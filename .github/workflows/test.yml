@@ -1,0 +1,115 @@
+name: CI
+
+on: [push]
+
+concurrency:
+  group: ${{github.workflow}}-${{github.ref}}
+  cancel-in-progress: true
+
+jobs:
+  # NOTE: commenting linter test until linter run
+  # lint:
+  #   name: Run Linters
+  #   runs-on: ubuntu-latest
+
+  #   strategy:
+  #     matrix:
+  #       node-version: [16.x]
+
+  #   steps:
+  #     - uses: actions/checkout@v3
+
+  #     - name: Install Foundry
+  #       uses: foundry-rs/foundry-toolchain@v1
+  #       with:
+  #         version: nightly
+
+  #     - name: Use Node.js
+  #       uses: actions/setup-node@v3
+  #       with:
+  #         node-version: ${{ matrix.node-version }}
+  #         cache: "yarn"
+
+  #     - name: Install dependencies
+  #       run: yarn --frozen-lockfile --network-concurrency 1
+
+  #     - run: yarn lint:check
+
+  forge:
+    name: Run Unit and E2E Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Install forge dependencies
+        run: forge install
+
+      - name: Precompile using 0.6.7 and via-ir=false
+        run: yarn build
+
+      - name: "Create env file"
+        run: |
+          touch .env
+          echo OP_MAINNET_RPC="${{ secrets.OP_MAINNET_RPC }}" >> .env
+          echo OP_GOERLI_RPC="${{ secrets.OP_GOERLI_RPC }}" >> .env
+          cat .env
+
+      - name: Run tests
+        shell: bash
+        run: yarn test
+
+  forge-optimized:
+    name: Run Optimized Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Install forge dependencies
+        run: forge install
+
+      - name: Precompile using 0.6.7 and via-ir=true
+        run: yarn build:optimized
+
+      - name: Run tests
+        run: yarn test
+
+  # coverage:
+  #   name: Run Coverage Tests
+  #   runs-on: ubuntu-latest
+
+  #   strategy:
+  #     matrix:
+  #       node-version: [16.x]
+
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - name: Use Node.js
+  #       uses: actions/setup-node@v3
+  #       with:
+  #         node-version: ${{ matrix.node-version }}
+  #         cache: "yarn"
+  #     - name: Install Foundry
+  #       uses: foundry-rs/foundry-toolchain@v1
+  #       with:
+  #         version: nightly
+  #     - run: yarn install
+  #     - run: yarn build
+  #     - run: yarn coverage
+  #     - uses: codecov/codecov-action@v3
+  #       with:
+  #         files: ./coverage/lcov.info
+  #         flags: production
