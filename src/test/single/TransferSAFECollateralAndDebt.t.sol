@@ -2,7 +2,7 @@ pragma solidity 0.6.7;
 
 import "ds-test/test.sol";
 
-import {SAFEEngine} from '../../single/SAFEEngine.sol';
+import {SAFEEngine} from '../../contracts/SAFEEngine.sol';
 
 contract Usr {
     SAFEEngine public safeEngine;

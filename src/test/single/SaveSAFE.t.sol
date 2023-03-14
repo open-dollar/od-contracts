@@ -4,12 +4,12 @@ pragma experimental ABIEncoderV2;
 import "ds-test/test.sol";
 import "ds-token/delegate.sol";
 
-import {SAFEEngine} from '../../single/SAFEEngine.sol';
-import {LiquidationEngine} from '../../single/LiquidationEngine.sol';
-import {AccountingEngine} from '../../single/AccountingEngine.sol';
-import {TaxCollector} from '../../single/TaxCollector.sol';
-import '../../shared/BasicTokenAdapters.sol';
-import {OracleRelayer} from '../../single/OracleRelayer.sol';
+import {SAFEEngine} from '../../contracts/SAFEEngine.sol';
+import {LiquidationEngine} from '../../contracts/LiquidationEngine.sol';
+import {AccountingEngine} from '../../contracts/AccountingEngine.sol';
+import {TaxCollector} from '../../contracts/TaxCollector.sol';
+import '../../contracts/utils/BasicTokenAdapters.sol';
+import {OracleRelayer} from '../../contracts/OracleRelayer.sol';
 
 import {EnglishCollateralAuctionHouse} from './CollateralAuctionHouse.t.sol';
 import {DebtAuctionHouse} from './DebtAuctionHouse.t.sol';

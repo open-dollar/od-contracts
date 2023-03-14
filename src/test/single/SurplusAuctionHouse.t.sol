@@ -3,11 +3,11 @@ pragma solidity 0.6.7;
 import "ds-test/test.sol";
 import {DSDelegateToken} from "ds-token/delegate.sol";
 
-import {BurningSurplusAuctionHouse, RecyclingSurplusAuctionHouse, MixedStratSurplusAuctionHouse, PostSettlementSurplusAuctionHouse} from "../../single/SurplusAuctionHouse.sol";
-import "../../single/SAFEEngine.sol";
+import {BurningSurplusAuctionHouse, RecyclingSurplusAuctionHouse, MixedStratSurplusAuctionHouse, PostSettlementSurplusAuctionHouse} from "../../contracts/SurplusAuctionHouse.sol";
+import "../../contracts/SAFEEngine.sol";
 
-import {CoinJoin} from '../../shared/BasicTokenAdapters.sol';
-import {Coin} from "../../shared/Coin.sol";
+import {CoinJoin} from '../../contracts/utils/BasicTokenAdapters.sol';
+import {Coin} from "../../contracts/utils/Coin.sol";
 
 abstract contract Hevm {
     function warp(uint256) virtual public;

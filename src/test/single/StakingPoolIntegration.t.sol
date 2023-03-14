@@ -5,7 +5,7 @@ import {DSDelegateToken} from "ds-token/delegate.sol";
 
 import {TestSAFEEngine as SAFEEngine} from './SAFEEngine.t.sol';
 import {DebtAuctionHouse as DAH} from './DebtAuctionHouse.t.sol';
-import {AccountingEngine} from '../../single/AccountingEngine.sol';
+import {AccountingEngine} from '../../contracts/AccountingEngine.sol';
 
 abstract contract Hevm {
     function warp(uint256) virtual public;

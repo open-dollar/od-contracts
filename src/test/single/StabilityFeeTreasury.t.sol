@@ -20,10 +20,10 @@ pragma solidity 0.6.7;
 
 import "ds-test/test.sol";
 
-import {Coin} from '../../shared/Coin.sol';
-import {SAFEEngine} from '../../single/SAFEEngine.sol';
-import {StabilityFeeTreasury} from '../../single/StabilityFeeTreasury.sol';
-import {CoinJoin} from '../../shared/BasicTokenAdapters.sol';
+import {Coin} from '../../contracts/utils/Coin.sol';
+import {SAFEEngine} from '../../contracts/SAFEEngine.sol';
+import {StabilityFeeTreasury} from '../../contracts/StabilityFeeTreasury.sol';
+import {CoinJoin} from '../../contracts/utils/BasicTokenAdapters.sol';
 
 abstract contract Hevm {
     function warp(uint256) virtual public;

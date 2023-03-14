@@ -20,8 +20,8 @@
 pragma solidity 0.6.7;
 
 import "ds-test/test.sol";
-import {SAFEEngine} from '../../single/SAFEEngine.sol';
-import {CoinSavingsAccount} from '../../single/CoinSavingsAccount.sol';
+import {SAFEEngine} from '../../contracts/SAFEEngine.sol';
+import {CoinSavingsAccount} from '../../contracts/CoinSavingsAccount.sol';
 
 abstract contract Hevm {
     function warp(uint256) virtual public;

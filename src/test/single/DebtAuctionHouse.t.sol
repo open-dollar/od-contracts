@@ -3,8 +3,8 @@ pragma solidity 0.6.7;
 import {DSTest}  from "ds-test/test.sol";
 import {DSDelegateToken} from "ds-token/delegate.sol";
 
-import "../../single/DebtAuctionHouse.sol";
-import "../../single/SAFEEngine.sol";
+import "../../contracts/DebtAuctionHouse.sol";
+import "../../contracts/SAFEEngine.sol";
 
 abstract contract Hevm {
     function warp(uint256) virtual public;

@@ -5,9 +5,9 @@ import {DebtAuctionHouse as DAH} from './DebtAuctionHouse.t.sol';
 import {BurningSurplusAuctionHouse as SAH_ONE} from "./SurplusAuctionHouse.t.sol";
 import {PostSettlementSurplusAuctionHouse as SAH_TWO} from "./SurplusAuctionHouse.t.sol";
 import {TestSAFEEngine as SAFEEngine} from './SAFEEngine.t.sol';
-import {AccountingEngine} from '../../single/AccountingEngine.sol';
-import {SettlementSurplusAuctioneer} from "../../single/SettlementSurplusAuctioneer.sol";
-import {CoinJoin} from '../../shared/BasicTokenAdapters.sol';
+import {AccountingEngine} from '../../contracts/AccountingEngine.sol';
+import {SettlementSurplusAuctioneer} from "../../contracts/SettlementSurplusAuctioneer.sol";
+import {CoinJoin} from '../../contracts/utils/BasicTokenAdapters.sol';
 
 abstract contract Hevm {
     function warp(uint256) virtual public;

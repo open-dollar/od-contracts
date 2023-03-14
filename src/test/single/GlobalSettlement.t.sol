@@ -22,18 +22,18 @@ pragma solidity 0.6.7;
 import "ds-test/test.sol";
 import "ds-token/delegate.sol";
 
-import {SAFEEngine} from '../../single/SAFEEngine.sol';
-import {LiquidationEngine} from '../../single/LiquidationEngine.sol';
-import {AccountingEngine} from '../../single/AccountingEngine.sol';
-import {CoinSavingsAccount} from '../../single/CoinSavingsAccount.sol';
-import {StabilityFeeTreasury} from '../../single/StabilityFeeTreasury.sol';
-import {EnglishCollateralAuctionHouse, FixedDiscountCollateralAuctionHouse} from '../../single/CollateralAuctionHouse.sol';
-import {BurningSurplusAuctionHouse} from '../../single/SurplusAuctionHouse.sol';
-import {DebtAuctionHouse} from '../../single/DebtAuctionHouse.sol';
-import {SettlementSurplusAuctioneer} from "../../single/SettlementSurplusAuctioneer.sol";
-import {CollateralJoin, CoinJoin} from '../../shared/BasicTokenAdapters.sol';
-import {GlobalSettlement}  from '../../single/GlobalSettlement.sol';
-import {OracleRelayer} from '../../single/OracleRelayer.sol';
+import {SAFEEngine} from '../../contracts/SAFEEngine.sol';
+import {LiquidationEngine} from '../../contracts/LiquidationEngine.sol';
+import {AccountingEngine} from '../../contracts/AccountingEngine.sol';
+import {CoinSavingsAccount} from '../../contracts/CoinSavingsAccount.sol';
+import {StabilityFeeTreasury} from '../../contracts/StabilityFeeTreasury.sol';
+import {EnglishCollateralAuctionHouse, FixedDiscountCollateralAuctionHouse} from '../../contracts/CollateralAuctionHouse.sol';
+import {BurningSurplusAuctionHouse} from '../../contracts/SurplusAuctionHouse.sol';
+import {DebtAuctionHouse} from '../../contracts/DebtAuctionHouse.sol';
+import {SettlementSurplusAuctioneer} from "../../contracts/SettlementSurplusAuctioneer.sol";
+import {CollateralJoin, CoinJoin} from '../../contracts/utils/BasicTokenAdapters.sol';
+import {GlobalSettlement}  from '../../contracts/GlobalSettlement.sol';
+import {OracleRelayer} from '../../contracts/OracleRelayer.sol';
 
 abstract contract Hevm {
     function warp(uint256) virtual public;

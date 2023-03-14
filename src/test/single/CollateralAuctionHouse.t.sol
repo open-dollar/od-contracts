@@ -3,9 +3,9 @@ pragma solidity 0.6.7;
 import "ds-test/test.sol";
 import {DSDelegateToken} from "ds-token/delegate.sol";
 
-import {SAFEEngine} from "../../single/SAFEEngine.sol";
-import {EnglishCollateralAuctionHouse, FixedDiscountCollateralAuctionHouse, IncreasingDiscountCollateralAuctionHouse} from "../../single/CollateralAuctionHouse.sol";
-import {OracleRelayer} from "../../single/OracleRelayer.sol";
+import {SAFEEngine} from "../../contracts/SAFEEngine.sol";
+import {EnglishCollateralAuctionHouse, FixedDiscountCollateralAuctionHouse, IncreasingDiscountCollateralAuctionHouse} from "../../contracts/CollateralAuctionHouse.sol";
+import {OracleRelayer} from "../../contracts/OracleRelayer.sol";
 
 abstract contract Hevm {
     function warp(uint256) virtual public;
