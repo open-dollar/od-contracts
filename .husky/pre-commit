@@ -2,7 +2,12 @@
 . "$(dirname "$0")/_/husky.sh"
 
 # 1. Build the contracts
+# Run forge snapshot to get gas report
+forge snapshot
+# Stage the snapshot
+git add .gas-snapshot
 # 2. Stage build output 
 # 2. Lint and stage style improvements 
 # NOTE: commenting linter test until linter run
 # yarn build && git add out && npx lint-staged
+
