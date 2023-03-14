@@ -23,7 +23,7 @@ import "ds-token/delegate.sol";
 import {Coin} from "../../shared/Coin.sol";
 import {SAFEEngine} from '../../single/SAFEEngine.sol';
 import {AccountingEngine} from '../../single/AccountingEngine.sol';
-import {BasicCollateralJoin} from '../../shared/BasicTokenAdapters.sol';
+import {CollateralJoin} from '../../shared/BasicTokenAdapters.sol';
 import {OracleRelayer} from '../../single/OracleRelayer.sol';
 
 contract Feed {
@@ -110,7 +110,7 @@ contract CoinTest is DSTest {
     SAFEEngine safeEngine;
     OracleRelayer oracleRelayer;
 
-    BasicCollateralJoin collateralA;
+    CollateralJoin collateralA;
     DSDelegateToken gold;
     Feed    goldFeed;
 
@@ -159,7 +159,7 @@ contract CoinTest is DSTest {
         oracleRelayer.modifyParameters("gold", "safetyCRatio", 1000000000000000000000000000);
         oracleRelayer.modifyParameters("gold", "liquidationCRatio", 1000000000000000000000000000);
         oracleRelayer.updateCollateralPrice("gold");
-        collateralA = new BasicCollateralJoin(address(safeEngine), "gold", address(gold));
+        collateralA = new CollateralJoin(address(safeEngine), "gold", address(gold));
 
         safeEngine.modifyParameters("gold", "debtCeiling", rad(1000 ether));
         safeEngine.modifyParameters("globalDebtCeiling", rad(1000 ether));
