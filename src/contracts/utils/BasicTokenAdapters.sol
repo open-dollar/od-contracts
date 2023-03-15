@@ -18,19 +18,19 @@
 pragma solidity 0.6.7;
 
 abstract contract CollateralLike {
-    function decimals() virtual public view returns (uint256);
-    function transfer(address,uint256) virtual public returns (bool);
-    function transferFrom(address,address,uint256) virtual public returns (bool);
+  function decimals() public view virtual returns (uint256);
+  function transfer(address, uint256) public virtual returns (bool);
+  function transferFrom(address, address, uint256) public virtual returns (bool);
 }
 
 abstract contract DSTokenLike {
-    function mint(address,uint256) virtual external;
-    function burn(address,uint256) virtual external;
+  function mint(address, uint256) external virtual;
+  function burn(address, uint256) external virtual;
 }
 
 abstract contract SAFEEngineLike {
-    function modifyCollateralBalance(bytes32,address,int256) virtual external;
-    function transferInternalCoins(address,address,uint256) virtual external;
+  function modifyCollateralBalance(bytes32, address, int256) external virtual;
+  function transferInternalCoins(address, address, uint256) external virtual;
 }
 
 /*
@@ -46,268 +46,296 @@ abstract contract SAFEEngineLike {
     semantics and token standards.
     Adapters need to implement two basic methods:
       - `join`: enter collateral into the system
-      - `exit`: remove collateral from the system
-*/
+      - `exit`: remove collateral from the system*/
 
 contract CollateralJoin {
-    // --- Auth ---
-    mapping (address => uint256) public authorizedAccounts;
-    /**
-     * @notice Add auth to an account
-     * @param account Account to add auth to
-     */
-    function addAuthorization(address account) external isAuthorized {
-        authorizedAccounts[account] = 1;
-        emit AddAuthorization(account);
-    }
-    /**
-     * @notice Remove auth from an account
-     * @param account Account to remove auth from
-     */
-    function removeAuthorization(address account) external isAuthorized {
-        authorizedAccounts[account] = 0;
-        emit RemoveAuthorization(account);
-    }
-    /**
-    * @notice Checks whether msg.sender can call an authed function
-    **/
-    modifier isAuthorized {
-        require(authorizedAccounts[msg.sender] == 1, "CollateralJoin/account-not-authorized");
-        _;
-    }
+  // --- Auth ---
+  mapping(address => uint256) public authorizedAccounts;
+  /**
+   * @notice Add auth to an account
+   * @param account Account to add auth to
+   */
 
-    // SAFE database
-    SAFEEngineLike  public safeEngine;
-    // Collateral type name
-    bytes32        public collateralType;
-    // Actual collateral token contract
-    CollateralLike public collateral;
-    // How many decimals the collateral token has
-    uint256        public decimals;
-    // Whether this adapter contract is enabled or not
-    uint256        public contractEnabled;
+  function addAuthorization(address account) external isAuthorized {
+    authorizedAccounts[account] = 1;
+    emit AddAuthorization(account);
+  }
+  /**
+   * @notice Remove auth from an account
+   * @param account Account to remove auth from
+   */
 
-    // --- Events ---
-    event AddAuthorization(address account);
-    event RemoveAuthorization(address account);
-    event DisableContract();
-    event Join(address sender, address account, uint256 wad);
-    event Exit(address sender, address account, uint256 wad);
+  function removeAuthorization(address account) external isAuthorized {
+    authorizedAccounts[account] = 0;
+    emit RemoveAuthorization(account);
+  }
+  /**
+   * @notice Checks whether msg.sender can call an authed function
+   *
+   */
 
-    constructor(address safeEngine_, bytes32 collateralType_, address collateral_) public {
-        authorizedAccounts[msg.sender] = 1;
-        contractEnabled = 1;
-        safeEngine      = SAFEEngineLike(safeEngine_);
-        collateralType  = collateralType_;
-        collateral      = CollateralLike(collateral_);
-        decimals        = collateral.decimals();
-        require(decimals == 18, "CollateralJoin/non-18-decimals");
-        emit AddAuthorization(msg.sender);
-    }
-    /**
-     * @notice Disable this contract
-     */
-    function disableContract() external isAuthorized {
-        contractEnabled = 0;
-        emit DisableContract();
-    }
-    /**
-    * @notice Join collateral in the system
-    * @dev This function locks collateral in the adapter and creates a 'representation' of
-    *      the locked collateral inside the system. This adapter assumes that the collateral
-    *      has 18 decimals
-    * @param account Account from which we transferFrom collateral and add it in the system
-    * @param wad Amount of collateral to transfer in the system (represented as a number with 18 decimals)
-    **/
-    function join(address account, uint256 wad) external {
-        require(contractEnabled == 1, "CollateralJoin/contract-not-enabled");
-        require(int256(wad) >= 0, "CollateralJoin/overflow");
-        safeEngine.modifyCollateralBalance(collateralType, account, int256(wad));
-        require(collateral.transferFrom(msg.sender, address(this), wad), "CollateralJoin/failed-transfer");
-        emit Join(msg.sender, account, wad);
-    }
-    /**
-    * @notice Exit collateral from the system
-    * @dev This function destroys the collateral representation from inside the system
-    *      and exits the collateral from this adapter. The adapter assumes that the collateral
-    *      has 18 decimals
-    * @param account Account to which we transfer the collateral
-    * @param wad Amount of collateral to transfer to 'account' (represented as a number with 18 decimals)
-    **/
-    function exit(address account, uint256 wad) external {
-        require(wad <= 2 ** 255, "CollateralJoin/overflow");
-        safeEngine.modifyCollateralBalance(collateralType, msg.sender, -int256(wad));
-        require(collateral.transfer(account, wad), "CollateralJoin/failed-transfer");
-        emit Exit(msg.sender, account, wad);
-    }
+  modifier isAuthorized() {
+    require(authorizedAccounts[msg.sender] == 1, 'CollateralJoin/account-not-authorized');
+    _;
+  }
+
+  // SAFE database
+  SAFEEngineLike public safeEngine;
+  // Collateral type name
+  bytes32 public collateralType;
+  // Actual collateral token contract
+  CollateralLike public collateral;
+  // How many decimals the collateral token has
+  uint256 public decimals;
+  // Whether this adapter contract is enabled or not
+  uint256 public contractEnabled;
+
+  // --- Events ---
+  event AddAuthorization(address account);
+  event RemoveAuthorization(address account);
+  event DisableContract();
+  event Join(address sender, address account, uint256 wad);
+  event Exit(address sender, address account, uint256 wad);
+
+  constructor(address safeEngine_, bytes32 collateralType_, address collateral_) public {
+    authorizedAccounts[msg.sender] = 1;
+    contractEnabled = 1;
+    safeEngine = SAFEEngineLike(safeEngine_);
+    collateralType = collateralType_;
+    collateral = CollateralLike(collateral_);
+    decimals = collateral.decimals();
+    require(decimals == 18, 'CollateralJoin/non-18-decimals');
+    emit AddAuthorization(msg.sender);
+  }
+  /**
+   * @notice Disable this contract
+   */
+
+  function disableContract() external isAuthorized {
+    contractEnabled = 0;
+    emit DisableContract();
+  }
+  /**
+   * @notice Join collateral in the system
+   * @dev This function locks collateral in the adapter and creates a 'representation' of
+   *      the locked collateral inside the system. This adapter assumes that the collateral
+   *      has 18 decimals
+   * @param account Account from which we transferFrom collateral and add it in the system
+   * @param wad Amount of collateral to transfer in the system (represented as a number with 18 decimals)
+   *
+   */
+
+  function join(address account, uint256 wad) external {
+    require(contractEnabled == 1, 'CollateralJoin/contract-not-enabled');
+    require(int256(wad) >= 0, 'CollateralJoin/overflow');
+    safeEngine.modifyCollateralBalance(collateralType, account, int256(wad));
+    require(collateral.transferFrom(msg.sender, address(this), wad), 'CollateralJoin/failed-transfer');
+    emit Join(msg.sender, account, wad);
+  }
+  /**
+   * @notice Exit collateral from the system
+   * @dev This function destroys the collateral representation from inside the system
+   *      and exits the collateral from this adapter. The adapter assumes that the collateral
+   *      has 18 decimals
+   * @param account Account to which we transfer the collateral
+   * @param wad Amount of collateral to transfer to 'account' (represented as a number with 18 decimals)
+   *
+   */
+
+  function exit(address account, uint256 wad) external {
+    require(wad <= 2 ** 255, 'CollateralJoin/overflow');
+    safeEngine.modifyCollateralBalance(collateralType, msg.sender, -int256(wad));
+    require(collateral.transfer(account, wad), 'CollateralJoin/failed-transfer');
+    emit Exit(msg.sender, account, wad);
+  }
 }
 
 contract ETHJoin {
-    // --- Auth ---
-    mapping (address => uint256) public authorizedAccounts;
-    /**
-     * @notice Add auth to an account
-     * @param account Account to add auth to
-     */
-    function addAuthorization(address account) external isAuthorized {
-        authorizedAccounts[account] = 1;
-        emit AddAuthorization(account);
-    }
-    /**
-     * @notice Remove auth from an account
-     * @param account Account to remove auth from
-     */
-    function removeAuthorization(address account) external isAuthorized {
-        authorizedAccounts[account] = 0;
-        emit RemoveAuthorization(account);
-    }
-    /**
-    * @notice Checks whether msg.sender can call a restricted function
-    **/
-    modifier isAuthorized {
-        require(authorizedAccounts[msg.sender] == 1, "ETHJoin/account-not-authorized");
-        _;
-    }
+  // --- Auth ---
+  mapping(address => uint256) public authorizedAccounts;
+  /**
+   * @notice Add auth to an account
+   * @param account Account to add auth to
+   */
 
-    // SAFE database
-    SAFEEngineLike public safeEngine;
-    // Collateral type name
-    bytes32       public collateralType;
-    // Whether this contract is enabled or not
-    uint256       public contractEnabled;
-    // Number of decimals ETH has
-    uint256       public decimals;
+  function addAuthorization(address account) external isAuthorized {
+    authorizedAccounts[account] = 1;
+    emit AddAuthorization(account);
+  }
+  /**
+   * @notice Remove auth from an account
+   * @param account Account to remove auth from
+   */
 
-    // --- Events ---
-    event AddAuthorization(address account);
-    event RemoveAuthorization(address account);
-    event DisableContract();
-    event Join(address sender, address account, uint256 wad);
-    event Exit(address sender, address account, uint256 wad);
+  function removeAuthorization(address account) external isAuthorized {
+    authorizedAccounts[account] = 0;
+    emit RemoveAuthorization(account);
+  }
+  /**
+   * @notice Checks whether msg.sender can call a restricted function
+   *
+   */
 
-    constructor(address safeEngine_, bytes32 collateralType_) public {
-        authorizedAccounts[msg.sender] = 1;
-        contractEnabled                = 1;
-        safeEngine                     = SAFEEngineLike(safeEngine_);
-        collateralType                 = collateralType_;
-        decimals                       = 18;
-        emit AddAuthorization(msg.sender);
-    }
-    /**
-     * @notice Disable this contract
-     */
-    function disableContract() external isAuthorized {
-        contractEnabled = 0;
-        emit DisableContract();
-    }
-    /**
-    * @notice Join ETH in the system
-    * @param account Account that will receive the ETH representation inside the system
-    **/
-    function join(address account) external payable {
-        require(contractEnabled == 1, "ETHJoin/contract-not-enabled");
-        require(int256(msg.value) >= 0, "ETHJoin/overflow");
-        safeEngine.modifyCollateralBalance(collateralType, account, int256(msg.value));
-        emit Join(msg.sender, account, msg.value);
-    }
-    /**
-    * @notice Exit ETH from the system
-    * @param account Account that will receive the ETH representation inside the system
-    **/
-    function exit(address payable account, uint256 wad) external {
-        require(int256(wad) >= 0, "ETHJoin/overflow");
-        safeEngine.modifyCollateralBalance(collateralType, msg.sender, -int256(wad));
-        emit Exit(msg.sender, account, wad);
-        account.transfer(wad);
-    }
+  modifier isAuthorized() {
+    require(authorizedAccounts[msg.sender] == 1, 'ETHJoin/account-not-authorized');
+    _;
+  }
+
+  // SAFE database
+  SAFEEngineLike public safeEngine;
+  // Collateral type name
+  bytes32 public collateralType;
+  // Whether this contract is enabled or not
+  uint256 public contractEnabled;
+  // Number of decimals ETH has
+  uint256 public decimals;
+
+  // --- Events ---
+  event AddAuthorization(address account);
+  event RemoveAuthorization(address account);
+  event DisableContract();
+  event Join(address sender, address account, uint256 wad);
+  event Exit(address sender, address account, uint256 wad);
+
+  constructor(address safeEngine_, bytes32 collateralType_) public {
+    authorizedAccounts[msg.sender] = 1;
+    contractEnabled = 1;
+    safeEngine = SAFEEngineLike(safeEngine_);
+    collateralType = collateralType_;
+    decimals = 18;
+    emit AddAuthorization(msg.sender);
+  }
+  /**
+   * @notice Disable this contract
+   */
+
+  function disableContract() external isAuthorized {
+    contractEnabled = 0;
+    emit DisableContract();
+  }
+  /**
+   * @notice Join ETH in the system
+   * @param account Account that will receive the ETH representation inside the system
+   *
+   */
+
+  function join(address account) external payable {
+    require(contractEnabled == 1, 'ETHJoin/contract-not-enabled');
+    require(int256(msg.value) >= 0, 'ETHJoin/overflow');
+    safeEngine.modifyCollateralBalance(collateralType, account, int256(msg.value));
+    emit Join(msg.sender, account, msg.value);
+  }
+  /**
+   * @notice Exit ETH from the system
+   * @param account Account that will receive the ETH representation inside the system
+   *
+   */
+
+  function exit(address payable account, uint256 wad) external {
+    require(int256(wad) >= 0, 'ETHJoin/overflow');
+    safeEngine.modifyCollateralBalance(collateralType, msg.sender, -int256(wad));
+    emit Exit(msg.sender, account, wad);
+    account.transfer(wad);
+  }
 }
 
 contract CoinJoin {
-    // --- Auth ---
-    mapping (address => uint256) public authorizedAccounts;
-    /**
-     * @notice Add auth to an account
-     * @param account Account to add auth to
-     */
-    function addAuthorization(address account) external isAuthorized {
-        authorizedAccounts[account] = 1;
-        emit AddAuthorization(account);
-    }
-    /**
-     * @notice Remove auth from an account
-     * @param account Account to remove auth from
-     */
-    function removeAuthorization(address account) external isAuthorized {
-        authorizedAccounts[account] = 0;
-        emit RemoveAuthorization(account);
-    }
-    /**
-    * @notice Checks whether msg.sender can call an authed function
-    **/
-    modifier isAuthorized {
-        require(authorizedAccounts[msg.sender] == 1, "CoinJoin/account-not-authorized");
-        _;
-    }
+  // --- Auth ---
+  mapping(address => uint256) public authorizedAccounts;
+  /**
+   * @notice Add auth to an account
+   * @param account Account to add auth to
+   */
 
-    // SAFE database
-    SAFEEngineLike public safeEngine;
-    // Coin created by the system; this is the external, ERC-20 representation, not the internal 'coinBalance'
-    DSTokenLike    public systemCoin;
-    // Whether this contract is enabled or not
-    uint256        public contractEnabled;
-    // Number of decimals the system coin has
-    uint256        public decimals;
+  function addAuthorization(address account) external isAuthorized {
+    authorizedAccounts[account] = 1;
+    emit AddAuthorization(account);
+  }
+  /**
+   * @notice Remove auth from an account
+   * @param account Account to remove auth from
+   */
 
-    // --- Events ---
-    event AddAuthorization(address account);
-    event RemoveAuthorization(address account);
-    event DisableContract();
-    event Join(address sender, address account, uint256 wad);
-    event Exit(address sender, address account, uint256 wad);
+  function removeAuthorization(address account) external isAuthorized {
+    authorizedAccounts[account] = 0;
+    emit RemoveAuthorization(account);
+  }
+  /**
+   * @notice Checks whether msg.sender can call an authed function
+   *
+   */
 
-    constructor(address safeEngine_, address systemCoin_) public {
-        authorizedAccounts[msg.sender] = 1;
-        contractEnabled                = 1;
-        safeEngine                     = SAFEEngineLike(safeEngine_);
-        systemCoin                     = DSTokenLike(systemCoin_);
-        decimals                       = 18;
-        emit AddAuthorization(msg.sender);
-    }
-    /**
-     * @notice Disable this contract
-     */
-    function disableContract() external isAuthorized {
-        contractEnabled = 0;
-        emit DisableContract();
-    }
-    uint256 constant RAY = 10 ** 27;
-    function multiply(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        require(y == 0 || (z = x * y) / y == x, "CoinJoin/mul-overflow");
-    }
-    /**
-    * @notice Join system coins in the system
-    * @dev Exited coins have 18 decimals but inside the system they have 45 (rad) decimals.
-           When we join, the amount (wad) is multiplied by 10**27 (ray)
-    * @param account Account that will receive the joined coins
-    * @param wad Amount of external coins to join (18 decimal number)
-    **/
-    function join(address account, uint256 wad) external {
-        safeEngine.transferInternalCoins(address(this), account, multiply(RAY, wad));
-        systemCoin.burn(msg.sender, wad);
-        emit Join(msg.sender, account, wad);
-    }
-    /**
-    * @notice Exit system coins from the system and inside 'Coin.sol'
-    * @dev Inside the system, coins have 45 (rad) decimals but outside of it they have 18 decimals (wad).
-           When we exit, we specify a wad amount of coins and then the contract automatically multiplies
-           wad by 10**27 to move the correct 45 decimal coin amount to this adapter
-    * @param account Account that will receive the exited coins
-    * @param wad Amount of internal coins to join (18 decimal number that will be multiplied by ray)
-    **/
-    function exit(address account, uint256 wad) external {
-        require(contractEnabled == 1, "CoinJoin/contract-not-enabled");
-        safeEngine.transferInternalCoins(msg.sender, address(this), multiply(RAY, wad));
-        systemCoin.mint(account, wad);
-        emit Exit(msg.sender, account, wad);
-    }
+  modifier isAuthorized() {
+    require(authorizedAccounts[msg.sender] == 1, 'CoinJoin/account-not-authorized');
+    _;
+  }
+
+  // SAFE database
+  SAFEEngineLike public safeEngine;
+  // Coin created by the system; this is the external, ERC-20 representation, not the internal 'coinBalance'
+  DSTokenLike public systemCoin;
+  // Whether this contract is enabled or not
+  uint256 public contractEnabled;
+  // Number of decimals the system coin has
+  uint256 public decimals;
+
+  // --- Events ---
+  event AddAuthorization(address account);
+  event RemoveAuthorization(address account);
+  event DisableContract();
+  event Join(address sender, address account, uint256 wad);
+  event Exit(address sender, address account, uint256 wad);
+
+  constructor(address safeEngine_, address systemCoin_) public {
+    authorizedAccounts[msg.sender] = 1;
+    contractEnabled = 1;
+    safeEngine = SAFEEngineLike(safeEngine_);
+    systemCoin = DSTokenLike(systemCoin_);
+    decimals = 18;
+    emit AddAuthorization(msg.sender);
+  }
+  /**
+   * @notice Disable this contract
+   */
+
+  function disableContract() external isAuthorized {
+    contractEnabled = 0;
+    emit DisableContract();
+  }
+
+  uint256 constant RAY = 10 ** 27;
+
+  function multiply(uint256 x, uint256 y) internal pure returns (uint256 z) {
+    require(y == 0 || (z = x * y) / y == x, 'CoinJoin/mul-overflow');
+  }
+  /**
+   * @notice Join system coins in the system
+   * @dev Exited coins have 18 decimals but inside the system they have 45 (rad) decimals.
+   *          When we join, the amount (wad) is multiplied by 10**27 (ray)
+   * @param account Account that will receive the joined coins
+   * @param wad Amount of external coins to join (18 decimal number)
+   *
+   */
+
+  function join(address account, uint256 wad) external {
+    safeEngine.transferInternalCoins(address(this), account, multiply(RAY, wad));
+    systemCoin.burn(msg.sender, wad);
+    emit Join(msg.sender, account, wad);
+  }
+  /**
+   * @notice Exit system coins from the system and inside 'Coin.sol'
+   * @dev Inside the system, coins have 45 (rad) decimals but outside of it they have 18 decimals (wad).
+   *          When we exit, we specify a wad amount of coins and then the contract automatically multiplies
+   *          wad by 10**27 to move the correct 45 decimal coin amount to this adapter
+   * @param account Account that will receive the exited coins
+   * @param wad Amount of internal coins to join (18 decimal number that will be multiplied by ray)
+   *
+   */
+
+  function exit(address account, uint256 wad) external {
+    require(contractEnabled == 1, 'CoinJoin/contract-not-enabled');
+    safeEngine.transferInternalCoins(msg.sender, address(this), multiply(RAY, wad));
+    systemCoin.mint(account, wad);
+    emit Exit(msg.sender, account, wad);
+  }
 }
