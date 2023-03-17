@@ -17,23 +17,9 @@
 
 pragma solidity 0.6.7;
 
-abstract contract AccountingEngineLike {
-  function surplusAuctionDelay() public view virtual returns (uint256);
-  function surplusAuctionAmountToSell() public view virtual returns (uint256);
-  function surplusAuctionHouse() public view virtual returns (address);
-  function safeEngine() public view virtual returns (address);
-  function contractEnabled() public view virtual returns (uint256);
-}
-
-abstract contract SAFEEngineLike {
-  function coinBalance(address) public view virtual returns (uint256);
-  function approveSAFEModification(address) external virtual;
-  function denySAFEModification(address) external virtual;
-}
-
-abstract contract SurplusAuctionHouseLike {
-  function startAuction(uint256, uint256) public virtual returns (uint256);
-}
+import {IAccountingEngine as AccountingEngineLike} from '../interfaces/IAccountingEngine.sol';
+import {ISAFEEngine as SAFEEngineLike} from '../interfaces/ISAFEEngine.sol';
+import {ISurplusAuctionHouse as SurplusAuctionHouseLike} from '../interfaces/ISurplusAuctionHouse.sol';
 
 contract SettlementSurplusAuctioneer {
   // --- Auth ---

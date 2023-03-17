@@ -17,19 +17,8 @@
 
 pragma solidity 0.6.7;
 
-abstract contract SAFEEngineLike {
-  function transferInternalCoins(address, address, uint256) external virtual;
-  function coinBalance(address) external view virtual returns (uint256);
-  function approveSAFEModification(address) external virtual;
-  function denySAFEModification(address) external virtual;
-}
-
-abstract contract TokenLike {
-  function approve(address, uint256) public virtual returns (bool);
-  function balanceOf(address) public view virtual returns (uint256);
-  function move(address, address, uint256) external virtual;
-  function burn(address, uint256) external virtual;
-}
+import {ISAFEEngine as SAFEEngineLike} from '../interfaces/ISAFEEngine.sol';
+import {IToken as TokenLike} from '../interfaces/external/IToken.sol';
 
 /*
    This thing lets you auction some system coins in return for protocol tokens that are then burnt*/

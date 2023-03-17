@@ -17,55 +17,10 @@
 
 pragma solidity 0.6.7;
 
-abstract contract CollateralAuctionHouseLike {
-  function startAuction(
-    address forgoneCollateralReceiver,
-    address initialBidder,
-    uint256 amountToRaise,
-    uint256 collateralToSell,
-    uint256 initialBid
-  ) public virtual returns (uint256);
-}
-
-abstract contract SAFESaviourLike {
-  function saveSAFE(address, bytes32, address) external virtual returns (bool, uint256, uint256);
-}
-
-abstract contract SAFEEngineLike {
-  function collateralTypes(bytes32)
-    public
-    view
-    virtual
-    returns (
-      uint256 debtAmount, // [wad]
-      uint256 accumulatedRate, // [ray]
-      uint256 safetyPrice, // [ray]
-      uint256 debtCeiling, // [rad]
-      uint256 debtFloor, // [rad]
-      uint256 liquidationPrice
-    ); // [ray]
-
-  function safes(
-    bytes32,
-    address
-  )
-    public
-    view
-    virtual
-    returns (
-      uint256 lockedCollateral, // [wad]
-      uint256 generatedDebt
-    ); // [wad]
-
-  function confiscateSAFECollateralAndDebt(bytes32, address, address, address, int256, int256) external virtual;
-  function canModifySAFE(address, address) public view virtual returns (bool);
-  function approveSAFEModification(address) external virtual;
-  function denySAFEModification(address) external virtual;
-}
-
-abstract contract AccountingEngineLike {
-  function pushDebtToQueue(uint256) external virtual;
-}
+import {ICollateralAuctionHouse as CollateralAuctionHouseLike} from '../interfaces/ICollateralAuctionHouse.sol';
+import {ISAFESaviour as SAFESaviourLike} from '../interfaces/external/ISAFESaviour.sol';
+import {ISAFEEngine as SAFEEngineLike} from '../interfaces/ISAFEEngine.sol';
+import {IAccountingEngine as AccountingEngineLike} from '../interfaces/IAccountingEngine.sol';
 
 contract LiquidationEngine {
   // --- Auth ---
@@ -401,11 +356,11 @@ contract LiquidationEngine {
         currentOnAuctionSystemCoins = addition(currentOnAuctionSystemCoins, amountToRaise_);
 
         auctionId = CollateralAuctionHouseLike(collateralData.collateralAuctionHouse).startAuction({
-          forgoneCollateralReceiver: safe,
-          initialBidder: address(accountingEngine),
-          amountToRaise: amountToRaise_,
-          collateralToSell: collateralToSell,
-          initialBid: 0
+          _forgoneCollateralReceiver: safe,
+          _initialBidder: address(accountingEngine),
+          _amountToRaise: amountToRaise_,
+          _collateralToSell: collateralToSell,
+          _initialBid: 0
         });
 
         emit UpdateCurrentOnAuctionSystemCoins(currentOnAuctionSystemCoins);

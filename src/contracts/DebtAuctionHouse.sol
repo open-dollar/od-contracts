@@ -17,19 +17,9 @@
 
 pragma solidity 0.6.7;
 
-abstract contract SAFEEngineLike {
-  function transferInternalCoins(address, address, uint256) external virtual;
-  function createUnbackedDebt(address, address, uint256) external virtual;
-}
-
-abstract contract TokenLike {
-  function mint(address, uint256) external virtual;
-}
-
-abstract contract AccountingEngineLike {
-  function totalOnAuctionDebt() public virtual returns (uint256);
-  function cancelAuctionedDebtWithSurplus(uint256) external virtual;
-}
+import {ISAFEEngine as SAFEEngineLike} from '../interfaces/ISAFEEngine.sol';
+import {IToken as TokenLike} from '../interfaces/external/IToken.sol';
+import {IAccountingEngine as AccountingEngineLike} from '../interfaces/IAccountingEngine.sol';
 
 /*
    This thing creates protocol tokens on demand in return for system coins*/

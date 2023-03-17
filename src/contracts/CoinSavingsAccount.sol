@@ -29,10 +29,7 @@ pragma solidity 0.6.7;
    - `withdraw`: withdraw coins from the savings account
    - `updateAccumulatedRate`: perform rate collection*/
 
-abstract contract SAFEEngineLike {
-  function transferInternalCoins(address, address, uint256) external virtual;
-  function createUnbackedDebt(address, address, uint256) external virtual;
-}
+import {ISAFEEngine as SAFEEngineLike} from '../interfaces/ISAFEEngine.sol';
 
 contract CoinSavingsAccount {
   // --- Auth ---

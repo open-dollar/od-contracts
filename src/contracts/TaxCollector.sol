@@ -14,20 +14,7 @@
 pragma solidity 0.6.7;
 
 import './utils/LinkedList.sol';
-
-abstract contract SAFEEngineLike {
-  function collateralTypes(bytes32)
-    public
-    view
-    virtual
-    returns (
-      uint256 debtAmount, // [wad]
-      uint256 accumulatedRate
-    ); // [ray]
-
-  function updateAccumulatedRate(bytes32, address, int256) external virtual;
-  function coinBalance(address) public view virtual returns (uint256);
-}
+import {ISAFEEngine as SAFEEngineLike} from '../interfaces/ISAFEEngine.sol';
 
 contract TaxCollector {
   using LinkedList for LinkedList.List;
@@ -437,7 +424,7 @@ contract TaxCollector {
     uint256 debtAmount;
     for (uint256 i = start; i <= end; i++) {
       if (now > collateralTypes[collateralList[i]].updateTime) {
-        (debtAmount,) = safeEngine.collateralTypes(collateralList[i]);
+        (debtAmount,,,,,) = safeEngine.collateralTypes(collateralList[i]);
         (, deltaRate) = taxSingleOutcome(collateralList[i]);
         rad = addition(rad, multiply(debtAmount, deltaRate));
       }
@@ -455,7 +442,7 @@ contract TaxCollector {
    */
 
   function taxSingleOutcome(bytes32 collateralType) public view returns (uint256, int256) {
-    (, uint256 lastAccumulatedRate) = safeEngine.collateralTypes(collateralType);
+    (, uint256 lastAccumulatedRate,,,,) = safeEngine.collateralTypes(collateralType);
     uint256 newlyAccumulatedRate = rmultiply(
       rpow(
         addition(globalStabilityFee, collateralTypes[collateralType].stabilityFee),
@@ -510,14 +497,14 @@ contract TaxCollector {
   function taxSingle(bytes32 collateralType) public returns (uint256) {
     uint256 latestAccumulatedRate;
     if (now <= collateralTypes[collateralType].updateTime) {
-      (, latestAccumulatedRate) = safeEngine.collateralTypes(collateralType);
+      (, latestAccumulatedRate,,,,) = safeEngine.collateralTypes(collateralType);
       return latestAccumulatedRate;
     }
     (, int256 deltaRate) = taxSingleOutcome(collateralType);
     // Check how much debt has been generated for collateralType
-    (uint256 debtAmount,) = safeEngine.collateralTypes(collateralType);
+    (uint256 debtAmount,,,,,) = safeEngine.collateralTypes(collateralType);
     splitTaxIncome(collateralType, debtAmount, deltaRate);
-    (, latestAccumulatedRate) = safeEngine.collateralTypes(collateralType);
+    (, latestAccumulatedRate,,,,) = safeEngine.collateralTypes(collateralType);
     collateralTypes[collateralType].updateTime = now;
     emit CollectTax(collateralType, latestAccumulatedRate, deltaRate);
     return latestAccumulatedRate;

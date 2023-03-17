@@ -18,97 +18,14 @@
 
 pragma solidity 0.6.7;
 
-abstract contract SAFEEngineLike {
-  function coinBalance(address) public view virtual returns (uint256);
-  function collateralTypes(bytes32)
-    public
-    view
-    virtual
-    returns (
-      uint256 debtAmount, // [wad]
-      uint256 accumulatedRate, // [ray]
-      uint256 safetyPrice, // [ray]
-      uint256 debtCeiling, // [rad]
-      uint256 debtFloor, // [rad]
-      uint256 liquidationPrice
-    ); // [ray]
-
-  function safes(
-    bytes32,
-    address
-  )
-    public
-    view
-    virtual
-    returns (
-      uint256 lockedCollateral, // [wad]
-      uint256 generatedDebt
-    ); // [wad]
-
-  function globalDebt() public virtual returns (uint256);
-  function transferInternalCoins(address src, address dst, uint256 rad) external virtual;
-  function approveSAFEModification(address) external virtual;
-  function transferCollateral(bytes32 collateralType, address src, address dst, uint256 wad) external virtual;
-  function confiscateSAFECollateralAndDebt(
-    bytes32 collateralType,
-    address safe,
-    address collateralSource,
-    address debtDestination,
-    int256 deltaCollateral,
-    int256 deltaDebt
-  ) external virtual;
-  function createUnbackedDebt(address debtDestination, address coinDestination, uint256 rad) external virtual;
-  function disableContract() external virtual;
-}
-
-abstract contract LiquidationEngineLike {
-  function collateralTypes(bytes32)
-    public
-    view
-    virtual
-    returns (
-      address collateralAuctionHouse,
-      uint256 liquidationPenalty, // [wad]
-      uint256 liquidationQuantity
-    ); // [rad]
-
-  function disableContract() external virtual;
-}
-
-abstract contract StabilityFeeTreasuryLike {
-  function disableContract() external virtual;
-}
-
-abstract contract AccountingEngineLike {
-  function disableContract() external virtual;
-}
-
-abstract contract CoinSavingsAccountLike {
-  function disableContract() external virtual;
-}
-
-abstract contract CollateralAuctionHouseLike {
-  function bidAmount(uint256 id) public view virtual returns (uint256);
-  function raisedAmount(uint256 id) public view virtual returns (uint256);
-  function remainingAmountToSell(uint256 id) public view virtual returns (uint256);
-  function forgoneCollateralReceiver(uint256 id) public view virtual returns (address);
-  function amountToRaise(uint256 id) public view virtual returns (uint256);
-  function terminateAuctionPrematurely(uint256 auctionId) external virtual;
-}
-
-abstract contract OracleLike {
-  function read() public view virtual returns (uint256);
-}
-
-abstract contract OracleRelayerLike {
-  function redemptionPrice() public virtual returns (uint256);
-  function collateralTypes(bytes32)
-    public
-    view
-    virtual
-    returns (OracleLike orcl, uint256 safetyCRatio, uint256 liquidationCRatio);
-  function disableContract() external virtual;
-}
+import {ISAFEEngine as SAFEEngineLike} from '../interfaces/ISAFEEngine.sol';
+import {ILiquidationEngine as LiquidationEngineLike} from '../interfaces/ILiquidationEngine.sol';
+import {IStabilityFeeTreasury as StabilityFeeTreasuryLike} from '../interfaces/IStabilityFeeTreasury.sol';
+import {IAccountingEngine as AccountingEngineLike} from '../interfaces/IAccountingEngine.sol';
+import {ICoinSavingsAccount as CoinSavingsAccountLike} from '../interfaces/ICoinSavingsAccount.sol';
+import {ICollateralAuctionHouse as CollateralAuctionHouseLike} from '../interfaces/ICollateralAuctionHouse.sol';
+import {IOracle as OracleLike} from '../interfaces/IOracle.sol';
+import {IOracleRelayer as OracleRelayerLike} from '../interfaces/IOracleRelayer.sol';
 
 /*
     This is the Global Settlement module. It is an

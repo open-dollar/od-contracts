@@ -15,13 +15,9 @@
 
 pragma solidity 0.6.7;
 
-abstract contract SAFEEngineLike {
-  function modifyParameters(bytes32, bytes32, uint256) external virtual;
-}
+import {ISAFEEngine as SAFEEngineLike} from '../interfaces/ISAFEEngine.sol';
 
-abstract contract OracleLike {
-  function getResultWithValidity() public view virtual returns (uint256, bool);
-}
+import {IOracle as OracleLike} from '../interfaces/IOracle.sol';
 
 contract OracleRelayer {
   // --- Auth ---

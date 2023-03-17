@@ -17,21 +17,9 @@
 
 pragma solidity 0.6.7;
 
-abstract contract CollateralLike {
-  function decimals() public view virtual returns (uint256);
-  function transfer(address, uint256) public virtual returns (bool);
-  function transferFrom(address, address, uint256) public virtual returns (bool);
-}
-
-abstract contract DSTokenLike {
-  function mint(address, uint256) external virtual;
-  function burn(address, uint256) external virtual;
-}
-
-abstract contract SAFEEngineLike {
-  function modifyCollateralBalance(bytes32, address, int256) external virtual;
-  function transferInternalCoins(address, address, uint256) external virtual;
-}
+import {ISAFEEngine as SAFEEngineLike} from '../../interfaces/ISAFEEngine.sol';
+import {IToken as DSTokenLike} from '../../interfaces/external/IToken.sol';
+import {ISystemCoin as CollateralLike} from '../../interfaces/external/ISystemCoin.sol';
 
 /*
     Here we provide *adapters* to connect the SAFEEngine to arbitrary external

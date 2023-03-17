@@ -17,23 +17,10 @@
 
 pragma solidity 0.6.7;
 
-abstract contract SAFEEngineLike {
-  function transferInternalCoins(address, address, uint256) external virtual;
-  function transferCollateral(bytes32, address, address, uint256) external virtual;
-}
-
-abstract contract OracleRelayerLike {
-  function redemptionPrice() public virtual returns (uint256);
-}
-
-abstract contract OracleLike {
-  function priceSource() public view virtual returns (address);
-  function getResultWithValidity() public view virtual returns (uint256, bool);
-}
-
-abstract contract LiquidationEngineLike {
-  function removeCoinsFromAuction(uint256) public virtual;
-}
+import {ISAFEEngine as SAFEEngineLike} from '../interfaces/ISAFEEngine.sol';
+import {IOracleRelayer as OracleRelayerLike} from '../interfaces/IOracleRelayer.sol';
+import {IOracle as OracleLike} from '../interfaces/IOracle.sol';
+import {ILiquidationEngine as LiquidationEngineLike} from '../interfaces/ILiquidationEngine.sol';
 
 /*
    This thing lets you (English) auction some collateral for a given amount of system coins*/

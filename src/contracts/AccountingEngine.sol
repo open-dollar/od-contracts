@@ -17,40 +17,15 @@
 
 pragma solidity 0.6.7;
 
-abstract contract DebtAuctionHouseLike {
-  function startAuction(
-    address incomeReceiver,
-    uint256 amountToSell,
-    uint256 initialBid
-  ) public virtual returns (uint256);
-  function protocolToken() public view virtual returns (address);
-  function disableContract() external virtual;
-  function contractEnabled() public view virtual returns (uint256);
-}
+import {IDebtAuctionHouse as DebtAuctionHouseLike} from '../interfaces/IDebtAuctionHouse.sol';
 
-abstract contract SurplusAuctionHouseLike {
-  function startAuction(uint256, uint256) public virtual returns (uint256);
-  function protocolToken() public view virtual returns (address);
-  function disableContract() external virtual;
-  function contractEnabled() public view virtual returns (uint256);
-}
+import {ISurplusAuctionHouse as SurplusAuctionHouseLike} from '../interfaces/ISurplusAuctionHouse.sol';
 
-abstract contract SAFEEngineLike {
-  function coinBalance(address) public view virtual returns (uint256);
-  function debtBalance(address) public view virtual returns (uint256);
-  function settleDebt(uint256) external virtual;
-  function transferInternalCoins(address, address, uint256) external virtual;
-  function approveSAFEModification(address) external virtual;
-  function denySAFEModification(address) external virtual;
-}
+import {ISAFEEngine as SAFEEngineLike} from '../interfaces/ISAFEEngine.sol';
 
-abstract contract SystemStakingPoolLike {
-  function canPrintProtocolTokens() public view virtual returns (bool);
-}
+import {ISystemStakingPool as SystemStakingPoolLike} from '../interfaces/external/ISystemStakingPool.sol';
 
-abstract contract ProtocolTokenAuthorityLike {
-  function authorizedAccounts(address) public view virtual returns (uint256);
-}
+import {IProtocolTokenAuthority as ProtocolTokenAuthorityLike} from '../interfaces/external/IProtocolTokenAuthority.sol';
 
 contract AccountingEngine {
   // --- Auth ---

@@ -17,26 +17,9 @@
 
 pragma solidity 0.6.7;
 
-abstract contract SAFEEngineLike {
-  function approveSAFEModification(address) external virtual;
-  function denySAFEModification(address) external virtual;
-  function transferInternalCoins(address, address, uint256) external virtual;
-  function settleDebt(uint256) external virtual;
-  function coinBalance(address) public view virtual returns (uint256);
-  function debtBalance(address) public view virtual returns (uint256);
-}
-
-abstract contract SystemCoinLike {
-  function balanceOf(address) public view virtual returns (uint256);
-  function approve(address, uint256) public virtual returns (uint256);
-  function transfer(address, uint256) public virtual returns (bool);
-  function transferFrom(address, address, uint256) public virtual returns (bool);
-}
-
-abstract contract CoinJoinLike {
-  function systemCoin() public view virtual returns (address);
-  function join(address, uint256) external virtual;
-}
+import {ISAFEEngine as SAFEEngineLike} from '../interfaces/ISAFEEngine.sol';
+import {ISystemCoin as SystemCoinLike} from '../interfaces/external/ISystemCoin.sol';
+import {ICoinJoin as CoinJoinLike} from '../interfaces/ICoinJoin.sol';
 
 contract StabilityFeeTreasury {
   // --- Auth ---
