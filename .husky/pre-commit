@@ -1,12 +1,9 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
-# 1. Build the contracts
-# 2. Stage build output 
-# NOTE: commenting linter test until linter run
 # Run linters on staged files
 npx lint-staged
-# Run forge snapshot to get gas report
+# Run forge snapshot to build contracts and get gas report
 forge snapshot
 # Stage the snapshot
 git add .gas-snapshot

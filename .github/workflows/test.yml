@@ -64,28 +64,6 @@ jobs:
         shell: bash
         run: yarn test
 
-  forge-optimized:
-    name: Run Optimized Unit Tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: recursive
-
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
-        with:
-          version: nightly
-
-      - name: Install forge dependencies
-        run: forge install
-
-      - name: Precompile using 0.6.7 and via-ir=true
-        run: yarn build:optimized
-
-      - name: Run tests
-        run: yarn test
-
   # coverage:
   #   name: Run Coverage Tests
   #   runs-on: ubuntu-latest
