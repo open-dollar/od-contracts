@@ -11,7 +11,7 @@ import {
 } from '../../contracts/SurplusAuctionHouse.sol';
 import '../../contracts/SAFEEngine.sol';
 
-import {CoinJoin} from '../../contracts/utils/BasicTokenAdapters.sol';
+import {CoinJoin} from '../../contracts/utils/CoinJoin.sol';
 import {Coin} from '../../contracts/utils/Coin.sol';
 
 abstract contract Hevm {

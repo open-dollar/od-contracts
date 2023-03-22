@@ -23,7 +23,7 @@ import 'ds-token/delegate.sol';
 import {Coin} from '../../contracts/utils/Coin.sol';
 import {SAFEEngine} from '../../contracts/SAFEEngine.sol';
 import {AccountingEngine} from '../../contracts/AccountingEngine.sol';
-import {CollateralJoin} from '../../contracts/utils/BasicTokenAdapters.sol';
+import {CollateralJoin} from '../../contracts/utils/CollateralJoin.sol';
 import {OracleRelayer} from '../../contracts/OracleRelayer.sol';
 
 contract Feed {

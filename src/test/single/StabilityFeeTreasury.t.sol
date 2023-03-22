@@ -23,7 +23,7 @@ import 'ds-test/test.sol';
 import {Coin} from '../../contracts/utils/Coin.sol';
 import {SAFEEngine} from '../../contracts/SAFEEngine.sol';
 import {StabilityFeeTreasury} from '../../contracts/StabilityFeeTreasury.sol';
-import {CoinJoin} from '../../contracts/utils/BasicTokenAdapters.sol';
+import {CoinJoin} from '../../contracts/utils/CoinJoin.sol';
 
 abstract contract Hevm {
   function warp(uint256) public virtual;

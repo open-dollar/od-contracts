@@ -19,7 +19,7 @@
   "scripts": {
     "build": "forge build",
     "coverage": "forge coverage",
-    "deploy:goerli": "bash -c 'source .env && forge script DeployGoerli --rpc-url $OP_GOERLI_RPC --broadcast --private-key $OP_GOERLI_DEPLOYER_PK --verify --etherscan-api-key $OP_ETHERSCAN_API_KEY'",
+    "deploy:goerli": "bash -c 'source .env && forge script DeployGoerli -vvvvv --rpc-url $OP_GOERLI_RPC --broadcast --private-key $OP_GOERLI_DEPLOYER_PK'",
     "deploy:mainnet": "bash -c 'source .env && forge script DeployMainnet --rpc-url $OP_MAINNET_RPC --broadcast --private-key $OP_MAINNET_DEPLOYER_PK --verify --etherscan-api-key $OP_ETHERSCAN_API_KEY'",
     "postinstall": "forge install",
     "lint:check": "yarn lint:sol && forge fmt check",

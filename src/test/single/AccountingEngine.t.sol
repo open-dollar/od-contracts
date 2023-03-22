@@ -7,7 +7,7 @@ import {PostSettlementSurplusAuctionHouse as SAH_TWO} from './SurplusAuctionHous
 import {TestSAFEEngine as SAFEEngine} from './SAFEEngine.t.sol';
 import {AccountingEngine} from '../../contracts/AccountingEngine.sol';
 import {SettlementSurplusAuctioneer} from '../../contracts/SettlementSurplusAuctioneer.sol';
-import {CoinJoin} from '../../contracts/utils/BasicTokenAdapters.sol';
+import {CoinJoin} from '../../contracts/utils/CoinJoin.sol';
 
 abstract contract Hevm {
   function warp(uint256) public virtual;

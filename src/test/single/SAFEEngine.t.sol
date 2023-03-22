@@ -8,7 +8,9 @@ import {SAFEEngine} from '../../contracts/SAFEEngine.sol';
 import {LiquidationEngine} from '../../contracts/LiquidationEngine.sol';
 import {AccountingEngine} from '../../contracts/AccountingEngine.sol';
 import {TaxCollector} from '../../contracts/TaxCollector.sol';
-import '../../contracts/utils/BasicTokenAdapters.sol';
+import {CoinJoin} from '../../contracts/utils/CoinJoin.sol';
+import {ETHJoin} from '../../contracts/utils/ETHJoin.sol';
+import {CollateralJoin} from '../../contracts/utils/CollateralJoin.sol';
 
 import {EnglishCollateralAuctionHouse} from './CollateralAuctionHouse.t.sol';
 import {DebtAuctionHouse} from './DebtAuctionHouse.t.sol';

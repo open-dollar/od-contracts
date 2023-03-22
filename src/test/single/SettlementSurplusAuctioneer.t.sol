@@ -6,7 +6,7 @@ import {DSDelegateToken} from 'ds-token/delegate.sol';
 import {PostSettlementSurplusAuctionHouse} from '../../contracts/SurplusAuctionHouse.sol';
 import '../../contracts/SettlementSurplusAuctioneer.sol';
 import {TestSAFEEngine as SAFEEngine} from './SAFEEngine.t.sol';
-import {CoinJoin} from '../../contracts/utils/BasicTokenAdapters.sol';
+import {CoinJoin} from '../../contracts/utils/CoinJoin.sol';
 import {Coin} from '../../contracts/utils/Coin.sol';
 
 abstract contract Hevm {
