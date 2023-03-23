@@ -1,4 +1,4 @@
-pragma solidity 0.6.7;
+pragma solidity 0.8.19;
 
 import {DSTest} from 'ds-test/test.sol';
 import {Deploy, SAFEEngine, Coin, CoinJoin, ETHJoin} from '../../../script/Deploy.s.sol';

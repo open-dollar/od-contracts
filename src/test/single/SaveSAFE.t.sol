@@ -1,8 +1,8 @@
-pragma solidity 0.6.7;
+pragma solidity 0.8.19;
 pragma experimental ABIEncoderV2;
 
 import 'ds-test/test.sol';
-import 'ds-token/delegate.sol';
+import {DSToken as DSDelegateToken} from '../../contracts/for-test/DSToken.sol';
 
 import {SAFEEngine} from '../../contracts/SAFEEngine.sol';
 import {LiquidationEngine} from '../../contracts/LiquidationEngine.sol';
@@ -26,15 +26,15 @@ contract Feed {
   bool public validPrice;
   uint256 public lastUpdateTime;
 
-  constructor(uint256 price_, bool validPrice_) public {
+  constructor(uint256 price_, bool validPrice_) {
     price = bytes32(price_);
     validPrice = validPrice_;
-    lastUpdateTime = now;
+    lastUpdateTime = block.timestamp;
   }
 
   function updateCollateralPrice(uint256 price_) external {
     price = bytes32(price_);
-    lastUpdateTime = now;
+    lastUpdateTime = block.timestamp;
   }
 
   function getResultWithValidity() external view returns (bytes32, bool) {
@@ -43,9 +43,7 @@ contract Feed {
 }
 
 contract TestSAFEEngine is SAFEEngine {
-  uint256 constant RAY = 10 ** 27;
-
-  constructor() public {}
+  constructor() {}
 
   function mint(address usr, uint256 wad) public {
     coinBalance[usr] += wad * RAY;
@@ -62,7 +60,7 @@ contract TestAccountingEngine is AccountingEngine {
     address safeEngine,
     address surplusAuctionHouse,
     address debtAuctionHouse
-  ) public AccountingEngine(safeEngine, surplusAuctionHouse, debtAuctionHouse) {}
+  ) AccountingEngine(safeEngine, surplusAuctionHouse, debtAuctionHouse) {}
 
   function totalDeficit() public view returns (uint256) {
     return safeEngine.debtBalance(address(this));
@@ -81,13 +79,13 @@ contract TestAccountingEngine is AccountingEngine {
 contract RevertableSaviour {
   address liquidationEngine;
 
-  constructor(address liquidationEngine_) public {
+  constructor(address liquidationEngine_) {
     liquidationEngine = liquidationEngine_;
   }
 
   function saveSAFE(address liquidator, bytes32, address) public returns (bool, uint256, uint256) {
     if (liquidator == liquidationEngine) {
-      return (true, uint256(-1), uint256(-1));
+      return (true, uint256(int256(-1)), uint256(int256(-1)));
     } else {
       revert();
     }
@@ -109,13 +107,13 @@ contract FaultyReturnableSaviour {
 contract ReentrantSaviour {
   address liquidationEngine;
 
-  constructor(address liquidationEngine_) public {
+  constructor(address liquidationEngine_) {
     liquidationEngine = liquidationEngine_;
   }
 
   function saveSAFE(address liquidator, bytes32 collateralType, address safe) public returns (bool, uint256, uint256) {
     if (liquidator == liquidationEngine) {
-      return (true, uint256(-1), uint256(-1));
+      return (true, uint256(int256(-1)), uint256(int256(-1)));
     } else {
       LiquidationEngine(msg.sender).liquidateSAFE(collateralType, safe);
       return (true, 1, 1);
@@ -127,14 +125,14 @@ contract GenuineSaviour {
   address safeEngine;
   address liquidationEngine;
 
-  constructor(address safeEngine_, address liquidationEngine_) public {
+  constructor(address safeEngine_, address liquidationEngine_) {
     safeEngine = safeEngine_;
     liquidationEngine = liquidationEngine_;
   }
 
   function saveSAFE(address liquidator, bytes32 collateralType, address safe) public returns (bool, uint256, uint256) {
     if (liquidator == liquidationEngine) {
-      return (true, uint256(-1), uint256(-1));
+      return (true, uint256(int256(-1)), uint256(int256(-1)));
     } else {
       SAFEEngine(safeEngine).modifySAFECollateralization(collateralType, safe, address(this), safe, 10_900 ether, 0);
       return (true, 10_900 ether, 0);
@@ -266,7 +264,7 @@ contract SingleSaveSAFETest is DSTest {
   }
 
   function liquidateSAFE() internal {
-    uint256 MAX_LIQUIDATION_QUANTITY = uint256(-1) / 10 ** 27;
+    uint256 MAX_LIQUIDATION_QUANTITY = uint256(int256(-1)) / 10 ** 27;
     liquidationEngine.modifyParameters('gold', 'liquidationQuantity', MAX_LIQUIDATION_QUANTITY);
     liquidationEngine.modifyParameters('gold', 'liquidationPenalty', 1.1 ether);
 
@@ -284,7 +282,7 @@ contract SingleSaveSAFETest is DSTest {
   }
 
   function liquidateSavedSAFE() internal {
-    uint256 MAX_LIQUIDATION_QUANTITY = uint256(-1) / 10 ** 27;
+    uint256 MAX_LIQUIDATION_QUANTITY = uint256(int256(-1)) / 10 ** 27;
     liquidationEngine.modifyParameters('gold', 'liquidationQuantity', MAX_LIQUIDATION_QUANTITY);
     liquidationEngine.modifyParameters('gold', 'liquidationPenalty', 1.1 ether);
 

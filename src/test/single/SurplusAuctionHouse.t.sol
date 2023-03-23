@@ -1,7 +1,7 @@
-pragma solidity 0.6.7;
+pragma solidity 0.8.19;
 
 import 'ds-test/test.sol';
-import {DSDelegateToken} from 'ds-token/delegate.sol';
+import {DSToken as DSDelegateToken} from '../../contracts/for-test/DSToken.sol';
 
 import {
   BurningSurplusAuctionHouse,
@@ -21,7 +21,7 @@ abstract contract Hevm {
 contract GuyBurningSurplusAuction {
   BurningSurplusAuctionHouse surplusAuctionHouse;
 
-  constructor(BurningSurplusAuctionHouse surplusAuctionHouse_) public {
+  constructor(BurningSurplusAuctionHouse surplusAuctionHouse_) {
     surplusAuctionHouse = surplusAuctionHouse_;
     SAFEEngine(address(surplusAuctionHouse.safeEngine())).approveSAFEModification(address(surplusAuctionHouse));
     DSDelegateToken(address(surplusAuctionHouse.protocolToken())).approve(address(surplusAuctionHouse));
@@ -54,7 +54,7 @@ contract GuyBurningSurplusAuction {
 contract GuyRecyclingSurplusAuction {
   RecyclingSurplusAuctionHouse surplusAuctionHouse;
 
-  constructor(RecyclingSurplusAuctionHouse surplusAuctionHouse_) public {
+  constructor(RecyclingSurplusAuctionHouse surplusAuctionHouse_) {
     surplusAuctionHouse = surplusAuctionHouse_;
     SAFEEngine(address(surplusAuctionHouse.safeEngine())).approveSAFEModification(address(surplusAuctionHouse));
     DSDelegateToken(address(surplusAuctionHouse.protocolToken())).approve(address(surplusAuctionHouse));
@@ -87,7 +87,7 @@ contract GuyRecyclingSurplusAuction {
 contract GuyPostSurplusAuction {
   PostSettlementSurplusAuctionHouse surplusAuctionHouse;
 
-  constructor(PostSettlementSurplusAuctionHouse surplusAuctionHouse_) public {
+  constructor(PostSettlementSurplusAuctionHouse surplusAuctionHouse_) {
     surplusAuctionHouse = surplusAuctionHouse_;
     SAFEEngine(address(surplusAuctionHouse.safeEngine())).approveSAFEModification(address(surplusAuctionHouse));
     DSDelegateToken(address(surplusAuctionHouse.protocolToken())).approve(address(surplusAuctionHouse));
@@ -194,7 +194,7 @@ contract SingleBurningSurplusAuctionHouseTest is DSTest {
     // excess remains in auction
     assertEq(protocolToken.balanceOf(address(surplusAuctionHouse)), 2 ether);
 
-    hevm.warp(now + 5 weeks);
+    hevm.warp(block.timestamp + 5 weeks);
     GuyBurningSurplusAuction(bob).settleAuction(id);
     // high bidder gets the amount sold
     assertEq(safeEngine.coinBalance(address(surplusAuctionHouse)), 0 ether);
@@ -218,7 +218,7 @@ contract SingleBurningSurplusAuctionHouseTest is DSTest {
     // check no tick
     assertTrue(!GuyBurningSurplusAuction(ali).try_restartAuction(id));
     // run past the end
-    hevm.warp(now + 2 weeks);
+    hevm.warp(block.timestamp + 2 weeks);
     // check not biddable
     assertTrue(!GuyBurningSurplusAuction(ali).try_increaseBidSize(id, 100 ether, 1 ether));
     assertTrue(GuyBurningSurplusAuction(ali).try_restartAuction(id));
@@ -323,7 +323,7 @@ contract SingleRecyclingSurplusAuctionHouseTest is DSTest {
     // excess remains in auction
     assertEq(protocolToken.balanceOf(address(surplusAuctionHouse)), 2 ether);
 
-    hevm.warp(now + 5 weeks);
+    hevm.warp(block.timestamp + 5 weeks);
     GuyRecyclingSurplusAuction(bob).settleAuction(id);
     // high bidder gets the amount sold
     assertEq(safeEngine.coinBalance(address(surplusAuctionHouse)), 0 ether);
@@ -351,7 +351,7 @@ contract SingleRecyclingSurplusAuctionHouseTest is DSTest {
     // check no tick
     assertTrue(!GuyRecyclingSurplusAuction(ali).try_restartAuction(id));
     // run past the end
-    hevm.warp(now + 2 weeks);
+    hevm.warp(block.timestamp + 2 weeks);
     // check not biddable
     assertTrue(!GuyRecyclingSurplusAuction(ali).try_increaseBidSize(id, 100 ether, 1 ether));
     assertTrue(GuyRecyclingSurplusAuction(ali).try_restartAuction(id));
@@ -458,7 +458,7 @@ contract SingleMixedStratSurplusAuctionHouseTest is DSTest {
     // excess remains in auction
     assertEq(protocolToken.balanceOf(address(surplusAuctionHouse)), 2 ether);
 
-    hevm.warp(now + 5 weeks);
+    hevm.warp(block.timestamp + 5 weeks);
     uint256 currentProtocolTokenSupply = protocolToken.totalSupply();
     GuyRecyclingSurplusAuction(bob).settleAuction(id);
     assertEq(protocolToken.totalSupply(), currentProtocolTokenSupply - 1 ether);
@@ -489,7 +489,7 @@ contract SingleMixedStratSurplusAuctionHouseTest is DSTest {
     // check no tick
     assertTrue(!GuyRecyclingSurplusAuction(ali).try_restartAuction(id));
     // run past the end
-    hevm.warp(now + 2 weeks);
+    hevm.warp(block.timestamp + 2 weeks);
     // check not biddable
     assertTrue(!GuyRecyclingSurplusAuction(ali).try_increaseBidSize(id, 100 ether, 1 ether));
     assertTrue(GuyRecyclingSurplusAuction(ali).try_restartAuction(id));
@@ -589,7 +589,7 @@ contract SinglePostSettlementSurplusAuctionHouseTest is DSTest {
     // excess remains in auction
     assertEq(protocolToken.balanceOf(address(surplusAuctionHouse)), 2 ether);
 
-    hevm.warp(now + 5 weeks);
+    hevm.warp(block.timestamp + 5 weeks);
     GuyPostSurplusAuction(bob).settleAuction(id);
     // high bidder gets the amount sold
     assertEq(safeEngine.coinBalance(address(surplusAuctionHouse)), 0 ether);
@@ -613,7 +613,7 @@ contract SinglePostSettlementSurplusAuctionHouseTest is DSTest {
     // check no tick
     assertTrue(!GuyPostSurplusAuction(ali).try_restartAuction(id));
     // run past the end
-    hevm.warp(now + 2 weeks);
+    hevm.warp(block.timestamp + 2 weeks);
     // check not biddable
     assertTrue(!GuyPostSurplusAuction(ali).try_increaseBidSize(id, 100 ether, 1 ether));
     assertTrue(GuyPostSurplusAuction(ali).try_restartAuction(id));

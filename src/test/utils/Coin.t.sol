@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-pragma solidity 0.6.7;
+pragma solidity 0.8.19;
 
 import 'ds-test/test.sol';
-import 'ds-token/delegate.sol';
+import {DSToken as DSDelegateToken} from '../../contracts/for-test/DSToken.sol';
 
 import {Coin} from '../../contracts/utils/Coin.sol';
 import {SAFEEngine} from '../../contracts/SAFEEngine.sol';
@@ -30,7 +30,7 @@ contract Feed {
   bytes32 public priceFeedValue;
   bool public hasValidValue;
 
-  constructor(uint256 initPrice, bool initHas) public {
+  constructor(uint256 initPrice, bool initHas) {
     priceFeedValue = bytes32(initPrice);
     hasValidValue = initHas;
   }
@@ -43,7 +43,7 @@ contract Feed {
 contract TokenUser {
   Coin token;
 
-  constructor(Coin token_) public {
+  constructor(Coin token_) {
     token = token_;
   }
 
@@ -68,7 +68,7 @@ contract TokenUser {
   }
 
   function doApprove(address guy) public returns (bool) {
-    return token.approve(guy, uint256(-1));
+    return token.approve(guy, uint256(int256(-1)));
   }
 
   function doMint(uint256 wad) public {
@@ -348,14 +348,14 @@ contract CoinTest is DSTest {
 
   function testTrusting() public {
     assertEq(token.allowance(self, user2), 0);
-    token.approve(user2, uint256(-1));
-    assertEq(token.allowance(self, user2), uint256(-1));
+    token.approve(user2, uint256(int256(-1)));
+    assertEq(token.allowance(self, user2), uint256(int256(-1)));
     token.approve(user2, 0);
     assertEq(token.allowance(self, user2), 0);
   }
 
   function testTrustedTransferFrom() public {
-    token.approve(user1, uint256(-1));
+    token.approve(user1, uint256(int256(-1)));
     TokenUser(user1).doTransferFrom(self, user2, 200);
     assertEq(token.balanceOf(user2), 200);
   }
@@ -373,11 +373,11 @@ contract CoinTest is DSTest {
   function testApproveWillNotModifyAllowance() public {
     assertEq(token.allowance(self, user1), 0);
     assertEq(token.balanceOf(user1), 0);
-    token.approve(user1, uint256(-1));
-    assertEq(token.allowance(self, user1), uint256(-1));
+    token.approve(user1, uint256(int256(-1)));
+    assertEq(token.allowance(self, user1), uint256(int256(-1)));
     TokenUser(user1).doTransferFrom(self, user1, 1000);
     assertEq(token.balanceOf(user1), 1000);
-    assertEq(token.allowance(self, user1), uint256(-1));
+    assertEq(token.allowance(self, user1), uint256(int256(-1)));
   }
 
   /* NOTE: commenting failing test
@@ -394,13 +394,13 @@ contract CoinTest is DSTest {
     }
     */
 
-  //TODO: remake with v,r,s for coin now that we changed the DOMAIN SEPARATOR because of the dai->coin renaming
+  // TODO: remake with v,r,s for coin now that we changed the DOMAIN SEPARATOR because of the dai->coin renaming
 
   // function testPermit() public {
   //     assertEq(token.nonces(cal), 0);
   //     assertEq(token.allowance(cal, del), 0);
   //     token.permit(cal, del, 0, 0, true, v, r, s);
-  //     assertEq(token.allowance(cal, del),uint(-1));
+  //     assertEq(token.allowance(cal, del),uint256(int256(-1)));
   //     assertEq(token.nonces(cal),1);
   // }
 
@@ -412,15 +412,15 @@ contract CoinTest is DSTest {
   //TODO: remake with _v,_r,_s for coin now that we changed the DOMAIN SEPARATOR because of the dai->coin renaming
 
   // function testPermitWithExpiry() public {
-  //     assertEq(now, 604411200);
+  //     assertEq(block.timestamp, 604411200);
   //     token.permit(cal, del, 0, 604411200 + 1 hours, true, _v, _r, _s);
-  //     assertEq(token.allowance(cal, del),uint(-1));
+  //     assertEq(token.allowance(cal, del),uint256(int256(-1)));
   //     assertEq(token.nonces(cal),1);
   // }
 
   function testFailPermitWithExpiry() public {
-    hevm.warp(now + 2 hours);
-    assertEq(now, 604_411_200 + 2 hours);
+    hevm.warp(block.timestamp + 2 hours);
+    assertEq(block.timestamp, 604_411_200 + 2 hours);
     token.permit(cal, del, 0, 1, true, _v, _r, _s);
   }
 

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -11,12 +12,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-pragma solidity 0.6.7;
+pragma solidity 0.8.19;
 
 import './utils/LinkedList.sol';
 import {ISAFEEngine as SAFEEngineLike} from '../interfaces/ISAFEEngine.sol';
 
-contract TaxCollector {
+import {Math} from './utils/Math.sol';
+
+contract TaxCollector is Math {
   using LinkedList for LinkedList.List;
 
   // --- Auth ---
@@ -122,104 +125,13 @@ contract TaxCollector {
 
   SAFEEngineLike public safeEngine;
 
-  // --- Init ---
-  constructor(address safeEngine_) public {
-    authorizedAccounts[msg.sender] = 1;
-    safeEngine = SAFEEngineLike(safeEngine_);
-    emit AddAuthorization(msg.sender);
-  }
-
-  // --- Math ---
-  uint256 public constant RAY = 10 ** 27;
   uint256 public constant WHOLE_TAX_CUT = 10 ** 29;
-  uint256 public constant ONE = 1;
-  int256 public constant INT256_MIN = -2 ** 255;
 
-  function rpow(uint256 x, uint256 n, uint256 b) internal pure returns (uint256 z) {
-    assembly {
-      switch x
-      case 0 {
-        switch n
-        case 0 { z := b }
-        default { z := 0 }
-      }
-      default {
-        switch mod(n, 2)
-        case 0 { z := b }
-        default { z := x }
-        let half := div(b, 2) // for rounding.
-        for { n := div(n, 2) } n { n := div(n, 2) } {
-          let xx := mul(x, x)
-          if iszero(eq(div(xx, x), x)) { revert(0, 0) }
-          let xxRound := add(xx, half)
-          if lt(xxRound, xx) { revert(0, 0) }
-          x := div(xxRound, b)
-          if mod(n, 2) {
-            let zx := mul(z, x)
-            if and(iszero(iszero(x)), iszero(eq(div(zx, x), z))) { revert(0, 0) }
-            let zxRound := add(zx, half)
-            if lt(zxRound, zx) { revert(0, 0) }
-            z := div(zxRound, b)
-          }
-        }
-      }
-    }
-  }
-
-  function addition(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    z = x + y;
-    require(z >= x, 'TaxCollector/add-uint-uint-overflow');
-  }
-
-  function addition(int256 x, int256 y) internal pure returns (int256 z) {
-    z = x + y;
-    if (y <= 0) require(z <= x, 'TaxCollector/add-int-int-underflow');
-    if (y > 0) require(z > x, 'TaxCollector/add-int-int-overflow');
-  }
-
-  function subtract(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require((z = x - y) <= x, 'TaxCollector/sub-uint-uint-underflow');
-  }
-
-  function subtract(int256 x, int256 y) internal pure returns (int256 z) {
-    z = x - y;
-    require(y <= 0 || z <= x, 'TaxCollector/sub-int-int-underflow');
-    require(y >= 0 || z >= x, 'TaxCollector/sub-int-int-overflow');
-  }
-
-  function deduct(uint256 x, uint256 y) internal pure returns (int256 z) {
-    z = int256(x) - int256(y);
-    require(int256(x) >= 0 && int256(y) >= 0, 'TaxCollector/ded-invalid-numbers');
-  }
-
-  function multiply(uint256 x, int256 y) internal pure returns (int256 z) {
-    z = int256(x) * y;
-    require(int256(x) >= 0, 'TaxCollector/mul-uint-int-invalid-x');
-    require(y == 0 || z / y == int256(x), 'TaxCollector/mul-uint-int-overflow');
-  }
-
-  function multiply(int256 x, int256 y) internal pure returns (int256 z) {
-    require(!both(x == -1, y == INT256_MIN), 'TaxCollector/mul-int-int-overflow');
-    require(y == 0 || (z = x * y) / y == x, 'TaxCollector/mul-int-int-invalid');
-  }
-
-  function rmultiply(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    z = x * y;
-    require(y == 0 || z / y == x, 'TaxCollector/rmul-overflow');
-    z = z / RAY;
-  }
-
-  // --- Boolean Logic ---
-  function both(bool x, bool y) internal pure returns (bool z) {
-    assembly {
-      z := and(x, y)
-    }
-  }
-
-  function either(bool x, bool y) internal pure returns (bool z) {
-    assembly {
-      z := or(x, y)
-    }
+  // --- Init ---
+  constructor(address _safeEngine) {
+    authorizedAccounts[msg.sender] = 1;
+    safeEngine = SAFEEngineLike(_safeEngine);
+    emit AddAuthorization(msg.sender);
   }
 
   // --- Administration ---
@@ -231,7 +143,7 @@ contract TaxCollector {
     CollateralType storage collateralType_ = collateralTypes[collateralType];
     require(collateralType_.stabilityFee == 0, 'TaxCollector/collateral-type-already-init');
     collateralType_.stabilityFee = RAY;
-    collateralType_.updateTime = now;
+    collateralType_.updateTime = block.timestamp;
     collateralList.push(collateralType);
     emit InitializeCollateralType(collateralType);
   }
@@ -243,7 +155,7 @@ contract TaxCollector {
    */
 
   function modifyParameters(bytes32 collateralType, bytes32 parameter, uint256 data) external isAuthorized {
-    require(now == collateralTypes[collateralType].updateTime, 'TaxCollector/update-time-not-now');
+    require(block.timestamp == collateralTypes[collateralType].updateTime, 'TaxCollector/update-time-not-now');
     if (parameter == 'stabilityFee') collateralTypes[collateralType].stabilityFee = data;
     else revert('TaxCollector/modify-unrecognized-param');
     emit ModifyParameters(collateralType, parameter, data);
@@ -280,8 +192,7 @@ contract TaxCollector {
    */
 
   function modifyParameters(bytes32 collateralType, uint256 position, uint256 val) external isAuthorized {
-    if (both(secondaryReceiverList.isNode(position), secondaryTaxReceivers[collateralType][position].taxPercentage > 0))
-    {
+    if (secondaryReceiverList.isNode(position) && secondaryTaxReceivers[collateralType][position].taxPercentage > 0) {
       secondaryTaxReceivers[collateralType][position].canTakeBackTax = val;
     } else {
       revert('TaxCollector/unknown-tax-receiver');
@@ -328,7 +239,7 @@ contract TaxCollector {
       addition(secondaryReceiverAllotedTax[collateralType], taxPercentage) < WHOLE_TAX_CUT,
       'TaxCollector/tax-cut-exceeds-hundred'
     );
-    secondaryReceiverNonce = addition(secondaryReceiverNonce, 1);
+    secondaryReceiverNonce = addition(secondaryReceiverNonce, uint256(1));
     latestSecondaryReceiver = secondaryReceiverNonce;
     usedSecondaryReceiver[receiverAccount] = ONE;
     secondaryReceiverAllotedTax[collateralType] = addition(secondaryReceiverAllotedTax[collateralType], taxPercentage);
@@ -369,7 +280,7 @@ contract TaxCollector {
         delete(secondaryReceiverAccounts[position]);
       } else if (secondaryTaxReceivers[collateralType][position].taxPercentage > 0) {
         secondaryReceiverRevenueSources[secondaryReceiverAccounts[position]] =
-          subtract(secondaryReceiverRevenueSources[secondaryReceiverAccounts[position]], 1);
+          subtract(secondaryReceiverRevenueSources[secondaryReceiverAccounts[position]], uint256(1));
         delete(secondaryTaxReceivers[collateralType][position]);
       }
     } else {
@@ -382,7 +293,7 @@ contract TaxCollector {
       require(secondaryReceiverAllotedTax_ < WHOLE_TAX_CUT, 'TaxCollector/tax-cut-too-big');
       if (secondaryTaxReceivers[collateralType][position].taxPercentage == 0) {
         secondaryReceiverRevenueSources[secondaryReceiverAccounts[position]] =
-          addition(secondaryReceiverRevenueSources[secondaryReceiverAccounts[position]], 1);
+          addition(secondaryReceiverRevenueSources[secondaryReceiverAccounts[position]], uint256(1));
       }
       secondaryReceiverAllotedTax[collateralType] = secondaryReceiverAllotedTax_;
       secondaryTaxReceivers[collateralType][position].taxPercentage = taxPercentage;
@@ -401,9 +312,9 @@ contract TaxCollector {
    * @notice Check if multiple collateral types are up to date with taxation
    */
   function collectedManyTax(uint256 start, uint256 end) public view returns (bool ok) {
-    require(both(start <= end, end < collateralList.length), 'TaxCollector/invalid-indexes');
+    require(start <= end && end < collateralList.length, 'TaxCollector/invalid-indexes');
     for (uint256 i = start; i <= end; i++) {
-      if (now > collateralTypes[collateralList[i]].updateTime) {
+      if (block.timestamp > collateralTypes[collateralList[i]].updateTime) {
         ok = false;
         return ok;
       }
@@ -418,12 +329,12 @@ contract TaxCollector {
    */
 
   function taxManyOutcome(uint256 start, uint256 end) public view returns (bool ok, int256 rad) {
-    require(both(start <= end, end < collateralList.length), 'TaxCollector/invalid-indexes');
+    require(start <= end && end < collateralList.length, 'TaxCollector/invalid-indexes');
     int256 primaryReceiverBalance = -int256(safeEngine.coinBalance(primaryTaxReceiver));
     int256 deltaRate;
     uint256 debtAmount;
     for (uint256 i = start; i <= end; i++) {
-      if (now > collateralTypes[collateralList[i]].updateTime) {
+      if (block.timestamp > collateralTypes[collateralList[i]].updateTime) {
         (debtAmount,,,,,) = safeEngine.collateralTypes(collateralList[i]);
         (, deltaRate) = taxSingleOutcome(collateralList[i]);
         rad = addition(rad, multiply(debtAmount, deltaRate));
@@ -446,7 +357,7 @@ contract TaxCollector {
     uint256 newlyAccumulatedRate = rmultiply(
       rpow(
         addition(globalStabilityFee, collateralTypes[collateralType].stabilityFee),
-        subtract(now, collateralTypes[collateralType].updateTime),
+        subtract(block.timestamp, collateralTypes[collateralType].updateTime),
         RAY
       ),
       lastAccumulatedRate
@@ -484,7 +395,7 @@ contract TaxCollector {
    * @param end Index in collateralList at which we stop looping and calculating the tax outcome
    */
   function taxMany(uint256 start, uint256 end) external {
-    require(both(start <= end, end < collateralList.length), 'TaxCollector/invalid-indexes');
+    require(start <= end && end < collateralList.length, 'TaxCollector/invalid-indexes');
     for (uint256 i = start; i <= end; i++) {
       taxSingle(collateralList[i]);
     }
@@ -496,7 +407,7 @@ contract TaxCollector {
 
   function taxSingle(bytes32 collateralType) public returns (uint256) {
     uint256 latestAccumulatedRate;
-    if (now <= collateralTypes[collateralType].updateTime) {
+    if (block.timestamp <= collateralTypes[collateralType].updateTime) {
       (, latestAccumulatedRate,,,,) = safeEngine.collateralTypes(collateralType);
       return latestAccumulatedRate;
     }
@@ -505,7 +416,7 @@ contract TaxCollector {
     (uint256 debtAmount,,,,,) = safeEngine.collateralTypes(collateralType);
     splitTaxIncome(collateralType, debtAmount, deltaRate);
     (, latestAccumulatedRate,,,,) = safeEngine.collateralTypes(collateralType);
-    collateralTypes[collateralType].updateTime = now;
+    collateralTypes[collateralType].updateTime = block.timestamp;
     emit CollectTax(collateralType, latestAccumulatedRate, deltaRate);
     return latestAccumulatedRate;
   }
@@ -534,7 +445,7 @@ contract TaxCollector {
       (, currentSecondaryReceiver) = secondaryReceiverList.prev(currentSecondaryReceiver);
     }
     // Distribute to primary receiver
-    distributeTax(collateralType, primaryTaxReceiver, uint256(-1), debtAmount, deltaRate);
+    distributeTax(collateralType, primaryTaxReceiver, uint256(int256(-1)), debtAmount, deltaRate);
   }
 
   /**
@@ -565,7 +476,7 @@ contract TaxCollector {
      *           compute a new tax cut that can be absorbed
      *
      */
-    currentTaxCut = (both(multiply(debtAmount, currentTaxCut) < 0, coinBalance > multiply(debtAmount, currentTaxCut)))
+    currentTaxCut = (multiply(debtAmount, currentTaxCut) < 0 && coinBalance > multiply(debtAmount, currentTaxCut))
       ? coinBalance / int256(debtAmount)
       : currentTaxCut;
     /**
@@ -575,13 +486,11 @@ contract TaxCollector {
      */
     if (currentTaxCut != 0) {
       if (
-        either(
-          receiver == primaryTaxReceiver,
-          either(
-            deltaRate >= 0,
-            both(currentTaxCut < 0, secondaryTaxReceivers[collateralType][receiverListPosition].canTakeBackTax > 0)
+        receiver == primaryTaxReceiver
+          || (
+            deltaRate >= 0
+              || (currentTaxCut < 0 && secondaryTaxReceivers[collateralType][receiverListPosition].canTakeBackTax > 0)
           )
-        )
       ) {
         safeEngine.updateAccumulatedRate(collateralType, receiver, currentTaxCut);
         emit DistributeTax(collateralType, receiver, currentTaxCut);

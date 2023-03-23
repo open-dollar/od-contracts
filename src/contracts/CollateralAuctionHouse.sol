@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0
 /// EnglishCollateralAuctionHouse.sol
 
 // Copyright (C) 2018 Rain <rainbreak@riseup.net>
@@ -15,17 +16,19 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity 0.6.7;
+pragma solidity 0.8.19;
 
 import {ISAFEEngine as SAFEEngineLike} from '../interfaces/ISAFEEngine.sol';
 import {IOracleRelayer as OracleRelayerLike} from '../interfaces/IOracleRelayer.sol';
 import {IOracle as OracleLike} from '../interfaces/IOracle.sol';
 import {ILiquidationEngine as LiquidationEngineLike} from '../interfaces/ILiquidationEngine.sol';
 
+import {Math} from './utils/Math.sol';
+
 /*
    This thing lets you (English) auction some collateral for a given amount of system coins*/
 
-contract EnglishCollateralAuctionHouse {
+contract EnglishCollateralAuctionHouse is Math {
   // --- Auth ---
   mapping(address => uint256) public authorizedAccounts;
   /**
@@ -84,7 +87,6 @@ contract EnglishCollateralAuctionHouse {
   // Collateral type name
   bytes32 public collateralType;
 
-  uint256 constant ONE = 1.0e18; // [wad]
   // Minimum bid increase compared to the last bid in order to take the new one in consideration
   uint256 public bidIncrease = 1.05e18; // [wad]
   // How long the auction lasts after a new bid is submitted
@@ -121,34 +123,12 @@ contract EnglishCollateralAuctionHouse {
   event TerminateAuctionPrematurely(uint256 indexed id, address sender, uint256 bidAmount, uint256 collateralAmount);
 
   // --- Init ---
-  constructor(address safeEngine_, address liquidationEngine_, bytes32 collateralType_) public {
-    safeEngine = SAFEEngineLike(safeEngine_);
-    liquidationEngine = LiquidationEngineLike(liquidationEngine_);
-    collateralType = collateralType_;
+  constructor(address _safeEngine, address _liquidationEngine, bytes32 _collateralType) {
+    safeEngine = SAFEEngineLike(_safeEngine);
+    liquidationEngine = LiquidationEngineLike(_liquidationEngine);
+    collateralType = _collateralType;
     authorizedAccounts[msg.sender] = 1;
     emit AddAuthorization(msg.sender);
-  }
-
-  // --- Math ---
-  function addUint48(uint48 x, uint48 y) internal pure returns (uint48 z) {
-    require((z = x + y) >= x, 'EnglishCollateralAuctionHouse/add-uint48-overflow');
-  }
-
-  function multiply(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require(y == 0 || (z = x * y) / y == x, 'EnglishCollateralAuctionHouse/mul-overflow');
-  }
-
-  uint256 constant WAD = 10 ** 18;
-
-  function wmultiply(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    z = multiply(x, y) / WAD;
-  }
-
-  uint256 constant RAY = 10 ** 27;
-
-  function rdivide(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require(y > 0, 'EnglishCollateralAuctionHouse/division-by-zero');
-    z = multiply(x, RAY) / y;
   }
 
   // --- Admin ---
@@ -192,14 +172,14 @@ contract EnglishCollateralAuctionHouse {
     uint256 amountToSell,
     uint256 initialBid
   ) public isAuthorized returns (uint256 id) {
-    require(auctionsStarted < uint256(-1), 'EnglishCollateralAuctionHouse/overflow');
+    require(auctionsStarted < uint256(int256(-1)), 'EnglishCollateralAuctionHouse/overflow');
     require(amountToSell > 0, 'EnglishCollateralAuctionHouse/null-amount-sold');
     id = ++auctionsStarted;
 
     bids[id].bidAmount = initialBid;
     bids[id].amountToSell = amountToSell;
     bids[id].highBidder = msg.sender;
-    bids[id].auctionDeadline = addUint48(uint48(now), totalAuctionLength);
+    bids[id].auctionDeadline = addUint48(uint48(block.timestamp), totalAuctionLength);
     bids[id].forgoneCollateralReceiver = forgoneCollateralReceiver;
     bids[id].auctionIncomeRecipient = auctionIncomeRecipient;
     bids[id].amountToRaise = amountToRaise;
@@ -223,9 +203,9 @@ contract EnglishCollateralAuctionHouse {
    */
 
   function restartAuction(uint256 id) external {
-    require(bids[id].auctionDeadline < now, 'EnglishCollateralAuctionHouse/not-finished');
+    require(bids[id].auctionDeadline < block.timestamp, 'EnglishCollateralAuctionHouse/not-finished');
     require(bids[id].bidExpiry == 0, 'EnglishCollateralAuctionHouse/bid-already-placed');
-    bids[id].auctionDeadline = addUint48(uint48(now), totalAuctionLength);
+    bids[id].auctionDeadline = addUint48(uint48(block.timestamp), totalAuctionLength);
     emit RestartAuction(id, bids[id].auctionDeadline);
   }
   /**
@@ -237,14 +217,17 @@ contract EnglishCollateralAuctionHouse {
 
   function increaseBidSize(uint256 id, uint256 amountToBuy, uint256 rad) external {
     require(bids[id].highBidder != address(0), 'EnglishCollateralAuctionHouse/high-bidder-not-set');
-    require(bids[id].bidExpiry > now || bids[id].bidExpiry == 0, 'EnglishCollateralAuctionHouse/bid-already-expired');
-    require(bids[id].auctionDeadline > now, 'EnglishCollateralAuctionHouse/auction-already-expired');
+    require(
+      bids[id].bidExpiry > block.timestamp || bids[id].bidExpiry == 0,
+      'EnglishCollateralAuctionHouse/bid-already-expired'
+    );
+    require(bids[id].auctionDeadline > block.timestamp, 'EnglishCollateralAuctionHouse/auction-already-expired');
 
     require(amountToBuy == bids[id].amountToSell, 'EnglishCollateralAuctionHouse/amounts-not-matching');
     require(rad <= bids[id].amountToRaise, 'EnglishCollateralAuctionHouse/higher-than-amount-to-raise');
     require(rad > bids[id].bidAmount, 'EnglishCollateralAuctionHouse/new-bid-not-higher');
     require(
-      multiply(rad, ONE) >= multiply(bidIncrease, bids[id].bidAmount) || rad == bids[id].amountToRaise,
+      multiply(rad, ONE_ETH) >= multiply(bidIncrease, bids[id].bidAmount) || rad == bids[id].amountToRaise,
       'EnglishCollateralAuctionHouse/insufficient-increase'
     );
 
@@ -255,7 +238,7 @@ contract EnglishCollateralAuctionHouse {
     safeEngine.transferInternalCoins(msg.sender, bids[id].auctionIncomeRecipient, rad - bids[id].bidAmount);
 
     bids[id].bidAmount = rad;
-    bids[id].bidExpiry = addUint48(uint48(now), bidDuration);
+    bids[id].bidExpiry = addUint48(uint48(block.timestamp), bidDuration);
 
     emit IncreaseBidSize(id, msg.sender, amountToBuy, rad, bids[id].bidExpiry);
   }
@@ -269,14 +252,17 @@ contract EnglishCollateralAuctionHouse {
 
   function decreaseSoldAmount(uint256 id, uint256 amountToBuy, uint256 rad) external {
     require(bids[id].highBidder != address(0), 'EnglishCollateralAuctionHouse/high-bidder-not-set');
-    require(bids[id].bidExpiry > now || bids[id].bidExpiry == 0, 'EnglishCollateralAuctionHouse/bid-already-expired');
-    require(bids[id].auctionDeadline > now, 'EnglishCollateralAuctionHouse/auction-already-expired');
+    require(
+      bids[id].bidExpiry > block.timestamp || bids[id].bidExpiry == 0,
+      'EnglishCollateralAuctionHouse/bid-already-expired'
+    );
+    require(bids[id].auctionDeadline > block.timestamp, 'EnglishCollateralAuctionHouse/auction-already-expired');
 
     require(rad == bids[id].bidAmount, 'EnglishCollateralAuctionHouse/not-matching-bid');
     require(rad == bids[id].amountToRaise, 'EnglishCollateralAuctionHouse/bid-increase-not-finished');
     require(amountToBuy < bids[id].amountToSell, 'EnglishCollateralAuctionHouse/amount-bought-not-lower');
     require(
-      multiply(bidIncrease, amountToBuy) <= multiply(bids[id].amountToSell, ONE),
+      multiply(bidIncrease, amountToBuy) <= multiply(bids[id].amountToSell, ONE_ETH),
       'EnglishCollateralAuctionHouse/insufficient-decrease'
     );
 
@@ -289,7 +275,7 @@ contract EnglishCollateralAuctionHouse {
     );
 
     bids[id].amountToSell = amountToBuy;
-    bids[id].bidExpiry = addUint48(uint48(now), bidDuration);
+    bids[id].bidExpiry = addUint48(uint48(block.timestamp), bidDuration);
 
     emit DecreaseSoldAmount(id, msg.sender, amountToBuy, rad, bids[id].bidExpiry);
   }
@@ -300,7 +286,7 @@ contract EnglishCollateralAuctionHouse {
 
   function settleAuction(uint256 id) external {
     require(
-      bids[id].bidExpiry != 0 && (bids[id].bidExpiry < now || bids[id].auctionDeadline < now),
+      bids[id].bidExpiry != 0 && (bids[id].bidExpiry < block.timestamp || bids[id].auctionDeadline < block.timestamp),
       'EnglishCollateralAuctionHouse/not-finished'
     );
     safeEngine.transferCollateral(collateralType, address(this), bids[id].highBidder, bids[id].amountToSell);
@@ -366,7 +352,7 @@ contract EnglishCollateralAuctionHouse {
 /*
    This thing lets you sell some collateral at a fixed discount in order to instantly recapitalize the system*/
 
-contract FixedDiscountCollateralAuctionHouse {
+contract FixedDiscountCollateralAuctionHouse is Math {
   // --- Auth ---
   mapping(address => uint256) public authorizedAccounts;
   /**
@@ -426,7 +412,7 @@ contract FixedDiscountCollateralAuctionHouse {
   // Minimum acceptable bid
   uint256 public minimumBid = 5 * WAD; // [wad]
   // Total length of the auction. Kept to adhere to the same interface as the English auction but redundant
-  uint48 public totalAuctionLength = uint48(-1); // [seconds]
+  uint48 public totalAuctionLength = uint48(int48(-1)); // [seconds]
   // Number of auctions started up until now
   uint256 public auctionsStarted = 0;
   // The last read redemption price
@@ -472,68 +458,12 @@ contract FixedDiscountCollateralAuctionHouse {
   event TerminateAuctionPrematurely(uint256 indexed id, address sender, uint256 collateralAmount);
 
   // --- Init ---
-  constructor(address safeEngine_, address liquidationEngine_, bytes32 collateralType_) public {
-    safeEngine = SAFEEngineLike(safeEngine_);
-    liquidationEngine = LiquidationEngineLike(liquidationEngine_);
-    collateralType = collateralType_;
+  constructor(address _safeEngine, address _liquidationEngine, bytes32 _collateralType) {
+    safeEngine = SAFEEngineLike(_safeEngine);
+    liquidationEngine = LiquidationEngineLike(_liquidationEngine);
+    collateralType = _collateralType;
     authorizedAccounts[msg.sender] = 1;
     emit AddAuthorization(msg.sender);
-  }
-
-  // --- Math ---
-  function addUint48(uint48 x, uint48 y) internal pure returns (uint48 z) {
-    require((z = x + y) >= x, 'FixedDiscountCollateralAuctionHouse/add-uint48-overflow');
-  }
-
-  function addUint256(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require((z = x + y) >= x, 'FixedDiscountCollateralAuctionHouse/add-uint256-overflow');
-  }
-
-  function subtract(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require((z = x - y) <= x, 'FixedDiscountCollateralAuctionHouse/sub-underflow');
-  }
-
-  function multiply(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require(y == 0 || (z = x * y) / y == x, 'FixedDiscountCollateralAuctionHouse/mul-overflow');
-  }
-
-  uint256 constant WAD = 10 ** 18;
-
-  function wmultiply(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    z = multiply(x, y) / WAD;
-  }
-
-  uint256 constant RAY = 10 ** 27;
-
-  function rdivide(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require(y > 0, 'FixedDiscountCollateralAuctionHouse/rdiv-by-zero');
-    z = multiply(x, RAY) / y;
-  }
-
-  function wdivide(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require(y > 0, 'FixedDiscountCollateralAuctionHouse/wdiv-by-zero');
-    z = multiply(x, WAD) / y;
-  }
-
-  function minimum(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    z = (x <= y) ? x : y;
-  }
-
-  function maximum(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    z = (x >= y) ? x : y;
-  }
-
-  // --- General Utils ---
-  function either(bool x, bool y) internal pure returns (bool z) {
-    assembly {
-      z := or(x, y)
-    }
-  }
-
-  function both(bool x, bool y) internal pure returns (bool z) {
-    assembly {
-      z := and(x, y)
-    }
   }
 
   // --- Admin ---
@@ -767,7 +697,7 @@ contract FixedDiscountCollateralAuctionHouse {
     */
 
   function getAdjustedBid(uint256 id, uint256 wad) public view returns (bool, uint256) {
-    if (either(either(bids[id].amountToSell == 0, bids[id].amountToRaise == 0), either(wad == 0, wad < minimumBid))) {
+    if ((bids[id].amountToSell == 0 || bids[id].amountToRaise == 0) || (wad == 0 || wad < minimumBid)) {
       return (false, wad);
     }
 
@@ -780,7 +710,7 @@ contract FixedDiscountCollateralAuctionHouse {
     }
 
     remainingToRaise = subtract(bids[id].amountToRaise, bids[id].raisedAmount);
-    if (both(remainingToRaise > 0, remainingToRaise < RAY)) {
+    if (remainingToRaise > 0 && remainingToRaise < RAY) {
       return (false, adjustedBid);
     }
 
@@ -803,13 +733,13 @@ contract FixedDiscountCollateralAuctionHouse {
     uint256 amountToSell,
     uint256 initialBid
   ) public isAuthorized returns (uint256 id) {
-    require(auctionsStarted < uint256(-1), 'FixedDiscountCollateralAuctionHouse/overflow');
+    require(auctionsStarted < uint256(int256(-1)), 'FixedDiscountCollateralAuctionHouse/overflow');
     require(amountToSell > 0, 'FixedDiscountCollateralAuctionHouse/no-collateral-for-sale');
     require(amountToRaise > 0, 'FixedDiscountCollateralAuctionHouse/nothing-to-raise');
     require(amountToRaise >= RAY, 'FixedDiscountCollateralAuctionHouse/dusty-auction');
     id = ++auctionsStarted;
 
-    bids[id].auctionDeadline = uint48(-1);
+    bids[id].auctionDeadline = uint48(int48(-1));
     bids[id].amountToSell = amountToSell;
     bids[id].forgoneCollateralReceiver = forgoneCollateralReceiver;
     bids[id].auctionIncomeRecipient = auctionIncomeRecipient;
@@ -893,12 +823,11 @@ contract FixedDiscountCollateralAuctionHouse {
 
   function buyCollateral(uint256 id, uint256 wad) external {
     require(
-      both(bids[id].amountToSell > 0, bids[id].amountToRaise > 0),
-      'FixedDiscountCollateralAuctionHouse/inexistent-auction'
+      bids[id].amountToSell > 0 && bids[id].amountToRaise > 0, 'FixedDiscountCollateralAuctionHouse/inexistent-auction'
     );
 
     uint256 remainingToRaise = subtract(bids[id].amountToRaise, bids[id].raisedAmount);
-    require(both(wad > 0, wad >= minimumBid), 'FixedDiscountCollateralAuctionHouse/invalid-bid');
+    require(wad > 0 && wad >= minimumBid, 'FixedDiscountCollateralAuctionHouse/invalid-bid');
 
     // bound max amount offered in exchange for collateral (in case someone offers more than is necessary)
     uint256 adjustedBid = wad;
@@ -942,7 +871,7 @@ contract FixedDiscountCollateralAuctionHouse {
     emit BuyCollateral(id, adjustedBid, boughtCollateral);
 
     // Remove coins from the liquidation buffer
-    bool soldAll = either(bids[id].amountToRaise <= bids[id].raisedAmount, bids[id].amountToSell == bids[id].soldAmount);
+    bool soldAll = bids[id].amountToRaise <= bids[id].raisedAmount || bids[id].amountToSell == bids[id].soldAmount;
     if (soldAll) {
       liquidationEngine.removeCoinsFromAuction(remainingToRaise);
     } else {
@@ -975,8 +904,7 @@ contract FixedDiscountCollateralAuctionHouse {
 
   function terminateAuctionPrematurely(uint256 id) external isAuthorized {
     require(
-      both(bids[id].amountToSell > 0, bids[id].amountToRaise > 0),
-      'FixedDiscountCollateralAuctionHouse/inexistent-auction'
+      bids[id].amountToSell > 0 && bids[id].amountToRaise > 0, 'FixedDiscountCollateralAuctionHouse/inexistent-auction'
     );
     uint256 leftoverCollateral = subtract(bids[id].amountToSell, bids[id].soldAmount);
     liquidationEngine.removeCoinsFromAuction(subtract(bids[id].amountToRaise, bids[id].raisedAmount));
@@ -1027,7 +955,7 @@ contract FixedDiscountCollateralAuctionHouse {
 /*
    This thing lets you sell some collateral at an increasing discount in order to instantly recapitalize the system*/
 
-contract IncreasingDiscountCollateralAuctionHouse {
+contract IncreasingDiscountCollateralAuctionHouse is Math {
   // --- Auth ---
   mapping(address => uint256) public authorizedAccounts;
   /**
@@ -1091,7 +1019,7 @@ contract IncreasingDiscountCollateralAuctionHouse {
   // Minimum acceptable bid
   uint256 public minimumBid = 5 * WAD; // [wad]
   // Total length of the auction. Kept to adhere to the same interface as the English auction but redundant
-  uint48 public totalAuctionLength = uint48(-1); // [seconds]
+  uint48 public totalAuctionLength = uint48(int48(-1)); // [seconds]
   // Number of auctions started up until now
   uint256 public auctionsStarted = 0;
   // The last read redemption price
@@ -1146,105 +1074,12 @@ contract IncreasingDiscountCollateralAuctionHouse {
   event TerminateAuctionPrematurely(uint256 indexed id, address sender, uint256 collateralAmount);
 
   // --- Init ---
-  constructor(address safeEngine_, address liquidationEngine_, bytes32 collateralType_) public {
-    safeEngine = SAFEEngineLike(safeEngine_);
-    liquidationEngine = LiquidationEngineLike(liquidationEngine_);
-    collateralType = collateralType_;
+  constructor(address _safeEngine, address _liquidationEngine, bytes32 _collateralType) {
+    safeEngine = SAFEEngineLike(_safeEngine);
+    liquidationEngine = LiquidationEngineLike(_liquidationEngine);
+    collateralType = _collateralType;
     authorizedAccounts[msg.sender] = 1;
     emit AddAuthorization(msg.sender);
-  }
-
-  // --- Math ---
-  function addUint48(uint48 x, uint48 y) internal pure returns (uint48 z) {
-    require((z = x + y) >= x, 'IncreasingDiscountCollateralAuctionHouse/add-uint48-overflow');
-  }
-
-  function addUint256(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require((z = x + y) >= x, 'IncreasingDiscountCollateralAuctionHouse/add-uint256-overflow');
-  }
-
-  function subtract(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require((z = x - y) <= x, 'IncreasingDiscountCollateralAuctionHouse/sub-underflow');
-  }
-
-  function multiply(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require(y == 0 || (z = x * y) / y == x, 'IncreasingDiscountCollateralAuctionHouse/mul-overflow');
-  }
-
-  uint256 constant WAD = 10 ** 18;
-
-  function wmultiply(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    z = multiply(x, y) / WAD;
-  }
-
-  uint256 constant RAY = 10 ** 27;
-
-  function rdivide(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require(y > 0, 'IncreasingDiscountCollateralAuctionHouse/rdiv-by-zero');
-    z = multiply(x, RAY) / y;
-  }
-
-  function rmultiply(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    z = x * y;
-    require(y == 0 || z / y == x, 'IncreasingDiscountCollateralAuctionHouse/rmul-overflow');
-    z = z / RAY;
-  }
-
-  function wdivide(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require(y > 0, 'IncreasingDiscountCollateralAuctionHouse/wdiv-by-zero');
-    z = multiply(x, WAD) / y;
-  }
-
-  function minimum(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    z = (x <= y) ? x : y;
-  }
-
-  function maximum(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    z = (x >= y) ? x : y;
-  }
-
-  function rpower(uint256 x, uint256 n, uint256 b) internal pure returns (uint256 z) {
-    assembly {
-      switch x
-      case 0 {
-        switch n
-        case 0 { z := b }
-        default { z := 0 }
-      }
-      default {
-        switch mod(n, 2)
-        case 0 { z := b }
-        default { z := x }
-        let half := div(b, 2) // for rounding.
-        for { n := div(n, 2) } n { n := div(n, 2) } {
-          let xx := mul(x, x)
-          if iszero(eq(div(xx, x), x)) { revert(0, 0) }
-          let xxRound := add(xx, half)
-          if lt(xxRound, xx) { revert(0, 0) }
-          x := div(xxRound, b)
-          if mod(n, 2) {
-            let zx := mul(z, x)
-            if and(iszero(iszero(x)), iszero(eq(div(zx, x), z))) { revert(0, 0) }
-            let zxRound := add(zx, half)
-            if lt(zxRound, zx) { revert(0, 0) }
-            z := div(zxRound, b)
-          }
-        }
-      }
-    }
-  }
-
-  // --- General Utils ---
-  function either(bool x, bool y) internal pure returns (bool z) {
-    assembly {
-      z := or(x, y)
-    }
-  }
-
-  function both(bool x, bool y) internal pure returns (bool z) {
-    assembly {
-      z := and(x, y)
-    }
   }
 
   // --- Admin ---
@@ -1255,12 +1090,11 @@ contract IncreasingDiscountCollateralAuctionHouse {
    */
   function modifyParameters(bytes32 parameter, uint256 data) external isAuthorized {
     if (parameter == 'minDiscount') {
-      require(both(data >= maxDiscount, data < WAD), 'IncreasingDiscountCollateralAuctionHouse/invalid-min-discount');
+      require(data >= maxDiscount && data < WAD, 'IncreasingDiscountCollateralAuctionHouse/invalid-min-discount');
       minDiscount = data;
     } else if (parameter == 'maxDiscount') {
       require(
-        both(both(data <= minDiscount, data < WAD), data > 0),
-        'IncreasingDiscountCollateralAuctionHouse/invalid-max-discount'
+        (data <= minDiscount && data < WAD) && data > 0, 'IncreasingDiscountCollateralAuctionHouse/invalid-max-discount'
       );
       maxDiscount = data;
     } else if (parameter == 'perSecondDiscountUpdateRate') {
@@ -1268,7 +1102,7 @@ contract IncreasingDiscountCollateralAuctionHouse {
       perSecondDiscountUpdateRate = data;
     } else if (parameter == 'maxDiscountUpdateRateTimeline') {
       require(
-        both(data > 0, uint256(uint48(-1)) > addUint256(now, data)),
+        data > 0 && uint256(uint48(int48(-1))) > addUint256(block.timestamp, data),
         'IncreasingDiscountCollateralAuctionHouse/invalid-update-rate-time'
       );
       maxDiscountUpdateRateTimeline = data;
@@ -1356,7 +1190,7 @@ contract IncreasingDiscountCollateralAuctionHouse {
     // Work directly with storage
     Bid storage auctionBidData = bids[id];
     auctionBidData.currentDiscount = getNextCurrentDiscount(id);
-    auctionBidData.latestDiscountUpdateTime = now;
+    auctionBidData.latestDiscountUpdateTime = block.timestamp;
     return auctionBidData.currentDiscount;
   }
 
@@ -1510,10 +1344,11 @@ contract IncreasingDiscountCollateralAuctionHouse {
     uint256 nextDiscount = bids[id].currentDiscount;
 
     // If the increase deadline hasn't been passed yet and the current discount is not at or greater than max
-    if (both(uint48(now) < bids[id].discountIncreaseDeadline, bids[id].currentDiscount > bids[id].maxDiscount)) {
+    if (uint48(block.timestamp) < bids[id].discountIncreaseDeadline && bids[id].currentDiscount > bids[id].maxDiscount)
+    {
       // Calculate the new current discount
       nextDiscount = rmultiply(
-        rpower(bids[id].perSecondDiscountUpdateRate, subtract(now, bids[id].latestDiscountUpdateTime), RAY),
+        rpower(bids[id].perSecondDiscountUpdateRate, subtract(block.timestamp, bids[id].latestDiscountUpdateTime), RAY),
         bids[id].currentDiscount
       );
 
@@ -1523,11 +1358,11 @@ contract IncreasingDiscountCollateralAuctionHouse {
       }
     } else {
       // Determine the conditions when we can instantly set the current discount to max
-      bool currentZeroMaxNonZero = both(bids[id].currentDiscount == 0, bids[id].maxDiscount > 0);
+      bool currentZeroMaxNonZero = bids[id].currentDiscount == 0 && bids[id].maxDiscount > 0;
       bool doneUpdating =
-        both(uint48(now) >= bids[id].discountIncreaseDeadline, bids[id].currentDiscount != bids[id].maxDiscount);
+        uint48(block.timestamp) >= bids[id].discountIncreaseDeadline && bids[id].currentDiscount != bids[id].maxDiscount;
 
-      if (either(currentZeroMaxNonZero, doneUpdating)) {
+      if (currentZeroMaxNonZero || doneUpdating) {
         nextDiscount = bids[id].maxDiscount;
       }
     }
@@ -1542,7 +1377,7 @@ contract IncreasingDiscountCollateralAuctionHouse {
     */
 
   function getAdjustedBid(uint256 id, uint256 wad) public view returns (bool, uint256) {
-    if (either(either(bids[id].amountToSell == 0, bids[id].amountToRaise == 0), either(wad == 0, wad < minimumBid))) {
+    if ((bids[id].amountToSell == 0 || bids[id].amountToRaise == 0) || (wad == 0 || wad < minimumBid)) {
       return (false, wad);
     }
 
@@ -1556,7 +1391,7 @@ contract IncreasingDiscountCollateralAuctionHouse {
 
     remainingToRaise =
       (multiply(adjustedBid, RAY) > remainingToRaise) ? 0 : subtract(bids[id].amountToRaise, multiply(adjustedBid, RAY));
-    if (both(remainingToRaise > 0, remainingToRaise < RAY)) {
+    if (remainingToRaise > 0 && remainingToRaise < RAY) {
       return (false, adjustedBid);
     }
 
@@ -1579,19 +1414,19 @@ contract IncreasingDiscountCollateralAuctionHouse {
     uint256 amountToSell,
     uint256 initialBid
   ) public isAuthorized returns (uint256 id) {
-    require(auctionsStarted < uint256(-1), 'IncreasingDiscountCollateralAuctionHouse/overflow');
+    require(auctionsStarted < uint256(int256(-1)), 'IncreasingDiscountCollateralAuctionHouse/overflow');
     require(amountToSell > 0, 'IncreasingDiscountCollateralAuctionHouse/no-collateral-for-sale');
     require(amountToRaise > 0, 'IncreasingDiscountCollateralAuctionHouse/nothing-to-raise');
     require(amountToRaise >= RAY, 'IncreasingDiscountCollateralAuctionHouse/dusty-auction');
     id = ++auctionsStarted;
 
-    uint48 discountIncreaseDeadline = addUint48(uint48(now), uint48(maxDiscountUpdateRateTimeline));
+    uint48 discountIncreaseDeadline = addUint48(uint48(block.timestamp), uint48(maxDiscountUpdateRateTimeline));
 
     bids[id].currentDiscount = minDiscount;
     bids[id].maxDiscount = maxDiscount;
     bids[id].perSecondDiscountUpdateRate = perSecondDiscountUpdateRate;
     bids[id].discountIncreaseDeadline = discountIncreaseDeadline;
-    bids[id].latestDiscountUpdateTime = now;
+    bids[id].latestDiscountUpdateTime = block.timestamp;
     bids[id].amountToSell = amountToSell;
     bids[id].forgoneCollateralReceiver = forgoneCollateralReceiver;
     bids[id].auctionIncomeRecipient = auctionIncomeRecipient;
@@ -1690,10 +1525,10 @@ contract IncreasingDiscountCollateralAuctionHouse {
 
   function buyCollateral(uint256 id, uint256 wad) external {
     require(
-      both(bids[id].amountToSell > 0, bids[id].amountToRaise > 0),
+      bids[id].amountToSell > 0 && bids[id].amountToRaise > 0,
       'IncreasingDiscountCollateralAuctionHouse/inexistent-auction'
     );
-    require(both(wad > 0, wad >= minimumBid), 'IncreasingDiscountCollateralAuctionHouse/invalid-bid');
+    require(wad > 0 && wad >= minimumBid, 'IncreasingDiscountCollateralAuctionHouse/invalid-bid');
 
     // bound max amount offered in exchange for collateral (in case someone offers more than it's necessary)
     uint256 adjustedBid = wad;
@@ -1724,7 +1559,7 @@ contract IncreasingDiscountCollateralAuctionHouse {
     bids[id].amountToSell = subtract(bids[id].amountToSell, boughtCollateral);
 
     // update remainingToRaise in case amountToSell is zero (everything has been sold)
-    uint256 remainingToRaise = (either(multiply(wad, RAY) >= bids[id].amountToRaise, bids[id].amountToSell == 0))
+    uint256 remainingToRaise = ((multiply(wad, RAY) >= bids[id].amountToRaise) || (bids[id].amountToSell == 0))
       ? bids[id].amountToRaise
       : subtract(bids[id].amountToRaise, multiply(wad, RAY));
 
@@ -1735,7 +1570,7 @@ contract IncreasingDiscountCollateralAuctionHouse {
 
     // check that the remaining amount to raise is either zero or higher than RAY
     require(
-      either(bids[id].amountToRaise == 0, bids[id].amountToRaise >= RAY),
+      bids[id].amountToRaise == 0 || bids[id].amountToRaise >= RAY,
       'IncreasingDiscountCollateralAuctionHouse/invalid-left-to-raise'
     );
 
@@ -1747,7 +1582,7 @@ contract IncreasingDiscountCollateralAuctionHouse {
     emit BuyCollateral(id, adjustedBid, boughtCollateral);
 
     // Remove coins from the liquidation buffer
-    bool soldAll = either(bids[id].amountToRaise == 0, bids[id].amountToSell == 0);
+    bool soldAll = bids[id].amountToRaise == 0 || bids[id].amountToSell == 0;
     if (soldAll) {
       liquidationEngine.removeCoinsFromAuction(remainingToRaise);
     } else {
@@ -1779,7 +1614,7 @@ contract IncreasingDiscountCollateralAuctionHouse {
 
   function terminateAuctionPrematurely(uint256 id) external isAuthorized {
     require(
-      both(bids[id].amountToSell > 0, bids[id].amountToRaise > 0),
+      bids[id].amountToSell > 0 && bids[id].amountToRaise > 0,
       'IncreasingDiscountCollateralAuctionHouse/inexistent-auction'
     );
     liquidationEngine.removeCoinsFromAuction(bids[id].amountToRaise);

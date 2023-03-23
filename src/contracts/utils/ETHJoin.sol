@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0
 /// BasicTokenAdapters.sol
 
 // Copyright (C) 2018 Rain <rainbreak@riseup.net>
@@ -15,7 +16,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity 0.6.7;
+pragma solidity 0.8.19;
 
 import {ISAFEEngine as SAFEEngineLike} from '../../interfaces/ISAFEEngine.sol';
 import {IToken as DSTokenLike} from '../../interfaces/external/IToken.sol';
@@ -80,7 +81,7 @@ contract ETHJoin {
   event Join(address sender, address account, uint256 wad);
   event Exit(address sender, address account, uint256 wad);
 
-  constructor(address safeEngine_, bytes32 collateralType_) public {
+  constructor(address safeEngine_, bytes32 collateralType_) {
     authorizedAccounts[msg.sender] = 1;
     contractEnabled = 1;
     safeEngine = SAFEEngineLike(safeEngine_);

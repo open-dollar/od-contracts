@@ -1,8 +1,8 @@
-pragma solidity 0.6.7;
+pragma solidity 0.8.19;
 pragma experimental ABIEncoderV2;
 
 import 'ds-test/test.sol';
-import 'ds-token/delegate.sol';
+import {DSToken as DSDelegateToken} from '../../contracts/for-test/DSToken.sol';
 
 import {SAFEEngine} from '../../contracts/SAFEEngine.sol';
 import {LiquidationEngine} from '../../contracts/LiquidationEngine.sol';
@@ -30,15 +30,15 @@ contract Feed {
   bool public validPrice;
   uint256 public lastUpdateTime;
 
-  constructor(uint256 price_, bool validPrice_) public {
+  constructor(uint256 price_, bool validPrice_) {
     price = bytes32(price_);
     validPrice = validPrice_;
-    lastUpdateTime = now;
+    lastUpdateTime = block.timestamp;
   }
 
   function updateCollateralPrice(uint256 price_) external {
     price = bytes32(price_);
-    lastUpdateTime = now;
+    lastUpdateTime = block.timestamp;
   }
 
   function getResultWithValidity() external view returns (bytes32, bool) {
@@ -47,9 +47,7 @@ contract Feed {
 }
 
 contract TestSAFEEngine is SAFEEngine {
-  uint256 constant RAY = 10 ** 27;
-
-  constructor() public {}
+  constructor() {}
 
   function mint(address usr, uint256 wad) public {
     coinBalance[usr] += wad * RAY;
@@ -66,7 +64,7 @@ contract TestAccountingEngine is AccountingEngine {
     address safeEngine,
     address surplusAuctionHouse,
     address debtAuctionHouse
-  ) public AccountingEngine(safeEngine, surplusAuctionHouse, debtAuctionHouse) {}
+  ) AccountingEngine(safeEngine, surplusAuctionHouse, debtAuctionHouse) {}
 
   function totalDeficit() public view returns (uint256) {
     return safeEngine.debtBalance(address(this));
@@ -84,7 +82,7 @@ contract TestAccountingEngine is AccountingEngine {
 contract Usr {
   SAFEEngine public safeEngine;
 
-  constructor(SAFEEngine safeEngine_) public {
+  constructor(SAFEEngine safeEngine_) {
     safeEngine = safeEngine_;
   }
 
@@ -583,7 +581,7 @@ contract SingleSAFEDebtLimitTest is DSTest {
 
     ali.modifySAFECollateralization('gold', a, a, a, 10 ether, 5 ether);
 
-    hevm.warp(now + 1 days);
+    hevm.warp(block.timestamp + 1 days);
     taxCollector.taxSingle('gold');
 
     ali.modifySAFECollateralization('gold', a, a, a, 0, -4 ether);
@@ -604,7 +602,7 @@ contract SingleSAFEDebtLimitTest is DSTest {
     ali.modifySAFECollateralization('gold', a, a, a, 0, -1 ether);
     assertTrue(!try_modifySAFECollateralization('gold', 0, 2 ether));
 
-    safeEngine.modifyParameters('safeDebtCeiling', uint256(-1));
+    safeEngine.modifyParameters('safeDebtCeiling', uint256(int256(-1)));
     ali.modifySAFECollateralization('gold', a, a, a, 0, 4 ether);
   }
 }
@@ -686,7 +684,7 @@ contract SingleJoinTest is DSTest {
   }
 
   function test_eth_exit() public {
-    address payable safe = address(this);
+    address payable safe = payable(address(this));
     ethA.join{value: 50 ether}(safe);
     ethA.exit(safe, 10 ether);
     assertEq(safeEngine.tokenCollateral('ETH', me), 40 ether);
@@ -714,7 +712,7 @@ contract SingleJoinTest is DSTest {
     safeEngine.mint(address(this), 100 ether);
     safeEngine.approveSAFEModification(address(coinA));
     coinA.exit(safe, 60 ether);
-    coin.approve(address(coinA), uint256(-1));
+    coin.approve(address(coinA), uint256(int256(-1)));
     coinA.join(safe, 30 ether);
     assertEq(coin.balanceOf(address(this)), 30 ether);
     assertEq(safeEngine.coinBalance(me), rad(70 ether));
@@ -930,11 +928,11 @@ contract SingleLiquidationTest is DSTest {
   }
 
   function testFail_liquidation_quantity_too_large() public {
-    liquidationEngine.modifyParameters('gold', 'liquidationQuantity', uint256(-1) / 10 ** 27 + 1);
+    liquidationEngine.modifyParameters('gold', 'liquidationQuantity', uint256(int256(-1)) / 10 ** 27 + 1);
   }
 
   function test_liquidate_max_liquidation_quantity() public {
-    uint256 MAX_LIQUIDATION_QUANTITY = uint256(-1) / 10 ** 27;
+    uint256 MAX_LIQUIDATION_QUANTITY = uint256(int256(-1)) / 10 ** 27;
     liquidationEngine.modifyParameters('gold', 'liquidationQuantity', MAX_LIQUIDATION_QUANTITY);
 
     safeEngine.modifyParameters('globalDebtCeiling', rad(300_000 ether));
@@ -952,7 +950,7 @@ contract SingleLiquidationTest is DSTest {
   }
 
   function testFail_liquidate_forced_over_max_liquidation_quantity() public {
-    uint256 MAX_LIQUIDATION_QUANTITY = uint256(-1) / 10 ** 27;
+    uint256 MAX_LIQUIDATION_QUANTITY = uint256(int256(-1)) / 10 ** 27;
     hevm.store(
       address(liquidationEngine),
       bytes32(uint256(keccak256(abi.encode(bytes32('gold'), uint256(1)))) + 2),
@@ -1042,7 +1040,7 @@ contract SingleLiquidationTest is DSTest {
     (lockedCollateral, generatedDebt) = safeEngine.safes('gold', address(this));
     assertEq(lockedCollateral, 0);
     assertEq(generatedDebt, 0);
-    assertEq(accountingEngine.debtQueue(now), rad(100 ether));
+    assertEq(accountingEngine.debtQueue(block.timestamp), rad(100 ether));
     assertEq(safeEngine.tokenCollateral('gold', address(this)), 960 ether);
 
     assertEq(safeEngine.coinBalance(address(accountingEngine)), 0 ether);
@@ -1056,9 +1054,9 @@ contract SingleLiquidationTest is DSTest {
     collateralAuctionHouse.decreaseSoldAmount(auction, 38 ether, rad(100 ether));
     assertEq(safeEngine.coinBalance(address(accountingEngine)), rad(100 ether));
     assertEq(safeEngine.tokenCollateral('gold', address(this)), 962 ether);
-    assertEq(accountingEngine.debtQueue(now), rad(100 ether));
+    assertEq(accountingEngine.debtQueue(block.timestamp), rad(100 ether));
 
-    hevm.warp(now + 4 hours);
+    hevm.warp(block.timestamp + 4 hours);
     collateralAuctionHouse.settleAuction(auction);
     assertEq(safeEngine.coinBalance(address(accountingEngine)), rad(100 ether));
   }
@@ -1073,12 +1071,12 @@ contract SingleLiquidationTest is DSTest {
     safeEngine.modifyParameters('gold', 'liquidationPrice', ray(2 ether));
 
     liquidationEngine.modifyParameters('gold', 'liquidationQuantity', rad(200 ether)); // => liquidate everything
-    assertEq(accountingEngine.debtQueue(now), rad(0 ether));
+    assertEq(accountingEngine.debtQueue(block.timestamp), rad(0 ether));
     uint256 auction = liquidationEngine.liquidateSAFE('gold', address(this));
-    assertEq(accountingEngine.debtQueue(now), rad(100 ether));
+    assertEq(accountingEngine.debtQueue(block.timestamp), rad(100 ether));
 
     assertEq(accountingEngine.totalQueuedDebt(), rad(100 ether));
-    accountingEngine.popDebtFromQueue(now);
+    accountingEngine.popDebtFromQueue(block.timestamp);
     assertEq(accountingEngine.totalQueuedDebt(), rad(0 ether));
     assertEq(accountingEngine.unqueuedUnauctionedDebt(), rad(100 ether));
     assertEq(accountingEngine.totalSurplus(), rad(0 ether));
@@ -1096,7 +1094,7 @@ contract SingleLiquidationTest is DSTest {
     assertEq(accountingEngine.totalOnAuctionDebt(), rad(0 ether));
 
     assertEq(protocolToken.balanceOf(address(this)), 100 ether);
-    hevm.warp(now + 4 hours);
+    hevm.warp(block.timestamp + 4 hours);
     protocolToken.setOwner(address(debtAuctionHouse));
     debtAuctionHouse.settleAuction(f1);
     assertEq(protocolToken.balanceOf(address(this)), 1100 ether);
@@ -1116,7 +1114,7 @@ contract SingleLiquidationTest is DSTest {
     assertEq(safeEngine.coinBalance(address(this)), 0 ether);
     assertEq(protocolToken.balanceOf(address(this)), 100 ether);
     surplusAuctionHouse.increaseBidSize(id, rad(100 ether), 10 ether);
-    hevm.warp(now + 4 hours);
+    hevm.warp(block.timestamp + 4 hours);
     protocolToken.setOwner(address(surplusAuctionHouse));
     surplusAuctionHouse.settleAuction(id);
     assertEq(safeEngine.coinBalance(address(this)), rad(100 ether));
@@ -1149,7 +1147,7 @@ contract SingleLiquidationTest is DSTest {
     (lockedCollateral, generatedDebt) = safeEngine.safes('gold', address(this));
     assertEq(lockedCollateral, 50 ether);
     assertEq(generatedDebt, 75 ether);
-    assertEq(accountingEngine.debtQueue(now), rad(75 ether));
+    assertEq(accountingEngine.debtQueue(block.timestamp), rad(75 ether));
     assertEq(safeEngine.tokenCollateral('gold', address(this)), 900 ether);
 
     assertEq(safeEngine.coinBalance(address(this)), rad(150 ether));
@@ -1165,9 +1163,9 @@ contract SingleLiquidationTest is DSTest {
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), rad(75 ether));
     assertEq(safeEngine.coinBalance(address(this)), rad(75 ether));
     assertEq(safeEngine.tokenCollateral('gold', address(this)), 925 ether);
-    assertEq(accountingEngine.debtQueue(now), rad(75 ether));
+    assertEq(accountingEngine.debtQueue(block.timestamp), rad(75 ether));
 
-    hevm.warp(now + 4 hours);
+    hevm.warp(block.timestamp + 4 hours);
     collateralAuctionHouse.settleAuction(auction);
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), 0);
     assertEq(safeEngine.tokenCollateral('gold', address(this)), 950 ether);
@@ -1200,7 +1198,7 @@ contract SingleLiquidationTest is DSTest {
     (lockedCollateral, generatedDebt) = safeEngine.safes('gold', address(this));
     assertEq(lockedCollateral, 50 ether);
     assertEq(generatedDebt, 75 ether);
-    assertEq(accountingEngine.debtQueue(now), rad(75 ether));
+    assertEq(accountingEngine.debtQueue(block.timestamp), rad(75 ether));
     assertEq(safeEngine.tokenCollateral('gold', address(this)), 900 ether);
 
     liquidationEngine.liquidateSAFE('gold', address(this));
@@ -1231,7 +1229,7 @@ contract SingleLiquidationTest is DSTest {
     (lockedCollateral, generatedDebt) = safeEngine.safes('gold', address(this));
     assertEq(lockedCollateral, 50 ether);
     assertEq(generatedDebt, 75 ether);
-    assertEq(accountingEngine.debtQueue(now), rad(75 ether));
+    assertEq(accountingEngine.debtQueue(block.timestamp), rad(75 ether));
     assertEq(safeEngine.tokenCollateral('gold', address(this)), 900 ether);
 
     assertEq(safeEngine.coinBalance(address(this)), rad(150 ether));
@@ -1247,12 +1245,12 @@ contract SingleLiquidationTest is DSTest {
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), rad(75 ether));
     assertEq(safeEngine.coinBalance(address(this)), rad(75 ether));
     assertEq(safeEngine.tokenCollateral('gold', address(this)), 925 ether);
-    assertEq(accountingEngine.debtQueue(now), rad(75 ether));
+    assertEq(accountingEngine.debtQueue(block.timestamp), rad(75 ether));
 
     // Another liquidateSAFE() here would fail and revert because we would go above the limit so we first
     // have to settle an auction and then liquidate again
 
-    hevm.warp(now + 4 hours);
+    hevm.warp(block.timestamp + 4 hours);
     collateralAuctionHouse.settleAuction(auction);
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), 0);
     assertEq(safeEngine.tokenCollateral('gold', address(this)), 950 ether);
@@ -1266,7 +1264,7 @@ contract SingleLiquidationTest is DSTest {
     (lockedCollateral, generatedDebt) = safeEngine.safes('gold', address(this));
     assertEq(lockedCollateral, 0);
     assertEq(generatedDebt, 0);
-    assertEq(accountingEngine.debtQueue(now), rad(75 ether));
+    assertEq(accountingEngine.debtQueue(block.timestamp), rad(75 ether));
     assertEq(safeEngine.tokenCollateral('gold', address(this)), 950 ether);
 
     assertEq(safeEngine.coinBalance(address(this)), rad(75 ether));
@@ -1282,9 +1280,9 @@ contract SingleLiquidationTest is DSTest {
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), rad(75 ether));
     assertEq(safeEngine.coinBalance(address(this)), 0);
     assertEq(safeEngine.tokenCollateral('gold', address(this)), 975 ether);
-    assertEq(accountingEngine.debtQueue(now), rad(75 ether));
+    assertEq(accountingEngine.debtQueue(block.timestamp), rad(75 ether));
 
-    hevm.warp(now + 4 hours);
+    hevm.warp(block.timestamp + 4 hours);
     collateralAuctionHouse.settleAuction(auction);
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), 0);
     assertEq(safeEngine.tokenCollateral('gold', address(this)), 1000 ether);
@@ -1379,7 +1377,7 @@ contract SingleLiquidationTest is DSTest {
 
     liquidationEngine.liquidateSAFE('gold', address(this));
 
-    liquidationEngine.modifyParameters('onAuctionSystemCoinLimit', uint256(-1));
+    liquidationEngine.modifyParameters('onAuctionSystemCoinLimit', uint256(int256(-1)));
     liquidationEngine.modifyParameters('gold', 'liquidationQuantity', rad(1000 ether));
 
     assertEq(liquidationEngine.getLimitAdjustedDebtToCover('gold', address(this)), 149 ether);

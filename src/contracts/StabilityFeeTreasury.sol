@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0
 /// StabilityFeeTreasury.sol
 
 // Copyright (C) 2018 Rain <rainbreak@riseup.net>, 2020 Reflexer Labs, INC
@@ -15,13 +16,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-pragma solidity 0.6.7;
+pragma solidity 0.8.19;
 
 import {ISAFEEngine as SAFEEngineLike} from '../interfaces/ISAFEEngine.sol';
 import {ISystemCoin as SystemCoinLike} from '../interfaces/external/ISystemCoin.sol';
 import {ICoinJoin as CoinJoinLike} from '../interfaces/ICoinJoin.sol';
 
-contract StabilityFeeTreasury {
+import {Math} from './utils/Math.sol';
+
+contract StabilityFeeTreasury is Math {
   // --- Auth ---
   mapping(address => uint256) public authorizedAccounts;
   /**
@@ -100,62 +103,23 @@ contract StabilityFeeTreasury {
     _;
   }
 
-  constructor(address safeEngine_, address extraSurplusReceiver_, address coinJoin_) public {
-    require(address(CoinJoinLike(coinJoin_).systemCoin()) != address(0), 'StabilityFeeTreasury/null-system-coin');
-    require(extraSurplusReceiver_ != address(0), 'StabilityFeeTreasury/null-surplus-receiver');
+  constructor(address _safeEngine, address _extraSurplusReceiver, address _coinJoin) {
+    require(address(CoinJoinLike(_coinJoin).systemCoin()) != address(0), 'StabilityFeeTreasury/null-system-coin');
+    require(_extraSurplusReceiver != address(0), 'StabilityFeeTreasury/null-surplus-receiver');
 
     authorizedAccounts[msg.sender] = 1;
 
-    safeEngine = SAFEEngineLike(safeEngine_);
-    extraSurplusReceiver = extraSurplusReceiver_;
-    coinJoin = CoinJoinLike(coinJoin_);
+    safeEngine = SAFEEngineLike(_safeEngine);
+    extraSurplusReceiver = _extraSurplusReceiver;
+    coinJoin = CoinJoinLike(_coinJoin);
     systemCoin = SystemCoinLike(coinJoin.systemCoin());
-    latestSurplusTransferTime = now;
+    latestSurplusTransferTime = block.timestamp;
     expensesMultiplier = HUNDRED;
     contractEnabled = 1;
 
-    systemCoin.approve(address(coinJoin), uint256(-1));
+    systemCoin.approve(address(coinJoin), uint256(int256(-1)));
 
     emit AddAuthorization(msg.sender);
-  }
-
-  // --- Math ---
-  uint256 constant HUNDRED = 10 ** 2;
-  uint256 constant RAY = 10 ** 27;
-
-  function addition(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    z = x + y;
-    require(z >= x, 'StabilityFeeTreasury/add-uint-uint-overflow');
-  }
-
-  function addition(int256 x, int256 y) internal pure returns (int256 z) {
-    z = x + y;
-    if (y <= 0) require(z <= x, 'StabilityFeeTreasury/add-int-int-underflow');
-    if (y > 0) require(z > x, 'StabilityFeeTreasury/add-int-int-overflow');
-  }
-
-  function subtract(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require((z = x - y) <= x, 'StabilityFeeTreasury/sub-uint-uint-underflow');
-  }
-
-  function subtract(int256 x, int256 y) internal pure returns (int256 z) {
-    z = x - y;
-    require(y <= 0 || z <= x, 'StabilityFeeTreasury/sub-int-int-underflow');
-    require(y >= 0 || z >= x, 'StabilityFeeTreasury/sub-int-int-overflow');
-  }
-
-  function multiply(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require(y == 0 || (z = x * y) / y == x, 'StabilityFeeTreasury/mul-uint-uint-overflow');
-  }
-
-  function divide(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require(y > 0, 'StabilityFeeTreasury/div-y-null');
-    z = x / y;
-    require(z <= x, 'StabilityFeeTreasury/div-invalid');
-  }
-
-  function minimum(uint256 x, uint256 y) internal view returns (uint256 z) {
-    z = (x <= y) ? x : y;
   }
 
   // --- Administration ---
@@ -212,18 +176,6 @@ contract StabilityFeeTreasury {
     emit DisableContract();
   }
 
-  // --- Utils ---
-  function either(bool x, bool y) internal pure returns (bool z) {
-    assembly {
-      z := or(x, y)
-    }
-  }
-
-  function both(bool x, bool y) internal pure returns (bool z) {
-    assembly {
-      z := and(x, y)
-    }
-  }
   /**
    * @notice Join all ERC20 system coins that the treasury has inside the SAFEEngine
    */
@@ -365,7 +317,7 @@ contract StabilityFeeTreasury {
    */
   function transferSurplusFunds() external {
     require(
-      now >= addition(latestSurplusTransferTime, surplusTransferDelay),
+      block.timestamp >= addition(latestSurplusTransferTime, surplusTransferDelay),
       'StabilityFeeTreasury/transfer-cooldown-not-passed'
     );
     // Compute latest expenses
@@ -380,7 +332,7 @@ contract StabilityFeeTreasury {
       : remainingFunds;
     // Set internal vars
     accumulatorTag = expensesAccumulator;
-    latestSurplusTransferTime = now;
+    latestSurplusTransferTime = block.timestamp;
     // Join all coins in system
     joinAllCoins();
     // Settle outstanding bad debt

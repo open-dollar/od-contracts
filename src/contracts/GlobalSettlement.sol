@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0
 /// GlobalSettlement.sol
 
 // Copyright (C) 2018 Rain <rainbreak@riseup.net>
@@ -16,7 +17,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity 0.6.7;
+pragma solidity 0.8.19;
 
 import {ISAFEEngine as SAFEEngineLike} from '../interfaces/ISAFEEngine.sol';
 import {ILiquidationEngine as LiquidationEngineLike} from '../interfaces/ILiquidationEngine.sol';
@@ -26,6 +27,8 @@ import {ICoinSavingsAccount as CoinSavingsAccountLike} from '../interfaces/ICoin
 import {ICollateralAuctionHouse as CollateralAuctionHouseLike} from '../interfaces/ICollateralAuctionHouse.sol';
 import {IOracle as OracleLike} from '../interfaces/IOracle.sol';
 import {IOracleRelayer as OracleRelayerLike} from '../interfaces/IOracleRelayer.sol';
+
+import {Math} from './utils/Math.sol';
 
 /*
     This is the Global Settlement module. It is an
@@ -94,7 +97,7 @@ import {IOracleRelayer as OracleRelayerLike} from '../interfaces/IOracleRelayer.
         - exchange some coin from your bag for tokens from a specific collateral type
         - the amount of collateral available to redeem is limited by how big your bag is*/
 
-contract GlobalSettlement {
+contract GlobalSettlement is Math {
   // --- Auth ---
   mapping(address => uint256) public authorizedAccounts;
   /**
@@ -174,45 +177,10 @@ contract GlobalSettlement {
   );
 
   // --- Init ---
-  constructor() public {
+  constructor() {
     authorizedAccounts[msg.sender] = 1;
     contractEnabled = 1;
     emit AddAuthorization(msg.sender);
-  }
-
-  // --- Math ---
-  function addition(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    z = x + y;
-    require(z >= x, 'GlobalSettlement/add-overflow');
-  }
-
-  function subtract(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require((z = x - y) <= x, 'GlobalSettlement/sub-underflow');
-  }
-
-  function multiply(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require(y == 0 || (z = x * y) / y == x, 'GlobalSettlement/mul-overflow');
-  }
-
-  function minimum(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    return x <= y ? x : y;
-  }
-
-  uint256 constant WAD = 10 ** 18;
-  uint256 constant RAY = 10 ** 27;
-
-  function rmultiply(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    z = multiply(x, y) / RAY;
-  }
-
-  function rdivide(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require(y > 0, 'GlobalSettlement/rdiv-by-zero');
-    z = multiply(x, RAY) / y;
-  }
-
-  function wdivide(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require(y > 0, 'GlobalSettlement/wdiv-by-zero');
-    z = multiply(x, WAD) / y;
   }
 
   // --- Administration ---
@@ -252,7 +220,7 @@ contract GlobalSettlement {
   function shutdownSystem() external isAuthorized {
     require(contractEnabled == 1, 'GlobalSettlement/contract-not-enabled');
     contractEnabled = 0;
-    shutdownTime = now;
+    shutdownTime = block.timestamp;
     safeEngine.disableContract();
     liquidationEngine.disableContract();
     // treasury must be disabled before the accounting engine so that all surplus is gathered in one place
@@ -366,7 +334,9 @@ contract GlobalSettlement {
     require(contractEnabled == 0, 'GlobalSettlement/contract-still-enabled');
     require(outstandingCoinSupply == 0, 'GlobalSettlement/outstanding-coin-supply-not-zero');
     require(safeEngine.coinBalance(address(accountingEngine)) == 0, 'GlobalSettlement/surplus-not-zero');
-    require(now >= addition(shutdownTime, shutdownCooldown), 'GlobalSettlement/shutdown-cooldown-not-finished');
+    require(
+      block.timestamp >= addition(shutdownTime, shutdownCooldown), 'GlobalSettlement/shutdown-cooldown-not-finished'
+    );
     outstandingCoinSupply = safeEngine.globalDebt();
     emit SetOutstandingCoinSupply(outstandingCoinSupply);
   }

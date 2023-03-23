@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0
 /// CoinSavingsAccount.sol
 
 // Copyright (C) 2018 Rain <rainbreak@riseup.net>
@@ -15,7 +16,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity 0.6.7;
+pragma solidity 0.8.19;
 
 /*
    "Savings Coin" is obtained when the core coin created by the protocol
@@ -31,7 +32,9 @@ pragma solidity 0.6.7;
 
 import {ISAFEEngine as SAFEEngineLike} from '../interfaces/ISAFEEngine.sol';
 
-contract CoinSavingsAccount {
+import {Math} from './utils/Math.sol';
+
+contract CoinSavingsAccount is Math {
   // --- Auth ---
   mapping(address => uint256) public authorizedAccounts;
   /**
@@ -93,63 +96,13 @@ contract CoinSavingsAccount {
   uint256 public contractEnabled;
 
   // --- Init ---
-  constructor(address safeEngine_) public {
+  constructor(address _safeEngine) {
     authorizedAccounts[msg.sender] = 1;
-    safeEngine = SAFEEngineLike(safeEngine_);
+    safeEngine = SAFEEngineLike(_safeEngine);
     savingsRate = RAY;
     accumulatedRate = RAY;
-    latestUpdateTime = now;
+    latestUpdateTime = block.timestamp;
     contractEnabled = 1;
-  }
-
-  // --- Math ---
-  uint256 constant RAY = 10 ** 27;
-
-  function rpower(uint256 x, uint256 n, uint256 base) internal pure returns (uint256 z) {
-    assembly {
-      switch x
-      case 0 {
-        switch n
-        case 0 { z := base }
-        default { z := 0 }
-      }
-      default {
-        switch mod(n, 2)
-        case 0 { z := base }
-        default { z := x }
-        let half := div(base, 2) // for rounding.
-        for { n := div(n, 2) } n { n := div(n, 2) } {
-          let xx := mul(x, x)
-          if iszero(eq(div(xx, x), x)) { revert(0, 0) }
-          let xxRound := add(xx, half)
-          if lt(xxRound, xx) { revert(0, 0) }
-          x := div(xxRound, base)
-          if mod(n, 2) {
-            let zx := mul(z, x)
-            if and(iszero(iszero(x)), iszero(eq(div(zx, x), z))) { revert(0, 0) }
-            let zxRound := add(zx, half)
-            if lt(zxRound, zx) { revert(0, 0) }
-            z := div(zxRound, base)
-          }
-        }
-      }
-    }
-  }
-
-  function rmultiply(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    z = multiply(x, y) / RAY;
-  }
-
-  function addition(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require((z = x + y) >= x, 'CoinSavingsAccount/add-overflow');
-  }
-
-  function subtract(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require((z = x - y) <= x, 'CoinSavingsAccount/sub-underflow');
-  }
-
-  function multiply(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require(y == 0 || (z = x * y) / y == x, 'CoinSavingsAccount/mul-overflow');
   }
 
   // --- Administration ---
@@ -160,7 +113,7 @@ contract CoinSavingsAccount {
    */
   function modifyParameters(bytes32 parameter, uint256 data) external isAuthorized {
     require(contractEnabled == 1, 'CoinSavingsAccount/contract-not-enabled');
-    require(now == latestUpdateTime, 'CoinSavingsAccount/accumulation-time-not-updated');
+    require(block.timestamp == latestUpdateTime, 'CoinSavingsAccount/accumulation-time-not-updated');
     if (parameter == 'savingsRate') savingsRate = data;
     else revert('CoinSavingsAccount/modify-unrecognized-param');
     emit ModifyParameters(parameter, data);
@@ -194,11 +147,12 @@ contract CoinSavingsAccount {
    *           this contract
    */
   function updateAccumulatedRate() public returns (uint256 newAccumulatedRate) {
-    if (now <= latestUpdateTime) return accumulatedRate;
-    newAccumulatedRate = rmultiply(rpower(savingsRate, subtract(now, latestUpdateTime), RAY), accumulatedRate);
+    if (block.timestamp <= latestUpdateTime) return accumulatedRate;
+    newAccumulatedRate =
+      rmultiply(rpower(savingsRate, subtract(block.timestamp, latestUpdateTime), RAY), accumulatedRate);
     uint256 accumulatedRate_ = subtract(newAccumulatedRate, accumulatedRate);
     accumulatedRate = newAccumulatedRate;
-    latestUpdateTime = now;
+    latestUpdateTime = block.timestamp;
     safeEngine.createUnbackedDebt(address(accountingEngine), address(this), multiply(totalSavings, accumulatedRate_));
     emit UpdateAccumulatedRate(newAccumulatedRate, multiply(totalSavings, accumulatedRate_));
   }
@@ -207,8 +161,8 @@ contract CoinSavingsAccount {
    */
 
   function nextAccumulatedRate() external view returns (uint256) {
-    if (now <= latestUpdateTime) return accumulatedRate;
-    return rmultiply(rpower(savingsRate, subtract(now, latestUpdateTime), RAY), accumulatedRate);
+    if (block.timestamp <= latestUpdateTime) return accumulatedRate;
+    return rmultiply(rpower(savingsRate, subtract(block.timestamp, latestUpdateTime), RAY), accumulatedRate);
   }
 
   // --- Savings Management ---
@@ -219,7 +173,7 @@ contract CoinSavingsAccount {
    */
   function deposit(uint256 wad) external {
     updateAccumulatedRate();
-    require(now == latestUpdateTime, 'CoinSavingsAccount/accumulation-time-not-updated');
+    require(block.timestamp == latestUpdateTime, 'CoinSavingsAccount/accumulation-time-not-updated');
     savings[msg.sender] = addition(savings[msg.sender], wad);
     totalSavings = addition(totalSavings, wad);
     safeEngine.transferInternalCoins(msg.sender, address(this), multiply(accumulatedRate, wad));

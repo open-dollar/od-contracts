@@ -1,4 +1,5 @@
-pragma solidity 0.6.7;
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity 0.8.19;
 
 abstract contract StructLike {
   function val(uint256 _id) public view virtual returns (uint256);

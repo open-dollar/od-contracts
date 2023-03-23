@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0
 /// AccountingEngine.sol
 
 // Copyright (C) 2018 Rain <rainbreak@riseup.net>
@@ -15,19 +16,17 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity 0.6.7;
+pragma solidity 0.8.19;
 
 import {IDebtAuctionHouse as DebtAuctionHouseLike} from '../interfaces/IDebtAuctionHouse.sol';
-
 import {ISurplusAuctionHouse as SurplusAuctionHouseLike} from '../interfaces/ISurplusAuctionHouse.sol';
-
 import {ISAFEEngine as SAFEEngineLike} from '../interfaces/ISAFEEngine.sol';
-
 import {ISystemStakingPool as SystemStakingPoolLike} from '../interfaces/external/ISystemStakingPool.sol';
-
 import {IProtocolTokenAuthority as ProtocolTokenAuthorityLike} from '../interfaces/external/IProtocolTokenAuthority.sol';
 
-contract AccountingEngine {
+import {Math} from './utils/Math.sol';
+
+contract AccountingEngine is Math {
   // --- Auth ---
   mapping(address => uint256) public authorizedAccounts;
   /**
@@ -142,33 +141,20 @@ contract AccountingEngine {
   event TransferExtraSurplus(address indexed extraSurplusReceiver, uint256 lastSurplusAuctionTime, uint256 coinBalance);
 
   // --- Init ---
-  constructor(address safeEngine_, address surplusAuctionHouse_, address debtAuctionHouse_) public {
+  constructor(address _safeEngine, address _surplusAuctionHouse, address _debtAuctionHouse) {
     authorizedAccounts[msg.sender] = 1;
 
-    safeEngine = SAFEEngineLike(safeEngine_);
-    surplusAuctionHouse = SurplusAuctionHouseLike(surplusAuctionHouse_);
-    debtAuctionHouse = DebtAuctionHouseLike(debtAuctionHouse_);
+    safeEngine = SAFEEngineLike(_safeEngine);
+    surplusAuctionHouse = SurplusAuctionHouseLike(_surplusAuctionHouse);
+    debtAuctionHouse = DebtAuctionHouseLike(_debtAuctionHouse);
 
-    safeEngine.approveSAFEModification(surplusAuctionHouse_);
+    safeEngine.approveSAFEModification(_surplusAuctionHouse);
 
-    lastSurplusAuctionTime = now;
-    lastSurplusTransferTime = now;
+    lastSurplusAuctionTime = block.timestamp;
+    lastSurplusTransferTime = block.timestamp;
     contractEnabled = 1;
 
     emit AddAuthorization(msg.sender);
-  }
-
-  // --- Math ---
-  function addition(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require((z = x + y) >= x, 'AccountingEngine/add-overflow');
-  }
-
-  function subtract(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require((z = x - y) <= x, 'AccountingEngine/sub-underflow');
-  }
-
-  function minimum(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    return x <= y ? x : y;
   }
 
   // --- Administration ---
@@ -197,10 +183,10 @@ contract AccountingEngine {
     } else if (parameter == 'surplusBuffer') {
       surplusBuffer = data;
     } else if (parameter == 'lastSurplusTransferTime') {
-      require(data > now, 'AccountingEngine/invalid-lastSurplusTransferTime');
+      require(data > block.timestamp, 'AccountingEngine/invalid-lastSurplusTransferTime');
       lastSurplusTransferTime = data;
     } else if (parameter == 'lastSurplusAuctionTime') {
-      require(data > now, 'AccountingEngine/invalid-lastSurplusAuctionTime');
+      require(data > block.timestamp, 'AccountingEngine/invalid-lastSurplusAuctionTime');
       lastSurplusAuctionTime = data;
     } else if (parameter == 'disableCooldown') {
       disableCooldown = data;
@@ -265,9 +251,9 @@ contract AccountingEngine {
    * @param debtBlock Amount of debt to push
    */
   function pushDebtToQueue(uint256 debtBlock) external isAuthorized {
-    debtQueue[now] = addition(debtQueue[now], debtBlock);
+    debtQueue[block.timestamp] = addition(debtQueue[block.timestamp], debtBlock);
     totalQueuedDebt = addition(totalQueuedDebt, debtBlock);
-    emit PushDebtToQueue(now, debtQueue[now], totalQueuedDebt);
+    emit PushDebtToQueue(block.timestamp, debtQueue[block.timestamp], totalQueuedDebt);
   }
   /**
    * @notice Pop a block of bad debt from the debt queue
@@ -277,11 +263,11 @@ contract AccountingEngine {
    */
 
   function popDebtFromQueue(uint256 debtBlockTimestamp) external {
-    require(addition(debtBlockTimestamp, popDebtDelay) <= now, 'AccountingEngine/pop-debt-delay-not-passed');
+    require(addition(debtBlockTimestamp, popDebtDelay) <= block.timestamp, 'AccountingEngine/pop-debt-delay-not-passed');
     require(debtQueue[debtBlockTimestamp] > 0, 'AccountingEngine/null-debt-block');
     totalQueuedDebt = subtract(totalQueuedDebt, debtQueue[debtBlockTimestamp]);
     debtPoppers[debtBlockTimestamp] = msg.sender;
-    emit PopDebtFromQueue(now, debtQueue[debtBlockTimestamp], totalQueuedDebt);
+    emit PopDebtFromQueue(block.timestamp, debtQueue[debtBlockTimestamp], totalQueuedDebt);
     debtQueue[debtBlockTimestamp] = 0;
   }
 
@@ -348,7 +334,8 @@ contract AccountingEngine {
     require(surplusAuctionAmountToSell > 0, 'AccountingEngine/null-amount-to-auction');
     settleDebt(unqueuedUnauctionedDebt());
     require(
-      now >= addition(lastSurplusAuctionTime, surplusAuctionDelay), 'AccountingEngine/surplus-auction-delay-not-passed'
+      block.timestamp >= addition(lastSurplusAuctionTime, surplusAuctionDelay),
+      'AccountingEngine/surplus-auction-delay-not-passed'
     );
     require(
       safeEngine.coinBalance(address(this))
@@ -357,8 +344,8 @@ contract AccountingEngine {
     );
     require(unqueuedUnauctionedDebt() == 0, 'AccountingEngine/debt-not-zero');
     require(surplusAuctionHouse.protocolToken() != address(0), 'AccountingEngine/surplus-auction-house-null-prot');
-    lastSurplusAuctionTime = now;
-    lastSurplusTransferTime = now;
+    lastSurplusAuctionTime = block.timestamp;
+    lastSurplusTransferTime = block.timestamp;
     id = surplusAuctionHouse.startAuction(surplusAuctionAmountToSell, 0);
     emit AuctionSurplus(id, lastSurplusAuctionTime, safeEngine.coinBalance(address(this)));
   }
@@ -376,7 +363,7 @@ contract AccountingEngine {
     require(surplusTransferAmount > 0, 'AccountingEngine/null-amount-to-transfer');
     settleDebt(unqueuedUnauctionedDebt());
     require(
-      now >= addition(lastSurplusTransferTime, surplusTransferDelay),
+      block.timestamp >= addition(lastSurplusTransferTime, surplusTransferDelay),
       'AccountingEngine/surplus-transfer-delay-not-passed'
     );
     require(
@@ -385,8 +372,8 @@ contract AccountingEngine {
       'AccountingEngine/insufficient-surplus'
     );
     require(unqueuedUnauctionedDebt() == 0, 'AccountingEngine/debt-not-zero');
-    lastSurplusTransferTime = now;
-    lastSurplusAuctionTime = now;
+    lastSurplusTransferTime = block.timestamp;
+    lastSurplusAuctionTime = block.timestamp;
     safeEngine.transferInternalCoins(address(this), extraSurplusReceiver, surplusTransferAmount);
     emit TransferExtraSurplus(extraSurplusReceiver, lastSurplusTransferTime, safeEngine.coinBalance(address(this)));
   }
@@ -405,7 +392,7 @@ contract AccountingEngine {
     totalQueuedDebt = 0;
     totalOnAuctionDebt = 0;
 
-    disableTimestamp = now;
+    disableTimestamp = block.timestamp;
 
     surplusAuctionHouse.disableContract();
     debtAuctionHouse.disableContract();
@@ -426,7 +413,7 @@ contract AccountingEngine {
 
   function transferPostSettlementSurplus() external {
     require(contractEnabled == 0, 'AccountingEngine/still-enabled');
-    require(addition(disableTimestamp, disableCooldown) <= now, 'AccountingEngine/cooldown-not-passed');
+    require(addition(disableTimestamp, disableCooldown) <= block.timestamp, 'AccountingEngine/cooldown-not-passed');
     safeEngine.settleDebt(minimum(safeEngine.coinBalance(address(this)), safeEngine.debtBalance(address(this))));
     safeEngine.transferInternalCoins(address(this), postSettlementSurplusDrain, safeEngine.coinBalance(address(this)));
     emit TransferPostSettlementSurplus(

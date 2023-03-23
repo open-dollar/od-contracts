@@ -1,7 +1,7 @@
-pragma solidity 0.6.7;
+pragma solidity 0.8.19;
 
 import 'ds-test/test.sol';
-import {DSDelegateToken} from 'ds-token/delegate.sol';
+import {DSToken as DSDelegateToken} from '../../contracts/for-test/DSToken.sol';
 
 import {PostSettlementSurplusAuctionHouse} from '../../contracts/SurplusAuctionHouse.sol';
 import '../../contracts/SettlementSurplusAuctioneer.sol';
@@ -111,7 +111,7 @@ contract SingleSettlementSurplusAuctioneerTest is DSTest {
     accountingEngine.toggle();
     safeEngine.mint(address(surplusAuctioneer), 500 ether * 10 ** 9);
     surplusAuctioneer.auctionSurplus();
-    hevm.warp(now + accountingEngine.surplusAuctionDelay());
+    hevm.warp(block.timestamp + accountingEngine.surplusAuctionDelay());
     surplusAuctioneer.auctionSurplus();
   }
 
@@ -119,7 +119,7 @@ contract SingleSettlementSurplusAuctioneerTest is DSTest {
     accountingEngine.toggle();
     safeEngine.mint(address(surplusAuctioneer), 1);
     surplusAuctioneer.auctionSurplus();
-    hevm.warp(now + accountingEngine.surplusAuctionDelay());
+    hevm.warp(block.timestamp + accountingEngine.surplusAuctionDelay());
     uint256 id = surplusAuctioneer.auctionSurplus();
     assertEq(id, 0);
     (uint256 bidAmount, uint256 amountToSell, address highBidder,,) = surplusAuctionHouse.bids(2);

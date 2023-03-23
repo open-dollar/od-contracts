@@ -1,4 +1,4 @@
-pragma solidity 0.6.7;
+pragma solidity 0.8.19;
 
 import 'ds-test/test.sol';
 import {DebtAuctionHouse as DAH} from './DebtAuctionHouse.t.sol';
@@ -160,8 +160,8 @@ contract SingleAccountingEngineTest is DSTest {
 
   function popDebtFromQueue(uint256 wad) internal {
     createUnbackedDebt(address(0), wad); // create unbacked coins into the zero address
-    accountingEngine.popDebtFromQueue(now);
-    assertEq(accountingEngine.debtPoppers(now), address(this));
+    accountingEngine.popDebtFromQueue(block.timestamp);
+    assertEq(accountingEngine.debtPoppers(block.timestamp), address(this));
   }
 
   function settleDebt(uint256 wad) internal {
@@ -193,10 +193,10 @@ contract SingleAccountingEngineTest is DSTest {
     accountingEngine.modifyParameters('popDebtDelay', uint256(100 seconds));
     assertEq(accountingEngine.popDebtDelay(), 100 seconds);
 
-    uint256 tic = now;
+    uint256 tic = block.timestamp;
     accountingEngine.pushDebtToQueue(100 ether);
     assertTrue(!try_popDebtFromQueue(tic));
-    hevm.warp(now + tic + 100 seconds);
+    hevm.warp(block.timestamp + tic + 100 seconds);
     assertTrue(try_popDebtFromQueue(tic));
   }
 
@@ -238,8 +238,8 @@ contract SingleAccountingEngineTest is DSTest {
 
   function testFail_pop_debt_after_being_popped() public {
     popDebtFromQueue(100 ether);
-    assertEq(accountingEngine.debtPoppers(now), address(this));
-    alice.popDebtFromQueue(address(accountingEngine), now);
+    assertEq(accountingEngine.debtPoppers(block.timestamp), address(this));
+    alice.popDebtFromQueue(address(accountingEngine), block.timestamp);
   }
 
   function test_surplus_auction_when_transfer_permitted() public {
@@ -308,7 +308,7 @@ contract SingleAccountingEngineTest is DSTest {
     accountingEngine.modifyParameters('surplusTransferDelay', 1);
     safeEngine.mint(address(accountingEngine), 200 ether);
     assertTrue(!can_TransferSurplus());
-    hevm.warp(now + 1);
+    hevm.warp(block.timestamp + 1);
     accountingEngine.transferExtraSurplus();
     assertEq(safeEngine.coinBalance(address(1)), 100 ether);
     assertTrue(!can_TransferSurplus());
@@ -344,7 +344,7 @@ contract SingleAccountingEngineTest is DSTest {
 
     assertEq(safeEngine.coinBalance(address(accountingEngine)), rad(100 ether));
     assertEq(safeEngine.coinBalance(address(postSettlementSurplusDrain)), 0);
-    hevm.warp(now + 1);
+    hevm.warp(block.timestamp + 1);
 
     accountingEngine.transferPostSettlementSurplus();
     assertEq(safeEngine.coinBalance(address(accountingEngine)), 0);

@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity 0.6.7;
+pragma solidity 0.8.19;
 
 import 'ds-test/test.sol';
 import {SAFEEngine} from '../../contracts/SAFEEngine.sol';
@@ -78,7 +78,7 @@ contract SingleCoinSavingsAccountTest is DSTest {
   function test_save_1d() public {
     coinSavingsAccount.deposit(100 ether);
     coinSavingsAccount.modifyParameters('savingsRate', uint256(1_000_000_564_701_133_626_865_910_626)); // 5% / day
-    hevm.warp(now + 1 days);
+    hevm.warp(block.timestamp + 1 days);
     coinSavingsAccount.updateAccumulatedRate();
     assertEq(coinSavingsAccount.savings(self), 100 ether);
     coinSavingsAccount.withdraw(100 ether);
@@ -88,11 +88,11 @@ contract SingleCoinSavingsAccountTest is DSTest {
   function test_update_rate_multi() public {
     coinSavingsAccount.deposit(100 ether);
     coinSavingsAccount.modifyParameters('savingsRate', uint256(1_000_000_564_701_133_626_865_910_626)); // 5% / day
-    hevm.warp(now + 1 days);
+    hevm.warp(block.timestamp + 1 days);
     coinSavingsAccount.updateAccumulatedRate();
     assertEq(wad(safeEngine.coinBalance(coinSavingsAccountB)), 105 ether);
     coinSavingsAccount.modifyParameters('savingsRate', uint256(1_000_001_103_127_689_513_476_993_127)); // 10% / day
-    hevm.warp(now + 1 days);
+    hevm.warp(block.timestamp + 1 days);
     coinSavingsAccount.updateAccumulatedRate();
     assertEq(wad(safeEngine.debtBalance(accountingEngine)), 15.5 ether);
     assertEq(wad(safeEngine.coinBalance(coinSavingsAccountB)), 115.5 ether);
@@ -103,29 +103,29 @@ contract SingleCoinSavingsAccountTest is DSTest {
   function test_update_rate_multi_inBlock() public {
     coinSavingsAccount.updateAccumulatedRate();
     uint256 latestUpdateTime = coinSavingsAccount.latestUpdateTime();
-    assertEq(latestUpdateTime, now);
-    hevm.warp(now + 1 days);
+    assertEq(latestUpdateTime, block.timestamp);
+    hevm.warp(block.timestamp + 1 days);
     latestUpdateTime = coinSavingsAccount.latestUpdateTime();
-    assertEq(latestUpdateTime, now - 1 days);
+    assertEq(latestUpdateTime, block.timestamp - 1 days);
     coinSavingsAccount.updateAccumulatedRate();
     latestUpdateTime = coinSavingsAccount.latestUpdateTime();
-    assertEq(latestUpdateTime, now);
+    assertEq(latestUpdateTime, block.timestamp);
     coinSavingsAccount.updateAccumulatedRate();
     latestUpdateTime = coinSavingsAccount.latestUpdateTime();
-    assertEq(latestUpdateTime, now);
+    assertEq(latestUpdateTime, block.timestamp);
   }
 
   function test_save_multi() public {
     coinSavingsAccount.deposit(100 ether);
     coinSavingsAccount.modifyParameters('savingsRate', uint256(1_000_000_564_701_133_626_865_910_626)); // 5% / day
-    hevm.warp(now + 1 days);
+    hevm.warp(block.timestamp + 1 days);
     coinSavingsAccount.updateAccumulatedRate();
     coinSavingsAccount.withdraw(50 ether);
     assertEq(wad(safeEngine.coinBalance(self)), 52.5 ether);
     assertEq(coinSavingsAccount.totalSavings(), 50.0 ether);
 
     coinSavingsAccount.modifyParameters('savingsRate', uint256(1_000_001_103_127_689_513_476_993_127)); // 10% / day
-    hevm.warp(now + 1 days);
+    hevm.warp(block.timestamp + 1 days);
     coinSavingsAccount.updateAccumulatedRate();
     coinSavingsAccount.withdraw(50 ether);
     assertEq(wad(safeEngine.coinBalance(self)), 110.25 ether);
@@ -134,9 +134,9 @@ contract SingleCoinSavingsAccountTest is DSTest {
 
   function test_fresh_accumulatedRate() public {
     uint256 rho = coinSavingsAccount.latestUpdateTime();
-    assertEq(rho, now);
-    hevm.warp(now + 1 days);
-    assertEq(rho, now - 1 days);
+    assertEq(rho, block.timestamp);
+    hevm.warp(block.timestamp + 1 days);
+    assertEq(rho, block.timestamp - 1 days);
     coinSavingsAccount.updateAccumulatedRate();
     coinSavingsAccount.deposit(100 ether);
     assertEq(coinSavingsAccount.savings(self), 100 ether);
@@ -148,18 +148,18 @@ contract SingleCoinSavingsAccountTest is DSTest {
   function testFail_stale_accumulatedRate() public {
     coinSavingsAccount.modifyParameters('savingsRate', uint256(1_000_000_564_701_133_626_865_910_626)); // 5% / day
     coinSavingsAccount.updateAccumulatedRate();
-    hevm.warp(now + 1 days);
+    hevm.warp(block.timestamp + 1 days);
     coinSavingsAccount.deposit(100 ether);
   }
 
   function test_modifyParameters() public {
-    hevm.warp(now + 1);
+    hevm.warp(block.timestamp + 1);
     coinSavingsAccount.updateAccumulatedRate();
     coinSavingsAccount.modifyParameters('savingsRate', uint256(1));
   }
 
   function testFail_modifyParameters() public {
-    hevm.warp(now + 1);
+    hevm.warp(block.timestamp + 1);
     coinSavingsAccount.modifyParameters('savingsRate', uint256(1));
   }
 }

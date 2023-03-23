@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0
 // Copyright (C) 2017, 2018, 2019 dbrock, rain, mrchico
 
 // This program is free software: you can redistribute it and/or modify
@@ -13,9 +14,11 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity 0.6.7;
+pragma solidity 0.8.19;
 
-contract Coin {
+import {Math} from './Math.sol';
+
+contract Coin is Math {
   // --- Auth ---
   mapping(address => uint256) public authorizedAccounts;
   /**
@@ -74,21 +77,12 @@ contract Coin {
   event Approval(address indexed src, address indexed guy, uint256 amount);
   event Transfer(address indexed src, address indexed dst, uint256 amount);
 
-  // --- Math ---
-  function addition(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require((z = x + y) >= x, 'Coin/add-overflow');
-  }
-
-  function subtract(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require((z = x - y) <= x, 'Coin/sub-underflow');
-  }
-
   // --- EIP712 niceties ---
   bytes32 public DOMAIN_SEPARATOR;
   // bytes32 public constant PERMIT_TYPEHASH = keccak256("Permit(address holder,address spender,uint256 nonce,uint256 expiry,bool allowed)");
   bytes32 public constant PERMIT_TYPEHASH = 0xea2aa0a1be11a07ed86d755c93467f4f82362b452371d1ba94d1715123511acb;
 
-  constructor(string memory name_, string memory symbol_, uint256 chainId_) public {
+  constructor(string memory name_, string memory symbol_, uint256 chainId_) {
     authorizedAccounts[msg.sender] = 1;
     name = name_;
     symbol = symbol_;
@@ -125,7 +119,7 @@ contract Coin {
     require(dst != address(0), 'Coin/null-dst');
     require(dst != address(this), 'Coin/dst-cannot-be-this-contract');
     require(balanceOf[src] >= amount, 'Coin/insufficient-balance');
-    if (src != msg.sender && allowance[src][msg.sender] != uint256(-1)) {
+    if (src != msg.sender && allowance[src][msg.sender] != uint256(int256(-1))) {
       require(allowance[src][msg.sender] >= amount, 'Coin/insufficient-allowance');
       allowance[src][msg.sender] = subtract(allowance[src][msg.sender], amount);
     }
@@ -153,7 +147,7 @@ contract Coin {
 
   function burn(address usr, uint256 amount) external {
     require(balanceOf[usr] >= amount, 'Coin/insufficient-balance');
-    if (usr != msg.sender && allowance[usr][msg.sender] != uint256(-1)) {
+    if (usr != msg.sender && allowance[usr][msg.sender] != uint256(int256(-1))) {
       require(allowance[usr][msg.sender] >= amount, 'Coin/insufficient-allowance');
       allowance[usr][msg.sender] = subtract(allowance[usr][msg.sender], amount);
     }
@@ -224,9 +218,9 @@ contract Coin {
 
     require(holder != address(0), 'Coin/invalid-address-0');
     require(holder == ecrecover(digest, v, r, s), 'Coin/invalid-permit');
-    require(expiry == 0 || now <= expiry, 'Coin/permit-expired');
+    require(expiry == 0 || block.timestamp <= expiry, 'Coin/permit-expired');
     require(nonce == nonces[holder]++, 'Coin/invalid-nonce');
-    uint256 wad = allowed ? uint256(-1) : 0;
+    uint256 wad = allowed ? uint256(int256(-1)) : 0;
     allowance[holder][spender] = wad;
     emit Approval(holder, spender, wad);
   }

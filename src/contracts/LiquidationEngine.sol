@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0
 /// LiquidationEngine.sol
 
 // Copyright (C) 2018 Rain <rainbreak@riseup.net>
@@ -15,14 +16,16 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity 0.6.7;
+pragma solidity 0.8.19;
 
 import {ICollateralAuctionHouse as CollateralAuctionHouseLike} from '../interfaces/ICollateralAuctionHouse.sol';
 import {ISAFESaviour as SAFESaviourLike} from '../interfaces/external/ISAFESaviour.sol';
 import {ISAFEEngine as SAFEEngineLike} from '../interfaces/ISAFEEngine.sol';
 import {IAccountingEngine as AccountingEngineLike} from '../interfaces/IAccountingEngine.sol';
 
-contract LiquidationEngine {
+import {Math} from './utils/Math.sol';
+
+contract LiquidationEngine is Math {
   // --- Auth ---
   mapping(address => uint256) public authorizedAccounts;
   /**
@@ -66,7 +69,10 @@ contract LiquidationEngine {
     (bool ok, uint256 collateralAdded, uint256 liquidatorReward) =
       SAFESaviourLike(saviour).saveSAFE(address(this), '', address(0));
     require(ok, 'LiquidationEngine/saviour-not-ok');
-    require(both(collateralAdded == uint256(-1), liquidatorReward == uint256(-1)), 'LiquidationEngine/invalid-amounts');
+    require(
+      collateralAdded == uint256(int256(-1)) && liquidatorReward == uint256(int256(-1)),
+      'LiquidationEngine/invalid-amounts'
+    );
     safeSaviours[saviour] = 1;
     emit ConnectSAFESaviour(saviour);
   }
@@ -133,50 +139,15 @@ contract LiquidationEngine {
   event ProtectSAFE(bytes32 indexed collateralType, address indexed safe, address saviour);
 
   // --- Init ---
-  constructor(address safeEngine_) public {
+  constructor(address _safeEngine) {
     authorizedAccounts[msg.sender] = 1;
 
-    safeEngine = SAFEEngineLike(safeEngine_);
-    onAuctionSystemCoinLimit = uint256(-1);
+    safeEngine = SAFEEngineLike(_safeEngine);
+    onAuctionSystemCoinLimit = uint256(int256(-1));
     contractEnabled = 1;
 
     emit AddAuthorization(msg.sender);
-    emit ModifyParameters('onAuctionSystemCoinLimit', uint256(-1));
-  }
-
-  // --- Math ---
-  uint256 constant WAD = 10 ** 18;
-  uint256 constant RAY = 10 ** 27;
-  uint256 constant MAX_LIQUIDATION_QUANTITY = uint256(-1) / RAY;
-
-  function addition(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require((z = x + y) >= x, 'LiquidationEngine/add-overflow');
-  }
-
-  function subtract(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require((z = x - y) <= x, 'LiquidationEngine/sub-underflow');
-  }
-
-  function multiply(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require(y == 0 || (z = x * y) / y == x, 'LiquidationEngine/mul-overflow');
-  }
-
-  function minimum(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    if (x > y) z = y;
-    else z = x;
-  }
-
-  // --- Utils ---
-  function both(bool x, bool y) internal pure returns (bool z) {
-    assembly {
-      z := and(x, y)
-    }
-  }
-
-  function either(bool x, bool y) internal pure returns (bool z) {
-    assembly {
-      z := or(x, y)
-    }
+    emit ModifyParameters('onAuctionSystemCoinLimit', uint256(int256(-1)));
   }
 
   // --- Administration ---
@@ -274,14 +245,12 @@ contract LiquidationEngine {
 
     require(contractEnabled == 1, 'LiquidationEngine/contract-not-enabled');
     require(
-      both(liquidationPrice > 0, multiply(safeCollateral, liquidationPrice) < multiply(safeDebt, accumulatedRate)),
+      liquidationPrice > 0 && multiply(safeCollateral, liquidationPrice) < multiply(safeDebt, accumulatedRate),
       'LiquidationEngine/safe-not-unsafe'
     );
     require(
-      both(
-        currentOnAuctionSystemCoins < onAuctionSystemCoinLimit,
-        subtract(onAuctionSystemCoinLimit, currentOnAuctionSystemCoins) >= debtFloor
-      ),
+      currentOnAuctionSystemCoins < onAuctionSystemCoinLimit
+        && subtract(onAuctionSystemCoinLimit, currentOnAuctionSystemCoins) >= debtFloor,
       'LiquidationEngine/liquidation-limit-hit'
     );
 
@@ -292,7 +261,7 @@ contract LiquidationEngine {
       try SAFESaviourLike(chosenSAFESaviour[collateralType][safe]).saveSAFE(msg.sender, collateralType, safe) returns (
         bool ok, uint256 collateralAddedOrDebtRepaid, uint256
       ) {
-        if (both(ok, collateralAddedOrDebtRepaid > 0)) {
+        if (ok && collateralAddedOrDebtRepaid > 0) {
           emit SaveSAFE(collateralType, safe, collateralAddedOrDebtRepaid);
         }
       } catch (bytes memory revertReason) {
@@ -304,7 +273,7 @@ contract LiquidationEngine {
     {
       (uint256 newSafeCollateral, uint256 newSafeDebt) = safeEngine.safes(collateralType, safe);
       require(
-        both(newSafeCollateral >= safeCollateral, newSafeDebt <= safeDebt),
+        newSafeCollateral >= safeCollateral && newSafeDebt <= safeDebt,
         'LiquidationEngine/invalid-safe-saviour-operation'
       );
     }
@@ -312,7 +281,7 @@ contract LiquidationEngine {
     (, accumulatedRate,,,, liquidationPrice) = safeEngine.collateralTypes(collateralType);
     (safeCollateral, safeDebt) = safeEngine.safes(collateralType, safe);
 
-    if (both(liquidationPrice > 0, multiply(safeCollateral, liquidationPrice) < multiply(safeDebt, accumulatedRate))) {
+    if ((liquidationPrice > 0) && (multiply(safeCollateral, liquidationPrice) < multiply(safeDebt, accumulatedRate))) {
       CollateralType memory collateralData = collateralTypes[collateralType];
 
       uint256 limitAdjustedDebt = minimum(
@@ -324,9 +293,8 @@ contract LiquidationEngine {
       );
       require(limitAdjustedDebt > 0, 'LiquidationEngine/null-auction');
       require(
-        either(
-          limitAdjustedDebt == safeDebt, multiply(subtract(safeDebt, limitAdjustedDebt), accumulatedRate) >= debtFloor
-        ),
+        (limitAdjustedDebt == safeDebt)
+          || (multiply(subtract(safeDebt, limitAdjustedDebt), accumulatedRate) >= debtFloor),
         'LiquidationEngine/dusty-safe'
       );
 
@@ -334,8 +302,7 @@ contract LiquidationEngine {
 
       require(collateralToSell > 0, 'LiquidationEngine/null-collateral-to-sell');
       require(
-        both(collateralToSell <= 2 ** 255, limitAdjustedDebt <= 2 ** 255),
-        'LiquidationEngine/collateral-or-debt-overflow'
+        collateralToSell <= 2 ** 255 && limitAdjustedDebt <= 2 ** 255, 'LiquidationEngine/collateral-or-debt-overflow'
       );
 
       safeEngine.confiscateSAFECollateralAndDebt(

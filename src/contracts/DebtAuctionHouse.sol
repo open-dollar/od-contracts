@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0
 /// DebtAuctionHouse.sol
 
 // Copyright (C) 2018 Rain <rainbreak@riseup.net>
@@ -15,16 +16,18 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity 0.6.7;
+pragma solidity 0.8.19;
 
 import {ISAFEEngine as SAFEEngineLike} from '../interfaces/ISAFEEngine.sol';
 import {IToken as TokenLike} from '../interfaces/external/IToken.sol';
 import {IAccountingEngine as AccountingEngineLike} from '../interfaces/IAccountingEngine.sol';
 
+import {Math} from './utils/Math.sol';
+
 /*
    This thing creates protocol tokens on demand in return for system coins*/
 
-contract DebtAuctionHouse {
+contract DebtAuctionHouse is Math {
   // --- Auth ---
   mapping(address => uint256) public authorizedAccounts;
   /**
@@ -79,7 +82,6 @@ contract DebtAuctionHouse {
   // Accounting engine
   address public accountingEngine;
 
-  uint256 constant ONE = 1.0e18; // [wad]
   // Minimum bid increase compared to the last bid in order to take the new one in consideration
   uint256 public bidDecrease = 1.05e18; // [wad]
   // Increase in protocol tokens sold in case an auction is restarted
@@ -119,34 +121,12 @@ contract DebtAuctionHouse {
   event DisableContract(address sender);
 
   // --- Init ---
-  constructor(address safeEngine_, address protocolToken_) public {
+  constructor(address _safeEngine, address _protocolToken) {
     authorizedAccounts[msg.sender] = 1;
-    safeEngine = SAFEEngineLike(safeEngine_);
-    protocolToken = TokenLike(protocolToken_);
+    safeEngine = SAFEEngineLike(_safeEngine);
+    protocolToken = TokenLike(_protocolToken);
     contractEnabled = 1;
     emit AddAuthorization(msg.sender);
-  }
-
-  // --- Math ---
-  function addUint48(uint48 x, uint48 y) internal pure returns (uint48 z) {
-    require((z = x + y) >= x, 'DebtAuctionHouse/add-uint48-overflow');
-  }
-
-  function addUint256(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require((z = x + y) >= x, 'DebtAuctionHouse/add-uint256-overflow');
-  }
-
-  function subtract(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require((z = x - y) <= x, 'DebtAuctionHouse/sub-underflow');
-  }
-
-  function multiply(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require(y == 0 || (z = x * y) / y == x, 'DebtAuctionHouse/mul-overflow');
-  }
-
-  function minimum(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    if (x > y) z = y;
-    else z = x;
   }
 
   // --- Admin ---
@@ -190,13 +170,13 @@ contract DebtAuctionHouse {
     uint256 initialBid
   ) external isAuthorized returns (uint256 id) {
     require(contractEnabled == 1, 'DebtAuctionHouse/contract-not-enabled');
-    require(auctionsStarted < uint256(-1), 'DebtAuctionHouse/overflow');
+    require(auctionsStarted < uint256(int256(-1)), 'DebtAuctionHouse/overflow');
     id = ++auctionsStarted;
 
     bids[id].bidAmount = initialBid;
     bids[id].amountToSell = amountToSell;
     bids[id].highBidder = incomeReceiver;
-    bids[id].auctionDeadline = addUint48(uint48(now), totalAuctionLength);
+    bids[id].auctionDeadline = addUint48(uint48(block.timestamp), totalAuctionLength);
 
     activeDebtAuctions = addUint256(activeDebtAuctions, 1);
 
@@ -211,10 +191,10 @@ contract DebtAuctionHouse {
 
   function restartAuction(uint256 id) external {
     require(id <= auctionsStarted, 'DebtAuctionHouse/auction-never-started');
-    require(bids[id].auctionDeadline < now, 'DebtAuctionHouse/not-finished');
+    require(bids[id].auctionDeadline < block.timestamp, 'DebtAuctionHouse/not-finished');
     require(bids[id].bidExpiry == 0, 'DebtAuctionHouse/bid-already-placed');
-    bids[id].amountToSell = multiply(amountSoldIncrease, bids[id].amountToSell) / ONE;
-    bids[id].auctionDeadline = addUint48(uint48(now), totalAuctionLength);
+    bids[id].amountToSell = multiply(amountSoldIncrease, bids[id].amountToSell) / ONE_ETH;
+    bids[id].auctionDeadline = addUint48(uint48(block.timestamp), totalAuctionLength);
     emit RestartAuction(id, bids[id].auctionDeadline);
   }
   /**
@@ -228,13 +208,13 @@ contract DebtAuctionHouse {
   function decreaseSoldAmount(uint256 id, uint256 amountToBuy, uint256 bid) external {
     require(contractEnabled == 1, 'DebtAuctionHouse/contract-not-enabled');
     require(bids[id].highBidder != address(0), 'DebtAuctionHouse/high-bidder-not-set');
-    require(bids[id].bidExpiry > now || bids[id].bidExpiry == 0, 'DebtAuctionHouse/bid-already-expired');
-    require(bids[id].auctionDeadline > now, 'DebtAuctionHouse/auction-already-expired');
+    require(bids[id].bidExpiry > block.timestamp || bids[id].bidExpiry == 0, 'DebtAuctionHouse/bid-already-expired');
+    require(bids[id].auctionDeadline > block.timestamp, 'DebtAuctionHouse/auction-already-expired');
 
     require(bid == bids[id].bidAmount, 'DebtAuctionHouse/not-matching-bid');
     require(amountToBuy < bids[id].amountToSell, 'DebtAuctionHouse/amount-bought-not-lower');
     require(
-      multiply(bidDecrease, amountToBuy) <= multiply(bids[id].amountToSell, ONE),
+      multiply(bidDecrease, amountToBuy) <= multiply(bids[id].amountToSell, ONE_ETH),
       'DebtAuctionHouse/insufficient-decrease'
     );
 
@@ -248,7 +228,7 @@ contract DebtAuctionHouse {
 
     bids[id].highBidder = msg.sender;
     bids[id].amountToSell = amountToBuy;
-    bids[id].bidExpiry = addUint48(uint48(now), bidDuration);
+    bids[id].bidExpiry = addUint48(uint48(block.timestamp), bidDuration);
 
     emit DecreaseSoldAmount(id, msg.sender, amountToBuy, bid, bids[id].bidExpiry);
   }
@@ -260,11 +240,11 @@ contract DebtAuctionHouse {
   function settleAuction(uint256 id) external {
     require(contractEnabled == 1, 'DebtAuctionHouse/not-live');
     require(
-      bids[id].bidExpiry != 0 && (bids[id].bidExpiry < now || bids[id].auctionDeadline < now),
+      bids[id].bidExpiry != 0 && (bids[id].bidExpiry < block.timestamp || bids[id].auctionDeadline < block.timestamp),
       'DebtAuctionHouse/not-finished'
     );
     protocolToken.mint(bids[id].highBidder, bids[id].amountToSell);
-    activeDebtAuctions = subtract(activeDebtAuctions, 1);
+    activeDebtAuctions = subtract(activeDebtAuctions, uint256(1));
     delete bids[id];
     emit SettleAuction(id, activeDebtAuctions);
   }

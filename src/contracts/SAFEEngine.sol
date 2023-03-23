@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0
 /// SAFEEngine.sol -- SAFE database
 
 // Copyright (C) 2018 Rain <rainbreak@riseup.net>
@@ -15,9 +16,11 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity 0.6.7;
+pragma solidity 0.8.19;
 
-contract SAFEEngine {
+import {Math} from './utils/Math.sol';
+
+contract SAFEEngine is Math {
   // --- Auth ---
   mapping(address => uint256) public authorizedAccounts;
   /**
@@ -76,7 +79,7 @@ contract SAFEEngine {
    */
 
   function canModifySAFE(address safe, address account) public view returns (bool) {
-    return either(safe == account, safeRights[safe][account] == 1);
+    return safe == account || safeRights[safe][account] == 1;
   }
 
   // --- Data ---
@@ -193,55 +196,12 @@ contract SAFEEngine {
   );
 
   // --- Init ---
-  constructor() public {
+  constructor() {
     authorizedAccounts[msg.sender] = 1;
-    safeDebtCeiling = uint256(-1);
+    safeDebtCeiling = uint256(int256(-1));
     contractEnabled = 1;
     emit AddAuthorization(msg.sender);
-    emit ModifyParameters('safeDebtCeiling', uint256(-1));
-  }
-
-  // --- Math ---
-  function addition(uint256 x, int256 y) internal pure returns (uint256 z) {
-    z = x + uint256(y);
-    require(y >= 0 || z <= x, 'SAFEEngine/add-uint-int-overflow');
-    require(y <= 0 || z >= x, 'SAFEEngine/add-uint-int-underflow');
-  }
-
-  function addition(int256 x, int256 y) internal pure returns (int256 z) {
-    z = x + y;
-    require(y >= 0 || z <= x, 'SAFEEngine/add-int-int-overflow');
-    require(y <= 0 || z >= x, 'SAFEEngine/add-int-int-underflow');
-  }
-
-  function subtract(uint256 x, int256 y) internal pure returns (uint256 z) {
-    z = x - uint256(y);
-    require(y <= 0 || z <= x, 'SAFEEngine/sub-uint-int-overflow');
-    require(y >= 0 || z >= x, 'SAFEEngine/sub-uint-int-underflow');
-  }
-
-  function subtract(int256 x, int256 y) internal pure returns (int256 z) {
-    z = x - y;
-    require(y <= 0 || z <= x, 'SAFEEngine/sub-int-int-overflow');
-    require(y >= 0 || z >= x, 'SAFEEngine/sub-int-int-underflow');
-  }
-
-  function multiply(uint256 x, int256 y) internal pure returns (int256 z) {
-    z = int256(x) * y;
-    require(int256(x) >= 0, 'SAFEEngine/mul-uint-int-null-x');
-    require(y == 0 || z / y == int256(x), 'SAFEEngine/mul-uint-int-overflow');
-  }
-
-  function addition(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require((z = x + y) >= x, 'SAFEEngine/add-uint-uint-overflow');
-  }
-
-  function subtract(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require((z = x - y) <= x, 'SAFEEngine/sub-uint-uint-underflow');
-  }
-
-  function multiply(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require(y == 0 || (z = x * y) / y == x, 'SAFEEngine/multiply-uint-uint-overflow');
+    emit ModifyParameters('safeDebtCeiling', uint256(int256(-1)));
   }
 
   // --- Administration ---
@@ -331,18 +291,6 @@ contract SAFEEngine {
     emit TransferInternalCoins(src, dst, rad);
   }
 
-  function either(bool x, bool y) internal pure returns (bool z) {
-    assembly {
-      z := or(x, y)
-    }
-  }
-
-  function both(bool x, bool y) internal pure returns (bool z) {
-    assembly {
-      z := and(x, y)
-    }
-  }
-
   // --- SAFE Manipulation ---
   /**
    * @notice Add/remove collateral or put back/generate more debt in a SAFE
@@ -379,38 +327,34 @@ contract SAFEEngine {
 
     // either debt has decreased, or debt ceilings are not exceeded
     require(
-      either(
-        deltaDebt <= 0,
-        both(
-          multiply(collateralTypeData.debtAmount, collateralTypeData.accumulatedRate) <= collateralTypeData.debtCeiling,
-          globalDebt <= globalDebtCeiling
-        )
-      ),
+      deltaDebt <= 0
+        || (
+          multiply(collateralTypeData.debtAmount, collateralTypeData.accumulatedRate) <= collateralTypeData.debtCeiling
+            && globalDebt <= globalDebtCeiling
+        ),
       'SAFEEngine/ceiling-exceeded'
     );
     // safe is either less risky than before, or it is safe
     require(
-      either(
-        both(deltaDebt <= 0, deltaCollateral >= 0),
-        totalDebtIssued <= multiply(safeData.lockedCollateral, collateralTypeData.safetyPrice)
-      ),
+      (deltaDebt <= 0 && deltaCollateral >= 0)
+        || totalDebtIssued <= multiply(safeData.lockedCollateral, collateralTypeData.safetyPrice),
       'SAFEEngine/not-safe'
     );
 
     // safe is either more safe, or the owner consents
     require(
-      either(both(deltaDebt <= 0, deltaCollateral >= 0), canModifySAFE(safe, msg.sender)),
+      (deltaDebt <= 0 && deltaCollateral >= 0) || canModifySAFE(safe, msg.sender),
       'SAFEEngine/not-allowed-to-modify-safe'
     );
     // collateral src consents
     require(
-      either(deltaCollateral <= 0, canModifySAFE(collateralSource, msg.sender)), 'SAFEEngine/not-allowed-collateral-src'
+      deltaCollateral <= 0 || canModifySAFE(collateralSource, msg.sender), 'SAFEEngine/not-allowed-collateral-src'
     );
     // debt dst consents
-    require(either(deltaDebt >= 0, canModifySAFE(debtDestination, msg.sender)), 'SAFEEngine/not-allowed-debt-dst');
+    require(deltaDebt >= 0 || canModifySAFE(debtDestination, msg.sender), 'SAFEEngine/not-allowed-debt-dst');
 
     // safe has no debt, or a non-dusty amount
-    require(either(safeData.generatedDebt == 0, totalDebtIssued >= collateralTypeData.debtFloor), 'SAFEEngine/dust');
+    require(safeData.generatedDebt == 0 || totalDebtIssued >= collateralTypeData.debtFloor, 'SAFEEngine/dust');
 
     // safe didn't go above the safe debt limit
     if (deltaDebt > 0) {
@@ -467,7 +411,7 @@ contract SAFEEngine {
     uint256 dstTotalDebtIssued = multiply(dstSAFE.generatedDebt, collateralType_.accumulatedRate);
 
     // both sides consent
-    require(both(canModifySAFE(src, msg.sender), canModifySAFE(dst, msg.sender)), 'SAFEEngine/not-allowed');
+    require(canModifySAFE(src, msg.sender) && canModifySAFE(dst, msg.sender), 'SAFEEngine/not-allowed');
 
     // both sides safe
     require(
@@ -478,8 +422,8 @@ contract SAFEEngine {
     );
 
     // both sides non-dusty
-    require(either(srcTotalDebtIssued >= collateralType_.debtFloor, srcSAFE.generatedDebt == 0), 'SAFEEngine/dust-src');
-    require(either(dstTotalDebtIssued >= collateralType_.debtFloor, dstSAFE.generatedDebt == 0), 'SAFEEngine/dust-dst');
+    require(srcTotalDebtIssued >= collateralType_.debtFloor || srcSAFE.generatedDebt == 0, 'SAFEEngine/dust-src');
+    require(dstTotalDebtIssued >= collateralType_.debtFloor || dstSAFE.generatedDebt == 0, 'SAFEEngine/dust-dst');
 
     emit TransferSAFECollateralAndDebt(
       collateralType,

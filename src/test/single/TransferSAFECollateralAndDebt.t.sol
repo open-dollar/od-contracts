@@ -1,4 +1,4 @@
-pragma solidity 0.6.7;
+pragma solidity 0.8.19;
 
 import 'ds-test/test.sol';
 
@@ -7,7 +7,7 @@ import {SAFEEngine} from '../../contracts/SAFEEngine.sol';
 contract Usr {
   SAFEEngine public safeEngine;
 
-  constructor(SAFEEngine safeEngine_) public {
+  constructor(SAFEEngine safeEngine_) {
     safeEngine = safeEngine_;
   }
 

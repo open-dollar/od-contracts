@@ -1,7 +1,6 @@
-pragma solidity 0.6.7;
+pragma solidity 0.8.19;
 
 import 'ds-test/test.sol';
-import {DSDelegateToken} from 'ds-token/delegate.sol';
 
 import {SAFEEngine} from '../../contracts/SAFEEngine.sol';
 import {
@@ -24,7 +23,7 @@ contract Guy {
     EnglishCollateralAuctionHouse englishCollateralAuctionHouse_,
     FixedDiscountCollateralAuctionHouse fixedDiscountCollateralAuctionHouse_,
     IncreasingDiscountCollateralAuctionHouse increasingDiscountCollateralAuctionHouse_
-  ) public {
+  ) {
     englishCollateralAuctionHouse = englishCollateralAuctionHouse_;
     fixedDiscountCollateralAuctionHouse = fixedDiscountCollateralAuctionHouse_;
     increasingDiscountCollateralAuctionHouse = increasingDiscountCollateralAuctionHouse_;
@@ -141,7 +140,7 @@ contract Feed {
   uint256 public priceFeedValue;
   bool public hasValidValue;
 
-  constructor(bytes32 initPrice, bool initHas) public {
+  constructor(bytes32 initPrice, bool initHas) {
     priceFeedValue = uint256(initPrice);
     hasValidValue = initHas;
   }
@@ -167,7 +166,7 @@ contract PartiallyImplementedFeed {
   uint256 public priceFeedValue;
   bool public hasValidValue;
 
-  constructor(bytes32 initPrice, bool initHas) public {
+  constructor(bytes32 initPrice, bool initHas) {
     priceFeedValue = uint256(initPrice);
     hasValidValue = initHas;
   }
@@ -188,7 +187,7 @@ contract PartiallyImplementedFeed {
 contract DummyLiquidationEngine {
   uint256 public currentOnAuctionSystemCoins;
 
-  constructor(uint256 rad) public {
+  constructor(uint256 rad) {
     currentOnAuctionSystemCoins = rad;
   }
 
@@ -302,7 +301,7 @@ contract SingleEnglishCollateralAuctionHouseTest is DSTest {
     // auctionIncomeRecipient receives excess
     assertEq(safeEngine.coin_balance(auctionIncomeRecipient), 2 ether);
 
-    hevm.warp(now + 5 hours);
+    hevm.warp(block.timestamp + 5 hours);
     Guy(bob).settleAuction(id);
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), rad(1000 ether) - 50 ether);
     // bob gets the winnings
@@ -317,7 +316,7 @@ contract SingleEnglishCollateralAuctionHouseTest is DSTest {
       auctionIncomeRecipient: auctionIncomeRecipient,
       initialBid: 0
     });
-    hevm.warp(now + 5 hours);
+    hevm.warp(block.timestamp + 5 hours);
 
     Guy(ali).increaseBidSize(id, 100 ether, 1 ether);
     // initialBid taken from bidder
@@ -379,7 +378,7 @@ contract SingleEnglishCollateralAuctionHouseTest is DSTest {
     // only after bid expiry
     Guy(ali).increaseBidSize(id, 100 ether, 1 ether);
     assertTrue(!Guy(bob).try_settleAuction(id));
-    hevm.warp(now + 4.1 hours);
+    hevm.warp(block.timestamp + 4.1 hours);
     assertTrue(Guy(bob).try_settleAuction(id));
 
     uint256 ie = collateralAuctionHouse.startAuction({
@@ -391,10 +390,10 @@ contract SingleEnglishCollateralAuctionHouseTest is DSTest {
     });
 
     // or after end
-    hevm.warp(now + 44 hours);
+    hevm.warp(block.timestamp + 44 hours);
     Guy(ali).increaseBidSize(ie, 100 ether, 1 ether);
     assertTrue(!Guy(bob).try_settleAuction(ie));
-    hevm.warp(now + 1 days);
+    hevm.warp(block.timestamp + 1 days);
     assertTrue(Guy(bob).try_settleAuction(ie));
 
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), rad(1000 ether) - 100 ether);
@@ -412,7 +411,7 @@ contract SingleEnglishCollateralAuctionHouseTest is DSTest {
     // check no restart
     assertTrue(!Guy(ali).try_restartAuction(id));
     // run past the end
-    hevm.warp(now + 2 weeks);
+    hevm.warp(block.timestamp + 2 weeks);
     // check not biddable
     assertTrue(!Guy(ali).try_increaseBidSize(id, 100 ether, 1 ether));
     assertTrue(Guy(ali).try_restartAuction(id));
@@ -433,7 +432,7 @@ contract SingleEnglishCollateralAuctionHouseTest is DSTest {
       initialBid: 0
     });
     assertTrue(!Guy(ali).try_settleAuction(id));
-    hevm.warp(now + 2 weeks);
+    hevm.warp(block.timestamp + 2 weeks);
     assertTrue(!Guy(ali).try_settleAuction(id));
     assertTrue(Guy(ali).try_restartAuction(id));
     assertTrue(!Guy(ali).try_settleAuction(id));
@@ -588,7 +587,7 @@ contract SingleFixedDiscountCollateralAuctionHouseTest is DSTest {
     assertEq(collateralAuctionHouse.lowerSystemCoinMedianDeviation(), 0.95e18);
     assertEq(collateralAuctionHouse.upperSystemCoinMedianDeviation(), 0.9e18);
     assertEq(collateralAuctionHouse.minimumBid(), 50 * WAD);
-    assertEq(uint256(collateralAuctionHouse.totalAuctionLength()), uint256(uint48(-1)));
+    assertEq(uint256(collateralAuctionHouse.totalAuctionLength()), uint256(uint48(int48(-1))));
   }
 
   function testFail_set_partially_implemented_collateralFSM() public {
@@ -1855,7 +1854,7 @@ contract SingleFixedDiscountCollateralAuctionHouseTest is DSTest {
       initialBid: 0
     });
 
-    hevm.warp(now + collateralAuctionHouse.totalAuctionLength() + 1);
+    hevm.warp(block.timestamp + collateralAuctionHouse.totalAuctionLength() + 1);
     collateralAuctionHouse.settleAuction(id);
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), rad(1000 ether));
 
@@ -2013,7 +2012,9 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     collateralAuctionHouse.modifyParameters('minDiscount', 0.91e18);
     collateralAuctionHouse.modifyParameters('minimumBid', 100 * WAD);
     collateralAuctionHouse.modifyParameters('perSecondDiscountUpdateRate', RAY - 100);
-    collateralAuctionHouse.modifyParameters('maxDiscountUpdateRateTimeline', uint256(uint48(-1)) - now - 1);
+    collateralAuctionHouse.modifyParameters(
+      'maxDiscountUpdateRateTimeline', uint256(uint48(int48(-1))) - block.timestamp - 1
+    );
     collateralAuctionHouse.modifyParameters('lowerCollateralMedianDeviation', 0.95e18);
     collateralAuctionHouse.modifyParameters('upperCollateralMedianDeviation', 0.9e18);
     collateralAuctionHouse.modifyParameters('lowerSystemCoinMedianDeviation', 0.95e18);
@@ -2026,9 +2027,9 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     assertEq(collateralAuctionHouse.lowerSystemCoinMedianDeviation(), 0.95e18);
     assertEq(collateralAuctionHouse.upperSystemCoinMedianDeviation(), 0.9e18);
     assertEq(collateralAuctionHouse.perSecondDiscountUpdateRate(), RAY - 100);
-    assertEq(collateralAuctionHouse.maxDiscountUpdateRateTimeline(), uint256(uint48(-1)) - now - 1);
+    assertEq(collateralAuctionHouse.maxDiscountUpdateRateTimeline(), uint256(uint48(int48(-1))) - block.timestamp - 1);
     assertEq(collateralAuctionHouse.minimumBid(), 100 * WAD);
-    assertEq(uint256(collateralAuctionHouse.totalAuctionLength()), uint256(uint48(-1)));
+    assertEq(uint256(collateralAuctionHouse.totalAuctionLength()), uint256(uint48(int48(-1))));
   }
 
   function testFail_set_partially_implemented_collateralFSM() public {
@@ -2165,8 +2166,8 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     assertEq(currentDiscount, collateralAuctionHouse.minDiscount());
     assertEq(maxDiscount, collateralAuctionHouse.maxDiscount());
     assertEq(perSecondDiscountUpdateRate, collateralAuctionHouse.perSecondDiscountUpdateRate());
-    assertEq(latestDiscountUpdateTime, now);
-    assertEq(discountIncreaseDeadline, now + collateralAuctionHouse.maxDiscountUpdateRateTimeline());
+    assertEq(latestDiscountUpdateTime, block.timestamp);
+    assertEq(discountIncreaseDeadline, block.timestamp + collateralAuctionHouse.maxDiscountUpdateRateTimeline());
     assertEq(forgoneCollateralReceiver, address(safeAuctioned));
     assertEq(incomeRecipient, auctionIncomeRecipient);
 
@@ -3077,7 +3078,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
       initialBid: 0
     });
 
-    hevm.warp(now + collateralAuctionHouse.totalAuctionLength() + 1);
+    hevm.warp(block.timestamp + collateralAuctionHouse.totalAuctionLength() + 1);
     collateralAuctionHouse.settleAuction(id);
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), rad(1000 ether));
 
@@ -3165,7 +3166,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     assertEq(amountToRaise, RAY * WAD);
     assertEq(currentDiscount, collateralAuctionHouse.minDiscount());
     assertEq(perSecondDiscountUpdateRate, 999_998_607_628_240_588_157_433_861);
-    assertEq(latestDiscountUpdateTime, now);
+    assertEq(latestDiscountUpdateTime, block.timestamp);
 
     assertEq(safeEngine.coinBalance(auctionIncomeRecipient), 49 * RAD);
     assertEq(safeEngine.tokenCollateral('collateralType', address(collateralAuctionHouse)), 742_105_263_157_894_737);
@@ -3194,7 +3195,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
       initialBid: 0
     });
 
-    hevm.warp(now + 30 minutes);
+    hevm.warp(block.timestamp + 30 minutes);
     Guy(ali).buyCollateral_increasingDiscount(id, 49 * WAD);
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), rad(951 ether));
 
@@ -3212,7 +3213,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     assertEq(amountToRaise, RAY * WAD);
     assertEq(currentDiscount, 947_622_023_804_850_158);
     assertEq(perSecondDiscountUpdateRate, 999_998_607_628_240_588_157_433_861);
-    assertEq(latestDiscountUpdateTime, now);
+    assertEq(latestDiscountUpdateTime, block.timestamp);
 
     assertEq(safeEngine.coinBalance(auctionIncomeRecipient), 49 * RAD);
     assertEq(safeEngine.tokenCollateral('collateralType', address(collateralAuctionHouse)), 741_458_098_434_345_369);
@@ -3241,7 +3242,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
       initialBid: 0
     });
 
-    hevm.warp(now + 1 hours);
+    hevm.warp(block.timestamp + 1 hours);
     Guy(ali).buyCollateral_increasingDiscount(id, 49 * WAD);
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), rad(951 ether));
 
@@ -3259,7 +3260,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     assertEq(amountToRaise, RAY * WAD);
     assertEq(currentDiscount, 930_000_000_000_000_000);
     assertEq(perSecondDiscountUpdateRate, 999_998_607_628_240_588_157_433_861);
-    assertEq(latestDiscountUpdateTime, now);
+    assertEq(latestDiscountUpdateTime, block.timestamp);
 
     assertEq(safeEngine.coinBalance(auctionIncomeRecipient), 49 * RAD);
     assertEq(safeEngine.tokenCollateral('collateralType', address(collateralAuctionHouse)), 736_559_139_784_946_237);
@@ -3288,7 +3289,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
       initialBid: 0
     });
 
-    hevm.warp(now + 3650 days);
+    hevm.warp(block.timestamp + 3650 days);
     Guy(ali).buyCollateral_increasingDiscount(id, 49 * WAD);
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), rad(951 ether));
 
@@ -3306,7 +3307,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     assertEq(amountToRaise, RAY * WAD);
     assertEq(currentDiscount, 930_000_000_000_000_000);
     assertEq(perSecondDiscountUpdateRate, 999_998_607_628_240_588_157_433_861);
-    assertEq(latestDiscountUpdateTime, now);
+    assertEq(latestDiscountUpdateTime, block.timestamp);
 
     assertEq(safeEngine.coinBalance(auctionIncomeRecipient), 49 * RAD);
     assertEq(safeEngine.tokenCollateral('collateralType', address(collateralAuctionHouse)), 736_559_139_784_946_237);
@@ -3336,7 +3337,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     });
 
     for (uint256 i = 0; i < 10; i++) {
-      hevm.warp(now + 1 minutes);
+      hevm.warp(block.timestamp + 1 minutes);
       Guy(ali).buyCollateral_increasingDiscount(id, 5 * WAD);
     }
 

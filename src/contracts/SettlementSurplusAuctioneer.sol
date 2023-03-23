@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0
 /// SettlementSurplusAuctioneer.sol
 
 // Copyright (C) 2020 Reflexer Labs, INC
@@ -15,13 +16,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-pragma solidity 0.6.7;
+pragma solidity 0.8.19;
 
 import {IAccountingEngine as AccountingEngineLike} from '../interfaces/IAccountingEngine.sol';
 import {ISAFEEngine as SAFEEngineLike} from '../interfaces/ISAFEEngine.sol';
 import {ISurplusAuctionHouse as SurplusAuctionHouseLike} from '../interfaces/ISurplusAuctionHouse.sol';
 
-contract SettlementSurplusAuctioneer {
+import {Math} from './utils/Math.sol';
+
+contract SettlementSurplusAuctioneer is Math {
   // --- Auth ---
   mapping(address => uint256) public authorizedAccounts;
   /**
@@ -65,18 +68,13 @@ contract SettlementSurplusAuctioneer {
   event ModifyParameters(bytes32 parameter, address addr);
   event AuctionSurplus(uint256 indexed id, uint256 lastSurplusAuctionTime, uint256 coinBalance);
 
-  constructor(address accountingEngine_, address surplusAuctionHouse_) public {
+  constructor(address _accountingEngine, address _surplusAuctionHouse) {
     authorizedAccounts[msg.sender] = 1;
-    accountingEngine = AccountingEngineLike(accountingEngine_);
-    surplusAuctionHouse = SurplusAuctionHouseLike(surplusAuctionHouse_);
+    accountingEngine = AccountingEngineLike(_accountingEngine);
+    surplusAuctionHouse = SurplusAuctionHouseLike(_surplusAuctionHouse);
     safeEngine = SAFEEngineLike(address(accountingEngine.safeEngine()));
     safeEngine.approveSAFEModification(address(surplusAuctionHouse));
     emit AddAuthorization(msg.sender);
-  }
-
-  // --- Math ---
-  function addition(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require((z = x + y) >= x, 'SettlementSurplusAuctioneer/overflow');
   }
 
   // --- Administration ---
@@ -107,10 +105,10 @@ contract SettlementSurplusAuctioneer {
   function auctionSurplus() external returns (uint256 id) {
     require(accountingEngine.contractEnabled() == 0, 'SettlementSurplusAuctioneer/accounting-engine-still-enabled');
     require(
-      now >= addition(lastSurplusAuctionTime, accountingEngine.surplusAuctionDelay()),
+      block.timestamp >= addition(lastSurplusAuctionTime, accountingEngine.surplusAuctionDelay()),
       'SettlementSurplusAuctioneer/surplus-auction-delay-not-passed'
     );
-    lastSurplusAuctionTime = now;
+    lastSurplusAuctionTime = block.timestamp;
     uint256 amountToSell = (safeEngine.coinBalance(address(this)) < accountingEngine.surplusAuctionAmountToSell())
       ? safeEngine.coinBalance(address(this))
       : accountingEngine.surplusAuctionAmountToSell();

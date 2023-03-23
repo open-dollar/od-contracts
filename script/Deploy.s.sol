@@ -1,4 +1,4 @@
-pragma solidity 0.6.7;
+pragma solidity 0.8.19;
 
 import 'forge-std/Script.sol';
 
@@ -151,7 +151,7 @@ contract Deploy is Script {
 }
 
 contract DeployMainnet is Deploy {
-  constructor() public {
+  constructor() {
     _deployerPk = uint256(vm.envBytes32('OP_MAINNET_DEPLOYER_PK'));
     deployer = vm.addr(_deployerPk);
     chainId = 10;
@@ -159,7 +159,7 @@ contract DeployMainnet is Deploy {
 }
 
 contract DeployGoerli is Deploy {
-  constructor() public {
+  constructor() {
     _deployerPk = uint256(vm.envBytes32('OP_GOERLI_DEPLOYER_PK'));
     deployer = vm.addr(_deployerPk);
     chainId = 420;

@@ -17,10 +17,10 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity 0.6.7;
+pragma solidity 0.8.19;
 
 import 'ds-test/test.sol';
-import 'ds-token/delegate.sol';
+import {DSToken as DSDelegateToken} from '../../contracts/for-test/DSToken.sol';
 
 import {SAFEEngine} from '../../contracts/SAFEEngine.sol';
 import {LiquidationEngine} from '../../contracts/LiquidationEngine.sol';
@@ -43,7 +43,7 @@ abstract contract Hevm {
   function warp(uint256) public virtual;
 }
 
-contract DSThing is DSAuth, DSNote, DSMath {
+contract DSThing { /* is DSAuth, DSNote, DSMath */
   function S(string memory s) internal pure returns (bytes4) {
     return bytes4(keccak256(abi.encodePacked(s)));
   }
@@ -66,12 +66,12 @@ contract DummyFSM is DSThing {
     return uint256(price_);
   }
 
-  function updateCollateralPrice(bytes32 newPrice) public note auth {
+  function updateCollateralPrice(bytes32 newPrice) public /* note auth */ {
     price = uint256(newPrice);
     validPrice = true;
   }
 
-  function restart() public note auth {
+  function restart() public /* note auth */ {
     // unset the value
     validPrice = false;
   }
@@ -81,7 +81,7 @@ contract Usr {
   SAFEEngine public safeEngine;
   GlobalSettlement public globalSettlement;
 
-  constructor(SAFEEngine safeEngine_, GlobalSettlement globalSettlement_) public {
+  constructor(SAFEEngine safeEngine_, GlobalSettlement globalSettlement_) {
     safeEngine = safeEngine_;
     globalSettlement = globalSettlement_;
   }
@@ -127,7 +127,7 @@ contract Feed {
   bool validPrice;
   bytes32 price;
 
-  constructor(bytes32 initPrice, bool initValid) public {
+  constructor(bytes32 initPrice, bool initValid) {
     price = initPrice;
     validPrice = initValid;
   }
@@ -280,7 +280,7 @@ contract SingleGlobalSettlementTest is DSTest {
 
     liquidationEngine.modifyParameters(encodedName, 'collateralAuctionHouse', address(englishCollateralAuctionHouse));
     liquidationEngine.modifyParameters(encodedName, 'liquidationPenalty', 1 ether);
-    liquidationEngine.modifyParameters(encodedName, 'liquidationQuantity', uint256(-1) / ray(1 ether));
+    liquidationEngine.modifyParameters(encodedName, 'liquidationQuantity', uint256(int256(-1)) / ray(1 ether));
 
     collateralTypes[encodedName].oracleSecurityModule = oracleFSM;
     collateralTypes[encodedName].collateral = newCollateral;
@@ -438,7 +438,7 @@ contract SingleGlobalSettlementTest is DSTest {
     assertEq(tokenCollateral('gold', safe1), 7 ether);
     ali.exit(gold.collateralA, address(this), 7 ether);
 
-    hevm.warp(now + 1 hours);
+    hevm.warp(block.timestamp + 1 hours);
     globalSettlement.setOutstandingCoinSupply();
     globalSettlement.calculateCashPrice('gold');
     assertTrue(globalSettlement.collateralCashPrice('gold') != 0);
@@ -509,7 +509,7 @@ contract SingleGlobalSettlementTest is DSTest {
     assertEq(tokenCollateral('gold', safe1), 2.5 ether);
     ali.exit(gold.collateralA, address(this), 2.5 ether);
 
-    hevm.warp(now + 1 hours);
+    hevm.warp(block.timestamp + 1 hours);
     globalSettlement.setOutstandingCoinSupply();
     globalSettlement.calculateCashPrice('gold');
     assertTrue(globalSettlement.collateralCashPrice('gold') != 0);
@@ -605,7 +605,7 @@ contract SingleGlobalSettlementTest is DSTest {
     assertEq(tokenCollateral('gold', safe1), 7 ether);
     ali.exit(gold.collateralA, address(this), 7 ether);
 
-    hevm.warp(now + 1 hours);
+    hevm.warp(block.timestamp + 1 hours);
     globalSettlement.setOutstandingCoinSupply();
     globalSettlement.calculateCashPrice('gold');
     assertTrue(globalSettlement.collateralCashPrice('gold') != 0);
@@ -685,7 +685,7 @@ contract SingleGlobalSettlementTest is DSTest {
     assertEq(tokenCollateral('gold', safe1), 7_973_684_210_526_315_790);
     ali.exit(gold.collateralA, address(this), 7_973_684_210_526_315_790);
 
-    hevm.warp(now + 1 hours);
+    hevm.warp(block.timestamp + 1 hours);
     globalSettlement.setOutstandingCoinSupply();
     globalSettlement.calculateCashPrice('gold');
     assertTrue(globalSettlement.collateralCashPrice('gold') != 0);
@@ -751,7 +751,7 @@ contract SingleGlobalSettlementTest is DSTest {
     assertEq(tokenCollateral('gold', safe1), 7 ether);
     ali.exit(gold.collateralA, address(this), 7 ether);
 
-    hevm.warp(now + 1 hours);
+    hevm.warp(block.timestamp + 1 hours);
     globalSettlement.setOutstandingCoinSupply();
     globalSettlement.calculateCashPrice('gold');
     assertTrue(globalSettlement.collateralCashPrice('gold') != 0);
@@ -809,7 +809,7 @@ contract SingleGlobalSettlementTest is DSTest {
     assertEq(safeEngine.globalUnbackedDebt(), 0);
 
     // transfer the remaining surplus with transferPostSettlementSurplus and continue the settlement process
-    hevm.warp(now + 1 hours);
+    hevm.warp(block.timestamp + 1 hours);
     accountingEngine.transferPostSettlementSurplus();
     assertEq(globalSettlement.outstandingCoinSupply(), 0);
     globalSettlement.setOutstandingCoinSupply();
@@ -872,7 +872,7 @@ contract SingleGlobalSettlementTest is DSTest {
     assertEq(tokenCollateral('gold', safe1), 8.5 ether);
     ali.exit(gold.collateralA, address(this), 8.5 ether);
 
-    hevm.warp(now + 1 hours);
+    hevm.warp(block.timestamp + 1 hours);
     accountingEngine.settleDebt(safeEngine.coinBalance(address(accountingEngine)));
     assertEq(globalSettlement.outstandingCoinSupply(), 0);
     globalSettlement.setOutstandingCoinSupply();
@@ -957,7 +957,7 @@ contract SingleGlobalSettlementTest is DSTest {
     assertEq(tokenCollateral('gold', safe1), 4 ether);
     ali.exit(gold.collateralA, address(this), 4 ether);
 
-    hevm.warp(now + 1 hours);
+    hevm.warp(block.timestamp + 1 hours);
     accountingEngine.settleDebt(safeEngine.coinBalance(address(accountingEngine)));
     assertEq(globalSettlement.outstandingCoinSupply(), 0);
     globalSettlement.setOutstandingCoinSupply();
@@ -1048,7 +1048,7 @@ contract SingleGlobalSettlementTest is DSTest {
     assertEq(tokenCollateral('gold', safe1), 2.5 ether);
     ali.exit(gold.collateralA, address(this), 2.5 ether);
 
-    hevm.warp(now + 1 hours);
+    hevm.warp(block.timestamp + 1 hours);
     // balance the accountingEngine using transferPostSettlementSurplus
     accountingEngine.transferPostSettlementSurplus();
     globalSettlement.setOutstandingCoinSupply();
@@ -1126,7 +1126,7 @@ contract SingleGlobalSettlementTest is DSTest {
     globalSettlement.processSAFE('gold', safe1); // over-collateralised
     globalSettlement.processSAFE('coal', safe2); // under-collateralised
 
-    hevm.warp(now + 1 hours);
+    hevm.warp(block.timestamp + 1 hours);
     globalSettlement.setOutstandingCoinSupply();
     globalSettlement.calculateCashPrice('gold');
     globalSettlement.calculateCashPrice('coal');
@@ -1222,7 +1222,7 @@ contract SingleGlobalSettlementTest is DSTest {
     assertEq(tokenCollateral('gold', safe1), 498_000_000 ether);
     ali.exit(gold.collateralA, address(this), 498_000_000 ether);
 
-    hevm.warp(now + 1 hours);
+    hevm.warp(block.timestamp + 1 hours);
     globalSettlement.setOutstandingCoinSupply();
     globalSettlement.calculateCashPrice('gold');
   }

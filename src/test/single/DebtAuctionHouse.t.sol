@@ -1,7 +1,7 @@
-pragma solidity 0.6.7;
+pragma solidity 0.8.19;
 
 import {DSTest} from 'ds-test/test.sol';
-import {DSDelegateToken} from 'ds-token/delegate.sol';
+import {DSToken as DSDelegateToken} from '../../contracts/for-test/DSToken.sol';
 
 import '../../contracts/DebtAuctionHouse.sol';
 import '../../contracts/SAFEEngine.sol';
@@ -13,7 +13,7 @@ abstract contract Hevm {
 contract Guy {
   DebtAuctionHouse debtAuctionHouse;
 
-  constructor(DebtAuctionHouse debtAuctionHouse_) public {
+  constructor(DebtAuctionHouse debtAuctionHouse_) {
     debtAuctionHouse = debtAuctionHouse_;
     SAFEEngine(address(debtAuctionHouse.safeEngine())).approveSAFEModification(address(debtAuctionHouse));
     DSDelegateToken(address(debtAuctionHouse.protocolToken())).approve(address(debtAuctionHouse));
@@ -81,7 +81,7 @@ contract SAFEEnginish is DSDelegateToken('', '') {
   }
 
   function coin(address usr) public view returns (uint256) {
-    return super.balanceOf(usr);
+    return balanceOf[usr];
   }
 }
 
@@ -140,7 +140,7 @@ contract SingleDebtAuctionHouseTest is DSTest {
     assertEq(amountToSell, 200 ether);
     assertTrue(guy == accountingEngine);
     assertEq(uint256(bidExpiry), 0);
-    assertEq(uint256(end), now + debtAuctionHouse.totalAuctionLength());
+    assertEq(uint256(end), block.timestamp + debtAuctionHouse.totalAuctionLength());
   }
 
   function test_decreaseSoldAmount() public {
@@ -161,7 +161,7 @@ contract SingleDebtAuctionHouseTest is DSTest {
     // accountingEngine receives no more
     assertEq(safeEngine.coinBalance(accountingEngine), 10 ether);
 
-    hevm.warp(now + 5 weeks);
+    hevm.warp(block.timestamp + 5 weeks);
     assertEq(protocolToken.totalSupply(), 0 ether);
     protocolToken.setOwner(address(debtAuctionHouse));
     Guy(bob).settleAuction(id);
@@ -195,7 +195,7 @@ contract SingleDebtAuctionHouseTest is DSTest {
     // accountingEngine receives no more
     assertEq(safeEngine.coinBalance(accountingEngine), 10 ether);
 
-    hevm.warp(now + 5 weeks);
+    hevm.warp(block.timestamp + 5 weeks);
     assertEq(protocolToken.totalSupply(), 0 ether);
     protocolToken.setOwner(address(debtAuctionHouse));
     Guy(bob).settleAuction(id);
@@ -213,7 +213,7 @@ contract SingleDebtAuctionHouseTest is DSTest {
     // check no restarting
     assertTrue(!Guy(ali).try_restart_auction(id));
     // run past the end
-    hevm.warp(now + 2 weeks);
+    hevm.warp(block.timestamp + 2 weeks);
     // check not biddable
     assertTrue(!Guy(ali).try_decreaseSoldAmount(id, 100 ether, 10 ether));
     assertTrue(Guy(ali).try_restart_auction(id));
@@ -231,7 +231,7 @@ contract SingleDebtAuctionHouseTest is DSTest {
     // be refundable to the creator. Rather, it restarts indefinitely.
     uint256 id = Gal(accountingEngine).startAuction(debtAuctionHouse, /*amountToSell*/ 200 ether, /*bid*/ 10 ether);
     assertTrue(!Guy(ali).try_settleAuction(id));
-    hevm.warp(now + 2 weeks);
+    hevm.warp(block.timestamp + 2 weeks);
     assertTrue(!Guy(ali).try_settleAuction(id));
     assertTrue(Guy(ali).try_restart_auction(id));
     // left auction in the accounting engine

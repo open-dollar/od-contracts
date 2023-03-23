@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0
 /// OracleRelayer.sol
 
 // This program is free software: you can redistribute it and/or modify
@@ -13,13 +14,14 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity 0.6.7;
+pragma solidity 0.8.19;
 
 import {ISAFEEngine as SAFEEngineLike} from '../interfaces/ISAFEEngine.sol';
-
 import {IOracle as OracleLike} from '../interfaces/IOracle.sol';
 
-contract OracleRelayer {
+import {Math} from './utils/Math.sol';
+
+contract OracleRelayer is Math {
   // --- Auth ---
   mapping(address => uint256) public authorizedAccounts;
   /**
@@ -91,72 +93,18 @@ contract OracleRelayer {
   );
 
   // --- Init ---
-  constructor(address safeEngine_) public {
+  constructor(address _safeEngine) {
     authorizedAccounts[msg.sender] = 1;
 
-    safeEngine = SAFEEngineLike(safeEngine_);
+    safeEngine = SAFEEngineLike(_safeEngine);
     _redemptionPrice = RAY;
     redemptionRate = RAY;
-    redemptionPriceUpdateTime = now;
+    redemptionPriceUpdateTime = block.timestamp;
     redemptionRateUpperBound = RAY * WAD;
     redemptionRateLowerBound = 1;
     contractEnabled = 1;
 
     emit AddAuthorization(msg.sender);
-  }
-
-  // --- Math ---
-  uint256 constant WAD = 10 ** 18;
-  uint256 constant RAY = 10 ** 27;
-
-  function subtract(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    z = x - y;
-    require(z <= x, 'OracleRelayer/sub-underflow');
-  }
-
-  function multiply(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require(y == 0 || (z = x * y) / y == x, 'OracleRelayer/mul-overflow');
-  }
-
-  function rmultiply(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    // always rounds down
-    z = multiply(x, y) / RAY;
-  }
-
-  function rdivide(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require(y > 0, 'OracleRelayer/rdiv-by-zero');
-    z = multiply(x, RAY) / y;
-  }
-
-  function rpower(uint256 x, uint256 n, uint256 base) internal pure returns (uint256 z) {
-    assembly {
-      switch x
-      case 0 {
-        switch n
-        case 0 { z := base }
-        default { z := 0 }
-      }
-      default {
-        switch mod(n, 2)
-        case 0 { z := base }
-        default { z := x }
-        let half := div(base, 2) // for rounding.
-        for { n := div(n, 2) } n { n := div(n, 2) } {
-          let xx := mul(x, x)
-          if iszero(eq(div(xx, x), x)) { revert(0, 0) }
-          let xxRound := add(xx, half)
-          if lt(xxRound, xx) { revert(0, 0) }
-          x := div(xxRound, base)
-          if mod(n, 2) {
-            let zx := mul(z, x)
-            if and(iszero(iszero(x)), iszero(eq(div(zx, x), z))) { revert(0, 0) }
-            let zxRound := add(zx, half)
-            if lt(zxRound, zx) { revert(0, 0) }
-            z := div(zxRound, base)
-          }
-        }
-      }
-    }
   }
 
   // --- Administration ---
@@ -184,7 +132,7 @@ contract OracleRelayer {
     if (parameter == 'redemptionPrice') {
       _redemptionPrice = data;
     } else if (parameter == 'redemptionRate') {
-      require(now == redemptionPriceUpdateTime, 'OracleRelayer/redemption-price-not-updated');
+      require(block.timestamp == redemptionPriceUpdateTime, 'OracleRelayer/redemption-price-not-updated');
       uint256 adjustedRate = data;
       if (data > redemptionRateUpperBound) {
         adjustedRate = redemptionRateUpperBound;
@@ -235,9 +183,9 @@ contract OracleRelayer {
   function updateRedemptionPrice() internal returns (uint256) {
     // Update redemption price
     _redemptionPrice =
-      rmultiply(rpower(redemptionRate, subtract(now, redemptionPriceUpdateTime), RAY), _redemptionPrice);
+      rmultiply(rpower(redemptionRate, subtract(block.timestamp, redemptionPriceUpdateTime), RAY), _redemptionPrice);
     if (_redemptionPrice == 0) _redemptionPrice = 1;
-    redemptionPriceUpdateTime = now;
+    redemptionPriceUpdateTime = block.timestamp;
     emit UpdateRedemptionPrice(_redemptionPrice);
     // Return updated redemption price
     return _redemptionPrice;
@@ -247,7 +195,7 @@ contract OracleRelayer {
    */
 
   function redemptionPrice() public returns (uint256) {
-    if (now > redemptionPriceUpdateTime) return updateRedemptionPrice();
+    if (block.timestamp > redemptionPriceUpdateTime) return updateRedemptionPrice();
     return _redemptionPrice;
   }
 
@@ -261,13 +209,13 @@ contract OracleRelayer {
     uint256 redemptionPrice_ = redemptionPrice();
     uint256 safetyPrice_ = hasValidValue
       ? rdivide(
-        rdivide(multiply(uint256(priceFeedValue), 10 ** 9), redemptionPrice_),
+        rdivide(multiply(uint256(priceFeedValue), uint256(10 ** 9)), redemptionPrice_),
         collateralTypes[collateralType].safetyCRatio
       )
       : 0;
     uint256 liquidationPrice_ = hasValidValue
       ? rdivide(
-        rdivide(multiply(uint256(priceFeedValue), 10 ** 9), redemptionPrice_),
+        rdivide(multiply(uint256(priceFeedValue), uint256(10 ** 9)), redemptionPrice_),
         collateralTypes[collateralType].liquidationCRatio
       )
       : 0;

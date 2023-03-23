@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-pragma solidity 0.6.7;
+pragma solidity 0.8.19;
 
 import 'ds-test/test.sol';
 
@@ -47,7 +47,7 @@ contract Usr {
   }
 
   function approve(address systemCoin, address gal) external {
-    Coin(systemCoin).approve(gal, uint256(-1));
+    Coin(systemCoin).approve(gal, uint256(int256(-1)));
   }
 }
 
@@ -103,7 +103,7 @@ contract SingleStabilityFeeTreasuryTest is DSTest {
     assertEq(stabilityFeeTreasury.surplusTransferDelay(), 0);
     assertEq(address(stabilityFeeTreasury.safeEngine()), address(safeEngine));
     assertEq(address(stabilityFeeTreasury.extraSurplusReceiver()), alice);
-    assertEq(stabilityFeeTreasury.latestSurplusTransferTime(), now);
+    assertEq(stabilityFeeTreasury.latestSurplusTransferTime(), block.timestamp);
     assertEq(stabilityFeeTreasury.expensesMultiplier(), HUNDRED);
     assertEq(systemCoin.balanceOf(address(this)), 100 ether);
     assertEq(safeEngine.coinBalance(address(alice)), 0);
@@ -125,10 +125,10 @@ contract SingleStabilityFeeTreasuryTest is DSTest {
   }
 
   function test_transferSurplusFunds_no_expenses_no_minimumFundsRequired() public {
-    hevm.warp(now + 1 seconds);
+    hevm.warp(block.timestamp + 1 seconds);
     stabilityFeeTreasury.transferSurplusFunds();
     assertEq(stabilityFeeTreasury.accumulatorTag(), 0);
-    assertEq(stabilityFeeTreasury.latestSurplusTransferTime(), now);
+    assertEq(stabilityFeeTreasury.latestSurplusTransferTime(), block.timestamp);
     assertEq(safeEngine.coinBalance(address(stabilityFeeTreasury)), 0);
     assertEq(safeEngine.coinBalance(address(alice)), rad(200 ether));
   }
@@ -136,10 +136,10 @@ contract SingleStabilityFeeTreasuryTest is DSTest {
   function test_transferSurplusFunds_no_expenses_with_minimumFundsRequired() public {
     stabilityFeeTreasury.modifyParameters('treasuryCapacity', rad(50 ether));
     stabilityFeeTreasury.modifyParameters('minimumFundsRequired', rad(50 ether));
-    hevm.warp(now + 1 seconds);
+    hevm.warp(block.timestamp + 1 seconds);
     stabilityFeeTreasury.transferSurplusFunds();
     assertEq(stabilityFeeTreasury.accumulatorTag(), 0);
-    assertEq(stabilityFeeTreasury.latestSurplusTransferTime(), now);
+    assertEq(stabilityFeeTreasury.latestSurplusTransferTime(), block.timestamp);
     assertEq(safeEngine.coinBalance(address(stabilityFeeTreasury)), rad(50 ether));
     assertEq(safeEngine.coinBalance(address(alice)), rad(150 ether));
   }
@@ -151,7 +151,7 @@ contract SingleStabilityFeeTreasuryTest is DSTest {
     assertEq(stabilityFeeTreasury.minimumFundsRequired(), 0);
     systemCoin.transfer(address(stabilityFeeTreasury), 1 ether);
     assertEq(systemCoin.balanceOf(address(stabilityFeeTreasury)), 1 ether);
-    hevm.warp(now + 1 seconds);
+    hevm.warp(block.timestamp + 1 seconds);
     stabilityFeeTreasury.transferSurplusFunds();
     assertEq(systemCoin.balanceOf(address(stabilityFeeTreasury)), 0);
     assertEq(safeEngine.coinBalance(address(stabilityFeeTreasury)), 0);
@@ -167,7 +167,7 @@ contract SingleStabilityFeeTreasuryTest is DSTest {
     assertEq(stabilityFeeTreasury.minimumFundsRequired(), rad(50 ether));
     systemCoin.transfer(address(stabilityFeeTreasury), 1 ether);
     assertEq(systemCoin.balanceOf(address(stabilityFeeTreasury)), 1 ether);
-    hevm.warp(now + 1 seconds);
+    hevm.warp(block.timestamp + 1 seconds);
     stabilityFeeTreasury.transferSurplusFunds();
     assertEq(systemCoin.balanceOf(address(stabilityFeeTreasury)), 0);
     assertEq(safeEngine.coinBalance(address(stabilityFeeTreasury)), rad(50 ether));
@@ -362,7 +362,7 @@ contract SingleStabilityFeeTreasuryTest is DSTest {
 
   function testFail_transferSurplusFunds_before_surplusTransferDelay() public {
     stabilityFeeTreasury.modifyParameters('surplusTransferDelay', 10 minutes);
-    hevm.warp(now + 9 minutes);
+    hevm.warp(block.timestamp + 9 minutes);
     stabilityFeeTreasury.transferSurplusFunds();
   }
 
@@ -372,12 +372,12 @@ contract SingleStabilityFeeTreasuryTest is DSTest {
 
     stabilityFeeTreasury.modifyParameters('surplusTransferDelay', 10 minutes);
     stabilityFeeTreasury.giveFunds(alice, rad(40 ether));
-    hevm.warp(now + 10 minutes);
+    hevm.warp(block.timestamp + 10 minutes);
     stabilityFeeTreasury.transferSurplusFunds();
     assertEq(safeEngine.coinBalance(address(stabilityFeeTreasury)), rad(40 ether));
     assertEq(safeEngine.coinBalance(address(alice)), rad(40 ether));
     assertEq(safeEngine.coinBalance(address(charlie)), rad(120 ether));
-    hevm.warp(now + 10 minutes);
+    hevm.warp(block.timestamp + 10 minutes);
     stabilityFeeTreasury.transferSurplusFunds();
     assertEq(safeEngine.coinBalance(address(stabilityFeeTreasury)), 0);
     assertEq(safeEngine.coinBalance(address(alice)), rad(40 ether));
@@ -392,12 +392,12 @@ contract SingleStabilityFeeTreasuryTest is DSTest {
     stabilityFeeTreasury.modifyParameters('minimumFundsRequired', rad(10 ether));
     stabilityFeeTreasury.modifyParameters('surplusTransferDelay', 10 minutes);
     stabilityFeeTreasury.giveFunds(alice, rad(40 ether));
-    hevm.warp(now + 10 minutes);
+    hevm.warp(block.timestamp + 10 minutes);
     stabilityFeeTreasury.transferSurplusFunds();
     assertEq(safeEngine.coinBalance(address(stabilityFeeTreasury)), rad(40 ether));
     assertEq(safeEngine.coinBalance(address(alice)), rad(40 ether));
     assertEq(safeEngine.coinBalance(address(charlie)), rad(120 ether));
-    hevm.warp(now + 10 minutes);
+    hevm.warp(block.timestamp + 10 minutes);
     stabilityFeeTreasury.transferSurplusFunds();
     assertEq(safeEngine.coinBalance(address(stabilityFeeTreasury)), rad(10 ether));
     assertEq(safeEngine.coinBalance(address(alice)), rad(40 ether));
@@ -418,7 +418,7 @@ contract SingleStabilityFeeTreasuryTest is DSTest {
     assertEq(safeEngine.coinBalance(address(stabilityFeeTreasury)), rad(160 ether));
     assertEq(safeEngine.debtBalance(address(stabilityFeeTreasury)), rad(161 ether));
 
-    hevm.warp(now + 10 minutes);
+    hevm.warp(block.timestamp + 10 minutes);
     stabilityFeeTreasury.transferSurplusFunds();
   }
 
@@ -436,7 +436,7 @@ contract SingleStabilityFeeTreasuryTest is DSTest {
     assertEq(safeEngine.coinBalance(address(stabilityFeeTreasury)), rad(160 ether));
     assertEq(safeEngine.debtBalance(address(stabilityFeeTreasury)), rad(50 ether));
 
-    hevm.warp(now + 10 minutes);
+    hevm.warp(block.timestamp + 10 minutes);
     stabilityFeeTreasury.transferSurplusFunds();
 
     assertEq(safeEngine.coinBalance(address(stabilityFeeTreasury)), rad(40 ether));

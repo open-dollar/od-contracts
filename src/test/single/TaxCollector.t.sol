@@ -1,4 +1,4 @@
-pragma solidity 0.6.7;
+pragma solidity 0.8.19;
 pragma experimental ABIEncoderV2;
 
 import 'ds-test/test.sol';
@@ -91,28 +91,28 @@ contract SingleTaxCollectorTest is DSTest {
 
   function test_collect_tax_setup() public {
     hevm.warp(0);
-    assertEq(uint256(now), 0);
+    assertEq(uint256(block.timestamp), 0);
     hevm.warp(1);
-    assertEq(uint256(now), 1);
+    assertEq(uint256(block.timestamp), 1);
     hevm.warp(2);
-    assertEq(uint256(now), 2);
+    assertEq(uint256(block.timestamp), 2);
     assertEq(debtAmount('i'), 100 ether);
   }
 
   function test_collect_tax_updates_updateTime() public {
     taxCollector.initializeCollateralType('i');
-    assertEq(updateTime('i'), now);
+    assertEq(updateTime('i'), block.timestamp);
 
     taxCollector.modifyParameters('i', 'stabilityFee', 10 ** 27);
     taxCollector.taxSingle('i');
-    assertEq(updateTime('i'), now);
-    hevm.warp(now + 1);
-    assertEq(updateTime('i'), now - 1);
+    assertEq(updateTime('i'), block.timestamp);
+    hevm.warp(block.timestamp + 1);
+    assertEq(updateTime('i'), block.timestamp - 1);
     taxCollector.taxSingle('i');
-    assertEq(updateTime('i'), now);
-    hevm.warp(now + 1 days);
+    assertEq(updateTime('i'), block.timestamp);
+    hevm.warp(block.timestamp + 1 days);
     taxCollector.taxSingle('i');
-    assertEq(updateTime('i'), now);
+    assertEq(updateTime('i'), block.timestamp);
   }
 
   function test_collect_tax_modifyParameters() public {
@@ -135,7 +135,7 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.modifyParameters('primaryTaxReceiver', ali);
 
     taxCollector.modifyParameters('i', 'stabilityFee', 1_000_000_564_701_133_626_865_910_626); // 5% / day
-    hevm.warp(now + 1 days);
+    hevm.warp(block.timestamp + 1 days);
     assertEq(wad(safeEngine.coinBalance(ali)), 0 ether);
     taxCollector.taxSingle('i');
     assertEq(wad(safeEngine.coinBalance(ali)), 5 ether);
@@ -146,7 +146,7 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.modifyParameters('primaryTaxReceiver', ali);
     taxCollector.modifyParameters('i', 'stabilityFee', 1_000_000_564_701_133_626_865_910_626); // 5% / day
 
-    hevm.warp(now + 2 days);
+    hevm.warp(block.timestamp + 2 days);
     assertEq(wad(safeEngine.coinBalance(ali)), 0 ether);
     taxCollector.taxSingle('i');
     assertEq(wad(safeEngine.coinBalance(ali)), 10.25 ether);
@@ -157,7 +157,7 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.modifyParameters('primaryTaxReceiver', ali);
 
     taxCollector.modifyParameters('i', 'stabilityFee', 1_000_000_564_701_133_626_865_910_626); // 5% / day
-    hevm.warp(now + 3 days);
+    hevm.warp(block.timestamp + 3 days);
     assertEq(wad(safeEngine.coinBalance(ali)), 0 ether);
     taxCollector.taxSingle('i');
     assertEq(wad(safeEngine.coinBalance(ali)), 15.7625 ether);
@@ -168,7 +168,7 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.modifyParameters('primaryTaxReceiver', ali);
 
     taxCollector.modifyParameters('i', 'stabilityFee', 999_999_706_969_857_929_985_428_567); // -2.5% / day
-    hevm.warp(now + 3 days);
+    hevm.warp(block.timestamp + 3 days);
     assertEq(wad(safeEngine.coinBalance(address(this))), 100 ether);
     safeEngine.transferInternalCoins(address(this), ali, rad(100 ether));
     assertEq(wad(safeEngine.coinBalance(ali)), 100 ether);
@@ -181,11 +181,11 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.modifyParameters('primaryTaxReceiver', ali);
 
     taxCollector.modifyParameters('i', 'stabilityFee', 1_000_000_564_701_133_626_865_910_626); // 5% / day
-    hevm.warp(now + 1 days);
+    hevm.warp(block.timestamp + 1 days);
     taxCollector.taxSingle('i');
     assertEq(wad(safeEngine.coinBalance(ali)), 5 ether);
     taxCollector.modifyParameters('i', 'stabilityFee', 1_000_001_103_127_689_513_476_993_127); // 10% / day
-    hevm.warp(now + 1 days);
+    hevm.warp(block.timestamp + 1 days);
     taxCollector.taxSingle('i');
     assertEq(wad(safeEngine.coinBalance(ali)), 15.5 ether);
     assertEq(wad(safeEngine.globalDebt()), 115.5 ether);
@@ -203,7 +203,7 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.modifyParameters('i', 'stabilityFee', 1_050_000_000_000_000_000_000_000_000); // 5% / second
     taxCollector.modifyParameters('j', 'stabilityFee', 1_000_000_000_000_000_000_000_000_000); // 0% / second
     taxCollector.modifyParameters('globalStabilityFee', uint256(50_000_000_000_000_000_000_000_000)); // 5% / second
-    hevm.warp(now + 1);
+    hevm.warp(block.timestamp + 1);
     taxCollector.taxSingle('i');
     assertEq(wad(safeEngine.coinBalance(ali)), 10 ether);
   }
@@ -220,15 +220,15 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.modifyParameters('j', 'stabilityFee', 1_030_000_000_000_000_000_000_000_000); // 3% / second
     taxCollector.modifyParameters('globalStabilityFee', uint256(50_000_000_000_000_000_000_000_000)); // 5% / second
 
-    hevm.warp(now + 1);
+    hevm.warp(block.timestamp + 1);
     taxCollector.taxMany(0, taxCollector.collateralListLength() - 1);
 
     assertEq(wad(safeEngine.coinBalance(ali)), 18 ether);
 
     (, uint256 updatedTime) = taxCollector.collateralTypes('i');
-    assertEq(updatedTime, now);
+    assertEq(updatedTime, block.timestamp);
     (, updatedTime) = taxCollector.collateralTypes('j');
-    assertEq(updatedTime, now);
+    assertEq(updatedTime, block.timestamp);
 
     assertTrue(taxCollector.collectedManyTax(0, 1));
   }
@@ -244,7 +244,7 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.modifyParameters('i', 'stabilityFee', 1_050_000_000_000_000_000_000_000_000);
     taxCollector.modifyParameters('j', 'stabilityFee', 900_000_000_000_000_000_000_000_000);
 
-    hevm.warp(now + 10);
+    hevm.warp(block.timestamp + 10);
     taxCollector.taxSingle('i');
     assertEq(wad(safeEngine.coinBalance(ali)), 62_889_462_677_744_140_625);
 
@@ -252,9 +252,9 @@ contract SingleTaxCollectorTest is DSTest {
     assertEq(wad(safeEngine.coinBalance(ali)), 0);
 
     (, uint256 updatedTime) = taxCollector.collateralTypes('i');
-    assertEq(updatedTime, now);
+    assertEq(updatedTime, block.timestamp);
     (, updatedTime) = taxCollector.collateralTypes('j');
-    assertEq(updatedTime, now);
+    assertEq(updatedTime, block.timestamp);
 
     assertTrue(taxCollector.collectedManyTax(0, 1));
   }
@@ -475,7 +475,7 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.modifyParameters('i', 2, ray(45 ether), char);
 
     assertEq(taxCollector.latestSecondaryReceiver(), 2);
-    hevm.warp(now + 10);
+    hevm.warp(block.timestamp + 10);
     (, int256 currentRates) = taxCollector.taxSingleOutcome('i');
     taxCollector.taxSingle('i');
     assertEq(taxCollector.latestSecondaryReceiver(), 2);
@@ -499,7 +499,7 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.modifyParameters('i', 2, ray(45 ether), char);
 
     safeEngine.disableContract();
-    hevm.warp(now + 10);
+    hevm.warp(block.timestamp + 10);
     taxCollector.taxSingle('i');
   }
 
@@ -518,7 +518,7 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.modifyParameters('i', 1, ray(40 ether), bob);
     taxCollector.modifyParameters('i', 2, ray(45 ether), char);
 
-    hevm.warp(now + 10);
+    hevm.warp(block.timestamp + 10);
     taxCollector.taxMany(0, taxCollector.collateralListLength() - 1);
 
     assertEq(wad(safeEngine.coinBalance(ali)), 72_322_882_079_405_761_718);
@@ -528,7 +528,7 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.modifyParameters('j', 1, ray(25 ether), bob);
     taxCollector.modifyParameters('j', 2, ray(33 ether), char);
 
-    hevm.warp(now + 10);
+    hevm.warp(block.timestamp + 10);
     taxCollector.taxMany(0, taxCollector.collateralListLength() - 1);
 
     assertEq(wad(safeEngine.coinBalance(ali)), 130_713_857_546_323_549_197);
@@ -575,7 +575,7 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.modifyParameters('i', 1, 1);
     taxCollector.modifyParameters('i', 2, 1);
 
-    hevm.warp(now + 5);
+    hevm.warp(block.timestamp + 5);
     taxCollector.taxSingle('i');
 
     assertEq(wad(safeEngine.coinBalance(ali)), 23_483_932_812_500_000_000);
@@ -586,7 +586,7 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.modifyParameters('i', 1, ray(10 ether), bob);
     taxCollector.modifyParameters('i', 2, ray(20 ether), char);
 
-    hevm.warp(now + 5);
+    hevm.warp(block.timestamp + 5);
     taxCollector.taxSingle('i');
 
     assertEq(wad(safeEngine.coinBalance(ali)), 0);
@@ -610,7 +610,7 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.modifyParameters('i', 1, 1);
     taxCollector.modifyParameters('i', 2, 1);
 
-    hevm.warp(now + 5);
+    hevm.warp(block.timestamp + 5);
     taxCollector.taxMany(0, taxCollector.collateralListLength() - 1);
 
     taxCollector.modifyParameters('i', 'stabilityFee', 900_000_000_000_000_000_000_000_000);
@@ -620,7 +620,7 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.modifyParameters('j', 1, ray(10 ether), bob);
     taxCollector.modifyParameters('j', 2, ray(20 ether), char);
 
-    hevm.warp(now + 5);
+    hevm.warp(block.timestamp + 5);
     taxCollector.taxMany(0, taxCollector.collateralListLength() - 1);
 
     assertEq(wad(safeEngine.coinBalance(ali)), 0);
@@ -638,7 +638,7 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.modifyParameters('i', 1, ray(5 ether), bob);
     taxCollector.modifyParameters('i', 2, ray(10 ether), char);
 
-    hevm.warp(now + 5);
+    hevm.warp(block.timestamp + 5);
     taxCollector.taxSingle('i');
 
     assertEq(wad(safeEngine.coinBalance(ali)), 23_483_932_812_500_000_000);
@@ -649,7 +649,7 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.modifyParameters('i', 1, ray(10 ether), bob);
     taxCollector.modifyParameters('i', 2, ray(20 ether), char);
 
-    hevm.warp(now + 5);
+    hevm.warp(block.timestamp + 5);
     taxCollector.taxSingle('i');
 
     assertEq(wad(safeEngine.coinBalance(ali)), 0);
@@ -669,7 +669,7 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.modifyParameters('j', 'stabilityFee', 1_000_000_000_000_000_000_000_000_000); // 0% / second
     taxCollector.modifyParameters('globalStabilityFee', uint256(50_000_000_000_000_000_000_000_000)); // 5% / second
 
-    hevm.warp(now + 1);
+    hevm.warp(block.timestamp + 1);
     assertTrue(!taxCollector.collectedManyTax(0, 1));
 
     taxCollector.taxSingle('i');
@@ -679,14 +679,14 @@ contract SingleTaxCollectorTest is DSTest {
 
   function test_modify_stabilityFee() public {
     taxCollector.initializeCollateralType('i');
-    hevm.warp(now + 1);
+    hevm.warp(block.timestamp + 1);
     taxCollector.taxSingle('i');
     taxCollector.modifyParameters('i', 'stabilityFee', 1);
   }
 
   function testFail_modify_stabilityFee() public {
     taxCollector.initializeCollateralType('i');
-    hevm.warp(now + 1);
+    hevm.warp(block.timestamp + 1);
     taxCollector.modifyParameters('i', 'stabilityFee', 1);
   }
 
@@ -703,7 +703,7 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.modifyParameters('j', 'stabilityFee', 1_030_000_000_000_000_000_000_000_000); // 3% / second
     taxCollector.modifyParameters('globalStabilityFee', uint256(50_000_000_000_000_000_000_000_000)); // 5% / second
 
-    hevm.warp(now + 1);
+    hevm.warp(block.timestamp + 1);
     (bool ok, int256 rad) = taxCollector.taxManyOutcome(0, 1);
     assertTrue(ok);
     assertEq(uint256(rad), 28 * 10 ** 45);
@@ -722,7 +722,7 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.modifyParameters('j', 'stabilityFee', 1_030_000_000_000_000_000_000_000_000); // 3% / second
     taxCollector.modifyParameters('globalStabilityFee', uint256(50_000_000_000_000_000_000_000_000)); // 5% / second
 
-    hevm.warp(now + 1);
+    hevm.warp(block.timestamp + 1);
     taxCollector.taxSingle('i');
     (bool ok, int256 rad) = taxCollector.taxManyOutcome(0, 1);
     assertTrue(ok);
@@ -741,7 +741,7 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.modifyParameters('i', 'stabilityFee', 950_000_000_000_000_000_000_000_000); // -5% / second
     taxCollector.modifyParameters('j', 'stabilityFee', 930_000_000_000_000_000_000_000_000); // -3% / second
 
-    hevm.warp(now + 1);
+    hevm.warp(block.timestamp + 1);
     (bool ok, int256 rad) = taxCollector.taxManyOutcome(0, 1);
     assertTrue(!ok);
     assertEq(rad, -17 * 10 ** 45);
@@ -758,7 +758,7 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.modifyParameters('i', 'stabilityFee', 950_000_000_000_000_000_000_000_000); // -5% / second
     taxCollector.modifyParameters('j', 'stabilityFee', 1_050_000_000_000_000_000_000_000_000); // 5% / second
 
-    hevm.warp(now + 1);
+    hevm.warp(block.timestamp + 1);
     (bool ok, int256 rad) = taxCollector.taxManyOutcome(0, 1);
     assertTrue(ok);
     assertEq(rad, 0);
@@ -775,7 +775,7 @@ contract SingleTaxCollectorTest is DSTest {
 
     taxCollector.modifyParameters('j', 'stabilityFee', 999_999_706_969_857_929_985_428_567); // -2.5% / day
 
-    hevm.warp(now + 3 days);
+    hevm.warp(block.timestamp + 3 days);
     taxCollector.taxSingle('j');
     assertEq(wad(safeEngine.coinBalance(ali)), 192.6859375 ether);
 

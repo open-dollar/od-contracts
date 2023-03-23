@@ -1,4 +1,4 @@
-pragma solidity 0.6.7;
+pragma solidity 0.8.19;
 
 import {DSTest} from 'ds-test/test.sol';
 import {
@@ -41,7 +41,7 @@ contract DeploymentTest is DSTest {
   function test_deployment_params_safe_engine() public {
     SAFEEngine _safeEngine = deployment.safeEngine();
 
-    assertEq(_safeEngine.safeDebtCeiling(), uint256(-1));
+    assertEq(_safeEngine.safeDebtCeiling(), uint256(int256(-1)));
   }
 
   // TaxCollector
@@ -84,7 +84,7 @@ contract DeploymentTest is DSTest {
     assertEq(address(_sfTreasury.coinJoin()), address(deployment.coinJoin()));
     assertEq(address(_sfTreasury.systemCoin()), address(deployment.coin()));
 
-    assertEq(deployment.coin().allowance(address(_sfTreasury), address(deployment.coinJoin())), uint256(-1));
+    assertEq(deployment.coin().allowance(address(_sfTreasury), address(deployment.coinJoin())), uint256(int256(-1)));
   }
 
   // CoinSavingsAccount
