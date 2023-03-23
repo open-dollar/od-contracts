@@ -1,0 +1,32 @@
+{
+  "extends": "solhint:recommended",
+  "plugins": ["defi-wonderland"],
+  "rules": {
+    "compiler-version": ["off"],
+    "constructor-syntax": "warn",
+    "state-visibility": "warn",
+    "func-visibility": ["warn", { "ignoreConstructors": true }],
+    "private-vars-leading-underscore": ["warn", { "strict": false }],
+    "const-name-snakecase": "warn",
+    "func-name-mixedcase": "warn",
+    "func-param-name-mixedcase": "warn",
+    "modifier-name-mixedcase": "warn",
+    "no-empty-blocks": "off",
+    "max-states-count": "off",
+    "reentrancy": "off",
+    "not-rely-on-time": "off",
+    "avoid-low-level-calls": "off",
+    "no-inline-assembly": "off",
+    "quotes": ["error", "single"],
+    "defi-wonderland/contract-data-order": "warn",
+    "defi-wonderland/enum-name-camelcase": "warn",
+    "defi-wonderland/immutable-name-snakecase": "warn",
+    "defi-wonderland/import-statement-format": "warn",
+    "defi-wonderland/interface-member-order": "warn",
+    "defi-wonderland/interface-starts-with-i": "warn",
+    "defi-wonderland/named-return-values": "warn",
+    "defi-wonderland/non-state-vars-leading-underscore": "warn",
+    "defi-wonderland/struct-name-camelcase": "warn",
+    "defi-wonderland/wonder-var-name-mixedcase": "warn"
+  }
+}
