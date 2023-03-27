@@ -16,9 +16,7 @@
 
 pragma solidity 0.8.19;
 
-import {Math} from './Math.sol';
-
-contract Coin is Math {
+contract Coin {
   // --- Auth ---
   mapping(address => uint256) public authorizedAccounts;
   /**
@@ -119,12 +117,12 @@ contract Coin is Math {
     require(dst != address(0), 'Coin/null-dst');
     require(dst != address(this), 'Coin/dst-cannot-be-this-contract');
     require(balanceOf[src] >= amount, 'Coin/insufficient-balance');
-    if (src != msg.sender && allowance[src][msg.sender] != uint256(int256(-1))) {
+    if (src != msg.sender && allowance[src][msg.sender] != type(uint256).max) {
       require(allowance[src][msg.sender] >= amount, 'Coin/insufficient-allowance');
-      allowance[src][msg.sender] = subtract(allowance[src][msg.sender], amount);
+      allowance[src][msg.sender] = allowance[src][msg.sender] - amount;
     }
-    balanceOf[src] = subtract(balanceOf[src], amount);
-    balanceOf[dst] = addition(balanceOf[dst], amount);
+    balanceOf[src] = balanceOf[src] - amount;
+    balanceOf[dst] = balanceOf[dst] + amount;
     emit Transfer(src, dst, amount);
     return true;
   }
@@ -135,8 +133,8 @@ contract Coin is Math {
     */
 
   function mint(address usr, uint256 amount) external isAuthorized {
-    balanceOf[usr] = addition(balanceOf[usr], amount);
-    totalSupply = addition(totalSupply, amount);
+    balanceOf[usr] = balanceOf[usr] + amount;
+    totalSupply = totalSupply + amount;
     emit Transfer(address(0), usr, amount);
   }
   /*
@@ -147,12 +145,12 @@ contract Coin is Math {
 
   function burn(address usr, uint256 amount) external {
     require(balanceOf[usr] >= amount, 'Coin/insufficient-balance');
-    if (usr != msg.sender && allowance[usr][msg.sender] != uint256(int256(-1))) {
+    if (usr != msg.sender && allowance[usr][msg.sender] != type(uint256).max) {
       require(allowance[usr][msg.sender] >= amount, 'Coin/insufficient-allowance');
-      allowance[usr][msg.sender] = subtract(allowance[usr][msg.sender], amount);
+      allowance[usr][msg.sender] = allowance[usr][msg.sender] - amount;
     }
-    balanceOf[usr] = subtract(balanceOf[usr], amount);
-    totalSupply = subtract(totalSupply, amount);
+    balanceOf[usr] = balanceOf[usr] - amount;
+    totalSupply = totalSupply - amount;
     emit Transfer(usr, address(0), amount);
   }
   /*
@@ -220,7 +218,7 @@ contract Coin is Math {
     require(holder == ecrecover(digest, v, r, s), 'Coin/invalid-permit');
     require(expiry == 0 || block.timestamp <= expiry, 'Coin/permit-expired');
     require(nonce == nonces[holder]++, 'Coin/invalid-nonce');
-    uint256 wad = allowed ? uint256(int256(-1)) : 0;
+    uint256 wad = allowed ? type(uint256).max : 0;
     allowance[holder][spender] = wad;
     emit Approval(holder, spender, wad);
   }

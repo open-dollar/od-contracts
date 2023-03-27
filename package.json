@@ -36,6 +36,9 @@
     "*.sol": "cross-env solhint --fix 'solidity/**/*.sol",
     "package.json": "sort-package-json"
   },
+  "dependencies": {
+    "@defi-wonderland/solidity-utils": "0.0.0-4298c6c6"
+  },
   "devDependencies": {
     "@commitlint/cli": "17.0.3",
     "@commitlint/config-conventional": "17.0.3",

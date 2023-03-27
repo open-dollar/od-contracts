@@ -7,7 +7,7 @@ contract DSToken is ERC20 {
   constructor(string memory _name, string memory _symbol) ERC20(_name, _symbol, 18) {}
 
   function approve(address _guy) public {
-    approve(_guy, uint256(int256(-1)));
+    approve(_guy, type(uint256).max);
   }
 
   function mint(uint256 _wad) external {

@@ -12,6 +12,8 @@ import {CoinJoin} from '../../contracts/utils/CoinJoin.sol';
 import {ETHJoin} from '../../contracts/utils/ETHJoin.sol';
 import {CollateralJoin} from '../../contracts/utils/CollateralJoin.sol';
 
+import {RAY} from '../../contracts/utils/Math.sol';
+
 import {EnglishCollateralAuctionHouse} from './CollateralAuctionHouse.t.sol';
 import {DebtAuctionHouse} from './DebtAuctionHouse.t.sol';
 import {PostSettlementSurplusAuctionHouse} from './SurplusAuctionHouse.t.sol';
@@ -75,7 +77,7 @@ contract TestAccountingEngine is AccountingEngine {
   }
 
   function preAuctionDebt() public view returns (uint256) {
-    return subtract(subtract(totalDeficit(), totalQueuedDebt), totalOnAuctionDebt);
+    return totalDeficit() - totalQueuedDebt - totalOnAuctionDebt;
   }
 }
 

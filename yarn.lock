@@ -191,6 +191,15 @@
   dependencies:
     "@jridgewell/trace-mapping" "0.3.9"
 
+"@defi-wonderland/solidity-utils@0.0.0-4298c6c6":
+  version "0.0.0-4298c6c6"
+  resolved "https://registry.yarnpkg.com/@defi-wonderland/solidity-utils/-/solidity-utils-0.0.0-4298c6c6.tgz#4ac9e4bcc586f7434715357310a7a3c30e81f17f"
+  integrity sha512-jpecgVx9hpnXXGnYnN8ayd1ONj4ljk0hI36ltNfkNwlDkLLzPt4/FY5YSyY/628Exfuy5X9Rl9gGv5UtYgAmtw==
+  dependencies:
+    "@openzeppelin/contracts" "4.8.1"
+    ds-test "https://github.com/dapphub/ds-test"
+    forge-std "https://github.com/foundry-rs/forge-std"
+
 "@jridgewell/resolve-uri@^3.0.3":
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/@jridgewell/resolve-uri/-/resolve-uri-3.1.0.tgz#2203b118c157721addfe69d47b70465463066d78"
@@ -229,6 +238,11 @@
   dependencies:
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
+
+"@openzeppelin/contracts@4.8.1":
+  version "4.8.1"
+  resolved "https://registry.yarnpkg.com/@openzeppelin/contracts/-/contracts-4.8.1.tgz#709cfc4bbb3ca9f4460d60101f15dac6b7a2d5e4"
+  integrity sha512-xQ6eUZl+RDyb/FiZe1h+U7qr/f4p/SrTSQcTPH2bjur3C5DbuW/zFgCU/b1P/xcIaEqJep+9ju4xDRi3rmChdQ==
 
 "@solidity-parser/parser@^0.13.2":
   version "0.13.2"
@@ -789,6 +803,10 @@ dot-prop@^5.1.0:
   dependencies:
     is-obj "^2.0.0"
 
+"ds-test@git+https://github.com/dapphub/ds-test.git":
+  version "1.0.0"
+  resolved "git+https://github.com/dapphub/ds-test.git#e282159d5170298eb2455a6c05280ab5a73a4ef0"
+
 eastasianwidth@^0.2.0:
   version "0.2.0"
   resolved "https://registry.yarnpkg.com/eastasianwidth/-/eastasianwidth-0.2.0.tgz#696ce2ec0aa0e6ea93a397ffcf24aa7840c827cb"
@@ -1058,6 +1076,10 @@ flatted@^2.0.0:
   version "2.0.2"
   resolved "https://registry.yarnpkg.com/flatted/-/flatted-2.0.2.tgz#4575b21e2bcee7434aa9be662f4b7b5f9c2b5138"
   integrity sha512-r5wGx7YeOwNWNlCA0wQ86zKyDLMQr+/RB8xy74M4hTphfmjlijTSSXGuH8rnvKZnfT9i+75zmd8jcKdMR4O6jA==
+
+"forge-std@git+https://github.com/foundry-rs/forge-std.git":
+  version "1.5.2"
+  resolved "git+https://github.com/foundry-rs/forge-std.git#f4264050aca5a2eedf243f9bd54b544c5a373bd2"
 
 fs-extra@^11.0.0:
   version "11.1.0"

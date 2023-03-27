@@ -19,9 +19,11 @@ pragma solidity 0.8.19;
 import {ISAFEEngine as SAFEEngineLike} from '../interfaces/ISAFEEngine.sol';
 import {IOracle as OracleLike} from '../interfaces/IOracle.sol';
 
-import {Math} from './utils/Math.sol';
+import {Math, RAY, WAD} from './utils/Math.sol';
 
-contract OracleRelayer is Math {
+contract OracleRelayer {
+  using Math for uint256;
+
   // --- Auth ---
   mapping(address => uint256) public authorizedAccounts;
   /**
@@ -182,8 +184,7 @@ contract OracleRelayer is Math {
    */
   function updateRedemptionPrice() internal returns (uint256) {
     // Update redemption price
-    _redemptionPrice =
-      rmultiply(rpower(redemptionRate, subtract(block.timestamp, redemptionPriceUpdateTime), RAY), _redemptionPrice);
+    _redemptionPrice = redemptionRate.rpow(block.timestamp - redemptionPriceUpdateTime).rmul(_redemptionPrice);
     if (_redemptionPrice == 0) _redemptionPrice = 1;
     redemptionPriceUpdateTime = block.timestamp;
     emit UpdateRedemptionPrice(_redemptionPrice);
@@ -208,14 +209,12 @@ contract OracleRelayer is Math {
     (uint256 priceFeedValue, bool hasValidValue) = collateralTypes[collateralType].orcl.getResultWithValidity();
     uint256 redemptionPrice_ = redemptionPrice();
     uint256 safetyPrice_ = hasValidValue
-      ? rdivide(
-        rdivide(multiply(uint256(priceFeedValue), uint256(10 ** 9)), redemptionPrice_),
+      ? (uint256(priceFeedValue) * uint256(10 ** 9)).rdiv(redemptionPrice_).rdiv(
         collateralTypes[collateralType].safetyCRatio
       )
       : 0;
     uint256 liquidationPrice_ = hasValidValue
-      ? rdivide(
-        rdivide(multiply(uint256(priceFeedValue), uint256(10 ** 9)), redemptionPrice_),
+      ? (uint256(priceFeedValue) * uint256(10 ** 9)).rdiv(redemptionPrice_).rdiv(
         collateralTypes[collateralType].liquidationCRatio
       )
       : 0;

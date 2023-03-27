@@ -21,12 +21,12 @@ pragma solidity 0.8.19;
 import {ISAFEEngine as SAFEEngineLike} from '../interfaces/ISAFEEngine.sol';
 import {IToken as TokenLike} from '../interfaces/external/IToken.sol';
 
-import {Math} from './utils/Math.sol';
+import {WAD, HUNDRED, FIFTY} from './utils/Math.sol';
 
 /*
    This thing lets you auction some system coins in return for protocol tokens that are then burnt*/
 
-contract BurningSurplusAuctionHouse is Math {
+contract BurningSurplusAuctionHouse {
   // --- Auth ---
   mapping(address => uint256) public authorizedAccounts;
   /**
@@ -137,13 +137,13 @@ contract BurningSurplusAuctionHouse is Math {
    */
   function startAuction(uint256 amountToSell, uint256 initialBid) external isAuthorized returns (uint256 id) {
     require(contractEnabled == 1, 'BurningSurplusAuctionHouse/contract-not-enabled');
-    require(auctionsStarted < uint256(int256(-1)), 'BurningSurplusAuctionHouse/overflow');
+    require(auctionsStarted < type(uint256).max, 'BurningSurplusAuctionHouse/overflow');
     id = ++auctionsStarted;
 
     bids[id].bidAmount = initialBid;
     bids[id].amountToSell = amountToSell;
     bids[id].highBidder = msg.sender;
-    bids[id].auctionDeadline = addUint48(uint48(block.timestamp), totalAuctionLength);
+    bids[id].auctionDeadline = uint48(block.timestamp) + totalAuctionLength;
 
     safeEngine.transferInternalCoins(msg.sender, address(this), amountToSell);
 
@@ -157,7 +157,7 @@ contract BurningSurplusAuctionHouse is Math {
   function restartAuction(uint256 id) external {
     require(bids[id].auctionDeadline < block.timestamp, 'BurningSurplusAuctionHouse/not-finished');
     require(bids[id].bidExpiry == 0, 'BurningSurplusAuctionHouse/bid-already-placed');
-    bids[id].auctionDeadline = addUint48(uint48(block.timestamp), totalAuctionLength);
+    bids[id].auctionDeadline = uint48(block.timestamp) + totalAuctionLength;
     emit RestartAuction(id, bids[id].auctionDeadline);
   }
   /**
@@ -177,10 +177,7 @@ contract BurningSurplusAuctionHouse is Math {
 
     require(amountToBuy == bids[id].amountToSell, 'BurningSurplusAuctionHouse/amounts-not-matching');
     require(bid > bids[id].bidAmount, 'BurningSurplusAuctionHouse/bid-not-higher');
-    require(
-      multiply(bid, ONE_ETH) >= multiply(bidIncrease, bids[id].bidAmount),
-      'BurningSurplusAuctionHouse/insufficient-increase'
-    );
+    require(bid * WAD >= bidIncrease * bids[id].bidAmount, 'BurningSurplusAuctionHouse/insufficient-increase');
 
     if (msg.sender != bids[id].highBidder) {
       protocolToken.move(msg.sender, bids[id].highBidder, bids[id].bidAmount);
@@ -189,7 +186,7 @@ contract BurningSurplusAuctionHouse is Math {
     protocolToken.move(msg.sender, address(this), bid - bids[id].bidAmount);
 
     bids[id].bidAmount = bid;
-    bids[id].bidExpiry = addUint48(uint48(block.timestamp), bidDuration);
+    bids[id].bidExpiry = uint48(block.timestamp) + bidDuration;
 
     emit IncreaseBidSize(id, msg.sender, amountToBuy, bid, bids[id].bidExpiry);
   }
@@ -237,7 +234,7 @@ contract BurningSurplusAuctionHouse is Math {
 
 // This thing lets you auction surplus for protocol tokens that are then sent to another address
 
-contract RecyclingSurplusAuctionHouse is Math {
+contract RecyclingSurplusAuctionHouse {
   // --- Auth ---
   mapping(address => uint256) public authorizedAccounts;
   /**
@@ -363,14 +360,14 @@ contract RecyclingSurplusAuctionHouse is Math {
    */
   function startAuction(uint256 amountToSell, uint256 initialBid) external isAuthorized returns (uint256 id) {
     require(contractEnabled == 1, 'RecyclingSurplusAuctionHouse/contract-not-enabled');
-    require(auctionsStarted < uint256(int256(-1)), 'RecyclingSurplusAuctionHouse/overflow');
+    require(auctionsStarted < type(uint256).max, 'RecyclingSurplusAuctionHouse/overflow');
     require(protocolTokenBidReceiver != address(0), 'RecyclingSurplusAuctionHouse/null-prot-token-receiver');
     id = ++auctionsStarted;
 
     bids[id].bidAmount = initialBid;
     bids[id].amountToSell = amountToSell;
     bids[id].highBidder = msg.sender;
-    bids[id].auctionDeadline = addUint48(uint48(block.timestamp), totalAuctionLength);
+    bids[id].auctionDeadline = uint48(block.timestamp) + totalAuctionLength;
 
     safeEngine.transferInternalCoins(msg.sender, address(this), amountToSell);
 
@@ -384,7 +381,7 @@ contract RecyclingSurplusAuctionHouse is Math {
   function restartAuction(uint256 id) external {
     require(bids[id].auctionDeadline < block.timestamp, 'RecyclingSurplusAuctionHouse/not-finished');
     require(bids[id].bidExpiry == 0, 'RecyclingSurplusAuctionHouse/bid-already-placed');
-    bids[id].auctionDeadline = addUint48(uint48(block.timestamp), totalAuctionLength);
+    bids[id].auctionDeadline = uint48(block.timestamp) + totalAuctionLength;
     emit RestartAuction(id, bids[id].auctionDeadline);
   }
   /**
@@ -405,10 +402,7 @@ contract RecyclingSurplusAuctionHouse is Math {
 
     require(amountToBuy == bids[id].amountToSell, 'RecyclingSurplusAuctionHouse/amounts-not-matching');
     require(bid > bids[id].bidAmount, 'RecyclingSurplusAuctionHouse/bid-not-higher');
-    require(
-      multiply(bid, ONE_ETH) >= multiply(bidIncrease, bids[id].bidAmount),
-      'RecyclingSurplusAuctionHouse/insufficient-increase'
-    );
+    require(bid * WAD >= bidIncrease * bids[id].bidAmount, 'RecyclingSurplusAuctionHouse/insufficient-increase');
 
     if (msg.sender != bids[id].highBidder) {
       protocolToken.move(msg.sender, bids[id].highBidder, bids[id].bidAmount);
@@ -417,7 +411,7 @@ contract RecyclingSurplusAuctionHouse is Math {
     protocolToken.move(msg.sender, address(this), bid - bids[id].bidAmount);
 
     bids[id].bidAmount = bid;
-    bids[id].bidExpiry = addUint48(uint48(block.timestamp), bidDuration);
+    bids[id].bidExpiry = uint48(block.timestamp) + bidDuration;
 
     emit IncreaseBidSize(id, msg.sender, amountToBuy, bid, bids[id].bidExpiry);
   }
@@ -465,7 +459,7 @@ contract RecyclingSurplusAuctionHouse is Math {
 
 // This thing lets you auction surplus for protocol tokens. 50% of the protocol tokens are sent to another address and the rest are burned
 
-contract MixedStratSurplusAuctionHouse is Math {
+contract MixedStratSurplusAuctionHouse {
   // --- Auth ---
   mapping(address => uint256) public authorizedAccounts;
   /**
@@ -591,14 +585,14 @@ contract MixedStratSurplusAuctionHouse is Math {
    */
   function startAuction(uint256 amountToSell, uint256 initialBid) external isAuthorized returns (uint256 id) {
     require(contractEnabled == 1, 'MixedStratSurplusAuctionHouse/contract-not-enabled');
-    require(auctionsStarted < uint256(int256(-1)), 'MixedStratSurplusAuctionHouse/overflow');
+    require(auctionsStarted < type(uint256).max, 'MixedStratSurplusAuctionHouse/overflow');
     require(protocolTokenBidReceiver != address(0), 'MixedStratSurplusAuctionHouse/null-prot-token-receiver');
     id = ++auctionsStarted;
 
     bids[id].bidAmount = initialBid;
     bids[id].amountToSell = amountToSell;
     bids[id].highBidder = msg.sender;
-    bids[id].auctionDeadline = addUint48(uint48(block.timestamp), totalAuctionLength);
+    bids[id].auctionDeadline = uint48(block.timestamp) + totalAuctionLength;
 
     safeEngine.transferInternalCoins(msg.sender, address(this), amountToSell);
 
@@ -612,7 +606,7 @@ contract MixedStratSurplusAuctionHouse is Math {
   function restartAuction(uint256 id) external {
     require(bids[id].auctionDeadline < block.timestamp, 'MixedStratSurplusAuctionHouse/not-finished');
     require(bids[id].bidExpiry == 0, 'MixedStratSurplusAuctionHouse/bid-already-placed');
-    bids[id].auctionDeadline = addUint48(uint48(block.timestamp), totalAuctionLength);
+    bids[id].auctionDeadline = uint48(block.timestamp) + totalAuctionLength;
     emit RestartAuction(id, bids[id].auctionDeadline);
   }
   /**
@@ -633,10 +627,7 @@ contract MixedStratSurplusAuctionHouse is Math {
 
     require(amountToBuy == bids[id].amountToSell, 'MixedStratSurplusAuctionHouse/amounts-not-matching');
     require(bid > bids[id].bidAmount, 'MixedStratSurplusAuctionHouse/bid-not-higher');
-    require(
-      multiply(bid, ONE_ETH) >= multiply(bidIncrease, bids[id].bidAmount),
-      'MixedStratSurplusAuctionHouse/insufficient-increase'
-    );
+    require(bid * WAD >= bidIncrease * bids[id].bidAmount, 'MixedStratSurplusAuctionHouse/insufficient-increase');
 
     if (msg.sender != bids[id].highBidder) {
       protocolToken.move(msg.sender, bids[id].highBidder, bids[id].bidAmount);
@@ -645,7 +636,7 @@ contract MixedStratSurplusAuctionHouse is Math {
     protocolToken.move(msg.sender, address(this), bid - bids[id].bidAmount);
 
     bids[id].bidAmount = bid;
-    bids[id].bidExpiry = addUint48(uint48(block.timestamp), bidDuration);
+    bids[id].bidExpiry = uint48(block.timestamp) + bidDuration;
 
     emit IncreaseBidSize(id, msg.sender, amountToBuy, bid, bids[id].bidExpiry);
   }
@@ -662,13 +653,13 @@ contract MixedStratSurplusAuctionHouse is Math {
     );
     safeEngine.transferInternalCoins(address(this), bids[id].highBidder, bids[id].amountToSell);
 
-    uint256 amountToSend = multiply(bids[id].bidAmount, FIFTY) / HUNDRED;
+    uint256 amountToSend = bids[id].bidAmount * FIFTY / HUNDRED;
     if (amountToSend > 0) {
       protocolToken.push(protocolTokenBidReceiver, amountToSend);
       // protocolToken.move(address(this), protocolTokenBidReceiver, amountToSend);
     }
 
-    uint256 amountToBurn = subtract(bids[id].bidAmount, amountToSend);
+    uint256 amountToBurn = bids[id].bidAmount - amountToSend;
     if (amountToBurn > 0) {
       protocolToken.burn(address(this), amountToBurn);
     }
@@ -701,7 +692,7 @@ contract MixedStratSurplusAuctionHouse is Math {
   }
 }
 
-contract PostSettlementSurplusAuctionHouse is Math {
+contract PostSettlementSurplusAuctionHouse {
   // --- Auth ---
   mapping(address => uint256) public authorizedAccounts;
   /**
@@ -805,13 +796,13 @@ contract PostSettlementSurplusAuctionHouse is Math {
    * @param initialBid Initial protocol token bid (rad)
    */
   function startAuction(uint256 amountToSell, uint256 initialBid) external isAuthorized returns (uint256 id) {
-    require(auctionsStarted < uint256(int256(-1)), 'PostSettlementSurplusAuctionHouse/overflow');
+    require(auctionsStarted < type(uint256).max, 'PostSettlementSurplusAuctionHouse/overflow');
     id = ++auctionsStarted;
 
     bids[id].bidAmount = initialBid;
     bids[id].amountToSell = amountToSell;
     bids[id].highBidder = msg.sender;
-    bids[id].auctionDeadline = addUint48(uint48(block.timestamp), totalAuctionLength);
+    bids[id].auctionDeadline = uint48(block.timestamp) + totalAuctionLength;
 
     safeEngine.transferInternalCoins(msg.sender, address(this), amountToSell);
 
@@ -825,7 +816,7 @@ contract PostSettlementSurplusAuctionHouse is Math {
   function restartAuction(uint256 id) external {
     require(bids[id].auctionDeadline < block.timestamp, 'PostSettlementSurplusAuctionHouse/not-finished');
     require(bids[id].bidExpiry == 0, 'PostSettlementSurplusAuctionHouse/bid-already-placed');
-    bids[id].auctionDeadline = addUint48(uint48(block.timestamp), totalAuctionLength);
+    bids[id].auctionDeadline = uint48(block.timestamp) + totalAuctionLength;
     emit RestartAuction(id, bids[id].auctionDeadline);
   }
   /**
@@ -845,10 +836,7 @@ contract PostSettlementSurplusAuctionHouse is Math {
 
     require(amountToBuy == bids[id].amountToSell, 'PostSettlementSurplusAuctionHouse/amounts-not-matching');
     require(bid > bids[id].bidAmount, 'PostSettlementSurplusAuctionHouse/bid-not-higher');
-    require(
-      multiply(bid, ONE_ETH) >= multiply(bidIncrease, bids[id].bidAmount),
-      'PostSettlementSurplusAuctionHouse/insufficient-increase'
-    );
+    require(bid * WAD >= bidIncrease * bids[id].bidAmount, 'PostSettlementSurplusAuctionHouse/insufficient-increase');
 
     if (msg.sender != bids[id].highBidder) {
       protocolToken.move(msg.sender, bids[id].highBidder, bids[id].bidAmount);
@@ -857,7 +845,7 @@ contract PostSettlementSurplusAuctionHouse is Math {
     protocolToken.move(msg.sender, address(this), bid - bids[id].bidAmount);
 
     bids[id].bidAmount = bid;
-    bids[id].bidExpiry = addUint48(uint48(block.timestamp), bidDuration);
+    bids[id].bidExpiry = uint48(block.timestamp) + bidDuration;
 
     emit IncreaseBidSize(id, msg.sender, amountToBuy, bid, bids[id].bidExpiry);
   }

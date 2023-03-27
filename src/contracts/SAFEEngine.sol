@@ -20,7 +20,9 @@ pragma solidity 0.8.19;
 
 import {Math} from './utils/Math.sol';
 
-contract SAFEEngine is Math {
+contract SAFEEngine {
+  using Math for uint256;
+
   // --- Auth ---
   mapping(address => uint256) public authorizedAccounts;
   /**
@@ -198,10 +200,10 @@ contract SAFEEngine is Math {
   // --- Init ---
   constructor() {
     authorizedAccounts[msg.sender] = 1;
-    safeDebtCeiling = uint256(int256(-1));
+    safeDebtCeiling = type(uint256).max;
     contractEnabled = 1;
     emit AddAuthorization(msg.sender);
-    emit ModifyParameters('safeDebtCeiling', uint256(int256(-1)));
+    emit ModifyParameters('safeDebtCeiling', type(uint256).max);
   }
 
   // --- Administration ---
@@ -260,7 +262,7 @@ contract SAFEEngine is Math {
    * @param wad Amount of collateral
    */
   function modifyCollateralBalance(bytes32 collateralType, address account, int256 wad) external isAuthorized {
-    tokenCollateral[collateralType][account] = addition(tokenCollateral[collateralType][account], wad);
+    tokenCollateral[collateralType][account] = tokenCollateral[collateralType][account].add(wad);
     emit ModifyCollateralBalance(collateralType, account, wad);
   }
   /**
@@ -273,8 +275,8 @@ contract SAFEEngine is Math {
 
   function transferCollateral(bytes32 collateralType, address src, address dst, uint256 wad) external {
     require(canModifySAFE(src, msg.sender), 'SAFEEngine/not-allowed');
-    tokenCollateral[collateralType][src] = subtract(tokenCollateral[collateralType][src], wad);
-    tokenCollateral[collateralType][dst] = addition(tokenCollateral[collateralType][dst], wad);
+    tokenCollateral[collateralType][src] = tokenCollateral[collateralType][src] - wad;
+    tokenCollateral[collateralType][dst] = tokenCollateral[collateralType][dst] + wad;
     emit TransferCollateral(collateralType, src, dst, wad);
   }
   /**
@@ -286,8 +288,8 @@ contract SAFEEngine is Math {
 
   function transferInternalCoins(address src, address dst, uint256 rad) external {
     require(canModifySAFE(src, msg.sender), 'SAFEEngine/not-allowed');
-    coinBalance[src] = subtract(coinBalance[src], rad);
-    coinBalance[dst] = addition(coinBalance[dst], rad);
+    coinBalance[src] = coinBalance[src] - rad;
+    coinBalance[dst] = coinBalance[dst] + rad;
     emit TransferInternalCoins(src, dst, rad);
   }
 
@@ -317,19 +319,19 @@ contract SAFEEngine is Math {
     // collateral type has been initialised
     require(collateralTypeData.accumulatedRate != 0, 'SAFEEngine/collateral-type-not-initialized');
 
-    safeData.lockedCollateral = addition(safeData.lockedCollateral, deltaCollateral);
-    safeData.generatedDebt = addition(safeData.generatedDebt, deltaDebt);
-    collateralTypeData.debtAmount = addition(collateralTypeData.debtAmount, deltaDebt);
+    safeData.lockedCollateral = safeData.lockedCollateral.add(deltaCollateral);
+    safeData.generatedDebt = safeData.generatedDebt.add(deltaDebt);
+    collateralTypeData.debtAmount = collateralTypeData.debtAmount.add(deltaDebt);
 
-    int256 deltaAdjustedDebt = multiply(collateralTypeData.accumulatedRate, deltaDebt);
-    uint256 totalDebtIssued = multiply(collateralTypeData.accumulatedRate, safeData.generatedDebt);
-    globalDebt = addition(globalDebt, deltaAdjustedDebt);
+    int256 deltaAdjustedDebt = collateralTypeData.accumulatedRate.mul(deltaDebt);
+    uint256 totalDebtIssued = collateralTypeData.accumulatedRate * safeData.generatedDebt;
+    globalDebt = globalDebt.add(deltaAdjustedDebt);
 
     // either debt has decreased, or debt ceilings are not exceeded
     require(
       deltaDebt <= 0
         || (
-          multiply(collateralTypeData.debtAmount, collateralTypeData.accumulatedRate) <= collateralTypeData.debtCeiling
+          collateralTypeData.debtAmount * collateralTypeData.accumulatedRate <= collateralTypeData.debtCeiling
             && globalDebt <= globalDebtCeiling
         ),
       'SAFEEngine/ceiling-exceeded'
@@ -337,7 +339,7 @@ contract SAFEEngine is Math {
     // safe is either less risky than before, or it is safe
     require(
       (deltaDebt <= 0 && deltaCollateral >= 0)
-        || totalDebtIssued <= multiply(safeData.lockedCollateral, collateralTypeData.safetyPrice),
+        || totalDebtIssued <= safeData.lockedCollateral * collateralTypeData.safetyPrice,
       'SAFEEngine/not-safe'
     );
 
@@ -362,9 +364,9 @@ contract SAFEEngine is Math {
     }
 
     tokenCollateral[collateralType][collateralSource] =
-      subtract(tokenCollateral[collateralType][collateralSource], deltaCollateral);
+      tokenCollateral[collateralType][collateralSource].sub(deltaCollateral);
 
-    coinBalance[debtDestination] = addition(coinBalance[debtDestination], deltaAdjustedDebt);
+    coinBalance[debtDestination] = coinBalance[debtDestination].add(deltaAdjustedDebt);
 
     safes[collateralType][safe] = safeData;
     collateralTypes[collateralType] = collateralTypeData;
@@ -402,24 +404,20 @@ contract SAFEEngine is Math {
     SAFE storage dstSAFE = safes[collateralType][dst];
     CollateralType storage collateralType_ = collateralTypes[collateralType];
 
-    srcSAFE.lockedCollateral = subtract(srcSAFE.lockedCollateral, deltaCollateral);
-    srcSAFE.generatedDebt = subtract(srcSAFE.generatedDebt, deltaDebt);
-    dstSAFE.lockedCollateral = addition(dstSAFE.lockedCollateral, deltaCollateral);
-    dstSAFE.generatedDebt = addition(dstSAFE.generatedDebt, deltaDebt);
+    srcSAFE.lockedCollateral = srcSAFE.lockedCollateral.sub(deltaCollateral);
+    srcSAFE.generatedDebt = srcSAFE.generatedDebt.sub(deltaDebt);
+    dstSAFE.lockedCollateral = dstSAFE.lockedCollateral.add(deltaCollateral);
+    dstSAFE.generatedDebt = dstSAFE.generatedDebt.add(deltaDebt);
 
-    uint256 srcTotalDebtIssued = multiply(srcSAFE.generatedDebt, collateralType_.accumulatedRate);
-    uint256 dstTotalDebtIssued = multiply(dstSAFE.generatedDebt, collateralType_.accumulatedRate);
+    uint256 srcTotalDebtIssued = srcSAFE.generatedDebt * collateralType_.accumulatedRate;
+    uint256 dstTotalDebtIssued = dstSAFE.generatedDebt * collateralType_.accumulatedRate;
 
     // both sides consent
     require(canModifySAFE(src, msg.sender) && canModifySAFE(dst, msg.sender), 'SAFEEngine/not-allowed');
 
     // both sides safe
-    require(
-      srcTotalDebtIssued <= multiply(srcSAFE.lockedCollateral, collateralType_.safetyPrice), 'SAFEEngine/not-safe-src'
-    );
-    require(
-      dstTotalDebtIssued <= multiply(dstSAFE.lockedCollateral, collateralType_.safetyPrice), 'SAFEEngine/not-safe-dst'
-    );
+    require(srcTotalDebtIssued <= srcSAFE.lockedCollateral * collateralType_.safetyPrice, 'SAFEEngine/not-safe-src');
+    require(dstTotalDebtIssued <= dstSAFE.lockedCollateral * collateralType_.safetyPrice, 'SAFEEngine/not-safe-dst');
 
     // both sides non-dusty
     require(srcTotalDebtIssued >= collateralType_.debtFloor || srcSAFE.generatedDebt == 0, 'SAFEEngine/dust-src');
@@ -460,16 +458,16 @@ contract SAFEEngine is Math {
     SAFE storage safe_ = safes[collateralType][safe];
     CollateralType storage collateralType_ = collateralTypes[collateralType];
 
-    safe_.lockedCollateral = addition(safe_.lockedCollateral, deltaCollateral);
-    safe_.generatedDebt = addition(safe_.generatedDebt, deltaDebt);
-    collateralType_.debtAmount = addition(collateralType_.debtAmount, deltaDebt);
+    safe_.lockedCollateral = safe_.lockedCollateral.add(deltaCollateral);
+    safe_.generatedDebt = safe_.generatedDebt.add(deltaDebt);
+    collateralType_.debtAmount = collateralType_.debtAmount.add(deltaDebt);
 
-    int256 deltaTotalIssuedDebt = multiply(collateralType_.accumulatedRate, deltaDebt);
+    int256 deltaTotalIssuedDebt = collateralType_.accumulatedRate.mul(deltaDebt);
 
     tokenCollateral[collateralType][collateralCounterparty] =
-      subtract(tokenCollateral[collateralType][collateralCounterparty], deltaCollateral);
-    debtBalance[debtCounterparty] = subtract(debtBalance[debtCounterparty], deltaTotalIssuedDebt);
-    globalUnbackedDebt = subtract(globalUnbackedDebt, deltaTotalIssuedDebt);
+      tokenCollateral[collateralType][collateralCounterparty].sub(deltaCollateral);
+    debtBalance[debtCounterparty] = debtBalance[debtCounterparty].sub(deltaTotalIssuedDebt);
+    globalUnbackedDebt = globalUnbackedDebt.sub(deltaTotalIssuedDebt);
 
     emit ConfiscateSAFECollateralAndDebt(
       collateralType, safe, collateralCounterparty, debtCounterparty, deltaCollateral, deltaDebt, globalUnbackedDebt
@@ -483,10 +481,10 @@ contract SAFEEngine is Math {
    */
   function settleDebt(uint256 rad) external {
     address account = msg.sender;
-    debtBalance[account] = subtract(debtBalance[account], rad);
-    coinBalance[account] = subtract(coinBalance[account], rad);
-    globalUnbackedDebt = subtract(globalUnbackedDebt, rad);
-    globalDebt = subtract(globalDebt, rad);
+    debtBalance[account] = debtBalance[account] - rad;
+    coinBalance[account] = coinBalance[account] - rad;
+    globalUnbackedDebt = globalUnbackedDebt - rad;
+    globalDebt = globalDebt - rad;
     emit SettleDebt(account, rad, debtBalance[account], coinBalance[account], globalUnbackedDebt, globalDebt);
   }
   /**
@@ -497,10 +495,10 @@ contract SAFEEngine is Math {
    */
 
   function createUnbackedDebt(address debtDestination, address coinDestination, uint256 rad) external isAuthorized {
-    debtBalance[debtDestination] = addition(debtBalance[debtDestination], rad);
-    coinBalance[coinDestination] = addition(coinBalance[coinDestination], rad);
-    globalUnbackedDebt = addition(globalUnbackedDebt, rad);
-    globalDebt = addition(globalDebt, rad);
+    debtBalance[debtDestination] = debtBalance[debtDestination] + rad;
+    coinBalance[coinDestination] = coinBalance[coinDestination] + rad;
+    globalUnbackedDebt = globalUnbackedDebt + rad;
+    globalDebt = globalDebt + rad;
     emit CreateUnbackedDebt(
       debtDestination,
       coinDestination,
@@ -526,10 +524,10 @@ contract SAFEEngine is Math {
   ) external isAuthorized {
     require(contractEnabled == 1, 'SAFEEngine/contract-not-enabled');
     CollateralType storage collateralType_ = collateralTypes[collateralType];
-    collateralType_.accumulatedRate = addition(collateralType_.accumulatedRate, rateMultiplier);
-    int256 deltaSurplus = multiply(collateralType_.debtAmount, rateMultiplier);
-    coinBalance[surplusDst] = addition(coinBalance[surplusDst], deltaSurplus);
-    globalDebt = addition(globalDebt, deltaSurplus);
+    collateralType_.accumulatedRate = collateralType_.accumulatedRate.add(rateMultiplier);
+    int256 deltaSurplus = collateralType_.debtAmount.mul(rateMultiplier);
+    coinBalance[surplusDst] = coinBalance[surplusDst].add(deltaSurplus);
+    globalDebt = globalDebt.add(deltaSurplus);
     emit UpdateAccumulatedRate(collateralType, surplusDst, rateMultiplier, coinBalance[surplusDst], globalDebt);
   }
 }

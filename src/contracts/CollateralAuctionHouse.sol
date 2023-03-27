@@ -23,12 +23,12 @@ import {IOracleRelayer as OracleRelayerLike} from '../interfaces/IOracleRelayer.
 import {IOracle as OracleLike} from '../interfaces/IOracle.sol';
 import {ILiquidationEngine as LiquidationEngineLike} from '../interfaces/ILiquidationEngine.sol';
 
-import {Math} from './utils/Math.sol';
+import {Math, RAY, WAD} from './utils/Math.sol';
 
 /*
    This thing lets you (English) auction some collateral for a given amount of system coins*/
 
-contract EnglishCollateralAuctionHouse is Math {
+contract EnglishCollateralAuctionHouse {
   // --- Auth ---
   mapping(address => uint256) public authorizedAccounts;
   /**
@@ -172,14 +172,14 @@ contract EnglishCollateralAuctionHouse is Math {
     uint256 amountToSell,
     uint256 initialBid
   ) public isAuthorized returns (uint256 id) {
-    require(auctionsStarted < uint256(int256(-1)), 'EnglishCollateralAuctionHouse/overflow');
+    require(auctionsStarted < type(uint256).max, 'EnglishCollateralAuctionHouse/overflow');
     require(amountToSell > 0, 'EnglishCollateralAuctionHouse/null-amount-sold');
     id = ++auctionsStarted;
 
     bids[id].bidAmount = initialBid;
     bids[id].amountToSell = amountToSell;
     bids[id].highBidder = msg.sender;
-    bids[id].auctionDeadline = addUint48(uint48(block.timestamp), totalAuctionLength);
+    bids[id].auctionDeadline = uint48(block.timestamp) + totalAuctionLength;
     bids[id].forgoneCollateralReceiver = forgoneCollateralReceiver;
     bids[id].auctionIncomeRecipient = auctionIncomeRecipient;
     bids[id].amountToRaise = amountToRaise;
@@ -205,7 +205,7 @@ contract EnglishCollateralAuctionHouse is Math {
   function restartAuction(uint256 id) external {
     require(bids[id].auctionDeadline < block.timestamp, 'EnglishCollateralAuctionHouse/not-finished');
     require(bids[id].bidExpiry == 0, 'EnglishCollateralAuctionHouse/bid-already-placed');
-    bids[id].auctionDeadline = addUint48(uint48(block.timestamp), totalAuctionLength);
+    bids[id].auctionDeadline = uint48(block.timestamp) + totalAuctionLength;
     emit RestartAuction(id, bids[id].auctionDeadline);
   }
   /**
@@ -227,7 +227,7 @@ contract EnglishCollateralAuctionHouse is Math {
     require(rad <= bids[id].amountToRaise, 'EnglishCollateralAuctionHouse/higher-than-amount-to-raise');
     require(rad > bids[id].bidAmount, 'EnglishCollateralAuctionHouse/new-bid-not-higher');
     require(
-      multiply(rad, ONE_ETH) >= multiply(bidIncrease, bids[id].bidAmount) || rad == bids[id].amountToRaise,
+      rad * WAD >= bidIncrease * bids[id].bidAmount || rad == bids[id].amountToRaise,
       'EnglishCollateralAuctionHouse/insufficient-increase'
     );
 
@@ -238,7 +238,7 @@ contract EnglishCollateralAuctionHouse is Math {
     safeEngine.transferInternalCoins(msg.sender, bids[id].auctionIncomeRecipient, rad - bids[id].bidAmount);
 
     bids[id].bidAmount = rad;
-    bids[id].bidExpiry = addUint48(uint48(block.timestamp), bidDuration);
+    bids[id].bidExpiry = uint48(block.timestamp) + bidDuration;
 
     emit IncreaseBidSize(id, msg.sender, amountToBuy, rad, bids[id].bidExpiry);
   }
@@ -262,8 +262,7 @@ contract EnglishCollateralAuctionHouse is Math {
     require(rad == bids[id].amountToRaise, 'EnglishCollateralAuctionHouse/bid-increase-not-finished');
     require(amountToBuy < bids[id].amountToSell, 'EnglishCollateralAuctionHouse/amount-bought-not-lower');
     require(
-      multiply(bidIncrease, amountToBuy) <= multiply(bids[id].amountToSell, ONE_ETH),
-      'EnglishCollateralAuctionHouse/insufficient-decrease'
+      bidIncrease * amountToBuy <= bids[id].amountToSell * WAD, 'EnglishCollateralAuctionHouse/insufficient-decrease'
     );
 
     if (msg.sender != bids[id].highBidder) {
@@ -275,7 +274,7 @@ contract EnglishCollateralAuctionHouse is Math {
     );
 
     bids[id].amountToSell = amountToBuy;
-    bids[id].bidExpiry = addUint48(uint48(block.timestamp), bidDuration);
+    bids[id].bidExpiry = uint48(block.timestamp) + bidDuration;
 
     emit DecreaseSoldAmount(id, msg.sender, amountToBuy, rad, bids[id].bidExpiry);
   }
@@ -352,7 +351,9 @@ contract EnglishCollateralAuctionHouse is Math {
 /*
    This thing lets you sell some collateral at a fixed discount in order to instantly recapitalize the system*/
 
-contract FixedDiscountCollateralAuctionHouse is Math {
+contract FixedDiscountCollateralAuctionHouse {
+  using Math for uint256;
+
   // --- Auth ---
   mapping(address => uint256) public authorizedAccounts;
   /**
@@ -412,7 +413,7 @@ contract FixedDiscountCollateralAuctionHouse is Math {
   // Minimum acceptable bid
   uint256 public minimumBid = 5 * WAD; // [wad]
   // Total length of the auction. Kept to adhere to the same interface as the English auction but redundant
-  uint48 public totalAuctionLength = uint48(int48(-1)); // [seconds]
+  uint48 public totalAuctionLength = type(uint48).max; // [seconds]
   // Number of auctions started up until now
   uint256 public auctionsStarted = 0;
   // The last read redemption price
@@ -541,10 +542,10 @@ contract FixedDiscountCollateralAuctionHouse is Math {
       collateralFsmPriceFeedValue, collateralMedianPriceFeedValue, systemCoinPriceFeedValue, discount
     );
     // calculate the amount of collateral bought
-    uint256 boughtCollateral = wdivide(adjustedBid, discountedCollateralPrice);
+    uint256 boughtCollateral = adjustedBid.wdiv(discountedCollateralPrice);
     // if the calculated collateral amount exceeds the amount still up for sale, adjust it to the remaining amount
-    boughtCollateral = (boughtCollateral > subtract(bids[id].amountToSell, bids[id].soldAmount))
-      ? subtract(bids[id].amountToSell, bids[id].soldAmount)
+    boughtCollateral = (boughtCollateral > bids[id].amountToSell - bids[id].soldAmount)
+      ? bids[id].amountToSell - bids[id].soldAmount
       : boughtCollateral;
 
     return boughtCollateral;
@@ -596,8 +597,8 @@ contract FixedDiscountCollateralAuctionHouse is Math {
     */
 
   function getSystemCoinFloorDeviatedPrice(uint256 redemptionPrice) public view returns (uint256 floorPrice) {
-    uint256 minFloorDeviatedPrice = wmultiply(redemptionPrice, minSystemCoinMedianDeviation);
-    floorPrice = wmultiply(redemptionPrice, lowerSystemCoinMedianDeviation);
+    uint256 minFloorDeviatedPrice = redemptionPrice.wmul(minSystemCoinMedianDeviation);
+    floorPrice = redemptionPrice.wmul(lowerSystemCoinMedianDeviation);
     floorPrice = (floorPrice <= minFloorDeviatedPrice) ? floorPrice : redemptionPrice;
   }
   /*
@@ -606,8 +607,8 @@ contract FixedDiscountCollateralAuctionHouse is Math {
     */
 
   function getSystemCoinCeilingDeviatedPrice(uint256 redemptionPrice) public view returns (uint256 ceilingPrice) {
-    uint256 minCeilingDeviatedPrice = wmultiply(redemptionPrice, subtract(2 * WAD, minSystemCoinMedianDeviation));
-    ceilingPrice = wmultiply(redemptionPrice, subtract(2 * WAD, upperSystemCoinMedianDeviation));
+    uint256 minCeilingDeviatedPrice = redemptionPrice.wmul((2 * WAD) - minSystemCoinMedianDeviation);
+    ceilingPrice = redemptionPrice.wmul((2 * WAD) - upperSystemCoinMedianDeviation);
     ceilingPrice = (ceilingPrice >= minCeilingDeviatedPrice) ? ceilingPrice : redemptionPrice;
   }
   /*
@@ -635,9 +636,9 @@ contract FixedDiscountCollateralAuctionHouse is Math {
       uint256 ceilingPrice = getSystemCoinCeilingDeviatedPrice(systemCoinAdjustedPrice);
 
       if (uint256(systemCoinPriceFeedValue) < systemCoinAdjustedPrice) {
-        systemCoinAdjustedPrice = maximum(uint256(systemCoinPriceFeedValue), floorPrice);
+        systemCoinAdjustedPrice = Math.max(uint256(systemCoinPriceFeedValue), floorPrice);
       } else {
-        systemCoinAdjustedPrice = minimum(uint256(systemCoinPriceFeedValue), ceilingPrice);
+        systemCoinAdjustedPrice = Math.min(uint256(systemCoinPriceFeedValue), ceilingPrice);
       }
     }
 
@@ -654,16 +655,16 @@ contract FixedDiscountCollateralAuctionHouse is Math {
     uint256 collateralFsmPriceFeedValue,
     uint256 collateralMedianPriceFeedValue
   ) public view returns (uint256) {
-    uint256 floorPrice = wmultiply(collateralFsmPriceFeedValue, lowerCollateralMedianDeviation);
-    uint256 ceilingPrice = wmultiply(collateralFsmPriceFeedValue, subtract(2 * WAD, upperCollateralMedianDeviation));
+    uint256 floorPrice = collateralFsmPriceFeedValue.wmul(lowerCollateralMedianDeviation);
+    uint256 ceilingPrice = collateralFsmPriceFeedValue.wmul((2 * WAD) - upperCollateralMedianDeviation);
 
     uint256 adjustedMedianPrice =
       (collateralMedianPriceFeedValue == 0) ? collateralFsmPriceFeedValue : collateralMedianPriceFeedValue;
 
     if (adjustedMedianPrice < collateralFsmPriceFeedValue) {
-      return maximum(adjustedMedianPrice, floorPrice);
+      return Math.max(adjustedMedianPrice, floorPrice);
     } else {
-      return minimum(adjustedMedianPrice, ceilingPrice);
+      return Math.min(adjustedMedianPrice, ceilingPrice);
     }
   }
   /*
@@ -681,13 +682,9 @@ contract FixedDiscountCollateralAuctionHouse is Math {
     uint256 customDiscount
   ) public view returns (uint256) {
     // calculate the collateral price in relation to the latest system coin price and apply the discount
-    return wmultiply(
-      rdivide(
-        getFinalBaseCollateralPrice(collateralFsmPriceFeedValue, collateralMedianPriceFeedValue),
-        systemCoinPriceFeedValue
-      ),
-      customDiscount
-    );
+    return getFinalBaseCollateralPrice(collateralFsmPriceFeedValue, collateralMedianPriceFeedValue).rdiv(
+      systemCoinPriceFeedValue
+    ).wmul(customDiscount);
   }
   /*
     * @notice Get the actual bid that will be used in an auction (taking into account the bidder input)
@@ -701,15 +698,15 @@ contract FixedDiscountCollateralAuctionHouse is Math {
       return (false, wad);
     }
 
-    uint256 remainingToRaise = subtract(bids[id].amountToRaise, bids[id].raisedAmount);
+    uint256 remainingToRaise = bids[id].amountToRaise - bids[id].raisedAmount;
 
     // bound max amount offered in exchange for collateral
     uint256 adjustedBid = wad;
-    if (multiply(adjustedBid, RAY) > remainingToRaise) {
-      adjustedBid = addUint256(remainingToRaise / RAY, 1);
+    if (adjustedBid * RAY > remainingToRaise) {
+      adjustedBid = (remainingToRaise / RAY) + 1;
     }
 
-    remainingToRaise = subtract(bids[id].amountToRaise, bids[id].raisedAmount);
+    remainingToRaise = bids[id].amountToRaise - bids[id].raisedAmount;
     if (remainingToRaise > 0 && remainingToRaise < RAY) {
       return (false, adjustedBid);
     }
@@ -733,13 +730,13 @@ contract FixedDiscountCollateralAuctionHouse is Math {
     uint256 amountToSell,
     uint256 initialBid
   ) public isAuthorized returns (uint256 id) {
-    require(auctionsStarted < uint256(int256(-1)), 'FixedDiscountCollateralAuctionHouse/overflow');
+    require(auctionsStarted < type(uint256).max, 'FixedDiscountCollateralAuctionHouse/overflow');
     require(amountToSell > 0, 'FixedDiscountCollateralAuctionHouse/no-collateral-for-sale');
     require(amountToRaise > 0, 'FixedDiscountCollateralAuctionHouse/nothing-to-raise');
     require(amountToRaise >= RAY, 'FixedDiscountCollateralAuctionHouse/dusty-auction');
     id = ++auctionsStarted;
 
-    bids[id].auctionDeadline = uint48(int48(-1));
+    bids[id].auctionDeadline = type(uint48).max;
     bids[id].amountToSell = amountToSell;
     bids[id].forgoneCollateralReceiver = forgoneCollateralReceiver;
     bids[id].auctionIncomeRecipient = auctionIncomeRecipient;
@@ -826,22 +823,22 @@ contract FixedDiscountCollateralAuctionHouse is Math {
       bids[id].amountToSell > 0 && bids[id].amountToRaise > 0, 'FixedDiscountCollateralAuctionHouse/inexistent-auction'
     );
 
-    uint256 remainingToRaise = subtract(bids[id].amountToRaise, bids[id].raisedAmount);
+    uint256 remainingToRaise = bids[id].amountToRaise - bids[id].raisedAmount;
     require(wad > 0 && wad >= minimumBid, 'FixedDiscountCollateralAuctionHouse/invalid-bid');
 
     // bound max amount offered in exchange for collateral (in case someone offers more than is necessary)
     uint256 adjustedBid = wad;
-    if (multiply(adjustedBid, RAY) > remainingToRaise) {
-      adjustedBid = addUint256(remainingToRaise / RAY, 1);
+    if (adjustedBid * RAY > remainingToRaise) {
+      adjustedBid = (remainingToRaise / RAY) + 1;
     }
 
     // update amount raised
-    bids[id].raisedAmount = addUint256(bids[id].raisedAmount, multiply(adjustedBid, RAY));
+    bids[id].raisedAmount = bids[id].raisedAmount + (adjustedBid * RAY);
 
     // check that there's at least RAY left to raise if raisedAmount < amountToRaise
     if (bids[id].raisedAmount < bids[id].amountToRaise) {
       require(
-        subtract(bids[id].amountToRaise, bids[id].raisedAmount) >= RAY,
+        bids[id].amountToRaise - bids[id].raisedAmount >= RAY,
         'FixedDiscountCollateralAuctionHouse/invalid-left-to-raise'
       );
     }
@@ -861,10 +858,10 @@ contract FixedDiscountCollateralAuctionHouse is Math {
     // check that the calculated amount is greater than zero
     require(boughtCollateral > 0, 'FixedDiscountCollateralAuctionHouse/null-bought-amount');
     // update the amount of collateral already sold
-    bids[id].soldAmount = addUint256(bids[id].soldAmount, boughtCollateral);
+    bids[id].soldAmount = bids[id].soldAmount + boughtCollateral;
 
     // transfer the bid to the income recipient and the collateral to the bidder
-    safeEngine.transferInternalCoins(msg.sender, bids[id].auctionIncomeRecipient, multiply(adjustedBid, RAY));
+    safeEngine.transferInternalCoins(msg.sender, bids[id].auctionIncomeRecipient, adjustedBid * RAY);
     safeEngine.transferCollateral(collateralType, address(this), msg.sender, boughtCollateral);
 
     // Emit the buy event
@@ -875,13 +872,13 @@ contract FixedDiscountCollateralAuctionHouse is Math {
     if (soldAll) {
       liquidationEngine.removeCoinsFromAuction(remainingToRaise);
     } else {
-      liquidationEngine.removeCoinsFromAuction(multiply(adjustedBid, RAY));
+      liquidationEngine.removeCoinsFromAuction(adjustedBid * RAY);
     }
 
     // If the auction raised the whole amount or all collateral was sold,
     // send remaining collateral back to the forgone receiver
     if (soldAll) {
-      uint256 leftoverCollateral = subtract(bids[id].amountToSell, bids[id].soldAmount);
+      uint256 leftoverCollateral = bids[id].amountToSell - bids[id].soldAmount;
       safeEngine.transferCollateral(
         collateralType, address(this), bids[id].forgoneCollateralReceiver, leftoverCollateral
       );
@@ -906,8 +903,8 @@ contract FixedDiscountCollateralAuctionHouse is Math {
     require(
       bids[id].amountToSell > 0 && bids[id].amountToRaise > 0, 'FixedDiscountCollateralAuctionHouse/inexistent-auction'
     );
-    uint256 leftoverCollateral = subtract(bids[id].amountToSell, bids[id].soldAmount);
-    liquidationEngine.removeCoinsFromAuction(subtract(bids[id].amountToRaise, bids[id].raisedAmount));
+    uint256 leftoverCollateral = bids[id].amountToSell - bids[id].soldAmount;
+    liquidationEngine.removeCoinsFromAuction(bids[id].amountToRaise - bids[id].raisedAmount);
     safeEngine.transferCollateral(collateralType, address(this), msg.sender, leftoverCollateral);
     delete bids[id];
     emit TerminateAuctionPrematurely(id, msg.sender, leftoverCollateral);
@@ -919,7 +916,7 @@ contract FixedDiscountCollateralAuctionHouse is Math {
   }
 
   function remainingAmountToSell(uint256 id) public view returns (uint256) {
-    return subtract(bids[id].amountToSell, bids[id].soldAmount);
+    return bids[id].amountToSell - bids[id].soldAmount;
   }
 
   function forgoneCollateralReceiver(uint256 id) public view returns (address) {
@@ -955,7 +952,9 @@ contract FixedDiscountCollateralAuctionHouse is Math {
 /*
    This thing lets you sell some collateral at an increasing discount in order to instantly recapitalize the system*/
 
-contract IncreasingDiscountCollateralAuctionHouse is Math {
+contract IncreasingDiscountCollateralAuctionHouse {
+  using Math for uint256;
+
   // --- Auth ---
   mapping(address => uint256) public authorizedAccounts;
   /**
@@ -1019,7 +1018,7 @@ contract IncreasingDiscountCollateralAuctionHouse is Math {
   // Minimum acceptable bid
   uint256 public minimumBid = 5 * WAD; // [wad]
   // Total length of the auction. Kept to adhere to the same interface as the English auction but redundant
-  uint48 public totalAuctionLength = uint48(int48(-1)); // [seconds]
+  uint48 public totalAuctionLength = type(uint48).max; // [seconds]
   // Number of auctions started up until now
   uint256 public auctionsStarted = 0;
   // The last read redemption price
@@ -1102,7 +1101,7 @@ contract IncreasingDiscountCollateralAuctionHouse is Math {
       perSecondDiscountUpdateRate = data;
     } else if (parameter == 'maxDiscountUpdateRateTimeline') {
       require(
-        data > 0 && uint256(uint48(int48(-1))) > addUint256(block.timestamp, data),
+        data > 0 && uint256(type(uint48).max) > block.timestamp + data,
         'IncreasingDiscountCollateralAuctionHouse/invalid-update-rate-time'
       );
       maxDiscountUpdateRateTimeline = data;
@@ -1174,7 +1173,7 @@ contract IncreasingDiscountCollateralAuctionHouse is Math {
       collateralFsmPriceFeedValue, collateralMedianPriceFeedValue, systemCoinPriceFeedValue, customDiscount
     );
     // calculate the amount of collateral bought
-    uint256 boughtCollateral = wdivide(adjustedBid, discountedCollateralPrice);
+    uint256 boughtCollateral = adjustedBid.wdiv(discountedCollateralPrice);
     // if the calculated collateral amount exceeds the amount still up for sale, adjust it to the remaining amount
     boughtCollateral = (boughtCollateral > bids[id].amountToSell) ? bids[id].amountToSell : boughtCollateral;
 
@@ -1240,8 +1239,8 @@ contract IncreasingDiscountCollateralAuctionHouse is Math {
     */
 
   function getSystemCoinFloorDeviatedPrice(uint256 redemptionPrice) public view returns (uint256 floorPrice) {
-    uint256 minFloorDeviatedPrice = wmultiply(redemptionPrice, minSystemCoinMedianDeviation);
-    floorPrice = wmultiply(redemptionPrice, lowerSystemCoinMedianDeviation);
+    uint256 minFloorDeviatedPrice = redemptionPrice.wmul(minSystemCoinMedianDeviation);
+    floorPrice = redemptionPrice.wmul(lowerSystemCoinMedianDeviation);
     floorPrice = (floorPrice <= minFloorDeviatedPrice) ? floorPrice : redemptionPrice;
   }
   /*
@@ -1250,8 +1249,8 @@ contract IncreasingDiscountCollateralAuctionHouse is Math {
     */
 
   function getSystemCoinCeilingDeviatedPrice(uint256 redemptionPrice) public view returns (uint256 ceilingPrice) {
-    uint256 minCeilingDeviatedPrice = wmultiply(redemptionPrice, subtract(2 * WAD, minSystemCoinMedianDeviation));
-    ceilingPrice = wmultiply(redemptionPrice, subtract(2 * WAD, upperSystemCoinMedianDeviation));
+    uint256 minCeilingDeviatedPrice = redemptionPrice.wmul((2 * WAD) - minSystemCoinMedianDeviation);
+    ceilingPrice = redemptionPrice.wmul((2 * WAD) - upperSystemCoinMedianDeviation);
     ceilingPrice = (ceilingPrice >= minCeilingDeviatedPrice) ? ceilingPrice : redemptionPrice;
   }
   /*
@@ -1279,9 +1278,9 @@ contract IncreasingDiscountCollateralAuctionHouse is Math {
       uint256 ceilingPrice = getSystemCoinCeilingDeviatedPrice(systemCoinAdjustedPrice);
 
       if (uint256(systemCoinPriceFeedValue) < systemCoinAdjustedPrice) {
-        systemCoinAdjustedPrice = maximum(uint256(systemCoinPriceFeedValue), floorPrice);
+        systemCoinAdjustedPrice = Math.max(uint256(systemCoinPriceFeedValue), floorPrice);
       } else {
-        systemCoinAdjustedPrice = minimum(uint256(systemCoinPriceFeedValue), ceilingPrice);
+        systemCoinAdjustedPrice = Math.min(uint256(systemCoinPriceFeedValue), ceilingPrice);
       }
     }
 
@@ -1298,16 +1297,16 @@ contract IncreasingDiscountCollateralAuctionHouse is Math {
     uint256 collateralFsmPriceFeedValue,
     uint256 collateralMedianPriceFeedValue
   ) public view returns (uint256) {
-    uint256 floorPrice = wmultiply(collateralFsmPriceFeedValue, lowerCollateralMedianDeviation);
-    uint256 ceilingPrice = wmultiply(collateralFsmPriceFeedValue, subtract(2 * WAD, upperCollateralMedianDeviation));
+    uint256 floorPrice = collateralFsmPriceFeedValue.wmul(lowerCollateralMedianDeviation);
+    uint256 ceilingPrice = collateralFsmPriceFeedValue.wmul((2 * WAD) - upperCollateralMedianDeviation);
 
     uint256 adjustedMedianPrice =
       (collateralMedianPriceFeedValue == 0) ? collateralFsmPriceFeedValue : collateralMedianPriceFeedValue;
 
     if (adjustedMedianPrice < collateralFsmPriceFeedValue) {
-      return maximum(adjustedMedianPrice, floorPrice);
+      return Math.max(adjustedMedianPrice, floorPrice);
     } else {
-      return minimum(adjustedMedianPrice, ceilingPrice);
+      return Math.min(adjustedMedianPrice, ceilingPrice);
     }
   }
   /*
@@ -1325,13 +1324,9 @@ contract IncreasingDiscountCollateralAuctionHouse is Math {
     uint256 customDiscount
   ) public view returns (uint256) {
     // calculate the collateral price in relation to the latest system coin price and apply the discount
-    return wmultiply(
-      rdivide(
-        getFinalBaseCollateralPrice(collateralFsmPriceFeedValue, collateralMedianPriceFeedValue),
-        systemCoinPriceFeedValue
-      ),
-      customDiscount
-    );
+    return getFinalBaseCollateralPrice(collateralFsmPriceFeedValue, collateralMedianPriceFeedValue).rdiv(
+      systemCoinPriceFeedValue
+    ).wmul(customDiscount);
   }
   /*
     * @notice Get the upcoming discount that will be used in a specific auction
@@ -1347,8 +1342,7 @@ contract IncreasingDiscountCollateralAuctionHouse is Math {
     if (uint48(block.timestamp) < bids[id].discountIncreaseDeadline && bids[id].currentDiscount > bids[id].maxDiscount)
     {
       // Calculate the new current discount
-      nextDiscount = rmultiply(
-        rpower(bids[id].perSecondDiscountUpdateRate, subtract(block.timestamp, bids[id].latestDiscountUpdateTime), RAY),
+      nextDiscount = bids[id].perSecondDiscountUpdateRate.rpow(block.timestamp - bids[id].latestDiscountUpdateTime).rmul(
         bids[id].currentDiscount
       );
 
@@ -1385,12 +1379,11 @@ contract IncreasingDiscountCollateralAuctionHouse is Math {
 
     // bound max amount offered in exchange for collateral
     uint256 adjustedBid = wad;
-    if (multiply(adjustedBid, RAY) > remainingToRaise) {
-      adjustedBid = addUint256(remainingToRaise / RAY, 1);
+    if (adjustedBid * RAY > remainingToRaise) {
+      adjustedBid = (remainingToRaise / RAY) + 1;
     }
 
-    remainingToRaise =
-      (multiply(adjustedBid, RAY) > remainingToRaise) ? 0 : subtract(bids[id].amountToRaise, multiply(adjustedBid, RAY));
+    remainingToRaise = (adjustedBid * RAY > remainingToRaise) ? 0 : bids[id].amountToRaise - (adjustedBid * RAY);
     if (remainingToRaise > 0 && remainingToRaise < RAY) {
       return (false, adjustedBid);
     }
@@ -1414,13 +1407,13 @@ contract IncreasingDiscountCollateralAuctionHouse is Math {
     uint256 amountToSell,
     uint256 initialBid
   ) public isAuthorized returns (uint256 id) {
-    require(auctionsStarted < uint256(int256(-1)), 'IncreasingDiscountCollateralAuctionHouse/overflow');
+    require(auctionsStarted < type(uint256).max, 'IncreasingDiscountCollateralAuctionHouse/overflow');
     require(amountToSell > 0, 'IncreasingDiscountCollateralAuctionHouse/no-collateral-for-sale');
     require(amountToRaise > 0, 'IncreasingDiscountCollateralAuctionHouse/nothing-to-raise');
     require(amountToRaise >= RAY, 'IncreasingDiscountCollateralAuctionHouse/dusty-auction');
     id = ++auctionsStarted;
 
-    uint48 discountIncreaseDeadline = addUint48(uint48(block.timestamp), uint48(maxDiscountUpdateRateTimeline));
+    uint48 discountIncreaseDeadline = uint48(block.timestamp) + uint48(maxDiscountUpdateRateTimeline);
 
     bids[id].currentDiscount = minDiscount;
     bids[id].maxDiscount = maxDiscount;
@@ -1532,8 +1525,8 @@ contract IncreasingDiscountCollateralAuctionHouse is Math {
 
     // bound max amount offered in exchange for collateral (in case someone offers more than it's necessary)
     uint256 adjustedBid = wad;
-    if (multiply(adjustedBid, RAY) > bids[id].amountToRaise) {
-      adjustedBid = addUint256(bids[id].amountToRaise / RAY, 1);
+    if (adjustedBid * RAY > bids[id].amountToRaise) {
+      adjustedBid = (bids[id].amountToRaise / RAY) + 1;
     }
 
     // Read the redemption price
@@ -1556,17 +1549,16 @@ contract IncreasingDiscountCollateralAuctionHouse is Math {
     // check that the calculated amount is greater than zero
     require(boughtCollateral > 0, 'IncreasingDiscountCollateralAuctionHouse/null-bought-amount');
     // update the amount of collateral to sell
-    bids[id].amountToSell = subtract(bids[id].amountToSell, boughtCollateral);
+    bids[id].amountToSell = bids[id].amountToSell - boughtCollateral;
 
     // update remainingToRaise in case amountToSell is zero (everything has been sold)
-    uint256 remainingToRaise = ((multiply(wad, RAY) >= bids[id].amountToRaise) || (bids[id].amountToSell == 0))
+    uint256 remainingToRaise = ((wad * RAY >= bids[id].amountToRaise) || (bids[id].amountToSell == 0))
       ? bids[id].amountToRaise
-      : subtract(bids[id].amountToRaise, multiply(wad, RAY));
+      : bids[id].amountToRaise - (wad * RAY);
 
     // update leftover amount to raise in the bid struct
-    bids[id].amountToRaise = (multiply(adjustedBid, RAY) > bids[id].amountToRaise)
-      ? 0
-      : subtract(bids[id].amountToRaise, multiply(adjustedBid, RAY));
+    bids[id].amountToRaise =
+      (adjustedBid * RAY > bids[id].amountToRaise) ? 0 : bids[id].amountToRaise - (adjustedBid * RAY);
 
     // check that the remaining amount to raise is either zero or higher than RAY
     require(
@@ -1575,7 +1567,7 @@ contract IncreasingDiscountCollateralAuctionHouse is Math {
     );
 
     // transfer the bid to the income recipient and the collateral to the bidder
-    safeEngine.transferInternalCoins(msg.sender, bids[id].auctionIncomeRecipient, multiply(adjustedBid, RAY));
+    safeEngine.transferInternalCoins(msg.sender, bids[id].auctionIncomeRecipient, adjustedBid * RAY);
     safeEngine.transferCollateral(collateralType, address(this), msg.sender, boughtCollateral);
 
     // Emit the buy event
@@ -1586,7 +1578,7 @@ contract IncreasingDiscountCollateralAuctionHouse is Math {
     if (soldAll) {
       liquidationEngine.removeCoinsFromAuction(remainingToRaise);
     } else {
-      liquidationEngine.removeCoinsFromAuction(multiply(adjustedBid, RAY));
+      liquidationEngine.removeCoinsFromAuction(adjustedBid * RAY);
     }
 
     // If the auction raised the whole amount or all collateral was sold,

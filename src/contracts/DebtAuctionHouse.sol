@@ -22,12 +22,12 @@ import {ISAFEEngine as SAFEEngineLike} from '../interfaces/ISAFEEngine.sol';
 import {IToken as TokenLike} from '../interfaces/external/IToken.sol';
 import {IAccountingEngine as AccountingEngineLike} from '../interfaces/IAccountingEngine.sol';
 
-import {Math} from './utils/Math.sol';
+import {Math, WAD} from './utils/Math.sol';
 
 /*
    This thing creates protocol tokens on demand in return for system coins*/
 
-contract DebtAuctionHouse is Math {
+contract DebtAuctionHouse {
   // --- Auth ---
   mapping(address => uint256) public authorizedAccounts;
   /**
@@ -170,15 +170,15 @@ contract DebtAuctionHouse is Math {
     uint256 initialBid
   ) external isAuthorized returns (uint256 id) {
     require(contractEnabled == 1, 'DebtAuctionHouse/contract-not-enabled');
-    require(auctionsStarted < uint256(int256(-1)), 'DebtAuctionHouse/overflow');
+    require(auctionsStarted < type(uint256).max, 'DebtAuctionHouse/overflow');
     id = ++auctionsStarted;
 
     bids[id].bidAmount = initialBid;
     bids[id].amountToSell = amountToSell;
     bids[id].highBidder = incomeReceiver;
-    bids[id].auctionDeadline = addUint48(uint48(block.timestamp), totalAuctionLength);
+    bids[id].auctionDeadline = uint48(block.timestamp) + totalAuctionLength;
 
-    activeDebtAuctions = addUint256(activeDebtAuctions, 1);
+    ++activeDebtAuctions;
 
     emit StartAuction(
       id, auctionsStarted, amountToSell, initialBid, incomeReceiver, bids[id].auctionDeadline, activeDebtAuctions
@@ -193,8 +193,8 @@ contract DebtAuctionHouse is Math {
     require(id <= auctionsStarted, 'DebtAuctionHouse/auction-never-started');
     require(bids[id].auctionDeadline < block.timestamp, 'DebtAuctionHouse/not-finished');
     require(bids[id].bidExpiry == 0, 'DebtAuctionHouse/bid-already-placed');
-    bids[id].amountToSell = multiply(amountSoldIncrease, bids[id].amountToSell) / ONE_ETH;
-    bids[id].auctionDeadline = addUint48(uint48(block.timestamp), totalAuctionLength);
+    bids[id].amountToSell = (amountSoldIncrease * bids[id].amountToSell) / WAD;
+    bids[id].auctionDeadline = uint48(block.timestamp) + totalAuctionLength;
     emit RestartAuction(id, bids[id].auctionDeadline);
   }
   /**
@@ -213,22 +213,19 @@ contract DebtAuctionHouse is Math {
 
     require(bid == bids[id].bidAmount, 'DebtAuctionHouse/not-matching-bid');
     require(amountToBuy < bids[id].amountToSell, 'DebtAuctionHouse/amount-bought-not-lower');
-    require(
-      multiply(bidDecrease, amountToBuy) <= multiply(bids[id].amountToSell, ONE_ETH),
-      'DebtAuctionHouse/insufficient-decrease'
-    );
+    require(bidDecrease * amountToBuy <= bids[id].amountToSell * WAD, 'DebtAuctionHouse/insufficient-decrease');
 
     safeEngine.transferInternalCoins(msg.sender, bids[id].highBidder, bid);
 
     // on first bid submitted, clear as much totalOnAuctionDebt as possible
     if (bids[id].bidExpiry == 0) {
       uint256 totalOnAuctionDebt = AccountingEngineLike(bids[id].highBidder).totalOnAuctionDebt();
-      AccountingEngineLike(bids[id].highBidder).cancelAuctionedDebtWithSurplus(minimum(bid, totalOnAuctionDebt));
+      AccountingEngineLike(bids[id].highBidder).cancelAuctionedDebtWithSurplus(Math.min(bid, totalOnAuctionDebt));
     }
 
     bids[id].highBidder = msg.sender;
     bids[id].amountToSell = amountToBuy;
-    bids[id].bidExpiry = addUint48(uint48(block.timestamp), bidDuration);
+    bids[id].bidExpiry = uint48(block.timestamp) + bidDuration;
 
     emit DecreaseSoldAmount(id, msg.sender, amountToBuy, bid, bids[id].bidExpiry);
   }
@@ -244,7 +241,7 @@ contract DebtAuctionHouse is Math {
       'DebtAuctionHouse/not-finished'
     );
     protocolToken.mint(bids[id].highBidder, bids[id].amountToSell);
-    activeDebtAuctions = subtract(activeDebtAuctions, uint256(1));
+    --activeDebtAuctions;
     delete bids[id];
     emit SettleAuction(id, activeDebtAuctions);
   }

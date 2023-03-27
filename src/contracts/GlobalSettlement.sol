@@ -28,7 +28,7 @@ import {ICollateralAuctionHouse as CollateralAuctionHouseLike} from '../interfac
 import {IOracle as OracleLike} from '../interfaces/IOracle.sol';
 import {IOracleRelayer as OracleRelayerLike} from '../interfaces/IOracleRelayer.sol';
 
-import {Math} from './utils/Math.sol';
+import {Math, RAY} from './utils/Math.sol';
 
 /*
     This is the Global Settlement module. It is an
@@ -97,7 +97,9 @@ import {Math} from './utils/Math.sol';
         - exchange some coin from your bag for tokens from a specific collateral type
         - the amount of collateral available to redeem is limited by how big your bag is*/
 
-contract GlobalSettlement is Math {
+contract GlobalSettlement {
+  using Math for uint256;
+
   // --- Auth ---
   mapping(address => uint256) public authorizedAccounts;
   /**
@@ -245,7 +247,7 @@ contract GlobalSettlement is Math {
     (collateralTotalDebt[collateralType],,,,,) = safeEngine.collateralTypes(collateralType);
     (OracleLike orcl,,) = oracleRelayer.collateralTypes(collateralType);
     // redemptionPrice is a ray, orcl returns a wad
-    finalCoinPerCollateralPrice[collateralType] = wdivide(oracleRelayer.redemptionPrice(), uint256(orcl.read()));
+    finalCoinPerCollateralPrice[collateralType] = oracleRelayer.redemptionPrice().wdiv(uint256(orcl.read()));
     emit FreezeCollateralType(collateralType, finalCoinPerCollateralPrice[collateralType]);
   }
   /**
@@ -267,15 +269,13 @@ contract GlobalSettlement is Math {
     address forgoneCollateralReceiver = collateralAuctionHouse.forgoneCollateralReceiver(auctionId);
     uint256 amountToRaise = collateralAuctionHouse.amountToRaise(auctionId);
 
-    safeEngine.createUnbackedDebt(
-      address(accountingEngine), address(accountingEngine), subtract(amountToRaise, raisedAmount)
-    );
+    safeEngine.createUnbackedDebt(address(accountingEngine), address(accountingEngine), amountToRaise - raisedAmount);
     safeEngine.createUnbackedDebt(address(accountingEngine), address(this), bidAmount);
     safeEngine.approveSAFEModification(address(collateralAuctionHouse));
     collateralAuctionHouse.terminateAuctionPrematurely(auctionId);
 
-    uint256 debt_ = subtract(amountToRaise, raisedAmount) / accumulatedRate;
-    collateralTotalDebt[collateralType] = addition(collateralTotalDebt[collateralType], debt_);
+    uint256 debt_ = (amountToRaise - raisedAmount) / accumulatedRate;
+    collateralTotalDebt[collateralType] = collateralTotalDebt[collateralType] + debt_;
     require(int256(collateralToSell) >= 0 && int256(debt_) >= 0, 'GlobalSettlement/overflow');
     safeEngine.confiscateSAFECollateralAndDebt(
       collateralType,
@@ -298,10 +298,9 @@ contract GlobalSettlement is Math {
     (, uint256 accumulatedRate,,,,) = safeEngine.collateralTypes(collateralType);
     (uint256 safeCollateral, uint256 safeDebt) = safeEngine.safes(collateralType, safe);
 
-    uint256 amountOwed = rmultiply(rmultiply(safeDebt, accumulatedRate), finalCoinPerCollateralPrice[collateralType]);
-    uint256 minCollateral = minimum(safeCollateral, amountOwed);
-    collateralShortfall[collateralType] =
-      addition(collateralShortfall[collateralType], subtract(amountOwed, minCollateral));
+    uint256 amountOwed = safeDebt.rmul(accumulatedRate).rmul(finalCoinPerCollateralPrice[collateralType]);
+    uint256 minCollateral = Math.min(safeCollateral, amountOwed);
+    collateralShortfall[collateralType] = collateralShortfall[collateralType] + (amountOwed - minCollateral);
 
     require(minCollateral <= 2 ** 255 && safeDebt <= 2 ** 255, 'GlobalSettlement/overflow');
     safeEngine.confiscateSAFECollateralAndDebt(
@@ -334,9 +333,7 @@ contract GlobalSettlement is Math {
     require(contractEnabled == 0, 'GlobalSettlement/contract-still-enabled');
     require(outstandingCoinSupply == 0, 'GlobalSettlement/outstanding-coin-supply-not-zero');
     require(safeEngine.coinBalance(address(accountingEngine)) == 0, 'GlobalSettlement/surplus-not-zero');
-    require(
-      block.timestamp >= addition(shutdownTime, shutdownCooldown), 'GlobalSettlement/shutdown-cooldown-not-finished'
-    );
+    require(block.timestamp >= shutdownTime + shutdownCooldown, 'GlobalSettlement/shutdown-cooldown-not-finished');
     outstandingCoinSupply = safeEngine.globalDebt();
     emit SetOutstandingCoinSupply(outstandingCoinSupply);
   }
@@ -350,12 +347,10 @@ contract GlobalSettlement is Math {
     require(collateralCashPrice[collateralType] == 0, 'GlobalSettlement/collateral-cash-price-already-defined');
 
     (, uint256 accumulatedRate,,,,) = safeEngine.collateralTypes(collateralType);
-    uint256 redemptionAdjustedDebt = rmultiply(
-      rmultiply(collateralTotalDebt[collateralType], accumulatedRate), finalCoinPerCollateralPrice[collateralType]
-    );
-    collateralCashPrice[collateralType] = multiply(
-      subtract(redemptionAdjustedDebt, collateralShortfall[collateralType]), RAY
-    ) / (outstandingCoinSupply / RAY);
+    uint256 redemptionAdjustedDebt =
+      collateralTotalDebt[collateralType].rmul(accumulatedRate).rmul(finalCoinPerCollateralPrice[collateralType]);
+    collateralCashPrice[collateralType] =
+      (redemptionAdjustedDebt - collateralShortfall[collateralType]) * RAY / (outstandingCoinSupply / RAY);
 
     emit CalculateCashPrice(collateralType, collateralCashPrice[collateralType]);
   }
@@ -366,8 +361,8 @@ contract GlobalSettlement is Math {
 
   function prepareCoinsForRedeeming(uint256 coinAmount) external {
     require(outstandingCoinSupply != 0, 'GlobalSettlement/outstanding-coin-supply-zero');
-    safeEngine.transferInternalCoins(msg.sender, address(accountingEngine), multiply(coinAmount, RAY));
-    coinBag[msg.sender] = addition(coinBag[msg.sender], coinAmount);
+    safeEngine.transferInternalCoins(msg.sender, address(accountingEngine), coinAmount * RAY);
+    coinBag[msg.sender] = coinBag[msg.sender] + coinAmount;
     emit PrepareCoinsForRedeeming(msg.sender, coinBag[msg.sender]);
   }
   /**
@@ -378,9 +373,9 @@ contract GlobalSettlement is Math {
 
   function redeemCollateral(bytes32 collateralType, uint256 coinsAmount) external {
     require(collateralCashPrice[collateralType] != 0, 'GlobalSettlement/collateral-cash-price-not-defined');
-    uint256 collateralAmount = rmultiply(coinsAmount, collateralCashPrice[collateralType]);
+    uint256 collateralAmount = coinsAmount.rmul(collateralCashPrice[collateralType]);
     safeEngine.transferCollateral(collateralType, address(this), msg.sender, collateralAmount);
-    coinsUsedToRedeem[collateralType][msg.sender] = addition(coinsUsedToRedeem[collateralType][msg.sender], coinsAmount);
+    coinsUsedToRedeem[collateralType][msg.sender] = coinsUsedToRedeem[collateralType][msg.sender] + coinsAmount;
     require(
       coinsUsedToRedeem[collateralType][msg.sender] <= coinBag[msg.sender], 'GlobalSettlement/insufficient-bag-balance'
     );

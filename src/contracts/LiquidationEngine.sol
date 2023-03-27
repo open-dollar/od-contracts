@@ -23,9 +23,9 @@ import {ISAFESaviour as SAFESaviourLike} from '../interfaces/external/ISAFESavio
 import {ISAFEEngine as SAFEEngineLike} from '../interfaces/ISAFEEngine.sol';
 import {IAccountingEngine as AccountingEngineLike} from '../interfaces/IAccountingEngine.sol';
 
-import {Math} from './utils/Math.sol';
+import {Math, RAY, WAD} from './utils/Math.sol';
 
-contract LiquidationEngine is Math {
+contract LiquidationEngine {
   // --- Auth ---
   mapping(address => uint256) public authorizedAccounts;
   /**
@@ -70,7 +70,7 @@ contract LiquidationEngine is Math {
       SAFESaviourLike(saviour).saveSAFE(address(this), '', address(0));
     require(ok, 'LiquidationEngine/saviour-not-ok');
     require(
-      collateralAdded == uint256(int256(-1)) && liquidatorReward == uint256(int256(-1)),
+      (collateralAdded == type(uint256).max) && (liquidatorReward == type(uint256).max),
       'LiquidationEngine/invalid-amounts'
     );
     safeSaviours[saviour] = 1;
@@ -111,6 +111,8 @@ contract LiquidationEngine is Math {
   // Whether this contract is enabled
   uint256 public contractEnabled;
 
+  uint256 constant MAX_LIQUIDATION_QUANTITY = type(uint256).max / RAY;
+
   SAFEEngineLike public safeEngine;
   AccountingEngineLike public accountingEngine;
 
@@ -143,11 +145,11 @@ contract LiquidationEngine is Math {
     authorizedAccounts[msg.sender] = 1;
 
     safeEngine = SAFEEngineLike(_safeEngine);
-    onAuctionSystemCoinLimit = uint256(int256(-1));
+    onAuctionSystemCoinLimit = type(uint256).max;
     contractEnabled = 1;
 
     emit AddAuthorization(msg.sender);
-    emit ModifyParameters('onAuctionSystemCoinLimit', uint256(int256(-1)));
+    emit ModifyParameters('onAuctionSystemCoinLimit', type(uint256).max);
   }
 
   // --- Administration ---
@@ -245,12 +247,12 @@ contract LiquidationEngine is Math {
 
     require(contractEnabled == 1, 'LiquidationEngine/contract-not-enabled');
     require(
-      liquidationPrice > 0 && multiply(safeCollateral, liquidationPrice) < multiply(safeDebt, accumulatedRate),
+      (liquidationPrice > 0) && (safeCollateral * liquidationPrice < safeDebt * accumulatedRate),
       'LiquidationEngine/safe-not-unsafe'
     );
     require(
       currentOnAuctionSystemCoins < onAuctionSystemCoinLimit
-        && subtract(onAuctionSystemCoinLimit, currentOnAuctionSystemCoins) >= debtFloor,
+        && onAuctionSystemCoinLimit - currentOnAuctionSystemCoins >= debtFloor,
       'LiquidationEngine/liquidation-limit-hit'
     );
 
@@ -281,24 +283,21 @@ contract LiquidationEngine is Math {
     (, accumulatedRate,,,, liquidationPrice) = safeEngine.collateralTypes(collateralType);
     (safeCollateral, safeDebt) = safeEngine.safes(collateralType, safe);
 
-    if ((liquidationPrice > 0) && (multiply(safeCollateral, liquidationPrice) < multiply(safeDebt, accumulatedRate))) {
+    if ((liquidationPrice > 0) && (safeCollateral * liquidationPrice < safeDebt * accumulatedRate)) {
       CollateralType memory collateralData = collateralTypes[collateralType];
 
-      uint256 limitAdjustedDebt = minimum(
+      uint256 limitAdjustedDebt = Math.min(
         safeDebt,
-        multiply(
-          minimum(collateralData.liquidationQuantity, subtract(onAuctionSystemCoinLimit, currentOnAuctionSystemCoins)),
-          WAD
-        ) / accumulatedRate / collateralData.liquidationPenalty
+        Math.min(collateralData.liquidationQuantity, onAuctionSystemCoinLimit - currentOnAuctionSystemCoins) * WAD
+          / accumulatedRate / collateralData.liquidationPenalty
       );
       require(limitAdjustedDebt > 0, 'LiquidationEngine/null-auction');
       require(
-        (limitAdjustedDebt == safeDebt)
-          || (multiply(subtract(safeDebt, limitAdjustedDebt), accumulatedRate) >= debtFloor),
+        (limitAdjustedDebt == safeDebt) || ((safeDebt - limitAdjustedDebt) * accumulatedRate >= debtFloor),
         'LiquidationEngine/dusty-safe'
       );
 
-      uint256 collateralToSell = minimum(safeCollateral, multiply(safeCollateral, limitAdjustedDebt) / safeDebt);
+      uint256 collateralToSell = Math.min(safeCollateral, safeCollateral * limitAdjustedDebt / safeDebt);
 
       require(collateralToSell > 0, 'LiquidationEngine/null-collateral-to-sell');
       require(
@@ -313,14 +312,13 @@ contract LiquidationEngine is Math {
         -int256(collateralToSell),
         -int256(limitAdjustedDebt)
       );
-      accountingEngine.pushDebtToQueue(multiply(limitAdjustedDebt, accumulatedRate));
+      accountingEngine.pushDebtToQueue(limitAdjustedDebt * accumulatedRate);
 
       {
         // This calcuation will overflow if multiply(limitAdjustedDebt, accumulatedRate) exceeds ~10^14,
         // i.e. the maximum amountToRaise is roughly 100 trillion system coins.
-        uint256 amountToRaise_ =
-          multiply(multiply(limitAdjustedDebt, accumulatedRate), collateralData.liquidationPenalty) / WAD;
-        currentOnAuctionSystemCoins = addition(currentOnAuctionSystemCoins, amountToRaise_);
+        uint256 amountToRaise_ = limitAdjustedDebt * accumulatedRate * collateralData.liquidationPenalty / WAD;
+        currentOnAuctionSystemCoins = currentOnAuctionSystemCoins + amountToRaise_;
 
         auctionId = CollateralAuctionHouseLike(collateralData.collateralAuctionHouse).startAuction({
           _forgoneCollateralReceiver: safe,
@@ -338,7 +336,7 @@ contract LiquidationEngine is Math {
         safe,
         collateralToSell,
         limitAdjustedDebt,
-        multiply(limitAdjustedDebt, accumulatedRate),
+        limitAdjustedDebt * accumulatedRate,
         collateralData.collateralAuctionHouse,
         auctionId
       );
@@ -352,7 +350,7 @@ contract LiquidationEngine is Math {
    */
 
   function removeCoinsFromAuction(uint256 rad) public isAuthorized {
-    currentOnAuctionSystemCoins = subtract(currentOnAuctionSystemCoins, rad);
+    currentOnAuctionSystemCoins = currentOnAuctionSystemCoins - rad;
     emit UpdateCurrentOnAuctionSystemCoins(currentOnAuctionSystemCoins);
   }
 
@@ -367,12 +365,10 @@ contract LiquidationEngine is Math {
     (uint256 safeCollateral, uint256 safeDebt) = safeEngine.safes(collateralType, safe);
     CollateralType memory collateralData = collateralTypes[collateralType];
 
-    return minimum(
+    return Math.min(
       safeDebt,
-      multiply(
-        minimum(collateralData.liquidationQuantity, subtract(onAuctionSystemCoinLimit, currentOnAuctionSystemCoins)),
-        WAD
-      ) / accumulatedRate / collateralData.liquidationPenalty
+      Math.min(collateralData.liquidationQuantity, onAuctionSystemCoinLimit - currentOnAuctionSystemCoins) * WAD
+        / accumulatedRate / collateralData.liquidationPenalty
     );
   }
 }

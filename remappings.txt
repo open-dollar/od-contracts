@@ -1,0 +1,5 @@
+@defi-wonderland/solidity-utils/=node_modules/@defi-wonderland/solidity-utils/solidity/
+
+@contracts/=src/contracts/
+@interfaces/=src/interfaces/
+@test/=src/test/

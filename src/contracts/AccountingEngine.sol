@@ -26,7 +26,7 @@ import {IProtocolTokenAuthority as ProtocolTokenAuthorityLike} from '../interfac
 
 import {Math} from './utils/Math.sol';
 
-contract AccountingEngine is Math {
+contract AccountingEngine {
   // --- Auth ---
   mapping(address => uint256) public authorizedAccounts;
   /**
@@ -228,7 +228,7 @@ contract AccountingEngine is Math {
     * @notice Returns the amount of bad debt that is not in the debtQueue and is not currently handled by debt auctions
     */
   function unqueuedUnauctionedDebt() public view returns (uint256) {
-    return subtract(subtract(safeEngine.debtBalance(address(this)), totalQueuedDebt), totalOnAuctionDebt);
+    return (safeEngine.debtBalance(address(this)) - totalQueuedDebt) - totalOnAuctionDebt;
   }
   /*
     * @notify Returns a bool indicating whether the AccountingEngine can currently print protocol tokens using debt auctions
@@ -251,8 +251,8 @@ contract AccountingEngine is Math {
    * @param debtBlock Amount of debt to push
    */
   function pushDebtToQueue(uint256 debtBlock) external isAuthorized {
-    debtQueue[block.timestamp] = addition(debtQueue[block.timestamp], debtBlock);
-    totalQueuedDebt = addition(totalQueuedDebt, debtBlock);
+    debtQueue[block.timestamp] = debtQueue[block.timestamp] + debtBlock;
+    totalQueuedDebt = totalQueuedDebt + debtBlock;
     emit PushDebtToQueue(block.timestamp, debtQueue[block.timestamp], totalQueuedDebt);
   }
   /**
@@ -263,9 +263,9 @@ contract AccountingEngine is Math {
    */
 
   function popDebtFromQueue(uint256 debtBlockTimestamp) external {
-    require(addition(debtBlockTimestamp, popDebtDelay) <= block.timestamp, 'AccountingEngine/pop-debt-delay-not-passed');
+    require(debtBlockTimestamp + popDebtDelay <= block.timestamp, 'AccountingEngine/pop-debt-delay-not-passed');
     require(debtQueue[debtBlockTimestamp] > 0, 'AccountingEngine/null-debt-block');
-    totalQueuedDebt = subtract(totalQueuedDebt, debtQueue[debtBlockTimestamp]);
+    totalQueuedDebt = totalQueuedDebt - debtQueue[debtBlockTimestamp];
     debtPoppers[debtBlockTimestamp] = msg.sender;
     emit PopDebtFromQueue(block.timestamp, debtQueue[debtBlockTimestamp], totalQueuedDebt);
     debtQueue[debtBlockTimestamp] = 0;
@@ -293,7 +293,7 @@ contract AccountingEngine is Math {
   function cancelAuctionedDebtWithSurplus(uint256 rad) external {
     require(rad <= totalOnAuctionDebt, 'AccountingEngine/not-enough-debt-being-auctioned');
     require(rad <= safeEngine.coinBalance(address(this)), 'AccountingEngine/insufficient-surplus');
-    totalOnAuctionDebt = subtract(totalOnAuctionDebt, rad);
+    totalOnAuctionDebt = totalOnAuctionDebt - rad;
     safeEngine.settleDebt(rad);
     emit CancelAuctionedDebtWithSurplus(
       rad, totalOnAuctionDebt, safeEngine.coinBalance(address(this)), safeEngine.debtBalance(address(this))
@@ -317,7 +317,7 @@ contract AccountingEngine is Math {
       'AccountingEngine/debt-auction-house-cannot-print-prot'
     );
     require(canPrintProtocolTokens(), 'AccountingEngine/staking-pool-denies-printing');
-    totalOnAuctionDebt = addition(totalOnAuctionDebt, debtAuctionBidSize);
+    totalOnAuctionDebt = totalOnAuctionDebt + debtAuctionBidSize;
     id = debtAuctionHouse.startAuction(address(this), initialDebtAuctionMintedTokens, debtAuctionBidSize);
     emit AuctionDebt(id, totalOnAuctionDebt, safeEngine.debtBalance(address(this)));
   }
@@ -334,12 +334,12 @@ contract AccountingEngine is Math {
     require(surplusAuctionAmountToSell > 0, 'AccountingEngine/null-amount-to-auction');
     settleDebt(unqueuedUnauctionedDebt());
     require(
-      block.timestamp >= addition(lastSurplusAuctionTime, surplusAuctionDelay),
+      block.timestamp >= lastSurplusAuctionTime + surplusAuctionDelay,
       'AccountingEngine/surplus-auction-delay-not-passed'
     );
     require(
       safeEngine.coinBalance(address(this))
-        >= addition(addition(safeEngine.debtBalance(address(this)), surplusAuctionAmountToSell), surplusBuffer),
+        >= safeEngine.debtBalance(address(this)) + surplusAuctionAmountToSell + surplusBuffer,
       'AccountingEngine/insufficient-surplus'
     );
     require(unqueuedUnauctionedDebt() == 0, 'AccountingEngine/debt-not-zero');
@@ -363,12 +363,12 @@ contract AccountingEngine is Math {
     require(surplusTransferAmount > 0, 'AccountingEngine/null-amount-to-transfer');
     settleDebt(unqueuedUnauctionedDebt());
     require(
-      block.timestamp >= addition(lastSurplusTransferTime, surplusTransferDelay),
+      block.timestamp >= lastSurplusTransferTime + surplusTransferDelay,
       'AccountingEngine/surplus-transfer-delay-not-passed'
     );
     require(
       safeEngine.coinBalance(address(this))
-        >= addition(addition(safeEngine.debtBalance(address(this)), surplusTransferAmount), surplusBuffer),
+        >= safeEngine.debtBalance(address(this)) + surplusTransferAmount + surplusBuffer,
       'AccountingEngine/insufficient-surplus'
     );
     require(unqueuedUnauctionedDebt() == 0, 'AccountingEngine/debt-not-zero');
@@ -397,7 +397,7 @@ contract AccountingEngine is Math {
     surplusAuctionHouse.disableContract();
     debtAuctionHouse.disableContract();
 
-    safeEngine.settleDebt(minimum(safeEngine.coinBalance(address(this)), safeEngine.debtBalance(address(this))));
+    safeEngine.settleDebt(Math.min(safeEngine.coinBalance(address(this)), safeEngine.debtBalance(address(this))));
 
     emit DisableContract(
       disableTimestamp, disableCooldown, safeEngine.coinBalance(address(this)), safeEngine.debtBalance(address(this))
@@ -413,8 +413,8 @@ contract AccountingEngine is Math {
 
   function transferPostSettlementSurplus() external {
     require(contractEnabled == 0, 'AccountingEngine/still-enabled');
-    require(addition(disableTimestamp, disableCooldown) <= block.timestamp, 'AccountingEngine/cooldown-not-passed');
-    safeEngine.settleDebt(minimum(safeEngine.coinBalance(address(this)), safeEngine.debtBalance(address(this))));
+    require(disableTimestamp + disableCooldown <= block.timestamp, 'AccountingEngine/cooldown-not-passed');
+    safeEngine.settleDebt(Math.min(safeEngine.coinBalance(address(this)), safeEngine.debtBalance(address(this))));
     safeEngine.transferInternalCoins(address(this), postSettlementSurplusDrain, safeEngine.coinBalance(address(this)));
     emit TransferPostSettlementSurplus(
       postSettlementSurplusDrain, safeEngine.coinBalance(address(this)), safeEngine.debtBalance(address(this))

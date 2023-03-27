@@ -22,9 +22,9 @@ import {ISAFEEngine as SAFEEngineLike} from '../interfaces/ISAFEEngine.sol';
 import {ISystemCoin as SystemCoinLike} from '../interfaces/external/ISystemCoin.sol';
 import {ICoinJoin as CoinJoinLike} from '../interfaces/ICoinJoin.sol';
 
-import {Math} from './utils/Math.sol';
+import {Math, RAY, HUNDRED} from './utils/Math.sol';
 
-contract StabilityFeeTreasury is Math {
+contract StabilityFeeTreasury {
   // --- Auth ---
   mapping(address => uint256) public authorizedAccounts;
   /**
@@ -117,7 +117,7 @@ contract StabilityFeeTreasury is Math {
     expensesMultiplier = HUNDRED;
     contractEnabled = 1;
 
-    systemCoin.approve(address(coinJoin), uint256(int256(-1)));
+    systemCoin.approve(address(coinJoin), type(uint256).max);
 
     emit AddAuthorization(msg.sender);
   }
@@ -194,7 +194,7 @@ contract StabilityFeeTreasury is Math {
     uint256 debtBalanceSelf = safeEngine.debtBalance(address(this));
 
     if (debtBalanceSelf > 0) {
-      safeEngine.settleDebt(minimum(coinBalanceSelf, debtBalanceSelf));
+      safeEngine.settleDebt(Math.min(coinBalanceSelf, debtBalanceSelf));
     }
   }
 
@@ -246,7 +246,7 @@ contract StabilityFeeTreasury is Math {
     require(safeEngine.coinBalance(address(this)) >= rad, 'StabilityFeeTreasury/not-enough-funds');
 
     if (account != extraSurplusReceiver) {
-      expensesAccumulator = addition(expensesAccumulator, rad);
+      expensesAccumulator = expensesAccumulator + rad;
     }
 
     safeEngine.transferInternalCoins(address(this), account, rad);
@@ -274,38 +274,38 @@ contract StabilityFeeTreasury is Math {
    */
   function pullFunds(address dstAccount, address token, uint256 wad) external {
     if (dstAccount == address(this)) return;
-    require(allowance[msg.sender].total >= multiply(wad, RAY), 'StabilityFeeTreasury/not-allowed');
+    require(allowance[msg.sender].total >= wad * RAY, 'StabilityFeeTreasury/not-allowed');
     require(dstAccount != address(0), 'StabilityFeeTreasury/null-dst');
     require(dstAccount != extraSurplusReceiver, 'StabilityFeeTreasury/dst-cannot-be-accounting');
     require(wad > 0, 'StabilityFeeTreasury/null-transfer-amount');
     require(token == address(systemCoin), 'StabilityFeeTreasury/token-unavailable');
     if (allowance[msg.sender].perBlock > 0) {
       require(
-        addition(pulledPerBlock[msg.sender][block.number], multiply(wad, RAY)) <= allowance[msg.sender].perBlock,
+        pulledPerBlock[msg.sender][block.number] + (wad * RAY) <= allowance[msg.sender].perBlock,
         'StabilityFeeTreasury/per-block-limit-exceeded'
       );
     }
 
-    pulledPerBlock[msg.sender][block.number] = addition(pulledPerBlock[msg.sender][block.number], multiply(wad, RAY));
+    pulledPerBlock[msg.sender][block.number] = pulledPerBlock[msg.sender][block.number] + (wad * RAY);
 
     joinAllCoins();
     settleDebt();
 
     require(safeEngine.debtBalance(address(this)) == 0, 'StabilityFeeTreasury/outstanding-bad-debt');
-    require(safeEngine.coinBalance(address(this)) >= multiply(wad, RAY), 'StabilityFeeTreasury/not-enough-funds');
+    require(safeEngine.coinBalance(address(this)) >= wad * RAY, 'StabilityFeeTreasury/not-enough-funds');
     require(
       safeEngine.coinBalance(address(this)) >= pullFundsMinThreshold,
       'StabilityFeeTreasury/below-pullFunds-min-threshold'
     );
 
     // Update allowance and accumulator
-    allowance[msg.sender].total = subtract(allowance[msg.sender].total, multiply(wad, RAY));
-    expensesAccumulator = addition(expensesAccumulator, multiply(wad, RAY));
+    allowance[msg.sender].total = allowance[msg.sender].total - (wad * RAY);
+    expensesAccumulator = expensesAccumulator + (wad * RAY);
 
     // Transfer money
-    safeEngine.transferInternalCoins(address(this), dstAccount, multiply(wad, RAY));
+    safeEngine.transferInternalCoins(address(this), dstAccount, wad * RAY);
 
-    emit PullFunds(msg.sender, dstAccount, token, multiply(wad, RAY), expensesAccumulator);
+    emit PullFunds(msg.sender, dstAccount, token, wad * RAY, expensesAccumulator);
   }
 
   // --- Treasury Maintenance ---
@@ -317,19 +317,18 @@ contract StabilityFeeTreasury is Math {
    */
   function transferSurplusFunds() external {
     require(
-      block.timestamp >= addition(latestSurplusTransferTime, surplusTransferDelay),
+      block.timestamp >= latestSurplusTransferTime + surplusTransferDelay,
       'StabilityFeeTreasury/transfer-cooldown-not-passed'
     );
     // Compute latest expenses
-    uint256 latestExpenses = subtract(expensesAccumulator, accumulatorTag);
+    uint256 latestExpenses = expensesAccumulator - accumulatorTag;
     // Check if we need to keep more funds than the total capacity
-    uint256 remainingFunds = (treasuryCapacity <= divide(multiply(expensesMultiplier, latestExpenses), HUNDRED))
-      ? divide(multiply(expensesMultiplier, latestExpenses), HUNDRED)
+    uint256 remainingFunds = (treasuryCapacity <= expensesMultiplier * latestExpenses / HUNDRED)
+      ? expensesMultiplier * latestExpenses / HUNDRED
       : treasuryCapacity;
     // Make sure to keep at least minimum funds
-    remainingFunds = (divide(multiply(expensesMultiplier, latestExpenses), HUNDRED) <= minimumFundsRequired)
-      ? minimumFundsRequired
-      : remainingFunds;
+    remainingFunds =
+      (expensesMultiplier * latestExpenses / HUNDRED <= minimumFundsRequired) ? minimumFundsRequired : remainingFunds;
     // Set internal vars
     accumulatorTag = expensesAccumulator;
     latestSurplusTransferTime = block.timestamp;
@@ -342,7 +341,7 @@ contract StabilityFeeTreasury is Math {
     // Check if we have too much money
     if (safeEngine.coinBalance(address(this)) > remainingFunds) {
       // Make sure that we still keep min SF in treasury
-      uint256 fundsToTransfer = subtract(safeEngine.coinBalance(address(this)), remainingFunds);
+      uint256 fundsToTransfer = safeEngine.coinBalance(address(this)) - remainingFunds;
       // Transfer surplus to accounting engine
       safeEngine.transferInternalCoins(address(this), extraSurplusReceiver, fundsToTransfer);
       // Emit event

@@ -22,9 +22,7 @@ import {IAccountingEngine as AccountingEngineLike} from '../interfaces/IAccounti
 import {ISAFEEngine as SAFEEngineLike} from '../interfaces/ISAFEEngine.sol';
 import {ISurplusAuctionHouse as SurplusAuctionHouseLike} from '../interfaces/ISurplusAuctionHouse.sol';
 
-import {Math} from './utils/Math.sol';
-
-contract SettlementSurplusAuctioneer is Math {
+contract SettlementSurplusAuctioneer {
   // --- Auth ---
   mapping(address => uint256) public authorizedAccounts;
   /**
@@ -105,7 +103,7 @@ contract SettlementSurplusAuctioneer is Math {
   function auctionSurplus() external returns (uint256 id) {
     require(accountingEngine.contractEnabled() == 0, 'SettlementSurplusAuctioneer/accounting-engine-still-enabled');
     require(
-      block.timestamp >= addition(lastSurplusAuctionTime, accountingEngine.surplusAuctionDelay()),
+      block.timestamp >= lastSurplusAuctionTime + accountingEngine.surplusAuctionDelay(),
       'SettlementSurplusAuctioneer/surplus-auction-delay-not-passed'
     );
     lastSurplusAuctionTime = block.timestamp;
