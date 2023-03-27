@@ -25,7 +25,6 @@ import {DSToken as DSDelegateToken} from '../../contracts/for-test/DSToken.sol';
 import {SAFEEngine} from '../../contracts/SAFEEngine.sol';
 import {LiquidationEngine} from '../../contracts/LiquidationEngine.sol';
 import {AccountingEngine} from '../../contracts/AccountingEngine.sol';
-import {CoinSavingsAccount} from '../../contracts/CoinSavingsAccount.sol';
 import {StabilityFeeTreasury} from '../../contracts/StabilityFeeTreasury.sol';
 import {
   EnglishCollateralAuctionHouse,
@@ -145,7 +144,6 @@ contract SingleGlobalSettlementTest is DSTest {
   AccountingEngine accountingEngine;
   LiquidationEngine liquidationEngine;
   OracleRelayer oracleRelayer;
-  CoinSavingsAccount coinSavingsAccount;
   StabilityFeeTreasury stabilityFeeTreasury;
   SettlementSurplusAuctioneer postSettlementSurplusDrain;
 
@@ -333,8 +331,6 @@ contract SingleGlobalSettlementTest is DSTest {
     safeEngine.addAuthorization(address(liquidationEngine));
     accountingEngine.addAuthorization(address(liquidationEngine));
 
-    coinSavingsAccount = new CoinSavingsAccount(address(safeEngine));
-
     oracleRelayer = new OracleRelayer(address(safeEngine));
     safeEngine.modifyParameters('globalDebtCeiling', rad(10_000_000 ether));
     safeEngine.addAuthorization(address(oracleRelayer));
@@ -351,7 +347,6 @@ contract SingleGlobalSettlementTest is DSTest {
     safeEngine.addAuthorization(address(globalSettlement));
     accountingEngine.addAuthorization(address(globalSettlement));
     oracleRelayer.addAuthorization(address(globalSettlement));
-    coinSavingsAccount.addAuthorization(address(globalSettlement));
     liquidationEngine.addAuthorization(address(globalSettlement));
     stabilityFeeTreasury.addAuthorization(address(globalSettlement));
     surplusAuctionHouseOne.addAuthorization(address(accountingEngine));
@@ -376,29 +371,6 @@ contract SingleGlobalSettlementTest is DSTest {
     assertEq(accountingEngine.surplusAuctionHouse().contractEnabled(), 0);
   }
 
-  function test_shutdown_savings_account_and_rate_setter_set() public {
-    globalSettlement.modifyParameters('coinSavingsAccount', address(coinSavingsAccount));
-    globalSettlement.modifyParameters('stabilityFeeTreasury', address(stabilityFeeTreasury));
-    assertEq(globalSettlement.contractEnabled(), 1);
-    assertEq(safeEngine.contractEnabled(), 1);
-    assertEq(liquidationEngine.contractEnabled(), 1);
-    assertEq(oracleRelayer.contractEnabled(), 1);
-    assertEq(accountingEngine.contractEnabled(), 1);
-    assertEq(accountingEngine.debtAuctionHouse().contractEnabled(), 1);
-    assertEq(accountingEngine.surplusAuctionHouse().contractEnabled(), 1);
-    assertEq(coinSavingsAccount.contractEnabled(), 1);
-    assertEq(stabilityFeeTreasury.contractEnabled(), 1);
-    globalSettlement.shutdownSystem();
-    assertEq(globalSettlement.contractEnabled(), 0);
-    assertEq(safeEngine.contractEnabled(), 0);
-    assertEq(liquidationEngine.contractEnabled(), 0);
-    assertEq(accountingEngine.contractEnabled(), 0);
-    assertEq(oracleRelayer.contractEnabled(), 0);
-    assertEq(accountingEngine.debtAuctionHouse().contractEnabled(), 0);
-    assertEq(accountingEngine.surplusAuctionHouse().contractEnabled(), 0);
-    assertEq(stabilityFeeTreasury.contractEnabled(), 0);
-    assertEq(coinSavingsAccount.contractEnabled(), 0);
-  }
   // -- Scenario where there is one over-collateralised SAFE
   // -- and there is no AccountingEngine deficit or surplus
 

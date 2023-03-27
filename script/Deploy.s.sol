@@ -16,7 +16,6 @@ import {GlobalSettlement} from '../src/contracts/GlobalSettlement.sol';
 // TODO: import ESM to repo
 // import {ESM} from "../src/contracts/ESM.sol";
 import {StabilityFeeTreasury} from '../src/contracts/StabilityFeeTreasury.sol';
-import {CoinSavingsAccount} from '../src/contracts/CoinSavingsAccount.sol';
 import {OracleRelayer} from '../src/contracts/OracleRelayer.sol';
 
 import {OracleForTest} from '../src/contracts/for-test/OracleForTest.sol';
@@ -29,7 +28,6 @@ contract Deploy is Script {
   AccountingEngine public accountingEngine;
   LiquidationEngine public liquidationEngine;
   StabilityFeeTreasury public stabilityFeeTreasury;
-  CoinSavingsAccount public coinSavingsAccount;
 
   Coin public coin;
   Coin public protocolToken;
@@ -71,10 +69,6 @@ contract Deploy is Script {
     // deploy TaxCollector
     taxCollector = new TaxCollector(address(safeEngine));
     safeEngine.addAuthorization(address(taxCollector));
-
-    // deploy CoinSavingsAccount
-    coinSavingsAccount = new CoinSavingsAccount(address(safeEngine));
-    safeEngine.addAuthorization(address(coinSavingsAccount));
 
     // deploy AuctionHouses
     protocolToken = new Coin('Protocol Token', 'TKN', chainId);
@@ -139,7 +133,6 @@ contract Deploy is Script {
     coin.removeAuthorization(deployer);
     coinJoin.removeAuthorization(deployer);
     taxCollector.removeAuthorization(deployer);
-    coinSavingsAccount.removeAuthorization(deployer);
     protocolToken.removeAuthorization(deployer);
     surplusAuctionHouse.removeAuthorization(deployer);
     debtAuctionHouse.removeAuthorization(deployer);

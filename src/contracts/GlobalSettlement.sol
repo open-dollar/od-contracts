@@ -23,7 +23,7 @@ import {ISAFEEngine as SAFEEngineLike} from '../interfaces/ISAFEEngine.sol';
 import {ILiquidationEngine as LiquidationEngineLike} from '../interfaces/ILiquidationEngine.sol';
 import {IStabilityFeeTreasury as StabilityFeeTreasuryLike} from '../interfaces/IStabilityFeeTreasury.sol';
 import {IAccountingEngine as AccountingEngineLike} from '../interfaces/IAccountingEngine.sol';
-import {ICoinSavingsAccount as CoinSavingsAccountLike} from '../interfaces/ICoinSavingsAccount.sol';
+import {IDisableable as CoinSavingsAccountLike} from '../interfaces/IDisableable.sol';
 import {ICollateralAuctionHouse as CollateralAuctionHouseLike} from '../interfaces/ICollateralAuctionHouse.sol';
 import {IOracle as OracleLike} from '../interfaces/IOracle.sol';
 import {IOracleRelayer as OracleRelayerLike} from '../interfaces/IOracleRelayer.sol';

@@ -8,7 +8,6 @@ import {
   AccountingEngine,
   LiquidationEngine,
   StabilityFeeTreasury,
-  CoinSavingsAccount,
   MixedStratSurplusAuctionHouse as SurplusAuctionHouse,
   DebtAuctionHouse,
   IncreasingDiscountCollateralAuctionHouse as CollateralAuctionHouse,
@@ -31,7 +30,6 @@ contract DeploymentTest is DSTest {
 
     assertEq(_safeEngine.authorizedAccounts(address(deployment.oracleRelayer())), 1);
     assertEq(_safeEngine.authorizedAccounts(address(deployment.taxCollector())), 1);
-    assertEq(_safeEngine.authorizedAccounts(address(deployment.coinSavingsAccount())), 1);
     assertEq(_safeEngine.authorizedAccounts(address(deployment.debtAuctionHouse())), 1);
     assertEq(_safeEngine.authorizedAccounts(address(deployment.liquidationEngine())), 1);
 
@@ -85,13 +83,6 @@ contract DeploymentTest is DSTest {
     assertEq(address(_sfTreasury.systemCoin()), address(deployment.coin()));
 
     assertEq(deployment.coin().allowance(address(_sfTreasury), address(deployment.coinJoin())), uint256(int256(-1)));
-  }
-
-  // CoinSavingsAccount
-  function test_deployment_params_coin_savings_account() public {
-    CoinSavingsAccount _coinSavingsAcc = deployment.coinSavingsAccount();
-
-    assertEq(address(_coinSavingsAcc.safeEngine()), address(deployment.safeEngine()));
   }
 
   // Coin (system)
