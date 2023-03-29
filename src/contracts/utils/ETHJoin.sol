@@ -32,7 +32,7 @@ import {ISystemCoin as CollateralLike} from '../../interfaces/external/ISystemCo
     Adapters need to implement two basic methods:
       - `join`: enter collateral into the system
       - `exit`: remove collateral from the system
-*/
+      */
 
 contract ETHJoin {
   // --- Auth ---

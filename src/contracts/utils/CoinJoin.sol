@@ -31,8 +31,7 @@ import {ISystemCoin as CollateralLike} from '../../interfaces/external/ISystemCo
     semantics and token standards.
     Adapters need to implement two basic methods:
       - `join`: enter collateral into the system
-      - `exit`: remove collateral from the system
-*/
+      - `exit`: remove collateral from the system*/
 
 contract CoinJoin {
   // --- Auth ---

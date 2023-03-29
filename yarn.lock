@@ -803,9 +803,9 @@ dot-prop@^5.1.0:
   dependencies:
     is-obj "^2.0.0"
 
-"ds-test@git+https://github.com/dapphub/ds-test.git":
+"ds-test@https://github.com/dapphub/ds-test":
   version "1.0.0"
-  resolved "git+https://github.com/dapphub/ds-test.git#e282159d5170298eb2455a6c05280ab5a73a4ef0"
+  resolved "https://github.com/dapphub/ds-test#e282159d5170298eb2455a6c05280ab5a73a4ef0"
 
 eastasianwidth@^0.2.0:
   version "0.2.0"
@@ -1077,9 +1077,9 @@ flatted@^2.0.0:
   resolved "https://registry.yarnpkg.com/flatted/-/flatted-2.0.2.tgz#4575b21e2bcee7434aa9be662f4b7b5f9c2b5138"
   integrity sha512-r5wGx7YeOwNWNlCA0wQ86zKyDLMQr+/RB8xy74M4hTphfmjlijTSSXGuH8rnvKZnfT9i+75zmd8jcKdMR4O6jA==
 
-"forge-std@git+https://github.com/foundry-rs/forge-std.git":
+"forge-std@https://github.com/foundry-rs/forge-std":
   version "1.5.2"
-  resolved "git+https://github.com/foundry-rs/forge-std.git#f4264050aca5a2eedf243f9bd54b544c5a373bd2"
+  resolved "https://github.com/foundry-rs/forge-std#46264e9788017fc74f9f58b7efa0bc6e1df6d410"
 
 fs-extra@^11.0.0:
   version "11.1.0"

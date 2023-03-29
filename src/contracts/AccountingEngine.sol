@@ -18,15 +18,15 @@
 
 pragma solidity 0.8.19;
 
-import {IDebtAuctionHouse as DebtAuctionHouseLike} from '../interfaces/IDebtAuctionHouse.sol';
-import {ISurplusAuctionHouse as SurplusAuctionHouseLike} from '../interfaces/ISurplusAuctionHouse.sol';
-import {ISAFEEngine as SAFEEngineLike} from '../interfaces/ISAFEEngine.sol';
-import {ISystemStakingPool as SystemStakingPoolLike} from '../interfaces/external/ISystemStakingPool.sol';
-import {IProtocolTokenAuthority as ProtocolTokenAuthorityLike} from '../interfaces/external/IProtocolTokenAuthority.sol';
-
+import {IDebtAuctionHouse as DebtAuctionHouseLike} from '@interfaces/IDebtAuctionHouse.sol';
+import {ISurplusAuctionHouse as SurplusAuctionHouseLike} from '@interfaces/ISurplusAuctionHouse.sol';
+import {ISAFEEngine as SAFEEngineLike} from '@interfaces/ISAFEEngine.sol';
+import {ISystemStakingPool as SystemStakingPoolLike} from '@interfaces/external/ISystemStakingPool.sol';
+import {IProtocolTokenAuthority as ProtocolTokenAuthorityLike} from '@interfaces/external/IProtocolTokenAuthority.sol';
+import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
 import {Math} from './utils/Math.sol';
 
-contract AccountingEngine {
+contract AccountingEngine is IAccountingEngine {
   // --- Auth ---
   mapping(address => uint256) public authorizedAccounts;
   /**
@@ -230,10 +230,10 @@ contract AccountingEngine {
   function unqueuedUnauctionedDebt() public view returns (uint256) {
     return (safeEngine.debtBalance(address(this)) - totalQueuedDebt) - totalOnAuctionDebt;
   }
+
   /*
     * @notify Returns a bool indicating whether the AccountingEngine can currently print protocol tokens using debt auctions
     */
-
   function canPrintProtocolTokens() public view returns (bool) {
     if (address(systemStakingPool) == address(0)) return true;
     try systemStakingPool.canPrintProtocolTokens() returns (bool ok) {
@@ -245,58 +245,56 @@ contract AccountingEngine {
 
   // --- Debt Queueing ---
   /**
-   * @notice Push bad debt into a queue
-   * @dev Debt is locked in a queue to give the system enough time to auction collateral
-   *      and gather surplus
-   * @param debtBlock Amount of debt to push
+   * @notice Push a block of bad debt to the debt queue
+   * @dev    Debt is locked in a queue to give the system enough time to auction collateral
+   *         and gather surplus
+   * @param  _debtBlock Amount of debt to push
    */
-  function pushDebtToQueue(uint256 debtBlock) external isAuthorized {
-    debtQueue[block.timestamp] = debtQueue[block.timestamp] + debtBlock;
-    totalQueuedDebt = totalQueuedDebt + debtBlock;
+  function pushDebtToQueue(uint256 _debtBlock) external isAuthorized {
+    debtQueue[block.timestamp] = debtQueue[block.timestamp] + _debtBlock;
+    totalQueuedDebt = totalQueuedDebt + _debtBlock;
     emit PushDebtToQueue(block.timestamp, debtQueue[block.timestamp], totalQueuedDebt);
   }
+
   /**
    * @notice Pop a block of bad debt from the debt queue
-   * @dev A block of debt can be popped from the queue after popDebtDelay seconds have passed since it was
-   *         added there
-   * @param debtBlockTimestamp Timestamp of the block of debt that should be popped out
+   * @dev    A block of debt can be popped from the queue after popDebtDelay seconds have passed since it was
+   *           added there
+   * @param  _debtBlockTimestamp Timestamp of the block of debt that should be popped out
    */
-
-  function popDebtFromQueue(uint256 debtBlockTimestamp) external {
-    require(debtBlockTimestamp + popDebtDelay <= block.timestamp, 'AccountingEngine/pop-debt-delay-not-passed');
-    require(debtQueue[debtBlockTimestamp] > 0, 'AccountingEngine/null-debt-block');
-    totalQueuedDebt = totalQueuedDebt - debtQueue[debtBlockTimestamp];
-    debtPoppers[debtBlockTimestamp] = msg.sender;
-    emit PopDebtFromQueue(block.timestamp, debtQueue[debtBlockTimestamp], totalQueuedDebt);
-    debtQueue[debtBlockTimestamp] = 0;
+  function popDebtFromQueue(uint256 _debtBlockTimestamp) external {
+    require(_debtBlockTimestamp + popDebtDelay <= block.timestamp, 'AccountingEngine/pop-debt-delay-not-passed');
+    require(debtQueue[_debtBlockTimestamp] > 0, 'AccountingEngine/null-debt-block');
+    totalQueuedDebt = totalQueuedDebt - debtQueue[_debtBlockTimestamp];
+    debtPoppers[_debtBlockTimestamp] = msg.sender;
+    emit PopDebtFromQueue(block.timestamp, debtQueue[_debtBlockTimestamp], totalQueuedDebt);
+    debtQueue[_debtBlockTimestamp] = 0;
   }
 
   // Debt settlement
   /**
    * @notice Destroy an equal amount of coins and bad debt
    * @dev We can only destroy debt that is not locked in the queue and also not in a debt auction
-   * @param rad Amount of coins/debt to destroy (number with 45 decimals)
-   *
+   * @param _rad Amount of coins/debt to destroy (number with 45 decimals)
    */
-  function settleDebt(uint256 rad) public {
-    require(rad <= safeEngine.coinBalance(address(this)), 'AccountingEngine/insufficient-surplus');
-    require(rad <= unqueuedUnauctionedDebt(), 'AccountingEngine/insufficient-debt');
-    safeEngine.settleDebt(rad);
-    emit SettleDebt(rad, safeEngine.coinBalance(address(this)), safeEngine.debtBalance(address(this)));
+  function settleDebt(uint256 _rad) public {
+    require(_rad <= safeEngine.coinBalance(address(this)), 'AccountingEngine/insufficient-surplus');
+    require(_rad <= unqueuedUnauctionedDebt(), 'AccountingEngine/insufficient-debt');
+    safeEngine.settleDebt(_rad);
+    emit SettleDebt(_rad, safeEngine.coinBalance(address(this)), safeEngine.debtBalance(address(this)));
   }
+
   /**
    * @notice Use surplus coins to destroy debt that was in a debt auction
-   * @param rad Amount of coins/debt to destroy (number with 45 decimals)
-   *
+   * @param _rad Amount of coins/debt to destroy (number with 45 decimals)
    */
-
-  function cancelAuctionedDebtWithSurplus(uint256 rad) external {
-    require(rad <= totalOnAuctionDebt, 'AccountingEngine/not-enough-debt-being-auctioned');
-    require(rad <= safeEngine.coinBalance(address(this)), 'AccountingEngine/insufficient-surplus');
-    totalOnAuctionDebt = totalOnAuctionDebt - rad;
-    safeEngine.settleDebt(rad);
+  function cancelAuctionedDebtWithSurplus(uint256 _rad) external {
+    require(_rad <= totalOnAuctionDebt, 'AccountingEngine/not-enough-debt-being-auctioned');
+    require(_rad <= safeEngine.coinBalance(address(this)), 'AccountingEngine/insufficient-surplus');
+    totalOnAuctionDebt = totalOnAuctionDebt - _rad;
+    safeEngine.settleDebt(_rad);
     emit CancelAuctionedDebtWithSurplus(
-      rad, totalOnAuctionDebt, safeEngine.coinBalance(address(this)), safeEngine.debtBalance(address(this))
+      _rad, totalOnAuctionDebt, safeEngine.coinBalance(address(this)), safeEngine.debtBalance(address(this))
     );
   }
 
@@ -304,10 +302,10 @@ contract AccountingEngine {
   /**
    * @notice Start a debt auction (print protocol tokens in exchange for coins so that the
    *         system can be recapitalized)
-   * @dev We can only auction debt that is not already being auctioned and is not locked in the debt queue
-   *
+   * @dev    We can only auction debt that is not already being auctioned and is not locked in the debt queue
+   * @return _id Id of the debt auction that was started
    */
-  function auctionDebt() external returns (uint256 id) {
+  function auctionDebt() external returns (uint256 _id) {
     require(debtAuctionBidSize <= unqueuedUnauctionedDebt(), 'AccountingEngine/insufficient-debt');
     settleDebt(safeEngine.coinBalance(address(this)));
     require(safeEngine.coinBalance(address(this)) == 0, 'AccountingEngine/surplus-not-zero');
@@ -318,18 +316,18 @@ contract AccountingEngine {
     );
     require(canPrintProtocolTokens(), 'AccountingEngine/staking-pool-denies-printing');
     totalOnAuctionDebt = totalOnAuctionDebt + debtAuctionBidSize;
-    id = debtAuctionHouse.startAuction(address(this), initialDebtAuctionMintedTokens, debtAuctionBidSize);
-    emit AuctionDebt(id, totalOnAuctionDebt, safeEngine.debtBalance(address(this)));
+    _id = debtAuctionHouse.startAuction(address(this), initialDebtAuctionMintedTokens, debtAuctionBidSize);
+    emit AuctionDebt(_id, totalOnAuctionDebt, safeEngine.debtBalance(address(this)));
   }
 
   // Surplus auction
   /**
    * @notice Start a surplus auction
-   * @dev We can only auction surplus if we wait at least 'surplusAuctionDelay' seconds since the last
-   *      surplus auction trigger, if we keep enough surplus in the buffer and if there is no bad debt left to settle
-   *
+   * @dev    We can only auction surplus if we wait at least 'surplusAuctionDelay' seconds since the last
+   *         surplus auction trigger, if we keep enough surplus in the buffer and if there is no bad debt left to settle
+   * @return _id the Id of the surplus auction that was started
    */
-  function auctionSurplus() external returns (uint256 id) {
+  function auctionSurplus() external returns (uint256 _id) {
     require(extraSurplusIsTransferred != 1, 'AccountingEngine/surplus-transfer-no-auction');
     require(surplusAuctionAmountToSell > 0, 'AccountingEngine/null-amount-to-auction');
     settleDebt(unqueuedUnauctionedDebt());
@@ -346,16 +344,15 @@ contract AccountingEngine {
     require(surplusAuctionHouse.protocolToken() != address(0), 'AccountingEngine/surplus-auction-house-null-prot');
     lastSurplusAuctionTime = block.timestamp;
     lastSurplusTransferTime = block.timestamp;
-    id = surplusAuctionHouse.startAuction(surplusAuctionAmountToSell, 0);
-    emit AuctionSurplus(id, lastSurplusAuctionTime, safeEngine.coinBalance(address(this)));
+    _id = surplusAuctionHouse.startAuction(surplusAuctionAmountToSell, 0);
+    emit AuctionSurplus(_id, lastSurplusAuctionTime, safeEngine.coinBalance(address(this)));
   }
 
   // Extra surplus transfers/surplus auction alternative
   /**
    * @notice Send surplus to an address as an alternative to surplus auctions
-   * @dev We can only transfer surplus if we wait at least 'surplusTransferDelay' seconds since the last
-   *      transfer, if we keep enough surplus in the buffer and if there is no bad debt left to settle
-   *
+   * @dev    We can only transfer surplus if we wait at least 'surplusTransferDelay' seconds since the last
+   *           transfer, if we keep enough surplus in the buffer and if there is no bad debt left to settle
    */
   function transferExtraSurplus() external {
     require(extraSurplusIsTransferred == 1, 'AccountingEngine/surplus-auction-not-transfer');
