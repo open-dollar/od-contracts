@@ -3,3 +3,4 @@
 @contracts/=src/contracts/
 @interfaces/=src/interfaces/
 @test/=src/test/
+@script/=src/script/

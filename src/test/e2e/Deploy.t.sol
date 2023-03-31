@@ -1,8 +1,8 @@
+// SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {DSTest} from 'ds-test/test.sol';
+import {PRBTest} from 'prb-test/PRBTest.sol';
 import {
-  Deploy,
   SAFEEngine,
   TaxCollector,
   AccountingEngine,
@@ -10,13 +10,16 @@ import {
   StabilityFeeTreasury,
   MixedStratSurplusAuctionHouse as SurplusAuctionHouse,
   DebtAuctionHouse,
-  IncreasingDiscountCollateralAuctionHouse as CollateralAuctionHouse,
+  CollateralAuctionHouse,
   OracleRelayer,
   Coin,
-  CoinJoin
-} from '../../../script/Deploy.s.sol';
+  CoinJoin,
+  ETHJoin,
+  CollateralJoin
+} from '@script/Contracts.s.sol';
+import {Deploy} from '@script/Deploy.s.sol';
 
-contract DeploymentTest is DSTest {
+contract E2EDeploymentTest is PRBTest {
   Deploy public deployment;
 
   function setUp() public {
@@ -25,7 +28,7 @@ contract DeploymentTest is DSTest {
   }
 
   // SAFEEngine
-  function test_deployment_auth_safe_engine() public {
+  function test_SAFEEngine_Auth() public {
     SAFEEngine _safeEngine = deployment.safeEngine();
 
     assertEq(_safeEngine.authorizedAccounts(address(deployment.oracleRelayer())), 1);
@@ -36,27 +39,27 @@ contract DeploymentTest is DSTest {
     assert(_safeEngine.canModifySAFE(address(deployment.accountingEngine()), address(deployment.surplusAuctionHouse())));
   }
 
-  function test_deployment_params_safe_engine() public {
+  function test_SAFEEngine_Params() public {
     SAFEEngine _safeEngine = deployment.safeEngine();
 
     assertEq(_safeEngine.safeDebtCeiling(), type(uint256).max);
   }
 
   // TaxCollector
-  function test_deployment_params_tax_collector() public {
+  function test_TaxCollector_Params() public {
     TaxCollector _taxCollector = deployment.taxCollector();
 
     assertEq(address(_taxCollector.safeEngine()), address(deployment.safeEngine()));
   }
 
   // AccountingEngine
-  function test_deployment_auth_accounting_engine() public {
+  function test_AccountingEntine_Auth() public {
     AccountingEngine _accountingEngine = deployment.accountingEngine();
 
     assertEq(_accountingEngine.authorizedAccounts(address(deployment.liquidationEngine())), 1);
   }
 
-  function test_deployment_params_accounting_engine() public {
+  function test_AccountingEngine_Params() public {
     AccountingEngine _accountingEngine = deployment.accountingEngine();
 
     assertEq(address(_accountingEngine.safeEngine()), address(deployment.safeEngine()));
@@ -65,7 +68,7 @@ contract DeploymentTest is DSTest {
   }
 
   // LiquidationEngine
-  function test_deployment_params_liquidation_engine() public {
+  function test_LiquidationEngine_Params() public {
     LiquidationEngine _liquidationEngine = deployment.liquidationEngine();
 
     assertEq(address(_liquidationEngine.safeEngine()), address(deployment.safeEngine()));
@@ -74,7 +77,7 @@ contract DeploymentTest is DSTest {
   }
 
   // StabilityFeeTreasury
-  function test_deployment_params_sf_treasury() public {
+  function test_StabilityFeeTreasury_Params() public {
     StabilityFeeTreasury _sfTreasury = deployment.stabilityFeeTreasury();
 
     assertEq(address(_sfTreasury.safeEngine()), address(deployment.safeEngine()));
@@ -86,29 +89,41 @@ contract DeploymentTest is DSTest {
   }
 
   // Coin (system)
-  function test_deployment_auth_coin() public {
+  function test_Coin_Auth() public {
     Coin _coin = deployment.coin();
 
     assertEq(_coin.authorizedAccounts(address(deployment.coinJoin())), 1);
   }
 
   // CoinJoin
-  function test_deployment_params_coin_join() public {
+  function test_CoinJoin_Params() public {
     CoinJoin _coinJoin = deployment.coinJoin();
 
     assertEq(address(_coinJoin.safeEngine()), address(deployment.safeEngine()));
   }
 
-  // TODO: CollateralJoin
+  // ETHJoin
+  function test_ETHJoin_Params() public {
+    ETHJoin _ethJoin = deployment.ethJoin();
+
+    assertEq(address(_ethJoin.safeEngine()), address(deployment.safeEngine()));
+  }
+
+  // CollateralJoin
+  function test_CollateralJoin_Params() public {
+    CollateralJoin _collateralJoin = deployment.collateralJoin();
+
+    assertEq(address(_collateralJoin.safeEngine()), address(deployment.safeEngine()));
+  }
 
   // SurplusAuctionHouse
-  function test_deployment_auth_surplus_auction_house() public {
+  function test_SurplusAuctionHouse_Auth() public {
     SurplusAuctionHouse _surplusAuctionHouse = deployment.surplusAuctionHouse();
 
     assertEq(_surplusAuctionHouse.authorizedAccounts(address(deployment.accountingEngine())), 1);
   }
 
-  function test_deployment_params_surplus_auction_house() public {
+  function test_SurplusAuctionHouse_Params() public {
     SurplusAuctionHouse _surplusAuctionHouse = deployment.surplusAuctionHouse();
 
     assertEq(address(_surplusAuctionHouse.safeEngine()), address(deployment.safeEngine()));
@@ -116,50 +131,83 @@ contract DeploymentTest is DSTest {
   }
 
   // DebtAuctionHouse
-  function test_deployment_auth_debt_auction_house() public {
+  function test_DebtAuctionHouse_Auth() public {
     DebtAuctionHouse _debtAuctionHouse = deployment.debtAuctionHouse();
 
     assertEq(_debtAuctionHouse.authorizedAccounts(address(deployment.accountingEngine())), 1);
   }
 
-  function test_deployment_params_debt_auction_house() public {
+  function test_DebtAuctionHouse_Params() public {
     DebtAuctionHouse _debtAuctionHouse = deployment.debtAuctionHouse();
 
     assertEq(address(_debtAuctionHouse.safeEngine()), address(deployment.safeEngine()));
     assertEq(address(_debtAuctionHouse.protocolToken()), address(deployment.protocolToken()));
   }
 
-  // TODO: CollateralAuctionHouse
-  function test_deployment_auth_collateral_auction_house() public {
+  function test_CollateralAuctionHouse_Auth() public {
     CollateralAuctionHouse _collateralAuctionHouse = deployment.collateralAuctionHouse();
 
     assertEq(_collateralAuctionHouse.authorizedAccounts(address(deployment.liquidationEngine())), 1);
   }
 
-  function test_deployment_params_collateral_auction_house() public {
+  function test_CollateralAuctionHouse_Params() public {
     CollateralAuctionHouse _collateralAuctionHouse = deployment.collateralAuctionHouse();
 
     assertEq(address(_collateralAuctionHouse.safeEngine()), address(deployment.safeEngine()));
     assertEq(address(_collateralAuctionHouse.liquidationEngine()), address(deployment.liquidationEngine()));
-    assertEq(_collateralAuctionHouse.collateralType(), deployment.COLLATERAL_TYPE());
+    assertEq(_collateralAuctionHouse.collateralType(), bytes32('TKN'));
+  }
+
+  function test_ETHCollateralAuctionHouse_Auth() public {
+    CollateralAuctionHouse _collateralAuctionHouse = deployment.ethCollateralAuctionHouse();
+
+    assertEq(_collateralAuctionHouse.authorizedAccounts(address(deployment.liquidationEngine())), 1);
+  }
+
+  function test_ETHCollateralAuctionHouse_Params() public {
+    CollateralAuctionHouse _collateralAuctionHouse = deployment.ethCollateralAuctionHouse();
+
+    assertEq(address(_collateralAuctionHouse.safeEngine()), address(deployment.safeEngine()));
+    assertEq(address(_collateralAuctionHouse.liquidationEngine()), address(deployment.liquidationEngine()));
+    assertEq(_collateralAuctionHouse.collateralType(), bytes32('ETH-A'));
   }
 
   // OracleRelayer
-  function test_deployment_params_debt_oracle_relayer() public {
+  function test_OracleRelayer_Params() public {
     OracleRelayer _oracleRelayer = deployment.oracleRelayer();
 
     assertEq(address(_oracleRelayer.safeEngine()), address(deployment.safeEngine()));
 
     // TODO: replace for actual oracle
-    assertEq(address(_oracleRelayer.orcl(deployment.COLLATERAL_TYPE())), address(deployment.oracleForTest()));
+    assertEq(address(_oracleRelayer.orcl(bytes32('ETH-A'))), address(deployment.ethOracle()));
+    assertEq(address(_oracleRelayer.orcl(bytes32('TKN'))), address(deployment.collateralOracle()));
   }
 
-  function test_deployment_revoke_auth() public {
-    // TODO: fix test
-    // address _deployer = address(deployment.deployer());
-    // deployment.revoke();
+  function test_Revoke_Auth() public {
+    address _deployer = address(deployment.deployer());
+    deployment.revoke();
 
-    // assertEq(deployment.safeEngine().authorizedAccounts(_deployer), 0);
-    // ...
+    // base contracts
+    assertEq(deployment.safeEngine().authorizedAccounts(_deployer), 0);
+    assertEq(deployment.oracleRelayer().authorizedAccounts(_deployer), 0);
+    assertEq(deployment.taxCollector().authorizedAccounts(_deployer), 0);
+    assertEq(deployment.stabilityFeeTreasury().authorizedAccounts(_deployer), 0);
+    assertEq(deployment.liquidationEngine().authorizedAccounts(_deployer), 0);
+    assertEq(deployment.accountingEngine().authorizedAccounts(_deployer), 0);
+    assertEq(deployment.surplusAuctionHouse().authorizedAccounts(_deployer), 0);
+    assertEq(deployment.debtAuctionHouse().authorizedAccounts(_deployer), 0);
+
+    // tokens
+    assertEq(deployment.coin().authorizedAccounts(_deployer), 0);
+    assertEq(deployment.protocolToken().authorizedAccounts(_deployer), 0);
+
+    // token adapters
+    assertEq(deployment.coinJoin().authorizedAccounts(_deployer), 0);
+    assertEq(deployment.ethJoin().authorizedAccounts(_deployer), 0);
+    assertEq(deployment.collateralJoin().authorizedAccounts(_deployer), 0);
+
+    // collateral auction houses
+    assertEq(deployment.ethCollateralAuctionHouse().authorizedAccounts(_deployer), 0);
+    assertEq(deployment.collateralAuctionHouse().authorizedAccounts(_deployer), 0);
   }
 }

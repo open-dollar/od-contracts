@@ -13,4 +13,8 @@ contract OracleForTest {
     price = _price;
     validity = _validity;
   }
+
+  function priceSource() public pure returns (address) {
+    return address(0);
+  }
 }
