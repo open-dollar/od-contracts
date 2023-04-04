@@ -7,56 +7,11 @@ import {Deploy} from '@script/Deploy.s.sol';
 import {Contracts, OracleForTest} from '@script/Contracts.s.sol';
 import {IOracle} from '@interfaces/IOracle.sol';
 import {Math} from '../../contracts/utils/Math.sol';
+import './Common.t.sol';
 
-uint256 constant YEAR = 365 days;
-uint256 constant RAY = 1e27;
-uint256 constant RAD_DELTA = 0.0001e45;
-
-uint256 constant COLLAT = 1e18;
-uint256 constant DEBT = 500e18; // LVT 50%
-uint256 constant TEST_ETH_PRICE_DROP = 100e18; // 1 ETH = 100 HAI
-
-contract E2ETest is PRBTest, Contracts {
-  Deploy deployment;
-  address deployer;
-
-  address alice = address(0x420);
-  address bob = address(0x421);
-  address carol = address(0x422);
-  address dave = address(0x423);
-
-  uint256 auctionId;
-
-  function setUp() public {
-    deployment = new Deploy();
-    deployment.run();
-    deployer = deployment.deployer();
-
-    vm.label(deployer, 'Deployer');
-    vm.label(alice, 'Alice');
-    vm.label(bob, 'Bob');
-    vm.label(carol, 'Carol');
-    vm.label(dave, 'Dave');
-
-    safeEngine = deployment.safeEngine();
-    accountingEngine = deployment.accountingEngine();
-    taxCollector = deployment.taxCollector();
-    debtAuctionHouse = deployment.debtAuctionHouse();
-    surplusAuctionHouse = deployment.surplusAuctionHouse();
-    liquidationEngine = deployment.liquidationEngine();
-    oracleRelayer = deployment.oracleRelayer();
-    coinJoin = deployment.coinJoin();
-    coin = deployment.coin();
-    protocolToken = deployment.protocolToken();
-
-    ethJoin = deployment.ethJoin();
-    ethOracle = deployment.ethOracle();
-    collateralAuctionHouse = deployment.ethCollateralAuctionHouse();
-
-    globalSettlement = deployment.globalSettlement();
-  }
-
+contract E2ETest is Common {
   function test_open_safe() public {
+    _joinETH(address(this), COLLAT);
     _openSafe(address(this), int256(COLLAT), int256(DEBT));
 
     (uint256 _lockedCollateral, uint256 _generatedDebt) = safeEngine.safes(ETH_A, address(this));
@@ -65,6 +20,7 @@ contract E2ETest is PRBTest, Contracts {
   }
 
   function test_exit_join() public {
+    _joinETH(address(this), COLLAT);
     _openSafe(address(this), int256(COLLAT), int256(DEBT));
 
     safeEngine.approveSAFEModification(address(coinJoin));
@@ -73,6 +29,7 @@ contract E2ETest is PRBTest, Contracts {
   }
 
   function test_stability_fee() public {
+    _joinETH(address(this), COLLAT);
     _openSafe(address(this), int256(COLLAT), int256(DEBT));
 
     uint256 _globalDebt;
@@ -90,6 +47,7 @@ contract E2ETest is PRBTest, Contracts {
   }
 
   function test_liquidation() public {
+    _joinETH(address(this), COLLAT);
     _openSafe(address(this), int256(COLLAT), int256(DEBT));
 
     ethOracle.setPriceAndValidity(TEST_ETH_PRICE_DROP, true);
@@ -103,6 +61,7 @@ contract E2ETest is PRBTest, Contracts {
   }
 
   function test_liquidation_by_price_drop() public {
+    _joinETH(address(this), COLLAT);
     _openSafe(address(this), int256(COLLAT), int256(DEBT));
 
     // NOTE: LVT for price = 1000 is 50%
@@ -116,6 +75,7 @@ contract E2ETest is PRBTest, Contracts {
   }
 
   function test_liquidation_by_fees() public {
+    _joinETH(address(this), COLLAT);
     _openSafe(address(this), int256(COLLAT), int256(DEBT));
 
     _collectFees(8 * YEAR); // 1.05^8 = 148%
@@ -128,6 +88,7 @@ contract E2ETest is PRBTest, Contracts {
   }
 
   function test_collateral_auction() public {
+    _joinETH(address(this), COLLAT);
     _openSafe(address(this), int256(COLLAT), int256(DEBT));
     _setCollateralPrice(ETH_A, TEST_ETH_PRICE_DROP);
     liquidationEngine.liquidateSAFE(ETH_A, address(this));
@@ -147,6 +108,7 @@ contract E2ETest is PRBTest, Contracts {
   }
 
   function test_collateral_auction_partial() public {
+    _joinETH(address(this), COLLAT);
     _openSafe(address(this), int256(COLLAT), int256(DEBT));
     _setCollateralPrice(ETH_A, TEST_ETH_PRICE_DROP);
     liquidationEngine.liquidateSAFE(ETH_A, address(this));
@@ -166,6 +128,7 @@ contract E2ETest is PRBTest, Contracts {
   }
 
   function test_debt_auction() public {
+    _joinETH(address(this), COLLAT);
     _openSafe(address(this), int256(COLLAT), int256(DEBT));
     _setCollateralPrice(ETH_A, TEST_ETH_PRICE_DROP);
     liquidationEngine.liquidateSAFE(ETH_A, address(this));
@@ -200,6 +163,7 @@ contract E2ETest is PRBTest, Contracts {
   }
 
   function test_surplus_auction() public {
+    _joinETH(address(this), COLLAT);
     _openSafe(address(this), int256(COLLAT), int256(DEBT));
     uint256 INITIAL_BID = 1e18;
 
@@ -237,8 +201,11 @@ contract E2ETest is PRBTest, Contracts {
   }
 
   function test_global_settlement() public {
+    _joinETH(alice, COLLAT);
     _openSafe(alice, int256(COLLAT), int256(DEBT));
+    _joinETH(bob, COLLAT);
     _openSafe(bob, int256(COLLAT), int256(DEBT));
+    _joinETH(carol, COLLAT);
     _openSafe(carol, int256(COLLAT), int256(DEBT));
 
     _setCollateralPrice(ETH_A, TEST_ETH_PRICE_DROP); // price 1 ETH = 100 HAI
@@ -252,6 +219,7 @@ contract E2ETest is PRBTest, Contracts {
     accountingEngine.auctionSurplus(); // active surplus auction
 
     // NOTE: why DEBT/10 not-safe? (price dropped to 1/10)
+    _joinETH(dave, COLLAT);
     _openSafe(dave, int256(COLLAT), int256(DEBT / 100)); // active healthy safe
 
     vm.prank(deployer);
@@ -262,35 +230,5 @@ contract E2ETest is PRBTest, Contracts {
     // bob has a safe liquidated for price drop (active debt auction)
     // carol has a safe that provides surplus (active surplus auction)
     // dave has a healthy active safe
-  }
-
-  function _openSafe(address _user, int256 _deltaCollat, int256 _deltaDebt) internal {
-    vm.startPrank(_user);
-    vm.deal(_user, 1000e18);
-    ethJoin.join{value: 100e18}(_user); // 100 ETH
-
-    safeEngine.approveSAFEModification(address(ethJoin));
-
-    safeEngine.modifySAFECollateralization({
-      collateralType: ETH_A,
-      safe: _user,
-      collateralSource: _user,
-      debtDestination: _user,
-      deltaCollateral: _deltaCollat,
-      deltaDebt: _deltaDebt
-    });
-
-    vm.stopPrank();
-  }
-
-  function _setCollateralPrice(bytes32 _collateral, uint256 _price) internal {
-    (IOracle _oracle,,) = oracleRelayer.collateralTypes(_collateral);
-    OracleForTest(address(_oracle)).setPriceAndValidity(_price, true);
-    oracleRelayer.updateCollateralPrice(_collateral);
-  }
-
-  function _collectFees(uint256 _timeToWarp) internal {
-    vm.warp(block.timestamp + _timeToWarp);
-    taxCollector.taxSingle(ETH_A);
   }
 }
