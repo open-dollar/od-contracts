@@ -1,13 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {PRBTest} from 'prb-test/PRBTest.sol';
-import '@script/Params.s.sol';
-import {Deploy} from '@script/Deploy.s.sol';
-import {Contracts, OracleForTest} from '@script/Contracts.s.sol';
-import {IOracle} from '@interfaces/IOracle.sol';
-import {Math} from '../../contracts/utils/Math.sol';
 import './Common.t.sol';
+import '@script/Params.s.sol';
+import {Math} from '../../contracts/utils/Math.sol';
 
 contract E2ETest is Common {
   function test_open_safe() public {
@@ -198,37 +194,5 @@ contract E2ETest is Common {
     assertEq(protocolToken.totalSupply(), INITIAL_BID / 2); // 50% of the bid is burned
     assertEq(protocolToken.balanceOf(SURPLUS_AUCTION_BID_RECEIVER), INITIAL_BID / 2); // 50% is sent to the receiver
     assertEq(protocolToken.balanceOf(address(this)), 0);
-  }
-
-  function test_global_settlement() public {
-    _joinETH(alice, COLLAT);
-    _openSafe(alice, int256(COLLAT), int256(DEBT));
-    _joinETH(bob, COLLAT);
-    _openSafe(bob, int256(COLLAT), int256(DEBT));
-    _joinETH(carol, COLLAT);
-    _openSafe(carol, int256(COLLAT), int256(DEBT));
-
-    _setCollateralPrice(ETH_A, TEST_ETH_PRICE_DROP); // price 1 ETH = 100 HAI
-    liquidationEngine.liquidateSAFE(ETH_A, alice);
-    accountingEngine.popDebtFromQueue(block.timestamp);
-    accountingEngine.auctionDebt(); // active debt auction
-
-    liquidationEngine.liquidateSAFE(ETH_A, bob); // active collateral auction
-
-    _collectFees(50 * YEAR);
-    accountingEngine.auctionSurplus(); // active surplus auction
-
-    // NOTE: why DEBT/10 not-safe? (price dropped to 1/10)
-    _joinETH(dave, COLLAT);
-    _openSafe(dave, int256(COLLAT), int256(DEBT / 100)); // active healthy safe
-
-    vm.prank(deployer);
-    globalSettlement.shutdownSystem();
-    globalSettlement.freezeCollateralType(ETH_A);
-
-    // alice has a safe liquidated for price drop (active collateral auction)
-    // bob has a safe liquidated for price drop (active debt auction)
-    // carol has a safe that provides surplus (active surplus auction)
-    // dave has a healthy active safe
   }
 }

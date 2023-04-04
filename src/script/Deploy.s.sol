@@ -204,6 +204,9 @@ contract Deploy is Script, Contracts {
     oracleRelayer.modifyParameters(_params.name, 'safetyCRatio', _params.safetyCRatio);
     oracleRelayer.modifyParameters(_params.name, 'liquidationCRatio', _params.liquidationRatio);
 
+    // setup global settlement
+    _collateralAuctionHouse.addAuthorization(address(globalSettlement)); // terminateAuctionPrematurely
+
     // setup oracle [test]
     _collateralOracle.setPriceAndValidity(_initialPriceForTest, true);
     oracleRelayer.updateCollateralPrice(_params.name);
