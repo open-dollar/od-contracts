@@ -21,6 +21,7 @@ pragma solidity 0.8.19;
 import {ISAFEEngine as SAFEEngineLike} from '../../interfaces/ISAFEEngine.sol';
 import {IToken as DSTokenLike} from '../../interfaces/external/IToken.sol';
 import {ISystemCoin as CollateralLike} from '../../interfaces/external/ISystemCoin.sol';
+import {Authorizable} from './Authorizable.sol';
 
 /*
     Here we provide ETHJoin adapter (for native Ether) to connect the 
@@ -34,37 +35,7 @@ import {ISystemCoin as CollateralLike} from '../../interfaces/external/ISystemCo
       - `exit`: remove collateral from the system
       */
 
-contract ETHJoin {
-  // --- Auth ---
-  mapping(address => uint256) public authorizedAccounts;
-  /**
-   * @notice Add auth to an account
-   * @param account Account to add auth to
-   */
-
-  function addAuthorization(address account) external isAuthorized {
-    authorizedAccounts[account] = 1;
-    emit AddAuthorization(account);
-  }
-  /**
-   * @notice Remove auth from an account
-   * @param account Account to remove auth from
-   */
-
-  function removeAuthorization(address account) external isAuthorized {
-    authorizedAccounts[account] = 0;
-    emit RemoveAuthorization(account);
-  }
-  /**
-   * @notice Checks whether msg.sender can call a restricted function
-   *
-   */
-
-  modifier isAuthorized() {
-    require(authorizedAccounts[msg.sender] == 1, 'ETHJoin/account-not-authorized');
-    _;
-  }
-
+contract ETHJoin is Authorizable {
   // SAFE database
   SAFEEngineLike public safeEngine;
   // Collateral type name
@@ -75,14 +46,12 @@ contract ETHJoin {
   uint256 public decimals;
 
   // --- Events ---
-  event AddAuthorization(address account);
-  event RemoveAuthorization(address account);
   event DisableContract();
   event Join(address sender, address account, uint256 wad);
   event Exit(address sender, address account, uint256 wad);
 
   constructor(address safeEngine_, bytes32 collateralType_) {
-    authorizedAccounts[msg.sender] = 1;
+    _addAuthorization(msg.sender);
     contractEnabled = 1;
     safeEngine = SAFEEngineLike(safeEngine_);
     collateralType = collateralType_;

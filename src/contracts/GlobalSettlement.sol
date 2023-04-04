@@ -29,6 +29,7 @@ import {IOracle as OracleLike} from '../interfaces/IOracle.sol';
 import {IOracleRelayer as OracleRelayerLike} from '../interfaces/IOracleRelayer.sol';
 
 import {Math, RAY} from './utils/Math.sol';
+import {Authorizable} from './utils/Authorizable.sol';
 
 /*
     This is the Global Settlement module. It is an
@@ -97,38 +98,8 @@ import {Math, RAY} from './utils/Math.sol';
         - exchange some coin from your bag for tokens from a specific collateral type
         - the amount of collateral available to redeem is limited by how big your bag is*/
 
-contract GlobalSettlement {
+contract GlobalSettlement is Authorizable {
   using Math for uint256;
-
-  // --- Auth ---
-  mapping(address => uint256) public authorizedAccounts;
-  /**
-   * @notice Add auth to an account
-   * @param account Account to add auth to
-   */
-
-  function addAuthorization(address account) external isAuthorized {
-    authorizedAccounts[account] = 1;
-    emit AddAuthorization(account);
-  }
-  /**
-   * @notice Remove auth from an account
-   * @param account Account to remove auth from
-   */
-
-  function removeAuthorization(address account) external isAuthorized {
-    authorizedAccounts[account] = 0;
-    emit RemoveAuthorization(account);
-  }
-  /**
-   * @notice Checks whether msg.sender can call an authed function
-   *
-   */
-
-  modifier isAuthorized() {
-    require(authorizedAccounts[msg.sender] == 1, 'GlobalSettlement/account-not-authorized');
-    _;
-  }
 
   // --- Data ---
   SAFEEngineLike public safeEngine;
@@ -162,8 +133,6 @@ contract GlobalSettlement {
   mapping(bytes32 => mapping(address => uint256)) public coinsUsedToRedeem; // [wad]
 
   // --- Events ---
-  event AddAuthorization(address account);
-  event RemoveAuthorization(address account);
   event ModifyParameters(bytes32 parameter, uint256 data);
   event ModifyParameters(bytes32 parameter, address data);
   event ShutdownSystem();
@@ -180,7 +149,7 @@ contract GlobalSettlement {
 
   // --- Init ---
   constructor() {
-    authorizedAccounts[msg.sender] = 1;
+    _addAuthorization(msg.sender);
     contractEnabled = 1;
     emit AddAuthorization(msg.sender);
   }

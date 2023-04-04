@@ -321,9 +321,6 @@ contract SingleGlobalSettlementTest is DSTest {
     accountingEngine.modifyParameters('postSettlementSurplusDrain', address(postSettlementSurplusDrain));
     safeEngine.addAuthorization(address(accountingEngine));
 
-    surplusAuctionHouseOne.addAuthorization(address(accountingEngine));
-
-    debtAuctionHouse.addAuthorization(address(accountingEngine));
     debtAuctionHouse.modifyParameters('accountingEngine', address(accountingEngine));
 
     liquidationEngine = new LiquidationEngine(address(safeEngine));

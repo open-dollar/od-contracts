@@ -22,41 +22,12 @@ import {ISAFEEngine as SAFEEngineLike} from '../interfaces/ISAFEEngine.sol';
 import {IToken as TokenLike} from '../interfaces/external/IToken.sol';
 
 import {WAD, HUNDRED, FIFTY} from './utils/Math.sol';
+import {Authorizable} from './utils/Authorizable.sol';
 
 /*
    This thing lets you auction some system coins in return for protocol tokens that are then burnt*/
 
-contract BurningSurplusAuctionHouse {
-  // --- Auth ---
-  mapping(address => uint256) public authorizedAccounts;
-  /**
-   * @notice Add auth to an account
-   * @param account Account to add auth to
-   */
-
-  function addAuthorization(address account) external isAuthorized {
-    authorizedAccounts[account] = 1;
-    emit AddAuthorization(account);
-  }
-  /**
-   * @notice Remove auth from an account
-   * @param account Account to remove auth from
-   */
-
-  function removeAuthorization(address account) external isAuthorized {
-    authorizedAccounts[account] = 0;
-    emit RemoveAuthorization(account);
-  }
-  /**
-   * @notice Checks whether msg.sender can call an authed function
-   *
-   */
-
-  modifier isAuthorized() {
-    require(authorizedAccounts[msg.sender] == 1, 'BurningSurplusAuctionHouse/account-not-authorized');
-    _;
-  }
-
+contract BurningSurplusAuctionHouse is Authorizable {
   // --- Data ---
   struct Bid {
     // Bid size (how many protocol tokens are offered per system coins sold)
@@ -94,8 +65,6 @@ contract BurningSurplusAuctionHouse {
   bytes32 public constant SURPLUS_AUCTION_TYPE = bytes32('BURNING');
 
   // --- Events ---
-  event AddAuthorization(address account);
-  event RemoveAuthorization(address account);
   event ModifyParameters(bytes32 parameter, uint256 data);
   event RestartAuction(uint256 id, uint256 auctionDeadline);
   event IncreaseBidSize(uint256 id, address highBidder, uint256 amountToBuy, uint256 bid, uint256 bidExpiry);
@@ -108,7 +77,7 @@ contract BurningSurplusAuctionHouse {
 
   // --- Init ---
   constructor(address _safeEngine, address _protocolToken) {
-    authorizedAccounts[msg.sender] = 1;
+    _addAuthorization(msg.sender);
     safeEngine = SAFEEngineLike(_safeEngine);
     protocolToken = TokenLike(_protocolToken);
     contractEnabled = 1;
@@ -234,37 +203,7 @@ contract BurningSurplusAuctionHouse {
 
 // This thing lets you auction surplus for protocol tokens that are then sent to another address
 
-contract RecyclingSurplusAuctionHouse {
-  // --- Auth ---
-  mapping(address => uint256) public authorizedAccounts;
-  /**
-   * @notice Add auth to an account
-   * @param account Account to add auth to
-   */
-
-  function addAuthorization(address account) external isAuthorized {
-    authorizedAccounts[account] = 1;
-    emit AddAuthorization(account);
-  }
-  /**
-   * @notice Remove auth from an account
-   * @param account Account to remove auth from
-   */
-
-  function removeAuthorization(address account) external isAuthorized {
-    authorizedAccounts[account] = 0;
-    emit RemoveAuthorization(account);
-  }
-  /**
-   * @notice Checks whether msg.sender can call an authed function
-   *
-   */
-
-  modifier isAuthorized() {
-    require(authorizedAccounts[msg.sender] == 1, 'RecyclingSurplusAuctionHouse/account-not-authorized');
-    _;
-  }
-
+contract RecyclingSurplusAuctionHouse is Authorizable {
   // --- Data ---
   struct Bid {
     // Bid size (how many protocol tokens are offered per system coins sold)
@@ -304,8 +243,6 @@ contract RecyclingSurplusAuctionHouse {
   bytes32 public constant SURPLUS_AUCTION_TYPE = bytes32('RECYCLING');
 
   // --- Events ---
-  event AddAuthorization(address account);
-  event RemoveAuthorization(address account);
   event ModifyParameters(bytes32 parameter, uint256 data);
   event ModifyParameters(bytes32 parameter, address addr);
   event RestartAuction(uint256 id, uint256 auctionDeadline);
@@ -319,7 +256,7 @@ contract RecyclingSurplusAuctionHouse {
 
   // --- Init ---
   constructor(address _safeEngine, address _protocolToken) {
-    authorizedAccounts[msg.sender] = 1;
+    _addAuthorization(msg.sender);
     safeEngine = SAFEEngineLike(_safeEngine);
     protocolToken = TokenLike(_protocolToken);
     contractEnabled = 1;
@@ -459,37 +396,7 @@ contract RecyclingSurplusAuctionHouse {
 
 // This thing lets you auction surplus for protocol tokens. 50% of the protocol tokens are sent to another address and the rest are burned
 
-contract MixedStratSurplusAuctionHouse {
-  // --- Auth ---
-  mapping(address => uint256) public authorizedAccounts;
-  /**
-   * @notice Add auth to an account
-   * @param account Account to add auth to
-   */
-
-  function addAuthorization(address account) external isAuthorized {
-    authorizedAccounts[account] = 1;
-    emit AddAuthorization(account);
-  }
-  /**
-   * @notice Remove auth from an account
-   * @param account Account to remove auth from
-   */
-
-  function removeAuthorization(address account) external isAuthorized {
-    authorizedAccounts[account] = 0;
-    emit RemoveAuthorization(account);
-  }
-  /**
-   * @notice Checks whether msg.sender can call an authed function
-   *
-   */
-
-  modifier isAuthorized() {
-    require(authorizedAccounts[msg.sender] == 1, 'MixedStratSurplusAuctionHouse/account-not-authorized');
-    _;
-  }
-
+contract MixedStratSurplusAuctionHouse is Authorizable {
   // --- Data ---
   struct Bid {
     // Bid size (how many protocol tokens are offered per system coins sold)
@@ -529,8 +436,6 @@ contract MixedStratSurplusAuctionHouse {
   bytes32 public constant SURPLUS_AUCTION_TYPE = bytes32('MIXED-STRAT');
 
   // --- Events ---
-  event AddAuthorization(address account);
-  event RemoveAuthorization(address account);
   event ModifyParameters(bytes32 parameter, uint256 data);
   event ModifyParameters(bytes32 parameter, address addr);
   event RestartAuction(uint256 id, uint256 auctionDeadline);
@@ -544,7 +449,7 @@ contract MixedStratSurplusAuctionHouse {
 
   // --- Init ---
   constructor(address _safeEngine, address _protocolToken) {
-    authorizedAccounts[msg.sender] = 1;
+    _addAuthorization(msg.sender);
     safeEngine = SAFEEngineLike(_safeEngine);
     protocolToken = TokenLike(_protocolToken);
     contractEnabled = 1;
@@ -692,37 +597,7 @@ contract MixedStratSurplusAuctionHouse {
   }
 }
 
-contract PostSettlementSurplusAuctionHouse {
-  // --- Auth ---
-  mapping(address => uint256) public authorizedAccounts;
-  /**
-   * @notice Add auth to an account
-   * @param account Account to add auth to
-   */
-
-  function addAuthorization(address account) external isAuthorized {
-    authorizedAccounts[account] = 1;
-    emit AddAuthorization(account);
-  }
-  /**
-   * @notice Remove auth from an account
-   * @param account Account to remove auth from
-   */
-
-  function removeAuthorization(address account) external isAuthorized {
-    authorizedAccounts[account] = 0;
-    emit RemoveAuthorization(account);
-  }
-  /**
-   * @notice Checks whether msg.sender can call an authed function
-   *
-   */
-
-  modifier isAuthorized() {
-    require(authorizedAccounts[msg.sender] == 1, 'PostSettlementSurplusAuctionHouse/account-not-authorized');
-    _;
-  }
-
+contract PostSettlementSurplusAuctionHouse is Authorizable {
   // --- Data ---
   struct Bid {
     // Bid size (how many protocol tokens are offered per system coins sold)
@@ -757,8 +632,6 @@ contract PostSettlementSurplusAuctionHouse {
   bytes32 public constant AUCTION_HOUSE_TYPE = bytes32('SURPLUS');
 
   // --- Events ---
-  event AddAuthorization(address account);
-  event RemoveAuthorization(address account);
   event ModifyParameters(bytes32 parameter, uint256 data);
   event RestartAuction(uint256 indexed id, uint256 auctionDeadline);
   event IncreaseBidSize(uint256 indexed id, address highBidder, uint256 amountToBuy, uint256 bid, uint256 bidExpiry);
@@ -769,7 +642,7 @@ contract PostSettlementSurplusAuctionHouse {
 
   // --- Init ---
   constructor(address _safeEngine, address _protocolToken) {
-    authorizedAccounts[msg.sender] = 1;
+    _addAuthorization(msg.sender);
     safeEngine = SAFEEngineLike(_safeEngine);
     protocolToken = TokenLike(_protocolToken);
     emit AddAuthorization(msg.sender);

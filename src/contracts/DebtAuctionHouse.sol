@@ -23,41 +23,12 @@ import {IToken as TokenLike} from '../interfaces/external/IToken.sol';
 import {IAccountingEngine as AccountingEngineLike} from '../interfaces/IAccountingEngine.sol';
 
 import {Math, WAD} from './utils/Math.sol';
+import {Authorizable} from './utils/Authorizable.sol';
 
 /*
    This thing creates protocol tokens on demand in return for system coins*/
 
-contract DebtAuctionHouse {
-  // --- Auth ---
-  mapping(address => uint256) public authorizedAccounts;
-  /**
-   * @notice Add auth to an account
-   * @param account Account to add auth to
-   */
-
-  function addAuthorization(address account) external isAuthorized {
-    authorizedAccounts[account] = 1;
-    emit AddAuthorization(account);
-  }
-  /**
-   * @notice Remove auth from an account
-   * @param account Account to remove auth from
-   */
-
-  function removeAuthorization(address account) external isAuthorized {
-    authorizedAccounts[account] = 0;
-    emit RemoveAuthorization(account);
-  }
-  /**
-   * @notice Checks whether msg.sender can call an authed function
-   *
-   */
-
-  modifier isAuthorized() {
-    require(authorizedAccounts[msg.sender] == 1, 'DebtAuctionHouse/account-not-authorized');
-    _;
-  }
-
+contract DebtAuctionHouse is Authorizable {
   // --- Data ---
   struct Bid {
     // Bid size
@@ -99,8 +70,6 @@ contract DebtAuctionHouse {
   bytes32 public constant AUCTION_HOUSE_TYPE = bytes32('DEBT');
 
   // --- Events ---
-  event AddAuthorization(address account);
-  event RemoveAuthorization(address account);
   event StartAuction(
     uint256 indexed id,
     uint256 auctionsStarted,
@@ -122,7 +91,7 @@ contract DebtAuctionHouse {
 
   // --- Init ---
   constructor(address _safeEngine, address _protocolToken) {
-    authorizedAccounts[msg.sender] = 1;
+    _addAuthorization(msg.sender);
     safeEngine = SAFEEngineLike(_safeEngine);
     protocolToken = TokenLike(_protocolToken);
     contractEnabled = 1;

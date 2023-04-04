@@ -19,40 +19,28 @@
 pragma solidity 0.8.19;
 
 import {Math} from './utils/Math.sol';
+import {Authorizable} from './utils/Authorizable.sol';
 
-contract SAFEEngine {
+contract SAFEEngine is Authorizable {
   using Math for uint256;
 
   // --- Auth ---
-  mapping(address => uint256) public authorizedAccounts;
   /**
    * @notice Add auth to an account
-   * @param account Account to add auth to
+   * @param _account Account to add auth to
    */
-
-  function addAuthorization(address account) external isAuthorized {
+  function addAuthorization(address _account) external virtual override isAuthorized {
     require(contractEnabled == 1, 'SAFEEngine/contract-not-enabled');
-    authorizedAccounts[account] = 1;
-    emit AddAuthorization(account);
+    _addAuthorization(_account);
   }
+
   /**
    * @notice Remove auth from an account
-   * @param account Account to remove auth from
+   * @param _account Account to remove auth from
    */
-
-  function removeAuthorization(address account) external isAuthorized {
+  function removeAuthorization(address _account) external virtual override isAuthorized {
     require(contractEnabled == 1, 'SAFEEngine/contract-not-enabled');
-    authorizedAccounts[account] = 0;
-    emit RemoveAuthorization(account);
-  }
-  /**
-   * @notice Checks whether msg.sender can call an authed function
-   *
-   */
-
-  modifier isAuthorized() {
-    require(authorizedAccounts[msg.sender] == 1, 'SAFEEngine/account-not-authorized');
-    _;
+    _removeAuthorization(_account);
   }
 
   // Who can transfer collateral & debt in/out of a SAFE
@@ -130,8 +118,6 @@ contract SAFEEngine {
   uint256 public contractEnabled;
 
   // --- Events ---
-  event AddAuthorization(address account);
-  event RemoveAuthorization(address account);
   event ApproveSAFEModification(address sender, address account);
   event DenySAFEModification(address sender, address account);
   event InitializeCollateralType(bytes32 collateralType);
@@ -199,7 +185,7 @@ contract SAFEEngine {
 
   // --- Init ---
   constructor() {
-    authorizedAccounts[msg.sender] = 1;
+    _addAuthorization(msg.sender);
     safeDebtCeiling = type(uint256).max;
     contractEnabled = 1;
     emit AddAuthorization(msg.sender);
