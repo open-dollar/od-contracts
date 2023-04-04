@@ -4,7 +4,8 @@ pragma solidity 0.8.19;
 import {PRBTest} from 'prb-test/PRBTest.sol';
 import '@script/Params.s.sol';
 import {Deploy} from '@script/Deploy.s.sol';
-import {Contracts} from '@script/Contracts.s.sol';
+import {Contracts, OracleForTest} from '@script/Contracts.s.sol';
+import {IOracle} from '@interfaces/IOracle.sol';
 import {Math} from '../../contracts/utils/Math.sol';
 
 uint256 constant YEAR = 365 days;
@@ -17,12 +18,22 @@ uint256 constant DEBT = 500e18; // LVT 50%
 contract E2ETest is PRBTest, Contracts {
   Deploy deployment;
   address deployer;
+
+  address alice = address(0x420);
+  address bob = address(0x421);
+  address charlie = address(0x422);
+
   uint256 auctionId;
 
   function setUp() public {
     deployment = new Deploy();
     deployment.run();
     deployer = deployment.deployer();
+
+    vm.label(deployer, 'Deployer');
+    vm.label(alice, 'Alice');
+    vm.label(bob, 'Bob');
+    vm.label(charlie, 'Charlie');
 
     safeEngine = deployment.safeEngine();
     accountingEngine = deployment.accountingEngine();
@@ -41,18 +52,7 @@ contract E2ETest is PRBTest, Contracts {
   }
 
   function test_open_safe() public {
-    ethJoin.join{value: 100e18}(address(this));
-    safeEngine.approveSAFEModification(address(ethJoin));
-    safeEngine.approveSAFEModification(address(coinJoin));
-
-    safeEngine.modifySAFECollateralization({
-      collateralType: ETH_A,
-      safe: address(this),
-      collateralSource: address(this),
-      debtDestination: address(this),
-      deltaCollateral: int256(COLLAT),
-      deltaDebt: int256(DEBT)
-    });
+    _openSafe(address(this), int256(COLLAT), int256(DEBT));
 
     (uint256 _lockedCollateral, uint256 _generatedDebt) = safeEngine.safes(ETH_A, address(this));
     assertEq(_generatedDebt, DEBT);
@@ -60,14 +60,15 @@ contract E2ETest is PRBTest, Contracts {
   }
 
   function test_exit_join() public {
-    test_open_safe();
+    _openSafe(address(this), int256(COLLAT), int256(DEBT));
 
+    safeEngine.approveSAFEModification(address(coinJoin));
     coinJoin.exit(address(this), DEBT);
     assertEq(coin.balanceOf(address(this)), DEBT);
   }
 
   function test_stability_fee() public {
-    test_open_safe();
+    _openSafe(address(this), int256(COLLAT), int256(DEBT));
 
     uint256 _globalDebt;
     _globalDebt = safeEngine.globalDebt();
@@ -84,7 +85,7 @@ contract E2ETest is PRBTest, Contracts {
   }
 
   function test_liquidation() public {
-    test_open_safe();
+    _openSafe(address(this), int256(COLLAT), int256(DEBT));
 
     ethOracle.setPriceAndValidity(TEST_ETH_PRICE_DROP, true);
     oracleRelayer.updateCollateralPrice(ETH_A);
@@ -97,38 +98,34 @@ contract E2ETest is PRBTest, Contracts {
   }
 
   function test_liquidation_by_price_drop() public {
-    test_open_safe();
+    _openSafe(address(this), int256(COLLAT), int256(DEBT));
 
     // NOTE: LVT for price = 1000 is 50%
-    ethOracle.setPriceAndValidity(675e18, true); // LVT = 74,0% = 1/1.35
-    oracleRelayer.updateCollateralPrice(ETH_A);
+    _setCollateralPrice(ETH_A, 675e18); // LVT = 74,0% = 1/1.35
 
     vm.expectRevert('LiquidationEngine/safe-not-unsafe');
     liquidationEngine.liquidateSAFE(ETH_A, address(this));
 
-    ethOracle.setPriceAndValidity(674e18, true); // LVT = 74,1% > 1/1.35
-    oracleRelayer.updateCollateralPrice(ETH_A);
-
+    _setCollateralPrice(ETH_A, 674e18); // LVT = 74,1% > 1/1.35
     liquidationEngine.liquidateSAFE(ETH_A, address(this));
   }
 
   function test_liquidation_by_fees() public {
-    test_open_safe();
+    _openSafe(address(this), int256(COLLAT), int256(DEBT));
 
-    // LVT = 50% => 74% = 148%
-    vm.warp(block.timestamp + 8 * YEAR); // 1.05^8 = 148%
-    taxCollector.taxSingle(ETH_A);
+    _collectFees(8 * YEAR); // 1.05^8 = 148%
 
     vm.expectRevert('LiquidationEngine/safe-not-unsafe');
     liquidationEngine.liquidateSAFE(ETH_A, address(this));
 
-    vm.warp(block.timestamp + YEAR); // 1.05^9 = 153%
-    taxCollector.taxSingle(ETH_A);
+    _collectFees(YEAR); // 1.05^9 = 153%
     liquidationEngine.liquidateSAFE(ETH_A, address(this));
   }
 
   function test_collateral_auction() public {
-    test_liquidation(); // price is 100=1
+    _openSafe(address(this), int256(COLLAT), int256(DEBT));
+    _setCollateralPrice(ETH_A, TEST_ETH_PRICE_DROP);
+    liquidationEngine.liquidateSAFE(ETH_A, address(this));
 
     uint256 _discount = collateralAuctionHouse.minDiscount();
     uint256 _amountToBid = Math.wmul(Math.wmul(COLLAT, _discount), TEST_ETH_PRICE_DROP);
@@ -145,7 +142,9 @@ contract E2ETest is PRBTest, Contracts {
   }
 
   function test_collateral_auction_partial() public {
-    test_liquidation(); // price is 100=1
+    _openSafe(address(this), int256(COLLAT), int256(DEBT));
+    _setCollateralPrice(ETH_A, TEST_ETH_PRICE_DROP);
+    liquidationEngine.liquidateSAFE(ETH_A, address(this));
 
     uint256 _discount = collateralAuctionHouse.minDiscount();
     uint256 _amountToBid = Math.wmul(Math.wmul(COLLAT, _discount), TEST_ETH_PRICE_DROP) / 2;
@@ -162,7 +161,9 @@ contract E2ETest is PRBTest, Contracts {
   }
 
   function test_debt_auction() public {
-    test_liquidation();
+    _openSafe(address(this), int256(COLLAT), int256(DEBT));
+    _setCollateralPrice(ETH_A, TEST_ETH_PRICE_DROP);
+    liquidationEngine.liquidateSAFE(ETH_A, address(this));
 
     accountingEngine.popDebtFromQueue(block.timestamp);
     accountingEngine.auctionDebt();
@@ -194,7 +195,7 @@ contract E2ETest is PRBTest, Contracts {
   }
 
   function test_surplus_auction() public {
-    test_open_safe();
+    _openSafe(address(this), int256(COLLAT), int256(DEBT));
     uint256 INITIAL_BID = 1e18;
 
     // mint protocol tokens to bid with
@@ -202,8 +203,7 @@ contract E2ETest is PRBTest, Contracts {
     protocolToken.mint(address(this), INITIAL_BID);
 
     // generate surplus
-    vm.warp(block.timestamp + 10 * YEAR);
-    taxCollector.taxSingle(ETH_A);
+    _collectFees(10 * YEAR);
 
     accountingEngine.auctionSurplus();
 
@@ -229,5 +229,36 @@ contract E2ETest is PRBTest, Contracts {
     assertEq(protocolToken.totalSupply(), INITIAL_BID / 2); // 50% of the bid is burned
     assertEq(protocolToken.balanceOf(SURPLUS_AUCTION_BID_RECEIVER), INITIAL_BID / 2); // 50% is sent to the receiver
     assertEq(protocolToken.balanceOf(address(this)), 0);
+  }
+
+  function test_global_settlement() public {}
+
+  function _openSafe(address _user, int256 _deltaCollat, int256 _deltaDebt) internal {
+    vm.startPrank(_user);
+    ethJoin.join{value: 100e18}(address(this)); // 100 ETH
+
+    safeEngine.approveSAFEModification(address(ethJoin));
+
+    safeEngine.modifySAFECollateralization({
+      collateralType: ETH_A,
+      safe: _user,
+      collateralSource: _user,
+      debtDestination: _user,
+      deltaCollateral: _deltaCollat,
+      deltaDebt: _deltaDebt
+    });
+
+    vm.stopPrank();
+  }
+
+  function _setCollateralPrice(bytes32 _collateral, uint256 _price) internal {
+    (IOracle _oracle,,) = oracleRelayer.collateralTypes(_collateral);
+    OracleForTest(address(_oracle)).setPriceAndValidity(_price, true);
+    oracleRelayer.updateCollateralPrice(_collateral);
+  }
+
+  function _collectFees(uint256 _timeToWarp) internal {
+    vm.warp(block.timestamp + _timeToWarp);
+    taxCollector.taxSingle(ETH_A);
   }
 }
