@@ -129,6 +129,8 @@ contract Deploy is Script, Contracts {
 
     // TODO: deploy ESM, GlobalSettlement, SettlementSurplusAuctioneer
 
+    globalSettlement = new GlobalSettlement();
+
     // setup registry
     debtAuctionHouse.modifyParameters('accountingEngine', address(accountingEngine));
     taxCollector.modifyParameters('primaryTaxReceiver', address(accountingEngine));
@@ -146,6 +148,21 @@ contract Deploy is Script, Contracts {
     accountingEngine.addAuthorization(address(liquidationEngine)); // pushDebtToQueue
     protocolToken.addAuthorization(address(debtAuctionHouse)); // mint
     coin.addAuthorization(address(coinJoin)); // mint
+
+    // setup globalSettlement [auth: disableContract]
+    // TODO: add key contracts to constructor
+    globalSettlement.modifyParameters('safeEngine', address(safeEngine));
+    safeEngine.addAuthorization(address(globalSettlement));
+    globalSettlement.modifyParameters('liquidationEngine', address(liquidationEngine));
+    liquidationEngine.addAuthorization(address(globalSettlement));
+    globalSettlement.modifyParameters('stabilityFeeTreasury', address(stabilityFeeTreasury));
+    stabilityFeeTreasury.addAuthorization(address(globalSettlement));
+    globalSettlement.modifyParameters('accountingEngine', address(accountingEngine));
+    accountingEngine.addAuthorization(address(globalSettlement));
+    globalSettlement.modifyParameters('oracleRelayer', address(oracleRelayer));
+    oracleRelayer.addAuthorization(address(globalSettlement));
+    // globalSettlement.modifyParameters('coinSavingsAccount', address(oracleRelayer));
+    // coinSavingsAccount.addAuthorization(address(globalSettlement));
 
     // setup params
     safeEngine.modifyParameters('globalDebtCeiling', _params.globalDebtCeiling);

@@ -14,6 +14,7 @@ uint256 constant RAD_DELTA = 0.0001e45;
 
 uint256 constant COLLAT = 1e18;
 uint256 constant DEBT = 500e18; // LVT 50%
+uint256 constant TEST_ETH_PRICE_DROP = 100e18; // 1 ETH = 100 HAI
 
 contract E2ETest is PRBTest, Contracts {
   Deploy deployment;
@@ -21,7 +22,8 @@ contract E2ETest is PRBTest, Contracts {
 
   address alice = address(0x420);
   address bob = address(0x421);
-  address charlie = address(0x422);
+  address carol = address(0x422);
+  address dave = address(0x423);
 
   uint256 auctionId;
 
@@ -33,7 +35,8 @@ contract E2ETest is PRBTest, Contracts {
     vm.label(deployer, 'Deployer');
     vm.label(alice, 'Alice');
     vm.label(bob, 'Bob');
-    vm.label(charlie, 'Charlie');
+    vm.label(carol, 'Carol');
+    vm.label(dave, 'Dave');
 
     safeEngine = deployment.safeEngine();
     accountingEngine = deployment.accountingEngine();
@@ -49,6 +52,8 @@ contract E2ETest is PRBTest, Contracts {
     ethJoin = deployment.ethJoin();
     ethOracle = deployment.ethOracle();
     collateralAuctionHouse = deployment.ethCollateralAuctionHouse();
+
+    globalSettlement = deployment.globalSettlement();
   }
 
   function test_open_safe() public {
@@ -231,11 +236,38 @@ contract E2ETest is PRBTest, Contracts {
     assertEq(protocolToken.balanceOf(address(this)), 0);
   }
 
-  function test_global_settlement() public {}
+  function test_global_settlement() public {
+    _openSafe(alice, int256(COLLAT), int256(DEBT));
+    _openSafe(bob, int256(COLLAT), int256(DEBT));
+    _openSafe(carol, int256(COLLAT), int256(DEBT));
+
+    _setCollateralPrice(ETH_A, TEST_ETH_PRICE_DROP); // price 1 ETH = 100 HAI
+    liquidationEngine.liquidateSAFE(ETH_A, alice);
+    accountingEngine.popDebtFromQueue(block.timestamp);
+    accountingEngine.auctionDebt(); // active debt auction
+
+    liquidationEngine.liquidateSAFE(ETH_A, bob); // active collateral auction
+
+    _collectFees(50 * YEAR);
+    accountingEngine.auctionSurplus(); // active surplus auction
+
+    // NOTE: why DEBT/10 not-safe? (price dropped to 1/10)
+    _openSafe(dave, int256(COLLAT), int256(DEBT / 100)); // active healthy safe
+
+    vm.prank(deployer);
+    globalSettlement.shutdownSystem();
+    globalSettlement.freezeCollateralType(ETH_A);
+
+    // alice has a safe liquidated for price drop (active collateral auction)
+    // bob has a safe liquidated for price drop (active debt auction)
+    // carol has a safe that provides surplus (active surplus auction)
+    // dave has a healthy active safe
+  }
 
   function _openSafe(address _user, int256 _deltaCollat, int256 _deltaDebt) internal {
     vm.startPrank(_user);
-    ethJoin.join{value: 100e18}(address(this)); // 100 ETH
+    vm.deal(_user, 1000e18);
+    ethJoin.join{value: 100e18}(_user); // 100 ETH
 
     safeEngine.approveSAFEModification(address(ethJoin));
 
