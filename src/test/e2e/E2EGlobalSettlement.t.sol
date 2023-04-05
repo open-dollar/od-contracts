@@ -55,12 +55,14 @@ contract E2EGlobalSettlementTest is Common {
     globalSettlement.freeCollateral(ETH_A);
 
     // TODO: add cooldowns in deploy
-    // globalSettlement.setOutstandingCoinSupply();
-    // globalSettlement.calculateCashPrice(ETH_A);
+    accountingEngine.settleDebt(safeEngine.coinBalance(address(accountingEngine)));
+    globalSettlement.setOutstandingCoinSupply();
+    globalSettlement.calculateCashPrice(ETH_A);
 
-    // vm.startPrank(dave);
-    // globalSettlement.prepareCoinsForRedeeming(DEBT);
-    // globalSettlement.redeemCollateral(ETH_A, DEBT);
-    // vm.stopPrank();
+    vm.startPrank(dave);
+    safeEngine.approveSAFEModification(address(globalSettlement));
+    globalSettlement.prepareCoinsForRedeeming(DEBT / 100);
+    globalSettlement.redeemCollateral(ETH_A, DEBT / 100);
+    vm.stopPrank();
   }
 }
