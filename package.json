@@ -37,7 +37,8 @@
     "package.json": "sort-package-json"
   },
   "dependencies": {
-    "@defi-wonderland/solidity-utils": "0.0.0-4298c6c6"
+    "@defi-wonderland/solidity-utils": "0.0.0-4298c6c6",
+    "@openzeppelin/contracts": "4.8.2"
   },
   "devDependencies": {
     "@commitlint/cli": "17.0.3",

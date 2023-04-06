@@ -25,37 +25,13 @@ import {ISystemStakingPool as SystemStakingPoolLike} from '@interfaces/external/
 import {IProtocolTokenAuthority as ProtocolTokenAuthorityLike} from '@interfaces/external/IProtocolTokenAuthority.sol';
 import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
 import {Math} from './utils/Math.sol';
+import {Authorizable, IAuthorizable} from './utils/Authorizable.sol';
 
-contract AccountingEngine is IAccountingEngine {
+contract AccountingEngine is IAccountingEngine, Authorizable {
   // --- Auth ---
-  mapping(address => uint256) public authorizedAccounts;
-  /**
-   * @notice Add auth to an account
-   * @param account Account to add auth to
-   */
-
-  function addAuthorization(address account) external isAuthorized {
+  function addAuthorization(address _account) external override(Authorizable, IAuthorizable) isAuthorized {
     require(contractEnabled == 1, 'AccountingEngine/contract-not-enabled');
-    authorizedAccounts[account] = 1;
-    emit AddAuthorization(account);
-  }
-  /**
-   * @notice Remove auth from an account
-   * @param account Account to remove auth from
-   */
-
-  function removeAuthorization(address account) external isAuthorized {
-    authorizedAccounts[account] = 0;
-    emit RemoveAuthorization(account);
-  }
-  /**
-   * @notice Checks whether msg.sender can call an authed function
-   *
-   */
-
-  modifier isAuthorized() {
-    require(authorizedAccounts[msg.sender] == 1, 'AccountingEngine/account-not-authorized');
-    _;
+    _addAuthorization(_account);
   }
 
   // --- Data ---
@@ -124,8 +100,6 @@ contract AccountingEngine is IAccountingEngine {
   uint256 public contractEnabled;
 
   // --- Events ---
-  event AddAuthorization(address account);
-  event RemoveAuthorization(address account);
   event ModifyParameters(bytes32 indexed parameter, uint256 data);
   event ModifyParameters(bytes32 indexed parameter, address data);
   event PushDebtToQueue(uint256 indexed timestamp, uint256 debtQueueBlock, uint256 totalQueuedDebt);
@@ -142,7 +116,7 @@ contract AccountingEngine is IAccountingEngine {
 
   // --- Init ---
   constructor(address _safeEngine, address _surplusAuctionHouse, address _debtAuctionHouse) {
-    authorizedAccounts[msg.sender] = 1;
+    _addAuthorization(msg.sender);
 
     safeEngine = SAFEEngineLike(_safeEngine);
     surplusAuctionHouse = SurplusAuctionHouseLike(_surplusAuctionHouse);

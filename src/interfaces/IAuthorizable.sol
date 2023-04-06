@@ -2,7 +2,17 @@
 pragma solidity 0.8.19;
 
 interface IAuthorizable {
+  // --- Events ---
+  event AddAuthorization(address account);
+  event RemoveAuthorization(address account);
+
+  // --- Errors ---
+  error AlreadyAuthorized();
+  error NotAuthorized();
+  error Unauthorized();
+
   function authorizedAccounts(address _account) external view returns (uint256 _authorized);
+  function authorizedAccounts() external view returns (address[] memory _accounts);
   function addAuthorization(address _account) external;
   function removeAuthorization(address _account) external;
 }

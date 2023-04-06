@@ -18,44 +18,13 @@ import './utils/LinkedList.sol';
 import {ISAFEEngine as SAFEEngineLike} from '../interfaces/ISAFEEngine.sol';
 
 import {Math, RAY} from './utils/Math.sol';
+import {Authorizable} from './utils/Authorizable.sol';
 
-contract TaxCollector {
+contract TaxCollector is Authorizable {
   using LinkedList for LinkedList.List;
   using Math for uint256;
 
-  // --- Auth ---
-  mapping(address => uint256) public authorizedAccounts;
-  /**
-   * @notice Add auth to an account
-   * @param account Account to add auth to
-   */
-
-  function addAuthorization(address account) external isAuthorized {
-    authorizedAccounts[account] = 1;
-    emit AddAuthorization(account);
-  }
-  /**
-   * @notice Remove auth from an account
-   * @param account Account to remove auth from
-   */
-
-  function removeAuthorization(address account) external isAuthorized {
-    authorizedAccounts[account] = 0;
-    emit RemoveAuthorization(account);
-  }
-  /**
-   * @notice Checks whether msg.sender can call an authed function
-   *
-   */
-
-  modifier isAuthorized() {
-    require(authorizedAccounts[msg.sender] == 1, 'TaxCollector/account-not-authorized');
-    _;
-  }
-
   // --- Events ---
-  event AddAuthorization(address account);
-  event RemoveAuthorization(address account);
   event InitializeCollateralType(bytes32 collateralType);
   event ModifyParameters(bytes32 collateralType, bytes32 parameter, uint256 data);
   event ModifyParameters(bytes32 parameter, uint256 data);
@@ -130,7 +99,7 @@ contract TaxCollector {
 
   // --- Init ---
   constructor(address _safeEngine) {
-    authorizedAccounts[msg.sender] = 1;
+    _addAuthorization(msg.sender);
     safeEngine = SAFEEngineLike(_safeEngine);
     emit AddAuthorization(msg.sender);
   }

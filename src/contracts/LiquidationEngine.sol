@@ -24,38 +24,9 @@ import {ISAFEEngine as SAFEEngineLike} from '../interfaces/ISAFEEngine.sol';
 import {IAccountingEngine as AccountingEngineLike} from '../interfaces/IAccountingEngine.sol';
 
 import {Math, RAY, WAD} from './utils/Math.sol';
+import {Authorizable} from './utils/Authorizable.sol';
 
-contract LiquidationEngine {
-  // --- Auth ---
-  mapping(address => uint256) public authorizedAccounts;
-  /**
-   * @notice Add auth to an account
-   * @param account Account to add auth to
-   */
-
-  function addAuthorization(address account) external isAuthorized {
-    authorizedAccounts[account] = 1;
-    emit AddAuthorization(account);
-  }
-  /**
-   * @notice Remove auth from an account
-   * @param account Account to remove auth from
-   */
-
-  function removeAuthorization(address account) external isAuthorized {
-    authorizedAccounts[account] = 0;
-    emit RemoveAuthorization(account);
-  }
-  /**
-   * @notice Checks whether msg.sender can call an authed function
-   *
-   */
-
-  modifier isAuthorized() {
-    require(authorizedAccounts[msg.sender] == 1, 'LiquidationEngine/account-not-authorized');
-    _;
-  }
-
+contract LiquidationEngine is Authorizable {
   // --- SAFE Saviours ---
   // Contracts that can save SAFEs from liquidation
   mapping(address => uint256) public safeSaviours;
@@ -117,8 +88,6 @@ contract LiquidationEngine {
   AccountingEngineLike public accountingEngine;
 
   // --- Events ---
-  event AddAuthorization(address account);
-  event RemoveAuthorization(address account);
   event ConnectSAFESaviour(address saviour);
   event DisconnectSAFESaviour(address saviour);
   event UpdateCurrentOnAuctionSystemCoins(uint256 currentOnAuctionSystemCoins);
@@ -142,7 +111,7 @@ contract LiquidationEngine {
 
   // --- Init ---
   constructor(address _safeEngine) {
-    authorizedAccounts[msg.sender] = 1;
+    _addAuthorization(msg.sender);
 
     safeEngine = SAFEEngineLike(_safeEngine);
     onAuctionSystemCoinLimit = type(uint256).max;

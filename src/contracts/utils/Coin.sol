@@ -16,37 +16,9 @@
 
 pragma solidity 0.8.19;
 
-contract Coin {
-  // --- Auth ---
-  mapping(address => uint256) public authorizedAccounts;
-  /**
-   * @notice Add auth to an account
-   * @param account Account to add auth to
-   */
+import {Authorizable} from './Authorizable.sol';
 
-  function addAuthorization(address account) external isAuthorized {
-    authorizedAccounts[account] = 1;
-    emit AddAuthorization(account);
-  }
-  /**
-   * @notice Remove auth from an account
-   * @param account Account to remove auth from
-   */
-
-  function removeAuthorization(address account) external isAuthorized {
-    authorizedAccounts[account] = 0;
-    emit RemoveAuthorization(account);
-  }
-  /**
-   * @notice Checks whether msg.sender can call an authed function
-   *
-   */
-
-  modifier isAuthorized() {
-    require(authorizedAccounts[msg.sender] == 1, 'Coin/account-not-authorized');
-    _;
-  }
-
+contract Coin is Authorizable {
   // --- ERC20 Data ---
   // The name of this coin
   string public name;
@@ -70,8 +42,6 @@ contract Coin {
   mapping(address => uint256) public nonces;
 
   // --- Events ---
-  event AddAuthorization(address account);
-  event RemoveAuthorization(address account);
   event Approval(address indexed src, address indexed guy, uint256 amount);
   event Transfer(address indexed src, address indexed dst, uint256 amount);
 
@@ -81,7 +51,7 @@ contract Coin {
   bytes32 public constant PERMIT_TYPEHASH = 0xea2aa0a1be11a07ed86d755c93467f4f82362b452371d1ba94d1715123511acb;
 
   constructor(string memory name_, string memory symbol_, uint256 chainId_) {
-    authorizedAccounts[msg.sender] = 1;
+    _addAuthorization(msg.sender);
     name = name_;
     symbol = symbol_;
     chainId = chainId_;

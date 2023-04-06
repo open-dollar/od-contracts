@@ -23,41 +23,10 @@ import {ISystemCoin as SystemCoinLike} from '../interfaces/external/ISystemCoin.
 import {ICoinJoin as CoinJoinLike} from '../interfaces/ICoinJoin.sol';
 
 import {Math, RAY, HUNDRED} from './utils/Math.sol';
+import {Authorizable} from './utils/Authorizable.sol';
 
-contract StabilityFeeTreasury {
-  // --- Auth ---
-  mapping(address => uint256) public authorizedAccounts;
-  /**
-   * @notice Add auth to an account
-   * @param account Account to add auth to
-   */
-
-  function addAuthorization(address account) external isAuthorized {
-    authorizedAccounts[account] = 1;
-    emit AddAuthorization(account);
-  }
-  /**
-   * @notice Remove auth from an account
-   * @param account Account to remove auth from
-   */
-
-  function removeAuthorization(address account) external isAuthorized {
-    authorizedAccounts[account] = 0;
-    emit RemoveAuthorization(account);
-  }
-  /**
-   * @notice Checks whether msg.sender can call an authed function
-   *
-   */
-
-  modifier isAuthorized() {
-    require(authorizedAccounts[msg.sender] == 1, 'StabilityFeeTreasury/account-not-authorized');
-    _;
-  }
-
+contract StabilityFeeTreasury is Authorizable {
   // --- Events ---
-  event AddAuthorization(address account);
-  event RemoveAuthorization(address account);
   event ModifyParameters(bytes32 parameter, address addr);
   event ModifyParameters(bytes32 parameter, uint256 val);
   event DisableContract();
@@ -107,7 +76,7 @@ contract StabilityFeeTreasury {
     require(address(CoinJoinLike(_coinJoin).systemCoin()) != address(0), 'StabilityFeeTreasury/null-system-coin');
     require(_extraSurplusReceiver != address(0), 'StabilityFeeTreasury/null-surplus-receiver');
 
-    authorizedAccounts[msg.sender] = 1;
+    _addAuthorization(msg.sender);
 
     safeEngine = SAFEEngineLike(_safeEngine);
     extraSurplusReceiver = _extraSurplusReceiver;

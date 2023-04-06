@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
+import {IAccountingEngine, IAuthorizable} from '@interfaces/IAccountingEngine.sol';
 import {AccountingEngine} from '@contracts/AccountingEngine.sol';
 import {SettlementSurplusAuctioneer} from '@contracts/SettlementSurplusAuctioneer.sol';
 import {HaiTest} from '@test/utils/HaiTest.t.sol';
@@ -331,7 +331,7 @@ contract Unit_AccountingEngine_PushDebtToQueue is Base {
   }
 
   function test_Revert_NotAuthorized(uint256 _debtBlock) public {
-    vm.expectRevert(bytes('AccountingEngine/account-not-authorized'));
+    vm.expectRevert(IAuthorizable.Unauthorized.selector);
 
     accountingEngine.pushDebtToQueue(_debtBlock);
   }

@@ -24,41 +24,12 @@ import {IOracle as OracleLike} from '../interfaces/IOracle.sol';
 import {ILiquidationEngine as LiquidationEngineLike} from '../interfaces/ILiquidationEngine.sol';
 
 import {Math, RAY, WAD} from './utils/Math.sol';
+import {Authorizable} from './utils/Authorizable.sol';
 
 /*
    This thing lets you (English) auction some collateral for a given amount of system coins*/
 
-contract EnglishCollateralAuctionHouse {
-  // --- Auth ---
-  mapping(address => uint256) public authorizedAccounts;
-  /**
-   * @notice Add auth to an account
-   * @param account Account to add auth to
-   */
-
-  function addAuthorization(address account) external isAuthorized {
-    authorizedAccounts[account] = 1;
-    emit AddAuthorization(account);
-  }
-  /**
-   * @notice Remove auth from an account
-   * @param account Account to remove auth from
-   */
-
-  function removeAuthorization(address account) external isAuthorized {
-    authorizedAccounts[account] = 0;
-    emit RemoveAuthorization(account);
-  }
-  /**
-   * @notice Checks whether msg.sender can call an authed function
-   *
-   */
-
-  modifier isAuthorized() {
-    require(authorizedAccounts[msg.sender] == 1, 'EnglishCollateralAuctionHouse/account-not-authorized');
-    _;
-  }
-
+contract EnglishCollateralAuctionHouse is Authorizable {
   // --- Data ---
   struct Bid {
     // Bid size (how many coins are offered per collateral sold)
@@ -102,8 +73,6 @@ contract EnglishCollateralAuctionHouse {
   bytes32 public constant AUCTION_TYPE = bytes32('ENGLISH');
 
   // --- Events ---
-  event AddAuthorization(address account);
-  event RemoveAuthorization(address account);
   event StartAuction(
     uint256 id,
     uint256 auctionsStarted,
@@ -127,7 +96,7 @@ contract EnglishCollateralAuctionHouse {
     safeEngine = SAFEEngineLike(_safeEngine);
     liquidationEngine = LiquidationEngineLike(_liquidationEngine);
     collateralType = _collateralType;
-    authorizedAccounts[msg.sender] = 1;
+    _addAuthorization(msg.sender);
     emit AddAuthorization(msg.sender);
   }
 
@@ -351,38 +320,8 @@ contract EnglishCollateralAuctionHouse {
 /*
    This thing lets you sell some collateral at a fixed discount in order to instantly recapitalize the system*/
 
-contract FixedDiscountCollateralAuctionHouse {
+contract FixedDiscountCollateralAuctionHouse is Authorizable {
   using Math for uint256;
-
-  // --- Auth ---
-  mapping(address => uint256) public authorizedAccounts;
-  /**
-   * @notice Add auth to an account
-   * @param account Account to add auth to
-   */
-
-  function addAuthorization(address account) external isAuthorized {
-    authorizedAccounts[account] = 1;
-    emit AddAuthorization(account);
-  }
-  /**
-   * @notice Remove auth from an account
-   * @param account Account to remove auth from
-   */
-
-  function removeAuthorization(address account) external isAuthorized {
-    authorizedAccounts[account] = 0;
-    emit RemoveAuthorization(account);
-  }
-  /**
-   * @notice Checks whether msg.sender can call an authed function
-   *
-   */
-
-  modifier isAuthorized() {
-    require(authorizedAccounts[msg.sender] == 1, 'FixedDiscountCollateralAuctionHouse/account-not-authorized');
-    _;
-  }
 
   // --- Data ---
   struct Bid {
@@ -440,8 +379,6 @@ contract FixedDiscountCollateralAuctionHouse {
   bytes32 public constant AUCTION_TYPE = bytes32('FIXED_DISCOUNT');
 
   // --- Events ---
-  event AddAuthorization(address account);
-  event RemoveAuthorization(address account);
   event StartAuction(
     uint256 id,
     uint256 auctionsStarted,
@@ -463,7 +400,7 @@ contract FixedDiscountCollateralAuctionHouse {
     safeEngine = SAFEEngineLike(_safeEngine);
     liquidationEngine = LiquidationEngineLike(_liquidationEngine);
     collateralType = _collateralType;
-    authorizedAccounts[msg.sender] = 1;
+    _addAuthorization(msg.sender);
     emit AddAuthorization(msg.sender);
   }
 
@@ -952,38 +889,8 @@ contract FixedDiscountCollateralAuctionHouse {
 /*
    This thing lets you sell some collateral at an increasing discount in order to instantly recapitalize the system*/
 
-contract IncreasingDiscountCollateralAuctionHouse {
+contract IncreasingDiscountCollateralAuctionHouse is Authorizable {
   using Math for uint256;
-
-  // --- Auth ---
-  mapping(address => uint256) public authorizedAccounts;
-  /**
-   * @notice Add auth to an account
-   * @param account Account to add auth to
-   */
-
-  function addAuthorization(address account) external isAuthorized {
-    authorizedAccounts[account] = 1;
-    emit AddAuthorization(account);
-  }
-  /**
-   * @notice Remove auth from an account
-   * @param account Account to remove auth from
-   */
-
-  function removeAuthorization(address account) external isAuthorized {
-    authorizedAccounts[account] = 0;
-    emit RemoveAuthorization(account);
-  }
-  /**
-   * @notice Checks whether msg.sender can call an authed function
-   *
-   */
-
-  modifier isAuthorized() {
-    require(authorizedAccounts[msg.sender] == 1, 'IncreasingDiscountCollateralAuctionHouse/account-not-authorized');
-    _;
-  }
 
   // --- Data ---
   struct Bid {
@@ -1051,8 +958,6 @@ contract IncreasingDiscountCollateralAuctionHouse {
   bytes32 public constant AUCTION_TYPE = bytes32('INCREASING_DISCOUNT');
 
   // --- Events ---
-  event AddAuthorization(address account);
-  event RemoveAuthorization(address account);
   event StartAuction(
     uint256 id,
     uint256 auctionsStarted,
@@ -1077,7 +982,7 @@ contract IncreasingDiscountCollateralAuctionHouse {
     safeEngine = SAFEEngineLike(_safeEngine);
     liquidationEngine = LiquidationEngineLike(_liquidationEngine);
     collateralType = _collateralType;
-    authorizedAccounts[msg.sender] = 1;
+    _addAuthorization(msg.sender);
     emit AddAuthorization(msg.sender);
   }
 

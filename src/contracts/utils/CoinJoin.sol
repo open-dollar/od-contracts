@@ -21,6 +21,7 @@ pragma solidity 0.8.19;
 import {ISAFEEngine as SAFEEngineLike} from '../../interfaces/ISAFEEngine.sol';
 import {IToken as DSTokenLike} from '../../interfaces/external/IToken.sol';
 import {ISystemCoin as CollateralLike} from '../../interfaces/external/ISystemCoin.sol';
+import {Authorizable} from './Authorizable.sol';
 
 /*
     Here we provide CoinJoin adapter (for connecting internal coin balances) 
@@ -33,37 +34,7 @@ import {ISystemCoin as CollateralLike} from '../../interfaces/external/ISystemCo
       - `join`: enter collateral into the system
       - `exit`: remove collateral from the system*/
 
-contract CoinJoin {
-  // --- Auth ---
-  mapping(address => uint256) public authorizedAccounts;
-  /**
-   * @notice Add auth to an account
-   * @param account Account to add auth to
-   */
-
-  function addAuthorization(address account) external isAuthorized {
-    authorizedAccounts[account] = 1;
-    emit AddAuthorization(account);
-  }
-  /**
-   * @notice Remove auth from an account
-   * @param account Account to remove auth from
-   */
-
-  function removeAuthorization(address account) external isAuthorized {
-    authorizedAccounts[account] = 0;
-    emit RemoveAuthorization(account);
-  }
-  /**
-   * @notice Checks whether msg.sender can call an authed function
-   *
-   */
-
-  modifier isAuthorized() {
-    require(authorizedAccounts[msg.sender] == 1, 'CoinJoin/account-not-authorized');
-    _;
-  }
-
+contract CoinJoin is Authorizable {
   // SAFE database
   SAFEEngineLike public safeEngine;
   // Coin created by the system; this is the external, ERC-20 representation, not the internal 'coinBalance'
@@ -74,14 +45,12 @@ contract CoinJoin {
   uint256 public decimals;
 
   // --- Events ---
-  event AddAuthorization(address account);
-  event RemoveAuthorization(address account);
   event DisableContract();
   event Join(address sender, address account, uint256 wad);
   event Exit(address sender, address account, uint256 wad);
 
   constructor(address safeEngine_, address systemCoin_) {
-    authorizedAccounts[msg.sender] = 1;
+    _addAuthorization(msg.sender);
     contractEnabled = 1;
     safeEngine = SAFEEngineLike(safeEngine_);
     systemCoin = DSTokenLike(systemCoin_);

@@ -21,6 +21,7 @@ pragma solidity 0.8.19;
 import {ISAFEEngine as SAFEEngineLike} from '../../interfaces/ISAFEEngine.sol';
 import {IToken as DSTokenLike} from '../../interfaces/external/IToken.sol';
 import {ISystemCoin as CollateralLike} from '../../interfaces/external/ISystemCoin.sol';
+import {Authorizable} from './Authorizable.sol';
 
 /*
     Here we provide CollateralJoin adapter (for well behaved ERC20 tokens) 
@@ -33,37 +34,7 @@ import {ISystemCoin as CollateralLike} from '../../interfaces/external/ISystemCo
       - `join`: enter collateral into the system
       - `exit`: remove collateral from the system*/
 
-contract CollateralJoin {
-  // --- Auth ---
-  mapping(address => uint256) public authorizedAccounts;
-  /**
-   * @notice Add auth to an account
-   * @param account Account to add auth to
-   */
-
-  function addAuthorization(address account) external isAuthorized {
-    authorizedAccounts[account] = 1;
-    emit AddAuthorization(account);
-  }
-  /**
-   * @notice Remove auth from an account
-   * @param account Account to remove auth from
-   */
-
-  function removeAuthorization(address account) external isAuthorized {
-    authorizedAccounts[account] = 0;
-    emit RemoveAuthorization(account);
-  }
-  /**
-   * @notice Checks whether msg.sender can call an authed function
-   *
-   */
-
-  modifier isAuthorized() {
-    require(authorizedAccounts[msg.sender] == 1, 'CollateralJoin/account-not-authorized');
-    _;
-  }
-
+contract CollateralJoin is Authorizable {
   // SAFE database
   SAFEEngineLike public safeEngine;
   // Collateral type name
@@ -76,14 +47,12 @@ contract CollateralJoin {
   uint256 public contractEnabled;
 
   // --- Events ---
-  event AddAuthorization(address account);
-  event RemoveAuthorization(address account);
   event DisableContract();
   event Join(address sender, address account, uint256 wad);
   event Exit(address sender, address account, uint256 wad);
 
   constructor(address safeEngine_, bytes32 collateralType_, address collateral_) {
-    authorizedAccounts[msg.sender] = 1;
+    _addAuthorization(msg.sender);
     contractEnabled = 1;
     safeEngine = SAFEEngineLike(safeEngine_);
     collateralType = collateralType_;

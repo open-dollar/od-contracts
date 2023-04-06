@@ -21,38 +21,10 @@ pragma solidity 0.8.19;
 import {IAccountingEngine as AccountingEngineLike} from '../interfaces/IAccountingEngine.sol';
 import {ISAFEEngine as SAFEEngineLike} from '../interfaces/ISAFEEngine.sol';
 import {ISurplusAuctionHouse as SurplusAuctionHouseLike} from '../interfaces/ISurplusAuctionHouse.sol';
+import {Authorizable} from './utils/Authorizable.sol';
 
-contract SettlementSurplusAuctioneer {
-  // --- Auth ---
-  mapping(address => uint256) public authorizedAccounts;
-  /**
-   * @notice Add auth to an account
-   * @param account Account to add auth to
-   */
-
-  function addAuthorization(address account) external isAuthorized {
-    authorizedAccounts[account] = 1;
-    emit AddAuthorization(account);
-  }
-  /**
-   * @notice Remove auth from an account
-   * @param account Account to remove auth from
-   */
-
-  function removeAuthorization(address account) external isAuthorized {
-    authorizedAccounts[account] = 0;
-    emit RemoveAuthorization(account);
-  }
-  /**
-   * @notice Checks whether msg.sender can call an authed function
-   *
-   */
-
-  modifier isAuthorized() {
-    require(authorizedAccounts[msg.sender] == 1, 'SettlementSurplusAuctioneer/account-not-authorized');
-    _;
-  }
-
+contract SettlementSurplusAuctioneer is Authorizable {
+  // --- Data ---
   AccountingEngineLike public accountingEngine;
   SurplusAuctionHouseLike public surplusAuctionHouse;
   SAFEEngineLike public safeEngine;
@@ -61,13 +33,11 @@ contract SettlementSurplusAuctioneer {
   uint256 public lastSurplusAuctionTime;
 
   // --- Events ---
-  event AddAuthorization(address account);
-  event RemoveAuthorization(address account);
   event ModifyParameters(bytes32 parameter, address addr);
   event AuctionSurplus(uint256 indexed id, uint256 lastSurplusAuctionTime, uint256 coinBalance);
 
   constructor(address _accountingEngine, address _surplusAuctionHouse) {
-    authorizedAccounts[msg.sender] = 1;
+    _addAuthorization(msg.sender);
     accountingEngine = AccountingEngineLike(_accountingEngine);
     surplusAuctionHouse = SurplusAuctionHouseLike(_surplusAuctionHouse);
     safeEngine = SAFEEngineLike(address(accountingEngine.safeEngine()));
