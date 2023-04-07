@@ -5,6 +5,10 @@ import '@script/Params.s.sol';
 import './Common.t.sol';
 
 contract E2EGlobalSettlementTest is Common {
+  function test_global_settlement_multicollateral() public {
+    // TODO: 3 personas, 3 collateral types, 3 price drops
+  }
+
   function test_global_settlement() public {
     // alice has a safe liquidated for price drop (active collateral auction)
     // bob has a safe liquidated for price drop (active debt auction)
@@ -59,6 +63,7 @@ contract E2EGlobalSettlementTest is Common {
     globalSettlement.setOutstandingCoinSupply();
     globalSettlement.calculateCashPrice(ETH_A);
 
+    // TODO: add expectations for each persona
     vm.startPrank(dave);
     safeEngine.approveSAFEModification(address(globalSettlement));
     globalSettlement.prepareCoinsForRedeeming(DEBT / 100);
