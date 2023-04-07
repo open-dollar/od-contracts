@@ -36,7 +36,7 @@ contract Contracts {
   MixedStratSurplusAuctionHouse public surplusAuctionHouse;
   DebtAuctionHouse public debtAuctionHouse;
 
-  mapping(bytes32 => IERC20) public collateral;
+  mapping(bytes32 => ERC20ForTest) public collateral;
   mapping(bytes32 => CollateralJoin) public collateralJoin;
   mapping(bytes32 => CollateralAuctionHouse) public collateralAuctionHouse;
 

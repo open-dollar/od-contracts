@@ -5,8 +5,66 @@ import '@script/Params.s.sol';
 import './Common.t.sol';
 
 contract E2EGlobalSettlementTest is Common {
+  function multiCollateralSetup() public {
+    deployment.deployTokenCollateral(
+      CollateralParams({
+        name: 'TKN-A',
+        liquidationPenalty: RAY,
+        liquidationQuantity: 100,
+        debtCeiling: type(uint256).max,
+        safetyCRatio: 1,
+        liquidationRatio: 1,
+        stabilityFee: 1
+      }),
+      100
+    );
+
+    deployment.deployTokenCollateral(
+      CollateralParams({
+        name: 'TKN-B',
+        liquidationPenalty: RAY,
+        liquidationQuantity: 100,
+        debtCeiling: type(uint256).max,
+        safetyCRatio: 1,
+        liquidationRatio: 1,
+        stabilityFee: 1
+      }),
+      1000
+    );
+
+    deployment.deployTokenCollateral(
+      CollateralParams({
+        name: 'TKN-C',
+        liquidationPenalty: RAY,
+        liquidationQuantity: 100,
+        debtCeiling: type(uint256).max,
+        safetyCRatio: 1,
+        liquidationRatio: 1,
+        stabilityFee: 1
+      }),
+      10_000
+    );
+
+    collateral['TKN-A'] = deployment.collateral('TKN-A');
+    collateral['TKN-B'] = deployment.collateral('TKN-B');
+    collateral['TKN-C'] = deployment.collateral('TKN-C');
+
+    collateral['TKN-A'].mint(alice, 100);
+    collateral['TKN-A'].mint(bob, 100);
+    collateral['TKN-A'].mint(carol, 100);
+
+    collateral['TKN-B'].mint(alice, 100);
+    collateral['TKN-B'].mint(bob, 100);
+    collateral['TKN-B'].mint(carol, 100);
+
+    collateral['TKN-C'].mint(alice, 100);
+    collateral['TKN-C'].mint(bob, 100);
+    collateral['TKN-C'].mint(carol, 100);
+  }
+
   function test_global_settlement_multicollateral() public {
     // TODO: 3 personas, 3 collateral types, 3 price drops
+    multiCollateralSetup();
   }
 
   function test_global_settlement() public {

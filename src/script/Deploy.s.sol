@@ -11,7 +11,6 @@ contract Deploy is Script, Contracts {
   uint256 internal _deployerPk = 69; // for tests
 
   function run() public {
-    vm.startBroadcast(_deployerPk);
     deployer = vm.addr(_deployerPk);
 
     _deployAndSetup(
@@ -50,11 +49,11 @@ contract Deploy is Script, Contracts {
       }),
       TEST_TKN_PRICE
     );
-
-    vm.stopBroadcast();
   }
 
   function deployETHCollateral(CollateralParams memory _params, uint256 _initialPrice) public {
+    vm.startBroadcast(_deployerPk);
+
     // deploy oracle for test
     oracle[ETH_A] = new OracleForTest();
     oracle[ETH_A].setPriceAndValidity(_initialPrice, true);
@@ -67,13 +66,14 @@ contract Deploy is Script, Contracts {
         _collateralType: ETH_A
         });
 
-    // add ETHJoin to safeEngine
-    safeEngine.addAuthorization(address(ethJoin));
-
     _setupCollateral(_params, address(oracle[ETH_A]));
+
+    vm.stopBroadcast();
   }
 
   function deployTokenCollateral(CollateralParams memory _params, uint256 _initialPrice) public {
+    vm.startBroadcast(_deployerPk);
+
     // deploy oracle for test
     oracle[_params.name] = new OracleForTest();
     oracle[_params.name].setPriceAndValidity(_initialPrice, true);
@@ -91,10 +91,9 @@ contract Deploy is Script, Contracts {
         _collateralType: _params.name
         });
 
-    // add CollateralJoin to safeEngine
-    safeEngine.addAuthorization(address(collateralJoin[_params.name]));
-
     _setupCollateral(_params, address(oracle[_params.name]));
+
+    vm.stopBroadcast();
   }
 
   function revoke() public {
@@ -131,6 +130,8 @@ contract Deploy is Script, Contracts {
   }
 
   function _deployAndSetup(GlobalParams memory _params) internal {
+    vm.startBroadcast(_deployerPk);
+
     // deploy Tokens
     coin = new Coin('HAI Index Token', 'HAI', chainId);
     protocolToken = new Coin('Protocol Token', 'GOV', chainId);
@@ -198,9 +199,14 @@ contract Deploy is Script, Contracts {
     accountingEngine.modifyParameters('debtAuctionBidSize', _params.bidAuctionSize);
     accountingEngine.modifyParameters('surplusAuctionAmountToSell', _params.surplusAuctionAmountToSell);
     surplusAuctionHouse.modifyParameters('protocolTokenBidReceiver', _params.surplusAuctionBidReceiver);
+
+    vm.stopBroadcast();
   }
 
   function _setupCollateral(CollateralParams memory _params, address _collateralOracle) internal {
+    address _collateralJoin = _params.name == ETH_A ? address(ethJoin) : address(collateralJoin[_params.name]);
+    safeEngine.addAuthorization(_collateralJoin);
+
     oracleRelayer.modifyParameters(_params.name, 'orcl', _collateralOracle);
 
     safeEngine.initializeCollateralType(_params.name);
