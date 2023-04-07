@@ -81,9 +81,9 @@ contract Deploy is Script, Contracts {
     // deploy Collateral, CollateralJoin and CollateralAuctionHouse
     collateral[_params.name] = new ERC20ForTest(); // TODO: replace for token
     collateralJoin[_params.name] = new CollateralJoin({
-        safeEngine_: address(safeEngine), 
-        collateralType_: _params.name, 
-        collateral_: address(collateral[_params.name])
+        _safeEngine: address(safeEngine), 
+        _collateralType: _params.name, 
+        _collateral: address(collateral[_params.name])
         });
     collateralAuctionHouse[_params.name] = new CollateralAuctionHouse({
         _safeEngine: address(safeEngine), 
