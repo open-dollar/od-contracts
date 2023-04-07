@@ -18,14 +18,16 @@
 
 pragma solidity 0.8.19;
 
-import {ISAFEEngine as SAFEEngineLike} from '../interfaces/ISAFEEngine.sol';
-import {IToken as TokenLike} from '../interfaces/external/IToken.sol';
+import {ISAFEEngine as SAFEEngineLike} from '@interfaces/ISAFEEngine.sol';
+import {IToken as TokenLike} from '@interfaces/external/IToken.sol';
 
-import {WAD, HUNDRED, FIFTY} from './utils/Math.sol';
-import {Authorizable} from './utils/Authorizable.sol';
+import {Authorizable} from '@contracts/utils/Authorizable.sol';
+
+import {WAD, HUNDRED, FIFTY} from '@libraries/Math.sol';
 
 /*
-   This thing lets you auction some system coins in return for protocol tokens that are then burnt*/
+   This thing lets you auction some system coins in return for protocol tokens that are then burnt
+*/
 
 contract BurningSurplusAuctionHouse is Authorizable {
   // --- Data ---
@@ -118,24 +120,24 @@ contract BurningSurplusAuctionHouse is Authorizable {
 
     emit StartAuction(id, auctionsStarted, amountToSell, initialBid, bids[id].auctionDeadline);
   }
+
   /**
    * @notice Restart an auction if no bids were submitted for it
    * @param id ID of the auction to restart
    */
-
   function restartAuction(uint256 id) external {
     require(bids[id].auctionDeadline < block.timestamp, 'BurningSurplusAuctionHouse/not-finished');
     require(bids[id].bidExpiry == 0, 'BurningSurplusAuctionHouse/bid-already-placed');
     bids[id].auctionDeadline = uint48(block.timestamp) + totalAuctionLength;
     emit RestartAuction(id, bids[id].auctionDeadline);
   }
+
   /**
    * @notice Submit a higher protocol token bid for the same amount of system coins
    * @param id ID of the auction you want to submit the bid for
    * @param amountToBuy Amount of system coins to buy (rad)
    * @param bid New bid submitted (wad)
    */
-
   function increaseBidSize(uint256 id, uint256 amountToBuy, uint256 bid) external {
     require(contractEnabled == 1, 'BurningSurplusAuctionHouse/contract-not-enabled');
     require(bids[id].highBidder != address(0), 'BurningSurplusAuctionHouse/high-bidder-not-set');
@@ -159,11 +161,11 @@ contract BurningSurplusAuctionHouse is Authorizable {
 
     emit IncreaseBidSize(id, msg.sender, amountToBuy, bid, bids[id].bidExpiry);
   }
+
   /**
    * @notice Settle/finish an auction
    * @param id ID of the auction to settle
    */
-
   function settleAuction(uint256 id) external {
     require(contractEnabled == 1, 'BurningSurplusAuctionHouse/contract-not-enabled');
     require(
@@ -175,21 +177,21 @@ contract BurningSurplusAuctionHouse is Authorizable {
     delete bids[id];
     emit SettleAuction(id);
   }
+
   /**
    * @notice Disable the auction house (usually called by AccountingEngine)
    *
    */
-
   function disableContract() external isAuthorized {
     contractEnabled = 0;
     safeEngine.transferInternalCoins(address(this), msg.sender, safeEngine.coinBalance(address(this)));
     emit DisableContract();
   }
+
   /**
    * @notice Terminate an auction prematurely.
    * @param id ID of the auction to settle/terminate
    */
-
   function terminateAuctionPrematurely(uint256 id) external {
     require(contractEnabled == 0, 'BurningSurplusAuctionHouse/contract-still-enabled');
     require(bids[id].highBidder != address(0), 'BurningSurplusAuctionHouse/high-bidder-not-set');
@@ -276,12 +278,12 @@ contract RecyclingSurplusAuctionHouse is Authorizable {
     else revert('RecyclingSurplusAuctionHouse/modify-unrecognized-param');
     emit ModifyParameters(parameter, data);
   }
+
   /**
    * @notice Modify address parameters
    * @param parameter The name of the parameter modified
    * @param addr New address value
    */
-
   function modifyParameters(bytes32 parameter, address addr) external isAuthorized {
     require(addr != address(0), 'RecyclingSurplusAuctionHouse/invalid-address');
     if (parameter == 'protocolTokenBidReceiver') protocolTokenBidReceiver = addr;
@@ -310,24 +312,24 @@ contract RecyclingSurplusAuctionHouse is Authorizable {
 
     emit StartAuction(id, auctionsStarted, amountToSell, initialBid, bids[id].auctionDeadline);
   }
+
   /**
    * @notice Restart an auction if no bids were submitted for it
    * @param id ID of the auction to restart
    */
-
   function restartAuction(uint256 id) external {
     require(bids[id].auctionDeadline < block.timestamp, 'RecyclingSurplusAuctionHouse/not-finished');
     require(bids[id].bidExpiry == 0, 'RecyclingSurplusAuctionHouse/bid-already-placed');
     bids[id].auctionDeadline = uint48(block.timestamp) + totalAuctionLength;
     emit RestartAuction(id, bids[id].auctionDeadline);
   }
+
   /**
    * @notice Submit a higher protocol token bid for the same amount of system coins
    * @param id ID of the auction you want to submit the bid for
    * @param amountToBuy Amount of system coins to buy (rad)
    * @param bid New bid submitted (wad)
    */
-
   function increaseBidSize(uint256 id, uint256 amountToBuy, uint256 bid) external {
     require(contractEnabled == 1, 'RecyclingSurplusAuctionHouse/contract-not-enabled');
     require(bids[id].highBidder != address(0), 'RecyclingSurplusAuctionHouse/high-bidder-not-set');
@@ -352,11 +354,11 @@ contract RecyclingSurplusAuctionHouse is Authorizable {
 
     emit IncreaseBidSize(id, msg.sender, amountToBuy, bid, bids[id].bidExpiry);
   }
+
   /**
    * @notice Settle/finish an auction
    * @param id ID of the auction to settle
    */
-
   function settleAuction(uint256 id) external {
     require(contractEnabled == 1, 'RecyclingSurplusAuctionHouse/contract-not-enabled');
     require(
@@ -369,21 +371,21 @@ contract RecyclingSurplusAuctionHouse is Authorizable {
     delete bids[id];
     emit SettleAuction(id);
   }
+
   /**
    * @notice Disable the auction house (usually called by AccountingEngine)
    *
    */
-
   function disableContract() external isAuthorized {
     contractEnabled = 0;
     safeEngine.transferInternalCoins(address(this), msg.sender, safeEngine.coinBalance(address(this)));
     emit DisableContract();
   }
+
   /**
    * @notice Terminate an auction prematurely.
    * @param id ID of the auction to settle/terminate
    */
-
   function terminateAuctionPrematurely(uint256 id) external {
     require(contractEnabled == 0, 'RecyclingSurplusAuctionHouse/contract-still-enabled');
     require(bids[id].highBidder != address(0), 'RecyclingSurplusAuctionHouse/high-bidder-not-set');
@@ -469,12 +471,12 @@ contract MixedStratSurplusAuctionHouse is Authorizable {
     else revert('MixedStratSurplusAuctionHouse/modify-unrecognized-param');
     emit ModifyParameters(parameter, data);
   }
+
   /**
    * @notice Modify address parameters
    * @param parameter The name of the parameter modified
    * @param addr New address value
    */
-
   function modifyParameters(bytes32 parameter, address addr) external isAuthorized {
     require(addr != address(0), 'MixedStratSurplusAuctionHouse/invalid-address');
     if (parameter == 'protocolTokenBidReceiver') protocolTokenBidReceiver = addr;
@@ -503,24 +505,24 @@ contract MixedStratSurplusAuctionHouse is Authorizable {
 
     emit StartAuction(id, auctionsStarted, amountToSell, initialBid, bids[id].auctionDeadline);
   }
+
   /**
    * @notice Restart an auction if no bids were submitted for it
    * @param id ID of the auction to restart
    */
-
   function restartAuction(uint256 id) external {
     require(bids[id].auctionDeadline < block.timestamp, 'MixedStratSurplusAuctionHouse/not-finished');
     require(bids[id].bidExpiry == 0, 'MixedStratSurplusAuctionHouse/bid-already-placed');
     bids[id].auctionDeadline = uint48(block.timestamp) + totalAuctionLength;
     emit RestartAuction(id, bids[id].auctionDeadline);
   }
+
   /**
    * @notice Submit a higher protocol token bid for the same amount of system coins
    * @param id ID of the auction you want to submit the bid for
    * @param amountToBuy Amount of system coins to buy (rad)
    * @param bid New bid submitted (wad)
    */
-
   function increaseBidSize(uint256 id, uint256 amountToBuy, uint256 bid) external {
     require(contractEnabled == 1, 'MixedStratSurplusAuctionHouse/contract-not-enabled');
     require(bids[id].highBidder != address(0), 'MixedStratSurplusAuctionHouse/high-bidder-not-set');
@@ -545,11 +547,11 @@ contract MixedStratSurplusAuctionHouse is Authorizable {
 
     emit IncreaseBidSize(id, msg.sender, amountToBuy, bid, bids[id].bidExpiry);
   }
+
   /**
    * @notice Settle/finish an auction
    * @param id ID of the auction to settle
    */
-
   function settleAuction(uint256 id) external {
     require(contractEnabled == 1, 'MixedStratSurplusAuctionHouse/contract-not-enabled');
     require(
@@ -572,21 +574,21 @@ contract MixedStratSurplusAuctionHouse is Authorizable {
     delete bids[id];
     emit SettleAuction(id);
   }
+
   /**
    * @notice Disable the auction house (usually called by AccountingEngine)
    *
    */
-
   function disableContract() external isAuthorized {
     contractEnabled = 0;
     safeEngine.transferInternalCoins(address(this), msg.sender, safeEngine.coinBalance(address(this)));
     emit DisableContract();
   }
+
   /**
    * @notice Terminate an auction prematurely.
    * @param id ID of the auction to settle/terminate
    */
-
   function terminateAuctionPrematurely(uint256 id) external {
     require(contractEnabled == 0, 'MixedStratSurplusAuctionHouse/contract-still-enabled');
     require(bids[id].highBidder != address(0), 'MixedStratSurplusAuctionHouse/high-bidder-not-set');
@@ -681,24 +683,24 @@ contract PostSettlementSurplusAuctionHouse is Authorizable {
 
     emit StartAuction(id, auctionsStarted, amountToSell, initialBid, bids[id].auctionDeadline);
   }
+
   /**
    * @notice Restart an auction if no bids were submitted for it
    * @param id ID of the auction to restart
    */
-
   function restartAuction(uint256 id) external {
     require(bids[id].auctionDeadline < block.timestamp, 'PostSettlementSurplusAuctionHouse/not-finished');
     require(bids[id].bidExpiry == 0, 'PostSettlementSurplusAuctionHouse/bid-already-placed');
     bids[id].auctionDeadline = uint48(block.timestamp) + totalAuctionLength;
     emit RestartAuction(id, bids[id].auctionDeadline);
   }
+
   /**
    * @notice Submit a higher protocol token bid for the same amount of system coins
    * @param id ID of the auction you want to submit the bid for
    * @param amountToBuy Amount of system coins to buy (wad)
    * @param bid New bid submitted (rad)
    */
-
   function increaseBidSize(uint256 id, uint256 amountToBuy, uint256 bid) external {
     require(bids[id].highBidder != address(0), 'PostSettlementSurplusAuctionHouse/high-bidder-not-set');
     require(
@@ -722,11 +724,11 @@ contract PostSettlementSurplusAuctionHouse is Authorizable {
 
     emit IncreaseBidSize(id, msg.sender, amountToBuy, bid, bids[id].bidExpiry);
   }
+
   /**
    * @notice Settle/finish an auction
    * @param id ID of the auction to settle
    */
-
   function settleAuction(uint256 id) external {
     require(
       bids[id].bidExpiry != 0 && (bids[id].bidExpiry < block.timestamp || bids[id].auctionDeadline < block.timestamp),

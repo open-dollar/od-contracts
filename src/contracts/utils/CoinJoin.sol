@@ -18,10 +18,11 @@
 
 pragma solidity 0.8.19;
 
-import {ISAFEEngine as SAFEEngineLike} from '../../interfaces/ISAFEEngine.sol';
-import {IToken as DSTokenLike} from '../../interfaces/external/IToken.sol';
-import {ISystemCoin as CollateralLike} from '../../interfaces/external/ISystemCoin.sol';
-import {Authorizable} from './Authorizable.sol';
+import {ISAFEEngine as SAFEEngineLike} from '@interfaces/ISAFEEngine.sol';
+import {IToken as DSTokenLike} from '@interfaces/external/IToken.sol';
+import {ISystemCoin as CollateralLike} from '@interfaces/external/ISystemCoin.sol';
+
+import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
 /*
     Here we provide CoinJoin adapter (for connecting internal coin balances) 
@@ -32,7 +33,8 @@ import {Authorizable} from './Authorizable.sol';
     semantics and token standards.
     Adapters need to implement two basic methods:
       - `join`: enter collateral into the system
-      - `exit`: remove collateral from the system*/
+      - `exit`: remove collateral from the system
+*/
 
 contract CoinJoin is Authorizable {
   // SAFE database
@@ -49,6 +51,7 @@ contract CoinJoin is Authorizable {
   event Join(address sender, address account, uint256 wad);
   event Exit(address sender, address account, uint256 wad);
 
+  // --- Init ---
   constructor(address safeEngine_, address systemCoin_) {
     _addAuthorization(msg.sender);
     contractEnabled = 1;
@@ -57,10 +60,10 @@ contract CoinJoin is Authorizable {
     decimals = 18;
     emit AddAuthorization(msg.sender);
   }
+
   /**
    * @notice Disable this contract
    */
-
   function disableContract() external isAuthorized {
     contractEnabled = 0;
     emit DisableContract();
@@ -71,6 +74,7 @@ contract CoinJoin is Authorizable {
   function multiply(uint256 x, uint256 y) internal pure returns (uint256 z) {
     require(y == 0 || (z = x * y) / y == x, 'CoinJoin/mul-overflow');
   }
+
   /**
    * @notice Join system coins in the system
    * @dev Exited coins have 18 decimals but inside the system they have 45 (rad) decimals.
@@ -79,12 +83,12 @@ contract CoinJoin is Authorizable {
    * @param wad Amount of external coins to join (18 decimal number)
    *
    */
-
   function join(address account, uint256 wad) external {
     safeEngine.transferInternalCoins(address(this), account, multiply(RAY, wad));
     systemCoin.burn(msg.sender, wad);
     emit Join(msg.sender, account, wad);
   }
+
   /**
    * @notice Exit system coins from the system and inside 'Coin.sol'
    * @dev Inside the system, coins have 45 (rad) decimals but outside of it they have 18 decimals (wad).
@@ -94,7 +98,6 @@ contract CoinJoin is Authorizable {
    * @param wad Amount of internal coins to join (18 decimal number that will be multiplied by ray)
    *
    */
-
   function exit(address account, uint256 wad) external {
     require(contractEnabled == 1, 'CoinJoin/contract-not-enabled');
     safeEngine.transferInternalCoins(msg.sender, address(this), multiply(RAY, wad));

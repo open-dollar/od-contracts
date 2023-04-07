@@ -18,10 +18,11 @@
 
 pragma solidity 0.8.19;
 
-import {IAccountingEngine as AccountingEngineLike} from '../interfaces/IAccountingEngine.sol';
-import {ISAFEEngine as SAFEEngineLike} from '../interfaces/ISAFEEngine.sol';
-import {ISurplusAuctionHouse as SurplusAuctionHouseLike} from '../interfaces/ISurplusAuctionHouse.sol';
-import {Authorizable} from './utils/Authorizable.sol';
+import {IAccountingEngine as AccountingEngineLike} from '@interfaces/IAccountingEngine.sol';
+import {ISAFEEngine as SAFEEngineLike} from '@interfaces/ISAFEEngine.sol';
+import {ISurplusAuctionHouse as SurplusAuctionHouseLike} from '@interfaces/ISurplusAuctionHouse.sol';
+
+import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
 contract SettlementSurplusAuctioneer is Authorizable {
   // --- Data ---

@@ -18,10 +18,11 @@
 
 pragma solidity 0.8.19;
 
-import {ISAFEEngine as SAFEEngineLike} from '../../interfaces/ISAFEEngine.sol';
-import {IToken as DSTokenLike} from '../../interfaces/external/IToken.sol';
-import {ISystemCoin as CollateralLike} from '../../interfaces/external/ISystemCoin.sol';
-import {Authorizable} from './Authorizable.sol';
+import {ISAFEEngine as SAFEEngineLike} from '@interfaces/ISAFEEngine.sol';
+import {IToken as DSTokenLike} from '@interfaces/external/IToken.sol';
+import {ISystemCoin as CollateralLike} from '@interfaces/external/ISystemCoin.sol';
+
+import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
 /*
     Here we provide ETHJoin adapter (for native Ether) to connect the 
@@ -33,7 +34,7 @@ import {Authorizable} from './Authorizable.sol';
     Adapters need to implement two basic methods:
       - `join`: enter collateral into the system
       - `exit`: remove collateral from the system
-      */
+*/
 
 contract ETHJoin is Authorizable {
   // SAFE database
@@ -50,6 +51,7 @@ contract ETHJoin is Authorizable {
   event Join(address sender, address account, uint256 wad);
   event Exit(address sender, address account, uint256 wad);
 
+  // --- Init ---
   constructor(address safeEngine_, bytes32 collateralType_) {
     _addAuthorization(msg.sender);
     contractEnabled = 1;
@@ -58,32 +60,32 @@ contract ETHJoin is Authorizable {
     decimals = 18;
     emit AddAuthorization(msg.sender);
   }
+
   /**
    * @notice Disable this contract
    */
-
   function disableContract() external isAuthorized {
     contractEnabled = 0;
     emit DisableContract();
   }
+
   /**
    * @notice Join ETH in the system
    * @param account Account that will receive the ETH representation inside the system
    *
    */
-
   function join(address account) external payable {
     require(contractEnabled == 1, 'ETHJoin/contract-not-enabled');
     require(int256(msg.value) >= 0, 'ETHJoin/overflow');
     safeEngine.modifyCollateralBalance(collateralType, account, int256(msg.value));
     emit Join(msg.sender, account, msg.value);
   }
+
   /**
    * @notice Exit ETH from the system
    * @param account Account that will receive the ETH representation inside the system
    *
    */
-
   function exit(address payable account, uint256 wad) external {
     require(int256(wad) >= 0, 'ETHJoin/overflow');
     safeEngine.modifyCollateralBalance(collateralType, msg.sender, -int256(wad));

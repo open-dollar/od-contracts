@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {IDisableable} from './IDisableable.sol';
-import {IAuthorizable} from './IAuthorizable.sol';
-import {ISAFEEngine} from './ISAFEEngine.sol';
-import {ISurplusAuctionHouse} from './ISurplusAuctionHouse.sol';
-import {IDebtAuctionHouse} from './IDebtAuctionHouse.sol';
-import {IProtocolTokenAuthority} from './external/IProtocolTokenAuthority.sol';
-import {ISystemStakingPool} from './external/ISystemStakingPool.sol';
+import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
+import {ISurplusAuctionHouse} from '@interfaces/ISurplusAuctionHouse.sol';
+import {IDebtAuctionHouse} from '@interfaces/IDebtAuctionHouse.sol';
+import {IProtocolTokenAuthority} from '@interfaces/external/IProtocolTokenAuthority.sol';
+import {ISystemStakingPool} from '@interfaces/external/ISystemStakingPool.sol';
+import {IAuthorizable} from '@interfaces/IAuthorizable.sol';
+import {IDisableable} from '@interfaces/IDisableable.sol';
 
-interface IAccountingEngine is IDisableable, IAuthorizable {
+interface IAccountingEngine is IAuthorizable, IDisableable {
   function pushDebtToQueue(uint256 _debtBlock) external;
   function popDebtFromQueue(uint256 _debtBlockTimestamp) external;
   function surplusAuctionDelay() external view returns (uint256 _surplusAuctionDelay);

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {DSTestPlus} from '@defi-wonderland/solidity-utils/test/DSTestPlus.sol';
+import {DSTestPlus, stdStorage, StdStorage} from '@defi-wonderland/solidity-utils/test/DSTestPlus.sol';
 
 contract OverflowChecker {
   function trySum(uint256[] calldata _numbers) external returns (uint256 _total) {
@@ -32,6 +32,10 @@ contract OverflowChecker {
     } catch {
       _valid = false;
     }
+  }
+
+  function notOverflowWhenInt256(uint256 _number) public returns (bool _valid) {
+    return _number < 2 ** 255;
   }
 }
 

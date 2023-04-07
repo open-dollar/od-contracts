@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {IDisableable} from './IDisableable.sol';
-import {IAuthorizable} from './IAuthorizable.sol';
+import {IAuthorizable} from '@interfaces/IAuthorizable.sol';
+import {IDisableable} from '@interfaces/IDisableable.sol';
 
-interface ILiquidationEngine is IDisableable, IAuthorizable {
+interface ILiquidationEngine is IAuthorizable, IDisableable {
   function removeCoinsFromAuction(uint256 _rad) external;
   function collateralTypes(bytes32)
     external

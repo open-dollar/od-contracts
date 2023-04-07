@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
-
 pragma solidity 0.8.19;
 
 import {IAuthorizable} from '@interfaces/IAuthorizable.sol';
+
 import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
 
 abstract contract Authorizable is IAuthorizable {

@@ -18,12 +18,13 @@
 
 pragma solidity 0.8.19;
 
-import {ISAFEEngine as SAFEEngineLike} from '../interfaces/ISAFEEngine.sol';
-import {ISystemCoin as SystemCoinLike} from '../interfaces/external/ISystemCoin.sol';
-import {ICoinJoin as CoinJoinLike} from '../interfaces/ICoinJoin.sol';
+import {ISAFEEngine as SAFEEngineLike} from '@interfaces/ISAFEEngine.sol';
+import {ISystemCoin as SystemCoinLike} from '@interfaces/external/ISystemCoin.sol';
+import {ICoinJoin as CoinJoinLike} from '@interfaces/ICoinJoin.sol';
 
-import {Math, RAY, HUNDRED} from './utils/Math.sol';
-import {Authorizable} from './utils/Authorizable.sol';
+import {Authorizable} from '@contracts/utils/Authorizable.sol';
+
+import {Math, RAY, HUNDRED} from '@libraries/Math.sol';
 
 contract StabilityFeeTreasury is Authorizable {
   // --- Events ---
@@ -108,12 +109,12 @@ contract StabilityFeeTreasury is Authorizable {
     }
     emit ModifyParameters(parameter, addr);
   }
+
   /**
    * @notice Modify uint256 parameters
    * @param parameter The name of the parameter to modify
    * @param val New parameter value
    */
-
   function modifyParameters(bytes32 parameter, uint256 val) external isAuthorized {
     require(contractEnabled == 1, 'StabilityFeeTreasury/not-live');
     if (parameter == 'expensesMultiplier') {
@@ -133,10 +134,10 @@ contract StabilityFeeTreasury is Authorizable {
     }
     emit ModifyParameters(parameter, val);
   }
+
   /**
    * @notice Disable this contract (normally called by GlobalSettlement)
    */
-
   function disableContract() external isAuthorized {
     require(contractEnabled == 1, 'StabilityFeeTreasury/already-disabled');
     contractEnabled = 0;
@@ -148,16 +149,15 @@ contract StabilityFeeTreasury is Authorizable {
   /**
    * @notice Join all ERC20 system coins that the treasury has inside the SAFEEngine
    */
-
   function joinAllCoins() internal {
     if (systemCoin.balanceOf(address(this)) > 0) {
       coinJoin.join(address(this), systemCoin.balanceOf(address(this)));
     }
   }
-  /*
-    * @notice Settle as much bad debt as possible (if this contract has any)
-    */
 
+  /**
+   * @notice Settle as much bad debt as possible (if this contract has any)
+   */
   function settleDebt() public {
     uint256 coinBalanceSelf = safeEngine.coinBalance(address(this));
     uint256 debtBalanceSelf = safeEngine.debtBalance(address(this));
@@ -168,10 +168,10 @@ contract StabilityFeeTreasury is Authorizable {
   }
 
   // --- Getters ---
-  /*
-    * @notice Returns the total and per block allowances for a specific address
-    * @param account The address to return the allowances for
-    */
+  /**
+   * @notice Returns the total and per block allowances for a specific address
+   * @param account The address to return the allowances for
+   */
   function getAllowance(address account) public view returns (uint256, uint256) {
     return (allowance[account].total, allowance[account].perBlock);
   }
@@ -187,12 +187,12 @@ contract StabilityFeeTreasury is Authorizable {
     allowance[account].total = rad;
     emit SetTotalAllowance(account, rad);
   }
+
   /**
    * @notice Modify an address' per block allowance in order to withdraw SF from the treasury
    * @param account The approved address
    * @param rad The per block approved amount of SF to withdraw (number with 45 decimals)
    */
-
   function setPerBlockAllowance(address account, uint256 rad) external isAuthorized accountNotTreasury(account) {
     require(account != address(0), 'StabilityFeeTreasury/null-account');
     allowance[account].perBlock = rad;
@@ -221,12 +221,12 @@ contract StabilityFeeTreasury is Authorizable {
     safeEngine.transferInternalCoins(address(this), account, rad);
     emit GiveFunds(account, rad, expensesAccumulator);
   }
+
   /**
    * @notice Governance takes funds from an address
    * @param account Address to take system coins from
    * @param rad Amount of internal system coins to take from the account (a number with 45 decimals)
    */
-
   function takeFunds(address account, uint256 rad) external isAuthorized accountNotTreasury(account) {
     safeEngine.transferInternalCoins(account, address(this), rad);
     emit TakeFunds(account, rad);

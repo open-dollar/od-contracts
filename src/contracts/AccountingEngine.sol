@@ -18,14 +18,16 @@
 
 pragma solidity 0.8.19;
 
+import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
 import {IDebtAuctionHouse as DebtAuctionHouseLike} from '@interfaces/IDebtAuctionHouse.sol';
 import {ISurplusAuctionHouse as SurplusAuctionHouseLike} from '@interfaces/ISurplusAuctionHouse.sol';
 import {ISAFEEngine as SAFEEngineLike} from '@interfaces/ISAFEEngine.sol';
 import {ISystemStakingPool as SystemStakingPoolLike} from '@interfaces/external/ISystemStakingPool.sol';
 import {IProtocolTokenAuthority as ProtocolTokenAuthorityLike} from '@interfaces/external/IProtocolTokenAuthority.sol';
-import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
-import {Math} from './utils/Math.sol';
-import {Authorizable, IAuthorizable} from './utils/Authorizable.sol';
+
+import {Authorizable, IAuthorizable} from '@contracts/utils/Authorizable.sol';
+
+import {Math} from '@libraries/Math.sol';
 
 contract AccountingEngine is IAccountingEngine, Authorizable {
   // --- Auth ---
@@ -169,12 +171,12 @@ contract AccountingEngine is IAccountingEngine, Authorizable {
     }
     emit ModifyParameters(parameter, data);
   }
+
   /**
    * @notice Modify an address param
    * @param parameter The name of the parameter
    * @param data New address for the parameter
    */
-
   function modifyParameters(bytes32 parameter, address data) external isAuthorized {
     if (parameter == 'surplusAuctionHouse') {
       safeEngine.denySAFEModification(address(surplusAuctionHouse));
@@ -198,16 +200,16 @@ contract AccountingEngine is IAccountingEngine, Authorizable {
   }
 
   // --- Getters ---
-  /*
-    * @notice Returns the amount of bad debt that is not in the debtQueue and is not currently handled by debt auctions
-    */
+  /**
+   * @notice Returns the amount of bad debt that is not in the debtQueue and is not currently handled by debt auctions
+   */
   function unqueuedUnauctionedDebt() public view returns (uint256) {
     return (safeEngine.debtBalance(address(this)) - totalQueuedDebt) - totalOnAuctionDebt;
   }
 
-  /*
-    * @notify Returns a bool indicating whether the AccountingEngine can currently print protocol tokens using debt auctions
-    */
+  /**
+   * @notice Returns a bool indicating whether the AccountingEngine can currently print protocol tokens using debt auctions
+   */
   function canPrintProtocolTokens() public view returns (bool) {
     if (address(systemStakingPool) == address(0)) return true;
     try systemStakingPool.canPrintProtocolTokens() returns (bool ok) {
@@ -374,6 +376,7 @@ contract AccountingEngine is IAccountingEngine, Authorizable {
       disableTimestamp, disableCooldown, safeEngine.coinBalance(address(this)), safeEngine.debtBalance(address(this))
     );
   }
+
   /**
    * @notice Transfer any remaining surplus after the disable cooldown has passed. Meant to be a backup in case GlobalSettlement.processSAFE
    *              has a bug, governance doesn't have power over the system and there's still surplus left in the AccountingEngine
@@ -381,7 +384,6 @@ contract AccountingEngine is IAccountingEngine, Authorizable {
    * @dev Transfer any remaining surplus after disableCooldown seconds have passed since disabling the contract
    *
    */
-
   function transferPostSettlementSurplus() external {
     require(contractEnabled == 0, 'AccountingEngine/still-enabled');
     require(disableTimestamp + disableCooldown <= block.timestamp, 'AccountingEngine/cooldown-not-passed');

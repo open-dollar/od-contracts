@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {IOracle as OracleLike} from './IOracle.sol';
-import {IDisableable} from './IDisableable.sol';
-import {IAuthorizable} from './IAuthorizable.sol';
+import {IOracle as OracleLike} from '@interfaces/IOracle.sol';
+import {IAuthorizable} from '@interfaces/IAuthorizable.sol';
+import {IDisableable} from '@interfaces/IDisableable.sol';
 
-interface IOracleRelayer is IDisableable, IAuthorizable {
+interface IOracleRelayer is IAuthorizable, IDisableable {
   function redemptionPrice() external returns (uint256 _redemptionPrice);
   function collateralTypes(bytes32)
     external

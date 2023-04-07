@@ -18,24 +18,25 @@
 
 pragma solidity 0.8.19;
 
-import {ICollateralAuctionHouse as CollateralAuctionHouseLike} from '../interfaces/ICollateralAuctionHouse.sol';
-import {ISAFESaviour as SAFESaviourLike} from '../interfaces/external/ISAFESaviour.sol';
-import {ISAFEEngine as SAFEEngineLike} from '../interfaces/ISAFEEngine.sol';
-import {IAccountingEngine as AccountingEngineLike} from '../interfaces/IAccountingEngine.sol';
+import {ICollateralAuctionHouse as CollateralAuctionHouseLike} from '@interfaces/ICollateralAuctionHouse.sol';
+import {ISAFESaviour as SAFESaviourLike} from '@interfaces/external/ISAFESaviour.sol';
+import {ISAFEEngine as SAFEEngineLike} from '@interfaces/ISAFEEngine.sol';
+import {IAccountingEngine as AccountingEngineLike} from '@interfaces/IAccountingEngine.sol';
 
-import {Math, RAY, WAD} from './utils/Math.sol';
-import {Authorizable} from './utils/Authorizable.sol';
+import {Authorizable} from '@contracts/utils/Authorizable.sol';
+
+import {Math, RAY, WAD} from '@libraries/Math.sol';
 
 contract LiquidationEngine is Authorizable {
   // --- SAFE Saviours ---
   // Contracts that can save SAFEs from liquidation
   mapping(address => uint256) public safeSaviours;
+
   /**
    * @notice Authed function to add contracts that can save SAFEs from liquidation
    * @param saviour SAFE saviour contract to be whitelisted
    *
    */
-
   function connectSAFESaviour(address saviour) external isAuthorized {
     (bool ok, uint256 collateralAdded, uint256 liquidatorReward) =
       SAFESaviourLike(saviour).saveSAFE(address(this), '', address(0));
@@ -47,12 +48,12 @@ contract LiquidationEngine is Authorizable {
     safeSaviours[saviour] = 1;
     emit ConnectSAFESaviour(saviour);
   }
+
   /**
    * @notice Governance used function to remove contracts that can save SAFEs from liquidation
    * @param saviour SAFE saviour contract to be removed
    *
    */
-
   function disconnectSAFESaviour(address saviour) external isAuthorized {
     safeSaviours[saviour] = 0;
     emit DisconnectSAFESaviour(saviour);
@@ -122,34 +123,34 @@ contract LiquidationEngine is Authorizable {
   }
 
   // --- Administration ---
-  /*
-    * @notice Modify uint256 parameters
-    * @param paramter The name of the parameter modified
-    * @param data Value for the new parameter
-    */
+  /**
+   * @notice Modify uint256 parameters
+   * @param parameter The name of the parameter modified
+   * @param data Value for the new parameter
+   */
   function modifyParameters(bytes32 parameter, uint256 data) external isAuthorized {
     if (parameter == 'onAuctionSystemCoinLimit') onAuctionSystemCoinLimit = data;
     else revert('LiquidationEngine/modify-unrecognized-param');
     emit ModifyParameters(parameter, data);
   }
+
   /**
    * @notice Modify contract integrations
    * @param parameter The name of the parameter modified
    * @param data New address for the parameter
    */
-
   function modifyParameters(bytes32 parameter, address data) external isAuthorized {
     if (parameter == 'accountingEngine') accountingEngine = AccountingEngineLike(data);
     else revert('LiquidationEngine/modify-unrecognized-param');
     emit ModifyParameters(parameter, data);
   }
+
   /**
    * @notice Modify liquidation params
    * @param collateralType The collateral type we change parameters for
    * @param parameter The name of the parameter modified
    * @param data New value for the parameter
    */
-
   function modifyParameters(bytes32 collateralType, bytes32 parameter, uint256 data) external isAuthorized {
     if (parameter == 'liquidationPenalty') {
       collateralTypes[collateralType].liquidationPenalty = data;
@@ -161,13 +162,13 @@ contract LiquidationEngine is Authorizable {
     }
     emit ModifyParameters(collateralType, parameter, data);
   }
+
   /**
    * @notice Modify collateral auction address
    * @param collateralType The collateral type we change parameters for
    * @param parameter The name of the integration modified
    * @param data New address for the integration contract
    */
-
   function modifyParameters(bytes32 collateralType, bytes32 parameter, address data) external isAuthorized {
     if (parameter == 'collateralAuctionHouse') {
       safeEngine.denySAFEModification(collateralTypes[collateralType].collateralAuctionHouse);
@@ -178,10 +179,10 @@ contract LiquidationEngine is Authorizable {
     }
     emit ModifyParameters(collateralType, parameter, data);
   }
+
   /**
    * @notice Disable this contract (normally called by GlobalSettlement)
    */
-
   function disableContract() external isAuthorized {
     contractEnabled = 0;
     emit DisableContract();
@@ -200,12 +201,12 @@ contract LiquidationEngine is Authorizable {
     chosenSAFESaviour[collateralType][safe] = saviour;
     emit ProtectSAFE(collateralType, safe, saviour);
   }
+
   /**
    * @notice Liquidate a SAFE
    * @param collateralType The SAFE's collateral type
    * @param safe The SAFE's address
    */
-
   function liquidateSAFE(bytes32 collateralType, address safe) external returns (uint256 auctionId) {
     require(mutex[collateralType][safe] == 0, 'LiquidationEngine/non-null-mutex');
     mutex[collateralType][safe] = 1;
@@ -313,22 +314,22 @@ contract LiquidationEngine is Authorizable {
 
     mutex[collateralType][safe] = 0;
   }
+
   /**
    * @notice Remove debt that was being auctioned
    * @param rad The amount of debt to withdraw from currentOnAuctionSystemCoins
    */
-
   function removeCoinsFromAuction(uint256 rad) public isAuthorized {
     currentOnAuctionSystemCoins = currentOnAuctionSystemCoins - rad;
     emit UpdateCurrentOnAuctionSystemCoins(currentOnAuctionSystemCoins);
   }
 
   // --- Getters ---
-  /*
-    * @notice Get the amount of debt that can currently be covered by a collateral auction for a specific safe
-    * @param collateralType The collateral type stored in the SAFE
-    * @param safe The SAFE's address/handler
-    */
+  /**
+   * @notice Get the amount of debt that can currently be covered by a collateral auction for a specific safe
+   * @param collateralType The collateral type stored in the SAFE
+   * @param safe The SAFE's address/handler
+   */
   function getLimitAdjustedDebtToCover(bytes32 collateralType, address safe) external view returns (uint256) {
     (, uint256 accumulatedRate,,,,) = safeEngine.collateralTypes(collateralType);
     (uint256 safeCollateral, uint256 safeDebt) = safeEngine.safes(collateralType, safe);

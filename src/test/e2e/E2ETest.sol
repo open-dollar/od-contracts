@@ -5,7 +5,7 @@ import {PRBTest} from 'prb-test/PRBTest.sol';
 import '@script/Params.s.sol';
 import {Deploy} from '@script/Deploy.s.sol';
 import {Contracts} from '@script/Contracts.s.sol';
-import {Math} from '../../contracts/utils/Math.sol';
+import {Math} from '@libraries/Math.sol';
 
 uint256 constant YEAR = 365 days;
 uint256 constant RAY = 1e27;

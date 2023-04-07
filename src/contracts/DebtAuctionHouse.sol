@@ -18,15 +18,17 @@
 
 pragma solidity 0.8.19;
 
-import {ISAFEEngine as SAFEEngineLike} from '../interfaces/ISAFEEngine.sol';
-import {IToken as TokenLike} from '../interfaces/external/IToken.sol';
-import {IAccountingEngine as AccountingEngineLike} from '../interfaces/IAccountingEngine.sol';
+import {ISAFEEngine as SAFEEngineLike} from '@interfaces/ISAFEEngine.sol';
+import {IToken as TokenLike} from '@interfaces/external/IToken.sol';
+import {IAccountingEngine as AccountingEngineLike} from '@interfaces/IAccountingEngine.sol';
 
-import {Math, WAD} from './utils/Math.sol';
-import {Authorizable} from './utils/Authorizable.sol';
+import {Authorizable} from '@contracts/utils/Authorizable.sol';
+
+import {Math, WAD} from '@libraries/Math.sol';
 
 /*
-   This thing creates protocol tokens on demand in return for system coins*/
+   This thing creates protocol tokens on demand in return for system coins
+*/
 
 contract DebtAuctionHouse is Authorizable {
   // --- Data ---
@@ -112,12 +114,12 @@ contract DebtAuctionHouse is Authorizable {
     else revert('DebtAuctionHouse/modify-unrecognized-param');
     emit ModifyParameters(parameter, data);
   }
+
   /**
    * @notice Modify an address parameter
    * @param parameter The name of the oracle contract modified
    * @param addr New contract address
    */
-
   function modifyParameters(bytes32 parameter, address addr) external isAuthorized {
     require(contractEnabled == 1, 'DebtAuctionHouse/contract-not-enabled');
     if (parameter == 'protocolToken') protocolToken = TokenLike(addr);
@@ -153,11 +155,11 @@ contract DebtAuctionHouse is Authorizable {
       id, auctionsStarted, amountToSell, initialBid, incomeReceiver, bids[id].auctionDeadline, activeDebtAuctions
     );
   }
+
   /**
    * @notice Restart an auction if no bids were submitted for it
    * @param id ID of the auction to restart
    */
-
   function restartAuction(uint256 id) external {
     require(id <= auctionsStarted, 'DebtAuctionHouse/auction-never-started');
     require(bids[id].auctionDeadline < block.timestamp, 'DebtAuctionHouse/not-finished');
@@ -166,6 +168,7 @@ contract DebtAuctionHouse is Authorizable {
     bids[id].auctionDeadline = uint48(block.timestamp) + totalAuctionLength;
     emit RestartAuction(id, bids[id].auctionDeadline);
   }
+
   /**
    * @notice Decrease the protocol token amount you're willing to receive in
    *         exchange for providing the same amount of system coins being raised by the auction
@@ -173,7 +176,6 @@ contract DebtAuctionHouse is Authorizable {
    * @param amountToBuy Amount of protocol tokens to buy (must be smaller than the previous proposed amount) (wad)
    * @param bid New system coin bid (must always equal the total amount raised by the auction) (rad)
    */
-
   function decreaseSoldAmount(uint256 id, uint256 amountToBuy, uint256 bid) external {
     require(contractEnabled == 1, 'DebtAuctionHouse/contract-not-enabled');
     require(bids[id].highBidder != address(0), 'DebtAuctionHouse/high-bidder-not-set');
@@ -198,11 +200,11 @@ contract DebtAuctionHouse is Authorizable {
 
     emit DecreaseSoldAmount(id, msg.sender, amountToBuy, bid, bids[id].bidExpiry);
   }
+
   /**
    * @notice Settle/finish an auction
    * @param id ID of the auction to settle
    */
-
   function settleAuction(uint256 id) external {
     require(contractEnabled == 1, 'DebtAuctionHouse/not-live');
     require(
@@ -225,11 +227,11 @@ contract DebtAuctionHouse is Authorizable {
     activeDebtAuctions = 0;
     emit DisableContract(msg.sender);
   }
+
   /**
    * @notice Terminate an auction prematurely
    * @param id ID of the auction to terminate
    */
-
   function terminateAuctionPrematurely(uint256 id) external {
     require(contractEnabled == 0, 'DebtAuctionHouse/contract-still-enabled');
     require(bids[id].highBidder != address(0), 'DebtAuctionHouse/high-bidder-not-set');

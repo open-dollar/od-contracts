@@ -18,8 +18,9 @@
 
 pragma solidity 0.8.19;
 
-import {Math} from './utils/Math.sol';
-import {Authorizable} from './utils/Authorizable.sol';
+import {Authorizable} from '@contracts/utils/Authorizable.sol';
+
+import {Math} from '@libraries/Math.sol';
 
 contract SAFEEngine is Authorizable {
   using Math for uint256;
@@ -29,7 +30,7 @@ contract SAFEEngine is Authorizable {
    * @notice Add auth to an account
    * @param _account Account to add auth to
    */
-  function addAuthorization(address _account) external virtual override isAuthorized {
+  function addAuthorization(address _account) external override isAuthorized {
     require(contractEnabled == 1, 'SAFEEngine/contract-not-enabled');
     _addAuthorization(_account);
   }
@@ -38,36 +39,36 @@ contract SAFEEngine is Authorizable {
    * @notice Remove auth from an account
    * @param _account Account to remove auth from
    */
-  function removeAuthorization(address _account) external virtual override isAuthorized {
+  function removeAuthorization(address _account) external override isAuthorized {
     require(contractEnabled == 1, 'SAFEEngine/contract-not-enabled');
     _removeAuthorization(_account);
   }
 
   // Who can transfer collateral & debt in/out of a SAFE
   mapping(address => mapping(address => uint256)) public safeRights;
+
   /**
    * @notice Allow an address to modify your SAFE
    * @param account Account to give SAFE permissions to
    */
-
   function approveSAFEModification(address account) external {
     safeRights[msg.sender][account] = 1;
     emit ApproveSAFEModification(msg.sender, account);
   }
+
   /**
    * @notice Deny an address the rights to modify your SAFE
    * @param account Account that is denied SAFE permissions
    */
-
   function denySAFEModification(address account) external {
     safeRights[msg.sender][account] = 0;
     emit DenySAFEModification(msg.sender, account);
   }
+
   /**
    * @notice Checks whether msg.sender has the right to modify a SAFE
    *
    */
-
   function canModifySAFE(address safe, address account) public view returns (bool) {
     return safe == account || safeRights[safe][account] == 1;
   }
@@ -202,12 +203,12 @@ contract SAFEEngine is Authorizable {
     collateralTypes[collateralType].accumulatedRate = 10 ** 27;
     emit InitializeCollateralType(collateralType);
   }
+
   /**
    * @notice Modify general uint256 params
    * @param parameter The name of the parameter modified
    * @param data New value for the parameter
    */
-
   function modifyParameters(bytes32 parameter, uint256 data) external isAuthorized {
     require(contractEnabled == 1, 'SAFEEngine/contract-not-enabled');
     if (parameter == 'globalDebtCeiling') globalDebtCeiling = data;
@@ -215,13 +216,13 @@ contract SAFEEngine is Authorizable {
     else revert('SAFEEngine/modify-unrecognized-param');
     emit ModifyParameters(parameter, data);
   }
+
   /**
    * @notice Modify collateral specific params
    * @param collateralType Collateral type we modify params for
    * @param parameter The name of the parameter modified
    * @param data New value for the parameter
    */
-
   function modifyParameters(bytes32 collateralType, bytes32 parameter, uint256 data) external isAuthorized {
     require(contractEnabled == 1, 'SAFEEngine/contract-not-enabled');
     if (parameter == 'safetyPrice') collateralTypes[collateralType].safetyPrice = data;
@@ -231,10 +232,10 @@ contract SAFEEngine is Authorizable {
     else revert('SAFEEngine/modify-unrecognized-param');
     emit ModifyParameters(collateralType, parameter, data);
   }
+
   /**
    * @notice Disable this contract (normally called by GlobalSettlement)
    */
-
   function disableContract() external isAuthorized {
     contractEnabled = 0;
     emit DisableContract();
@@ -251,6 +252,7 @@ contract SAFEEngine is Authorizable {
     tokenCollateral[collateralType][account] = tokenCollateral[collateralType][account].add(wad);
     emit ModifyCollateralBalance(collateralType, account, wad);
   }
+
   /**
    * @notice Transfer collateral between accounts
    * @param collateralType Collateral type transferred
@@ -258,20 +260,19 @@ contract SAFEEngine is Authorizable {
    * @param dst Collateral destination
    * @param wad Amount of collateral transferred
    */
-
   function transferCollateral(bytes32 collateralType, address src, address dst, uint256 wad) external {
     require(canModifySAFE(src, msg.sender), 'SAFEEngine/not-allowed');
     tokenCollateral[collateralType][src] = tokenCollateral[collateralType][src] - wad;
     tokenCollateral[collateralType][dst] = tokenCollateral[collateralType][dst] + wad;
     emit TransferCollateral(collateralType, src, dst, wad);
   }
+
   /**
    * @notice Transfer internal coins (does not affect external balances from Coin.sol)
    * @param src Coins source
    * @param dst Coins destination
    * @param rad Amount of coins transferred
    */
-
   function transferInternalCoins(address src, address dst, uint256 rad) external {
     require(canModifySAFE(src, msg.sender), 'SAFEEngine/not-allowed');
     coinBalance[src] = coinBalance[src] - rad;
@@ -473,13 +474,13 @@ contract SAFEEngine is Authorizable {
     globalDebt = globalDebt - rad;
     emit SettleDebt(account, rad, debtBalance[account], coinBalance[account], globalUnbackedDebt, globalDebt);
   }
+
   /**
    * @notice Usually called by CoinSavingsAccount in order to create unbacked debt
    * @param debtDestination Usually AccountingEngine that can settle uncovered debt with surplus
    * @param coinDestination Usually CoinSavingsAccount that passes the new coins to depositors
    * @param rad Amount of debt to create
    */
-
   function createUnbackedDebt(address debtDestination, address coinDestination, uint256 rad) external isAuthorized {
     debtBalance[debtDestination] = debtBalance[debtDestination] + rad;
     coinBalance[coinDestination] = coinBalance[coinDestination] + rad;
