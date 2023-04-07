@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {ERC20} from 'isolmate/tokens/ERC20.sol';
+import {ERC20, IERC20} from 'isolmate/tokens/ERC20.sol';
 
 contract ERC20ForTest is ERC20 {
   constructor() ERC20('TOKEN', 'TKN', 18) {}

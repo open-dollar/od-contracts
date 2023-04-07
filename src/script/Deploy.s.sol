@@ -25,18 +25,7 @@ contract Deploy is Script, Contracts {
       })
     );
 
-    deployETHCollateral();
-    deployTokenCollateral();
-
-    vm.stopBroadcast();
-  }
-
-  function deployETHCollateral() public {
-    // deploy ETHJoin
-    ethJoin = new ETHJoin(address(safeEngine), ETH_A);
-    safeEngine.addAuthorization(address(ethJoin));
-
-    (ethCollateralAuctionHouse, ethOracle) = _deployCollateral(
+    deployETHCollateral(
       CollateralParams({
         name: ETH_A,
         liquidationPenalty: ETH_A_LIQUIDATION_PENALTY,
@@ -48,15 +37,8 @@ contract Deploy is Script, Contracts {
       }),
       TEST_ETH_PRICE
     );
-  }
 
-  function deployTokenCollateral() public {
-    // deploy Collateral and CollateralJoin
-    collateral = new Coin('Collateral', 'TKN', chainId); // TODO: replace for token
-    collateralJoin = new CollateralJoin(address(safeEngine), 'TKN', address(collateral));
-    safeEngine.addAuthorization(address(collateralJoin));
-
-    (collateralAuctionHouse, collateralOracle) = _deployCollateral(
+    deployTokenCollateral(
       CollateralParams({
         name: TKN,
         liquidationPenalty: TKN_LIQUIDATION_PENALTY,
@@ -68,6 +50,51 @@ contract Deploy is Script, Contracts {
       }),
       TEST_TKN_PRICE
     );
+
+    vm.stopBroadcast();
+  }
+
+  function deployETHCollateral(CollateralParams memory _params, uint256 _initialPrice) public {
+    // deploy oracle for test
+    oracle[ETH_A] = new OracleForTest();
+    oracle[ETH_A].setPriceAndValidity(_initialPrice, true);
+
+    // deploy ETHJoin and CollateralAuctionHouse
+    ethJoin = new ETHJoin(address(safeEngine), ETH_A);
+    collateralAuctionHouse[ETH_A] = new CollateralAuctionHouse({
+        _safeEngine: address(safeEngine), 
+        _liquidationEngine: address(liquidationEngine), 
+        _collateralType: ETH_A
+        });
+
+    // add ETHJoin to safeEngine
+    safeEngine.addAuthorization(address(ethJoin));
+
+    _setupCollateral(_params, address(oracle[ETH_A]));
+  }
+
+  function deployTokenCollateral(CollateralParams memory _params, uint256 _initialPrice) public {
+    // deploy oracle for test
+    oracle[_params.name] = new OracleForTest();
+    oracle[_params.name].setPriceAndValidity(_initialPrice, true);
+
+    // deploy Collateral, CollateralJoin and CollateralAuctionHouse
+    collateral[_params.name] = new ERC20ForTest(); // TODO: replace for token
+    collateralJoin[_params.name] = new CollateralJoin({
+        safeEngine_: address(safeEngine), 
+        collateralType_: _params.name, 
+        collateral_: address(collateral[_params.name])
+        });
+    collateralAuctionHouse[_params.name] = new CollateralAuctionHouse({
+        _safeEngine: address(safeEngine), 
+        _liquidationEngine: address(liquidationEngine), 
+        _collateralType: _params.name
+        });
+
+    // add CollateralJoin to safeEngine
+    safeEngine.addAuthorization(address(collateralJoin[_params.name]));
+
+    _setupCollateral(_params, address(oracle[_params.name]));
   }
 
   function revoke() public {
@@ -90,15 +117,15 @@ contract Deploy is Script, Contracts {
     // token adapters
     coinJoin.removeAuthorization(deployer);
     ethJoin.removeAuthorization(deployer);
-    collateralJoin.removeAuthorization(deployer);
+    collateralJoin[TKN].removeAuthorization(deployer);
 
     // auction houses
     surplusAuctionHouse.removeAuthorization(deployer);
     debtAuctionHouse.removeAuthorization(deployer);
 
     // collateral auction houses
-    ethCollateralAuctionHouse.removeAuthorization(deployer);
-    collateralAuctionHouse.removeAuthorization(deployer);
+    collateralAuctionHouse[ETH_A].removeAuthorization(deployer);
+    collateralAuctionHouse[TKN].removeAuthorization(deployer);
 
     vm.stopBroadcast();
   }
@@ -173,28 +200,23 @@ contract Deploy is Script, Contracts {
     surplusAuctionHouse.modifyParameters('protocolTokenBidReceiver', _params.surplusAuctionBidReceiver);
   }
 
-  function _deployCollateral(
-    CollateralParams memory _params,
-    uint256 _initialPriceForTest
-  ) internal returns (CollateralAuctionHouse _collateralAuctionHouse, OracleForTest _collateralOracle) {
-    // TODO: replace for actual oracle
-    _collateralOracle = new OracleForTest();
-    oracleRelayer.modifyParameters(_params.name, 'orcl', address(_collateralOracle));
+  function _setupCollateral(CollateralParams memory _params, address _collateralOracle) internal {
+    oracleRelayer.modifyParameters(_params.name, 'orcl', _collateralOracle);
 
     safeEngine.initializeCollateralType(_params.name);
     taxCollector.initializeCollateralType(_params.name);
 
-    // deploy ETHCollateralAuctionHouse
-    _collateralAuctionHouse = new CollateralAuctionHouse(address(safeEngine), address(liquidationEngine), _params.name);
-    _collateralAuctionHouse.addAuthorization(address(liquidationEngine));
-    liquidationEngine.addAuthorization(address(_collateralAuctionHouse));
-    // _collateralAuctionHouse.addAuthorization(address(globalSettlement));
+    collateralAuctionHouse[_params.name].addAuthorization(address(liquidationEngine));
+    liquidationEngine.addAuthorization(address(collateralAuctionHouse[_params.name]));
+    // collateralAuctionHouse[_params.name].addAuthorization(address(globalSettlement));
     // TODO: change for a FSM oracle
 
     // setup registry
-    _collateralAuctionHouse.modifyParameters('oracleRelayer', address(oracleRelayer));
-    _collateralAuctionHouse.modifyParameters('collateralFSM', address(_collateralOracle));
-    liquidationEngine.modifyParameters(_params.name, 'collateralAuctionHouse', address(_collateralAuctionHouse));
+    collateralAuctionHouse[_params.name].modifyParameters('oracleRelayer', address(oracleRelayer));
+    collateralAuctionHouse[_params.name].modifyParameters('collateralFSM', address(_collateralOracle));
+    liquidationEngine.modifyParameters(
+      _params.name, 'collateralAuctionHouse', address(collateralAuctionHouse[_params.name])
+    );
     liquidationEngine.modifyParameters(_params.name, 'liquidationPenalty', _params.liquidationPenalty);
     liquidationEngine.modifyParameters(_params.name, 'liquidationQuantity', _params.liquidationQuantity);
 
@@ -205,10 +227,9 @@ contract Deploy is Script, Contracts {
     oracleRelayer.modifyParameters(_params.name, 'liquidationCRatio', _params.liquidationRatio);
 
     // setup global settlement
-    _collateralAuctionHouse.addAuthorization(address(globalSettlement)); // terminateAuctionPrematurely
+    collateralAuctionHouse[_params.name].addAuthorization(address(globalSettlement)); // terminateAuctionPrematurely
 
-    // setup oracle [test]
-    _collateralOracle.setPriceAndValidity(_initialPriceForTest, true);
+    // setup initial price
     oracleRelayer.updateCollateralPrice(_params.name);
   }
 }

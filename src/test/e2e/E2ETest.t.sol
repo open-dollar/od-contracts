@@ -46,7 +46,7 @@ contract E2ETest is Common {
     _joinETH(address(this), COLLAT);
     _openSafe(address(this), int256(COLLAT), int256(DEBT));
 
-    ethOracle.setPriceAndValidity(TEST_ETH_PRICE_DROP, true);
+    oracle[ETH_A].setPriceAndValidity(TEST_ETH_PRICE_DROP, true);
     oracleRelayer.updateCollateralPrice(ETH_A);
 
     liquidationEngine.liquidateSAFE(ETH_A, address(this));
@@ -89,17 +89,17 @@ contract E2ETest is Common {
     _setCollateralPrice(ETH_A, TEST_ETH_PRICE_DROP);
     liquidationEngine.liquidateSAFE(ETH_A, address(this));
 
-    uint256 _discount = collateralAuctionHouse.minDiscount();
+    uint256 _discount = collateralAuctionHouse[ETH_A].minDiscount();
     uint256 _amountToBid = Math.wmul(Math.wmul(COLLAT, _discount), TEST_ETH_PRICE_DROP);
     // NOTE: getExpectedCollateralBought doesn't have a previous reference (lastReadRedemptionPrice)
-    (uint256 _expectedCollateral,) = collateralAuctionHouse.getCollateralBought(1, _amountToBid);
+    (uint256 _expectedCollateral,) = collateralAuctionHouse[ETH_A].getCollateralBought(1, _amountToBid);
     assertEq(_expectedCollateral, COLLAT);
 
-    safeEngine.approveSAFEModification(address(collateralAuctionHouse));
-    collateralAuctionHouse.buyCollateral(1, _amountToBid);
+    safeEngine.approveSAFEModification(address(collateralAuctionHouse[ETH_A]));
+    collateralAuctionHouse[ETH_A].buyCollateral(1, _amountToBid);
 
     // NOTE: bids(1) is deleted
-    (uint256 _amountToSell,,,,,,,,) = collateralAuctionHouse.bids(1);
+    (uint256 _amountToSell,,,,,,,,) = collateralAuctionHouse[ETH_A].bids(1);
     assertEq(_amountToSell, 0);
   }
 
@@ -109,17 +109,17 @@ contract E2ETest is Common {
     _setCollateralPrice(ETH_A, TEST_ETH_PRICE_DROP);
     liquidationEngine.liquidateSAFE(ETH_A, address(this));
 
-    uint256 _discount = collateralAuctionHouse.minDiscount();
+    uint256 _discount = collateralAuctionHouse[ETH_A].minDiscount();
     uint256 _amountToBid = Math.wmul(Math.wmul(COLLAT, _discount), TEST_ETH_PRICE_DROP) / 2;
     // NOTE: getExpectedCollateralBought doesn't have a previous reference (lastReadRedemptionPrice)
-    (uint256 _expectedCollateral,) = collateralAuctionHouse.getCollateralBought(1, _amountToBid);
+    (uint256 _expectedCollateral,) = collateralAuctionHouse[ETH_A].getCollateralBought(1, _amountToBid);
     assertEq(_expectedCollateral, COLLAT / 2);
 
-    safeEngine.approveSAFEModification(address(collateralAuctionHouse));
-    collateralAuctionHouse.buyCollateral(1, _amountToBid);
+    safeEngine.approveSAFEModification(address(collateralAuctionHouse[ETH_A]));
+    collateralAuctionHouse[ETH_A].buyCollateral(1, _amountToBid);
 
     // NOTE: bids(1) is NOT deleted
-    (uint256 _amountToSell,,,,,,,,) = collateralAuctionHouse.bids(1);
+    (uint256 _amountToSell,,,,,,,,) = collateralAuctionHouse[ETH_A].bids(1);
     assertGt(_amountToSell, 0);
   }
 

@@ -19,6 +19,8 @@ import {OracleRelayer} from '@contracts/OracleRelayer.sol';
 
 import {OracleForTest} from '@contracts/for-test/OracleForTest.sol';
 
+import {ERC20ForTest, ERC20, IERC20} from '@contracts/for-test/ERC20ForTest.sol';
+
 contract Contracts {
   SAFEEngine public safeEngine;
   TaxCollector public taxCollector;
@@ -30,18 +32,16 @@ contract Contracts {
   Coin public protocolToken;
   CoinJoin public coinJoin;
   ETHJoin public ethJoin;
-  Coin public collateral;
-  CollateralJoin public collateralJoin;
 
   MixedStratSurplusAuctionHouse public surplusAuctionHouse;
   DebtAuctionHouse public debtAuctionHouse;
 
-  CollateralAuctionHouse public ethCollateralAuctionHouse;
-  CollateralAuctionHouse public collateralAuctionHouse;
+  mapping(bytes32 => IERC20) public collateral;
+  mapping(bytes32 => CollateralJoin) public collateralJoin;
+  mapping(bytes32 => CollateralAuctionHouse) public collateralAuctionHouse;
 
   OracleRelayer public oracleRelayer;
-  OracleForTest public ethOracle;
-  OracleForTest public collateralOracle;
+  mapping(bytes32 => OracleForTest) public oracle;
 
   GlobalSettlement public globalSettlement;
   // ESM public esm;

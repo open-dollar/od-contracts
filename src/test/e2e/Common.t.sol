@@ -50,8 +50,8 @@ abstract contract Common is PRBTest, Contracts {
     protocolToken = deployment.protocolToken();
 
     ethJoin = deployment.ethJoin();
-    ethOracle = deployment.ethOracle();
-    collateralAuctionHouse = deployment.ethCollateralAuctionHouse();
+    oracle[ETH_A] = deployment.oracle(ETH_A);
+    collateralAuctionHouse[ETH_A] = deployment.collateralAuctionHouse(ETH_A);
 
     globalSettlement = deployment.globalSettlement();
   }
