@@ -4,7 +4,7 @@ pragma solidity 0.8.19;
 import {IAccountingEngine, IAuthorizable} from '@interfaces/IAccountingEngine.sol';
 import {AccountingEngine} from '@contracts/AccountingEngine.sol';
 import {SettlementSurplusAuctioneer} from '@contracts/SettlementSurplusAuctioneer.sol';
-import {HaiTest} from '@test/utils/HaiTest.t.sol';
+import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ISurplusAuctionHouse} from '@interfaces/ISurplusAuctionHouse.sol';
 import {IDebtAuctionHouse} from '@interfaces/IDebtAuctionHouse.sol';
@@ -12,7 +12,6 @@ import {ISurplusAuctionHouse} from '@interfaces/ISurplusAuctionHouse.sol';
 import {AccountingEngine} from '@contracts/AccountingEngine.sol';
 import {IProtocolTokenAuthority} from '@interfaces/external/IProtocolTokenAuthority.sol';
 import {ISystemStakingPool} from '@interfaces/external/ISystemStakingPool.sol';
-import {StdStorage, stdStorage} from 'forge-std/StdStorage.sol';
 
 abstract contract Base is HaiTest {
   using stdStorage for StdStorage;
@@ -467,7 +466,7 @@ contract Unit_AccountingEngine_SettleDebt is Base {
     accountingEngine.settleDebt(_rad);
   }
 
-  function test_Emits_SettleDebt(uint256 _rad, uint256 _coinBalance, uint256 _debtBalance) public {
+  function test_Emit_SettleDebt(uint256 _rad, uint256 _coinBalance, uint256 _debtBalance) public {
     _assumeHappyPath(_rad, _coinBalance, _debtBalance);
     _mockCoinAndDebtBalance(_coinBalance, _debtBalance);
 

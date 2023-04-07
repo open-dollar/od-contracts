@@ -49,9 +49,6 @@ jobs:
 
       - name: Install forge dependencies
         run: forge install
-         
-      - name: Install yarn
-        run: yarn install
 
       - name: Install yarn dependencies
         run: yarn install --frozen-lockfile

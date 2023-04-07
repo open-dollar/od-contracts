@@ -16,11 +16,12 @@
 
 pragma solidity 0.8.19;
 
-import {ISAFEEngine as SAFEEngineLike} from '../interfaces/ISAFEEngine.sol';
-import {IOracle as OracleLike} from '../interfaces/IOracle.sol';
+import {ISAFEEngine as SAFEEngineLike} from '@interfaces/ISAFEEngine.sol';
+import {IOracle as OracleLike} from '@interfaces/IOracle.sol';
 
-import {Math, RAY, WAD} from './utils/Math.sol';
-import {Authorizable} from './utils/Authorizable.sol';
+import {Authorizable} from '@contracts/utils/Authorizable.sol';
+
+import {Math, RAY, WAD} from '@libraries/Math.sol';
 
 contract OracleRelayer is Authorizable {
   using Math for uint256;
@@ -91,12 +92,12 @@ contract OracleRelayer is Authorizable {
     else revert('OracleRelayer/modify-unrecognized-param');
     emit ModifyParameters(collateralType, parameter, addr);
   }
+
   /**
    * @notice Modify redemption rate/price related parameters
    * @param parameter Name of the parameter
    * @param data New param value
    */
-
   function modifyParameters(bytes32 parameter, uint256 data) external isAuthorized {
     require(contractEnabled == 1, 'OracleRelayer/contract-not-enabled');
     require(data > 0, 'OracleRelayer/null-data');
@@ -122,13 +123,13 @@ contract OracleRelayer is Authorizable {
     }
     emit ModifyParameters(parameter, data);
   }
+
   /**
    * @notice Modify CRatio related parameters
    * @param collateralType Collateral whose parameters we change
    * @param parameter Name of the parameter
    * @param data New param value
    */
-
   function modifyParameters(bytes32 collateralType, bytes32 parameter, uint256 data) external isAuthorized {
     require(contractEnabled == 1, 'OracleRelayer/contract-not-enabled');
     if (parameter == 'safetyCRatio') {
@@ -160,10 +161,10 @@ contract OracleRelayer is Authorizable {
     // Return updated redemption price
     return _redemptionPrice;
   }
+
   /**
    * @notice Fetch the latest redemption price by first updating it
    */
-
   function redemptionPrice() public returns (uint256) {
     if (block.timestamp > redemptionPriceUpdateTime) return updateRedemptionPrice();
     return _redemptionPrice;
@@ -209,19 +210,19 @@ contract OracleRelayer is Authorizable {
   function safetyCRatio(bytes32 collateralType) public view returns (uint256) {
     return collateralTypes[collateralType].safetyCRatio;
   }
+
   /**
    * @notice Fetch the liquidation CRatio of a specific collateral type
    * @param collateralType The collateral type we want the liquidation CRatio for
    */
-
   function liquidationCRatio(bytes32 collateralType) public view returns (uint256) {
     return collateralTypes[collateralType].liquidationCRatio;
   }
+
   /**
    * @notice Fetch the oracle price feed of a specific collateral type
    * @param collateralType The collateral type we want the oracle price feed for
    */
-
   function orcl(bytes32 collateralType) public view returns (address) {
     return address(collateralTypes[collateralType].orcl);
   }

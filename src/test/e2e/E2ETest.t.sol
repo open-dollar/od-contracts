@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import './Common.t.sol';
 import '@script/Params.s.sol';
-import {Math} from '../../contracts/utils/Math.sol';
+import {Math} from '@libraries/Math.sol';
 
 contract E2ETest is Common {
   function test_open_safe() public {

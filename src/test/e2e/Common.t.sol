@@ -6,7 +6,7 @@ import '@script/Params.s.sol';
 import {Deploy} from '@script/Deploy.s.sol';
 import {Contracts, OracleForTest} from '@script/Contracts.s.sol';
 import {IOracle} from '@interfaces/IOracle.sol';
-import {Math} from '../../contracts/utils/Math.sol';
+import {Math} from '@libraries/Math.sol';
 
 uint256 constant YEAR = 365 days;
 uint256 constant RAY = 1e27;

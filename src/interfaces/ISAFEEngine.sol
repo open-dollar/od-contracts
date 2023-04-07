@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {IDisableable} from './IDisableable.sol';
-import {IAuthorizable} from './IAuthorizable.sol';
+import {IAuthorizable} from '@interfaces/IAuthorizable.sol';
+import {IDisableable} from '@interfaces/IDisableable.sol';
 
-interface ISAFEEngine is IDisableable, IAuthorizable {
+interface ISAFEEngine is IAuthorizable, IDisableable {
   function coinBalance(address _coinAddress) external view returns (uint256 _balance);
   function debtBalance(address _coinAddress) external view returns (uint256 _debtBalance);
   function settleDebt(uint256 _rad) external;

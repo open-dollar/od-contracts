@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {ICollateralAuctionHouse} from './ICollateralAuctionHouse.sol';
+import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
 
 interface IIncreasingDiscountCollateralAuctionHouse is ICollateralAuctionHouse {
   function getApproximateCollateralBought(

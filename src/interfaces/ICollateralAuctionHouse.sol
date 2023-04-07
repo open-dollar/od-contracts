@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {IAuthorizable} from './IAuthorizable.sol';
+import {IAuthorizable} from '@interfaces/IAuthorizable.sol';
 
 interface ICollateralAuctionHouse is IAuthorizable {
   function coinName() external view returns (bytes32 _name);

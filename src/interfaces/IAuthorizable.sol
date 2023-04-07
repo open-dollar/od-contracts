@@ -3,8 +3,8 @@ pragma solidity 0.8.19;
 
 interface IAuthorizable {
   // --- Events ---
-  event AddAuthorization(address account);
-  event RemoveAuthorization(address account);
+  event AddAuthorization(address _account);
+  event RemoveAuthorization(address _account);
 
   // --- Errors ---
   error AlreadyAuthorized();

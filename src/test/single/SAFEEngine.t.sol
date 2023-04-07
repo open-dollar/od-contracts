@@ -12,7 +12,7 @@ import {CoinJoin} from '../../contracts/utils/CoinJoin.sol';
 import {ETHJoin} from '../../contracts/utils/ETHJoin.sol';
 import {CollateralJoin} from '../../contracts/utils/CollateralJoin.sol';
 
-import {RAY} from '../../contracts/utils/Math.sol';
+import {RAY} from '../../libraries/Math.sol';
 
 import {EnglishCollateralAuctionHouse} from './CollateralAuctionHouse.t.sol';
 import {DebtAuctionHouse} from './DebtAuctionHouse.t.sol';
