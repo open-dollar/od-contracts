@@ -46,12 +46,12 @@ contract E2ETest is PRBTest, Contracts {
     safeEngine.approveSAFEModification(address(coinJoin));
 
     safeEngine.modifySAFECollateralization({
-      collateralType: ETH_A,
-      safe: address(this),
-      collateralSource: address(this),
-      debtDestination: address(this),
-      deltaCollateral: int256(COLLAT),
-      deltaDebt: int256(DEBT)
+      _collateralType: ETH_A,
+      _safe: address(this),
+      _collateralSource: address(this),
+      _debtDestination: address(this),
+      _deltaCollateral: int256(COLLAT),
+      _deltaDebt: int256(DEBT)
     });
 
     (uint256 _lockedCollateral, uint256 _generatedDebt) = safeEngine.safes(ETH_A, address(this));
