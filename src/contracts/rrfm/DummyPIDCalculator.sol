@@ -1,22 +1,26 @@
 pragma solidity 0.6.7;
 
 contract DummyPIDCalculator {
-  uint constant internal TWENTY_SEVEN_DECIMAL_NUMBER = 10**27;
-  uint constant internal _rt = 1;
+  uint256 internal constant TWENTY_SEVEN_DECIMAL_NUMBER = 10 ** 27;
+  uint256 internal constant _rt = 1;
 
-  function computeRate(uint256, uint256, uint256) virtual external returns (uint256) {
-      return TWENTY_SEVEN_DECIMAL_NUMBER;
+  function computeRate(uint256, uint256, uint256) external virtual returns (uint256) {
+    return TWENTY_SEVEN_DECIMAL_NUMBER;
   }
-  function rt(uint256, uint256, uint256) virtual external view returns (uint256) {
-      return _rt;
+
+  function rt(uint256, uint256, uint256) external view virtual returns (uint256) {
+    return _rt;
   }
-  function pscl() virtual external view returns (uint256) {
-      return TWENTY_SEVEN_DECIMAL_NUMBER;
+
+  function pscl() external view virtual returns (uint256) {
+    return TWENTY_SEVEN_DECIMAL_NUMBER;
   }
-  function tlv() virtual external view returns (uint256) {
-      return 1;
+
+  function tlv() external view virtual returns (uint256) {
+    return 1;
   }
-  function adat() virtual external view returns (uint256) {
-      return 0;
+
+  function adat() external view virtual returns (uint256) {
+    return 0;
   }
 }

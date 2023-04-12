@@ -30,86 +30,86 @@ pragma solidity ^0.6.7;
  * @dev Signed math operations with safety checks that revert on error.
  */
 contract SignedSafeMath {
-    int256 constant private _INT256_MIN = -2**255;
+  int256 private constant _INT256_MIN = -2 ** 255;
 
-    /**
-     * @dev Returns the multiplication of two signed integers, reverting on
-     * overflow.
-     *
-     * Counterpart to Solidity's `*` operator.
-     *
-     * Requirements:
-     *
-     * - Multiplication cannot overflow.
-     */
-    function multiply(int256 a, int256 b) internal pure returns (int256) {
-        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
-        // benefit is lost if 'b' is also tested.
-        // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
-        if (a == 0) {
-            return 0;
-        }
-
-        assert(!(a == -1 && b == _INT256_MIN));
-
-        int256 c = a * b;
-        assert(c / a == b);
-
-        return c;
+  /**
+   * @dev Returns the multiplication of two signed integers, reverting on
+   * overflow.
+   *
+   * Counterpart to Solidity's `*` operator.
+   *
+   * Requirements:
+   *
+   * - Multiplication cannot overflow.
+   */
+  function multiply(int256 a, int256 b) internal pure returns (int256) {
+    // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
+    // benefit is lost if 'b' is also tested.
+    // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
+    if (a == 0) {
+      return 0;
     }
 
-    /**
-     * @dev Returns the integer division of two signed integers. Reverts on
-     * division by zero. The result is rounded towards zero.
-     *
-     * Counterpart to Solidity's `/` operator. Note: this function uses a
-     * `revert` opcode (which leaves remaining gas untouched) while Solidity
-     * uses an invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function divide(int256 a, int256 b) internal pure returns (int256) {
-        assert(b != 0);
-        assert(!(b == -1 && a == _INT256_MIN));
+    assert(!(a == -1 && b == _INT256_MIN));
 
-        int256 c = a / b;
+    int256 c = a * b;
+    assert(c / a == b);
 
-        return c;
-    }
+    return c;
+  }
 
-    /**
-     * @dev Returns the subtraction of two signed integers, reverting on
-     * overflow.
-     *
-     * Counterpart to Solidity's `-` operator.
-     *
-     * Requirements:
-     *
-     * - Subtraction cannot overflow.
-     */
-    function subtract(int256 a, int256 b) internal pure returns (int256) {
-        int256 c = a - b;
-        assert((b >= 0 && c <= a) || (b < 0 && c > a));
+  /**
+   * @dev Returns the integer division of two signed integers. Reverts on
+   * division by zero. The result is rounded towards zero.
+   *
+   * Counterpart to Solidity's `/` operator. Note: this function uses a
+   * `revert` opcode (which leaves remaining gas untouched) while Solidity
+   * uses an invalid opcode to revert (consuming all remaining gas).
+   *
+   * Requirements:
+   *
+   * - The divisor cannot be zero.
+   */
+  function divide(int256 a, int256 b) internal pure returns (int256) {
+    assert(b != 0);
+    assert(!(b == -1 && a == _INT256_MIN));
 
-        return c;
-    }
+    int256 c = a / b;
 
-    /**
-     * @dev Returns the addition of two signed integers, reverting on
-     * overflow.
-     *
-     * Counterpart to Solidity's `+` operator.
-     *
-     * Requirements:
-     *
-     * - Addition cannot overflow.
-     */
-    function addition(int256 a, int256 b) internal pure returns (int256) {
-        int256 c = a + b;
-        assert((b >= 0 && c >= a) || (b < 0 && c < a));
+    return c;
+  }
 
-        return c;
-    }
+  /**
+   * @dev Returns the subtraction of two signed integers, reverting on
+   * overflow.
+   *
+   * Counterpart to Solidity's `-` operator.
+   *
+   * Requirements:
+   *
+   * - Subtraction cannot overflow.
+   */
+  function subtract(int256 a, int256 b) internal pure returns (int256) {
+    int256 c = a - b;
+    assert((b >= 0 && c <= a) || (b < 0 && c > a));
+
+    return c;
+  }
+
+  /**
+   * @dev Returns the addition of two signed integers, reverting on
+   * overflow.
+   *
+   * Counterpart to Solidity's `+` operator.
+   *
+   * Requirements:
+   *
+   * - Addition cannot overflow.
+   */
+  function addition(int256 a, int256 b) internal pure returns (int256) {
+    int256 c = a + b;
+    assert((b >= 0 && c >= a) || (b < 0 && c < a));
+
+    return c;
+  }
 }
