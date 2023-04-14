@@ -4,7 +4,7 @@ pragma solidity 0.8.19;
 import {PRBTest} from 'prb-test/PRBTest.sol';
 import '@script/Params.s.sol';
 import {Deploy} from '@script/Deploy.s.sol';
-import {Contracts, OracleForTest} from '@script/Contracts.s.sol';
+import {Contracts, OracleForTest, CollateralJoin, ERC20ForTest} from '@script/Contracts.s.sol';
 import {IOracle} from '@interfaces/IOracle.sol';
 import {Math} from '@libraries/Math.sol';
 
@@ -15,6 +15,10 @@ uint256 constant RAD_DELTA = 0.0001e45;
 uint256 constant COLLAT = 1e18;
 uint256 constant DEBT = 500e18; // LVT 50%
 uint256 constant TEST_ETH_PRICE_DROP = 100e18; // 1 ETH = 100 HAI
+
+interface ICollateralJoinLike {
+  function collateralType() external view returns (bytes32);
+}
 
 abstract contract Common is PRBTest, Contracts {
   Deploy deployment;
@@ -63,13 +67,22 @@ abstract contract Common is PRBTest, Contracts {
     vm.stopPrank();
   }
 
-  function _openSafe(address _user, int256 _deltaCollat, int256 _deltaDebt) internal {
+  function _joinTKN(address _user, CollateralJoin _collateralJoin, uint256 _amount) internal {
+    vm.startPrank(_user);
+    ERC20ForTest _collateral = ERC20ForTest(address(_collateralJoin.collateral()));
+    _collateral.mint(_user, _amount);
+    _collateral.approve(address(_collateralJoin), _amount);
+    _collateralJoin.join(_user, _amount);
+    vm.stopPrank();
+  }
+
+  function _openSafe(address _user, address _collateralJoin, int256 _deltaCollat, int256 _deltaDebt) internal {
     vm.startPrank(_user);
 
-    safeEngine.approveSAFEModification(address(ethJoin));
+    safeEngine.approveSAFEModification(_collateralJoin);
 
     safeEngine.modifySAFECollateralization({
-      collateralType: ETH_A,
+      collateralType: ICollateralJoinLike(_collateralJoin).collateralType(),
       safe: _user,
       collateralSource: _user,
       debtDestination: _user,

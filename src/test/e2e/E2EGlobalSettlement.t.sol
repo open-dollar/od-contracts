@@ -5,66 +5,8 @@ import '@script/Params.s.sol';
 import './Common.t.sol';
 
 contract E2EGlobalSettlementTest is Common {
-  function multiCollateralSetup() public {
-    deployment.deployTokenCollateral(
-      CollateralParams({
-        name: 'TKN-A',
-        liquidationPenalty: RAY,
-        liquidationQuantity: 100,
-        debtCeiling: type(uint256).max,
-        safetyCRatio: 1,
-        liquidationRatio: 1,
-        stabilityFee: 1
-      }),
-      100
-    );
-
-    deployment.deployTokenCollateral(
-      CollateralParams({
-        name: 'TKN-B',
-        liquidationPenalty: RAY,
-        liquidationQuantity: 100,
-        debtCeiling: type(uint256).max,
-        safetyCRatio: 1,
-        liquidationRatio: 1,
-        stabilityFee: 1
-      }),
-      1000
-    );
-
-    deployment.deployTokenCollateral(
-      CollateralParams({
-        name: 'TKN-C',
-        liquidationPenalty: RAY,
-        liquidationQuantity: 100,
-        debtCeiling: type(uint256).max,
-        safetyCRatio: 1,
-        liquidationRatio: 1,
-        stabilityFee: 1
-      }),
-      10_000
-    );
-
-    collateral['TKN-A'] = deployment.collateral('TKN-A');
-    collateral['TKN-B'] = deployment.collateral('TKN-B');
-    collateral['TKN-C'] = deployment.collateral('TKN-C');
-
-    collateral['TKN-A'].mint(alice, 100);
-    collateral['TKN-A'].mint(bob, 100);
-    collateral['TKN-A'].mint(carol, 100);
-
-    collateral['TKN-B'].mint(alice, 100);
-    collateral['TKN-B'].mint(bob, 100);
-    collateral['TKN-B'].mint(carol, 100);
-
-    collateral['TKN-C'].mint(alice, 100);
-    collateral['TKN-C'].mint(bob, 100);
-    collateral['TKN-C'].mint(carol, 100);
-  }
-
   function test_global_settlement_multicollateral() public {
-    // TODO: 3 personas, 3 collateral types, 3 price drops
-    multiCollateralSetup();
+    _multiCollateralSetup();
   }
 
   function test_global_settlement() public {
@@ -74,11 +16,11 @@ contract E2EGlobalSettlementTest is Common {
     // dave has a healthy active safe
 
     _joinETH(alice, COLLAT);
-    _openSafe(alice, int256(COLLAT), int256(DEBT));
+    _openSafe(alice, address(ethJoin), int256(COLLAT), int256(DEBT));
     _joinETH(bob, COLLAT);
-    _openSafe(bob, int256(COLLAT), int256(DEBT));
+    _openSafe(bob, address(ethJoin), int256(COLLAT), int256(DEBT));
     _joinETH(carol, COLLAT);
-    _openSafe(carol, int256(COLLAT), int256(DEBT));
+    _openSafe(carol, address(ethJoin), int256(COLLAT), int256(DEBT));
 
     _setCollateralPrice(ETH_A, TEST_ETH_PRICE_DROP); // price 1 ETH = 100 HAI
     liquidationEngine.liquidateSAFE(ETH_A, alice);
@@ -92,7 +34,7 @@ contract E2EGlobalSettlementTest is Common {
 
     // NOTE: why DEBT/10 not-safe? (price dropped to 1/10)
     _joinETH(dave, COLLAT);
-    _openSafe(dave, int256(COLLAT), int256(DEBT / 100)); // active healthy safe
+    _openSafe(dave, address(ethJoin), int256(COLLAT), int256(DEBT / 100)); // active healthy safe
 
     vm.prank(deployer);
     globalSettlement.shutdownSystem();
@@ -127,5 +69,85 @@ contract E2EGlobalSettlementTest is Common {
     globalSettlement.prepareCoinsForRedeeming(DEBT / 100);
     globalSettlement.redeemCollateral(ETH_A, DEBT / 100);
     vm.stopPrank();
+  }
+
+  function _multiCollateralSetup() internal {
+    uint256 LIQUIDATION_QUANTITY = 1000e45;
+    uint256 COLLATERAL_PRICE = 100e18;
+    uint256 LIQUIDATION_RATIO = 1.5e27;
+
+    deployment.deployTokenCollateral(
+      CollateralParams({
+        name: 'TKN-A',
+        liquidationPenalty: RAY,
+        liquidationQuantity: LIQUIDATION_QUANTITY,
+        debtCeiling: type(uint256).max,
+        safetyCRatio: LIQUIDATION_RATIO,
+        liquidationRatio: LIQUIDATION_RATIO,
+        stabilityFee: RAY
+      }),
+      COLLATERAL_PRICE
+    );
+
+    deployment.deployTokenCollateral(
+      CollateralParams({
+        name: 'TKN-B',
+        liquidationPenalty: RAY,
+        liquidationQuantity: LIQUIDATION_QUANTITY,
+        debtCeiling: type(uint256).max,
+        safetyCRatio: LIQUIDATION_RATIO,
+        liquidationRatio: LIQUIDATION_RATIO,
+        stabilityFee: 0
+      }),
+      COLLATERAL_PRICE
+    );
+
+    deployment.deployTokenCollateral(
+      CollateralParams({
+        name: 'TKN-C',
+        liquidationPenalty: RAY,
+        liquidationQuantity: LIQUIDATION_QUANTITY,
+        debtCeiling: type(uint256).max,
+        safetyCRatio: LIQUIDATION_RATIO,
+        liquidationRatio: LIQUIDATION_RATIO,
+        stabilityFee: 0
+      }),
+      COLLATERAL_PRICE
+    );
+
+    collateral['TKN-A'] = deployment.collateral('TKN-A');
+    collateral['TKN-B'] = deployment.collateral('TKN-B');
+    collateral['TKN-C'] = deployment.collateral('TKN-C');
+
+    collateralJoin['TKN-A'] = deployment.collateralJoin('TKN-A');
+    collateralJoin['TKN-B'] = deployment.collateralJoin('TKN-B');
+    collateralJoin['TKN-C'] = deployment.collateralJoin('TKN-C');
+
+    _joinTKN(alice, collateralJoin['TKN-A'], 100e18);
+    _joinTKN(alice, collateralJoin['TKN-B'], 100e18);
+    _joinTKN(alice, collateralJoin['TKN-C'], 100e18);
+    _openSafe(alice, address(collateralJoin['TKN-A']), int256(COLLAT), int256(20e18));
+    _openSafe(alice, address(collateralJoin['TKN-B']), int256(COLLAT), int256(20e18));
+    _openSafe(alice, address(collateralJoin['TKN-C']), int256(COLLAT), int256(20e18));
+
+    // assert alice LTV is 20%
+
+    _joinTKN(bob, collateralJoin['TKN-A'], 100e18);
+    _joinTKN(bob, collateralJoin['TKN-B'], 100e18);
+    _joinTKN(bob, collateralJoin['TKN-C'], 100e18);
+    _openSafe(bob, address(collateralJoin['TKN-A']), int256(COLLAT), int256(50e18));
+    _openSafe(bob, address(collateralJoin['TKN-B']), int256(COLLAT), int256(50e18));
+    _openSafe(bob, address(collateralJoin['TKN-C']), int256(COLLAT), int256(50e18));
+
+    // assert bob LTV is 50%
+
+    _joinTKN(carol, collateralJoin['TKN-A'], 100e18);
+    _joinTKN(carol, collateralJoin['TKN-B'], 100e18);
+    _joinTKN(carol, collateralJoin['TKN-C'], 100e18);
+    _openSafe(carol, address(collateralJoin['TKN-A']), int256(COLLAT), int256(60e18));
+    _openSafe(carol, address(collateralJoin['TKN-B']), int256(COLLAT), int256(60e18));
+    _openSafe(carol, address(collateralJoin['TKN-C']), int256(COLLAT), int256(60e18));
+
+    // assert carol LTV is 60%
   }
 }

@@ -8,7 +8,7 @@ import {Math} from '@libraries/Math.sol';
 contract E2ETest is Common {
   function test_open_safe() public {
     _joinETH(address(this), COLLAT);
-    _openSafe(address(this), int256(COLLAT), int256(DEBT));
+    _openSafe(address(this), address(ethJoin), int256(COLLAT), int256(DEBT));
 
     (uint256 _lockedCollateral, uint256 _generatedDebt) = safeEngine.safes(ETH_A, address(this));
     assertEq(_generatedDebt, DEBT);
@@ -17,7 +17,7 @@ contract E2ETest is Common {
 
   function test_exit_join() public {
     _joinETH(address(this), COLLAT);
-    _openSafe(address(this), int256(COLLAT), int256(DEBT));
+    _openSafe(address(this), address(ethJoin), int256(COLLAT), int256(DEBT));
 
     safeEngine.approveSAFEModification(address(coinJoin));
     coinJoin.exit(address(this), DEBT);
@@ -26,7 +26,7 @@ contract E2ETest is Common {
 
   function test_stability_fee() public {
     _joinETH(address(this), COLLAT);
-    _openSafe(address(this), int256(COLLAT), int256(DEBT));
+    _openSafe(address(this), address(ethJoin), int256(COLLAT), int256(DEBT));
 
     uint256 _globalDebt;
     _globalDebt = safeEngine.globalDebt();
@@ -44,7 +44,7 @@ contract E2ETest is Common {
 
   function test_liquidation() public {
     _joinETH(address(this), COLLAT);
-    _openSafe(address(this), int256(COLLAT), int256(DEBT));
+    _openSafe(address(this), address(ethJoin), int256(COLLAT), int256(DEBT));
 
     oracle[ETH_A].setPriceAndValidity(TEST_ETH_PRICE_DROP, true);
     oracleRelayer.updateCollateralPrice(ETH_A);
@@ -58,7 +58,7 @@ contract E2ETest is Common {
 
   function test_liquidation_by_price_drop() public {
     _joinETH(address(this), COLLAT);
-    _openSafe(address(this), int256(COLLAT), int256(DEBT));
+    _openSafe(address(this), address(ethJoin), int256(COLLAT), int256(DEBT));
 
     // NOTE: LVT for price = 1000 is 50%
     _setCollateralPrice(ETH_A, 675e18); // LVT = 74,0% = 1/1.35
@@ -72,7 +72,7 @@ contract E2ETest is Common {
 
   function test_liquidation_by_fees() public {
     _joinETH(address(this), COLLAT);
-    _openSafe(address(this), int256(COLLAT), int256(DEBT));
+    _openSafe(address(this), address(ethJoin), int256(COLLAT), int256(DEBT));
 
     _collectFees(8 * YEAR); // 1.05^8 = 148%
 
@@ -85,7 +85,7 @@ contract E2ETest is Common {
 
   function test_collateral_auction() public {
     _joinETH(address(this), COLLAT);
-    _openSafe(address(this), int256(COLLAT), int256(DEBT));
+    _openSafe(address(this), address(ethJoin), int256(COLLAT), int256(DEBT));
     _setCollateralPrice(ETH_A, TEST_ETH_PRICE_DROP);
     liquidationEngine.liquidateSAFE(ETH_A, address(this));
 
@@ -105,7 +105,7 @@ contract E2ETest is Common {
 
   function test_collateral_auction_partial() public {
     _joinETH(address(this), COLLAT);
-    _openSafe(address(this), int256(COLLAT), int256(DEBT));
+    _openSafe(address(this), address(ethJoin), int256(COLLAT), int256(DEBT));
     _setCollateralPrice(ETH_A, TEST_ETH_PRICE_DROP);
     liquidationEngine.liquidateSAFE(ETH_A, address(this));
 
@@ -125,7 +125,7 @@ contract E2ETest is Common {
 
   function test_debt_auction() public {
     _joinETH(address(this), COLLAT);
-    _openSafe(address(this), int256(COLLAT), int256(DEBT));
+    _openSafe(address(this), address(ethJoin), int256(COLLAT), int256(DEBT));
     _setCollateralPrice(ETH_A, TEST_ETH_PRICE_DROP);
     liquidationEngine.liquidateSAFE(ETH_A, address(this));
 
@@ -160,7 +160,7 @@ contract E2ETest is Common {
 
   function test_surplus_auction() public {
     _joinETH(address(this), COLLAT);
-    _openSafe(address(this), int256(COLLAT), int256(DEBT));
+    _openSafe(address(this), address(ethJoin), int256(COLLAT), int256(DEBT));
     uint256 INITIAL_BID = 1e18;
 
     // mint protocol tokens to bid with
