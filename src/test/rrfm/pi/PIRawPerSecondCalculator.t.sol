@@ -1,8 +1,8 @@
-pragma solidity ^0.6.7;
+pragma solidity 0.8.19;
 
 import 'ds-test/test.sol';
 
-import {PIRawPerSecondCalculator} from '../../calculator/PIRawPerSecondCalculator.sol';
+import {RawPIDController as PIRawPerSecondCalculator} from '@contracts/for-test/RawPIDController.sol';
 import {MockSetterRelayer} from '../utils/mock/MockSetterRelayer.sol';
 import {MockPIRateSetter} from '../utils/mock/MockPIRateSetter.sol';
 import '../utils/mock/MockOracleRelayer.sol';
@@ -12,15 +12,15 @@ contract Feed {
   bool public validPrice;
   uint256 public lastUpdateTime;
 
-  constructor(uint256 price_, bool validPrice_) public {
+  constructor(uint256 price_, bool validPrice_) {
     price = bytes32(price_);
     validPrice = validPrice_;
-    lastUpdateTime = now;
+    lastUpdateTime = block.timestamp;
   }
 
   function updateTokenPrice(uint256 price_) external {
     price = bytes32(price_);
-    lastUpdateTime = now;
+    lastUpdateTime = block.timestamp;
   }
 
   function read() external view returns (uint256) {
@@ -142,9 +142,9 @@ contract PIRawPerSecondCalculatorTest is DSTest {
   }
 
   function test_correct_setup() public {
-    assertEq(calculator.readers(address(this)), 1);
-    assertEq(calculator.readers(address(rateSetter)), 1);
-    assertEq(calculator.authorities(address(this)), 1);
+    // assertEq(calculator.readers(address(this)), 1);
+    // assertEq(calculator.readers(address(rateSetter)), 1);
+    assertEq(calculator.authorizedAccounts(address(this)), 1);
 
     assertEq(calculator.nb(), noiseBarrier);
     assertEq(calculator.foub(), feedbackOutputUpperBound);
@@ -189,9 +189,9 @@ contract PIRawPerSecondCalculatorTest is DSTest {
     assertEq(rateTimeline, defaultGlobalTimeline);
 
     // Verify that it did not change state
-    assertEq(calculator.readers(address(this)), 1);
-    assertEq(calculator.readers(address(rateSetter)), 1);
-    assertEq(calculator.authorities(address(this)), 1);
+    // assertEq(calculator.readers(address(this)), 1);
+    // assertEq(calculator.readers(address(rateSetter)), 1);
+    assertEq(calculator.authorizedAccounts(address(this)), 1);
 
     assertEq(calculator.nb(), noiseBarrier);
     assertEq(calculator.foub(), feedbackOutputUpperBound);
@@ -208,10 +208,10 @@ contract PIRawPerSecondCalculatorTest is DSTest {
   }
 
   function test_first_update_rate_no_deviation() public {
-    hevm.warp(now + calculator.ips() + 1);
+    hevm.warp(block.timestamp + calculator.ips() + 1);
 
     rateSetter.updateRate(address(this));
-    assertEq(uint256(calculator.lut()), now);
+    assertEq(uint256(calculator.lut()), block.timestamp);
     assertEq(uint256(calculator.pdc()), 0);
 
     assertEq(oracleRelayer.redemptionPrice(), TWENTY_SEVEN_DECIMAL_NUMBER);
@@ -219,7 +219,7 @@ contract PIRawPerSecondCalculatorTest is DSTest {
 
     (uint256 timestamp, int256 proportional, int256 integral) = calculator.dos(calculator.oll() - 1);
 
-    assertEq(timestamp, now);
+    assertEq(timestamp, block.timestamp);
     assertEq(proportional, 0);
     assertEq(integral, 0);
   }
@@ -227,12 +227,12 @@ contract PIRawPerSecondCalculatorTest is DSTest {
   function testFail_update_invalid_market_price() public {
     orcl = new Feed(1 ether, false);
     rateSetter.modifyParameters('orcl', address(orcl));
-    hevm.warp(now + calculator.ips() + 1);
+    hevm.warp(block.timestamp + calculator.ips() + 1);
     rateSetter.updateRate(address(this));
   }
 
   function testFail_update_same_period_warp() public {
-    hevm.warp(now + calculator.ips() + 1);
+    hevm.warp(block.timestamp + calculator.ips() + 1);
     rateSetter.updateRate(address(this));
     rateSetter.updateRate(address(this));
   }
@@ -269,7 +269,7 @@ contract PIRawPerSecondCalculatorTest is DSTest {
 
     calculator.modifyParameters('nb', uint256(0.995e18));
 
-    hevm.warp(now + calculator.ips());
+    hevm.warp(block.timestamp + calculator.ips());
     orcl.updateTokenPrice(1.05e18);
 
     (uint256 newRedemptionRate, int256 pTerm, int256 iTerm, uint256 rateTimeline) =
@@ -281,14 +281,14 @@ contract PIRawPerSecondCalculatorTest is DSTest {
 
     rateSetter.updateRate(address(this)); // irrelevant because the contract computes everything by itself
 
-    assertEq(uint256(calculator.lut()), now);
+    assertEq(uint256(calculator.lut()), block.timestamp);
     assertEq(calculator.pdc(), 0);
     assertEq(oracleRelayer.redemptionPrice(), TWENTY_SEVEN_DECIMAL_NUMBER);
     assertEq(oracleRelayer.redemptionRate(), 0.95e27);
 
     (uint256 timestamp, int256 proportional, int256 integral) = calculator.dos(calculator.oll() - 1);
 
-    assertEq(timestamp, now);
+    assertEq(timestamp, block.timestamp);
     assertEq(proportional, -0.05e27);
     assertEq(integral, 0);
   }
@@ -298,7 +298,7 @@ contract PIRawPerSecondCalculatorTest is DSTest {
 
     calculator.modifyParameters('nb', uint256(0.995e18));
 
-    hevm.warp(now + calculator.ips());
+    hevm.warp(block.timestamp + calculator.ips());
 
     orcl.updateTokenPrice(0.95e18);
 
@@ -311,7 +311,7 @@ contract PIRawPerSecondCalculatorTest is DSTest {
 
     rateSetter.updateRate(address(this));
 
-    assertEq(uint256(calculator.lut()), now);
+    assertEq(uint256(calculator.lut()), block.timestamp);
     assertEq(calculator.pdc(), 0);
     assertEq(oracleRelayer.redemptionPrice(), TWENTY_SEVEN_DECIMAL_NUMBER);
     assertEq(oracleRelayer.redemptionRate(), 1.05e27);
@@ -325,20 +325,20 @@ contract PIRawPerSecondCalculatorTest is DSTest {
     calculator.modifyParameters('pscl', uint256(998_721_603_904_830_360_273_103_599)); // -99% per hour
 
     // First update
-    hevm.warp(now + calculator.ips());
+    hevm.warp(block.timestamp + calculator.ips());
     orcl.updateTokenPrice(1 ether + 1);
 
     rateSetter.updateRate(address(this));
 
     // Second update
-    hevm.warp(now + calculator.ips());
+    hevm.warp(block.timestamp + calculator.ips());
     orcl.updateTokenPrice(1 ether + 1);
 
     rateSetter.updateRate(address(this));
 
     // Third update
     orcl.updateTokenPrice(1 ether);
-    hevm.warp(now + calculator.ips());
+    hevm.warp(block.timestamp + calculator.ips());
 
     oracleRelayer.redemptionPrice();
     oracleRelayer.modifyParameters('redemptionPrice', 1e27);
@@ -352,7 +352,7 @@ contract PIRawPerSecondCalculatorTest is DSTest {
     assertEq(oracleRelayer.redemptionRate(), 1e27);
 
     // Final update
-    hevm.warp(now + calculator.ips() * 100);
+    hevm.warp(block.timestamp + calculator.ips() * 100);
 
     (uint256 newRedemptionRate, int256 pTerm, int256 iTerm,) =
       calculator.getNextRedemptionRate(1 ether, oracleRelayer.redemptionPrice(), rateSetter.iapcr());
@@ -368,12 +368,12 @@ contract PIRawPerSecondCalculatorTest is DSTest {
     assertEq(uint256(calculator.pdc()), 0);
     calculator.modifyParameters('nb', uint256(0.995e18));
 
-    hevm.warp(now + calculator.ips());
+    hevm.warp(block.timestamp + calculator.ips());
 
     orcl.updateTokenPrice(1.05e18);
     rateSetter.updateRate(address(this)); // -5% global rate
 
-    hevm.warp(now + calculator.ips());
+    hevm.warp(block.timestamp + calculator.ips());
     assertEq(oracleRelayer.redemptionPrice(), 1);
 
     (uint256 newRedemptionRate, int256 pTerm, int256 iTerm, uint256 rateTimeline) =
@@ -386,7 +386,7 @@ contract PIRawPerSecondCalculatorTest is DSTest {
 
     rateSetter.updateRate(address(this));
 
-    assertEq(uint256(calculator.lut()), now);
+    assertEq(uint256(calculator.lut()), block.timestamp);
     assertEq(calculator.pdc(), -1_979_999_999_999_999_999_999_999_996_400);
     assertEq(oracleRelayer.redemptionPrice(), 1);
     assertEq(oracleRelayer.redemptionRate(), 1);
@@ -396,12 +396,12 @@ contract PIRawPerSecondCalculatorTest is DSTest {
     assertEq(uint256(calculator.pdc()), 0);
     calculator.modifyParameters('nb', uint256(0.995e18));
 
-    hevm.warp(now + calculator.ips());
+    hevm.warp(block.timestamp + calculator.ips());
 
     orcl.updateTokenPrice(1.05e18);
     rateSetter.updateRate(address(this));
 
-    hevm.warp(now + calculator.ips() * 10); // 10 hours
+    hevm.warp(block.timestamp + calculator.ips() * 10); // 10 hours
 
     (uint256 newRedemptionRate, int256 pTerm, int256 iTerm, uint256 rateTimeline) =
       calculator.getNextRedemptionRate(1.05e18, oracleRelayer.redemptionPrice(), rateSetter.iapcr());
@@ -417,7 +417,7 @@ contract PIRawPerSecondCalculatorTest is DSTest {
     assertEq(uint256(calculator.pdc()), 0);
     calculator.modifyParameters('nb', EIGHTEEN_DECIMAL_NUMBER - 1);
 
-    hevm.warp(now + calculator.ips());
+    hevm.warp(block.timestamp + calculator.ips());
     orcl.updateTokenPrice(0.95e18);
 
     (uint256 newRedemptionRate, int256 pTerm, int256 iTerm, uint256 rateTimeline) =
@@ -448,7 +448,7 @@ contract PIRawPerSecondCalculatorTest is DSTest {
     assertEq(rateTimeline, defaultGlobalTimeline);
 
     rateSetter.updateRate(address(this));
-    hevm.warp(now + calculator.ips());
+    hevm.warp(block.timestamp + calculator.ips());
 
     (newRedemptionRate, pTerm, iTerm, rateTimeline) =
       calculator.getNextRedemptionRate(0.95e18, oracleRelayer.redemptionPrice(), rateSetter.iapcr());
@@ -473,7 +473,7 @@ contract PIRawPerSecondCalculatorTest is DSTest {
 
     oracleRelayer.redemptionPrice();
     oracleRelayer.modifyParameters('redemptionPrice', 2e27);
-    hevm.warp(now + calculator.ips());
+    hevm.warp(block.timestamp + calculator.ips());
 
     (uint256 newRedemptionRate, int256 pTerm, int256 iTerm, uint256 rateTimeline) =
       calculator.getNextRedemptionRate(2.05e18, oracleRelayer.redemptionPrice(), rateSetter.iapcr());

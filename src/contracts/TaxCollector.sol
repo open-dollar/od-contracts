@@ -401,7 +401,7 @@ contract TaxCollector is ITaxCollector, Authorizable {
      *           compute a new tax cut that can be absorbed
      *
      */
-    _currentTaxCut = (_debtAmount.mul(_currentTaxCut) < 0 && _coinBalance > _debtAmount.mul(_currentTaxCut))
+    _currentTaxCut = _debtAmount.mul(_currentTaxCut) < 0 && _coinBalance > _debtAmount.mul(_currentTaxCut)
       ? _coinBalance / int256(_debtAmount)
       : _currentTaxCut;
     /**
@@ -412,13 +412,7 @@ contract TaxCollector is ITaxCollector, Authorizable {
     if (_currentTaxCut != 0) {
       if (
         _receiver == primaryTaxReceiver
-          || (
-            _deltaRate >= 0
-              || (
-                _currentTaxCut < 0 // REVIEW: May this check fail ever?
-                  && secondaryTaxReceivers[_collateralType][_receiverListPosition].canTakeBackTax > 0
-              )
-          )
+          || (_deltaRate >= 0 || secondaryTaxReceivers[_collateralType][_receiverListPosition].canTakeBackTax > 0)
       ) {
         safeEngine.updateAccumulatedRate(_collateralType, _receiver, _currentTaxCut);
         emit DistributeTax(_collateralType, _receiver, _currentTaxCut);
