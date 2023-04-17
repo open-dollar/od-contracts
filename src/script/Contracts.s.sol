@@ -12,7 +12,7 @@ import {MixedStratSurplusAuctionHouse} from '@contracts/SurplusAuctionHouse.sol'
 import {DebtAuctionHouse} from '@contracts/DebtAuctionHouse.sol';
 import {IncreasingDiscountCollateralAuctionHouse as CollateralAuctionHouse} from '@contracts/CollateralAuctionHouse.sol';
 import {Coin} from '@contracts/utils/Coin.sol';
-import {GlobalSettlement} from '@contracts/GlobalSettlement.sol';
+import {GlobalSettlement} from '@contracts/settlement/GlobalSettlement.sol';
 // TODO: import {ESM} from "@contracts/ESM.sol";
 import {StabilityFeeTreasury} from '@contracts/StabilityFeeTreasury.sol';
 import {OracleRelayer} from '@contracts/OracleRelayer.sol';

@@ -3,8 +3,8 @@ pragma solidity 0.8.19;
 import 'ds-test/test.sol';
 import {DSToken as DSDelegateToken} from '../../contracts/for-test/DSToken.sol';
 
-import {PostSettlementSurplusAuctionHouse} from '../../contracts/SurplusAuctionHouse.sol';
-import '../../contracts/SettlementSurplusAuctioneer.sol';
+import {PostSettlementSurplusAuctionHouse} from '../../contracts/settlement/PostSettlementSurplusAuctionHouse.sol';
+import {SettlementSurplusAuctioneer} from '../../contracts/settlement/SettlementSurplusAuctioneer.sol';
 import {TestSAFEEngine as SAFEEngine} from './SAFEEngine.t.sol';
 import {CoinJoin} from '../../contracts/utils/CoinJoin.sol';
 import {Coin} from '../../contracts/utils/Coin.sol';

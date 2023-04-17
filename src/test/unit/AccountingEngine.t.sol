@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import {IAccountingEngine, IAuthorizable} from '@interfaces/IAccountingEngine.sol';
 import {AccountingEngine} from '@contracts/AccountingEngine.sol';
-import {SettlementSurplusAuctioneer} from '@contracts/SettlementSurplusAuctioneer.sol';
+import {SettlementSurplusAuctioneer} from '@contracts/settlement/SettlementSurplusAuctioneer.sol';
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ISurplusAuctionHouse} from '@interfaces/ISurplusAuctionHouse.sol';
