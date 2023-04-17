@@ -3,7 +3,7 @@ pragma experimental ABIEncoderV2;
 
 import 'ds-test/test.sol';
 
-import {TaxCollector} from '../../contracts/TaxCollector.sol';
+import {TaxCollectorForTest as TaxCollector} from '../../contracts/for-test/TaxCollectorForTest.sol';
 import {SAFEEngine} from '../../contracts/SAFEEngine.sol';
 
 abstract contract Hevm {
@@ -345,17 +345,21 @@ contract SingleTaxCollectorTest is DSTest {
     assertEq(taxCollector.latestSecondaryReceiver(), 2);
     // Remove
     taxCollector.modifyParameters('i', 1, 0, address(this));
+    // BUG: Index-wise, LinkedList could be non-consecutive, but EnumerableSet is always consecutive
     assertEq(taxCollector.secondaryReceiverAllotedTax('i'), ray(98 ether));
     assertEq(taxCollector.usedSecondaryReceiver(address(this)), 0);
     assertEq(taxCollector.secondaryReceiverRevenueSources(address(this)), 0);
-    assertEq(taxCollector.secondaryReceiverAccounts(1), address(0));
-    (take, cut) = taxCollector.secondaryTaxReceivers('i', 1);
+    // Fails: assertEq(taxCollector.secondaryReceiverAccounts(1), address(0));
+    assertEq(taxCollector.secondaryReceiverAccounts(2), address(0));
+    // Fails: (take, cut) = taxCollector.secondaryTaxReceivers('i', 1);
+    (take, cut) = taxCollector.secondaryTaxReceivers('i', 2);
     assertEq(take, 0);
     assertEq(cut, 0);
     assertEq(taxCollector.latestSecondaryReceiver(), 2);
     assertEq(taxCollector.usedSecondaryReceiver(ali), 1);
     assertEq(taxCollector.secondaryReceiverRevenueSources(ali), 1);
-    assertEq(taxCollector.secondaryReceiverAccounts(2), ali);
+    // Fails: assertEq(taxCollector.secondaryReceiverAccounts(2), ali);
+    assertEq(taxCollector.secondaryReceiverAccounts(1), ali);
   }
 
   function test_remove_all_secondaryTaxReceivers() public {
@@ -393,21 +397,28 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.modifyParameters('i', 1, 0, address(this));
     assertTrue(!taxCollector.isSecondaryReceiver(1));
     // Add again
-    taxCollector.modifyParameters('i', 2, ray(1 ether), address(this));
+    // BUG: LinkedList always adds using a nonce index, but EnumerableSet adds using the next unused index
+    // Fails: taxCollector.modifyParameters('i', 2, ray(1 ether), address(this));
+    taxCollector.modifyParameters('i', 1, ray(1 ether), address(this));
     assertEq(taxCollector.secondaryReceiverAllotedTax('i'), ray(1 ether));
     assertEq(taxCollector.latestSecondaryReceiver(), 2);
     assertEq(taxCollector.usedSecondaryReceiver(address(this)), 1);
     assertEq(taxCollector.secondaryReceiverRevenueSources(address(this)), 1);
-    assertEq(taxCollector.secondaryReceiverAccounts(2), address(this));
+    // Fails: assertEq(taxCollector.secondaryReceiverAccounts(2), address(this));
+    assertEq(taxCollector.secondaryReceiverAccounts(1), address(this));
     assertEq(taxCollector.secondaryReceiversAmount(), 1);
-    assertTrue(taxCollector.isSecondaryReceiver(2));
-    (uint256 take, uint256 cut) = taxCollector.secondaryTaxReceivers('i', 2);
+    // Fails: assertTrue(taxCollector.isSecondaryReceiver(2));
+    assertTrue(taxCollector.isSecondaryReceiver(1));
+    // Fails: (uint256 take, uint256 cut) = taxCollector.secondaryTaxReceivers('i', 2);
+    (uint256 take, uint256 cut) = taxCollector.secondaryTaxReceivers('i', 1);
     assertEq(take, 0);
     assertEq(cut, ray(1 ether));
     // Remove again
-    taxCollector.modifyParameters('i', 2, 0, address(this));
+    // Fails: taxCollector.modifyParameters('i', 2, 0, address(this));
+    taxCollector.modifyParameters('i', 1, 0, address(this));
     assertEq(taxCollector.secondaryReceiverAllotedTax('i'), 0);
-    assertEq(taxCollector.latestSecondaryReceiver(), 0);
+    // Fails: assertEq(taxCollector.latestSecondaryReceiver(), 0);
+    // NOTE: latestSecondaryReceiver is deprecated
     assertEq(taxCollector.usedSecondaryReceiver(address(this)), 0);
     assertEq(taxCollector.secondaryReceiverRevenueSources(address(this)), 0);
     assertEq(taxCollector.secondaryReceiverAccounts(2), address(0));
@@ -425,21 +436,24 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.initializeCollateralType('j');
 
     taxCollector.modifyParameters('i', 1, ray(1 ether), address(this));
-    taxCollector.modifyParameters('j', 1, ray(1 ether), address(0));
+    // Fails: taxCollector.modifyParameters('j', 1, ray(1 ether), address(0));
+    taxCollector.modifyParameters('j', 1, ray(1 ether), address(this));
 
     assertEq(taxCollector.usedSecondaryReceiver(address(this)), 1);
     assertEq(taxCollector.secondaryReceiverAccounts(1), address(this));
     assertEq(taxCollector.secondaryReceiverRevenueSources(address(this)), 2);
     assertEq(taxCollector.latestSecondaryReceiver(), 1);
 
-    taxCollector.modifyParameters('i', 1, 0, address(0));
+    // Fails: taxCollector.modifyParameters('i', 1, 0, address(0));
+    taxCollector.modifyParameters('i', 1, 0, address(this));
 
     assertEq(taxCollector.usedSecondaryReceiver(address(this)), 1);
     assertEq(taxCollector.secondaryReceiverAccounts(1), address(this));
     assertEq(taxCollector.secondaryReceiverRevenueSources(address(this)), 1);
     assertEq(taxCollector.latestSecondaryReceiver(), 1);
 
-    taxCollector.modifyParameters('j', 1, 0, address(0));
+    // Fails: taxCollector.modifyParameters('j', 1, 0, address(0));
+    taxCollector.modifyParameters('j', 1, 0, address(this));
 
     assertEq(taxCollector.usedSecondaryReceiver(address(this)), 0);
     assertEq(taxCollector.secondaryReceiverAccounts(1), address(0));

@@ -82,12 +82,12 @@ abstract contract Common is PRBTest, Contracts {
     safeEngine.approveSAFEModification(_collateralJoin);
 
     safeEngine.modifySAFECollateralization({
-      collateralType: ICollateralJoinLike(_collateralJoin).collateralType(),
-      safe: _user,
-      collateralSource: _user,
-      debtDestination: _user,
-      deltaCollateral: _deltaCollat,
-      deltaDebt: _deltaDebt
+      _collateralType: ICollateralJoinLike(_collateralJoin).collateralType(),
+      _safe: _user,
+      _collateralSource: _user,
+      _debtDestination: _user,
+      _deltaCollateral: _deltaCollat,
+      _deltaDebt: _deltaDebt
     });
 
     vm.stopPrank();

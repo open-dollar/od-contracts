@@ -38,12 +38,30 @@ library Math {
     z = (x * y) / RAY;
   }
 
+  function rmul(uint256 x, int256 y) internal pure returns (int256 z) {
+    z = (int256(x) * y) / int256(RAY);
+    require(int256(x) >= 0, 'Math/mul-uint-int-invalid-x');
+  }
+
   function wmul(uint256 x, uint256 y) internal pure returns (uint256 z) {
     z = (x * y) / WAD;
   }
 
+  function wmul(uint256 x, int256 y) internal pure returns (int256 z) {
+    z = (int256(x) * y) / int256(WAD);
+    require(int256(x) >= 0, 'Math/mul-uint-int-invalid-x');
+  }
+
+  function wmul(int256 x, int256 y) internal pure returns (int256 z) {
+    z = (x * y) / int256(WAD);
+  }
+
   function rdiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
     z = (x * RAY) / y;
+  }
+
+  function rdiv(int256 x, int256 y) internal pure returns (int256 z) {
+    z = (x * int256(RAY)) / y;
   }
 
   function wdiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
@@ -87,5 +105,14 @@ library Math {
 
   function min(uint256 x, uint256 y) internal pure returns (uint256 z) {
     z = (x <= y) ? x : y;
+  }
+
+  // --- PI Specific Math ---
+  function riemannSum(int256 x, int256 y) internal pure returns (int256 z) {
+    return (x + y) / 2;
+  }
+
+  function absolute(int256 x) internal pure returns (uint256 z) {
+    z = (x < 0) ? uint256(-x) : uint256(x);
   }
 }
