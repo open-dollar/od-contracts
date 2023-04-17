@@ -365,7 +365,7 @@ contract TaxCollector is ITaxCollector, Authorizable {
      * If SF is negative and a tax receiver doesn't have enough coins to absorb the loss,
      *           compute a new tax cut that can be absorbed
      */
-    _currentTaxCut = (_debtAmount.mul(_currentTaxCut) < 0 && _coinBalance > _debtAmount.mul(_currentTaxCut))
+    _currentTaxCut = _debtAmount.mul(_currentTaxCut) < 0 && _coinBalance > _debtAmount.mul(_currentTaxCut)
       ? _coinBalance / int256(_debtAmount)
       : _currentTaxCut;
     /**
