@@ -6,7 +6,7 @@ import {BurningSurplusAuctionHouse as SAH_ONE} from './SurplusAuctionHouse.t.sol
 import {PostSettlementSurplusAuctionHouse as SAH_TWO} from './SurplusAuctionHouse.t.sol';
 import {TestSAFEEngine as SAFEEngine} from './SAFEEngine.t.sol';
 import {AccountingEngine} from '../../contracts/AccountingEngine.sol';
-import {SettlementSurplusAuctioneer} from '../../contracts/SettlementSurplusAuctioneer.sol';
+import {SettlementSurplusAuctioneer} from '../../contracts/settlement/SettlementSurplusAuctioneer.sol';
 import {CoinJoin} from '../../contracts/utils/CoinJoin.sol';
 
 abstract contract Hevm {

@@ -6,10 +6,10 @@ import {DSToken as DSDelegateToken} from '../../contracts/for-test/DSToken.sol';
 import {
   BurningSurplusAuctionHouse,
   RecyclingSurplusAuctionHouse,
-  MixedStratSurplusAuctionHouse,
-  PostSettlementSurplusAuctionHouse
+  MixedStratSurplusAuctionHouse
 } from '../../contracts/SurplusAuctionHouse.sol';
-import '../../contracts/SAFEEngine.sol';
+import {PostSettlementSurplusAuctionHouse} from '../../contracts/settlement/PostSettlementSurplusAuctionHouse.sol';
+import {SAFEEngine} from '../../contracts/SAFEEngine.sol';
 
 import {CoinJoin} from '../../contracts/utils/CoinJoin.sol';
 import {Coin} from '../../contracts/utils/Coin.sol';

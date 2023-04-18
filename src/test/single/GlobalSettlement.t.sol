@@ -32,11 +32,11 @@ import {
 } from '../../contracts/CollateralAuctionHouse.sol';
 import {BurningSurplusAuctionHouse} from '../../contracts/SurplusAuctionHouse.sol';
 import {DebtAuctionHouse} from '../../contracts/DebtAuctionHouse.sol';
-import {SettlementSurplusAuctioneer} from '../../contracts/SettlementSurplusAuctioneer.sol';
 import {CollateralJoin} from '../../contracts/utils/CollateralJoin.sol';
 import {CoinJoin} from '../../contracts/utils/CoinJoin.sol';
-import {GlobalSettlement} from '../../contracts/GlobalSettlement.sol';
 import {OracleRelayer} from '../../contracts/OracleRelayer.sol';
+import {GlobalSettlement} from '../../contracts/settlement/GlobalSettlement.sol';
+import {SettlementSurplusAuctioneer} from '../../contracts/settlement/SettlementSurplusAuctioneer.sol';
 
 abstract contract Hevm {
   function warp(uint256) public virtual;

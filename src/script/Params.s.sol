@@ -39,7 +39,6 @@ uint256 constant ETH_A_LIQUIDATION_RATIO = 1.35e27;
 uint256 constant ETH_A_STABILITY_FEE = 1.54713e18; // 5%/yr
 uint256 constant TEST_ETH_A_SF_APR = 1.05e18; // 5%/yr
 uint256 constant TEST_ETH_PRICE = 1000e18; // 1 ETH = 1000 HAI
-uint256 constant TEST_ETH_PRICE_DROP = 100e18; // 1 ETH = 100 HAI
 
 // TKN Collateral Params
 bytes32 constant TKN = bytes32('TKN');

@@ -1,6 +1,8 @@
 pragma solidity 0.8.19;
 
-contract OracleForTest {
+import {IOracle} from '@interfaces/IOracle.sol';
+
+contract OracleForTest is IOracle {
   uint256 price = 1 ether;
   bool validity = true;
 
@@ -16,5 +18,9 @@ contract OracleForTest {
 
   function priceSource() public pure returns (address) {
     return address(0);
+  }
+
+  function read() external view returns (uint256 _value) {
+    return price;
   }
 }

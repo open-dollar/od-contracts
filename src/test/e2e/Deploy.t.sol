@@ -17,6 +17,7 @@ import {
   ETHJoin,
   CollateralJoin
 } from '@script/Contracts.s.sol';
+import '@script/Params.s.sol';
 import {Deploy} from '@script/Deploy.s.sol';
 
 contract E2EDeploymentTest is PRBTest {
@@ -111,7 +112,7 @@ contract E2EDeploymentTest is PRBTest {
 
   // CollateralJoin
   function test_CollateralJoin_Params() public {
-    CollateralJoin _collateralJoin = deployment.collateralJoin();
+    CollateralJoin _collateralJoin = deployment.collateralJoin(TKN);
 
     assertEq(address(_collateralJoin.safeEngine()), address(deployment.safeEngine()));
   }
@@ -145,13 +146,13 @@ contract E2EDeploymentTest is PRBTest {
   }
 
   function test_CollateralAuctionHouse_Auth() public {
-    CollateralAuctionHouse _collateralAuctionHouse = deployment.collateralAuctionHouse();
+    CollateralAuctionHouse _collateralAuctionHouse = deployment.collateralAuctionHouse(TKN);
 
     assertEq(_collateralAuctionHouse.authorizedAccounts(address(deployment.liquidationEngine())), 1);
   }
 
   function test_CollateralAuctionHouse_Params() public {
-    CollateralAuctionHouse _collateralAuctionHouse = deployment.collateralAuctionHouse();
+    CollateralAuctionHouse _collateralAuctionHouse = deployment.collateralAuctionHouse(TKN);
 
     assertEq(address(_collateralAuctionHouse.safeEngine()), address(deployment.safeEngine()));
     assertEq(address(_collateralAuctionHouse.liquidationEngine()), address(deployment.liquidationEngine()));
@@ -159,13 +160,13 @@ contract E2EDeploymentTest is PRBTest {
   }
 
   function test_ETHCollateralAuctionHouse_Auth() public {
-    CollateralAuctionHouse _collateralAuctionHouse = deployment.ethCollateralAuctionHouse();
+    CollateralAuctionHouse _collateralAuctionHouse = deployment.collateralAuctionHouse(ETH_A);
 
     assertEq(_collateralAuctionHouse.authorizedAccounts(address(deployment.liquidationEngine())), 1);
   }
 
   function test_ETHCollateralAuctionHouse_Params() public {
-    CollateralAuctionHouse _collateralAuctionHouse = deployment.ethCollateralAuctionHouse();
+    CollateralAuctionHouse _collateralAuctionHouse = deployment.collateralAuctionHouse(ETH_A);
 
     assertEq(address(_collateralAuctionHouse.safeEngine()), address(deployment.safeEngine()));
     assertEq(address(_collateralAuctionHouse.liquidationEngine()), address(deployment.liquidationEngine()));
@@ -179,8 +180,8 @@ contract E2EDeploymentTest is PRBTest {
     assertEq(address(_oracleRelayer.safeEngine()), address(deployment.safeEngine()));
 
     // TODO: replace for actual oracle
-    assertEq(address(_oracleRelayer.orcl(bytes32('ETH-A'))), address(deployment.ethOracle()));
-    assertEq(address(_oracleRelayer.orcl(bytes32('TKN'))), address(deployment.collateralOracle()));
+    assertEq(address(_oracleRelayer.orcl(bytes32('ETH-A'))), address(deployment.oracle(ETH_A)));
+    assertEq(address(_oracleRelayer.orcl(bytes32('TKN'))), address(deployment.oracle(TKN)));
   }
 
   function test_Revoke_Auth() public {
@@ -204,10 +205,10 @@ contract E2EDeploymentTest is PRBTest {
     // token adapters
     assertEq(deployment.coinJoin().authorizedAccounts(_deployer), 0);
     assertEq(deployment.ethJoin().authorizedAccounts(_deployer), 0);
-    assertEq(deployment.collateralJoin().authorizedAccounts(_deployer), 0);
+    assertEq(deployment.collateralJoin(TKN).authorizedAccounts(_deployer), 0);
 
     // collateral auction houses
-    assertEq(deployment.ethCollateralAuctionHouse().authorizedAccounts(_deployer), 0);
-    assertEq(deployment.collateralAuctionHouse().authorizedAccounts(_deployer), 0);
+    assertEq(deployment.collateralAuctionHouse(ETH_A).authorizedAccounts(_deployer), 0);
+    assertEq(deployment.collateralAuctionHouse(ETH_A).authorizedAccounts(_deployer), 0);
   }
 }
