@@ -8,6 +8,7 @@ import {IAuthorizable} from '@interfaces/IAuthorizable.sol';
 import {SAFEEngine} from '@contracts/SAFEEngine.sol';
 import {HaiTest} from '@test/utils/HaiTest.t.sol';
 import {StdStorage, stdStorage} from 'forge-std/StdStorage.sol';
+import {Math, RAY, WAD} from '@libraries/Math.sol';
 
 abstract contract Base is HaiTest {
   using stdStorage for StdStorage;
@@ -1847,10 +1848,7 @@ contract Unit_SAFEEngine_InitializeCollateralType is Base {
     safeEngine.initializeCollateralType(_collateralType);
   }
 
-  function test_Revert_CollaterealTypeAlreadyExists(
-    bytes32 _collateralType,
-    uint256 _accumulatedRate
-  ) public authorized {
+  function test_Revert_CollateralTypeAlreadyExists(bytes32 _collateralType, uint256 _accumulatedRate) public authorized {
     vm.assume(_accumulatedRate > 0);
     _mockCollateralType({
       _collateralType: _collateralType,

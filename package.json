@@ -26,10 +26,10 @@
     "lint:fix": "sort-package-json && forge fmt && yarn lint:sol --fix",
     "lint:sol": "cross-env solhint 'src/contracts/**/*.sol' 'src/interfaces/**/*.sol' 'src/test/**/*.sol'",
     "prepare": "husky install",
-    "test": "forge test -vvv",
-    "test:e2e": "forge test --match-contract E2E -vvv",
-    "test:unit": "forge test --match-contract Unit -vvv",
-    "test:unit:deep": "FOUNDRY_FUZZ_RUNS=5000 yarn test:unit"
+    "test": "FOUNDRY_FUZZ_MAX_TEST_REJECTS=1000000 forge test -vvv",
+    "test:e2e": "FOUNDRY_FUZZ_MAX_TEST_REJECTS=1000000 forge test --match-contract E2E -vvv",
+    "test:unit": "FOUNDRY_FUZZ_MAX_TEST_REJECTS=1000000 forge test --match-contract Unit -vvv",
+    "test:unit:deep": "FOUNDRY_FUZZ_MAX_TEST_REJECTS=1000000 FOUNDRY_FUZZ_RUNS=5000 yarn test:unit"
   },
   "lint-staged": {
     "*.{js,css,md,ts,sol}": "forge fmt",

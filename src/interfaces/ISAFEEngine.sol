@@ -81,7 +81,6 @@ interface ISAFEEngine is IDisableable, IAuthorizable {
     uint256 generatedDebt; // [wad]
   }
 
-  // --- Data ---
   struct CollateralType {
     // Total debt issued for this specific collateral type
     uint256 debtAmount; // [wad]
