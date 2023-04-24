@@ -5,6 +5,9 @@ interface IDisableable {
   // --- Events ---
   event DisableContract();
 
-  function disableContract() external;
+  // --- Data ---
   function contractEnabled() external view returns (uint256 _enabled);
+
+  // --- Admin ---
+  function disableContract() external;
 }

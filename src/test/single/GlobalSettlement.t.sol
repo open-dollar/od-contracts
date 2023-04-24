@@ -30,7 +30,7 @@ import {
   EnglishCollateralAuctionHouse,
   FixedDiscountCollateralAuctionHouse
 } from '../../contracts/CollateralAuctionHouse.sol';
-import {BurningSurplusAuctionHouse} from '../../contracts/SurplusAuctionHouse.sol';
+import {SurplusAuctionHouse} from '../../contracts/SurplusAuctionHouse.sol';
 import {DebtAuctionHouse} from '../../contracts/DebtAuctionHouse.sol';
 import {CollateralJoin} from '../../contracts/utils/CollateralJoin.sol';
 import {CoinJoin} from '../../contracts/utils/CoinJoin.sol';
@@ -161,7 +161,7 @@ contract SingleGlobalSettlementTest is DSTest {
 
   mapping(bytes32 => CollateralType) collateralTypes;
 
-  BurningSurplusAuctionHouse surplusAuctionHouseOne;
+  SurplusAuctionHouse surplusAuctionHouseOne;
   DebtAuctionHouse debtAuctionHouse;
 
   uint256 constant WAD = 10 ** 18;
@@ -298,7 +298,7 @@ contract SingleGlobalSettlementTest is DSTest {
     systemCoin = new DSDelegateToken('Coin', 'Coin');
     systemCoinA = new CoinJoin(address(safeEngine), address(systemCoin));
 
-    surplusAuctionHouseOne = new BurningSurplusAuctionHouse(address(safeEngine), address(protocolToken));
+    surplusAuctionHouseOne = new SurplusAuctionHouse(address(safeEngine), address(protocolToken), 0);
 
     safeEngine.approveSAFEModification(address(surplusAuctionHouseOne));
 

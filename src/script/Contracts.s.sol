@@ -8,7 +8,7 @@ import {LiquidationEngine} from '@contracts/LiquidationEngine.sol';
 import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
 import {ETHJoin} from '@contracts/utils/ETHJoin.sol';
 import {CollateralJoin} from '@contracts/utils/CollateralJoin.sol';
-import {MixedStratSurplusAuctionHouse} from '@contracts/SurplusAuctionHouse.sol';
+import {SurplusAuctionHouse} from '@contracts/SurplusAuctionHouse.sol';
 import {DebtAuctionHouse} from '@contracts/DebtAuctionHouse.sol';
 import {IncreasingDiscountCollateralAuctionHouse as CollateralAuctionHouse} from '@contracts/CollateralAuctionHouse.sol';
 import {Coin} from '@contracts/utils/Coin.sol';
@@ -35,7 +35,7 @@ contract Contracts {
   CoinJoin public coinJoin;
   ETHJoin public ethJoin;
 
-  MixedStratSurplusAuctionHouse public surplusAuctionHouse;
+  SurplusAuctionHouse public surplusAuctionHouse;
   DebtAuctionHouse public debtAuctionHouse;
 
   mapping(bytes32 => ERC20ForTest) public collateral;

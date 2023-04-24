@@ -150,10 +150,8 @@ contract GlobalSettlement is Authorizable {
   );
 
   // --- Init ---
-  constructor() {
-    _addAuthorization(msg.sender);
+  constructor() Authorizable(msg.sender) {
     contractEnabled = 1;
-    emit AddAuthorization(msg.sender);
   }
 
   // --- Administration ---

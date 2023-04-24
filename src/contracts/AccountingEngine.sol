@@ -117,9 +117,7 @@ contract AccountingEngine is IAccountingEngine, Authorizable {
   event TransferExtraSurplus(address indexed extraSurplusReceiver, uint256 lastSurplusAuctionTime, uint256 coinBalance);
 
   // --- Init ---
-  constructor(address _safeEngine, address _surplusAuctionHouse, address _debtAuctionHouse) {
-    _addAuthorization(msg.sender);
-
+  constructor(address _safeEngine, address _surplusAuctionHouse, address _debtAuctionHouse) Authorizable(msg.sender) {
     safeEngine = SAFEEngineLike(_safeEngine);
     surplusAuctionHouse = SurplusAuctionHouseLike(_surplusAuctionHouse);
     debtAuctionHouse = DebtAuctionHouseLike(_debtAuctionHouse);
@@ -129,8 +127,6 @@ contract AccountingEngine is IAccountingEngine, Authorizable {
     lastSurplusAuctionTime = block.timestamp;
     lastSurplusTransferTime = block.timestamp;
     contractEnabled = 1;
-
-    emit AddAuthorization(msg.sender);
   }
 
   // --- Administration ---
@@ -317,7 +313,9 @@ contract AccountingEngine is IAccountingEngine, Authorizable {
       'AccountingEngine/insufficient-surplus'
     );
     require(unqueuedUnauctionedDebt() == 0, 'AccountingEngine/debt-not-zero');
-    require(surplusAuctionHouse.protocolToken() != address(0), 'AccountingEngine/surplus-auction-house-null-prot');
+    require(
+      address(surplusAuctionHouse.protocolToken()) != address(0), 'AccountingEngine/surplus-auction-house-null-prot'
+    );
     lastSurplusAuctionTime = block.timestamp;
     lastSurplusTransferTime = block.timestamp;
     _id = surplusAuctionHouse.startAuction(surplusAuctionAmountToSell, 0);

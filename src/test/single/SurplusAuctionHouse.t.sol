@@ -3,11 +3,7 @@ pragma solidity 0.8.19;
 import 'ds-test/test.sol';
 import {DSToken as DSDelegateToken} from '../../contracts/for-test/DSToken.sol';
 
-import {
-  BurningSurplusAuctionHouse,
-  RecyclingSurplusAuctionHouse,
-  MixedStratSurplusAuctionHouse
-} from '../../contracts/SurplusAuctionHouse.sol';
+import {SurplusAuctionHouse} from '../../contracts/SurplusAuctionHouse.sol';
 import {PostSettlementSurplusAuctionHouse} from '../../contracts/settlement/PostSettlementSurplusAuctionHouse.sol';
 import {SAFEEngine} from '../../contracts/SAFEEngine.sol';
 
@@ -19,9 +15,9 @@ abstract contract Hevm {
 }
 
 contract GuyBurningSurplusAuction {
-  BurningSurplusAuctionHouse surplusAuctionHouse;
+  SurplusAuctionHouse surplusAuctionHouse;
 
-  constructor(BurningSurplusAuctionHouse surplusAuctionHouse_) {
+  constructor(SurplusAuctionHouse surplusAuctionHouse_) {
     surplusAuctionHouse = surplusAuctionHouse_;
     SAFEEngine(address(surplusAuctionHouse.safeEngine())).approveSAFEModification(address(surplusAuctionHouse));
     DSDelegateToken(address(surplusAuctionHouse.protocolToken())).approve(address(surplusAuctionHouse));
@@ -52,9 +48,9 @@ contract GuyBurningSurplusAuction {
 }
 
 contract GuyRecyclingSurplusAuction {
-  RecyclingSurplusAuctionHouse surplusAuctionHouse;
+  SurplusAuctionHouse surplusAuctionHouse;
 
-  constructor(RecyclingSurplusAuctionHouse surplusAuctionHouse_) {
+  constructor(SurplusAuctionHouse surplusAuctionHouse_) {
     surplusAuctionHouse = surplusAuctionHouse_;
     SAFEEngine(address(surplusAuctionHouse.safeEngine())).approveSAFEModification(address(surplusAuctionHouse));
     DSDelegateToken(address(surplusAuctionHouse.protocolToken())).approve(address(surplusAuctionHouse));
@@ -128,7 +124,7 @@ contract GlobalSettlement {
 contract SingleBurningSurplusAuctionHouseTest is DSTest {
   Hevm hevm;
 
-  BurningSurplusAuctionHouse surplusAuctionHouse;
+  SurplusAuctionHouse surplusAuctionHouse;
   SAFEEngine safeEngine;
   DSDelegateToken protocolToken;
 
@@ -142,7 +138,7 @@ contract SingleBurningSurplusAuctionHouseTest is DSTest {
     safeEngine = new SAFEEngine();
     protocolToken = new DSDelegateToken('', '');
 
-    surplusAuctionHouse = new BurningSurplusAuctionHouse(address(safeEngine), address(protocolToken));
+    surplusAuctionHouse = new SurplusAuctionHouse(address(safeEngine), address(protocolToken), 0);
 
     ali = address(new GuyBurningSurplusAuction(surplusAuctionHouse));
     bob = address(new GuyBurningSurplusAuction(surplusAuctionHouse));
@@ -162,13 +158,13 @@ contract SingleBurningSurplusAuctionHouseTest is DSTest {
   function test_start_auction() public {
     assertEq(safeEngine.coinBalance(address(this)), 1000 ether);
     assertEq(safeEngine.coinBalance(address(surplusAuctionHouse)), 0 ether);
-    surplusAuctionHouse.startAuction({amountToSell: 100 ether, initialBid: 0});
+    surplusAuctionHouse.startAuction({_amountToSell: 100 ether, _initialBid: 0});
     assertEq(safeEngine.coinBalance(address(this)), 900 ether);
     assertEq(safeEngine.coinBalance(address(surplusAuctionHouse)), 100 ether);
   }
 
   function test_increase_bid_same_bidder() public {
-    uint256 id = surplusAuctionHouse.startAuction({amountToSell: 100 ether, initialBid: 0});
+    uint256 id = surplusAuctionHouse.startAuction({_amountToSell: 100 ether, _initialBid: 0});
     GuyBurningSurplusAuction(ali).increaseBidSize(id, 100 ether, 190 ether);
     assertEq(protocolToken.balanceOf(ali), 10 ether);
     GuyBurningSurplusAuction(ali).increaseBidSize(id, 100 ether, 200 ether);
@@ -176,7 +172,7 @@ contract SingleBurningSurplusAuctionHouseTest is DSTest {
   }
 
   function test_increaseBidSize() public {
-    uint256 id = surplusAuctionHouse.startAuction({amountToSell: 100 ether, initialBid: 0});
+    uint256 id = surplusAuctionHouse.startAuction({_amountToSell: 100 ether, _initialBid: 0});
     // amount to buy taken from creator
     assertEq(safeEngine.coinBalance(address(this)), 900 ether);
 
@@ -204,7 +200,7 @@ contract SingleBurningSurplusAuctionHouseTest is DSTest {
   }
 
   function test_bid_increase() public {
-    uint256 id = surplusAuctionHouse.startAuction({amountToSell: 100 ether, initialBid: 0});
+    uint256 id = surplusAuctionHouse.startAuction({_amountToSell: 100 ether, _initialBid: 0});
     assertTrue(GuyBurningSurplusAuction(ali).try_increaseBidSize(id, 100 ether, 1.0 ether));
     assertTrue(!GuyBurningSurplusAuction(bob).try_increaseBidSize(id, 100 ether, 1.01 ether));
     // high bidder is subject to beg
@@ -214,7 +210,7 @@ contract SingleBurningSurplusAuctionHouseTest is DSTest {
 
   function test_restart_auction() public {
     // start an auction
-    uint256 id = surplusAuctionHouse.startAuction({amountToSell: 100 ether, initialBid: 0});
+    uint256 id = surplusAuctionHouse.startAuction({_amountToSell: 100 ether, _initialBid: 0});
     // check no tick
     assertTrue(!GuyBurningSurplusAuction(ali).try_restartAuction(id));
     // run past the end
@@ -227,7 +223,7 @@ contract SingleBurningSurplusAuctionHouseTest is DSTest {
   }
 
   function testFail_terminate_prematurely() public {
-    uint256 id = surplusAuctionHouse.startAuction({amountToSell: 100 ether, initialBid: 0});
+    uint256 id = surplusAuctionHouse.startAuction({_amountToSell: 100 ether, _initialBid: 0});
     // amount to buy taken from creator
     assertEq(safeEngine.coinBalance(address(this)), 900 ether);
 
@@ -236,7 +232,7 @@ contract SingleBurningSurplusAuctionHouseTest is DSTest {
   }
 
   function test_terminate_prematurely() public {
-    uint256 id = surplusAuctionHouse.startAuction({amountToSell: 100 ether, initialBid: 0});
+    uint256 id = surplusAuctionHouse.startAuction({_amountToSell: 100 ether, _initialBid: 0});
     // amount to buy taken from creator
     assertEq(safeEngine.coinBalance(address(this)), 900 ether);
 
@@ -250,7 +246,7 @@ contract SingleBurningSurplusAuctionHouseTest is DSTest {
 contract SingleRecyclingSurplusAuctionHouseTest is DSTest {
   Hevm hevm;
 
-  RecyclingSurplusAuctionHouse surplusAuctionHouse;
+  SurplusAuctionHouse surplusAuctionHouse;
   SAFEEngine safeEngine;
   DSDelegateToken protocolToken;
 
@@ -264,7 +260,7 @@ contract SingleRecyclingSurplusAuctionHouseTest is DSTest {
     safeEngine = new SAFEEngine();
     protocolToken = new DSDelegateToken('', '');
 
-    surplusAuctionHouse = new RecyclingSurplusAuctionHouse(address(safeEngine), address(protocolToken));
+    surplusAuctionHouse = new SurplusAuctionHouse(address(safeEngine), address(protocolToken), 100);
 
     ali = address(new GuyRecyclingSurplusAuction(surplusAuctionHouse));
     bob = address(new GuyRecyclingSurplusAuction(surplusAuctionHouse));
@@ -285,18 +281,18 @@ contract SingleRecyclingSurplusAuctionHouseTest is DSTest {
     surplusAuctionHouse.modifyParameters('protocolTokenBidReceiver', address(0x123));
     assertEq(safeEngine.coinBalance(address(this)), 1000 ether);
     assertEq(safeEngine.coinBalance(address(surplusAuctionHouse)), 0 ether);
-    surplusAuctionHouse.startAuction({amountToSell: 100 ether, initialBid: 0});
+    surplusAuctionHouse.startAuction({_amountToSell: 100 ether, _initialBid: 0});
     assertEq(safeEngine.coinBalance(address(this)), 900 ether);
     assertEq(safeEngine.coinBalance(address(surplusAuctionHouse)), 100 ether);
   }
 
   function testFail_start_auction_when_prot_token_receiver_null() public {
-    surplusAuctionHouse.startAuction({amountToSell: 100 ether, initialBid: 0});
+    surplusAuctionHouse.startAuction({_amountToSell: 100 ether, _initialBid: 0});
   }
 
   function test_increase_bid_same_bidder() public {
     surplusAuctionHouse.modifyParameters('protocolTokenBidReceiver', address(0x123));
-    uint256 id = surplusAuctionHouse.startAuction({amountToSell: 100 ether, initialBid: 0});
+    uint256 id = surplusAuctionHouse.startAuction({_amountToSell: 100 ether, _initialBid: 0});
     GuyRecyclingSurplusAuction(ali).increaseBidSize(id, 100 ether, 190 ether);
     assertEq(protocolToken.balanceOf(ali), 10 ether);
     GuyRecyclingSurplusAuction(ali).increaseBidSize(id, 100 ether, 200 ether);
@@ -305,7 +301,7 @@ contract SingleRecyclingSurplusAuctionHouseTest is DSTest {
 
   function test_increaseBidSize() public {
     surplusAuctionHouse.modifyParameters('protocolTokenBidReceiver', address(0x123));
-    uint256 id = surplusAuctionHouse.startAuction({amountToSell: 100 ether, initialBid: 0});
+    uint256 id = surplusAuctionHouse.startAuction({_amountToSell: 100 ether, _initialBid: 0});
     // amount to buy taken from creator
     assertEq(safeEngine.coinBalance(address(this)), 900 ether);
 
@@ -335,7 +331,7 @@ contract SingleRecyclingSurplusAuctionHouseTest is DSTest {
 
   function test_bid_increase() public {
     surplusAuctionHouse.modifyParameters('protocolTokenBidReceiver', address(0x123));
-    uint256 id = surplusAuctionHouse.startAuction({amountToSell: 100 ether, initialBid: 0});
+    uint256 id = surplusAuctionHouse.startAuction({_amountToSell: 100 ether, _initialBid: 0});
     assertTrue(GuyRecyclingSurplusAuction(ali).try_increaseBidSize(id, 100 ether, 1.0 ether));
     assertTrue(!GuyRecyclingSurplusAuction(bob).try_increaseBidSize(id, 100 ether, 1.01 ether));
     // high bidder is subject to beg
@@ -347,7 +343,7 @@ contract SingleRecyclingSurplusAuctionHouseTest is DSTest {
     // set the protocol token bid receiver
     surplusAuctionHouse.modifyParameters('protocolTokenBidReceiver', address(0x123));
     // start an auction
-    uint256 id = surplusAuctionHouse.startAuction({amountToSell: 100 ether, initialBid: 0});
+    uint256 id = surplusAuctionHouse.startAuction({_amountToSell: 100 ether, _initialBid: 0});
     // check no tick
     assertTrue(!GuyRecyclingSurplusAuction(ali).try_restartAuction(id));
     // run past the end
@@ -361,7 +357,7 @@ contract SingleRecyclingSurplusAuctionHouseTest is DSTest {
 
   function testFail_terminate_prematurely() public {
     surplusAuctionHouse.modifyParameters('protocolTokenBidReceiver', address(0x123));
-    uint256 id = surplusAuctionHouse.startAuction({amountToSell: 100 ether, initialBid: 0});
+    uint256 id = surplusAuctionHouse.startAuction({_amountToSell: 100 ether, _initialBid: 0});
     // amount to buy taken from creator
     assertEq(safeEngine.coinBalance(address(this)), 900 ether);
 
@@ -371,7 +367,7 @@ contract SingleRecyclingSurplusAuctionHouseTest is DSTest {
 
   function test_terminate_prematurely() public {
     surplusAuctionHouse.modifyParameters('protocolTokenBidReceiver', address(0x123));
-    uint256 id = surplusAuctionHouse.startAuction({amountToSell: 100 ether, initialBid: 0});
+    uint256 id = surplusAuctionHouse.startAuction({_amountToSell: 100 ether, _initialBid: 0});
     // amount to buy taken from creator
     assertEq(safeEngine.coinBalance(address(this)), 900 ether);
 
@@ -385,7 +381,7 @@ contract SingleRecyclingSurplusAuctionHouseTest is DSTest {
 contract SingleMixedStratSurplusAuctionHouseTest is DSTest {
   Hevm hevm;
 
-  MixedStratSurplusAuctionHouse surplusAuctionHouse;
+  SurplusAuctionHouse surplusAuctionHouse;
   SAFEEngine safeEngine;
   DSDelegateToken protocolToken;
 
@@ -399,10 +395,10 @@ contract SingleMixedStratSurplusAuctionHouseTest is DSTest {
     safeEngine = new SAFEEngine();
     protocolToken = new DSDelegateToken('', '');
 
-    surplusAuctionHouse = new MixedStratSurplusAuctionHouse(address(safeEngine), address(protocolToken));
+    surplusAuctionHouse = new SurplusAuctionHouse(address(safeEngine), address(protocolToken), 50);
 
-    ali = address(new GuyRecyclingSurplusAuction(RecyclingSurplusAuctionHouse(address(surplusAuctionHouse))));
-    bob = address(new GuyRecyclingSurplusAuction(RecyclingSurplusAuctionHouse(address(surplusAuctionHouse))));
+    ali = address(new GuyRecyclingSurplusAuction(surplusAuctionHouse));
+    bob = address(new GuyRecyclingSurplusAuction(surplusAuctionHouse));
 
     safeEngine.approveSAFEModification(address(surplusAuctionHouse));
     protocolToken.approve(address(surplusAuctionHouse));
@@ -420,18 +416,18 @@ contract SingleMixedStratSurplusAuctionHouseTest is DSTest {
     surplusAuctionHouse.modifyParameters('protocolTokenBidReceiver', address(0x123));
     assertEq(safeEngine.coinBalance(address(this)), 1000 ether);
     assertEq(safeEngine.coinBalance(address(surplusAuctionHouse)), 0 ether);
-    surplusAuctionHouse.startAuction({amountToSell: 100 ether, initialBid: 0});
+    surplusAuctionHouse.startAuction({_amountToSell: 100 ether, _initialBid: 0});
     assertEq(safeEngine.coinBalance(address(this)), 900 ether);
     assertEq(safeEngine.coinBalance(address(surplusAuctionHouse)), 100 ether);
   }
 
   function testFail_start_auction_when_prot_token_receiver_null() public {
-    surplusAuctionHouse.startAuction({amountToSell: 100 ether, initialBid: 0});
+    surplusAuctionHouse.startAuction({_amountToSell: 100 ether, _initialBid: 0});
   }
 
   function test_increase_bid_same_bidder() public {
     surplusAuctionHouse.modifyParameters('protocolTokenBidReceiver', address(0x123));
-    uint256 id = surplusAuctionHouse.startAuction({amountToSell: 100 ether, initialBid: 0});
+    uint256 id = surplusAuctionHouse.startAuction({_amountToSell: 100 ether, _initialBid: 0});
     GuyRecyclingSurplusAuction(ali).increaseBidSize(id, 100 ether, 190 ether);
     assertEq(protocolToken.balanceOf(ali), 10 ether);
     GuyRecyclingSurplusAuction(ali).increaseBidSize(id, 100 ether, 200 ether);
@@ -440,7 +436,7 @@ contract SingleMixedStratSurplusAuctionHouseTest is DSTest {
 
   function test_increaseBidSize() public {
     surplusAuctionHouse.modifyParameters('protocolTokenBidReceiver', address(0x123));
-    uint256 id = surplusAuctionHouse.startAuction({amountToSell: 100 ether, initialBid: 0});
+    uint256 id = surplusAuctionHouse.startAuction({_amountToSell: 100 ether, _initialBid: 0});
     // amount to buy taken from creator
     assertEq(safeEngine.coinBalance(address(this)), 900 ether);
 
@@ -473,7 +469,7 @@ contract SingleMixedStratSurplusAuctionHouseTest is DSTest {
 
   function test_bid_increase() public {
     surplusAuctionHouse.modifyParameters('protocolTokenBidReceiver', address(0x123));
-    uint256 id = surplusAuctionHouse.startAuction({amountToSell: 100 ether, initialBid: 0});
+    uint256 id = surplusAuctionHouse.startAuction({_amountToSell: 100 ether, _initialBid: 0});
     assertTrue(GuyRecyclingSurplusAuction(ali).try_increaseBidSize(id, 100 ether, 1.0 ether));
     assertTrue(!GuyRecyclingSurplusAuction(bob).try_increaseBidSize(id, 100 ether, 1.01 ether));
     // high bidder is subject to beg
@@ -485,7 +481,7 @@ contract SingleMixedStratSurplusAuctionHouseTest is DSTest {
     // set the protocol token bid receiver
     surplusAuctionHouse.modifyParameters('protocolTokenBidReceiver', address(0x123));
     // start an auction
-    uint256 id = surplusAuctionHouse.startAuction({amountToSell: 100 ether, initialBid: 0});
+    uint256 id = surplusAuctionHouse.startAuction({_amountToSell: 100 ether, _initialBid: 0});
     // check no tick
     assertTrue(!GuyRecyclingSurplusAuction(ali).try_restartAuction(id));
     // run past the end
@@ -499,7 +495,7 @@ contract SingleMixedStratSurplusAuctionHouseTest is DSTest {
 
   function testFail_terminate_prematurely() public {
     surplusAuctionHouse.modifyParameters('protocolTokenBidReceiver', address(0x123));
-    uint256 id = surplusAuctionHouse.startAuction({amountToSell: 100 ether, initialBid: 0});
+    uint256 id = surplusAuctionHouse.startAuction({_amountToSell: 100 ether, _initialBid: 0});
     // amount to buy taken from creator
     assertEq(safeEngine.coinBalance(address(this)), 900 ether);
 
@@ -509,7 +505,7 @@ contract SingleMixedStratSurplusAuctionHouseTest is DSTest {
 
   function test_terminate_prematurely() public {
     surplusAuctionHouse.modifyParameters('protocolTokenBidReceiver', address(0x123));
-    uint256 id = surplusAuctionHouse.startAuction({amountToSell: 100 ether, initialBid: 0});
+    uint256 id = surplusAuctionHouse.startAuction({_amountToSell: 100 ether, _initialBid: 0});
     // amount to buy taken from creator
     assertEq(safeEngine.coinBalance(address(this)), 900 ether);
 

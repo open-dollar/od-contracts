@@ -92,12 +92,10 @@ contract DebtAuctionHouse is Authorizable {
   event DisableContract(address sender);
 
   // --- Init ---
-  constructor(address _safeEngine, address _protocolToken) {
-    _addAuthorization(msg.sender);
+  constructor(address _safeEngine, address _protocolToken) Authorizable(msg.sender) {
     safeEngine = SAFEEngineLike(_safeEngine);
     protocolToken = TokenLike(_protocolToken);
     contractEnabled = 1;
-    emit AddAuthorization(msg.sender);
   }
 
   // --- Admin ---

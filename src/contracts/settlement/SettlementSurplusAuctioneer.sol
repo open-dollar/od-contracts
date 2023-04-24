@@ -37,13 +37,11 @@ contract SettlementSurplusAuctioneer is Authorizable {
   event ModifyParameters(bytes32 parameter, address addr);
   event AuctionSurplus(uint256 indexed id, uint256 lastSurplusAuctionTime, uint256 coinBalance);
 
-  constructor(address _accountingEngine, address _surplusAuctionHouse) {
-    _addAuthorization(msg.sender);
+  constructor(address _accountingEngine, address _surplusAuctionHouse) Authorizable(msg.sender) {
     accountingEngine = AccountingEngineLike(_accountingEngine);
     surplusAuctionHouse = SurplusAuctionHouseLike(_surplusAuctionHouse);
     safeEngine = SAFEEngineLike(address(accountingEngine.safeEngine()));
     safeEngine.approveSAFEModification(address(surplusAuctionHouse));
-    emit AddAuthorization(msg.sender);
   }
 
   // --- Administration ---

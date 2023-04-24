@@ -52,13 +52,11 @@ contract ETHJoin is Authorizable {
   event Exit(address sender, address account, uint256 wad);
 
   // --- Init ---
-  constructor(address safeEngine_, bytes32 collateralType_) {
-    _addAuthorization(msg.sender);
+  constructor(address safeEngine_, bytes32 collateralType_) Authorizable(msg.sender) {
     contractEnabled = 1;
     safeEngine = SAFEEngineLike(safeEngine_);
     collateralType = collateralType_;
     decimals = 18;
-    emit AddAuthorization(msg.sender);
   }
 
   /**

@@ -22,7 +22,7 @@ contract PIDController is IPIDController, Authorizable {
     uint256 _feedbackOutputUpperBound,
     int256 _feedbackOutputLowerBound,
     int256[] memory _importedState // TODO: replace for struct
-  ) {
+  ) Authorizable(msg.sender) {
     require(
       _feedbackOutputUpperBound < ((type(uint256).max - defaultRedemptionRate) - 1) && _feedbackOutputUpperBound > 0,
       'PIDController/invalid-foub'
@@ -34,8 +34,6 @@ contract PIDController is IPIDController, Authorizable {
     require(_integralPeriodSize > 0, 'PIDController/invalid-ips');
     require(_noiseBarrier > 0 && _noiseBarrier <= WAD, 'PIDController/invalid-nb');
     require(Math.absolute(_Kp) <= WAD && Math.absolute(_Ki) <= WAD, 'PIDController/invalid-sg');
-
-    _addAuthorization(msg.sender);
 
     feedbackOutputUpperBound = _feedbackOutputUpperBound;
     feedbackOutputLowerBound = _feedbackOutputLowerBound;

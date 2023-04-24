@@ -2,7 +2,7 @@ pragma solidity 0.8.19;
 
 import 'ds-test/test.sol';
 import {DebtAuctionHouse as DAH} from './DebtAuctionHouse.t.sol';
-import {BurningSurplusAuctionHouse as SAH_ONE} from './SurplusAuctionHouse.t.sol';
+import {SurplusAuctionHouse as SAH_ONE} from './SurplusAuctionHouse.t.sol';
 import {PostSettlementSurplusAuctionHouse as SAH_TWO} from './SurplusAuctionHouse.t.sol';
 import {TestSAFEEngine as SAFEEngine} from './SAFEEngine.t.sol';
 import {AccountingEngine} from '../../contracts/AccountingEngine.sol';
@@ -71,7 +71,7 @@ contract SingleAccountingEngineTest is DSTest {
 
     protocolToken = new Gem();
     debtAuctionHouse = new DAH(address(safeEngine), address(protocolToken));
-    surplusAuctionHouseOne = new SAH_ONE(address(safeEngine), address(protocolToken));
+    surplusAuctionHouseOne = new SAH_ONE(address(safeEngine), address(protocolToken), 0);
 
     accountingEngine = new AccountingEngine(
           address(safeEngine), address(surplusAuctionHouseOne), address(debtAuctionHouse)
@@ -169,7 +169,7 @@ contract SingleAccountingEngineTest is DSTest {
   }
 
   function test_change_auction_houses() public {
-    SAH_ONE newSAH_ONE = new SAH_ONE(address(safeEngine), address(protocolToken));
+    SAH_ONE newSAH_ONE = new SAH_ONE(address(safeEngine), address(protocolToken), 0);
     DAH newDAH = new DAH(address(safeEngine), address(protocolToken));
 
     newSAH_ONE.addAuthorization(address(accountingEngine));

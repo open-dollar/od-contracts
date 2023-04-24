@@ -65,9 +65,7 @@ contract OracleRelayer is Authorizable {
   );
 
   // --- Init ---
-  constructor(address _safeEngine) {
-    _addAuthorization(msg.sender);
-
+  constructor(address _safeEngine) Authorizable(msg.sender) {
     safeEngine = SAFEEngineLike(_safeEngine);
     _redemptionPrice = RAY;
     redemptionRate = RAY;
@@ -75,8 +73,6 @@ contract OracleRelayer is Authorizable {
     redemptionRateUpperBound = RAY * WAD;
     redemptionRateLowerBound = 1;
     contractEnabled = 1;
-
-    emit AddAuthorization(msg.sender);
   }
 
   // --- Administration ---

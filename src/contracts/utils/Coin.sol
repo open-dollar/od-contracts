@@ -51,8 +51,7 @@ contract Coin is Authorizable {
   bytes32 public constant PERMIT_TYPEHASH = 0xea2aa0a1be11a07ed86d755c93467f4f82362b452371d1ba94d1715123511acb;
 
   // --- Init ---
-  constructor(string memory name_, string memory symbol_, uint256 chainId_) {
-    _addAuthorization(msg.sender);
+  constructor(string memory name_, string memory symbol_, uint256 chainId_) Authorizable(msg.sender) {
     name = name_;
     symbol = symbol_;
     chainId = chainId_;
@@ -65,7 +64,6 @@ contract Coin is Authorizable {
         address(this)
       )
     );
-    emit AddAuthorization(msg.sender);
   }
 
   // --- Token ---

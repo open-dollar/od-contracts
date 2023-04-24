@@ -54,10 +54,8 @@ contract TaxCollector is ITaxCollector, Authorizable {
   SAFEEngineLike public safeEngine;
 
   // --- Init ---
-  constructor(address _safeEngine) {
-    _addAuthorization(msg.sender);
+  constructor(address _safeEngine) Authorizable(msg.sender) {
     safeEngine = SAFEEngineLike(_safeEngine);
-    emit AddAuthorization(msg.sender);
   }
 
   // --- Administration ---

@@ -8,7 +8,7 @@ import {
   AccountingEngine,
   LiquidationEngine,
   StabilityFeeTreasury,
-  MixedStratSurplusAuctionHouse as SurplusAuctionHouse,
+  SurplusAuctionHouse,
   DebtAuctionHouse,
   CollateralAuctionHouse,
   OracleRelayer,
@@ -129,6 +129,7 @@ contract E2EDeploymentTest is PRBTest {
 
     assertEq(address(_surplusAuctionHouse.safeEngine()), address(deployment.safeEngine()));
     assertEq(address(_surplusAuctionHouse.protocolToken()), address(deployment.protocolToken()));
+    assertEq(_surplusAuctionHouse.recyclingPercentage(), 50);
   }
 
   // DebtAuctionHouse

@@ -54,15 +54,13 @@ contract CollateralJoin is Authorizable {
   event Exit(address sender, address account, uint256 wad);
 
   // --- Init ---
-  constructor(address _safeEngine, bytes32 _collateralType, address _collateral) {
-    _addAuthorization(msg.sender);
+  constructor(address _safeEngine, bytes32 _collateralType, address _collateral) Authorizable(msg.sender) {
     contractEnabled = 1;
     safeEngine = SAFEEngineLike(_safeEngine);
     collateralType = _collateralType;
     collateral = CollateralLike(_collateral);
     decimals = collateral.decimals();
     require(decimals == 18, 'CollateralJoin/non-18-decimals');
-    emit AddAuthorization(msg.sender);
   }
 
   /**

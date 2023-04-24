@@ -73,11 +73,9 @@ contract StabilityFeeTreasury is Authorizable {
     _;
   }
 
-  constructor(address _safeEngine, address _extraSurplusReceiver, address _coinJoin) {
+  constructor(address _safeEngine, address _extraSurplusReceiver, address _coinJoin) Authorizable(msg.sender) {
     require(address(CoinJoinLike(_coinJoin).systemCoin()) != address(0), 'StabilityFeeTreasury/null-system-coin');
     require(_extraSurplusReceiver != address(0), 'StabilityFeeTreasury/null-surplus-receiver');
-
-    _addAuthorization(msg.sender);
 
     safeEngine = SAFEEngineLike(_safeEngine);
     extraSurplusReceiver = _extraSurplusReceiver;
@@ -88,8 +86,6 @@ contract StabilityFeeTreasury is Authorizable {
     contractEnabled = 1;
 
     systemCoin.approve(address(coinJoin), type(uint256).max);
-
-    emit AddAuthorization(msg.sender);
   }
 
   // --- Administration ---

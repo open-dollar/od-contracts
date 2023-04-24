@@ -23,7 +23,7 @@ import {IToken as TokenLike} from '@interfaces/external/IToken.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
-import {WAD, HUNDRED, FIFTY} from '@libraries/Math.sol';
+import {WAD} from '@libraries/Math.sol';
 
 contract PostSettlementSurplusAuctionHouse is Authorizable {
   // --- Data ---
@@ -69,11 +69,9 @@ contract PostSettlementSurplusAuctionHouse is Authorizable {
   event SettleAuction(uint256 indexed id);
 
   // --- Init ---
-  constructor(address _safeEngine, address _protocolToken) {
-    _addAuthorization(msg.sender);
+  constructor(address _safeEngine, address _protocolToken) Authorizable(msg.sender) {
     safeEngine = SAFEEngineLike(_safeEngine);
     protocolToken = TokenLike(_protocolToken);
-    emit AddAuthorization(msg.sender);
   }
 
   // --- Admin ---

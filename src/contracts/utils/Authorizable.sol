@@ -10,8 +10,12 @@ abstract contract Authorizable is IAuthorizable {
 
   EnumerableSet.AddressSet private _authorizedAccounts;
 
-  // --- Views ---
+  // --- Init ---
+  constructor(address _account) {
+    _addAuthorization(_account);
+  }
 
+  // --- Views ---
   /**
    * @notice Checks whether an account is authorized
    * @return _isAuthorized Whether the account is authorized (1) or not (0)
@@ -30,7 +34,6 @@ abstract contract Authorizable is IAuthorizable {
   }
 
   // --- Methods ---
-
   /**
    * @notice Add auth to an account
    * @param _account Account to add auth to
@@ -48,7 +51,6 @@ abstract contract Authorizable is IAuthorizable {
   }
 
   // --- Internal methods ---
-
   function _addAuthorization(address _account) internal {
     if (_authorizedAccounts.add(_account)) {
       emit AddAuthorization(_account);
@@ -66,7 +68,6 @@ abstract contract Authorizable is IAuthorizable {
   }
 
   // --- Modifiers ---
-
   /**
    * @notice Checks whether msg.sender can call an authed function
    */

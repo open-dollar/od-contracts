@@ -52,14 +52,11 @@ contract LiquidationEngine is Authorizable, ILiquidationEngine {
   AccountingEngineLike public accountingEngine;
 
   // --- Init ---
-  constructor(address _safeEngine) {
-    _addAuthorization(msg.sender);
-
+  constructor(address _safeEngine) Authorizable(msg.sender) {
     safeEngine = SAFEEngineLike(_safeEngine);
     onAuctionSystemCoinLimit = type(uint256).max;
     contractEnabled = 1;
 
-    emit AddAuthorization(msg.sender);
     emit ModifyParameters('onAuctionSystemCoinLimit', type(uint256).max);
   }
 

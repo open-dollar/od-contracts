@@ -52,13 +52,11 @@ contract CoinJoin is Authorizable {
   event Exit(address sender, address account, uint256 wad);
 
   // --- Init ---
-  constructor(address safeEngine_, address systemCoin_) {
-    _addAuthorization(msg.sender);
+  constructor(address safeEngine_, address systemCoin_) Authorizable(msg.sender) {
     contractEnabled = 1;
     safeEngine = SAFEEngineLike(safeEngine_);
     systemCoin = DSTokenLike(systemCoin_);
     decimals = 18;
-    emit AddAuthorization(msg.sender);
   }
 
   /**

@@ -21,7 +21,8 @@ contract Deploy is Script, Contracts {
         surplusAuctionAmountToSell: SURPLUS_AUCTION_SIZE,
         globalDebtCeiling: GLOBAL_DEBT_CEILING,
         globalStabilityFee: GLOBAL_STABILITY_FEE,
-        surplusAuctionBidReceiver: SURPLUS_AUCTION_BID_RECEIVER
+        surplusAuctionBidReceiver: SURPLUS_AUCTION_BID_RECEIVER,
+        surplusAuctionRecyclingPercentage: SURPLUS_AUCTION_RECYCLING_PERCENTAGE
       })
     );
 
@@ -156,7 +157,8 @@ contract Deploy is Script, Contracts {
     liquidationEngine = new LiquidationEngine(address(safeEngine));
 
     coinJoin = new CoinJoin(address(safeEngine), address(coin));
-    surplusAuctionHouse = new MixedStratSurplusAuctionHouse(address(safeEngine), address(protocolToken));
+    surplusAuctionHouse =
+      new SurplusAuctionHouse(address(safeEngine), address(protocolToken), _params.surplusAuctionRecyclingPercentage);
     debtAuctionHouse = new DebtAuctionHouse(address(safeEngine), address(protocolToken));
 
     accountingEngine =

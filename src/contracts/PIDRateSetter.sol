@@ -52,12 +52,11 @@ contract PIDRateSetter is Authorizable {
   event UpdateRedemptionRate(uint256 marketPrice, uint256 redemptionPrice, uint256 redemptionRate);
   event FailUpdateRedemptionRate(uint256 marketPrice, uint256 redemptionPrice, uint256 redemptionRate, bytes reason);
 
-  constructor(address _oracleRelayer, address _orcl, address _pidCalculator, uint256 _updateRateDelay) {
+  constructor(address _oracleRelayer, address _orcl, address _pidCalculator, uint256 _updateRateDelay) Authorizable(msg.sender) {
     require(_oracleRelayer != address(0), 'PIDRateSetter/null-oracle-relayer');
     require(_orcl != address(0), 'PIDRateSetter/null-orcl');
     require(_pidCalculator != address(0), 'PIDRateSetter/null-calculator');
 
-    _addAuthorization(msg.sender);
     defaultLeak = 1;
 
     oracleRelayer = OracleRelayerLike(_oracleRelayer);
@@ -66,7 +65,6 @@ contract PIDRateSetter is Authorizable {
 
     updateRateDelay = _updateRateDelay;
 
-    emit AddAuthorization(msg.sender);
     emit ModifyParameters('orcl', _orcl);
     emit ModifyParameters('oracleRelayer', _oracleRelayer);
     emit ModifyParameters('pidCalculator', _pidCalculator);

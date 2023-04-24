@@ -18,6 +18,7 @@ struct GlobalParams {
   uint256 /* rad */ globalDebtCeiling;
   uint256 /* ray */ globalStabilityFee;
   address surplusAuctionBidReceiver;
+  uint256 surplusAuctionRecyclingPercentage;
 }
 
 struct PIDParams {
@@ -36,6 +37,7 @@ uint256 constant INITIAL_DEBT_AUCTION_MINTED_TOKENS = 1e18;
 uint256 constant BID_AUCTION_SIZE = 100e18;
 uint256 constant SURPLUS_AUCTION_SIZE = 100e45;
 address constant SURPLUS_AUCTION_BID_RECEIVER = address(420); // address that receives protocol tokens
+uint256 constant SURPLUS_AUCTION_RECYCLING_PERCENTAGE = 50;
 uint256 constant GLOBAL_DEBT_CEILING = type(uint256).max;
 uint256 constant GLOBAL_STABILITY_FEE = 1e27;
 

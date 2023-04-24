@@ -94,12 +94,10 @@ contract EnglishCollateralAuctionHouse is Authorizable {
   event TerminateAuctionPrematurely(uint256 indexed id, address sender, uint256 bidAmount, uint256 collateralAmount);
 
   // --- Init ---
-  constructor(address _safeEngine, address _liquidationEngine, bytes32 _collateralType) {
+  constructor(address _safeEngine, address _liquidationEngine, bytes32 _collateralType) Authorizable(msg.sender) {
     safeEngine = SAFEEngineLike(_safeEngine);
     liquidationEngine = LiquidationEngineLike(_liquidationEngine);
     collateralType = _collateralType;
-    _addAuthorization(msg.sender);
-    emit AddAuthorization(msg.sender);
   }
 
   // --- Admin ---
@@ -399,12 +397,10 @@ contract FixedDiscountCollateralAuctionHouse is Authorizable {
   event TerminateAuctionPrematurely(uint256 indexed id, address sender, uint256 collateralAmount);
 
   // --- Init ---
-  constructor(address _safeEngine, address _liquidationEngine, bytes32 _collateralType) {
+  constructor(address _safeEngine, address _liquidationEngine, bytes32 _collateralType) Authorizable(msg.sender) {
     safeEngine = SAFEEngineLike(_safeEngine);
     liquidationEngine = LiquidationEngineLike(_liquidationEngine);
     collateralType = _collateralType;
-    _addAuthorization(msg.sender);
-    emit AddAuthorization(msg.sender);
   }
 
   // --- Admin ---
@@ -982,12 +978,10 @@ contract IncreasingDiscountCollateralAuctionHouse is Authorizable {
   event TerminateAuctionPrematurely(uint256 indexed id, address sender, uint256 collateralAmount);
 
   // --- Init ---
-  constructor(address _safeEngine, address _liquidationEngine, bytes32 _collateralType) {
+  constructor(address _safeEngine, address _liquidationEngine, bytes32 _collateralType) Authorizable(msg.sender) {
     safeEngine = SAFEEngineLike(_safeEngine);
     liquidationEngine = LiquidationEngineLike(_liquidationEngine);
     collateralType = _collateralType;
-    _addAuthorization(msg.sender);
-    emit AddAuthorization(msg.sender);
   }
 
   // --- Admin ---

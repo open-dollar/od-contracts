@@ -96,11 +96,9 @@ contract SAFEEngine is Authorizable, ISAFEEngine {
   uint256 public contractEnabled;
 
   // --- Init ---
-  constructor() {
-    _addAuthorization(msg.sender);
+  constructor() Authorizable(msg.sender) {
     safeDebtCeiling = type(uint256).max;
     contractEnabled = 1;
-    emit AddAuthorization(msg.sender);
     emit ModifyParameters('safeDebtCeiling', type(uint256).max);
   }
 
