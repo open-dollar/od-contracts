@@ -21,7 +21,7 @@ abstract contract PIDCalculator {
   function tlv() external view virtual returns (uint256);
 }
 
-contract MockPIRateSetter is RateSetterMath {
+contract MockPIDRateSetter is RateSetterMath {
   // --- System Dependencies ---
   // OSM or medianizer for the system coin
   OracleLike public orcl;
@@ -57,9 +57,9 @@ contract MockPIRateSetter is RateSetterMath {
     // Get price feed updates
     (uint256 marketPrice, bool hasValidValue) = orcl.getResultWithValidity();
     // If the oracle has a value
-    require(hasValidValue, 'MockPIRateSetter/invalid-oracle-value');
+    require(hasValidValue, 'MockPIDRateSetter/invalid-oracle-value');
     // If the price is non-zero
-    require(marketPrice > 0, 'MockPIRateSetter/null-market-price');
+    require(marketPrice > 0, 'MockPIDRateSetter/null-market-price');
     // Get the latest redemption price
     uint256 redemptionPrice = oracleRelayer.redemptionPrice();
     // Calculate the new redemption rate

@@ -4,6 +4,7 @@ pragma solidity 0.8.19;
 import 'forge-std/Script.sol';
 import '@script/Contracts.s.sol';
 import '@script/Params.s.sol';
+import '@libraries/Math.sol';
 
 contract Deploy is Script, Contracts {
   uint256 public chainId;
@@ -13,7 +14,7 @@ contract Deploy is Script, Contracts {
   function run() public {
     deployer = vm.addr(_deployerPk);
 
-    _deployAndSetup(
+    deployAndSetup(
       GlobalParams({
         initialDebtAuctionMintedTokens: INITIAL_DEBT_AUCTION_MINTED_TOKENS,
         bidAuctionSize: BID_AUCTION_SIZE,
@@ -22,6 +23,20 @@ contract Deploy is Script, Contracts {
         globalStabilityFee: GLOBAL_STABILITY_FEE,
         surplusAuctionBidReceiver: SURPLUS_AUCTION_BID_RECEIVER
       })
+    );
+
+    deployPIDController(
+      PIDParams({
+        proportionalGain: PID_PROPORTIONAL_GAIN,
+        integralGain: PID_INTEGRAL_GAIN,
+        noiseBarrier: PID_NOISE_BARRIER,
+        perSecondCumulativeLeak: PID_PER_SECOND_CUMULATIVE_LEAK,
+        feedbackOutputLowerBound: PID_FEEDBACK_OUTPUT_LOWER_BOUND,
+        feedbackOutputUpperBound: PID_FEEDBACK_OUTPUT_UPPER_BOUND,
+        periodSize: PID_PERIOD_SIZE,
+        updateRate: PID_UPDATE_RATE
+      }),
+      HAI_INITIAL_PRICE
     );
 
     deployETHCollateral(
@@ -55,8 +70,7 @@ contract Deploy is Script, Contracts {
     vm.startBroadcast(_deployerPk);
 
     // deploy oracle for test
-    oracle[ETH_A] = new OracleForTest();
-    oracle[ETH_A].setPriceAndValidity(_initialPrice, true);
+    oracle[ETH_A] = new OracleForTest(_initialPrice);
 
     // deploy ETHJoin and CollateralAuctionHouse
     ethJoin = new ETHJoin(address(safeEngine), ETH_A);
@@ -75,8 +89,7 @@ contract Deploy is Script, Contracts {
     vm.startBroadcast(_deployerPk);
 
     // deploy oracle for test
-    oracle[_params.name] = new OracleForTest();
-    oracle[_params.name].setPriceAndValidity(_initialPrice, true);
+    oracle[_params.name] = new OracleForTest(_initialPrice);
 
     // deploy Collateral, CollateralJoin and CollateralAuctionHouse
     collateral[_params.name] = new ERC20ForTest(); // TODO: replace for token
@@ -129,12 +142,12 @@ contract Deploy is Script, Contracts {
     vm.stopBroadcast();
   }
 
-  function _deployAndSetup(GlobalParams memory _params) internal {
+  function deployAndSetup(GlobalParams memory _params) public {
     vm.startBroadcast(_deployerPk);
 
     // deploy Tokens
     coin = new Coin('HAI Index Token', 'HAI', chainId);
-    protocolToken = new Coin('Protocol Token', 'GOV', chainId);
+    protocolToken = new Coin('Protocol Token', 'KITE', chainId);
 
     // deploy Base contracts
     safeEngine = new SAFEEngine();
@@ -155,8 +168,7 @@ contract Deploy is Script, Contracts {
           address(coinJoin)
         );
 
-    // TODO: deploy ESM, GlobalSettlement, SettlementSurplusAuctioneer
-
+    // TODO: deploy PostSettlementSurplusAuctionHouse & SettlementSurplusAuctioneer
     globalSettlement = new GlobalSettlement();
 
     // setup registry
@@ -237,6 +249,40 @@ contract Deploy is Script, Contracts {
 
     // setup initial price
     oracleRelayer.updateCollateralPrice(_params.name);
+  }
+
+  function deployPIDController(PIDParams memory _params, uint256 _haiInitialPrice) public {
+    vm.startBroadcast(_deployerPk);
+    oracle[HAI] = new OracleForTest(_haiInitialPrice);
+
+    pidController = new PIDController({
+      _Kp: _params.proportionalGain,
+      _Ki: _params.integralGain,
+      _perSecondCumulativeLeak: _params.perSecondCumulativeLeak,
+      _integralPeriodSize: _params.periodSize, // TODO: rename ips to ps
+      _noiseBarrier: _params.noiseBarrier,
+      _feedbackOutputUpperBound: _params.feedbackOutputUpperBound,
+      _feedbackOutputLowerBound: _params.feedbackOutputLowerBound,
+      _importedState: new int256[](0)
+    });
+
+    pidRateSetter = new PIDRateSetter({
+     _oracleRelayer: address(oracleRelayer),
+     _orcl: address(oracle[HAI]),
+     _pidCalculator: address(pidController),
+     _updateRateDelay: _params.updateRate
+    });
+
+    // setup registry
+    pidController.modifyParameters('seedProposer', address(pidRateSetter));
+
+    // auth
+    oracleRelayer.addAuthorization(address(pidRateSetter));
+
+    // initialize
+    pidRateSetter.updateRate();
+
+    vm.stopBroadcast();
   }
 }
 

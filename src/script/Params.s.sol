@@ -20,6 +20,17 @@ struct GlobalParams {
   address surplusAuctionBidReceiver;
 }
 
+struct PIDParams {
+  int256 /*  wad */ proportionalGain;
+  int256 /*  wad */ integralGain;
+  uint256 /* wad */ noiseBarrier;
+  uint256 /* ray */ perSecondCumulativeLeak;
+  int256 /*  ray */ feedbackOutputLowerBound;
+  uint256 /* ray */ feedbackOutputUpperBound;
+  uint256 periodSize;
+  uint256 updateRate;
+}
+
 // Global Params
 uint256 constant INITIAL_DEBT_AUCTION_MINTED_TOKENS = 1e18;
 uint256 constant BID_AUCTION_SIZE = 100e18;
@@ -27,6 +38,20 @@ uint256 constant SURPLUS_AUCTION_SIZE = 100e45;
 address constant SURPLUS_AUCTION_BID_RECEIVER = address(420); // address that receives protocol tokens
 uint256 constant GLOBAL_DEBT_CEILING = type(uint256).max;
 uint256 constant GLOBAL_STABILITY_FEE = 1e27;
+
+// HAI Params
+bytes32 constant HAI = bytes32('HAI');
+uint256 constant HAI_INITIAL_PRICE = 1e18; // 1 HAI = 1 USD
+
+// PID Params
+int256 constant PID_INTEGRAL_GAIN = 1e18;
+int256 constant PID_PROPORTIONAL_GAIN = 1e18;
+uint256 constant PID_PER_SECOND_CUMULATIVE_LEAK = 999_997_208_243_937_652_252_849_536; // 1% per hour
+uint256 constant PID_NOISE_BARRIER = 1e18;
+uint256 constant PID_FEEDBACK_OUTPUT_UPPER_BOUND = 1e45; // unbounded
+int256 constant PID_FEEDBACK_OUTPUT_LOWER_BOUND = -int256(1e27 - 1); // unbounded
+uint256 constant PID_PERIOD_SIZE = 1 hours;
+uint256 constant PID_UPDATE_RATE = 1 days;
 
 // ETH Collateral Params
 bytes32 constant ETH_A = bytes32('ETH-A');

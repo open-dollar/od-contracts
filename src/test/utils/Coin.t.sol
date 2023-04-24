@@ -194,7 +194,7 @@ contract CoinTest is DSTest {
   }
 
   function createToken() internal returns (Coin) {
-    return new Coin('Rai', 'RAI', 99);
+    return new Coin('Hai', 'HAI', 99);
   }
 
   function testSetup() public {

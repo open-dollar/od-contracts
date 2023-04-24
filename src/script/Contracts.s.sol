@@ -16,6 +16,8 @@ import {GlobalSettlement} from '@contracts/settlement/GlobalSettlement.sol';
 // TODO: import {ESM} from "@contracts/ESM.sol";
 import {StabilityFeeTreasury} from '@contracts/StabilityFeeTreasury.sol';
 import {OracleRelayer} from '@contracts/OracleRelayer.sol';
+import {PIDController} from '@contracts/PIDController.sol';
+import {PIDRateSetter} from '@contracts/PIDRateSetter.sol';
 
 import {OracleForTest} from '@contracts/for-test/OracleForTest.sol';
 
@@ -42,6 +44,9 @@ contract Contracts {
 
   OracleRelayer public oracleRelayer;
   mapping(bytes32 => OracleForTest) public oracle;
+
+  PIDController public pidController;
+  PIDRateSetter public pidRateSetter;
 
   GlobalSettlement public globalSettlement;
   // ESM public esm;

@@ -4,7 +4,7 @@ import 'ds-test/test.sol';
 
 import {RawPIDController as PIRawPerSecondCalculator} from '@contracts/for-test/RawPIDController.sol';
 import {MockSetterRelayer} from '../utils/mock/MockSetterRelayer.sol';
-import {MockPIRateSetter} from '../utils/mock/MockPIRateSetter.sol';
+import {MockPIDRateSetter} from '../utils/mock/MockPIDRateSetter.sol';
 import '../utils/mock/MockOracleRelayer.sol';
 
 contract Feed {
@@ -40,7 +40,7 @@ contract PIRawPerSecondCalculatorTest is DSTest {
   Hevm hevm;
 
   MockOracleRelayer oracleRelayer;
-  MockPIRateSetter rateSetter;
+  MockPIDRateSetter rateSetter;
   MockSetterRelayer setterRelayer;
 
   PIRawPerSecondCalculator calculator;
@@ -49,8 +49,6 @@ contract PIRawPerSecondCalculatorTest is DSTest {
   int256 Kp = int256(EIGHTEEN_DECIMAL_NUMBER);
   int256 Ki = int256(EIGHTEEN_DECIMAL_NUMBER);
   uint256 integralPeriodSize = 3600;
-  uint256 baseUpdateCallerReward = 10 ether;
-  uint256 maxUpdateCallerReward = 30 ether;
   uint256 perSecondCallerRewardIncrease = 1_000_002_763_984_612_345_119_745_925;
   uint256 perSecondCumulativeLeak = 999_997_208_243_937_652_252_849_536; // 1% per hour
   uint256 noiseBarrier = EIGHTEEN_DECIMAL_NUMBER;
@@ -80,7 +78,7 @@ contract PIRawPerSecondCalculatorTest is DSTest {
       );
 
     rateSetter =
-      new MockPIRateSetter(address(orcl), address(oracleRelayer), address(calculator), address(setterRelayer));
+      new MockPIDRateSetter(address(orcl), address(oracleRelayer), address(calculator), address(setterRelayer));
     setterRelayer.modifyParameters('setter', address(rateSetter));
     calculator.modifyParameters('seedProposer', address(rateSetter));
 

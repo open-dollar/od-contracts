@@ -61,4 +61,8 @@ interface IPIDController {
     returns (uint256 _redemptionRate, int256 _proportionalTerm, int256 _cumulativeDeviation, uint256 _rateTimeline);
 
   function seedProposer() external view returns (address _seedProposer);
+
+  function pscl() external view returns (uint256 _perSecondCumulativeLeak);
+
+  function tlv() external view returns (uint256 _timeSinceLastValue);
 }

@@ -14,49 +14,51 @@ contract PIDController is IPIDController, Authorizable {
   using Math for int256;
 
   constructor(
-    int256 Kp_,
-    int256 Ki_,
-    uint256 perSecondCumulativeLeak_,
-    uint256 integralPeriodSize_,
-    uint256 noiseBarrier_,
-    uint256 feedbackOutputUpperBound_,
-    int256 feedbackOutputLowerBound_,
-    int256[] memory importedState
+    int256 _Kp,
+    int256 _Ki,
+    uint256 _perSecondCumulativeLeak,
+    uint256 _integralPeriodSize,
+    uint256 _noiseBarrier,
+    uint256 _feedbackOutputUpperBound,
+    int256 _feedbackOutputLowerBound,
+    int256[] memory _importedState // TODO: replace for struct
   ) {
     require(
-      feedbackOutputUpperBound_ < ((type(uint256).max - defaultRedemptionRate) - 1) && feedbackOutputUpperBound_ > 0,
+      _feedbackOutputUpperBound < ((type(uint256).max - defaultRedemptionRate) - 1) && _feedbackOutputUpperBound > 0,
       'PIDController/invalid-foub'
     );
     require(
-      feedbackOutputLowerBound_ < 0 && feedbackOutputLowerBound_ >= -int256(NEGATIVE_RATE_LIMIT),
+      _feedbackOutputLowerBound < 0 && _feedbackOutputLowerBound >= -int256(NEGATIVE_RATE_LIMIT),
       'PIDController/invalid-folb'
     );
-    require(integralPeriodSize_ > 0, 'PIDController/invalid-ips');
-    require(noiseBarrier_ > 0 && noiseBarrier_ <= WAD, 'PIDController/invalid-nb');
-    require(Math.absolute(Kp_) <= WAD && Math.absolute(Ki_) <= WAD, 'PIDController/invalid-sg');
+    require(_integralPeriodSize > 0, 'PIDController/invalid-ips');
+    require(_noiseBarrier > 0 && _noiseBarrier <= WAD, 'PIDController/invalid-nb');
+    require(Math.absolute(_Kp) <= WAD && Math.absolute(_Ki) <= WAD, 'PIDController/invalid-sg');
 
     _addAuthorization(msg.sender);
 
-    feedbackOutputUpperBound = feedbackOutputUpperBound_;
-    feedbackOutputLowerBound = feedbackOutputLowerBound_;
-    integralPeriodSize = integralPeriodSize_;
-    controllerGains = ControllerGains(Kp_, Ki_);
-    perSecondCumulativeLeak = perSecondCumulativeLeak_;
-    noiseBarrier = noiseBarrier_;
+    feedbackOutputUpperBound = _feedbackOutputUpperBound;
+    feedbackOutputLowerBound = _feedbackOutputLowerBound;
+    integralPeriodSize = _integralPeriodSize;
+    controllerGains = ControllerGains(_Kp, _Ki);
+    perSecondCumulativeLeak = _perSecondCumulativeLeak;
+    noiseBarrier = _noiseBarrier;
 
-    if (importedState.length > 0) {
-      require(uint256(importedState[0]) <= block.timestamp, 'PIDController/invalid-imported-time');
-      priceDeviationCumulative = importedState[3];
-      lastUpdateTime = uint256(importedState[0]);
-      if (importedState[4] > 0) {
-        deviationObservations.push(DeviationObservation(uint256(importedState[4]), importedState[1], importedState[2]));
+    if (_importedState.length > 0) {
+      require(uint256(_importedState[0]) <= block.timestamp, 'PIDController/invalid-imported-time');
+      priceDeviationCumulative = _importedState[3];
+      lastUpdateTime = uint256(_importedState[0]);
+      if (_importedState[4] > 0) {
+        deviationObservations.push(
+          DeviationObservation(uint256(_importedState[4]), _importedState[1], _importedState[2])
+        );
       }
 
       historicalCumulativeDeviations.push(priceDeviationCumulative);
     }
   }
 
-  // The address allowed to call calculateRate
+  // The address allowed to call computeRate
   address public seedProposer;
 
   // --- Fluctuating/Dynamic Variables ---
@@ -83,7 +85,7 @@ contract PIDController is IPIDController, Authorizable {
 
   uint256 internal constant NEGATIVE_RATE_LIMIT = RAY - 1;
 
-  // The integral term (sum of deviations at each calculateRate call minus the leak applied at every call)
+  // The integral term (sum of deviations at each computeRate call minus the leak applied at every call)
   int256 internal priceDeviationCumulative; // [RAY]
   // The per second leak applied to priceDeviationCumulative before the latest deviation is added
   uint256 internal perSecondCumulativeLeak; // [RAY]
@@ -350,7 +352,7 @@ contract PIDController is IPIDController, Authorizable {
   }
 
   /**
-   * @notice Returns the time elapsed since the last calculateRate call minus periodSize
+   * @notice Returns the time elapsed since the last computeRate call minus periodSize
    */
   function adat() external view returns (uint256) {
     uint256 elapsed = (block.timestamp - lastUpdateTime);
@@ -365,7 +367,7 @@ contract PIDController is IPIDController, Authorizable {
   }
 
   /**
-   * @notice Returns the time elapsed since the last calculateRate call
+   * @notice Returns the time elapsed since the last computeRate call
    */
   function tlv() external view returns (uint256) {
     uint256 elapsed = (lastUpdateTime == 0) ? 0 : (block.timestamp - lastUpdateTime);

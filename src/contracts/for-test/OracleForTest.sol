@@ -6,6 +6,10 @@ contract OracleForTest is IOracle {
   uint256 price = 1 ether;
   bool validity = true;
 
+  constructor(uint256 _price) {
+    price = _price;
+  }
+
   function getResultWithValidity() public view returns (uint256 _price, bool _validity) {
     _price = price;
     _validity = validity;

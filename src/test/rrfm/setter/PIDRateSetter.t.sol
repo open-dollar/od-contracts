@@ -1,0 +1,165 @@
+// SPDX-License-Identifier: Unlicensed
+pragma solidity 0.8.19;
+
+import 'ds-test/test.sol';
+
+import {MockPIDCalculator} from '../utils/mock/MockPIDCalculator.sol';
+import {PIDRateSetter} from '@contracts/PIDRateSetter.sol';
+
+import '../utils/mock/MockOracleRelayer.sol';
+
+contract Feed {
+  bytes32 public price;
+  bool public validPrice;
+  uint256 public lastUpdateTime;
+
+  constructor(uint256 price_, bool validPrice_) {
+    price = bytes32(price_);
+    validPrice = validPrice_;
+    lastUpdateTime = block.timestamp;
+  }
+
+  function updateTokenPrice(uint256 price_) external {
+    price = bytes32(price_);
+    lastUpdateTime = block.timestamp;
+  }
+
+  function getResultWithValidity() external view returns (uint256, bool) {
+    return (uint256(price), validPrice);
+  }
+}
+
+abstract contract Hevm {
+  function warp(uint256) public virtual;
+}
+
+contract PIDRateSetterTest is DSTest {
+  Hevm hevm;
+
+  MockOracleRelayer oracleRelayer;
+
+  PIDRateSetter rateSetter;
+
+  MockPIDCalculator calculator;
+  Feed orcl;
+
+  uint256 periodSize = 3600;
+
+  uint256 RAY = 10 ** 27;
+  uint256 WAD = 10 ** 18;
+
+  function setUp() public {
+    hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
+    hevm.warp(604_411_200);
+
+    oracleRelayer = new MockOracleRelayer();
+    orcl = new Feed(1 ether, true);
+
+    calculator = new MockPIDCalculator();
+    rateSetter = new PIDRateSetter(
+          address(oracleRelayer),
+          address(orcl),
+          address(calculator),
+          periodSize
+        );
+    rateSetter.modifyParameters('defaultLeak', 0);
+  }
+
+  function test_correct_setup() public {
+    assertEq(rateSetter.authorizedAccounts(address(this)), 1);
+    assertEq(rateSetter.updateRateDelay(), periodSize);
+  }
+
+  function test_modify_parameters() public {
+    // Modify
+    rateSetter.modifyParameters('orcl', address(0x12));
+    rateSetter.modifyParameters('oracleRelayer', address(0x12));
+    rateSetter.modifyParameters('pidCalculator', address(0x12));
+    rateSetter.modifyParameters('updateRateDelay', 1);
+
+    // Check
+    assertTrue(address(rateSetter.orcl()) == address(0x12));
+    assertTrue(address(rateSetter.oracleRelayer()) == address(0x12));
+    assertTrue(address(rateSetter.pidCalculator()) == address(0x12));
+
+    assertEq(rateSetter.updateRateDelay(), 1);
+  }
+
+  function test_get_redemption_and_market_prices() public {
+    (uint256 marketPrice, uint256 redemptionPrice) = rateSetter.getRedemptionAndMarketPrices();
+    assertEq(marketPrice, 1 ether);
+    assertEq(redemptionPrice, RAY);
+  }
+
+  function test_first_update_rate_no_warp() public {
+    rateSetter.updateRate();
+    assertEq(oracleRelayer.redemptionRate(), RAY + 2);
+  }
+
+  function test_first_update_rate_with_warp() public {
+    hevm.warp(block.timestamp + periodSize);
+    rateSetter.updateRate();
+    assertEq(oracleRelayer.redemptionRate(), RAY + 2);
+  }
+
+  function testFail_update_before_period_passed() public {
+    rateSetter.updateRate();
+    rateSetter.updateRate();
+  }
+
+  function test_two_updates() public {
+    hevm.warp(block.timestamp + periodSize);
+    rateSetter.updateRate();
+    assertEq(oracleRelayer.redemptionRate(), RAY + 2);
+
+    hevm.warp(block.timestamp + periodSize);
+    rateSetter.updateRate();
+    assertEq(oracleRelayer.redemptionRate(), RAY + 2);
+  }
+
+  function test_null_rate_needed_submit_different() public {
+    calculator.toggleValidated();
+    rateSetter.updateRate();
+    assertEq(oracleRelayer.redemptionRate(), RAY - 2);
+
+    hevm.warp(block.timestamp + periodSize);
+    rateSetter.updateRate();
+    assertEq(oracleRelayer.redemptionRate(), RAY - 2);
+  }
+
+  function test_wait_more_than_maxRewardIncreaseDelay_since_last_update() public {
+    hevm.warp(block.timestamp + periodSize);
+    rateSetter.updateRate();
+
+    hevm.warp(block.timestamp + periodSize * 100_000 + 1);
+    assertEq(block.timestamp - rateSetter.lastUpdateTime() - rateSetter.updateRateDelay(), 359_996_401);
+
+    rateSetter.updateRate();
+  }
+
+  function test_null_default_leak() public {
+    rateSetter.modifyParameters('defaultLeak', 1);
+
+    hevm.warp(block.timestamp + periodSize);
+    rateSetter.updateRate();
+    assertEq(oracleRelayer.redemptionRate(), RAY + 2);
+
+    hevm.warp(block.timestamp + periodSize);
+    rateSetter.updateRate();
+    assertEq(oracleRelayer.redemptionRate(), RAY + 2);
+  }
+
+  function test_oracle_relayer_bounded_rate() public {
+    oracleRelayer.modifyParameters('redemptionRateUpperBound', RAY + 1);
+    oracleRelayer.modifyParameters('redemptionRateLowerBound', RAY - 1);
+
+    rateSetter.updateRate();
+    assertEq(oracleRelayer.redemptionRate(), RAY + 1);
+
+    calculator.toggleValidated();
+
+    hevm.warp(block.timestamp + periodSize);
+    rateSetter.updateRate();
+    assertEq(oracleRelayer.redemptionRate(), RAY - 1);
+  }
+}
