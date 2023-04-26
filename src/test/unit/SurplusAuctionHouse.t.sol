@@ -4,8 +4,8 @@ pragma solidity 0.8.19;
 import {SurplusAuctionHouseForTest, ISurplusAuctionHouse} from '@contracts/for-test/SurplusAuctionHouseForTest.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IToken} from '@interfaces/external/IToken.sol';
-import {IAuthorizable} from '@interfaces/IAuthorizable.sol';
-import {IDisableable} from '@interfaces/IDisableable.sol';
+import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
+import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {WAD, HUNDRED} from '@libraries/Math.sol';
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 
@@ -222,7 +222,7 @@ contract Unit_SurplusAuctionHouse_StartAuction is Base {
   function test_Revert_ContractNotEnabled(uint256 _amountToSell, uint256 _initialBid) public authorized {
     _mockContractEnabled(0);
 
-    vm.expectRevert('SurplusAuctionHouse/contract-not-enabled');
+    vm.expectRevert(IDisableable.ContractIsDisabled.selector);
 
     surplusAuctionHouse.startAuction(_amountToSell, _initialBid);
   }
@@ -376,7 +376,7 @@ contract Unit_SurplusAuctionHouse_IncreaseBidSize is Base {
   function test_Revert_ContractNotEnabled(Auction memory _auction, uint256 _amountToBuy, uint256 _bid) public {
     _mockContractEnabled(0);
 
-    vm.expectRevert('SurplusAuctionHouse/contract-not-enabled');
+    vm.expectRevert(IDisableable.ContractIsDisabled.selector);
 
     surplusAuctionHouse.increaseBidSize(_auction.id, _amountToBuy, _bid);
   }
@@ -564,7 +564,7 @@ contract Unit_SurplusAuctionHouse_SettleAuction is Base {
   function test_Revert_ContractNotEnabled(Auction memory _auction) public {
     _mockContractEnabled(0);
 
-    vm.expectRevert('SurplusAuctionHouse/contract-not-enabled');
+    vm.expectRevert(IDisableable.ContractIsDisabled.selector);
 
     surplusAuctionHouse.settleAuction(_auction.id);
   }
@@ -701,7 +701,7 @@ contract Unit_SurplusAuctionHouse_TerminateAuctionPrematurely is Base {
   function test_Revert_ContractStillEnabled(Auction memory _auction) public {
     _mockContractEnabled(1);
 
-    vm.expectRevert('SurplusAuctionHouse/contract-still-enabled');
+    vm.expectRevert(IDisableable.ContractIsEnabled.selector);
 
     surplusAuctionHouse.terminateAuctionPrematurely(_auction.id);
   }

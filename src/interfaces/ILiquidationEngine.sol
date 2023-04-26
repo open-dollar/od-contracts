@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {IAuthorizable} from '@interfaces/IAuthorizable.sol';
-import {IDisableable} from '@interfaces/IDisableable.sol';
+import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
+import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
 
@@ -60,5 +60,4 @@ interface ILiquidationEngine is IAuthorizable, IDisableable {
   function chosenSAFESaviour(bytes32 _collateralType, address _safe) external view returns (address _saviour);
   function accountingEngine() external view returns (IAccountingEngine _accountingEngine);
   function mutex(bytes32 _collateralType, address _safe) external view returns (uint8 _mutex);
-  function contractEnabled() external view returns (uint256 _enabled);
 }

@@ -25,9 +25,10 @@ import {IAccountingEngine as AccountingEngineLike} from '@interfaces/IAccounting
 import {ILiquidationEngine} from '@interfaces/ILiquidationEngine.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
+import {Disableable} from '@contracts/utils/Disableable.sol';
 import {Math, RAY, WAD} from '@libraries/Math.sol';
 
-contract LiquidationEngine is Authorizable, ILiquidationEngine {
+contract LiquidationEngine is Authorizable, Disableable, ILiquidationEngine {
   // --- SAFE Saviours ---
   // Contracts that can save SAFEs from liquidation
   mapping(address => uint256) public safeSaviours;
@@ -43,8 +44,6 @@ contract LiquidationEngine is Authorizable, ILiquidationEngine {
   uint256 public onAuctionSystemCoinLimit; // [rad]
   // Current amount of system coins out for liquidation
   uint256 public currentOnAuctionSystemCoins; // [rad]
-  // Whether this contract is enabled
-  uint256 public contractEnabled;
 
   uint256 constant MAX_LIQUIDATION_QUANTITY = type(uint256).max / RAY;
 
@@ -55,7 +54,6 @@ contract LiquidationEngine is Authorizable, ILiquidationEngine {
   constructor(address _safeEngine) Authorizable(msg.sender) {
     safeEngine = SAFEEngineLike(_safeEngine);
     onAuctionSystemCoinLimit = type(uint256).max;
-    contractEnabled = 1;
 
     emit ModifyParameters('onAuctionSystemCoinLimit', type(uint256).max);
   }
@@ -146,9 +144,8 @@ contract LiquidationEngine is Authorizable, ILiquidationEngine {
   /**
    * @notice Disable this contract (normally called by GlobalSettlement)
    */
-  function disableContract() external isAuthorized {
-    contractEnabled = 0;
-    emit DisableContract();
+  function disableContract() external isAuthorized whenEnabled {
+    _disableContract();
   }
 
   // --- SAFE Liquidation ---
@@ -170,7 +167,7 @@ contract LiquidationEngine is Authorizable, ILiquidationEngine {
    * @param  _collateralType The SAFE's collateral type
    * @param  _safe The SAFE's address
    */
-  function liquidateSAFE(bytes32 _collateralType, address _safe) external returns (uint256 _auctionId) {
+  function liquidateSAFE(bytes32 _collateralType, address _safe) external whenEnabled returns (uint256 _auctionId) {
     require(mutex[_collateralType][_safe] == 0, 'LiquidationEngine/non-null-mutex');
     mutex[_collateralType][_safe] = 1;
 
@@ -178,7 +175,6 @@ contract LiquidationEngine is Authorizable, ILiquidationEngine {
       safeEngine.collateralTypes(_collateralType);
     (uint256 _safeCollateral, uint256 _safeDebt) = safeEngine.safes(_collateralType, _safe);
 
-    require(contractEnabled == 1, 'LiquidationEngine/contract-not-enabled');
     require(
       (_liquidationPrice > 0) && (_safeCollateral * _liquidationPrice < _safeDebt * _accumulatedRate),
       'LiquidationEngine/safe-not-unsafe'

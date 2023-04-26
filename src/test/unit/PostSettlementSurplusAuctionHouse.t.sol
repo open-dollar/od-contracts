@@ -7,7 +7,7 @@ import {
 } from '@contracts/for-test/PostSettlementSurplusAuctionHouseForTest.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IToken} from '@interfaces/external/IToken.sol';
-import {IAuthorizable} from '@interfaces/IAuthorizable.sol';
+import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {WAD} from '@libraries/Math.sol';
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 

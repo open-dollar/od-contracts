@@ -20,10 +20,11 @@ import {ISAFEEngine as SAFEEngineLike} from '@interfaces/ISAFEEngine.sol';
 import {IOracle as OracleLike} from '@interfaces/IOracle.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
+import {Disableable} from '@contracts/utils/Disableable.sol';
 
 import {Math, RAY, WAD} from '@libraries/Math.sol';
 
-contract OracleRelayer is Authorizable {
+contract OracleRelayer is Authorizable, Disableable {
   using Math for uint256;
 
   // --- Data ---
@@ -41,8 +42,6 @@ contract OracleRelayer is Authorizable {
 
   SAFEEngineLike public safeEngine;
 
-  // Whether this contract is enabled
-  uint256 public contractEnabled;
   // Virtual redemption price (not the most updated value)
   uint256 internal _redemptionPrice; // [ray]
   // The force that changes the system users' incentives by changing the redemption price
@@ -55,7 +54,6 @@ contract OracleRelayer is Authorizable {
   uint256 public redemptionRateLowerBound; // [ray]
 
   // --- Events ---
-  event DisableContract();
   event ModifyParameters(bytes32 collateralType, bytes32 parameter, address addr);
   event ModifyParameters(bytes32 parameter, uint256 data);
   event ModifyParameters(bytes32 collateralType, bytes32 parameter, uint256 data);
@@ -72,7 +70,6 @@ contract OracleRelayer is Authorizable {
     redemptionPriceUpdateTime = block.timestamp;
     redemptionRateUpperBound = RAY * WAD;
     redemptionRateLowerBound = 1;
-    contractEnabled = 1;
   }
 
   // --- Administration ---
@@ -82,8 +79,7 @@ contract OracleRelayer is Authorizable {
    * @param parameter Name of the parameter
    * @param addr New oracle address
    */
-  function modifyParameters(bytes32 collateralType, bytes32 parameter, address addr) external isAuthorized {
-    require(contractEnabled == 1, 'OracleRelayer/contract-not-enabled');
+  function modifyParameters(bytes32 collateralType, bytes32 parameter, address addr) external isAuthorized whenEnabled {
     if (parameter == 'orcl') collateralTypes[collateralType].orcl = OracleLike(addr);
     else revert('OracleRelayer/modify-unrecognized-param');
     emit ModifyParameters(collateralType, parameter, addr);
@@ -94,8 +90,7 @@ contract OracleRelayer is Authorizable {
    * @param parameter Name of the parameter
    * @param data New param value
    */
-  function modifyParameters(bytes32 parameter, uint256 data) external isAuthorized {
-    require(contractEnabled == 1, 'OracleRelayer/contract-not-enabled');
+  function modifyParameters(bytes32 parameter, uint256 data) external isAuthorized whenEnabled {
     require(data > 0, 'OracleRelayer/null-data');
     if (parameter == 'redemptionPrice') {
       _redemptionPrice = data;
@@ -126,8 +121,7 @@ contract OracleRelayer is Authorizable {
    * @param parameter Name of the parameter
    * @param data New param value
    */
-  function modifyParameters(bytes32 collateralType, bytes32 parameter, uint256 data) external isAuthorized {
-    require(contractEnabled == 1, 'OracleRelayer/contract-not-enabled');
+  function modifyParameters(bytes32 collateralType, bytes32 parameter, uint256 data) external isAuthorized whenEnabled {
     if (parameter == 'safetyCRatio') {
       require(
         data >= collateralTypes[collateralType].liquidationCRatio, 'OracleRelayer/safety-lower-than-liquidation-cratio'
@@ -193,10 +187,9 @@ contract OracleRelayer is Authorizable {
   /**
    * @notice Disable this contract (normally called by GlobalSettlement)
    */
-  function disableContract() external isAuthorized {
-    contractEnabled = 0;
+  function disableContract() external isAuthorized whenEnabled {
+    _disableContract();
     redemptionRate = RAY;
-    emit DisableContract();
   }
 
   /**

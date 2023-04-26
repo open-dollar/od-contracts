@@ -18,12 +18,13 @@
 
 pragma solidity 0.8.19;
 
-import {IAuthorizable} from '@interfaces/IAuthorizable.sol';
+import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {Math, RAY} from '@libraries/Math.sol';
 import {Authorizable} from '@contract-utils/Authorizable.sol';
+import {Disableable} from '@contract-utils/Disableable.sol';
 
-contract SAFEEngine is Authorizable, ISAFEEngine {
+contract SAFEEngine is Authorizable, Disableable, ISAFEEngine {
   using Math for uint256;
 
   // --- Auth ---
@@ -31,8 +32,7 @@ contract SAFEEngine is Authorizable, ISAFEEngine {
    * @notice Add auth to an account
    * @param _account Account to add auth to
    */
-  function addAuthorization(address _account) external override(Authorizable, IAuthorizable) isAuthorized {
-    require(contractEnabled == 1, 'SAFEEngine/contract-not-enabled');
+  function addAuthorization(address _account) external override(Authorizable, IAuthorizable) isAuthorized whenEnabled {
     _addAuthorization(_account);
   }
 
@@ -40,8 +40,12 @@ contract SAFEEngine is Authorizable, ISAFEEngine {
    * @notice Remove auth from an account
    * @param _account Account to remove auth from
    */
-  function removeAuthorization(address _account) external override(Authorizable, IAuthorizable) isAuthorized {
-    require(contractEnabled == 1, 'SAFEEngine/contract-not-enabled');
+  function removeAuthorization(address _account)
+    external
+    override(Authorizable, IAuthorizable)
+    isAuthorized
+    whenEnabled
+  {
     _removeAuthorization(_account);
   }
 
@@ -92,13 +96,10 @@ contract SAFEEngine is Authorizable, ISAFEEngine {
   uint256 public globalUnbackedDebt; // [rad]
   // Maximum amount of debt that can be issued
   uint256 public globalDebtCeiling; // [rad]
-  // Access flag, indicates whether this contract is still active
-  uint256 public contractEnabled;
 
   // --- Init ---
   constructor() Authorizable(msg.sender) {
     safeDebtCeiling = type(uint256).max;
-    contractEnabled = 1;
     emit ModifyParameters('safeDebtCeiling', type(uint256).max);
   }
 
@@ -118,8 +119,7 @@ contract SAFEEngine is Authorizable, ISAFEEngine {
    * @param _parameter The name of the parameter modified
    * @param _data New value for the parameter
    */
-  function modifyParameters(bytes32 _parameter, uint256 _data) external isAuthorized {
-    require(contractEnabled == 1, 'SAFEEngine/contract-not-enabled');
+  function modifyParameters(bytes32 _parameter, uint256 _data) external isAuthorized whenEnabled {
     if (_parameter == 'globalDebtCeiling') globalDebtCeiling = _data;
     else if (_parameter == 'safeDebtCeiling') safeDebtCeiling = _data;
     else revert('SAFEEngine/modify-unrecognized-param');
@@ -132,8 +132,11 @@ contract SAFEEngine is Authorizable, ISAFEEngine {
    * @param _parameter The name of the parameter modified
    * @param _data New value for the parameter
    */
-  function modifyParameters(bytes32 _collateralType, bytes32 _parameter, uint256 _data) external isAuthorized {
-    require(contractEnabled == 1, 'SAFEEngine/contract-not-enabled');
+  function modifyParameters(
+    bytes32 _collateralType,
+    bytes32 _parameter,
+    uint256 _data
+  ) external isAuthorized whenEnabled {
     if (_parameter == 'safetyPrice') collateralTypes[_collateralType].safetyPrice = _data;
     else if (_parameter == 'liquidationPrice') collateralTypes[_collateralType].liquidationPrice = _data;
     else if (_parameter == 'debtCeiling') collateralTypes[_collateralType].debtCeiling = _data;
@@ -146,8 +149,7 @@ contract SAFEEngine is Authorizable, ISAFEEngine {
    * @notice Disable this contract (normally called by GlobalSettlement)
    */
   function disableContract() external isAuthorized {
-    contractEnabled = 0;
-    emit DisableContract();
+    _disableContract();
   }
 
   // --- Fungibility ---
@@ -209,10 +211,7 @@ contract SAFEEngine is Authorizable, ISAFEEngine {
     address _debtDestination,
     int256 _deltaCollateral,
     int256 _deltaDebt
-  ) external {
-    // system is live
-    require(contractEnabled == 1, 'SAFEEngine/contract-not-enabled');
-
+  ) external whenEnabled {
     SAFE memory safeData = safes[_collateralType][_safe];
     CollateralType memory collateralTypeData = collateralTypes[_collateralType];
     // collateral type has been initialised
@@ -422,8 +421,7 @@ contract SAFEEngine is Authorizable, ISAFEEngine {
     bytes32 _collateralType,
     address _surplusDst,
     int256 _rateMultiplier
-  ) external isAuthorized {
-    require(contractEnabled == 1, 'SAFEEngine/contract-not-enabled');
+  ) external isAuthorized whenEnabled {
     CollateralType storage collateralType_ = collateralTypes[_collateralType];
     collateralType_.accumulatedRate = collateralType_.accumulatedRate.add(_rateMultiplier);
     int256 _deltaSurplus = collateralType_.debtAmount.mul(_rateMultiplier);

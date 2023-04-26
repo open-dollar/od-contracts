@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import {TaxCollectorForTest, ITaxCollector} from '@contracts/for-test/TaxCollectorForTest.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
-import {IAuthorizable} from '@interfaces/IAuthorizable.sol';
+import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {Math, RAY} from '@libraries/Math.sol';
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 

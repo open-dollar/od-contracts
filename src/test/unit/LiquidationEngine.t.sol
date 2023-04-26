@@ -7,8 +7,9 @@ import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
 import {ISAFESaviour} from '@interfaces/external/ISAFESaviour.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
-import {ILiquidationEngine} from '@interfaces/ILiquidationEngine.sol';
-import {IAuthorizable} from '@interfaces/IAuthorizable.sol';
+import {ILiquidationEngine, IDisableable} from '@interfaces/ILiquidationEngine.sol';
+import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
+import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 
 import {LiquidationEngine} from '@contracts/LiquidationEngine.sol';
 import {AccountingEngine} from '@contracts/AccountingEngine.sol';
@@ -180,7 +181,7 @@ abstract contract Base is HaiTest {
   }
 
   function _mockContractEnabled(uint256 _enabled) internal {
-    stdstore.target(address(liquidationEngine)).sig(ILiquidationEngine.contractEnabled.selector).checked_write(_enabled);
+    stdstore.target(address(liquidationEngine)).sig(IDisableable.contractEnabled.selector).checked_write(_enabled);
   }
 
   function _mockSafeSaviourSaveSafe(
@@ -1327,13 +1328,13 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     liquidationEngine.liquidateSAFE(collateralType, safe);
   }
 
-  function test_Revert_ContractNotEnabled(uint256 _enabled) public {
+  function test_Revert_ContractNotEnabled() public {
     // We don't care about any of these values just mocking for call to work when calling safe engine
     _mockValues(Liquidation(0, 0, 0, 0, 0, 0, 0, 0, 0));
-    vm.assume(_enabled != 1);
+    uint256 _enabled = 0;
     _mockContractEnabled(_enabled);
 
-    vm.expectRevert(bytes('LiquidationEngine/contract-not-enabled'));
+    vm.expectRevert(IDisableable.ContractIsDisabled.selector);
 
     liquidationEngine.liquidateSAFE(collateralType, safe);
   }

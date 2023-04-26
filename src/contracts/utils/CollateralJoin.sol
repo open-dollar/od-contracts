@@ -23,6 +23,7 @@ import {IToken as DSTokenLike} from '@interfaces/external/IToken.sol';
 import {ISystemCoin as CollateralLike} from '@interfaces/external/ISystemCoin.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
+import {Disableable} from '@contract-utils/Disableable.sol';
 
 /*
     Here we provide CollateralJoin adapter (for well behaved ERC20 tokens) 
@@ -36,7 +37,7 @@ import {Authorizable} from '@contracts/utils/Authorizable.sol';
       - `exit`: remove collateral from the system
 */
 
-contract CollateralJoin is Authorizable {
+contract CollateralJoin is Authorizable, Disableable {
   // SAFE database
   SAFEEngineLike public safeEngine;
   // Collateral type name
@@ -45,17 +46,13 @@ contract CollateralJoin is Authorizable {
   CollateralLike public collateral;
   // How many decimals the collateral token has
   uint256 public decimals;
-  // Whether this adapter contract is enabled or not
-  uint256 public contractEnabled;
 
   // --- Events ---
-  event DisableContract();
   event Join(address sender, address account, uint256 wad);
   event Exit(address sender, address account, uint256 wad);
 
   // --- Init ---
   constructor(address _safeEngine, bytes32 _collateralType, address _collateral) Authorizable(msg.sender) {
-    contractEnabled = 1;
     safeEngine = SAFEEngineLike(_safeEngine);
     collateralType = _collateralType;
     collateral = CollateralLike(_collateral);
@@ -66,9 +63,8 @@ contract CollateralJoin is Authorizable {
   /**
    * @notice Disable this contract
    */
-  function disableContract() external isAuthorized {
-    contractEnabled = 0;
-    emit DisableContract();
+  function disableContract() external isAuthorized whenEnabled {
+    _disableContract();
   }
 
   /**
@@ -80,8 +76,7 @@ contract CollateralJoin is Authorizable {
    * @param wad Amount of collateral to transfer in the system (represented as a number with 18 decimals)
    *
    */
-  function join(address account, uint256 wad) external {
-    require(contractEnabled == 1, 'CollateralJoin/contract-not-enabled');
+  function join(address account, uint256 wad) external whenEnabled {
     require(int256(wad) >= 0, 'CollateralJoin/overflow');
     safeEngine.modifyCollateralBalance(collateralType, account, int256(wad));
     require(collateral.transferFrom(msg.sender, address(this), wad), 'CollateralJoin/failed-transfer');

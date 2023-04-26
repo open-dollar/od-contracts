@@ -9,7 +9,7 @@ import {IPIDController} from '@interfaces/IPIDController.sol';
  * @title PIDController
  * @notice Redemption Rate Feedback Mechanism (RRFM) controller that implements a PI controller
  */
-contract PIDController is IPIDController, Authorizable {
+contract PIDController is Authorizable, IPIDController {
   using Math for uint256;
   using Math for int256;
 

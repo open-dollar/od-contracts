@@ -3,8 +3,8 @@ pragma solidity 0.8.19;
 
 import {ISAFEEngine as SAFEEngineLike} from '@interfaces/ISAFEEngine.sol';
 import {IToken as TokenLike} from '@interfaces/external/IToken.sol';
-import {IAuthorizable} from '@interfaces/IAuthorizable.sol';
-import {IDisableable} from '@interfaces/IDisableable.sol';
+import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
+import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 
 interface ISurplusAuctionHouse is IAuthorizable, IDisableable {
   // --- Events ---

@@ -26,13 +26,13 @@ import {ISystemStakingPool as SystemStakingPoolLike} from '@interfaces/external/
 import {IProtocolTokenAuthority as ProtocolTokenAuthorityLike} from '@interfaces/external/IProtocolTokenAuthority.sol';
 
 import {Authorizable, IAuthorizable} from '@contracts/utils/Authorizable.sol';
+import {Disableable} from '@contracts/utils/Disableable.sol';
 
 import {Math} from '@libraries/Math.sol';
 
-contract AccountingEngine is IAccountingEngine, Authorizable {
+contract AccountingEngine is Authorizable, Disableable, IAccountingEngine {
   // --- Auth ---
-  function addAuthorization(address _account) external override(Authorizable, IAuthorizable) isAuthorized {
-    require(contractEnabled == 1, 'AccountingEngine/contract-not-enabled');
+  function addAuthorization(address _account) external override(Authorizable, IAuthorizable) isAuthorized whenEnabled {
     _addAuthorization(_account);
   }
 
@@ -44,7 +44,6 @@ contract AccountingEngine is IAccountingEngine, Authorizable {
   /**
    * Contract that handles auctions for debt that couldn't be covered by collateral
    *     auctions (it prints protocol tokens in exchange for coins that will settle the debt)
-   *
    */
   DebtAuctionHouseLike public debtAuctionHouse;
   // Permissions registry for who can burn and mint protocol tokens
@@ -98,9 +97,6 @@ contract AccountingEngine is IAccountingEngine, Authorizable {
   // When the contract was disabled
   uint256 public disableTimestamp; // [unix timestamp]
 
-  // Whether this contract is enabled or not
-  uint256 public contractEnabled;
-
   // --- Events ---
   event ModifyParameters(bytes32 indexed parameter, uint256 data);
   event ModifyParameters(bytes32 indexed parameter, address data);
@@ -112,7 +108,6 @@ contract AccountingEngine is IAccountingEngine, Authorizable {
   );
   event AuctionDebt(uint256 indexed id, uint256 totalOnAuctionDebt, uint256 debtBalance);
   event AuctionSurplus(uint256 indexed id, uint256 lastSurplusAuctionTime, uint256 coinBalance);
-  event DisableContract(uint256 disableTimestamp, uint256 disableCooldown, uint256 coinBalance, uint256 debtBalance);
   event TransferPostSettlementSurplus(address postSettlementSurplusDrain, uint256 coinBalance, uint256 debtBalance);
   event TransferExtraSurplus(address indexed extraSurplusReceiver, uint256 lastSurplusAuctionTime, uint256 coinBalance);
 
@@ -126,7 +121,6 @@ contract AccountingEngine is IAccountingEngine, Authorizable {
 
     lastSurplusAuctionTime = block.timestamp;
     lastSurplusTransferTime = block.timestamp;
-    contractEnabled = 1;
   }
 
   // --- Administration ---
@@ -356,23 +350,17 @@ contract AccountingEngine is IAccountingEngine, Authorizable {
    *      left in the AccountingEngine
    *
    */
-  function disableContract() external isAuthorized {
-    require(contractEnabled == 1, 'AccountingEngine/contract-not-enabled');
-
-    contractEnabled = 0;
+  function disableContract() external isAuthorized whenEnabled {
     totalQueuedDebt = 0;
     totalOnAuctionDebt = 0;
 
     disableTimestamp = block.timestamp;
+    _disableContract();
 
     surplusAuctionHouse.disableContract();
     debtAuctionHouse.disableContract();
 
     safeEngine.settleDebt(Math.min(safeEngine.coinBalance(address(this)), safeEngine.debtBalance(address(this))));
-
-    emit DisableContract(
-      disableTimestamp, disableCooldown, safeEngine.coinBalance(address(this)), safeEngine.debtBalance(address(this))
-    );
   }
 
   /**
@@ -382,8 +370,7 @@ contract AccountingEngine is IAccountingEngine, Authorizable {
    * @dev Transfer any remaining surplus after disableCooldown seconds have passed since disabling the contract
    *
    */
-  function transferPostSettlementSurplus() external {
-    require(contractEnabled == 0, 'AccountingEngine/still-enabled');
+  function transferPostSettlementSurplus() external whenDisabled {
     require(disableTimestamp + disableCooldown <= block.timestamp, 'AccountingEngine/cooldown-not-passed');
     safeEngine.settleDebt(Math.min(safeEngine.coinBalance(address(this)), safeEngine.debtBalance(address(this))));
     safeEngine.transferInternalCoins(address(this), postSettlementSurplusDrain, safeEngine.coinBalance(address(this)));

@@ -21,11 +21,12 @@ pragma solidity 0.8.19;
 import {ISurplusAuctionHouse, SAFEEngineLike, TokenLike} from '@interfaces/ISurplusAuctionHouse.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
+import {Disableable} from '@contract-utils/Disableable.sol';
 
 import {WAD, HUNDRED} from '@libraries/Math.sol';
 
 // This thing lets you auction surplus for protocol tokens. 50% of the protocol tokens are sent to another address and the rest are burned
-contract SurplusAuctionHouse is ISurplusAuctionHouse, Authorizable {
+contract SurplusAuctionHouse is Authorizable, Disableable, ISurplusAuctionHouse {
   // --- Data ---
   // Bid data for each separate auction
   mapping(uint256 => Bid) public bids;
@@ -45,8 +46,6 @@ contract SurplusAuctionHouse is ISurplusAuctionHouse, Authorizable {
   uint48 public totalAuctionLength = 2 days; // [seconds]
   // Number of auctions started up until now
   uint256 public auctionsStarted;
-  // Whether the contract is settled or not
-  uint256 public contractEnabled = 1;
 
   bytes32 public constant AUCTION_HOUSE_TYPE = bytes32('SURPLUS');
   bytes32 public constant SURPLUS_AUCTION_TYPE = bytes32('MIXED-STRAT');
@@ -89,10 +88,9 @@ contract SurplusAuctionHouse is ISurplusAuctionHouse, Authorizable {
    * @notice Disable the auction house (usually called by AccountingEngine)
    *
    */
-  function disableContract() external isAuthorized {
-    delete contractEnabled;
+  function disableContract() external isAuthorized whenEnabled {
+    _disableContract();
     safeEngine.transferInternalCoins(address(this), msg.sender, safeEngine.coinBalance(address(this)));
-    emit DisableContract();
   }
 
   // --- Auction ---
@@ -101,8 +99,10 @@ contract SurplusAuctionHouse is ISurplusAuctionHouse, Authorizable {
    * @param _amountToSell Total amount of system coins to sell (rad)
    * @param _initialBid Initial protocol token bid (wad)
    */
-  function startAuction(uint256 _amountToSell, uint256 _initialBid) external isAuthorized returns (uint256 _id) {
-    require(contractEnabled == 1, 'SurplusAuctionHouse/contract-not-enabled');
+  function startAuction(
+    uint256 _amountToSell,
+    uint256 _initialBid
+  ) external isAuthorized whenEnabled returns (uint256 _id) {
     require(
       recyclingPercentage == 0 || protocolTokenBidReceiver != address(0), 'SurplusAuctionHouse/null-prot-token-receiver'
     );
@@ -135,8 +135,7 @@ contract SurplusAuctionHouse is ISurplusAuctionHouse, Authorizable {
    * @param _amountToBuy Amount of system coins to buy (rad)
    * @param _bid New bid submitted (wad)
    */
-  function increaseBidSize(uint256 _id, uint256 _amountToBuy, uint256 _bid) external {
-    require(contractEnabled == 1, 'SurplusAuctionHouse/contract-not-enabled');
+  function increaseBidSize(uint256 _id, uint256 _amountToBuy, uint256 _bid) external whenEnabled {
     require(bids[_id].highBidder != address(0), 'SurplusAuctionHouse/high-bidder-not-set');
     require(
       bids[_id].bidExpiry > block.timestamp || bids[_id].bidExpiry == 0, 'SurplusAuctionHouse/bid-already-expired'
@@ -163,8 +162,7 @@ contract SurplusAuctionHouse is ISurplusAuctionHouse, Authorizable {
    * @notice Settle/finish an auction
    * @param _id ID of the auction to settle
    */
-  function settleAuction(uint256 _id) external {
-    require(contractEnabled == 1, 'SurplusAuctionHouse/contract-not-enabled');
+  function settleAuction(uint256 _id) external whenEnabled {
     require(
       bids[_id].bidExpiry != 0 && (bids[_id].bidExpiry < block.timestamp || bids[_id].auctionDeadline < block.timestamp),
       'SurplusAuctionHouse/not-finished'
@@ -190,8 +188,7 @@ contract SurplusAuctionHouse is ISurplusAuctionHouse, Authorizable {
    * @notice Terminate an auction prematurely.
    * @param _id ID of the auction to settle/terminate
    */
-  function terminateAuctionPrematurely(uint256 _id) external {
-    require(contractEnabled == 0, 'SurplusAuctionHouse/contract-still-enabled');
+  function terminateAuctionPrematurely(uint256 _id) external whenDisabled {
     require(bids[_id].highBidder != address(0), 'SurplusAuctionHouse/high-bidder-not-set');
     protocolToken.push(bids[_id].highBidder, bids[_id].bidAmount);
     // protocolToken.move(address(this), bids[_id].highBidder, bids[_id].bidAmount);

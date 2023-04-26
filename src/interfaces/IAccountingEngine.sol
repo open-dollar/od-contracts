@@ -6,8 +6,8 @@ import {ISurplusAuctionHouse} from '@interfaces/ISurplusAuctionHouse.sol';
 import {IDebtAuctionHouse} from '@interfaces/IDebtAuctionHouse.sol';
 import {IProtocolTokenAuthority} from '@interfaces/external/IProtocolTokenAuthority.sol';
 import {ISystemStakingPool} from '@interfaces/external/ISystemStakingPool.sol';
-import {IAuthorizable} from '@interfaces/IAuthorizable.sol';
-import {IDisableable} from '@interfaces/IDisableable.sol';
+import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
+import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 
 interface IAccountingEngine is IAuthorizable, IDisableable {
   function pushDebtToQueue(uint256 _debtBlock) external;

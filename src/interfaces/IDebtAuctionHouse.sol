@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {IAuthorizable} from '@interfaces/IAuthorizable.sol';
-import {IDisableable} from '@interfaces/IDisableable.sol';
+import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
+import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 
 interface IDebtAuctionHouse is IAuthorizable, IDisableable {
   function startAuction(

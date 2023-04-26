@@ -23,6 +23,7 @@ import {IToken as TokenLike} from '@interfaces/external/IToken.sol';
 import {IAccountingEngine as AccountingEngineLike} from '@interfaces/IAccountingEngine.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
+import {Disableable} from '@contracts/utils/Disableable.sol';
 
 import {Math, WAD} from '@libraries/Math.sol';
 
@@ -30,7 +31,7 @@ import {Math, WAD} from '@libraries/Math.sol';
    This thing creates protocol tokens on demand in return for system coins
 */
 
-contract DebtAuctionHouse is Authorizable {
+contract DebtAuctionHouse is Authorizable, Disableable {
   // --- Data ---
   struct Bid {
     // Bid size
@@ -67,7 +68,6 @@ contract DebtAuctionHouse is Authorizable {
   uint256 public auctionsStarted = 0;
   // Accumulator for all debt auctions currently not settled
   uint256 public activeDebtAuctions;
-  uint256 public contractEnabled;
 
   bytes32 public constant AUCTION_HOUSE_TYPE = bytes32('DEBT');
 
@@ -89,13 +89,11 @@ contract DebtAuctionHouse is Authorizable {
   event TerminateAuctionPrematurely(
     uint256 indexed id, address sender, address highBidder, uint256 bidAmount, uint256 activeDebtAuctions
   );
-  event DisableContract(address sender);
 
   // --- Init ---
   constructor(address _safeEngine, address _protocolToken) Authorizable(msg.sender) {
     safeEngine = SAFEEngineLike(_safeEngine);
     protocolToken = TokenLike(_protocolToken);
-    contractEnabled = 1;
   }
 
   // --- Admin ---
@@ -118,8 +116,7 @@ contract DebtAuctionHouse is Authorizable {
    * @param parameter The name of the oracle contract modified
    * @param addr New contract address
    */
-  function modifyParameters(bytes32 parameter, address addr) external isAuthorized {
-    require(contractEnabled == 1, 'DebtAuctionHouse/contract-not-enabled');
+  function modifyParameters(bytes32 parameter, address addr) external isAuthorized whenEnabled {
     if (parameter == 'protocolToken') protocolToken = TokenLike(addr);
     else if (parameter == 'accountingEngine') accountingEngine = addr;
     else revert('DebtAuctionHouse/modify-unrecognized-param');
@@ -137,8 +134,7 @@ contract DebtAuctionHouse is Authorizable {
     address incomeReceiver,
     uint256 amountToSell,
     uint256 initialBid
-  ) external isAuthorized returns (uint256 id) {
-    require(contractEnabled == 1, 'DebtAuctionHouse/contract-not-enabled');
+  ) external isAuthorized whenEnabled returns (uint256 id) {
     require(auctionsStarted < type(uint256).max, 'DebtAuctionHouse/overflow');
     id = ++auctionsStarted;
 
@@ -174,8 +170,7 @@ contract DebtAuctionHouse is Authorizable {
    * @param amountToBuy Amount of protocol tokens to buy (must be smaller than the previous proposed amount) (wad)
    * @param bid New system coin bid (must always equal the total amount raised by the auction) (rad)
    */
-  function decreaseSoldAmount(uint256 id, uint256 amountToBuy, uint256 bid) external {
-    require(contractEnabled == 1, 'DebtAuctionHouse/contract-not-enabled');
+  function decreaseSoldAmount(uint256 id, uint256 amountToBuy, uint256 bid) external whenEnabled {
     require(bids[id].highBidder != address(0), 'DebtAuctionHouse/high-bidder-not-set');
     require(bids[id].bidExpiry > block.timestamp || bids[id].bidExpiry == 0, 'DebtAuctionHouse/bid-already-expired');
     require(bids[id].auctionDeadline > block.timestamp, 'DebtAuctionHouse/auction-already-expired');
@@ -203,8 +198,7 @@ contract DebtAuctionHouse is Authorizable {
    * @notice Settle/finish an auction
    * @param id ID of the auction to settle
    */
-  function settleAuction(uint256 id) external {
-    require(contractEnabled == 1, 'DebtAuctionHouse/not-live');
+  function settleAuction(uint256 id) external whenEnabled {
     require(
       bids[id].bidExpiry != 0 && (bids[id].bidExpiry < block.timestamp || bids[id].auctionDeadline < block.timestamp),
       'DebtAuctionHouse/not-finished'
@@ -220,18 +214,16 @@ contract DebtAuctionHouse is Authorizable {
    * @notice Disable the auction house (usually called by the AccountingEngine)
    */
   function disableContract() external isAuthorized {
-    contractEnabled = 0;
+    _disableContract();
     accountingEngine = msg.sender;
     activeDebtAuctions = 0;
-    emit DisableContract(msg.sender);
   }
 
   /**
    * @notice Terminate an auction prematurely
    * @param id ID of the auction to terminate
    */
-  function terminateAuctionPrematurely(uint256 id) external {
-    require(contractEnabled == 0, 'DebtAuctionHouse/contract-still-enabled');
+  function terminateAuctionPrematurely(uint256 id) external whenDisabled {
     require(bids[id].highBidder != address(0), 'DebtAuctionHouse/high-bidder-not-set');
     safeEngine.createUnbackedDebt(accountingEngine, bids[id].highBidder, bids[id].bidAmount);
     emit TerminateAuctionPrematurely(id, msg.sender, bids[id].highBidder, bids[id].bidAmount, activeDebtAuctions);

@@ -3,8 +3,8 @@ pragma solidity 0.8.19;
 
 import {Math, RAY} from '@libraries/Math.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
-import {IDisableable} from '@interfaces/IDisableable.sol';
-import {IAuthorizable} from '@interfaces/IAuthorizable.sol';
+import {IDisableable} from '@interfaces/utils/IDisableable.sol';
+import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {SAFEEngine} from '@contracts/SAFEEngine.sol';
 import {HaiTest} from '@test/utils/HaiTest.t.sol';
 import {StdStorage, stdStorage} from 'forge-std/StdStorage.sol';
@@ -680,11 +680,11 @@ contract Unit_SAFEEngine_UpdateAccumulatedRate is Base {
     safeEngine.updateAccumulatedRate(collateralType, surplusDst, _rateMultiplier);
   }
 
-  function test_Revert_ContractNotEnabled(int256 _rateMultiplier, uint256 _enabled) public authorized {
-    vm.assume(_enabled != 1);
+  function test_Revert_ContractNotEnabled(int256 _rateMultiplier) public authorized {
+    uint256 _enabled = 0;
     _mockContractEnabled(_enabled);
 
-    vm.expectRevert(bytes('SAFEEngine/contract-not-enabled'));
+    vm.expectRevert(IDisableable.ContractIsDisabled.selector);
 
     safeEngine.updateAccumulatedRate(collateralType, surplusDst, _rateMultiplier);
   }
@@ -1001,11 +1001,11 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
     safeEngine.modifySAFECollateralization(collateralType, safe, src, debtDestination, _deltaCollateral, 0);
   }
 
-  function test_Revert_ContractNotEnabled(uint256 _enabled) public {
-    vm.assume(_enabled != 1);
+  function test_Revert_ContractNotEnabled() public {
+    uint256 _enabled = 0;
     _mockContractEnabled(_enabled);
 
-    vm.expectRevert(bytes('SAFEEngine/contract-not-enabled'));
+    vm.expectRevert(IDisableable.ContractIsDisabled.selector);
     safeEngine.modifySAFECollateralization(collateralType, safe, src, debtDestination, 0, 0);
   }
 

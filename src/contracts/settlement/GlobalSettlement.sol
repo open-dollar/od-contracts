@@ -23,12 +23,13 @@ import {ISAFEEngine as SAFEEngineLike} from '@interfaces/ISAFEEngine.sol';
 import {ILiquidationEngine as LiquidationEngineLike} from '@interfaces/ILiquidationEngine.sol';
 import {IStabilityFeeTreasury as StabilityFeeTreasuryLike} from '@interfaces/IStabilityFeeTreasury.sol';
 import {IAccountingEngine as AccountingEngineLike} from '@interfaces/IAccountingEngine.sol';
-import {IDisableable as CoinSavingsAccountLike} from '@interfaces/IDisableable.sol';
+import {IDisableable as CoinSavingsAccountLike} from '@interfaces/utils/IDisableable.sol';
 import {ICollateralAuctionHouse as CollateralAuctionHouseLike} from '@interfaces/ICollateralAuctionHouse.sol';
 import {IOracle as OracleLike} from '@interfaces/IOracle.sol';
 import {IOracleRelayer as OracleRelayerLike} from '@interfaces/IOracleRelayer.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
+import {Disableable} from '@contract-utils/Disableable.sol';
 
 import {Math, RAY} from '@libraries/Math.sol';
 
@@ -100,7 +101,7 @@ import {Math, RAY} from '@libraries/Math.sol';
         - the amount of collateral available to redeem is limited by how big your bag is
 */
 
-contract GlobalSettlement is Authorizable {
+contract GlobalSettlement is Authorizable, Disableable {
   using Math for uint256;
 
   // --- Data ---
@@ -111,8 +112,6 @@ contract GlobalSettlement is Authorizable {
   CoinSavingsAccountLike public coinSavingsAccount;
   StabilityFeeTreasuryLike public stabilityFeeTreasury;
 
-  // Flag that indicates whether settlement has been triggered or not
-  uint256 public contractEnabled;
   // The timestamp when settlement was triggered
   uint256 public shutdownTime;
   // The amount of time post settlement during which no processing takes place
@@ -150,9 +149,7 @@ contract GlobalSettlement is Authorizable {
   );
 
   // --- Init ---
-  constructor() Authorizable(msg.sender) {
-    contractEnabled = 1;
-  }
+  constructor() Authorizable(msg.sender) {}
 
   // --- Administration ---
   /**
@@ -160,8 +157,7 @@ contract GlobalSettlement is Authorizable {
    * @param parameter The name of the parameter to modify
    * @param data The new address for the parameter
    */
-  function modifyParameters(bytes32 parameter, address data) external isAuthorized {
-    require(contractEnabled == 1, 'GlobalSettlement/contract-not-enabled');
+  function modifyParameters(bytes32 parameter, address data) external isAuthorized whenEnabled {
     if (parameter == 'safeEngine') safeEngine = SAFEEngineLike(data);
     else if (parameter == 'liquidationEngine') liquidationEngine = LiquidationEngineLike(data);
     else if (parameter == 'accountingEngine') accountingEngine = AccountingEngineLike(data);
@@ -177,21 +173,24 @@ contract GlobalSettlement is Authorizable {
    * @param parameter The name of the parameter to modify
    * @param data The new value for the parameter
    */
-  function modifyParameters(bytes32 parameter, uint256 data) external isAuthorized {
-    require(contractEnabled == 1, 'GlobalSettlement/contract-not-enabled');
+  function modifyParameters(bytes32 parameter, uint256 data) external isAuthorized whenEnabled {
     if (parameter == 'shutdownCooldown') shutdownCooldown = data;
     else revert('GlobalSettlement/modify-unrecognized-parameter');
     emit ModifyParameters(parameter, data);
+  }
+
+  function disableContract() external pure {
+    revert NonDisableable();
   }
 
   // --- Settlement ---
   /**
    * @notice Freeze the system and start the cooldown period
    */
-  function shutdownSystem() external isAuthorized {
-    require(contractEnabled == 1, 'GlobalSettlement/contract-not-enabled');
-    contractEnabled = 0;
+  function shutdownSystem() external isAuthorized whenEnabled {
     shutdownTime = block.timestamp;
+    _disableContract();
+
     safeEngine.disableContract();
     liquidationEngine.disableContract();
     // treasury must be disabled before the accounting engine so that all surplus is gathered in one place
@@ -210,8 +209,7 @@ contract GlobalSettlement is Authorizable {
    * @notice Calculate a collateral type's final price according to the latest system coin redemption price
    * @param collateralType The collateral type to calculate the price for
    */
-  function freezeCollateralType(bytes32 collateralType) external {
-    require(contractEnabled == 0, 'GlobalSettlement/contract-still-enabled');
+  function freezeCollateralType(bytes32 collateralType) external whenDisabled {
     require(finalCoinPerCollateralPrice[collateralType] == 0, 'GlobalSettlement/final-collateral-price-already-defined');
     (collateralTotalDebt[collateralType],,,,,) = safeEngine.collateralTypes(collateralType);
     (OracleLike orcl,,) = oracleRelayer.collateralTypes(collateralType);
@@ -283,8 +281,7 @@ contract GlobalSettlement is Authorizable {
    * @notice Remove collateral from the caller's SAFE
    * @param collateralType The collateral type to free
    */
-  function freeCollateral(bytes32 collateralType) external {
-    require(contractEnabled == 0, 'GlobalSettlement/contract-still-enabled');
+  function freeCollateral(bytes32 collateralType) external whenDisabled {
     (uint256 safeCollateral, uint256 safeDebt) = safeEngine.safes(collateralType, msg.sender);
     require(safeDebt == 0, 'GlobalSettlement/safe-debt-not-zero');
     require(safeCollateral <= 2 ** 255, 'GlobalSettlement/overflow');
@@ -298,8 +295,7 @@ contract GlobalSettlement is Authorizable {
    * @notice Set the final outstanding supply of system coins
    * @dev There must be no remaining surplus in the accounting engine
    */
-  function setOutstandingCoinSupply() external {
-    require(contractEnabled == 0, 'GlobalSettlement/contract-still-enabled');
+  function setOutstandingCoinSupply() external whenDisabled {
     require(outstandingCoinSupply == 0, 'GlobalSettlement/outstanding-coin-supply-not-zero');
     require(safeEngine.coinBalance(address(accountingEngine)) == 0, 'GlobalSettlement/surplus-not-zero');
     require(block.timestamp >= shutdownTime + shutdownCooldown, 'GlobalSettlement/shutdown-cooldown-not-finished');

@@ -23,6 +23,7 @@ import {IToken as DSTokenLike} from '@interfaces/external/IToken.sol';
 import {ISystemCoin as CollateralLike} from '@interfaces/external/ISystemCoin.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
+import {Disableable} from '@contract-utils/Disableable.sol';
 
 /*
     Here we provide CoinJoin adapter (for connecting internal coin balances) 
@@ -36,24 +37,20 @@ import {Authorizable} from '@contracts/utils/Authorizable.sol';
       - `exit`: remove collateral from the system
 */
 
-contract CoinJoin is Authorizable {
+contract CoinJoin is Authorizable, Disableable {
   // SAFE database
   SAFEEngineLike public safeEngine;
   // Coin created by the system; this is the external, ERC-20 representation, not the internal 'coinBalance'
   DSTokenLike public systemCoin;
-  // Whether this contract is enabled or not
-  uint256 public contractEnabled;
   // Number of decimals the system coin has
   uint256 public decimals;
 
   // --- Events ---
-  event DisableContract();
   event Join(address sender, address account, uint256 wad);
   event Exit(address sender, address account, uint256 wad);
 
   // --- Init ---
   constructor(address safeEngine_, address systemCoin_) Authorizable(msg.sender) {
-    contractEnabled = 1;
     safeEngine = SAFEEngineLike(safeEngine_);
     systemCoin = DSTokenLike(systemCoin_);
     decimals = 18;
@@ -62,9 +59,8 @@ contract CoinJoin is Authorizable {
   /**
    * @notice Disable this contract
    */
-  function disableContract() external isAuthorized {
-    contractEnabled = 0;
-    emit DisableContract();
+  function disableContract() external isAuthorized whenEnabled {
+    _disableContract();
   }
 
   uint256 constant RAY = 10 ** 27;
@@ -96,8 +92,7 @@ contract CoinJoin is Authorizable {
    * @param wad Amount of internal coins to join (18 decimal number that will be multiplied by ray)
    *
    */
-  function exit(address account, uint256 wad) external {
-    require(contractEnabled == 1, 'CoinJoin/contract-not-enabled');
+  function exit(address account, uint256 wad) external whenEnabled {
     safeEngine.transferInternalCoins(msg.sender, address(this), multiply(RAY, wad));
     systemCoin.mint(account, wad);
     emit Exit(msg.sender, account, wad);

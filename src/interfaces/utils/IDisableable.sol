@@ -5,6 +5,11 @@ interface IDisableable {
   // --- Events ---
   event DisableContract();
 
+  // --- Errors ---
+  error ContractIsEnabled();
+  error ContractIsDisabled();
+  error NonDisableable();
+
   // --- Data ---
   function contractEnabled() external view returns (uint256 _enabled);
 

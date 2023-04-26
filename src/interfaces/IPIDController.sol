@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-interface IPIDController {
+import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
+
+interface IPIDController is IAuthorizable {
   // --- Structs ---
   struct DeviationObservation {
     // The timestamp when this observation was stored

@@ -23,6 +23,7 @@ import {IToken as DSTokenLike} from '@interfaces/external/IToken.sol';
 import {ISystemCoin as CollateralLike} from '@interfaces/external/ISystemCoin.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
+import {Disableable} from '@contract-utils/Disableable.sol';
 
 /*
     Here we provide ETHJoin adapter (for native Ether) to connect the 
@@ -36,24 +37,20 @@ import {Authorizable} from '@contracts/utils/Authorizable.sol';
       - `exit`: remove collateral from the system
 */
 
-contract ETHJoin is Authorizable {
+contract ETHJoin is Authorizable, Disableable {
   // SAFE database
   SAFEEngineLike public safeEngine;
   // Collateral type name
   bytes32 public collateralType;
-  // Whether this contract is enabled or not
-  uint256 public contractEnabled;
   // Number of decimals ETH has
   uint256 public decimals;
 
   // --- Events ---
-  event DisableContract();
   event Join(address sender, address account, uint256 wad);
   event Exit(address sender, address account, uint256 wad);
 
   // --- Init ---
   constructor(address safeEngine_, bytes32 collateralType_) Authorizable(msg.sender) {
-    contractEnabled = 1;
     safeEngine = SAFEEngineLike(safeEngine_);
     collateralType = collateralType_;
     decimals = 18;
@@ -62,9 +59,8 @@ contract ETHJoin is Authorizable {
   /**
    * @notice Disable this contract
    */
-  function disableContract() external isAuthorized {
-    contractEnabled = 0;
-    emit DisableContract();
+  function disableContract() external isAuthorized whenEnabled {
+    _disableContract();
   }
 
   /**
@@ -72,8 +68,7 @@ contract ETHJoin is Authorizable {
    * @param account Account that will receive the ETH representation inside the system
    *
    */
-  function join(address account) external payable {
-    require(contractEnabled == 1, 'ETHJoin/contract-not-enabled');
+  function join(address account) external payable whenEnabled {
     require(int256(msg.value) >= 0, 'ETHJoin/overflow');
     safeEngine.modifyCollateralBalance(collateralType, account, int256(msg.value));
     emit Join(msg.sender, account, msg.value);

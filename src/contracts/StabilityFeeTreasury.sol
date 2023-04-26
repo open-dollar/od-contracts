@@ -23,14 +23,14 @@ import {ISystemCoin as SystemCoinLike} from '@interfaces/external/ISystemCoin.so
 import {ICoinJoin as CoinJoinLike} from '@interfaces/ICoinJoin.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
+import {Disableable} from '@contract-utils/Disableable.sol';
 
 import {Math, RAY, HUNDRED} from '@libraries/Math.sol';
 
-contract StabilityFeeTreasury is Authorizable {
+contract StabilityFeeTreasury is Authorizable, Disableable {
   // --- Events ---
   event ModifyParameters(bytes32 parameter, address addr);
   event ModifyParameters(bytes32 parameter, uint256 val);
-  event DisableContract();
   event SetTotalAllowance(address indexed account, uint256 rad);
   event SetPerBlockAllowance(address indexed account, uint256 rad);
   event GiveFunds(address indexed account, uint256 rad, uint256 expensesAccumulator);
@@ -66,7 +66,6 @@ contract StabilityFeeTreasury is Authorizable {
   uint256 public accumulatorTag; // latest tagged accumulator price                                          [rad]
   uint256 public pullFundsMinThreshold; // minimum funds that must be in the treasury so that someone can pullFunds [rad]
   uint256 public latestSurplusTransferTime; // latest timestamp when transferSurplusFunds was called                    [seconds]
-  uint256 public contractEnabled;
 
   modifier accountNotTreasury(address account) {
     require(account != address(this), 'StabilityFeeTreasury/account-cannot-be-treasury');
@@ -83,7 +82,6 @@ contract StabilityFeeTreasury is Authorizable {
     systemCoin = SystemCoinLike(coinJoin.systemCoin());
     latestSurplusTransferTime = block.timestamp;
     expensesMultiplier = HUNDRED;
-    contractEnabled = 1;
 
     systemCoin.approve(address(coinJoin), type(uint256).max);
   }
@@ -94,8 +92,7 @@ contract StabilityFeeTreasury is Authorizable {
    * @param parameter The name of the contract whose address will be changed
    * @param addr New address for the contract
    */
-  function modifyParameters(bytes32 parameter, address addr) external isAuthorized {
-    require(contractEnabled == 1, 'StabilityFeeTreasury/contract-not-enabled');
+  function modifyParameters(bytes32 parameter, address addr) external isAuthorized whenEnabled {
     require(addr != address(0), 'StabilityFeeTreasury/null-addr');
     if (parameter == 'extraSurplusReceiver') {
       require(addr != address(this), 'StabilityFeeTreasury/accounting-engine-cannot-be-treasury');
@@ -111,8 +108,7 @@ contract StabilityFeeTreasury is Authorizable {
    * @param parameter The name of the parameter to modify
    * @param val New parameter value
    */
-  function modifyParameters(bytes32 parameter, uint256 val) external isAuthorized {
-    require(contractEnabled == 1, 'StabilityFeeTreasury/not-live');
+  function modifyParameters(bytes32 parameter, uint256 val) external isAuthorized whenEnabled {
     if (parameter == 'expensesMultiplier') {
       expensesMultiplier = val;
     } else if (parameter == 'treasuryCapacity') {
@@ -134,12 +130,10 @@ contract StabilityFeeTreasury is Authorizable {
   /**
    * @notice Disable this contract (normally called by GlobalSettlement)
    */
-  function disableContract() external isAuthorized {
-    require(contractEnabled == 1, 'StabilityFeeTreasury/already-disabled');
-    contractEnabled = 0;
+  function disableContract() external isAuthorized whenEnabled {
+    _disableContract();
     joinAllCoins();
     safeEngine.transferInternalCoins(address(this), extraSurplusReceiver, safeEngine.coinBalance(address(this)));
-    emit DisableContract();
   }
 
   /**

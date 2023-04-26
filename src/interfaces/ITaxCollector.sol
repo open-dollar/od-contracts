@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import {ISAFEEngine as SAFEEngineLike} from '@interfaces/ISAFEEngine.sol';
-import {IAuthorizable} from '@interfaces/IAuthorizable.sol';
+import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 
 interface ITaxCollector is IAuthorizable {
   // --- Events ---
