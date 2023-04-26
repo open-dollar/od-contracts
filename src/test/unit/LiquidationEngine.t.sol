@@ -745,6 +745,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     uint256 _liquidationPenalty,
     uint256 _currentOnAuctionSystemCoins
   ) internal pure returns (bool _notNull) {
+    vm.assume(notOverflowMul(_limitedValue, WAD));
     uint256 _limitAdjustedDebt = _limitedValue * WAD / _accumulatedRate / _liquidationPenalty;
     vm.assume(
       notOverflowMul(_safeCollateral, _limitAdjustedDebt) && notOverflow(_currentOnAuctionSystemCoins, _limitedValue)
