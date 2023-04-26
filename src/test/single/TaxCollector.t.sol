@@ -3,26 +3,12 @@ pragma experimental ABIEncoderV2;
 
 import 'ds-test/test.sol';
 
-import {TaxCollectorForTest as TaxCollector} from '../../contracts/for-test/TaxCollectorForTest.sol';
-import {SAFEEngine} from '../../contracts/SAFEEngine.sol';
+import {TaxCollectorForTest as TaxCollector} from '@contracts/for-test/TaxCollectorForTest.sol';
+import {SAFEEngine} from '@contracts/SAFEEngine.sol';
+import {ISAFEEngine as SAFEEngineLike} from '@interfaces/ISAFEEngine.sol';
 
 abstract contract Hevm {
   function warp(uint256) public virtual;
-}
-
-abstract contract SAFEEngineLike {
-  function collateralTypes(bytes32)
-    public
-    view
-    virtual
-    returns (
-      uint256 debtAmount,
-      uint256 accumulatedRate,
-      uint256 safetyPrice,
-      uint256 debtCeiling,
-      uint256 debtFloor,
-      uint256 liquidationPrice
-    );
 }
 
 contract SingleTaxCollectorTest is DSTest {
@@ -30,38 +16,38 @@ contract SingleTaxCollectorTest is DSTest {
   TaxCollector taxCollector;
   SAFEEngine safeEngine;
 
-  function ray(uint256 wad_) internal pure returns (uint256) {
-    return wad_ * 10 ** 9;
+  function ray(uint256 _wad) internal pure returns (uint256) {
+    return _wad * 10 ** 9;
   }
 
-  function rad(uint256 wad_) internal pure returns (uint256) {
-    return wad_ * 10 ** 27;
+  function rad(uint256 _wad) internal pure returns (uint256) {
+    return _wad * 10 ** 27;
   }
 
-  function wad(uint256 rad_) internal pure returns (uint256) {
-    return rad_ / 10 ** 27;
+  function wad(uint256 _rad) internal pure returns (uint256) {
+    return _rad / 10 ** 27;
   }
 
-  function wad(int256 rad_) internal pure returns (uint256) {
-    return uint256(rad_ / 10 ** 27);
+  function wad(int256 _rad) internal pure returns (uint256) {
+    return uint256(_rad / 10 ** 27);
   }
 
-  function updateTime(bytes32 collateralType) internal view returns (uint256) {
-    (uint256 stabilityFee, uint256 updateTime_) = taxCollector.collateralTypes(collateralType);
+  function updateTime(bytes32 _collateralType) internal view returns (uint256) {
+    (uint256 stabilityFee, uint256 updateTime_) = taxCollector.collateralTypes(_collateralType);
     stabilityFee;
     return updateTime_;
   }
 
-  function debtAmount(bytes32 collateralType) internal view returns (uint256 debtAmountV) {
-    (debtAmountV,,,,,) = SAFEEngineLike(address(safeEngine)).collateralTypes(collateralType);
+  function debtAmount(bytes32 collateralType) internal view returns (uint256 _debtAmountV) {
+    (_debtAmountV,) = SAFEEngineLike(address(safeEngine)).cData(collateralType);
   }
 
-  function accumulatedRate(bytes32 collateralType) internal view returns (uint256 accumulatedRateV) {
-    (, accumulatedRateV,,,,) = SAFEEngineLike(address(safeEngine)).collateralTypes(collateralType);
+  function accumulatedRate(bytes32 collateralType) internal view returns (uint256 _accumulatedRateV) {
+    (, _accumulatedRateV) = SAFEEngineLike(address(safeEngine)).cData(collateralType);
   }
 
-  function debtCeiling(bytes32 collateralType) internal view returns (uint256 debtCeilingV) {
-    (,,, debtCeilingV,,) = SAFEEngineLike(address(safeEngine)).collateralTypes(collateralType);
+  function debtCeiling(bytes32 collateralType) internal view returns (uint256 _debtCeilingV) {
+    (, _debtCeilingV,,) = SAFEEngineLike(address(safeEngine)).cParams(collateralType);
   }
 
   address ali = address(bytes20('ali'));
@@ -81,9 +67,10 @@ contract SingleTaxCollectorTest is DSTest {
   }
 
   function draw(bytes32 collateralType, uint256 coin) internal {
-    safeEngine.modifyParameters('globalDebtCeiling', safeEngine.globalDebtCeiling() + rad(coin));
-    safeEngine.modifyParameters(collateralType, 'debtCeiling', debtCeiling(collateralType) + rad(coin));
-    safeEngine.modifyParameters(collateralType, 'safetyPrice', 10 ** 27 * 10_000 ether);
+    (, uint256 _globalDebtCeiling) = safeEngine.params();
+    safeEngine.modifyParameters('globalDebtCeiling', abi.encode(_globalDebtCeiling + rad(coin)));
+    safeEngine.modifyParameters(collateralType, 'debtCeiling', abi.encode(debtCeiling(collateralType) + rad(coin)));
+    safeEngine.modifyParameters(collateralType, 'safetyPrice', abi.encode(10 ** 27 * 10_000 ether));
     address self = address(this);
     safeEngine.modifyCollateralBalance(collateralType, self, 10 ** 27 * 1 ether);
     safeEngine.modifySAFECollateralization(collateralType, self, self, self, int256(1 ether), int256(coin));
@@ -793,7 +780,7 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.taxSingle('j');
     assertEq(wad(safeEngine.coinBalance(ali)), 192.6859375 ether);
 
-    (, uint256 accumulatedRate,,,,) = safeEngine.collateralTypes('j');
-    assertEq(accumulatedRate, 926_859_375_000_000_000_000_022_885);
+    (, uint256 _accumulatedRate) = safeEngine.cData('j');
+    assertEq(_accumulatedRate, 926_859_375_000_000_000_000_022_885);
   }
 }

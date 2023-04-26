@@ -112,9 +112,9 @@ contract SingleTransferSAFECollateralAndDebtTest is DSTest {
     b = address(bob);
 
     safeEngine.initializeCollateralType('collateralTokens');
-    safeEngine.modifyParameters('collateralTokens', 'safetyPrice', ray(0.5 ether));
-    safeEngine.modifyParameters('collateralTokens', 'debtCeiling', rad(1000 ether));
-    safeEngine.modifyParameters('globalDebtCeiling', rad(1000 ether));
+    safeEngine.modifyParameters('collateralTokens', 'safetyPrice', abi.encode(ray(0.5 ether)));
+    safeEngine.modifyParameters('collateralTokens', 'debtCeiling', abi.encode(rad(1000 ether)));
+    safeEngine.modifyParameters('globalDebtCeiling', abi.encode(rad(1000 ether)));
 
     safeEngine.addAuthorization(a);
     safeEngine.addAuthorization(b);
@@ -148,7 +148,7 @@ contract SingleTransferSAFECollateralAndDebtTest is DSTest {
     ali.modifySAFECollateralization('collateralTokens', a, a, a, 8 ether, 4 ether);
     bob.approveSAFEModification(address(ali));
     assertTrue(ali.can_transferSAFECollateralAndDebt('collateralTokens', a, b, 4 ether, 2 ether));
-    safeEngine.modifyParameters('collateralTokens', 'debtFloor', rad(1 ether));
+    safeEngine.modifyParameters('collateralTokens', 'debtFloor', abi.encode(rad(1 ether)));
     assertTrue(ali.can_transferSAFECollateralAndDebt('collateralTokens', a, b, 2 ether, 1 ether));
     assertTrue(!ali.can_transferSAFECollateralAndDebt('collateralTokens', a, b, 1 ether, 0.5 ether));
   }

@@ -116,6 +116,28 @@ abstract contract Base is HaiTest {
     ).depth(2).checked_write(_liquidationQuantity);
   }
 
+  function _mockSafeEngineCData(bytes32 _collateralType, uint256 _debtAmount, uint256 _accumulatedRate) internal {
+    vm.mockCall(
+      address(mockSafeEngine),
+      abi.encodeCall(ISAFEEngine(mockSafeEngine).cData, (_collateralType)),
+      abi.encode(_debtAmount, _accumulatedRate)
+    );
+  }
+
+  function _mockSafeEngineCParams(
+    bytes32 _collateralType,
+    uint256 _safetyPrice,
+    uint256 _debtCeiling,
+    uint256 _debtFloor,
+    uint256 _liquidationPrice
+  ) internal {
+    vm.mockCall(
+      address(mockSafeEngine),
+      abi.encodeCall(ISAFEEngine(mockSafeEngine).cParams, (_collateralType)),
+      abi.encode(_safetyPrice, _debtCeiling, _debtFloor, _liquidationPrice)
+    );
+  }
+
   function _mockSafeEngineCollateralTypes(
     bytes32 _collateralType,
     uint256 _debtAmount,
@@ -125,11 +147,8 @@ abstract contract Base is HaiTest {
     uint256 _debtFloor,
     uint256 _liquidationPrice
   ) internal {
-    vm.mockCall(
-      address(mockSafeEngine),
-      abi.encodeCall(ISAFEEngine(mockSafeEngine).collateralTypes, (_collateralType)),
-      abi.encode(_debtAmount, _accumulatedRate, _safetyPrice, _debtCeiling, _debtFloor, _liquidationPrice)
-    );
+    _mockSafeEngineCData(_collateralType, _debtAmount, _accumulatedRate);
+    _mockSafeEngineCParams(_collateralType, _safetyPrice, _debtCeiling, _debtFloor, _liquidationPrice);
   }
 
   function _mockSafeEngineSafes(
@@ -531,15 +550,7 @@ contract Unit_LiquidationEngine_GetLimitAdjustedDebtToCover is Base {
     uint256 _onAuctionSystemCoinLimit,
     uint256 _currentOnAuctionSystemCoins
   ) public {
-    _mockSafeEngineCollateralTypes({
-      _collateralType: collateralType,
-      _debtAmount: 0,
-      _accumulatedRate: _accumulatedRate,
-      _safetyPrice: 0,
-      _debtCeiling: 0,
-      _debtFloor: 0,
-      _liquidationPrice: 0
-    });
+    _mockSafeEngineCData({_collateralType: collateralType, _debtAmount: 0, _accumulatedRate: _accumulatedRate});
     _mockSafeEngineSafes({_collateralType: collateralType, _safe: safe, _lockedCollateral: 0, _generatedDebt: _safeDebt});
     _mockLiquidationEngineCollateralType(
       collateralType, mockCollateralAuctionHouse, _liquidationPenalty, _liquidationQuantity
@@ -604,7 +615,7 @@ contract Unit_LiquidationEngine_GetLimitAdjustedDebtToCover is Base {
       _currentOnAuctionSystemCoins
     );
 
-    vm.expectCall(address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.collateralTypes.selector, collateralType));
+    vm.expectCall(address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.cData.selector, collateralType));
 
     liquidationEngine.getLimitAdjustedDebtToCover(collateralType, safe);
   }
@@ -961,11 +972,14 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     _;
   }
 
-  function test_Call_SafeEngine_CollateralTypes(Liquidation memory _liquidation)
-    public
-    happyPathFullLiquidation(_liquidation)
-  {
-    vm.expectCall(address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.collateralTypes.selector, collateralType));
+  function test_Call_SafeEngine_CData(Liquidation memory _liquidation) public happyPathFullLiquidation(_liquidation) {
+    vm.expectCall(address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.cData.selector, collateralType));
+
+    liquidationEngine.liquidateSAFE(collateralType, safe);
+  }
+
+  function test_Call_SafeEngine_CParams(Liquidation memory _liquidation) public happyPathFullLiquidation(_liquidation) {
+    vm.expectCall(address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.cParams.selector, collateralType));
 
     liquidationEngine.liquidateSAFE(collateralType, safe);
   }

@@ -3,14 +3,13 @@ pragma solidity 0.8.19;
 
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
+import {IModifiablePerCollateral, GLOBAL_PARAM} from '@interfaces/utils/IModifiablePerCollateral.sol';
 
-interface ISAFEEngine is IAuthorizable, IDisableable {
+interface ISAFEEngine is IDisableable, IAuthorizable, IModifiablePerCollateral {
   // --- Events ---
   event ApproveSAFEModification(address _sender, address _account);
   event DenySAFEModification(address _sender, address _account);
   event InitializeCollateralType(bytes32 _collateralType);
-  event ModifyParameters(bytes32 _parameter, uint256 _data);
-  event ModifyParameters(bytes32 _collateralType, bytes32 _parameter, uint256 _data);
   event ModifyCollateralBalance(bytes32 indexed _collateralType, address indexed _account, int256 _wad);
   event TransferCollateral(bytes32 indexed _collateralType, address indexed _src, address indexed _dst, uint256 _wad);
   event TransferInternalCoins(address indexed _src, address indexed _dst, uint256 _rad);
@@ -81,11 +80,21 @@ interface ISAFEEngine is IAuthorizable, IDisableable {
     uint256 generatedDebt; // [wad]
   }
 
-  struct CollateralType {
-    // Total debt issued for this specific collateral type
+  struct SAFEEngineParams {
+    // Total amount of debt that a single safe can generate
+    uint256 safeDebtCeiling; // [wad]
+    // Maximum amount of debt that can be issued
+    uint256 globalDebtCeiling; // [rad]
+  }
+
+  struct SAFEEngineCollateralData {
+    // Total amount of debt issued by a collateral type
     uint256 debtAmount; // [wad]
-    // Accumulator for interest accrued on this collateral type
+    // Accumulated rate of a collateral type
     uint256 accumulatedRate; // [ray]
+  }
+
+  struct SAFEEngineCollateralParams {
     // Floor price at which a SAFE is allowed to generate debt
     uint256 safetyPrice; // [ray]
     // Maximum amount of debt that can be generated with this collateral type
@@ -105,12 +114,15 @@ interface ISAFEEngine is IAuthorizable, IDisableable {
   function approveSAFEModification(address _account) external;
   function denySAFEModification(address _acount) external;
   function createUnbackedDebt(address _debtDestination, address _coinDestination, uint256 _rad) external;
-  function collateralTypes(bytes32)
+  function params() external view returns (uint256 _globalDebtCeiling, uint256 _globalDebtFloor);
+  function cData(bytes32 _collateralType)
+    external
+    view
+    returns (uint256 /* wad */ _debtAmount, uint256 /* ray */ _accumulatedRate);
+  function cParams(bytes32 _collateralType)
     external
     view
     returns (
-      uint256 /* wad */ _debtAmount,
-      uint256 /* ray */ _accumulatedRate,
       uint256 /* ray */ _safetyPrice,
       uint256 /* rad */ _debtCeiling,
       uint256 /* rad */ _debtFloor,
@@ -131,7 +143,6 @@ interface ISAFEEngine is IAuthorizable, IDisableable {
     int256 _deltaCollateral,
     int256 _deltaDebt
   ) external;
-  function modifyParameters(bytes32 _collateralType, bytes32 _parameter, uint256 _data) external;
   function updateAccumulatedRate(bytes32 _collateralType, address _surplusDst, int256 _rateMultiplier) external;
 
   function initializeCollateralType(bytes32 _collateralType) external;
@@ -153,9 +164,7 @@ interface ISAFEEngine is IAuthorizable, IDisableable {
     int256 /* wad */ _deltaDebt
   ) external;
 
-  function safeDebtCeiling() external view returns (uint256 _safeDebtCeiling);
   function tokenCollateral(bytes32 _collateralType, address _account) external view returns (uint256 _tokenCollateral);
-  function globalDebtCeiling() external view returns (uint256 _globalDebtCeiling);
   function globalUnbackedDebt() external view returns (uint256 _globalUnbackedDebt);
   function safeRights(address _account, address _safe) external view returns (uint256 _safeRights);
 }

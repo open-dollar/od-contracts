@@ -222,9 +222,9 @@ contract SingleModifySAFECollateralizationTest is DSTest {
 
     collateralA = new CollateralJoin(address(safeEngine), 'gold', address(gold));
 
-    safeEngine.modifyParameters('gold', 'safetyPrice', ray(1 ether));
-    safeEngine.modifyParameters('gold', 'debtCeiling', rad(1000 ether));
-    safeEngine.modifyParameters('globalDebtCeiling', rad(1000 ether));
+    safeEngine.modifyParameters('gold', 'safetyPrice', abi.encode(ray(1 ether)));
+    safeEngine.modifyParameters('gold', 'debtCeiling', abi.encode(rad(1000 ether)));
+    safeEngine.modifyParameters('globalDebtCeiling', abi.encode(rad(1000 ether)));
 
     taxCollector = new TaxCollector(address(safeEngine));
     taxCollector.initializeCollateralType('gold');
@@ -289,7 +289,7 @@ contract SingleModifySAFECollateralizationTest is DSTest {
   function test_calm() public {
     // calm means that the debt ceiling is not exceeded
     // it's ok to increase debt as long as you remain calm
-    safeEngine.modifyParameters('gold', 'debtCeiling', rad(10 ether));
+    safeEngine.modifyParameters('gold', 'debtCeiling', abi.encode(rad(10 ether)));
     assertTrue(try_modifySAFECollateralization('gold', 10 ether, 9 ether));
     // only if under debt ceiling
     assertTrue(!try_modifySAFECollateralization('gold', 0 ether, 2 ether));
@@ -298,9 +298,9 @@ contract SingleModifySAFECollateralizationTest is DSTest {
   function test_cool() public {
     // cool means that the debt has decreased
     // it's ok to be over the debt ceiling as long as you're cool
-    safeEngine.modifyParameters('gold', 'debtCeiling', rad(10 ether));
+    safeEngine.modifyParameters('gold', 'debtCeiling', abi.encode(rad(10 ether)));
     assertTrue(try_modifySAFECollateralization('gold', 10 ether, 8 ether));
-    safeEngine.modifyParameters('gold', 'debtCeiling', rad(5 ether));
+    safeEngine.modifyParameters('gold', 'debtCeiling', abi.encode(rad(5 ether)));
     // can decrease debt when over ceiling
     assertTrue(try_modifySAFECollateralization('gold', 0 ether, -1 ether));
   }
@@ -317,7 +317,7 @@ contract SingleModifySAFECollateralizationTest is DSTest {
     // decreased. remaining unsafe is ok as long as you're nice
 
     safeEngine.modifySAFECollateralization('gold', me, me, me, 10 ether, 10 ether);
-    safeEngine.modifyParameters('gold', 'safetyPrice', ray(0.5 ether)); // now unsafe
+    safeEngine.modifyParameters('gold', 'safetyPrice', abi.encode(ray(0.5 ether))); // now unsafe
 
     // debt can't increase if unsafe
     assertTrue(!try_modifySAFECollateralization('gold', 0 ether, 1 ether));
@@ -336,7 +336,7 @@ contract SingleModifySAFECollateralizationTest is DSTest {
 
     // lockedCollateral can decrease if end state is safe
     assertTrue(this.try_modifySAFECollateralization('gold', -1 ether, -4 ether));
-    safeEngine.modifyParameters('gold', 'safetyPrice', ray(0.4 ether)); // now unsafe
+    safeEngine.modifyParameters('gold', 'safetyPrice', abi.encode(ray(0.4 ether))); // now unsafe
     // debt can increase if end state is safe
     assertTrue(this.try_modifySAFECollateralization('gold', 5 ether, 1 ether));
   }
@@ -436,7 +436,7 @@ contract SingleModifySAFECollateralizationTest is DSTest {
 
   function test_debtFloor() public {
     assertTrue(try_modifySAFECollateralization('gold', 9 ether, 1 ether));
-    safeEngine.modifyParameters('gold', 'debtFloor', rad(5 ether));
+    safeEngine.modifyParameters('gold', 'debtFloor', abi.encode(rad(5 ether)));
     assertTrue(!try_modifySAFECollateralization('gold', 5 ether, 2 ether));
     assertTrue(try_modifySAFECollateralization('gold', 0 ether, 5 ether));
     assertTrue(!try_modifySAFECollateralization('gold', 0 ether, -5 ether));
@@ -502,9 +502,9 @@ contract SingleSAFEDebtLimitTest is DSTest {
 
     collateralA = new CollateralJoin(address(safeEngine), 'gold', address(gold));
 
-    safeEngine.modifyParameters('gold', 'safetyPrice', ray(1 ether));
-    safeEngine.modifyParameters('gold', 'debtCeiling', rad(1000 ether));
-    safeEngine.modifyParameters('globalDebtCeiling', rad(1000 ether));
+    safeEngine.modifyParameters('gold', 'safetyPrice', abi.encode(ray(1 ether)));
+    safeEngine.modifyParameters('gold', 'debtCeiling', abi.encode(rad(1000 ether)));
+    safeEngine.modifyParameters('globalDebtCeiling', abi.encode(rad(1000 ether)));
 
     taxCollector = new TaxCollector(address(safeEngine));
     taxCollector.initializeCollateralType('gold');
@@ -520,8 +520,8 @@ contract SingleSAFEDebtLimitTest is DSTest {
 
     collateralA.join(address(this), 1000 ether);
 
-    safeEngine.modifyParameters('gold', 'debtCeiling', rad(10 ether));
-    safeEngine.modifyParameters('safeDebtCeiling', 5 ether);
+    safeEngine.modifyParameters('gold', 'debtCeiling', abi.encode(rad(10 ether)));
+    safeEngine.modifyParameters('safeDebtCeiling', abi.encode(5 ether));
 
     me = address(this);
   }
@@ -545,7 +545,8 @@ contract SingleSAFEDebtLimitTest is DSTest {
   function test_setup() public {
     assertEq(gold.balanceOf(address(collateralA)), 1000 ether);
     assertEq(tokenCollateral('gold', address(this)), 1000 ether);
-    assertEq(safeEngine.safeDebtCeiling(), 5 ether);
+    (uint256 _safeDebtCeiling, uint256 _globalDebtCeiling) = safeEngine.params();
+    assertEq(_safeDebtCeiling, 5 ether);
   }
 
   function testFail_generate_debt_above_safe_limit() public {
@@ -559,7 +560,7 @@ contract SingleSAFEDebtLimitTest is DSTest {
   }
 
   function testFail_generate_debt_above_collateral_ceiling_but_below_safe_limit() public {
-    safeEngine.modifyParameters('gold', 'debtCeiling', rad(4 ether));
+    safeEngine.modifyParameters('gold', 'debtCeiling', abi.encode(rad(4 ether)));
     assertTrue(try_modifySAFECollateralization('gold', 10 ether, 4.5 ether));
   }
 
@@ -598,13 +599,13 @@ contract SingleSAFEDebtLimitTest is DSTest {
 
     ali.modifySAFECollateralization('gold', a, a, a, 10 ether, 5 ether);
 
-    safeEngine.modifyParameters('safeDebtCeiling', 4 ether);
+    safeEngine.modifyParameters('safeDebtCeiling', abi.encode(4 ether));
 
     assertTrue(!try_modifySAFECollateralization('gold', 0, 2 ether));
     ali.modifySAFECollateralization('gold', a, a, a, 0, -1 ether);
     assertTrue(!try_modifySAFECollateralization('gold', 0, 2 ether));
 
-    safeEngine.modifyParameters('safeDebtCeiling', uint256(int256(-1)));
+    safeEngine.modifyParameters('safeDebtCeiling', abi.encode(uint256(int256(-1))));
     ali.modifySAFECollateralization('gold', a, a, a, 0, 4 ether);
   }
 }
@@ -890,9 +891,9 @@ contract SingleLiquidationTest is DSTest {
     gold.approve(address(collateralA));
     collateralA.join(address(this), 1000 ether);
 
-    safeEngine.modifyParameters('gold', 'safetyPrice', ray(1 ether));
-    safeEngine.modifyParameters('gold', 'debtCeiling', rad(1000 ether));
-    safeEngine.modifyParameters('globalDebtCeiling', rad(1000 ether));
+    safeEngine.modifyParameters('gold', 'safetyPrice', abi.encode(ray(1 ether)));
+    safeEngine.modifyParameters('gold', 'debtCeiling', abi.encode(rad(1000 ether)));
+    safeEngine.modifyParameters('globalDebtCeiling', abi.encode(rad(1000 ether)));
 
     collateralAuctionHouse = new EnglishCollateralAuctionHouse(address(safeEngine), address(liquidationEngine), 'gold');
     collateralAuctionHouse.addAuthorization(address(liquidationEngine));
@@ -937,14 +938,14 @@ contract SingleLiquidationTest is DSTest {
     uint256 MAX_LIQUIDATION_QUANTITY = uint256(int256(-1)) / 10 ** 27;
     liquidationEngine.modifyParameters('gold', 'liquidationQuantity', MAX_LIQUIDATION_QUANTITY);
 
-    safeEngine.modifyParameters('globalDebtCeiling', rad(300_000 ether));
-    safeEngine.modifyParameters('gold', 'debtCeiling', rad(300_000 ether));
-    safeEngine.modifyParameters('gold', 'safetyPrice', ray(205 ether));
-    safeEngine.modifyParameters('gold', 'liquidationPrice', ray(205 ether));
+    safeEngine.modifyParameters('globalDebtCeiling', abi.encode(rad(300_000 ether)));
+    safeEngine.modifyParameters('gold', 'debtCeiling', abi.encode(rad(300_000 ether)));
+    safeEngine.modifyParameters('gold', 'safetyPrice', abi.encode(ray(205 ether)));
+    safeEngine.modifyParameters('gold', 'liquidationPrice', abi.encode(ray(205 ether)));
     safeEngine.modifySAFECollateralization('gold', me, me, me, 1000 ether, 200_000 ether);
 
-    safeEngine.modifyParameters('gold', 'safetyPrice', ray(2 ether)); // now unsafe
-    safeEngine.modifyParameters('gold', 'liquidationPrice', ray(2 ether));
+    safeEngine.modifyParameters('gold', 'safetyPrice', abi.encode(ray(2 ether))); // now unsafe
+    safeEngine.modifyParameters('gold', 'liquidationPrice', abi.encode(ray(2 ether)));
 
     uint256 auction = liquidationEngine.liquidateSAFE('gold', address(this));
     (,,,,,,, uint256 amountToRaise) = collateralAuctionHouse.bids(auction);
@@ -959,27 +960,27 @@ contract SingleLiquidationTest is DSTest {
       bytes32(MAX_LIQUIDATION_QUANTITY + 1)
     );
 
-    safeEngine.modifyParameters('globalDebtCeiling', rad(300_000 ether));
-    safeEngine.modifyParameters('gold', 'debtCeiling', rad(300_000 ether));
-    safeEngine.modifyParameters('gold', 'safetyPrice', ray(205 ether));
-    safeEngine.modifyParameters('gold', 'liquidationPrice', ray(205 ether));
+    safeEngine.modifyParameters('globalDebtCeiling', abi.encode(rad(300_000 ether)));
+    safeEngine.modifyParameters('gold', 'debtCeiling', abi.encode(rad(300_000 ether)));
+    safeEngine.modifyParameters('gold', 'safetyPrice', abi.encode(ray(205 ether)));
+    safeEngine.modifyParameters('gold', 'liquidationPrice', abi.encode(ray(205 ether)));
     safeEngine.modifySAFECollateralization('gold', me, me, me, 1000 ether, 200_000 ether);
 
-    safeEngine.modifyParameters('gold', 'safetyPrice', ray(2 ether)); // now unsafe
-    safeEngine.modifyParameters('gold', 'liquidationPrice', ray(2 ether));
+    safeEngine.modifyParameters('gold', 'safetyPrice', abi.encode(ray(2 ether))); // now unsafe
+    safeEngine.modifyParameters('gold', 'liquidationPrice', abi.encode(ray(2 ether)));
 
     uint256 auction = liquidationEngine.liquidateSAFE('gold', address(this));
     assertEq(auction, 1);
   }
 
   function test_liquidate_under_liquidation_quantity() public {
-    safeEngine.modifyParameters('gold', 'safetyPrice', ray(2.5 ether));
-    safeEngine.modifyParameters('gold', 'liquidationPrice', ray(2.5 ether));
+    safeEngine.modifyParameters('gold', 'safetyPrice', abi.encode(ray(2.5 ether)));
+    safeEngine.modifyParameters('gold', 'liquidationPrice', abi.encode(ray(2.5 ether)));
 
     safeEngine.modifySAFECollateralization('gold', me, me, me, 40 ether, 100 ether);
 
-    safeEngine.modifyParameters('gold', 'safetyPrice', ray(2 ether));
-    safeEngine.modifyParameters('gold', 'liquidationPrice', ray(2 ether));
+    safeEngine.modifyParameters('gold', 'safetyPrice', abi.encode(ray(2 ether)));
+    safeEngine.modifyParameters('gold', 'liquidationPrice', abi.encode(ray(2 ether)));
 
     liquidationEngine.modifyParameters('gold', 'liquidationQuantity', rad(111 ether));
     liquidationEngine.modifyParameters('gold', 'liquidationPenalty', 1.1 ether);
@@ -998,13 +999,13 @@ contract SingleLiquidationTest is DSTest {
   }
 
   function test_liquidate_over_liquidation_quantity() public {
-    safeEngine.modifyParameters('gold', 'safetyPrice', ray(2.5 ether));
-    safeEngine.modifyParameters('gold', 'liquidationPrice', ray(2.5 ether));
+    safeEngine.modifyParameters('gold', 'safetyPrice', abi.encode(ray(2.5 ether)));
+    safeEngine.modifyParameters('gold', 'liquidationPrice', abi.encode(ray(2.5 ether)));
 
     safeEngine.modifySAFECollateralization('gold', me, me, me, 40 ether, 100 ether);
 
-    safeEngine.modifyParameters('gold', 'safetyPrice', ray(2 ether));
-    safeEngine.modifyParameters('gold', 'liquidationPrice', ray(2 ether));
+    safeEngine.modifyParameters('gold', 'safetyPrice', abi.encode(ray(2 ether)));
+    safeEngine.modifyParameters('gold', 'liquidationPrice', abi.encode(ray(2 ether)));
 
     liquidationEngine.modifyParameters('gold', 'liquidationQuantity', rad(82.5 ether));
     liquidationEngine.modifyParameters('gold', 'liquidationPenalty', 1.1 ether);
@@ -1023,13 +1024,13 @@ contract SingleLiquidationTest is DSTest {
   }
 
   function test_liquidate_happy_safe() public {
-    safeEngine.modifyParameters('gold', 'safetyPrice', ray(2.5 ether));
-    safeEngine.modifyParameters('gold', 'liquidationPrice', ray(2.5 ether));
+    safeEngine.modifyParameters('gold', 'safetyPrice', abi.encode(ray(2.5 ether)));
+    safeEngine.modifyParameters('gold', 'liquidationPrice', abi.encode(ray(2.5 ether)));
 
     safeEngine.modifySAFECollateralization('gold', me, me, me, 40 ether, 100 ether);
 
-    safeEngine.modifyParameters('gold', 'safetyPrice', ray(2 ether));
-    safeEngine.modifyParameters('gold', 'liquidationPrice', ray(2 ether));
+    safeEngine.modifyParameters('gold', 'safetyPrice', abi.encode(ray(2 ether)));
+    safeEngine.modifyParameters('gold', 'liquidationPrice', abi.encode(ray(2 ether)));
 
     (uint256 lockedCollateral, uint256 generatedDebt) = safeEngine.safes('gold', address(this));
     assertEq(lockedCollateral, 40 ether);
@@ -1064,13 +1065,13 @@ contract SingleLiquidationTest is DSTest {
   }
 
   function test_liquidate_when_system_deficit() public {
-    safeEngine.modifyParameters('gold', 'safetyPrice', ray(2.5 ether));
-    safeEngine.modifyParameters('gold', 'liquidationPrice', ray(2.5 ether));
+    safeEngine.modifyParameters('gold', 'safetyPrice', abi.encode(ray(2.5 ether)));
+    safeEngine.modifyParameters('gold', 'liquidationPrice', abi.encode(ray(2.5 ether)));
 
     safeEngine.modifySAFECollateralization('gold', me, me, me, 40 ether, 100 ether);
 
-    safeEngine.modifyParameters('gold', 'safetyPrice', ray(2 ether));
-    safeEngine.modifyParameters('gold', 'liquidationPrice', ray(2 ether));
+    safeEngine.modifyParameters('gold', 'safetyPrice', abi.encode(ray(2 ether)));
+    safeEngine.modifyParameters('gold', 'liquidationPrice', abi.encode(ray(2 ether)));
 
     liquidationEngine.modifyParameters('gold', 'liquidationQuantity', rad(200 ether)); // => liquidate everything
     assertEq(accountingEngine.debtQueue(block.timestamp), rad(0 ether));
@@ -1125,13 +1126,13 @@ contract SingleLiquidationTest is DSTest {
   // tests a partial liquidation because it would fill the onAuctionSystemCoinLimit
 
   function test_partial_liquidation_fill_limit() public {
-    safeEngine.modifyParameters('gold', 'safetyPrice', ray(2.5 ether));
-    safeEngine.modifyParameters('gold', 'liquidationPrice', ray(2.5 ether));
+    safeEngine.modifyParameters('gold', 'safetyPrice', abi.encode(ray(2.5 ether)));
+    safeEngine.modifyParameters('gold', 'liquidationPrice', abi.encode(ray(2.5 ether)));
 
     safeEngine.modifySAFECollateralization('gold', me, me, me, 100 ether, 150 ether);
 
-    safeEngine.modifyParameters('gold', 'safetyPrice', ray(1 ether));
-    safeEngine.modifyParameters('gold', 'liquidationPrice', ray(1 ether));
+    safeEngine.modifyParameters('gold', 'safetyPrice', abi.encode(ray(1 ether)));
+    safeEngine.modifyParameters('gold', 'liquidationPrice', abi.encode(ray(1 ether)));
 
     (uint256 lockedCollateral, uint256 generatedDebt) = safeEngine.safes('gold', address(this));
     assertEq(lockedCollateral, 100 ether);
@@ -1176,13 +1177,13 @@ contract SingleLiquidationTest is DSTest {
   }
 
   function testFail_liquidate_fill_over_limit() public {
-    safeEngine.modifyParameters('gold', 'safetyPrice', ray(2.5 ether));
-    safeEngine.modifyParameters('gold', 'liquidationPrice', ray(2.5 ether));
+    safeEngine.modifyParameters('gold', 'safetyPrice', abi.encode(ray(2.5 ether)));
+    safeEngine.modifyParameters('gold', 'liquidationPrice', abi.encode(ray(2.5 ether)));
 
     safeEngine.modifySAFECollateralization('gold', me, me, me, 100 ether, 150 ether);
 
-    safeEngine.modifyParameters('gold', 'safetyPrice', ray(1 ether));
-    safeEngine.modifyParameters('gold', 'liquidationPrice', ray(1 ether));
+    safeEngine.modifyParameters('gold', 'safetyPrice', abi.encode(ray(1 ether)));
+    safeEngine.modifyParameters('gold', 'liquidationPrice', abi.encode(ray(1 ether)));
 
     (uint256 lockedCollateral, uint256 generatedDebt) = safeEngine.safes('gold', address(this));
     assertEq(lockedCollateral, 100 ether);
@@ -1207,13 +1208,13 @@ contract SingleLiquidationTest is DSTest {
   }
 
   function test_multiple_liquidations_partial_fill_limit() public {
-    safeEngine.modifyParameters('gold', 'safetyPrice', ray(2.5 ether));
-    safeEngine.modifyParameters('gold', 'liquidationPrice', ray(2.5 ether));
+    safeEngine.modifyParameters('gold', 'safetyPrice', abi.encode(ray(2.5 ether)));
+    safeEngine.modifyParameters('gold', 'liquidationPrice', abi.encode(ray(2.5 ether)));
 
     safeEngine.modifySAFECollateralization('gold', me, me, me, 100 ether, 150 ether);
 
-    safeEngine.modifyParameters('gold', 'safetyPrice', ray(1 ether));
-    safeEngine.modifyParameters('gold', 'liquidationPrice', ray(1 ether));
+    safeEngine.modifyParameters('gold', 'safetyPrice', abi.encode(ray(1 ether)));
+    safeEngine.modifyParameters('gold', 'liquidationPrice', abi.encode(ray(1 ether)));
 
     (uint256 lockedCollateral, uint256 generatedDebt) = safeEngine.safes('gold', address(this));
     assertEq(lockedCollateral, 100 ether);
@@ -1293,14 +1294,14 @@ contract SingleLiquidationTest is DSTest {
   }
 
   function testFail_liquidation_quantity_small_leaves_dust() public {
-    safeEngine.modifyParameters('gold', 'debtFloor', rad(150 ether));
-    safeEngine.modifyParameters('gold', 'safetyPrice', ray(2.5 ether));
-    safeEngine.modifyParameters('gold', 'liquidationPrice', ray(2.5 ether));
+    safeEngine.modifyParameters('gold', 'debtFloor', abi.encode(rad(150 ether)));
+    safeEngine.modifyParameters('gold', 'safetyPrice', abi.encode(ray(2.5 ether)));
+    safeEngine.modifyParameters('gold', 'liquidationPrice', abi.encode(ray(2.5 ether)));
 
     safeEngine.modifySAFECollateralization('gold', me, me, me, 100 ether, 150 ether);
 
-    safeEngine.modifyParameters('gold', 'safetyPrice', ray(1 ether));
-    safeEngine.modifyParameters('gold', 'liquidationPrice', ray(1 ether));
+    safeEngine.modifyParameters('gold', 'safetyPrice', abi.encode(ray(1 ether)));
+    safeEngine.modifyParameters('gold', 'liquidationPrice', abi.encode(ray(1 ether)));
 
     liquidationEngine.modifyParameters('onAuctionSystemCoinLimit', rad(150 ether));
     liquidationEngine.modifyParameters('gold', 'liquidationQuantity', rad(1 ether));
@@ -1314,14 +1315,14 @@ contract SingleLiquidationTest is DSTest {
   }
 
   function testFail_liquidation_remaining_on_auction_limit_results_in_dust() public {
-    safeEngine.modifyParameters('gold', 'debtFloor', rad(150 ether));
-    safeEngine.modifyParameters('gold', 'safetyPrice', ray(2.5 ether));
-    safeEngine.modifyParameters('gold', 'liquidationPrice', ray(2.5 ether));
+    safeEngine.modifyParameters('gold', 'debtFloor', abi.encode(rad(150 ether)));
+    safeEngine.modifyParameters('gold', 'safetyPrice', abi.encode(ray(2.5 ether)));
+    safeEngine.modifyParameters('gold', 'liquidationPrice', abi.encode(ray(2.5 ether)));
 
     safeEngine.modifySAFECollateralization('gold', me, me, me, 100 ether, 150 ether);
 
-    safeEngine.modifyParameters('gold', 'safetyPrice', ray(1 ether));
-    safeEngine.modifyParameters('gold', 'liquidationPrice', ray(1 ether));
+    safeEngine.modifyParameters('gold', 'safetyPrice', abi.encode(ray(1 ether)));
+    safeEngine.modifyParameters('gold', 'liquidationPrice', abi.encode(ray(1 ether)));
 
     liquidationEngine.modifyParameters('onAuctionSystemCoinLimit', rad(149 ether));
     liquidationEngine.modifyParameters('gold', 'liquidationQuantity', rad(150 ether));
@@ -1335,14 +1336,14 @@ contract SingleLiquidationTest is DSTest {
   }
 
   function test_liquidation_remaining_on_auction_limit_right_above_safe_debt() public {
-    safeEngine.modifyParameters('gold', 'debtFloor', rad(149 ether));
-    safeEngine.modifyParameters('gold', 'safetyPrice', ray(2.5 ether));
-    safeEngine.modifyParameters('gold', 'liquidationPrice', ray(2.5 ether));
+    safeEngine.modifyParameters('gold', 'debtFloor', abi.encode(rad(149 ether)));
+    safeEngine.modifyParameters('gold', 'safetyPrice', abi.encode(ray(2.5 ether)));
+    safeEngine.modifyParameters('gold', 'liquidationPrice', abi.encode(ray(2.5 ether)));
 
     safeEngine.modifySAFECollateralization('gold', me, me, me, 100 ether, 150 ether);
 
-    safeEngine.modifyParameters('gold', 'safetyPrice', ray(1 ether));
-    safeEngine.modifyParameters('gold', 'liquidationPrice', ray(1 ether));
+    safeEngine.modifyParameters('gold', 'safetyPrice', abi.encode(ray(1 ether)));
+    safeEngine.modifyParameters('gold', 'liquidationPrice', abi.encode(ray(1 ether)));
 
     liquidationEngine.modifyParameters('onAuctionSystemCoinLimit', rad(150 ether));
     liquidationEngine.modifyParameters('gold', 'liquidationQuantity', rad(1 ether));
@@ -1360,14 +1361,14 @@ contract SingleLiquidationTest is DSTest {
   }
 
   function test_double_liquidate_safe() public {
-    safeEngine.modifyParameters('gold', 'debtFloor', rad(149 ether));
-    safeEngine.modifyParameters('gold', 'safetyPrice', ray(2.5 ether));
-    safeEngine.modifyParameters('gold', 'liquidationPrice', ray(2.5 ether));
+    safeEngine.modifyParameters('gold', 'debtFloor', abi.encode(rad(149 ether)));
+    safeEngine.modifyParameters('gold', 'safetyPrice', abi.encode(ray(2.5 ether)));
+    safeEngine.modifyParameters('gold', 'liquidationPrice', abi.encode(ray(2.5 ether)));
 
     safeEngine.modifySAFECollateralization('gold', me, me, me, 100 ether, 150 ether);
 
-    safeEngine.modifyParameters('gold', 'safetyPrice', ray(1 ether));
-    safeEngine.modifyParameters('gold', 'liquidationPrice', ray(1 ether));
+    safeEngine.modifyParameters('gold', 'safetyPrice', abi.encode(ray(1 ether)));
+    safeEngine.modifyParameters('gold', 'liquidationPrice', abi.encode(ray(1 ether)));
 
     liquidationEngine.modifyParameters('onAuctionSystemCoinLimit', rad(150 ether));
     liquidationEngine.modifyParameters('gold', 'liquidationQuantity', rad(1 ether));
@@ -1405,21 +1406,21 @@ contract SingleAccumulateRatesTest is DSTest {
 
   function totalAdjustedDebt(bytes32 collateralType, address safe) internal view returns (uint256) {
     (, uint256 generatedDebt_) = safeEngine.safes(collateralType, safe);
-    (, uint256 accumulatedRate_,,,,) = safeEngine.collateralTypes(collateralType);
+    (, uint256 accumulatedRate_) = safeEngine.cData(collateralType);
     return generatedDebt_ * accumulatedRate_;
   }
 
   function setUp() public {
     safeEngine = new SAFEEngine();
     safeEngine.initializeCollateralType('gold');
-    safeEngine.modifyParameters('globalDebtCeiling', rad(100 ether));
-    safeEngine.modifyParameters('gold', 'debtCeiling', rad(100 ether));
+    safeEngine.modifyParameters('globalDebtCeiling', abi.encode(rad(100 ether)));
+    safeEngine.modifyParameters('gold', 'debtCeiling', abi.encode(rad(100 ether)));
   }
 
   function generateDebt(bytes32 collateralType, uint256 coin) internal {
-    safeEngine.modifyParameters('globalDebtCeiling', rad(coin));
-    safeEngine.modifyParameters(collateralType, 'debtCeiling', rad(coin));
-    safeEngine.modifyParameters(collateralType, 'safetyPrice', 10 ** 27 * 10_000 ether);
+    safeEngine.modifyParameters('globalDebtCeiling', abi.encode(rad(coin)));
+    safeEngine.modifyParameters(collateralType, 'debtCeiling', abi.encode(rad(coin)));
+    safeEngine.modifyParameters(collateralType, 'safetyPrice', abi.encode(10 ** 27 * 10_000 ether));
     address self = address(this);
     safeEngine.modifyCollateralBalance(collateralType, self, 10 ** 27 * 1 ether);
     safeEngine.modifySAFECollateralization(collateralType, self, self, self, 1 ether, int256(coin));

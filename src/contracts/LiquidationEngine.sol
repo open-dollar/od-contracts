@@ -171,8 +171,8 @@ contract LiquidationEngine is Authorizable, Disableable, ILiquidationEngine {
     require(mutex[_collateralType][_safe] == 0, 'LiquidationEngine/non-null-mutex');
     mutex[_collateralType][_safe] = 1;
 
-    (, uint256 _accumulatedRate,,, uint256 _debtFloor, uint256 _liquidationPrice) =
-      safeEngine.collateralTypes(_collateralType);
+    (, uint256 _accumulatedRate) = safeEngine.cData(_collateralType);
+    (,, uint256 _debtFloor, uint256 _liquidationPrice) = safeEngine.cParams(_collateralType);
     (uint256 _safeCollateral, uint256 _safeDebt) = safeEngine.safes(_collateralType, _safe);
 
     require(
@@ -208,7 +208,9 @@ contract LiquidationEngine is Authorizable, Disableable, ILiquidationEngine {
       );
     }
 
-    (, _accumulatedRate,,,, _liquidationPrice) = safeEngine.collateralTypes(_collateralType);
+    // NOTE: can accumulatedRate change within this call?
+    (, _accumulatedRate) = safeEngine.cData(_collateralType);
+    (,,, _liquidationPrice) = safeEngine.cParams(_collateralType);
     (_safeCollateral, _safeDebt) = safeEngine.safes(_collateralType, _safe);
 
     if ((_liquidationPrice > 0) && (_safeCollateral * _liquidationPrice < _safeDebt * _accumulatedRate)) {
@@ -290,7 +292,7 @@ contract LiquidationEngine is Authorizable, Disableable, ILiquidationEngine {
    * @param  _safe The SAFE's address/handler
    */
   function getLimitAdjustedDebtToCover(bytes32 _collateralType, address _safe) external view returns (uint256) {
-    (, uint256 _accumulatedRate,,,,) = safeEngine.collateralTypes(_collateralType);
+    (, uint256 _accumulatedRate) = safeEngine.cData(_collateralType);
     (, uint256 _safeDebt) = safeEngine.safes(_collateralType, _safe);
     CollateralType memory _collateralData = collateralTypes[_collateralType];
 

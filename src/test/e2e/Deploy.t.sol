@@ -43,7 +43,9 @@ contract E2EDeploymentTest is PRBTest {
   function test_SAFEEngine_Params() public {
     SAFEEngine _safeEngine = deployment.safeEngine();
 
-    assertEq(_safeEngine.safeDebtCeiling(), type(uint256).max);
+    (uint256 _safeDebtCeiling, ) = _safeEngine.params();
+
+    assertEq(_safeDebtCeiling, type(uint256).max);
   }
 
   // TaxCollector

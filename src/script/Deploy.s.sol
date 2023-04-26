@@ -207,7 +207,7 @@ contract Deploy is Script, Contracts {
     // coinSavingsAccount.addAuthorization(address(globalSettlement));
 
     // setup params
-    safeEngine.modifyParameters('globalDebtCeiling', _params.globalDebtCeiling);
+    safeEngine.modifyParameters('globalDebtCeiling', abi.encode(_params.globalDebtCeiling));
     taxCollector.modifyParameters('globalStabilityFee', _params.globalStabilityFee);
     accountingEngine.modifyParameters('initialDebtAuctionMintedTokens', _params.initialDebtAuctionMintedTokens);
     accountingEngine.modifyParameters('debtAuctionBidSize', _params.bidAuctionSize);
@@ -241,7 +241,7 @@ contract Deploy is Script, Contracts {
     liquidationEngine.modifyParameters(_params.name, 'liquidationQuantity', _params.liquidationQuantity);
 
     // setup params
-    safeEngine.modifyParameters(_params.name, 'debtCeiling', _params.debtCeiling);
+    safeEngine.modifyParameters(_params.name, 'debtCeiling', abi.encode(_params.debtCeiling));
     taxCollector.modifyParameters(_params.name, 'stabilityFee', _params.stabilityFee);
     oracleRelayer.modifyParameters(_params.name, 'safetyCRatio', _params.safetyCRatio);
     oracleRelayer.modifyParameters(_params.name, 'liquidationCRatio', _params.liquidationRatio);

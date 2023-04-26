@@ -150,8 +150,8 @@ contract CoinTest is DSTest {
     oracleRelayer.updateCollateralPrice('gold');
     collateralA = new CollateralJoin(address(safeEngine), 'gold', address(gold));
 
-    safeEngine.modifyParameters('gold', 'debtCeiling', rad(1000 ether));
-    safeEngine.modifyParameters('globalDebtCeiling', rad(1000 ether));
+    safeEngine.modifyParameters('gold', 'debtCeiling', abi.encode(rad(1000 ether)));
+    safeEngine.modifyParameters('globalDebtCeiling', abi.encode(rad(1000 ether)));
 
     gold.approve(address(collateralA));
     gold.approve(address(safeEngine));
@@ -204,8 +204,8 @@ contract CoinTest is DSTest {
     assertEq(token.chainId(), 99);
     assertEq(keccak256(abi.encodePacked(token.version())), keccak256(abi.encodePacked('1')));
     token.mint(self, 0);
-    (,, uint256 safetyPrice,,,) = safeEngine.collateralTypes('gold');
-    assertEq(safetyPrice, ray(1 ether));
+    (uint256 _safetyPrice,,,) = safeEngine.cParams('gold');
+    assertEq(_safetyPrice, ray(1 ether));
   }
 
   function testSetupPrecondition() public {

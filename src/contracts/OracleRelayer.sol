@@ -179,8 +179,8 @@ contract OracleRelayer is Authorizable, Disableable {
       )
       : 0;
 
-    safeEngine.modifyParameters(collateralType, 'safetyPrice', safetyPrice_);
-    safeEngine.modifyParameters(collateralType, 'liquidationPrice', liquidationPrice_);
+    safeEngine.modifyParameters(collateralType, 'safetyPrice', abi.encode(safetyPrice_));
+    safeEngine.modifyParameters(collateralType, 'liquidationPrice', abi.encode(liquidationPrice_));
     emit UpdateCollateralPrice(collateralType, priceFeedValue, safetyPrice_, liquidationPrice_);
   }
 

@@ -46,7 +46,7 @@
     "cross-env": "7.0.3",
     "husky": ">=8",
     "lint-staged": ">=10",
-    "solhint": "3.3.6",
+    "solhint": "3.4.1",
     "solhint-plugin-defi-wonderland": "1.1.0",
     "sort-package-json": "1.53.1"
   }

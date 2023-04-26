@@ -211,7 +211,7 @@ contract GlobalSettlement is Authorizable, Disableable {
    */
   function freezeCollateralType(bytes32 collateralType) external whenDisabled {
     require(finalCoinPerCollateralPrice[collateralType] == 0, 'GlobalSettlement/final-collateral-price-already-defined');
-    (collateralTotalDebt[collateralType],,,,,) = safeEngine.collateralTypes(collateralType);
+    (collateralTotalDebt[collateralType],) = safeEngine.cData(collateralType);
     (OracleLike orcl,,) = oracleRelayer.collateralTypes(collateralType);
     // redemptionPrice is a ray, orcl returns a wad
     finalCoinPerCollateralPrice[collateralType] = oracleRelayer.redemptionPrice().wdiv(uint256(orcl.read()));
@@ -228,7 +228,7 @@ contract GlobalSettlement is Authorizable, Disableable {
 
     (address auctionHouse_,,) = liquidationEngine.collateralTypes(collateralType);
     CollateralAuctionHouseLike collateralAuctionHouse = CollateralAuctionHouseLike(auctionHouse_);
-    (, uint256 accumulatedRate,,,,) = safeEngine.collateralTypes(collateralType);
+    (, uint256 _accumulatedRate) = safeEngine.cData(collateralType);
 
     uint256 bidAmount = collateralAuctionHouse.bidAmount(auctionId);
     uint256 raisedAmount = collateralAuctionHouse.raisedAmount(auctionId);
@@ -241,16 +241,16 @@ contract GlobalSettlement is Authorizable, Disableable {
     safeEngine.approveSAFEModification(address(collateralAuctionHouse));
     collateralAuctionHouse.terminateAuctionPrematurely(auctionId);
 
-    uint256 debt_ = (amountToRaise - raisedAmount) / accumulatedRate;
-    collateralTotalDebt[collateralType] = collateralTotalDebt[collateralType] + debt_;
-    require(int256(collateralToSell) >= 0 && int256(debt_) >= 0, 'GlobalSettlement/overflow');
+    uint256 _debt = (amountToRaise - raisedAmount) / _accumulatedRate;
+    collateralTotalDebt[collateralType] = collateralTotalDebt[collateralType] + _debt;
+    require(int256(collateralToSell) >= 0 && int256(_debt) >= 0, 'GlobalSettlement/overflow');
     safeEngine.confiscateSAFECollateralAndDebt(
       collateralType,
       forgoneCollateralReceiver,
       address(this),
       address(accountingEngine),
       int256(collateralToSell),
-      int256(debt_)
+      int256(_debt)
     );
     emit FastTrackAuction(collateralType, auctionId, collateralTotalDebt[collateralType]);
   }
@@ -262,10 +262,10 @@ contract GlobalSettlement is Authorizable, Disableable {
    */
   function processSAFE(bytes32 collateralType, address safe) external {
     require(finalCoinPerCollateralPrice[collateralType] != 0, 'GlobalSettlement/final-collateral-price-not-defined');
-    (, uint256 accumulatedRate,,,,) = safeEngine.collateralTypes(collateralType);
+    (, uint256 _accumulatedRate) = safeEngine.cData(collateralType);
     (uint256 safeCollateral, uint256 safeDebt) = safeEngine.safes(collateralType, safe);
 
-    uint256 amountOwed = safeDebt.rmul(accumulatedRate).rmul(finalCoinPerCollateralPrice[collateralType]);
+    uint256 amountOwed = safeDebt.rmul(_accumulatedRate).rmul(finalCoinPerCollateralPrice[collateralType]);
     uint256 minCollateral = Math.min(safeCollateral, amountOwed);
     collateralShortfall[collateralType] = collateralShortfall[collateralType] + (amountOwed - minCollateral);
 
@@ -311,9 +311,9 @@ contract GlobalSettlement is Authorizable, Disableable {
     require(outstandingCoinSupply != 0, 'GlobalSettlement/outstanding-coin-supply-zero');
     require(collateralCashPrice[collateralType] == 0, 'GlobalSettlement/collateral-cash-price-already-defined');
 
-    (, uint256 accumulatedRate,,,,) = safeEngine.collateralTypes(collateralType);
+    (, uint256 _accumulatedRate) = safeEngine.cData(collateralType);
     uint256 redemptionAdjustedDebt =
-      collateralTotalDebt[collateralType].rmul(accumulatedRate).rmul(finalCoinPerCollateralPrice[collateralType]);
+      collateralTotalDebt[collateralType].rmul(_accumulatedRate).rmul(finalCoinPerCollateralPrice[collateralType]);
     collateralCashPrice[collateralType] =
       (redemptionAdjustedDebt - collateralShortfall[collateralType]) * RAY / (outstandingCoinSupply / RAY);
 
