@@ -553,13 +553,13 @@ contract SinglePostSettlementSurplusAuctionHouseTest is DSTest {
   function test_start_auction() public {
     assertEq(safeEngine.coinBalance(address(this)), 1000 ether);
     assertEq(safeEngine.coinBalance(address(surplusAuctionHouse)), 0 ether);
-    surplusAuctionHouse.startAuction({amountToSell: 100 ether, initialBid: 0});
+    surplusAuctionHouse.startAuction({_amountToSell: 100 ether, _initialBid: 0});
     assertEq(safeEngine.coinBalance(address(this)), 900 ether);
     assertEq(safeEngine.coinBalance(address(surplusAuctionHouse)), 100 ether);
   }
 
   function test_increase_bid_same_bidder() public {
-    uint256 id = surplusAuctionHouse.startAuction({amountToSell: 100 ether, initialBid: 0});
+    uint256 id = surplusAuctionHouse.startAuction({_amountToSell: 100 ether, _initialBid: 0});
     GuyPostSurplusAuction(ali).increaseBidSize(id, 100 ether, 190 ether);
     assertEq(protocolToken.balanceOf(ali), 10 ether);
     GuyPostSurplusAuction(ali).increaseBidSize(id, 100 ether, 200 ether);
@@ -567,7 +567,7 @@ contract SinglePostSettlementSurplusAuctionHouseTest is DSTest {
   }
 
   function test_increaseBidSize() public {
-    uint256 id = surplusAuctionHouse.startAuction({amountToSell: 100 ether, initialBid: 0});
+    uint256 id = surplusAuctionHouse.startAuction({_amountToSell: 100 ether, _initialBid: 0});
     // amount to buy taken from creator
     assertEq(safeEngine.coinBalance(address(this)), 900 ether);
 
@@ -595,7 +595,7 @@ contract SinglePostSettlementSurplusAuctionHouseTest is DSTest {
   }
 
   function test_bid_increase() public {
-    uint256 id = surplusAuctionHouse.startAuction({amountToSell: 100 ether, initialBid: 0});
+    uint256 id = surplusAuctionHouse.startAuction({_amountToSell: 100 ether, _initialBid: 0});
     assertTrue(GuyPostSurplusAuction(ali).try_increaseBidSize(id, 100 ether, 1.0 ether));
     assertTrue(!GuyPostSurplusAuction(bob).try_increaseBidSize(id, 100 ether, 1.01 ether));
     // high bidder is subject to beg
@@ -605,7 +605,7 @@ contract SinglePostSettlementSurplusAuctionHouseTest is DSTest {
 
   function test_restart_auction() public {
     // start an auction
-    uint256 id = surplusAuctionHouse.startAuction({amountToSell: 100 ether, initialBid: 0});
+    uint256 id = surplusAuctionHouse.startAuction({_amountToSell: 100 ether, _initialBid: 0});
     // check no tick
     assertTrue(!GuyPostSurplusAuction(ali).try_restartAuction(id));
     // run past the end
