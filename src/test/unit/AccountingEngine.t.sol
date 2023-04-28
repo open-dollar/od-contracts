@@ -451,7 +451,7 @@ contract Unit_AccountingEngine_SettleDebt is Base {
     _mockCoinAndDebtBalance(_coinBalance, _debtBalance);
 
     vm.expectCall(
-      address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.coinBalance.selector, address(accountingEngine))
+      address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.coinBalance.selector, address(accountingEngine)), 2
     );
 
     accountingEngine.settleDebt(_rad);
@@ -514,7 +514,7 @@ contract Unit_AccountingEngine_CancelAuctionedDebtWithSurplus is Base {
     _mockValues(_rad, _totalBalance, _debtBalance);
 
     vm.expectCall(
-      address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.coinBalance.selector, address(accountingEngine))
+      address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.coinBalance.selector, address(accountingEngine)), 2
     );
 
     accountingEngine.cancelAuctionedDebtWithSurplus(_rad);
@@ -622,7 +622,7 @@ contract Unit_AccountingEngine_AuctionDebt is Base {
     _mockValues(_debtAuctionBidSize, _debtBalance, _totalQueuedDebt, _totalOnAuctionDebt, 1);
 
     vm.expectCall(
-      address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.coinBalance.selector, address(accountingEngine))
+      address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.coinBalance.selector, address(accountingEngine)), 4
     );
 
     accountingEngine.auctionDebt();
@@ -874,7 +874,7 @@ contract Unit_AccountingEngine_AuctionSurplus is Base {
     _mockValues(_extraSurplusIsTransferred, _surplusAuctionAmountToSell, _surplusBuffer, _coinBalance, 0);
 
     vm.expectCall(
-      address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.debtBalance.selector, address(accountingEngine))
+      address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.debtBalance.selector, address(accountingEngine)), 5
     );
 
     accountingEngine.auctionSurplus();
@@ -1097,7 +1097,7 @@ contract Unit_AccountingEngine_TransferExtraSurplus is Base {
     _assumeAndMockHappyPath(_surplusTransferAmount, _surplusBuffer, _coinBalance, 0);
 
     vm.expectCall(
-      address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.coinBalance.selector, address(accountingEngine))
+      address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.coinBalance.selector, address(accountingEngine)), 4
     );
 
     accountingEngine.transferExtraSurplus();
@@ -1111,7 +1111,7 @@ contract Unit_AccountingEngine_TransferExtraSurplus is Base {
     _assumeAndMockHappyPath(_surplusTransferAmount, _surplusBuffer, _coinBalance, 0);
 
     vm.expectCall(
-      address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.coinBalance.selector, address(accountingEngine))
+      address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.coinBalance.selector, address(accountingEngine)), 4
     );
 
     vm.warp(block.timestamp + 1);
@@ -1129,7 +1129,7 @@ contract Unit_AccountingEngine_TransferExtraSurplus is Base {
     _assumeAndMockHappyPath(_surplusTransferAmount, _surplusBuffer, _coinBalance, 0);
 
     vm.expectCall(
-      address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.coinBalance.selector, address(accountingEngine))
+      address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.coinBalance.selector, address(accountingEngine)), 4
     );
 
     vm.warp(block.timestamp + 1);

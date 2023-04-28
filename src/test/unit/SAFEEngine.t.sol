@@ -233,7 +233,6 @@ contract Unit_SAFEEngine_TransferCollateral is Base {
     _assumeHappyPath(_initialCollateralSrc, _initialCollateralDst, _wad);
     _mockValues(_initialCollateralSrc, _initialCollateralDst);
 
-    vm.stopPrank();
     vm.prank(src);
     safeEngine.transferCollateral(collateralType, src, dst, _wad);
 
@@ -248,7 +247,6 @@ contract Unit_SAFEEngine_TransferCollateral is Base {
     _assumeHappyPath(_initialCollateralSrc, _initialCollateralDst, _wad);
     _mockValues(_initialCollateralSrc, _initialCollateralDst);
 
-    vm.stopPrank();
     vm.prank(src);
     safeEngine.transferCollateral(collateralType, src, dst, _wad);
 
@@ -266,7 +264,6 @@ contract Unit_SAFEEngine_TransferCollateral is Base {
     vm.expectEmit(true, false, false, true);
     emit TransferCollateral(collateralType, src, dst, _wad);
 
-    vm.stopPrank();
     vm.prank(src);
     safeEngine.transferCollateral(collateralType, src, dst, _wad);
   }
