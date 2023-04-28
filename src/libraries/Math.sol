@@ -4,6 +4,7 @@ pragma solidity 0.8.19;
 uint256 constant RAD = 10 ** 45;
 uint256 constant RAY = 10 ** 27;
 uint256 constant WAD = 10 ** 18;
+uint256 constant MAX_RAD = type(uint256).max / RAY;
 uint256 constant HUNDRED = 100;
 
 library Math {

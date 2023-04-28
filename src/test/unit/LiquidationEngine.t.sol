@@ -59,9 +59,8 @@ abstract contract Base is HaiTest {
   }
 
   function _mockOnAuctionSystemCoinLimit(uint256 _rad) internal {
-    stdstore.target(address(liquidationEngine)).sig(ILiquidationEngine.onAuctionSystemCoinLimit.selector).checked_write(
-      _rad
-    );
+    // TODO: unify with setAccountingEngine
+    stdstore.target(address(liquidationEngine)).sig(ILiquidationEngine.params.selector).depth(1).checked_write(_rad);
   }
 
   function _mockSafeSaviours(address _saviour, uint256 _canSave) internal {
@@ -86,7 +85,7 @@ abstract contract Base is HaiTest {
   }
 
   function _mockLiquidationEngineCollateralType(
-    bytes32 _collateralType,
+    bytes32 _cType,
     address _collateralAuctionHouse,
     uint256 _liquidationPenalty,
     uint256 _liquidationQuantity
@@ -96,36 +95,32 @@ abstract contract Base is HaiTest {
       modifyParameters for this purpose */
     // https://book.getfoundry.sh/reference/forge-std/std-storage?highlight=std#std-storage
     // https://github.com/foundry-rs/forge-std/issues/101
-    LiquidationEngineForTest(address(liquidationEngine)).setCollateralAuctionHouse(
-      _collateralType, _collateralAuctionHouse
-    );
+    LiquidationEngineForTest(address(liquidationEngine)).setCollateralAuctionHouse(_cType, _collateralAuctionHouse);
 
     // The above code should be implemented this way
     /*
-     stdstore.target(address(liquidationEngine)).sig(ILiquidationEngine.collateralTypes.selector).with_key(
-      _collateralType
+     stdstore.target(address(liquidationEngine)).sig(ILiquidationEngine.cParams.selector).with_key(
+      _cType
     ).depth(0).checked_write(_collateralAuctionHouse);
     */
 
-    stdstore.target(address(liquidationEngine)).sig(ILiquidationEngine.collateralTypes.selector).with_key(
-      _collateralType
-    ).depth(1).checked_write(_liquidationPenalty);
+    stdstore.target(address(liquidationEngine)).sig(ILiquidationEngine.cParams.selector).with_key(_cType).depth(1)
+      .checked_write(_liquidationPenalty);
 
-    stdstore.target(address(liquidationEngine)).sig(ILiquidationEngine.collateralTypes.selector).with_key(
-      _collateralType
-    ).depth(2).checked_write(_liquidationQuantity);
+    stdstore.target(address(liquidationEngine)).sig(ILiquidationEngine.cParams.selector).with_key(_cType).depth(2)
+      .checked_write(_liquidationQuantity);
   }
 
-  function _mockSafeEngineCData(bytes32 _collateralType, uint256 _debtAmount, uint256 _accumulatedRate) internal {
+  function _mockSafeEngineCData(bytes32 _cType, uint256 _debtAmount, uint256 _accumulatedRate) internal {
     vm.mockCall(
       address(mockSafeEngine),
-      abi.encodeCall(ISAFEEngine(mockSafeEngine).cData, (_collateralType)),
+      abi.encodeCall(ISAFEEngine(mockSafeEngine).cData, (_cType)),
       abi.encode(_debtAmount, _accumulatedRate)
     );
   }
 
   function _mockSafeEngineCParams(
-    bytes32 _collateralType,
+    bytes32 _cType,
     uint256 _safetyPrice,
     uint256 _debtCeiling,
     uint256 _debtFloor,
@@ -133,13 +128,13 @@ abstract contract Base is HaiTest {
   ) internal {
     vm.mockCall(
       address(mockSafeEngine),
-      abi.encodeCall(ISAFEEngine(mockSafeEngine).cParams, (_collateralType)),
+      abi.encodeCall(ISAFEEngine(mockSafeEngine).cParams, (_cType)),
       abi.encode(_safetyPrice, _debtCeiling, _debtFloor, _liquidationPrice)
     );
   }
 
   function _mockSafeEngineCollateralTypes(
-    bytes32 _collateralType,
+    bytes32 _cType,
     uint256 _debtAmount,
     uint256 _accumulatedRate,
     uint256 _safetyPrice,
@@ -147,27 +142,26 @@ abstract contract Base is HaiTest {
     uint256 _debtFloor,
     uint256 _liquidationPrice
   ) internal {
-    _mockSafeEngineCData(_collateralType, _debtAmount, _accumulatedRate);
-    _mockSafeEngineCParams(_collateralType, _safetyPrice, _debtCeiling, _debtFloor, _liquidationPrice);
+    _mockSafeEngineCData(_cType, _debtAmount, _accumulatedRate);
+    _mockSafeEngineCParams(_cType, _safetyPrice, _debtCeiling, _debtFloor, _liquidationPrice);
   }
 
   function _mockSafeEngineSafes(
-    bytes32 _collateralType,
+    bytes32 _cType,
     address _safe,
     uint256 _lockedCollateral,
     uint256 _generatedDebt
   ) internal {
     vm.mockCall(
       address(mockSafeEngine),
-      abi.encodeCall(ISAFEEngine(mockSafeEngine).safes, (_collateralType, _safe)),
+      abi.encodeCall(ISAFEEngine(mockSafeEngine).safes, (_cType, _safe)),
       abi.encode(_lockedCollateral, _generatedDebt)
     );
   }
 
-  function _mockChosenSafeSaviour(bytes32 _collateralType, address _safe, address _saviour) internal {
-    stdstore.target(address(liquidationEngine)).sig(ILiquidationEngine.chosenSAFESaviour.selector).with_key(
-      _collateralType
-    ).with_key(_safe).checked_write(_saviour);
+  function _mockChosenSafeSaviour(bytes32 _cType, address _safe, address _saviour) internal {
+    stdstore.target(address(liquidationEngine)).sig(ILiquidationEngine.chosenSAFESaviour.selector).with_key(_cType)
+      .with_key(_safe).checked_write(_saviour);
   }
 
   function _mockAccountingEnginePushDebtToQueue(uint256 _debt) internal {
@@ -194,9 +188,9 @@ abstract contract Base is HaiTest {
     );
   }
 
-  function _mockMutex(bytes32 _collateralType, address _safe, uint8 _mutex) internal {
-    stdstore.target(address(liquidationEngine)).sig(ILiquidationEngine.mutex.selector).with_key(_collateralType)
-      .with_key(_safe).checked_write(_mutex);
+  function _mockMutex(bytes32 _cType, address _safe, uint8 _mutex) internal {
+    stdstore.target(address(liquidationEngine)).sig(ILiquidationEngine.mutex.selector).with_key(_cType).with_key(_safe)
+      .checked_write(_mutex);
   }
 
   function _mockContractEnabled(uint256 _enabled) internal {
@@ -206,7 +200,7 @@ abstract contract Base is HaiTest {
   function _mockSafeSaviourSaveSafe(
     address _saviour,
     address _sender,
-    bytes32 _collateralType,
+    bytes32 _cType,
     address _safe,
     bool _ok,
     uint256 _collateralAdded,
@@ -214,7 +208,7 @@ abstract contract Base is HaiTest {
   ) internal {
     vm.mockCall(
       address(_saviour),
-      abi.encodeCall(ISAFESaviour(_saviour).saveSAFE, (_sender, _collateralType, _safe)),
+      abi.encodeCall(ISAFESaviour(_saviour).saveSAFE, (_sender, _cType, _safe)),
       abi.encode(_ok, _collateralAdded, _liquidatorReward)
     );
   }
@@ -244,12 +238,12 @@ contract SAFESaviourIncreaseGeneratedDebtOrDecreaseCollateral is ISAFESaviour, B
 
   function saveSAFE(
     address _liquidator,
-    bytes32 _collateralType,
+    bytes32 _cType,
     address _safe
   ) external returns (bool _ok, uint256 _collateralAdded, uint256 _liquidatorReward) {
     uint256 newLockedCollateral = collateralOrDebt ? lockedCollateral - 1 : lockedCollateral;
     uint256 newGeneratedDebt = collateralOrDebt ? generatedDebt : generatedDebt + 1;
-    _mockSafeEngineSafes(_collateralType, _safe, newLockedCollateral, newGeneratedDebt + 1);
+    _mockSafeEngineSafes(_cType, _safe, newLockedCollateral, newGeneratedDebt + 1);
 
     return (true, 10, 1);
   }
@@ -270,12 +264,12 @@ contract SAFESaviourCollateralTypeModifier is ISAFESaviour, Base {
 
   function saveSAFE(
     address _liquidator,
-    bytes32 _collateralType,
+    bytes32 _cType,
     address _safe
   ) external returns (bool _ok, uint256 _collateralAdded, uint256 _liquidatorReward) {
-    _mockSafeEngineSafes(_collateralType, _safe, lockedCollateral, generatedDebt);
+    _mockSafeEngineSafes(_cType, _safe, lockedCollateral, generatedDebt);
     _mockSafeEngineCollateralTypes({
-      _collateralType: _collateralType,
+      _cType: _cType,
       _debtAmount: 0,
       _accumulatedRate: accumulatedRate,
       _safetyPrice: 0,
@@ -290,7 +284,7 @@ contract SAFESaviourCollateralTypeModifier is ISAFESaviour, Base {
 
 contract Unit_LiquidationEngine_Constructor is Base {
   event AddAuthorization(address _account);
-  event ModifyParameters(bytes32 _parameter, uint256 _data);
+  event ModifyParameters(bytes32 indexed _parameter, bytes32 indexed _cType, bytes _data);
 
   function test_Set_Authorization() public {
     assertEq(liquidationEngine.authorizedAccounts(deployer), 1);
@@ -301,7 +295,8 @@ contract Unit_LiquidationEngine_Constructor is Base {
   }
 
   function test_Set_OnAuctionSystemCoinLimit() public {
-    assertEq(liquidationEngine.onAuctionSystemCoinLimit(), type(uint256).max);
+    (, uint256 _onAuctionSystemCoinLimit) = liquidationEngine.params();
+    assertEq(_onAuctionSystemCoinLimit, type(uint256).max);
   }
 
   function test_Set_ContractEnabled() public {
@@ -317,10 +312,64 @@ contract Unit_LiquidationEngine_Constructor is Base {
   }
 
   function test_Emit_ModifyParameters() public {
-    expectEmitNoIndex();
-    emit ModifyParameters('onAuctionSystemCoinLimit', type(uint256).max);
+    vm.expectEmit(true, true, false, false);
+    emit ModifyParameters('onAuctionSystemCoinLimit', bytes32(0), abi.encode(type(uint256).max));
 
     new LiquidationEngine(address(mockSafeEngine));
+  }
+}
+
+contract Unit_LiquidationEngine_ModifyParameters is Base {
+  function test_ModifyParameters(ILiquidationEngine.LiquidationEngineParams memory _fuzz) public authorized {
+    liquidationEngine.modifyParameters('accountingEngine', abi.encode(_fuzz.accountingEngine));
+    liquidationEngine.modifyParameters('onAuctionSystemCoinLimit', abi.encode(_fuzz.onAuctionSystemCoinLimit));
+
+    (bool _success, bytes memory _data) = address(liquidationEngine).staticcall(abi.encodeWithSignature('params()'));
+
+    assert(_success);
+    assertEq(keccak256(abi.encode(_fuzz)), keccak256(_data));
+  }
+
+  function test_ModifyParameters_PerCollateral(
+    bytes32 _cType,
+    ILiquidationEngine.LiquidationEngineCollateralParams memory _fuzz
+  ) public authorized {
+    liquidationEngine.modifyParameters(_cType, 'collateralAuctionHouse', abi.encode(_fuzz.collateralAuctionHouse));
+    liquidationEngine.modifyParameters(_cType, 'liquidationPenalty', abi.encode(_fuzz.liquidationPenalty));
+    vm.assume(_fuzz.liquidationQuantity <= type(uint256).max / RAY);
+    liquidationEngine.modifyParameters(_cType, 'liquidationQuantity', abi.encode(_fuzz.liquidationQuantity));
+
+    (bool _success, bytes memory _data) =
+      address(liquidationEngine).staticcall(abi.encodeWithSignature('cParams(bytes32)', _cType));
+
+    assert(_success);
+    assertEq(keccak256(abi.encode(_fuzz)), keccak256(_data));
+  }
+
+  function test_Revert_ModifyParameters_LiquidationQuantity(
+    bytes32 _cType,
+    uint256 _liquidationQuantity
+  ) public authorized {
+    vm.assume(_liquidationQuantity > type(uint256).max / RAY);
+    vm.expectRevert();
+    liquidationEngine.modifyParameters(_cType, 'liquidationQuantity', abi.encode(_liquidationQuantity));
+  }
+
+  function test_ModifyParameters_CollateralAuctionHouse(
+    bytes32 _cType,
+    address _previousCAH,
+    address _newCAH
+  ) public authorized {
+    LiquidationEngineForTest(address(liquidationEngine)).setCollateralAuctionHouse(_cType, _previousCAH);
+
+    vm.expectCall(
+      address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.denySAFEModification.selector, _previousCAH)
+    );
+    vm.expectCall(
+      address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.approveSAFEModification.selector, _newCAH)
+    );
+
+    liquidationEngine.modifyParameters(_cType, 'collateralAuctionHouse', abi.encode(_newCAH));
   }
 }
 
@@ -382,66 +431,66 @@ contract Unit_LiquidationEngine_RemoveCoinsFromAuction is Base {
 }
 
 contract Unit_LiquidationEngine_ProtectSafe is Base {
-  event ProtectSAFE(bytes32 indexed _collateralType, address indexed _safe, address _saviour);
+  event ProtectSAFE(bytes32 indexed _cType, address indexed _safe, address _saviour);
 
   function _mockValues(address _safe, bool _canModifySafe, address _saviour, uint256 _canSave) internal {
     _mockSafeEngineCanModifySafe(_safe, account, _canModifySafe);
     _mockSafeSaviours(_saviour, _canSave);
   }
 
-  function test_Set_ChosenSAFESaviour(bytes32 _collateralType, address _safe, address _saviour) public {
+  function test_Set_ChosenSAFESaviour(bytes32 _cType, address _safe, address _saviour) public {
     _mockValues({_safe: _safe, _canModifySafe: true, _saviour: _saviour, _canSave: 1});
     vm.prank(account);
-    liquidationEngine.protectSAFE(_collateralType, _safe, _saviour);
+    liquidationEngine.protectSAFE(_cType, _safe, _saviour);
 
-    assertEq(liquidationEngine.chosenSAFESaviour(_collateralType, _safe), _saviour);
+    assertEq(liquidationEngine.chosenSAFESaviour(_cType, _safe), _saviour);
   }
 
-  function test_Set_ChosenSAFESaviourZeroAddress(bytes32 _collateralType, address _safe) public {
+  function test_Set_ChosenSAFESaviourZeroAddress(bytes32 _cType, address _safe) public {
     _mockSafeEngineCanModifySafe(_safe, account, true);
 
     vm.prank(account);
-    liquidationEngine.protectSAFE(_collateralType, _safe, address(0));
+    liquidationEngine.protectSAFE(_cType, _safe, address(0));
 
-    assertEq(liquidationEngine.chosenSAFESaviour(_collateralType, _safe), address(0));
+    assertEq(liquidationEngine.chosenSAFESaviour(_cType, _safe), address(0));
   }
 
-  function test_Call_SAFEEngine_CanModifySafe(bytes32 _collateralType, address _safe, address _saviour) public {
+  function test_Call_SAFEEngine_CanModifySafe(bytes32 _cType, address _safe, address _saviour) public {
     _mockValues({_safe: _safe, _canModifySafe: true, _saviour: _saviour, _canSave: 1});
     vm.prank(account);
 
     vm.expectCall(address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.canModifySAFE.selector, _safe, account));
 
-    liquidationEngine.protectSAFE(_collateralType, _safe, _saviour);
+    liquidationEngine.protectSAFE(_cType, _safe, _saviour);
   }
 
-  function test_Emit_ProtectSAFE(bytes32 _collateralType, address _safe, address _saviour) public {
+  function test_Emit_ProtectSAFE(bytes32 _cType, address _safe, address _saviour) public {
     _mockValues({_safe: _safe, _canModifySafe: true, _saviour: _saviour, _canSave: 1});
 
     vm.expectEmit(true, false, false, true);
-    emit ProtectSAFE(_collateralType, _safe, _saviour);
+    emit ProtectSAFE(_cType, _safe, _saviour);
 
     vm.prank(account);
-    liquidationEngine.protectSAFE(_collateralType, _safe, _saviour);
+    liquidationEngine.protectSAFE(_cType, _safe, _saviour);
   }
 
-  function test_Revert_CannotModifySafe(bytes32 _collateralType, address _safe, address _saviour) public {
+  function test_Revert_CannotModifySafe(bytes32 _cType, address _safe, address _saviour) public {
     _mockValues({_safe: _safe, _canModifySafe: false, _saviour: _saviour, _canSave: 1});
 
     vm.expectRevert(bytes('LiquidationEngine/cannot-modify-safe'));
     vm.prank(account);
 
-    liquidationEngine.protectSAFE(_collateralType, _safe, _saviour);
+    liquidationEngine.protectSAFE(_cType, _safe, _saviour);
   }
 
-  function test_Revert_SaviourNotAuthorized(bytes32 _collateralType, address _safe, address _saviour) public {
+  function test_Revert_SaviourNotAuthorized(bytes32 _cType, address _safe, address _saviour) public {
     vm.assume(_saviour != address(0));
     _mockValues({_safe: _safe, _canModifySafe: true, _saviour: _saviour, _canSave: 0});
 
     vm.expectRevert(bytes('LiquidationEngine/saviour-not-authorized'));
     vm.prank(account);
 
-    liquidationEngine.protectSAFE(_collateralType, _safe, _saviour);
+    liquidationEngine.protectSAFE(_cType, _safe, _saviour);
   }
 }
 
@@ -550,8 +599,8 @@ contract Unit_LiquidationEngine_GetLimitAdjustedDebtToCover is Base {
     uint256 _onAuctionSystemCoinLimit,
     uint256 _currentOnAuctionSystemCoins
   ) public {
-    _mockSafeEngineCData({_collateralType: collateralType, _debtAmount: 0, _accumulatedRate: _accumulatedRate});
-    _mockSafeEngineSafes({_collateralType: collateralType, _safe: safe, _lockedCollateral: 0, _generatedDebt: _safeDebt});
+    _mockSafeEngineCData({_cType: collateralType, _debtAmount: 0, _accumulatedRate: _accumulatedRate});
+    _mockSafeEngineSafes({_cType: collateralType, _safe: safe, _lockedCollateral: 0, _generatedDebt: _safeDebt});
     _mockLiquidationEngineCollateralType(
       collateralType, mockCollateralAuctionHouse, _liquidationPenalty, _liquidationQuantity
     );
@@ -652,7 +701,7 @@ contract Unit_LiquidationEngine_GetLimitAdjustedDebtToCover is Base {
 
 contract Unit_LiquidationEngine_LiquidateSafe is Base {
   event UpdateCurrentOnAuctionSystemCoins(uint256 _currentOnAuctionSystemCoins);
-  event SaveSAFE(bytes32 indexed _collateralType, address indexed _safe, uint256 _collateralAddedOrDebtRepaid);
+  event SaveSAFE(bytes32 indexed _cType, address indexed _safe, uint256 _collateralAddedOrDebtRepaid);
   event FailedSAFESave(bytes _failReason);
 
   struct Liquidation {
@@ -668,7 +717,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
   }
 
   event Liquidate(
-    bytes32 indexed _collateralType,
+    bytes32 indexed _cType,
     address indexed _safe,
     uint256 _collateralAmount,
     uint256 _debtAmount,
@@ -935,7 +984,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     );
 
     _mockSafeEngineCollateralTypes({
-      _collateralType: collateralType,
+      _cType: collateralType,
       _debtAmount: 0,
       _accumulatedRate: _liquidation.accumulatedRate,
       _safetyPrice: 0,
@@ -945,7 +994,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     });
 
     _mockSafeEngineSafes({
-      _collateralType: collateralType,
+      _cType: collateralType,
       _safe: safe,
       _lockedCollateral: _liquidation.safeCollateral,
       _generatedDebt: _liquidation.safeDebt

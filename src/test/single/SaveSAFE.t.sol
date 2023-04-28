@@ -229,7 +229,7 @@ contract SingleSaveSAFETest is DSTest {
     safeEngine.addAuthorization(address(taxCollector));
 
     liquidationEngine = new LiquidationEngine(address(safeEngine));
-    liquidationEngine.modifyParameters('accountingEngine', address(accountingEngine));
+    liquidationEngine.modifyParameters('accountingEngine', abi.encode(accountingEngine));
     safeEngine.addAuthorization(address(liquidationEngine));
     accountingEngine.addAuthorization(address(liquidationEngine));
 
@@ -250,8 +250,8 @@ contract SingleSaveSAFETest is DSTest {
     collateralAuctionHouse.addAuthorization(address(liquidationEngine));
 
     liquidationEngine.addAuthorization(address(collateralAuctionHouse));
-    liquidationEngine.modifyParameters('gold', 'collateralAuctionHouse', address(collateralAuctionHouse));
-    liquidationEngine.modifyParameters('gold', 'liquidationPenalty', 1 ether);
+    liquidationEngine.modifyParameters('gold', 'collateralAuctionHouse', abi.encode(collateralAuctionHouse));
+    liquidationEngine.modifyParameters('gold', 'liquidationPenalty', abi.encode(1 ether));
 
     safeEngine.addAuthorization(address(collateralAuctionHouse));
     safeEngine.addAuthorization(address(surplusAuctionHouse));
@@ -267,8 +267,8 @@ contract SingleSaveSAFETest is DSTest {
 
   function liquidateSAFE() internal {
     uint256 MAX_LIQUIDATION_QUANTITY = uint256(int256(-1)) / 10 ** 27;
-    liquidationEngine.modifyParameters('gold', 'liquidationQuantity', MAX_LIQUIDATION_QUANTITY);
-    liquidationEngine.modifyParameters('gold', 'liquidationPenalty', 1.1 ether);
+    liquidationEngine.modifyParameters('gold', 'liquidationQuantity', abi.encode(MAX_LIQUIDATION_QUANTITY));
+    liquidationEngine.modifyParameters('gold', 'liquidationPenalty', abi.encode(1.1 ether));
 
     safeEngine.modifyParameters('globalDebtCeiling', abi.encode(rad(300_000 ether)));
     safeEngine.modifyParameters('gold', 'debtCeiling', abi.encode(rad(300_000 ether)));
@@ -285,8 +285,8 @@ contract SingleSaveSAFETest is DSTest {
 
   function liquidateSavedSAFE() internal {
     uint256 MAX_LIQUIDATION_QUANTITY = uint256(int256(-1)) / 10 ** 27;
-    liquidationEngine.modifyParameters('gold', 'liquidationQuantity', MAX_LIQUIDATION_QUANTITY);
-    liquidationEngine.modifyParameters('gold', 'liquidationPenalty', 1.1 ether);
+    liquidationEngine.modifyParameters('gold', 'liquidationQuantity', abi.encode(MAX_LIQUIDATION_QUANTITY));
+    liquidationEngine.modifyParameters('gold', 'liquidationPenalty', abi.encode(1.1 ether));
 
     safeEngine.modifyParameters('globalDebtCeiling', abi.encode(rad(300_000 ether)));
     safeEngine.modifyParameters('gold', 'debtCeiling', abi.encode(rad(300_000 ether)));

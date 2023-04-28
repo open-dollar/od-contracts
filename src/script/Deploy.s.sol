@@ -176,7 +176,7 @@ contract Deploy is Script, Contracts {
     // setup registry
     debtAuctionHouse.modifyParameters('accountingEngine', address(accountingEngine));
     taxCollector.modifyParameters('primaryTaxReceiver', address(accountingEngine));
-    liquidationEngine.modifyParameters('accountingEngine', address(accountingEngine));
+    liquidationEngine.modifyParameters('accountingEngine', abi.encode(accountingEngine));
     accountingEngine.modifyParameters('protocolTokenAuthority', address(protocolToken));
 
     // auth
@@ -235,10 +235,10 @@ contract Deploy is Script, Contracts {
     collateralAuctionHouse[_params.name].modifyParameters('oracleRelayer', address(oracleRelayer));
     collateralAuctionHouse[_params.name].modifyParameters('collateralFSM', address(_collateralOracle));
     liquidationEngine.modifyParameters(
-      _params.name, 'collateralAuctionHouse', address(collateralAuctionHouse[_params.name])
+      _params.name, 'collateralAuctionHouse', abi.encode(collateralAuctionHouse[_params.name])
     );
-    liquidationEngine.modifyParameters(_params.name, 'liquidationPenalty', _params.liquidationPenalty);
-    liquidationEngine.modifyParameters(_params.name, 'liquidationQuantity', _params.liquidationQuantity);
+    liquidationEngine.modifyParameters(_params.name, 'liquidationPenalty', abi.encode(_params.liquidationPenalty));
+    liquidationEngine.modifyParameters(_params.name, 'liquidationQuantity', abi.encode(_params.liquidationQuantity));
 
     // setup params
     safeEngine.modifyParameters(_params.name, 'debtCeiling', abi.encode(_params.debtCeiling));

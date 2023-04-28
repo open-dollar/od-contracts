@@ -18,6 +18,7 @@ import {
   CollateralJoin
 } from '@script/Contracts.s.sol';
 import '@script/Params.s.sol';
+import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
 import {Deploy} from '@script/Deploy.s.sol';
 
 contract E2EDeploymentTest is PRBTest {
@@ -43,9 +44,10 @@ contract E2EDeploymentTest is PRBTest {
   function test_SAFEEngine_Params() public {
     SAFEEngine _safeEngine = deployment.safeEngine();
 
-    (uint256 _safeDebtCeiling,) = _safeEngine.params();
+    (uint256 _safeDebtCeiling, uint256 _globalDebtCeiling) = _safeEngine.params();
 
     assertEq(_safeDebtCeiling, type(uint256).max);
+    assertEq(_globalDebtCeiling, GLOBAL_DEBT_CEILING);
   }
 
   // TaxCollector
@@ -75,8 +77,10 @@ contract E2EDeploymentTest is PRBTest {
     LiquidationEngine _liquidationEngine = deployment.liquidationEngine();
 
     assertEq(address(_liquidationEngine.safeEngine()), address(deployment.safeEngine()));
-    // on script
-    assertEq(address(_liquidationEngine.accountingEngine()), address(deployment.accountingEngine()));
+
+    (IAccountingEngine _accountingEngine, uint256 _onAuctionSystemCoinLimit) = _liquidationEngine.params();
+    assertEq(address(_accountingEngine), address(deployment.accountingEngine()));
+    assertEq(_onAuctionSystemCoinLimit, type(uint256).max);
   }
 
   // StabilityFeeTreasury

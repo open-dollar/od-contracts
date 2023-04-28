@@ -226,7 +226,7 @@ contract GlobalSettlement is Authorizable, Disableable {
   function fastTrackAuction(bytes32 collateralType, uint256 auctionId) external {
     require(finalCoinPerCollateralPrice[collateralType] != 0, 'GlobalSettlement/final-collateral-price-not-defined');
 
-    (address auctionHouse_,,) = liquidationEngine.collateralTypes(collateralType);
+    (address auctionHouse_,,) = liquidationEngine.cParams(collateralType);
     CollateralAuctionHouseLike collateralAuctionHouse = CollateralAuctionHouseLike(auctionHouse_);
     (, uint256 _accumulatedRate) = safeEngine.cData(collateralType);
 

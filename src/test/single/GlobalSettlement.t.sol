@@ -264,9 +264,11 @@ contract SingleGlobalSettlementTest is DSTest {
     liquidationEngine.addAuthorization(address(englishCollateralAuctionHouse));
     liquidationEngine.addAuthorization(address(fixedDiscountCollateralAuctionHouse));
 
-    liquidationEngine.modifyParameters(encodedName, 'collateralAuctionHouse', address(englishCollateralAuctionHouse));
-    liquidationEngine.modifyParameters(encodedName, 'liquidationPenalty', 1 ether);
-    liquidationEngine.modifyParameters(encodedName, 'liquidationQuantity', uint256(int256(-1)) / ray(1 ether));
+    liquidationEngine.modifyParameters(encodedName, 'collateralAuctionHouse', abi.encode(englishCollateralAuctionHouse));
+    liquidationEngine.modifyParameters(encodedName, 'liquidationPenalty', abi.encode(1 ether));
+    liquidationEngine.modifyParameters(
+      encodedName, 'liquidationQuantity', abi.encode(uint256(int256(-1)) / ray(1 ether))
+    );
 
     collateralTypes[encodedName].oracleSecurityModule = oracleFSM;
     collateralTypes[encodedName].collateral = newCollateral;
@@ -312,7 +314,7 @@ contract SingleGlobalSettlementTest is DSTest {
     debtAuctionHouse.modifyParameters('accountingEngine', address(accountingEngine));
 
     liquidationEngine = new LiquidationEngine(address(safeEngine));
-    liquidationEngine.modifyParameters('accountingEngine', address(accountingEngine));
+    liquidationEngine.modifyParameters('accountingEngine', abi.encode(accountingEngine));
     safeEngine.addAuthorization(address(liquidationEngine));
     accountingEngine.addAuthorization(address(liquidationEngine));
 
@@ -591,7 +593,7 @@ contract SingleGlobalSettlementTest is DSTest {
     CollateralType memory gold = init_collateral('gold', 'gold');
     // swap auction house in the liquidation engine
     liquidationEngine.modifyParameters(
-      'gold', 'collateralAuctionHouse', address(gold.fixedDiscountCollateralAuctionHouse)
+      'gold', 'collateralAuctionHouse', abi.encode(gold.fixedDiscountCollateralAuctionHouse)
     );
 
     Usr ali = new Usr(safeEngine, globalSettlement);

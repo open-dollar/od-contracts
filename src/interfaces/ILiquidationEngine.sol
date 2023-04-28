@@ -5,16 +5,25 @@ import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
+import {IModifiablePerCollateral, GLOBAL_PARAM} from '@interfaces/utils/IModifiablePerCollateral.sol';
 
-interface ILiquidationEngine is IAuthorizable, IDisableable {
+interface ILiquidationEngine is IAuthorizable, IDisableable, IModifiablePerCollateral {
+  // --- Params ---
+  struct LiquidationEngineParams {
+    IAccountingEngine accountingEngine;
+    uint256 onAuctionSystemCoinLimit;
+  }
+
+  struct LiquidationEngineCollateralParams {
+    address collateralAuctionHouse;
+    uint256 liquidationPenalty;
+    uint256 liquidationQuantity;
+  }
+
   // --- Events ---
   event ConnectSAFESaviour(address _saviour);
   event DisconnectSAFESaviour(address _saviour);
   event UpdateCurrentOnAuctionSystemCoins(uint256 _currentOnAuctionSystemCoins);
-  event ModifyParameters(bytes32 _parameter, uint256 _data);
-  event ModifyParameters(bytes32 _parameter, address _data);
-  event ModifyParameters(bytes32 _collateralType, bytes32 _parameter, uint256 _data);
-  event ModifyParameters(bytes32 _collateralType, bytes32 _parameter, address _data);
   event Liquidate(
     bytes32 indexed _collateralType,
     address indexed _safe,
@@ -39,7 +48,8 @@ interface ILiquidationEngine is IAuthorizable, IDisableable {
   }
 
   function removeCoinsFromAuction(uint256 _rad) external;
-  function collateralTypes(bytes32 _collateralType)
+  function params() external view returns (IAccountingEngine _accountingEngine, uint256 _onAuctionSystemCoinLimit);
+  function cParams(bytes32 _collateralType)
     external
     view
     returns (
@@ -54,10 +64,8 @@ interface ILiquidationEngine is IAuthorizable, IDisableable {
   function liquidateSAFE(bytes32 _collateralType, address _safe) external returns (uint256 _auctionId);
   function getLimitAdjustedDebtToCover(bytes32 _collateralType, address _safe) external view returns (uint256 _wad);
   function safeEngine() external view returns (ISAFEEngine _safeEngine);
-  function onAuctionSystemCoinLimit() external view returns (uint256 _onAuctionSystemCoinLimit);
   function currentOnAuctionSystemCoins() external view returns (uint256 _currentOnAuctionSystemCoins);
   function safeSaviours(address _saviour) external view returns (uint256 _canSave);
   function chosenSAFESaviour(bytes32 _collateralType, address _safe) external view returns (address _saviour);
-  function accountingEngine() external view returns (IAccountingEngine _accountingEngine);
   function mutex(bytes32 _collateralType, address _safe) external view returns (uint8 _mutex);
 }
