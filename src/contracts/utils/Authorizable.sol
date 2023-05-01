@@ -8,7 +8,8 @@ import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
 abstract contract Authorizable is IAuthorizable {
   using EnumerableSet for EnumerableSet.AddressSet;
 
-  EnumerableSet.AddressSet private _authorizedAccounts;
+  // --- Data ---
+  EnumerableSet.AddressSet internal _authorizedAccounts;
 
   // --- Init ---
   constructor(address _account) {
