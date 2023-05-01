@@ -18,36 +18,17 @@
 
 pragma solidity 0.8.19;
 
+import {Math, RAY, HUNDRED} from '@libraries/Math.sol';
+import {IStabilityFeeTreasury} from '@interfaces/IStabilityFeeTreasury.sol';
 import {ISAFEEngine as SAFEEngineLike} from '@interfaces/ISAFEEngine.sol';
 import {ISystemCoin as SystemCoinLike} from '@interfaces/external/ISystemCoin.sol';
 import {ICoinJoin as CoinJoinLike} from '@interfaces/ICoinJoin.sol';
-
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {Disableable} from '@contract-utils/Disableable.sol';
 
-import {Math, RAY, HUNDRED} from '@libraries/Math.sol';
-
-contract StabilityFeeTreasury is Authorizable, Disableable {
-  // --- Events ---
-  event ModifyParameters(bytes32 parameter, address addr);
-  event ModifyParameters(bytes32 parameter, uint256 val);
-  event SetTotalAllowance(address indexed account, uint256 rad);
-  event SetPerBlockAllowance(address indexed account, uint256 rad);
-  event GiveFunds(address indexed account, uint256 rad, uint256 expensesAccumulator);
-  event TakeFunds(address indexed account, uint256 rad);
-  event PullFunds(
-    address indexed sender, address indexed dstAccount, address token, uint256 rad, uint256 expensesAccumulator
-  );
-  event TransferSurplusFunds(address extraSurplusReceiver, uint256 fundsToTransfer);
-
-  // --- Structs ---
-  struct Allowance {
-    uint256 total;
-    uint256 perBlock;
-  }
-
+contract StabilityFeeTreasury is Authorizable, Disableable, IStabilityFeeTreasury {
   // Mapping of total and per block allowances
-  mapping(address => Allowance) private allowance;
+  mapping(address => Allowance) public allowance;
   // Mapping that keeps track of how much surplus an authorized address has pulled each block
   mapping(address => mapping(uint256 => uint256)) public pulledPerBlock;
 
@@ -89,42 +70,42 @@ contract StabilityFeeTreasury is Authorizable, Disableable {
   // --- Administration ---
   /**
    * @notice Modify address parameters
-   * @param parameter The name of the contract whose address will be changed
-   * @param addr New address for the contract
+   * @param  _parameter The name of the contract whose address will be changed
+   * @param  _addr New address for the contract
    */
-  function modifyParameters(bytes32 parameter, address addr) external isAuthorized whenEnabled {
-    require(addr != address(0), 'StabilityFeeTreasury/null-addr');
-    if (parameter == 'extraSurplusReceiver') {
-      require(addr != address(this), 'StabilityFeeTreasury/accounting-engine-cannot-be-treasury');
-      extraSurplusReceiver = addr;
+  function modifyParameters(bytes32 _parameter, address _addr) external isAuthorized whenEnabled {
+    require(_addr != address(0), 'StabilityFeeTreasury/null-addr');
+    if (_parameter == 'extraSurplusReceiver') {
+      require(_addr != address(this), 'StabilityFeeTreasury/accounting-engine-cannot-be-treasury');
+      extraSurplusReceiver = _addr;
     } else {
       revert('StabilityFeeTreasury/modify-unrecognized-param');
     }
-    emit ModifyParameters(parameter, addr);
+    emit ModifyParameters(_parameter, _addr);
   }
 
   /**
    * @notice Modify uint256 parameters
-   * @param parameter The name of the parameter to modify
-   * @param val New parameter value
+   * @param  _parameter The name of the parameter to modify
+   * @param  _val New parameter value
    */
-  function modifyParameters(bytes32 parameter, uint256 val) external isAuthorized whenEnabled {
-    if (parameter == 'expensesMultiplier') {
-      expensesMultiplier = val;
-    } else if (parameter == 'treasuryCapacity') {
-      require(val >= minimumFundsRequired, 'StabilityFeeTreasury/capacity-lower-than-min-funds');
-      treasuryCapacity = val;
-    } else if (parameter == 'minimumFundsRequired') {
-      require(val <= treasuryCapacity, 'StabilityFeeTreasury/min-funds-higher-than-capacity');
-      minimumFundsRequired = val;
-    } else if (parameter == 'pullFundsMinThreshold') {
-      pullFundsMinThreshold = val;
-    } else if (parameter == 'surplusTransferDelay') {
-      surplusTransferDelay = val;
+  function modifyParameters(bytes32 _parameter, uint256 _val) external isAuthorized whenEnabled {
+    if (_parameter == 'expensesMultiplier') {
+      expensesMultiplier = _val;
+    } else if (_parameter == 'treasuryCapacity') {
+      require(_val >= minimumFundsRequired, 'StabilityFeeTreasury/capacity-lower-than-min-funds');
+      treasuryCapacity = _val;
+    } else if (_parameter == 'minimumFundsRequired') {
+      require(_val <= treasuryCapacity, 'StabilityFeeTreasury/min-funds-higher-than-capacity');
+      minimumFundsRequired = _val;
+    } else if (_parameter == 'pullFundsMinThreshold') {
+      pullFundsMinThreshold = _val;
+    } else if (_parameter == 'surplusTransferDelay') {
+      surplusTransferDelay = _val;
     } else {
       revert('StabilityFeeTreasury/modify-unrecognized-param');
     }
-    emit ModifyParameters(parameter, val);
+    emit ModifyParameters(_parameter, _val);
   }
 
   /**
@@ -132,14 +113,14 @@ contract StabilityFeeTreasury is Authorizable, Disableable {
    */
   function disableContract() external isAuthorized whenEnabled {
     _disableContract();
-    joinAllCoins();
+    _joinAllCoins();
     safeEngine.transferInternalCoins(address(this), extraSurplusReceiver, safeEngine.coinBalance(address(this)));
   }
 
   /**
    * @notice Join all ERC20 system coins that the treasury has inside the SAFEEngine
    */
-  function joinAllCoins() internal {
+  function _joinAllCoins() internal virtual {
     if (systemCoin.balanceOf(address(this)) > 0) {
       coinJoin.join(address(this), systemCoin.balanceOf(address(this)));
     }
@@ -148,7 +129,11 @@ contract StabilityFeeTreasury is Authorizable, Disableable {
   /**
    * @notice Settle as much bad debt as possible (if this contract has any)
    */
-  function settleDebt() public {
+  function settleDebt() external virtual {
+    _settleDebt();
+  }
+
+  function _settleDebt() internal virtual {
     uint256 coinBalanceSelf = safeEngine.coinBalance(address(this));
     uint256 debtBalanceSelf = safeEngine.debtBalance(address(this));
 
@@ -157,114 +142,105 @@ contract StabilityFeeTreasury is Authorizable, Disableable {
     }
   }
 
-  // --- Getters ---
-  /**
-   * @notice Returns the total and per block allowances for a specific address
-   * @param account The address to return the allowances for
-   */
-  function getAllowance(address account) public view returns (uint256, uint256) {
-    return (allowance[account].total, allowance[account].perBlock);
-  }
-
   // --- SF Transfer Allowance ---
   /**
    * @notice Modify an address' total allowance in order to withdraw SF from the treasury
-   * @param account The approved address
-   * @param rad The total approved amount of SF to withdraw (number with 45 decimals)
+   * @param  _account The approved address
+   * @param  _rad The total approved amount of SF to withdraw (number with 45 decimals)
    */
-  function setTotalAllowance(address account, uint256 rad) external isAuthorized accountNotTreasury(account) {
-    require(account != address(0), 'StabilityFeeTreasury/null-account');
-    allowance[account].total = rad;
-    emit SetTotalAllowance(account, rad);
+  function setTotalAllowance(address _account, uint256 _rad) external isAuthorized accountNotTreasury(_account) {
+    require(_account != address(0), 'StabilityFeeTreasury/null-account');
+    allowance[_account].total = _rad;
+    emit SetTotalAllowance(_account, _rad);
   }
 
   /**
    * @notice Modify an address' per block allowance in order to withdraw SF from the treasury
-   * @param account The approved address
-   * @param rad The per block approved amount of SF to withdraw (number with 45 decimals)
+   * @param  _account The approved address
+   * @param  _rad The per block approved amount of SF to withdraw (number with 45 decimals)
    */
-  function setPerBlockAllowance(address account, uint256 rad) external isAuthorized accountNotTreasury(account) {
-    require(account != address(0), 'StabilityFeeTreasury/null-account');
-    allowance[account].perBlock = rad;
-    emit SetPerBlockAllowance(account, rad);
+  function setPerBlockAllowance(address _account, uint256 _rad) external isAuthorized accountNotTreasury(_account) {
+    require(_account != address(0), 'StabilityFeeTreasury/null-account');
+    allowance[_account].perBlock = _rad;
+    emit SetPerBlockAllowance(_account, _rad);
   }
 
   // --- Stability Fee Transfer (Governance) ---
   /**
    * @notice Governance transfers SF to an address
-   * @param account Address to transfer SF to
-   * @param rad Amount of internal system coins to transfer (a number with 45 decimals)
+   * @param  _account Address to transfer SF to
+   * @param  _rad Amount of internal system coins to transfer (a number with 45 decimals)
    */
-  function giveFunds(address account, uint256 rad) external isAuthorized accountNotTreasury(account) {
-    require(account != address(0), 'StabilityFeeTreasury/null-account');
+  function giveFunds(address _account, uint256 _rad) external isAuthorized accountNotTreasury(_account) {
+    require(_account != address(0), 'StabilityFeeTreasury/null-account');
 
-    joinAllCoins();
-    settleDebt();
+    _joinAllCoins();
+    _settleDebt();
 
     require(safeEngine.debtBalance(address(this)) == 0, 'StabilityFeeTreasury/outstanding-bad-debt');
-    require(safeEngine.coinBalance(address(this)) >= rad, 'StabilityFeeTreasury/not-enough-funds');
+    require(safeEngine.coinBalance(address(this)) >= _rad, 'StabilityFeeTreasury/not-enough-funds');
 
-    if (account != extraSurplusReceiver) {
-      expensesAccumulator = expensesAccumulator + rad;
+    if (_account != extraSurplusReceiver) {
+      expensesAccumulator += _rad;
     }
 
-    safeEngine.transferInternalCoins(address(this), account, rad);
-    emit GiveFunds(account, rad, expensesAccumulator);
+    safeEngine.transferInternalCoins(address(this), _account, _rad);
+    emit GiveFunds(_account, _rad, expensesAccumulator);
   }
 
   /**
    * @notice Governance takes funds from an address
-   * @param account Address to take system coins from
-   * @param rad Amount of internal system coins to take from the account (a number with 45 decimals)
+   * @param  _account Address to take system coins from
+   * @param  _rad Amount of internal system coins to take from the account (a number with 45 decimals)
    */
-  function takeFunds(address account, uint256 rad) external isAuthorized accountNotTreasury(account) {
-    safeEngine.transferInternalCoins(account, address(this), rad);
-    emit TakeFunds(account, rad);
+  function takeFunds(address _account, uint256 _rad) external isAuthorized accountNotTreasury(_account) {
+    safeEngine.transferInternalCoins(_account, address(this), _rad);
+    emit TakeFunds(_account, _rad);
   }
 
   // --- Stability Fee Transfer (Approved Accounts) ---
   /**
    * @notice Pull stability fees from the treasury (if your allowance permits)
-   * @param dstAccount Address to transfer funds to
-   * @param token Address of the token to transfer (in this case it must be the address of the ERC20 system coin).
+   * @param  _dstAccount Address to transfer funds to
+   * @param  _token Address of the token to transfer (in this case it must be the address of the ERC20 system coin).
    *              Used only to adhere to a standard for automated, on-chain treasuries
-   * @param wad Amount of system coins (SF) to transfer (expressed as an 18 decimal number but the contract will transfer
+   * @param  _wad Amount of system coins (SF) to transfer (expressed as an 18 decimal number but the contract will transfer
    *             internal system coins that have 45 decimals)
    */
-  function pullFunds(address dstAccount, address token, uint256 wad) external {
-    if (dstAccount == address(this)) return;
-    require(allowance[msg.sender].total >= wad * RAY, 'StabilityFeeTreasury/not-allowed');
-    require(dstAccount != address(0), 'StabilityFeeTreasury/null-dst');
-    require(dstAccount != extraSurplusReceiver, 'StabilityFeeTreasury/dst-cannot-be-accounting');
-    require(wad > 0, 'StabilityFeeTreasury/null-transfer-amount');
-    require(token == address(systemCoin), 'StabilityFeeTreasury/token-unavailable');
+  function pullFunds(address _dstAccount, address _token, uint256 _wad) external {
+    if (_dstAccount == address(this)) return;
+    require(allowance[msg.sender].total >= _wad * RAY, 'StabilityFeeTreasury/not-allowed');
+    require(_dstAccount != address(0), 'StabilityFeeTreasury/null-dst');
+    require(_dstAccount != extraSurplusReceiver, 'StabilityFeeTreasury/dst-cannot-be-accounting');
+    require(_wad > 0, 'StabilityFeeTreasury/null-transfer-amount');
+    require(_token == address(systemCoin), 'StabilityFeeTreasury/token-unavailable');
     if (allowance[msg.sender].perBlock > 0) {
       require(
-        pulledPerBlock[msg.sender][block.number] + (wad * RAY) <= allowance[msg.sender].perBlock,
+        pulledPerBlock[msg.sender][block.number] + (_wad * RAY) <= allowance[msg.sender].perBlock,
         'StabilityFeeTreasury/per-block-limit-exceeded'
       );
     }
 
-    pulledPerBlock[msg.sender][block.number] = pulledPerBlock[msg.sender][block.number] + (wad * RAY);
+    pulledPerBlock[msg.sender][block.number] += (_wad * RAY);
 
-    joinAllCoins();
-    settleDebt();
+    _joinAllCoins();
+    _settleDebt();
 
     require(safeEngine.debtBalance(address(this)) == 0, 'StabilityFeeTreasury/outstanding-bad-debt');
-    require(safeEngine.coinBalance(address(this)) >= wad * RAY, 'StabilityFeeTreasury/not-enough-funds');
+    require(safeEngine.coinBalance(address(this)) >= _wad * RAY, 'StabilityFeeTreasury/not-enough-funds');
     require(
       safeEngine.coinBalance(address(this)) >= pullFundsMinThreshold,
       'StabilityFeeTreasury/below-pullFunds-min-threshold'
     );
 
     // Update allowance and accumulator
-    allowance[msg.sender].total = allowance[msg.sender].total - (wad * RAY);
-    expensesAccumulator = expensesAccumulator + (wad * RAY);
+    allowance[msg.sender].total -= (_wad * RAY);
+    expensesAccumulator += (_wad * RAY);
 
     // Transfer money
-    safeEngine.transferInternalCoins(address(this), dstAccount, wad * RAY);
+    safeEngine.transferInternalCoins(address(this), _dstAccount, _wad * RAY);
 
-    emit PullFunds(msg.sender, dstAccount, token, wad * RAY, expensesAccumulator);
+    emit PullFunds(msg.sender, _dstAccount, _token, _wad * RAY, expensesAccumulator);
   }
 
   // --- Treasury Maintenance ---
@@ -280,27 +256,27 @@ contract StabilityFeeTreasury is Authorizable, Disableable {
       'StabilityFeeTreasury/transfer-cooldown-not-passed'
     );
     // Compute latest expenses
-    uint256 latestExpenses = expensesAccumulator - accumulatorTag;
+    uint256 _latestExpenses = expensesAccumulator - accumulatorTag;
     // Check if we need to keep more funds than the total capacity
-    uint256 remainingFunds = (treasuryCapacity <= expensesMultiplier * latestExpenses / HUNDRED)
-      ? expensesMultiplier * latestExpenses / HUNDRED
+    uint256 _remainingFunds = (treasuryCapacity <= expensesMultiplier * _latestExpenses / HUNDRED)
+      ? expensesMultiplier * _latestExpenses / HUNDRED
       : treasuryCapacity;
     // Make sure to keep at least minimum funds
-    remainingFunds =
-      (expensesMultiplier * latestExpenses / HUNDRED <= minimumFundsRequired) ? minimumFundsRequired : remainingFunds;
+    _remainingFunds =
+      (expensesMultiplier * _latestExpenses / HUNDRED <= minimumFundsRequired) ? minimumFundsRequired : _remainingFunds;
     // Set internal vars
     accumulatorTag = expensesAccumulator;
     latestSurplusTransferTime = block.timestamp;
     // Join all coins in system
-    joinAllCoins();
+    _joinAllCoins();
     // Settle outstanding bad debt
-    settleDebt();
+    _settleDebt();
     // Check that there's no bad debt left
     require(safeEngine.debtBalance(address(this)) == 0, 'StabilityFeeTreasury/outstanding-bad-debt');
     // Check if we have too much money
-    if (safeEngine.coinBalance(address(this)) > remainingFunds) {
+    if (safeEngine.coinBalance(address(this)) > _remainingFunds) {
       // Make sure that we still keep min SF in treasury
-      uint256 fundsToTransfer = safeEngine.coinBalance(address(this)) - remainingFunds;
+      uint256 fundsToTransfer = safeEngine.coinBalance(address(this)) - _remainingFunds;
       // Transfer surplus to accounting engine
       safeEngine.transferInternalCoins(address(this), extraSurplusReceiver, fundsToTransfer);
       // Emit event
