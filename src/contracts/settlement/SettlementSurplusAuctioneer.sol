@@ -18,13 +18,18 @@
 
 pragma solidity 0.8.19;
 
-import {IAccountingEngine as AccountingEngineLike} from '@interfaces/IAccountingEngine.sol';
-import {ISAFEEngine as SAFEEngineLike} from '@interfaces/ISAFEEngine.sol';
-import {ISurplusAuctionHouse as SurplusAuctionHouseLike} from '@interfaces/ISurplusAuctionHouse.sol';
+import {
+  ISettlementSurplusAuctioneer,
+  AccountingEngineLike,
+  SAFEEngineLike,
+  SurplusAuctionHouseLike
+} from '@interfaces/ISettlementSurplusAuctioneer.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
-contract SettlementSurplusAuctioneer is Authorizable {
+import {Math} from '@libraries/Math.sol';
+
+contract SettlementSurplusAuctioneer is ISettlementSurplusAuctioneer, Authorizable {
   // --- Data ---
   AccountingEngineLike public accountingEngine;
   SurplusAuctionHouseLike public surplusAuctionHouse;
@@ -33,10 +38,7 @@ contract SettlementSurplusAuctioneer is Authorizable {
   // Last time when this contract triggered a surplus auction
   uint256 public lastSurplusAuctionTime;
 
-  // --- Events ---
-  event ModifyParameters(bytes32 parameter, address addr);
-  event AuctionSurplus(uint256 indexed id, uint256 lastSurplusAuctionTime, uint256 coinBalance);
-
+  // --- Init ---
   constructor(address _accountingEngine, address _surplusAuctionHouse) Authorizable(msg.sender) {
     accountingEngine = AccountingEngineLike(_accountingEngine);
     surplusAuctionHouse = SurplusAuctionHouseLike(_surplusAuctionHouse);
@@ -47,20 +49,20 @@ contract SettlementSurplusAuctioneer is Authorizable {
   // --- Administration ---
   /**
    * @notice Modify address params
-   * @param parameter The name of the contract whose address will be changed
-   * @param addr New address for the contract
+   * @param _parameter The name of the contract whose address will be changed
+   * @param _addr New address for the contract
    */
-  function modifyParameters(bytes32 parameter, address addr) external isAuthorized {
-    if (parameter == 'accountingEngine') {
-      accountingEngine = AccountingEngineLike(addr);
-    } else if (parameter == 'surplusAuctionHouse') {
+  function modifyParameters(bytes32 _parameter, address _addr) external isAuthorized {
+    if (_parameter == 'accountingEngine') {
+      accountingEngine = AccountingEngineLike(_addr);
+    } else if (_parameter == 'surplusAuctionHouse') {
       safeEngine.denySAFEModification(address(surplusAuctionHouse));
-      surplusAuctionHouse = SurplusAuctionHouseLike(addr);
+      surplusAuctionHouse = SurplusAuctionHouseLike(_addr);
       safeEngine.approveSAFEModification(address(surplusAuctionHouse));
     } else {
       revert('SettlementSurplusAuctioneer/modify-unrecognized-param');
     }
-    emit ModifyParameters(parameter, addr);
+    emit ModifyParameters(_parameter, _addr);
   }
 
   // --- Core Logic ---
@@ -69,19 +71,18 @@ contract SettlementSurplusAuctioneer is Authorizable {
    * @dev The contract reads surplus auction parameters from the AccountingEngine and uses them to
    *      start a new auction.
    */
-  function auctionSurplus() external returns (uint256 id) {
+  function auctionSurplus() external returns (uint256 _id) {
     require(accountingEngine.contractEnabled() == 0, 'SettlementSurplusAuctioneer/accounting-engine-still-enabled');
     require(
       block.timestamp >= lastSurplusAuctionTime + accountingEngine.surplusAuctionDelay(),
       'SettlementSurplusAuctioneer/surplus-auction-delay-not-passed'
     );
     lastSurplusAuctionTime = block.timestamp;
-    uint256 amountToSell = (safeEngine.coinBalance(address(this)) < accountingEngine.surplusAuctionAmountToSell())
-      ? safeEngine.coinBalance(address(this))
-      : accountingEngine.surplusAuctionAmountToSell();
-    if (amountToSell > 0) {
-      id = surplusAuctionHouse.startAuction(amountToSell, 0);
-      emit AuctionSurplus(id, lastSurplusAuctionTime, safeEngine.coinBalance(address(this)));
+    uint256 _amountToSell =
+      Math.min(safeEngine.coinBalance(address(this)), accountingEngine.surplusAuctionAmountToSell());
+    if (_amountToSell > 0) {
+      _id = surplusAuctionHouse.startAuction(_amountToSell, 0);
+      emit AuctionSurplus(_id, lastSurplusAuctionTime, safeEngine.coinBalance(address(this)));
     }
   }
 }

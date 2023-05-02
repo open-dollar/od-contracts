@@ -124,9 +124,9 @@ abstract contract Base is HaiTest {
     _;
   }
 
-  function _mockCoinBalance(address _receiver, uint256 _coinBalance) internal {
+  function _mockCoinBalance(address _coinAddress, uint256 _coinBalance) internal {
     vm.mockCall(
-      address(mockSafeEngine), abi.encodeCall(mockSafeEngine.coinBalance, (_receiver)), abi.encode(_coinBalance)
+      address(mockSafeEngine), abi.encodeCall(mockSafeEngine.coinBalance, (_coinAddress)), abi.encode(_coinBalance)
     );
   }
 
