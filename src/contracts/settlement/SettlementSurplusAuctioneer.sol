@@ -23,7 +23,7 @@ import {
   AccountingEngineLike,
   SAFEEngineLike,
   SurplusAuctionHouseLike
-} from '@interfaces/ISettlementSurplusAuctioneer.sol';
+} from '@interfaces/settlement/ISettlementSurplusAuctioneer.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 

@@ -26,7 +26,7 @@ import {Disableable} from '@contract-utils/Disableable.sol';
 import {WAD, HUNDRED} from '@libraries/Math.sol';
 
 // This thing lets you auction surplus for protocol tokens. 50% of the protocol tokens are sent to another address and the rest are burned
-contract SurplusAuctionHouse is Authorizable, Disableable, ISurplusAuctionHouse {
+contract SurplusAuctionHouse is ISurplusAuctionHouse, Authorizable, Disableable {
   // --- Data ---
   // Bid data for each separate auction
   mapping(uint256 => Bid) public bids;
@@ -52,7 +52,11 @@ contract SurplusAuctionHouse is Authorizable, Disableable, ISurplusAuctionHouse 
   uint256 public recyclingPercentage;
 
   // --- Init ---
-  constructor(address _safeEngine, address _protocolToken, uint256 _recyclingPercentage) Authorizable(msg.sender) {
+  constructor(
+    address _safeEngine,
+    address _protocolToken,
+    uint256 _recyclingPercentage
+  ) Authorizable(msg.sender) Disableable() {
     safeEngine = SAFEEngineLike(_safeEngine);
     protocolToken = TokenLike(_protocolToken);
     recyclingPercentage = _recyclingPercentage;

@@ -21,7 +21,7 @@ import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {Math, RAY} from '@libraries/Math.sol';
 import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
 
-contract TaxCollector is Authorizable, ITaxCollector {
+contract TaxCollector is ITaxCollector, Authorizable {
   using Math for uint256;
   using EnumerableSet for EnumerableSet.AddressSet;
   using EnumerableSet for EnumerableSet.Bytes32Set;

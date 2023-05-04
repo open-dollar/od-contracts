@@ -11,7 +11,7 @@ interface IDisableable {
   error NonDisableable();
 
   // --- Data ---
-  function contractEnabled() external view returns (uint256 _enabled);
+  function contractEnabled() external view returns (uint256 _contractEnabled);
 
   // --- Admin ---
   function disableContract() external;

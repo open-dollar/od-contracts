@@ -119,6 +119,10 @@ contract Unit_SurplusAuctionHouse_Constructor is Base {
     vm.startPrank(user);
   }
 
+  function test_Set_ContractEnabled() public {
+    assertEq(surplusAuctionHouse.contractEnabled(), 1);
+  }
+
   function test_Set_BidIncrease() public {
     assertEq(surplusAuctionHouse.bidIncrease(), 1.05e18);
   }
@@ -129,10 +133,6 @@ contract Unit_SurplusAuctionHouse_Constructor is Base {
 
   function test_Set_TotalAuctionLength() public {
     assertEq(surplusAuctionHouse.totalAuctionLength(), 2 days);
-  }
-
-  function test_Set_ContractEnabled() public {
-    assertEq(surplusAuctionHouse.contractEnabled(), 1);
   }
 
   function test_Emit_AddAuthorization() public {
@@ -177,10 +177,19 @@ contract Unit_SurplusAuctionHouse_DisableContract is Base {
     surplusAuctionHouse.disableContract();
   }
 
-  function test_Set_ContractEnabled(uint256 _coinBalance) public authorized happyPath(_coinBalance) {
-    surplusAuctionHouse.disableContract();
+  function test_Revert_ContractIsDisabled() public authorized {
+    _mockContractEnabled(0);
 
-    assertEq(surplusAuctionHouse.contractEnabled(), 0);
+    vm.expectRevert(IDisableable.ContractIsDisabled.selector);
+
+    surplusAuctionHouse.disableContract();
+  }
+
+  function test_Emit_DisableContract(uint256 _coinBalance) public authorized happyPath(_coinBalance) {
+    expectEmitNoIndex();
+    emit DisableContract();
+
+    surplusAuctionHouse.disableContract();
   }
 
   function test_Call_SafeEngine_TransferInternalCoins(uint256 _coinBalance) public authorized happyPath(_coinBalance) {
@@ -190,13 +199,6 @@ contract Unit_SurplusAuctionHouse_DisableContract is Base {
         mockSafeEngine.transferInternalCoins, (address(surplusAuctionHouse), authorizedAccount, _coinBalance)
       )
     );
-
-    surplusAuctionHouse.disableContract();
-  }
-
-  function test_Emit_DisableContract(uint256 _coinBalance) public authorized happyPath(_coinBalance) {
-    expectEmitNoIndex();
-    emit DisableContract();
 
     surplusAuctionHouse.disableContract();
   }
@@ -219,7 +221,7 @@ contract Unit_SurplusAuctionHouse_StartAuction is Base {
     surplusAuctionHouse.startAuction(_amountToSell, _initialBid);
   }
 
-  function test_Revert_ContractNotEnabled(uint256 _amountToSell, uint256 _initialBid) public authorized {
+  function test_Revert_ContractIsDisabled(uint256 _amountToSell, uint256 _initialBid) public authorized {
     _mockContractEnabled(0);
 
     vm.expectRevert(IDisableable.ContractIsDisabled.selector);
@@ -373,7 +375,7 @@ contract Unit_SurplusAuctionHouse_IncreaseBidSize is Base {
     vm.assume(_bid * WAD >= surplusAuctionHouse.bidIncrease() * _auction.bidAmount);
   }
 
-  function test_Revert_ContractNotEnabled(Auction memory _auction, uint256 _amountToBuy, uint256 _bid) public {
+  function test_Revert_ContractIsDisabled(Auction memory _auction, uint256 _amountToBuy, uint256 _bid) public {
     _mockContractEnabled(0);
 
     vm.expectRevert(IDisableable.ContractIsDisabled.selector);
@@ -561,7 +563,7 @@ contract Unit_SurplusAuctionHouse_SettleAuction is Base {
     vm.assume(_amountToBurn > 0);
   }
 
-  function test_Revert_ContractNotEnabled(Auction memory _auction) public {
+  function test_Revert_ContractIsDisabled(Auction memory _auction) public {
     _mockContractEnabled(0);
 
     vm.expectRevert(IDisableable.ContractIsDisabled.selector);
@@ -698,7 +700,7 @@ contract Unit_SurplusAuctionHouse_TerminateAuctionPrematurely is Base {
     vm.assume(_auction.highBidder != address(0));
   }
 
-  function test_Revert_ContractStillEnabled(Auction memory _auction) public {
+  function test_Revert_ContractIsEnabled(Auction memory _auction) public {
     _mockContractEnabled(1);
 
     vm.expectRevert(IDisableable.ContractIsEnabled.selector);

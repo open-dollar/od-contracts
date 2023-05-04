@@ -22,7 +22,7 @@ import {
   IPostSettlementSurplusAuctionHouse,
   SAFEEngineLike,
   TokenLike
-} from '@interfaces/IPostSettlementSurplusAuctionHouse.sol';
+} from '@interfaces/settlement/IPostSettlementSurplusAuctionHouse.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
