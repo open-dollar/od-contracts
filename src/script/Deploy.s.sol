@@ -212,7 +212,7 @@ contract Deploy is Script, Contracts {
     accountingEngine.modifyParameters('initialDebtAuctionMintedTokens', _params.initialDebtAuctionMintedTokens);
     accountingEngine.modifyParameters('debtAuctionBidSize', _params.bidAuctionSize);
     accountingEngine.modifyParameters('surplusAuctionAmountToSell', _params.surplusAuctionAmountToSell);
-    surplusAuctionHouse.modifyParameters('protocolTokenBidReceiver', _params.surplusAuctionBidReceiver);
+    surplusAuctionHouse.modifyParameters('protocolTokenBidReceiver', abi.encode(_params.surplusAuctionBidReceiver));
 
     vm.stopBroadcast();
   }

@@ -5,11 +5,17 @@ import {ISAFEEngine as SAFEEngineLike} from '@interfaces/ISAFEEngine.sol';
 import {IToken as TokenLike} from '@interfaces/external/IToken.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
+import {IModifiable, GLOBAL_PARAM} from '@interfaces/utils/IModifiable.sol';
 
-interface ISurplusAuctionHouse is IAuthorizable, IDisableable {
+interface ISurplusAuctionHouse is IAuthorizable, IDisableable, IModifiable {
+  struct SurplusAuctionHouseParams {
+    uint256 bidIncrease;
+    uint48 bidDuration;
+    uint48 totalAuctionLength;
+    uint256 recyclingPercentage;
+  }
+
   // --- Events ---
-  event ModifyParameters(bytes32 _parameter, uint256 _data);
-  event ModifyParameters(bytes32 _parameter, address _addr);
   event RestartAuction(uint256 _id, uint256 _auctionDeadline);
   event IncreaseBidSize(uint256 _id, address _highBidder, uint256 _amountToBuy, uint256 _bid, uint256 _bidExpiry);
   event StartAuction(
@@ -39,13 +45,10 @@ interface ISurplusAuctionHouse is IAuthorizable, IDisableable {
   function safeEngine() external view returns (SAFEEngineLike _safeEngine);
   function protocolToken() external view returns (TokenLike _protocolToken);
   function protocolTokenBidReceiver() external view returns (address _protocolTokenBidReceiver);
-  function bidIncrease() external view returns (uint256 _bidIncrease);
-  function bidDuration() external view returns (uint48 _bidDuration);
-  function totalAuctionLength() external view returns (uint48 _totalAuctionLength);
   function auctionsStarted() external view returns (uint256 _auctionsStarted);
   function AUCTION_HOUSE_TYPE() external view returns (bytes32 _AUCTION_HOUSE_TYPE);
   function SURPLUS_AUCTION_TYPE() external view returns (bytes32 _SURPLUS_AUCTION_TYPE);
-  function recyclingPercentage() external view returns (uint256 _recyclingPercentage);
+  function params() external view returns (SurplusAuctionHouseParams memory _params);
 
   // --- Auction ---
   function startAuction(uint256 /* rad */ _amountToSell, uint256 /* wad */ _initialBid) external returns (uint256 _id);

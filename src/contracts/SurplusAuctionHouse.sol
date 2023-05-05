@@ -18,19 +18,28 @@
 
 pragma solidity 0.8.19;
 
-import {ISurplusAuctionHouse, SAFEEngineLike, TokenLike} from '@interfaces/ISurplusAuctionHouse.sol';
+import {ISurplusAuctionHouse, SAFEEngineLike, TokenLike, GLOBAL_PARAM} from '@interfaces/ISurplusAuctionHouse.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {Disableable} from '@contract-utils/Disableable.sol';
 
 import {WAD, HUNDRED} from '@libraries/Math.sol';
+import {Encoding} from '@libraries/Encoding.sol';
 
 // This thing lets you auction surplus for protocol tokens. 50% of the protocol tokens are sent to another address and the rest are burned
 contract SurplusAuctionHouse is ISurplusAuctionHouse, Authorizable, Disableable {
+  using Encoding for bytes;
+
+  bytes32 public constant AUCTION_HOUSE_TYPE = bytes32('SURPLUS');
+  bytes32 public constant SURPLUS_AUCTION_TYPE = bytes32('MIXED-STRAT');
+
   // --- Data ---
   // Bid data for each separate auction
   mapping(uint256 => Bid) public bids;
+  // Number of auctions started up until now
+  uint256 public auctionsStarted;
 
+  // --- Registry ---
   // SAFE database
   SAFEEngineLike public safeEngine;
   // Protocol token address
@@ -38,18 +47,12 @@ contract SurplusAuctionHouse is ISurplusAuctionHouse, Authorizable, Disableable 
   // Receiver of protocol tokens
   address public protocolTokenBidReceiver;
 
-  // Minimum bid increase compared to the last bid in order to take the new one in consideration
-  uint256 public bidIncrease = 1.05e18; // [wad]
-  // How long the auction lasts after a new bid is submitted
-  uint48 public bidDuration = 3 hours; // [seconds]
-  // Total length of the auction
-  uint48 public totalAuctionLength = 2 days; // [seconds]
-  // Number of auctions started up until now
-  uint256 public auctionsStarted;
+  // --- Params ---
+  SurplusAuctionHouseParams _params;
 
-  bytes32 public constant AUCTION_HOUSE_TYPE = bytes32('SURPLUS');
-  bytes32 public constant SURPLUS_AUCTION_TYPE = bytes32('MIXED-STRAT');
-  uint256 public recyclingPercentage;
+  function params() external view returns (SurplusAuctionHouseParams memory) {
+    return _params;
+  }
 
   // --- Init ---
   constructor(
@@ -59,33 +62,13 @@ contract SurplusAuctionHouse is ISurplusAuctionHouse, Authorizable, Disableable 
   ) Authorizable(msg.sender) Disableable() {
     safeEngine = SAFEEngineLike(_safeEngine);
     protocolToken = TokenLike(_protocolToken);
-    recyclingPercentage = _recyclingPercentage;
-  }
 
-  // --- Admin ---
-  /**
-   * @notice Modify uint256 parameters
-   * @param _parameter The name of the parameter modified
-   * @param _data New value for the parameter
-   */
-  function modifyParameters(bytes32 _parameter, uint256 _data) external isAuthorized {
-    if (_parameter == 'bidIncrease') bidIncrease = _data;
-    else if (_parameter == 'bidDuration') bidDuration = uint48(_data);
-    else if (_parameter == 'totalAuctionLength') totalAuctionLength = uint48(_data);
-    else revert('SurplusAuctionHouse/modify-unrecognized-param');
-    emit ModifyParameters(_parameter, _data);
-  }
-
-  /**
-   * @notice Modify address parameters
-   * @param _parameter The name of the parameter modified
-   * @param _addr New address value
-   */
-  function modifyParameters(bytes32 _parameter, address _addr) external isAuthorized {
-    require(_addr != address(0), 'SurplusAuctionHouse/invalid-address');
-    if (_parameter == 'protocolTokenBidReceiver') protocolTokenBidReceiver = _addr;
-    else revert('SurplusAuctionHouse/modify-unrecognized-param');
-    emit ModifyParameters(_parameter, _addr);
+    _params = SurplusAuctionHouseParams({
+      bidIncrease: 1.05e18,
+      bidDuration: 3 hours,
+      totalAuctionLength: 2 days,
+      recyclingPercentage: _recyclingPercentage
+    });
   }
 
   /**
@@ -108,14 +91,15 @@ contract SurplusAuctionHouse is ISurplusAuctionHouse, Authorizable, Disableable 
     uint256 _initialBid
   ) external isAuthorized whenEnabled returns (uint256 _id) {
     require(
-      recyclingPercentage == 0 || protocolTokenBidReceiver != address(0), 'SurplusAuctionHouse/null-prot-token-receiver'
+      _params.recyclingPercentage == 0 || protocolTokenBidReceiver != address(0),
+      'SurplusAuctionHouse/null-prot-token-receiver'
     );
     _id = ++auctionsStarted;
 
     bids[_id].bidAmount = _initialBid;
     bids[_id].amountToSell = _amountToSell;
     bids[_id].highBidder = msg.sender;
-    bids[_id].auctionDeadline = uint48(block.timestamp) + totalAuctionLength;
+    bids[_id].auctionDeadline = uint48(block.timestamp) + _params.totalAuctionLength;
 
     safeEngine.transferInternalCoins(msg.sender, address(this), _amountToSell);
 
@@ -129,7 +113,7 @@ contract SurplusAuctionHouse is ISurplusAuctionHouse, Authorizable, Disableable 
   function restartAuction(uint256 _id) external {
     require(bids[_id].auctionDeadline < block.timestamp, 'SurplusAuctionHouse/not-finished');
     require(bids[_id].bidExpiry == 0, 'SurplusAuctionHouse/bid-already-placed');
-    bids[_id].auctionDeadline = uint48(block.timestamp) + totalAuctionLength;
+    bids[_id].auctionDeadline = uint48(block.timestamp) + _params.totalAuctionLength;
     emit RestartAuction(_id, bids[_id].auctionDeadline);
   }
 
@@ -148,7 +132,7 @@ contract SurplusAuctionHouse is ISurplusAuctionHouse, Authorizable, Disableable 
 
     require(_amountToBuy == bids[_id].amountToSell, 'SurplusAuctionHouse/amounts-not-matching');
     require(_bid > bids[_id].bidAmount, 'SurplusAuctionHouse/bid-not-higher');
-    require(_bid * WAD >= bidIncrease * bids[_id].bidAmount, 'SurplusAuctionHouse/insufficient-increase');
+    require(_bid * WAD >= _params.bidIncrease * bids[_id].bidAmount, 'SurplusAuctionHouse/insufficient-increase');
 
     if (msg.sender != bids[_id].highBidder) {
       protocolToken.move(msg.sender, bids[_id].highBidder, bids[_id].bidAmount);
@@ -157,7 +141,7 @@ contract SurplusAuctionHouse is ISurplusAuctionHouse, Authorizable, Disableable 
     protocolToken.move(msg.sender, address(this), _bid - bids[_id].bidAmount);
 
     bids[_id].bidAmount = _bid;
-    bids[_id].bidExpiry = uint48(block.timestamp) + bidDuration;
+    bids[_id].bidExpiry = uint48(block.timestamp) + _params.bidDuration;
 
     emit IncreaseBidSize(_id, msg.sender, _amountToBuy, _bid, bids[_id].bidExpiry);
   }
@@ -173,7 +157,7 @@ contract SurplusAuctionHouse is ISurplusAuctionHouse, Authorizable, Disableable 
     );
     safeEngine.transferInternalCoins(address(this), bids[_id].highBidder, bids[_id].amountToSell);
 
-    uint256 _amountToSend = bids[_id].bidAmount * recyclingPercentage / HUNDRED;
+    uint256 _amountToSend = bids[_id].bidAmount * _params.recyclingPercentage / HUNDRED;
     if (_amountToSend > 0) {
       protocolToken.push(protocolTokenBidReceiver, _amountToSend);
       // protocolToken.move(address(this), protocolTokenBidReceiver, _amountToSend);
@@ -195,8 +179,30 @@ contract SurplusAuctionHouse is ISurplusAuctionHouse, Authorizable, Disableable 
   function terminateAuctionPrematurely(uint256 _id) external whenDisabled {
     require(bids[_id].highBidder != address(0), 'SurplusAuctionHouse/high-bidder-not-set');
     protocolToken.push(bids[_id].highBidder, bids[_id].bidAmount);
-    // protocolToken.move(address(this), bids[_id].highBidder, bids[_id].bidAmount);
     emit TerminateAuctionPrematurely(_id, msg.sender, bids[_id].highBidder, bids[_id].bidAmount);
     delete bids[_id];
+  }
+
+  // --- Administration ---
+  /**
+   * @notice Modify parameters
+   * @param _parameter The name of the parameter modified
+   * @param _data New value for the parameter
+   */
+  function modifyParameters(bytes32 _parameter, bytes memory _data) external isAuthorized {
+    uint256 _uint256 = _data.toUint256();
+
+    if (_parameter == 'protocolTokenBidReceiver') protocolTokenBidReceiver = _validateNonNull(_data.toAddress());
+    else if (_parameter == 'bidIncrease') _params.bidIncrease = _uint256;
+    else if (_parameter == 'bidDuration') _params.bidDuration = uint48(_uint256);
+    else if (_parameter == 'totalAuctionLength') _params.totalAuctionLength = uint48(_uint256);
+    else if (_parameter == 'recyclingPercentage') _params.recyclingPercentage = _uint256;
+    else revert UnrecognizedParam();
+    emit ModifyParameters(_parameter, GLOBAL_PARAM, _data);
+  }
+
+  function _validateNonNull(address _address) internal pure returns (address _nonNullAddress) {
+    require(_address != address(0), 'SurplusAuctionHouse/null-address');
+    return _address;
   }
 }
