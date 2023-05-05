@@ -4,10 +4,16 @@ pragma solidity 0.8.19;
 import {ISAFEEngine as SAFEEngineLike} from '@interfaces/ISAFEEngine.sol';
 import {IToken as TokenLike} from '@interfaces/external/IToken.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
+import {IModifiable, GLOBAL_PARAM} from '@interfaces/utils/IModifiable.sol';
 
-interface IPostSettlementSurplusAuctionHouse is IAuthorizable {
+interface IPostSettlementSurplusAuctionHouse is IAuthorizable, IModifiable {
+  struct PostSettlementSAHParams {
+    uint256 bidIncrease;
+    uint48 bidDuration;
+    uint48 totalAuctionLength;
+  }
+
   // --- Events ---
-  event ModifyParameters(bytes32 _parameter, uint256 _data);
   event RestartAuction(uint256 _id, uint256 _auctionDeadline);
   event IncreaseBidSize(uint256 _id, address _highBidder, uint256 _amountToBuy, uint256 _bid, uint256 _bidExpiry);
   event StartAuction(
@@ -35,9 +41,6 @@ interface IPostSettlementSurplusAuctionHouse is IAuthorizable {
     returns (uint256 _bidAmount, uint256 _amountToSell, address _highBidder, uint48 _bidExpiry, uint48 _auctionDeadline);
   function safeEngine() external view returns (SAFEEngineLike _safeEngine);
   function protocolToken() external view returns (TokenLike _protocolToken);
-  function bidIncrease() external view returns (uint256 _bidIncrease);
-  function bidDuration() external view returns (uint48 _bidDuration);
-  function totalAuctionLength() external view returns (uint48 _totalAuctionLength);
   function auctionsStarted() external view returns (uint256 _auctionsStarted);
   function AUCTION_HOUSE_TYPE() external view returns (bytes32 _AUCTION_HOUSE_TYPE);
   function SURPLUS_AUCTION_TYPE() external view returns (bytes32 _SURPLUS_AUCTION_TYPE);
@@ -47,4 +50,7 @@ interface IPostSettlementSurplusAuctionHouse is IAuthorizable {
   function restartAuction(uint256 _id) external;
   function increaseBidSize(uint256 _id, uint256 /* rad */ _amountToBuy, uint256 /* wad */ _bid) external;
   function settleAuction(uint256 _id) external;
+
+  // --- Params ---
+  function params() external view returns (PostSettlementSAHParams memory _params);
 }

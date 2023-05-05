@@ -74,8 +74,8 @@ contract SingleSettlementSurplusAuctioneerTest is DSTest {
   }
 
   function test_modify_parameters() public {
-    surplusAuctioneer.modifyParameters('accountingEngine', address(0x1234));
-    surplusAuctioneer.modifyParameters('surplusAuctionHouse', address(0x1234));
+    surplusAuctioneer.modifyParameters('accountingEngine', abi.encode(0x1234));
+    surplusAuctioneer.modifyParameters('surplusAuctionHouse', abi.encode(0x1234));
 
     assertEq(safeEngine.safeRights(address(surplusAuctioneer), address(surplusAuctionHouse)), 0);
     assertEq(safeEngine.safeRights(address(surplusAuctioneer), address(0x1234)), 1);

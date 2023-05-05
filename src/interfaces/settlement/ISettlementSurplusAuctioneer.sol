@@ -5,10 +5,10 @@ import {IAccountingEngine as AccountingEngineLike} from '@interfaces/IAccounting
 import {ISAFEEngine as SAFEEngineLike} from '@interfaces/ISAFEEngine.sol';
 import {ISurplusAuctionHouse as SurplusAuctionHouseLike} from '@interfaces/ISurplusAuctionHouse.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
+import {IModifiable, GLOBAL_PARAM} from '@interfaces/utils/IModifiable.sol';
 
-interface ISettlementSurplusAuctioneer is IAuthorizable {
+interface ISettlementSurplusAuctioneer is IAuthorizable, IModifiable {
   // --- Events ---
-  event ModifyParameters(bytes32 _parameter, address _addr);
   event AuctionSurplus(uint256 indexed _id, uint256 _lastSurplusAuctionTime, uint256 _coinBalance);
 
   // --- Data ---

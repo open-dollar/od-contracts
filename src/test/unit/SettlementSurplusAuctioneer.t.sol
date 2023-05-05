@@ -9,6 +9,7 @@ import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ISurplusAuctionHouse} from '@interfaces/ISurplusAuctionHouse.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
+import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 
 abstract contract Base is HaiTest {
@@ -131,6 +132,35 @@ contract Unit_SettlementSurplusAuctioneer_Constructor is Base {
 
     settlementSurplusAuctioneer =
       new SettlementSurplusAuctioneer(address(mockAccountingEngine), address(mockSurplusAuctionHouse));
+  }
+}
+
+contract Unit_SettlementSurplusAuctioneer_ModifyParameters is Base {
+  function test_ModifyParameters_AccountingEngine(address _accountingEngine) public authorized {
+    settlementSurplusAuctioneer.modifyParameters('accountingEngine', abi.encode(_accountingEngine));
+
+    assertEq(_accountingEngine, address(settlementSurplusAuctioneer.accountingEngine()));
+  }
+
+  function test_ModifyParameters_SurplusAuctionHouse(address _surplusAuctionHouse) public authorized {
+    address _previousSurplusAuctionHouse = address(settlementSurplusAuctioneer.surplusAuctionHouse());
+
+    vm.expectCall(
+      address(mockSafeEngine), abi.encodeCall(mockSafeEngine.denySAFEModification, (_previousSurplusAuctionHouse))
+    );
+    vm.expectCall(
+      address(mockSafeEngine), abi.encodeCall(mockSafeEngine.approveSAFEModification, (_surplusAuctionHouse))
+    );
+
+    settlementSurplusAuctioneer.modifyParameters('surplusAuctionHouse', abi.encode(_surplusAuctionHouse));
+
+    assertEq(_surplusAuctionHouse, address(settlementSurplusAuctioneer.surplusAuctionHouse()));
+  }
+
+  function test_Revert_ModifyParameters_UnrecognizedParam() public authorized {
+    vm.expectRevert(IModifiable.UnrecognizedParam.selector);
+
+    settlementSurplusAuctioneer.modifyParameters('unrecognizedParam', abi.encode(0));
   }
 }
 

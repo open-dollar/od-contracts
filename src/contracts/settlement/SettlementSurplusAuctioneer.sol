@@ -22,14 +22,18 @@ import {
   ISettlementSurplusAuctioneer,
   AccountingEngineLike,
   SAFEEngineLike,
-  SurplusAuctionHouseLike
+  SurplusAuctionHouseLike,
+  GLOBAL_PARAM
 } from '@interfaces/settlement/ISettlementSurplusAuctioneer.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
 import {Math} from '@libraries/Math.sol';
+import {Encoding} from '@libraries/Encoding.sol';
 
 contract SettlementSurplusAuctioneer is ISettlementSurplusAuctioneer, Authorizable {
+  using Encoding for bytes;
+
   // --- Data ---
   AccountingEngineLike public accountingEngine;
   SurplusAuctionHouseLike public surplusAuctionHouse;
@@ -44,25 +48,6 @@ contract SettlementSurplusAuctioneer is ISettlementSurplusAuctioneer, Authorizab
     surplusAuctionHouse = SurplusAuctionHouseLike(_surplusAuctionHouse);
     safeEngine = SAFEEngineLike(address(accountingEngine.safeEngine()));
     safeEngine.approveSAFEModification(address(surplusAuctionHouse));
-  }
-
-  // --- Administration ---
-  /**
-   * @notice Modify address params
-   * @param _parameter The name of the contract whose address will be changed
-   * @param _addr New address for the contract
-   */
-  function modifyParameters(bytes32 _parameter, address _addr) external isAuthorized {
-    if (_parameter == 'accountingEngine') {
-      accountingEngine = AccountingEngineLike(_addr);
-    } else if (_parameter == 'surplusAuctionHouse') {
-      safeEngine.denySAFEModification(address(surplusAuctionHouse));
-      surplusAuctionHouse = SurplusAuctionHouseLike(_addr);
-      safeEngine.approveSAFEModification(address(surplusAuctionHouse));
-    } else {
-      revert('SettlementSurplusAuctioneer/modify-unrecognized-param');
-    }
-    emit ModifyParameters(_parameter, _addr);
   }
 
   // --- Core Logic ---
@@ -84,5 +69,26 @@ contract SettlementSurplusAuctioneer is ISettlementSurplusAuctioneer, Authorizab
       _id = surplusAuctionHouse.startAuction(_amountToSell, 0);
       emit AuctionSurplus(_id, lastSurplusAuctionTime, safeEngine.coinBalance(address(this)));
     }
+  }
+
+  // --- Administration ---
+  /**
+   * @notice Modify parameters
+   * @param _parameter The name of the contract whose address will be changed
+   * @param _data New address for the contract
+   */
+  function modifyParameters(bytes32 _parameter, bytes memory _data) external isAuthorized {
+    address _address = _data.toAddress();
+
+    if (_parameter == 'accountingEngine') accountingEngine = AccountingEngineLike(_address);
+    else if (_parameter == 'surplusAuctionHouse') _setSurplusAuctionHouse(_address);
+    else revert UnrecognizedParam();
+    emit ModifyParameters(_parameter, GLOBAL_PARAM, _data);
+  }
+
+  function _setSurplusAuctionHouse(address _address) internal {
+    safeEngine.denySAFEModification(address(surplusAuctionHouse));
+    surplusAuctionHouse = SurplusAuctionHouseLike(_address);
+    safeEngine.approveSAFEModification(_address);
   }
 }

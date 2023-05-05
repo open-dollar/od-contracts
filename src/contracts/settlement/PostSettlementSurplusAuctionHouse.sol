@@ -21,14 +21,18 @@ pragma solidity 0.8.19;
 import {
   IPostSettlementSurplusAuctionHouse,
   SAFEEngineLike,
-  TokenLike
+  TokenLike,
+  GLOBAL_PARAM
 } from '@interfaces/settlement/IPostSettlementSurplusAuctionHouse.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
 import {WAD} from '@libraries/Math.sol';
+import {Encoding} from '@libraries/Encoding.sol';
 
 contract PostSettlementSurplusAuctionHouse is IPostSettlementSurplusAuctionHouse, Authorizable {
+  using Encoding for bytes;
+
   // --- Data ---
   // Bid data for each separate auction
   mapping(uint256 => Bid) public bids;
@@ -38,14 +42,15 @@ contract PostSettlementSurplusAuctionHouse is IPostSettlementSurplusAuctionHouse
   // Protocol token address
   TokenLike public protocolToken;
 
-  // Minimum bid increase compared to the last bid in order to take the new one in consideration
-  uint256 public bidIncrease = 1.05e18; // [wad]
-  // How long the auction lasts after a new bid is submitted
-  uint48 public bidDuration = 3 hours; // [seconds]
-  // Total length of the auction
-  uint48 public totalAuctionLength = 2 days; // [seconds]
   // Number of auctions started up until now
   uint256 public auctionsStarted;
+
+  // --- Params ---
+  PostSettlementSAHParams _params;
+
+  function params() external view returns (PostSettlementSAHParams memory) {
+    return _params;
+  }
 
   bytes32 public constant AUCTION_HOUSE_TYPE = bytes32('SURPLUS');
   bytes32 public constant SURPLUS_AUCTION_TYPE = bytes32('POST-SETTLEMENT');
@@ -54,6 +59,8 @@ contract PostSettlementSurplusAuctionHouse is IPostSettlementSurplusAuctionHouse
   constructor(address _safeEngine, address _protocolToken) Authorizable(msg.sender) {
     safeEngine = SAFEEngineLike(_safeEngine);
     protocolToken = TokenLike(_protocolToken);
+
+    _params = PostSettlementSAHParams({bidIncrease: 1.05e18, bidDuration: 3 hours, totalAuctionLength: 2 days});
   }
 
   // --- Admin ---
@@ -62,12 +69,14 @@ contract PostSettlementSurplusAuctionHouse is IPostSettlementSurplusAuctionHouse
    * @param _parameter The name of the parameter modified
    * @param _data New value for the parameter
    */
-  function modifyParameters(bytes32 _parameter, uint256 _data) external isAuthorized {
-    if (_parameter == 'bidIncrease') bidIncrease = _data;
-    else if (_parameter == 'bidDuration') bidDuration = uint48(_data);
-    else if (_parameter == 'totalAuctionLength') totalAuctionLength = uint48(_data);
-    else revert('PostSettlementSurplusAuctionHouse/modify-unrecognized-param');
-    emit ModifyParameters(_parameter, _data);
+  function modifyParameters(bytes32 _parameter, bytes memory _data) external isAuthorized {
+    uint256 _uint256 = _data.toUint256();
+
+    if (_parameter == 'bidIncrease') _params.bidIncrease = _uint256;
+    else if (_parameter == 'bidDuration') _params.bidDuration = uint48(_uint256);
+    else if (_parameter == 'totalAuctionLength') _params.totalAuctionLength = uint48(_uint256);
+    else revert UnrecognizedParam();
+    emit ModifyParameters(_parameter, GLOBAL_PARAM, _data);
   }
 
   // --- Auction ---
@@ -82,7 +91,7 @@ contract PostSettlementSurplusAuctionHouse is IPostSettlementSurplusAuctionHouse
     bids[_id].bidAmount = _initialBid;
     bids[_id].amountToSell = _amountToSell;
     bids[_id].highBidder = msg.sender;
-    bids[_id].auctionDeadline = uint48(block.timestamp) + totalAuctionLength;
+    bids[_id].auctionDeadline = uint48(block.timestamp) + _params.totalAuctionLength;
 
     safeEngine.transferInternalCoins(msg.sender, address(this), _amountToSell);
 
@@ -96,7 +105,7 @@ contract PostSettlementSurplusAuctionHouse is IPostSettlementSurplusAuctionHouse
   function restartAuction(uint256 _id) external {
     require(bids[_id].auctionDeadline < block.timestamp, 'PostSettlementSurplusAuctionHouse/not-finished');
     require(bids[_id].bidExpiry == 0, 'PostSettlementSurplusAuctionHouse/bid-already-placed');
-    bids[_id].auctionDeadline = uint48(block.timestamp) + totalAuctionLength;
+    bids[_id].auctionDeadline = uint48(block.timestamp) + _params.totalAuctionLength;
     emit RestartAuction(_id, bids[_id].auctionDeadline);
   }
 
@@ -116,7 +125,9 @@ contract PostSettlementSurplusAuctionHouse is IPostSettlementSurplusAuctionHouse
 
     require(_amountToBuy == bids[_id].amountToSell, 'PostSettlementSurplusAuctionHouse/amounts-not-matching');
     require(_bid > bids[_id].bidAmount, 'PostSettlementSurplusAuctionHouse/bid-not-higher');
-    require(_bid * WAD >= bidIncrease * bids[_id].bidAmount, 'PostSettlementSurplusAuctionHouse/insufficient-increase');
+    require(
+      _bid * WAD >= _params.bidIncrease * bids[_id].bidAmount, 'PostSettlementSurplusAuctionHouse/insufficient-increase'
+    );
 
     if (msg.sender != bids[_id].highBidder) {
       protocolToken.move(msg.sender, bids[_id].highBidder, bids[_id].bidAmount);
@@ -125,7 +136,7 @@ contract PostSettlementSurplusAuctionHouse is IPostSettlementSurplusAuctionHouse
     protocolToken.move(msg.sender, address(this), _bid - bids[_id].bidAmount);
 
     bids[_id].bidAmount = _bid;
-    bids[_id].bidExpiry = uint48(block.timestamp) + bidDuration;
+    bids[_id].bidExpiry = uint48(block.timestamp) + _params.bidDuration;
 
     emit IncreaseBidSize(_id, msg.sender, _amountToBuy, _bid, bids[_id].bidExpiry);
   }
