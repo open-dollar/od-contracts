@@ -1,14 +1,14 @@
 pragma solidity 0.8.19;
 
 import 'ds-test/test.sol';
-import {DSToken as DSDelegateToken} from '../../contracts/for-test/DSToken.sol';
+import {DSToken as DSDelegateToken} from '@contracts/for-test/DSToken.sol';
 
-import {SurplusAuctionHouse} from '../../contracts/SurplusAuctionHouse.sol';
-import {PostSettlementSurplusAuctionHouse} from '../../contracts/settlement/PostSettlementSurplusAuctionHouse.sol';
-import {SAFEEngine} from '../../contracts/SAFEEngine.sol';
+import {SurplusAuctionHouse} from '@contracts/SurplusAuctionHouse.sol';
+import {PostSettlementSurplusAuctionHouse} from '@contracts/settlement/PostSettlementSurplusAuctionHouse.sol';
+import {SAFEEngine} from '@contracts/SAFEEngine.sol';
 
-import {CoinJoin} from '../../contracts/utils/CoinJoin.sol';
-import {Coin} from '../../contracts/utils/Coin.sol';
+import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
+import {Coin} from '@contracts/utils/Coin.sol';
 
 abstract contract Hevm {
   function warp(uint256) public virtual;

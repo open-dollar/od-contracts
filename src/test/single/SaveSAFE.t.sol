@@ -1,21 +1,22 @@
+// SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 pragma experimental ABIEncoderV2;
 
 import 'ds-test/test.sol';
-import {DSToken as DSDelegateToken} from '../../contracts/for-test/DSToken.sol';
+import {DSToken as DSDelegateToken} from '@contracts/for-test/DSToken.sol';
 
-import {SAFEEngine} from '../../contracts/SAFEEngine.sol';
-import {LiquidationEngine} from '../../contracts/LiquidationEngine.sol';
-import {AccountingEngine} from '../../contracts/AccountingEngine.sol';
-import {TaxCollector} from '../../contracts/TaxCollector.sol';
-import {CoinJoin} from '../../contracts/utils/CoinJoin.sol';
-import {ETHJoin} from '../../contracts/utils/ETHJoin.sol';
-import {CollateralJoin} from '../../contracts/utils/CollateralJoin.sol';
-import {OracleRelayer} from '../../contracts/OracleRelayer.sol';
+import {SAFEEngine} from '@contracts/SAFEEngine.sol';
+import {LiquidationEngine} from '@contracts/LiquidationEngine.sol';
+import {AccountingEngine} from '@contracts/AccountingEngine.sol';
+import {TaxCollector} from '@contracts/TaxCollector.sol';
+import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
+import {ETHJoin} from '@contracts/utils/ETHJoin.sol';
+import {CollateralJoin} from '@contracts/utils/CollateralJoin.sol';
+import {OracleRelayer} from '@contracts/OracleRelayer.sol';
 
 import {RAY} from '../../libraries/Math.sol';
 
-import {EnglishCollateralAuctionHouse} from './CollateralAuctionHouse.t.sol';
+import {IncreasingDiscountCollateralAuctionHouse} from './CollateralAuctionHouse.t.sol';
 import {DebtAuctionHouse} from './DebtAuctionHouse.t.sol';
 import {PostSettlementSurplusAuctionHouse} from './SurplusAuctionHouse.t.sol';
 
@@ -153,7 +154,7 @@ contract SingleSaveSAFETest is DSTest {
 
   CollateralJoin collateralA;
 
-  EnglishCollateralAuctionHouse collateralAuctionHouse;
+  IncreasingDiscountCollateralAuctionHouse collateralAuctionHouse;
   DebtAuctionHouse debtAuctionHouse;
   PostSettlementSurplusAuctionHouse surplusAuctionHouse;
 
@@ -246,7 +247,8 @@ contract SingleSaveSAFETest is DSTest {
     safeEngine.modifyParameters('gold', 'debtCeiling', abi.encode(rad(1000 ether)));
     safeEngine.modifyParameters('globalDebtCeiling', abi.encode(rad(1000 ether)));
 
-    collateralAuctionHouse = new EnglishCollateralAuctionHouse(address(safeEngine), address(liquidationEngine), 'gold');
+    collateralAuctionHouse =
+      new IncreasingDiscountCollateralAuctionHouse(address(safeEngine), address(liquidationEngine), 'gold');
     collateralAuctionHouse.addAuthorization(address(liquidationEngine));
 
     liquidationEngine.addAuthorization(address(collateralAuctionHouse));

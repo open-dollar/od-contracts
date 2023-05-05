@@ -18,13 +18,13 @@
 pragma solidity 0.8.19;
 
 import 'ds-test/test.sol';
-import {DSToken as DSDelegateToken} from '../../contracts/for-test/DSToken.sol';
+import {DSToken as DSDelegateToken} from '@contracts/for-test/DSToken.sol';
 
-import {Coin} from '../../contracts/utils/Coin.sol';
-import {SAFEEngine} from '../../contracts/SAFEEngine.sol';
-import {AccountingEngine} from '../../contracts/AccountingEngine.sol';
-import {CollateralJoin} from '../../contracts/utils/CollateralJoin.sol';
-import {OracleRelayer} from '../../contracts/OracleRelayer.sol';
+import {Coin} from '@contracts/utils/Coin.sol';
+import {SAFEEngine} from '@contracts/SAFEEngine.sol';
+import {AccountingEngine} from '@contracts/AccountingEngine.sol';
+import {CollateralJoin} from '@contracts/utils/CollateralJoin.sol';
+import {OracleRelayer} from '@contracts/OracleRelayer.sol';
 
 contract Feed {
   bytes32 public priceFeedValue;

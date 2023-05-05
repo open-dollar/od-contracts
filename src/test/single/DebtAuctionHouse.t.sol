@@ -1,10 +1,10 @@
 pragma solidity 0.8.19;
 
 import {DSTest} from 'ds-test/test.sol';
-import {DSToken as DSDelegateToken} from '../../contracts/for-test/DSToken.sol';
+import {DSToken as DSDelegateToken} from '@contracts/for-test/DSToken.sol';
 
-import '../../contracts/DebtAuctionHouse.sol';
-import '../../contracts/SAFEEngine.sol';
+import '@contracts/DebtAuctionHouse.sol';
+import '@contracts/SAFEEngine.sol';
 
 abstract contract Hevm {
   function warp(uint256) public virtual;
