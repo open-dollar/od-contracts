@@ -6,11 +6,18 @@ import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ICoinJoin} from '@interfaces/ICoinJoin.sol';
 import {ISystemCoin} from '@interfaces/external/ISystemCoin.sol';
+import {IModifiable, GLOBAL_PARAM} from '@interfaces/utils/IModifiable.sol';
 
-interface IStabilityFeeTreasury is IAuthorizable, IDisableable {
+interface IStabilityFeeTreasury is IAuthorizable, IDisableable, IModifiable {
+  struct StabilityFeeTreasuryParams {
+    uint256 expensesMultiplier;
+    uint256 treasuryCapacity;
+    uint256 minimumFundsRequired;
+    uint256 pullFundsMinThreshold;
+    uint256 surplusTransferDelay;
+  }
+
   // --- Events ---
-  event ModifyParameters(bytes32 parameter, address addr);
-  event ModifyParameters(bytes32 parameter, uint256 val);
   event SetTotalAllowance(address indexed _account, uint256 _rad);
   event SetPerBlockAllowance(address indexed account, uint256 rad);
   event GiveFunds(address indexed _account, uint256 _rad, uint256 _expensesAccumulator);
@@ -37,14 +44,11 @@ interface IStabilityFeeTreasury is IAuthorizable, IDisableable {
   function extraSurplusReceiver() external view returns (address _extraSurplusReceiver);
   function systemCoin() external view returns (ISystemCoin _systemCoin);
   function latestSurplusTransferTime() external view returns (uint256 _latestSurplusTransferTime);
-  function expensesMultiplier() external view returns (uint256 _expensesMultiplier);
   function settleDebt() external;
   function allowance(address _account) external view returns (uint256 _total, uint256 _perBlock);
   function expensesAccumulator() external view returns (uint256 _expensesAccumulator);
   function pulledPerBlock(address _account, uint256 _blockNumber) external view returns (uint256 _pulledPerBlock);
-  function pullFundsMinThreshold() external view returns (uint256 _pullFundsMinThreshold);
-  function treasuryCapacity() external view returns (uint256 _treasuryCapacity);
   function accumulatorTag() external view returns (uint256 _accumulatorTag);
-  function minimumFundsRequired() external view returns (uint256 _minimumFundsRequired);
-  function surplusTransferDelay() external view returns (uint256 _surplusTransferDelay);
+
+  function params() external view returns (StabilityFeeTreasuryParams memory _params);
 }

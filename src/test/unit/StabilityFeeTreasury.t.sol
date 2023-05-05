@@ -4,6 +4,7 @@ pragma solidity 0.8.19;
 import {Math, RAY, WAD, HUNDRED} from '@libraries/Math.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
+import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {IStabilityFeeTreasury} from '@interfaces/IStabilityFeeTreasury.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ICoinJoin} from '@interfaces/ICoinJoin.sol';
@@ -115,26 +116,9 @@ contract Base is HaiTest {
       .depth(1).checked_write(_rad);
   }
 
-  function _mockPullFundsMinThreshold(uint256 _value) internal {
-    stdstore.target(address(stabilityFeeTreasury)).sig(IStabilityFeeTreasury.pullFundsMinThreshold.selector)
-      .checked_write(_value);
-  }
-
-  function _mockTreasuryCapacity(uint256 _capacity) internal {
-    stdstore.target(address(stabilityFeeTreasury)).sig(IStabilityFeeTreasury.treasuryCapacity.selector).checked_write(
-      _capacity
-    );
-  }
-
   function _mockPulledPerBlock(address _account, uint256 _blockNumber, uint256 _value) internal {
     stdstore.target(address(stabilityFeeTreasury)).sig(IStabilityFeeTreasury.pulledPerBlock.selector).with_key(_account)
       .with_key(_blockNumber).checked_write(_value);
-  }
-
-  function _mockExpensesMultiplier(uint256 _multiplier) internal {
-    stdstore.target(address(stabilityFeeTreasury)).sig(IStabilityFeeTreasury.expensesMultiplier.selector).checked_write(
-      _multiplier
-    );
   }
 
   function _mockAccumulatorTag(uint256 _tag) internal {
@@ -143,19 +127,41 @@ contract Base is HaiTest {
     );
   }
 
-  function _mockMinimumFundsRequired(uint256 _minFundsRequired) internal {
-    stdstore.target(address(stabilityFeeTreasury)).sig(IStabilityFeeTreasury.minimumFundsRequired.selector)
-      .checked_write(_minFundsRequired);
-  }
-
-  function _mockSurplusTransferDelay(uint256 _surplusTransferDelay) internal {
-    stdstore.target(address(stabilityFeeTreasury)).sig(IStabilityFeeTreasury.surplusTransferDelay.selector)
-      .checked_write(_surplusTransferDelay);
-  }
-
   function _mockLatestSurplusTransferTime(uint256 _latestSurplusTransferTime) internal {
     stdstore.target(address(stabilityFeeTreasury)).sig(IStabilityFeeTreasury.latestSurplusTransferTime.selector)
       .checked_write(_latestSurplusTransferTime);
+  }
+
+  // params
+
+  function _mockExpensesMultiplier(uint256 _multiplier) internal {
+    stdstore.target(address(stabilityFeeTreasury)).sig(IStabilityFeeTreasury.params.selector).depth(0).checked_write(
+      _multiplier
+    );
+  }
+
+  function _mockTreasuryCapacity(uint256 _capacity) internal {
+    stdstore.target(address(stabilityFeeTreasury)).sig(IStabilityFeeTreasury.params.selector).depth(1).checked_write(
+      _capacity
+    );
+  }
+
+  function _mockMinimumFundsRequired(uint256 _minFundsRequired) internal {
+    stdstore.target(address(stabilityFeeTreasury)).sig(IStabilityFeeTreasury.params.selector).depth(2).checked_write(
+      _minFundsRequired
+    );
+  }
+
+  function _mockPullFundsMinThreshold(uint256 _value) internal {
+    stdstore.target(address(stabilityFeeTreasury)).sig(IStabilityFeeTreasury.params.selector).depth(3).checked_write(
+      _value
+    );
+  }
+
+  function _mockSurplusTransferDelay(uint256 _surplusTransferDelay) internal {
+    stdstore.target(address(stabilityFeeTreasury)).sig(IStabilityFeeTreasury.params.selector).depth(4).checked_write(
+      _surplusTransferDelay
+    );
   }
 
   function setUp() public virtual {
@@ -195,7 +201,8 @@ contract Unit_StabilityFeeTreasury_Constructor is Base {
   }
 
   function test_Set_ExpensesMultiplier() public {
-    assertEq(stabilityFeeTreasury.expensesMultiplier(), 100);
+    IStabilityFeeTreasury.StabilityFeeTreasuryParams memory _params = stabilityFeeTreasury.params();
+    assertEq(_params.expensesMultiplier, 100);
   }
 
   function test_Set_ContractEnabled() public {
@@ -223,6 +230,46 @@ contract Unit_StabilityFeeTreasury_Constructor is Base {
     vm.expectRevert(bytes('StabilityFeeTreasury/null-surplus-receiver'));
 
     stabilityFeeTreasury = new StabilityFeeTreasury(address(mockSafeEngine), address(0), address(mockCoinJoin));
+  }
+}
+
+contract Unit_StabilityFeeTreasury_ModifyParameters is Base {
+  function test_ModifyParameters(IStabilityFeeTreasury.StabilityFeeTreasuryParams memory _fuzz) public authorized {
+    vm.assume(_fuzz.treasuryCapacity >= _fuzz.minimumFundsRequired);
+
+    stabilityFeeTreasury.modifyParameters('expensesMultiplier', abi.encode(_fuzz.expensesMultiplier));
+    stabilityFeeTreasury.modifyParameters('treasuryCapacity', abi.encode(_fuzz.treasuryCapacity));
+    stabilityFeeTreasury.modifyParameters('minimumFundsRequired', abi.encode(_fuzz.minimumFundsRequired));
+    stabilityFeeTreasury.modifyParameters('pullFundsMinThreshold', abi.encode(_fuzz.pullFundsMinThreshold));
+    stabilityFeeTreasury.modifyParameters('surplusTransferDelay', abi.encode(_fuzz.surplusTransferDelay));
+
+    (bool _success, bytes memory _data) = address(stabilityFeeTreasury).staticcall(abi.encodeWithSignature('params()'));
+
+    assert(_success);
+    assertEq(keccak256(abi.encode(_fuzz)), keccak256(_data));
+  }
+
+  function test_ModifyParameters_ExtraSurplusReceiver(address _extraSurplusReceiver) public authorized {
+    vm.assume(_extraSurplusReceiver != address(0));
+    vm.assume(_extraSurplusReceiver != address(stabilityFeeTreasury));
+    stabilityFeeTreasury.modifyParameters('extraSurplusReceiver', abi.encode(_extraSurplusReceiver));
+
+    assertEq(_extraSurplusReceiver, stabilityFeeTreasury.extraSurplusReceiver());
+  }
+
+  function test_Revert_ModifyParameters_UnrecognizedParam() public authorized {
+    vm.expectRevert(IModifiable.UnrecognizedParam.selector);
+    stabilityFeeTreasury.modifyParameters('unrecognizedParam', abi.encode(0));
+  }
+
+  function test_Revert_ModifyParameters_ExtraSurplusReceiver0() public authorized {
+    vm.expectRevert('StabilityFeeTreasury/null-addr');
+    stabilityFeeTreasury.modifyParameters('extraSurplusReceiver', abi.encode(0));
+  }
+
+  function test_Revert_ModifyParameters_ExtraSurplusReceiver1() public authorized {
+    vm.expectRevert('StabilityFeeTreasury/accounting-engine-cannot-be-treasury');
+    stabilityFeeTreasury.modifyParameters('extraSurplusReceiver', abi.encode(stabilityFeeTreasury));
   }
 }
 
@@ -641,7 +688,7 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     uint256 _initialExpensesAccumulator;
   }
 
-  function _allowed(PullFundsScenario memory _pullFundsScenario) internal returns (bool) {
+  function _allowed(PullFundsScenario memory _pullFundsScenario) internal pure returns (bool) {
     vm.assume(notOverflowMul(_pullFundsScenario._wad, RAY)); // notOverflow
     return _pullFundsScenario._totalAllowance >= _pullFundsScenario._wad * RAY; // avoid not allowed error
   }
@@ -680,7 +727,7 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     return _pullFundsScenario._safeEngineCoinBalance >= _pullFundsScenario._pullFundsMinThreshold; // avoid StabilityFeeTreasury/below-pullFunds-min-threshold
   }
 
-  function _notOverflowExpensesAccumulator(PullFundsScenario memory _pullFundsScenario) internal pure returns (bool) {
+  function _notOverflowExpensesAccumulator(PullFundsScenario memory _pullFundsScenario) internal pure {
     vm.assume(notOverflow(_pullFundsScenario._initialExpensesAccumulator, _pullFundsScenario._wad * RAY));
   }
 
@@ -694,7 +741,7 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     _mockExpensesAccumulator(_pullFundsScenario._initialExpensesAccumulator);
   }
 
-  function _assumeHappyPathAllowancePerBlockNotZero(PullFundsScenario memory _pullFundsScenario) internal {
+  function _assumeHappyPathAllowancePerBlockNotZero(PullFundsScenario memory _pullFundsScenario) internal view {
     vm.assume(_notStabilityFeeTreasuryDstAcc(_pullFundsScenario));
     vm.assume(_allowed(_pullFundsScenario));
     vm.assume(_notNullDstAcc(_pullFundsScenario));
@@ -707,7 +754,7 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     _notOverflowExpensesAccumulator(_pullFundsScenario);
   }
 
-  function _assumeHappyPathAllowancePerBlockZero(PullFundsScenario memory _pullFundsScenario) internal {
+  function _assumeHappyPathAllowancePerBlockZero(PullFundsScenario memory _pullFundsScenario) internal view {
     vm.assume(_notStabilityFeeTreasuryDstAcc(_pullFundsScenario));
     vm.assume(_allowed(_pullFundsScenario));
     vm.assume(_notNullDstAcc(_pullFundsScenario));

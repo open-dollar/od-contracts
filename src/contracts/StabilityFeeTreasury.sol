@@ -18,35 +18,40 @@
 
 pragma solidity 0.8.19;
 
-import {Math, RAY, HUNDRED} from '@libraries/Math.sol';
-import {IStabilityFeeTreasury} from '@interfaces/IStabilityFeeTreasury.sol';
+import {IStabilityFeeTreasury, GLOBAL_PARAM} from '@interfaces/IStabilityFeeTreasury.sol';
 import {ISAFEEngine as SAFEEngineLike} from '@interfaces/ISAFEEngine.sol';
 import {ISystemCoin as SystemCoinLike} from '@interfaces/external/ISystemCoin.sol';
 import {ICoinJoin as CoinJoinLike} from '@interfaces/ICoinJoin.sol';
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {Disableable} from '@contract-utils/Disableable.sol';
 
+import {Math, RAY, HUNDRED} from '@libraries/Math.sol';
+import {Encoding} from '@libraries/Encoding.sol';
+
 contract StabilityFeeTreasury is Authorizable, Disableable, IStabilityFeeTreasury {
+  using Encoding for bytes;
+
+  // --- Registry ---
+  SAFEEngineLike public safeEngine;
+  SystemCoinLike public systemCoin;
+  CoinJoinLike public coinJoin;
+  address public extraSurplusReceiver;
+
+  // --- Params ---
+  StabilityFeeTreasuryParams _params;
+
+  function params() external view returns (StabilityFeeTreasuryParams memory) {
+    return _params;
+  }
+
+  // --- Data ---
   // Mapping of total and per block allowances
   mapping(address => Allowance) public allowance;
   // Mapping that keeps track of how much surplus an authorized address has pulled each block
   mapping(address => mapping(uint256 => uint256)) public pulledPerBlock;
-
-  SAFEEngineLike public safeEngine;
-  SystemCoinLike public systemCoin;
-  CoinJoinLike public coinJoin;
-
-  // The address that receives any extra surplus which is not used by the treasury
-  address public extraSurplusReceiver;
-
-  uint256 public treasuryCapacity; // max amount of SF that can be kept in the treasury                        [rad]
-  uint256 public minimumFundsRequired; // minimum amount of SF that must be kept in the treasury at all times      [rad]
-  uint256 public expensesMultiplier; // multiplier for expenses                                                  [hundred]
-  uint256 public surplusTransferDelay; // minimum time between transferSurplusFunds calls                          [seconds]
-  uint256 public expensesAccumulator; // expenses accumulator                                                     [rad]
-  uint256 public accumulatorTag; // latest tagged accumulator price                                          [rad]
-  uint256 public pullFundsMinThreshold; // minimum funds that must be in the treasury so that someone can pullFunds [rad]
-  uint256 public latestSurplusTransferTime; // latest timestamp when transferSurplusFunds was called                    [seconds]
+  uint256 public expensesAccumulator; // expenses accumulator [rad]
+  uint256 public accumulatorTag; // latest tagged accumulator price [rad]
+  uint256 public latestSurplusTransferTime; // latest timestamp when transferSurplusFunds was called [seconds]
 
   modifier accountNotTreasury(address account) {
     require(account != address(this), 'StabilityFeeTreasury/account-cannot-be-treasury');
@@ -62,50 +67,9 @@ contract StabilityFeeTreasury is Authorizable, Disableable, IStabilityFeeTreasur
     coinJoin = CoinJoinLike(_coinJoin);
     systemCoin = SystemCoinLike(coinJoin.systemCoin());
     latestSurplusTransferTime = block.timestamp;
-    expensesMultiplier = HUNDRED;
+    _params.expensesMultiplier = HUNDRED;
 
     systemCoin.approve(address(coinJoin), type(uint256).max);
-  }
-
-  // --- Administration ---
-  /**
-   * @notice Modify address parameters
-   * @param  _parameter The name of the contract whose address will be changed
-   * @param  _addr New address for the contract
-   */
-  function modifyParameters(bytes32 _parameter, address _addr) external isAuthorized whenEnabled {
-    require(_addr != address(0), 'StabilityFeeTreasury/null-addr');
-    if (_parameter == 'extraSurplusReceiver') {
-      require(_addr != address(this), 'StabilityFeeTreasury/accounting-engine-cannot-be-treasury');
-      extraSurplusReceiver = _addr;
-    } else {
-      revert('StabilityFeeTreasury/modify-unrecognized-param');
-    }
-    emit ModifyParameters(_parameter, _addr);
-  }
-
-  /**
-   * @notice Modify uint256 parameters
-   * @param  _parameter The name of the parameter to modify
-   * @param  _val New parameter value
-   */
-  function modifyParameters(bytes32 _parameter, uint256 _val) external isAuthorized whenEnabled {
-    if (_parameter == 'expensesMultiplier') {
-      expensesMultiplier = _val;
-    } else if (_parameter == 'treasuryCapacity') {
-      require(_val >= minimumFundsRequired, 'StabilityFeeTreasury/capacity-lower-than-min-funds');
-      treasuryCapacity = _val;
-    } else if (_parameter == 'minimumFundsRequired') {
-      require(_val <= treasuryCapacity, 'StabilityFeeTreasury/min-funds-higher-than-capacity');
-      minimumFundsRequired = _val;
-    } else if (_parameter == 'pullFundsMinThreshold') {
-      pullFundsMinThreshold = _val;
-    } else if (_parameter == 'surplusTransferDelay') {
-      surplusTransferDelay = _val;
-    } else {
-      revert('StabilityFeeTreasury/modify-unrecognized-param');
-    }
-    emit ModifyParameters(_parameter, _val);
   }
 
   /**
@@ -229,7 +193,7 @@ contract StabilityFeeTreasury is Authorizable, Disableable, IStabilityFeeTreasur
     require(safeEngine.debtBalance(address(this)) == 0, 'StabilityFeeTreasury/outstanding-bad-debt');
     require(safeEngine.coinBalance(address(this)) >= _wad * RAY, 'StabilityFeeTreasury/not-enough-funds');
     require(
-      safeEngine.coinBalance(address(this)) >= pullFundsMinThreshold,
+      safeEngine.coinBalance(address(this)) >= _params.pullFundsMinThreshold,
       'StabilityFeeTreasury/below-pullFunds-min-threshold'
     );
 
@@ -252,18 +216,19 @@ contract StabilityFeeTreasury is Authorizable, Disableable, IStabilityFeeTreasur
    */
   function transferSurplusFunds() external {
     require(
-      block.timestamp >= latestSurplusTransferTime + surplusTransferDelay,
+      block.timestamp >= latestSurplusTransferTime + _params.surplusTransferDelay,
       'StabilityFeeTreasury/transfer-cooldown-not-passed'
     );
     // Compute latest expenses
     uint256 _latestExpenses = expensesAccumulator - accumulatorTag;
     // Check if we need to keep more funds than the total capacity
-    uint256 _remainingFunds = (treasuryCapacity <= expensesMultiplier * _latestExpenses / HUNDRED)
-      ? expensesMultiplier * _latestExpenses / HUNDRED
-      : treasuryCapacity;
+    uint256 _remainingFunds = (_params.treasuryCapacity <= _params.expensesMultiplier * _latestExpenses / HUNDRED)
+      ? _params.expensesMultiplier * _latestExpenses / HUNDRED
+      : _params.treasuryCapacity;
     // Make sure to keep at least minimum funds
-    _remainingFunds =
-      (expensesMultiplier * _latestExpenses / HUNDRED <= minimumFundsRequired) ? minimumFundsRequired : _remainingFunds;
+    _remainingFunds = (_params.expensesMultiplier * _latestExpenses / HUNDRED <= _params.minimumFundsRequired)
+      ? _params.minimumFundsRequired
+      : _remainingFunds;
     // Set internal vars
     accumulatorTag = expensesAccumulator;
     latestSurplusTransferTime = block.timestamp;
@@ -282,5 +247,41 @@ contract StabilityFeeTreasury is Authorizable, Disableable, IStabilityFeeTreasur
       // Emit event
       emit TransferSurplusFunds(extraSurplusReceiver, fundsToTransfer);
     }
+  }
+
+  // --- Administration ---
+  /**
+   * @notice Modify parameters
+   * @param  _parameter The name of the contract whose address will be changed
+   * @param  _data New address for the contract
+   */
+  function modifyParameters(bytes32 _parameter, bytes memory _data) external isAuthorized whenEnabled {
+    uint256 _uint256 = _data.toUint256();
+
+    if (_parameter == 'extraSurplusReceiver') extraSurplusReceiver = _validateSurplusReceiver(_data.toAddress());
+    else if (_parameter == 'expensesMultiplier') _params.expensesMultiplier = _uint256;
+    else if (_parameter == 'treasuryCapacity') _params.treasuryCapacity = _validateTreasuryCapacity(_uint256);
+    else if (_parameter == 'minimumFundsRequired') _params.minimumFundsRequired = _validateMinFundsReceived(_uint256);
+    else if (_parameter == 'pullFundsMinThreshold') _params.pullFundsMinThreshold = _uint256;
+    else if (_parameter == 'surplusTransferDelay') _params.surplusTransferDelay = _uint256;
+    else revert UnrecognizedParam();
+    emit ModifyParameters(_parameter, GLOBAL_PARAM, _data);
+  }
+
+  function _validateSurplusReceiver(address _address) internal view returns (address) {
+    // NOTE: why these checks?
+    require(_address != address(0), 'StabilityFeeTreasury/null-addr');
+    require(_address != address(this), 'StabilityFeeTreasury/accounting-engine-cannot-be-treasury');
+    return _address;
+  }
+
+  function _validateTreasuryCapacity(uint256 _uint256) internal view returns (uint256) {
+    require(_uint256 >= _params.minimumFundsRequired, 'StabilityFeeTreasury/capacity-lower-than-min-funds');
+    return _uint256;
+  }
+
+  function _validateMinFundsReceived(uint256 _uint256) internal view returns (uint256) {
+    require(_uint256 <= _params.treasuryCapacity, 'StabilityFeeTreasury/min-funds-higher-than-capacity');
+    return _uint256;
   }
 }

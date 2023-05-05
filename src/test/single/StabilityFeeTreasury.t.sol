@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0
 /// StabilityFeeTreasury.t.sol
 
 // Copyright (C) 2015-2020  DappHub, LLC
@@ -20,10 +21,11 @@ pragma solidity 0.8.19;
 
 import 'ds-test/test.sol';
 
-import {Coin} from '../../contracts/utils/Coin.sol';
-import {SAFEEngine} from '../../contracts/SAFEEngine.sol';
-import {StabilityFeeTreasury} from '../../contracts/StabilityFeeTreasury.sol';
-import {CoinJoin} from '../../contracts/utils/CoinJoin.sol';
+import {Coin} from '@contracts/utils/Coin.sol';
+import {SAFEEngine} from '@contracts/SAFEEngine.sol';
+import {StabilityFeeTreasury} from '@contracts/StabilityFeeTreasury.sol';
+import {IStabilityFeeTreasury} from '@interfaces/IStabilityFeeTreasury.sol';
+import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
 
 abstract contract Hevm {
   function warp(uint256) public virtual;
@@ -100,28 +102,31 @@ contract SingleStabilityFeeTreasuryTest is DSTest {
   }
 
   function test_setup() public {
-    assertEq(stabilityFeeTreasury.surplusTransferDelay(), 0);
+    IStabilityFeeTreasury.StabilityFeeTreasuryParams memory _params = stabilityFeeTreasury.params();
+
+    assertEq(_params.surplusTransferDelay, 0);
     assertEq(address(stabilityFeeTreasury.safeEngine()), address(safeEngine));
     assertEq(address(stabilityFeeTreasury.extraSurplusReceiver()), alice);
     assertEq(stabilityFeeTreasury.latestSurplusTransferTime(), block.timestamp);
-    assertEq(stabilityFeeTreasury.expensesMultiplier(), HUNDRED);
+    assertEq(_params.expensesMultiplier, HUNDRED);
     assertEq(systemCoin.balanceOf(address(this)), 100 ether);
     assertEq(safeEngine.coinBalance(address(alice)), 0);
     assertEq(safeEngine.coinBalance(address(stabilityFeeTreasury)), rad(200 ether));
   }
 
   function test_modify_extra_surplus_receiver() public {
-    stabilityFeeTreasury.modifyParameters('extraSurplusReceiver', bob);
+    stabilityFeeTreasury.modifyParameters('extraSurplusReceiver', abi.encode(bob));
     assertEq(stabilityFeeTreasury.extraSurplusReceiver(), bob);
   }
 
   function test_modify_params() public {
-    stabilityFeeTreasury.modifyParameters('expensesMultiplier', 5 * HUNDRED);
-    stabilityFeeTreasury.modifyParameters('treasuryCapacity', rad(50 ether));
-    stabilityFeeTreasury.modifyParameters('surplusTransferDelay', 10 minutes);
-    assertEq(stabilityFeeTreasury.expensesMultiplier(), 5 * HUNDRED);
-    assertEq(stabilityFeeTreasury.treasuryCapacity(), rad(50 ether));
-    assertEq(stabilityFeeTreasury.surplusTransferDelay(), 10 minutes);
+    stabilityFeeTreasury.modifyParameters('expensesMultiplier', abi.encode(5 * HUNDRED));
+    stabilityFeeTreasury.modifyParameters('treasuryCapacity', abi.encode(rad(50 ether)));
+    stabilityFeeTreasury.modifyParameters('surplusTransferDelay', abi.encode(10 minutes));
+    IStabilityFeeTreasury.StabilityFeeTreasuryParams memory _params = stabilityFeeTreasury.params();
+    assertEq(_params.expensesMultiplier, 5 * HUNDRED);
+    assertEq(_params.treasuryCapacity, rad(50 ether));
+    assertEq(_params.surplusTransferDelay, 10 minutes);
   }
 
   function test_transferSurplusFunds_no_expenses_no_minimumFundsRequired() public {
@@ -134,8 +139,8 @@ contract SingleStabilityFeeTreasuryTest is DSTest {
   }
 
   function test_transferSurplusFunds_no_expenses_with_minimumFundsRequired() public {
-    stabilityFeeTreasury.modifyParameters('treasuryCapacity', rad(50 ether));
-    stabilityFeeTreasury.modifyParameters('minimumFundsRequired', rad(50 ether));
+    stabilityFeeTreasury.modifyParameters('treasuryCapacity', abi.encode(rad(50 ether)));
+    stabilityFeeTreasury.modifyParameters('minimumFundsRequired', abi.encode(rad(50 ether)));
     hevm.warp(block.timestamp + 1 seconds);
     stabilityFeeTreasury.transferSurplusFunds();
     assertEq(stabilityFeeTreasury.accumulatorTag(), 0);
@@ -145,10 +150,11 @@ contract SingleStabilityFeeTreasuryTest is DSTest {
   }
 
   function test_transferSurplusFunds_no_expenses_both_internal_and_external_coins() public {
-    assertEq(stabilityFeeTreasury.treasuryCapacity(), 0);
-    assertEq(stabilityFeeTreasury.expensesMultiplier(), HUNDRED);
+    IStabilityFeeTreasury.StabilityFeeTreasuryParams memory _params = stabilityFeeTreasury.params();
+    assertEq(_params.treasuryCapacity, 0);
+    assertEq(_params.expensesMultiplier, HUNDRED);
     assertEq(stabilityFeeTreasury.expensesAccumulator(), 0);
-    assertEq(stabilityFeeTreasury.minimumFundsRequired(), 0);
+    assertEq(_params.minimumFundsRequired, 0);
     systemCoin.transfer(address(stabilityFeeTreasury), 1 ether);
     assertEq(systemCoin.balanceOf(address(stabilityFeeTreasury)), 1 ether);
     hevm.warp(block.timestamp + 1 seconds);
@@ -159,12 +165,13 @@ contract SingleStabilityFeeTreasuryTest is DSTest {
   }
 
   function test_transferSurplusFunds_no_expenses_with_minimumFundsRequired_both_internal_and_external_coins() public {
-    stabilityFeeTreasury.modifyParameters('treasuryCapacity', rad(50 ether));
-    stabilityFeeTreasury.modifyParameters('minimumFundsRequired', rad(50 ether));
-    assertEq(stabilityFeeTreasury.treasuryCapacity(), rad(50 ether));
-    assertEq(stabilityFeeTreasury.expensesMultiplier(), HUNDRED);
+    stabilityFeeTreasury.modifyParameters('treasuryCapacity', abi.encode(rad(50 ether)));
+    stabilityFeeTreasury.modifyParameters('minimumFundsRequired', abi.encode(rad(50 ether)));
+    IStabilityFeeTreasury.StabilityFeeTreasuryParams memory _params = stabilityFeeTreasury.params();
+    assertEq(_params.treasuryCapacity, rad(50 ether));
+    assertEq(_params.expensesMultiplier, HUNDRED);
     assertEq(stabilityFeeTreasury.expensesAccumulator(), 0);
-    assertEq(stabilityFeeTreasury.minimumFundsRequired(), rad(50 ether));
+    assertEq(_params.minimumFundsRequired, rad(50 ether));
     systemCoin.transfer(address(stabilityFeeTreasury), 1 ether);
     assertEq(systemCoin.balanceOf(address(stabilityFeeTreasury)), 1 ether);
     hevm.warp(block.timestamp + 1 seconds);
@@ -291,7 +298,7 @@ contract SingleStabilityFeeTreasuryTest is DSTest {
 
   function testFail_pull_funds_when_funds_below_pull_threshold() public {
     stabilityFeeTreasury.modifyParameters(
-      'pullFundsMinThreshold', safeEngine.coinBalance(address(stabilityFeeTreasury)) + 1
+      'pullFundsMinThreshold', abi.encode(safeEngine.coinBalance(address(stabilityFeeTreasury)) + 1)
     );
     stabilityFeeTreasury.setPerBlockAllowance(address(usr), rad(1 ether));
     stabilityFeeTreasury.setTotalAllowance(address(usr), rad(10 ether));
@@ -361,16 +368,16 @@ contract SingleStabilityFeeTreasuryTest is DSTest {
   }
 
   function testFail_transferSurplusFunds_before_surplusTransferDelay() public {
-    stabilityFeeTreasury.modifyParameters('surplusTransferDelay', 10 minutes);
+    stabilityFeeTreasury.modifyParameters('surplusTransferDelay', abi.encode(10 minutes));
     hevm.warp(block.timestamp + 9 minutes);
     stabilityFeeTreasury.transferSurplusFunds();
   }
 
   function test_transferSurplusFunds_after_expenses() public {
     address charlie = address(0x12345);
-    stabilityFeeTreasury.modifyParameters('extraSurplusReceiver', charlie);
+    stabilityFeeTreasury.modifyParameters('extraSurplusReceiver', abi.encode(charlie));
 
-    stabilityFeeTreasury.modifyParameters('surplusTransferDelay', 10 minutes);
+    stabilityFeeTreasury.modifyParameters('surplusTransferDelay', abi.encode(10 minutes));
     stabilityFeeTreasury.giveFunds(alice, rad(40 ether));
     hevm.warp(block.timestamp + 10 minutes);
     stabilityFeeTreasury.transferSurplusFunds();
@@ -386,11 +393,11 @@ contract SingleStabilityFeeTreasuryTest is DSTest {
 
   function test_transferSurplusFunds_after_expenses_with_treasuryCapacity_and_minimumFundsRequired() public {
     address charlie = address(0x12345);
-    stabilityFeeTreasury.modifyParameters('extraSurplusReceiver', charlie);
+    stabilityFeeTreasury.modifyParameters('extraSurplusReceiver', abi.encode(charlie));
 
-    stabilityFeeTreasury.modifyParameters('treasuryCapacity', rad(30 ether));
-    stabilityFeeTreasury.modifyParameters('minimumFundsRequired', rad(10 ether));
-    stabilityFeeTreasury.modifyParameters('surplusTransferDelay', 10 minutes);
+    stabilityFeeTreasury.modifyParameters('treasuryCapacity', abi.encode(rad(30 ether)));
+    stabilityFeeTreasury.modifyParameters('minimumFundsRequired', abi.encode(rad(10 ether)));
+    stabilityFeeTreasury.modifyParameters('surplusTransferDelay', abi.encode(10 minutes));
     stabilityFeeTreasury.giveFunds(alice, rad(40 ether));
     hevm.warp(block.timestamp + 10 minutes);
     stabilityFeeTreasury.transferSurplusFunds();
@@ -406,11 +413,11 @@ contract SingleStabilityFeeTreasuryTest is DSTest {
 
   function testFail_transferSurplusFunds_more_debt_than_coin() public {
     address charlie = address(0x12345);
-    stabilityFeeTreasury.modifyParameters('extraSurplusReceiver', charlie);
+    stabilityFeeTreasury.modifyParameters('extraSurplusReceiver', abi.encode(charlie));
 
-    stabilityFeeTreasury.modifyParameters('treasuryCapacity', rad(30 ether));
-    stabilityFeeTreasury.modifyParameters('minimumFundsRequired', rad(10 ether));
-    stabilityFeeTreasury.modifyParameters('surplusTransferDelay', 10 minutes);
+    stabilityFeeTreasury.modifyParameters('treasuryCapacity', abi.encode(rad(30 ether)));
+    stabilityFeeTreasury.modifyParameters('minimumFundsRequired', abi.encode(rad(10 ether)));
+    stabilityFeeTreasury.modifyParameters('surplusTransferDelay', abi.encode(10 minutes));
 
     stabilityFeeTreasury.giveFunds(alice, rad(40 ether));
     safeEngine.createUnbackedDebt(address(stabilityFeeTreasury), address(this), rad(161 ether));
@@ -424,11 +431,11 @@ contract SingleStabilityFeeTreasuryTest is DSTest {
 
   function test_transferSurplusFunds_less_debt_than_coin() public {
     address charlie = address(0x12345);
-    stabilityFeeTreasury.modifyParameters('extraSurplusReceiver', charlie);
+    stabilityFeeTreasury.modifyParameters('extraSurplusReceiver', abi.encode(charlie));
 
-    stabilityFeeTreasury.modifyParameters('treasuryCapacity', rad(30 ether));
-    stabilityFeeTreasury.modifyParameters('minimumFundsRequired', rad(10 ether));
-    stabilityFeeTreasury.modifyParameters('surplusTransferDelay', 10 minutes);
+    stabilityFeeTreasury.modifyParameters('treasuryCapacity', abi.encode(rad(30 ether)));
+    stabilityFeeTreasury.modifyParameters('minimumFundsRequired', abi.encode(rad(10 ether)));
+    stabilityFeeTreasury.modifyParameters('surplusTransferDelay', abi.encode(10 minutes));
 
     stabilityFeeTreasury.giveFunds(alice, rad(40 ether));
     safeEngine.createUnbackedDebt(address(stabilityFeeTreasury), address(this), rad(50 ether));
