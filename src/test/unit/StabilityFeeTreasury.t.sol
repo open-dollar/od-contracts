@@ -1400,12 +1400,12 @@ contract Unit_StabilityFeeTreasury_TransferSurplusFunds is Base {
     stabilityFeeTreasury.transferSurplusFunds();
   }
 
-  function test_Revert_TransferCoolDownNotPassed(uint256 _surplusTransferDelay, uint256 _timePassed) public {
-    vm.assume(_timePassed < _surplusTransferDelay);
-    vm.assume(notOverflow(block.timestamp, _surplusTransferDelay));
-    vm.assume(notOverflow(block.timestamp + _timePassed, _surplusTransferDelay));
+  function test_Revert_TransferCoolDownNotPassed(uint256 _surplusDelay, uint256 _timePassed) public {
+    vm.assume(_timePassed < _surplusDelay);
+    vm.assume(notOverflow(block.timestamp, _surplusDelay));
+    vm.assume(notOverflow(block.timestamp + _timePassed, _surplusDelay));
 
-    _mockSurplusTransferDelay(_surplusTransferDelay);
+    _mockSurplusTransferDelay(_surplusDelay);
     _mockLatestSurplusTransferTime(block.timestamp + _timePassed);
 
     vm.warp(block.timestamp + _timePassed);
@@ -1416,13 +1416,13 @@ contract Unit_StabilityFeeTreasury_TransferSurplusFunds is Base {
 
   function testFail_Emit_TransferSurplusFunds_CooldownElapsed(
     TransferSurplusFundsScenario memory _transferSurplusFundsScenario,
-    uint256 _surplusTransferDelay,
+    uint256 _surplusDelay,
     uint256 _timePassed
   ) public happyPathEnoughTreasureCapacityNotEnoughCoinBalance(_transferSurplusFundsScenario) {
-    vm.assume(_timePassed >= _surplusTransferDelay);
+    vm.assume(_timePassed >= _surplusDelay);
     vm.assume(notOverflow(block.timestamp, _timePassed));
 
-    _mockSurplusTransferDelay(_surplusTransferDelay);
+    _mockSurplusTransferDelay(_surplusDelay);
     _mockLatestSurplusTransferTime(block.timestamp + _timePassed);
 
     expectEmitNoIndex();

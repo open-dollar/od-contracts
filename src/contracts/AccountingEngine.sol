@@ -18,7 +18,7 @@
 
 pragma solidity 0.8.19;
 
-import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
+import {IAccountingEngine, GLOBAL_PARAM} from '@interfaces/IAccountingEngine.sol';
 import {IDebtAuctionHouse as DebtAuctionHouseLike} from '@interfaces/IDebtAuctionHouse.sol';
 import {ISurplusAuctionHouse as SurplusAuctionHouseLike} from '@interfaces/ISurplusAuctionHouse.sol';
 import {ISAFEEngine as SAFEEngineLike} from '@interfaces/ISAFEEngine.sol';
@@ -28,88 +28,44 @@ import {IProtocolTokenAuthority as ProtocolTokenAuthorityLike} from '@interfaces
 import {Authorizable, IAuthorizable} from '@contracts/utils/Authorizable.sol';
 import {Disableable} from '@contracts/utils/Disableable.sol';
 
+import {Encoding} from '@libraries/Encoding.sol';
 import {Math} from '@libraries/Math.sol';
 
 contract AccountingEngine is Authorizable, Disableable, IAccountingEngine {
+  using Encoding for bytes;
+
   // --- Auth ---
   function addAuthorization(address _account) external override(Authorizable, IAuthorizable) isAuthorized whenEnabled {
     _addAuthorization(_account);
   }
 
-  // --- Data ---
-  // SAFE database
+  // --- Registry ---
   SAFEEngineLike public safeEngine;
-  // Contract that handles auctions for surplus stability fees (sell coins for protocol tokens that are then burned)
   SurplusAuctionHouseLike public surplusAuctionHouse;
-  /**
-   * Contract that handles auctions for debt that couldn't be covered by collateral
-   *     auctions (it prints protocol tokens in exchange for coins that will settle the debt)
-   */
   DebtAuctionHouseLike public debtAuctionHouse;
-  // Permissions registry for who can burn and mint protocol tokens
   ProtocolTokenAuthorityLike public protocolTokenAuthority;
-  // Staking pool for protocol tokens
   SystemStakingPoolLike public systemStakingPool;
-  // Contract that auctions extra surplus after settlement is triggered
   address public postSettlementSurplusDrain;
-  // Address that receives extra surplus transfers
   address public extraSurplusReceiver;
 
-  /**
-   * Debt blocks that need to be covered by auctions. There is a delay to pop debt from
-   *     this queue and either settle it with surplus that came from collateral auctions or with debt auctions
-   *     that print protocol tokens
-   *
-   */
+  // --- Params ---
+  AccountingEngineParams _params;
+
+  function params() external view returns (AccountingEngineParams memory) {
+    return _params;
+  }
+
+  // --- Data ---
+  // Debt blocks that need to be covered by auctions
   mapping(uint256 => uint256) public debtQueue; // [unix timestamp => rad]
-  // Addresses that popped debt out of the queue
-  mapping(uint256 => address) public debtPoppers; // [unix timestamp => address]
-  // Total debt in the queue (that the system tries to cover with collateral auctions)
+  // Total debt in the queue
   uint256 public totalQueuedDebt; // [rad]
-  // Total debt being auctioned in DebtAuctionHouse (printing protocol tokens for coins that will settle the debt)
+  // Total debt being auctioned in DebtAuctionHouse
   uint256 public totalOnAuctionDebt; // [rad]
-  // When the last surplus auction was triggered
-  uint256 public lastSurplusAuctionTime; // [unix timestamp]
-  // When the last surplus transfer was triggered
-  uint256 public lastSurplusTransferTime; // [unix timestamp]
-  // Delay between surplus auctions
-  uint256 public surplusAuctionDelay; // [seconds]
-  // Delay between extra surplus transfers
-  uint256 public surplusTransferDelay; // [seconds]
-  // Delay after which debt can be popped from debtQueue
-  uint256 public popDebtDelay; // [seconds]
-  // Amount of protocol tokens to be minted post-auction
-  uint256 public initialDebtAuctionMintedTokens; // [wad]
-  // Amount of debt sold in one debt auction (initial coin bid for initialDebtAuctionMintedTokens protocol tokens)
-  uint256 public debtAuctionBidSize; // [rad]
-
-  // Whether the system transfers surplus instead of auctioning it
-  uint256 public extraSurplusIsTransferred;
-  // Amount of surplus stability fees sold in one surplus auction
-  uint256 public surplusAuctionAmountToSell; // [rad]
-  // Amount of extra surplus to transfer
-  uint256 public surplusTransferAmount; // [rad]
-  // Amount of stability fees that need to accrue in this contract before any surplus auction can start
-  uint256 public surplusBuffer; // [rad]
-
-  // Time to wait (post settlement) until any remaining surplus can be transferred to the settlement auctioneer
-  uint256 public disableCooldown; // [seconds]
+  // When the last surplus transfer or auction was triggered
+  uint256 public lastSurplusTime; // [unix timestamp]
   // When the contract was disabled
   uint256 public disableTimestamp; // [unix timestamp]
-
-  // --- Events ---
-  event ModifyParameters(bytes32 indexed parameter, uint256 data);
-  event ModifyParameters(bytes32 indexed parameter, address data);
-  event PushDebtToQueue(uint256 indexed timestamp, uint256 debtQueueBlock, uint256 totalQueuedDebt);
-  event PopDebtFromQueue(uint256 indexed timestamp, uint256 debtQueueBlock, uint256 totalQueuedDebt);
-  event SettleDebt(uint256 rad, uint256 coinBalance, uint256 debtBalance);
-  event CancelAuctionedDebtWithSurplus(
-    uint256 rad, uint256 totalOnAuctionDebt, uint256 coinBalance, uint256 debtBalance
-  );
-  event AuctionDebt(uint256 indexed id, uint256 totalOnAuctionDebt, uint256 debtBalance);
-  event AuctionSurplus(uint256 indexed id, uint256 lastSurplusAuctionTime, uint256 coinBalance);
-  event TransferPostSettlementSurplus(address postSettlementSurplusDrain, uint256 coinBalance, uint256 debtBalance);
-  event TransferExtraSurplus(address indexed extraSurplusReceiver, uint256 lastSurplusAuctionTime, uint256 coinBalance);
 
   // --- Init ---
   constructor(address _safeEngine, address _surplusAuctionHouse, address _debtAuctionHouse) Authorizable(msg.sender) {
@@ -119,74 +75,7 @@ contract AccountingEngine is Authorizable, Disableable, IAccountingEngine {
 
     safeEngine.approveSAFEModification(_surplusAuctionHouse);
 
-    lastSurplusAuctionTime = block.timestamp;
-    lastSurplusTransferTime = block.timestamp;
-  }
-
-  // --- Administration ---
-  /**
-   * @notice Modify an uint256 param
-   * @param parameter The name of the parameter modified
-   * @param data New value for the parameter
-   */
-  function modifyParameters(bytes32 parameter, uint256 data) external isAuthorized {
-    if (parameter == 'surplusAuctionDelay') {
-      surplusAuctionDelay = data;
-    } else if (parameter == 'surplusTransferDelay') {
-      surplusTransferDelay = data;
-    } else if (parameter == 'popDebtDelay') {
-      popDebtDelay = data;
-    } else if (parameter == 'surplusAuctionAmountToSell') {
-      surplusAuctionAmountToSell = data;
-    } else if (parameter == 'surplusTransferAmount') {
-      surplusTransferAmount = data;
-    } else if (parameter == 'extraSurplusIsTransferred') {
-      extraSurplusIsTransferred = data;
-    } else if (parameter == 'debtAuctionBidSize') {
-      debtAuctionBidSize = data;
-    } else if (parameter == 'initialDebtAuctionMintedTokens') {
-      initialDebtAuctionMintedTokens = data;
-    } else if (parameter == 'surplusBuffer') {
-      surplusBuffer = data;
-    } else if (parameter == 'lastSurplusTransferTime') {
-      require(data > block.timestamp, 'AccountingEngine/invalid-lastSurplusTransferTime');
-      lastSurplusTransferTime = data;
-    } else if (parameter == 'lastSurplusAuctionTime') {
-      require(data > block.timestamp, 'AccountingEngine/invalid-lastSurplusAuctionTime');
-      lastSurplusAuctionTime = data;
-    } else if (parameter == 'disableCooldown') {
-      disableCooldown = data;
-    } else {
-      revert('AccountingEngine/modify-unrecognized-param');
-    }
-    emit ModifyParameters(parameter, data);
-  }
-
-  /**
-   * @notice Modify an address param
-   * @param parameter The name of the parameter
-   * @param data New address for the parameter
-   */
-  function modifyParameters(bytes32 parameter, address data) external isAuthorized {
-    if (parameter == 'surplusAuctionHouse') {
-      safeEngine.denySAFEModification(address(surplusAuctionHouse));
-      surplusAuctionHouse = SurplusAuctionHouseLike(data);
-      safeEngine.approveSAFEModification(data);
-    } else if (parameter == 'systemStakingPool') {
-      systemStakingPool = SystemStakingPoolLike(data);
-      systemStakingPool.canPrintProtocolTokens();
-    } else if (parameter == 'debtAuctionHouse') {
-      debtAuctionHouse = DebtAuctionHouseLike(data);
-    } else if (parameter == 'postSettlementSurplusDrain') {
-      postSettlementSurplusDrain = data;
-    } else if (parameter == 'protocolTokenAuthority') {
-      protocolTokenAuthority = ProtocolTokenAuthorityLike(data);
-    } else if (parameter == 'extraSurplusReceiver') {
-      extraSurplusReceiver = data;
-    } else {
-      revert('AccountingEngine/modify-unrecognized-param');
-    }
-    emit ModifyParameters(parameter, data);
+    lastSurplusTime = block.timestamp;
   }
 
   // --- Getters ---
@@ -229,10 +118,9 @@ contract AccountingEngine is Authorizable, Disableable, IAccountingEngine {
    * @param  _debtBlockTimestamp Timestamp of the block of debt that should be popped out
    */
   function popDebtFromQueue(uint256 _debtBlockTimestamp) external {
-    require(_debtBlockTimestamp + popDebtDelay <= block.timestamp, 'AccountingEngine/pop-debt-delay-not-passed');
+    require(_debtBlockTimestamp + _params.popDebtDelay <= block.timestamp, 'AccountingEngine/pop-debt-delay-not-passed');
     require(debtQueue[_debtBlockTimestamp] > 0, 'AccountingEngine/null-debt-block');
     totalQueuedDebt = totalQueuedDebt - debtQueue[_debtBlockTimestamp];
-    debtPoppers[_debtBlockTimestamp] = msg.sender;
     emit PopDebtFromQueue(block.timestamp, debtQueue[_debtBlockTimestamp], totalQueuedDebt);
     debtQueue[_debtBlockTimestamp] = 0;
   }
@@ -272,7 +160,7 @@ contract AccountingEngine is Authorizable, Disableable, IAccountingEngine {
    * @return _id Id of the debt auction that was started
    */
   function auctionDebt() external returns (uint256 _id) {
-    require(debtAuctionBidSize <= unqueuedUnauctionedDebt(), 'AccountingEngine/insufficient-debt');
+    require(_params.debtAuctionBidSize <= unqueuedUnauctionedDebt(), 'AccountingEngine/insufficient-debt');
     settleDebt(safeEngine.coinBalance(address(this)));
     require(safeEngine.coinBalance(address(this)) == 0, 'AccountingEngine/surplus-not-zero');
     require(debtAuctionHouse.protocolToken() != address(0), 'AccountingEngine/debt-auction-house-null-prot');
@@ -281,66 +169,62 @@ contract AccountingEngine is Authorizable, Disableable, IAccountingEngine {
       'AccountingEngine/debt-auction-house-cannot-print-prot'
     );
     require(canPrintProtocolTokens(), 'AccountingEngine/staking-pool-denies-printing');
-    totalOnAuctionDebt = totalOnAuctionDebt + debtAuctionBidSize;
-    _id = debtAuctionHouse.startAuction(address(this), initialDebtAuctionMintedTokens, debtAuctionBidSize);
+    totalOnAuctionDebt = totalOnAuctionDebt + _params.debtAuctionBidSize;
+    _id = debtAuctionHouse.startAuction(address(this), _params.debtAuctionMintedTokens, _params.debtAuctionBidSize);
     emit AuctionDebt(_id, totalOnAuctionDebt, safeEngine.debtBalance(address(this)));
   }
 
   // Surplus auction
   /**
    * @notice Start a surplus auction
-   * @dev    We can only auction surplus if we wait at least 'surplusAuctionDelay' seconds since the last
+   * @dev    We can only auction surplus if we wait at least 'surplusDelay' seconds since the last
    *         surplus auction trigger, if we keep enough surplus in the buffer and if there is no bad debt left to settle
    * @return _id the Id of the surplus auction that was started
    */
   function auctionSurplus() external returns (uint256 _id) {
-    require(extraSurplusIsTransferred != 1, 'AccountingEngine/surplus-transfer-no-auction');
-    require(surplusAuctionAmountToSell > 0, 'AccountingEngine/null-amount-to-auction');
+    require(_params.surplusIsTransferred != 1, 'AccountingEngine/surplus-transfer-no-auction');
+    require(_params.surplusAmount > 0, 'AccountingEngine/null-amount-to-auction');
     settleDebt(unqueuedUnauctionedDebt());
     require(
-      block.timestamp >= lastSurplusAuctionTime + surplusAuctionDelay,
-      'AccountingEngine/surplus-auction-delay-not-passed'
+      block.timestamp >= lastSurplusTime + _params.surplusDelay, 'AccountingEngine/surplus-auction-delay-not-passed'
     );
     require(
       safeEngine.coinBalance(address(this))
-        >= safeEngine.debtBalance(address(this)) + surplusAuctionAmountToSell + surplusBuffer,
+        >= safeEngine.debtBalance(address(this)) + _params.surplusAmount + _params.surplusBuffer,
       'AccountingEngine/insufficient-surplus'
     );
     require(unqueuedUnauctionedDebt() == 0, 'AccountingEngine/debt-not-zero');
     require(
       address(surplusAuctionHouse.protocolToken()) != address(0), 'AccountingEngine/surplus-auction-house-null-prot'
     );
-    lastSurplusAuctionTime = block.timestamp;
-    lastSurplusTransferTime = block.timestamp;
-    _id = surplusAuctionHouse.startAuction(surplusAuctionAmountToSell, 0);
-    emit AuctionSurplus(_id, lastSurplusAuctionTime, safeEngine.coinBalance(address(this)));
+    lastSurplusTime = block.timestamp;
+    _id = surplusAuctionHouse.startAuction(_params.surplusAmount, 0);
+    emit AuctionSurplus(_id, lastSurplusTime, safeEngine.coinBalance(address(this)));
   }
 
   // Extra surplus transfers/surplus auction alternative
   /**
    * @notice Send surplus to an address as an alternative to surplus auctions
-   * @dev    We can only transfer surplus if we wait at least 'surplusTransferDelay' seconds since the last
+   * @dev    We can only transfer surplus if we wait at least 'surplusDelay' seconds since the last
    *           transfer, if we keep enough surplus in the buffer and if there is no bad debt left to settle
    */
   function transferExtraSurplus() external {
-    require(extraSurplusIsTransferred == 1, 'AccountingEngine/surplus-auction-not-transfer');
+    require(_params.surplusIsTransferred == 1, 'AccountingEngine/surplus-auction-not-transfer');
     require(extraSurplusReceiver != address(0), 'AccountingEngine/null-surplus-receiver');
-    require(surplusTransferAmount > 0, 'AccountingEngine/null-amount-to-transfer');
+    require(_params.surplusAmount > 0, 'AccountingEngine/null-amount-to-transfer');
     settleDebt(unqueuedUnauctionedDebt());
     require(
-      block.timestamp >= lastSurplusTransferTime + surplusTransferDelay,
-      'AccountingEngine/surplus-transfer-delay-not-passed'
+      block.timestamp >= lastSurplusTime + _params.surplusDelay, 'AccountingEngine/surplus-transfer-delay-not-passed'
     );
     require(
       safeEngine.coinBalance(address(this))
-        >= safeEngine.debtBalance(address(this)) + surplusTransferAmount + surplusBuffer,
+        >= safeEngine.debtBalance(address(this)) + _params.surplusAmount + _params.surplusBuffer,
       'AccountingEngine/insufficient-surplus'
     );
     require(unqueuedUnauctionedDebt() == 0, 'AccountingEngine/debt-not-zero');
-    lastSurplusTransferTime = block.timestamp;
-    lastSurplusAuctionTime = block.timestamp;
-    safeEngine.transferInternalCoins(address(this), extraSurplusReceiver, surplusTransferAmount);
-    emit TransferExtraSurplus(extraSurplusReceiver, lastSurplusTransferTime, safeEngine.coinBalance(address(this)));
+    lastSurplusTime = block.timestamp;
+    safeEngine.transferInternalCoins(address(this), extraSurplusReceiver, _params.surplusAmount);
+    emit TransferExtraSurplus(extraSurplusReceiver, lastSurplusTime, safeEngine.coinBalance(address(this)));
   }
 
   /**
@@ -371,11 +255,54 @@ contract AccountingEngine is Authorizable, Disableable, IAccountingEngine {
    *
    */
   function transferPostSettlementSurplus() external whenDisabled {
-    require(disableTimestamp + disableCooldown <= block.timestamp, 'AccountingEngine/cooldown-not-passed');
+    require(disableTimestamp + _params.disableCooldown <= block.timestamp, 'AccountingEngine/cooldown-not-passed');
     safeEngine.settleDebt(Math.min(safeEngine.coinBalance(address(this)), safeEngine.debtBalance(address(this))));
     safeEngine.transferInternalCoins(address(this), postSettlementSurplusDrain, safeEngine.coinBalance(address(this)));
     emit TransferPostSettlementSurplus(
       postSettlementSurplusDrain, safeEngine.coinBalance(address(this)), safeEngine.debtBalance(address(this))
     );
+  }
+
+  // --- Administration ---
+  /**
+   * @notice Modify a parameter
+   * @param _param The name of the parameter modified
+   * @param _data New value for the parameter
+   */
+  function modifyParameters(bytes32 _param, bytes memory _data) external isAuthorized {
+    uint256 _uint256 = _data.toUint256();
+    address _address = _data.toAddress();
+
+    // params
+    if (_param == 'surplusIsTransferred') _params.surplusIsTransferred = _uint256;
+    else if (_param == 'surplusDelay') _params.surplusDelay = _uint256;
+    else if (_param == 'popDebtDelay') _params.popDebtDelay = _uint256;
+    else if (_param == 'disableCooldown') _params.disableCooldown = _uint256;
+    else if (_param == 'surplusAmount') _params.surplusAmount = _uint256;
+    else if (_param == 'debtAuctionBidSize') _params.debtAuctionBidSize = _uint256;
+    else if (_param == 'debtAuctionMintedTokens') _params.debtAuctionMintedTokens = _uint256;
+    else if (_param == 'surplusBuffer') _params.surplusBuffer = _uint256;
+    // registry
+    else if (_param == 'surplusAuctionHouse') _setSurplusAuctionHouse(_address);
+    else if (_param == 'systemStakingPool') _setSystemStakingPool(_address);
+    else if (_param == 'debtAuctionHouse') debtAuctionHouse = DebtAuctionHouseLike(_address);
+    else if (_param == 'protocolTokenAuthority') protocolTokenAuthority = ProtocolTokenAuthorityLike(_address);
+    else if (_param == 'postSettlementSurplusDrain') postSettlementSurplusDrain = _address;
+    else if (_param == 'extraSurplusReceiver') extraSurplusReceiver = _address;
+    else revert UnrecognizedParam();
+
+    emit ModifyParameters(_param, GLOBAL_PARAM, _data);
+  }
+
+  function _setSurplusAuctionHouse(address _surplusAuctionHouse) internal {
+    safeEngine.denySAFEModification(address(surplusAuctionHouse));
+    surplusAuctionHouse = SurplusAuctionHouseLike(_surplusAuctionHouse);
+    safeEngine.approveSAFEModification(_surplusAuctionHouse);
+  }
+
+  function _setSystemStakingPool(address _systemStakingPool) internal {
+    systemStakingPool = SystemStakingPoolLike(_systemStakingPool);
+    // NOTE: excesive check? why would governance set to an address that reverts?
+    systemStakingPool.canPrintProtocolTokens();
   }
 }

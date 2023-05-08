@@ -403,7 +403,7 @@ contract SAFEEngine is Authorizable, Disableable, ISAFEEngine {
 
     if (_parameter == 'globalDebtCeiling') params.globalDebtCeiling = _uint256;
     else if (_parameter == 'safeDebtCeiling') params.safeDebtCeiling = _uint256;
-    else revert('SAFEEngine/modify-unrecognized-param');
+    else revert UnrecognizedParam();
     emit ModifyParameters(_parameter, GLOBAL_PARAM, _data);
   }
 
@@ -420,7 +420,7 @@ contract SAFEEngine is Authorizable, Disableable, ISAFEEngine {
     else if (_parameter == 'liquidationPrice') cParams[_cType].liquidationPrice = _uint256;
     else if (_parameter == 'debtCeiling') cParams[_cType].debtCeiling = _uint256;
     else if (_parameter == 'debtFloor') cParams[_cType].debtFloor = _uint256;
-    else revert('SAFEEngine/modify-unrecognized-param');
+    else revert UnrecognizedParam();
     emit ModifyParameters(_cType, _parameter, _data);
   }
 

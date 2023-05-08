@@ -58,20 +58,12 @@ abstract contract Base is HaiTest {
     );
   }
 
-  function _mockSurplusAuctionDelay(uint256 _surplusAuctionDelay) internal {
-    vm.mockCall(
-      address(mockAccountingEngine),
-      abi.encodeCall(mockAccountingEngine.surplusAuctionDelay, ()),
-      abi.encode(_surplusAuctionDelay)
-    );
-  }
+  function _mockAccountingEngineParams(uint256 _surplusDelay, uint256 _surplusAmount) internal {
+    IAccountingEngine.AccountingEngineParams memory _params;
+    _params.surplusDelay = _surplusDelay;
+    _params.surplusAmount = _surplusAmount;
 
-  function _mockSurplusAuctionAmountToSell(uint256 _surplusAuctionAmountToSell) internal {
-    vm.mockCall(
-      address(mockAccountingEngine),
-      abi.encodeCall(mockAccountingEngine.surplusAuctionAmountToSell, ()),
-      abi.encode(_surplusAuctionAmountToSell)
-    );
+    vm.mockCall(address(mockAccountingEngine), abi.encodeCall(mockAccountingEngine.params, ()), abi.encode(_params));
   }
 
   function _mockStartAuction(uint256 _amountToSell, uint256 _initialBid, uint256 _id) internal {
@@ -88,10 +80,9 @@ abstract contract Base is HaiTest {
     );
   }
 
-  function _mockLastSurplusAuctionTime(uint256 _lastSurplusAuctionTime) internal {
-    stdstore.target(address(settlementSurplusAuctioneer)).sig(
-      ISettlementSurplusAuctioneer.lastSurplusAuctionTime.selector
-    ).checked_write(_lastSurplusAuctionTime);
+  function _mockLastSurplusAuctionTime(uint256 _lastSurplusTime) internal {
+    stdstore.target(address(settlementSurplusAuctioneer)).sig(ISettlementSurplusAuctioneer.lastSurplusTime.selector)
+      .checked_write(_lastSurplusTime);
   }
 }
 
@@ -165,30 +156,29 @@ contract Unit_SettlementSurplusAuctioneer_ModifyParameters is Base {
 }
 
 contract Unit_SettlementSurplusAuctioneer_AuctionSurplus is Base {
-  event AuctionSurplus(uint256 indexed _id, uint256 _lastSurplusAuctionTime, uint256 _coinBalance);
+  event AuctionSurplus(uint256 indexed _id, uint256 _lastSurplusTime, uint256 _coinBalance);
 
   modifier happyPath(
-    uint256 _lastSurplusAuctionTime,
-    uint256 _surplusAuctionDelay,
-    uint256 _surplusAuctionAmountToSell,
+    uint256 _lastSurplusTime,
+    uint256 _surplusDelay,
+    uint256 _surplusAmount,
     uint256 _coinBalance,
     uint256 _idA,
     uint256 _idB
   ) {
-    _assumeHappyPath(_lastSurplusAuctionTime, _surplusAuctionDelay);
+    _assumeHappyPath(_lastSurplusTime, _surplusDelay);
     _mockContractEnabled(0);
-    _mockLastSurplusAuctionTime(_lastSurplusAuctionTime);
-    _mockSurplusAuctionDelay(_surplusAuctionDelay);
-    _mockSurplusAuctionAmountToSell(_surplusAuctionAmountToSell);
+    _mockLastSurplusAuctionTime(_lastSurplusTime);
+    _mockAccountingEngineParams(_surplusDelay, _surplusAmount);
     _mockCoinBalance(address(settlementSurplusAuctioneer), _coinBalance);
     _mockStartAuction(_coinBalance, 0, _idA);
-    _mockStartAuction(_surplusAuctionAmountToSell, 0, _idB);
+    _mockStartAuction(_surplusAmount, 0, _idB);
     _;
   }
 
-  function _assumeHappyPath(uint256 _lastSurplusAuctionTime, uint256 _surplusAuctionDelay) internal {
-    vm.assume(notOverflow(_lastSurplusAuctionTime, _surplusAuctionDelay));
-    vm.assume(block.timestamp >= _lastSurplusAuctionTime + _surplusAuctionDelay);
+  function _assumeHappyPath(uint256 _lastSurplusTime, uint256 _surplusDelay) internal {
+    vm.assume(notOverflow(_lastSurplusTime, _surplusDelay));
+    vm.assume(block.timestamp >= _lastSurplusTime + _surplusDelay);
   }
 
   function test_Revert_AccountingEngineStillEnabled(uint256 _contractEnabled) public {
@@ -201,16 +191,13 @@ contract Unit_SettlementSurplusAuctioneer_AuctionSurplus is Base {
     settlementSurplusAuctioneer.auctionSurplus();
   }
 
-  function test_Revert_SurplusAuctionDelayNotPassed(
-    uint256 _lastSurplusAuctionTime,
-    uint256 _surplusAuctionDelay
-  ) public {
-    vm.assume(notOverflow(_lastSurplusAuctionTime, _surplusAuctionDelay));
-    vm.assume(block.timestamp < _lastSurplusAuctionTime + _surplusAuctionDelay);
+  function test_Revert_SurplusAuctionDelayNotPassed(uint256 _lastSurplusTime, uint256 _surplusDelay) public {
+    vm.assume(notOverflow(_lastSurplusTime, _surplusDelay));
+    vm.assume(block.timestamp < _lastSurplusTime + _surplusDelay);
 
     _mockContractEnabled(0);
-    _mockLastSurplusAuctionTime(_lastSurplusAuctionTime);
-    _mockSurplusAuctionDelay(_surplusAuctionDelay);
+    _mockLastSurplusAuctionTime(_lastSurplusTime);
+    _mockAccountingEngineParams(_surplusDelay, 0);
 
     vm.expectRevert('SettlementSurplusAuctioneer/surplus-auction-delay-not-passed');
 
@@ -218,86 +205,70 @@ contract Unit_SettlementSurplusAuctioneer_AuctionSurplus is Base {
   }
 
   function test_Set_LastSurplusAuctionTime(
-    uint256 _lastSurplusAuctionTime,
-    uint256 _surplusAuctionDelay,
-    uint256 _surplusAuctionAmountToSell,
+    uint256 _lastSurplusTime,
+    uint256 _surplusDelay,
+    uint256 _surplusAmount,
     uint256 _coinBalance,
     uint256 _idA,
     uint256 _idB
-  )
-    public
-    happyPath(_lastSurplusAuctionTime, _surplusAuctionDelay, _surplusAuctionAmountToSell, _coinBalance, _idA, _idB)
-  {
+  ) public happyPath(_lastSurplusTime, _surplusDelay, _surplusAmount, _coinBalance, _idA, _idB) {
     settlementSurplusAuctioneer.auctionSurplus();
 
-    assertEq(settlementSurplusAuctioneer.lastSurplusAuctionTime(), block.timestamp);
+    assertEq(settlementSurplusAuctioneer.lastSurplusTime(), block.timestamp);
   }
 
   function test_Return_Id_A(
-    uint256 _lastSurplusAuctionTime,
-    uint256 _surplusAuctionDelay,
-    uint256 _surplusAuctionAmountToSell,
+    uint256 _lastSurplusTime,
+    uint256 _surplusDelay,
+    uint256 _surplusAmount,
     uint256 _coinBalance,
     uint256 _idA,
     uint256 _idB
-  )
-    public
-    happyPath(_lastSurplusAuctionTime, _surplusAuctionDelay, _surplusAuctionAmountToSell, _coinBalance, _idA, _idB)
-  {
-    vm.assume(_coinBalance < _surplusAuctionAmountToSell);
+  ) public happyPath(_lastSurplusTime, _surplusDelay, _surplusAmount, _coinBalance, _idA, _idB) {
+    vm.assume(_coinBalance < _surplusAmount);
     vm.assume(_coinBalance > 0);
 
     assertEq(settlementSurplusAuctioneer.auctionSurplus(), _idA);
   }
 
   function test_Return_Id_B(
-    uint256 _lastSurplusAuctionTime,
-    uint256 _surplusAuctionDelay,
-    uint256 _surplusAuctionAmountToSell,
+    uint256 _lastSurplusTime,
+    uint256 _surplusDelay,
+    uint256 _surplusAmount,
     uint256 _coinBalance,
     uint256 _idA,
     uint256 _idB
-  )
-    public
-    happyPath(_lastSurplusAuctionTime, _surplusAuctionDelay, _surplusAuctionAmountToSell, _coinBalance, _idA, _idB)
-  {
-    vm.assume(_coinBalance >= _surplusAuctionAmountToSell);
-    vm.assume(_surplusAuctionAmountToSell > 0);
+  ) public happyPath(_lastSurplusTime, _surplusDelay, _surplusAmount, _coinBalance, _idA, _idB) {
+    vm.assume(_coinBalance >= _surplusAmount);
+    vm.assume(_surplusAmount > 0);
 
     assertEq(settlementSurplusAuctioneer.auctionSurplus(), _idB);
   }
 
   function test_Return_Id_C(
-    uint256 _lastSurplusAuctionTime,
-    uint256 _surplusAuctionDelay,
-    uint256 _surplusAuctionAmountToSell,
+    uint256 _lastSurplusTime,
+    uint256 _surplusDelay,
+    uint256 _surplusAmount,
     uint256 _coinBalance,
     uint256 _idA,
     uint256 _idB
-  )
-    public
-    happyPath(_lastSurplusAuctionTime, _surplusAuctionDelay, _surplusAuctionAmountToSell, _coinBalance, _idA, _idB)
-  {
+  ) public happyPath(_lastSurplusTime, _surplusDelay, _surplusAmount, _coinBalance, _idA, _idB) {
     vm.assume(
-      _coinBalance < _surplusAuctionAmountToSell && _coinBalance == 0
-        || _coinBalance >= _surplusAuctionAmountToSell && _surplusAuctionAmountToSell == 0
+      _coinBalance < _surplusAmount && _coinBalance == 0 || _coinBalance >= _surplusAmount && _surplusAmount == 0
     );
 
     assertEq(settlementSurplusAuctioneer.auctionSurplus(), 0);
   }
 
   function test_Emit_AuctionSurplus_A(
-    uint256 _lastSurplusAuctionTime,
-    uint256 _surplusAuctionDelay,
-    uint256 _surplusAuctionAmountToSell,
+    uint256 _lastSurplusTime,
+    uint256 _surplusDelay,
+    uint256 _surplusAmount,
     uint256 _coinBalance,
     uint256 _idA,
     uint256 _idB
-  )
-    public
-    happyPath(_lastSurplusAuctionTime, _surplusAuctionDelay, _surplusAuctionAmountToSell, _coinBalance, _idA, _idB)
-  {
-    vm.assume(_coinBalance < _surplusAuctionAmountToSell);
+  ) public happyPath(_lastSurplusTime, _surplusDelay, _surplusAmount, _coinBalance, _idA, _idB) {
+    vm.assume(_coinBalance < _surplusAmount);
     vm.assume(_coinBalance > 0);
 
     expectEmitNoIndex();
@@ -307,18 +278,15 @@ contract Unit_SettlementSurplusAuctioneer_AuctionSurplus is Base {
   }
 
   function test_Emit_AuctionSurplus_B(
-    uint256 _lastSurplusAuctionTime,
-    uint256 _surplusAuctionDelay,
-    uint256 _surplusAuctionAmountToSell,
+    uint256 _lastSurplusTime,
+    uint256 _surplusDelay,
+    uint256 _surplusAmount,
     uint256 _coinBalance,
     uint256 _idA,
     uint256 _idB
-  )
-    public
-    happyPath(_lastSurplusAuctionTime, _surplusAuctionDelay, _surplusAuctionAmountToSell, _coinBalance, _idA, _idB)
-  {
-    vm.assume(_coinBalance >= _surplusAuctionAmountToSell);
-    vm.assume(_surplusAuctionAmountToSell > 0);
+  ) public happyPath(_lastSurplusTime, _surplusDelay, _surplusAmount, _coinBalance, _idA, _idB) {
+    vm.assume(_coinBalance >= _surplusAmount);
+    vm.assume(_surplusAmount > 0);
 
     expectEmitNoIndex();
     emit AuctionSurplus(_idB, block.timestamp, _coinBalance);
@@ -327,19 +295,15 @@ contract Unit_SettlementSurplusAuctioneer_AuctionSurplus is Base {
   }
 
   function testFail_Emit_AuctionSurplus(
-    uint256 _lastSurplusAuctionTime,
-    uint256 _surplusAuctionDelay,
-    uint256 _surplusAuctionAmountToSell,
+    uint256 _lastSurplusTime,
+    uint256 _surplusDelay,
+    uint256 _surplusAmount,
     uint256 _coinBalance,
     uint256 _idA,
     uint256 _idB
-  )
-    public
-    happyPath(_lastSurplusAuctionTime, _surplusAuctionDelay, _surplusAuctionAmountToSell, _coinBalance, _idA, _idB)
-  {
+  ) public happyPath(_lastSurplusTime, _surplusDelay, _surplusAmount, _coinBalance, _idA, _idB) {
     vm.assume(
-      _coinBalance < _surplusAuctionAmountToSell && _coinBalance == 0
-        || _coinBalance >= _surplusAuctionAmountToSell && _surplusAuctionAmountToSell == 0
+      _coinBalance < _surplusAmount && _coinBalance == 0 || _coinBalance >= _surplusAmount && _surplusAmount == 0
     );
 
     expectEmitNoIndex();

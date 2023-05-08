@@ -16,9 +16,9 @@ contract Deploy is Script, Contracts {
 
     deployAndSetup(
       GlobalParams({
-        initialDebtAuctionMintedTokens: INITIAL_DEBT_AUCTION_MINTED_TOKENS,
+        debtAuctionMintedTokens: INITIAL_DEBT_AUCTION_MINTED_TOKENS,
         bidAuctionSize: BID_AUCTION_SIZE,
-        surplusAuctionAmountToSell: SURPLUS_AUCTION_SIZE,
+        surplusAmount: SURPLUS_AUCTION_SIZE,
         globalDebtCeiling: GLOBAL_DEBT_CEILING,
         globalStabilityFee: GLOBAL_STABILITY_FEE,
         surplusAuctionBidReceiver: SURPLUS_AUCTION_BID_RECEIVER,
@@ -177,7 +177,7 @@ contract Deploy is Script, Contracts {
     debtAuctionHouse.modifyParameters('accountingEngine', address(accountingEngine));
     taxCollector.modifyParameters('primaryTaxReceiver', address(accountingEngine));
     liquidationEngine.modifyParameters('accountingEngine', abi.encode(accountingEngine));
-    accountingEngine.modifyParameters('protocolTokenAuthority', address(protocolToken));
+    accountingEngine.modifyParameters('protocolTokenAuthority', abi.encode(protocolToken));
 
     // auth
     safeEngine.addAuthorization(address(oracleRelayer)); // modifyParameters
@@ -209,9 +209,9 @@ contract Deploy is Script, Contracts {
     // setup params
     safeEngine.modifyParameters('globalDebtCeiling', abi.encode(_params.globalDebtCeiling));
     taxCollector.modifyParameters('globalStabilityFee', _params.globalStabilityFee);
-    accountingEngine.modifyParameters('initialDebtAuctionMintedTokens', _params.initialDebtAuctionMintedTokens);
-    accountingEngine.modifyParameters('debtAuctionBidSize', _params.bidAuctionSize);
-    accountingEngine.modifyParameters('surplusAuctionAmountToSell', _params.surplusAuctionAmountToSell);
+    accountingEngine.modifyParameters('debtAuctionMintedTokens', abi.encode(_params.debtAuctionMintedTokens));
+    accountingEngine.modifyParameters('debtAuctionBidSize', abi.encode(_params.bidAuctionSize));
+    accountingEngine.modifyParameters('surplusAmount', abi.encode(_params.surplusAmount));
     surplusAuctionHouse.modifyParameters('protocolTokenBidReceiver', abi.encode(_params.surplusAuctionBidReceiver));
 
     vm.stopBroadcast();

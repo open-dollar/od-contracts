@@ -932,7 +932,7 @@ contract SingleLiquidationTest is DSTest {
     tokenAuthority = new ProtocolTokenAuthority();
     tokenAuthority.addAuthorization(address(debtAuctionHouse));
 
-    accountingEngine.modifyParameters('protocolTokenAuthority', address(tokenAuthority));
+    accountingEngine.modifyParameters('protocolTokenAuthority', abi.encode(tokenAuthority));
 
     me = address(this);
   }
@@ -1109,8 +1109,8 @@ contract SingleLiquidationTest is DSTest {
     assertEq(accountingEngine.totalSurplus(), rad(0 ether));
     assertEq(accountingEngine.totalOnAuctionDebt(), rad(0 ether));
 
-    accountingEngine.modifyParameters('debtAuctionBidSize', rad(10 ether));
-    accountingEngine.modifyParameters('initialDebtAuctionMintedTokens', 2000 ether);
+    accountingEngine.modifyParameters('debtAuctionBidSize', abi.encode(rad(10 ether)));
+    accountingEngine.modifyParameters('debtAuctionMintedTokens', abi.encode(2000 ether));
     uint256 f1 = accountingEngine.auctionDebt();
     assertEq(accountingEngine.unqueuedUnauctionedDebt(), rad(90 ether));
     assertEq(accountingEngine.totalSurplus(), rad(0 ether));
@@ -1133,7 +1133,7 @@ contract SingleLiquidationTest is DSTest {
     assertEq(safeEngine.coinBalance(address(accountingEngine)), rad(100 ether));
     assertEq(protocolToken.balanceOf(address(this)), 100 ether);
 
-    accountingEngine.modifyParameters('surplusAuctionAmountToSell', rad(100 ether));
+    accountingEngine.modifyParameters('surplusAmount', abi.encode(rad(100 ether)));
     assertEq(accountingEngine.unqueuedUnauctionedDebt(), 0 ether);
     assertEq(accountingEngine.totalOnAuctionDebt(), 0 ether);
     uint256 id = accountingEngine.auctionSurplus();

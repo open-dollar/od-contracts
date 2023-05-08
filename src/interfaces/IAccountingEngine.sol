@@ -8,36 +8,74 @@ import {IProtocolTokenAuthority} from '@interfaces/external/IProtocolTokenAuthor
 import {ISystemStakingPool} from '@interfaces/external/ISystemStakingPool.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
+import {IModifiable, GLOBAL_PARAM} from '@interfaces/utils/IModifiable.sol';
 
-interface IAccountingEngine is IAuthorizable, IDisableable {
-  function pushDebtToQueue(uint256 _debtBlock) external;
-  function popDebtFromQueue(uint256 _debtBlockTimestamp) external;
-  function surplusAuctionDelay() external view returns (uint256 _surplusAuctionDelay);
-  function surplusAuctionAmountToSell() external view returns (uint256 _surplusAmountToSell);
-  function surplusAuctionHouse() external view returns (ISurplusAuctionHouse _surplusAuctionHouse);
-  function debtAuctionHouse() external view returns (IDebtAuctionHouse _debtAuctionHouse);
+interface IAccountingEngine is IAuthorizable, IDisableable, IModifiable {
+  // --- Events ---
+  event PushDebtToQueue(uint256 indexed _timestamp, uint256 _debtQueueBlock, uint256 _totalQueuedDebt);
+  event PopDebtFromQueue(uint256 indexed _timestamp, uint256 _debtQueueBlock, uint256 _totalQueuedDebt);
+  event SettleDebt(uint256 _rad, uint256 _coinBalance, uint256 _debtBalance);
+  event CancelAuctionedDebtWithSurplus(
+    uint256 _rad, uint256 _totalOnAuctionDebt, uint256 _coinBalance, uint256 _debtBalance
+  );
+  event AuctionDebt(uint256 indexed id, uint256 _totalOnAuctionDebt, uint256 _debtBalance);
+  event AuctionSurplus(uint256 indexed id, uint256 _lastSurplusTime, uint256 _coinBalance);
+  event TransferPostSettlementSurplus(address _postSettlementSurplusDrain, uint256 _coinBalance, uint256 _debtBalance);
+  event TransferExtraSurplus(address indexed _extraSurplusReceiver, uint256 _lastSurplusTime, uint256 _coinBalance);
+
+  // --- Structs ---
+  struct AccountingEngineParams {
+    // Whether the system transfers surplus instead of auctioning it
+    uint256 surplusIsTransferred;
+    // Delay between surplus actions
+    uint256 surplusDelay;
+    // Delay after which debt can be popped from debtQueue
+    uint256 popDebtDelay;
+    // Time to wait (post settlement) until any remaining surplus can be transferred to the settlement auctioneer
+    uint256 disableCooldown;
+    // Amount of surplus stability fees transferred or sold in one surplus auction
+    uint256 surplusAmount;
+    // Amount of stability fees that need to accrue in this contract before any surplus auction can start
+    uint256 surplusBuffer;
+    // Amount of protocol tokens to be minted post-auction
+    uint256 debtAuctionMintedTokens;
+    // Amount of debt sold in one debt auction (initial coin bid for debtAuctionMintedTokens protocol tokens)
+    uint256 debtAuctionBidSize;
+  }
+
+  // --- Params ---
+  function params() external view returns (AccountingEngineParams memory _params);
+
+  // --- Registry ---
+  // SAFE database
   function safeEngine() external view returns (ISAFEEngine _safeEngine);
+  // Contract that handles auctions for surplus stability fees (sell coins for protocol tokens that are then burned)
+  function surplusAuctionHouse() external view returns (ISurplusAuctionHouse _surplusAuctionHouse);
+  //Contract that handles auctions for debt that couldn't be covered by collateral auctions
+  function debtAuctionHouse() external view returns (IDebtAuctionHouse _debtAuctionHouse);
+  // Permissions registry for who can burn and mint protocol tokens
+  function protocolTokenAuthority() external view returns (IProtocolTokenAuthority _protocolTokenAuthority);
+  // Staking pool for protocol tokens
+  function systemStakingPool() external view returns (ISystemStakingPool _systemStakingPool);
+  // Contract that auctions extra surplus after settlement is triggered
+  function postSettlementSurplusDrain() external view returns (address _postSettlementSurplusDrain);
+  // Address that receives extra surplus transfers
+  function extraSurplusReceiver() external view returns (address _extraSurplusReceiver);
+
+  // --- Data ---
   function totalOnAuctionDebt() external view returns (uint256 _totalOnAuctionDebt);
-  function cancelAuctionedDebtWithSurplus(uint256 _rad) external;
-  function auctionDebt() external returns (uint256 _id);
-  function auctionSurplus() external returns (uint256 _id);
-  function transferExtraSurplus() external;
-  function transferPostSettlementSurplus() external;
   function totalQueuedDebt() external view returns (uint256 _totalQueuedDebt);
   function debtQueue(uint256 _blockTimestamp) external view returns (uint256 _debtQueue);
-  function debtPoppers(uint256 _blockTimestamp) external view returns (address _debtPopperAddress);
-  function popDebtDelay() external view returns (uint256 _popDebtDelay);
-  function settleDebt(uint256 rad) external;
-  function debtAuctionBidSize() external view returns (uint256 _debtAuctionBidSize);
-  function initialDebtAuctionMintedTokens() external view returns (uint256 _initialDebtAuctionMintedTokens);
-  function lastSurplusAuctionTime() external view returns (uint256 _lastSurplusAuctionTime);
-  function lastSurplusTransferTime() external view returns (uint256 _lastSurplusTransferTime);
-  function surplusBuffer() external view returns (uint256 _surplusBuffer);
+  function lastSurplusTime() external view returns (uint256 _lastSurplusTime);
   function unqueuedUnauctionedDebt() external view returns (uint256 _unqueuedUnauctionedDebt);
-  function protocolTokenAuthority() external view returns (IProtocolTokenAuthority _protocolTokenAuthority);
-  function extraSurplusIsTransferred() external view returns (uint256 _extraSurplusIsTransferred);
-  function surplusTransferAmount() external view returns (uint256 _surplusTransferAmount);
-  function systemStakingPool() external view returns (ISystemStakingPool _systemStakingPool);
-  function extraSurplusReceiver() external view returns (address _extraSurplusReceiver);
-  function surplusTransferDelay() external view returns (uint256 _surplusTransferDelay);
+
+  // --- Methods ---
+  function auctionDebt() external returns (uint256 _id);
+  function auctionSurplus() external returns (uint256 _id);
+  function cancelAuctionedDebtWithSurplus(uint256 _rad) external;
+  function pushDebtToQueue(uint256 _debtBlock) external;
+  function popDebtFromQueue(uint256 _debtBlockTimestamp) external;
+  function settleDebt(uint256 _rad) external;
+  function transferExtraSurplus() external;
+  function transferPostSettlementSurplus() external;
 }

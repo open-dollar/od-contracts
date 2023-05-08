@@ -10,6 +10,7 @@ import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
 import {ILiquidationEngine, IDisableable} from '@interfaces/ILiquidationEngine.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
+import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
 import {LiquidationEngine} from '@contracts/LiquidationEngine.sol';
 import {AccountingEngine} from '@contracts/AccountingEngine.sol';
@@ -370,6 +371,16 @@ contract Unit_LiquidationEngine_ModifyParameters is Base {
     );
 
     liquidationEngine.modifyParameters(_cType, 'collateralAuctionHouse', abi.encode(_newCAH));
+  }
+
+  function test_Revert_ModifyParameters_UnrecognizedParam() public authorized {
+    vm.expectRevert(IModifiable.UnrecognizedParam.selector);
+    liquidationEngine.modifyParameters('unrecognizedParam', abi.encode(0));
+  }
+
+  function test_Revert_ModifyParameters_PerCollateral_UnrecognizedParam(bytes32 _cType) public authorized {
+    vm.expectRevert(IModifiable.UnrecognizedParam.selector);
+    liquidationEngine.modifyParameters(_cType, 'unrecognizedParam', abi.encode(0));
   }
 }
 

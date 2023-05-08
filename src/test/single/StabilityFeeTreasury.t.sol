@@ -367,7 +367,7 @@ contract SingleStabilityFeeTreasuryTest is DSTest {
     usr.pullFunds(address(stabilityFeeTreasury), address(usr), address(stabilityFeeTreasury.systemCoin()), 10 ether);
   }
 
-  function testFail_transferSurplusFunds_before_surplusTransferDelay() public {
+  function testFail_transferSurplusFunds_before_surplusDelay() public {
     stabilityFeeTreasury.modifyParameters('surplusTransferDelay', abi.encode(10 minutes));
     hevm.warp(block.timestamp + 9 minutes);
     stabilityFeeTreasury.transferSurplusFunds();

@@ -5,6 +5,8 @@ import {Math, RAY} from '@libraries/Math.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
+import {IModifiable} from '@interfaces/utils/IModifiable.sol';
+
 import {SAFEEngine} from '@contracts/SAFEEngine.sol';
 import {HaiTest} from '@test/utils/HaiTest.t.sol';
 import {StdStorage, stdStorage} from 'forge-std/StdStorage.sol';
@@ -174,6 +176,16 @@ contract Unit_SAFEEngine_ModifyParameters is Base {
 
     assert(_success);
     assertEq(keccak256(abi.encode(_fuzz)), keccak256(_data));
+  }
+
+  function test_Revert_ModifyParameters_UnrecognizedParam() public authorized {
+    vm.expectRevert(IModifiable.UnrecognizedParam.selector);
+    safeEngine.modifyParameters('unrecognizedParam', abi.encode(0));
+  }
+
+  function test_Revert_ModifyParameters_PerCollateral_UnrecognizedParam(bytes32 _cType) public authorized {
+    vm.expectRevert(IModifiable.UnrecognizedParam.selector);
+    safeEngine.modifyParameters(_cType, 'unrecognizedParam', abi.encode(0));
   }
 }
 

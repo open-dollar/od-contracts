@@ -12,9 +12,9 @@ struct CollateralParams {
 }
 
 struct GlobalParams {
-  uint256 /* wad */ initialDebtAuctionMintedTokens;
+  uint256 /* wad */ debtAuctionMintedTokens;
   uint256 /* wad */ bidAuctionSize;
-  uint256 /* wad */ surplusAuctionAmountToSell;
+  uint256 /* wad */ surplusAmount;
   uint256 /* rad */ globalDebtCeiling;
   uint256 /* ray */ globalStabilityFee;
   address surplusAuctionBidReceiver;

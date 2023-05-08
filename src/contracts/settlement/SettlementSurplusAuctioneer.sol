@@ -40,7 +40,7 @@ contract SettlementSurplusAuctioneer is ISettlementSurplusAuctioneer, Authorizab
   SAFEEngineLike public safeEngine;
 
   // Last time when this contract triggered a surplus auction
-  uint256 public lastSurplusAuctionTime;
+  uint256 public lastSurplusTime;
 
   // --- Init ---
   constructor(address _accountingEngine, address _surplusAuctionHouse) Authorizable(msg.sender) {
@@ -58,16 +58,16 @@ contract SettlementSurplusAuctioneer is ISettlementSurplusAuctioneer, Authorizab
    */
   function auctionSurplus() external returns (uint256 _id) {
     require(accountingEngine.contractEnabled() == 0, 'SettlementSurplusAuctioneer/accounting-engine-still-enabled');
+    AccountingEngineLike.AccountingEngineParams memory _accountingEngineParams = accountingEngine.params();
     require(
-      block.timestamp >= lastSurplusAuctionTime + accountingEngine.surplusAuctionDelay(),
+      block.timestamp >= lastSurplusTime + _accountingEngineParams.surplusDelay,
       'SettlementSurplusAuctioneer/surplus-auction-delay-not-passed'
     );
-    lastSurplusAuctionTime = block.timestamp;
-    uint256 _amountToSell =
-      Math.min(safeEngine.coinBalance(address(this)), accountingEngine.surplusAuctionAmountToSell());
+    lastSurplusTime = block.timestamp;
+    uint256 _amountToSell = Math.min(safeEngine.coinBalance(address(this)), _accountingEngineParams.surplusAmount);
     if (_amountToSell > 0) {
       _id = surplusAuctionHouse.startAuction(_amountToSell, 0);
-      emit AuctionSurplus(_id, lastSurplusAuctionTime, safeEngine.coinBalance(address(this)));
+      emit AuctionSurplus(_id, lastSurplusTime, safeEngine.coinBalance(address(this)));
     }
   }
 
