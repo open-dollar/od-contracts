@@ -21,7 +21,7 @@ pragma solidity 0.8.19;
 import {ISurplusAuctionHouse, SAFEEngineLike, TokenLike, GLOBAL_PARAM} from '@interfaces/ISurplusAuctionHouse.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
-import {Disableable} from '@contract-utils/Disableable.sol';
+import {Disableable} from '@contracts/utils/Disableable.sol';
 
 import {WAD, HUNDRED} from '@libraries/Math.sol';
 import {Encoding} from '@libraries/Encoding.sol';
@@ -55,11 +55,7 @@ contract SurplusAuctionHouse is ISurplusAuctionHouse, Authorizable, Disableable 
   }
 
   // --- Init ---
-  constructor(
-    address _safeEngine,
-    address _protocolToken,
-    uint256 _recyclingPercentage
-  ) Authorizable(msg.sender) Disableable() {
+  constructor(address _safeEngine, address _protocolToken, uint256 _recyclingPercentage) Authorizable(msg.sender) {
     safeEngine = SAFEEngineLike(_safeEngine);
     protocolToken = TokenLike(_protocolToken);
 

@@ -21,9 +21,9 @@ pragma solidity 0.8.19;
 import {IStabilityFeeTreasury, GLOBAL_PARAM} from '@interfaces/IStabilityFeeTreasury.sol';
 import {ISAFEEngine as SAFEEngineLike} from '@interfaces/ISAFEEngine.sol';
 import {ISystemCoin as SystemCoinLike} from '@interfaces/external/ISystemCoin.sol';
-import {ICoinJoin as CoinJoinLike} from '@interfaces/ICoinJoin.sol';
+import {ICoinJoin as CoinJoinLike} from '@interfaces/utils/ICoinJoin.sol';
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
-import {Disableable} from '@contract-utils/Disableable.sol';
+import {Disableable} from '@contracts/utils/Disableable.sol';
 
 import {Math, RAY, HUNDRED} from '@libraries/Math.sol';
 import {Encoding} from '@libraries/Encoding.sol';
@@ -65,7 +65,7 @@ contract StabilityFeeTreasury is Authorizable, Disableable, IStabilityFeeTreasur
     safeEngine = SAFEEngineLike(_safeEngine);
     extraSurplusReceiver = _extraSurplusReceiver;
     coinJoin = CoinJoinLike(_coinJoin);
-    systemCoin = SystemCoinLike(coinJoin.systemCoin());
+    systemCoin = SystemCoinLike(address(coinJoin.systemCoin()));
     latestSurplusTransferTime = block.timestamp;
     _params.expensesMultiplier = HUNDRED;
 

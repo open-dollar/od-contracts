@@ -22,8 +22,8 @@ import {ISAFEEngine, GLOBAL_PARAM} from '@interfaces/ISAFEEngine.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {Math, RAY} from '@libraries/Math.sol';
 import {Encoding} from '@libraries/Encoding.sol';
-import {Authorizable} from '@contract-utils/Authorizable.sol';
-import {Disableable} from '@contract-utils/Disableable.sol';
+import {Authorizable} from '@contracts/utils/Authorizable.sol';
+import {Disableable} from '@contracts/utils/Disableable.sol';
 
 contract SAFEEngine is Authorizable, Disableable, ISAFEEngine {
   using Math for uint256;

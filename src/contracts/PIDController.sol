@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import {Math, WAD, RAY} from '@libraries/Math.sol';
-import {Authorizable} from '@contract-utils/Authorizable.sol';
+import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {IPIDController} from '@interfaces/IPIDController.sol';
 
 /**

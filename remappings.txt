@@ -4,6 +4,5 @@
 @contracts/=src/contracts/
 @interfaces/=src/interfaces/
 @libraries/=src/libraries/
-@test/=src/test/
-@contract-utils/=src/contracts/utils/
 @script/=src/script/
+@test/=src/test/

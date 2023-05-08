@@ -18,17 +18,17 @@
 
 pragma solidity 0.8.19;
 
-import {ISAFEEngine as SAFEEngineLike} from '@interfaces/ISAFEEngine.sol';
-import {IToken as DSTokenLike} from '@interfaces/external/IToken.sol';
-import {ISystemCoin as CollateralLike} from '@interfaces/external/ISystemCoin.sol';
+import {IETHJoin, SAFEEngineLike} from '@interfaces/utils/IETHJoin.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
-import {Disableable} from '@contract-utils/Disableable.sol';
+import {Disableable} from '@contracts/utils/Disableable.sol';
+
+import {Math} from '@libraries/Math.sol';
 
 /*
-    Here we provide ETHJoin adapter (for native Ether) to connect the 
-    SAFEEngine to arbitrary external token implementations, creating a 
-    bounded context for the SAFEEngine. 
+    Here we provide ETHJoin adapter (for native Ether)
+    to connect the SAFEEngine to arbitrary external token implementations,
+    creating a bounded context for the SAFEEngine. 
     In practice, adapter implementations will be varied and specific to
     individual collateral types, accounting for different transfer
     semantics and token standards.
@@ -37,7 +37,9 @@ import {Disableable} from '@contract-utils/Disableable.sol';
       - `exit`: remove collateral from the system
 */
 
-contract ETHJoin is Authorizable, Disableable {
+contract ETHJoin is IETHJoin, Authorizable, Disableable {
+  using Math for uint256;
+
   // SAFE database
   SAFEEngineLike public safeEngine;
   // Collateral type name
@@ -45,17 +47,14 @@ contract ETHJoin is Authorizable, Disableable {
   // Number of decimals ETH has
   uint256 public decimals;
 
-  // --- Events ---
-  event Join(address sender, address account, uint256 wad);
-  event Exit(address sender, address account, uint256 wad);
-
   // --- Init ---
-  constructor(address safeEngine_, bytes32 collateralType_) Authorizable(msg.sender) {
-    safeEngine = SAFEEngineLike(safeEngine_);
-    collateralType = collateralType_;
+  constructor(address _safeEngine, bytes32 _collateralType) Authorizable(msg.sender) {
+    safeEngine = SAFEEngineLike(_safeEngine);
+    collateralType = _collateralType;
     decimals = 18;
   }
 
+  // --- Admin ---
   /**
    * @notice Disable this contract
    */
@@ -65,24 +64,23 @@ contract ETHJoin is Authorizable, Disableable {
 
   /**
    * @notice Join ETH in the system
-   * @param account Account that will receive the ETH representation inside the system
+   * @param _account Account that will receive the ETH representation inside the system
    *
    */
-  function join(address account) external payable whenEnabled {
-    require(int256(msg.value) >= 0, 'ETHJoin/overflow');
-    safeEngine.modifyCollateralBalance(collateralType, account, int256(msg.value));
-    emit Join(msg.sender, account, msg.value);
+  function join(address _account) external payable whenEnabled {
+    safeEngine.modifyCollateralBalance(collateralType, _account, msg.value.toIntNotOverflow());
+    emit Join(msg.sender, _account, msg.value);
   }
 
   /**
    * @notice Exit ETH from the system
-   * @param account Account that will receive the ETH representation inside the system
+   * @param _account Account that will receive the ETH representation inside the system
    *
    */
-  function exit(address payable account, uint256 wad) external {
-    require(int256(wad) >= 0, 'ETHJoin/overflow');
-    safeEngine.modifyCollateralBalance(collateralType, msg.sender, -int256(wad));
-    emit Exit(msg.sender, account, wad);
-    account.transfer(wad);
+  function exit(address _account, uint256 _wad) external {
+    safeEngine.modifyCollateralBalance(collateralType, msg.sender, -_wad.toIntNotOverflow());
+    emit Exit(msg.sender, _account, _wad);
+    (bool _success,) = _account.call{value: _wad}('');
+    require(_success, 'ETHJoin/failed-transfer');
   }
 }

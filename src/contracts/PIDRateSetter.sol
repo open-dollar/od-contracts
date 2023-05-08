@@ -21,7 +21,7 @@ import {IOracleRelayer as OracleRelayerLike} from '@interfaces/IOracleRelayer.so
 import {IPIDController as PIDCalculator} from '@interfaces/IPIDController.sol';
 
 import {Math, RAY} from '@libraries/Math.sol';
-import {Authorizable} from '@contract-utils/Authorizable.sol';
+import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
 interface IModifiable {
   function modifyParameters(bytes32 parameter, uint256 data) external;

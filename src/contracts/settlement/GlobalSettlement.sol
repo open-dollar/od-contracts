@@ -29,7 +29,7 @@ import {IOracle as OracleLike} from '@interfaces/IOracle.sol';
 import {IOracleRelayer as OracleRelayerLike} from '@interfaces/IOracleRelayer.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
-import {Disableable} from '@contract-utils/Disableable.sol';
+import {Disableable} from '@contracts/utils/Disableable.sol';
 
 import {Math, RAY} from '@libraries/Math.sol';
 

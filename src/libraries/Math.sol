@@ -1,13 +1,17 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
+uint256 constant MAX_RAD = type(uint256).max / RAY;
 uint256 constant RAD = 10 ** 45;
 uint256 constant RAY = 10 ** 27;
 uint256 constant WAD = 10 ** 18;
-uint256 constant MAX_RAD = type(uint256).max / RAY;
 uint256 constant HUNDRED = 100;
 
 library Math {
+  error InvalidSub();
+  error InvalidMul();
+  error IntOverflow();
+
   function add(uint256 x, int256 y) internal pure returns (uint256 z) {
     if (y >= 0) {
       z = x + uint256(y);
@@ -26,12 +30,12 @@ library Math {
 
   function sub(uint256 x, uint256 y) internal pure returns (int256 z) {
     z = int256(x) - int256(y);
-    require(int256(x) >= 0 && int256(y) >= 0, 'Math/sub-uint-uint-invalid-numbers');
+    if (int256(x) < 0 || int256(y) < 0) revert InvalidSub();
   }
 
   function mul(uint256 x, int256 y) internal pure returns (int256 z) {
     z = int256(x) * y;
-    require(int256(x) >= 0, 'Math/mul-uint-int-invalid-x');
+    if (int256(x) < 0) revert InvalidMul();
   }
 
   function rmul(uint256 x, uint256 y) internal pure returns (uint256 z) {
@@ -40,7 +44,7 @@ library Math {
 
   function rmul(uint256 x, int256 y) internal pure returns (int256 z) {
     z = (int256(x) * y) / int256(RAY);
-    require(int256(x) >= 0, 'Math/mul-uint-int-invalid-x');
+    if (int256(x) < 0) revert InvalidMul();
   }
 
   function wmul(uint256 x, uint256 y) internal pure returns (uint256 z) {
@@ -49,7 +53,7 @@ library Math {
 
   function wmul(uint256 x, int256 y) internal pure returns (int256 z) {
     z = (int256(x) * y) / int256(WAD);
-    require(int256(x) >= 0, 'Math/mul-uint-int-invalid-x');
+    if (int256(x) < 0) revert InvalidMul();
   }
 
   function wmul(int256 x, int256 y) internal pure returns (int256 z) {
@@ -105,6 +109,11 @@ library Math {
 
   function min(uint256 x, uint256 y) internal pure returns (uint256 z) {
     z = (x <= y) ? x : y;
+  }
+
+  function toIntNotOverflow(uint256 x) internal pure returns (int256 z) {
+    z = int256(x);
+    if (z < 0) revert IntOverflow();
   }
 
   // --- PI Specific Math ---

@@ -18,12 +18,12 @@
 
 pragma solidity 0.8.19;
 
-import {ISAFEEngine as SAFEEngineLike} from '@interfaces/ISAFEEngine.sol';
-import {IToken as DSTokenLike} from '@interfaces/external/IToken.sol';
-import {ISystemCoin as CollateralLike} from '@interfaces/external/ISystemCoin.sol';
+import {ICollateralJoin, SAFEEngineLike, CollateralLike} from '@interfaces/utils/ICollateralJoin.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
-import {Disableable} from '@contract-utils/Disableable.sol';
+import {Disableable} from '@contracts/utils/Disableable.sol';
+
+import {Math} from '@libraries/Math.sol';
 
 /*
     Here we provide CollateralJoin adapter (for well behaved ERC20 tokens) 
@@ -37,7 +37,9 @@ import {Disableable} from '@contract-utils/Disableable.sol';
       - `exit`: remove collateral from the system
 */
 
-contract CollateralJoin is Authorizable, Disableable {
+contract CollateralJoin is ICollateralJoin, Authorizable, Disableable {
+  using Math for uint256;
+
   // SAFE database
   SAFEEngineLike public safeEngine;
   // Collateral type name
@@ -46,10 +48,6 @@ contract CollateralJoin is Authorizable, Disableable {
   CollateralLike public collateral;
   // How many decimals the collateral token has
   uint256 public decimals;
-
-  // --- Events ---
-  event Join(address sender, address account, uint256 wad);
-  event Exit(address sender, address account, uint256 wad);
 
   // --- Init ---
   constructor(address _safeEngine, bytes32 _collateralType, address _collateral) Authorizable(msg.sender) {
@@ -60,6 +58,7 @@ contract CollateralJoin is Authorizable, Disableable {
     require(decimals == 18, 'CollateralJoin/non-18-decimals');
   }
 
+  // --- Admin ---
   /**
    * @notice Disable this contract
    */
@@ -72,15 +71,14 @@ contract CollateralJoin is Authorizable, Disableable {
    * @dev This function locks collateral in the adapter and creates a 'representation' of
    *      the locked collateral inside the system. This adapter assumes that the collateral
    *      has 18 decimals
-   * @param account Account from which we transferFrom collateral and add it in the system
-   * @param wad Amount of collateral to transfer in the system (represented as a number with 18 decimals)
+   * @param _account Account from which we transferFrom collateral and add it in the system
+   * @param _wad Amount of collateral to transfer in the system (represented as a number with 18 decimals)
    *
    */
-  function join(address account, uint256 wad) external whenEnabled {
-    require(int256(wad) >= 0, 'CollateralJoin/overflow');
-    safeEngine.modifyCollateralBalance(collateralType, account, int256(wad));
-    require(collateral.transferFrom(msg.sender, address(this), wad), 'CollateralJoin/failed-transfer');
-    emit Join(msg.sender, account, wad);
+  function join(address _account, uint256 _wad) external whenEnabled {
+    safeEngine.modifyCollateralBalance(collateralType, _account, _wad.toIntNotOverflow());
+    require(collateral.transferFrom(msg.sender, address(this), _wad), 'CollateralJoin/failed-transfer');
+    emit Join(msg.sender, _account, _wad);
   }
 
   /**
@@ -88,14 +86,13 @@ contract CollateralJoin is Authorizable, Disableable {
    * @dev This function destroys the collateral representation from inside the system
    *      and exits the collateral from this adapter. The adapter assumes that the collateral
    *      has 18 decimals
-   * @param account Account to which we transfer the collateral
-   * @param wad Amount of collateral to transfer to 'account' (represented as a number with 18 decimals)
+   * @param _account Account to which we transfer the collateral
+   * @param _wad Amount of collateral to transfer to 'account' (represented as a number with 18 decimals)
    *
    */
-  function exit(address account, uint256 wad) external {
-    require(wad <= 2 ** 255, 'CollateralJoin/overflow');
-    safeEngine.modifyCollateralBalance(collateralType, msg.sender, -int256(wad));
-    require(collateral.transfer(account, wad), 'CollateralJoin/failed-transfer');
-    emit Exit(msg.sender, account, wad);
+  function exit(address _account, uint256 _wad) external {
+    safeEngine.modifyCollateralBalance(collateralType, msg.sender, -_wad.toIntNotOverflow());
+    require(collateral.transfer(_account, _wad), 'CollateralJoin/failed-transfer');
+    emit Exit(msg.sender, _account, _wad);
   }
 }

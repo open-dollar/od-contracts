@@ -7,7 +7,7 @@ import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {IStabilityFeeTreasury} from '@interfaces/IStabilityFeeTreasury.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
-import {ICoinJoin} from '@interfaces/ICoinJoin.sol';
+import {ICoinJoin} from '@interfaces/utils/ICoinJoin.sol';
 import {ISystemCoin} from '@interfaces/external/ISystemCoin.sol';
 import {StabilityFeeTreasury} from '@contracts/StabilityFeeTreasury.sol';
 import {

@@ -121,6 +121,14 @@ contract Unit_SurplusAuctionHouse_Constructor is Base {
     vm.startPrank(user);
   }
 
+  function test_Emit_AddAuthorization() public {
+    expectEmitNoIndex();
+    emit AddAuthorization(user);
+
+    surplusAuctionHouse =
+      new SurplusAuctionHouseForTest(address(mockSafeEngine), address(mockProtocolToken), RECYCLING_PERCENTAGE);
+  }
+
   function test_Set_ContractEnabled() public {
     assertEq(surplusAuctionHouse.contractEnabled(), 1);
   }
@@ -135,14 +143,6 @@ contract Unit_SurplusAuctionHouse_Constructor is Base {
 
   function test_Set_TotalAuctionLength() public {
     assertEq(surplusAuctionHouse.params().totalAuctionLength, 2 days);
-  }
-
-  function test_Emit_AddAuthorization() public {
-    expectEmitNoIndex();
-    emit AddAuthorization(user);
-
-    surplusAuctionHouse =
-      new SurplusAuctionHouseForTest(address(mockSafeEngine), address(mockProtocolToken), RECYCLING_PERCENTAGE);
   }
 
   function test_Set_SafeEngine(address _safeEngine) public {
