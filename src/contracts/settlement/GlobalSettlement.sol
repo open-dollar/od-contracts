@@ -211,7 +211,7 @@ contract GlobalSettlement is Authorizable, Disableable {
    */
   function freezeCollateralType(bytes32 collateralType) external whenDisabled {
     require(finalCoinPerCollateralPrice[collateralType] == 0, 'GlobalSettlement/final-collateral-price-already-defined');
-    (collateralTotalDebt[collateralType],) = safeEngine.cData(collateralType);
+    collateralTotalDebt[collateralType] = safeEngine.cData(collateralType).debtAmount;
     (OracleLike orcl,,) = oracleRelayer.collateralTypes(collateralType);
     // redemptionPrice is a ray, orcl returns a wad
     finalCoinPerCollateralPrice[collateralType] = oracleRelayer.redemptionPrice().wdiv(uint256(orcl.read()));
@@ -228,7 +228,7 @@ contract GlobalSettlement is Authorizable, Disableable {
 
     (address auctionHouse_,,) = liquidationEngine.cParams(collateralType);
     CollateralAuctionHouseLike collateralAuctionHouse = CollateralAuctionHouseLike(auctionHouse_);
-    (, uint256 _accumulatedRate) = safeEngine.cData(collateralType);
+    uint256 _accumulatedRate = safeEngine.cData(collateralType).accumulatedRate;
 
     uint256 bidAmount = collateralAuctionHouse.bidAmount(auctionId);
     uint256 raisedAmount = collateralAuctionHouse.raisedAmount(auctionId);
@@ -262,16 +262,22 @@ contract GlobalSettlement is Authorizable, Disableable {
    */
   function processSAFE(bytes32 collateralType, address safe) external {
     require(finalCoinPerCollateralPrice[collateralType] != 0, 'GlobalSettlement/final-collateral-price-not-defined');
-    (, uint256 _accumulatedRate) = safeEngine.cData(collateralType);
-    (uint256 safeCollateral, uint256 safeDebt) = safeEngine.safes(collateralType, safe);
+    uint256 _accumulatedRate = safeEngine.cData(collateralType).accumulatedRate;
+    SAFEEngineLike.SAFE memory _safeData = safeEngine.safes(collateralType, safe);
 
-    uint256 amountOwed = safeDebt.rmul(_accumulatedRate).rmul(finalCoinPerCollateralPrice[collateralType]);
-    uint256 minCollateral = Math.min(safeCollateral, amountOwed);
+    uint256 amountOwed =
+      _safeData.generatedDebt.rmul(_accumulatedRate).rmul(finalCoinPerCollateralPrice[collateralType]);
+    uint256 minCollateral = Math.min(_safeData.lockedCollateral, amountOwed);
     collateralShortfall[collateralType] = collateralShortfall[collateralType] + (amountOwed - minCollateral);
 
-    require(minCollateral <= 2 ** 255 && safeDebt <= 2 ** 255, 'GlobalSettlement/overflow');
+    require(minCollateral <= 2 ** 255 && _safeData.generatedDebt <= 2 ** 255, 'GlobalSettlement/overflow');
     safeEngine.confiscateSAFECollateralAndDebt(
-      collateralType, safe, address(this), address(accountingEngine), -int256(minCollateral), -int256(safeDebt)
+      collateralType,
+      safe,
+      address(this),
+      address(accountingEngine),
+      -int256(minCollateral),
+      -int256(_safeData.generatedDebt)
     );
 
     emit ProcessSAFE(collateralType, safe, collateralShortfall[collateralType]);
@@ -282,13 +288,13 @@ contract GlobalSettlement is Authorizable, Disableable {
    * @param collateralType The collateral type to free
    */
   function freeCollateral(bytes32 collateralType) external whenDisabled {
-    (uint256 safeCollateral, uint256 safeDebt) = safeEngine.safes(collateralType, msg.sender);
-    require(safeDebt == 0, 'GlobalSettlement/safe-debt-not-zero');
-    require(safeCollateral <= 2 ** 255, 'GlobalSettlement/overflow');
+    SAFEEngineLike.SAFE memory _safeData = safeEngine.safes(collateralType, msg.sender);
+    require(_safeData.generatedDebt == 0, 'GlobalSettlement/safe-debt-not-zero');
+    require(_safeData.lockedCollateral <= 2 ** 255, 'GlobalSettlement/overflow');
     safeEngine.confiscateSAFECollateralAndDebt(
-      collateralType, msg.sender, msg.sender, address(accountingEngine), -int256(safeCollateral), 0
+      collateralType, msg.sender, msg.sender, address(accountingEngine), -int256(_safeData.lockedCollateral), 0
     );
-    emit FreeCollateral(collateralType, msg.sender, -int256(safeCollateral));
+    emit FreeCollateral(collateralType, msg.sender, -int256(_safeData.lockedCollateral));
   }
 
   /**
@@ -311,7 +317,7 @@ contract GlobalSettlement is Authorizable, Disableable {
     require(outstandingCoinSupply != 0, 'GlobalSettlement/outstanding-coin-supply-zero');
     require(collateralCashPrice[collateralType] == 0, 'GlobalSettlement/collateral-cash-price-already-defined');
 
-    (, uint256 _accumulatedRate) = safeEngine.cData(collateralType);
+    uint256 _accumulatedRate = safeEngine.cData(collateralType).accumulatedRate;
     uint256 redemptionAdjustedDebt =
       collateralTotalDebt[collateralType].rmul(_accumulatedRate).rmul(finalCoinPerCollateralPrice[collateralType]);
     collateralCashPrice[collateralType] =

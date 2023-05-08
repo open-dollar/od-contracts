@@ -4,6 +4,7 @@ pragma solidity 0.8.19;
 import '@script/Params.s.sol';
 import './Common.t.sol';
 import {Math} from '@libraries/Math.sol';
+import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 
 contract E2EGlobalSettlementTest is Common {
   using Math for uint256;
@@ -22,16 +23,16 @@ contract E2EGlobalSettlementTest is Common {
 
     // NOTE: all collaterals have COLLATERAL_PRICE
     // alice has a 20% LTV
-    (uint256 _aliceCollateral, uint256 _aliceDebt) = safeEngine.safes('TKN-A', alice);
-    assertEq(_aliceDebt.rdiv(_aliceCollateral * COLLATERAL_PRICE), 0.2e9);
+    ISAFEEngine.SAFE memory _aliceSafe = safeEngine.safes('TKN-A', alice);
+    assertEq(_aliceSafe.generatedDebt.rdiv(_aliceSafe.lockedCollateral * COLLATERAL_PRICE), 0.2e9);
 
     // bob has a 50% LTV
-    (uint256 _bobCollateral, uint256 _bobDebt) = safeEngine.safes('TKN-A', bob);
-    assertEq(_bobDebt.rdiv(_bobCollateral * COLLATERAL_PRICE), 0.5e9);
+    ISAFEEngine.SAFE memory _bobSafe = safeEngine.safes('TKN-A', bob);
+    assertEq(_bobSafe.generatedDebt.rdiv(_bobSafe.lockedCollateral * COLLATERAL_PRICE), 0.5e9);
 
     // carol has a 60% LTV
-    (uint256 _carolCollateral, uint256 _carolDebt) = safeEngine.safes('TKN-A', carol);
-    assertEq(_carolDebt.rdiv(_carolCollateral * COLLATERAL_PRICE), 0.6e9);
+    ISAFEEngine.SAFE memory _carolSafe = safeEngine.safes('TKN-A', carol);
+    assertEq(_carolSafe.generatedDebt.rdiv(_carolSafe.lockedCollateral * COLLATERAL_PRICE), 0.6e9);
 
     // NOTE: now B and C collaterals have less value
     oracle['TKN-B'].setPriceAndValidity(COLLATERAL_B_DROP, true); // price 1 TKN-B = 75 HAI
@@ -395,7 +396,7 @@ contract E2EGlobalSettlementTest is Common {
     address _account,
     bytes32 _collateralType
   ) internal returns (uint256 _remainderCollateral) {
-    (_remainderCollateral,) = safeEngine.safes(_collateralType, _account);
+    _remainderCollateral = safeEngine.safes(_collateralType, _account).lockedCollateral;
     if (_remainderCollateral > 0) {
       vm.startPrank(_account);
       globalSettlement.freeCollateral(_collateralType);

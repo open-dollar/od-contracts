@@ -10,9 +10,8 @@ contract E2ETest is Common {
     _joinETH(address(this), COLLAT);
     _openSafe(address(this), address(ethJoin), int256(COLLAT), int256(DEBT));
 
-    (uint256 _lockedCollateral, uint256 _generatedDebt) = safeEngine.safes(ETH_A, address(this));
-    assertEq(_generatedDebt, DEBT);
-    assertEq(_lockedCollateral, COLLAT);
+    assertEq(safeEngine.safes(ETH_A, address(this)).generatedDebt, DEBT);
+    assertEq(safeEngine.safes(ETH_A, address(this)).lockedCollateral, COLLAT);
   }
 
   function test_exit_join() public {
@@ -51,9 +50,8 @@ contract E2ETest is Common {
 
     liquidationEngine.liquidateSAFE(ETH_A, address(this));
 
-    (uint256 _lockedCollateral, uint256 _generatedDebt) = safeEngine.safes(ETH_A, address(this));
-    assertEq(_lockedCollateral, 0);
-    assertEq(_generatedDebt, 0);
+    assertEq(safeEngine.safes(ETH_A, address(this)).lockedCollateral, 0);
+    assertEq(safeEngine.safes(ETH_A, address(this)).generatedDebt, 0);
   }
 
   function test_liquidation_by_price_drop() public {

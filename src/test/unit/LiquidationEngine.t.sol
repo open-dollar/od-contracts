@@ -112,25 +112,25 @@ abstract contract Base is HaiTest {
       .checked_write(_liquidationQuantity);
   }
 
-  function _mockSafeEngineCData(bytes32 _cType, uint256 _debtAmount, uint256 _accumulatedRate) internal {
-    vm.mockCall(
-      address(mockSafeEngine),
-      abi.encodeCall(ISAFEEngine(mockSafeEngine).cData, (_cType)),
-      abi.encode(_debtAmount, _accumulatedRate)
-    );
-  }
-
-  function _mockSafeEngineCParams(
+  function _mockSafeEngineCData(
     bytes32 _cType,
+    uint256 _debtAmount,
+    uint256 _accumulatedRate,
     uint256 _safetyPrice,
-    uint256 _debtCeiling,
-    uint256 _debtFloor,
     uint256 _liquidationPrice
   ) internal {
     vm.mockCall(
       address(mockSafeEngine),
+      abi.encodeCall(ISAFEEngine(mockSafeEngine).cData, (_cType)),
+      abi.encode(_debtAmount, _accumulatedRate, _safetyPrice, _liquidationPrice)
+    );
+  }
+
+  function _mockSafeEngineCParams(bytes32 _cType, uint256 _debtCeiling, uint256 _debtFloor) internal {
+    vm.mockCall(
+      address(mockSafeEngine),
       abi.encodeCall(ISAFEEngine(mockSafeEngine).cParams, (_cType)),
-      abi.encode(_safetyPrice, _debtCeiling, _debtFloor, _liquidationPrice)
+      abi.encode(_debtCeiling, _debtFloor)
     );
   }
 
@@ -143,8 +143,8 @@ abstract contract Base is HaiTest {
     uint256 _debtFloor,
     uint256 _liquidationPrice
   ) internal {
-    _mockSafeEngineCData(_cType, _debtAmount, _accumulatedRate);
-    _mockSafeEngineCParams(_cType, _safetyPrice, _debtCeiling, _debtFloor, _liquidationPrice);
+    _mockSafeEngineCData(_cType, _debtAmount, _accumulatedRate, _safetyPrice, _liquidationPrice);
+    _mockSafeEngineCParams(_cType, _debtCeiling, _debtFloor);
   }
 
   function _mockSafeEngineSafes(
@@ -216,11 +216,7 @@ abstract contract Base is HaiTest {
 }
 
 contract FailorSafeSaviour is ISAFESaviour {
-  function saveSAFE(
-    address,
-    bytes32,
-    address
-  ) external pure returns (bool _ok, uint256 _collateralAdded, uint256 _liquidatorReward) {
+  function saveSAFE(address, bytes32, address) external pure returns (bool, uint256, uint256) {
     revert('Failed to save safe');
   }
 }
@@ -238,7 +234,7 @@ contract SAFESaviourIncreaseGeneratedDebtOrDecreaseCollateral is ISAFESaviour, B
   }
 
   function saveSAFE(
-    address _liquidator,
+    address,
     bytes32 _cType,
     address _safe
   ) external returns (bool _ok, uint256 _collateralAdded, uint256 _liquidatorReward) {
@@ -264,7 +260,7 @@ contract SAFESaviourCollateralTypeModifier is ISAFESaviour, Base {
   }
 
   function saveSAFE(
-    address _liquidator,
+    address,
     bytes32 _cType,
     address _safe
   ) external returns (bool _ok, uint256 _collateralAdded, uint256 _liquidatorReward) {
@@ -610,7 +606,13 @@ contract Unit_LiquidationEngine_GetLimitAdjustedDebtToCover is Base {
     uint256 _onAuctionSystemCoinLimit,
     uint256 _currentOnAuctionSystemCoins
   ) public {
-    _mockSafeEngineCData({_cType: collateralType, _debtAmount: 0, _accumulatedRate: _accumulatedRate});
+    _mockSafeEngineCData({
+      _cType: collateralType,
+      _debtAmount: 0,
+      _accumulatedRate: _accumulatedRate,
+      _safetyPrice: 0,
+      _liquidationPrice: 0
+    });
     _mockSafeEngineSafes({_cType: collateralType, _safe: safe, _lockedCollateral: 0, _generatedDebt: _safeDebt});
     _mockLiquidationEngineCollateralType(
       collateralType, mockCollateralAuctionHouse, _liquidationPenalty, _liquidationQuantity
@@ -751,12 +753,12 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     uint256 _liquidationPenalty,
     uint256 _debtFloor,
     uint256 _accumulatedRate
-  ) internal pure returns (bool _notDusty) {
+  ) internal pure returns (bool _notDustyBool) {
     vm.assume(notOverflowMul(_limitedValue, WAD));
     uint256 _limitAdjustedDebt = _limitedValue * WAD / _accumulatedRate / _liquidationPenalty;
     // safe debt must be different from the _limitAdjustedDebt value, if not it's pointless to check because it will never be dusty (_limitAdjustedDebt == _safeDebt)
     vm.assume(_safeDebt > _limitAdjustedDebt);
-    _notDusty = (_safeDebt - _limitAdjustedDebt) * _accumulatedRate >= _debtFloor;
+    _notDustyBool = (_safeDebt - _limitAdjustedDebt) * _accumulatedRate >= _debtFloor;
   }
 
   function _notZeroDivision(
@@ -771,11 +773,11 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     uint256 _safeCollateral,
     uint256 _safeDebt,
     uint256 _accumulatedRate
-  ) internal pure returns (bool _notSafe) {
+  ) internal pure returns (bool _notSafeBool) {
     if (_liquidationPrice > 0) {
       vm.assume(notOverflowMul(_safeCollateral, _liquidationPrice));
       vm.assume(notOverflowMul(_safeDebt, _accumulatedRate));
-      _notSafe = _safeCollateral * _liquidationPrice < _safeDebt * _accumulatedRate;
+      _notSafeBool = _safeCollateral * _liquidationPrice < _safeDebt * _accumulatedRate;
     }
   }
 
@@ -938,7 +940,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     );
   }
 
-  function _assumeHappyPathPartialLiquidationCoins(Liquidation memory _liquidation) internal {
+  function _assumeHappyPathPartialLiquidationCoins(Liquidation memory _liquidation) internal pure {
     vm.assume(_notZeroDivision(_liquidation.accumulatedRate, _liquidation.liquidationPenalty));
     vm.assume(
       _notSafe(
@@ -1040,7 +1042,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
   }
 
   function test_Call_SafeEngine_CParams(Liquidation memory _liquidation) public happyPathFullLiquidation(_liquidation) {
-    vm.expectCall(address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.cParams.selector, collateralType), 2);
+    vm.expectCall(address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.cParams.selector, collateralType), 1);
 
     liquidationEngine.liquidateSAFE(collateralType, safe);
   }

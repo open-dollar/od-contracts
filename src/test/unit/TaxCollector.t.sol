@@ -134,7 +134,7 @@ abstract contract Base is HaiTest {
     vm.mockCall(
       address(mockSafeEngine),
       abi.encodeCall(mockSafeEngine.cData, (_collateralType)),
-      abi.encode(_debtAmount, _accumulatedRate)
+      abi.encode(_debtAmount, _accumulatedRate, 0, 0)
     );
   }
 

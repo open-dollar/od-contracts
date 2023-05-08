@@ -221,7 +221,7 @@ contract TaxCollector is ITaxCollector, Authorizable {
     uint256 _debtAmount;
     for (uint256 _i = _start; _i <= _end; ++_i) {
       if (block.timestamp > collateralTypes[_collateralList.at(_i)].updateTime) {
-        (_debtAmount,) = safeEngine.cData(_collateralList.at(_i));
+        _debtAmount = safeEngine.cData(_collateralList.at(_i)).debtAmount;
         (, _deltaRate) = taxSingleOutcome(_collateralList.at(_i));
         _rad = _rad + _debtAmount.mul(_deltaRate);
       }
@@ -244,7 +244,7 @@ contract TaxCollector is ITaxCollector, Authorizable {
     view
     returns (uint256 _newlyAccumulatedRate, int256 _deltaRate)
   {
-    (, uint256 _lastAccumulatedRate) = safeEngine.cData(_collateralType);
+    uint256 _lastAccumulatedRate = safeEngine.cData(_collateralType).accumulatedRate;
     _newlyAccumulatedRate = (globalStabilityFee + collateralTypes[_collateralType].stabilityFee).rpow(
       block.timestamp - collateralTypes[_collateralType].updateTime
     ).rmul(_lastAccumulatedRate);
@@ -309,14 +309,14 @@ contract TaxCollector is ITaxCollector, Authorizable {
    */
   function taxSingle(bytes32 _collateralType) public returns (uint256 _latestAccumulatedRate) {
     if (block.timestamp <= collateralTypes[_collateralType].updateTime) {
-      (, _latestAccumulatedRate) = safeEngine.cData(_collateralType);
+      _latestAccumulatedRate = safeEngine.cData(_collateralType).accumulatedRate;
       return _latestAccumulatedRate;
     }
     (, int256 _deltaRate) = taxSingleOutcome(_collateralType);
     // Check how much debt has been generated for collateralType
-    (uint256 _debtAmount,) = safeEngine.cData(_collateralType);
+    uint256 _debtAmount = safeEngine.cData(_collateralType).debtAmount;
     _splitTaxIncome(_collateralType, _debtAmount, _deltaRate);
-    (, _latestAccumulatedRate) = safeEngine.cData(_collateralType);
+    _latestAccumulatedRate = safeEngine.cData(_collateralType).accumulatedRate;
     collateralTypes[_collateralType].updateTime = block.timestamp;
     emit CollectTax(_collateralType, _latestAccumulatedRate, _deltaRate);
     return _latestAccumulatedRate;

@@ -182,14 +182,12 @@ contract CoinTest is DSTest {
   }
 
   function lockedCollateral(bytes32 collateralType, address safe) internal view returns (uint256) {
-    (uint256 lockedCollateral_, uint256 generatedDebt_) = safeEngine.safes(collateralType, safe);
-    generatedDebt_;
+    uint256 lockedCollateral_ = safeEngine.safes(collateralType, safe).lockedCollateral;
     return lockedCollateral_;
   }
 
-  function art(bytes32 collateralType, address urn) internal view returns (uint256) {
-    (uint256 lockedCollateral_, uint256 generatedDebt_) = safeEngine.safes(collateralType, urn);
-    lockedCollateral_;
+  function generatedDebt(bytes32 collateralType, address urn) internal view returns (uint256) {
+    uint256 generatedDebt_ = safeEngine.safes(collateralType, urn).generatedDebt;
     return generatedDebt_;
   }
 
@@ -204,7 +202,7 @@ contract CoinTest is DSTest {
     assertEq(token.chainId(), 99);
     assertEq(keccak256(abi.encodePacked(token.version())), keccak256(abi.encodePacked('1')));
     token.mint(self, 0);
-    (uint256 _safetyPrice,,,) = safeEngine.cParams('gold');
+    uint256 _safetyPrice = safeEngine.cData('gold').safetyPrice;
     assertEq(_safetyPrice, ray(1 ether));
   }
 

@@ -113,12 +113,16 @@ contract LiquidationEngine is Authorizable, Disableable, ILiquidationEngine {
     require(mutex[_cType][_safe] == 0, 'LiquidationEngine/non-null-mutex');
     mutex[_cType][_safe] = 1;
 
-    (, uint256 _accumulatedRate) = safeEngine.cData(_cType);
-    (,, uint256 _debtFloor, uint256 _liquidationPrice) = safeEngine.cParams(_cType);
-    (uint256 _safeCollateral, uint256 _safeDebt) = safeEngine.safes(_cType, _safe);
+    uint256 _debtFloor = safeEngine.cParams(_cType).debtFloor;
+    SAFEEngineLike.SAFEEngineCollateralData memory _safeEngCData = safeEngine.cData(_cType);
+    SAFEEngineLike.SAFE memory _safeData = safeEngine.safes(_cType, _safe);
 
     require(
-      (_liquidationPrice > 0) && (_safeCollateral * _liquidationPrice < _safeDebt * _accumulatedRate),
+      (_safeEngCData.liquidationPrice > 0)
+        && (
+          _safeData.lockedCollateral * _safeEngCData.liquidationPrice
+            < _safeData.generatedDebt * _safeEngCData.accumulatedRate
+        ),
       'LiquidationEngine/safe-not-unsafe'
     );
     require(
@@ -141,34 +145,41 @@ contract LiquidationEngine is Authorizable, Disableable, ILiquidationEngine {
 
     // Checks that the saviour didn't take collateral or add more debt to the SAFE
     {
-      (uint256 _newSafeCollateral, uint256 _newSafeDebt) = safeEngine.safes(_cType, _safe);
+      SAFEEngineLike.SAFE memory _newSafeData = safeEngine.safes(_cType, _safe);
       require(
-        _newSafeCollateral >= _safeCollateral && _newSafeDebt <= _safeDebt,
+        _newSafeData.lockedCollateral >= _safeData.lockedCollateral
+          && _newSafeData.generatedDebt <= _safeData.generatedDebt,
         'LiquidationEngine/invalid-safe-saviour-operation'
       );
     }
 
-    // NOTE: can accumulatedRate change within this call?
-    (, _accumulatedRate) = safeEngine.cData(_cType);
-    (,,, _liquidationPrice) = safeEngine.cParams(_cType);
-    (_safeCollateral, _safeDebt) = safeEngine.safes(_cType, _safe);
+    _safeEngCData = safeEngine.cData(_cType);
+    _safeData = safeEngine.safes(_cType, _safe);
 
-    if ((_liquidationPrice > 0) && (_safeCollateral * _liquidationPrice < _safeDebt * _accumulatedRate)) {
+    if (
+      (_safeEngCData.liquidationPrice > 0)
+        && (
+          _safeData.lockedCollateral * _safeEngCData.liquidationPrice
+            < _safeData.generatedDebt * _safeEngCData.accumulatedRate
+        )
+    ) {
       LiquidationEngineCollateralParams memory _cParams = cParams[_cType];
 
       uint256 _limitAdjustedDebt = Math.min(
-        _safeDebt,
+        _safeData.generatedDebt,
         Math.min(_cParams.liquidationQuantity, params.onAuctionSystemCoinLimit - currentOnAuctionSystemCoins) * WAD
-          / _accumulatedRate / _cParams.liquidationPenalty
+          / _safeEngCData.accumulatedRate / _cParams.liquidationPenalty
       );
 
       require(_limitAdjustedDebt > 0, 'LiquidationEngine/null-auction');
       require(
-        (_limitAdjustedDebt == _safeDebt) || ((_safeDebt - _limitAdjustedDebt) * _accumulatedRate >= _debtFloor),
+        _limitAdjustedDebt == _safeData.generatedDebt
+          || (_safeData.generatedDebt - _limitAdjustedDebt) * _safeEngCData.accumulatedRate >= _debtFloor,
         'LiquidationEngine/dusty-safe'
       );
 
-      uint256 _collateralToSell = Math.min(_safeCollateral, _safeCollateral * _limitAdjustedDebt / _safeDebt);
+      uint256 _collateralToSell =
+        Math.min(_safeData.lockedCollateral, _safeData.lockedCollateral * _limitAdjustedDebt / _safeData.generatedDebt);
 
       require(_collateralToSell > 0, 'LiquidationEngine/null-collateral-to-sell');
       require(
@@ -183,12 +194,12 @@ contract LiquidationEngine is Authorizable, Disableable, ILiquidationEngine {
         -int256(_collateralToSell),
         -int256(_limitAdjustedDebt)
       );
-      params.accountingEngine.pushDebtToQueue(_limitAdjustedDebt * _accumulatedRate);
+      params.accountingEngine.pushDebtToQueue(_limitAdjustedDebt * _safeEngCData.accumulatedRate);
 
       {
         // This calcuation will overflow if multiply(limitAdjustedDebt, accumulatedRate) exceeds ~10^14,
         // i.e. the maximum amountToRaise is roughly 100 trillion system coins.
-        uint256 _amountToRaise = _limitAdjustedDebt * _accumulatedRate * _cParams.liquidationPenalty / WAD;
+        uint256 _amountToRaise = _limitAdjustedDebt * _safeEngCData.accumulatedRate * _cParams.liquidationPenalty / WAD;
         currentOnAuctionSystemCoins += _amountToRaise;
 
         _auctionId = CollateralAuctionHouseLike(_cParams.collateralAuctionHouse).startAuction({
@@ -207,7 +218,7 @@ contract LiquidationEngine is Authorizable, Disableable, ILiquidationEngine {
         _safe,
         _collateralToSell,
         _limitAdjustedDebt,
-        _limitAdjustedDebt * _accumulatedRate,
+        _limitAdjustedDebt * _safeEngCData.accumulatedRate,
         _cParams.collateralAuctionHouse,
         _auctionId
       );
@@ -232,12 +243,12 @@ contract LiquidationEngine is Authorizable, Disableable, ILiquidationEngine {
    * @param  _safe The SAFE's address/handler
    */
   function getLimitAdjustedDebtToCover(bytes32 _cType, address _safe) external view returns (uint256) {
-    (, uint256 _accumulatedRate) = safeEngine.cData(_cType);
-    (, uint256 _safeDebt) = safeEngine.safes(_cType, _safe);
+    uint256 _accumulatedRate = safeEngine.cData(_cType).accumulatedRate;
+    uint256 _generatedDebt = safeEngine.safes(_cType, _safe).generatedDebt;
     LiquidationEngineCollateralParams memory _cParams = cParams[_cType];
 
     return Math.min(
-      _safeDebt,
+      _generatedDebt,
       Math.min(_cParams.liquidationQuantity, params.onAuctionSystemCoinLimit - currentOnAuctionSystemCoins) * WAD
         / _accumulatedRate / _cParams.liquidationPenalty
     );

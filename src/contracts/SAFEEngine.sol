@@ -79,13 +79,31 @@ contract SAFEEngine is Authorizable, Disableable, ISAFEEngine {
     return _safe == _account || safeRights[_safe][_account] == 1;
   }
 
-  SAFEEngineParams public params;
+  // Data about system parameters
+  SAFEEngineParams internal _params;
+  // Data about each collateral type parameters
+  mapping(bytes32 _cType => SAFEEngineCollateralParams) internal _cParams;
   // Data about each collateral type
-  mapping(bytes32 _cType => SAFEEngineCollateralParams) public cParams;
-  // Data about each collateral type
-  mapping(bytes32 _cType => SAFEEngineCollateralData) public cData;
+  mapping(bytes32 _cType => SAFEEngineCollateralData) internal _cData;
   // Data about each SAFE
-  mapping(bytes32 _cType => mapping(address _safe => SAFE)) public safes;
+  mapping(bytes32 _cType => mapping(address _safe => SAFE)) internal _safes;
+
+  function params() external view returns (SAFEEngineParams memory) {
+    return _params;
+  }
+
+  function cParams(bytes32 _cType) external view returns (SAFEEngineCollateralParams memory _collateralParams) {
+    return _cParams[_cType];
+  }
+
+  function cData(bytes32 _cType) external view returns (SAFEEngineCollateralData memory _collateralData) {
+    return _cData[_cType];
+  }
+
+  function safes(bytes32 _cType, address _safe) external view returns (SAFE memory _safeData) {
+    return _safes[_cType][_safe];
+  }
+
   // Balance of each collateral type
   mapping(bytes32 _cType => mapping(address _safe => uint256)) public tokenCollateral; // [wad]
   // Internal balance of system coins
@@ -100,7 +118,7 @@ contract SAFEEngine is Authorizable, Disableable, ISAFEEngine {
 
   // --- Init ---
   constructor() Authorizable(msg.sender) {
-    params.safeDebtCeiling = type(uint256).max;
+    _params.safeDebtCeiling = type(uint256).max;
     emit ModifyParameters('safeDebtCeiling', GLOBAL_PARAM, abi.encode(type(uint256).max));
   }
 
@@ -110,8 +128,8 @@ contract SAFEEngine is Authorizable, Disableable, ISAFEEngine {
    * @param _cType Collateral type name (e.g ETH-A, TBTC-B)
    */
   function initializeCollateralType(bytes32 _cType) external isAuthorized {
-    require(cData[_cType].accumulatedRate == 0, 'SAFEEngine/collateral-type-already-exists');
-    cData[_cType].accumulatedRate = RAY;
+    require(_cData[_cType].accumulatedRate == 0, 'SAFEEngine/collateral-type-already-exists');
+    _cData[_cType].accumulatedRate = RAY;
     emit InitializeCollateralType(_cType);
   }
 
@@ -182,30 +200,31 @@ contract SAFEEngine is Authorizable, Disableable, ISAFEEngine {
     int256 _deltaCollateral,
     int256 _deltaDebt
   ) external whenEnabled {
-    SAFE storage safeData_ = safes[_cType][_safe];
-    SAFEEngineCollateralData storage cData_ = cData[_cType];
-    SAFEEngineCollateralParams memory _cParams = cParams[_cType];
+    SAFE storage _safeData = _safes[_cType][_safe];
+    SAFEEngineCollateralData storage __cData = _cData[_cType];
+    SAFEEngineCollateralParams memory __cParams = _cParams[_cType];
     // collateral type has been initialised
-    require(cData_.accumulatedRate != 0, 'SAFEEngine/collateral-type-not-initialized');
+    require(__cData.accumulatedRate != 0, 'SAFEEngine/collateral-type-not-initialized');
 
-    safeData_.lockedCollateral = safeData_.lockedCollateral.add(_deltaCollateral);
-    safeData_.generatedDebt = safeData_.generatedDebt.add(_deltaDebt);
-    cData_.debtAmount = cData_.debtAmount.add(_deltaDebt);
+    _safeData.lockedCollateral = _safeData.lockedCollateral.add(_deltaCollateral);
+    _safeData.generatedDebt = _safeData.generatedDebt.add(_deltaDebt);
+    __cData.debtAmount = __cData.debtAmount.add(_deltaDebt);
 
-    int256 _deltaAdjustedDebt = cData_.accumulatedRate.mul(_deltaDebt);
-    uint256 _totalDebtIssued = cData_.accumulatedRate * safeData_.generatedDebt;
+    int256 _deltaAdjustedDebt = __cData.accumulatedRate.mul(_deltaDebt);
+    uint256 _totalDebtIssued = __cData.accumulatedRate * _safeData.generatedDebt;
     globalDebt = globalDebt.add(_deltaAdjustedDebt);
 
     // either debt has decreased, or debt ceilings are not exceeded
     require(
       _deltaDebt <= 0
-        || (cData_.debtAmount * cData_.accumulatedRate <= _cParams.debtCeiling && globalDebt <= params.globalDebtCeiling),
+        || (
+          __cData.debtAmount * __cData.accumulatedRate <= __cParams.debtCeiling && globalDebt <= _params.globalDebtCeiling
+        ),
       'SAFEEngine/ceiling-exceeded'
     );
     // safe is either less risky than before, or it is safe
     require(
-      (_deltaDebt <= 0 && _deltaCollateral >= 0)
-        || _totalDebtIssued <= safeData_.lockedCollateral * _cParams.safetyPrice,
+      (_deltaDebt <= 0 && _deltaCollateral >= 0) || _totalDebtIssued <= _safeData.lockedCollateral * __cData.safetyPrice,
       'SAFEEngine/not-safe'
     );
 
@@ -222,11 +241,11 @@ contract SAFEEngine is Authorizable, Disableable, ISAFEEngine {
     require(_deltaDebt >= 0 || canModifySAFE(_debtDestination, msg.sender), 'SAFEEngine/not-allowed-debt-dst');
 
     // safe has no debt, or a non-dusty amount
-    require(safeData_.generatedDebt == 0 || _totalDebtIssued >= _cParams.debtFloor, 'SAFEEngine/dust');
+    require(_safeData.generatedDebt == 0 || _totalDebtIssued >= __cParams.debtFloor, 'SAFEEngine/dust');
 
     // safe didn't go above the safe debt limit
     if (_deltaDebt > 0) {
-      require(safeData_.generatedDebt <= params.safeDebtCeiling, 'SAFEEngine/above-debt-limit');
+      require(_safeData.generatedDebt <= _params.safeDebtCeiling, 'SAFEEngine/above-debt-limit');
     }
 
     tokenCollateral[_cType][_collateralSource] = tokenCollateral[_cType][_collateralSource].sub(_deltaCollateral);
@@ -240,8 +259,8 @@ contract SAFEEngine is Authorizable, Disableable, ISAFEEngine {
       _debtDestination,
       _deltaCollateral,
       _deltaDebt,
-      safeData_.lockedCollateral,
-      safeData_.generatedDebt,
+      _safeData.lockedCollateral,
+      _safeData.generatedDebt,
       globalDebt
     );
   }
@@ -262,27 +281,27 @@ contract SAFEEngine is Authorizable, Disableable, ISAFEEngine {
     int256 _deltaCollateral,
     int256 _deltaDebt
   ) external isSAFEAllowed(_src, msg.sender) isSAFEAllowed(_dst, msg.sender) {
-    SAFE storage srcSAFE_ = safes[_cType][_src];
-    SAFE storage dstSAFE_ = safes[_cType][_dst];
-    SAFEEngineCollateralParams memory _cParams = cParams[_cType];
-    SAFEEngineCollateralData memory _cData = cData[_cType];
+    SAFE storage _srcSAFE = _safes[_cType][_src];
+    SAFE storage _dstSAFE = _safes[_cType][_dst];
+    SAFEEngineCollateralParams memory __cParams = _cParams[_cType];
+    SAFEEngineCollateralData memory __cData = _cData[_cType];
 
     {
-      srcSAFE_.lockedCollateral = srcSAFE_.lockedCollateral.sub(_deltaCollateral);
-      srcSAFE_.generatedDebt = srcSAFE_.generatedDebt.sub(_deltaDebt);
-      dstSAFE_.lockedCollateral = dstSAFE_.lockedCollateral.add(_deltaCollateral);
-      dstSAFE_.generatedDebt = dstSAFE_.generatedDebt.add(_deltaDebt);
+      _srcSAFE.lockedCollateral = _srcSAFE.lockedCollateral.sub(_deltaCollateral);
+      _srcSAFE.generatedDebt = _srcSAFE.generatedDebt.sub(_deltaDebt);
+      _dstSAFE.lockedCollateral = _dstSAFE.lockedCollateral.add(_deltaCollateral);
+      _dstSAFE.generatedDebt = _dstSAFE.generatedDebt.add(_deltaDebt);
 
-      uint256 _srcTotalDebtIssued = srcSAFE_.generatedDebt * _cData.accumulatedRate;
-      uint256 _dstTotalDebtIssued = dstSAFE_.generatedDebt * _cData.accumulatedRate;
+      uint256 _srcTotalDebtIssued = _srcSAFE.generatedDebt * __cData.accumulatedRate;
+      uint256 _dstTotalDebtIssued = _dstSAFE.generatedDebt * __cData.accumulatedRate;
 
       // both sides safe
-      require(_srcTotalDebtIssued <= srcSAFE_.lockedCollateral * _cParams.safetyPrice, 'SAFEEngine/not-safe-src');
-      require(_dstTotalDebtIssued <= dstSAFE_.lockedCollateral * _cParams.safetyPrice, 'SAFEEngine/not-safe-dst');
+      require(_srcTotalDebtIssued <= _srcSAFE.lockedCollateral * __cData.safetyPrice, 'SAFEEngine/not-safe-src');
+      require(_dstTotalDebtIssued <= _dstSAFE.lockedCollateral * __cData.safetyPrice, 'SAFEEngine/not-safe-dst');
 
       // both sides non-dusty
-      require(_srcTotalDebtIssued >= _cParams.debtFloor || srcSAFE_.generatedDebt == 0, 'SAFEEngine/dust-src');
-      require(_dstTotalDebtIssued >= _cParams.debtFloor || dstSAFE_.generatedDebt == 0, 'SAFEEngine/dust-dst');
+      require(_srcTotalDebtIssued >= __cParams.debtFloor || _srcSAFE.generatedDebt == 0, 'SAFEEngine/dust-src');
+      require(_dstTotalDebtIssued >= __cParams.debtFloor || _dstSAFE.generatedDebt == 0, 'SAFEEngine/dust-dst');
     }
 
     emit TransferSAFECollateralAndDebt(
@@ -291,10 +310,10 @@ contract SAFEEngine is Authorizable, Disableable, ISAFEEngine {
       _dst,
       _deltaCollateral,
       _deltaDebt,
-      srcSAFE_.lockedCollateral,
-      srcSAFE_.generatedDebt,
-      dstSAFE_.lockedCollateral,
-      dstSAFE_.generatedDebt
+      _srcSAFE.lockedCollateral,
+      _srcSAFE.generatedDebt,
+      _dstSAFE.lockedCollateral,
+      _dstSAFE.generatedDebt
     );
   }
 
@@ -317,14 +336,14 @@ contract SAFEEngine is Authorizable, Disableable, ISAFEEngine {
     int256 _deltaCollateral,
     int256 _deltaDebt
   ) external isAuthorized {
-    SAFE storage safe_ = safes[_cType][_safe];
-    SAFEEngineCollateralData storage cData_ = cData[_cType];
+    SAFE storage _safeData = _safes[_cType][_safe];
+    SAFEEngineCollateralData storage __cData = _cData[_cType];
 
-    safe_.lockedCollateral = safe_.lockedCollateral.add(_deltaCollateral);
-    safe_.generatedDebt = safe_.generatedDebt.add(_deltaDebt);
-    cData_.debtAmount = cData_.debtAmount.add(_deltaDebt);
+    _safeData.lockedCollateral = _safeData.lockedCollateral.add(_deltaCollateral);
+    _safeData.generatedDebt = _safeData.generatedDebt.add(_deltaDebt);
+    __cData.debtAmount = __cData.debtAmount.add(_deltaDebt);
 
-    int256 deltaTotalIssuedDebt = cData_.accumulatedRate.mul(_deltaDebt);
+    int256 deltaTotalIssuedDebt = __cData.accumulatedRate.mul(_deltaDebt);
 
     tokenCollateral[_cType][_collateralCounterparty] =
       tokenCollateral[_cType][_collateralCounterparty].sub(_deltaCollateral);
@@ -384,12 +403,22 @@ contract SAFEEngine is Authorizable, Disableable, ISAFEEngine {
     address _surplusDst,
     int256 _rateMultiplier
   ) external isAuthorized whenEnabled {
-    SAFEEngineCollateralData storage cData_ = cData[_cType];
-    cData_.accumulatedRate = cData_.accumulatedRate.add(_rateMultiplier);
-    int256 _deltaSurplus = cData_.debtAmount.mul(_rateMultiplier);
+    SAFEEngineCollateralData storage __cData = _cData[_cType];
+    __cData.accumulatedRate = __cData.accumulatedRate.add(_rateMultiplier);
+    int256 _deltaSurplus = __cData.debtAmount.mul(_rateMultiplier);
     coinBalance[_surplusDst] = coinBalance[_surplusDst].add(_deltaSurplus);
     globalDebt = globalDebt.add(_deltaSurplus);
     emit UpdateAccumulatedRate(_cType, _surplusDst, _rateMultiplier, coinBalance[_surplusDst], globalDebt);
+  }
+
+  function updateCollateralPrice(
+    bytes32 _cType,
+    uint256 _safetyPrice,
+    uint256 _liquidationPrice
+  ) external isAuthorized whenEnabled {
+    _cData[_cType].safetyPrice = _safetyPrice;
+    _cData[_cType].liquidationPrice = _liquidationPrice;
+    emit UpdateCollateralPrice(_cType, _safetyPrice, _liquidationPrice);
   }
 
   // --- Administration ---
@@ -401,8 +430,8 @@ contract SAFEEngine is Authorizable, Disableable, ISAFEEngine {
   function modifyParameters(bytes32 _parameter, bytes memory _data) external isAuthorized whenEnabled {
     uint256 _uint256 = _data.toUint256();
 
-    if (_parameter == 'globalDebtCeiling') params.globalDebtCeiling = _uint256;
-    else if (_parameter == 'safeDebtCeiling') params.safeDebtCeiling = _uint256;
+    if (_parameter == 'globalDebtCeiling') _params.globalDebtCeiling = _uint256;
+    else if (_parameter == 'safeDebtCeiling') _params.safeDebtCeiling = _uint256;
     else revert UnrecognizedParam();
     emit ModifyParameters(_parameter, GLOBAL_PARAM, _data);
   }
@@ -416,10 +445,8 @@ contract SAFEEngine is Authorizable, Disableable, ISAFEEngine {
   function modifyParameters(bytes32 _cType, bytes32 _parameter, bytes memory _data) public isAuthorized whenEnabled {
     uint256 _uint256 = _data.toUint256();
 
-    if (_parameter == 'safetyPrice') cParams[_cType].safetyPrice = _uint256;
-    else if (_parameter == 'liquidationPrice') cParams[_cType].liquidationPrice = _uint256;
-    else if (_parameter == 'debtCeiling') cParams[_cType].debtCeiling = _uint256;
-    else if (_parameter == 'debtFloor') cParams[_cType].debtFloor = _uint256;
+    if (_parameter == 'debtCeiling') _cParams[_cType].debtCeiling = _uint256;
+    else if (_parameter == 'debtFloor') _cParams[_cType].debtFloor = _uint256;
     else revert UnrecognizedParam();
     emit ModifyParameters(_cType, _parameter, _data);
   }

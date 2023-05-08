@@ -66,11 +66,7 @@ abstract contract Base is HaiTest {
 }
 
 contract SAFEEngineForTest {
-  event ModifyParametersCalled(bytes32 _collateralType, bytes32 _parameter, bytes _data);
-
-  function modifyParameters(bytes32 _collateralType, bytes32 _parameter, bytes memory _data) external {
-    emit ModifyParametersCalled(_collateralType, _parameter, _data);
-  }
+  function updateCollateralPrice(bytes32 _collateralType, uint256 _safetyPrice, uint256 _liquidationPrice) external {}
 }
 
 contract Unit_OracleRelayer_Constructor is Base {
@@ -414,83 +410,39 @@ contract Unit_OracleRelayer_UpdateCollateralPrice is Base {
     oracleRelayer.updateCollateralPrice(collateralType);
   }
 
-  function test_Call_SafeEngine_ModifyParameters_SafetyPrice(UpdateCollateralPriceScenario memory _scenario)
+  function test_Call_SafeEngine_UpdateCollateralPrice(UpdateCollateralPriceScenario memory _scenario)
     public
     happyPathValidityNoUpdate(_scenario)
   {
-    (uint256 _safetyPrice,) = _getSafeEngineNewParameters(_scenario, false);
+    (uint256 _safetyPrice, uint256 _liquidationPrice) = _getSafeEngineNewParameters(_scenario, false);
 
     vm.expectCall(
       address(mockSafeEngine),
-      abi.encodeCall(mockSafeEngine.modifyParameters, (collateralType, 'safetyPrice', abi.encode(_safetyPrice)))
+      abi.encodeCall(ISAFEEngine.updateCollateralPrice, (collateralType, _safetyPrice, _liquidationPrice))
     );
 
     oracleRelayer.updateCollateralPrice(collateralType);
   }
 
-  function test_Call_SafeEngine_ModifyParameters_SafetyPrice_WithPriceUpdate(
-    UpdateCollateralPriceScenario memory _scenario
-  ) public happyPathValidityWithUpdate(_scenario) {
-    (uint256 _safetyPrice,) = _getSafeEngineNewParameters(_scenario, true);
-
-    vm.expectCall(
-      address(mockSafeEngine),
-      abi.encodeCall(mockSafeEngine.modifyParameters, (collateralType, 'safetyPrice', abi.encode(_safetyPrice)))
-    );
-
-    oracleRelayer.updateCollateralPrice(collateralType);
-  }
-
-  function test_Call_SafeEngine_ModifyParameters_LiquidationPrice(UpdateCollateralPriceScenario memory _scenario)
+  function test_Call_SafeEngine_UpdateCollateralPrice_WithPriceUpdate(UpdateCollateralPriceScenario memory _scenario)
     public
-    happyPathValidityNoUpdate(_scenario)
+    happyPathValidityWithUpdate(_scenario)
   {
-    (, uint256 _liquidationPrice) = _getSafeEngineNewParameters(_scenario, false);
+    (uint256 _safetyPrice, uint256 _liquidationPrice) = _getSafeEngineNewParameters(_scenario, true);
 
     vm.expectCall(
       address(mockSafeEngine),
-      abi.encodeCall(
-        mockSafeEngine.modifyParameters, (collateralType, 'liquidationPrice', abi.encode(_liquidationPrice))
-      )
+      abi.encodeCall(ISAFEEngine.updateCollateralPrice, (collateralType, _safetyPrice, _liquidationPrice))
     );
 
     oracleRelayer.updateCollateralPrice(collateralType);
   }
 
-  function test_Call_SafeEngine_ModifyParameters_LiquidationPrice_WithUpdate(
-    UpdateCollateralPriceScenario memory _scenario
-  ) public happyPathValidityWithUpdate(_scenario) {
-    (, uint256 _liquidationPrice) = _getSafeEngineNewParameters(_scenario, true);
-
-    vm.expectCall(
-      address(mockSafeEngine),
-      abi.encodeCall(
-        mockSafeEngine.modifyParameters, (collateralType, 'liquidationPrice', abi.encode(_liquidationPrice))
-      )
-    );
-
-    oracleRelayer.updateCollateralPrice(collateralType);
-  }
-
-  function test_Call_SafeEngine_ModifyParameters_SafetyPrice_NoValidity(UpdateCollateralPriceScenario memory _scenario)
+  function test_Call_SafeEngine_UpdateCollateralPrice_NoValidity(UpdateCollateralPriceScenario memory _scenario)
     public
     happyPathNoValidity(_scenario)
   {
-    vm.expectCall(
-      address(mockSafeEngine),
-      abi.encodeCall(mockSafeEngine.modifyParameters, (collateralType, 'safetyPrice', abi.encode(0)))
-    );
-
-    oracleRelayer.updateCollateralPrice(collateralType);
-  }
-
-  function test_Call_SafeEngine_ModifyParameters_LiquidationPrice_NoValidity(
-    UpdateCollateralPriceScenario memory _scenario
-  ) public happyPathNoValidity(_scenario) {
-    vm.expectCall(
-      address(mockSafeEngine),
-      abi.encodeCall(mockSafeEngine.modifyParameters, (collateralType, 'liquidationPrice', abi.encode(0)))
-    );
+    vm.expectCall(address(mockSafeEngine), abi.encodeCall(ISAFEEngine.updateCollateralPrice, (collateralType, 0, 0)));
 
     oracleRelayer.updateCollateralPrice(collateralType);
   }

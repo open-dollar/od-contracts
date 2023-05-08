@@ -39,15 +39,15 @@ contract SingleTaxCollectorTest is DSTest {
   }
 
   function debtAmount(bytes32 collateralType) internal view returns (uint256 _debtAmountV) {
-    (_debtAmountV,) = SAFEEngineLike(address(safeEngine)).cData(collateralType);
+    _debtAmountV = SAFEEngineLike(address(safeEngine)).cData(collateralType).debtAmount;
   }
 
   function accumulatedRate(bytes32 collateralType) internal view returns (uint256 _accumulatedRateV) {
-    (, _accumulatedRateV) = SAFEEngineLike(address(safeEngine)).cData(collateralType);
+    _accumulatedRateV = SAFEEngineLike(address(safeEngine)).cData(collateralType).accumulatedRate;
   }
 
   function debtCeiling(bytes32 collateralType) internal view returns (uint256 _debtCeilingV) {
-    (, _debtCeilingV,,) = SAFEEngineLike(address(safeEngine)).cParams(collateralType);
+    _debtCeilingV = SAFEEngineLike(address(safeEngine)).cParams(collateralType).debtCeiling;
   }
 
   address ali = address(bytes20('ali'));
@@ -67,10 +67,11 @@ contract SingleTaxCollectorTest is DSTest {
   }
 
   function draw(bytes32 collateralType, uint256 coin) internal {
-    (, uint256 _globalDebtCeiling) = safeEngine.params();
+    uint256 _globalDebtCeiling = safeEngine.params().globalDebtCeiling;
     safeEngine.modifyParameters('globalDebtCeiling', abi.encode(_globalDebtCeiling + rad(coin)));
     safeEngine.modifyParameters(collateralType, 'debtCeiling', abi.encode(debtCeiling(collateralType) + rad(coin)));
-    safeEngine.modifyParameters(collateralType, 'safetyPrice', abi.encode(10 ** 27 * 10_000 ether));
+    uint256 _collateralPrice = 10 ** 27 * 10_000 ether;
+    safeEngine.updateCollateralPrice(collateralType, _collateralPrice, _collateralPrice);
     address self = address(this);
     safeEngine.modifyCollateralBalance(collateralType, self, 10 ** 27 * 1 ether);
     safeEngine.modifySAFECollateralization(collateralType, self, self, self, int256(1 ether), int256(coin));
@@ -780,7 +781,7 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.taxSingle('j');
     assertEq(wad(safeEngine.coinBalance(ali)), 192.6859375 ether);
 
-    (, uint256 _accumulatedRate) = safeEngine.cData('j');
+    uint256 _accumulatedRate = safeEngine.cData('j').accumulatedRate;
     assertEq(_accumulatedRate, 926_859_375_000_000_000_000_022_885);
   }
 }

@@ -77,18 +77,20 @@ abstract contract Base is HaiTest {
     uint256 _debtFloor,
     uint256 _liquidationPrice
   ) internal {
+    // cData
     stdstore.target(address(safeEngine)).sig(ISAFEEngine.cData.selector).with_key(_collateralType).depth(0)
       .checked_write(_debtAmount);
     stdstore.target(address(safeEngine)).sig(ISAFEEngine.cData.selector).with_key(_collateralType).depth(1)
       .checked_write(_accumulatedRate);
-    stdstore.target(address(safeEngine)).sig(ISAFEEngine.cParams.selector).with_key(_collateralType).depth(0)
+    stdstore.target(address(safeEngine)).sig(ISAFEEngine.cData.selector).with_key(_collateralType).depth(2)
       .checked_write(_safetyPrice);
-    stdstore.target(address(safeEngine)).sig(ISAFEEngine.cParams.selector).with_key(_collateralType).depth(1)
-      .checked_write(_debtCeiling);
-    stdstore.target(address(safeEngine)).sig(ISAFEEngine.cParams.selector).with_key(_collateralType).depth(2)
-      .checked_write(_debtFloor);
-    stdstore.target(address(safeEngine)).sig(ISAFEEngine.cParams.selector).with_key(_collateralType).depth(3)
+    stdstore.target(address(safeEngine)).sig(ISAFEEngine.cData.selector).with_key(_collateralType).depth(3)
       .checked_write(_liquidationPrice);
+    // cParams
+    stdstore.target(address(safeEngine)).sig(ISAFEEngine.cParams.selector).with_key(_collateralType).depth(0)
+      .checked_write(_debtCeiling);
+    stdstore.target(address(safeEngine)).sig(ISAFEEngine.cParams.selector).with_key(_collateralType).depth(1)
+      .checked_write(_debtFloor);
   }
 
   function _mockParams(uint256 _safeDebtCeiling, uint256 _globalDebtCeiling) internal {
@@ -127,7 +129,7 @@ contract Unit_SAFEEngine_Constructor is Base {
   }
 
   function test_Set_SafeDebtCeiling() public {
-    (uint256 _safeDebtCeiling,) = safeEngine.params();
+    uint256 _safeDebtCeiling = safeEngine.params().safeDebtCeiling;
     assertEq(_safeDebtCeiling, type(uint256).max);
   }
 
@@ -166,10 +168,8 @@ contract Unit_SAFEEngine_ModifyParameters is Base {
     bytes32 _cType,
     ISAFEEngine.SAFEEngineCollateralParams memory _fuzz
   ) public authorized {
-    safeEngine.modifyParameters(_cType, 'safetyPrice', abi.encode(_fuzz.safetyPrice));
     safeEngine.modifyParameters(_cType, 'debtCeiling', abi.encode(_fuzz.debtCeiling));
     safeEngine.modifyParameters(_cType, 'debtFloor', abi.encode(_fuzz.debtFloor));
-    safeEngine.modifyParameters(_cType, 'liquidationPrice', abi.encode(_fuzz.liquidationPrice));
 
     (bool _success, bytes memory _data) =
       address(safeEngine).staticcall(abi.encodeWithSignature('cParams(bytes32)', _cType));
@@ -631,7 +631,7 @@ contract Unit_SAFEEngine_UpdateAccumulatedRate is Base {
 
     safeEngine.updateAccumulatedRate(collateralType, surplusDst, _rateMultiplier);
 
-    (, uint256 _newAccumulatedRate) = safeEngine.cData(collateralType);
+    uint256 _newAccumulatedRate = safeEngine.cData(collateralType).accumulatedRate;
     assertEq(_newAccumulatedRate, _collateralTypeAccumulatedRate.add(_rateMultiplier));
   }
 
@@ -885,7 +885,7 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
     vm.prank(safe);
     safeEngine.modifySAFECollateralization(collateralType, safe, src, debtDestination, _deltaCollateral, 0);
 
-    (uint256 _newLockedCollateral,) = safeEngine.safes(collateralType, safe);
+    uint256 _newLockedCollateral = safeEngine.safes(collateralType, safe).lockedCollateral;
     assertEq(_newLockedCollateral, _initialSafeLockedCollateral.add(_deltaCollateral));
   }
 
@@ -905,7 +905,7 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
     vm.prank(safe);
     safeEngine.modifySAFECollateralization(collateralType, safe, src, debtDestination, 0, _deltaDebt);
 
-    (, uint256 _newGeneratedDebt) = safeEngine.safes(collateralType, safe);
+    uint256 _newGeneratedDebt = safeEngine.safes(collateralType, safe).generatedDebt;
     assertEq(_newGeneratedDebt, _initialGeneratedDebt.add(_deltaDebt));
   }
 
@@ -925,7 +925,7 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
     vm.prank(safe);
     safeEngine.modifySAFECollateralization(collateralType, safe, src, debtDestination, 0, _deltaDebt);
 
-    (uint256 _newDebtAmount,) = safeEngine.cData(collateralType);
+    uint256 _newDebtAmount = safeEngine.cData(collateralType).debtAmount;
 
     assertEq(_newDebtAmount, _initialDebtAmount.add(_deltaDebt));
   }
@@ -1331,7 +1331,7 @@ contract Unit_SAFEEngine_TransferSafeCollateralAndDebt is Base {
     vm.prank(account);
     safeEngine.transferSAFECollateralAndDebt(collateralType, src, dst, _deltaCollateral, _deltaDebt);
 
-    (uint256 _srcLockedCollateral,) = safeEngine.safes(collateralType, src);
+    uint256 _srcLockedCollateral = safeEngine.safes(collateralType, src).lockedCollateral;
     assertEq(_srcLockedCollateral, _srcInitialLockedCollateral.sub(_deltaCollateral));
   }
 
@@ -1350,7 +1350,7 @@ contract Unit_SAFEEngine_TransferSafeCollateralAndDebt is Base {
     vm.prank(account);
     safeEngine.transferSAFECollateralAndDebt(collateralType, src, dst, _deltaCollateral, _deltaDebt);
 
-    (, uint256 _srcGeneratedDebt) = safeEngine.safes(collateralType, src);
+    uint256 _srcGeneratedDebt = safeEngine.safes(collateralType, src).generatedDebt;
     assertEq(_srcGeneratedDebt, _srcInitialGeneratedDebt.sub(_deltaDebt));
   }
 
@@ -1369,7 +1369,7 @@ contract Unit_SAFEEngine_TransferSafeCollateralAndDebt is Base {
     vm.prank(account);
     safeEngine.transferSAFECollateralAndDebt(collateralType, src, dst, _deltaCollateral, _deltaDebt);
 
-    (uint256 _dstLockedCollateral,) = safeEngine.safes(collateralType, dst);
+    uint256 _dstLockedCollateral = safeEngine.safes(collateralType, dst).lockedCollateral;
     assertEq(_dstLockedCollateral, _dstInitialLockedCollateral.add(_deltaCollateral));
   }
 
@@ -1388,7 +1388,7 @@ contract Unit_SAFEEngine_TransferSafeCollateralAndDebt is Base {
     vm.prank(account);
     safeEngine.transferSAFECollateralAndDebt(collateralType, src, dst, _deltaCollateral, _deltaDebt);
 
-    (, uint256 _dstGeneratedDebt) = safeEngine.safes(collateralType, dst);
+    uint256 _dstGeneratedDebt = safeEngine.safes(collateralType, dst).generatedDebt;
     assertEq(_dstGeneratedDebt, _dstInitialGeneratedDebt.add(_deltaDebt));
   }
 
@@ -1505,7 +1505,7 @@ contract Unit_SAFEEngine_TransferSafeCollateralAndDebt is Base {
     _mockValues(
       _srcInitialLockedCollateral, _srcInitialGeneratedDebt, _dstInitialLockedCollateral, _dstInitialGeneratedDebt, 1, 1
     );
-    stdstore.target(address(safeEngine)).sig(ISAFEEngine.cParams.selector).with_key(collateralType).depth(2)
+    stdstore.target(address(safeEngine)).sig(ISAFEEngine.cParams.selector).with_key(collateralType).depth(1)
       .checked_write(_debtFloor);
 
     vm.expectRevert(bytes('SAFEEngine/dust-src'));
@@ -1528,7 +1528,7 @@ contract Unit_SAFEEngine_TransferSafeCollateralAndDebt is Base {
     _mockValues(
       _srcInitialLockedCollateral, _srcInitialGeneratedDebt, _dstInitialLockedCollateral, _dstInitialGeneratedDebt, 1, 1
     );
-    stdstore.target(address(safeEngine)).sig(ISAFEEngine.cParams.selector).with_key(collateralType).depth(2)
+    stdstore.target(address(safeEngine)).sig(ISAFEEngine.cParams.selector).with_key(collateralType).depth(1)
       .checked_write(_debtFloor);
 
     vm.expectRevert(bytes('SAFEEngine/dust-dst'));
@@ -1616,7 +1616,7 @@ contract Unit_SAFEEngine_ConfiscateSAFECollateralAndDebt is Base {
       collateralType, safe, collateralCounterparty, debtCounterparty, _deltaCollateral, _deltaDebt
     );
 
-    (uint256 _lockedCollateral,) = safeEngine.safes(collateralType, safe);
+    uint256 _lockedCollateral = safeEngine.safes(collateralType, safe).lockedCollateral;
     assertEq(_lockedCollateral, _initialLockedCollateral.add(_deltaCollateral));
   }
 
@@ -1645,7 +1645,7 @@ contract Unit_SAFEEngine_ConfiscateSAFECollateralAndDebt is Base {
       collateralType, safe, collateralCounterparty, debtCounterparty, _deltaCollateral, _deltaDebt
     );
 
-    (, uint256 _generatedDebt) = safeEngine.safes(collateralType, safe);
+    uint256 _generatedDebt = safeEngine.safes(collateralType, safe).generatedDebt;
     assertEq(_generatedDebt, _initialGeneratedDebt.add(_deltaDebt));
   }
 
@@ -1674,7 +1674,7 @@ contract Unit_SAFEEngine_ConfiscateSAFECollateralAndDebt is Base {
       collateralType, safe, collateralCounterparty, debtCounterparty, _deltaCollateral, _deltaDebt
     );
 
-    (uint256 _debtAmount,) = safeEngine.cData(collateralType);
+    uint256 _debtAmount = safeEngine.cData(collateralType).debtAmount;
     assertEq(_debtAmount, _initialGeneratedDebt.add(_deltaDebt));
   }
 
@@ -1874,7 +1874,7 @@ contract Unit_SAFEEngine_InitializeCollateralType is Base {
   function test_Set_AccummulatedRate(bytes32 _collateralType) public authorized {
     safeEngine.initializeCollateralType(_collateralType);
 
-    (, uint256 _accumulatedRate) = safeEngine.cData(_collateralType);
+    uint256 _accumulatedRate = safeEngine.cData(_collateralType).accumulatedRate;
     assertEq(_accumulatedRate, RAY);
   }
 

@@ -112,7 +112,7 @@ contract SingleTransferSAFECollateralAndDebtTest is DSTest {
     b = address(bob);
 
     safeEngine.initializeCollateralType('collateralTokens');
-    safeEngine.modifyParameters('collateralTokens', 'safetyPrice', abi.encode(ray(0.5 ether)));
+    safeEngine.updateCollateralPrice('collateralTokens', ray(0.5 ether), ray(0.5 ether));
     safeEngine.modifyParameters('collateralTokens', 'debtCeiling', abi.encode(rad(1000 ether)));
     safeEngine.modifyParameters('globalDebtCeiling', abi.encode(rad(1000 ether)));
 

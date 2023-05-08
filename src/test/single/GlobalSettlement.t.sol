@@ -178,19 +178,17 @@ contract SingleGlobalSettlementTest is DSTest {
   }
 
   function lockedCollateral(bytes32 _collateralType, address _safe) internal view returns (uint256) {
-    (uint256 _lockedCollateral, uint256 _generatedDebt) = safeEngine.safes(_collateralType, _safe);
-    _generatedDebt;
+    uint256 _lockedCollateral = safeEngine.safes(_collateralType, _safe).lockedCollateral;
     return _lockedCollateral;
   }
 
   function generatedDebt(bytes32 _collateralType, address _safe) internal view returns (uint256) {
-    (uint256 _lockedCollateral, uint256 _generatedDebt) = safeEngine.safes(_collateralType, _safe);
-    _lockedCollateral;
+    uint256 _generatedDebt = safeEngine.safes(_collateralType, _safe).generatedDebt;
     return _generatedDebt;
   }
 
   function debtAmount(bytes32 collateralType) internal view returns (uint256) {
-    (uint256 _debtAmount,) = safeEngine.cData(collateralType);
+    uint256 _debtAmount = safeEngine.cData(collateralType).debtAmount;
     return _debtAmount;
   }
 
@@ -213,8 +211,7 @@ contract SingleGlobalSettlementTest is DSTest {
     safeEngine.initializeCollateralType(_encodedName);
     CollateralJoin collateralA = new CollateralJoin(address(safeEngine), _encodedName, address(newCollateral));
 
-    safeEngine.modifyParameters(_encodedName, 'safetyPrice', abi.encode(ray(3 ether)));
-    safeEngine.modifyParameters(_encodedName, 'liquidationPrice', abi.encode(ray(3 ether)));
+    safeEngine.updateCollateralPrice(_encodedName, ray(3 ether), ray(3 ether));
     safeEngine.modifyParameters(_encodedName, 'debtCeiling', abi.encode(rad(10_000_000 ether))); // 10M
 
     newCollateral.approve(address(collateralA));
@@ -491,8 +488,7 @@ contract SingleGlobalSettlementTest is DSTest {
     gold.collateralA.join(_safe1, 10 ether);
     _ali.modifySAFECollateralization('gold', _safe1, _safe1, _safe1, 10 ether, 15 ether);
 
-    safeEngine.modifyParameters('gold', 'safetyPrice', abi.encode(ray(1 ether)));
-    safeEngine.modifyParameters('gold', 'liquidationPrice', abi.encode(ray(1 ether))); // now unsafe
+    safeEngine.updateCollateralPrice('gold', ray(1 ether), ray(1 ether)); // now unsafe
 
     uint256 auction = liquidationEngine.liquidateSAFE('gold', _safe1); // SAFE liquidated
     assertEq(safeEngine.globalUnbackedDebt(), rad(15 ether)); // now there is bad debt
@@ -964,7 +960,7 @@ contract SingleGlobalSettlementTest is DSTest {
     // make a second SAFE:
     address safe2 = address(_bob);
     coal.collateralA.join(safe2, 1 ether);
-    safeEngine.modifyParameters('coal', 'safetyPrice', abi.encode(ray(5 ether)));
+    safeEngine.updateCollateralPrice('coal', ray(5 ether), ray(5 ether));
     _bob.modifySAFECollateralization('coal', safe2, safe2, safe2, 1 ether, 5 ether);
 
     gold.oracleSecurityModule.updateCollateralPrice(bytes32(2 * WAD));
