@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
+import {Math} from '@libraries/Math.sol';
 import {DSTestPlus, stdStorage, StdStorage} from '@defi-wonderland/solidity-utils/test/DSTestPlus.sol';
 
 contract OverflowChecker {
+  using Math for uint256;
+
   function trySum(uint256[] calldata _numbers) external pure returns (uint256 _total) {
     for (uint256 i = 0; i < _numbers.length; i++) {
       _total += _numbers[i];
@@ -83,6 +86,18 @@ contract OverflowChecker {
       }
     } else {
       _valid = _a <= uint256(type(int256).max) / uint256(_b);
+    }
+  }
+
+  function tryRPow(uint256 _a, uint256 _b) external pure returns (uint256 _total) {
+    _total = _a.rpow(_b);
+  }
+
+  function notOverflowRPow(uint256 _a, uint256 _b) public view returns (bool _valid) {
+    try OverflowChecker(address(this)).tryRPow(_a, _b) {
+      _valid = true;
+    } catch {
+      _valid = false;
     }
   }
 }
