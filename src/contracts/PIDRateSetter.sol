@@ -47,10 +47,12 @@ contract PIDRateSetter is Authorizable {
   PIDCalculator public pidCalculator;
 
   // --- Events ---
-  event ModifyParameters(bytes32 parameter, address addr);
-  event ModifyParameters(bytes32 parameter, uint256 val);
-  event UpdateRedemptionRate(uint256 marketPrice, uint256 redemptionPrice, uint256 redemptionRate);
-  event FailUpdateRedemptionRate(uint256 marketPrice, uint256 redemptionPrice, uint256 redemptionRate, bytes reason);
+  event ModifyParameters(bytes32 _parameter, address _addr);
+  event ModifyParameters(bytes32 _parameter, uint256 _val);
+  event UpdateRedemptionRate(uint256 _marketPrice, uint256 _redemptionPrice, uint256 _redemptionRate);
+  event FailUpdateRedemptionRate(
+    uint256 _marketPrice, uint256 _redemptionPrice, uint256 _redemptionRate, bytes _reason
+  );
 
   constructor(
     address _oracleRelayer,
@@ -120,7 +122,7 @@ contract PIDRateSetter is Authorizable {
    */
   function updateRate() external {
     // Check delay between calls
-    require(block.timestamp - lastUpdateTime >= updateRateDelay || lastUpdateTime == 0, 'PIDRateSetter/wait-more');
+    require(block.timestamp - lastUpdateTime >= updateRateDelay, 'PIDRateSetter/wait-more');
     // Get price feed updates
     (uint256 _marketPrice, bool _hasValidValue) = orcl.getResultWithValidity();
     // If the oracle has a value
