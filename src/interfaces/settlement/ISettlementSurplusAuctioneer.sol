@@ -13,10 +13,12 @@ interface ISettlementSurplusAuctioneer is IAuthorizable, IModifiable {
   event AuctionSurplus(uint256 indexed _id, uint256 _lastSurplusAuctionTime, uint256 _coinBalance);
 
   // --- Data ---
+  function lastSurplusTime() external view returns (uint256 _lastSurplusTime);
+
+  // --- Registry ---
   function accountingEngine() external view returns (AccountingEngineLike _accountingEngine);
   function surplusAuctionHouse() external view returns (SurplusAuctionHouseLike _surplusAuctionHouse);
   function safeEngine() external view returns (SAFEEngineLike _safeEngine);
-  function lastSurplusTime() external view returns (uint256 _lastSurplusTime);
 
   // --- Core Logic ---
   function auctionSurplus() external returns (uint256 _id);

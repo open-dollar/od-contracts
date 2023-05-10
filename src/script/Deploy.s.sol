@@ -174,7 +174,7 @@ contract Deploy is Script, Contracts {
     globalSettlement = new GlobalSettlement();
 
     // setup registry
-    debtAuctionHouse.modifyParameters('accountingEngine', address(accountingEngine));
+    debtAuctionHouse.modifyParameters('accountingEngine', abi.encode(accountingEngine));
     taxCollector.modifyParameters('primaryTaxReceiver', address(accountingEngine));
     liquidationEngine.modifyParameters('accountingEngine', abi.encode(accountingEngine));
     accountingEngine.modifyParameters('protocolTokenAuthority', abi.encode(protocolToken));

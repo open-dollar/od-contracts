@@ -9,13 +9,6 @@ import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IModifiable, GLOBAL_PARAM} from '@interfaces/utils/IModifiable.sol';
 
 interface ISurplusAuctionHouse is IAuthorizable, IDisableable, IModifiable {
-  struct SurplusAuctionHouseParams {
-    uint256 bidIncrease;
-    uint48 bidDuration;
-    uint48 totalAuctionLength;
-    uint256 recyclingPercentage;
-  }
-
   // --- Events ---
   event RestartAuction(uint256 _id, uint256 _auctionDeadline);
   event IncreaseBidSize(uint256 _id, address _highBidder, uint256 _amountToBuy, uint256 _bid, uint256 _bidExpiry);
@@ -39,16 +32,31 @@ interface ISurplusAuctionHouse is IAuthorizable, IDisableable, IModifiable {
     uint48 auctionDeadline; // [unix epoch time]
   }
 
+  struct SurplusAuctionHouseParams {
+    // Minimum bid increase compared to the last bid in order to take the new one in consideration
+    uint256 bidIncrease; // [wad]
+    // How long the auction lasts after a new bid is submitted
+    uint48 bidDuration; // [seconds]
+    // Total length of the auction
+    uint48 totalAuctionLength; // [seconds]
+    uint256 recyclingPercentage;
+  }
+
+  function AUCTION_HOUSE_TYPE() external view returns (bytes32 _AUCTION_HOUSE_TYPE);
+  function SURPLUS_AUCTION_TYPE() external view returns (bytes32 _SURPLUS_AUCTION_TYPE);
+
   function bids(uint256 _id)
     external
     view
     returns (uint256 _bidAmount, uint256 _amountToSell, address _highBidder, uint48 _bidExpiry, uint48 _auctionDeadline);
+  function auctionsStarted() external view returns (uint256 _auctionsStarted);
+
+  // --- Registry ---
   function safeEngine() external view returns (SAFEEngineLike _safeEngine);
   function protocolToken() external view returns (TokenLike _protocolToken);
   function protocolTokenBidReceiver() external view returns (address _protocolTokenBidReceiver);
-  function auctionsStarted() external view returns (uint256 _auctionsStarted);
-  function AUCTION_HOUSE_TYPE() external view returns (bytes32 _AUCTION_HOUSE_TYPE);
-  function SURPLUS_AUCTION_TYPE() external view returns (bytes32 _SURPLUS_AUCTION_TYPE);
+
+  // --- Params ---
   function params() external view returns (SurplusAuctionHouseParams memory _params);
 
   // --- Auction ---

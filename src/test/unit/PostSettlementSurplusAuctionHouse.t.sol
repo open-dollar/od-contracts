@@ -102,18 +102,6 @@ contract Unit_PostSettlementSurplusAuctionHouse_Constructor is Base {
       new PostSettlementSurplusAuctionHouseForTest(address(mockSafeEngine), address(mockProtocolToken));
   }
 
-  function test_Set_BidIncrease() public {
-    assertEq(postSettlementSurplusAuctionHouse.params().bidIncrease, 1.05e18);
-  }
-
-  function test_Set_BidDuration() public {
-    assertEq(postSettlementSurplusAuctionHouse.params().bidDuration, 3 hours);
-  }
-
-  function test_Set_TotalAuctionLength() public {
-    assertEq(postSettlementSurplusAuctionHouse.params().totalAuctionLength, 2 days);
-  }
-
   function test_Set_SafeEngine(address _safeEngine) public {
     postSettlementSurplusAuctionHouse =
       new PostSettlementSurplusAuctionHouseForTest(_safeEngine, address(mockProtocolToken));
@@ -127,28 +115,17 @@ contract Unit_PostSettlementSurplusAuctionHouse_Constructor is Base {
 
     assertEq(address(postSettlementSurplusAuctionHouse.protocolToken()), _protocolToken);
   }
-}
 
-contract Unit_PostSettlementSurplusAuctionHouse_ModifyParameters is Base {
-  function test_ModifyParameters(IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams memory _fuzz)
-    public
-    authorized
-  {
-    postSettlementSurplusAuctionHouse.modifyParameters('bidIncrease', abi.encode(_fuzz.bidIncrease));
-    postSettlementSurplusAuctionHouse.modifyParameters('bidDuration', abi.encode(_fuzz.bidDuration));
-    postSettlementSurplusAuctionHouse.modifyParameters('totalAuctionLength', abi.encode(_fuzz.totalAuctionLength));
-
-    (bool _success, bytes memory _data) =
-      address(postSettlementSurplusAuctionHouse).staticcall(abi.encodeWithSignature('params()'));
-
-    assert(_success);
-    assertEq(keccak256(abi.encode(_fuzz)), keccak256(_data));
+  function test_Set_BidIncrease() public {
+    assertEq(postSettlementSurplusAuctionHouse.params().bidIncrease, 1.05e18);
   }
 
-  function test_Revert_ModifyParameters_UnrecognizedParam() public authorized {
-    vm.expectRevert(IModifiable.UnrecognizedParam.selector);
+  function test_Set_BidDuration() public {
+    assertEq(postSettlementSurplusAuctionHouse.params().bidDuration, 3 hours);
+  }
 
-    postSettlementSurplusAuctionHouse.modifyParameters('unrecognizedParam', abi.encode(0));
+  function test_Set_TotalAuctionLength() public {
+    assertEq(postSettlementSurplusAuctionHouse.params().totalAuctionLength, 2 days);
   }
 }
 
@@ -538,5 +515,28 @@ contract Unit_PostSettlementSurplusAuctionHouse_SettleAuction is Base {
     emit SettleAuction(_auction.id);
 
     postSettlementSurplusAuctionHouse.settleAuction(_auction.id);
+  }
+}
+
+contract Unit_PostSettlementSurplusAuctionHouse_ModifyParameters is Base {
+  function test_Set_Parameters(IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams memory _fuzz)
+    public
+    authorized
+  {
+    postSettlementSurplusAuctionHouse.modifyParameters('bidIncrease', abi.encode(_fuzz.bidIncrease));
+    postSettlementSurplusAuctionHouse.modifyParameters('bidDuration', abi.encode(_fuzz.bidDuration));
+    postSettlementSurplusAuctionHouse.modifyParameters('totalAuctionLength', abi.encode(_fuzz.totalAuctionLength));
+
+    (bool _success, bytes memory _data) =
+      address(postSettlementSurplusAuctionHouse).staticcall(abi.encodeWithSignature('params()'));
+
+    assert(_success);
+    assertEq(keccak256(abi.encode(_fuzz)), keccak256(_data));
+  }
+
+  function test_Revert_UnrecognizedParam() public authorized {
+    vm.expectRevert(IModifiable.UnrecognizedParam.selector);
+
+    postSettlementSurplusAuctionHouse.modifyParameters('unrecognizedParam', abi.encode(0));
   }
 }

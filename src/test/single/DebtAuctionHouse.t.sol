@@ -111,7 +111,7 @@ contract SingleDebtAuctionHouseTest is DSTest {
     bob = address(new Guy(debtAuctionHouse));
     accountingEngine = address(new Gal());
 
-    debtAuctionHouse.modifyParameters('accountingEngine', address(accountingEngine));
+    debtAuctionHouse.modifyParameters('accountingEngine', abi.encode(accountingEngine));
     debtAuctionHouse.addAuthorization(accountingEngine);
     debtAuctionHouse.removeAuthorization(address(this));
 
@@ -140,7 +140,7 @@ contract SingleDebtAuctionHouseTest is DSTest {
     assertEq(amountToSell, 200 ether);
     assertTrue(guy == accountingEngine);
     assertEq(uint256(bidExpiry), 0);
-    assertEq(uint256(end), block.timestamp + debtAuctionHouse.totalAuctionLength());
+    assertEq(uint256(end), block.timestamp + debtAuctionHouse.params().totalAuctionLength);
   }
 
   function test_decreaseSoldAmount() public {

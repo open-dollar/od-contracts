@@ -126,35 +126,6 @@ contract Unit_SettlementSurplusAuctioneer_Constructor is Base {
   }
 }
 
-contract Unit_SettlementSurplusAuctioneer_ModifyParameters is Base {
-  function test_ModifyParameters_AccountingEngine(address _accountingEngine) public authorized {
-    settlementSurplusAuctioneer.modifyParameters('accountingEngine', abi.encode(_accountingEngine));
-
-    assertEq(_accountingEngine, address(settlementSurplusAuctioneer.accountingEngine()));
-  }
-
-  function test_ModifyParameters_SurplusAuctionHouse(address _surplusAuctionHouse) public authorized {
-    address _previousSurplusAuctionHouse = address(settlementSurplusAuctioneer.surplusAuctionHouse());
-
-    vm.expectCall(
-      address(mockSafeEngine), abi.encodeCall(mockSafeEngine.denySAFEModification, (_previousSurplusAuctionHouse))
-    );
-    vm.expectCall(
-      address(mockSafeEngine), abi.encodeCall(mockSafeEngine.approveSAFEModification, (_surplusAuctionHouse))
-    );
-
-    settlementSurplusAuctioneer.modifyParameters('surplusAuctionHouse', abi.encode(_surplusAuctionHouse));
-
-    assertEq(_surplusAuctionHouse, address(settlementSurplusAuctioneer.surplusAuctionHouse()));
-  }
-
-  function test_Revert_ModifyParameters_UnrecognizedParam() public authorized {
-    vm.expectRevert(IModifiable.UnrecognizedParam.selector);
-
-    settlementSurplusAuctioneer.modifyParameters('unrecognizedParam', abi.encode(0));
-  }
-}
-
 contract Unit_SettlementSurplusAuctioneer_AuctionSurplus is Base {
   event AuctionSurplus(uint256 indexed _id, uint256 _lastSurplusTime, uint256 _coinBalance);
 
@@ -310,5 +281,34 @@ contract Unit_SettlementSurplusAuctioneer_AuctionSurplus is Base {
     emit AuctionSurplus(0, block.timestamp, _coinBalance);
 
     settlementSurplusAuctioneer.auctionSurplus();
+  }
+}
+
+contract Unit_SettlementSurplusAuctioneer_ModifyParameters is Base {
+  function test_Set_AccountingEngine(address _accountingEngine) public authorized {
+    settlementSurplusAuctioneer.modifyParameters('accountingEngine', abi.encode(_accountingEngine));
+
+    assertEq(_accountingEngine, address(settlementSurplusAuctioneer.accountingEngine()));
+  }
+
+  function test_Set_SurplusAuctionHouse(address _surplusAuctionHouse) public authorized {
+    address _previousSurplusAuctionHouse = address(settlementSurplusAuctioneer.surplusAuctionHouse());
+
+    vm.expectCall(
+      address(mockSafeEngine), abi.encodeCall(mockSafeEngine.denySAFEModification, (_previousSurplusAuctionHouse))
+    );
+    vm.expectCall(
+      address(mockSafeEngine), abi.encodeCall(mockSafeEngine.approveSAFEModification, (_surplusAuctionHouse))
+    );
+
+    settlementSurplusAuctioneer.modifyParameters('surplusAuctionHouse', abi.encode(_surplusAuctionHouse));
+
+    assertEq(_surplusAuctionHouse, address(settlementSurplusAuctioneer.surplusAuctionHouse()));
+  }
+
+  function test_Revert_UnrecognizedParam() public authorized {
+    vm.expectRevert(IModifiable.UnrecognizedParam.selector);
+
+    settlementSurplusAuctioneer.modifyParameters('unrecognizedParam', abi.encode(0));
   }
 }

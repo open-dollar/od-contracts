@@ -40,6 +40,7 @@ import {Math} from '@libraries/Math.sol';
 contract CollateralJoin is ICollateralJoin, Authorizable, Disableable {
   using Math for uint256;
 
+  // --- Data ---
   // SAFE database
   SAFEEngineLike public safeEngine;
   // Collateral type name
@@ -58,7 +59,7 @@ contract CollateralJoin is ICollateralJoin, Authorizable, Disableable {
     require(decimals == 18, 'CollateralJoin/non-18-decimals');
   }
 
-  // --- Admin ---
+  // --- Shutdown ---
   /**
    * @notice Disable this contract
    */

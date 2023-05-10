@@ -40,6 +40,7 @@ import {Math} from '@libraries/Math.sol';
 contract ETHJoin is IETHJoin, Authorizable, Disableable {
   using Math for uint256;
 
+  // --- Data ---
   // SAFE database
   SAFEEngineLike public safeEngine;
   // Collateral type name
@@ -54,7 +55,7 @@ contract ETHJoin is IETHJoin, Authorizable, Disableable {
     decimals = 18;
   }
 
-  // --- Admin ---
+  // --- Shutdown ---
   /**
    * @notice Disable this contract
    */

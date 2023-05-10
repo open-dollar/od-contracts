@@ -137,7 +137,7 @@ contract E2ETest is Common {
     assertEq(_highBidder, address(accountingEngine));
 
     uint256 _deltaCoinBalance = safeEngine.coinBalance(address(this));
-    uint256 _bidDecrease = debtAuctionHouse.bidDecrease();
+    uint256 _bidDecrease = debtAuctionHouse.params().bidDecrease;
     uint256 _tokenAmount = Math.wdiv(INITIAL_DEBT_AUCTION_MINTED_TOKENS, _bidDecrease);
 
     safeEngine.approveSAFEModification(address(debtAuctionHouse));

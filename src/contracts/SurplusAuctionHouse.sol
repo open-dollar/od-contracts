@@ -48,7 +48,7 @@ contract SurplusAuctionHouse is ISurplusAuctionHouse, Authorizable, Disableable 
   address public protocolTokenBidReceiver;
 
   // --- Params ---
-  SurplusAuctionHouseParams _params;
+  SurplusAuctionHouseParams internal _params;
 
   function params() external view returns (SurplusAuctionHouseParams memory) {
     return _params;
@@ -67,6 +67,7 @@ contract SurplusAuctionHouse is ISurplusAuctionHouse, Authorizable, Disableable 
     });
   }
 
+  // --- Shutdown ---
   /**
    * @notice Disable the auction house (usually called by AccountingEngine)
    *
@@ -179,7 +180,7 @@ contract SurplusAuctionHouse is ISurplusAuctionHouse, Authorizable, Disableable 
     delete bids[_id];
   }
 
-  // --- Administration ---
+  // --- Admin ---
   /**
    * @notice Modify parameters
    * @param _parameter The name of the parameter modified

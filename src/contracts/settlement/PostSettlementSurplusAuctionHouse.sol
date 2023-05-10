@@ -33,27 +33,27 @@ import {Encoding} from '@libraries/Encoding.sol';
 contract PostSettlementSurplusAuctionHouse is IPostSettlementSurplusAuctionHouse, Authorizable {
   using Encoding for bytes;
 
+  bytes32 public constant AUCTION_HOUSE_TYPE = bytes32('SURPLUS');
+  bytes32 public constant SURPLUS_AUCTION_TYPE = bytes32('POST-SETTLEMENT');
+
   // --- Data ---
   // Bid data for each separate auction
   mapping(uint256 => Bid) public bids;
+  // Number of auctions started up until now
+  uint256 public auctionsStarted;
 
+  // --- Registry ---
   // SAFE database
   SAFEEngineLike public safeEngine;
   // Protocol token address
   TokenLike public protocolToken;
 
-  // Number of auctions started up until now
-  uint256 public auctionsStarted;
-
   // --- Params ---
-  PostSettlementSAHParams _params;
+  PostSettlementSAHParams internal _params;
 
   function params() external view returns (PostSettlementSAHParams memory) {
     return _params;
   }
-
-  bytes32 public constant AUCTION_HOUSE_TYPE = bytes32('SURPLUS');
-  bytes32 public constant SURPLUS_AUCTION_TYPE = bytes32('POST-SETTLEMENT');
 
   // --- Init ---
   constructor(address _safeEngine, address _protocolToken) Authorizable(msg.sender) {
@@ -61,22 +61,6 @@ contract PostSettlementSurplusAuctionHouse is IPostSettlementSurplusAuctionHouse
     protocolToken = TokenLike(_protocolToken);
 
     _params = PostSettlementSAHParams({bidIncrease: 1.05e18, bidDuration: 3 hours, totalAuctionLength: 2 days});
-  }
-
-  // --- Admin ---
-  /**
-   * @notice Modify uint256 parameters
-   * @param _parameter The name of the parameter modified
-   * @param _data New value for the parameter
-   */
-  function modifyParameters(bytes32 _parameter, bytes memory _data) external isAuthorized {
-    uint256 _uint256 = _data.toUint256();
-
-    if (_parameter == 'bidIncrease') _params.bidIncrease = _uint256;
-    else if (_parameter == 'bidDuration') _params.bidDuration = uint48(_uint256);
-    else if (_parameter == 'totalAuctionLength') _params.totalAuctionLength = uint48(_uint256);
-    else revert UnrecognizedParam();
-    emit ModifyParameters(_parameter, GLOBAL_PARAM, _data);
   }
 
   // --- Auction ---
@@ -154,5 +138,21 @@ contract PostSettlementSurplusAuctionHouse is IPostSettlementSurplusAuctionHouse
     protocolToken.burn(address(this), bids[_id].bidAmount);
     delete bids[_id];
     emit SettleAuction(_id);
+  }
+
+  // --- Admin ---
+  /**
+   * @notice Modify uint256 parameters
+   * @param _parameter The name of the parameter modified
+   * @param _data New value for the parameter
+   */
+  function modifyParameters(bytes32 _parameter, bytes memory _data) external isAuthorized {
+    uint256 _uint256 = _data.toUint256();
+
+    if (_parameter == 'bidIncrease') _params.bidIncrease = _uint256;
+    else if (_parameter == 'bidDuration') _params.bidDuration = uint48(_uint256);
+    else if (_parameter == 'totalAuctionLength') _params.totalAuctionLength = uint48(_uint256);
+    else revert UnrecognizedParam();
+    emit ModifyParameters(_parameter, GLOBAL_PARAM, _data);
   }
 }

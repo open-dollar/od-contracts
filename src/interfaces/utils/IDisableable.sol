@@ -13,6 +13,6 @@ interface IDisableable {
   // --- Data ---
   function contractEnabled() external view returns (uint256 _contractEnabled);
 
-  // --- Admin ---
+  // --- Shutdown ---
   function disableContract() external;
 }

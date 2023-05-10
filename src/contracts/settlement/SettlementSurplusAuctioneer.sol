@@ -35,12 +35,13 @@ contract SettlementSurplusAuctioneer is ISettlementSurplusAuctioneer, Authorizab
   using Encoding for bytes;
 
   // --- Data ---
+  // Last time when this contract triggered a surplus auction
+  uint256 public lastSurplusTime;
+
+  // --- Registry ---
   AccountingEngineLike public accountingEngine;
   SurplusAuctionHouseLike public surplusAuctionHouse;
   SAFEEngineLike public safeEngine;
-
-  // Last time when this contract triggered a surplus auction
-  uint256 public lastSurplusTime;
 
   // --- Init ---
   constructor(address _accountingEngine, address _surplusAuctionHouse) Authorizable(msg.sender) {
@@ -71,7 +72,7 @@ contract SettlementSurplusAuctioneer is ISettlementSurplusAuctioneer, Authorizab
     }
   }
 
-  // --- Administration ---
+  // --- Admin ---
   /**
    * @notice Modify parameters
    * @param _parameter The name of the contract whose address will be changed

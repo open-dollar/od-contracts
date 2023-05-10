@@ -133,18 +133,6 @@ contract Unit_SurplusAuctionHouse_Constructor is Base {
     assertEq(surplusAuctionHouse.contractEnabled(), 1);
   }
 
-  function test_Set_BidIncrease() public {
-    assertEq(surplusAuctionHouse.params().bidIncrease, 1.05e18);
-  }
-
-  function test_Set_BidDuration() public {
-    assertEq(surplusAuctionHouse.params().bidDuration, 3 hours);
-  }
-
-  function test_Set_TotalAuctionLength() public {
-    assertEq(surplusAuctionHouse.params().totalAuctionLength, 2 days);
-  }
-
   function test_Set_SafeEngine(address _safeEngine) public {
     surplusAuctionHouse = new SurplusAuctionHouseForTest(_safeEngine, address(mockProtocolToken), RECYCLING_PERCENTAGE);
 
@@ -157,44 +145,23 @@ contract Unit_SurplusAuctionHouse_Constructor is Base {
     assertEq(address(surplusAuctionHouse.protocolToken()), _protocolToken);
   }
 
+  function test_Set_BidIncrease() public {
+    assertEq(surplusAuctionHouse.params().bidIncrease, 1.05e18);
+  }
+
+  function test_Set_BidDuration() public {
+    assertEq(surplusAuctionHouse.params().bidDuration, 3 hours);
+  }
+
+  function test_Set_TotalAuctionLength() public {
+    assertEq(surplusAuctionHouse.params().totalAuctionLength, 2 days);
+  }
+
   function test_Set_RecyclingPercentage(uint256 _recyclingPercentage) public {
     surplusAuctionHouse =
       new SurplusAuctionHouseForTest(address(mockSafeEngine), address(mockProtocolToken), _recyclingPercentage);
 
     assertEq(surplusAuctionHouse.params().recyclingPercentage, _recyclingPercentage);
-  }
-}
-
-contract Unit_SurplusAuctionHouse_ModifyParameters is Base {
-  function test_ModifyParameters(ISurplusAuctionHouse.SurplusAuctionHouseParams memory _fuzz) public authorized {
-    surplusAuctionHouse.modifyParameters('bidIncrease', abi.encode(_fuzz.bidIncrease));
-    surplusAuctionHouse.modifyParameters('bidDuration', abi.encode(_fuzz.bidDuration));
-    surplusAuctionHouse.modifyParameters('totalAuctionLength', abi.encode(_fuzz.totalAuctionLength));
-    surplusAuctionHouse.modifyParameters('recyclingPercentage', abi.encode(_fuzz.recyclingPercentage));
-
-    (bool _success, bytes memory _data) = address(surplusAuctionHouse).staticcall(abi.encodeWithSignature('params()'));
-
-    assert(_success);
-    assertEq(keccak256(abi.encode(_fuzz)), keccak256(_data));
-  }
-
-  function test_ModifyParameters_ProtocolTokenBidReceiver(address _protocolTokenBidReceiver) public authorized {
-    vm.assume(_protocolTokenBidReceiver != address(0));
-    surplusAuctionHouse.modifyParameters('protocolTokenBidReceiver', abi.encode(_protocolTokenBidReceiver));
-
-    assertEq(_protocolTokenBidReceiver, surplusAuctionHouse.protocolTokenBidReceiver());
-  }
-
-  function test_Revert_ModifiyParameters_UnrecognizedParam() public authorized {
-    vm.expectRevert(IModifiable.UnrecognizedParam.selector);
-
-    surplusAuctionHouse.modifyParameters('unrecognizedParam', abi.encode(0));
-  }
-
-  function test_Revert_ModifiyParameters_ProtocolTokenBidReceiver() public authorized {
-    vm.expectRevert('SurplusAuctionHouse/null-address');
-
-    surplusAuctionHouse.modifyParameters('protocolTokenBidReceiver', abi.encode(0));
   }
 }
 
@@ -786,5 +753,39 @@ contract Unit_SurplusAuctionHouse_TerminateAuctionPrematurely is Base {
     assertEq(_highBidder, address(0));
     assertEq(_bidExpiry, 0);
     assertEq(_auctionDeadline, 0);
+  }
+}
+
+contract Unit_SurplusAuctionHouse_ModifyParameters is Base {
+  function test_Set_Parameters(ISurplusAuctionHouse.SurplusAuctionHouseParams memory _fuzz) public authorized {
+    surplusAuctionHouse.modifyParameters('bidIncrease', abi.encode(_fuzz.bidIncrease));
+    surplusAuctionHouse.modifyParameters('bidDuration', abi.encode(_fuzz.bidDuration));
+    surplusAuctionHouse.modifyParameters('totalAuctionLength', abi.encode(_fuzz.totalAuctionLength));
+    surplusAuctionHouse.modifyParameters('recyclingPercentage', abi.encode(_fuzz.recyclingPercentage));
+
+    (bool _success, bytes memory _data) = address(surplusAuctionHouse).staticcall(abi.encodeWithSignature('params()'));
+
+    assert(_success);
+    assertEq(keccak256(abi.encode(_fuzz)), keccak256(_data));
+  }
+
+  function test_Set_ProtocolTokenBidReceiver(address _protocolTokenBidReceiver) public authorized {
+    vm.assume(_protocolTokenBidReceiver != address(0));
+
+    surplusAuctionHouse.modifyParameters('protocolTokenBidReceiver', abi.encode(_protocolTokenBidReceiver));
+
+    assertEq(_protocolTokenBidReceiver, surplusAuctionHouse.protocolTokenBidReceiver());
+  }
+
+  function test_Revert_ProtocolTokenBidReceiver_NullAddress() public authorized {
+    vm.expectRevert('SurplusAuctionHouse/null-address');
+
+    surplusAuctionHouse.modifyParameters('protocolTokenBidReceiver', abi.encode(0));
+  }
+
+  function test_Revert_UnrecognizedParam() public authorized {
+    vm.expectRevert(IModifiable.UnrecognizedParam.selector);
+
+    surplusAuctionHouse.modifyParameters('unrecognizedParam', abi.encode(0));
   }
 }

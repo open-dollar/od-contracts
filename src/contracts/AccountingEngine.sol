@@ -163,7 +163,7 @@ contract AccountingEngine is Authorizable, Disableable, IAccountingEngine {
     require(_params.debtAuctionBidSize <= unqueuedUnauctionedDebt(), 'AccountingEngine/insufficient-debt');
     settleDebt(safeEngine.coinBalance(address(this)));
     require(safeEngine.coinBalance(address(this)) == 0, 'AccountingEngine/surplus-not-zero');
-    require(debtAuctionHouse.protocolToken() != address(0), 'AccountingEngine/debt-auction-house-null-prot');
+    require(address(debtAuctionHouse.protocolToken()) != address(0), 'AccountingEngine/debt-auction-house-null-prot');
     require(
       protocolTokenAuthority.authorizedAccounts(address(debtAuctionHouse)) == 1,
       'AccountingEngine/debt-auction-house-cannot-print-prot'

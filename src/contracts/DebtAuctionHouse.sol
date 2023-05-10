@@ -18,37 +18,35 @@
 
 pragma solidity 0.8.19;
 
-import {ISAFEEngine as SAFEEngineLike} from '@interfaces/ISAFEEngine.sol';
-import {IToken as TokenLike} from '@interfaces/external/IToken.sol';
-import {IAccountingEngine as AccountingEngineLike} from '@interfaces/IAccountingEngine.sol';
+import {
+  IDebtAuctionHouse,
+  SAFEEngineLike,
+  TokenLike,
+  AccountingEngineLike,
+  GLOBAL_PARAM
+} from '@interfaces/IDebtAuctionHouse.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {Disableable} from '@contracts/utils/Disableable.sol';
 
 import {Math, WAD} from '@libraries/Math.sol';
+import {Encoding} from '@libraries/Encoding.sol';
 
-/*
-   This thing creates protocol tokens on demand in return for system coins
-*/
+// This thing creates protocol tokens on demand in return for system coins
+contract DebtAuctionHouse is IDebtAuctionHouse, Authorizable, Disableable {
+  using Encoding for bytes;
 
-contract DebtAuctionHouse is Authorizable, Disableable {
+  bytes32 public constant AUCTION_HOUSE_TYPE = bytes32('DEBT');
+
   // --- Data ---
-  struct Bid {
-    // Bid size
-    uint256 bidAmount; // [rad]
-    // How many protocol tokens are sold in an auction
-    uint256 amountToSell; // [wad]
-    // Who the high bidder is
-    address highBidder;
-    // When the latest bid expires and the auction can be settled
-    uint48 bidExpiry; // [unix epoch time]
-    // Hard deadline for the auction after which no more bids can be placed
-    uint48 auctionDeadline; // [unix epoch time]
-  }
-
   // Bid data for each separate auction
   mapping(uint256 => Bid) public bids;
+  // Number of auctions started up until now
+  uint256 public auctionsStarted;
+  // Accumulator for all debt auctions currently not settled
+  uint256 public activeDebtAuctions;
 
+  // --- Registry ---
   // SAFE database
   SAFEEngineLike public safeEngine;
   // Protocol token address
@@ -56,157 +54,24 @@ contract DebtAuctionHouse is Authorizable, Disableable {
   // Accounting engine
   address public accountingEngine;
 
-  // Minimum bid increase compared to the last bid in order to take the new one in consideration
-  uint256 public bidDecrease = 1.05e18; // [wad]
-  // Increase in protocol tokens sold in case an auction is restarted
-  uint256 public amountSoldIncrease = 1.5e18; // [wad]
-  // How long the auction lasts after a new bid is submitted
-  uint48 public bidDuration = 3 hours; // [seconds]
-  // Total length of the auction
-  uint48 public totalAuctionLength = 2 days; // [seconds]
-  // Number of auctions started up until now
-  uint256 public auctionsStarted = 0;
-  // Accumulator for all debt auctions currently not settled
-  uint256 public activeDebtAuctions;
+  // --- Params ---
+  DebtAuctionHouseParams internal _params;
 
-  bytes32 public constant AUCTION_HOUSE_TYPE = bytes32('DEBT');
-
-  // --- Events ---
-  event StartAuction(
-    uint256 indexed id,
-    uint256 auctionsStarted,
-    uint256 amountToSell,
-    uint256 initialBid,
-    address indexed incomeReceiver,
-    uint256 indexed auctionDeadline,
-    uint256 activeDebtAuctions
-  );
-  event ModifyParameters(bytes32 parameter, uint256 data);
-  event ModifyParameters(bytes32 parameter, address data);
-  event RestartAuction(uint256 indexed id, uint256 auctionDeadline);
-  event DecreaseSoldAmount(uint256 indexed id, address highBidder, uint256 amountToBuy, uint256 bid, uint256 bidExpiry);
-  event SettleAuction(uint256 indexed id, uint256 activeDebtAuctions);
-  event TerminateAuctionPrematurely(
-    uint256 indexed id, address sender, address highBidder, uint256 bidAmount, uint256 activeDebtAuctions
-  );
+  function params() external view returns (DebtAuctionHouseParams memory) {
+    return _params;
+  }
 
   // --- Init ---
   constructor(address _safeEngine, address _protocolToken) Authorizable(msg.sender) {
     safeEngine = SAFEEngineLike(_safeEngine);
     protocolToken = TokenLike(_protocolToken);
-  }
 
-  // --- Admin ---
-  /**
-   * @notice Modify an uint256 parameter
-   * @param parameter The name of the parameter modified
-   * @param data New value for the parameter
-   */
-  function modifyParameters(bytes32 parameter, uint256 data) external isAuthorized {
-    if (parameter == 'bidDecrease') bidDecrease = data;
-    else if (parameter == 'amountSoldIncrease') amountSoldIncrease = data;
-    else if (parameter == 'bidDuration') bidDuration = uint48(data);
-    else if (parameter == 'totalAuctionLength') totalAuctionLength = uint48(data);
-    else revert('DebtAuctionHouse/modify-unrecognized-param');
-    emit ModifyParameters(parameter, data);
-  }
-
-  /**
-   * @notice Modify an address parameter
-   * @param parameter The name of the oracle contract modified
-   * @param addr New contract address
-   */
-  function modifyParameters(bytes32 parameter, address addr) external isAuthorized whenEnabled {
-    if (parameter == 'protocolToken') protocolToken = TokenLike(addr);
-    else if (parameter == 'accountingEngine') accountingEngine = addr;
-    else revert('DebtAuctionHouse/modify-unrecognized-param');
-    emit ModifyParameters(parameter, addr);
-  }
-
-  // --- Auction ---
-  /**
-   * @notice Start a new debt auction
-   * @param incomeReceiver Who receives the auction proceeds
-   * @param amountToSell Amount of protocol tokens to sell (wad)
-   * @param initialBid Initial bid size (rad)
-   */
-  function startAuction(
-    address incomeReceiver,
-    uint256 amountToSell,
-    uint256 initialBid
-  ) external isAuthorized whenEnabled returns (uint256 id) {
-    require(auctionsStarted < type(uint256).max, 'DebtAuctionHouse/overflow');
-    id = ++auctionsStarted;
-
-    bids[id].bidAmount = initialBid;
-    bids[id].amountToSell = amountToSell;
-    bids[id].highBidder = incomeReceiver;
-    bids[id].auctionDeadline = uint48(block.timestamp) + totalAuctionLength;
-
-    ++activeDebtAuctions;
-
-    emit StartAuction(
-      id, auctionsStarted, amountToSell, initialBid, incomeReceiver, bids[id].auctionDeadline, activeDebtAuctions
-    );
-  }
-
-  /**
-   * @notice Restart an auction if no bids were submitted for it
-   * @param id ID of the auction to restart
-   */
-  function restartAuction(uint256 id) external {
-    require(id <= auctionsStarted, 'DebtAuctionHouse/auction-never-started');
-    require(bids[id].auctionDeadline < block.timestamp, 'DebtAuctionHouse/not-finished');
-    require(bids[id].bidExpiry == 0, 'DebtAuctionHouse/bid-already-placed');
-    bids[id].amountToSell = (amountSoldIncrease * bids[id].amountToSell) / WAD;
-    bids[id].auctionDeadline = uint48(block.timestamp) + totalAuctionLength;
-    emit RestartAuction(id, bids[id].auctionDeadline);
-  }
-
-  /**
-   * @notice Decrease the protocol token amount you're willing to receive in
-   *         exchange for providing the same amount of system coins being raised by the auction
-   * @param id ID of the auction for which you want to submit a new bid
-   * @param amountToBuy Amount of protocol tokens to buy (must be smaller than the previous proposed amount) (wad)
-   * @param bid New system coin bid (must always equal the total amount raised by the auction) (rad)
-   */
-  function decreaseSoldAmount(uint256 id, uint256 amountToBuy, uint256 bid) external whenEnabled {
-    require(bids[id].highBidder != address(0), 'DebtAuctionHouse/high-bidder-not-set');
-    require(bids[id].bidExpiry > block.timestamp || bids[id].bidExpiry == 0, 'DebtAuctionHouse/bid-already-expired');
-    require(bids[id].auctionDeadline > block.timestamp, 'DebtAuctionHouse/auction-already-expired');
-
-    require(bid == bids[id].bidAmount, 'DebtAuctionHouse/not-matching-bid');
-    require(amountToBuy < bids[id].amountToSell, 'DebtAuctionHouse/amount-bought-not-lower');
-    require(bidDecrease * amountToBuy <= bids[id].amountToSell * WAD, 'DebtAuctionHouse/insufficient-decrease');
-
-    safeEngine.transferInternalCoins(msg.sender, bids[id].highBidder, bid);
-
-    // on first bid submitted, clear as much totalOnAuctionDebt as possible
-    if (bids[id].bidExpiry == 0) {
-      uint256 totalOnAuctionDebt = AccountingEngineLike(bids[id].highBidder).totalOnAuctionDebt();
-      AccountingEngineLike(bids[id].highBidder).cancelAuctionedDebtWithSurplus(Math.min(bid, totalOnAuctionDebt));
-    }
-
-    bids[id].highBidder = msg.sender;
-    bids[id].amountToSell = amountToBuy;
-    bids[id].bidExpiry = uint48(block.timestamp) + bidDuration;
-
-    emit DecreaseSoldAmount(id, msg.sender, amountToBuy, bid, bids[id].bidExpiry);
-  }
-
-  /**
-   * @notice Settle/finish an auction
-   * @param id ID of the auction to settle
-   */
-  function settleAuction(uint256 id) external whenEnabled {
-    require(
-      bids[id].bidExpiry != 0 && (bids[id].bidExpiry < block.timestamp || bids[id].auctionDeadline < block.timestamp),
-      'DebtAuctionHouse/not-finished'
-    );
-    protocolToken.mint(bids[id].highBidder, bids[id].amountToSell);
-    --activeDebtAuctions;
-    delete bids[id];
-    emit SettleAuction(id, activeDebtAuctions);
+    _params = DebtAuctionHouseParams({
+      bidDecrease: 1.05e18,
+      amountSoldIncrease: 1.5e18,
+      bidDuration: 3 hours,
+      totalAuctionLength: 2 days
+    });
   }
 
   // --- Shutdown ---
@@ -219,14 +84,121 @@ contract DebtAuctionHouse is Authorizable, Disableable {
     activeDebtAuctions = 0;
   }
 
+  // --- Auction ---
+  /**
+   * @notice Start a new debt auction
+   * @param _incomeReceiver Who receives the auction proceeds
+   * @param _amountToSell Amount of protocol tokens to sell (wad)
+   * @param _initialBid Initial bid size (rad)
+   */
+  function startAuction(
+    address _incomeReceiver,
+    uint256 _amountToSell,
+    uint256 _initialBid
+  ) external isAuthorized whenEnabled returns (uint256 _id) {
+    require(auctionsStarted < type(uint256).max, 'DebtAuctionHouse/overflow');
+    _id = ++auctionsStarted;
+
+    bids[_id].bidAmount = _initialBid;
+    bids[_id].amountToSell = _amountToSell;
+    bids[_id].highBidder = _incomeReceiver;
+    bids[_id].auctionDeadline = uint48(block.timestamp) + _params.totalAuctionLength;
+
+    ++activeDebtAuctions;
+
+    emit StartAuction(
+      _id, auctionsStarted, _amountToSell, _initialBid, _incomeReceiver, bids[_id].auctionDeadline, activeDebtAuctions
+    );
+  }
+
+  /**
+   * @notice Restart an auction if no bids were submitted for it
+   * @param _id ID of the auction to restart
+   */
+  function restartAuction(uint256 _id) external {
+    require(_id <= auctionsStarted, 'DebtAuctionHouse/auction-never-started');
+    require(bids[_id].auctionDeadline < block.timestamp, 'DebtAuctionHouse/not-finished');
+    require(bids[_id].bidExpiry == 0, 'DebtAuctionHouse/bid-already-placed');
+    bids[_id].amountToSell = (_params.amountSoldIncrease * bids[_id].amountToSell) / WAD;
+    bids[_id].auctionDeadline = uint48(block.timestamp) + _params.totalAuctionLength;
+    emit RestartAuction(_id, bids[_id].auctionDeadline);
+  }
+
+  /**
+   * @notice Decrease the protocol token amount you're willing to receive in
+   *         exchange for providing the same amount of system coins being raised by the auction
+   * @param _id ID of the auction for which you want to submit a new bid
+   * @param _amountToBuy Amount of protocol tokens to buy (must be smaller than the previous proposed amount) (wad)
+   * @param _bid New system coin bid (must always equal the total amount raised by the auction) (rad)
+   */
+  function decreaseSoldAmount(uint256 _id, uint256 _amountToBuy, uint256 _bid) external whenEnabled {
+    require(bids[_id].highBidder != address(0), 'DebtAuctionHouse/high-bidder-not-set');
+    require(bids[_id].bidExpiry > block.timestamp || bids[_id].bidExpiry == 0, 'DebtAuctionHouse/bid-already-expired');
+    require(bids[_id].auctionDeadline > block.timestamp, 'DebtAuctionHouse/auction-already-expired');
+
+    require(_bid == bids[_id].bidAmount, 'DebtAuctionHouse/not-matching-bid');
+    require(_amountToBuy < bids[_id].amountToSell, 'DebtAuctionHouse/amount-bought-not-lower');
+    require(
+      _params.bidDecrease * _amountToBuy <= bids[_id].amountToSell * WAD, 'DebtAuctionHouse/insufficient-decrease'
+    );
+
+    safeEngine.transferInternalCoins(msg.sender, bids[_id].highBidder, _bid);
+
+    // on first bid submitted, clear as much totalOnAuctionDebt as possible
+    if (bids[_id].bidExpiry == 0) {
+      uint256 totalOnAuctionDebt = AccountingEngineLike(bids[_id].highBidder).totalOnAuctionDebt();
+      AccountingEngineLike(bids[_id].highBidder).cancelAuctionedDebtWithSurplus(Math.min(_bid, totalOnAuctionDebt));
+    }
+
+    bids[_id].highBidder = msg.sender;
+    bids[_id].amountToSell = _amountToBuy;
+    bids[_id].bidExpiry = uint48(block.timestamp) + _params.bidDuration;
+
+    emit DecreaseSoldAmount(_id, msg.sender, _amountToBuy, _bid, bids[_id].bidExpiry);
+  }
+
+  /**
+   * @notice Settle/finish an auction
+   * @param _id ID of the auction to settle
+   */
+  function settleAuction(uint256 _id) external whenEnabled {
+    require(
+      bids[_id].bidExpiry != 0 && (bids[_id].bidExpiry < block.timestamp || bids[_id].auctionDeadline < block.timestamp),
+      'DebtAuctionHouse/not-finished'
+    );
+    protocolToken.mint(bids[_id].highBidder, bids[_id].amountToSell);
+    --activeDebtAuctions;
+    delete bids[_id];
+    emit SettleAuction(_id, activeDebtAuctions);
+  }
+
   /**
    * @notice Terminate an auction prematurely
-   * @param id ID of the auction to terminate
+   * @param _id ID of the auction to terminate
    */
-  function terminateAuctionPrematurely(uint256 id) external whenDisabled {
-    require(bids[id].highBidder != address(0), 'DebtAuctionHouse/high-bidder-not-set');
-    safeEngine.createUnbackedDebt(accountingEngine, bids[id].highBidder, bids[id].bidAmount);
-    emit TerminateAuctionPrematurely(id, msg.sender, bids[id].highBidder, bids[id].bidAmount, activeDebtAuctions);
-    delete bids[id];
+  function terminateAuctionPrematurely(uint256 _id) external whenDisabled {
+    require(bids[_id].highBidder != address(0), 'DebtAuctionHouse/high-bidder-not-set');
+    safeEngine.createUnbackedDebt(accountingEngine, bids[_id].highBidder, bids[_id].bidAmount);
+    emit TerminateAuctionPrematurely(_id, msg.sender, bids[_id].highBidder, bids[_id].bidAmount, activeDebtAuctions);
+    delete bids[_id];
+  }
+
+  // --- Admin ---
+  /**
+   * @notice Modify parameters
+   * @param _parameter The name of the parameter modified
+   * @param _data New value for the parameter
+   */
+  function modifyParameters(bytes32 _parameter, bytes memory _data) external isAuthorized {
+    uint256 _uint256 = _data.toUint256(); // REVIEW: To include whenEnabled modifier?
+
+    if (_parameter == 'protocolToken') protocolToken = TokenLike(_data.toAddress());
+    else if (_parameter == 'accountingEngine') accountingEngine = _data.toAddress();
+    else if (_parameter == 'bidDecrease') _params.bidDecrease = _uint256;
+    else if (_parameter == 'amountSoldIncrease') _params.amountSoldIncrease = _uint256;
+    else if (_parameter == 'bidDuration') _params.bidDuration = uint48(_uint256);
+    else if (_parameter == 'totalAuctionLength') _params.totalAuctionLength = uint48(_uint256);
+    else revert UnrecognizedParam();
+    emit ModifyParameters(_parameter, GLOBAL_PARAM, _data);
   }
 }

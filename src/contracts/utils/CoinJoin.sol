@@ -53,7 +53,7 @@ contract CoinJoin is ICoinJoin, Authorizable, Disableable {
     decimals = 18;
   }
 
-  // --- Admin ---
+  // --- Shutdown ---
   /**
    * @notice Disable this contract
    */

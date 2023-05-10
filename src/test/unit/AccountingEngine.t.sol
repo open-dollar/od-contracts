@@ -263,13 +263,15 @@ contract Unit_AccountingEngine_ModifyParameters is Base {
     assertEq(_surplusAuctionHouse, address(accountingEngine.surplusAuctionHouse()));
   }
 
-  function test_ModifyParameters_SystemStakingPool(address _systemStakingPool) public authorized {
-    vm.mockCall(_systemStakingPool, abi.encodeWithSignature('canPrintProtocolTokens()'), abi.encode(0));
-    vm.expectCall(_systemStakingPool, abi.encodeWithSignature('canPrintProtocolTokens()'), 1);
+  function test_ModifyParameters_SystemStakingPool() public authorized {
+    ISystemStakingPool _systemStakingPool = ISystemStakingPool(mockContract('system_staking_pool'));
+
+    vm.mockCall(address(_systemStakingPool), abi.encodeWithSignature('canPrintProtocolTokens()'), abi.encode(0));
+    vm.expectCall(address(_systemStakingPool), abi.encodeWithSignature('canPrintProtocolTokens()'), 1);
 
     accountingEngine.modifyParameters('systemStakingPool', abi.encode(_systemStakingPool));
 
-    assertEq(_systemStakingPool, address(accountingEngine.systemStakingPool()));
+    assertEq(address(_systemStakingPool), address(accountingEngine.systemStakingPool()));
   }
 
   function test_ModifyParameters_DebtAuctionHouse(address _debtAuctionHouse) public authorized {
