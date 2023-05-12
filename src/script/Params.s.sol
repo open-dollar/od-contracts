@@ -9,6 +9,7 @@ struct CollateralParams {
   uint256 /* ray */ safetyCRatio;
   uint256 /* ray */ liquidationRatio;
   uint256 /* ray */ stabilityFee;
+  uint256 /* ray */ percentageOfStabilityFeeToTreasury;
 }
 
 struct GlobalParams {
@@ -17,6 +18,7 @@ struct GlobalParams {
   uint256 /* wad */ surplusAmount;
   uint256 /* rad */ globalDebtCeiling;
   uint256 /* ray */ globalStabilityFee;
+  uint256 /* units */ maxSecondaryReceivers;
   address surplusAuctionBidReceiver;
   uint256 surplusAuctionRecyclingPercentage;
 }
@@ -40,6 +42,8 @@ address constant SURPLUS_AUCTION_BID_RECEIVER = address(420); // address that re
 uint256 constant SURPLUS_AUCTION_RECYCLING_PERCENTAGE = 50;
 uint256 constant GLOBAL_DEBT_CEILING = type(uint256).max;
 uint256 constant GLOBAL_STABILITY_FEE = 1e27;
+uint256 constant MAX_SECONDARY_RECEIVERS = 1;
+uint256 constant PERCENTAGE_OF_STABILITY_FEE_TO_TREASURY = 50e27;
 
 // HAI Params
 bytes32 constant HAI = bytes32('HAI');

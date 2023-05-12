@@ -327,7 +327,8 @@ contract E2EGlobalSettlementTest is Common {
         debtCeiling: type(uint256).max,
         safetyCRatio: LIQUIDATION_RATIO,
         liquidationRatio: LIQUIDATION_RATIO,
-        stabilityFee: RAY
+        stabilityFee: RAY,
+        percentageOfStabilityFeeToTreasury: 0
       }),
       COLLATERAL_PRICE
     );
@@ -340,7 +341,8 @@ contract E2EGlobalSettlementTest is Common {
         debtCeiling: type(uint256).max,
         safetyCRatio: LIQUIDATION_RATIO,
         liquidationRatio: LIQUIDATION_RATIO,
-        stabilityFee: 0
+        stabilityFee: 0,
+        percentageOfStabilityFeeToTreasury: 0
       }),
       COLLATERAL_PRICE
     );
@@ -353,7 +355,8 @@ contract E2EGlobalSettlementTest is Common {
         debtCeiling: type(uint256).max,
         safetyCRatio: LIQUIDATION_RATIO,
         liquidationRatio: LIQUIDATION_RATIO,
-        stabilityFee: 0
+        stabilityFee: 0,
+        percentageOfStabilityFeeToTreasury: 0
       }),
       COLLATERAL_PRICE
     );

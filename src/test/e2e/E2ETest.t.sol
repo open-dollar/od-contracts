@@ -6,6 +6,8 @@ import '@script/Params.s.sol';
 import {Math} from '@libraries/Math.sol';
 
 contract E2ETest is Common {
+  using Math for uint256;
+
   function test_open_safe() public {
     _joinETH(address(this), COLLAT);
     _openSafe(address(this), address(ethJoin), int256(COLLAT), int256(DEBT));
@@ -37,7 +39,8 @@ contract E2ETest is Common {
     uint256 _globalDebtAfterTax = safeEngine.globalDebt();
     assertAlmostEq(_globalDebtAfterTax, Math.wmul(DEBT, TEST_ETH_A_SF_APR) * RAY, RAD_DELTA); // RAD
 
-    uint256 _accountingEngineCoins = safeEngine.coinBalance(address(accountingEngine));
+    uint256 _accountingEngineCoins =
+      safeEngine.coinBalance(address(accountingEngine)).rmul(100 * RAY).rdiv(PERCENTAGE_OF_STABILITY_FEE_TO_TREASURY);
     assertEq(_accountingEngineCoins, _globalDebtAfterTax - _globalDebt);
   }
 

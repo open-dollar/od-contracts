@@ -45,6 +45,7 @@ abstract contract Common is PRBTest, Contracts {
     safeEngine = deployment.safeEngine();
     accountingEngine = deployment.accountingEngine();
     taxCollector = deployment.taxCollector();
+    stabilityFeeTreasury = deployment.stabilityFeeTreasury();
     debtAuctionHouse = deployment.debtAuctionHouse();
     surplusAuctionHouse = deployment.surplusAuctionHouse();
     liquidationEngine = deployment.liquidationEngine();

@@ -21,6 +21,7 @@ contract Deploy is Script, Contracts {
         surplusAmount: SURPLUS_AUCTION_SIZE,
         globalDebtCeiling: GLOBAL_DEBT_CEILING,
         globalStabilityFee: GLOBAL_STABILITY_FEE,
+        maxSecondaryReceivers: MAX_SECONDARY_RECEIVERS,
         surplusAuctionBidReceiver: SURPLUS_AUCTION_BID_RECEIVER,
         surplusAuctionRecyclingPercentage: SURPLUS_AUCTION_RECYCLING_PERCENTAGE
       })
@@ -48,7 +49,8 @@ contract Deploy is Script, Contracts {
         debtCeiling: ETH_A_DEBT_CEILING,
         safetyCRatio: ETH_A_SAFETY_C_RATIO,
         liquidationRatio: ETH_A_LIQUIDATION_RATIO,
-        stabilityFee: ETH_A_STABILITY_FEE
+        stabilityFee: ETH_A_STABILITY_FEE,
+        percentageOfStabilityFeeToTreasury: PERCENTAGE_OF_STABILITY_FEE_TO_TREASURY
       }),
       TEST_ETH_PRICE
     );
@@ -61,7 +63,8 @@ contract Deploy is Script, Contracts {
         debtCeiling: TKN_DEBT_CEILING,
         safetyCRatio: TKN_SAFETY_C_RATIO,
         liquidationRatio: TKN_LIQUIDATION_RATIO,
-        stabilityFee: TKN_STABILITY_FEE
+        stabilityFee: TKN_STABILITY_FEE,
+        percentageOfStabilityFeeToTreasury: PERCENTAGE_OF_STABILITY_FEE_TO_TREASURY
       }),
       TEST_TKN_PRICE
     );
@@ -213,6 +216,7 @@ contract Deploy is Script, Contracts {
     accountingEngine.modifyParameters('debtAuctionBidSize', abi.encode(_params.bidAuctionSize));
     accountingEngine.modifyParameters('surplusAmount', abi.encode(_params.surplusAmount));
     surplusAuctionHouse.modifyParameters('protocolTokenBidReceiver', abi.encode(_params.surplusAuctionBidReceiver));
+    taxCollector.modifyParameters('maxSecondaryReceivers', _params.maxSecondaryReceivers);
 
     vm.stopBroadcast();
   }
@@ -243,6 +247,10 @@ contract Deploy is Script, Contracts {
     // setup params
     safeEngine.modifyParameters(_params.name, 'debtCeiling', abi.encode(_params.debtCeiling));
     taxCollector.modifyParameters(_params.name, 'stabilityFee', _params.stabilityFee);
+    // TODO: change for `addSecondaryTaxReceiver` method
+    taxCollector.modifyParameters(
+      _params.name, _params.percentageOfStabilityFeeToTreasury, address(stabilityFeeTreasury)
+    );
     oracleRelayer.modifyParameters(_params.name, 'safetyCRatio', _params.safetyCRatio);
     oracleRelayer.modifyParameters(_params.name, 'liquidationCRatio', _params.liquidationRatio);
 
