@@ -37,7 +37,7 @@ import {RAY} from '@libraries/Math.sol';
       - `exit`: remove collateral from the system
 */
 
-contract CoinJoin is ICoinJoin, Authorizable, Disableable {
+contract CoinJoin is Authorizable, Disableable, ICoinJoin {
   // --- Data ---
   // SAFE database
   SAFEEngineLike public safeEngine;

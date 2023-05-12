@@ -776,20 +776,20 @@ contract Unit_DebtAuctionHouse_TerminateAuctionPrematurely is Base {
 }
 
 contract Unit_DebtAuctionHouse_ModifyParameters is Base {
-  event ModifyParameters(bytes32 indexed _parameter, bytes32 indexed _collateralType, bytes _data);
+  event ModifyParameters(bytes32 indexed _param, bytes32 indexed _cType, bytes _data);
 
-  function test_Revert_Unauthorized(bytes32 _parameter, bytes memory _data) public {
+  function test_Revert_Unauthorized(bytes32 _param, bytes memory _data) public {
     vm.expectRevert(IAuthorizable.Unauthorized.selector);
 
-    debtAuctionHouse.modifyParameters(_parameter, _data);
+    debtAuctionHouse.modifyParameters(_param, _data);
   }
 
-  function test_Revert_ContractIsDisabled(bytes32 _parameter, bytes memory _data) public authorized {
+  function test_Revert_ContractIsDisabled(bytes32 _param, bytes memory _data) public authorized {
     _mockContractEnabled(0);
 
     vm.expectRevert(IDisableable.ContractIsDisabled.selector);
 
-    debtAuctionHouse.modifyParameters(_parameter, _data);
+    debtAuctionHouse.modifyParameters(_param, _data);
   }
 
   function test_Set_Parameters(IDebtAuctionHouse.DebtAuctionHouseParams memory _fuzz) public authorized {

@@ -13,7 +13,7 @@ interface IETHJoin is IAuthorizable, IDisableable {
 
   // --- Data ---
   function safeEngine() external view returns (SAFEEngineLike _safeEngine);
-  function collateralType() external view returns (bytes32 _collateralType);
+  function collateralType() external view returns (bytes32 _cType);
   function decimals() external view returns (uint256 _decimals);
 
   function join(address _account) external payable;

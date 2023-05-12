@@ -70,10 +70,10 @@ contract Unit_ETHJoin_Constructor is Base {
     assertEq(address(ethJoin.safeEngine()), _safeEngine);
   }
 
-  function test_Set_CollateralType(bytes32 _collateralType) public {
-    ethJoin = new ETHJoin(address(mockSafeEngine), _collateralType);
+  function test_Set_CollateralType(bytes32 _cType) public {
+    ethJoin = new ETHJoin(address(mockSafeEngine), _cType);
 
-    assertEq(ethJoin.collateralType(), _collateralType);
+    assertEq(ethJoin.collateralType(), _cType);
   }
 
   function test_Set_Decimals() public {
@@ -132,7 +132,7 @@ contract Unit_ETHJoin_Join is Base {
     ethJoin.join{value: _wad}(_account);
   }
 
-  function test_Revert_Overflow(address _account, uint256 _wad) public {
+  function test_Revert_IntOverflow(address _account, uint256 _wad) public {
     vm.assume(!notOverflowWhenInt256(_wad));
 
     vm.expectRevert(Math.IntOverflow.selector);
@@ -176,7 +176,7 @@ contract Unit_ETHJoin_Exit is Base {
     vm.assume(notOverflowWhenInt256(_wad));
   }
 
-  function test_Revert_Overflow(address _account, uint256 _wad) public {
+  function test_Revert_IntOverflow(address _account, uint256 _wad) public {
     vm.assume(!notOverflowWhenInt256(_wad));
 
     vm.expectRevert(Math.IntOverflow.selector);

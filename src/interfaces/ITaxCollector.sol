@@ -7,20 +7,20 @@ import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 
 interface ITaxCollector is IAuthorizable {
   // --- Events ---
-  event InitializeCollateralType(bytes32 _collateralType);
-  event ModifyParameters(bytes32 _collateralType, bytes32 _parameter, uint256 _data);
-  event ModifyParameters(bytes32 _parameter, uint256 _data);
-  event ModifyParameters(bytes32 _parameter, address _data);
-  event ModifyParameters(bytes32 _collateralType, address _receiver, bool _val);
-  event ModifyParameters(bytes32 _collateralType, uint256 _taxPercentage, address _receiver);
+  event InitializeCollateralType(bytes32 _cType);
+  event ModifyParameters(bytes32 _cType, bytes32 _param, uint256 _data);
+  event ModifyParameters(bytes32 _param, uint256 _data);
+  event ModifyParameters(bytes32 _param, address _data);
+  event ModifyParameters(bytes32 _cType, address _receiver, bool _val);
+  event ModifyParameters(bytes32 _cType, uint256 _taxPercentage, address _receiver);
   // NOTE: bytes32(collateralType) is left for future compatibility
-  event SetPrimaryReceiver(bytes32 indexed _collateralType, address indexed _receiver);
+  event SetPrimaryReceiver(bytes32 indexed _cType, address indexed _receiver);
   // NOTE: (taxPercentage, canTakeBackTax) = (0, false) means that the receiver is removed
   event SetSecondaryReceiver(
-    bytes32 indexed _collateralType, address indexed _receiver, uint128 _taxPercentage, bool _canTakeBackTax
+    bytes32 indexed _cType, address indexed _receiver, uint128 _taxPercentage, bool _canTakeBackTax
   );
-  event CollectTax(bytes32 indexed _collateralType, uint256 _latestAccumulatedRate, int256 _deltaRate);
-  event DistributeTax(bytes32 indexed _collateralType, address indexed _target, int256 _taxCut);
+  event CollectTax(bytes32 indexed _cType, uint256 _latestAccumulatedRate, int256 _deltaRate);
+  event DistributeTax(bytes32 indexed _cType, address indexed _target, int256 _taxCut);
 
   // --- Data ---
   struct CollateralType {
@@ -38,13 +38,10 @@ interface ITaxCollector is IAuthorizable {
     uint128 taxPercentage; // [ray%]
   }
 
-  function collateralTypes(bytes32 _collateralType) external view returns (uint256 _stabilityFee, uint256 _updateTime);
-  function secondaryReceiverAllotedTax(bytes32 _collateralType)
-    external
-    view
-    returns (uint256 _secondaryReceiverAllotedTax);
+  function collateralTypes(bytes32 _cType) external view returns (uint256 _stabilityFee, uint256 _updateTime);
+  function secondaryReceiverAllotedTax(bytes32 _cType) external view returns (uint256 _secondaryReceiverAllotedTax);
   function _secondaryTaxReceivers(
-    bytes32 _collateralType,
+    bytes32 _cType,
     address _receiver
   ) external view returns (bool _canTakeBackTax, uint128 _taxPercentage);
   function primaryTaxReceiver() external view returns (address _primaryTaxReceiver);
@@ -54,20 +51,17 @@ interface ITaxCollector is IAuthorizable {
   function safeEngine() external view returns (SAFEEngineLike _safeEngine);
 
   // --- Administration ---
-  function initializeCollateralType(bytes32 _collateralType) external;
-  function modifyParameters(bytes32 _collateralType, bytes32 _parameter, uint256 _data) external;
-  function modifyParameters(bytes32 _parameter, uint256 _data) external;
-  function modifyParameters(bytes32 _parameter, address _data) external;
-  function modifyParameters(bytes32 _collateralType, address _receiver, bool _val) external;
-  function modifyParameters(bytes32 _collateralType, uint256 _taxPercentage, address _receiver) external;
+  function initializeCollateralType(bytes32 _cType) external;
+  function modifyParameters(bytes32 _cType, bytes32 _param, uint256 _data) external;
+  function modifyParameters(bytes32 _param, uint256 _data) external;
+  function modifyParameters(bytes32 _param, address _data) external;
+  function modifyParameters(bytes32 _cType, address _receiver, bool _val) external;
+  function modifyParameters(bytes32 _cType, uint256 _taxPercentage, address _receiver) external;
 
   // --- Tax Collection Utils ---
   function collectedManyTax(uint256 _start, uint256 _end) external view returns (bool _ok);
   function taxManyOutcome(uint256 _start, uint256 _end) external view returns (bool _ok, int256 _rad);
-  function taxSingleOutcome(bytes32 _collateralType)
-    external
-    view
-    returns (uint256 _newlyAccumulatedRate, int256 _deltaRate);
+  function taxSingleOutcome(bytes32 _cType) external view returns (uint256 _newlyAccumulatedRate, int256 _deltaRate);
 
   // --- Tax Receiver Utils ---
   function secondaryReceiversListLength() external view returns (uint256 _secondaryReceiversListLength);
@@ -84,5 +78,5 @@ interface ITaxCollector is IAuthorizable {
 
   // --- Tax (Stability Fee) Collection ---
   function taxMany(uint256 _start, uint256 _end) external;
-  function taxSingle(bytes32 _collateralType) external returns (uint256 _latestAccumulatedRate);
+  function taxSingle(bytes32 _cType) external returns (uint256 _latestAccumulatedRate);
 }

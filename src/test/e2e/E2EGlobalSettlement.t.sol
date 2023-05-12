@@ -394,14 +394,14 @@ contract E2EGlobalSettlementTest is Common {
 
   function _releaseRemainingCollateral(
     address _account,
-    bytes32 _collateralType
+    bytes32 _cType
   ) internal returns (uint256 _remainderCollateral) {
-    _remainderCollateral = safeEngine.safes(_collateralType, _account).lockedCollateral;
+    _remainderCollateral = safeEngine.safes(_cType, _account).lockedCollateral;
     if (_remainderCollateral > 0) {
       vm.startPrank(_account);
-      globalSettlement.freeCollateral(_collateralType);
-      collateralJoin[_collateralType].exit(_account, _remainderCollateral);
-      assertEq(collateral[_collateralType].balanceOf(_account), _remainderCollateral);
+      globalSettlement.freeCollateral(_cType);
+      collateralJoin[_cType].exit(_account, _remainderCollateral);
+      assertEq(collateral[_cType].balanceOf(_account), _remainderCollateral);
       vm.stopPrank();
     }
   }
@@ -415,13 +415,13 @@ contract E2EGlobalSettlementTest is Common {
 
   function _redeemCollateral(
     address _account,
-    bytes32 _collateralType,
+    bytes32 _cType,
     uint256 _coinsAmount
   ) internal returns (uint256 _collateralAmount) {
     vm.startPrank(_account);
-    globalSettlement.redeemCollateral(_collateralType, _coinsAmount);
-    _collateralAmount = safeEngine.tokenCollateral(_collateralType, _account);
-    collateralJoin[_collateralType].exit(_account, _collateralAmount);
+    globalSettlement.redeemCollateral(_cType, _coinsAmount);
+    _collateralAmount = safeEngine.tokenCollateral(_cType, _account);
+    collateralJoin[_cType].exit(_account, _collateralAmount);
     vm.stopPrank();
   }
 }

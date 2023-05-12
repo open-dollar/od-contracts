@@ -33,7 +33,7 @@ import {Math, WAD} from '@libraries/Math.sol';
 import {Encoding} from '@libraries/Encoding.sol';
 
 // This thing creates protocol tokens on demand in return for system coins
-contract DebtAuctionHouse is IDebtAuctionHouse, Authorizable, Disableable {
+contract DebtAuctionHouse is Authorizable, Disableable, IDebtAuctionHouse {
   using Encoding for bytes;
 
   bytes32 public constant AUCTION_HOUSE_TYPE = bytes32('DEBT');
@@ -185,20 +185,21 @@ contract DebtAuctionHouse is IDebtAuctionHouse, Authorizable, Disableable {
   // --- Admin ---
   /**
    * @notice Modify parameters
-   * @param _parameter The name of the parameter modified
+   * @param _param The name of the parameter modified
    * @param _data New value for the parameter
    */
-  function modifyParameters(bytes32 _parameter, bytes memory _data) external isAuthorized whenEnabled {
+  function modifyParameters(bytes32 _param, bytes memory _data) external isAuthorized whenEnabled {
+    address _address = _data.toAddress();
     uint256 _uint256 = _data.toUint256();
 
-    if (_parameter == 'protocolToken') protocolToken = TokenLike(_data.toAddress());
-    else if (_parameter == 'accountingEngine') accountingEngine = _data.toAddress();
-    else if (_parameter == 'bidDecrease') _params.bidDecrease = _uint256;
-    else if (_parameter == 'amountSoldIncrease') _params.amountSoldIncrease = _uint256;
-    else if (_parameter == 'bidDuration') _params.bidDuration = uint48(_uint256);
-    else if (_parameter == 'totalAuctionLength') _params.totalAuctionLength = uint48(_uint256);
+    if (_param == 'protocolToken') protocolToken = TokenLike(_address);
+    else if (_param == 'accountingEngine') accountingEngine = _address;
+    else if (_param == 'bidDecrease') _params.bidDecrease = _uint256;
+    else if (_param == 'amountSoldIncrease') _params.amountSoldIncrease = _uint256;
+    else if (_param == 'bidDuration') _params.bidDuration = uint48(_uint256);
+    else if (_param == 'totalAuctionLength') _params.totalAuctionLength = uint48(_uint256);
     else revert UnrecognizedParam();
 
-    emit ModifyParameters(_parameter, GLOBAL_PARAM, _data);
+    emit ModifyParameters(_param, GLOBAL_PARAM, _data);
   }
 }

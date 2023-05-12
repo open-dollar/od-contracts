@@ -70,12 +70,12 @@ abstract contract Base is HaiTest {
     _mockCollateralList(collateralTypeC);
   }
 
-  function setUpTaxSingleOutcome(bytes32 _collateralType) public {
+  function setUpTaxSingleOutcome(bytes32 _cType) public {
     // SafeEngine storage
-    _mockSafeEngineCData(_collateralType, debtAmount, lastAccumulatedRate, 0, 0);
+    _mockSafeEngineCData(_cType, debtAmount, lastAccumulatedRate, 0, 0);
 
     // TaxCollector storage
-    _mockCollateralType(_collateralType, stabilityFee, updateTime);
+    _mockCollateralType(_cType, stabilityFee, updateTime);
     _mockGlobalStabilityFee(globalStabilityFee);
   }
 
@@ -87,14 +87,14 @@ abstract contract Base is HaiTest {
     setUpSplitTaxIncome(collateralTypeC);
   }
 
-  function setUpTaxSingle(bytes32 _collateralType) public {
-    setUpTaxSingleOutcome(_collateralType);
+  function setUpTaxSingle(bytes32 _cType) public {
+    setUpTaxSingleOutcome(_cType);
 
-    setUpSplitTaxIncome(_collateralType);
+    setUpSplitTaxIncome(_cType);
   }
 
-  function setUpSplitTaxIncome(bytes32 _collateralType) public {
-    setUpDistributeTax(_collateralType);
+  function setUpSplitTaxIncome(bytes32 _cType) public {
+    setUpDistributeTax(_cType);
 
     // SafeEngine storage
     _mockCoinBalance(secondaryReceiverB, coinBalance);
@@ -104,18 +104,18 @@ abstract contract Base is HaiTest {
     _mockSecondaryReceiver(secondaryReceiverA);
     _mockSecondaryReceiver(secondaryReceiverB);
     _mockSecondaryReceiver(secondaryReceiverC);
-    _mockSecondaryTaxReceiver(_collateralType, secondaryReceiverB, canTakeBackTax, 0);
-    _mockSecondaryTaxReceiver(_collateralType, secondaryReceiverC, canTakeBackTax, taxPercentage);
+    _mockSecondaryTaxReceiver(_cType, secondaryReceiverB, canTakeBackTax, 0);
+    _mockSecondaryTaxReceiver(_cType, secondaryReceiverC, canTakeBackTax, taxPercentage);
   }
 
-  function setUpDistributeTax(bytes32 _collateralType) public {
+  function setUpDistributeTax(bytes32 _cType) public {
     // SafeEngine storage
     _mockCoinBalance(primaryTaxReceiver, coinBalance);
     _mockCoinBalance(secondaryReceiverA, coinBalance);
 
     // TaxCollector storage
-    _mockSecondaryReceiverAllotedTax(_collateralType, secondaryReceiverAllotedTax);
-    _mockSecondaryTaxReceiver(_collateralType, secondaryReceiverA, canTakeBackTax, taxPercentage);
+    _mockSecondaryReceiverAllotedTax(_cType, secondaryReceiverAllotedTax);
+    _mockSecondaryTaxReceiver(_cType, secondaryReceiverA, canTakeBackTax, taxPercentage);
     _mockPrimaryTaxReceiver(primaryTaxReceiver);
   }
 
@@ -131,7 +131,7 @@ abstract contract Base is HaiTest {
   }
 
   function _mockSafeEngineCData(
-    bytes32 _collateralType,
+    bytes32 _cType,
     uint256 _debtAmount,
     uint256 _accumulatedRate,
     uint256 _safetyPrice,
@@ -139,34 +139,31 @@ abstract contract Base is HaiTest {
   ) internal {
     vm.mockCall(
       address(mockSafeEngine),
-      abi.encodeCall(mockSafeEngine.cData, (_collateralType)),
+      abi.encodeCall(mockSafeEngine.cData, (_cType)),
       abi.encode(_debtAmount, _accumulatedRate, _safetyPrice, _liquidationPrice)
     );
   }
 
-  function _mockCollateralType(bytes32 _collateralType, uint256 _stabilityFee, uint256 _updateTime) internal {
-    stdstore.target(address(taxCollector)).sig(ITaxCollector.collateralTypes.selector).with_key(_collateralType).depth(
-      0
-    ).checked_write(_stabilityFee);
-    stdstore.target(address(taxCollector)).sig(ITaxCollector.collateralTypes.selector).with_key(_collateralType).depth(
-      1
-    ).checked_write(_updateTime);
+  function _mockCollateralType(bytes32 _cType, uint256 _stabilityFee, uint256 _updateTime) internal {
+    stdstore.target(address(taxCollector)).sig(ITaxCollector.collateralTypes.selector).with_key(_cType).depth(0)
+      .checked_write(_stabilityFee);
+    stdstore.target(address(taxCollector)).sig(ITaxCollector.collateralTypes.selector).with_key(_cType).depth(1)
+      .checked_write(_updateTime);
   }
 
-  function _mockSecondaryReceiverAllotedTax(bytes32 _collateralType, uint256 _secondaryReceiverAllotedTax) internal {
-    stdstore.target(address(taxCollector)).sig(ITaxCollector.secondaryReceiverAllotedTax.selector).with_key(
-      _collateralType
-    ).checked_write(_secondaryReceiverAllotedTax);
+  function _mockSecondaryReceiverAllotedTax(bytes32 _cType, uint256 _secondaryReceiverAllotedTax) internal {
+    stdstore.target(address(taxCollector)).sig(ITaxCollector.secondaryReceiverAllotedTax.selector).with_key(_cType)
+      .checked_write(_secondaryReceiverAllotedTax);
   }
 
   function _mockSecondaryTaxReceiver(
-    bytes32 _collateralType,
+    bytes32 _cType,
     address _receiver,
     bool _canTakeBackTax,
     uint128 _taxPercentage
   ) internal {
     // BUG: Accessing packed slots is not supported by Std Storage
-    taxCollector.addSecondaryTaxReceiver(_collateralType, _receiver, _canTakeBackTax, _taxPercentage);
+    taxCollector.addSecondaryTaxReceiver(_cType, _receiver, _canTakeBackTax, _taxPercentage);
   }
 
   function _mockPrimaryTaxReceiver(address _primaryTaxReceiver) internal {
@@ -181,8 +178,8 @@ abstract contract Base is HaiTest {
     );
   }
 
-  function _mockCollateralList(bytes32 _collateralType) internal {
-    taxCollector.addToCollateralList(_collateralType);
+  function _mockCollateralList(bytes32 _cType) internal {
+    taxCollector.addToCollateralList(_cType);
   }
 
   function _mockSecondaryReceiver(address _receiver) internal {
@@ -257,49 +254,49 @@ contract Unit_TaxCollector_Constructor is Base {
 }
 
 contract Unit_TaxCollector_InitializeCollateralType is Base {
-  event InitializeCollateralType(bytes32 _collateralType);
+  event InitializeCollateralType(bytes32 _cType);
 
-  function test_Revert_Unauthorized(bytes32 _collateralType) public {
+  function test_Revert_Unauthorized(bytes32 _cType) public {
     vm.expectRevert(IAuthorizable.Unauthorized.selector);
 
-    taxCollector.initializeCollateralType(_collateralType);
+    taxCollector.initializeCollateralType(_cType);
   }
 
-  function test_Revert_CollateralTypeAlreadyInit(bytes32 _collateralType) public authorized {
-    _mockCollateralType(_collateralType, RAY, 0);
+  function test_Revert_CollateralTypeAlreadyInit(bytes32 _cType) public authorized {
+    _mockCollateralType(_cType, RAY, 0);
 
     vm.expectRevert('TaxCollector/collateral-type-already-init');
 
-    taxCollector.initializeCollateralType(_collateralType);
+    taxCollector.initializeCollateralType(_cType);
   }
 
-  function test_Set_CollateralTypeStabilityFee(bytes32 _collateralType) public authorized {
-    taxCollector.initializeCollateralType(_collateralType);
+  function test_Set_CollateralTypeStabilityFee(bytes32 _cType) public authorized {
+    taxCollector.initializeCollateralType(_cType);
 
-    (uint256 _stabilityFee,) = taxCollector.collateralTypes(_collateralType);
+    (uint256 _stabilityFee,) = taxCollector.collateralTypes(_cType);
 
     assertEq(_stabilityFee, RAY);
   }
 
-  function test_Set_CollateralTypeUpdateTime(bytes32 _collateralType) public authorized {
-    taxCollector.initializeCollateralType(_collateralType);
+  function test_Set_CollateralTypeUpdateTime(bytes32 _cType) public authorized {
+    taxCollector.initializeCollateralType(_cType);
 
-    (, uint256 _updateTime) = taxCollector.collateralTypes(_collateralType);
+    (, uint256 _updateTime) = taxCollector.collateralTypes(_cType);
 
     assertEq(_updateTime, block.timestamp);
   }
 
-  function test_Set_CollateralList(bytes32 _collateralType) public authorized {
-    taxCollector.initializeCollateralType(_collateralType);
+  function test_Set_CollateralList(bytes32 _cType) public authorized {
+    taxCollector.initializeCollateralType(_cType);
 
-    assertEq(taxCollector.collateralListList()[0], _collateralType);
+    assertEq(taxCollector.collateralListList()[0], _cType);
   }
 
-  function test_Emit_InitializeCollateralType(bytes32 _collateralType) public authorized {
+  function test_Emit_InitializeCollateralType(bytes32 _cType) public authorized {
     expectEmitNoIndex();
-    emit InitializeCollateralType(_collateralType);
+    emit InitializeCollateralType(_cType);
 
-    taxCollector.initializeCollateralType(_collateralType);
+    taxCollector.initializeCollateralType(_cType);
   }
 }
 
@@ -370,6 +367,16 @@ contract Unit_TaxCollector_TaxManyOutcome is Base {
     vm.expectRevert('TaxCollector/invalid-indexes');
 
     taxCollector.taxManyOutcome(_start, _end);
+  }
+
+  function test_Revert_IntOverflow(uint256 _coinBalance) public {
+    vm.assume(!notOverflowWhenInt256(_coinBalance));
+
+    _mockCoinBalance(primaryTaxReceiver, _coinBalance);
+
+    vm.expectRevert(Math.IntOverflow.selector);
+
+    taxCollector.taxManyOutcome(0, 2);
   }
 
   function test_Return_Ok_False() public {
@@ -449,7 +456,7 @@ contract Unit_TaxCollector_TaxSingleOutcome is Base {
 }
 
 contract Unit_TaxCollector_TaxMany is Base {
-  event CollectTax(bytes32 indexed _collateralType, uint256 _latestAccumulatedRate, int256 _deltaRate);
+  event CollectTax(bytes32 indexed _cType, uint256 _latestAccumulatedRate, int256 _deltaRate);
 
   function setUp() public override {
     Base.setUp();
@@ -489,8 +496,8 @@ contract Unit_TaxCollector_TaxMany is Base {
 }
 
 contract Unit_TaxCollector_TaxSingle is Base {
-  event CollectTax(bytes32 indexed _collateralType, uint256 _latestAccumulatedRate, int256 _deltaRate);
-  event DistributeTax(bytes32 indexed _collateralType, address indexed _target, int256 _taxCut);
+  event CollectTax(bytes32 indexed _cType, uint256 _latestAccumulatedRate, int256 _deltaRate);
+  event DistributeTax(bytes32 indexed _cType, address indexed _target, int256 _taxCut);
 
   function setUp() public override {
     Base.setUp();
@@ -554,7 +561,7 @@ contract Unit_TaxCollector_TaxSingle is Base {
 }
 
 contract Unit_TaxCollector_SplitTaxIncome is Base {
-  event DistributeTax(bytes32 indexed _collateralType, address indexed _target, int256 _taxCut);
+  event DistributeTax(bytes32 indexed _cType, address indexed _target, int256 _taxCut);
 
   function setUp() public override {
     Base.setUp();
@@ -586,7 +593,7 @@ contract Unit_TaxCollector_SplitTaxIncome is Base {
 }
 
 contract Unit_TaxCollector_DistributeTax is Base {
-  event DistributeTax(bytes32 indexed _collateralType, address indexed _target, int256 _taxCut);
+  event DistributeTax(bytes32 indexed _cType, address indexed _target, int256 _taxCut);
 
   function setUp() public override {
     Base.setUp();
@@ -594,8 +601,8 @@ contract Unit_TaxCollector_DistributeTax is Base {
     Base.setUpDistributeTax(collateralTypeA);
   }
 
-  function test_Revert_CoinBalanceDoesNotFitIntoInt256(
-    bytes32 _collateralType,
+  function test_Revert_IntOverflow(
+    bytes32 _cType,
     address _receiver,
     uint256 _debtAmount,
     int256 _deltaRate,
@@ -605,9 +612,9 @@ contract Unit_TaxCollector_DistributeTax is Base {
 
     _mockCoinBalance(_receiver, _coinBalance);
 
-    vm.expectRevert('TaxCollector/coin-balance-does-not-fit-into-int256');
+    vm.expectRevert(Math.IntOverflow.selector);
 
-    taxCollector.distributeTax(_collateralType, _receiver, _debtAmount, _deltaRate);
+    taxCollector.distributeTax(_cType, _receiver, _debtAmount, _deltaRate);
   }
 
   function test_Call_SafeEngine_UpdateAccumulatedRate(

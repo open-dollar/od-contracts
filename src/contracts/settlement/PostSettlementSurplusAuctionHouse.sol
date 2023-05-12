@@ -30,7 +30,7 @@ import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {WAD} from '@libraries/Math.sol';
 import {Encoding} from '@libraries/Encoding.sol';
 
-contract PostSettlementSurplusAuctionHouse is IPostSettlementSurplusAuctionHouse, Authorizable {
+contract PostSettlementSurplusAuctionHouse is Authorizable, IPostSettlementSurplusAuctionHouse {
   using Encoding for bytes;
 
   bytes32 public constant AUCTION_HOUSE_TYPE = bytes32('SURPLUS');
@@ -144,17 +144,17 @@ contract PostSettlementSurplusAuctionHouse is IPostSettlementSurplusAuctionHouse
   // --- Admin ---
   /**
    * @notice Modify uint256 parameters
-   * @param _parameter The name of the parameter modified
+   * @param _param The name of the parameter modified
    * @param _data New value for the parameter
    */
-  function modifyParameters(bytes32 _parameter, bytes memory _data) external isAuthorized {
+  function modifyParameters(bytes32 _param, bytes memory _data) external isAuthorized {
     uint256 _uint256 = _data.toUint256();
 
-    if (_parameter == 'bidIncrease') _params.bidIncrease = _uint256;
-    else if (_parameter == 'bidDuration') _params.bidDuration = uint48(_uint256);
-    else if (_parameter == 'totalAuctionLength') _params.totalAuctionLength = uint48(_uint256);
+    if (_param == 'bidIncrease') _params.bidIncrease = _uint256;
+    else if (_param == 'bidDuration') _params.bidDuration = uint48(_uint256);
+    else if (_param == 'totalAuctionLength') _params.totalAuctionLength = uint48(_uint256);
     else revert UnrecognizedParam();
 
-    emit ModifyParameters(_parameter, GLOBAL_PARAM, _data);
+    emit ModifyParameters(_param, GLOBAL_PARAM, _data);
   }
 }

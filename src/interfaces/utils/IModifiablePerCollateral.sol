@@ -5,5 +5,5 @@ import {IModifiable, GLOBAL_PARAM} from '@interfaces/utils/IModifiable.sol';
 
 interface IModifiablePerCollateral is IModifiable {
   // --- Admin ---
-  function modifyParameters(bytes32 _collateralType, bytes32 _parameter, bytes memory _data) external;
+  function modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) external;
 }

@@ -292,11 +292,11 @@ contract SingleGlobalSettlementTest is DSTest {
       new StabilityFeeTreasury(address(safeEngine), address(accountingEngine), address(systemCoinA));
 
     globalSettlement = new GlobalSettlement();
-    globalSettlement.modifyParameters('safeEngine', address(safeEngine));
-    globalSettlement.modifyParameters('liquidationEngine', address(liquidationEngine));
-    globalSettlement.modifyParameters('accountingEngine', address(accountingEngine));
-    globalSettlement.modifyParameters('oracleRelayer', address(oracleRelayer));
-    globalSettlement.modifyParameters('shutdownCooldown', 1 hours);
+    globalSettlement.modifyParameters('safeEngine', abi.encode(safeEngine));
+    globalSettlement.modifyParameters('liquidationEngine', abi.encode(liquidationEngine));
+    globalSettlement.modifyParameters('accountingEngine', abi.encode(accountingEngine));
+    globalSettlement.modifyParameters('oracleRelayer', abi.encode(oracleRelayer));
+    globalSettlement.modifyParameters('shutdownCooldown', abi.encode(1 hours));
     safeEngine.addAuthorization(address(globalSettlement));
     accountingEngine.addAuthorization(address(globalSettlement));
     oracleRelayer.addAuthorization(address(globalSettlement));

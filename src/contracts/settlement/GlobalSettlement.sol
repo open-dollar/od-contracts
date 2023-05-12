@@ -19,19 +19,24 @@
 
 pragma solidity 0.8.19;
 
-import {ISAFEEngine as SAFEEngineLike} from '@interfaces/ISAFEEngine.sol';
-import {ILiquidationEngine as LiquidationEngineLike} from '@interfaces/ILiquidationEngine.sol';
-import {IStabilityFeeTreasury as StabilityFeeTreasuryLike} from '@interfaces/IStabilityFeeTreasury.sol';
-import {IAccountingEngine as AccountingEngineLike} from '@interfaces/IAccountingEngine.sol';
-import {IDisableable as CoinSavingsAccountLike} from '@interfaces/utils/IDisableable.sol';
-import {ICollateralAuctionHouse as CollateralAuctionHouseLike} from '@interfaces/ICollateralAuctionHouse.sol';
-import {IOracle as OracleLike} from '@interfaces/IOracle.sol';
-import {IOracleRelayer as OracleRelayerLike} from '@interfaces/IOracleRelayer.sol';
+import {
+  IGlobalSettlement,
+  SAFEEngineLike,
+  LiquidationEngineLike,
+  AccountingEngineLike,
+  OracleRelayerLike,
+  CoinSavingsAccountLike,
+  StabilityFeeTreasuryLike,
+  CollateralAuctionHouseLike,
+  OracleLike,
+  GLOBAL_PARAM
+} from '@interfaces/settlement/IGlobalSettlement.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {Disableable} from '@contracts/utils/Disableable.sol';
 
 import {Math, RAY} from '@libraries/Math.sol';
+import {Encoding} from '@libraries/Encoding.sol';
 
 /*
     This is the Global Settlement module. It is an
@@ -101,17 +106,11 @@ import {Math, RAY} from '@libraries/Math.sol';
         - the amount of collateral available to redeem is limited by how big your bag is
 */
 
-contract GlobalSettlement is Authorizable, Disableable {
+contract GlobalSettlement is Authorizable, Disableable, IGlobalSettlement {
   using Math for uint256;
+  using Encoding for bytes;
 
   // --- Data ---
-  SAFEEngineLike public safeEngine;
-  LiquidationEngineLike public liquidationEngine;
-  AccountingEngineLike public accountingEngine;
-  OracleRelayerLike public oracleRelayer;
-  CoinSavingsAccountLike public coinSavingsAccount;
-  StabilityFeeTreasuryLike public stabilityFeeTreasury;
-
   // The timestamp when settlement was triggered
   uint256 public shutdownTime;
   // The amount of time post settlement during which no processing takes place
@@ -133,52 +132,18 @@ contract GlobalSettlement is Authorizable, Disableable {
   // Amount of coins already used for collateral redemption by every address and for different collateral types
   mapping(bytes32 => mapping(address => uint256)) public coinsUsedToRedeem; // [wad]
 
-  // --- Events ---
-  event ModifyParameters(bytes32 parameter, uint256 data);
-  event ModifyParameters(bytes32 parameter, address data);
-  event ShutdownSystem();
-  event FreezeCollateralType(bytes32 indexed collateralType, uint256 finalCoinPerCollateralPrice);
-  event FastTrackAuction(bytes32 indexed collateralType, uint256 auctionId, uint256 collateralTotalDebt);
-  event ProcessSAFE(bytes32 indexed collateralType, address safe, uint256 collateralShortfall);
-  event FreeCollateral(bytes32 indexed collateralType, address sender, int256 collateralAmount);
-  event SetOutstandingCoinSupply(uint256 outstandingCoinSupply);
-  event CalculateCashPrice(bytes32 indexed collateralType, uint256 collateralCashPrice);
-  event PrepareCoinsForRedeeming(address indexed sender, uint256 coinBag);
-  event RedeemCollateral(
-    bytes32 indexed collateralType, address indexed sender, uint256 coinsAmount, uint256 collateralAmount
-  );
+  // --- Registry ---
+  SAFEEngineLike public safeEngine;
+  LiquidationEngineLike public liquidationEngine;
+  AccountingEngineLike public accountingEngine;
+  OracleRelayerLike public oracleRelayer;
+  CoinSavingsAccountLike public coinSavingsAccount;
+  StabilityFeeTreasuryLike public stabilityFeeTreasury;
 
   // --- Init ---
   constructor() Authorizable(msg.sender) {}
 
-  // --- Administration ---
-  /**
-   * @notice Modify an address parameter
-   * @param parameter The name of the parameter to modify
-   * @param data The new address for the parameter
-   */
-  function modifyParameters(bytes32 parameter, address data) external isAuthorized whenEnabled {
-    if (parameter == 'safeEngine') safeEngine = SAFEEngineLike(data);
-    else if (parameter == 'liquidationEngine') liquidationEngine = LiquidationEngineLike(data);
-    else if (parameter == 'accountingEngine') accountingEngine = AccountingEngineLike(data);
-    else if (parameter == 'oracleRelayer') oracleRelayer = OracleRelayerLike(data);
-    else if (parameter == 'coinSavingsAccount') coinSavingsAccount = CoinSavingsAccountLike(data);
-    else if (parameter == 'stabilityFeeTreasury') stabilityFeeTreasury = StabilityFeeTreasuryLike(data);
-    else revert('GlobalSettlement/modify-unrecognized-parameter');
-    emit ModifyParameters(parameter, data);
-  }
-
-  /**
-   * @notice Modify an uint256 parameter
-   * @param parameter The name of the parameter to modify
-   * @param data The new value for the parameter
-   */
-  function modifyParameters(bytes32 parameter, uint256 data) external isAuthorized whenEnabled {
-    if (parameter == 'shutdownCooldown') shutdownCooldown = data;
-    else revert('GlobalSettlement/modify-unrecognized-parameter');
-    emit ModifyParameters(parameter, data);
-  }
-
+  // --- Shutdown ---
   function disableContract() external pure {
     revert NonDisableable();
   }
@@ -207,94 +172,90 @@ contract GlobalSettlement is Authorizable, Disableable {
 
   /**
    * @notice Calculate a collateral type's final price according to the latest system coin redemption price
-   * @param collateralType The collateral type to calculate the price for
+   * @param _cType The collateral type to calculate the price for
    */
-  function freezeCollateralType(bytes32 collateralType) external whenDisabled {
-    require(finalCoinPerCollateralPrice[collateralType] == 0, 'GlobalSettlement/final-collateral-price-already-defined');
-    collateralTotalDebt[collateralType] = safeEngine.cData(collateralType).debtAmount;
-    (OracleLike orcl,,) = oracleRelayer.collateralTypes(collateralType);
+  function freezeCollateralType(bytes32 _cType) external whenDisabled {
+    require(finalCoinPerCollateralPrice[_cType] == 0, 'GlobalSettlement/final-collateral-price-already-defined');
+    collateralTotalDebt[_cType] = safeEngine.cData(_cType).debtAmount;
+    (OracleLike _orcl,,) = oracleRelayer.collateralTypes(_cType);
     // redemptionPrice is a ray, orcl returns a wad
-    finalCoinPerCollateralPrice[collateralType] = oracleRelayer.redemptionPrice().wdiv(uint256(orcl.read()));
-    emit FreezeCollateralType(collateralType, finalCoinPerCollateralPrice[collateralType]);
+    finalCoinPerCollateralPrice[_cType] = oracleRelayer.redemptionPrice().wdiv(_orcl.read());
+    emit FreezeCollateralType(_cType, finalCoinPerCollateralPrice[_cType]);
   }
 
   /**
    * @notice Fast track an ongoing collateral auction
-   * @param collateralType The collateral type associated with the auction contract
-   * @param auctionId The ID of the auction to be fast tracked
+   * @param _cType The collateral type associated with the auction contract
+   * @param _auctionId The ID of the auction to be fast tracked
    */
-  function fastTrackAuction(bytes32 collateralType, uint256 auctionId) external {
-    require(finalCoinPerCollateralPrice[collateralType] != 0, 'GlobalSettlement/final-collateral-price-not-defined');
+  function fastTrackAuction(bytes32 _cType, uint256 _auctionId) external {
+    require(finalCoinPerCollateralPrice[_cType] != 0, 'GlobalSettlement/final-collateral-price-not-defined');
 
-    (address auctionHouse_,,) = liquidationEngine.cParams(collateralType);
-    CollateralAuctionHouseLike collateralAuctionHouse = CollateralAuctionHouseLike(auctionHouse_);
-    uint256 _accumulatedRate = safeEngine.cData(collateralType).accumulatedRate;
+    (address _auctionHouse,,) = liquidationEngine.cParams(_cType);
+    CollateralAuctionHouseLike _collateralAuctionHouse = CollateralAuctionHouseLike(_auctionHouse);
+    uint256 _accumulatedRate = safeEngine.cData(_cType).accumulatedRate;
 
-    uint256 bidAmount = collateralAuctionHouse.bidAmount(auctionId);
-    uint256 raisedAmount = collateralAuctionHouse.raisedAmount(auctionId);
-    uint256 collateralToSell = collateralAuctionHouse.remainingAmountToSell(auctionId);
-    address forgoneCollateralReceiver = collateralAuctionHouse.forgoneCollateralReceiver(auctionId);
-    uint256 amountToRaise = collateralAuctionHouse.amountToRaise(auctionId);
+    uint256 _bidAmount = _collateralAuctionHouse.bidAmount(_auctionId);
+    uint256 _raisedAmount = _collateralAuctionHouse.raisedAmount(_auctionId);
+    uint256 _collateralToSell = _collateralAuctionHouse.remainingAmountToSell(_auctionId);
+    address _forgoneCollateralReceiver = _collateralAuctionHouse.forgoneCollateralReceiver(_auctionId);
+    uint256 _amountToRaise = _collateralAuctionHouse.amountToRaise(_auctionId);
 
-    safeEngine.createUnbackedDebt(address(accountingEngine), address(accountingEngine), amountToRaise - raisedAmount);
-    safeEngine.createUnbackedDebt(address(accountingEngine), address(this), bidAmount);
-    safeEngine.approveSAFEModification(address(collateralAuctionHouse));
-    collateralAuctionHouse.terminateAuctionPrematurely(auctionId);
+    safeEngine.createUnbackedDebt(address(accountingEngine), address(accountingEngine), _amountToRaise - _raisedAmount);
+    safeEngine.createUnbackedDebt(address(accountingEngine), address(this), _bidAmount);
+    safeEngine.approveSAFEModification(address(_collateralAuctionHouse));
+    _collateralAuctionHouse.terminateAuctionPrematurely(_auctionId);
 
-    uint256 _debt = (amountToRaise - raisedAmount) / _accumulatedRate;
-    collateralTotalDebt[collateralType] = collateralTotalDebt[collateralType] + _debt;
-    require(int256(collateralToSell) >= 0 && int256(_debt) >= 0, 'GlobalSettlement/overflow');
+    uint256 _debt = (_amountToRaise - _raisedAmount) / _accumulatedRate;
+    collateralTotalDebt[_cType] = collateralTotalDebt[_cType] + _debt;
     safeEngine.confiscateSAFECollateralAndDebt(
-      collateralType,
-      forgoneCollateralReceiver,
+      _cType,
+      _forgoneCollateralReceiver,
       address(this),
       address(accountingEngine),
-      int256(collateralToSell),
-      int256(_debt)
+      _collateralToSell.toIntNotOverflow(),
+      _debt.toIntNotOverflow()
     );
-    emit FastTrackAuction(collateralType, auctionId, collateralTotalDebt[collateralType]);
+    emit FastTrackAuction(_cType, _auctionId, collateralTotalDebt[_cType]);
   }
 
   /**
    * @notice Cancel a SAFE's debt and leave any extra collateral in it
-   * @param collateralType The collateral type associated with the SAFE
-   * @param safe The SAFE to be processed
+   * @param _cType The collateral type associated with the SAFE
+   * @param _safe The SAFE to be processed
    */
-  function processSAFE(bytes32 collateralType, address safe) external {
-    require(finalCoinPerCollateralPrice[collateralType] != 0, 'GlobalSettlement/final-collateral-price-not-defined');
-    uint256 _accumulatedRate = safeEngine.cData(collateralType).accumulatedRate;
-    SAFEEngineLike.SAFE memory _safeData = safeEngine.safes(collateralType, safe);
+  function processSAFE(bytes32 _cType, address _safe) external {
+    require(finalCoinPerCollateralPrice[_cType] != 0, 'GlobalSettlement/final-collateral-price-not-defined');
+    uint256 _accumulatedRate = safeEngine.cData(_cType).accumulatedRate;
+    SAFEEngineLike.SAFE memory _safeData = safeEngine.safes(_cType, _safe);
 
-    uint256 amountOwed =
-      _safeData.generatedDebt.rmul(_accumulatedRate).rmul(finalCoinPerCollateralPrice[collateralType]);
-    uint256 minCollateral = Math.min(_safeData.lockedCollateral, amountOwed);
-    collateralShortfall[collateralType] = collateralShortfall[collateralType] + (amountOwed - minCollateral);
+    uint256 _amountOwed = _safeData.generatedDebt.rmul(_accumulatedRate).rmul(finalCoinPerCollateralPrice[_cType]);
+    uint256 _minCollateral = Math.min(_safeData.lockedCollateral, _amountOwed);
+    collateralShortfall[_cType] = collateralShortfall[_cType] + (_amountOwed - _minCollateral);
 
-    require(minCollateral <= 2 ** 255 && _safeData.generatedDebt <= 2 ** 255, 'GlobalSettlement/overflow');
     safeEngine.confiscateSAFECollateralAndDebt(
-      collateralType,
-      safe,
+      _cType,
+      _safe,
       address(this),
       address(accountingEngine),
-      -int256(minCollateral),
-      -int256(_safeData.generatedDebt)
+      -_minCollateral.toIntNotOverflow(),
+      -_safeData.generatedDebt.toIntNotOverflow()
     );
 
-    emit ProcessSAFE(collateralType, safe, collateralShortfall[collateralType]);
+    emit ProcessSAFE(_cType, _safe, collateralShortfall[_cType]);
   }
 
   /**
    * @notice Remove collateral from the caller's SAFE
-   * @param collateralType The collateral type to free
+   * @param _cType The collateral type to free
    */
-  function freeCollateral(bytes32 collateralType) external whenDisabled {
-    SAFEEngineLike.SAFE memory _safeData = safeEngine.safes(collateralType, msg.sender);
+  function freeCollateral(bytes32 _cType) external whenDisabled {
+    SAFEEngineLike.SAFE memory _safeData = safeEngine.safes(_cType, msg.sender);
     require(_safeData.generatedDebt == 0, 'GlobalSettlement/safe-debt-not-zero');
-    require(_safeData.lockedCollateral <= 2 ** 255, 'GlobalSettlement/overflow');
     safeEngine.confiscateSAFECollateralAndDebt(
-      collateralType, msg.sender, msg.sender, address(accountingEngine), -int256(_safeData.lockedCollateral), 0
+      _cType, msg.sender, msg.sender, address(accountingEngine), -_safeData.lockedCollateral.toIntNotOverflow(), 0
     );
-    emit FreeCollateral(collateralType, msg.sender, -int256(_safeData.lockedCollateral));
+    emit FreeCollateral(_cType, msg.sender, -_safeData.lockedCollateral.toIntNotOverflow());
   }
 
   /**
@@ -311,45 +272,64 @@ contract GlobalSettlement is Authorizable, Disableable {
 
   /**
    * @notice Calculate a collateral's price taking into consideration system surplus/deficit and the finalCoinPerCollateralPrice
-   * @param collateralType The collateral whose cash price will be calculated
+   * @param _cType The collateral whose cash price will be calculated
    */
-  function calculateCashPrice(bytes32 collateralType) external {
+  function calculateCashPrice(bytes32 _cType) external {
     require(outstandingCoinSupply != 0, 'GlobalSettlement/outstanding-coin-supply-zero');
-    require(collateralCashPrice[collateralType] == 0, 'GlobalSettlement/collateral-cash-price-already-defined');
+    require(collateralCashPrice[_cType] == 0, 'GlobalSettlement/collateral-cash-price-already-defined');
 
-    uint256 _accumulatedRate = safeEngine.cData(collateralType).accumulatedRate;
-    uint256 redemptionAdjustedDebt =
-      collateralTotalDebt[collateralType].rmul(_accumulatedRate).rmul(finalCoinPerCollateralPrice[collateralType]);
-    collateralCashPrice[collateralType] =
-      (redemptionAdjustedDebt - collateralShortfall[collateralType]) * RAY / (outstandingCoinSupply / RAY);
+    uint256 _accumulatedRate = safeEngine.cData(_cType).accumulatedRate;
+    uint256 _redemptionAdjustedDebt =
+      collateralTotalDebt[_cType].rmul(_accumulatedRate).rmul(finalCoinPerCollateralPrice[_cType]);
+    collateralCashPrice[_cType] =
+      (_redemptionAdjustedDebt - collateralShortfall[_cType]) * RAY / (outstandingCoinSupply / RAY);
 
-    emit CalculateCashPrice(collateralType, collateralCashPrice[collateralType]);
+    emit CalculateCashPrice(_cType, collateralCashPrice[_cType]);
   }
 
   /**
    * @notice Add coins into a 'bag' so that you can use them to redeem collateral
-   * @param coinAmount The amount of internal system coins to add into the bag
+   * @param _coinAmount The amount of internal system coins to add into the bag
    */
-  function prepareCoinsForRedeeming(uint256 coinAmount) external {
+  function prepareCoinsForRedeeming(uint256 _coinAmount) external {
     require(outstandingCoinSupply != 0, 'GlobalSettlement/outstanding-coin-supply-zero');
-    safeEngine.transferInternalCoins(msg.sender, address(accountingEngine), coinAmount * RAY);
-    coinBag[msg.sender] = coinBag[msg.sender] + coinAmount;
+    safeEngine.transferInternalCoins(msg.sender, address(accountingEngine), _coinAmount * RAY);
+    coinBag[msg.sender] = coinBag[msg.sender] + _coinAmount;
     emit PrepareCoinsForRedeeming(msg.sender, coinBag[msg.sender]);
   }
 
   /**
    * @notice Redeem a specific collateral type using an amount of internal system coins from your bag
-   * @param collateralType The collateral type to redeem
-   * @param coinsAmount The amount of internal coins to use from your bag
+   * @param _cType The collateral type to redeem
+   * @param _coinsAmount The amount of internal coins to use from your bag
    */
-  function redeemCollateral(bytes32 collateralType, uint256 coinsAmount) external {
-    require(collateralCashPrice[collateralType] != 0, 'GlobalSettlement/collateral-cash-price-not-defined');
-    uint256 collateralAmount = coinsAmount.rmul(collateralCashPrice[collateralType]);
-    safeEngine.transferCollateral(collateralType, address(this), msg.sender, collateralAmount);
-    coinsUsedToRedeem[collateralType][msg.sender] = coinsUsedToRedeem[collateralType][msg.sender] + coinsAmount;
-    require(
-      coinsUsedToRedeem[collateralType][msg.sender] <= coinBag[msg.sender], 'GlobalSettlement/insufficient-bag-balance'
-    );
-    emit RedeemCollateral(collateralType, msg.sender, coinsAmount, collateralAmount);
+  function redeemCollateral(bytes32 _cType, uint256 _coinsAmount) external {
+    require(collateralCashPrice[_cType] != 0, 'GlobalSettlement/collateral-cash-price-not-defined');
+    uint256 _collateralAmount = _coinsAmount.rmul(collateralCashPrice[_cType]);
+    safeEngine.transferCollateral(_cType, address(this), msg.sender, _collateralAmount);
+    coinsUsedToRedeem[_cType][msg.sender] = coinsUsedToRedeem[_cType][msg.sender] + _coinsAmount;
+    require(coinsUsedToRedeem[_cType][msg.sender] <= coinBag[msg.sender], 'GlobalSettlement/insufficient-bag-balance');
+    emit RedeemCollateral(_cType, msg.sender, _coinsAmount, _collateralAmount);
+  }
+
+  // --- Admin ---
+  /**
+   * @notice Modify parameters
+   * @param _param The name of the parameter modified
+   * @param _data New value for the parameter
+   */
+  function modifyParameters(bytes32 _param, bytes memory _data) external isAuthorized whenEnabled {
+    address _address = _data.toAddress();
+
+    if (_param == 'safeEngine') safeEngine = SAFEEngineLike(_address);
+    else if (_param == 'liquidationEngine') liquidationEngine = LiquidationEngineLike(_address);
+    else if (_param == 'accountingEngine') accountingEngine = AccountingEngineLike(_address);
+    else if (_param == 'oracleRelayer') oracleRelayer = OracleRelayerLike(_address);
+    else if (_param == 'coinSavingsAccount') coinSavingsAccount = CoinSavingsAccountLike(_address);
+    else if (_param == 'stabilityFeeTreasury') stabilityFeeTreasury = StabilityFeeTreasuryLike(_address);
+    else if (_param == 'shutdownCooldown') shutdownCooldown = _data.toUint256();
+    else revert UnrecognizedParam();
+
+    emit ModifyParameters(_param, GLOBAL_PARAM, _data);
   }
 }

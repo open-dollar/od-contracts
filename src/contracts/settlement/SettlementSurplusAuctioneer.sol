@@ -31,7 +31,7 @@ import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {Math} from '@libraries/Math.sol';
 import {Encoding} from '@libraries/Encoding.sol';
 
-contract SettlementSurplusAuctioneer is ISettlementSurplusAuctioneer, Authorizable {
+contract SettlementSurplusAuctioneer is Authorizable, ISettlementSurplusAuctioneer {
   using Encoding for bytes;
 
   // --- Data ---
@@ -75,17 +75,17 @@ contract SettlementSurplusAuctioneer is ISettlementSurplusAuctioneer, Authorizab
   // --- Admin ---
   /**
    * @notice Modify parameters
-   * @param _parameter The name of the contract whose address will be changed
+   * @param _param The name of the contract whose address will be changed
    * @param _data New address for the contract
    */
-  function modifyParameters(bytes32 _parameter, bytes memory _data) external isAuthorized {
+  function modifyParameters(bytes32 _param, bytes memory _data) external isAuthorized {
     address _address = _data.toAddress();
 
-    if (_parameter == 'accountingEngine') accountingEngine = AccountingEngineLike(_address);
-    else if (_parameter == 'surplusAuctionHouse') _setSurplusAuctionHouse(_address);
+    if (_param == 'accountingEngine') accountingEngine = AccountingEngineLike(_address);
+    else if (_param == 'surplusAuctionHouse') _setSurplusAuctionHouse(_address);
     else revert UnrecognizedParam();
 
-    emit ModifyParameters(_parameter, GLOBAL_PARAM, _data);
+    emit ModifyParameters(_param, GLOBAL_PARAM, _data);
   }
 
   function _setSurplusAuctionHouse(address _address) internal {

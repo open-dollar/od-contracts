@@ -96,7 +96,7 @@ contract Deploy is Script, Contracts {
     collateral[_params.name] = new ERC20ForTest(); // TODO: replace for token
     collateralJoin[_params.name] = new CollateralJoin({
         _safeEngine: address(safeEngine), 
-        _collateralType: _params.name, 
+        _cType: _params.name, 
         _collateral: address(collateral[_params.name])
         });
     collateralAuctionHouse[_params.name] = new CollateralAuctionHouse({
@@ -193,17 +193,17 @@ contract Deploy is Script, Contracts {
 
     // setup globalSettlement [auth: disableContract]
     // TODO: add key contracts to constructor
-    globalSettlement.modifyParameters('safeEngine', address(safeEngine));
+    globalSettlement.modifyParameters('safeEngine', abi.encode(safeEngine));
     safeEngine.addAuthorization(address(globalSettlement));
-    globalSettlement.modifyParameters('liquidationEngine', address(liquidationEngine));
+    globalSettlement.modifyParameters('liquidationEngine', abi.encode(liquidationEngine));
     liquidationEngine.addAuthorization(address(globalSettlement));
-    globalSettlement.modifyParameters('stabilityFeeTreasury', address(stabilityFeeTreasury));
+    globalSettlement.modifyParameters('stabilityFeeTreasury', abi.encode(stabilityFeeTreasury));
     stabilityFeeTreasury.addAuthorization(address(globalSettlement));
-    globalSettlement.modifyParameters('accountingEngine', address(accountingEngine));
+    globalSettlement.modifyParameters('accountingEngine', abi.encode(accountingEngine));
     accountingEngine.addAuthorization(address(globalSettlement));
-    globalSettlement.modifyParameters('oracleRelayer', address(oracleRelayer));
+    globalSettlement.modifyParameters('oracleRelayer', abi.encode(oracleRelayer));
     oracleRelayer.addAuthorization(address(globalSettlement));
-    // globalSettlement.modifyParameters('coinSavingsAccount', address(oracleRelayer));
+    // globalSettlement.modifyParameters('coinSavingsAccount', abi.encode(oracleRelayer));
     // coinSavingsAccount.addAuthorization(address(globalSettlement));
 
     // setup params

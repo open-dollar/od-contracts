@@ -285,12 +285,12 @@ contract Unit_SettlementSurplusAuctioneer_AuctionSurplus is Base {
 }
 
 contract Unit_SettlementSurplusAuctioneer_ModifyParameters is Base {
-  event ModifyParameters(bytes32 indexed _parameter, bytes32 indexed _collateralType, bytes _data);
+  event ModifyParameters(bytes32 indexed _param, bytes32 indexed _cType, bytes _data);
 
-  function test_Revert_Unauthorized(bytes32 _parameter, bytes memory _data) public {
+  function test_Revert_Unauthorized(bytes32 _param, bytes memory _data) public {
     vm.expectRevert(IAuthorizable.Unauthorized.selector);
 
-    settlementSurplusAuctioneer.modifyParameters(_parameter, _data);
+    settlementSurplusAuctioneer.modifyParameters(_param, _data);
   }
 
   function test_Set_AccountingEngine(address _accountingEngine) public authorized {

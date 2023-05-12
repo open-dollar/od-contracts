@@ -99,10 +99,10 @@ contract Unit_CollateralJoin_Constructor is Base {
     assertEq(address(collateralJoin.safeEngine()), address(mockSafeEngine));
   }
 
-  function test_Set_CollateralType(bytes32 _collateralType) public {
-    collateralJoin = new CollateralJoin(address(mockSafeEngine), _collateralType, address(mockCollateral));
+  function test_Set_CollateralType(bytes32 _cType) public {
+    collateralJoin = new CollateralJoin(address(mockSafeEngine), _cType, address(mockCollateral));
 
-    assertEq(collateralJoin.collateralType(), _collateralType);
+    assertEq(collateralJoin.collateralType(), _cType);
   }
 
   function test_Set_Collateral() public {
@@ -166,7 +166,7 @@ contract Unit_CollateralJoin_Join is Base {
     collateralJoin.join(_account, _wad);
   }
 
-  function test_Revert_Overflow(address _account, uint256 _wad) public {
+  function test_Revert_IntOverflow(address _account, uint256 _wad) public {
     vm.assume(!notOverflowWhenInt256(_wad));
 
     vm.expectRevert(Math.IntOverflow.selector);
@@ -220,7 +220,7 @@ contract Unit_CollateralJoin_Exit is Base {
     vm.assume(notOverflowWhenInt256(_wad));
   }
 
-  function test_Revert_Overflow(address _account, uint256 _wad) public {
+  function test_Revert_IntOverflow(address _account, uint256 _wad) public {
     vm.assume(!notOverflowWhenInt256(_wad));
 
     vm.expectRevert(Math.IntOverflow.selector);

@@ -555,12 +555,12 @@ contract Unit_PostSettlementSurplusAuctionHouse_SettleAuction is Base {
 }
 
 contract Unit_PostSettlementSurplusAuctionHouse_ModifyParameters is Base {
-  event ModifyParameters(bytes32 indexed _parameter, bytes32 indexed _collateralType, bytes _data);
+  event ModifyParameters(bytes32 indexed _param, bytes32 indexed _cType, bytes _data);
 
-  function test_Revert_Unauthorized(bytes32 _parameter, bytes memory _data) public {
+  function test_Revert_Unauthorized(bytes32 _param, bytes memory _data) public {
     vm.expectRevert(IAuthorizable.Unauthorized.selector);
 
-    postSettlementSurplusAuctionHouse.modifyParameters(_parameter, _data);
+    postSettlementSurplusAuctionHouse.modifyParameters(_param, _data);
   }
 
   function test_Set_Parameters(IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams memory _fuzz)

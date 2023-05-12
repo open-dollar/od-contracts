@@ -6,26 +6,26 @@ import {TaxCollector, ITaxCollector, EnumerableSet} from '@contracts/TaxCollecto
 contract TaxCollectorForTest is TaxCollector {
   constructor(address _safeEngine) TaxCollector(_safeEngine) {}
 
-  function splitTaxIncome(bytes32 _collateralType, uint256 _debtAmount, int256 _deltaRate) external {
-    _splitTaxIncome(_collateralType, _debtAmount, _deltaRate);
+  function splitTaxIncome(bytes32 _cType, uint256 _debtAmount, int256 _deltaRate) external {
+    _splitTaxIncome(_cType, _debtAmount, _deltaRate);
   }
 
-  function distributeTax(bytes32 _collateralType, address _receiver, uint256 _debtAmount, int256 _deltaRate) external {
-    _distributeTax(_collateralType, _receiver, _debtAmount, _deltaRate);
+  function distributeTax(bytes32 _cType, address _receiver, uint256 _debtAmount, int256 _deltaRate) external {
+    _distributeTax(_cType, _receiver, _debtAmount, _deltaRate);
   }
 
   function addSecondaryTaxReceiver(
-    bytes32 _collateralType,
+    bytes32 _cType,
     address _receiver,
     bool _canTakeBackTax,
     uint128 _taxPercentage
   ) external {
-    _secondaryTaxReceivers[_collateralType][_receiver].canTakeBackTax = _canTakeBackTax;
-    _secondaryTaxReceivers[_collateralType][_receiver].taxPercentage = _taxPercentage;
+    _secondaryTaxReceivers[_cType][_receiver].canTakeBackTax = _canTakeBackTax;
+    _secondaryTaxReceivers[_cType][_receiver].taxPercentage = _taxPercentage;
   }
 
-  function addToCollateralList(bytes32 _collateralType) external {
-    _collateralList.add(_collateralType);
+  function addToCollateralList(bytes32 _cType) external {
+    _collateralList.add(_cType);
   }
 
   function addSecondaryReceiver(address _receiver) external {
@@ -71,39 +71,36 @@ contract TaxCollectorForTest is TaxCollector {
     return _secondaryReceiverRevenueSources[_receiver].length();
   }
 
-  function secondaryTaxReceivers(
-    bytes32 _collateralType,
-    uint256 _receiverIndex
-  ) external view returns (uint256, uint256) {
+  function secondaryTaxReceivers(bytes32 _cType, uint256 _receiverIndex) external view returns (uint256, uint256) {
     address _receiver = _secondaryReceiversAt(_receiverIndex);
-    bool _canTakeBackTax = _secondaryTaxReceivers[_collateralType][_receiver].canTakeBackTax;
-    uint128 _taxPercentage = _secondaryTaxReceivers[_collateralType][_receiver].taxPercentage;
+    bool _canTakeBackTax = _secondaryTaxReceivers[_cType][_receiver].canTakeBackTax;
+    uint128 _taxPercentage = _secondaryTaxReceivers[_cType][_receiver].taxPercentage;
     if (_canTakeBackTax) return (canTakeBackTax, _taxPercentage);
     else return (0, _taxPercentage);
   }
 
   // NOTE: this method is only used for testing compatibility purposes
-  function modifyParameters(bytes32 _collateralType, uint256 _receiverIndex, uint256 _val) external /* isAuthorized */ {
+  function modifyParameters(bytes32 _cType, uint256 _receiverIndex, uint256 _val) external /* isAuthorized */ {
     if (_val != 0) {
       canTakeBackTax = _val;
-      modifyParameters(_collateralType, _secondaryReceiversAt(_receiverIndex), true);
+      modifyParameters(_cType, _secondaryReceiversAt(_receiverIndex), true);
     } else {
       delete canTakeBackTax;
-      modifyParameters(_collateralType, _secondaryReceiversAt(_receiverIndex), false);
+      modifyParameters(_cType, _secondaryReceiversAt(_receiverIndex), false);
     }
   }
 
   function modifyParameters(
-    bytes32 _collateralType,
+    bytes32 _cType,
     uint256 _receiverIndex, // position (legacy compatibility)
     uint256 _taxPercentage,
     address _receiver
   ) external isAuthorized {
     if (!_secondaryReceivers.contains(_receiver)) latestSecondaryReceiver = ++secondaryReceiverNonce;
-    modifyParameters(_collateralType, _taxPercentage, _receiver);
+    modifyParameters(_cType, _taxPercentage, _receiver);
     if (!_secondaryReceivers.contains(_receiver)) {
       if (_receiverIndex == latestSecondaryReceiver) latestSecondaryReceiver = _secondaryReceivers.length();
-    } else if (_secondaryReceiverRevenueSources[_receiver].contains(_collateralType)) {
+    } else if (_secondaryReceiverRevenueSources[_receiver].contains(_cType)) {
       // NOTE: if trying to add a secondary receiver that exists for that collateral but in another index
       if (_secondaryReceivers._inner._indexes[bytes32(uint256(uint160(_receiver)))] != _receiverIndex) {
         revert('TaxCollector/account-already-used'); // (legacy test compatibility)

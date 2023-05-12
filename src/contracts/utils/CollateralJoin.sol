@@ -37,7 +37,7 @@ import {Math} from '@libraries/Math.sol';
       - `exit`: remove collateral from the system
 */
 
-contract CollateralJoin is ICollateralJoin, Authorizable, Disableable {
+contract CollateralJoin is Authorizable, Disableable, ICollateralJoin {
   using Math for uint256;
 
   // --- Data ---
@@ -51,9 +51,9 @@ contract CollateralJoin is ICollateralJoin, Authorizable, Disableable {
   uint256 public decimals;
 
   // --- Init ---
-  constructor(address _safeEngine, bytes32 _collateralType, address _collateral) Authorizable(msg.sender) {
+  constructor(address _safeEngine, bytes32 _cType, address _collateral) Authorizable(msg.sender) {
     safeEngine = SAFEEngineLike(_safeEngine);
-    collateralType = _collateralType;
+    collateralType = _cType;
     collateral = CollateralLike(_collateral);
     decimals = collateral.decimals();
     require(decimals == 18, 'CollateralJoin/non-18-decimals');

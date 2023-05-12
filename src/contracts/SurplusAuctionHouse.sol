@@ -27,7 +27,7 @@ import {WAD, HUNDRED} from '@libraries/Math.sol';
 import {Encoding} from '@libraries/Encoding.sol';
 
 // This thing lets you auction surplus for protocol tokens. 50% of the protocol tokens are sent to another address and the rest are burned
-contract SurplusAuctionHouse is ISurplusAuctionHouse, Authorizable, Disableable {
+contract SurplusAuctionHouse is Authorizable, Disableable, ISurplusAuctionHouse {
   using Encoding for bytes;
 
   bytes32 public constant AUCTION_HOUSE_TYPE = bytes32('SURPLUS');
@@ -184,20 +184,20 @@ contract SurplusAuctionHouse is ISurplusAuctionHouse, Authorizable, Disableable 
   // --- Admin ---
   /**
    * @notice Modify parameters
-   * @param _parameter The name of the parameter modified
+   * @param _param The name of the parameter modified
    * @param _data New value for the parameter
    */
-  function modifyParameters(bytes32 _parameter, bytes memory _data) external isAuthorized {
+  function modifyParameters(bytes32 _param, bytes memory _data) external isAuthorized {
     uint256 _uint256 = _data.toUint256();
 
-    if (_parameter == 'protocolTokenBidReceiver') protocolTokenBidReceiver = _validateNonNull(_data.toAddress());
-    else if (_parameter == 'bidIncrease') _params.bidIncrease = _uint256;
-    else if (_parameter == 'bidDuration') _params.bidDuration = uint48(_uint256);
-    else if (_parameter == 'totalAuctionLength') _params.totalAuctionLength = uint48(_uint256);
-    else if (_parameter == 'recyclingPercentage') _params.recyclingPercentage = _uint256;
+    if (_param == 'protocolTokenBidReceiver') protocolTokenBidReceiver = _validateNonNull(_data.toAddress());
+    else if (_param == 'bidIncrease') _params.bidIncrease = _uint256;
+    else if (_param == 'bidDuration') _params.bidDuration = uint48(_uint256);
+    else if (_param == 'totalAuctionLength') _params.totalAuctionLength = uint48(_uint256);
+    else if (_param == 'recyclingPercentage') _params.recyclingPercentage = _uint256;
     else revert UnrecognizedParam();
 
-    emit ModifyParameters(_parameter, GLOBAL_PARAM, _data);
+    emit ModifyParameters(_param, GLOBAL_PARAM, _data);
   }
 
   function _validateNonNull(address _address) internal pure returns (address _nonNullAddress) {

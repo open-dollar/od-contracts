@@ -37,7 +37,7 @@ import {Math} from '@libraries/Math.sol';
       - `exit`: remove collateral from the system
 */
 
-contract ETHJoin is IETHJoin, Authorizable, Disableable {
+contract ETHJoin is Authorizable, Disableable, IETHJoin {
   using Math for uint256;
 
   // --- Data ---
@@ -49,9 +49,9 @@ contract ETHJoin is IETHJoin, Authorizable, Disableable {
   uint256 public decimals;
 
   // --- Init ---
-  constructor(address _safeEngine, bytes32 _collateralType) Authorizable(msg.sender) {
+  constructor(address _safeEngine, bytes32 _cType) Authorizable(msg.sender) {
     safeEngine = SAFEEngineLike(_safeEngine);
-    collateralType = _collateralType;
+    collateralType = _cType;
     decimals = 18;
   }
 
