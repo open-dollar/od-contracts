@@ -5,25 +5,26 @@ import {Math, RAY} from '@libraries/Math.sol';
 import {IOracle} from '@interfaces/IOracle.sol';
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
 import {IPIDController} from '@interfaces/IPIDController.sol';
+import {IPIDRateSetter} from '@interfaces/IPIDRateSetter.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
-import {HaiTest} from '@test/utils/HaiTest.t.sol';
-
 import {PIDRateSetter} from '@contracts/PIDRateSetter.sol';
-import {PIDRateSetterForTest} from '@contracts/for-test/PIDRateSetterForTest.sol';
+
+import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 
 contract Base is HaiTest {
+  using stdStorage for StdStorage;
+
   address deployer = address(deployer);
   address mockOracleRelayer = address(new OracleRelayerForTest());
   uint256 periodSize = 3600;
-  PIDRateSetter pidRateSetter;
+  IPIDRateSetter pidRateSetter;
   IOracle mockOracle = IOracle(mockContract('mockOracle'));
   IPIDController mockPIDController = IPIDController(mockContract('mockPIDController'));
 
   function _createDefaulPIDRateSetter() internal returns (PIDRateSetter _pidRateSetter) {
     vm.prank(deployer);
-    _pidRateSetter =
-      new PIDRateSetterForTest(mockOracleRelayer, address(mockOracle), address(mockPIDController), periodSize);
+    _pidRateSetter = new PIDRateSetter(mockOracleRelayer, address(mockOracle), address(mockPIDController), periodSize);
   }
 
   function setUp() public virtual {
@@ -49,7 +50,15 @@ contract Base is HaiTest {
   }
 
   function _mockDefaultLeak(uint256 _defaultLeak) internal {
-    PIDRateSetterForTest(address(pidRateSetter)).setDefaultLeak(_defaultLeak);
+    stdstore.target(address(pidRateSetter)).sig(IPIDRateSetter.defaultLeak.selector).checked_write(_defaultLeak);
+  }
+
+  function _mockLastUpdateTime(uint256 _lastUpdateTime) internal {
+    stdstore.target(address(pidRateSetter)).sig(IPIDRateSetter.lastUpdateTime.selector).checked_write(_lastUpdateTime);
+  }
+
+  function _mockUpdateRateDelay(uint256 _updateRateDelay) internal {
+    stdstore.target(address(pidRateSetter)).sig(IPIDRateSetter.updateRateDelay.selector).checked_write(_updateRateDelay);
   }
 
   function _mockPIDControllerComputeRate(
@@ -63,14 +72,6 @@ contract Base is HaiTest {
       abi.encodeWithSelector(IPIDController.computeRate.selector, _marketPrice, _redemptionPrice, _accumulatedLeak),
       abi.encode(_computedRate)
     );
-  }
-
-  function _mockLastUpdateTime(uint256 _lastUpdateTime) internal {
-    PIDRateSetterForTest(address(pidRateSetter)).setLastUpdateTime(_lastUpdateTime);
-  }
-
-  function _mockUpdateRateDelay(uint256 _updateRateDelay) internal {
-    PIDRateSetterForTest(address(pidRateSetter)).setUpdateRateDelay(_updateRateDelay);
   }
 }
 

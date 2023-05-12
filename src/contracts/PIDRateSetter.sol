@@ -16,10 +16,10 @@
 
 pragma solidity 0.8.19;
 
+import {IPIDRateSetter} from '@interfaces/IPIDRateSetter.sol';
 import {IOracle as OracleLike} from '@interfaces/IOracle.sol';
 import {IOracleRelayer as OracleRelayerLike} from '@interfaces/IOracleRelayer.sol';
 import {IPIDController as PIDCalculator} from '@interfaces/IPIDController.sol';
-
 import {Math, RAY} from '@libraries/Math.sol';
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
@@ -27,7 +27,7 @@ interface IModifiable {
   function modifyParameters(bytes32 parameter, uint256 data) external;
 }
 
-contract PIDRateSetter is Authorizable {
+contract PIDRateSetter is Authorizable, IPIDRateSetter {
   using Math for uint256;
 
   // --- Variables ---
@@ -45,14 +45,6 @@ contract PIDRateSetter is Authorizable {
   OracleRelayerLike public oracleRelayer;
   // Calculator for the redemption rate
   PIDCalculator public pidCalculator;
-
-  // --- Events ---
-  event ModifyParameters(bytes32 _parameter, address _addr);
-  event ModifyParameters(bytes32 _parameter, uint256 _val);
-  event UpdateRedemptionRate(uint256 _marketPrice, uint256 _redemptionPrice, uint256 _redemptionRate);
-  event FailUpdateRedemptionRate(
-    uint256 _marketPrice, uint256 _redemptionPrice, uint256 _redemptionRate, bytes _reason
-  );
 
   constructor(
     address _oracleRelayer,
