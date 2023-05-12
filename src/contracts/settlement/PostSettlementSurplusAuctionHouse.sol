@@ -87,6 +87,7 @@ contract PostSettlementSurplusAuctionHouse is IPostSettlementSurplusAuctionHouse
    * @param _id ID of the auction to restart
    */
   function restartAuction(uint256 _id) external {
+    require(_id > 0 && _id <= auctionsStarted, 'PostSettlementSurplusAuctionHouse/auction-never-started');
     require(bids[_id].auctionDeadline < block.timestamp, 'PostSettlementSurplusAuctionHouse/not-finished');
     require(bids[_id].bidExpiry == 0, 'PostSettlementSurplusAuctionHouse/bid-already-placed');
     bids[_id].auctionDeadline = uint48(block.timestamp) + _params.totalAuctionLength;
@@ -153,6 +154,7 @@ contract PostSettlementSurplusAuctionHouse is IPostSettlementSurplusAuctionHouse
     else if (_parameter == 'bidDuration') _params.bidDuration = uint48(_uint256);
     else if (_parameter == 'totalAuctionLength') _params.totalAuctionLength = uint48(_uint256);
     else revert UnrecognizedParam();
+
     emit ModifyParameters(_parameter, GLOBAL_PARAM, _data);
   }
 }

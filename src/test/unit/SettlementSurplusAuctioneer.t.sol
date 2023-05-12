@@ -9,7 +9,7 @@ import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ISurplusAuctionHouse} from '@interfaces/ISurplusAuctionHouse.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
-import {IModifiable} from '@interfaces/utils/IModifiable.sol';
+import {IModifiable, GLOBAL_PARAM} from '@interfaces/utils/IModifiable.sol';
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 
 abstract contract Base is HaiTest {
@@ -285,10 +285,18 @@ contract Unit_SettlementSurplusAuctioneer_AuctionSurplus is Base {
 }
 
 contract Unit_SettlementSurplusAuctioneer_ModifyParameters is Base {
+  event ModifyParameters(bytes32 indexed _parameter, bytes32 indexed _collateralType, bytes _data);
+
+  function test_Revert_Unauthorized(bytes32 _parameter, bytes memory _data) public {
+    vm.expectRevert(IAuthorizable.Unauthorized.selector);
+
+    settlementSurplusAuctioneer.modifyParameters(_parameter, _data);
+  }
+
   function test_Set_AccountingEngine(address _accountingEngine) public authorized {
     settlementSurplusAuctioneer.modifyParameters('accountingEngine', abi.encode(_accountingEngine));
 
-    assertEq(_accountingEngine, address(settlementSurplusAuctioneer.accountingEngine()));
+    assertEq(address(settlementSurplusAuctioneer.accountingEngine()), _accountingEngine);
   }
 
   function test_Set_SurplusAuctionHouse(address _surplusAuctionHouse) public authorized {
@@ -303,12 +311,19 @@ contract Unit_SettlementSurplusAuctioneer_ModifyParameters is Base {
 
     settlementSurplusAuctioneer.modifyParameters('surplusAuctionHouse', abi.encode(_surplusAuctionHouse));
 
-    assertEq(_surplusAuctionHouse, address(settlementSurplusAuctioneer.surplusAuctionHouse()));
+    assertEq(address(settlementSurplusAuctioneer.surplusAuctionHouse()), _surplusAuctionHouse);
   }
 
   function test_Revert_UnrecognizedParam() public authorized {
     vm.expectRevert(IModifiable.UnrecognizedParam.selector);
 
     settlementSurplusAuctioneer.modifyParameters('unrecognizedParam', abi.encode(0));
+  }
+
+  function test_Emit_ModifyParameters(address _surplusAuctionHouse) public authorized {
+    expectEmitNoIndex();
+    emit ModifyParameters('surplusAuctionHouse', GLOBAL_PARAM, abi.encode(_surplusAuctionHouse));
+
+    settlementSurplusAuctioneer.modifyParameters('surplusAuctionHouse', abi.encode(_surplusAuctionHouse));
   }
 }

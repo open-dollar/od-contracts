@@ -10,10 +10,12 @@ import {IModifiable, GLOBAL_PARAM} from '@interfaces/utils/IModifiable.sol';
 
 interface ISurplusAuctionHouse is IAuthorizable, IDisableable, IModifiable {
   // --- Events ---
-  event RestartAuction(uint256 _id, uint256 _auctionDeadline);
-  event IncreaseBidSize(uint256 _id, address _highBidder, uint256 _amountToBuy, uint256 _bid, uint256 _bidExpiry);
   event StartAuction(
     uint256 indexed _id, uint256 _auctionsStarted, uint256 _amountToSell, uint256 _initialBid, uint256 _auctionDeadline
+  );
+  event RestartAuction(uint256 indexed _id, uint256 _auctionDeadline);
+  event IncreaseBidSize(
+    uint256 indexed _id, address _highBidder, uint256 _amountToBuy, uint256 _bid, uint256 _bidExpiry
   );
   event SettleAuction(uint256 indexed _id);
   event TerminateAuctionPrematurely(uint256 indexed _id, address _sender, address _highBidder, uint256 _bidAmount);

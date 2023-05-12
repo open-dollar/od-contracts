@@ -81,7 +81,7 @@ contract DebtAuctionHouse is IDebtAuctionHouse, Authorizable, Disableable {
   function disableContract() external isAuthorized {
     _disableContract();
     accountingEngine = msg.sender;
-    activeDebtAuctions = 0;
+    delete activeDebtAuctions;
   }
 
   // --- Auction ---
@@ -96,7 +96,6 @@ contract DebtAuctionHouse is IDebtAuctionHouse, Authorizable, Disableable {
     uint256 _amountToSell,
     uint256 _initialBid
   ) external isAuthorized whenEnabled returns (uint256 _id) {
-    require(auctionsStarted < type(uint256).max, 'DebtAuctionHouse/overflow');
     _id = ++auctionsStarted;
 
     bids[_id].bidAmount = _initialBid;
@@ -116,7 +115,7 @@ contract DebtAuctionHouse is IDebtAuctionHouse, Authorizable, Disableable {
    * @param _id ID of the auction to restart
    */
   function restartAuction(uint256 _id) external {
-    require(_id <= auctionsStarted, 'DebtAuctionHouse/auction-never-started');
+    require(_id > 0 && _id <= auctionsStarted, 'DebtAuctionHouse/auction-never-started');
     require(bids[_id].auctionDeadline < block.timestamp, 'DebtAuctionHouse/not-finished');
     require(bids[_id].bidExpiry == 0, 'DebtAuctionHouse/bid-already-placed');
     bids[_id].amountToSell = (_params.amountSoldIncrease * bids[_id].amountToSell) / WAD;
@@ -189,8 +188,8 @@ contract DebtAuctionHouse is IDebtAuctionHouse, Authorizable, Disableable {
    * @param _parameter The name of the parameter modified
    * @param _data New value for the parameter
    */
-  function modifyParameters(bytes32 _parameter, bytes memory _data) external isAuthorized {
-    uint256 _uint256 = _data.toUint256(); // REVIEW: To include whenEnabled modifier?
+  function modifyParameters(bytes32 _parameter, bytes memory _data) external isAuthorized whenEnabled {
+    uint256 _uint256 = _data.toUint256();
 
     if (_parameter == 'protocolToken') protocolToken = TokenLike(_data.toAddress());
     else if (_parameter == 'accountingEngine') accountingEngine = _data.toAddress();
@@ -199,6 +198,7 @@ contract DebtAuctionHouse is IDebtAuctionHouse, Authorizable, Disableable {
     else if (_parameter == 'bidDuration') _params.bidDuration = uint48(_uint256);
     else if (_parameter == 'totalAuctionLength') _params.totalAuctionLength = uint48(_uint256);
     else revert UnrecognizedParam();
+
     emit ModifyParameters(_parameter, GLOBAL_PARAM, _data);
   }
 }

@@ -84,6 +84,7 @@ contract SettlementSurplusAuctioneer is ISettlementSurplusAuctioneer, Authorizab
     if (_parameter == 'accountingEngine') accountingEngine = AccountingEngineLike(_address);
     else if (_parameter == 'surplusAuctionHouse') _setSurplusAuctionHouse(_address);
     else revert UnrecognizedParam();
+
     emit ModifyParameters(_parameter, GLOBAL_PARAM, _data);
   }
 

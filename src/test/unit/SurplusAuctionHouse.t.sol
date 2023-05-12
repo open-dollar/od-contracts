@@ -6,7 +6,7 @@ import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IToken} from '@interfaces/external/IToken.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
-import {IModifiable} from '@interfaces/utils/IModifiable.sol';
+import {IModifiable, GLOBAL_PARAM} from '@interfaces/utils/IModifiable.sol';
 import {WAD, HUNDRED} from '@libraries/Math.sol';
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 
@@ -59,6 +59,12 @@ abstract contract Base is HaiTest {
     );
   }
 
+  function _mockContractEnabled(uint256 _contractEnabled) internal {
+    stdstore.target(address(surplusAuctionHouse)).sig(IDisableable.contractEnabled.selector).checked_write(
+      _contractEnabled
+    );
+  }
+
   function _mockAuction(Auction memory _auction) internal {
     // BUG: Accessing packed slots is not supported by Std Storage
     surplusAuctionHouse.addBid(
@@ -71,21 +77,15 @@ abstract contract Base is HaiTest {
     );
   }
 
-  function _mockProtocolTokenBidReceiver(address _protocolTokenBidReceiver) internal {
-    stdstore.target(address(surplusAuctionHouse)).sig(ISurplusAuctionHouse.protocolTokenBidReceiver.selector)
-      .checked_write(_protocolTokenBidReceiver);
-  }
-
   function _mockAuctionsStarted(uint256 _auctionsStarted) internal {
     stdstore.target(address(surplusAuctionHouse)).sig(ISurplusAuctionHouse.auctionsStarted.selector).checked_write(
       _auctionsStarted
     );
   }
 
-  function _mockContractEnabled(uint256 _contractEnabled) internal {
-    stdstore.target(address(surplusAuctionHouse)).sig(IDisableable.contractEnabled.selector).checked_write(
-      _contractEnabled
-    );
+  function _mockProtocolTokenBidReceiver(address _protocolTokenBidReceiver) internal {
+    stdstore.target(address(surplusAuctionHouse)).sig(ISurplusAuctionHouse.protocolTokenBidReceiver.selector)
+      .checked_write(_protocolTokenBidReceiver);
   }
 
   // params
@@ -304,41 +304,72 @@ contract Unit_SurplusAuctionHouse_StartAuction is Base {
 }
 
 contract Unit_SurplusAuctionHouse_RestartAuction is Base {
-  event RestartAuction(uint256 _id, uint256 _auctionDeadline);
+  event RestartAuction(uint256 indexed _id, uint256 _auctionDeadline);
 
-  modifier happyPath(Auction memory _auction) {
-    _assumeHappyPath(_auction);
+  modifier happyPath(Auction memory _auction, uint256 _auctionsStarted) {
+    _assumeHappyPath(_auction, _auctionsStarted);
     _mockAuction(_auction);
+    _mockAuctionsStarted(_auctionsStarted);
     _;
   }
 
-  function _assumeHappyPath(Auction memory _auction) internal view {
+  function _assumeHappyPath(Auction memory _auction, uint256 _auctionsStarted) internal view {
+    vm.assume(_auction.id > 0 && _auction.id <= _auctionsStarted);
     vm.assume(_auction.auctionDeadline < block.timestamp);
     vm.assume(_auction.bidExpiry == 0);
   }
 
-  function test_Revert_NotFinished(Auction memory _auction) public {
+  function test_Revert_AuctionNeverStarted_0(Auction memory _auction, uint256 _auctionsStarted) public {
+    vm.assume(_auction.id == 0);
+
+    _mockAuction(_auction);
+    _mockAuctionsStarted(_auctionsStarted);
+
+    vm.expectRevert('SurplusAuctionHouse/auction-never-started');
+
+    surplusAuctionHouse.restartAuction(_auction.id);
+  }
+
+  function test_Revert_AuctionNeverStarted_1(Auction memory _auction, uint256 _auctionsStarted) public {
+    vm.assume(_auction.id > _auctionsStarted);
+
+    _mockAuction(_auction);
+    _mockAuctionsStarted(_auctionsStarted);
+
+    vm.expectRevert('SurplusAuctionHouse/auction-never-started');
+
+    surplusAuctionHouse.restartAuction(_auction.id);
+  }
+
+  function test_Revert_NotFinished(Auction memory _auction, uint256 _auctionsStarted) public {
+    vm.assume(_auction.id > 0 && _auction.id <= _auctionsStarted);
     vm.assume(_auction.auctionDeadline >= block.timestamp);
 
     _mockAuction(_auction);
+    _mockAuctionsStarted(_auctionsStarted);
 
     vm.expectRevert('SurplusAuctionHouse/not-finished');
 
     surplusAuctionHouse.restartAuction(_auction.id);
   }
 
-  function test_Revert_BidAlreadyPlaced(Auction memory _auction) public {
+  function test_Revert_BidAlreadyPlaced(Auction memory _auction, uint256 _auctionsStarted) public {
+    vm.assume(_auction.id > 0 && _auction.id <= _auctionsStarted);
     vm.assume(_auction.auctionDeadline < block.timestamp);
     vm.assume(_auction.bidExpiry != 0);
 
     _mockAuction(_auction);
+    _mockAuctionsStarted(_auctionsStarted);
 
     vm.expectRevert('SurplusAuctionHouse/bid-already-placed');
 
     surplusAuctionHouse.restartAuction(_auction.id);
   }
 
-  function test_Set_Bids_AuctionDeadline(Auction memory _auction) public happyPath(_auction) {
+  function test_Set_Bids_AuctionDeadline(
+    Auction memory _auction,
+    uint256 _auctionsStarted
+  ) public happyPath(_auction, _auctionsStarted) {
     surplusAuctionHouse.restartAuction(_auction.id);
 
     (,,,, uint48 _auctionDeadline) = surplusAuctionHouse.bids(_auction.id);
@@ -346,7 +377,10 @@ contract Unit_SurplusAuctionHouse_RestartAuction is Base {
     assertEq(_auctionDeadline, block.timestamp + surplusAuctionHouse.params().totalAuctionLength);
   }
 
-  function test_Emit_RestartAuction(Auction memory _auction) public happyPath(_auction) {
+  function test_Emit_RestartAuction(
+    Auction memory _auction,
+    uint256 _auctionsStarted
+  ) public happyPath(_auction, _auctionsStarted) {
     expectEmitNoIndex();
     emit RestartAuction(_auction.id, block.timestamp + surplusAuctionHouse.params().totalAuctionLength);
 
@@ -355,7 +389,9 @@ contract Unit_SurplusAuctionHouse_RestartAuction is Base {
 }
 
 contract Unit_SurplusAuctionHouse_IncreaseBidSize is Base {
-  event IncreaseBidSize(uint256 _id, address _highBidder, uint256 _amountToBuy, uint256 _bid, uint256 _bidExpiry);
+  event IncreaseBidSize(
+    uint256 indexed _id, address _highBidder, uint256 _amountToBuy, uint256 _bid, uint256 _bidExpiry
+  );
 
   function setUp() public override {
     Base.setUp();
@@ -424,7 +460,7 @@ contract Unit_SurplusAuctionHouse_IncreaseBidSize is Base {
     vm.assume(_auction.highBidder != address(0));
     vm.assume(_auction.bidExpiry == 0 || _auction.bidExpiry > block.timestamp);
     vm.assume(_auction.auctionDeadline > block.timestamp);
-    vm.assume(_auction.amountToSell != _amountToBuy);
+    vm.assume(_amountToBuy != _auction.amountToSell);
 
     _mockAuction(_auction);
 
@@ -699,8 +735,8 @@ contract Unit_SurplusAuctionHouse_TerminateAuctionPrematurely is Base {
 
   modifier happyPath(Auction memory _auction) {
     _assumeHappyPath(_auction);
-    _mockAuction(_auction);
     _mockContractEnabled(0);
+    _mockAuction(_auction);
     _;
   }
 
@@ -757,16 +793,23 @@ contract Unit_SurplusAuctionHouse_TerminateAuctionPrematurely is Base {
 }
 
 contract Unit_SurplusAuctionHouse_ModifyParameters is Base {
+  event ModifyParameters(bytes32 indexed _parameter, bytes32 indexed _collateralType, bytes _data);
+
+  function test_Revert_Unauthorized(bytes32 _parameter, bytes memory _data) public {
+    vm.expectRevert(IAuthorizable.Unauthorized.selector);
+
+    surplusAuctionHouse.modifyParameters(_parameter, _data);
+  }
+
   function test_Set_Parameters(ISurplusAuctionHouse.SurplusAuctionHouseParams memory _fuzz) public authorized {
     surplusAuctionHouse.modifyParameters('bidIncrease', abi.encode(_fuzz.bidIncrease));
     surplusAuctionHouse.modifyParameters('bidDuration', abi.encode(_fuzz.bidDuration));
     surplusAuctionHouse.modifyParameters('totalAuctionLength', abi.encode(_fuzz.totalAuctionLength));
     surplusAuctionHouse.modifyParameters('recyclingPercentage', abi.encode(_fuzz.recyclingPercentage));
 
-    (bool _success, bytes memory _data) = address(surplusAuctionHouse).staticcall(abi.encodeWithSignature('params()'));
+    ISurplusAuctionHouse.SurplusAuctionHouseParams memory _params = surplusAuctionHouse.params();
 
-    assert(_success);
-    assertEq(keccak256(abi.encode(_fuzz)), keccak256(_data));
+    assertEq(keccak256(abi.encode(_params)), keccak256(abi.encode(_fuzz)));
   }
 
   function test_Set_ProtocolTokenBidReceiver(address _protocolTokenBidReceiver) public authorized {
@@ -774,7 +817,7 @@ contract Unit_SurplusAuctionHouse_ModifyParameters is Base {
 
     surplusAuctionHouse.modifyParameters('protocolTokenBidReceiver', abi.encode(_protocolTokenBidReceiver));
 
-    assertEq(_protocolTokenBidReceiver, surplusAuctionHouse.protocolTokenBidReceiver());
+    assertEq(surplusAuctionHouse.protocolTokenBidReceiver(), _protocolTokenBidReceiver);
   }
 
   function test_Revert_ProtocolTokenBidReceiver_NullAddress() public authorized {
@@ -787,5 +830,14 @@ contract Unit_SurplusAuctionHouse_ModifyParameters is Base {
     vm.expectRevert(IModifiable.UnrecognizedParam.selector);
 
     surplusAuctionHouse.modifyParameters('unrecognizedParam', abi.encode(0));
+  }
+
+  function test_Emit_ModifyParameters(address _protocolTokenBidReceiver) public authorized {
+    vm.assume(_protocolTokenBidReceiver != address(0));
+
+    expectEmitNoIndex();
+    emit ModifyParameters('protocolTokenBidReceiver', GLOBAL_PARAM, abi.encode(_protocolTokenBidReceiver));
+
+    surplusAuctionHouse.modifyParameters('protocolTokenBidReceiver', abi.encode(_protocolTokenBidReceiver));
   }
 }
