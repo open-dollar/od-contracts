@@ -16,12 +16,14 @@
 
 pragma solidity 0.8.19;
 
-import {IPIDRateSetter} from '@interfaces/IPIDRateSetter.sol';
+import {IPIDRateSetter, GLOBAL_PARAM} from '@interfaces/IPIDRateSetter.sol';
 import {IOracle as OracleLike} from '@interfaces/IOracle.sol';
 import {IOracleRelayer as OracleRelayerLike} from '@interfaces/IOracleRelayer.sol';
 import {IPIDController as PIDCalculator} from '@interfaces/IPIDController.sol';
-import {Math, RAY} from '@libraries/Math.sol';
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
+
+import {Math, RAY} from '@libraries/Math.sol';
+import {Encoding} from '@libraries/Encoding.sol';
 
 interface IModifiable {
   function modifyParameters(bytes32 parameter, uint256 data) external;
@@ -29,94 +31,56 @@ interface IModifiable {
 
 contract PIDRateSetter is Authorizable, IPIDRateSetter {
   using Math for uint256;
+  using Math for address;
+  using Encoding for bytes;
 
-  // --- Variables ---
-  // When the price feed was last updated
-  uint256 public lastUpdateTime; // [timestamp]
-  // Enforced gap between calls
-  uint256 public updateRateDelay; // [seconds]
-  // Whether the leak is set to zero by default
-  uint256 public defaultLeak; // [0 or 1]
-
-  // --- System Dependencies ---
+  // --- Registry ---
   // OSM or medianizer for the system coin
-  OracleLike public orcl;
+  OracleLike public oracle;
   // OracleRelayer where the redemption price is stored
   OracleRelayerLike public oracleRelayer;
   // Calculator for the redemption rate
   PIDCalculator public pidCalculator;
 
+  // --- Params ---
+  PIDRateSetterParams internal _params;
+
+  function params() external view returns (PIDRateSetterParams memory) {
+    return _params;
+  }
+
+  // --- Data ---
+  // When the price feed was last updated
+  uint256 public lastUpdateTime; // [timestamp]
+
+  // --- Init ---
   constructor(
     address _oracleRelayer,
-    address _orcl,
+    address _oracle,
     address _pidCalculator,
     uint256 _updateRateDelay
   ) Authorizable(msg.sender) {
     require(_oracleRelayer != address(0), 'PIDRateSetter/null-oracle-relayer');
-    require(_orcl != address(0), 'PIDRateSetter/null-orcl');
+    require(_oracle != address(0), 'PIDRateSetter/null-oracle');
     require(_pidCalculator != address(0), 'PIDRateSetter/null-calculator');
 
-    defaultLeak = 1;
-
     oracleRelayer = OracleRelayerLike(_oracleRelayer);
-    orcl = OracleLike(_orcl);
+    oracle = OracleLike(_oracle);
     pidCalculator = PIDCalculator(_pidCalculator);
 
-    updateRateDelay = _updateRateDelay;
-
-    emit ModifyParameters('orcl', _orcl);
-    emit ModifyParameters('oracleRelayer', _oracleRelayer);
-    emit ModifyParameters('pidCalculator', _pidCalculator);
-    emit ModifyParameters('updateRateDelay', _updateRateDelay);
+    // TODO: require params at constructor
+    _params = PIDRateSetterParams({updateRateDelay: _updateRateDelay, defaultLeak: 1});
   }
 
-  // --- Management ---
-  /**
-   * @notice Modify the address of a contract that the setter is connected to
-   * @param parameter Contract name
-   * @param addr The new contract address
-   */
-  function modifyParameters(bytes32 parameter, address addr) external isAuthorized {
-    require(addr != address(0), 'PIDRateSetter/null-addr');
-    if (parameter == 'orcl') {
-      orcl = OracleLike(addr);
-    } else if (parameter == 'oracleRelayer') {
-      oracleRelayer = OracleRelayerLike(addr);
-    } else if (parameter == 'pidCalculator') {
-      pidCalculator = PIDCalculator(addr);
-    } else {
-      revert('PIDRateSetter/modify-unrecognized-param');
-    }
-    emit ModifyParameters(parameter, addr);
-  }
-
-  /**
-   * @notice Modify a uint256 parameter
-   * @param parameter The parameter name
-   * @param val The new parameter value
-   */
-  function modifyParameters(bytes32 parameter, uint256 val) external isAuthorized {
-    if (parameter == 'updateRateDelay') {
-      require(val > 0, 'PIDRateSetter/null-update-delay');
-      updateRateDelay = val;
-    } else if (parameter == 'defaultLeak') {
-      require(val <= 1, 'PIDRateSetter/invalid-default-leak');
-      defaultLeak = val;
-    } else {
-      revert('PIDRateSetter/modify-unrecognized-param');
-    }
-    emit ModifyParameters(parameter, val);
-  }
-
-  // --- Feedback Mechanism ---
+  // --- Methods ---
   /**
    * @notice Compute and set a new redemption rate
    */
   function updateRate() external {
     // Check delay between calls
-    require(block.timestamp - lastUpdateTime >= updateRateDelay, 'PIDRateSetter/wait-more');
+    require(block.timestamp - lastUpdateTime >= _params.updateRateDelay, 'PIDRateSetter/wait-more');
     // Get price feed updates
-    (uint256 _marketPrice, bool _hasValidValue) = orcl.getResultWithValidity();
+    (uint256 _marketPrice, bool _hasValidValue) = oracle.getResultWithValidity();
     // If the oracle has a value
     require(_hasValidValue, 'PIDRateSetter/invalid-oracle-value');
     // If the price is non-zero
@@ -124,7 +88,7 @@ contract PIDRateSetter is Authorizable, IPIDRateSetter {
     // Get (and update if old) the latest redemption price
     uint256 _redemptionPrice = oracleRelayer.redemptionPrice();
     // Calculate the rate
-    uint256 _iapcr = (defaultLeak == 1) ? RAY : pidCalculator.pscl().rpow(pidCalculator.tlv());
+    uint256 _iapcr = (_params.defaultLeak == 1) ? RAY : pidCalculator.pscl().rpow(pidCalculator.tlv());
     uint256 _redemptionRate = pidCalculator.computeRate(_marketPrice, _redemptionPrice, _iapcr);
     // Store the timestamp of the update
     lastUpdateTime = block.timestamp;
@@ -137,14 +101,29 @@ contract PIDRateSetter is Authorizable, IPIDRateSetter {
    * @notice Get the market price from the system coin oracle
    */
   function getMarketPrice() external view returns (uint256 _marketPrice) {
-    (_marketPrice,) = orcl.getResultWithValidity();
+    (_marketPrice,) = oracle.getResultWithValidity();
   }
 
   /**
    * @notice Get the redemption and the market prices for the system coin
    */
   function getRedemptionAndMarketPrices() external returns (uint256 _marketPrice, uint256 _redemptionPrice) {
-    (_marketPrice,) = orcl.getResultWithValidity();
+    (_marketPrice,) = oracle.getResultWithValidity();
     _redemptionPrice = oracleRelayer.redemptionPrice();
+  }
+
+  // --- Administration ---
+  function modifyParameters(bytes32 _param, bytes memory _data) external isAuthorized {
+    address _address = _data.toAddress();
+    uint256 _uint256 = _data.toUint256();
+
+    if (_param == 'oracle') oracle = OracleLike(_address.assertNonNull());
+    else if (_param == 'oracleRelayer') oracleRelayer = OracleRelayerLike(_address.assertNonNull());
+    else if (_param == 'pidCalculator') pidCalculator = PIDCalculator(_address.assertNonNull());
+    else if (_param == 'updateRateDelay') _params.updateRateDelay = _uint256.assertGt(0);
+    else if (_param == 'defaultLeak') _params.defaultLeak = _uint256.assertLtEq(1);
+    else revert UnrecognizedParam();
+
+    emit ModifyParameters(_param, GLOBAL_PARAM, _data);
   }
 }

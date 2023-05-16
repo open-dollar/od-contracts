@@ -32,6 +32,11 @@ contract Base is HaiTest {
     pidRateSetter = _createDefaulPIDRateSetter();
   }
 
+  modifier authorized() {
+    vm.startPrank(deployer);
+    _;
+  }
+
   function _mockOrclGetResultWithValidity(uint256 _result, bool _valid) internal {
     vm.mockCall(
       address(mockOracle), abi.encodeWithSelector(IOracle.getResultWithValidity.selector), abi.encode(_result, _valid)
@@ -60,16 +65,16 @@ contract Base is HaiTest {
     vm.mockCall(address(mockPIDController), abi.encodeWithSelector(IPIDController.tlv.selector), abi.encode(_tlv));
   }
 
-  function _mockDefaultLeak(uint256 _defaultLeak) internal {
-    stdstore.target(address(pidRateSetter)).sig(IPIDRateSetter.defaultLeak.selector).checked_write(_defaultLeak);
-  }
-
   function _mockLastUpdateTime(uint256 _lastUpdateTime) internal {
     stdstore.target(address(pidRateSetter)).sig(IPIDRateSetter.lastUpdateTime.selector).checked_write(_lastUpdateTime);
   }
 
   function _mockUpdateRateDelay(uint256 _updateRateDelay) internal {
-    stdstore.target(address(pidRateSetter)).sig(IPIDRateSetter.updateRateDelay.selector).checked_write(_updateRateDelay);
+    stdstore.target(address(pidRateSetter)).sig(IPIDRateSetter.params.selector).depth(0).checked_write(_updateRateDelay);
+  }
+
+  function _mockDefaultLeak(uint256 _defaultLeak) internal {
+    stdstore.target(address(pidRateSetter)).sig(IPIDRateSetter.params.selector).depth(1).checked_write(_defaultLeak);
   }
 
   function _mockPIDControllerComputeRate(
@@ -87,15 +92,12 @@ contract Base is HaiTest {
 }
 
 contract Unit_PIDRateSetter_Constructor is Base {
-  event ModifyParameters(bytes32 _parameter, address _addr);
-  event ModifyParameters(bytes32 _parameter, uint256 _val);
-
   function test_Set_OracleRelayer() public {
     assertEq(address(pidRateSetter.oracleRelayer()), address(mockOracleRelayer));
   }
 
   function test_Set_Oracle() public {
-    assertEq(address(pidRateSetter.orcl()), address(mockOracle));
+    assertEq(address(pidRateSetter.oracle()), address(mockOracle));
   }
 
   function test_Set_PIDCalculator() public {
@@ -103,58 +105,79 @@ contract Unit_PIDRateSetter_Constructor is Base {
   }
 
   function test_Set_UpdateRateDelay() public {
-    assertEq(pidRateSetter.updateRateDelay(), periodSize);
+    assertEq(pidRateSetter.params().updateRateDelay, periodSize);
   }
 
   function test_Set_DefaultLeak() public {
-    assertEq(pidRateSetter.defaultLeak(), 1);
+    assertEq(pidRateSetter.params().defaultLeak, 1);
   }
 
   function test_Set_AuthorizedAccounts() public {
     assertEq(pidRateSetter.authorizedAccounts(deployer), 1);
   }
 
-  function test_Emit_ModifyParameters_OracleRelayer() public {
-    expectEmitNoIndex();
-    emit ModifyParameters('oracleRelayer', address(mockOracleRelayer));
-
-    _createDefaulPIDRateSetter();
-  }
-
-  function test_Emit_ModifyParameters_Oracle() public {
-    expectEmitNoIndex();
-    emit ModifyParameters('orcl', address(mockOracle));
-
-    _createDefaulPIDRateSetter();
-  }
-
-  function test_Emit_ModifyParameters_PIDController() public {
-    expectEmitNoIndex();
-    emit ModifyParameters('pidCalculator', address(mockPIDController));
-
-    _createDefaulPIDRateSetter();
-  }
-
-  function test_Emit_ModifyParameters_UpdateRateDelay() public {
-    expectEmitNoIndex();
-    emit ModifyParameters('updateRateDelay', periodSize);
-
-    _createDefaulPIDRateSetter();
-  }
-
+  // TODO: change reverts for Math NullAddress()
   function test_Revert_NullOracleRelayerAddress() public {
     vm.expectRevert('PIDRateSetter/null-oracle-relayer');
     new PIDRateSetter(address(0), address(mockOracle), address(mockPIDController), periodSize);
   }
 
   function test_Revert_NullOrcl() public {
-    vm.expectRevert('PIDRateSetter/null-orcl');
+    vm.expectRevert('PIDRateSetter/null-oracle');
     new PIDRateSetter(address(mockOracleRelayer), address(0), address(mockPIDController), periodSize);
   }
 
   function test_Revert_NullCalculator() public {
     vm.expectRevert('PIDRateSetter/null-calculator');
     new PIDRateSetter(address(mockOracleRelayer), address(mockOracle), address(0), periodSize);
+  }
+}
+
+contract Unit_PIDRateSetter_ModifyParameters is Base {
+  function test_ModifyParameters(IPIDRateSetter.PIDRateSetterParams memory _fuzz) public authorized {
+    vm.assume(_fuzz.updateRateDelay > 0);
+    pidRateSetter.modifyParameters('updateRateDelay', abi.encode(_fuzz.updateRateDelay));
+    vm.assume(_fuzz.defaultLeak == 0 || _fuzz.defaultLeak == 1);
+    pidRateSetter.modifyParameters('defaultLeak', abi.encode(_fuzz.defaultLeak));
+
+    IPIDRateSetter.PIDRateSetterParams memory _params = pidRateSetter.params();
+
+    assertEq(abi.encode(_fuzz), abi.encode(_params));
+  }
+
+  function test_ModifyParameters_Set_Oracle(address _oracle) public authorized {
+    vm.assume(_oracle != address(0));
+    pidRateSetter.modifyParameters('oracle', abi.encode(_oracle));
+
+    assertEq(address(pidRateSetter.oracle()), _oracle);
+  }
+
+  function test_ModifyParameters_Set_OracleRelayer(address _oracleRelayer) public authorized {
+    vm.assume(_oracleRelayer != address(0));
+    pidRateSetter.modifyParameters('oracleRelayer', abi.encode(_oracleRelayer));
+
+    assertEq(address(pidRateSetter.oracleRelayer()), _oracleRelayer);
+  }
+
+  function test_ModifyParameters_Set_PIDCalculator(address _pidCalculator) public authorized {
+    vm.assume(_pidCalculator != address(0));
+    pidRateSetter.modifyParameters('pidCalculator', abi.encode(_pidCalculator));
+
+    assertEq(address(pidRateSetter.pidCalculator()), _pidCalculator);
+  }
+
+  function test_Revert_ModifyParameters_UpdateRateDelayIs0() public authorized {
+    vm.expectRevert(abi.encodeWithSelector(Math.NotGreaterThan.selector, 0, 0));
+
+    pidRateSetter.modifyParameters('updateRateDelay', abi.encode(0));
+  }
+
+  function test_Revert_ModifyParameters_DefaultLeakGt1(uint256 _defaultLeak) public authorized {
+    vm.assume(_defaultLeak > 1);
+
+    vm.expectRevert(abi.encodeWithSelector(Math.NotLesserOrEqualThan.selector, _defaultLeak, 1));
+
+    pidRateSetter.modifyParameters('defaultLeak', abi.encode(_defaultLeak));
   }
 }
 

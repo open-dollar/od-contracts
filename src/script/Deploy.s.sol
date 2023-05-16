@@ -278,7 +278,7 @@ contract Deploy is Script, Contracts {
 
     pidRateSetter = new PIDRateSetter({
      _oracleRelayer: address(oracleRelayer),
-     _orcl: address(oracle[HAI]),
+     _oracle: address(oracle[HAI]),
      _pidCalculator: address(pidController),
      _updateRateDelay: _params.updateRate
     });

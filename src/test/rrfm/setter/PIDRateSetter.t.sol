@@ -63,29 +63,28 @@ contract PIDRateSetterTest is DSTest {
           address(calculator),
           periodSize
         );
-    rateSetter.modifyParameters('defaultLeak', 0);
-
+    rateSetter.modifyParameters('defaultLeak', abi.encode(0));
     oracleRelayer.addAuthorization(address(rateSetter));
   }
 
   function test_correct_setup() public {
     assertEq(rateSetter.authorizedAccounts(address(this)), 1);
-    assertEq(rateSetter.updateRateDelay(), periodSize);
+    assertEq(rateSetter.params().updateRateDelay, periodSize);
   }
 
   function test_modify_parameters() public {
     // Modify
-    rateSetter.modifyParameters('orcl', address(0x12));
-    rateSetter.modifyParameters('oracleRelayer', address(0x12));
-    rateSetter.modifyParameters('pidCalculator', address(0x12));
-    rateSetter.modifyParameters('updateRateDelay', 1);
+    rateSetter.modifyParameters('oracle', abi.encode(0x12));
+    rateSetter.modifyParameters('oracleRelayer', abi.encode(0x12));
+    rateSetter.modifyParameters('pidCalculator', abi.encode(0x12));
+    rateSetter.modifyParameters('updateRateDelay', abi.encode(1));
 
     // Check
-    assertTrue(address(rateSetter.orcl()) == address(0x12));
+    assertTrue(address(rateSetter.oracle()) == address(0x12));
     assertTrue(address(rateSetter.oracleRelayer()) == address(0x12));
     assertTrue(address(rateSetter.pidCalculator()) == address(0x12));
 
-    assertEq(rateSetter.updateRateDelay(), 1);
+    assertEq(rateSetter.params().updateRateDelay, 1);
   }
 
   function test_get_redemption_and_market_prices() public {
@@ -135,13 +134,13 @@ contract PIDRateSetterTest is DSTest {
     rateSetter.updateRate();
 
     hevm.warp(block.timestamp + periodSize * 100_000 + 1);
-    assertEq(block.timestamp - rateSetter.lastUpdateTime() - rateSetter.updateRateDelay(), 359_996_401);
+    assertEq(block.timestamp - rateSetter.lastUpdateTime() - rateSetter.params().updateRateDelay, 359_996_401);
 
     rateSetter.updateRate();
   }
 
   function test_null_default_leak() public {
-    rateSetter.modifyParameters('defaultLeak', 1);
+    rateSetter.modifyParameters('defaultLeak', abi.encode(1));
 
     hevm.warp(block.timestamp + periodSize);
     rateSetter.updateRate();

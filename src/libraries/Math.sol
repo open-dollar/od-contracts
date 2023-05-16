@@ -15,6 +15,7 @@ library Math {
   error NotLesserThan(uint256 _x, uint256 _y);
   error NotGreaterOrEqualThan(uint256 _x, uint256 _y);
   error NotLesserOrEqualThan(uint256 _x, uint256 _y);
+  error NullAddress();
 
   function add(uint256 _x, int256 _y) internal pure returns (uint256 _add) {
     if (_y >= 0) {
@@ -144,5 +145,10 @@ library Math {
   function assertLtEq(uint256 _x, uint256 _y) internal pure returns (uint256 __x) {
     if (_x > _y) revert NotLesserOrEqualThan(_x, _y);
     return _x;
+  }
+
+  function assertNonNull(address _address) internal pure returns (address __address) {
+    if (_address == address(0)) revert NullAddress();
+    return _address;
   }
 }
