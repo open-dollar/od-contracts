@@ -129,8 +129,7 @@ contract PIDRateSetter is Authorizable, IPIDRateSetter {
     // Store the timestamp of the update
     lastUpdateTime = block.timestamp;
     // Update the rate using the setter relayer
-    // TODO: add IModifiable to IOracleRelayer when .modifyParameters is addressed
-    IModifiable(address(oracleRelayer)).modifyParameters('redemptionRate', _redemptionRate);
+    oracleRelayer.updateRedemptionRate(_redemptionRate);
   }
 
   // --- Getters ---

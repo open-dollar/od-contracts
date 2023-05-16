@@ -60,8 +60,7 @@ abstract contract Base is HaiTest {
   }
 
   function _mockOnAuctionSystemCoinLimit(uint256 _rad) internal {
-    // TODO: unify with setAccountingEngine
-    stdstore.target(address(liquidationEngine)).sig(ILiquidationEngine.params.selector).depth(1).checked_write(_rad);
+    stdstore.target(address(liquidationEngine)).sig(ILiquidationEngine.params.selector).depth(0).checked_write(_rad);
   }
 
   function _mockSafeSaviours(address _saviour, uint256 _canSave) internal {
@@ -292,8 +291,7 @@ contract Unit_LiquidationEngine_Constructor is Base {
   }
 
   function test_Set_OnAuctionSystemCoinLimit() public {
-    (, uint256 _onAuctionSystemCoinLimit) = liquidationEngine.params();
-    assertEq(_onAuctionSystemCoinLimit, type(uint256).max);
+    assertEq(liquidationEngine.params().onAuctionSystemCoinLimit, type(uint256).max);
   }
 
   function test_Set_ContractEnabled() public {
@@ -318,13 +316,11 @@ contract Unit_LiquidationEngine_Constructor is Base {
 
 contract Unit_LiquidationEngine_ModifyParameters is Base {
   function test_ModifyParameters(ILiquidationEngine.LiquidationEngineParams memory _fuzz) public authorized {
-    liquidationEngine.modifyParameters('accountingEngine', abi.encode(_fuzz.accountingEngine));
     liquidationEngine.modifyParameters('onAuctionSystemCoinLimit', abi.encode(_fuzz.onAuctionSystemCoinLimit));
 
-    (bool _success, bytes memory _data) = address(liquidationEngine).staticcall(abi.encodeWithSignature('params()'));
+    ILiquidationEngine.LiquidationEngineParams memory _params = liquidationEngine.params();
 
-    assert(_success);
-    assertEq(keccak256(abi.encode(_fuzz)), keccak256(_data));
+    assertEq(abi.encode(_fuzz), abi.encode(_params));
   }
 
   function test_ModifyParameters_PerCollateral(
@@ -336,11 +332,9 @@ contract Unit_LiquidationEngine_ModifyParameters is Base {
     vm.assume(_fuzz.liquidationQuantity <= type(uint256).max / RAY);
     liquidationEngine.modifyParameters(_cType, 'liquidationQuantity', abi.encode(_fuzz.liquidationQuantity));
 
-    (bool _success, bytes memory _data) =
-      address(liquidationEngine).staticcall(abi.encodeWithSignature('cParams(bytes32)', _cType));
+    ILiquidationEngine.LiquidationEngineCollateralParams memory _params = liquidationEngine.cParams(_cType);
 
-    assert(_success);
-    assertEq(keccak256(abi.encode(_fuzz)), keccak256(_data));
+    assertEq(abi.encode(_fuzz), abi.encode(_params));
   }
 
   function test_Revert_ModifyParameters_LiquidationQuantity(
@@ -350,6 +344,12 @@ contract Unit_LiquidationEngine_ModifyParameters is Base {
     vm.assume(_liquidationQuantity > type(uint256).max / RAY);
     vm.expectRevert();
     liquidationEngine.modifyParameters(_cType, 'liquidationQuantity', abi.encode(_liquidationQuantity));
+  }
+
+  function test_ModifyParameters_AccoutingEngine(address _accountingEngine) public authorized {
+    liquidationEngine.modifyParameters('accountingEngine', abi.encode(_accountingEngine));
+
+    assertEq(_accountingEngine, address(liquidationEngine.accountingEngine()));
   }
 
   function test_ModifyParameters_CollateralAuctionHouse(

@@ -177,9 +177,9 @@ contract GlobalSettlement is Authorizable, Disableable, IGlobalSettlement {
   function freezeCollateralType(bytes32 _cType) external whenDisabled {
     require(finalCoinPerCollateralPrice[_cType] == 0, 'GlobalSettlement/final-collateral-price-already-defined');
     collateralTotalDebt[_cType] = safeEngine.cData(_cType).debtAmount;
-    (OracleLike _orcl,,) = oracleRelayer.collateralTypes(_cType);
+    OracleLike _oracle = oracleRelayer.cParams(_cType).oracle;
     // redemptionPrice is a ray, orcl returns a wad
-    finalCoinPerCollateralPrice[_cType] = oracleRelayer.redemptionPrice().wdiv(_orcl.read());
+    finalCoinPerCollateralPrice[_cType] = oracleRelayer.redemptionPrice().wdiv(_oracle.read());
     emit FreezeCollateralType(_cType, finalCoinPerCollateralPrice[_cType]);
   }
 
@@ -191,7 +191,7 @@ contract GlobalSettlement is Authorizable, Disableable, IGlobalSettlement {
   function fastTrackAuction(bytes32 _cType, uint256 _auctionId) external {
     require(finalCoinPerCollateralPrice[_cType] != 0, 'GlobalSettlement/final-collateral-price-not-defined');
 
-    (address _auctionHouse,,) = liquidationEngine.cParams(_cType);
+    address _auctionHouse = liquidationEngine.cParams(_cType).collateralAuctionHouse;
     CollateralAuctionHouseLike _collateralAuctionHouse = CollateralAuctionHouseLike(_auctionHouse);
     uint256 _accumulatedRate = safeEngine.cData(_cType).accumulatedRate;
 

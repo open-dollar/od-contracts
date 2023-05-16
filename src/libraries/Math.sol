@@ -11,117 +11,138 @@ library Math {
   error InvalidSub();
   error InvalidMul();
   error IntOverflow();
+  error NotGreaterThan(uint256 _x, uint256 _y);
+  error NotLesserThan(uint256 _x, uint256 _y);
+  error NotGreaterOrEqualThan(uint256 _x, uint256 _y);
+  error NotLesserOrEqualThan(uint256 _x, uint256 _y);
 
-  function add(uint256 x, int256 y) internal pure returns (uint256 z) {
-    if (y >= 0) {
-      z = x + uint256(y);
+  function add(uint256 _x, int256 _y) internal pure returns (uint256 _add) {
+    if (_y >= 0) {
+      return _x + uint256(_y);
     } else {
-      z = x - uint256(-y);
+      return _x - uint256(-_y);
     }
   }
 
-  function sub(uint256 x, int256 y) internal pure returns (uint256 z) {
-    if (y >= 0) {
-      z = x - uint256(y);
+  function sub(uint256 _x, int256 _y) internal pure returns (uint256 _sub) {
+    if (_y >= 0) {
+      return _x - uint256(_y);
     } else {
-      z = x + uint256(-y);
+      return _x + uint256(-_y);
     }
   }
 
-  function sub(uint256 x, uint256 y) internal pure returns (int256 z) {
-    z = int256(x) - int256(y);
-    if (int256(x) < 0 || int256(y) < 0) revert InvalidSub();
+  function sub(uint256 _x, uint256 _y) internal pure returns (int256 _sub) {
+    return toIntNotOverflow(_x) - toIntNotOverflow(_y);
   }
 
-  function mul(uint256 x, int256 y) internal pure returns (int256 z) {
-    z = int256(x) * y;
-    if (int256(x) < 0) revert InvalidMul();
+  function mul(uint256 _x, int256 _y) internal pure returns (int256 _mul) {
+    return toIntNotOverflow(_x) * _y;
   }
 
-  function rmul(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    z = (x * y) / RAY;
+  function rmul(uint256 _x, uint256 _y) internal pure returns (uint256 _rmul) {
+    return (_x * _y) / RAY;
   }
 
-  function rmul(uint256 x, int256 y) internal pure returns (int256 z) {
-    z = (int256(x) * y) / int256(RAY);
-    if (int256(x) < 0) revert InvalidMul();
+  function rmul(uint256 _x, int256 y) internal pure returns (int256 _rmul) {
+    return (toIntNotOverflow(_x) * y) / int256(RAY);
   }
 
-  function wmul(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    z = (x * y) / WAD;
+  function wmul(uint256 _x, uint256 _y) internal pure returns (uint256 _wmul) {
+    return (_x * _y) / WAD;
   }
 
-  function wmul(uint256 x, int256 y) internal pure returns (int256 z) {
-    z = (int256(x) * y) / int256(WAD);
-    if (int256(x) < 0) revert InvalidMul();
+  function wmul(uint256 _x, int256 _y) internal pure returns (int256 _wmul) {
+    return (toIntNotOverflow(_x) * _y) / int256(WAD);
   }
 
-  function wmul(int256 x, int256 y) internal pure returns (int256 z) {
-    z = (x * y) / int256(WAD);
+  function wmul(int256 _x, int256 _y) internal pure returns (int256 _wmul) {
+    return (_x * _y) / int256(WAD);
   }
 
-  function rdiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    z = (x * RAY) / y;
+  function rdiv(uint256 _x, uint256 _y) internal pure returns (uint256 _rdiv) {
+    return (_x * RAY) / _y;
   }
 
-  function rdiv(int256 x, int256 y) internal pure returns (int256 z) {
-    z = (x * int256(RAY)) / y;
+  function rdiv(int256 _x, int256 _y) internal pure returns (int256 _rdiv) {
+    return (_x * int256(RAY)) / _y;
   }
 
-  function wdiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    z = (x * WAD) / y;
+  function wdiv(uint256 _x, uint256 _y) internal pure returns (uint256 _wdiv) {
+    return (_x * WAD) / _y;
   }
 
-  function rpow(uint256 x, uint256 n) internal pure returns (uint256 z) {
+  function rpow(uint256 _x, uint256 _n) internal pure returns (uint256 _rpow) {
     assembly {
-      switch x
+      switch _x
       case 0 {
-        switch n
-        case 0 { z := RAY }
-        default { z := 0 }
+        switch _n
+        case 0 { _rpow := RAY }
+        default { _rpow := 0 }
       }
       default {
-        switch mod(n, 2)
-        case 0 { z := RAY }
-        default { z := x }
+        switch mod(_n, 2)
+        case 0 { _rpow := RAY }
+        default { _rpow := _x }
         let half := div(RAY, 2) // for rounding.
-        for { n := div(n, 2) } n { n := div(n, 2) } {
-          let xx := mul(x, x)
-          if iszero(eq(div(xx, x), x)) { revert(0, 0) }
-          let xxRound := add(xx, half)
-          if lt(xxRound, xx) { revert(0, 0) }
-          x := div(xxRound, RAY)
-          if mod(n, 2) {
-            let zx := mul(z, x)
-            if and(iszero(iszero(x)), iszero(eq(div(zx, x), z))) { revert(0, 0) }
-            let zxRound := add(zx, half)
-            if lt(zxRound, zx) { revert(0, 0) }
-            z := div(zxRound, RAY)
+        for { _n := div(_n, 2) } _n { _n := div(_n, 2) } {
+          let _xx := mul(_x, _x)
+          if iszero(eq(div(_xx, _x), _x)) { revert(0, 0) }
+          let _xxRound := add(_xx, half)
+          if lt(_xxRound, _xx) { revert(0, 0) }
+          _x := div(_xxRound, RAY)
+          if mod(_n, 2) {
+            let _zx := mul(_rpow, _x)
+            if and(iszero(iszero(_x)), iszero(eq(div(_zx, _x), _rpow))) { revert(0, 0) }
+            let _zxRound := add(_zx, half)
+            if lt(_zxRound, _zx) { revert(0, 0) }
+            _rpow := div(_zxRound, RAY)
           }
         }
       }
     }
   }
 
-  function max(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    z = (x >= y) ? x : y;
+  function max(uint256 _x, uint256 _y) internal pure returns (uint256 _max) {
+    _max = (_x >= _y) ? _x : _y;
   }
 
-  function min(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    z = (x <= y) ? x : y;
+  function min(uint256 _x, uint256 _y) internal pure returns (uint256 _min) {
+    _min = (_x <= _y) ? _x : _y;
   }
 
-  function toIntNotOverflow(uint256 x) internal pure returns (int256 z) {
-    z = int256(x);
-    if (z < 0) revert IntOverflow();
+  function toIntNotOverflow(uint256 _x) internal pure returns (int256 _int) {
+    _int = int256(_x);
+    if (_int < 0) revert IntOverflow();
   }
 
   // --- PI Specific Math ---
-  function riemannSum(int256 x, int256 y) internal pure returns (int256 z) {
-    return (x + y) / 2;
+  function riemannSum(int256 _x, int256 _y) internal pure returns (int256 _riemannSum) {
+    return (_x + _y) / 2;
   }
 
-  function absolute(int256 x) internal pure returns (uint256 z) {
-    z = (x < 0) ? uint256(-x) : uint256(x);
+  function absolute(int256 _x) internal pure returns (uint256 _z) {
+    _z = (_x < 0) ? uint256(-_x) : uint256(_x);
+  }
+
+  // --- Assertions ---
+  function assertGt(uint256 _x, uint256 _y) internal pure returns (uint256 __x) {
+    if (_x <= _y) revert NotGreaterThan(_x, _y);
+    return _x;
+  }
+
+  function assertGtEq(uint256 _x, uint256 _y) internal pure returns (uint256 __x) {
+    if (_x < _y) revert NotGreaterOrEqualThan(_x, _y);
+    return _x;
+  }
+
+  function assertLt(uint256 _x, uint256 _y) internal pure returns (uint256 __x) {
+    if (_x >= _y) revert NotLesserThan(_x, _y);
+    return _x;
+  }
+
+  function assertLtEq(uint256 _x, uint256 _y) internal pure returns (uint256 __x) {
+    if (_x > _y) revert NotLesserOrEqualThan(_x, _y);
+    return _x;
   }
 }

@@ -201,9 +201,9 @@ contract SingleGlobalSettlementTest is DSTest {
     newCollateral.mint(20 ether);
 
     DummyFSM oracleFSM = new DummyFSM();
-    oracleRelayer.modifyParameters(_encodedName, 'orcl', address(oracleFSM));
-    oracleRelayer.modifyParameters(_encodedName, 'safetyCRatio', ray(1.5 ether));
-    oracleRelayer.modifyParameters(_encodedName, 'liquidationCRatio', ray(1.5 ether));
+    oracleRelayer.modifyParameters(_encodedName, 'oracle', abi.encode(oracleFSM));
+    oracleRelayer.modifyParameters(_encodedName, 'safetyCRatio', abi.encode(ray(1.5 ether)));
+    oracleRelayer.modifyParameters(_encodedName, 'liquidationCRatio', abi.encode(ray(1.5 ether)));
 
     // initial collateral price of 5
     oracleFSM.updateCollateralPrice(bytes32(5 * WAD));
@@ -697,7 +697,7 @@ contract SingleGlobalSettlementTest is DSTest {
     // collateral price is 5
     gold.oracleSecurityModule.updateCollateralPrice(bytes32(5 * WAD));
     // redemption price is 0.5
-    oracleRelayer.modifyParameters('redemptionPrice', ray(0.5 ether));
+    oracleRelayer.modifyParameters('redemptionPrice', abi.encode(ray(0.5 ether)));
 
     globalSettlement.shutdownSystem();
     globalSettlement.freezeCollateralType('gold');
@@ -782,7 +782,7 @@ contract SingleGlobalSettlementTest is DSTest {
     // collateral price is 5
     gold.oracleSecurityModule.updateCollateralPrice(bytes32(5 * WAD));
     // redemption price is 0.5
-    oracleRelayer.modifyParameters('redemptionPrice', ray(2 ether));
+    oracleRelayer.modifyParameters('redemptionPrice', abi.encode(ray(2 ether)));
 
     globalSettlement.shutdownSystem();
     globalSettlement.freezeCollateralType('gold');

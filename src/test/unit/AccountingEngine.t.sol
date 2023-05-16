@@ -239,10 +239,9 @@ contract Unit_AccountingEngine_ModifyParameters is Base {
     accountingEngine.modifyParameters('debtAuctionMintedTokens', abi.encode(_fuzz.debtAuctionMintedTokens));
     accountingEngine.modifyParameters('debtAuctionBidSize', abi.encode(_fuzz.debtAuctionBidSize));
 
-    (bool _success, bytes memory _data) = address(accountingEngine).staticcall(abi.encodeWithSignature('params()'));
+    IAccountingEngine.AccountingEngineParams memory _params = accountingEngine.params();
 
-    assert(_success);
-    assertEq(keccak256(abi.encode(_fuzz)), keccak256(_data));
+    assertEq(abi.encode(_fuzz), abi.encode(_params));
   }
 
   function test_ModifyParameters_SurplusAuctionHouse(address _surplusAuctionHouse) public authorized {

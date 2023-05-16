@@ -8,9 +8,8 @@ contract OracleRelayerForTest is OracleRelayer {
   constructor(address _safeEngine) OracleRelayer(_safeEngine) {}
 
   // function to mock oracle since we can get a slot with sdstorage
-  function setCTypeOracle(bytes32 _cType, address _orcl) external {
-    CollateralType storage cType_ = collateralTypes[_cType];
-    cType_.orcl = IOracle(_orcl);
+  function setCTypeOracle(bytes32 _cType, address _oracle) external {
+    _cParams[_cType].oracle = IOracle(_oracle);
   }
 
   function setRedemptionPrice(uint256 _price) external {

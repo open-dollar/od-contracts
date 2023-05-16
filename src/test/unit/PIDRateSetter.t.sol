@@ -16,15 +16,16 @@ contract Base is HaiTest {
   using stdStorage for StdStorage;
 
   address deployer = address(deployer);
-  address mockOracleRelayer = address(new OracleRelayerForTest());
   uint256 periodSize = 3600;
   IPIDRateSetter pidRateSetter;
+  IOracleRelayer mockOracleRelayer = IOracleRelayer(mockContract('mockOracleRelayer'));
   IOracle mockOracle = IOracle(mockContract('mockOracle'));
   IPIDController mockPIDController = IPIDController(mockContract('mockPIDController'));
 
   function _createDefaulPIDRateSetter() internal returns (PIDRateSetter _pidRateSetter) {
     vm.prank(deployer);
-    _pidRateSetter = new PIDRateSetter(mockOracleRelayer, address(mockOracle), address(mockPIDController), periodSize);
+    _pidRateSetter =
+      new PIDRateSetter(address(mockOracleRelayer), address(mockOracle), address(mockPIDController), periodSize);
   }
 
   function setUp() public virtual {
@@ -38,7 +39,17 @@ contract Base is HaiTest {
   }
 
   function _mockOracleRelayerRedemptionPrice(uint256 _redemptionPrice) internal {
-    OracleRelayerForTest(address(mockOracleRelayer)).setRedemptionPrice(_redemptionPrice);
+    vm.mockCall(
+      address(mockOracleRelayer),
+      abi.encodeWithSelector(IOracleRelayer.redemptionPrice.selector),
+      abi.encode(_redemptionPrice)
+    );
+  }
+
+  function _mockOracleRelayerUpdateRedemptionRate() internal {
+    vm.mockCall(
+      address(mockOracleRelayer), abi.encodeWithSelector(IOracleRelayer.updateRedemptionRate.selector), abi.encode()
+    );
   }
 
   function _mockPIDControllerPsl(uint256 _pscl) internal {
@@ -72,21 +83,6 @@ contract Base is HaiTest {
       abi.encodeWithSelector(IPIDController.computeRate.selector, _marketPrice, _redemptionPrice, _accumulatedLeak),
       abi.encode(_computedRate)
     );
-  }
-}
-
-// Not moving to the for-tewt folder because it's too specific for these test and going to be changed soon with the modify parameters change
-contract OracleRelayerForTest {
-  uint256 public redemptionPrice;
-
-  function setRedemptionPrice(uint256 _price) public {
-    redemptionPrice = _price;
-  }
-
-  function modifyParameters(bytes32 _parameter, uint256 _val) public {
-    if (_parameter == 'redemptionPrice') {
-      redemptionPrice = _val;
-    }
   }
 }
 
@@ -248,6 +244,7 @@ contract Unit_PIDRateSetter_UpdateRate is Base {
   function _mockValues(UpdateRateScenario memory _scenario, uint256 _defaultLeak, uint256 _iapcr) internal {
     _mockOrclGetResultWithValidity(_scenario.marketPrice, true);
     _mockOracleRelayerRedemptionPrice(_scenario.redemptionPrice);
+    _mockOracleRelayerUpdateRedemptionRate();
     _mockPIDControllerPsl(_scenario.pscl);
     _mockPIDControllertlv(_scenario.tlv);
     _mockDefaultLeak(_defaultLeak);
@@ -338,10 +335,7 @@ contract Unit_PIDRateSetter_UpdateRate is Base {
     happyPathDefaultLeakIsOne(_scenario)
   {
     vm.expectCall(
-      address(mockOracleRelayer),
-      abi.encodeCall(
-        OracleRelayerForTest(address(mockOracleRelayer)).modifyParameters, ('redemptionRate', _scenario.computedRate)
-      )
+      address(mockOracleRelayer), abi.encodeCall(IOracleRelayer.updateRedemptionRate, (_scenario.computedRate))
     );
 
     pidRateSetter.updateRate();
@@ -352,10 +346,7 @@ contract Unit_PIDRateSetter_UpdateRate is Base {
     happyPathDefaultLeakIsZero(_scenario)
   {
     vm.expectCall(
-      address(mockOracleRelayer),
-      abi.encodeCall(
-        OracleRelayerForTest(address(mockOracleRelayer)).modifyParameters, ('redemptionRate', _scenario.computedRate)
-      )
+      address(mockOracleRelayer), abi.encodeCall(IOracleRelayer.updateRedemptionRate, (_scenario.computedRate))
     );
 
     pidRateSetter.updateRate();

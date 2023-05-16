@@ -95,7 +95,7 @@ abstract contract Common is PRBTest, Contracts {
   }
 
   function _setCollateralPrice(bytes32 _collateral, uint256 _price) internal {
-    (IOracle _oracle,,) = oracleRelayer.collateralTypes(_collateral);
+    IOracle _oracle = oracleRelayer.cParams(_collateral).oracle;
     OracleForTest(address(_oracle)).setPriceAndValidity(_price, true);
     oracleRelayer.updateCollateralPrice(_collateral);
   }

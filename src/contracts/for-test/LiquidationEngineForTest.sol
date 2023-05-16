@@ -8,10 +8,10 @@ contract LiquidationEngineForTest is LiquidationEngine {
   constructor(address _safeEngine) LiquidationEngine(_safeEngine) {}
 
   function setCollateralAuctionHouse(bytes32 _collateralType, address _collateralAuctionHouse) external {
-    cParams[_collateralType].collateralAuctionHouse = _collateralAuctionHouse;
+    _cParams[_collateralType].collateralAuctionHouse = _collateralAuctionHouse;
   }
 
   function setAccountingEngine(address _accountingEngine) external {
-    params.accountingEngine = IAccountingEngine(_accountingEngine);
+    accountingEngine = IAccountingEngine(_accountingEngine);
   }
 }

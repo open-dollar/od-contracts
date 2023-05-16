@@ -144,9 +144,9 @@ contract CoinTest is DSTest {
     gold.mint(1000 ether);
     safeEngine.initializeCollateralType('gold');
     goldFeed = new Feed(1 ether, true);
-    oracleRelayer.modifyParameters('gold', 'orcl', address(goldFeed));
-    oracleRelayer.modifyParameters('gold', 'safetyCRatio', 1_000_000_000_000_000_000_000_000_000);
-    oracleRelayer.modifyParameters('gold', 'liquidationCRatio', 1_000_000_000_000_000_000_000_000_000);
+    oracleRelayer.modifyParameters('gold', 'oracle', abi.encode(goldFeed));
+    oracleRelayer.modifyParameters('gold', 'safetyCRatio', abi.encode(1_000_000_000_000_000_000_000_000_000));
+    oracleRelayer.modifyParameters('gold', 'liquidationCRatio', abi.encode(1_000_000_000_000_000_000_000_000_000));
     oracleRelayer.updateCollateralPrice('gold');
     collateralA = new CollateralJoin(address(safeEngine), 'gold', address(gold));
 

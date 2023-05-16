@@ -902,9 +902,9 @@ contract SingleLiquidationTest is DSTest {
     safeEngine.addAuthorization(address(oracleRelayer));
 
     oracleFSM = new DummyFSM();
-    oracleRelayer.modifyParameters('gold', 'orcl', address(oracleFSM));
-    oracleRelayer.modifyParameters('gold', 'safetyCRatio', ray(1.5 ether));
-    oracleRelayer.modifyParameters('gold', 'liquidationCRatio', ray(1.5 ether));
+    oracleRelayer.modifyParameters('gold', 'oracle', abi.encode(oracleFSM));
+    oracleRelayer.modifyParameters('gold', 'safetyCRatio', abi.encode(ray(1.5 ether)));
+    oracleRelayer.modifyParameters('gold', 'liquidationCRatio', abi.encode(ray(1.5 ether)));
 
     collateralAuctionHouse =
       new IncreasingDiscountCollateralAuctionHouse(address(safeEngine), address(liquidationEngine), 'gold');
@@ -935,14 +935,12 @@ contract SingleLiquidationTest is DSTest {
 
   function test_set_liquidation_quantity() public {
     liquidationEngine.modifyParameters('gold', 'liquidationQuantity', abi.encode(rad(115_792 ether)));
-    (,, uint256 liquidationQuantity) = liquidationEngine.cParams('gold');
-    assertEq(liquidationQuantity, rad(115_792 ether));
+    assertEq(liquidationEngine.cParams('gold').liquidationQuantity, rad(115_792 ether));
   }
 
   function test_set_auction_system_coin_limit() public {
     liquidationEngine.modifyParameters('onAuctionSystemCoinLimit', abi.encode(rad(1)));
-    (, uint256 _onAuctionSystemCoinLimit) = liquidationEngine.params();
-    assertEq(_onAuctionSystemCoinLimit, rad(1));
+    assertEq(liquidationEngine.params().onAuctionSystemCoinLimit, rad(1));
   }
 
   function testFail_liquidation_quantity_too_large() public {
@@ -1151,8 +1149,7 @@ contract SingleLiquidationTest is DSTest {
 
     liquidationEngine.modifyParameters('onAuctionSystemCoinLimit', abi.encode(rad(75 ether)));
     liquidationEngine.modifyParameters('gold', 'liquidationQuantity', abi.encode(rad(100 ether)));
-    (, uint256 _onAuctionSystemCoinLimit) = liquidationEngine.params();
-    assertEq(_onAuctionSystemCoinLimit, rad(75 ether));
+    assertEq(liquidationEngine.params().onAuctionSystemCoinLimit, rad(75 ether));
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), 0);
     uint256 auction = liquidationEngine.liquidateSAFE('gold', address(this));
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), rad(75 ether));
@@ -1199,8 +1196,7 @@ contract SingleLiquidationTest is DSTest {
 
     liquidationEngine.modifyParameters('onAuctionSystemCoinLimit', abi.encode(rad(75 ether)));
     liquidationEngine.modifyParameters('gold', 'liquidationQuantity', abi.encode(rad(100 ether)));
-    (, uint256 _onAuctionSystemCoinLimit) = liquidationEngine.params();
-    assertEq(_onAuctionSystemCoinLimit, rad(75 ether));
+    assertEq(liquidationEngine.params().onAuctionSystemCoinLimit, rad(75 ether));
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), 0);
     liquidationEngine.liquidateSAFE('gold', address(this));
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), rad(75 ether));
@@ -1231,8 +1227,7 @@ contract SingleLiquidationTest is DSTest {
     collateralAuctionHouse.modifyParameters('minimumBid', 1 ether);
     liquidationEngine.modifyParameters('onAuctionSystemCoinLimit', abi.encode(rad(75 ether)));
     liquidationEngine.modifyParameters('gold', 'liquidationQuantity', abi.encode(rad(100 ether)));
-    (, uint256 _onAuctionSystemCoinLimit) = liquidationEngine.params();
-    assertEq(_onAuctionSystemCoinLimit, rad(75 ether));
+    assertEq(liquidationEngine.params().onAuctionSystemCoinLimit, rad(75 ether));
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), 0);
     uint256 auction = liquidationEngine.liquidateSAFE('gold', address(this));
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), rad(75 ether));
@@ -1310,8 +1305,7 @@ contract SingleLiquidationTest is DSTest {
     liquidationEngine.modifyParameters('onAuctionSystemCoinLimit', abi.encode(rad(150 ether)));
     liquidationEngine.modifyParameters('gold', 'liquidationQuantity', abi.encode(rad(1 ether)));
 
-    (, uint256 _onAuctionSystemCoinLimit) = liquidationEngine.params();
-    assertEq(_onAuctionSystemCoinLimit, rad(150 ether));
+    assertEq(liquidationEngine.params().onAuctionSystemCoinLimit, rad(150 ether));
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), 0);
 
     assertEq(liquidationEngine.getLimitAdjustedDebtToCover('gold', address(this)), 1 ether);
@@ -1330,8 +1324,7 @@ contract SingleLiquidationTest is DSTest {
     liquidationEngine.modifyParameters('onAuctionSystemCoinLimit', abi.encode(rad(149 ether)));
     liquidationEngine.modifyParameters('gold', 'liquidationQuantity', abi.encode(rad(150 ether)));
 
-    (, uint256 _onAuctionSystemCoinLimit) = liquidationEngine.params();
-    assertEq(_onAuctionSystemCoinLimit, rad(149 ether));
+    assertEq(liquidationEngine.params().onAuctionSystemCoinLimit, rad(149 ether));
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), 0);
 
     assertEq(liquidationEngine.getLimitAdjustedDebtToCover('gold', address(this)), 149 ether);
@@ -1350,8 +1343,7 @@ contract SingleLiquidationTest is DSTest {
     liquidationEngine.modifyParameters('onAuctionSystemCoinLimit', abi.encode(rad(150 ether)));
     liquidationEngine.modifyParameters('gold', 'liquidationQuantity', abi.encode(rad(1 ether)));
 
-    (, uint256 _onAuctionSystemCoinLimit) = liquidationEngine.params();
-    assertEq(_onAuctionSystemCoinLimit, rad(150 ether));
+    assertEq(liquidationEngine.params().onAuctionSystemCoinLimit, rad(150 ether));
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), 0);
 
     assertEq(liquidationEngine.getLimitAdjustedDebtToCover('gold', address(this)), 1 ether);
@@ -1374,8 +1366,7 @@ contract SingleLiquidationTest is DSTest {
     liquidationEngine.modifyParameters('onAuctionSystemCoinLimit', abi.encode(rad(150 ether)));
     liquidationEngine.modifyParameters('gold', 'liquidationQuantity', abi.encode(rad(1 ether)));
 
-    (, uint256 _onAuctionSystemCoinLimit) = liquidationEngine.params();
-    assertEq(_onAuctionSystemCoinLimit, rad(150 ether));
+    assertEq(liquidationEngine.params().onAuctionSystemCoinLimit, rad(150 ether));
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), 0);
 
     assertEq(liquidationEngine.getLimitAdjustedDebtToCover('gold', address(this)), 1 ether);

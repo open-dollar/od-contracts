@@ -165,7 +165,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
       new IncreasingDiscountCollateralAuctionHouse(address(safeEngine), address(liquidationEngine), 'collateralType');
 
     oracleRelayer = new OracleRelayer(address(safeEngine));
-    oracleRelayer.modifyParameters('redemptionPrice', 5 * RAY);
+    oracleRelayer.modifyParameters('redemptionPrice', abi.encode(5 * RAY));
     collateralAuctionHouse.modifyParameters('oracleRelayer', address(oracleRelayer));
 
     collateralFSM = new Feed(bytes32(uint256(0)), true);
@@ -345,7 +345,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
 
   // Tests with a setup that's similar to a fixed discount auction
   function test_buy_some_collateral() public {
-    oracleRelayer.modifyParameters('redemptionPrice', RAY);
+    oracleRelayer.modifyParameters('redemptionPrice', abi.encode(RAY));
     collateralFSM.set_val(200 ether);
     safeEngine.mint(ali, 200 * RAD - 200 ether);
 
@@ -397,7 +397,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
   }
 
   function test_buy_all_collateral() public {
-    oracleRelayer.modifyParameters('redemptionPrice', 2 * RAY);
+    oracleRelayer.modifyParameters('redemptionPrice', abi.encode(2 * RAY));
     collateralFSM.set_val(200 ether);
     safeEngine.mint(ali, 200 * RAD - 200 ether);
 
@@ -441,7 +441,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
   }
 
   function testFail_start_tiny_collateral_auction() public {
-    oracleRelayer.modifyParameters('redemptionPrice', 2 * RAY);
+    oracleRelayer.modifyParameters('redemptionPrice', abi.encode(2 * RAY));
     collateralFSM.set_val(200 ether);
     safeEngine.mint(ali, 200 * RAD - 200 ether);
 
@@ -456,7 +456,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
 
   function test_buyCollateral_small_market_price() public {
     collateralFSM.set_val(0.01 ether);
-    oracleRelayer.modifyParameters('redemptionPrice', 2 * RAY);
+    oracleRelayer.modifyParameters('redemptionPrice', abi.encode(2 * RAY));
     (uint256 colMedianPrice, bool colMedianValidity) = collateralMedian.getResultWithValidity();
     assertEq(colMedianPrice, 0);
     assertTrue(colMedianValidity);
@@ -490,7 +490,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
   }
 
   function test_big_discount_buy() public {
-    oracleRelayer.modifyParameters('redemptionPrice', RAY);
+    oracleRelayer.modifyParameters('redemptionPrice', abi.encode(RAY));
     collateralAuctionHouse.modifyParameters('maxDiscount', 0.1e18);
     collateralAuctionHouse.modifyParameters('minDiscount', 0.1e18);
     collateralFSM.set_val(200 ether);
@@ -520,7 +520,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
   }
 
   function test_small_discount_buy() public {
-    oracleRelayer.modifyParameters('redemptionPrice', RAY);
+    oracleRelayer.modifyParameters('redemptionPrice', abi.encode(RAY));
     collateralAuctionHouse.modifyParameters('minDiscount', 0.99e18);
     collateralAuctionHouse.modifyParameters('maxDiscount', 0.99e18);
     collateralFSM.set_val(200 ether);
@@ -550,7 +550,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
   }
 
   function test_collateral_median_and_collateral_fsm_equal() public {
-    oracleRelayer.modifyParameters('redemptionPrice', RAY);
+    oracleRelayer.modifyParameters('redemptionPrice', abi.encode(RAY));
     collateralFSM.set_val(200 ether);
     collateralMedian.set_val(200 ether);
     safeEngine.mint(ali, 200 * RAD - 200 ether);
@@ -581,7 +581,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
   }
 
   function test_collateral_median_higher_than_collateral_fsm_floor() public {
-    oracleRelayer.modifyParameters('redemptionPrice', RAY);
+    oracleRelayer.modifyParameters('redemptionPrice', abi.encode(RAY));
     collateralFSM.set_val(200 ether);
     collateralMedian.set_val(181 ether);
     safeEngine.mint(ali, 200 * RAD - 200 ether);
@@ -612,7 +612,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
   }
 
   function test_collateral_median_lower_than_collateral_fsm_ceiling() public {
-    oracleRelayer.modifyParameters('redemptionPrice', RAY);
+    oracleRelayer.modifyParameters('redemptionPrice', abi.encode(RAY));
     collateralFSM.set_val(200 ether);
     collateralMedian.set_val(209 ether);
     safeEngine.mint(ali, 200 * RAD - 200 ether);
@@ -643,7 +643,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
   }
 
   function test_collateral_median_higher_than_collateral_fsm_ceiling() public {
-    oracleRelayer.modifyParameters('redemptionPrice', RAY);
+    oracleRelayer.modifyParameters('redemptionPrice', abi.encode(RAY));
     collateralFSM.set_val(200 ether);
     collateralMedian.set_val(500 ether);
     safeEngine.mint(ali, 200 * RAD - 200 ether);
@@ -674,7 +674,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
   }
 
   function test_collateral_median_lower_than_collateral_fsm_floor() public {
-    oracleRelayer.modifyParameters('redemptionPrice', RAY);
+    oracleRelayer.modifyParameters('redemptionPrice', abi.encode(RAY));
     collateralFSM.set_val(200 ether);
     collateralMedian.set_val(1 ether);
     safeEngine.mint(ali, 200 * RAD - 200 ether);
@@ -705,7 +705,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
   }
 
   function test_collateral_median_lower_than_collateral_fsm_buy_all() public {
-    oracleRelayer.modifyParameters('redemptionPrice', RAY);
+    oracleRelayer.modifyParameters('redemptionPrice', abi.encode(RAY));
     collateralFSM.set_val(200 ether);
     collateralMedian.set_val(1 ether);
     safeEngine.mint(ali, 200 * RAD - 200 ether);
@@ -734,7 +734,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
   }
 
   function test_collateral_median_reverts() public {
-    oracleRelayer.modifyParameters('redemptionPrice', RAY);
+    oracleRelayer.modifyParameters('redemptionPrice', abi.encode(RAY));
     collateralFSM.set_val(200 ether);
     RevertableMedian revertMedian = new RevertableMedian();
     collateralFSM.set_price_source(address(revertMedian));
@@ -766,7 +766,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
   }
 
   function test_system_coin_median_and_redemption_equal() public {
-    oracleRelayer.modifyParameters('redemptionPrice', RAY);
+    oracleRelayer.modifyParameters('redemptionPrice', abi.encode(RAY));
     collateralFSM.set_val(200 ether);
     systemCoinMedian.set_val(1 ether);
 
@@ -802,7 +802,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
   }
 
   function test_system_coin_median_higher_than_redemption_floor() public {
-    oracleRelayer.modifyParameters('redemptionPrice', RAY);
+    oracleRelayer.modifyParameters('redemptionPrice', abi.encode(RAY));
     collateralFSM.set_val(200 ether);
     systemCoinMedian.set_val(0.975e18);
 
@@ -838,7 +838,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
   }
 
   function test_system_coin_median_lower_than_redemption_ceiling() public {
-    oracleRelayer.modifyParameters('redemptionPrice', RAY);
+    oracleRelayer.modifyParameters('redemptionPrice', abi.encode(RAY));
     collateralFSM.set_val(200 ether);
     systemCoinMedian.set_val(1.05e18);
 
@@ -874,7 +874,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
   }
 
   function test_system_coin_median_higher_than_redemption_ceiling() public {
-    oracleRelayer.modifyParameters('redemptionPrice', RAY);
+    oracleRelayer.modifyParameters('redemptionPrice', abi.encode(RAY));
     collateralFSM.set_val(200 ether);
     systemCoinMedian.set_val(1.15e18);
 
@@ -910,7 +910,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
   }
 
   function test_system_coin_median_lower_than_redemption_floor() public {
-    oracleRelayer.modifyParameters('redemptionPrice', RAY);
+    oracleRelayer.modifyParameters('redemptionPrice', abi.encode(RAY));
     collateralFSM.set_val(200 ether);
     systemCoinMedian.set_val(0.9e18);
 
@@ -946,7 +946,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
   }
 
   function test_system_coin_median_lower_than_redemption_buy_all() public {
-    oracleRelayer.modifyParameters('redemptionPrice', RAY);
+    oracleRelayer.modifyParameters('redemptionPrice', abi.encode(RAY));
     collateralFSM.set_val(200 ether);
     systemCoinMedian.set_val(0.9e18);
 
@@ -980,7 +980,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
   }
 
   function test_system_coin_median_reverts() public {
-    oracleRelayer.modifyParameters('redemptionPrice', RAY);
+    oracleRelayer.modifyParameters('redemptionPrice', abi.encode(RAY));
     collateralFSM.set_val(200 ether);
     RevertableMedian revertMedian = new RevertableMedian();
 
@@ -1016,7 +1016,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
   }
 
   function test_system_coin_lower_collateral_median_higher() public {
-    oracleRelayer.modifyParameters('redemptionPrice', RAY);
+    oracleRelayer.modifyParameters('redemptionPrice', abi.encode(RAY));
     systemCoinMedian.set_val(0.9e18);
 
     collateralFSM.set_val(200 ether);
@@ -1054,7 +1054,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
   }
 
   function test_system_coin_higher_collateral_median_lower() public {
-    oracleRelayer.modifyParameters('redemptionPrice', RAY);
+    oracleRelayer.modifyParameters('redemptionPrice', abi.encode(RAY));
     systemCoinMedian.set_val(1.1e18);
 
     collateralFSM.set_val(200 ether);
@@ -1092,7 +1092,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
   }
 
   function test_system_coin_lower_collateral_median_lower() public {
-    oracleRelayer.modifyParameters('redemptionPrice', RAY);
+    oracleRelayer.modifyParameters('redemptionPrice', abi.encode(RAY));
     systemCoinMedian.set_val(0.9e18);
 
     collateralFSM.set_val(200 ether);
@@ -1130,7 +1130,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
   }
 
   function test_system_coin_higher_collateral_median_higher() public {
-    oracleRelayer.modifyParameters('redemptionPrice', RAY);
+    oracleRelayer.modifyParameters('redemptionPrice', abi.encode(RAY));
     systemCoinMedian.set_val(1.1e18);
 
     collateralFSM.set_val(200 ether);
@@ -1168,7 +1168,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
   }
 
   function test_min_system_coin_deviation_exceeds_lower_deviation() public {
-    oracleRelayer.modifyParameters('redemptionPrice', RAY);
+    oracleRelayer.modifyParameters('redemptionPrice', abi.encode(RAY));
     collateralFSM.set_val(200 ether);
     systemCoinMedian.set_val(0.95e18);
 
@@ -1205,7 +1205,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
   }
 
   function test_min_system_coin_deviation_exceeds_higher_deviation() public {
-    oracleRelayer.modifyParameters('redemptionPrice', RAY);
+    oracleRelayer.modifyParameters('redemptionPrice', abi.encode(RAY));
     collateralFSM.set_val(200 ether);
     systemCoinMedian.set_val(1.05e18);
 
@@ -1242,7 +1242,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
   }
 
   function test_consecutive_small_bids() public {
-    oracleRelayer.modifyParameters('redemptionPrice', RAY);
+    oracleRelayer.modifyParameters('redemptionPrice', abi.encode(RAY));
     collateralFSM.set_val(200 ether);
     safeEngine.mint(ali, 200 * RAD - 200 ether);
 
@@ -1276,7 +1276,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
   }
 
   function test_settle_auction() public {
-    oracleRelayer.modifyParameters('redemptionPrice', 2 * RAY);
+    oracleRelayer.modifyParameters('redemptionPrice', abi.encode(2 * RAY));
     collateralFSM.set_val(200 ether);
     safeEngine.mint(ali, 200 * RAD - 200 ether);
 
@@ -1309,7 +1309,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
   }
 
   function test_terminateAuctionPrematurely() public {
-    oracleRelayer.modifyParameters('redemptionPrice', 2 * RAY);
+    oracleRelayer.modifyParameters('redemptionPrice', abi.encode(2 * RAY));
     collateralFSM.set_val(200 ether);
     safeEngine.mint(ali, 200 * RAD - 200 ether);
 
@@ -1347,7 +1347,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     collateralAuctionHouse.modifyParameters('perSecondDiscountUpdateRate', 999_998_607_628_240_588_157_433_861); // -0.5% per hour
     collateralAuctionHouse.modifyParameters('maxDiscount', 0.93e18);
 
-    oracleRelayer.modifyParameters('redemptionPrice', RAY);
+    oracleRelayer.modifyParameters('redemptionPrice', abi.encode(RAY));
     collateralFSM.set_val(200 ether);
     safeEngine.mint(ali, 200 * RAD - 200 ether);
 
@@ -1393,7 +1393,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     collateralAuctionHouse.modifyParameters('perSecondDiscountUpdateRate', 999_998_607_628_240_588_157_433_861); // -0.5% per hour
     collateralAuctionHouse.modifyParameters('maxDiscount', 0.93e18);
 
-    oracleRelayer.modifyParameters('redemptionPrice', RAY);
+    oracleRelayer.modifyParameters('redemptionPrice', abi.encode(RAY));
     collateralFSM.set_val(200 ether);
     safeEngine.mint(ali, 200 * RAD - 200 ether);
 
@@ -1440,7 +1440,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     collateralAuctionHouse.modifyParameters('perSecondDiscountUpdateRate', 999_998_607_628_240_588_157_433_861); // -0.5% per hour
     collateralAuctionHouse.modifyParameters('maxDiscount', 0.93e18);
 
-    oracleRelayer.modifyParameters('redemptionPrice', RAY);
+    oracleRelayer.modifyParameters('redemptionPrice', abi.encode(RAY));
     collateralFSM.set_val(200 ether);
     safeEngine.mint(ali, 200 * RAD - 200 ether);
 
@@ -1487,7 +1487,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     collateralAuctionHouse.modifyParameters('perSecondDiscountUpdateRate', 999_998_607_628_240_588_157_433_861); // -0.5% per hour
     collateralAuctionHouse.modifyParameters('maxDiscount', 0.93e18);
 
-    oracleRelayer.modifyParameters('redemptionPrice', RAY);
+    oracleRelayer.modifyParameters('redemptionPrice', abi.encode(RAY));
     collateralFSM.set_val(200 ether);
     safeEngine.mint(ali, 200 * RAD - 200 ether);
 
@@ -1534,7 +1534,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     collateralAuctionHouse.modifyParameters('perSecondDiscountUpdateRate', 999_998_607_628_240_588_157_433_861); // -0.5% per hour
     collateralAuctionHouse.modifyParameters('maxDiscount', 0.93e18);
 
-    oracleRelayer.modifyParameters('redemptionPrice', RAY);
+    oracleRelayer.modifyParameters('redemptionPrice', abi.encode(RAY));
     collateralFSM.set_val(200 ether);
     safeEngine.mint(ali, 200 * RAD - 200 ether);
 

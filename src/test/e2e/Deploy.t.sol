@@ -75,10 +75,9 @@ contract E2EDeploymentTest is PRBTest {
     LiquidationEngine _liquidationEngine = deployment.liquidationEngine();
 
     assertEq(address(_liquidationEngine.safeEngine()), address(deployment.safeEngine()));
+    assertEq(address(_liquidationEngine.accountingEngine()), address(deployment.accountingEngine()));
 
-    (IAccountingEngine _accountingEngine, uint256 _onAuctionSystemCoinLimit) = _liquidationEngine.params();
-    assertEq(address(_accountingEngine), address(deployment.accountingEngine()));
-    assertEq(_onAuctionSystemCoinLimit, type(uint256).max);
+    assertEq(_liquidationEngine.params().onAuctionSystemCoinLimit, type(uint256).max);
   }
 
   // StabilityFeeTreasury
@@ -185,8 +184,8 @@ contract E2EDeploymentTest is PRBTest {
     assertEq(address(_oracleRelayer.safeEngine()), address(deployment.safeEngine()));
 
     // TODO: replace for actual oracle
-    assertEq(address(_oracleRelayer.orcl(bytes32('ETH-A'))), address(deployment.oracle(ETH_A)));
-    assertEq(address(_oracleRelayer.orcl(bytes32('TKN'))), address(deployment.oracle(TKN)));
+    assertEq(address(_oracleRelayer.cParams(bytes32('ETH-A')).oracle), address(deployment.oracle(ETH_A)));
+    assertEq(address(_oracleRelayer.cParams(bytes32('TKN')).oracle), address(deployment.oracle(TKN)));
   }
 
   function test_Revoke_Auth() public {

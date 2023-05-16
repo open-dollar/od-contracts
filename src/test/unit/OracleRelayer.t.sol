@@ -43,15 +43,13 @@ abstract contract Base is HaiTest {
   }
 
   function _mockCTypeSafetyCRatio(bytes32 _collateralType, uint256 _safetyCRatio) internal {
-    stdstore.target(address(oracleRelayer)).sig(IOracleRelayer.collateralTypes.selector).with_key(_collateralType).depth(
-      1
-    ).checked_write(_safetyCRatio);
+    stdstore.target(address(oracleRelayer)).sig(IOracleRelayer.cParams.selector).with_key(_collateralType).depth(1)
+      .checked_write(_safetyCRatio);
   }
 
   function _mockCTypeLiquidationCRatio(bytes32 _collateralType, uint256 _liquidationCRatio) internal {
-    stdstore.target(address(oracleRelayer)).sig(IOracleRelayer.collateralTypes.selector).with_key(_collateralType).depth(
-      2
-    ).checked_write(_liquidationCRatio);
+    stdstore.target(address(oracleRelayer)).sig(IOracleRelayer.cParams.selector).with_key(_collateralType).depth(2)
+      .checked_write(_liquidationCRatio);
   }
 
   function _mockRedemptionPrice(uint256 _redemptionPrice) internal {
@@ -61,6 +59,18 @@ abstract contract Base is HaiTest {
   function _mockRedemptionPriceUpdateTime(uint256 _redemptionPriceUpdateTime) internal {
     stdstore.target(address(oracleRelayer)).sig(IOracleRelayer.redemptionPriceUpdateTime.selector).checked_write(
       _redemptionPriceUpdateTime
+    );
+  }
+
+  function _mockRedemptionRateUpperBound(uint256 _redemptionRateUpperBound) internal {
+    stdstore.target(address(oracleRelayer)).sig(IOracleRelayer.params.selector).depth(0).checked_write(
+      _redemptionRateUpperBound
+    );
+  }
+
+  function _mockRedemptionRateLowerBound(uint256 _redemptionRateLowerBound) internal {
+    stdstore.target(address(oracleRelayer)).sig(IOracleRelayer.params.selector).depth(1).checked_write(
+      _redemptionRateLowerBound
     );
   }
 }
@@ -87,11 +97,11 @@ contract Unit_OracleRelayer_Constructor is Base {
   }
 
   function test_Set_RedemptionRateUpperBound() public {
-    assertEq(oracleRelayer.redemptionRateUpperBound(), RAY * WAD);
+    assertEq(oracleRelayer.params().redemptionRateUpperBound, RAY * WAD);
   }
 
   function test_Set_RedemptionRateLowerBound() public {
-    assertEq(oracleRelayer.redemptionRateLowerBound(), 1);
+    assertEq(oracleRelayer.params().redemptionRateLowerBound, 1);
   }
 
   function test_Set_Authorizable() public {
@@ -112,7 +122,7 @@ contract Unit_OracleRelayer_SafetyCRatio is Base {
   function test_Get_SafetyCRatio(bytes32 _collateralType, uint256 _safetyCRatioSet) public {
     _mockCTypeSafetyCRatio(_collateralType, _safetyCRatioSet);
 
-    assertEq(oracleRelayer.safetyCRatio(_collateralType), _safetyCRatioSet);
+    assertEq(oracleRelayer.cParams(_collateralType).safetyCRatio, _safetyCRatioSet);
   }
 }
 
@@ -120,7 +130,7 @@ contract Unit_OracleRelayer_LiquidationCRatio is Base {
   function test_Get_LiquidationCRatio(bytes32 _collateralType, uint256 _liquidationCRatioSet) public {
     _mockCTypeLiquidationCRatio(_collateralType, _liquidationCRatioSet);
 
-    assertEq(oracleRelayer.liquidationCRatio(_collateralType), _liquidationCRatioSet);
+    assertEq(oracleRelayer.cParams(_collateralType).liquidationCRatio, _liquidationCRatioSet);
   }
 }
 
@@ -128,7 +138,7 @@ contract Unit_OracleRelayer_Orcl is Base {
   function test_Get_Orcl(bytes32 _collateralType, address _oracleSet) public {
     OracleRelayerForTest(address(oracleRelayer)).setCTypeOracle(_collateralType, _oracleSet);
 
-    assertEq(oracleRelayer.orcl(_collateralType), _oracleSet);
+    assertEq(address(oracleRelayer.cParams(_collateralType).oracle), _oracleSet);
   }
 }
 
@@ -479,5 +489,73 @@ contract Unit_OracleRelayer_UpdateCollateralPrice is Base {
     emit UpdateCollateralPrice(collateralType, _scenario.priceFeedValue, 0, 0);
 
     oracleRelayer.updateCollateralPrice(collateralType);
+  }
+}
+
+contract Unit_OracleRelayer_UpdateRedemptionRate is Base {
+  using Math for uint256;
+
+  function _mockValues(uint256 _redemptionRateUpperBound, uint256 _redemptionRateLowerBound) internal {
+    _mockRedemptionRateUpperBound(_redemptionRateUpperBound);
+    _mockRedemptionRateLowerBound(_redemptionRateLowerBound);
+  }
+
+  modifier happyPath(uint256 _redemptionRate, uint256 _redemptionRateUpperBound, uint256 _redemptionRateLowerBound) {
+    _mockRedemptionPriceUpdateTime(block.timestamp);
+    vm.assume(_redemptionRateLowerBound <= _redemptionRateUpperBound);
+    _mockValues(_redemptionRateUpperBound, _redemptionRateLowerBound);
+    _;
+  }
+
+  function test_Set_RedemptionRate(
+    uint256 _redemptionRate,
+    uint256 _redemptionRateUpperBound,
+    uint256 _redemptionRateLowerBound
+  ) public authorized happyPath(_redemptionRate, _redemptionRateUpperBound, _redemptionRateLowerBound) {
+    vm.assume(_redemptionRate <= _redemptionRateUpperBound);
+    vm.assume(_redemptionRate >= _redemptionRateLowerBound);
+
+    oracleRelayer.updateRedemptionRate(_redemptionRate);
+
+    assertEq(oracleRelayer.redemptionRate(), _redemptionRate);
+  }
+
+  function test_Set_RedemptionRateUpperBound(
+    uint256 _redemptionRate,
+    uint256 _redemptionRateUpperBound,
+    uint256 _redemptionRateLowerBound
+  ) public authorized happyPath(_redemptionRate, _redemptionRateUpperBound, _redemptionRateLowerBound) {
+    vm.assume(_redemptionRate > _redemptionRateUpperBound);
+
+    oracleRelayer.updateRedemptionRate(_redemptionRate);
+
+    assertEq(oracleRelayer.redemptionRate(), _redemptionRateUpperBound);
+  }
+
+  function test_Set_RedemptionRateLowerBound(
+    uint256 _redemptionRate,
+    uint256 _redemptionRateUpperBound,
+    uint256 _redemptionRateLowerBound
+  ) public authorized happyPath(_redemptionRate, _redemptionRateUpperBound, _redemptionRateLowerBound) {
+    vm.assume(_redemptionRate < _redemptionRateLowerBound);
+
+    oracleRelayer.updateRedemptionRate(_redemptionRate);
+
+    assertEq(oracleRelayer.redemptionRate(), _redemptionRateLowerBound);
+  }
+
+  function test_Revert_WithoutUpdateRedemptionPrice(
+    uint256 _timeSinceLastRedemptionPriceUpdate,
+    uint256 _redemptionRate,
+    uint256 _redemptionRateUpperBound,
+    uint256 _redemptionRateLowerBound
+  ) public authorized happyPath(_redemptionRate, _redemptionRateUpperBound, _redemptionRateLowerBound) {
+    vm.assume(notUnderflow(block.timestamp, _timeSinceLastRedemptionPriceUpdate));
+    vm.assume(_timeSinceLastRedemptionPriceUpdate > 0);
+    vm.warp(block.timestamp + _timeSinceLastRedemptionPriceUpdate);
+
+    vm.expectRevert(IOracleRelayer.RedemptionPriceNotUpdated.selector);
+
+    oracleRelayer.updateRedemptionRate(_redemptionRate);
   }
 }

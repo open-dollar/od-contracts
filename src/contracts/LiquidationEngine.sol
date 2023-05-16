@@ -45,16 +45,27 @@ contract LiquidationEngine is Authorizable, Disableable, ILiquidationEngine {
   // Current amount of system coins out for liquidation
   uint256 public currentOnAuctionSystemCoins; // [rad]
 
+  // --- Registry ---
   SAFEEngineLike public safeEngine;
+  AccountingEngineLike public accountingEngine;
 
-  LiquidationEngineParams public params;
-  mapping(bytes32 _cType => LiquidationEngineCollateralParams) public cParams;
+  // --- Params ---
+  LiquidationEngineParams internal _params;
+  mapping(bytes32 _cType => LiquidationEngineCollateralParams) internal _cParams;
+
+  function params() external view returns (LiquidationEngineParams memory) {
+    return _params;
+  }
+
+  function cParams(bytes32 _cType) external view returns (LiquidationEngineCollateralParams memory) {
+    return _cParams[_cType];
+  }
 
   // --- Init ---
   constructor(address _safeEngine) Authorizable(msg.sender) {
     safeEngine = SAFEEngineLike(_safeEngine);
 
-    params.onAuctionSystemCoinLimit = type(uint256).max;
+    _params.onAuctionSystemCoinLimit = type(uint256).max;
     emit ModifyParameters('onAuctionSystemCoinLimit', GLOBAL_PARAM, abi.encode(type(uint256).max));
   }
 
@@ -126,8 +137,8 @@ contract LiquidationEngine is Authorizable, Disableable, ILiquidationEngine {
       'LiquidationEngine/safe-not-unsafe'
     );
     require(
-      currentOnAuctionSystemCoins < params.onAuctionSystemCoinLimit
-        && params.onAuctionSystemCoinLimit - currentOnAuctionSystemCoins >= _debtFloor,
+      currentOnAuctionSystemCoins < _params.onAuctionSystemCoinLimit
+        && _params.onAuctionSystemCoinLimit - currentOnAuctionSystemCoins >= _debtFloor,
       'LiquidationEngine/liquidation-limit-hit'
     );
 
@@ -163,12 +174,12 @@ contract LiquidationEngine is Authorizable, Disableable, ILiquidationEngine {
             < _safeData.generatedDebt * _safeEngCData.accumulatedRate
         )
     ) {
-      LiquidationEngineCollateralParams memory _cParams = cParams[_cType];
+      LiquidationEngineCollateralParams memory __cParams = _cParams[_cType];
 
       uint256 _limitAdjustedDebt = Math.min(
         _safeData.generatedDebt,
-        Math.min(_cParams.liquidationQuantity, params.onAuctionSystemCoinLimit - currentOnAuctionSystemCoins) * WAD
-          / _safeEngCData.accumulatedRate / _cParams.liquidationPenalty
+        Math.min(__cParams.liquidationQuantity, _params.onAuctionSystemCoinLimit - currentOnAuctionSystemCoins) * WAD
+          / _safeEngCData.accumulatedRate / __cParams.liquidationPenalty
       );
 
       require(_limitAdjustedDebt > 0, 'LiquidationEngine/null-auction');
@@ -187,24 +198,19 @@ contract LiquidationEngine is Authorizable, Disableable, ILiquidationEngine {
       );
 
       safeEngine.confiscateSAFECollateralAndDebt(
-        _cType,
-        _safe,
-        address(this),
-        address(params.accountingEngine),
-        -int256(_collateralToSell),
-        -int256(_limitAdjustedDebt)
+        _cType, _safe, address(this), address(accountingEngine), -int256(_collateralToSell), -int256(_limitAdjustedDebt)
       );
-      params.accountingEngine.pushDebtToQueue(_limitAdjustedDebt * _safeEngCData.accumulatedRate);
+      accountingEngine.pushDebtToQueue(_limitAdjustedDebt * _safeEngCData.accumulatedRate);
 
       {
         // This calcuation will overflow if multiply(limitAdjustedDebt, accumulatedRate) exceeds ~10^14,
         // i.e. the maximum amountToRaise is roughly 100 trillion system coins.
-        uint256 _amountToRaise = _limitAdjustedDebt * _safeEngCData.accumulatedRate * _cParams.liquidationPenalty / WAD;
+        uint256 _amountToRaise = _limitAdjustedDebt * _safeEngCData.accumulatedRate * __cParams.liquidationPenalty / WAD;
         currentOnAuctionSystemCoins += _amountToRaise;
 
-        _auctionId = CollateralAuctionHouseLike(_cParams.collateralAuctionHouse).startAuction({
+        _auctionId = CollateralAuctionHouseLike(__cParams.collateralAuctionHouse).startAuction({
           _forgoneCollateralReceiver: _safe,
-          _initialBidder: address(params.accountingEngine),
+          _initialBidder: address(accountingEngine),
           _amountToRaise: _amountToRaise,
           _collateralToSell: _collateralToSell,
           _initialBid: 0
@@ -219,7 +225,7 @@ contract LiquidationEngine is Authorizable, Disableable, ILiquidationEngine {
         _collateralToSell,
         _limitAdjustedDebt,
         _limitAdjustedDebt * _safeEngCData.accumulatedRate,
-        _cParams.collateralAuctionHouse,
+        __cParams.collateralAuctionHouse,
         _auctionId
       );
     }
@@ -245,12 +251,12 @@ contract LiquidationEngine is Authorizable, Disableable, ILiquidationEngine {
   function getLimitAdjustedDebtToCover(bytes32 _cType, address _safe) external view returns (uint256) {
     uint256 _accumulatedRate = safeEngine.cData(_cType).accumulatedRate;
     uint256 _generatedDebt = safeEngine.safes(_cType, _safe).generatedDebt;
-    LiquidationEngineCollateralParams memory _cParams = cParams[_cType];
+    LiquidationEngineCollateralParams memory __cParams = _cParams[_cType];
 
     return Math.min(
       _generatedDebt,
-      Math.min(_cParams.liquidationQuantity, params.onAuctionSystemCoinLimit - currentOnAuctionSystemCoins) * WAD
-        / _accumulatedRate / _cParams.liquidationPenalty
+      Math.min(__cParams.liquidationQuantity, _params.onAuctionSystemCoinLimit - currentOnAuctionSystemCoins) * WAD
+        / _accumulatedRate / __cParams.liquidationPenalty
     );
   }
 
@@ -261,8 +267,8 @@ contract LiquidationEngine is Authorizable, Disableable, ILiquidationEngine {
    * @param  _data Value for the new parameter
    */
   function modifyParameters(bytes32 _param, bytes memory _data) external isAuthorized {
-    if (_param == 'onAuctionSystemCoinLimit') params.onAuctionSystemCoinLimit = _data.toUint256();
-    else if (_param == 'accountingEngine') params.accountingEngine = abi.decode(_data, (AccountingEngineLike));
+    if (_param == 'onAuctionSystemCoinLimit') _params.onAuctionSystemCoinLimit = _data.toUint256();
+    else if (_param == 'accountingEngine') accountingEngine = abi.decode(_data, (AccountingEngineLike));
     else revert UnrecognizedParam();
     emit ModifyParameters(_param, GLOBAL_PARAM, _data);
   }
@@ -276,9 +282,8 @@ contract LiquidationEngine is Authorizable, Disableable, ILiquidationEngine {
   function modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) external isAuthorized {
     uint256 _uint256 = _data.toUint256();
 
-    if (_param == 'liquidationPenalty') cParams[_cType].liquidationPenalty = _uint256;
-    // NOTE: *= 1 avoids overflow
-    else if (_param == 'liquidationQuantity') cParams[_cType].liquidationQuantity = _uint256.rmul(RAY);
+    if (_param == 'liquidationPenalty') _cParams[_cType].liquidationPenalty = _uint256;
+    else if (_param == 'liquidationQuantity') _cParams[_cType].liquidationQuantity = _uint256.assertLtEq(MAX_RAD);
     else if (_param == 'collateralAuctionHouse') _setCollateralAuctionHouse(_cType, _data.toAddress());
     else revert UnrecognizedParam();
 
@@ -286,8 +291,8 @@ contract LiquidationEngine is Authorizable, Disableable, ILiquidationEngine {
   }
 
   function _setCollateralAuctionHouse(bytes32 _cType, address _newCollateralAuctionHouse) internal {
-    safeEngine.denySAFEModification(cParams[_cType].collateralAuctionHouse);
-    cParams[_cType].collateralAuctionHouse = _newCollateralAuctionHouse;
+    safeEngine.denySAFEModification(_cParams[_cType].collateralAuctionHouse);
+    _cParams[_cType].collateralAuctionHouse = _newCollateralAuctionHouse;
     safeEngine.approveSAFEModification(_newCollateralAuctionHouse);
   }
 }

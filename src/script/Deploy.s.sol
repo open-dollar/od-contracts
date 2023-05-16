@@ -225,7 +225,7 @@ contract Deploy is Script, Contracts {
     address _collateralJoin = _params.name == ETH_A ? address(ethJoin) : address(collateralJoin[_params.name]);
     safeEngine.addAuthorization(_collateralJoin);
 
-    oracleRelayer.modifyParameters(_params.name, 'orcl', _collateralOracle);
+    oracleRelayer.modifyParameters(_params.name, 'oracle', abi.encode(_collateralOracle));
 
     safeEngine.initializeCollateralType(_params.name);
     taxCollector.initializeCollateralType(_params.name);
@@ -251,8 +251,8 @@ contract Deploy is Script, Contracts {
     taxCollector.modifyParameters(
       _params.name, _params.percentageOfStabilityFeeToTreasury, address(stabilityFeeTreasury)
     );
-    oracleRelayer.modifyParameters(_params.name, 'safetyCRatio', _params.safetyCRatio);
-    oracleRelayer.modifyParameters(_params.name, 'liquidationCRatio', _params.liquidationRatio);
+    oracleRelayer.modifyParameters(_params.name, 'safetyCRatio', abi.encode(_params.safetyCRatio));
+    oracleRelayer.modifyParameters(_params.name, 'liquidationCRatio', abi.encode(_params.liquidationRatio));
 
     // setup global settlement
     collateralAuctionHouse[_params.name].addAuthorization(address(globalSettlement)); // terminateAuctionPrematurely

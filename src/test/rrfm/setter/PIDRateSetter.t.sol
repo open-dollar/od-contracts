@@ -6,7 +6,7 @@ import 'ds-test/test.sol';
 import {MockPIDCalculator} from '../utils/mock/MockPIDCalculator.sol';
 import {PIDRateSetter} from '@contracts/PIDRateSetter.sol';
 
-import '../utils/mock/MockOracleRelayer.sol';
+import {OracleRelayer as MockOracleRelayer} from '@contracts/OracleRelayer.sol';
 
 contract Feed {
   bytes32 public price;
@@ -52,7 +52,8 @@ contract PIDRateSetterTest is DSTest {
     hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     hevm.warp(604_411_200);
 
-    oracleRelayer = new MockOracleRelayer();
+    oracleRelayer = new MockOracleRelayer(address(69));
+
     orcl = new Feed(1 ether, true);
 
     calculator = new MockPIDCalculator();
@@ -63,6 +64,8 @@ contract PIDRateSetterTest is DSTest {
           periodSize
         );
     rateSetter.modifyParameters('defaultLeak', 0);
+
+    oracleRelayer.addAuthorization(address(rateSetter));
   }
 
   function test_correct_setup() public {
@@ -150,8 +153,8 @@ contract PIDRateSetterTest is DSTest {
   }
 
   function test_oracle_relayer_bounded_rate() public {
-    oracleRelayer.modifyParameters('redemptionRateUpperBound', RAY + 1);
-    oracleRelayer.modifyParameters('redemptionRateLowerBound', RAY - 1);
+    oracleRelayer.modifyParameters('redemptionRateUpperBound', abi.encode(RAY + 1));
+    oracleRelayer.modifyParameters('redemptionRateLowerBound', abi.encode(RAY - 1));
 
     rateSetter.updateRate();
     assertEq(oracleRelayer.redemptionRate(), RAY + 1);
