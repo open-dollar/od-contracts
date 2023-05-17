@@ -1,5 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
-pragma experimental ABIEncoderV2;
 
 import 'ds-test/test.sol';
 
@@ -32,21 +32,21 @@ contract SingleTaxCollectorTest is DSTest {
     return uint256(_rad / 10 ** 27);
   }
 
-  function updateTime(bytes32 _collateralType) internal view returns (uint256) {
+  function _updateTime(bytes32 _collateralType) internal view returns (uint256) {
     (uint256 stabilityFee, uint256 updateTime_) = taxCollector.collateralTypes(_collateralType);
     stabilityFee;
     return updateTime_;
   }
 
-  function debtAmount(bytes32 collateralType) internal view returns (uint256 _debtAmountV) {
+  function _debtAmount(bytes32 collateralType) internal view returns (uint256 _debtAmountV) {
     _debtAmountV = SAFEEngineLike(address(safeEngine)).cData(collateralType).debtAmount;
   }
 
-  function accumulatedRate(bytes32 collateralType) internal view returns (uint256 _accumulatedRateV) {
+  function _accumulatedRate(bytes32 collateralType) internal view returns (uint256 _accumulatedRateV) {
     _accumulatedRateV = SAFEEngineLike(address(safeEngine)).cData(collateralType).accumulatedRate;
   }
 
-  function debtCeiling(bytes32 collateralType) internal view returns (uint256 _debtCeilingV) {
+  function _debtCeiling(bytes32 collateralType) internal view returns (uint256 _debtCeilingV) {
     _debtCeilingV = SAFEEngineLike(address(safeEngine)).cParams(collateralType).debtCeiling;
   }
 
@@ -66,15 +66,15 @@ contract SingleTaxCollectorTest is DSTest {
     draw('i', 100 ether);
   }
 
-  function draw(bytes32 collateralType, uint256 coin) internal {
+  function draw(bytes32 collateralType, uint256 _coin) internal {
     uint256 _globalDebtCeiling = safeEngine.params().globalDebtCeiling;
-    safeEngine.modifyParameters('globalDebtCeiling', abi.encode(_globalDebtCeiling + rad(coin)));
-    safeEngine.modifyParameters(collateralType, 'debtCeiling', abi.encode(debtCeiling(collateralType) + rad(coin)));
+    safeEngine.modifyParameters('globalDebtCeiling', abi.encode(_globalDebtCeiling + rad(_coin)));
+    safeEngine.modifyParameters(collateralType, 'debtCeiling', abi.encode(_debtCeiling(collateralType) + rad(_coin)));
     uint256 _collateralPrice = 10 ** 27 * 10_000 ether;
     safeEngine.updateCollateralPrice(collateralType, _collateralPrice, _collateralPrice);
     address self = address(this);
     safeEngine.modifyCollateralBalance(collateralType, self, 10 ** 27 * 1 ether);
-    safeEngine.modifySAFECollateralization(collateralType, self, self, self, int256(1 ether), int256(coin));
+    safeEngine.modifySAFECollateralization(collateralType, self, self, self, int256(1 ether), int256(_coin));
   }
 
   function test_collect_tax_setup() public {
@@ -84,23 +84,23 @@ contract SingleTaxCollectorTest is DSTest {
     assertEq(uint256(block.timestamp), 1);
     hevm.warp(2);
     assertEq(uint256(block.timestamp), 2);
-    assertEq(debtAmount('i'), 100 ether);
+    assertEq(_debtAmount('i'), 100 ether);
   }
 
-  function test_collect_tax_updates_updateTime() public {
+  function test_collect_tax_updates__updateTime() public {
     taxCollector.initializeCollateralType('i');
-    assertEq(updateTime('i'), block.timestamp);
+    assertEq(_updateTime('i'), block.timestamp);
 
     taxCollector.modifyParameters('i', 'stabilityFee', 10 ** 27);
     taxCollector.taxSingle('i');
-    assertEq(updateTime('i'), block.timestamp);
+    assertEq(_updateTime('i'), block.timestamp);
     hevm.warp(block.timestamp + 1);
-    assertEq(updateTime('i'), block.timestamp - 1);
+    assertEq(_updateTime('i'), block.timestamp - 1);
     taxCollector.taxSingle('i');
-    assertEq(updateTime('i'), block.timestamp);
+    assertEq(_updateTime('i'), block.timestamp);
     hevm.warp(block.timestamp + 1 days);
     taxCollector.taxSingle('i');
-    assertEq(updateTime('i'), block.timestamp);
+    assertEq(_updateTime('i'), block.timestamp);
   }
 
   function test_collect_tax_modifyParameters() public {
@@ -177,7 +177,7 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.taxSingle('i');
     assertEq(wad(safeEngine.coinBalance(ali)), 15.5 ether);
     assertEq(wad(safeEngine.globalDebt()), 115.5 ether);
-    assertEq(accumulatedRate('i') / 10 ** 9, 1.155 ether);
+    assertEq(_accumulatedRate('i') / 10 ** 9, 1.155 ether);
   }
 
   function test_collect_tax_global_stability_fee() public {

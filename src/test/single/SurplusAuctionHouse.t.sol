@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
 import 'ds-test/test.sol';
@@ -110,14 +111,6 @@ contract GuyPostSurplusAuction {
   function try_restartAuction(uint256 id) public returns (bool ok) {
     string memory sig = 'restartAuction(uint256)';
     (ok,) = address(surplusAuctionHouse).call(abi.encodeWithSignature(sig, id));
-  }
-}
-
-contract GlobalSettlement {
-  uint256 public contractEnabled = 0;
-
-  function toggle() external {
-    contractEnabled = (contractEnabled == 1) ? 0 : 1;
   }
 }
 

@@ -1,10 +1,11 @@
+// SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
 import 'ds-test/test.sol';
 
 import {SAFEEngine} from '@contracts/SAFEEngine.sol';
 
-contract Usr {
+contract Guy {
   SAFEEngine public safeEngine;
 
   constructor(SAFEEngine safeEngine_) {
@@ -91,8 +92,8 @@ contract Usr {
 
 contract SingleTransferSAFECollateralAndDebtTest is DSTest {
   SAFEEngine safeEngine;
-  Usr ali;
-  Usr bob;
+  Guy ali;
+  Guy bob;
   address a;
   address b;
 
@@ -106,8 +107,8 @@ contract SingleTransferSAFECollateralAndDebtTest is DSTest {
 
   function setUp() public {
     safeEngine = new SAFEEngine();
-    ali = new Usr(safeEngine);
-    bob = new Usr(safeEngine);
+    ali = new Guy(safeEngine);
+    bob = new Guy(safeEngine);
     a = address(ali);
     b = address(bob);
 

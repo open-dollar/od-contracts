@@ -98,11 +98,11 @@ contract StabilityFeeTreasury is Authorizable, Disableable, IStabilityFeeTreasur
   }
 
   function _settleDebt() internal virtual {
-    uint256 coinBalanceSelf = safeEngine.coinBalance(address(this));
-    uint256 debtBalanceSelf = safeEngine.debtBalance(address(this));
+    uint256 _coinBalanceSelf = safeEngine.coinBalance(address(this));
+    uint256 _debtBalanceSelf = safeEngine.debtBalance(address(this));
 
-    if (debtBalanceSelf > 0) {
-      safeEngine.settleDebt(Math.min(coinBalanceSelf, debtBalanceSelf));
+    if (_debtBalanceSelf > 0) {
+      safeEngine.settleDebt(Math.min(_coinBalanceSelf, _debtBalanceSelf));
     }
   }
 

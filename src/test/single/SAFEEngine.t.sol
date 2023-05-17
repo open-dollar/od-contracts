@@ -18,9 +18,9 @@ import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 
 import {RAY} from '@libraries/Math.sol';
 
-import {IncreasingDiscountCollateralAuctionHouse} from './CollateralAuctionHouse.t.sol';
-import {DebtAuctionHouse} from './DebtAuctionHouse.t.sol';
-import {PostSettlementSurplusAuctionHouse} from './SurplusAuctionHouse.t.sol';
+import {IncreasingDiscountCollateralAuctionHouse} from '@contracts/CollateralAuctionHouse.sol';
+import {DebtAuctionHouse} from '@contracts/DebtAuctionHouse.sol';
+import {PostSettlementSurplusAuctionHouse} from '@contracts/settlement/PostSettlementSurplusAuctionHouse.sol';
 
 abstract contract Hevm {
   function warp(uint256) public virtual;
@@ -55,44 +55,11 @@ contract DummyFSM {
   }
 }
 
-contract TestSAFEEngine is SAFEEngine {
-  constructor() {}
-
-  function mint(address _usr, uint256 _wad) public {
-    coinBalance[_usr] += _wad * RAY;
-    globalDebt += _wad * RAY;
-  }
-
-  function balanceOf(address _usr) public view returns (uint256) {
-    return uint256(coinBalance[_usr] / RAY);
-  }
-}
-
-contract TestAccountingEngine is AccountingEngine {
-  constructor(
-    address safeEngine,
-    address surplusAuctionHouse,
-    address debtAuctionHouse
-  ) AccountingEngine(safeEngine, surplusAuctionHouse, debtAuctionHouse) {}
-
-  function totalDeficit() public view returns (uint256) {
-    return safeEngine.debtBalance(address(this));
-  }
-
-  function totalSurplus() public view returns (uint256) {
-    return safeEngine.coinBalance(address(this));
-  }
-
-  function preAuctionDebt() public view returns (uint256) {
-    return totalDeficit() - totalQueuedDebt - totalOnAuctionDebt;
-  }
-}
-
 contract Usr {
   SAFEEngine public safeEngine;
 
-  constructor(SAFEEngine safeEngine_) {
-    safeEngine = safeEngine_;
+  constructor(SAFEEngine _safeEngine) {
+    safeEngine = _safeEngine;
   }
 
   function try_call(address addr, bytes calldata data) external returns (bool) {
@@ -184,7 +151,7 @@ contract Usr {
 }
 
 contract SingleModifySAFECollateralizationTest is DSTest {
-  TestSAFEEngine safeEngine;
+  SAFEEngine safeEngine;
   DSDelegateToken gold;
   DSDelegateToken stable;
   TaxCollector taxCollector;
@@ -222,7 +189,7 @@ contract SingleModifySAFECollateralizationTest is DSTest {
   }
 
   function setUp() public {
-    safeEngine = new TestSAFEEngine();
+    safeEngine = new SAFEEngine();
 
     gold = new DSDelegateToken('GEM', '');
     gold.mint(1000 ether);
@@ -250,23 +217,9 @@ contract SingleModifySAFECollateralizationTest is DSTest {
     me = address(this);
   }
 
-  function tokenCollateral(bytes32 _collateralType, address _safe) internal view returns (uint256) {
-    return safeEngine.tokenCollateral(_collateralType, _safe);
-  }
-
-  function lockedCollateral(bytes32 _collateralType, address _safe) internal view returns (uint256) {
-    uint256 _lockedCollateral = safeEngine.safes(_collateralType, _safe).lockedCollateral;
-    return _lockedCollateral;
-  }
-
-  function generatedDebt(bytes32 _collateralType, address _safe) internal view returns (uint256) {
-    uint256 _generatedDebt = safeEngine.safes(_collateralType, _safe).generatedDebt;
-    return _generatedDebt;
-  }
-
   function test_setup() public {
     assertEq(gold.balanceOf(address(collateralA)), 1000 ether);
-    assertEq(tokenCollateral('gold', address(this)), 1000 ether);
+    assertEq(safeEngine.tokenCollateral('gold', address(this)), 1000 ether);
   }
 
   function test_join() public {
@@ -283,14 +236,14 @@ contract SingleModifySAFECollateralizationTest is DSTest {
   }
 
   function test_lock() public {
-    assertEq(lockedCollateral('gold', address(this)), 0 ether);
-    assertEq(tokenCollateral('gold', address(this)), 1000 ether);
+    assertEq(safeEngine.safes('gold', address(this)).lockedCollateral, 0 ether);
+    assertEq(safeEngine.tokenCollateral('gold', address(this)), 1000 ether);
     safeEngine.modifySAFECollateralization('gold', me, me, me, 6 ether, 0);
-    assertEq(lockedCollateral('gold', address(this)), 6 ether);
-    assertEq(tokenCollateral('gold', address(this)), 994 ether);
+    assertEq(safeEngine.safes('gold', address(this)).lockedCollateral, 6 ether);
+    assertEq(safeEngine.tokenCollateral('gold', address(this)), 994 ether);
     safeEngine.modifySAFECollateralization('gold', me, me, me, -6 ether, 0);
-    assertEq(lockedCollateral('gold', address(this)), 0 ether);
-    assertEq(tokenCollateral('gold', address(this)), 1000 ether);
+    assertEq(safeEngine.safes('gold', address(this)).lockedCollateral, 0 ether);
+    assertEq(safeEngine.tokenCollateral('gold', address(this)), 1000 ether);
   }
 
   function test_calm() public {
@@ -396,8 +349,8 @@ contract SingleModifySAFECollateralizationTest is DSTest {
     assertTrue(ali.can_modifySAFECollateralization('gold', a, a, b, 0 ether, 1 ether));
     assertTrue(ali.can_modifySAFECollateralization('gold', a, a, c, 0 ether, 1 ether));
 
-    safeEngine.mint(address(bob), 1 ether);
-    safeEngine.mint(address(che), 1 ether);
+    safeEngine.createUnbackedDebt(address(0), address(bob), rad(1 ether));
+    safeEngine.createUnbackedDebt(address(0), address(che), rad(1 ether));
 
     // anyone can wipe
     assertTrue(ali.can_modifySAFECollateralization('gold', a, a, a, 0 ether, -1 ether));
@@ -454,7 +407,7 @@ contract SingleModifySAFECollateralizationTest is DSTest {
 contract SingleSAFEDebtLimitTest is DSTest {
   Hevm hevm;
 
-  TestSAFEEngine safeEngine;
+  SAFEEngine safeEngine;
   DSDelegateToken gold;
   DSDelegateToken stable;
   TaxCollector taxCollector;
@@ -498,7 +451,7 @@ contract SingleSAFEDebtLimitTest is DSTest {
     hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     hevm.warp(604_411_200);
 
-    safeEngine = new TestSAFEEngine();
+    safeEngine = new SAFEEngine();
 
     gold = new DSDelegateToken('GEM', '');
     gold.mint(1000 ether);
@@ -531,23 +484,9 @@ contract SingleSAFEDebtLimitTest is DSTest {
     me = address(this);
   }
 
-  function tokenCollateral(bytes32 _collateralType, address _safe) internal view returns (uint256) {
-    return safeEngine.tokenCollateral(_collateralType, _safe);
-  }
-
-  function lockedCollateral(bytes32 _collateralType, address _safe) internal view returns (uint256) {
-    uint256 _lockedCollateral = safeEngine.safes(_collateralType, _safe).lockedCollateral;
-    return _lockedCollateral;
-  }
-
-  function generatedDebt(bytes32 _collateralType, address _safe) internal view returns (uint256) {
-    uint256 _generatedDebt = safeEngine.safes(_collateralType, _safe).generatedDebt;
-    return _generatedDebt;
-  }
-
   function test_setup() public {
     assertEq(gold.balanceOf(address(collateralA)), 1000 ether);
-    assertEq(tokenCollateral('gold', address(this)), 1000 ether);
+    assertEq(safeEngine.tokenCollateral('gold', address(this)), 1000 ether);
     uint256 _safeDebtCeiling = safeEngine.params().safeDebtCeiling;
     assertEq(_safeDebtCeiling, 5 ether);
   }
@@ -614,7 +553,7 @@ contract SingleSAFEDebtLimitTest is DSTest {
 }
 
 contract SingleJoinTest is DSTest {
-  TestSAFEEngine safeEngine;
+  SAFEEngine safeEngine;
   DSDelegateToken collateral;
   CollateralJoin collateralA;
   ETHJoin ethA;
@@ -625,7 +564,7 @@ contract SingleJoinTest is DSTest {
   uint256 constant WAD = 10 ** 18;
 
   function setUp() public {
-    safeEngine = new TestSAFEEngine();
+    safeEngine = new SAFEEngine();
     safeEngine.initializeCollateralType('ETH');
 
     collateral = new DSDelegateToken('Gem', 'Gem');
@@ -641,12 +580,6 @@ contract SingleJoinTest is DSTest {
     coin.setOwner(address(coinA));
 
     me = address(this);
-  }
-
-  function draw(bytes32 _collateralType, int256 wad, int256 coin_) internal {
-    address _self = address(this);
-    safeEngine.modifyCollateralBalance(_collateralType, _self, wad);
-    safeEngine.modifySAFECollateralization(_collateralType, _self, _self, _self, wad, coin_);
   }
 
   function try_disable_contract(address a) public payable returns (bool ok) {
@@ -702,7 +635,7 @@ contract SingleJoinTest is DSTest {
 
   function test_coin_exit() public {
     address safe = address(this);
-    safeEngine.mint(address(this), 100 ether);
+    safeEngine.createUnbackedDebt(address(0), address(this), rad(100 ether));
     safeEngine.approveSAFEModification(address(coinA));
     assertTrue(try_exit_coin(safe, 40 ether));
     assertEq(coin.balanceOf(address(this)), 40 ether);
@@ -715,7 +648,7 @@ contract SingleJoinTest is DSTest {
 
   function test_coin_exit_join() public {
     address safe = address(this);
-    safeEngine.mint(address(this), 100 ether);
+    safeEngine.createUnbackedDebt(address(0), address(this), rad(100 ether));
     safeEngine.approveSAFEModification(address(coinA));
     coinA.exit(safe, 60 ether);
     coin.approve(address(coinA), uint256(int256(-1)));
@@ -795,8 +728,8 @@ contract ProtocolTokenAuthority {
 contract SingleLiquidationTest is DSTest {
   Hevm hevm;
 
-  TestSAFEEngine safeEngine;
-  TestAccountingEngine accountingEngine;
+  SAFEEngine safeEngine;
+  AccountingEngine accountingEngine;
   LiquidationEngine liquidationEngine;
   DSDelegateToken gold;
   TaxCollector taxCollector;
@@ -840,20 +773,6 @@ contract SingleLiquidationTest is DSTest {
     return wad * 10 ** 27;
   }
 
-  function tokenCollateral(bytes32 _collateralType, address _safe) internal view returns (uint256) {
-    return safeEngine.tokenCollateral(_collateralType, _safe);
-  }
-
-  function lockedCollateral(bytes32 _collateralType, address _safe) internal view returns (uint256) {
-    uint256 _lockedCollateral = safeEngine.safes(_collateralType, _safe).lockedCollateral;
-    return _lockedCollateral;
-  }
-
-  function generatedDebt(bytes32 _collateralType, address _safe) internal view returns (uint256) {
-    uint256 _generatedDebt = safeEngine.safes(_collateralType, _safe).generatedDebt;
-    return _generatedDebt;
-  }
-
   function setUp() public {
     hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     hevm.warp(604_411_200);
@@ -861,13 +780,13 @@ contract SingleLiquidationTest is DSTest {
     protocolToken = new DSDelegateToken('GOV', '');
     protocolToken.mint(100 ether);
 
-    safeEngine = new TestSAFEEngine();
+    safeEngine = new SAFEEngine();
     safeEngine = safeEngine;
 
     surplusAuctionHouse = new PostSettlementSurplusAuctionHouse(address(safeEngine), address(protocolToken));
     debtAuctionHouse = new DebtAuctionHouse(address(safeEngine), address(protocolToken));
 
-    accountingEngine = new TestAccountingEngine(
+    accountingEngine = new AccountingEngine(
           address(safeEngine), address(surplusAuctionHouse), address(debtAuctionHouse)
         );
     surplusAuctionHouse.addAuthorization(address(accountingEngine));
@@ -1061,7 +980,8 @@ contract SingleLiquidationTest is DSTest {
     assertEq(safeEngine.coinBalance(address(this)), rad(20 ether));
     assertEq(safeEngine.tokenCollateral('gold', address(this)), 993_684_210_526_315_789_472);
 
-    safeEngine.mint(address(this), 100 ether); // magic up some system coins for bidding
+    // magic up some system coins for bidding
+    safeEngine.createUnbackedDebt(address(0), address(this), rad(100 ether));
     collateralAuctionHouse.buyCollateral(auction, 38 ether);
     assertEq(safeEngine.coinBalance(address(accountingEngine)), rad(100 ether) + ray(1 ether));
     assertEq(safeEngine.tokenCollateral('gold', address(this)), 1000 ether);
@@ -1088,18 +1008,18 @@ contract SingleLiquidationTest is DSTest {
     accountingEngine.popDebtFromQueue(block.timestamp);
     assertEq(accountingEngine.totalQueuedDebt(), rad(0 ether));
     assertEq(accountingEngine.unqueuedUnauctionedDebt(), rad(100 ether));
-    assertEq(accountingEngine.totalSurplus(), rad(0 ether));
+    assertEq(safeEngine.coinBalance(address(accountingEngine)), rad(0 ether));
     assertEq(accountingEngine.totalOnAuctionDebt(), rad(0 ether));
 
     accountingEngine.modifyParameters('debtAuctionBidSize', abi.encode(rad(10 ether)));
     accountingEngine.modifyParameters('debtAuctionMintedTokens', abi.encode(2000 ether));
     uint256 f1 = accountingEngine.auctionDebt();
     assertEq(accountingEngine.unqueuedUnauctionedDebt(), rad(90 ether));
-    assertEq(accountingEngine.totalSurplus(), rad(0 ether));
+    assertEq(safeEngine.coinBalance(address(accountingEngine)), rad(0 ether));
     assertEq(accountingEngine.totalOnAuctionDebt(), rad(10 ether));
     debtAuctionHouse.decreaseSoldAmount(f1, 1000 ether, rad(10 ether));
     assertEq(accountingEngine.unqueuedUnauctionedDebt(), rad(90 ether));
-    assertEq(accountingEngine.totalSurplus(), rad(0 ether));
+    assertEq(safeEngine.coinBalance(address(accountingEngine)), rad(0 ether));
     assertEq(accountingEngine.totalOnAuctionDebt(), rad(0 ether));
 
     assertEq(protocolToken.balanceOf(address(this)), 100 ether);
@@ -1111,7 +1031,7 @@ contract SingleLiquidationTest is DSTest {
 
   function test_liquidate_when_system_surplus() public {
     // get some surplus
-    safeEngine.mint(address(accountingEngine), 100 ether);
+    safeEngine.createUnbackedDebt(address(0), address(accountingEngine), rad(100 ether));
     assertEq(safeEngine.coinBalance(address(accountingEngine)), rad(100 ether));
     assertEq(protocolToken.balanceOf(address(this)), 100 ether);
 
@@ -1397,7 +1317,7 @@ contract SingleAccumulateRatesTest is DSTest {
     return wad * 10 ** 27;
   }
 
-  function totalAdjustedDebt(bytes32 _collateralType, address _safe) internal view returns (uint256) {
+  function _totalAdjustedDebt(bytes32 _collateralType, address _safe) internal view returns (uint256) {
     uint256 _generatedDebt = safeEngine.safes(_collateralType, _safe).generatedDebt;
     uint256 accumulatedRate_ = safeEngine.cData(_collateralType).accumulatedRate;
     return _generatedDebt * accumulatedRate_;
@@ -1410,24 +1330,24 @@ contract SingleAccumulateRatesTest is DSTest {
     safeEngine.modifyParameters('gold', 'debtCeiling', abi.encode(rad(100 ether)));
   }
 
-  function generateDebt(bytes32 _collateralType, uint256 coin) internal {
-    safeEngine.modifyParameters('globalDebtCeiling', abi.encode(rad(coin)));
-    safeEngine.modifyParameters(_collateralType, 'debtCeiling', abi.encode(rad(coin)));
+  function _generateDebt(bytes32 _collateralType, uint256 _coin) internal {
+    safeEngine.modifyParameters('globalDebtCeiling', abi.encode(rad(_coin)));
+    safeEngine.modifyParameters(_collateralType, 'debtCeiling', abi.encode(rad(_coin)));
     uint256 _collateralPrice = 10 ** 27 * 10_000 ether;
     safeEngine.updateCollateralPrice(_collateralType, _collateralPrice, _collateralPrice);
     address _self = address(this);
     safeEngine.modifyCollateralBalance(_collateralType, _self, 10 ** 27 * 1 ether);
-    safeEngine.modifySAFECollateralization(_collateralType, _self, _self, _self, 1 ether, int256(coin));
+    safeEngine.modifySAFECollateralization(_collateralType, _self, _self, _self, 1 ether, int256(_coin));
   }
 
   function test_accumulate_rates() public {
     address _self = address(this);
     address _ali = address(bytes20('ali'));
-    generateDebt('gold', 1 ether);
+    _generateDebt('gold', 1 ether);
 
-    assertEq(totalAdjustedDebt('gold', _self), rad(1.0 ether));
+    assertEq(_totalAdjustedDebt('gold', _self), rad(1.0 ether));
     safeEngine.updateAccumulatedRate('gold', _ali, int256(ray(0.05 ether)));
-    assertEq(totalAdjustedDebt('gold', _self), rad(1.05 ether));
+    assertEq(_totalAdjustedDebt('gold', _self), rad(1.05 ether));
     assertEq(safeEngine.coinBalance(_ali), rad(0.05 ether));
   }
 }

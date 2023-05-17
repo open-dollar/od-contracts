@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import '../RateSetterMath.sol';
+import {Math} from '@libraries/Math.sol';
 
 abstract contract OracleLike {
   function getResultWithValidity() external view virtual returns (uint256, bool);
@@ -21,7 +22,9 @@ abstract contract PIDCalculator {
   function tlv() external view virtual returns (uint256);
 }
 
-contract MockPIDRateSetter is RateSetterMath {
+contract MockPIDRateSetter {
+  using Math for uint256;
+
   // --- System Dependencies ---
   // OSM or medianizer for the system coin
   OracleLike public orcl;
@@ -64,13 +67,13 @@ contract MockPIDRateSetter is RateSetterMath {
     uint256 redemptionPrice = oracleRelayer.redemptionPrice();
     // Calculate the new redemption rate
     uint256 tlv = pidCalculator.tlv();
-    uint256 _iapcr = rpower(pidCalculator.pscl(), tlv, RAY);
+    uint256 _iapcr = pidCalculator.pscl().rpow(tlv);
     uint256 calculated = pidCalculator.computeRate(marketPrice, redemptionPrice, _iapcr);
     // Update the rate using the setter relayer
     try setterRelayer.relayRate(calculated) {} catch (bytes memory) {}
   }
 
   function iapcr() public view returns (uint256) {
-    return rpower(pidCalculator.pscl(), pidCalculator.tlv(), RAY);
+    return pidCalculator.pscl().rpow(pidCalculator.tlv());
   }
 }

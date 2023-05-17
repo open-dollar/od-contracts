@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
-pragma experimental ABIEncoderV2;
 
 import 'ds-test/test.sol';
 import {DSToken as DSDelegateToken} from '@contracts/for-test/DSToken.sol';
@@ -13,12 +12,9 @@ import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
 import {ETHJoin} from '@contracts/utils/ETHJoin.sol';
 import {CollateralJoin} from '@contracts/utils/CollateralJoin.sol';
 import {OracleRelayer} from '@contracts/OracleRelayer.sol';
-
-import {RAY} from '../../libraries/Math.sol';
-
-import {IncreasingDiscountCollateralAuctionHouse} from './CollateralAuctionHouse.t.sol';
-import {DebtAuctionHouse} from './DebtAuctionHouse.t.sol';
-import {PostSettlementSurplusAuctionHouse} from './SurplusAuctionHouse.t.sol';
+import {DebtAuctionHouse} from '@contracts/DebtAuctionHouse.sol';
+import {IncreasingDiscountCollateralAuctionHouse} from '@contracts/CollateralAuctionHouse.sol';
+import {PostSettlementSurplusAuctionHouse} from '@contracts/settlement/PostSettlementSurplusAuctionHouse.sol';
 
 abstract contract Hevm {
   function warp(uint256) public virtual;
@@ -42,39 +38,6 @@ contract Feed {
 
   function getResultWithValidity() external view returns (bytes32, bool) {
     return (price, validPrice);
-  }
-}
-
-contract TestSAFEEngine is SAFEEngine {
-  constructor() {}
-
-  function mint(address usr, uint256 wad) public {
-    coinBalance[usr] += wad * RAY;
-    globalDebt += wad * RAY;
-  }
-
-  function balanceOf(address usr) public view returns (uint256) {
-    return uint256(coinBalance[usr] / RAY);
-  }
-}
-
-contract TestAccountingEngine is AccountingEngine {
-  constructor(
-    address safeEngine,
-    address surplusAuctionHouse,
-    address debtAuctionHouse
-  ) AccountingEngine(safeEngine, surplusAuctionHouse, debtAuctionHouse) {}
-
-  function totalDeficit() public view returns (uint256) {
-    return safeEngine.debtBalance(address(this));
-  }
-
-  function totalSurplus() public view returns (uint256) {
-    return safeEngine.coinBalance(address(this));
-  }
-
-  function preAuctionDebt() public view returns (uint256) {
-    return totalDeficit() - totalQueuedDebt - totalOnAuctionDebt;
   }
 }
 
@@ -146,8 +109,8 @@ contract GenuineSaviour {
 contract SingleSaveSAFETest is DSTest {
   Hevm hevm;
 
-  TestSAFEEngine safeEngine;
-  TestAccountingEngine accountingEngine;
+  SAFEEngine safeEngine;
+  AccountingEngine accountingEngine;
   LiquidationEngine liquidationEngine;
   DSDelegateToken gold;
   TaxCollector taxCollector;
@@ -187,20 +150,6 @@ contract SingleSaveSAFETest is DSTest {
     return wad * 10 ** 27;
   }
 
-  function tokenCollateral(bytes32 collateralType, address safe) internal view returns (uint256) {
-    return safeEngine.tokenCollateral(collateralType, safe);
-  }
-
-  function lockedCollateral(bytes32 collateralType, address safe) internal view returns (uint256) {
-    uint256 lockedCollateral_ = safeEngine.safes(collateralType, safe).lockedCollateral;
-    return lockedCollateral_;
-  }
-
-  function generatedDebt(bytes32 collateralType, address safe) internal view returns (uint256) {
-    uint256 generatedDebt_ = safeEngine.safes(collateralType, safe).generatedDebt;
-    return generatedDebt_;
-  }
-
   function setUp() public {
     hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     hevm.warp(604_411_200);
@@ -208,13 +157,13 @@ contract SingleSaveSAFETest is DSTest {
     protocolToken = new DSDelegateToken('GOV', 'GOV');
     protocolToken.mint(100 ether);
 
-    safeEngine = new TestSAFEEngine();
+    safeEngine = new SAFEEngine();
     safeEngine = safeEngine;
 
     surplusAuctionHouse = new PostSettlementSurplusAuctionHouse(address(safeEngine), address(protocolToken));
     debtAuctionHouse = new DebtAuctionHouse(address(safeEngine), address(protocolToken));
 
-    accountingEngine = new TestAccountingEngine(
+    accountingEngine = new AccountingEngine(
           address(safeEngine), address(surplusAuctionHouse), address(debtAuctionHouse)
         );
     surplusAuctionHouse.addAuthorization(address(accountingEngine));
@@ -265,7 +214,7 @@ contract SingleSaveSAFETest is DSTest {
     me = address(this);
   }
 
-  function liquidateSAFE() internal {
+  function _liquidateSAFE() internal {
     uint256 MAX_LIQUIDATION_QUANTITY = uint256(int256(-1)) / 10 ** 27;
     liquidationEngine.modifyParameters('gold', 'liquidationQuantity', abi.encode(MAX_LIQUIDATION_QUANTITY));
     liquidationEngine.modifyParameters('gold', 'liquidationPenalty', abi.encode(1.1 ether));
@@ -281,7 +230,7 @@ contract SingleSaveSAFETest is DSTest {
     assertEq(auction, 1);
   }
 
-  function liquidateSavedSAFE() internal {
+  function _liquidateSavedSAFE() internal {
     uint256 MAX_LIQUIDATION_QUANTITY = uint256(int256(-1)) / 10 ** 27;
     liquidationEngine.modifyParameters('gold', 'liquidationQuantity', abi.encode(MAX_LIQUIDATION_QUANTITY));
     liquidationEngine.modifyParameters('gold', 'liquidationPenalty', abi.encode(1.1 ether));
@@ -302,7 +251,7 @@ contract SingleSaveSAFETest is DSTest {
     liquidationEngine.connectSAFESaviour(address(saviour));
     liquidationEngine.protectSAFE('gold', me, address(saviour));
     assertTrue(liquidationEngine.chosenSAFESaviour('gold', me) == address(saviour));
-    liquidateSAFE();
+    _liquidateSAFE();
   }
 
   function testFail_missing_function_saviour() public {
@@ -320,7 +269,7 @@ contract SingleSaveSAFETest is DSTest {
     liquidationEngine.connectSAFESaviour(address(saviour));
     liquidationEngine.protectSAFE('gold', me, address(saviour));
     assertTrue(liquidationEngine.chosenSAFESaviour('gold', me) == address(saviour));
-    liquidateSAFE();
+    _liquidateSAFE();
   }
 
   function test_liquidate_genuine_saviour() public {
@@ -334,7 +283,7 @@ contract SingleSaveSAFETest is DSTest {
     collateralA.join(address(this), 10_000 ether);
     safeEngine.transferCollateral('gold', me, address(saviour), 10_900 ether);
 
-    liquidateSavedSAFE();
+    _liquidateSavedSAFE();
 
     uint256 _lockedCollateral = safeEngine.safes('gold', me).lockedCollateral;
     assertEq(_lockedCollateral, 10_910 ether);
