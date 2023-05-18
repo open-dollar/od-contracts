@@ -18,8 +18,8 @@ abstract contract SetterRelayer {
 abstract contract PIDCalculator {
   function computeRate(uint256, uint256, uint256) external virtual returns (uint256);
   function rt(uint256, uint256, uint256) external view virtual returns (uint256);
-  function pscl() external view virtual returns (uint256);
-  function tlv() external view virtual returns (uint256);
+  function perSecondCumulativeLeak() external view virtual returns (uint256);
+  function timeSinceLastUpdate() external view virtual returns (uint256);
 }
 
 contract MockPIDRateSetter {
@@ -66,14 +66,14 @@ contract MockPIDRateSetter {
     // Get the latest redemption price
     uint256 redemptionPrice = oracleRelayer.redemptionPrice();
     // Calculate the new redemption rate
-    uint256 tlv = pidCalculator.tlv();
-    uint256 _iapcr = pidCalculator.pscl().rpow(tlv);
+    uint256 tlv = pidCalculator.timeSinceLastUpdate();
+    uint256 _iapcr = pidCalculator.perSecondCumulativeLeak().rpow(tlv);
     uint256 calculated = pidCalculator.computeRate(marketPrice, redemptionPrice, _iapcr);
     // Update the rate using the setter relayer
     try setterRelayer.relayRate(calculated) {} catch (bytes memory) {}
   }
 
   function iapcr() public view returns (uint256) {
-    return pidCalculator.pscl().rpow(pidCalculator.tlv());
+    return pidCalculator.perSecondCumulativeLeak().rpow(pidCalculator.timeSinceLastUpdate());
   }
 }

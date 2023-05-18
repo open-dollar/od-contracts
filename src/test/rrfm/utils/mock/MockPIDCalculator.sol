@@ -22,11 +22,11 @@ contract MockPIDCalculator {
     return 31_536_000;
   }
 
-  function pscl() external view virtual returns (uint256) {
+  function perSecondCumulativeLeak() external view virtual returns (uint256) {
     return RAY;
   }
 
-  function tlv() external view virtual returns (uint256) {
+  function timeSinceLastUpdate() external view virtual returns (uint256) {
     return 1;
   }
 

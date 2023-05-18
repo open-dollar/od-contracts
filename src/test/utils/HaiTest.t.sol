@@ -25,6 +25,25 @@ contract OverflowChecker {
     _valid = _a < type(uint256).max - _b;
   }
 
+  function notOverflowAdd(int256 _a, int256 _b) public pure returns (bool _valid) {
+    if (_a == 0 || _b == 0) {
+      _valid = true;
+    } else if ((_a > 0 && _b < 0) || (_a < 0 && _b > 0)) {
+      _valid = true;
+    } else {
+      if (_a == type(int256).min || _b == type(int256).min) {
+        _valid = false;
+      } else {
+        _valid = uint256(type(int256).max) - Math.absolute(_b) >= Math.absolute(_a);
+      }
+    }
+  }
+
+  // When the result is int256
+  function notOverflow(uint256 _a, int256 _b) public pure returns (bool _valid) {
+    _valid = type(int256).max - _b >= int256(_a);
+  }
+
   function notOverflow(uint256 _a, uint256 _b, uint256 _c) public view returns (bool _valid) {
     uint256[] memory _numbers = new uint256[](3);
     _numbers[0] = _a;
@@ -45,6 +64,7 @@ contract OverflowChecker {
     _valid = _a >= _b;
   }
 
+  // When the result is uint256
   function notUnderOrOverflowAdd(uint256 _a, int256 _b) public pure returns (bool _valid) {
     if (_b < 0) {
       if (_b == type(int256).min) {
@@ -57,6 +77,7 @@ contract OverflowChecker {
     }
   }
 
+  // When the result is uint256
   function notUnderOrOverflowSub(uint256 _a, int256 _b) public pure returns (bool _valid) {
     if (_b > 0) {
       _valid = notUnderflow(_a, uint256(-_b));
@@ -73,6 +94,17 @@ contract OverflowChecker {
     }
   }
 
+  function notOverflowMul(int256 _a, int256 _b) public pure returns (bool _valid) {
+    if (_a == 0 || _b == 0) {
+      _valid = true;
+    } else if (_b == type(int256).min || _a == type(int256).min) {
+      _valid = false;
+    } else {
+      _valid = int256(Math.absolute(_a)) <= type(int256).max / int256(Math.absolute(_b));
+    }
+  }
+
+  // When the result is uint256
   function notUnderOrOverflowMul(uint256 _a, int256 _b) public pure returns (bool _valid) {
     if (int256(_a) < 0) {
       _valid = false;

@@ -24,7 +24,7 @@ contract BasicRawPIDController is RawPIDController {
     )
   {}
 
-  function breaksNoiseBarrier(uint256, uint256) public pure override returns (bool) {
+  function _breaksNoiseBarrier(uint256, uint256) internal pure override returns (bool) {
     return true;
   }
 

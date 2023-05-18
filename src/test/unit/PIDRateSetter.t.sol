@@ -58,11 +58,17 @@ contract Base is HaiTest {
   }
 
   function _mockPIDControllerPsl(uint256 _pscl) internal {
-    vm.mockCall(address(mockPIDController), abi.encodeWithSelector(IPIDController.pscl.selector), abi.encode(_pscl));
+    vm.mockCall(
+      address(mockPIDController),
+      abi.encodeWithSelector(IPIDController.perSecondCumulativeLeak.selector),
+      abi.encode(_pscl)
+    );
   }
 
-  function _mockPIDControllertlv(uint256 _tlv) internal {
-    vm.mockCall(address(mockPIDController), abi.encodeWithSelector(IPIDController.tlv.selector), abi.encode(_tlv));
+  function _mockPIDControllertimeSinceLastUpdate(uint256 _tlv) internal {
+    vm.mockCall(
+      address(mockPIDController), abi.encodeWithSelector(IPIDController.timeSinceLastUpdate.selector), abi.encode(_tlv)
+    );
   }
 
   function _mockLastUpdateTime(uint256 _lastUpdateTime) internal {
@@ -269,7 +275,7 @@ contract Unit_PIDRateSetter_UpdateRate is Base {
     _mockOracleRelayerRedemptionPrice(_scenario.redemptionPrice);
     _mockOracleRelayerUpdateRedemptionRate();
     _mockPIDControllerPsl(_scenario.pscl);
-    _mockPIDControllertlv(_scenario.tlv);
+    _mockPIDControllertimeSinceLastUpdate(_scenario.tlv);
     _mockDefaultLeak(_defaultLeak);
     _mockPIDControllerComputeRate(_scenario.marketPrice, _scenario.redemptionPrice, _iapcr, _scenario.computedRate);
   }

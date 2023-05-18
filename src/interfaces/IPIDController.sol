@@ -47,11 +47,11 @@ interface IPIDController is IAuthorizable {
     uint256 accumulatedLeak
   ) external returns (int256 _priceDeviationCumulative, int256 _timeAdjustedDeviation);
 
-  function breaksNoiseBarrier(uint256 _piSum, uint256 _redemptionPrice) external view returns (bool);
+  function breaksNoiseBarrier(uint256 _piSum, uint256 _redemptionPrice) external view returns (bool _breaksNb);
 
-  function getLastProportionalTerm() external view returns (int256);
-  function getLastIntegralTerm() external view returns (int256);
-  function oll() external view returns (uint256);
+  function getLastProportionalTerm() external view returns (int256 _lastProportionalTerm);
+  function getLastIntegralTerm() external view returns (int256 _lastIntegralTerm);
+  function oll() external view returns (uint256 _oll);
 
   function getNextRedemptionRate(
     uint256 _marketPrice,
@@ -64,7 +64,38 @@ interface IPIDController is IAuthorizable {
 
   function seedProposer() external view returns (address _seedProposer);
 
-  function pscl() external view returns (uint256 _perSecondCumulativeLeak);
+  function perSecondCumulativeLeak() external view returns (uint256 _perSecondCumulativeLeak);
 
-  function tlv() external view returns (uint256 _timeSinceLastValue);
+  function timeSinceLastUpdate() external view returns (uint256 _timeSinceLastValue);
+
+  function defaultGlobalTimeline() external view returns (uint256 _defaultGlobalTimeline);
+
+  function lastUpdateTime() external view returns (uint256 _lastUpdateTime);
+
+  function integralPeriodSize() external view returns (uint256 _integralPeriodSize);
+
+  function feedbackOutputLowerBound() external view returns (int256 _feedbackOutputLowerBound);
+
+  function feedbackOutputUpperBound() external view returns (uint256 _feedbackOutputUpperBound);
+
+  function defaultRedemptionRate() external view returns (uint256 _defaultRedemptionRate);
+
+  function noiseBarrier() external view returns (uint256 _noiseBarrier);
+
+  function priceDeviationCumulative() external view returns (int256 _priceDeviationCumulative);
+
+  function ag() external view returns (int256 _ag);
+
+  function sg() external view returns (int256 _sg);
+
+  function adat() external view returns (uint256 _adat);
+
+  function rt(uint256 _marketPrice, uint256 _redemptionPrice, uint256) external view returns (uint256 _rateTimeline);
+
+  function deviationObservations(uint256 i)
+    external
+    view
+    returns (uint256 _deviationTimestamp, int256 _deviationProportional, int256 _deviationIntegral);
+
+  function historicalCumulativeDeviations(uint256 i) external view returns (int256 _deviations);
 }

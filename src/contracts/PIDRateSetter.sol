@@ -88,7 +88,9 @@ contract PIDRateSetter is Authorizable, IPIDRateSetter {
     // Get (and update if old) the latest redemption price
     uint256 _redemptionPrice = oracleRelayer.redemptionPrice();
     // Calculate the rate
-    uint256 _iapcr = (_params.defaultLeak == 1) ? RAY : pidCalculator.pscl().rpow(pidCalculator.tlv());
+    uint256 _iapcr = (_params.defaultLeak == 1)
+      ? RAY
+      : pidCalculator.perSecondCumulativeLeak().rpow(pidCalculator.timeSinceLastUpdate());
     uint256 _redemptionRate = pidCalculator.computeRate(_marketPrice, _redemptionPrice, _iapcr);
     // Store the timestamp of the update
     lastUpdateTime = block.timestamp;

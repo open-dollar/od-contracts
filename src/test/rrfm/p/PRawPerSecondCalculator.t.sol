@@ -141,27 +141,27 @@ contract PRawPerSecondCalculatorTest is DSTest {
     // assertEq(calculator.readers(address(rateSetter)), 1);
     assertEq(calculator.authorizedAccounts(address(this)), 1);
 
-    assertEq(calculator.nb(), noiseBarrier);
-    assertEq(calculator.foub(), feedbackOutputUpperBound);
-    assertEq(calculator.folb(), feedbackOutputLowerBound);
-    assertEq(calculator.lut(), 0);
-    assertEq(calculator.ps(), periodSize);
-    assertEq(calculator.drr(), TWENTY_SEVEN_DECIMAL_NUMBER);
+    assertEq(calculator.noiseBarrier(), noiseBarrier);
+    assertEq(calculator.feedbackOutputUpperBound(), feedbackOutputUpperBound);
+    assertEq(calculator.feedbackOutputLowerBound(), feedbackOutputLowerBound);
+    assertEq(calculator.lastUpdateTime(), 0);
+    assertEq(calculator.integralPeriodSize(), periodSize);
+    assertEq(calculator.defaultRedemptionRate(), TWENTY_SEVEN_DECIMAL_NUMBER);
     assertEq(Kp, calculator.sg());
   }
 
   function test_modify_parameters() public {
     // Uint
-    calculator.modifyParameters('nb', EIGHTEEN_DECIMAL_NUMBER);
+    calculator.modifyParameters('noiseBarrier', EIGHTEEN_DECIMAL_NUMBER);
     calculator.modifyParameters('ps', uint256(2));
     calculator.modifyParameters('sg', int256(1));
-    calculator.modifyParameters('foub', uint256(TWENTY_SEVEN_DECIMAL_NUMBER + 1));
+    calculator.modifyParameters('feedbackOutputUpperBound', uint256(TWENTY_SEVEN_DECIMAL_NUMBER + 1));
     calculator.modifyParameters('folb', -int256(1));
 
-    assertEq(calculator.nb(), EIGHTEEN_DECIMAL_NUMBER);
-    assertEq(calculator.ps(), uint256(2));
-    assertEq(calculator.foub(), uint256(TWENTY_SEVEN_DECIMAL_NUMBER + 1));
-    assertEq(calculator.folb(), -int256(1));
+    assertEq(calculator.noiseBarrier(), EIGHTEEN_DECIMAL_NUMBER);
+    assertEq(calculator.integralPeriodSize(), uint256(2));
+    assertEq(calculator.feedbackOutputUpperBound(), uint256(TWENTY_SEVEN_DECIMAL_NUMBER + 1));
+    assertEq(calculator.feedbackOutputLowerBound(), -int256(1));
 
     assertEq(int256(1), calculator.sg());
   }
@@ -178,20 +178,20 @@ contract PRawPerSecondCalculatorTest is DSTest {
     // assertEq(calculator.readers(address(rateSetter)), 1);
     assertEq(calculator.authorizedAccounts(address(this)), 1);
 
-    assertEq(calculator.nb(), noiseBarrier);
-    assertEq(calculator.foub(), feedbackOutputUpperBound);
-    assertEq(calculator.folb(), feedbackOutputLowerBound);
-    assertEq(calculator.lut(), 0);
-    assertEq(calculator.ps(), periodSize);
-    assertEq(calculator.drr(), TWENTY_SEVEN_DECIMAL_NUMBER);
+    assertEq(calculator.noiseBarrier(), noiseBarrier);
+    assertEq(calculator.feedbackOutputUpperBound(), feedbackOutputUpperBound);
+    assertEq(calculator.feedbackOutputLowerBound(), feedbackOutputLowerBound);
+    assertEq(calculator.lastUpdateTime(), 0);
+    assertEq(calculator.integralPeriodSize(), periodSize);
+    assertEq(calculator.defaultRedemptionRate(), TWENTY_SEVEN_DECIMAL_NUMBER);
     assertEq(Kp, calculator.sg());
   }
 
   function test_first_update_rate_no_deviation() public {
-    hevm.warp(block.timestamp + calculator.ps() + 1);
+    hevm.warp(block.timestamp + calculator.integralPeriodSize() + 1);
 
     rateSetter.updateRate(address(this));
-    assertEq(uint256(calculator.lut()), block.timestamp);
+    assertEq(uint256(calculator.lastUpdateTime()), block.timestamp);
 
     assertEq(oracleRelayer.redemptionPrice(), TWENTY_SEVEN_DECIMAL_NUMBER);
     assertEq(oracleRelayer.redemptionRate(), TWENTY_SEVEN_DECIMAL_NUMBER);
@@ -200,12 +200,12 @@ contract PRawPerSecondCalculatorTest is DSTest {
   function testFail_update_invalid_market_price() public {
     orcl = new Feed(1 ether, false);
     rateSetter.modifyParameters('orcl', address(orcl));
-    hevm.warp(block.timestamp + calculator.ps() + 1);
+    hevm.warp(block.timestamp + calculator.integralPeriodSize() + 1);
     rateSetter.updateRate(address(this));
   }
 
   function testFail_update_same_period_warp() public {
-    hevm.warp(block.timestamp + calculator.ps() + 1);
+    hevm.warp(block.timestamp + calculator.integralPeriodSize() + 1);
     rateSetter.updateRate(address(this));
     rateSetter.updateRate(address(this));
   }
@@ -216,7 +216,7 @@ contract PRawPerSecondCalculatorTest is DSTest {
   }
 
   function test_get_new_rate_no_warp_zero_current_integral() public {
-    calculator.modifyParameters('nb', uint256(0.94e18));
+    calculator.modifyParameters('noiseBarrier', uint256(0.94e18));
 
     orcl.updateTokenPrice(1.05e18); // 5% deviation
 
@@ -236,9 +236,9 @@ contract PRawPerSecondCalculatorTest is DSTest {
   }
 
   function test_first_small_positive_deviation() public {
-    calculator.modifyParameters('nb', uint256(0.995e18));
+    calculator.modifyParameters('noiseBarrier', uint256(0.995e18));
 
-    hevm.warp(block.timestamp + calculator.ps());
+    hevm.warp(block.timestamp + calculator.integralPeriodSize());
     orcl.updateTokenPrice(1.05e18);
 
     (uint256 newRedemptionRate, int256 pTerm,, uint256 rateTimeline) =
@@ -249,15 +249,15 @@ contract PRawPerSecondCalculatorTest is DSTest {
 
     rateSetter.updateRate(address(this)); // irrelevant because the contract computes everything by itself
 
-    assertEq(uint256(calculator.lut()), block.timestamp);
+    assertEq(uint256(calculator.lastUpdateTime()), block.timestamp);
     assertEq(oracleRelayer.redemptionPrice(), TWENTY_SEVEN_DECIMAL_NUMBER);
     assertEq(oracleRelayer.redemptionRate(), 0.95e27);
   }
 
   function test_first_small_negative_deviation() public {
-    calculator.modifyParameters('nb', uint256(0.995e18));
+    calculator.modifyParameters('noiseBarrier', uint256(0.995e18));
 
-    hevm.warp(block.timestamp + calculator.ps());
+    hevm.warp(block.timestamp + calculator.integralPeriodSize());
 
     orcl.updateTokenPrice(0.95e18);
 
@@ -269,29 +269,29 @@ contract PRawPerSecondCalculatorTest is DSTest {
 
     rateSetter.updateRate(address(this));
 
-    assertEq(uint256(calculator.lut()), block.timestamp);
+    assertEq(uint256(calculator.lastUpdateTime()), block.timestamp);
     assertEq(oracleRelayer.redemptionPrice(), TWENTY_SEVEN_DECIMAL_NUMBER);
     assertEq(oracleRelayer.redemptionRate(), 1.05e27);
   }
 
   function test_leak_sets_integral_to_zero() public {
-    calculator.modifyParameters('nb', uint256(1e18));
+    calculator.modifyParameters('noiseBarrier', uint256(1e18));
 
     // First update
-    hevm.warp(block.timestamp + calculator.ps());
+    hevm.warp(block.timestamp + calculator.integralPeriodSize());
     orcl.updateTokenPrice(1 ether + 1);
 
     rateSetter.updateRate(address(this));
 
     // Second update
-    hevm.warp(block.timestamp + calculator.ps());
+    hevm.warp(block.timestamp + calculator.integralPeriodSize());
     orcl.updateTokenPrice(1 ether + 1);
 
     rateSetter.updateRate(address(this));
 
     // Third update
     orcl.updateTokenPrice(1 ether);
-    hevm.warp(block.timestamp + calculator.ps());
+    hevm.warp(block.timestamp + calculator.integralPeriodSize());
 
     oracleRelayer.redemptionPrice();
     oracleRelayer.modifyParameters('redemptionPrice', 1e27);
@@ -305,7 +305,7 @@ contract PRawPerSecondCalculatorTest is DSTest {
     assertEq(oracleRelayer.redemptionRate(), 1e27);
 
     // Final update
-    hevm.warp(block.timestamp + calculator.ps() * 100);
+    hevm.warp(block.timestamp + calculator.integralPeriodSize() * 100);
 
     (uint256 newRedemptionRate, int256 pTerm,,) =
       calculator.getNextRedemptionRate(1 ether, oracleRelayer.redemptionPrice(), 0);
@@ -316,14 +316,14 @@ contract PRawPerSecondCalculatorTest is DSTest {
   }
 
   function test_two_small_positive_deviations() public {
-    calculator.modifyParameters('nb', uint256(0.995e18));
+    calculator.modifyParameters('noiseBarrier', uint256(0.995e18));
 
-    hevm.warp(block.timestamp + calculator.ps());
+    hevm.warp(block.timestamp + calculator.integralPeriodSize());
 
     orcl.updateTokenPrice(1.05e18);
     rateSetter.updateRate(address(this)); // -5% global rate
 
-    hevm.warp(block.timestamp + calculator.ps());
+    hevm.warp(block.timestamp + calculator.integralPeriodSize());
     assertEq(oracleRelayer.redemptionPrice(), 1);
 
     (uint256 newRedemptionRate, int256 pTerm,, uint256 rateTimeline) =
@@ -335,20 +335,20 @@ contract PRawPerSecondCalculatorTest is DSTest {
 
     rateSetter.updateRate(address(this));
 
-    assertEq(uint256(calculator.lut()), block.timestamp);
+    assertEq(uint256(calculator.lastUpdateTime()), block.timestamp);
     assertEq(oracleRelayer.redemptionPrice(), 1);
     assertEq(oracleRelayer.redemptionRate(), 1);
   }
 
   function test_big_delay_positive_deviation() public {
-    calculator.modifyParameters('nb', uint256(0.995e18));
+    calculator.modifyParameters('noiseBarrier', uint256(0.995e18));
 
-    hevm.warp(block.timestamp + calculator.ps());
+    hevm.warp(block.timestamp + calculator.integralPeriodSize());
 
     orcl.updateTokenPrice(1.05e18);
     rateSetter.updateRate(address(this));
 
-    hevm.warp(block.timestamp + calculator.ps() * 10); // 10 hours
+    hevm.warp(block.timestamp + calculator.integralPeriodSize() * 10); // 10 hours
 
     (uint256 newRedemptionRate, int256 pTerm,, uint256 rateTimeline) =
       calculator.getNextRedemptionRate(1.05e18, oracleRelayer.redemptionPrice(), 0);
@@ -360,9 +360,9 @@ contract PRawPerSecondCalculatorTest is DSTest {
   }
 
   function test_normalized_p_result() public {
-    calculator.modifyParameters('nb', EIGHTEEN_DECIMAL_NUMBER - 1);
+    calculator.modifyParameters('noiseBarrier', EIGHTEEN_DECIMAL_NUMBER - 1);
 
-    hevm.warp(block.timestamp + calculator.ps());
+    hevm.warp(block.timestamp + calculator.integralPeriodSize());
     orcl.updateTokenPrice(0.95e18);
 
     (uint256 newRedemptionRate, int256 pTerm,, uint256 rateTimeline) =
@@ -371,7 +371,7 @@ contract PRawPerSecondCalculatorTest is DSTest {
     assertEq(pTerm, 0.05e27);
     assertEq(rateTimeline, defaultGlobalTimeline);
 
-    Kp = Kp / int256(4) / int256(calculator.ps() * 24);
+    Kp = Kp / int256(4) / int256(calculator.integralPeriodSize() * 24);
     assertEq(Kp, 2_893_518_518_518);
 
     calculator.modifyParameters('sg', Kp);
@@ -383,7 +383,7 @@ contract PRawPerSecondCalculatorTest is DSTest {
     assertEq(rateTimeline, defaultGlobalTimeline);
 
     rateSetter.updateRate(address(this));
-    hevm.warp(block.timestamp + calculator.ps());
+    hevm.warp(block.timestamp + calculator.integralPeriodSize());
 
     (newRedemptionRate, pTerm,, rateTimeline) =
       calculator.getNextRedemptionRate(0.95e18, oracleRelayer.redemptionPrice(), 0);
@@ -393,7 +393,7 @@ contract PRawPerSecondCalculatorTest is DSTest {
   }
 
   function testFail_redemption_way_higher_than_market() public {
-    calculator.modifyParameters('nb', EIGHTEEN_DECIMAL_NUMBER - 1);
+    calculator.modifyParameters('noiseBarrier', EIGHTEEN_DECIMAL_NUMBER - 1);
 
     oracleRelayer.modifyParameters('redemptionPrice', FORTY_FIVE_DECIMAL_NUMBER * EIGHTEEN_DECIMAL_NUMBER);
 
@@ -401,11 +401,11 @@ contract PRawPerSecondCalculatorTest is DSTest {
   }
 
   function test_correct_proportional_calculation() public {
-    calculator.modifyParameters('nb', EIGHTEEN_DECIMAL_NUMBER - 1);
+    calculator.modifyParameters('noiseBarrier', EIGHTEEN_DECIMAL_NUMBER - 1);
 
     oracleRelayer.redemptionPrice();
     oracleRelayer.modifyParameters('redemptionPrice', 2e27);
-    hevm.warp(block.timestamp + calculator.ps());
+    hevm.warp(block.timestamp + calculator.integralPeriodSize());
 
     (uint256 newRedemptionRate, int256 pTerm,, uint256 rateTimeline) =
       calculator.getNextRedemptionRate(2.05e18, oracleRelayer.redemptionPrice(), 0);
@@ -413,10 +413,10 @@ contract PRawPerSecondCalculatorTest is DSTest {
     assertEq(pTerm, -0.05e27);
     assertEq(rateTimeline, defaultGlobalTimeline);
 
-    Kp = Kp / 4 / int256(calculator.ps()) / 96;
+    Kp = Kp / 4 / int256(calculator.integralPeriodSize()) / 96;
 
     assertEq(Kp, 723_379_629_629);
-    assertEq(Kp * int256(4 * calculator.ps() * 96), 999_999_999_999_129_600);
+    assertEq(Kp * int256(4 * calculator.integralPeriodSize() * 96), 999_999_999_999_129_600);
 
     calculator.modifyParameters('sg', Kp);
 
@@ -436,7 +436,7 @@ contract PRawPerSecondCalculatorTest is DSTest {
   function test_both_zero_gain() public {
     calculator.modifyParameters('sg', int256(0));
 
-    calculator.modifyParameters('nb', EIGHTEEN_DECIMAL_NUMBER - 1);
+    calculator.modifyParameters('noiseBarrier', EIGHTEEN_DECIMAL_NUMBER - 1);
 
     (uint256 newRedemptionRate, int256 pTerm,, uint256 rateTimeline) =
       calculator.getNextRedemptionRate(1.05e18, oracleRelayer.redemptionPrice(), 0);

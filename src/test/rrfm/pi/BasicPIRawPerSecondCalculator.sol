@@ -138,26 +138,26 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
     // assertEq(calculator.readers(address(rateSetter)), 1);
     assertEq(calculator.authorizedAccounts(address(this)), 1);
 
-    assertEq(calculator.lut(), 0);
-    assertEq(calculator.ips(), integralPeriodSize);
-    assertEq(calculator.pdc(), 0);
-    assertEq(calculator.pscl(), perSecondCumulativeLeak);
-    assertEq(calculator.drr(), TWENTY_SEVEN_DECIMAL_NUMBER);
+    assertEq(calculator.lastUpdateTime(), 0);
+    assertEq(calculator.integralPeriodSize(), integralPeriodSize);
+    assertEq(calculator.priceDeviationCumulative(), 0);
+    assertEq(calculator.perSecondCumulativeLeak(), perSecondCumulativeLeak);
+    assertEq(calculator.defaultRedemptionRate(), TWENTY_SEVEN_DECIMAL_NUMBER);
     assertEq(Kp, calculator.ag());
     assertEq(Ki, calculator.sg());
     assertEq(calculator.oll(), 0);
-    assertEq(calculator.tlv(), 0);
+    assertEq(calculator.timeSinceLastUpdate(), 0);
   }
 
   function test_modify_parameters() public {
     // Uint
-    calculator.modifyParameters('ips', uint256(2));
+    calculator.modifyParameters('integralPeriodSize', uint256(2));
     calculator.modifyParameters('sg', int256(1));
     calculator.modifyParameters('ag', int256(1));
-    calculator.modifyParameters('pscl', uint256(TWENTY_SEVEN_DECIMAL_NUMBER - 5));
+    calculator.modifyParameters('perSecondCumulativeLeak', uint256(TWENTY_SEVEN_DECIMAL_NUMBER - 5));
 
-    assertEq(calculator.ips(), uint256(2));
-    assertEq(calculator.pscl(), TWENTY_SEVEN_DECIMAL_NUMBER - 5);
+    assertEq(calculator.integralPeriodSize(), uint256(2));
+    assertEq(calculator.perSecondCumulativeLeak(), TWENTY_SEVEN_DECIMAL_NUMBER - 5);
 
     assertEq(int256(1), calculator.ag());
     assertEq(int256(1), calculator.sg());
@@ -176,28 +176,28 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
     // assertEq(calculator.readers(address(rateSetter)), 1);
     assertEq(calculator.authorizedAccounts(address(this)), 1);
 
-    assertEq(calculator.lut(), 0);
-    assertEq(calculator.ips(), integralPeriodSize);
-    assertEq(calculator.pdc(), 0);
-    assertEq(calculator.pscl(), perSecondCumulativeLeak);
-    assertEq(calculator.drr(), TWENTY_SEVEN_DECIMAL_NUMBER);
+    assertEq(calculator.lastUpdateTime(), 0);
+    assertEq(calculator.integralPeriodSize(), integralPeriodSize);
+    assertEq(calculator.priceDeviationCumulative(), 0);
+    assertEq(calculator.perSecondCumulativeLeak(), perSecondCumulativeLeak);
+    assertEq(calculator.defaultRedemptionRate(), TWENTY_SEVEN_DECIMAL_NUMBER);
     assertEq(Kp, calculator.ag());
     assertEq(Ki, calculator.sg());
     assertEq(calculator.oll(), 0);
-    assertEq(calculator.tlv(), 0);
+    assertEq(calculator.timeSinceLastUpdate(), 0);
   }
 
   function test_first_update_rate_no_deviation() public {
-    hevm.warp(block.timestamp + calculator.ips() + 1);
+    hevm.warp(block.timestamp + calculator.integralPeriodSize() + 1);
 
     rateSetter.updateRate(address(this));
-    assertEq(uint256(calculator.lut()), block.timestamp);
-    assertEq(uint256(calculator.pdc()), 0);
+    assertEq(uint256(calculator.lastUpdateTime()), block.timestamp);
+    assertEq(uint256(calculator.priceDeviationCumulative()), 0);
 
     assertEq(oracleRelayer.redemptionPrice(), TWENTY_SEVEN_DECIMAL_NUMBER);
     assertEq(oracleRelayer.redemptionRate(), TWENTY_SEVEN_DECIMAL_NUMBER);
 
-    (uint256 timestamp, int256 proportional, int256 integral) = calculator.dos(calculator.oll() - 1);
+    (uint256 timestamp, int256 proportional, int256 integral) = calculator.deviationObservations(calculator.oll() - 1);
 
     assertEq(timestamp, block.timestamp);
     assertEq(proportional, 0);
@@ -207,12 +207,12 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
   function testFail_update_invalid_market_price() public {
     orcl = new Feed(1 ether, false);
     rateSetter.modifyParameters('orcl', address(orcl));
-    hevm.warp(block.timestamp + calculator.ips() + 1);
+    hevm.warp(block.timestamp + calculator.integralPeriodSize() + 1);
     rateSetter.updateRate(address(this));
   }
 
   function testFail_update_same_period_warp() public {
-    hevm.warp(block.timestamp + calculator.ips() + 1);
+    hevm.warp(block.timestamp + calculator.integralPeriodSize() + 1);
     rateSetter.updateRate(address(this));
     rateSetter.updateRate(address(this));
   }
@@ -243,9 +243,9 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
   }
 
   function test_first_small_positive_deviation() public {
-    assertEq(uint256(calculator.pdc()), 0);
+    assertEq(uint256(calculator.priceDeviationCumulative()), 0);
 
-    hevm.warp(block.timestamp + calculator.ips());
+    hevm.warp(block.timestamp + calculator.integralPeriodSize());
     orcl.updateTokenPrice(1.05e18);
 
     (uint256 newRedemptionRate, int256 pTerm, int256 iTerm, uint256 rateTimeline) =
@@ -257,12 +257,12 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
 
     rateSetter.updateRate(address(this)); // irrelevant because the contract computes everything by itself
 
-    assertEq(uint256(calculator.lut()), block.timestamp);
-    assertEq(calculator.pdc(), 0);
+    assertEq(uint256(calculator.lastUpdateTime()), block.timestamp);
+    assertEq(calculator.priceDeviationCumulative(), 0);
     assertEq(oracleRelayer.redemptionPrice(), TWENTY_SEVEN_DECIMAL_NUMBER);
     assertEq(oracleRelayer.redemptionRate(), 0.95e27);
 
-    (uint256 timestamp, int256 proportional, int256 integral) = calculator.dos(calculator.oll() - 1);
+    (uint256 timestamp, int256 proportional, int256 integral) = calculator.deviationObservations(calculator.oll() - 1);
 
     assertEq(timestamp, block.timestamp);
     assertEq(proportional, -0.05e27);
@@ -270,9 +270,9 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
   }
 
   function test_first_small_negative_deviation() public {
-    assertEq(uint256(calculator.pdc()), 0);
+    assertEq(uint256(calculator.priceDeviationCumulative()), 0);
 
-    hevm.warp(block.timestamp + calculator.ips());
+    hevm.warp(block.timestamp + calculator.integralPeriodSize());
 
     orcl.updateTokenPrice(0.95e18);
 
@@ -285,33 +285,33 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
 
     rateSetter.updateRate(address(this));
 
-    assertEq(uint256(calculator.lut()), block.timestamp);
-    assertEq(calculator.pdc(), 0);
+    assertEq(uint256(calculator.lastUpdateTime()), block.timestamp);
+    assertEq(calculator.priceDeviationCumulative(), 0);
     assertEq(oracleRelayer.redemptionPrice(), TWENTY_SEVEN_DECIMAL_NUMBER);
     assertEq(oracleRelayer.redemptionRate(), 1.05e27);
   }
 
   function test_leak_sets_integral_to_zero() public {
-    assertEq(uint256(calculator.pdc()), 0);
+    assertEq(uint256(calculator.priceDeviationCumulative()), 0);
 
     calculator.modifyParameters('ag', int256(1000));
-    calculator.modifyParameters('pscl', uint256(998_721_603_904_830_360_273_103_599)); // -99% per hour
+    calculator.modifyParameters('perSecondCumulativeLeak', uint256(998_721_603_904_830_360_273_103_599)); // -99% per hour
 
     // First update
-    hevm.warp(block.timestamp + calculator.ips());
+    hevm.warp(block.timestamp + calculator.integralPeriodSize());
     orcl.updateTokenPrice(1 ether + 1);
 
     rateSetter.updateRate(address(this));
 
     // Second update
-    hevm.warp(block.timestamp + calculator.ips());
+    hevm.warp(block.timestamp + calculator.integralPeriodSize());
     orcl.updateTokenPrice(1 ether + 1);
 
     rateSetter.updateRate(address(this));
 
     // Third update
     orcl.updateTokenPrice(1 ether);
-    hevm.warp(block.timestamp + calculator.ips());
+    hevm.warp(block.timestamp + calculator.integralPeriodSize());
 
     oracleRelayer.redemptionPrice();
     oracleRelayer.modifyParameters('redemptionPrice', 1e27);
@@ -325,7 +325,7 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
     assertEq(oracleRelayer.redemptionRate(), 1e27);
 
     // Final update
-    hevm.warp(block.timestamp + calculator.ips() * 100);
+    hevm.warp(block.timestamp + calculator.integralPeriodSize() * 100);
 
     (uint256 newRedemptionRate, int256 pTerm, int256 iTerm,) =
       calculator.getNextRedemptionRate(1 ether, oracleRelayer.redemptionPrice(), rateSetter.iapcr());
@@ -334,18 +334,18 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
     assertEq(iTerm, 0);
 
     rateSetter.updateRate(address(this));
-    assertEq(calculator.pdc(), 0);
+    assertEq(calculator.priceDeviationCumulative(), 0);
   }
 
   function test_two_small_positive_deviations() public {
-    assertEq(uint256(calculator.pdc()), 0);
+    assertEq(uint256(calculator.priceDeviationCumulative()), 0);
 
-    hevm.warp(block.timestamp + calculator.ips());
+    hevm.warp(block.timestamp + calculator.integralPeriodSize());
 
     orcl.updateTokenPrice(1.05e18);
     rateSetter.updateRate(address(this)); // -5% global rate
 
-    hevm.warp(block.timestamp + calculator.ips());
+    hevm.warp(block.timestamp + calculator.integralPeriodSize());
     assertEq(oracleRelayer.redemptionPrice(), 1);
 
     (uint256 newRedemptionRate, int256 pTerm, int256 iTerm, uint256 rateTimeline) =
@@ -358,21 +358,21 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
 
     rateSetter.updateRate(address(this));
 
-    assertEq(uint256(calculator.lut()), block.timestamp);
-    assertEq(calculator.pdc(), -1_979_999_999_999_999_999_999_999_996_400);
+    assertEq(uint256(calculator.lastUpdateTime()), block.timestamp);
+    assertEq(calculator.priceDeviationCumulative(), -1_979_999_999_999_999_999_999_999_996_400);
     assertEq(oracleRelayer.redemptionPrice(), 1);
     assertEq(oracleRelayer.redemptionRate(), 999_999_999_999_999_999_999_999_999);
   }
 
   function test_big_delay_positive_deviation() public {
-    assertEq(uint256(calculator.pdc()), 0);
+    assertEq(uint256(calculator.priceDeviationCumulative()), 0);
 
-    hevm.warp(block.timestamp + calculator.ips());
+    hevm.warp(block.timestamp + calculator.integralPeriodSize());
 
     orcl.updateTokenPrice(1.05e18);
     rateSetter.updateRate(address(this));
 
-    hevm.warp(block.timestamp + calculator.ips() * 10); // 10 hours
+    hevm.warp(block.timestamp + calculator.integralPeriodSize() * 10); // 10 hours
 
     (uint256 newRedemptionRate, int256 pTerm, int256 iTerm, uint256 rateTimeline) =
       calculator.getNextRedemptionRate(1.05e18, oracleRelayer.redemptionPrice(), rateSetter.iapcr());
@@ -385,9 +385,9 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
   }
 
   function test_normalized_pi_result() public {
-    assertEq(uint256(calculator.pdc()), 0);
+    assertEq(uint256(calculator.priceDeviationCumulative()), 0);
 
-    hevm.warp(block.timestamp + calculator.ips());
+    hevm.warp(block.timestamp + calculator.integralPeriodSize());
     orcl.updateTokenPrice(0.95e18);
 
     (uint256 newRedemptionRate, int256 pTerm, int256 iTerm, uint256 rateTimeline) =
@@ -397,8 +397,8 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
     assertEq(iTerm, 0);
     assertEq(rateTimeline, defaultGlobalTimeline);
 
-    Kp = Kp / int256(4) / int256(calculator.ips() * 24);
-    Ki = Ki / int256(4) / int256(calculator.ips() ** 2) / 24;
+    Kp = Kp / int256(4) / int256(calculator.integralPeriodSize() * 24);
+    Ki = Ki / int256(4) / int256(calculator.integralPeriodSize() ** 2) / 24;
 
     assertEq(Kp, 2_893_518_518_518);
     assertEq(Ki, 803_755_144);
@@ -418,7 +418,7 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
     assertEq(rateTimeline, defaultGlobalTimeline);
 
     rateSetter.updateRate(address(this));
-    hevm.warp(block.timestamp + calculator.ips());
+    hevm.warp(block.timestamp + calculator.integralPeriodSize());
 
     (newRedemptionRate, pTerm, iTerm, rateTimeline) =
       calculator.getNextRedemptionRate(0.95e18, oracleRelayer.redemptionPrice(), rateSetter.iapcr());
@@ -429,7 +429,7 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
   }
 
   function testFail_redemption_way_higher_than_market() public {
-    assertEq(uint256(calculator.pdc()), 0);
+    assertEq(uint256(calculator.priceDeviationCumulative()), 0);
 
     oracleRelayer.modifyParameters('redemptionPrice', FORTY_FIVE_DECIMAL_NUMBER * EIGHTEEN_DECIMAL_NUMBER);
 
@@ -437,11 +437,11 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
   }
 
   function test_correct_proportional_calculation() public {
-    assertEq(uint256(calculator.pdc()), 0);
+    assertEq(uint256(calculator.priceDeviationCumulative()), 0);
 
     oracleRelayer.redemptionPrice();
     oracleRelayer.modifyParameters('redemptionPrice', 2e27);
-    hevm.warp(block.timestamp + calculator.ips());
+    hevm.warp(block.timestamp + calculator.integralPeriodSize());
 
     (uint256 newRedemptionRate, int256 pTerm, int256 iTerm, uint256 rateTimeline) =
       calculator.getNextRedemptionRate(2.05e18, oracleRelayer.redemptionPrice(), rateSetter.iapcr());
@@ -450,12 +450,12 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
     assertEq(iTerm, 0);
     assertEq(rateTimeline, defaultGlobalTimeline);
 
-    Kp = Kp / 4 / int256(calculator.ips()) / 96;
+    Kp = Kp / 4 / int256(calculator.integralPeriodSize()) / 96;
     Ki = 0;
 
     assertEq(Kp, 723_379_629_629);
     assertEq(Ki, 0);
-    assertEq(Kp * int256(4 * calculator.ips() * 96), 999_999_999_999_129_600);
+    assertEq(Kp * int256(4 * calculator.integralPeriodSize() * 96), 999_999_999_999_129_600);
 
     calculator.modifyParameters('sg', Kp);
     calculator.modifyParameters('ag', Ki);
@@ -469,7 +469,10 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
 
     (int256 gainAdjustedP,) = calculator.getGainAdjustedTerms(-int256(0.05e27), int256(0));
     assertEq(gainAdjustedP, -36_168_981_481_450_000_000);
-    assertEq(gainAdjustedP * int256(96) * int256(calculator.ips()) * int256(4), -49_999_999_999_956_480_000_000_000);
+    assertEq(
+      gainAdjustedP * int256(96) * int256(calculator.integralPeriodSize()) * int256(4),
+      -49_999_999_999_956_480_000_000_000
+    );
 
     (newRedemptionRate, pTerm, iTerm, rateTimeline) =
       calculator.getNextRedemptionRate(1.95e18, oracleRelayer.redemptionPrice(), rateSetter.iapcr());
@@ -480,14 +483,17 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
 
     (gainAdjustedP,) = calculator.getGainAdjustedTerms(int256(0.05e27), int256(0));
     assertEq(gainAdjustedP, 36_168_981_481_450_000_000);
-    assertEq(gainAdjustedP * int256(96) * int256(calculator.ips()) * int256(4), 49_999_999_999_956_480_000_000_000);
+    assertEq(
+      gainAdjustedP * int256(96) * int256(calculator.integralPeriodSize()) * int256(4),
+      49_999_999_999_956_480_000_000_000
+    );
   }
 
   function test_both_gains_zero() public {
     calculator.modifyParameters('sg', int256(0));
     calculator.modifyParameters('ag', int256(0));
 
-    assertEq(uint256(calculator.pdc()), 0);
+    assertEq(uint256(calculator.priceDeviationCumulative()), 0);
 
     (uint256 newRedemptionRate, int256 pTerm, int256 iTerm, uint256 rateTimeline) =
       calculator.getNextRedemptionRate(1.05e18, oracleRelayer.redemptionPrice(), rateSetter.iapcr());
