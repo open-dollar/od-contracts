@@ -21,10 +21,7 @@ interface IPIDController is IAuthorizable {
     int256 Ki; // [WAD]
   }
 
-  function getBoundedRedemptionRate(int256 _piOutput)
-    external
-    view
-    returns (uint256 _redemptionRate, uint256 _rateTimeline);
+  function getBoundedRedemptionRate(int256 _piOutput) external view returns (uint256 _redemptionRate);
 
   function computeRate(
     uint256 _marketPrice,
@@ -57,18 +54,13 @@ interface IPIDController is IAuthorizable {
     uint256 _marketPrice,
     uint256 _redemptionPrice,
     uint256 _accumulatedLeak
-  )
-    external
-    view
-    returns (uint256 _redemptionRate, int256 _proportionalTerm, int256 _cumulativeDeviation, uint256 _rateTimeline);
+  ) external view returns (uint256 _redemptionRate, int256 _proportionalTerm, int256 _cumulativeDeviation);
 
   function seedProposer() external view returns (address _seedProposer);
 
   function perSecondCumulativeLeak() external view returns (uint256 _perSecondCumulativeLeak);
 
   function timeSinceLastUpdate() external view returns (uint256 _timeSinceLastValue);
-
-  function defaultGlobalTimeline() external view returns (uint256 _defaultGlobalTimeline);
 
   function lastUpdateTime() external view returns (uint256 _lastUpdateTime);
 
@@ -78,19 +70,11 @@ interface IPIDController is IAuthorizable {
 
   function feedbackOutputUpperBound() external view returns (uint256 _feedbackOutputUpperBound);
 
-  function defaultRedemptionRate() external view returns (uint256 _defaultRedemptionRate);
-
   function noiseBarrier() external view returns (uint256 _noiseBarrier);
 
   function priceDeviationCumulative() external view returns (int256 _priceDeviationCumulative);
 
-  function ag() external view returns (int256 _ag);
-
-  function sg() external view returns (int256 _sg);
-
-  function adat() external view returns (uint256 _adat);
-
-  function rt(uint256 _marketPrice, uint256 _redemptionPrice, uint256) external view returns (uint256 _rateTimeline);
+  function controllerGains() external view returns (ControllerGains memory _cGains);
 
   function deviationObservations(uint256 i)
     external

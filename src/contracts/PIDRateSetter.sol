@@ -25,10 +25,6 @@ import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {Math, RAY} from '@libraries/Math.sol';
 import {Encoding} from '@libraries/Encoding.sol';
 
-interface IModifiable {
-  function modifyParameters(bytes32 parameter, uint256 data) external;
-}
-
 contract PIDRateSetter is Authorizable, IPIDRateSetter {
   using Math for uint256;
   using Math for address;
@@ -45,7 +41,7 @@ contract PIDRateSetter is Authorizable, IPIDRateSetter {
   // --- Params ---
   PIDRateSetterParams internal _params;
 
-  function params() external view returns (PIDRateSetterParams memory) {
+  function params() external view returns (PIDRateSetterParams memory _pidRateSetterParams) {
     return _params;
   }
 

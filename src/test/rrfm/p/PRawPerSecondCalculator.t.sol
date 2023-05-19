@@ -83,7 +83,6 @@ contract PRawPerSecondCalculatorTest is DSTest {
   }
 
   // --- Math ---
-  uint256 constant defaultGlobalTimeline = 1;
   uint256 constant FORTY_FIVE_DECIMAL_NUMBER = 10 ** 45;
   uint256 constant TWENTY_SEVEN_DECIMAL_NUMBER = 10 ** 27;
   uint256 constant EIGHTEEN_DECIMAL_NUMBER = 10 ** 18;
@@ -146,32 +145,30 @@ contract PRawPerSecondCalculatorTest is DSTest {
     assertEq(calculator.feedbackOutputLowerBound(), feedbackOutputLowerBound);
     assertEq(calculator.lastUpdateTime(), 0);
     assertEq(calculator.integralPeriodSize(), periodSize);
-    assertEq(calculator.defaultRedemptionRate(), TWENTY_SEVEN_DECIMAL_NUMBER);
-    assertEq(Kp, calculator.sg());
+    assertEq(Kp, calculator.controllerGains().Kp);
   }
 
   function test_modify_parameters() public {
     // Uint
     calculator.modifyParameters('noiseBarrier', EIGHTEEN_DECIMAL_NUMBER);
-    calculator.modifyParameters('ps', uint256(2));
-    calculator.modifyParameters('sg', int256(1));
+    calculator.modifyParameters('periodSize', uint256(2));
+    calculator.modifyParameters('kp', int256(1));
     calculator.modifyParameters('feedbackOutputUpperBound', uint256(TWENTY_SEVEN_DECIMAL_NUMBER + 1));
-    calculator.modifyParameters('folb', -int256(1));
+    calculator.modifyParameters('feedbackOutputLowerBound', -int256(1));
 
     assertEq(calculator.noiseBarrier(), EIGHTEEN_DECIMAL_NUMBER);
     assertEq(calculator.integralPeriodSize(), uint256(2));
     assertEq(calculator.feedbackOutputUpperBound(), uint256(TWENTY_SEVEN_DECIMAL_NUMBER + 1));
     assertEq(calculator.feedbackOutputLowerBound(), -int256(1));
 
-    assertEq(int256(1), calculator.sg());
+    assertEq(int256(1), calculator.controllerGains().Kp);
   }
 
   function test_get_new_rate_no_proportional() public {
-    (uint256 newRedemptionRate, int256 pTerm,, uint256 rateTimeline) =
+    (uint256 newRedemptionRate, int256 pTerm,) =
       calculator.getNextRedemptionRate(EIGHTEEN_DECIMAL_NUMBER, TWENTY_SEVEN_DECIMAL_NUMBER, 0);
     assertEq(newRedemptionRate, TWENTY_SEVEN_DECIMAL_NUMBER);
     assertEq(pTerm, 0);
-    assertEq(rateTimeline, defaultGlobalTimeline);
 
     // Verify that it did not change state
     // assertEq(calculator.readers(address(this)), 1);
@@ -183,8 +180,7 @@ contract PRawPerSecondCalculatorTest is DSTest {
     assertEq(calculator.feedbackOutputLowerBound(), feedbackOutputLowerBound);
     assertEq(calculator.lastUpdateTime(), 0);
     assertEq(calculator.integralPeriodSize(), periodSize);
-    assertEq(calculator.defaultRedemptionRate(), TWENTY_SEVEN_DECIMAL_NUMBER);
-    assertEq(Kp, calculator.sg());
+    assertEq(Kp, calculator.controllerGains().Kp);
   }
 
   function test_first_update_rate_no_deviation() public {
@@ -220,19 +216,16 @@ contract PRawPerSecondCalculatorTest is DSTest {
 
     orcl.updateTokenPrice(1.05e18); // 5% deviation
 
-    (uint256 newRedemptionRate, int256 pTerm,, uint256 rateTimeline) =
+    (uint256 newRedemptionRate, int256 pTerm,) =
       calculator.getNextRedemptionRate(1.05e18, TWENTY_SEVEN_DECIMAL_NUMBER, 0);
     assertEq(newRedemptionRate, 1e27);
     assertEq(pTerm, -0.05e27);
-    assertEq(rateTimeline, defaultGlobalTimeline);
 
     orcl.updateTokenPrice(0.995e18); // -0.5% deviation
 
-    (newRedemptionRate, pTerm,, rateTimeline) =
-      calculator.getNextRedemptionRate(0.995e18, TWENTY_SEVEN_DECIMAL_NUMBER, 0);
+    (newRedemptionRate, pTerm,) = calculator.getNextRedemptionRate(0.995e18, TWENTY_SEVEN_DECIMAL_NUMBER, 0);
     assertEq(newRedemptionRate, 1e27);
     assertEq(pTerm, 0.005e27);
-    assertEq(rateTimeline, defaultGlobalTimeline);
   }
 
   function test_first_small_positive_deviation() public {
@@ -241,11 +234,10 @@ contract PRawPerSecondCalculatorTest is DSTest {
     hevm.warp(block.timestamp + calculator.integralPeriodSize());
     orcl.updateTokenPrice(1.05e18);
 
-    (uint256 newRedemptionRate, int256 pTerm,, uint256 rateTimeline) =
+    (uint256 newRedemptionRate, int256 pTerm,) =
       calculator.getNextRedemptionRate(1.05e18, TWENTY_SEVEN_DECIMAL_NUMBER, 0);
     assertEq(newRedemptionRate, 0.95e27);
     assertEq(pTerm, -0.05e27);
-    assertEq(rateTimeline, defaultGlobalTimeline);
 
     rateSetter.updateRate(address(this)); // irrelevant because the contract computes everything by itself
 
@@ -261,11 +253,10 @@ contract PRawPerSecondCalculatorTest is DSTest {
 
     orcl.updateTokenPrice(0.95e18);
 
-    (uint256 newRedemptionRate, int256 pTerm,, uint256 rateTimeline) =
+    (uint256 newRedemptionRate, int256 pTerm,) =
       calculator.getNextRedemptionRate(0.95e18, TWENTY_SEVEN_DECIMAL_NUMBER, 0);
     assertEq(newRedemptionRate, 1.05e27);
     assertEq(pTerm, 0.05e27);
-    assertEq(rateTimeline, defaultGlobalTimeline);
 
     rateSetter.updateRate(address(this));
 
@@ -307,7 +298,7 @@ contract PRawPerSecondCalculatorTest is DSTest {
     // Final update
     hevm.warp(block.timestamp + calculator.integralPeriodSize() * 100);
 
-    (uint256 newRedemptionRate, int256 pTerm,,) =
+    (uint256 newRedemptionRate, int256 pTerm,) =
       calculator.getNextRedemptionRate(1 ether, oracleRelayer.redemptionPrice(), 0);
     assertEq(newRedemptionRate, 1e27);
     assertEq(pTerm, 0);
@@ -326,12 +317,10 @@ contract PRawPerSecondCalculatorTest is DSTest {
     hevm.warp(block.timestamp + calculator.integralPeriodSize());
     assertEq(oracleRelayer.redemptionPrice(), 1);
 
-    (uint256 newRedemptionRate, int256 pTerm,, uint256 rateTimeline) =
+    (uint256 newRedemptionRate, int256 pTerm,) =
       calculator.getNextRedemptionRate(1.05e18, oracleRelayer.redemptionPrice(), rateSetter.iapcr());
     assertEq(newRedemptionRate, 1);
     assertEq(pTerm, -1_049_999_999_999_999_999_999_999_999);
-
-    assertEq(rateTimeline, defaultGlobalTimeline);
 
     rateSetter.updateRate(address(this));
 
@@ -350,11 +339,10 @@ contract PRawPerSecondCalculatorTest is DSTest {
 
     hevm.warp(block.timestamp + calculator.integralPeriodSize() * 10); // 10 hours
 
-    (uint256 newRedemptionRate, int256 pTerm,, uint256 rateTimeline) =
+    (uint256 newRedemptionRate, int256 pTerm,) =
       calculator.getNextRedemptionRate(1.05e18, oracleRelayer.redemptionPrice(), 0);
     assertEq(newRedemptionRate, 1);
     assertEq(pTerm, -1_049_999_999_999_999_999_999_999_999);
-    assertEq(rateTimeline, defaultGlobalTimeline);
 
     rateSetter.updateRate(address(this));
   }
@@ -365,31 +353,26 @@ contract PRawPerSecondCalculatorTest is DSTest {
     hevm.warp(block.timestamp + calculator.integralPeriodSize());
     orcl.updateTokenPrice(0.95e18);
 
-    (uint256 newRedemptionRate, int256 pTerm,, uint256 rateTimeline) =
+    (uint256 newRedemptionRate, int256 pTerm,) =
       calculator.getNextRedemptionRate(0.95e18, TWENTY_SEVEN_DECIMAL_NUMBER, 0);
     assertEq(newRedemptionRate, 1.05e27);
     assertEq(pTerm, 0.05e27);
-    assertEq(rateTimeline, defaultGlobalTimeline);
 
     Kp = Kp / int256(4) / int256(calculator.integralPeriodSize() * 24);
     assertEq(Kp, 2_893_518_518_518);
 
-    calculator.modifyParameters('sg', Kp);
+    calculator.modifyParameters('kp', Kp);
 
-    (newRedemptionRate, pTerm,, rateTimeline) =
-      calculator.getNextRedemptionRate(0.95e18, TWENTY_SEVEN_DECIMAL_NUMBER, 0);
+    (newRedemptionRate, pTerm,) = calculator.getNextRedemptionRate(0.95e18, TWENTY_SEVEN_DECIMAL_NUMBER, 0);
     assertEq(newRedemptionRate, 1_000_000_144_675_925_925_900_000_000);
     assertEq(pTerm, 0.05e27);
-    assertEq(rateTimeline, defaultGlobalTimeline);
 
     rateSetter.updateRate(address(this));
     hevm.warp(block.timestamp + calculator.integralPeriodSize());
 
-    (newRedemptionRate, pTerm,, rateTimeline) =
-      calculator.getNextRedemptionRate(0.95e18, oracleRelayer.redemptionPrice(), 0);
+    (newRedemptionRate, pTerm,) = calculator.getNextRedemptionRate(0.95e18, oracleRelayer.redemptionPrice(), 0);
     assertEq(newRedemptionRate, 1_000_000_146_183_359_238_598_598_834);
     assertEq(pTerm, 50_520_968_952_868_729_114_836_237);
-    assertEq(rateTimeline, defaultGlobalTimeline);
   }
 
   function testFail_redemption_way_higher_than_market() public {
@@ -407,42 +390,36 @@ contract PRawPerSecondCalculatorTest is DSTest {
     oracleRelayer.modifyParameters('redemptionPrice', 2e27);
     hevm.warp(block.timestamp + calculator.integralPeriodSize());
 
-    (uint256 newRedemptionRate, int256 pTerm,, uint256 rateTimeline) =
+    (uint256 newRedemptionRate, int256 pTerm,) =
       calculator.getNextRedemptionRate(2.05e18, oracleRelayer.redemptionPrice(), 0);
     assertEq(newRedemptionRate, 0.95e27);
     assertEq(pTerm, -0.05e27);
-    assertEq(rateTimeline, defaultGlobalTimeline);
 
     Kp = Kp / 4 / int256(calculator.integralPeriodSize()) / 96;
 
     assertEq(Kp, 723_379_629_629);
     assertEq(Kp * int256(4 * calculator.integralPeriodSize() * 96), 999_999_999_999_129_600);
 
-    calculator.modifyParameters('sg', Kp);
+    calculator.modifyParameters('kp', Kp);
 
-    (newRedemptionRate, pTerm,, rateTimeline) =
-      calculator.getNextRedemptionRate(2.05e18, oracleRelayer.redemptionPrice(), 0);
+    (newRedemptionRate, pTerm,) = calculator.getNextRedemptionRate(2.05e18, oracleRelayer.redemptionPrice(), 0);
     assertEq(newRedemptionRate, 999_999_963_831_018_518_550_000_000);
     assertEq(pTerm, -0.05e27);
-    assertEq(rateTimeline, defaultGlobalTimeline);
 
-    (newRedemptionRate, pTerm,, rateTimeline) =
-      calculator.getNextRedemptionRate(1.95e18, oracleRelayer.redemptionPrice(), 0);
+    (newRedemptionRate, pTerm,) = calculator.getNextRedemptionRate(1.95e18, oracleRelayer.redemptionPrice(), 0);
     assertEq(newRedemptionRate, 1_000_000_036_168_981_481_450_000_000);
     assertEq(pTerm, 0.05e27);
-    assertEq(rateTimeline, defaultGlobalTimeline);
   }
 
   function test_both_zero_gain() public {
-    calculator.modifyParameters('sg', int256(0));
+    calculator.modifyParameters('kp', int256(0));
 
     calculator.modifyParameters('noiseBarrier', EIGHTEEN_DECIMAL_NUMBER - 1);
 
-    (uint256 newRedemptionRate, int256 pTerm,, uint256 rateTimeline) =
+    (uint256 newRedemptionRate, int256 pTerm,) =
       calculator.getNextRedemptionRate(1.05e18, oracleRelayer.redemptionPrice(), 0);
     assertEq(newRedemptionRate, 1e27);
     assertEq(pTerm, -0.05e27);
-    assertEq(rateTimeline, defaultGlobalTimeline);
 
     orcl.updateTokenPrice(1.05e18);
     rateSetter.updateRate(address(this));

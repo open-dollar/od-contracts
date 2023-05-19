@@ -19,6 +19,8 @@ contract Base is HaiTest {
   using stdStorage for StdStorage;
 
   uint256 internal constant NEGATIVE_RATE_LIMIT = RAY - 1;
+  uint256 internal constant POSITIVE_RATE_LIMIT = type(uint256).max - RAY - 1;
+
   MockPIDController mockPIDController = new MockPIDController();
 
   function _createPidController(int256[] memory _importedState) internal {
@@ -42,8 +44,8 @@ contract Base is HaiTest {
       integralGain: PID_INTEGRAL_GAIN,
       noiseBarrier: PID_NOISE_BARRIER,
       perSecondCumulativeLeak: PID_PER_SECOND_CUMULATIVE_LEAK,
-      feedbackOutputLowerBound: PID_FEEDBACK_OUTPUT_LOWER_BOUND,
-      feedbackOutputUpperBound: PID_FEEDBACK_OUTPUT_UPPER_BOUND,
+      feedbackOutputLowerBound: -int256(NEGATIVE_RATE_LIMIT),
+      feedbackOutputUpperBound: POSITIVE_RATE_LIMIT / 2,
       periodSize: PID_PERIOD_SIZE,
       updateRate: PID_UPDATE_RATE
     });
@@ -55,12 +57,6 @@ contract Base is HaiTest {
     PIDControllerForTest(address(pidController)).setCallSupper_getGainAdjustedPIOutput(false);
     PIDControllerForTest(address(pidController)).setCallSupper_getBoundedRedemptionRate(false);
     PIDControllerForTest(address(pidController)).setCallSupper_updateDeviationHistory(false);
-  }
-
-  function _mockDefaultRedemptionRate(uint256 _defaultRedemptionRate) internal {
-    stdstore.target(address(pidController)).sig(IPIDController.defaultRedemptionRate.selector).checked_write(
-      _defaultRedemptionRate
-    );
   }
 
   function _mockLastUpdateTime(uint256 _updateTime) internal {
@@ -119,11 +115,11 @@ contract Base is HaiTest {
     );
   }
 
-  function _mockGetBoundedRedemptionRate(uint256 _newRedemptionRate, uint256 _rateTimeline) internal {
+  function _mockGetBoundedRedemptionRate(uint256 _newRedemptionRate) internal {
     vm.mockCall(
       address(mockPIDController),
       abi.encodeWithSelector(MockPIDController.mock_getBoundedRedemptionRate.selector),
-      abi.encode(_newRedemptionRate, _rateTimeline)
+      abi.encode(_newRedemptionRate)
     );
   }
 
@@ -172,13 +168,12 @@ contract Base is HaiTest {
   function _mockGetNextRedemptionRate(
     uint256 _newRedemptionRate,
     int256 _proportionalTerm,
-    int256 _cumulativeDeviation,
-    uint256 _rateTimeline
+    int256 _cumulativeDeviation
   ) internal {
     vm.mockCall(
       address(mockPIDController),
       abi.encodeWithSelector(MockPIDController.mock_getNextRedemptionRate.selector),
-      abi.encode(_newRedemptionRate, _proportionalTerm, _cumulativeDeviation, _rateTimeline)
+      abi.encode(_newRedemptionRate, _proportionalTerm, _cumulativeDeviation)
     );
   }
 
@@ -190,11 +185,11 @@ contract Base is HaiTest {
 
 contract Unit_PIDController_Constructor is Base {
   function test_Set_ProportionalGain() public {
-    assertEq(pidController.sg(), params.proportionalGain);
+    assertEq(pidController.controllerGains().Kp, params.proportionalGain);
   }
 
   function test_Set_IntegralGain() public {
-    assertEq(pidController.ag(), params.integralGain);
+    assertEq(pidController.controllerGains().Ki, params.integralGain);
   }
 
   function test_Set_PerSecondCumulativeLeak() public {
@@ -377,36 +372,6 @@ contract Unit_PIDController_TimeSinceLastUpdate is Base {
   }
 }
 
-contract Unit_PIDController_Adat is Base {
-  function test_Return_Elapsed_LessThanIntegralPeriodSize(
-    uint256 _timestamp,
-    uint256 _lastUpdateTime,
-    uint256 _integralPeriodSize
-  ) public {
-    vm.assume(_lastUpdateTime <= _timestamp);
-    vm.assume(_timestamp - _lastUpdateTime < _integralPeriodSize);
-    vm.warp(_timestamp);
-    _mockLastUpdateTime(_lastUpdateTime);
-    _mockIntegralPeriodSize(_integralPeriodSize);
-
-    assertEq(pidController.adat(), 0);
-  }
-
-  function test_Return_Elapsed_GreaterOrEqualThanIntegralPeriodSize(
-    uint256 _timestamp,
-    uint256 _lastUpdateTime,
-    uint256 _integralPeriodSize
-  ) public {
-    vm.assume(_lastUpdateTime <= _timestamp);
-    vm.assume(_timestamp - _lastUpdateTime >= _integralPeriodSize);
-    vm.warp(_timestamp);
-    _mockLastUpdateTime(_lastUpdateTime);
-    _mockIntegralPeriodSize(_integralPeriodSize);
-
-    assertEq(pidController.adat(), _timestamp - _lastUpdateTime - _integralPeriodSize);
-  }
-}
-
 contract Unit_PIDRateSetter_Oll is Base {
   function test_Return_Zero() public {
     assertEq(pidController.oll(), 0);
@@ -423,55 +388,25 @@ contract Unit_PIDRateSetter_Oll is Base {
 
 contract Unit_PIDController_GetBoundedRedemptionRate is Base {
   using stdStorage for StdStorage;
+  using Math for uint256;
 
   function setUp() public virtual override {
     super.setUp();
+    setCallSuper(false);
     PIDControllerForTest(address(pidController)).setCallSupper_getBoundedRedemptionRate(true);
   }
 
-  function _negativeOutputExceedsOneHundred(
-    int256 _boundedPIOutput,
-    uint256 _defaultRedemptionRate
-  ) internal pure returns (bool) {
-    vm.assume(_boundedPIOutput > type(int256).min);
-    return (_boundedPIOutput < 0 && -_boundedPIOutput >= int256(_defaultRedemptionRate));
-  }
-
-  function _boundedPIOutputLowerThanNegRateLimit(int256 _boundedPIOutput) internal pure returns (bool) {
-    return _boundedPIOutput < -int256(NEGATIVE_RATE_LIMIT);
-  }
-
-  function _mockValues(int256 _boundedPIOutput, uint256 _defaultRedemptionRate) internal {
+  modifier negativeBoundedPIOutput(int256 _boundedPIOutput) {
+    // Checks that boundedPIOutput is never less than NEGATIVE_RATE_LIMIT, the setters should prevent this
+    vm.assume(_boundedPIOutput < 0 && _boundedPIOutput >= -int256(RAY - 1));
     _mockBoundedPIOutput(_boundedPIOutput);
-    _mockDefaultRedemptionRate(_defaultRedemptionRate);
-  }
-
-  modifier negativeOutputExceedsOneHundred(int256 _boundedPIOutput, uint256 _defaultRedemptionRate) {
-    vm.assume(notUnderOrOverflowAdd(_defaultRedemptionRate, _boundedPIOutput));
-    vm.assume(_negativeOutputExceedsOneHundred(_boundedPIOutput, _defaultRedemptionRate));
-    _mockBoundedPIOutput(_boundedPIOutput);
-    _mockDefaultRedemptionRate(_defaultRedemptionRate);
     _;
   }
 
-  modifier notExceedsOneHundredAndBPiLower(int256 _boundedPIOutput, uint256 _defaultRedemptionRate) {
-    vm.assume(notUnderOrOverflowAdd(_defaultRedemptionRate, _boundedPIOutput));
-    vm.assume(!_negativeOutputExceedsOneHundred(_boundedPIOutput, _defaultRedemptionRate));
-    vm.assume(!_boundedPIOutputLowerThanNegRateLimit(_boundedPIOutput));
-    if (_boundedPIOutput < 0) {
-      vm.assume(notUnderflow(_defaultRedemptionRate, uint256(-_boundedPIOutput)));
-    } else {
-      vm.assume(notOverflow(_defaultRedemptionRate, _boundedPIOutput));
-    }
-    _mockValues(_boundedPIOutput, _defaultRedemptionRate);
-    _;
-  }
-
-  modifier notExceedsOneHundredAndBPiGreater(int256 _boundedPIOutput, uint256 _defaultRedemptionRate) {
-    vm.assume(notUnderOrOverflowAdd(_defaultRedemptionRate, _boundedPIOutput));
-    vm.assume(!_negativeOutputExceedsOneHundred(_boundedPIOutput, _defaultRedemptionRate));
-    vm.assume(_boundedPIOutputLowerThanNegRateLimit(_boundedPIOutput));
-    _mockValues(_boundedPIOutput, _defaultRedemptionRate);
+  modifier positiveBoundedPIOutput(int256 _boundedPIOutput) {
+    // Checks that boundedPIOutput is never greater or equal than POSITIVE_RATE_LIMIT, the setters should prevent this
+    vm.assume(_boundedPIOutput >= 0 && uint256(_boundedPIOutput) < type(uint256).max - RAY - 1);
+    _mockBoundedPIOutput(_boundedPIOutput);
     _;
   }
 
@@ -486,65 +421,52 @@ contract Unit_PIDController_GetBoundedRedemptionRate is Base {
     pidController.getBoundedRedemptionRate(_piOutput);
   }
 
-  function test_Return_NewRedemptionRate_NegativeOutputExceedsHundred(
-    int256 _boundedPIOutput,
-    uint256 _defaultRedemptionRate
-  ) public negativeOutputExceedsOneHundred(_boundedPIOutput, _defaultRedemptionRate) {
-    setCallSuper(false);
-    // defaultRedemptionRate is RAY when constructed
+  function test_Return_NewRedemptionRate_NegativeBoundedPIOutput(int256 _boundedPIOutput)
+    public
+    negativeBoundedPIOutput(_boundedPIOutput)
+  {
+    uint256 _calculatedRedemptionRate = RAY.add(_boundedPIOutput);
 
     // sending 0 as _piOutput because it's mocked and it does not matter
-    (uint256 _newRedemptionRate,) = pidController.getBoundedRedemptionRate(0);
+    uint256 _newRedemptionRate = pidController.getBoundedRedemptionRate(0);
+
+    assertEq(_newRedemptionRate, _calculatedRedemptionRate);
+  }
+
+  function test_Return_NewRedemptionRate_PositiveBoundedPIOutput(int256 _boundedPIOutput)
+    public
+    positiveBoundedPIOutput(_boundedPIOutput)
+  {
+    uint256 _calculatedRedemptionRate = RAY.add(_boundedPIOutput);
+    uint256 _newRedemptionRate = pidController.getBoundedRedemptionRate(0);
+
+    assertEq(_newRedemptionRate, _calculatedRedemptionRate);
+  }
+
+  function test_Return_NewRedemptionRate_PiOutputLessThanFeedbackOutputLowerBound(int256 _piOutput) public {
+    setCallSuper(true);
+    vm.assume(_piOutput < -int256(NEGATIVE_RATE_LIMIT));
+    uint256 _newRedemptionRate = pidController.getBoundedRedemptionRate(_piOutput);
+
+    // RAY - NEGATIVE_RATE_LIMIT = 1
+    assertEq(_newRedemptionRate, 1);
+  }
+
+  function test_Return_NewRedemptionRate_PiOutputGreaterThanFeedbackOutputUpperBound(int256 _piOutput) public {
+    setCallSuper(true);
+    vm.assume(_piOutput > int256(pidController.feedbackOutputUpperBound()));
+    uint256 _newRedemptionRate = pidController.getBoundedRedemptionRate(_piOutput);
+
+    assertEq(_newRedemptionRate, RAY + pidController.feedbackOutputUpperBound());
+  }
+
+  // This scenario would not happen in reality because the feedbackOutputLowerBound will never be less than -NEGATIVE_RATE_LIMIT
+  function test_Return_NewRedemptionRate_NEGATIVE_RATE_LIMIT(int256 _boundedPiOutput) public {
+    vm.assume(_boundedPiOutput < -int256(RAY));
+    _mockBoundedPIOutput(_boundedPiOutput);
+    uint256 _newRedemptionRate = pidController.getBoundedRedemptionRate(0);
+
     assertEq(_newRedemptionRate, NEGATIVE_RATE_LIMIT);
-  }
-
-  function test_Return_DefaultGlobalTimeLine_NegativeOutputExceedsHundred(
-    int256 _boundedPIOutput,
-    uint256 _defaultRedemptionRate
-  ) public negativeOutputExceedsOneHundred(_boundedPIOutput, _defaultRedemptionRate) {
-    // _defaultGlobalTimeline is 1
-    // sending 0 as _piOutput because it's mocked and it does not matter
-    (, uint256 _defaultGlobalTimeline) = pidController.getBoundedRedemptionRate(0);
-    assertEq(_defaultGlobalTimeline, 1);
-  }
-
-  function test_Return_NewRedemptionRate(
-    int256 _boundedPIOutput,
-    uint256 _defaultRedemptionRate
-  ) public notExceedsOneHundredAndBPiLower(_boundedPIOutput, _defaultRedemptionRate) {
-    setCallSuper(false);
-
-    uint256 _calculatedRedemptionRate = uint256((int256(_defaultRedemptionRate) + _boundedPIOutput));
-    (uint256 _newRedemptionRate,) = pidController.getBoundedRedemptionRate(0);
-
-    assertEq(_newRedemptionRate, _calculatedRedemptionRate);
-  }
-
-  function test_Return_DefaultGlobalTimeline(
-    int256 _boundedPIOutput,
-    uint256 _defaultRedemptionRate
-  ) public notExceedsOneHundredAndBPiLower(_boundedPIOutput, _defaultRedemptionRate) {
-    (, uint256 _defaultGlobalTimeline) = pidController.getBoundedRedemptionRate(0);
-    assertEq(_defaultGlobalTimeline, 1);
-  }
-
-  function test_Return_NewRedemptionRate_BPiGreater(
-    int256 _boundedPIOutput,
-    uint256 _defaultRedemptionRate
-  ) public notExceedsOneHundredAndBPiGreater(_boundedPIOutput, _defaultRedemptionRate) {
-    setCallSuper(false);
-    uint256 _calculatedRedemptionRate = uint256(int256(_defaultRedemptionRate) - int256(NEGATIVE_RATE_LIMIT));
-
-    (uint256 _newRedemptionRate,) = pidController.getBoundedRedemptionRate(0);
-    assertEq(_newRedemptionRate, _calculatedRedemptionRate);
-  }
-
-  function test_Return_DefaultGlobalTimeline_BPiGreater(
-    int256 _boundedPIOutput,
-    uint256 _defaultRedemptionRate
-  ) public notExceedsOneHundredAndBPiGreater(_boundedPIOutput, _defaultRedemptionRate) {
-    (, uint256 _defaultGlobalTimeline) = pidController.getBoundedRedemptionRate(0);
-    assertEq(_defaultGlobalTimeline, 1);
   }
 }
 
@@ -560,7 +482,6 @@ contract Unit_PIDController_GetNextRedemptionRate is Base {
     int256 cumulativeDeviation;
     int256 piOutput;
     uint256 newRedemptionRate;
-    uint256 rateTimeline;
   }
 
   function setUp() public virtual override {
@@ -575,7 +496,7 @@ contract Unit_PIDController_GetNextRedemptionRate is Base {
     _mockGetNextPriceDeviationCumulative(_scenario.cumulativeDeviation);
     _mockGetGainAdjustedPIOutput(_scenario.piOutput);
     _mockBreakNoiseBarrier(_breaksNoiseBarrier);
-    _mockGetBoundedRedemptionRate(_scenario.newRedemptionRate, _scenario.rateTimeline);
+    _mockGetBoundedRedemptionRate(_scenario.newRedemptionRate);
   }
 
   modifier breaksNoiseBarrierAndPiOutputNotZero(GetNextRedemptionRateScenario memory _scenario) {
@@ -714,12 +635,11 @@ contract Unit_PIDController_GetNextRedemptionRate is Base {
     breaksNoiseBarrierAndPiOutputNotZero(_scenario)
   {
     PIDControllerForTest(address(pidController)).setCallSupper_getGainAdjustedPIOutput(false);
-    (uint256 _newRedemptionRate, int256 proportionalTerm, int256 _cumulativeDeviation, uint256 _rateTimeline) =
+    (uint256 _newRedemptionRate, int256 proportionalTerm, int256 _cumulativeDeviation) =
       pidController.getNextRedemptionRate(_scenario.marketPrice, _scenario.redemptionPrice, _scenario.accumulatedLeak);
-    bytes memory _data = abi.encode(_newRedemptionRate, proportionalTerm, _cumulativeDeviation, _rateTimeline);
-    bytes memory _expectedResult = abi.encode(
-      _scenario.newRedemptionRate, _scenario.proportionalTerm, _scenario.cumulativeDeviation, _scenario.rateTimeline
-    );
+    bytes memory _data = abi.encode(_newRedemptionRate, proportionalTerm, _cumulativeDeviation);
+    bytes memory _expectedResult =
+      abi.encode(_scenario.newRedemptionRate, _scenario.proportionalTerm, _scenario.cumulativeDeviation);
 
     assertEq(_data, _expectedResult);
   }
@@ -728,11 +648,10 @@ contract Unit_PIDController_GetNextRedemptionRate is Base {
     public
     breaksNoiseBarrierAndPiOutputIsZero(_scenario)
   {
-    (uint256 _newRedemptionRate, int256 proportionalTerm, int256 _cumulativeDeviation, uint256 _rateTimeline) =
+    (uint256 _newRedemptionRate, int256 proportionalTerm, int256 _cumulativeDeviation) =
       pidController.getNextRedemptionRate(_scenario.marketPrice, _scenario.redemptionPrice, _scenario.accumulatedLeak);
-    bytes memory _data = abi.encode(_newRedemptionRate, proportionalTerm, _cumulativeDeviation, _rateTimeline);
-    bytes memory _expectedResult =
-      abi.encode(RAY, _scenario.proportionalTerm, _scenario.cumulativeDeviation, pidController.defaultGlobalTimeline());
+    bytes memory _data = abi.encode(_newRedemptionRate, proportionalTerm, _cumulativeDeviation);
+    bytes memory _expectedResult = abi.encode(RAY, _scenario.proportionalTerm, _scenario.cumulativeDeviation);
 
     assertEq(_data, _expectedResult);
   }
@@ -741,11 +660,10 @@ contract Unit_PIDController_GetNextRedemptionRate is Base {
     public
     notBreaksNoiseBarrierAndPiOutputIsNotZero(_scenario)
   {
-    (uint256 _newRedemptionRate, int256 proportionalTerm, int256 _cumulativeDeviation, uint256 _rateTimeline) =
+    (uint256 _newRedemptionRate, int256 proportionalTerm, int256 _cumulativeDeviation) =
       pidController.getNextRedemptionRate(_scenario.marketPrice, _scenario.redemptionPrice, _scenario.accumulatedLeak);
-    bytes memory _data = abi.encode(_newRedemptionRate, proportionalTerm, _cumulativeDeviation, _rateTimeline);
-    bytes memory _expectedResult =
-      abi.encode(RAY, _scenario.proportionalTerm, _scenario.cumulativeDeviation, pidController.defaultGlobalTimeline());
+    bytes memory _data = abi.encode(_newRedemptionRate, proportionalTerm, _cumulativeDeviation);
+    bytes memory _expectedResult = abi.encode(RAY, _scenario.proportionalTerm, _scenario.cumulativeDeviation);
 
     assertEq(_data, _expectedResult);
   }
@@ -971,7 +889,7 @@ contract Unit_PIDController_GetNextPriceDeviationCumulative is Base {
     pidController.getNextPriceDeviationCumulative(0, 0);
   }
 
-  function _happyPath(GetNextPriceDeviationCumulativeScenario memory _scenario) internal {
+  function _happyPath(GetNextPriceDeviationCumulativeScenario memory _scenario) internal pure {
     vm.assume(_scenario.timestamp >= _scenario.lastUpdateTime);
     vm.assume(_scenario.timestamp - _scenario.lastUpdateTime <= uint256(type(int256).max));
     vm.assume(_scenario.accumulatedLeak <= uint256(type(int256).max));
@@ -1022,7 +940,7 @@ contract Unit_PIDController_GetNextPriceDeviationCumulative is Base {
     int256 _expectedNextPriceDeviationCumulative =
       _scenario.accumulatedLeak.rmul(_scenario.priceDeviationCumulative) + _expectedNewTimeAdjustedDeviation;
 
-    (int256 _nextPriceDeviationCumulative, int256 _newTimeAdjustedDeviation) =
+    (int256 _nextPriceDeviationCumulative,) =
       pidController.getNextPriceDeviationCumulative(_scenario.proportionalTerm, _scenario.accumulatedLeak);
 
     assertEq(_nextPriceDeviationCumulative, _expectedNextPriceDeviationCumulative);
@@ -1046,7 +964,7 @@ contract Unit_PIDController_GetNextPriceDeviationCumulative is Base {
   ) public lastUpdateTimeIsZero(_scenario) {
     int256 _expectedNextPriceDeviationCumulative = _scenario.accumulatedLeak.rmul(_scenario.priceDeviationCumulative);
 
-    (int256 _nextPriceDeviationCumulative, int256 _newTimeAdjustedDeviation) =
+    (int256 _nextPriceDeviationCumulative,) =
       pidController.getNextPriceDeviationCumulative(_scenario.proportionalTerm, _scenario.accumulatedLeak);
 
     assertEq(_nextPriceDeviationCumulative, _expectedNextPriceDeviationCumulative);
@@ -1176,7 +1094,7 @@ contract Unit_PIDController_ComputeRate is Base {
     _mockBreakNoiseBarrier(_breaksNoiseBarrier);
     _mockLastUpdateTime(_scenario.lastUpdateTime);
     _mockIntegralPeriodSize(_scenario.integralPeriodSize);
-    _mockGetBoundedRedemptionRate(_scenario.newRedemptionRate, 0);
+    _mockGetBoundedRedemptionRate(_scenario.newRedemptionRate);
     PIDControllerForTest(address(pidController)).setPriceDeviationCumulative(_scenario.priceDeviationCumulative);
     PIDControllerForTest(address(pidController)).setSeedProposer(deployer);
   }
@@ -1401,43 +1319,13 @@ contract Unit_PIDController_ComputeRate is Base {
   }
 }
 
-contract Unit_PIDController_Rt is Base {
-  function setUp() public override {
-    super.setUp();
-    setCallSuper(false);
-    PIDControllerForTest(address(pidController)).setCallSupper_getNextRedemptionRate(false);
-  }
-
-  function test_Call_Internal_GetNextRedemptionRate(
-    uint256 _marketPrice,
-    uint256 _redemptionPrice,
-    uint256 _rateTimeline
-  ) public {
-    _mockGetNextRedemptionRate(0, 0, 0, _rateTimeline);
-    vm.expectCall(
-      watcher,
-      abi.encodeCall(
-        InternalCallsWatcher.calledInternal,
-        abi.encodeWithSignature('_getNextRedemptionRate(uint256,uint256,uint256)', _marketPrice, _redemptionPrice, 0)
-      )
-    );
-
-    pidController.rt(_marketPrice, _redemptionPrice, 0);
-  }
-
-  function test_Return_RateTimeline(uint256 _marketPrice, uint256 _redemptionPrice, uint256 _rateTimeline) public {
-    _mockGetNextRedemptionRate(0, 0, 0, _rateTimeline);
-    assertEq(pidController.rt(_marketPrice, _redemptionPrice, 0), _rateTimeline);
-  }
-}
-
 contract Unit_GetBoundedPIOutput is Base {
-  function _mockValues(int256 _piOutput, int256 _feedbackOutputLowerBound, uint256 _feedbackOutputUpperBound) internal {
+  function _mockValues(int256 _feedbackOutputLowerBound, uint256 _feedbackOutputUpperBound) internal {
     _mockFeedbackOutputUpperBound(_feedbackOutputUpperBound);
     _mockFeedbackOutputLowerBound(_feedbackOutputLowerBound);
   }
 
-  function _happyPath(int256 _feedbackOutputLowerBound, uint256 _feedbackOutputUpperBound) internal {
+  function _happyPath(int256 _feedbackOutputLowerBound, uint256 _feedbackOutputUpperBound) internal pure {
     vm.assume(_feedbackOutputUpperBound <= uint256(type(int256).max));
     vm.assume(_feedbackOutputLowerBound > type(int256).min);
     vm.assume(_feedbackOutputUpperBound >= uint256(_feedbackOutputLowerBound));
@@ -1447,21 +1335,21 @@ contract Unit_GetBoundedPIOutput is Base {
     _happyPath(_feedbackOutputLowerBound, _feedbackOutputUpperBound);
     vm.assume(_piOutput >= _feedbackOutputLowerBound);
     vm.assume(_piOutput <= int256(_feedbackOutputUpperBound));
-    _mockValues(_piOutput, _feedbackOutputLowerBound, _feedbackOutputUpperBound);
+    _mockValues(_feedbackOutputLowerBound, _feedbackOutputUpperBound);
     _;
   }
 
   modifier exceedsUpperBound(int256 _piOutput, int256 _feedbackOutputLowerBound, uint256 _feedbackOutputUpperBound) {
     _happyPath(_feedbackOutputLowerBound, _feedbackOutputUpperBound);
     vm.assume(_piOutput > int256(_feedbackOutputUpperBound));
-    _mockValues(_piOutput, _feedbackOutputLowerBound, _feedbackOutputUpperBound);
+    _mockValues(_feedbackOutputLowerBound, _feedbackOutputUpperBound);
     _;
   }
 
   modifier lessThanLowerBound(int256 _piOutput, int256 _feedbackOutputLowerBound, uint256 _feedbackOutputUpperBound) {
     _happyPath(_feedbackOutputLowerBound, _feedbackOutputUpperBound);
     vm.assume(_piOutput < _feedbackOutputLowerBound);
-    _mockValues(_piOutput, _feedbackOutputLowerBound, _feedbackOutputUpperBound);
+    _mockValues(_feedbackOutputLowerBound, _feedbackOutputUpperBound);
     _;
   }
 
@@ -1489,5 +1377,19 @@ contract Unit_GetBoundedPIOutput is Base {
     uint256 _feedbackOutputUpperBound
   ) public lessThanLowerBound(_piOutput, _feedbackOutputLowerBound, _feedbackOutputUpperBound) {
     assertEq(PIDControllerForTest(address(pidController)).call_getBoundedPIOutput(_piOutput), _feedbackOutputLowerBound);
+  }
+}
+
+contract Unit_PIDController_ControllerGains is Base {
+  function test_Return_ControllerGains_Kp(int256 _proportionalGain, int256 _integralGain) public {
+    PIDControllerForTest(address(pidController)).setControllerGains(_proportionalGain, _integralGain);
+
+    assertEq(pidController.controllerGains().Kp, _proportionalGain);
+  }
+
+  function test_Return_ControllerGains_Ki(int256 _proportionalGain, int256 _integralGain) public {
+    PIDControllerForTest(address(pidController)).setControllerGains(_proportionalGain, _integralGain);
+
+    assertEq(pidController.controllerGains().Ki, _integralGain);
   }
 }

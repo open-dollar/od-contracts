@@ -13,6 +13,9 @@ contract PIDController is Authorizable, IPIDController {
   using Math for uint256;
   using Math for int256;
 
+  uint256 internal constant _NEGATIVE_RATE_LIMIT = RAY - 1;
+  uint256 internal constant _POSITIVE_RATE_LIMIT = type(uint256).max - RAY - 1;
+
   // The address allowed to call computeRate
   address public seedProposer;
 
@@ -24,22 +27,15 @@ contract PIDController is Authorizable, IPIDController {
 
   // -- Static & Default Variables ---
   // The Kp and Ki values used in this calculator
-  ControllerGains internal controllerGains;
+  ControllerGains internal _controllerGains;
 
   // The minimum percentage deviation from the redemption price that allows the contract to calculate a non null redemption rate
   uint256 public noiseBarrier; // [WAD]
-  // The default redemption rate to calculate in case P + I is smaller than noiseBarrier
-  uint256 public defaultRedemptionRate = RAY; // [RAY]
+  // The default redemption rate to calculate in case P + I is smaller than noiseBarrier, default redemption rate is RAY
   // The maximum value allowed for the redemption rate
   uint256 public feedbackOutputUpperBound; // [RAY]
   // The minimum value allowed for the redemption rate
   int256 public feedbackOutputLowerBound; // [RAY]
-
-  // Flag indicating that the rate computed is per second
-  uint256 public constant defaultGlobalTimeline = 1;
-
-  uint256 internal constant NEGATIVE_RATE_LIMIT = RAY - 1;
-
   // The integral term (sum of deviations at each computeRate call minus the leak applied at every call)
   int256 public priceDeviationCumulative; // [RAY]
   // The per second leak applied to priceDeviationCumulative before the latest deviation is added
@@ -47,7 +43,6 @@ contract PIDController is Authorizable, IPIDController {
   // Timestamp of the last update
   uint256 public lastUpdateTime; // [timestamp]
   // The minimum delay between two computeRate calls
-  // TODO: replace for periodSize()
   uint256 public integralPeriodSize; // [seconds]
 
   constructor(
@@ -61,11 +56,11 @@ contract PIDController is Authorizable, IPIDController {
     int256[] memory _importedState // TODO: replace for struct
   ) Authorizable(msg.sender) {
     require(
-      _feedbackOutputUpperBound < ((type(uint256).max - defaultRedemptionRate) - 1) && _feedbackOutputUpperBound > 0,
+      _feedbackOutputUpperBound < _POSITIVE_RATE_LIMIT && _feedbackOutputUpperBound > 0,
       'PIDController/invalid-feedbackOutputUpperBound'
     );
     require(
-      _feedbackOutputLowerBound < 0 && _feedbackOutputLowerBound >= -int256(NEGATIVE_RATE_LIMIT),
+      _feedbackOutputLowerBound < 0 && _feedbackOutputLowerBound >= -int256(_NEGATIVE_RATE_LIMIT),
       'PIDController/invalid-feedbackOutputLowerBound'
     );
     require(_integralPeriodSize > 0, 'PIDController/invalid-integralPeriodSize');
@@ -75,7 +70,7 @@ contract PIDController is Authorizable, IPIDController {
     feedbackOutputUpperBound = _feedbackOutputUpperBound;
     feedbackOutputLowerBound = _feedbackOutputLowerBound;
     integralPeriodSize = _integralPeriodSize;
-    controllerGains = ControllerGains(_Kp, _Ki);
+    _controllerGains = ControllerGains(_Kp, _Ki);
     perSecondCumulativeLeak = _perSecondCumulativeLeak;
     noiseBarrier = _noiseBarrier;
 
@@ -93,44 +88,28 @@ contract PIDController is Authorizable, IPIDController {
     }
   }
 
+  function controllerGains() external view returns (ControllerGains memory _cGains) {
+    return _controllerGains;
+  }
+
   /**
    * @notice Return a redemption rate bounded by feedbackOutputLowerBound and feedbackOutputUpperBound as well as the
    *             timeline over which that rate will take effect
    * @param  _piOutput The raw redemption rate computed from the proportional and integral terms
    */
-  function getBoundedRedemptionRate(int256 _piOutput)
-    external
-    view
-    returns (uint256 _newRedemptionRate, uint256 _rateTimeline)
-  {
+  function getBoundedRedemptionRate(int256 _piOutput) external view returns (uint256 _newRedemptionRate) {
     return _getBoundedRedemptionRate(_piOutput);
   }
 
-  function _getBoundedRedemptionRate(int256 _piOutput)
-    internal
-    view
-    virtual
-    returns (uint256 _newRedemptionRate, uint256 _rateTimeline)
-  {
+  function _getBoundedRedemptionRate(int256 _piOutput) internal view virtual returns (uint256 _newRedemptionRate) {
     int256 _boundedPIOutput = _getBoundedPIOutput(_piOutput);
 
-    // newRedemptionRate cannot be lower than 10^0 (1) because of the way rpower is designed
-    bool _negativeOutputExceedsHundred = _boundedPIOutput < 0 && -_boundedPIOutput >= int256(defaultRedemptionRate);
+    // feedbackOutputLowerBound will never be less than NEGATIVE_RATE_LIMIT : RAY - 1, 
+    // and feedbackOutputUpperBound will never be greater than POSITIVE_RATE_LIMIT : type(uint256).max - RAY - 1
+    // boundedPIOutput can be safely added to RAY
+    _newRedemptionRate = _boundedPIOutput < -int256(RAY) ? _NEGATIVE_RATE_LIMIT : RAY.add(_boundedPIOutput);
 
-    // If it is smaller than 1, set it to the nagative rate limit
-    if (_negativeOutputExceedsHundred) {
-      _newRedemptionRate = NEGATIVE_RATE_LIMIT;
-    } else {
-      // If boundedPIOutput is lower than -int(NEGATIVE_RATE_LIMIT) set newRedemptionRate to 1
-      if (_boundedPIOutput < 0 && _boundedPIOutput <= -int256(NEGATIVE_RATE_LIMIT)) {
-        _newRedemptionRate = defaultRedemptionRate - NEGATIVE_RATE_LIMIT;
-      } else {
-        // Otherwise add defaultRedemptionRate and boundedPIOutput together
-        _newRedemptionRate = defaultRedemptionRate.add(_boundedPIOutput);
-      }
-    }
-
-    return (_newRedemptionRate, defaultGlobalTimeline);
+    return _newRedemptionRate;
   }
 
   /**
@@ -143,6 +122,7 @@ contract PIDController is Authorizable, IPIDController {
     } else if (_piOutput > int256(feedbackOutputUpperBound)) {
       _boundedPIOutput = int256(feedbackOutputUpperBound);
     }
+    return _boundedPIOutput;
   }
 
   // --- Rate Validation/Calculation ---
@@ -174,7 +154,7 @@ contract PIDController is Authorizable, IPIDController {
     // If the P * Kp + I * Ki output breaks the noise barrier, you can recompute a non null rate. Also make sure the sum is not null
     if (_breaksNoiseBarrier(Math.absolute(_piOutput), _redemptionPrice) && _piOutput != 0) {
       // Get the new redemption rate by taking into account the feedbackOutputUpperBound and feedbackOutputLowerBound
-      (_newRedemptionRate,) = _getBoundedRedemptionRate(_piOutput);
+      _newRedemptionRate = _getBoundedRedemptionRate(_piOutput);
       return _newRedemptionRate;
     } else {
       return RAY;
@@ -232,7 +212,7 @@ contract PIDController is Authorizable, IPIDController {
     int256 _proportionalTerm,
     int256 _integralTerm
   ) internal view virtual returns (int256 _ajustedProportionalTerm, int256 _adjustedIntegralTerm) {
-    return (controllerGains.Kp.wmul(_proportionalTerm), controllerGains.Ki.wmul(_integralTerm));
+    return (_controllerGains.Kp.wmul(_proportionalTerm), _controllerGains.Ki.wmul(_integralTerm));
   }
 
   /**
@@ -276,7 +256,7 @@ contract PIDController is Authorizable, IPIDController {
     uint256 _accumulatedLeak
   ) internal view virtual returns (int256, int256) {
     int256 _lastProportionalTerm = _getLastProportionalTerm();
-    uint256 _timeElapsed = lastUpdateTime == 0 ? 0 : (block.timestamp - lastUpdateTime);
+    uint256 _timeElapsed = _timeSinceLastUpdate();
     int256 _newTimeAdjustedDeviation =
       int256(_proportionalTerm).riemannSum(_lastProportionalTerm) * int256(_timeElapsed);
     int256 _leakedPriceCumulative = _accumulatedLeak.rmul(priceDeviationCumulative);
@@ -294,12 +274,7 @@ contract PIDController is Authorizable, IPIDController {
     uint256 _marketPrice,
     uint256 _redemptionPrice,
     uint256 _accumulatedLeak
-  )
-    external
-    view
-    virtual
-    returns (uint256 _redemptionRate, int256 _proportionalTerm, int256 _cumulativeDeviation, uint256 _rateTimeline)
-  {
+  ) external view virtual returns (uint256 _redemptionRate, int256 _proportionalTerm, int256 _cumulativeDeviation) {
     return _getNextRedemptionRate(_marketPrice, _redemptionPrice, _accumulatedLeak);
   }
 
@@ -307,20 +282,15 @@ contract PIDController is Authorizable, IPIDController {
     uint256 _marketPrice,
     uint256 _redemptionPrice,
     uint256 _accumulatedLeak
-  )
-    internal
-    view
-    virtual
-    returns (uint256 _newRedemptionRate, int256 _proportionalTerm, int256 _cumulativeDeviation, uint256 _rateTimeline)
-  {
+  ) internal view virtual returns (uint256 _newRedemptionRate, int256 _proportionalTerm, int256 _cumulativeDeviation) {
     _proportionalTerm = _getProportionalTerm(_marketPrice, _redemptionPrice);
     (_cumulativeDeviation,) = _getNextPriceDeviationCumulative(_proportionalTerm, _accumulatedLeak);
     int256 _piOutput = _getGainAdjustedPIOutput(_proportionalTerm, _cumulativeDeviation);
     if (_breaksNoiseBarrier(Math.absolute(_piOutput), _redemptionPrice) && _piOutput != 0) {
-      (_newRedemptionRate, _rateTimeline) = _getBoundedRedemptionRate(_piOutput);
-      return (_newRedemptionRate, _proportionalTerm, _cumulativeDeviation, _rateTimeline);
+      _newRedemptionRate = _getBoundedRedemptionRate(_piOutput);
+      return (_newRedemptionRate, _proportionalTerm, _cumulativeDeviation);
     } else {
-      return (RAY, _proportionalTerm, _cumulativeDeviation, defaultGlobalTimeline);
+      return (RAY, _proportionalTerm, _cumulativeDeviation);
     }
   }
 
@@ -359,46 +329,15 @@ contract PIDController is Authorizable, IPIDController {
     return deviationObservations.length;
   }
 
-  // --- Parameter Getters ---
-  /**
-   * @notice Get the timeline over which the computed redemption rate takes effect e.g rateTimeline = 3600 so the rate is
-   *         computed over 1 hour
-   */
-  function rt(uint256 _marketPrice, uint256 _redemptionPrice, uint256) external view returns (uint256 _rateTimeline) {
-    (,,, uint256 rateTimeline) = _getNextRedemptionRate(_marketPrice, _redemptionPrice, 0);
-    return rateTimeline;
-  }
-
-  /**
-   * @notice Return Kp
-   */
-  function sg() external view returns (int256 _sg) {
-    return controllerGains.Kp;
-  }
-
-  /**
-   * @notice Return Ki
-   */
-  function ag() external view returns (int256 _ag) {
-    return controllerGains.Ki;
-  }
-
-  /**
-   * @notice Returns the time elapsed since the last computeRate call minus periodSize
-   */
-  function adat() external view returns (uint256 _adat) {
-    uint256 elapsed = (block.timestamp - lastUpdateTime);
-    if (elapsed < integralPeriodSize) {
-      return 0;
-    }
-    return (elapsed - integralPeriodSize);
-  }
-
   /**
    * @notice Returns the time elapsed since the last computeRate call
    */
   function timeSinceLastUpdate() external view returns (uint256 _elapsed) {
-    return (lastUpdateTime == 0) ? 0 : (block.timestamp - lastUpdateTime);
+    return _timeSinceLastUpdate();
+  }
+
+  function _timeSinceLastUpdate() internal view returns (uint256 _elapsed) {
+    return lastUpdateTime == 0 ? 0 : block.timestamp - lastUpdateTime;
   }
 
   // --- Administration ---
@@ -427,15 +366,12 @@ contract PIDController is Authorizable, IPIDController {
     } else if (_parameter == 'integralPeriodSize') {
       require(_val > 0, 'PIDController/null-integralPeriodSize');
       integralPeriodSize = _val;
-    } else if (_parameter == 'ps') {
+    } else if (_parameter == 'periodSize') {
       // NOTE: keeping both for backwards compatibility with periodSize
       require(_val > 0, 'PIDController/null-integralPeriodSize');
       integralPeriodSize = _val;
     } else if (_parameter == 'feedbackOutputUpperBound') {
-      require(
-        _val < ((type(uint256).max - defaultRedemptionRate) - 1) && _val > 0,
-        'PIDController/invalid-feedbackOutputUpperBound'
-      );
+      require(_val < _POSITIVE_RATE_LIMIT && _val > 0, 'PIDController/invalid-feedbackOutputUpperBound');
       feedbackOutputUpperBound = _val;
     } else if (_parameter == 'perSecondCumulativeLeak') {
       require(_val <= RAY, 'PIDController/invalid-perSecondCumulativeLeak');
@@ -451,17 +387,17 @@ contract PIDController is Authorizable, IPIDController {
    * @param val The new value for the parameter
    */
   function modifyParameters(bytes32 parameter, int256 val) external isAuthorized {
-    if (parameter == 'folb') {
-      require(val < 0 && val >= -int256(NEGATIVE_RATE_LIMIT), 'PIDController/invalid-feedbackOutputLowerBound');
+    if (parameter == 'feedbackOutputLowerBound') {
+      require(val < 0 && val >= -int256(_NEGATIVE_RATE_LIMIT), 'PIDController/invalid-feedbackOutputLowerBound');
       feedbackOutputLowerBound = val;
-    } else if (parameter == 'sg') {
-      require(val >= -int256(WAD) && val <= int256(WAD), 'PIDController/invalid-sg');
-      controllerGains.Kp = val;
-    } else if (parameter == 'ag') {
-      require(val >= -int256(WAD) && val <= int256(WAD), 'PIDController/invalid-ag');
-      controllerGains.Ki = val;
-    } else if (parameter == 'pdc') {
-      require(controllerGains.Ki == 0, 'PIDController/cannot-set-pdc');
+    } else if (parameter == 'kp') {
+      require(val >= -int256(WAD) && val <= int256(WAD), 'PIDController/invalid-kp');
+      _controllerGains.Kp = val;
+    } else if (parameter == 'ki') {
+      require(val >= -int256(WAD) && val <= int256(WAD), 'PIDController/invalid-ki');
+      _controllerGains.Ki = val;
+    } else if (parameter == 'priceDeviationCumulative') {
+      require(_controllerGains.Ki == 0, 'PIDController/cannot-set-priceDeviationCumulative');
       priceDeviationCumulative = val;
     } else {
       revert('PIDController/modify-unrecognized-param');

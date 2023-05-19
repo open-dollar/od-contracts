@@ -137,7 +137,7 @@ contract PIDControllerForTest is PIDController, InternalCallsExtension {
     callSupper_getBoundedRedemptionRate = _callSuper;
   }
 
-  function _getBoundedRedemptionRate(int256 _piOutput) internal view virtual override returns (uint256, uint256) {
+  function _getBoundedRedemptionRate(int256 _piOutput) internal view virtual override returns (uint256) {
     watcher.calledInternal(abi.encodeWithSignature('_getBoundedRedemptionRate(int256)', _piOutput));
     if (callSuper || callSupper_getBoundedRedemptionRate) {
       return super._getBoundedRedemptionRate(_piOutput);
@@ -191,7 +191,7 @@ contract PIDControllerForTest is PIDController, InternalCallsExtension {
     uint256 _marketPrice,
     uint256 _redemptionPrice,
     uint256 _accumulatedLeak
-  ) internal view virtual override returns (uint256, int256, int256, uint256) {
+  ) internal view virtual override returns (uint256, int256, int256) {
     watcher.calledInternal(
       abi.encodeWithSignature(
         '_getNextRedemptionRate(uint256,uint256,uint256)', _marketPrice, _redemptionPrice, _accumulatedLeak
@@ -220,8 +220,8 @@ contract PIDControllerForTest is PIDController, InternalCallsExtension {
   }
 
   function setControllerGains(int256 _kp, int256 _ki) external {
-    controllerGains.Kp = _kp;
-    controllerGains.Ki = _ki;
+    _controllerGains.Kp = _kp;
+    _controllerGains.Ki = _ki;
   }
 
   // stdstore not available for int256
@@ -263,7 +263,7 @@ contract MockPIDController {
     uint256 _redemptionPrice
   ) external view virtual returns (bool _breaks) {}
 
-  function mock_getBoundedRedemptionRate(int256 _piOutput) external view virtual returns (uint256, uint256) {}
+  function mock_getBoundedRedemptionRate(int256 _piOutput) external view virtual returns (uint256) {}
 
   function mock_oll() external view virtual returns (uint256) {}
 
@@ -280,5 +280,5 @@ contract MockPIDController {
     uint256 _marketPrice,
     uint256 _redemptionPrice,
     uint256 _accumulatedLeak
-  ) external view virtual returns (uint256, int256, int256, uint256) {}
+  ) external view virtual returns (uint256, int256, int256) {}
 }
