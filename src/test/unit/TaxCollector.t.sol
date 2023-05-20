@@ -119,11 +119,6 @@ abstract contract Base is HaiTest {
     _mockPrimaryTaxReceiver(primaryTaxReceiver);
   }
 
-  modifier authorized() {
-    vm.startPrank(authorizedAccount);
-    _;
-  }
-
   function _mockCoinBalance(address _coinAddress, uint256 _coinBalance) internal {
     vm.mockCall(
       address(mockSafeEngine), abi.encodeCall(mockSafeEngine.coinBalance, (_coinAddress)), abi.encode(_coinBalance)
@@ -256,13 +251,20 @@ contract Unit_TaxCollector_Constructor is Base {
 contract Unit_TaxCollector_InitializeCollateralType is Base {
   event InitializeCollateralType(bytes32 _cType);
 
+  modifier happyPath() {
+    vm.startPrank(authorizedAccount);
+    _;
+  }
+
   function test_Revert_Unauthorized(bytes32 _cType) public {
     vm.expectRevert(IAuthorizable.Unauthorized.selector);
 
     taxCollector.initializeCollateralType(_cType);
   }
 
-  function test_Revert_CollateralTypeAlreadyInit(bytes32 _cType) public authorized {
+  function test_Revert_CollateralTypeAlreadyInit(bytes32 _cType) public {
+    vm.startPrank(authorizedAccount);
+
     _mockCollateralType(_cType, RAY, 0);
 
     vm.expectRevert('TaxCollector/collateral-type-already-init');
@@ -270,7 +272,7 @@ contract Unit_TaxCollector_InitializeCollateralType is Base {
     taxCollector.initializeCollateralType(_cType);
   }
 
-  function test_Set_CollateralTypeStabilityFee(bytes32 _cType) public authorized {
+  function test_Set_CollateralTypeStabilityFee(bytes32 _cType) public happyPath {
     taxCollector.initializeCollateralType(_cType);
 
     (uint256 _stabilityFee,) = taxCollector.collateralTypes(_cType);
@@ -278,7 +280,7 @@ contract Unit_TaxCollector_InitializeCollateralType is Base {
     assertEq(_stabilityFee, RAY);
   }
 
-  function test_Set_CollateralTypeUpdateTime(bytes32 _cType) public authorized {
+  function test_Set_CollateralTypeUpdateTime(bytes32 _cType) public happyPath {
     taxCollector.initializeCollateralType(_cType);
 
     (, uint256 _updateTime) = taxCollector.collateralTypes(_cType);
@@ -286,13 +288,13 @@ contract Unit_TaxCollector_InitializeCollateralType is Base {
     assertEq(_updateTime, block.timestamp);
   }
 
-  function test_Set_CollateralList(bytes32 _cType) public authorized {
+  function test_Set_CollateralList(bytes32 _cType) public happyPath {
     taxCollector.initializeCollateralType(_cType);
 
     assertEq(taxCollector.collateralListList()[0], _cType);
   }
 
-  function test_Emit_InitializeCollateralType(bytes32 _cType) public authorized {
+  function test_Emit_InitializeCollateralType(bytes32 _cType) public happyPath {
     expectEmitNoIndex();
     emit InitializeCollateralType(_cType);
 
@@ -370,7 +372,7 @@ contract Unit_TaxCollector_TaxManyOutcome is Base {
   }
 
   function test_Revert_IntOverflow(uint256 _coinBalance) public {
-    vm.assume(!notOverflowWhenInt256(_coinBalance));
+    vm.assume(!notOverflowInt256(_coinBalance));
 
     _mockCoinBalance(primaryTaxReceiver, _coinBalance);
 
@@ -389,7 +391,7 @@ contract Unit_TaxCollector_TaxManyOutcome is Base {
     (, int256 _deltaRate) = taxCollector.taxSingleOutcome(collateralTypeA);
     int256 _rad = debtAmount.mul(_deltaRate) * 3;
 
-    vm.assume(notOverflowWhenInt256(_coinBalance) && -int256(_coinBalance) <= _rad);
+    vm.assume(notOverflowInt256(_coinBalance) && -int256(_coinBalance) <= _rad);
 
     _mockCoinBalance(primaryTaxReceiver, _coinBalance);
 
@@ -608,7 +610,7 @@ contract Unit_TaxCollector_DistributeTax is Base {
     int256 _deltaRate,
     uint256 _coinBalance
   ) public {
-    vm.assume(!notOverflowWhenInt256(_coinBalance));
+    vm.assume(!notOverflowInt256(_coinBalance));
 
     _mockCoinBalance(_receiver, _coinBalance);
 

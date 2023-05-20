@@ -34,11 +34,6 @@ abstract contract Base is HaiTest {
     vm.stopPrank();
   }
 
-  modifier authorized() {
-    vm.startPrank(authorizedAccount);
-    _;
-  }
-
   function _mockContractEnabled(uint256 _contractEnabled) internal {
     stdstore.target(address(ethJoin)).sig(IDisableable.contractEnabled.selector).checked_write(_contractEnabled);
   }
@@ -47,36 +42,35 @@ abstract contract Base is HaiTest {
 contract Unit_ETHJoin_Constructor is Base {
   event AddAuthorization(address _account);
 
-  function setUp() public override {
-    Base.setUp();
-
+  modifier happyPath() {
     vm.startPrank(user);
+    _;
   }
 
-  function test_Emit_AddAuthorization() public {
+  function test_Emit_AddAuthorization() public happyPath {
     expectEmitNoIndex();
     emit AddAuthorization(user);
 
     ethJoin = new ETHJoin(address(mockSafeEngine), collateralType);
   }
 
-  function test_Set_ContractEnabled() public {
+  function test_Set_ContractEnabled() public happyPath {
     assertEq(ethJoin.contractEnabled(), 1);
   }
 
-  function test_Set_SafeEngine(address _safeEngine) public {
+  function test_Set_SafeEngine(address _safeEngine) public happyPath {
     ethJoin = new ETHJoin(_safeEngine, collateralType);
 
     assertEq(address(ethJoin.safeEngine()), _safeEngine);
   }
 
-  function test_Set_CollateralType(bytes32 _cType) public {
+  function test_Set_CollateralType(bytes32 _cType) public happyPath {
     ethJoin = new ETHJoin(address(mockSafeEngine), _cType);
 
     assertEq(ethJoin.collateralType(), _cType);
   }
 
-  function test_Set_Decimals() public {
+  function test_Set_Decimals() public happyPath {
     assertEq(ethJoin.decimals(), 18);
   }
 }
@@ -84,13 +78,20 @@ contract Unit_ETHJoin_Constructor is Base {
 contract Unit_ETHJoin_DisableContract is Base {
   event DisableContract();
 
+  modifier happyPath() {
+    vm.startPrank(authorizedAccount);
+    _;
+  }
+
   function test_Revert_Unauthorized() public {
     vm.expectRevert(IAuthorizable.Unauthorized.selector);
 
     ethJoin.disableContract();
   }
 
-  function test_Revert_ContractIsDisabled() public authorized {
+  function test_Revert_ContractIsDisabled() public {
+    vm.startPrank(authorizedAccount);
+
     _mockContractEnabled(0);
 
     vm.expectRevert(IDisableable.ContractIsDisabled.selector);
@@ -98,7 +99,7 @@ contract Unit_ETHJoin_DisableContract is Base {
     ethJoin.disableContract();
   }
 
-  function test_Emit_DisableContract() public authorized {
+  function test_Emit_DisableContract() public happyPath {
     expectEmitNoIndex();
     emit DisableContract();
 
@@ -109,22 +110,20 @@ contract Unit_ETHJoin_DisableContract is Base {
 contract Unit_ETHJoin_Join is Base {
   event Join(address _sender, address _account, uint256 _wad);
 
-  function setUp() public override {
-    Base.setUp();
-
-    startHoax(user, type(uint256).max);
-  }
-
   modifier happyPath(uint256 _wad) {
+    startHoax(user, type(uint256).max);
+
     _assumeHappyPath(_wad);
     _;
   }
 
   function _assumeHappyPath(uint256 _wad) internal {
-    vm.assume(notOverflowWhenInt256(_wad));
+    vm.assume(notOverflowInt256(_wad));
   }
 
   function test_Revert_ContractIsDisabled(address _account, uint256 _wad) public {
+    startHoax(user, type(uint256).max);
+
     _mockContractEnabled(0);
 
     vm.expectRevert(IDisableable.ContractIsDisabled.selector);
@@ -133,7 +132,9 @@ contract Unit_ETHJoin_Join is Base {
   }
 
   function test_Revert_IntOverflow(address _account, uint256 _wad) public {
-    vm.assume(!notOverflowWhenInt256(_wad));
+    startHoax(user, type(uint256).max);
+
+    vm.assume(!notOverflowInt256(_wad));
 
     vm.expectRevert(Math.IntOverflow.selector);
 
@@ -160,24 +161,20 @@ contract Unit_ETHJoin_Join is Base {
 contract Unit_ETHJoin_Exit is Base {
   event Exit(address _sender, address _account, uint256 _wad);
 
-  function setUp() public override {
-    Base.setUp();
-
-    vm.startPrank(user);
-  }
-
   modifier happyPath(uint256 _wad) {
-    _assumeHappyPath(_wad);
+    vm.startPrank(user);
     deal(address(ethJoin), type(uint256).max);
+
+    _assumeHappyPath(_wad);
     _;
   }
 
   function _assumeHappyPath(uint256 _wad) internal {
-    vm.assume(notOverflowWhenInt256(_wad));
+    vm.assume(notOverflowInt256(_wad));
   }
 
   function test_Revert_IntOverflow(address _account, uint256 _wad) public {
-    vm.assume(!notOverflowWhenInt256(_wad));
+    vm.assume(!notOverflowInt256(_wad));
 
     vm.expectRevert(Math.IntOverflow.selector);
 

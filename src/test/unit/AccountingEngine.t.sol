@@ -315,7 +315,7 @@ contract Unit_AccountingEngine_UnqueuedUnauctionedDebt is Base {
     uint256 _totalQueuedDebt,
     uint256 _totalOnAuctionDebt
   ) public {
-    vm.assume(notOverflow(_debtBalance, _totalQueuedDebt, _totalOnAuctionDebt));
+    vm.assume(notOverflowAdd(_debtBalance, _totalQueuedDebt, _totalOnAuctionDebt));
     vm.assume(_debtBalance >= _totalQueuedDebt + _totalOnAuctionDebt);
     uint256 _unqueuedUnauctionedDebt = _debtBalance - _totalQueuedDebt - _totalOnAuctionDebt;
     _mockValues(_debtBalance, _totalQueuedDebt, _totalOnAuctionDebt);
@@ -328,7 +328,7 @@ contract Unit_AccountingEngine_PushDebtToQueue is Base {
   event PushDebtToQueue(uint256 indexed _timestamp, uint256 _debtQueueBlock, uint256 _totalQueuedDebt);
 
   function _assumeHappyPath(uint256 _a, uint256 _b) internal pure {
-    vm.assume(notOverflow(_a, _b));
+    vm.assume(notOverflowAdd(_a, _b));
   }
 
   function _pushDebtQueueTwice(uint256 _debtBlock1, uint256 _debtBlock2, uint256 _timeElapsed) internal {
@@ -411,7 +411,7 @@ contract Unit_AccountingEngine_PopDebtFromQueue is Base {
 
   function _assumeHappyPath(uint256 _a, uint256 _b) internal pure {
     vm.assume(_a > 0 && _b > 0);
-    vm.assume(notOverflow(_a, _b));
+    vm.assume(notOverflowAdd(_a, _b));
   }
 
   function _mockTwoQueuedDebts(uint256 _debtBlock1, uint256 _debtBlock2, uint256 _timeElapsed) internal {
@@ -657,7 +657,7 @@ contract Unit_AccountingEngine_AuctionDebt is Base {
   }
 
   function _assumeHappyPath(AuctionDebtScenario memory _scenario) internal pure {
-    vm.assume(notOverflow(_scenario.totalQueuedDebt, _scenario.totalOnAuctionDebt));
+    vm.assume(notOverflowAdd(_scenario.totalQueuedDebt, _scenario.totalOnAuctionDebt));
     vm.assume(
       _scenario.debtBalance >= _scenario.totalOnAuctionDebt + _scenario.totalQueuedDebt
         && _scenario.debtAuctionBidSize
@@ -769,7 +769,7 @@ contract Unit_AccountingEngine_AuctionDebt is Base {
   }
 
   function test_Revert_DebtAuctionBidSizeGtUnqueuedUnauctionedDebt(AuctionDebtScenario memory _scenario) public {
-    vm.assume(notOverflow(_scenario.totalQueuedDebt, _scenario.totalOnAuctionDebt));
+    vm.assume(notOverflowAdd(_scenario.totalQueuedDebt, _scenario.totalOnAuctionDebt));
     vm.assume(
       _scenario.debtBalance > _scenario.totalQueuedDebt + _scenario.totalOnAuctionDebt
         && _scenario.debtAuctionBidSize > _scenario.debtBalance - _scenario.totalQueuedDebt - _scenario.totalOnAuctionDebt
@@ -782,7 +782,7 @@ contract Unit_AccountingEngine_AuctionDebt is Base {
   }
 
   function test_Revert_DebtIsNotSettled(AuctionDebtScenario memory _scenario, uint256 _coinBalance) public {
-    vm.assume(notOverflow(_scenario.totalQueuedDebt, _scenario.totalOnAuctionDebt));
+    vm.assume(notOverflowAdd(_scenario.totalQueuedDebt, _scenario.totalOnAuctionDebt));
     vm.assume(_coinBalance > 0 && _scenario.debtBalance >= _scenario.totalOnAuctionDebt + _scenario.totalQueuedDebt);
     uint256 _unqueuedUnauctionedDebt = _scenario.debtBalance - _scenario.totalQueuedDebt - _scenario.totalOnAuctionDebt;
     vm.assume(_scenario.debtAuctionBidSize <= _unqueuedUnauctionedDebt && _coinBalance <= _unqueuedUnauctionedDebt);
@@ -845,7 +845,7 @@ contract Unit_AccountingEngine_AuctionSurplus is Base {
   }
 
   function _assumeHappyPath(AuctionSurplusScenario memory _scenario) internal pure {
-    vm.assume(notOverflow(_scenario.surplusAmount, _scenario.surplusBuffer));
+    vm.assume(notOverflowAdd(_scenario.surplusAmount, _scenario.surplusBuffer));
     vm.assume(_scenario.coinBalance >= _scenario.surplusAmount + _scenario.surplusBuffer);
     vm.assume(_scenario.surplusAmount > 0);
   }
@@ -955,7 +955,7 @@ contract Unit_AccountingEngine_AuctionSurplus is Base {
   }
 
   function test_Revert_InsufficientSurplus(AuctionSurplusScenario memory _scenario) public {
-    vm.assume(notOverflow(_scenario.surplusAmount, _scenario.surplusBuffer));
+    vm.assume(notOverflowAdd(_scenario.surplusAmount, _scenario.surplusBuffer));
     vm.assume(_scenario.coinBalance < _scenario.surplusAmount + _scenario.surplusBuffer);
     vm.assume(_scenario.surplusAmount > 0);
     _mockValues(0, 0, _scenario);
@@ -968,7 +968,7 @@ contract Unit_AccountingEngine_AuctionSurplus is Base {
   function test_Revert_DebtIsNotZero(AuctionSurplusScenario memory _scenario, uint256 _debtBalance) public {
     vm.assume(_debtBalance > 0);
     vm.assume(_scenario.surplusAmount > 0);
-    vm.assume(notOverflow(_scenario.surplusAmount, _scenario.surplusBuffer, _debtBalance));
+    vm.assume(notOverflowAdd(_scenario.surplusAmount, _scenario.surplusBuffer, _debtBalance));
     vm.assume(_scenario.coinBalance >= _scenario.surplusAmount + _scenario.surplusBuffer + _debtBalance);
 
     _mockValues(0, _debtBalance, _scenario);
@@ -1011,7 +1011,7 @@ contract Unit_AccountingEngine_TransferExtraSurplus is Base {
   }
 
   function _assumeHappyPath(TransferSurplusScenario memory _scenario) internal {
-    vm.assume(notOverflow(_scenario.surplusAmount, _scenario.surplusBuffer, _scenario.debtBalance));
+    vm.assume(notOverflowAdd(_scenario.surplusAmount, _scenario.surplusBuffer, _scenario.debtBalance));
     vm.assume(_scenario.coinBalance >= _scenario.surplusAmount + _scenario.surplusBuffer);
     vm.assume(_scenario.surplusAmount > 0);
     _mockValues(_scenario);
@@ -1124,7 +1124,7 @@ contract Unit_AccountingEngine_TransferExtraSurplus is Base {
     uint256 _coinBalance
   ) public {
     vm.assume(_surplusAmount > 0);
-    vm.assume(notOverflow(_surplusAmount, _surplusBuffer));
+    vm.assume(notOverflowAdd(_surplusAmount, _surplusBuffer));
     vm.assume(_coinBalance < _surplusAmount + _surplusBuffer);
 
     _mockValues(TransferSurplusScenario(_surplusAmount, _surplusBuffer, _coinBalance, 0));
@@ -1143,7 +1143,7 @@ contract Unit_AccountingEngine_TransferExtraSurplus is Base {
   ) public {
     vm.assume(_surplusAmount > 0);
     vm.assume(_debtBalance > 0);
-    vm.assume(notOverflow(_surplusAmount, _surplusBuffer, _debtBalance));
+    vm.assume(notOverflowAdd(_surplusAmount, _surplusBuffer, _debtBalance));
     vm.assume(_coinBalance >= _surplusAmount + _surplusBuffer + _debtBalance);
     _mockValues(TransferSurplusScenario(_surplusAmount, _surplusBuffer, _coinBalance, _debtBalance));
 

@@ -32,11 +32,6 @@ abstract contract Base is HaiTest {
     vm.stopPrank();
   }
 
-  modifier authorized() {
-    vm.startPrank(authorizedAccount);
-    _;
-  }
-
   function _mockContractEnabled(uint256 _contractEnabled) internal {
     stdstore.target(address(coinJoin)).sig(IDisableable.contractEnabled.selector).checked_write(_contractEnabled);
   }
@@ -45,36 +40,35 @@ abstract contract Base is HaiTest {
 contract Unit_CoinJoin_Constructor is Base {
   event AddAuthorization(address _account);
 
-  function setUp() public override {
-    Base.setUp();
-
+  modifier happyPath() {
     vm.startPrank(user);
+    _;
   }
 
-  function test_Emit_AddAuthorization() public {
+  function test_Emit_AddAuthorization() public happyPath {
     expectEmitNoIndex();
     emit AddAuthorization(user);
 
     coinJoin = new CoinJoin(address(mockSafeEngine), address(mockSystemCoin));
   }
 
-  function test_Set_ContractEnabled() public {
+  function test_Set_ContractEnabled() public happyPath {
     assertEq(coinJoin.contractEnabled(), 1);
   }
 
-  function test_Set_SafeEngine(address _safeEngine) public {
+  function test_Set_SafeEngine(address _safeEngine) public happyPath {
     coinJoin = new CoinJoin(_safeEngine, address(mockSystemCoin));
 
     assertEq(address(coinJoin.safeEngine()), _safeEngine);
   }
 
-  function test_Set_SystemCoin(address _systemCoin) public {
+  function test_Set_SystemCoin(address _systemCoin) public happyPath {
     coinJoin = new CoinJoin(address(mockSafeEngine), _systemCoin);
 
     assertEq(address(coinJoin.systemCoin()), _systemCoin);
   }
 
-  function test_Set_Decimals() public {
+  function test_Set_Decimals() public happyPath {
     assertEq(coinJoin.decimals(), 18);
   }
 }
@@ -82,13 +76,20 @@ contract Unit_CoinJoin_Constructor is Base {
 contract Unit_CoinJoin_DisableContract is Base {
   event DisableContract();
 
+  modifier happyPath() {
+    vm.startPrank(authorizedAccount);
+    _;
+  }
+
   function test_Revert_Unauthorized() public {
     vm.expectRevert(IAuthorizable.Unauthorized.selector);
 
     coinJoin.disableContract();
   }
 
-  function test_Revert_ContractIsDisabled() public authorized {
+  function test_Revert_ContractIsDisabled() public {
+    vm.startPrank(authorizedAccount);
+
     _mockContractEnabled(0);
 
     vm.expectRevert(IDisableable.ContractIsDisabled.selector);
@@ -96,7 +97,7 @@ contract Unit_CoinJoin_DisableContract is Base {
     coinJoin.disableContract();
   }
 
-  function test_Emit_DisableContract() public authorized {
+  function test_Emit_DisableContract() public happyPath {
     expectEmitNoIndex();
     emit DisableContract();
 
@@ -107,13 +108,9 @@ contract Unit_CoinJoin_DisableContract is Base {
 contract Unit_CoinJoin_Join is Base {
   event Join(address _sender, address _account, uint256 _wad);
 
-  function setUp() public override {
-    Base.setUp();
-
-    vm.startPrank(user);
-  }
-
   modifier happyPath(uint256 _wad) {
+    vm.startPrank(user);
+
     _assumeHappyPath(_wad);
     _;
   }
@@ -156,13 +153,9 @@ contract Unit_CoinJoin_Join is Base {
 contract Unit_CoinJoin_Exit is Base {
   event Exit(address _sender, address _account, uint256 _wad);
 
-  function setUp() public override {
-    Base.setUp();
-
-    vm.startPrank(user);
-  }
-
   modifier happyPath(uint256 _wad) {
+    vm.startPrank(user);
+
     _assumeHappyPath(_wad);
     _;
   }

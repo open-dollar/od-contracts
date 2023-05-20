@@ -39,11 +39,6 @@ abstract contract Base is HaiTest {
     vm.stopPrank();
   }
 
-  modifier authorized() {
-    vm.startPrank(authorizedAccount);
-    _;
-  }
-
   function _mockContractEnabled(uint256 _contractEnabled) internal {
     vm.mockCall(
       address(mockAccountingEngine),
@@ -58,12 +53,30 @@ abstract contract Base is HaiTest {
     );
   }
 
-  function _mockAccountingEngineParams(uint256 _surplusDelay, uint256 _surplusAmount) internal {
-    IAccountingEngine.AccountingEngineParams memory _params;
-    _params.surplusDelay = _surplusDelay;
-    _params.surplusAmount = _surplusAmount;
-
-    vm.mockCall(address(mockAccountingEngine), abi.encodeCall(mockAccountingEngine.params, ()), abi.encode(_params));
+  function _mockAccountingEngineParams(
+    uint256 _surplusIsTransferred,
+    uint256 _surplusDelay,
+    uint256 _popDebtDelay,
+    uint256 _disableCooldown,
+    uint256 _surplusAmount,
+    uint256 _surplusBuffer,
+    uint256 _debtAuctionMintedTokens,
+    uint256 _debtAuctionBidSize
+  ) internal {
+    vm.mockCall(
+      address(mockAccountingEngine),
+      abi.encodeCall(mockAccountingEngine.params, ()),
+      abi.encode(
+        _surplusIsTransferred,
+        _surplusDelay,
+        _popDebtDelay,
+        _disableCooldown,
+        _surplusAmount,
+        _surplusBuffer,
+        _debtAuctionMintedTokens,
+        _debtAuctionBidSize
+      )
+    );
   }
 
   function _mockStartAuction(uint256 _amountToSell, uint256 _initialBid, uint256 _id) internal {
@@ -89,13 +102,12 @@ abstract contract Base is HaiTest {
 contract Unit_SettlementSurplusAuctioneer_Constructor is Base {
   event AddAuthorization(address _account);
 
-  function setUp() public override {
-    Base.setUp();
-
+  modifier happyPath() {
     vm.startPrank(user);
+    _;
   }
 
-  function test_Emit_AddAuthorization() public {
+  function test_Emit_AddAuthorization() public happyPath {
     expectEmitNoIndex();
     emit AddAuthorization(user);
 
@@ -103,19 +115,19 @@ contract Unit_SettlementSurplusAuctioneer_Constructor is Base {
       new SettlementSurplusAuctioneer(address(mockAccountingEngine), address(mockSurplusAuctionHouse));
   }
 
-  function test_Set_AccountingEngine() public {
+  function test_Set_AccountingEngine() public happyPath {
     assertEq(address(settlementSurplusAuctioneer.accountingEngine()), address(mockAccountingEngine));
   }
 
-  function test_Set_SurplusAuctionHouse() public {
+  function test_Set_SurplusAuctionHouse() public happyPath {
     assertEq(address(settlementSurplusAuctioneer.surplusAuctionHouse()), address(mockSurplusAuctionHouse));
   }
 
-  function test_Set_SafeEngine() public {
+  function test_Set_SafeEngine() public happyPath {
     assertEq(address(settlementSurplusAuctioneer.safeEngine()), address(mockSafeEngine));
   }
 
-  function test_Call_SafeEngine_ApproveSAFEModification() public {
+  function test_Call_SafeEngine_ApproveSAFEModification() public happyPath {
     vm.expectCall(
       address(mockSafeEngine),
       abi.encodeCall(mockSafeEngine.approveSAFEModification, (address(mockSurplusAuctionHouse)))
@@ -138,18 +150,29 @@ contract Unit_SettlementSurplusAuctioneer_AuctionSurplus is Base {
     uint256 _idB
   ) {
     _assumeHappyPath(_lastSurplusTime, _surplusDelay);
-    _mockContractEnabled(0);
-    _mockLastSurplusAuctionTime(_lastSurplusTime);
-    _mockAccountingEngineParams(_surplusDelay, _surplusAmount);
-    _mockCoinBalance(address(settlementSurplusAuctioneer), _coinBalance);
-    _mockStartAuction(_coinBalance, 0, _idA);
-    _mockStartAuction(_surplusAmount, 0, _idB);
+    _mockValues(_lastSurplusTime, _surplusDelay, _surplusAmount, _coinBalance, _idA, _idB);
     _;
   }
 
   function _assumeHappyPath(uint256 _lastSurplusTime, uint256 _surplusDelay) internal {
-    vm.assume(notOverflow(_lastSurplusTime, _surplusDelay));
+    vm.assume(notOverflowAdd(_lastSurplusTime, _surplusDelay));
     vm.assume(block.timestamp >= _lastSurplusTime + _surplusDelay);
+  }
+
+  function _mockValues(
+    uint256 _lastSurplusTime,
+    uint256 _surplusDelay,
+    uint256 _surplusAmount,
+    uint256 _coinBalance,
+    uint256 _idA,
+    uint256 _idB
+  ) internal {
+    _mockLastSurplusAuctionTime(_lastSurplusTime);
+    _mockContractEnabled(0);
+    _mockAccountingEngineParams(0, _surplusDelay, 0, 0, _surplusAmount, 0, 0, 0);
+    _mockCoinBalance(address(settlementSurplusAuctioneer), _coinBalance);
+    _mockStartAuction(_coinBalance, 0, _idA);
+    _mockStartAuction(_surplusAmount, 0, _idB);
   }
 
   function test_Revert_AccountingEngineStillEnabled(uint256 _contractEnabled) public {
@@ -163,12 +186,10 @@ contract Unit_SettlementSurplusAuctioneer_AuctionSurplus is Base {
   }
 
   function test_Revert_SurplusAuctionDelayNotPassed(uint256 _lastSurplusTime, uint256 _surplusDelay) public {
-    vm.assume(notOverflow(_lastSurplusTime, _surplusDelay));
+    vm.assume(notOverflowAdd(_lastSurplusTime, _surplusDelay));
     vm.assume(block.timestamp < _lastSurplusTime + _surplusDelay);
 
-    _mockContractEnabled(0);
-    _mockLastSurplusAuctionTime(_lastSurplusTime);
-    _mockAccountingEngineParams(_surplusDelay, 0);
+    _mockValues(_lastSurplusTime, _surplusDelay, 0, 0, 0, 0);
 
     vm.expectRevert('SettlementSurplusAuctioneer/surplus-auction-delay-not-passed');
 
@@ -287,19 +308,24 @@ contract Unit_SettlementSurplusAuctioneer_AuctionSurplus is Base {
 contract Unit_SettlementSurplusAuctioneer_ModifyParameters is Base {
   event ModifyParameters(bytes32 indexed _param, bytes32 indexed _cType, bytes _data);
 
+  modifier happyPath() {
+    vm.startPrank(authorizedAccount);
+    _;
+  }
+
   function test_Revert_Unauthorized(bytes32 _param, bytes memory _data) public {
     vm.expectRevert(IAuthorizable.Unauthorized.selector);
 
     settlementSurplusAuctioneer.modifyParameters(_param, _data);
   }
 
-  function test_Set_AccountingEngine(address _accountingEngine) public authorized {
+  function test_Set_AccountingEngine(address _accountingEngine) public happyPath {
     settlementSurplusAuctioneer.modifyParameters('accountingEngine', abi.encode(_accountingEngine));
 
     assertEq(address(settlementSurplusAuctioneer.accountingEngine()), _accountingEngine);
   }
 
-  function test_Set_SurplusAuctionHouse(address _surplusAuctionHouse) public authorized {
+  function test_Set_SurplusAuctionHouse(address _surplusAuctionHouse) public happyPath {
     address _previousSurplusAuctionHouse = address(settlementSurplusAuctioneer.surplusAuctionHouse());
 
     vm.expectCall(
@@ -314,13 +340,15 @@ contract Unit_SettlementSurplusAuctioneer_ModifyParameters is Base {
     assertEq(address(settlementSurplusAuctioneer.surplusAuctionHouse()), _surplusAuctionHouse);
   }
 
-  function test_Revert_UnrecognizedParam() public authorized {
+  function test_Revert_UnrecognizedParam() public {
+    vm.startPrank(authorizedAccount);
+
     vm.expectRevert(IModifiable.UnrecognizedParam.selector);
 
     settlementSurplusAuctioneer.modifyParameters('unrecognizedParam', abi.encode(0));
   }
 
-  function test_Emit_ModifyParameters(address _surplusAuctionHouse) public authorized {
+  function test_Emit_ModifyParameters(address _surplusAuctionHouse) public happyPath {
     expectEmitNoIndex();
     emit ModifyParameters('surplusAuctionHouse', GLOBAL_PARAM, abi.encode(_surplusAuctionHouse));
 

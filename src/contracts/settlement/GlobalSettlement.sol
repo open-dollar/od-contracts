@@ -207,7 +207,7 @@ contract GlobalSettlement is Authorizable, Disableable, IGlobalSettlement {
     _collateralAuctionHouse.terminateAuctionPrematurely(_auctionId);
 
     uint256 _debt = (_amountToRaise - _raisedAmount) / _accumulatedRate;
-    collateralTotalDebt[_cType] = collateralTotalDebt[_cType] + _debt;
+    collateralTotalDebt[_cType] += _debt;
     safeEngine.confiscateSAFECollateralAndDebt(
       _cType,
       _forgoneCollateralReceiver,
@@ -231,14 +231,14 @@ contract GlobalSettlement is Authorizable, Disableable, IGlobalSettlement {
 
     uint256 _amountOwed = _safeData.generatedDebt.rmul(_accumulatedRate).rmul(finalCoinPerCollateralPrice[_cType]);
     uint256 _minCollateral = Math.min(_safeData.lockedCollateral, _amountOwed);
-    collateralShortfall[_cType] = collateralShortfall[_cType] + (_amountOwed - _minCollateral);
+    collateralShortfall[_cType] += _amountOwed - _minCollateral;
 
     safeEngine.confiscateSAFECollateralAndDebt(
       _cType,
       _safe,
       address(this),
       address(accountingEngine),
-      -_minCollateral.toIntNotOverflow(),
+      -int256(_minCollateral), // safe cast: cannot overflow because result of rmul
       -_safeData.generatedDebt.toIntNotOverflow()
     );
 
@@ -294,7 +294,7 @@ contract GlobalSettlement is Authorizable, Disableable, IGlobalSettlement {
   function prepareCoinsForRedeeming(uint256 _coinAmount) external {
     require(outstandingCoinSupply != 0, 'GlobalSettlement/outstanding-coin-supply-zero');
     safeEngine.transferInternalCoins(msg.sender, address(accountingEngine), _coinAmount * RAY);
-    coinBag[msg.sender] = coinBag[msg.sender] + _coinAmount;
+    coinBag[msg.sender] += _coinAmount;
     emit PrepareCoinsForRedeeming(msg.sender, coinBag[msg.sender]);
   }
 
@@ -307,7 +307,7 @@ contract GlobalSettlement is Authorizable, Disableable, IGlobalSettlement {
     require(collateralCashPrice[_cType] != 0, 'GlobalSettlement/collateral-cash-price-not-defined');
     uint256 _collateralAmount = _coinsAmount.rmul(collateralCashPrice[_cType]);
     safeEngine.transferCollateral(_cType, address(this), msg.sender, _collateralAmount);
-    coinsUsedToRedeem[_cType][msg.sender] = coinsUsedToRedeem[_cType][msg.sender] + _coinsAmount;
+    coinsUsedToRedeem[_cType][msg.sender] += _coinsAmount;
     require(coinsUsedToRedeem[_cType][msg.sender] <= coinBag[msg.sender], 'GlobalSettlement/insufficient-bag-balance');
     emit RedeemCollateral(_cType, msg.sender, _coinsAmount, _collateralAmount);
   }

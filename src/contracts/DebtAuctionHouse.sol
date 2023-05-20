@@ -145,8 +145,8 @@ contract DebtAuctionHouse is Authorizable, Disableable, IDebtAuctionHouse {
 
     // on first bid submitted, clear as much totalOnAuctionDebt as possible
     if (bids[_id].bidExpiry == 0) {
-      uint256 totalOnAuctionDebt = AccountingEngineLike(bids[_id].highBidder).totalOnAuctionDebt();
-      AccountingEngineLike(bids[_id].highBidder).cancelAuctionedDebtWithSurplus(Math.min(_bid, totalOnAuctionDebt));
+      uint256 _totalOnAuctionDebt = AccountingEngineLike(bids[_id].highBidder).totalOnAuctionDebt();
+      AccountingEngineLike(bids[_id].highBidder).cancelAuctionedDebtWithSurplus(Math.min(_bid, _totalOnAuctionDebt));
     }
 
     bids[_id].highBidder = msg.sender;

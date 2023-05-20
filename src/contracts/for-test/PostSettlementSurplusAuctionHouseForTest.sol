@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
 import {
@@ -25,5 +25,13 @@ contract PostSettlementSurplusAuctionHouseForTest is PostSettlementSurplusAuctio
     bids[_id].highBidder = _highBidder;
     bids[_id].bidExpiry = _bidExpiry;
     bids[_id].auctionDeadline = _auctionDeadline;
+  }
+
+  function setBidDuration(uint48 _bidDuration) external {
+    _params.bidDuration = _bidDuration;
+  }
+
+  function setTotalAuctionLength(uint48 _totalAuctionLength) external {
+    _params.totalAuctionLength = _totalAuctionLength;
   }
 }

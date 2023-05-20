@@ -18,11 +18,6 @@ abstract contract Base is HaiTest {
 
     vm.stopPrank();
   }
-
-  modifier authorized() {
-    vm.startPrank(authorizedAccount);
-    _;
-  }
 }
 
 contract Unit_Authorizable_Constructor is Base {
@@ -64,6 +59,8 @@ contract Unit_Authorizable_AddAuthorization is Base {
   event AddAuthorization(address _account);
 
   modifier happyPath(address _account) {
+    vm.startPrank(authorizedAccount);
+
     _assumeHappyPath(_account);
     _;
   }
@@ -78,19 +75,21 @@ contract Unit_Authorizable_AddAuthorization is Base {
     authorizable.addAuthorization(_account);
   }
 
-  function test_Revert_AlreadyAuthorized() public authorized {
+  function test_Revert_AlreadyAuthorized() public {
+    vm.startPrank(authorizedAccount);
+
     vm.expectRevert(IAuthorizable.AlreadyAuthorized.selector);
 
     authorizable.addAuthorization(authorizedAccount);
   }
 
-  function test_Set_AuthorizedAccounts(address _account) public authorized happyPath(_account) {
+  function test_Set_AuthorizedAccounts(address _account) public happyPath(_account) {
     authorizable.addAuthorization(_account);
 
     assertEq(authorizable.authorizedAccounts(_account), 1);
   }
 
-  function test_Emit_AddAuthorization(address _account) public authorized happyPath(_account) {
+  function test_Emit_AddAuthorization(address _account) public happyPath(_account) {
     expectEmitNoIndex();
     emit AddAuthorization(_account);
 
@@ -101,13 +100,19 @@ contract Unit_Authorizable_AddAuthorization is Base {
 contract Unit_Authorizable_RemoveAuthorization is Base {
   event RemoveAuthorization(address _account);
 
+  modifier happyPath() {
+    vm.startPrank(authorizedAccount);
+    _;
+  }
+
   function test_Revert_Unauthorized(address _account) public {
     vm.expectRevert(IAuthorizable.Unauthorized.selector);
 
     authorizable.removeAuthorization(_account);
   }
 
-  function test_Revert_NotAuthorized(address _account) public authorized {
+  function test_Revert_NotAuthorized(address _account) public {
+    vm.startPrank(authorizedAccount);
     vm.assume(_account != authorizedAccount);
 
     vm.expectRevert(IAuthorizable.NotAuthorized.selector);
@@ -115,13 +120,13 @@ contract Unit_Authorizable_RemoveAuthorization is Base {
     authorizable.removeAuthorization(_account);
   }
 
-  function test_Set_AuthorizedAccounts() public authorized {
+  function test_Set_AuthorizedAccounts() public happyPath {
     authorizable.removeAuthorization(authorizedAccount);
 
     assertEq(authorizable.authorizedAccounts(authorizedAccount), 0);
   }
 
-  function test_Emit_RemoveAuthorization() public authorized {
+  function test_Emit_RemoveAuthorization() public happyPath {
     expectEmitNoIndex();
     emit RemoveAuthorization(authorizedAccount);
 
@@ -130,13 +135,18 @@ contract Unit_Authorizable_RemoveAuthorization is Base {
 }
 
 contract Unit_Authorizable_IsAuthorized is Base {
+  modifier happyPath() {
+    vm.startPrank(authorizedAccount);
+    _;
+  }
+
   function test_Revert_Unauthorized() public {
     vm.expectRevert(IAuthorizable.Unauthorized.selector);
 
     authorizable.isAuthorizedModifier();
   }
 
-  function testFail_IsAuthorized() public authorized {
+  function testFail_IsAuthorized() public happyPath {
     vm.expectRevert(IAuthorizable.Unauthorized.selector);
 
     authorizable.isAuthorizedModifier();

@@ -104,7 +104,7 @@ contract PIDController is Authorizable, IPIDController {
   function _getBoundedRedemptionRate(int256 _piOutput) internal view virtual returns (uint256 _newRedemptionRate) {
     int256 _boundedPIOutput = _getBoundedPIOutput(_piOutput);
 
-    // feedbackOutputLowerBound will never be less than NEGATIVE_RATE_LIMIT : RAY - 1, 
+    // feedbackOutputLowerBound will never be less than NEGATIVE_RATE_LIMIT : RAY - 1,
     // and feedbackOutputUpperBound will never be greater than POSITIVE_RATE_LIMIT : type(uint256).max - RAY - 1
     // boundedPIOutput can be safely added to RAY
     _newRedemptionRate = _boundedPIOutput < -int256(RAY) ? _NEGATIVE_RATE_LIMIT : RAY.add(_boundedPIOutput);

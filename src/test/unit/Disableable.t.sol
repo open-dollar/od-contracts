@@ -17,11 +17,6 @@ abstract contract Base is HaiTest {
     label(address(disableable), 'Disableable');
   }
 
-  modifier disabled() {
-    _mockContractEnabled(0);
-    _;
-  }
-
   function _mockContractEnabled(uint256 _contractEnabled) internal {
     stdstore.target(address(disableable)).sig(IDisableable.contractEnabled.selector).checked_write(_contractEnabled);
   }
@@ -51,7 +46,9 @@ contract Unit_Disableable_DisableContract is Base {
 }
 
 contract Unit_Disableable_WhenEnabled is Base {
-  function test_Revert_ContractIsDisabled() public disabled {
+  function test_Revert_ContractIsDisabled() public {
+    _mockContractEnabled(0);
+
     vm.expectRevert(IDisableable.ContractIsDisabled.selector);
 
     disableable.whenEnabledModifier();
@@ -65,13 +62,18 @@ contract Unit_Disableable_WhenEnabled is Base {
 }
 
 contract Unit_Disableable_WhenDisabled is Base {
+  modifier happyPath() {
+    _mockContractEnabled(0);
+    _;
+  }
+
   function test_Revert_ContractIsEnabled() public {
     vm.expectRevert(IDisableable.ContractIsEnabled.selector);
 
     disableable.whenDisabledModifier();
   }
 
-  function testFail_WhenDisabled() public disabled {
+  function testFail_WhenDisabled() public happyPath {
     vm.expectRevert(IDisableable.ContractIsEnabled.selector);
 
     disableable.whenDisabledModifier();

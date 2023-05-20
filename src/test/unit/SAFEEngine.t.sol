@@ -229,7 +229,7 @@ contract Unit_SAFEEngine_TransferCollateral is Base {
 
   function _assumeHappyPath(uint256 _initialCollateralSrc, uint256 _initialCollateralDst, uint256 _wad) internal pure {
     vm.assume(notUnderflow(_initialCollateralSrc, _wad));
-    vm.assume(notOverflow(_initialCollateralDst, _wad));
+    vm.assume(notOverflowAdd(_initialCollateralDst, _wad));
   }
 
   function _mockValues(uint256 _initialCollateralSrc, uint256 _initialCollateralDst) internal {
@@ -293,7 +293,7 @@ contract Unit_SAFEEngine_TransferInternalCoins is Base {
 
   function _assumeHappyPath(uint256 _initialBalanceSrc, uint256 _initialBalanceDst, uint256 _rad) internal pure {
     vm.assume(notUnderflow(_initialBalanceSrc, _rad));
-    vm.assume(notOverflow(_initialBalanceDst, _rad));
+    vm.assume(notOverflowAdd(_initialBalanceDst, _rad));
   }
 
   function _mockValues(uint256 _initialBalanceSrc, uint256 _initialBalanceDst) internal {
@@ -494,10 +494,10 @@ contract Unit_SAFEEngine_CreateUnbackedDebt is Base {
     uint256 _globalDebt,
     uint256 _rad
   ) internal pure {
-    vm.assume(notOverflow(_initialDebtBalance, _rad));
-    vm.assume(notOverflow(_initialCoinBalance, _rad));
-    vm.assume(notOverflow(_initialGlobalUnbackedDebt, _rad));
-    vm.assume(notOverflow(_globalDebt, _rad));
+    vm.assume(notOverflowAdd(_initialDebtBalance, _rad));
+    vm.assume(notOverflowAdd(_initialCoinBalance, _rad));
+    vm.assume(notOverflowAdd(_initialGlobalUnbackedDebt, _rad));
+    vm.assume(notOverflowAdd(_globalDebt, _rad));
   }
 
   function test_Set_DebtBalance(

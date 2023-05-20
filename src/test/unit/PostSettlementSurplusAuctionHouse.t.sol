@@ -15,7 +15,7 @@ import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 abstract contract Base is HaiTest {
   using stdStorage for StdStorage;
 
-  struct Auction {
+  struct SurplusAuction {
     uint256 id;
     uint256 bidAmount;
     uint256 amountToSell;
@@ -45,12 +45,7 @@ abstract contract Base is HaiTest {
     vm.stopPrank();
   }
 
-  modifier authorized() {
-    vm.startPrank(authorizedAccount);
-    _;
-  }
-
-  function _mockAuction(Auction memory _auction) internal {
+  function _mockAuction(SurplusAuction memory _auction) internal {
     // BUG: Accessing packed slots is not supported by Std Storage
     postSettlementSurplusAuctionHouse.addBid(
       _auction.id,
@@ -73,6 +68,16 @@ abstract contract Base is HaiTest {
     stdstore.target(address(postSettlementSurplusAuctionHouse)).sig(IPostSettlementSurplusAuctionHouse.params.selector)
       .depth(0).checked_write(_bidIncrease);
   }
+
+  function _mockBidDuration(uint48 _bidDuration) internal {
+    // BUG: Accessing packed slots is not supported by Std Storage
+    postSettlementSurplusAuctionHouse.setBidDuration(_bidDuration);
+  }
+
+  function _mockTotalAuctionLength(uint48 _totalAuctionLength) internal {
+    // BUG: Accessing packed slots is not supported by Std Storage
+    postSettlementSurplusAuctionHouse.setTotalAuctionLength(_totalAuctionLength);
+  }
 }
 
 contract Unit_PostSettlementSurplusAuctionHouse_Constants is Base {
@@ -88,13 +93,12 @@ contract Unit_PostSettlementSurplusAuctionHouse_Constants is Base {
 contract Unit_PostSettlementSurplusAuctionHouse_Constructor is Base {
   event AddAuthorization(address _account);
 
-  function setUp() public override {
-    Base.setUp();
-
+  modifier happyPath() {
     vm.startPrank(user);
+    _;
   }
 
-  function test_Emit_AddAuthorization() public {
+  function test_Emit_AddAuthorization() public happyPath {
     expectEmitNoIndex();
     emit AddAuthorization(user);
 
@@ -102,29 +106,29 @@ contract Unit_PostSettlementSurplusAuctionHouse_Constructor is Base {
       new PostSettlementSurplusAuctionHouseForTest(address(mockSafeEngine), address(mockProtocolToken));
   }
 
-  function test_Set_SafeEngine(address _safeEngine) public {
+  function test_Set_SafeEngine(address _safeEngine) public happyPath {
     postSettlementSurplusAuctionHouse =
       new PostSettlementSurplusAuctionHouseForTest(_safeEngine, address(mockProtocolToken));
 
     assertEq(address(postSettlementSurplusAuctionHouse.safeEngine()), _safeEngine);
   }
 
-  function test_Set_ProtocolToken(address _protocolToken) public {
+  function test_Set_ProtocolToken(address _protocolToken) public happyPath {
     postSettlementSurplusAuctionHouse =
       new PostSettlementSurplusAuctionHouseForTest(address(mockSafeEngine), _protocolToken);
 
     assertEq(address(postSettlementSurplusAuctionHouse.protocolToken()), _protocolToken);
   }
 
-  function test_Set_BidIncrease() public {
+  function test_Set_BidIncrease() public happyPath {
     assertEq(postSettlementSurplusAuctionHouse.params().bidIncrease, 1.05e18);
   }
 
-  function test_Set_BidDuration() public {
+  function test_Set_BidDuration() public happyPath {
     assertEq(postSettlementSurplusAuctionHouse.params().bidDuration, 3 hours);
   }
 
-  function test_Set_TotalAuctionLength() public {
+  function test_Set_TotalAuctionLength() public happyPath {
     assertEq(postSettlementSurplusAuctionHouse.params().totalAuctionLength, 2 days);
   }
 }
@@ -134,41 +138,75 @@ contract Unit_PostSettlementSurplusAuctionHouse_StartAuction is Base {
     uint256 indexed _id, uint256 _auctionsStarted, uint256 _amountToSell, uint256 _initialBid, uint256 _auctionDeadline
   );
 
+  modifier happyPath(uint256 _auctionsStarted, uint48 _totalAuctionLength) {
+    vm.startPrank(authorizedAccount);
+
+    _assumeHappyPath(_auctionsStarted, _totalAuctionLength);
+    _mockValues(_auctionsStarted, _totalAuctionLength);
+    _;
+  }
+
+  function _assumeHappyPath(uint256 _auctionsStarted, uint48 _totalAuctionLength) internal view {
+    vm.assume(_auctionsStarted < type(uint256).max);
+    vm.assume(notOverflowAddUint48(uint48(block.timestamp), _totalAuctionLength));
+  }
+
+  function _mockValues(uint256 _auctionsStarted, uint48 _totalAuctionLength) internal {
+    _mockAuctionsStarted(_auctionsStarted);
+    _mockTotalAuctionLength(_totalAuctionLength);
+  }
+
   function test_Revert_Unauthorized(uint256 _amountToSell, uint256 _initialBid) public {
     vm.expectRevert(IAuthorizable.Unauthorized.selector);
 
     postSettlementSurplusAuctionHouse.startAuction(_amountToSell, _initialBid);
   }
 
-  function test_Revert_Overflow(uint256 _amountToSell, uint256 _initialBid) public authorized {
-    _mockAuctionsStarted(type(uint256).max);
+  function test_Revert_Overflow(uint256 _amountToSell, uint256 _initialBid) public {
+    vm.startPrank(authorizedAccount);
+
+    _mockValues(type(uint256).max, 0);
 
     vm.expectRevert();
 
     postSettlementSurplusAuctionHouse.startAuction(_amountToSell, _initialBid);
   }
 
-  function test_Set_AuctionsStarted(uint256 _amountToSell, uint256 _initialBid) public authorized {
-    for (uint256 _i = 1; _i <= 3; ++_i) {
-      postSettlementSurplusAuctionHouse.startAuction(_amountToSell, _initialBid);
-      assertEq(postSettlementSurplusAuctionHouse.auctionsStarted(), _i);
-    }
+  function test_Set_AuctionsStarted(
+    uint256 _amountToSell,
+    uint256 _initialBid,
+    uint256 _auctionsStarted,
+    uint48 _totalAuctionLength
+  ) public happyPath(_auctionsStarted, _totalAuctionLength) {
+    postSettlementSurplusAuctionHouse.startAuction(_amountToSell, _initialBid);
+
+    assertEq(postSettlementSurplusAuctionHouse.auctionsStarted(), _auctionsStarted + 1);
   }
 
-  function test_Set_Bids(uint256 _amountToSellFuzzed, uint256 _initialBid) public authorized {
+  function test_Set_Bids(
+    uint256 _amountToSellFuzzed,
+    uint256 _initialBid,
+    uint256 _auctionsStarted,
+    uint48 _totalAuctionLength
+  ) public happyPath(_auctionsStarted, _totalAuctionLength) {
     postSettlementSurplusAuctionHouse.startAuction(_amountToSellFuzzed, _initialBid);
 
     (uint256 _bidAmount, uint256 _amountToSell, address _highBidder, uint48 _bidExpiry, uint48 _auctionDeadline) =
-      postSettlementSurplusAuctionHouse.bids(1);
+      postSettlementSurplusAuctionHouse.bids(_auctionsStarted + 1);
 
     assertEq(_bidAmount, _initialBid);
     assertEq(_amountToSell, _amountToSellFuzzed);
     assertEq(_highBidder, authorizedAccount);
     assertEq(_bidExpiry, 0);
-    assertEq(_auctionDeadline, block.timestamp + postSettlementSurplusAuctionHouse.params().totalAuctionLength);
+    assertEq(_auctionDeadline, block.timestamp + _totalAuctionLength);
   }
 
-  function test_Call_SafeEngine_TransferInternalCoins(uint256 _amountToSell, uint256 _initialBid) public authorized {
+  function test_Call_SafeEngine_TransferInternalCoins(
+    uint256 _amountToSell,
+    uint256 _initialBid,
+    uint256 _auctionsStarted,
+    uint48 _totalAuctionLength
+  ) public happyPath(_auctionsStarted, _totalAuctionLength) {
     vm.expectCall(
       address(mockSafeEngine),
       abi.encodeCall(
@@ -180,18 +218,26 @@ contract Unit_PostSettlementSurplusAuctionHouse_StartAuction is Base {
     postSettlementSurplusAuctionHouse.startAuction(_amountToSell, _initialBid);
   }
 
-  function test_Emit_StartAuction(uint256 _amountToSell, uint256 _initialBid) public authorized {
+  function test_Emit_StartAuction(
+    uint256 _amountToSell,
+    uint256 _initialBid,
+    uint256 _auctionsStarted,
+    uint48 _totalAuctionLength
+  ) public happyPath(_auctionsStarted, _totalAuctionLength) {
     expectEmitNoIndex();
     emit StartAuction(
-      1, 1, _amountToSell, _initialBid, block.timestamp + postSettlementSurplusAuctionHouse.params().totalAuctionLength
+      _auctionsStarted + 1, _auctionsStarted + 1, _amountToSell, _initialBid, block.timestamp + _totalAuctionLength
     );
 
     postSettlementSurplusAuctionHouse.startAuction(_amountToSell, _initialBid);
   }
 
-  function test_Return_Id(uint256 _amountToSell, uint256 _initialBid) public authorized {
-    uint256 _auctionsStarted = postSettlementSurplusAuctionHouse.auctionsStarted();
-
+  function test_Return_Id(
+    uint256 _amountToSell,
+    uint256 _initialBid,
+    uint256 _auctionsStarted,
+    uint48 _totalAuctionLength
+  ) public happyPath(_auctionsStarted, _totalAuctionLength) {
     assertEq(postSettlementSurplusAuctionHouse.startAuction(_amountToSell, _initialBid), _auctionsStarted + 1);
   }
 }
@@ -199,60 +245,66 @@ contract Unit_PostSettlementSurplusAuctionHouse_StartAuction is Base {
 contract Unit_PostSettlementSurplusAuctionHouse_RestartAuction is Base {
   event RestartAuction(uint256 indexed _id, uint256 _auctionDeadline);
 
-  modifier happyPath(Auction memory _auction, uint256 _auctionsStarted) {
-    _assumeHappyPath(_auction, _auctionsStarted);
-    _mockAuction(_auction);
-    _mockAuctionsStarted(_auctionsStarted);
+  modifier happyPath(SurplusAuction memory _auction, uint256 _auctionsStarted, uint48 _totalAuctionLength) {
+    _assumeHappyPath(_auction, _auctionsStarted, _totalAuctionLength);
+    _mockValues(_auction, _auctionsStarted, _totalAuctionLength);
     _;
   }
 
-  function _assumeHappyPath(Auction memory _auction, uint256 _auctionsStarted) internal view {
+  function _assumeHappyPath(
+    SurplusAuction memory _auction,
+    uint256 _auctionsStarted,
+    uint48 _totalAuctionLength
+  ) internal view {
     vm.assume(_auction.id > 0 && _auction.id <= _auctionsStarted);
     vm.assume(_auction.auctionDeadline < block.timestamp);
     vm.assume(_auction.bidExpiry == 0);
+    vm.assume(notOverflowAddUint48(uint48(block.timestamp), _totalAuctionLength));
   }
 
-  function test_Revert_AuctionNeverStarted_0(Auction memory _auction, uint256 _auctionsStarted) public {
+  function _mockValues(SurplusAuction memory _auction, uint256 _auctionsStarted, uint48 _totalAuctionLength) internal {
+    _mockAuction(_auction);
+    _mockAuctionsStarted(_auctionsStarted);
+    _mockTotalAuctionLength(_totalAuctionLength);
+  }
+
+  function test_Revert_AuctionNeverStarted_0(SurplusAuction memory _auction) public {
     vm.assume(_auction.id == 0);
 
-    _mockAuction(_auction);
-    _mockAuctionsStarted(_auctionsStarted);
+    _mockValues(_auction, 0, 0);
 
     vm.expectRevert('PostSettlementSurplusAuctionHouse/auction-never-started');
 
     postSettlementSurplusAuctionHouse.restartAuction(_auction.id);
   }
 
-  function test_Revert_AuctionNeverStarted_1(Auction memory _auction, uint256 _auctionsStarted) public {
+  function test_Revert_AuctionNeverStarted_1(SurplusAuction memory _auction, uint256 _auctionsStarted) public {
     vm.assume(_auction.id > _auctionsStarted);
 
-    _mockAuction(_auction);
-    _mockAuctionsStarted(_auctionsStarted);
+    _mockValues(_auction, _auctionsStarted, 0);
 
     vm.expectRevert('PostSettlementSurplusAuctionHouse/auction-never-started');
 
     postSettlementSurplusAuctionHouse.restartAuction(_auction.id);
   }
 
-  function test_Revert_NotFinished(Auction memory _auction, uint256 _auctionsStarted) public {
+  function test_Revert_NotFinished(SurplusAuction memory _auction, uint256 _auctionsStarted) public {
     vm.assume(_auction.id > 0 && _auction.id <= _auctionsStarted);
     vm.assume(_auction.auctionDeadline >= block.timestamp);
 
-    _mockAuction(_auction);
-    _mockAuctionsStarted(_auctionsStarted);
+    _mockValues(_auction, _auctionsStarted, 0);
 
     vm.expectRevert('PostSettlementSurplusAuctionHouse/not-finished');
 
     postSettlementSurplusAuctionHouse.restartAuction(_auction.id);
   }
 
-  function test_Revert_BidAlreadyPlaced(Auction memory _auction, uint256 _auctionsStarted) public {
+  function test_Revert_BidAlreadyPlaced(SurplusAuction memory _auction, uint256 _auctionsStarted) public {
     vm.assume(_auction.id > 0 && _auction.id <= _auctionsStarted);
     vm.assume(_auction.auctionDeadline < block.timestamp);
     vm.assume(_auction.bidExpiry != 0);
 
-    _mockAuction(_auction);
-    _mockAuctionsStarted(_auctionsStarted);
+    _mockValues(_auction, _auctionsStarted, 0);
 
     vm.expectRevert('PostSettlementSurplusAuctionHouse/bid-already-placed');
 
@@ -260,22 +312,24 @@ contract Unit_PostSettlementSurplusAuctionHouse_RestartAuction is Base {
   }
 
   function test_Set_Bids_AuctionDeadline(
-    Auction memory _auction,
-    uint256 _auctionsStarted
-  ) public happyPath(_auction, _auctionsStarted) {
+    SurplusAuction memory _auction,
+    uint256 _auctionsStarted,
+    uint48 _totalAuctionLength
+  ) public happyPath(_auction, _auctionsStarted, _totalAuctionLength) {
     postSettlementSurplusAuctionHouse.restartAuction(_auction.id);
 
     (,,,, uint48 _auctionDeadline) = postSettlementSurplusAuctionHouse.bids(_auction.id);
 
-    assertEq(_auctionDeadline, block.timestamp + postSettlementSurplusAuctionHouse.params().totalAuctionLength);
+    assertEq(_auctionDeadline, block.timestamp + _totalAuctionLength);
   }
 
   function test_Emit_RestartAuction(
-    Auction memory _auction,
-    uint256 _auctionsStarted
-  ) public happyPath(_auction, _auctionsStarted) {
+    SurplusAuction memory _auction,
+    uint256 _auctionsStarted,
+    uint48 _totalAuctionLength
+  ) public happyPath(_auction, _auctionsStarted, _totalAuctionLength) {
     expectEmitNoIndex();
-    emit RestartAuction(_auction.id, block.timestamp + postSettlementSurplusAuctionHouse.params().totalAuctionLength);
+    emit RestartAuction(_auction.id, block.timestamp + _totalAuctionLength);
 
     postSettlementSurplusAuctionHouse.restartAuction(_auction.id);
   }
@@ -286,91 +340,96 @@ contract Unit_PostSettlementSurplusAuctionHouse_IncreaseBidSize is Base {
     uint256 indexed _id, address _highBidder, uint256 _amountToBuy, uint256 _bid, uint256 _bidExpiry
   );
 
-  function setUp() public override {
-    Base.setUp();
-
+  modifier happyPath(SurplusAuction memory _auction, uint256 _bid, uint256 _bidIncrease, uint48 _bidDuration) {
     vm.startPrank(user);
-  }
 
-  modifier happyPath(Auction memory _auction, uint256 _bid) {
-    _assumeHappyPath(_auction, _bid);
-    _mockAuction(_auction);
+    _assumeHappyPath(_auction, _bid, _bidIncrease, _bidDuration);
+    _mockValues(_auction, _bidIncrease, _bidDuration);
     _;
   }
 
-  function _assumeHappyPath(Auction memory _auction, uint256 _bid) internal view {
-    IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams memory _params =
-      postSettlementSurplusAuctionHouse.params();
-
+  function _assumeHappyPath(
+    SurplusAuction memory _auction,
+    uint256 _bid,
+    uint256 _bidIncrease,
+    uint48 _bidDuration
+  ) internal view {
     vm.assume(_auction.highBidder != address(0) && _auction.highBidder != user);
     vm.assume(_auction.bidExpiry == 0 || _auction.bidExpiry > block.timestamp);
     vm.assume(_auction.auctionDeadline > block.timestamp);
     vm.assume(_bid > _auction.bidAmount);
     vm.assume(notOverflowMul(_bid, WAD));
-    vm.assume(notOverflowMul(_params.bidIncrease, _auction.bidAmount));
-    vm.assume(_bid * WAD >= _params.bidIncrease * _auction.bidAmount);
+    vm.assume(notOverflowMul(_bidIncrease, _auction.bidAmount));
+    vm.assume(_bid * WAD >= _bidIncrease * _auction.bidAmount);
+    vm.assume(notOverflowAddUint48(uint48(block.timestamp), _bidDuration));
   }
 
-  function test_Revert_HighBidderNotSet(Auction memory _auction, uint256 _amountToBuy, uint256 _bid) public {
+  function _mockValues(SurplusAuction memory _auction, uint256 _bidIncrease, uint48 _bidDuration) internal {
+    _mockAuction(_auction);
+    _mockBidIncrease(_bidIncrease);
+    _mockBidDuration(_bidDuration);
+  }
+
+  function test_Revert_HighBidderNotSet(SurplusAuction memory _auction, uint256 _amountToBuy, uint256 _bid) public {
     _auction.highBidder = address(0);
 
-    _mockAuction(_auction);
+    _mockValues(_auction, 0, 0);
 
     vm.expectRevert('PostSettlementSurplusAuctionHouse/high-bidder-not-set');
 
     postSettlementSurplusAuctionHouse.increaseBidSize(_auction.id, _amountToBuy, _bid);
   }
 
-  function test_Revert_BidAlreadyExpired(Auction memory _auction, uint256 _amountToBuy, uint256 _bid) public {
+  function test_Revert_BidAlreadyExpired(SurplusAuction memory _auction, uint256 _amountToBuy, uint256 _bid) public {
     vm.assume(_auction.highBidder != address(0));
     vm.assume(_auction.bidExpiry != 0 && _auction.bidExpiry <= block.timestamp);
 
-    _mockAuction(_auction);
+    _mockValues(_auction, 0, 0);
 
     vm.expectRevert('PostSettlementSurplusAuctionHouse/bid-already-expired');
 
     postSettlementSurplusAuctionHouse.increaseBidSize(_auction.id, _amountToBuy, _bid);
   }
 
-  function test_Revert_AuctionAlreadyExpired(Auction memory _auction, uint256 _amountToBuy, uint256 _bid) public {
+  function test_Revert_AuctionAlreadyExpired(SurplusAuction memory _auction, uint256 _amountToBuy, uint256 _bid) public {
     vm.assume(_auction.highBidder != address(0));
     vm.assume(_auction.bidExpiry == 0 || _auction.bidExpiry > block.timestamp);
     vm.assume(_auction.auctionDeadline <= block.timestamp);
 
-    _mockAuction(_auction);
+    _mockValues(_auction, 0, 0);
 
     vm.expectRevert('PostSettlementSurplusAuctionHouse/auction-already-expired');
 
     postSettlementSurplusAuctionHouse.increaseBidSize(_auction.id, _amountToBuy, _bid);
   }
 
-  function test_Revert_AmountsNotMatching(Auction memory _auction, uint256 _amountToBuy, uint256 _bid) public {
+  function test_Revert_AmountsNotMatching(SurplusAuction memory _auction, uint256 _amountToBuy, uint256 _bid) public {
     vm.assume(_auction.highBidder != address(0));
     vm.assume(_auction.bidExpiry == 0 || _auction.bidExpiry > block.timestamp);
     vm.assume(_auction.auctionDeadline > block.timestamp);
     vm.assume(_auction.amountToSell != _amountToBuy);
 
-    _mockAuction(_auction);
+    _mockValues(_auction, 0, 0);
 
     vm.expectRevert('PostSettlementSurplusAuctionHouse/amounts-not-matching');
 
     postSettlementSurplusAuctionHouse.increaseBidSize(_auction.id, _amountToBuy, _bid);
   }
 
-  function test_Revert_BidNotHigher(Auction memory _auction, uint256 _bid) public {
+  function test_Revert_BidNotHigher(SurplusAuction memory _auction, uint256 _bid) public {
     vm.assume(_auction.highBidder != address(0));
     vm.assume(_auction.bidExpiry == 0 || _auction.bidExpiry > block.timestamp);
     vm.assume(_auction.auctionDeadline > block.timestamp);
     vm.assume(_bid <= _auction.bidAmount);
 
-    _mockAuction(_auction);
+    _mockValues(_auction, 0, 0);
 
     vm.expectRevert('PostSettlementSurplusAuctionHouse/bid-not-higher');
 
     postSettlementSurplusAuctionHouse.increaseBidSize(_auction.id, _auction.amountToSell, _bid);
   }
 
-  function test_Revert_InsufficientIncrease(Auction memory _auction, uint256 _bid, uint256 _bidIncrease) public {
+  function test_Revert_InsufficientIncrease(SurplusAuction memory _auction, uint256 _bid, uint256 _bidIncrease) public {
     vm.assume(_auction.highBidder != address(0));
     vm.assume(_auction.bidExpiry == 0 || _auction.bidExpiry > block.timestamp);
     vm.assume(_auction.auctionDeadline > block.timestamp);
@@ -379,15 +438,19 @@ contract Unit_PostSettlementSurplusAuctionHouse_IncreaseBidSize is Base {
     vm.assume(notOverflowMul(_bidIncrease, _auction.bidAmount));
     vm.assume(_bid * WAD < _bidIncrease * _auction.bidAmount);
 
-    _mockAuction(_auction);
-    _mockBidIncrease(_bidIncrease);
+    _mockValues(_auction, _bidIncrease, 0);
 
     vm.expectRevert('PostSettlementSurplusAuctionHouse/insufficient-increase');
 
     postSettlementSurplusAuctionHouse.increaseBidSize(_auction.id, _auction.amountToSell, _bid);
   }
 
-  function test_Call_ProtocolToken_Move_0(Auction memory _auction, uint256 _bid) public happyPath(_auction, _bid) {
+  function test_Call_ProtocolToken_Move_0(
+    SurplusAuction memory _auction,
+    uint256 _bid,
+    uint256 _bidIncrease,
+    uint48 _bidDuration
+  ) public happyPath(_auction, _bid, _bidIncrease, _bidDuration) {
     vm.expectCall(
       address(mockProtocolToken),
       abi.encodeCall(
@@ -400,7 +463,12 @@ contract Unit_PostSettlementSurplusAuctionHouse_IncreaseBidSize is Base {
     postSettlementSurplusAuctionHouse.increaseBidSize(_auction.id, _auction.amountToSell, _bid);
   }
 
-  function testFail_Call_ProtocolToken_Move_0(Auction memory _auction, uint256 _bid) public happyPath(_auction, _bid) {
+  function testFail_Call_ProtocolToken_Move_0(
+    SurplusAuction memory _auction,
+    uint256 _bid,
+    uint256 _bidIncrease,
+    uint48 _bidDuration
+  ) public happyPath(_auction, _bid, _bidIncrease, _bidDuration) {
     vm.expectCall(
       address(mockProtocolToken),
       abi.encodeCall(mockProtocolToken.move, (_auction.highBidder, _auction.highBidder, _auction.bidAmount))
@@ -410,7 +478,12 @@ contract Unit_PostSettlementSurplusAuctionHouse_IncreaseBidSize is Base {
     postSettlementSurplusAuctionHouse.increaseBidSize(_auction.id, _auction.amountToSell, _bid);
   }
 
-  function test_Call_ProtocolToken_Move_1(Auction memory _auction, uint256 _bid) public happyPath(_auction, _bid) {
+  function test_Call_ProtocolToken_Move_1(
+    SurplusAuction memory _auction,
+    uint256 _bid,
+    uint256 _bidIncrease,
+    uint48 _bidDuration
+  ) public happyPath(_auction, _bid, _bidIncrease, _bidDuration) {
     vm.expectCall(
       address(mockProtocolToken),
       abi.encodeCall(mockProtocolToken.move, (user, _auction.highBidder, _auction.bidAmount))
@@ -425,7 +498,12 @@ contract Unit_PostSettlementSurplusAuctionHouse_IncreaseBidSize is Base {
     postSettlementSurplusAuctionHouse.increaseBidSize(_auction.id, _auction.amountToSell, _bid);
   }
 
-  function test_Set_Bids_HighBidder_0(Auction memory _auction, uint256 _bid) public happyPath(_auction, _bid) {
+  function test_Set_Bids_HighBidder_0(
+    SurplusAuction memory _auction,
+    uint256 _bid,
+    uint256 _bidIncrease,
+    uint48 _bidDuration
+  ) public happyPath(_auction, _bid, _bidIncrease, _bidDuration) {
     changePrank(_auction.highBidder);
     postSettlementSurplusAuctionHouse.increaseBidSize(_auction.id, _auction.amountToSell, _bid);
 
@@ -434,7 +512,12 @@ contract Unit_PostSettlementSurplusAuctionHouse_IncreaseBidSize is Base {
     assertEq(_highBidder, _auction.highBidder);
   }
 
-  function test_Set_Bids_HighBidder_1(Auction memory _auction, uint256 _bid) public happyPath(_auction, _bid) {
+  function test_Set_Bids_HighBidder_1(
+    SurplusAuction memory _auction,
+    uint256 _bid,
+    uint256 _bidIncrease,
+    uint48 _bidDuration
+  ) public happyPath(_auction, _bid, _bidIncrease, _bidDuration) {
     postSettlementSurplusAuctionHouse.increaseBidSize(_auction.id, _auction.amountToSell, _bid);
 
     (,, address _highBidder,,) = postSettlementSurplusAuctionHouse.bids(_auction.id);
@@ -442,7 +525,12 @@ contract Unit_PostSettlementSurplusAuctionHouse_IncreaseBidSize is Base {
     assertEq(_highBidder, user);
   }
 
-  function test_Set_Bids_BidAmount(Auction memory _auction, uint256 _bid) public happyPath(_auction, _bid) {
+  function test_Set_Bids_BidAmount(
+    SurplusAuction memory _auction,
+    uint256 _bid,
+    uint256 _bidIncrease,
+    uint48 _bidDuration
+  ) public happyPath(_auction, _bid, _bidIncrease, _bidDuration) {
     postSettlementSurplusAuctionHouse.increaseBidSize(_auction.id, _auction.amountToSell, _bid);
 
     (uint256 _bidAmount,,,,) = postSettlementSurplusAuctionHouse.bids(_auction.id);
@@ -450,23 +538,27 @@ contract Unit_PostSettlementSurplusAuctionHouse_IncreaseBidSize is Base {
     assertEq(_bidAmount, _bid);
   }
 
-  function test_Set_Bids_BidExpiry(Auction memory _auction, uint256 _bid) public happyPath(_auction, _bid) {
+  function test_Set_Bids_BidExpiry(
+    SurplusAuction memory _auction,
+    uint256 _bid,
+    uint256 _bidIncrease,
+    uint48 _bidDuration
+  ) public happyPath(_auction, _bid, _bidIncrease, _bidDuration) {
     postSettlementSurplusAuctionHouse.increaseBidSize(_auction.id, _auction.amountToSell, _bid);
 
     (,,, uint48 _bidExpiry,) = postSettlementSurplusAuctionHouse.bids(_auction.id);
 
-    assertEq(_bidExpiry, block.timestamp + postSettlementSurplusAuctionHouse.params().bidDuration);
+    assertEq(_bidExpiry, block.timestamp + _bidDuration);
   }
 
-  function test_Emit_IncreaseBidSize(Auction memory _auction, uint256 _bid) public happyPath(_auction, _bid) {
+  function test_Emit_IncreaseBidSize(
+    SurplusAuction memory _auction,
+    uint256 _bid,
+    uint256 _bidIncrease,
+    uint48 _bidDuration
+  ) public happyPath(_auction, _bid, _bidIncrease, _bidDuration) {
     expectEmitNoIndex();
-    emit IncreaseBidSize(
-      _auction.id,
-      user,
-      _auction.amountToSell,
-      _bid,
-      block.timestamp + postSettlementSurplusAuctionHouse.params().bidDuration
-    );
+    emit IncreaseBidSize(_auction.id, user, _auction.amountToSell, _bid, block.timestamp + _bidDuration);
 
     postSettlementSurplusAuctionHouse.increaseBidSize(_auction.id, _auction.amountToSell, _bid);
   }
@@ -475,44 +567,44 @@ contract Unit_PostSettlementSurplusAuctionHouse_IncreaseBidSize is Base {
 contract Unit_PostSettlementSurplusAuctionHouse_SettleAuction is Base {
   event SettleAuction(uint256 indexed _id);
 
-  modifier happyPath(Auction memory _auction) {
+  modifier happyPath(SurplusAuction memory _auction) {
     _assumeHappyPath(_auction);
-    _mockAuction(_auction);
+    _mockValues(_auction);
     _;
   }
 
-  function _assumeHappyPath(Auction memory _auction) internal view {
-    vm.assume(_auction.bidExpiry != 0);
-    vm.assume(_auction.bidExpiry < block.timestamp);
+  function _assumeHappyPath(SurplusAuction memory _auction) internal view {
+    vm.assume(
+      _auction.bidExpiry != 0 && (_auction.bidExpiry < block.timestamp || _auction.auctionDeadline < block.timestamp)
+    );
   }
 
-  function test_Revert_NotFinished_0(Auction memory _auction) public {
+  function _mockValues(SurplusAuction memory _auction) internal {
+    _mockAuction(_auction);
+  }
+
+  function test_Revert_NotFinished_0(SurplusAuction memory _auction) public {
     vm.assume(_auction.bidExpiry == 0);
 
-    _mockAuction(_auction);
+    _mockValues(_auction);
 
     vm.expectRevert('PostSettlementSurplusAuctionHouse/not-finished');
 
     postSettlementSurplusAuctionHouse.settleAuction(_auction.id);
   }
 
-  function test_Revert_NotFinished_1(Auction memory _auction) public {
+  function test_Revert_NotFinished_1(SurplusAuction memory _auction) public {
     vm.assume(_auction.bidExpiry >= block.timestamp);
     vm.assume(_auction.auctionDeadline >= block.timestamp);
 
-    _mockAuction(_auction);
+    _mockValues(_auction);
 
     vm.expectRevert('PostSettlementSurplusAuctionHouse/not-finished');
 
     postSettlementSurplusAuctionHouse.settleAuction(_auction.id);
   }
 
-  function test_Call_SafeEngine_TransferInternalCoins(Auction memory _auction) public {
-    vm.assume(_auction.bidExpiry >= block.timestamp);
-    vm.assume(_auction.auctionDeadline < block.timestamp);
-
-    _mockAuction(_auction);
-
+  function test_Call_SafeEngine_TransferInternalCoins(SurplusAuction memory _auction) public happyPath(_auction) {
     vm.expectCall(
       address(mockSafeEngine),
       abi.encodeCall(
@@ -524,7 +616,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_SettleAuction is Base {
     postSettlementSurplusAuctionHouse.settleAuction(_auction.id);
   }
 
-  function test_Call_ProtocolToken_Burn(Auction memory _auction) public happyPath(_auction) {
+  function test_Call_ProtocolToken_Burn(SurplusAuction memory _auction) public happyPath(_auction) {
     vm.expectCall(
       address(mockProtocolToken),
       abi.encodeCall(mockProtocolToken.burn, (address(postSettlementSurplusAuctionHouse), _auction.bidAmount))
@@ -533,7 +625,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_SettleAuction is Base {
     postSettlementSurplusAuctionHouse.settleAuction(_auction.id);
   }
 
-  function test_Set_Bids(Auction memory _auction) public happyPath(_auction) {
+  function test_Set_Bids(SurplusAuction memory _auction) public happyPath(_auction) {
     postSettlementSurplusAuctionHouse.settleAuction(_auction.id);
 
     (uint256 _bidAmount, uint256 _amountToSell, address _highBidder, uint48 _bidExpiry, uint48 _auctionDeadline) =
@@ -546,7 +638,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_SettleAuction is Base {
     assertEq(_auctionDeadline, 0);
   }
 
-  function test_Emit_SettleAuction(Auction memory _auction) public happyPath(_auction) {
+  function test_Emit_SettleAuction(SurplusAuction memory _auction) public happyPath(_auction) {
     expectEmitNoIndex();
     emit SettleAuction(_auction.id);
 
@@ -557,6 +649,11 @@ contract Unit_PostSettlementSurplusAuctionHouse_SettleAuction is Base {
 contract Unit_PostSettlementSurplusAuctionHouse_ModifyParameters is Base {
   event ModifyParameters(bytes32 indexed _param, bytes32 indexed _cType, bytes _data);
 
+  modifier happyPath() {
+    vm.startPrank(authorizedAccount);
+    _;
+  }
+
   function test_Revert_Unauthorized(bytes32 _param, bytes memory _data) public {
     vm.expectRevert(IAuthorizable.Unauthorized.selector);
 
@@ -565,7 +662,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_ModifyParameters is Base {
 
   function test_Set_Parameters(IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams memory _fuzz)
     public
-    authorized
+    happyPath
   {
     postSettlementSurplusAuctionHouse.modifyParameters('bidIncrease', abi.encode(_fuzz.bidIncrease));
     postSettlementSurplusAuctionHouse.modifyParameters('bidDuration', abi.encode(_fuzz.bidDuration));
@@ -577,13 +674,15 @@ contract Unit_PostSettlementSurplusAuctionHouse_ModifyParameters is Base {
     assertEq(keccak256(abi.encode(_params)), keccak256(abi.encode(_fuzz)));
   }
 
-  function test_Revert_UnrecognizedParam() public authorized {
+  function test_Revert_UnrecognizedParam() public {
+    vm.startPrank(authorizedAccount);
+
     vm.expectRevert(IModifiable.UnrecognizedParam.selector);
 
     postSettlementSurplusAuctionHouse.modifyParameters('unrecognizedParam', abi.encode(0));
   }
 
-  function test_Emit_ModifyParameters(uint256 _bidIncrease) public authorized {
+  function test_Emit_ModifyParameters(uint256 _bidIncrease) public happyPath {
     expectEmitNoIndex();
     emit ModifyParameters('bidIncrease', GLOBAL_PARAM, abi.encode(_bidIncrease));
 

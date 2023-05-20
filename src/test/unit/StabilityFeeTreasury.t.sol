@@ -576,7 +576,7 @@ contract Unit_StabilityFeeTreasury_GiveFunds is Base {
     uint256 _expensesInitialValue
   ) public authorized {
     _assumeHappyPath(_account);
-    vm.assume(notOverflow(_expensesInitialValue, _rad));
+    vm.assume(notOverflowAdd(_expensesInitialValue, _rad));
 
     _mockValues({_coinBalance: _rad, _debtBalance: 0});
     _mockExpensesAccumulator(_expensesInitialValue);
@@ -607,7 +607,7 @@ contract Unit_StabilityFeeTreasury_GiveFunds is Base {
 
   function test_Emit_GiveFunds(address _account, uint256 _rad, uint256 _expensesInitialValue) public authorized {
     _assumeHappyPath(_account);
-    vm.assume(notOverflow(_expensesInitialValue, _rad));
+    vm.assume(notOverflowAdd(_expensesInitialValue, _rad));
 
     _mockValues({_coinBalance: _rad, _debtBalance: 0});
     _mockExpensesAccumulator(_expensesInitialValue);
@@ -714,7 +714,7 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
   }
 
   function _notPerBlockLimitExceeded(PullFundsScenario memory _pullFundsScenario) internal pure returns (bool) {
-    vm.assume(notOverflow(_pullFundsScenario._initialPulledPerBlock, _pullFundsScenario._wad * RAY));
+    vm.assume(notOverflowAdd(_pullFundsScenario._initialPulledPerBlock, _pullFundsScenario._wad * RAY));
     return _pullFundsScenario._initialPulledPerBlock + (_pullFundsScenario._wad * RAY)
       <= _pullFundsScenario._allowancePerBlock; //avoid StabilityFeeTreasury/per-block-limit-exceeded
   }
@@ -728,7 +728,7 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
   }
 
   function _notOverflowExpensesAccumulator(PullFundsScenario memory _pullFundsScenario) internal pure {
-    vm.assume(notOverflow(_pullFundsScenario._initialExpensesAccumulator, _pullFundsScenario._wad * RAY));
+    vm.assume(notOverflowAdd(_pullFundsScenario._initialExpensesAccumulator, _pullFundsScenario._wad * RAY));
   }
 
   function _mockValues(PullFundsScenario memory _pullFundsScenario, uint256 _safeEngineDebtBalance) internal {
@@ -760,7 +760,7 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     vm.assume(_notNullDstAcc(_pullFundsScenario));
     vm.assume(_notAccountingDstAcc(_pullFundsScenario));
     vm.assume(_notNullTransferAmmount(_pullFundsScenario));
-    vm.assume(notOverflow(_pullFundsScenario._initialPulledPerBlock, _pullFundsScenario._wad * RAY));
+    vm.assume(notOverflowAdd(_pullFundsScenario._initialPulledPerBlock, _pullFundsScenario._wad * RAY));
     vm.assume(_enoughFunds(_pullFundsScenario));
     vm.assume(_notBelowPullFundsMinThreshold(_pullFundsScenario));
     _notOverflowExpensesAccumulator(_pullFundsScenario);
@@ -1402,8 +1402,8 @@ contract Unit_StabilityFeeTreasury_TransferSurplusFunds is Base {
 
   function test_Revert_TransferCoolDownNotPassed(uint256 _surplusDelay, uint256 _timePassed) public {
     vm.assume(_timePassed < _surplusDelay);
-    vm.assume(notOverflow(block.timestamp, _surplusDelay));
-    vm.assume(notOverflow(block.timestamp + _timePassed, _surplusDelay));
+    vm.assume(notOverflowAdd(block.timestamp, _surplusDelay));
+    vm.assume(notOverflowAdd(block.timestamp + _timePassed, _surplusDelay));
 
     _mockSurplusTransferDelay(_surplusDelay);
     _mockLatestSurplusTransferTime(block.timestamp + _timePassed);
@@ -1420,7 +1420,7 @@ contract Unit_StabilityFeeTreasury_TransferSurplusFunds is Base {
     uint256 _timePassed
   ) public happyPathEnoughTreasureCapacityNotEnoughCoinBalance(_transferSurplusFundsScenario) {
     vm.assume(_timePassed >= _surplusDelay);
-    vm.assume(notOverflow(block.timestamp, _timePassed));
+    vm.assume(notOverflowAdd(block.timestamp, _timePassed));
 
     _mockSurplusTransferDelay(_surplusDelay);
     _mockLatestSurplusTransferTime(block.timestamp + _timePassed);

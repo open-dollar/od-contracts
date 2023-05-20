@@ -20,4 +20,12 @@ contract DebtAuctionHouseForTest is DebtAuctionHouse {
     bids[_id].bidExpiry = _bidExpiry;
     bids[_id].auctionDeadline = _auctionDeadline;
   }
+
+  function setBidDuration(uint48 _bidDuration) external {
+    _params.bidDuration = _bidDuration;
+  }
+
+  function setTotalAuctionLength(uint48 _totalAuctionLength) external {
+    _params.totalAuctionLength = _totalAuctionLength;
+  }
 }

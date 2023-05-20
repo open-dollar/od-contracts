@@ -8,12 +8,12 @@ contract OverflowChecker {
   using Math for uint256;
 
   function trySum(uint256[] calldata _numbers) external pure returns (uint256 _total) {
-    for (uint256 i = 0; i < _numbers.length; i++) {
-      _total += _numbers[i];
+    for (uint256 _i = 0; _i < _numbers.length; ++_i) {
+      _total += _numbers[_i];
     }
   }
 
-  function notOverflow(uint256[] memory _numbers) public view returns (bool _valid) {
+  function notOverflowAdd(uint256[] memory _numbers) public view returns (bool _valid) {
     try OverflowChecker(address(this)).trySum(_numbers) {
       _valid = true;
     } catch {
@@ -21,8 +21,17 @@ contract OverflowChecker {
     }
   }
 
-  function notOverflow(uint256 _a, uint256 _b) public pure returns (bool _valid) {
-    _valid = _a < type(uint256).max - _b;
+  function notOverflowAdd(uint256 _a, uint256 _b, uint256 _c) public view returns (bool _valid) {
+    uint256[] memory _numbers = new uint256[](3);
+    _numbers[0] = _a;
+    _numbers[1] = _b;
+    _numbers[2] = _c;
+
+    return notOverflowAdd(_numbers);
+  }
+
+  function notOverflowAdd(uint256 _a, uint256 _b) public pure returns (bool _valid) {
+    _valid = _a <= type(uint256).max - _b;
   }
 
   function notOverflowAdd(int256 _a, int256 _b) public pure returns (bool _valid) {
@@ -40,24 +49,12 @@ contract OverflowChecker {
   }
 
   // When the result is int256
-  function notOverflow(uint256 _a, int256 _b) public pure returns (bool _valid) {
+  function notOverflowAdd(uint256 _a, int256 _b) public pure returns (bool _valid) {
     _valid = type(int256).max - _b >= int256(_a);
   }
 
-  function notOverflow(uint256 _a, uint256 _b, uint256 _c) public view returns (bool _valid) {
-    uint256[] memory _numbers = new uint256[](3);
-    _numbers[0] = _a;
-    _numbers[1] = _b;
-    _numbers[2] = _c;
-    try OverflowChecker(address(this)).trySum(_numbers) {
-      _valid = true;
-    } catch {
-      _valid = false;
-    }
-  }
-
-  function notOverflowWhenInt256(uint256 _number) public pure returns (bool _valid) {
-    _valid = _number < 2 ** 255;
+  function notOverflowAddUint48(uint48 _a, uint48 _b) public pure returns (bool _valid) {
+    _valid = _a <= type(uint48).max - _b;
   }
 
   function notUnderflow(uint256 _a, uint256 _b) public pure returns (bool _valid) {
@@ -73,7 +70,7 @@ contract OverflowChecker {
         _valid = notUnderflow(_a, uint256(-_b));
       }
     } else {
-      _valid = notOverflow(_a, uint256(_b));
+      _valid = notOverflowAdd(_a, uint256(_b));
     }
   }
 
@@ -82,7 +79,7 @@ contract OverflowChecker {
     if (_b > 0) {
       _valid = notUnderflow(_a, uint256(-_b));
     } else {
-      _valid = notOverflow(_a, uint256(_b));
+      _valid = notOverflowAdd(_a, uint256(_b));
     }
   }
 
@@ -131,6 +128,10 @@ contract OverflowChecker {
     } catch {
       _valid = false;
     }
+  }
+
+  function notOverflowInt256(uint256 _number) public pure returns (bool _valid) {
+    _valid = _number < 2 ** 255;
   }
 }
 

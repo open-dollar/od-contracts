@@ -37,11 +37,6 @@ abstract contract Base is HaiTest {
     vm.stopPrank();
   }
 
-  modifier authorized() {
-    vm.startPrank(authorizedAccount);
-    _;
-  }
-
   function _mockDecimals(uint256 _decimals) internal {
     vm.mockCall(address(mockCollateral), abi.encodeCall(mockCollateral.decimals, ()), abi.encode(_decimals));
   }
@@ -68,10 +63,9 @@ abstract contract Base is HaiTest {
 contract Unit_CollateralJoin_Constructor is Base {
   event AddAuthorization(address _account);
 
-  function setUp() public override {
-    Base.setUp();
-
+  modifier happyPath() {
     vm.startPrank(user);
+    _;
   }
 
   function test_Revert_Non18Decimals(uint256 _decimals) public {
@@ -84,32 +78,32 @@ contract Unit_CollateralJoin_Constructor is Base {
     collateralJoin = new CollateralJoin(address(mockSafeEngine), collateralType, address(mockCollateral));
   }
 
-  function test_Emit_AddAuthorization() public {
+  function test_Emit_AddAuthorization() public happyPath {
     expectEmitNoIndex();
     emit AddAuthorization(user);
 
     collateralJoin = new CollateralJoin(address(mockSafeEngine), collateralType, address(mockCollateral));
   }
 
-  function test_Set_ContractEnabled() public {
+  function test_Set_ContractEnabled() public happyPath {
     assertEq(collateralJoin.contractEnabled(), 1);
   }
 
-  function test_Set_SafeEngine() public {
+  function test_Set_SafeEngine() public happyPath {
     assertEq(address(collateralJoin.safeEngine()), address(mockSafeEngine));
   }
 
-  function test_Set_CollateralType(bytes32 _cType) public {
+  function test_Set_CollateralType(bytes32 _cType) public happyPath {
     collateralJoin = new CollateralJoin(address(mockSafeEngine), _cType, address(mockCollateral));
 
     assertEq(collateralJoin.collateralType(), _cType);
   }
 
-  function test_Set_Collateral() public {
+  function test_Set_Collateral() public happyPath {
     assertEq(address(collateralJoin.collateral()), address(mockCollateral));
   }
 
-  function test_Set_Decimals() public {
+  function test_Set_Decimals() public happyPath {
     assertEq(collateralJoin.decimals(), 18);
   }
 }
@@ -117,13 +111,20 @@ contract Unit_CollateralJoin_Constructor is Base {
 contract Unit_CollateralJoin_DisableContract is Base {
   event DisableContract();
 
+  modifier happyPath() {
+    vm.startPrank(authorizedAccount);
+    _;
+  }
+
   function test_Revert_Unauthorized() public {
     vm.expectRevert(IAuthorizable.Unauthorized.selector);
 
     collateralJoin.disableContract();
   }
 
-  function test_Revert_ContractIsDisabled() public authorized {
+  function test_Revert_ContractIsDisabled() public {
+    vm.startPrank(authorizedAccount);
+
     _mockContractEnabled(0);
 
     vm.expectRevert(IDisableable.ContractIsDisabled.selector);
@@ -131,7 +132,7 @@ contract Unit_CollateralJoin_DisableContract is Base {
     collateralJoin.disableContract();
   }
 
-  function test_Emit_DisableContract() public authorized {
+  function test_Emit_DisableContract() public happyPath {
     expectEmitNoIndex();
     emit DisableContract();
 
@@ -142,20 +143,20 @@ contract Unit_CollateralJoin_DisableContract is Base {
 contract Unit_CollateralJoin_Join is Base {
   event Join(address _sender, address _account, uint256 _wad);
 
-  function setUp() public override {
-    Base.setUp();
-
-    vm.startPrank(user);
-  }
-
   modifier happyPath(uint256 _wad) {
+    vm.startPrank(user);
+
     _assumeHappyPath(_wad);
-    _mockTransferFrom(user, address(collateralJoin), _wad, true);
+    _mockValues(_wad);
     _;
   }
 
   function _assumeHappyPath(uint256 _wad) internal {
-    vm.assume(notOverflowWhenInt256(_wad));
+    vm.assume(notOverflowInt256(_wad));
+  }
+
+  function _mockValues(uint256 _wad) internal {
+    _mockTransferFrom(user, address(collateralJoin), _wad, true);
   }
 
   function test_Revert_ContractIsDisabled(address _account, uint256 _wad) public {
@@ -167,7 +168,7 @@ contract Unit_CollateralJoin_Join is Base {
   }
 
   function test_Revert_IntOverflow(address _account, uint256 _wad) public {
-    vm.assume(!notOverflowWhenInt256(_wad));
+    vm.assume(!notOverflowInt256(_wad));
 
     vm.expectRevert(Math.IntOverflow.selector);
 
@@ -175,6 +176,7 @@ contract Unit_CollateralJoin_Join is Base {
   }
 
   function test_Revert_FailedTransfer(address _account, uint256 _wad) public {
+    vm.startPrank(user);
     vm.assume(int256(_wad) >= 0);
 
     _mockTransferFrom(user, address(collateralJoin), _wad, false);
@@ -204,24 +206,24 @@ contract Unit_CollateralJoin_Join is Base {
 contract Unit_CollateralJoin_Exit is Base {
   event Exit(address _sender, address _account, uint256 _wad);
 
-  function setUp() public override {
-    Base.setUp();
-
-    vm.startPrank(user);
-  }
-
   modifier happyPath(address _account, uint256 _wad) {
+    vm.startPrank(user);
+
     _assumeHappyPath(_wad);
-    _mockTransfer(_account, _wad, true);
+    _mockValues(_account, _wad);
     _;
   }
 
   function _assumeHappyPath(uint256 _wad) internal {
-    vm.assume(notOverflowWhenInt256(_wad));
+    vm.assume(notOverflowInt256(_wad));
+  }
+
+  function _mockValues(address _account, uint256 _wad) internal {
+    _mockTransfer(_account, _wad, true);
   }
 
   function test_Revert_IntOverflow(address _account, uint256 _wad) public {
-    vm.assume(!notOverflowWhenInt256(_wad));
+    vm.assume(!notOverflowInt256(_wad));
 
     vm.expectRevert(Math.IntOverflow.selector);
 
@@ -229,7 +231,7 @@ contract Unit_CollateralJoin_Exit is Base {
   }
 
   function test_Revert_FailedTransfer(address _account, uint256 _wad) public {
-    vm.assume(notOverflowWhenInt256(_wad));
+    vm.assume(notOverflowInt256(_wad));
 
     _mockTransfer(_account, _wad, false);
 

@@ -810,7 +810,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     vm.assume(notOverflowMul(_limitedValue, WAD));
     uint256 _limitAdjustedDebt = _limitedValue * WAD / _accumulatedRate / _liquidationPenalty;
     vm.assume(
-      notOverflowMul(_safeCollateral, _limitAdjustedDebt) && notOverflow(_currentOnAuctionSystemCoins, _limitedValue)
+      notOverflowMul(_safeCollateral, _limitAdjustedDebt) && notOverflowAdd(_currentOnAuctionSystemCoins, _limitedValue)
     );
     _notNull = _safeCollateral * _limitAdjustedDebt / _safeDebt > 0;
   }
