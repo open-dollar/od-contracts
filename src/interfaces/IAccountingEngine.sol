@@ -18,8 +18,8 @@ interface IAccountingEngine is IAuthorizable, IDisableable, IModifiable {
   event CancelAuctionedDebtWithSurplus(
     uint256 _rad, uint256 _totalOnAuctionDebt, uint256 _coinBalance, uint256 _debtBalance
   );
-  event AuctionDebt(uint256 indexed id, uint256 _totalOnAuctionDebt, uint256 _debtBalance);
-  event AuctionSurplus(uint256 indexed id, uint256 _lastSurplusTime, uint256 _coinBalance);
+  event AuctionDebt(uint256 indexed _id, uint256 _totalOnAuctionDebt, uint256 _debtBalance);
+  event AuctionSurplus(uint256 indexed _id, uint256 _lastSurplusTime, uint256 _coinBalance);
   event TransferPostSettlementSurplus(address _postSettlementSurplusDrain, uint256 _coinBalance, uint256 _debtBalance);
   event TransferExtraSurplus(address indexed _extraSurplusReceiver, uint256 _lastSurplusTime, uint256 _coinBalance);
 

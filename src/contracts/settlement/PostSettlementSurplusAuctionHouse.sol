@@ -51,7 +51,7 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, IPostSettlementSurpl
   // --- Params ---
   PostSettlementSAHParams internal _params;
 
-  function params() external view returns (PostSettlementSAHParams memory) {
+  function params() external view returns (PostSettlementSAHParams memory _pssahParams) {
     return _params;
   }
 

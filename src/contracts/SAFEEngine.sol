@@ -88,11 +88,11 @@ contract SAFEEngine is Authorizable, Disableable, ISAFEEngine {
   // Data about each SAFE
   mapping(bytes32 _cType => mapping(address _safe => SAFE)) internal _safes;
 
-  function params() external view returns (SAFEEngineParams memory) {
+  function params() external view returns (SAFEEngineParams memory _safeEngineParams) {
     return _params;
   }
 
-  function cParams(bytes32 _cType) external view returns (SAFEEngineCollateralParams memory _collateralParams) {
+  function cParams(bytes32 _cType) external view returns (SAFEEngineCollateralParams memory _safeEngineCParams) {
     return _cParams[_cType];
   }
 
@@ -343,12 +343,12 @@ contract SAFEEngine is Authorizable, Disableable, ISAFEEngine {
     _safeData.generatedDebt = _safeData.generatedDebt.add(_deltaDebt);
     __cData.debtAmount = __cData.debtAmount.add(_deltaDebt);
 
-    int256 deltaTotalIssuedDebt = __cData.accumulatedRate.mul(_deltaDebt);
+    int256 _deltaTotalIssuedDebt = __cData.accumulatedRate.mul(_deltaDebt);
 
     tokenCollateral[_cType][_collateralCounterparty] =
       tokenCollateral[_cType][_collateralCounterparty].sub(_deltaCollateral);
-    debtBalance[_debtCounterparty] = debtBalance[_debtCounterparty].sub(deltaTotalIssuedDebt);
-    globalUnbackedDebt = globalUnbackedDebt.sub(deltaTotalIssuedDebt);
+    debtBalance[_debtCounterparty] = debtBalance[_debtCounterparty].sub(_deltaTotalIssuedDebt);
+    globalUnbackedDebt = globalUnbackedDebt.sub(_deltaTotalIssuedDebt);
 
     emit ConfiscateSAFECollateralAndDebt(
       _cType, _safe, _collateralCounterparty, _debtCounterparty, _deltaCollateral, _deltaDebt, globalUnbackedDebt

@@ -40,6 +40,7 @@ interface ITaxCollector is IAuthorizable {
 
   function collateralTypes(bytes32 _cType) external view returns (uint256 _stabilityFee, uint256 _updateTime);
   function secondaryReceiverAllotedTax(bytes32 _cType) external view returns (uint256 _secondaryReceiverAllotedTax);
+  // TODO: remove the underscore from this method
   function _secondaryTaxReceivers(
     bytes32 _cType,
     address _receiver

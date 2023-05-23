@@ -38,9 +38,9 @@ contract StabilityFeeTreasury is Authorizable, Disableable, IStabilityFeeTreasur
   address public extraSurplusReceiver;
 
   // --- Params ---
-  StabilityFeeTreasuryParams _params;
+  StabilityFeeTreasuryParams internal _params;
 
-  function params() external view returns (StabilityFeeTreasuryParams memory) {
+  function params() external view returns (StabilityFeeTreasuryParams memory _sfTreasuryParams) {
     return _params;
   }
 
@@ -53,8 +53,8 @@ contract StabilityFeeTreasury is Authorizable, Disableable, IStabilityFeeTreasur
   uint256 public accumulatorTag; // latest tagged accumulator price [rad]
   uint256 public latestSurplusTransferTime; // latest timestamp when transferSurplusFunds was called [seconds]
 
-  modifier accountNotTreasury(address account) {
-    require(account != address(this), 'StabilityFeeTreasury/account-cannot-be-treasury');
+  modifier accountNotTreasury(address _account) {
+    require(_account != address(this), 'StabilityFeeTreasury/account-cannot-be-treasury');
     _;
   }
 
@@ -241,11 +241,11 @@ contract StabilityFeeTreasury is Authorizable, Disableable, IStabilityFeeTreasur
     // Check if we have too much money
     if (safeEngine.coinBalance(address(this)) > _remainingFunds) {
       // Make sure that we still keep min SF in treasury
-      uint256 fundsToTransfer = safeEngine.coinBalance(address(this)) - _remainingFunds;
+      uint256 _fundsToTransfer = safeEngine.coinBalance(address(this)) - _remainingFunds;
       // Transfer surplus to accounting engine
-      safeEngine.transferInternalCoins(address(this), extraSurplusReceiver, fundsToTransfer);
+      safeEngine.transferInternalCoins(address(this), extraSurplusReceiver, _fundsToTransfer);
       // Emit event
-      emit TransferSurplusFunds(extraSurplusReceiver, fundsToTransfer);
+      emit TransferSurplusFunds(extraSurplusReceiver, _fundsToTransfer);
     }
   }
 
@@ -268,19 +268,19 @@ contract StabilityFeeTreasury is Authorizable, Disableable, IStabilityFeeTreasur
     emit ModifyParameters(_parameter, GLOBAL_PARAM, _data);
   }
 
-  function _validateSurplusReceiver(address _address) internal view returns (address) {
+  function _validateSurplusReceiver(address _address) internal view returns (address _surplusReceiver) {
     // NOTE: why these checks?
     require(_address != address(0), 'StabilityFeeTreasury/null-addr');
     require(_address != address(this), 'StabilityFeeTreasury/accounting-engine-cannot-be-treasury');
     return _address;
   }
 
-  function _validateTreasuryCapacity(uint256 _uint256) internal view returns (uint256) {
+  function _validateTreasuryCapacity(uint256 _uint256) internal view returns (uint256 _treasuryCapacity) {
     require(_uint256 >= _params.minimumFundsRequired, 'StabilityFeeTreasury/capacity-lower-than-min-funds');
     return _uint256;
   }
 
-  function _validateMinFundsReceived(uint256 _uint256) internal view returns (uint256) {
+  function _validateMinFundsReceived(uint256 _uint256) internal view returns (uint256 _minFundsReceived) {
     require(_uint256 <= _params.treasuryCapacity, 'StabilityFeeTreasury/min-funds-higher-than-capacity');
     return _uint256;
   }

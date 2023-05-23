@@ -7,5 +7,5 @@ interface ISystemCoin {
   function approve(address _account, uint256 _amount) external returns (bool _success);
   function transfer(address _account, uint256 _amount) external returns (bool _success);
   function transferFrom(address, address, uint256) external returns (bool _success);
-  function decimals() external view returns (uint256);
+  function decimals() external view returns (uint256 _decimals);
 }

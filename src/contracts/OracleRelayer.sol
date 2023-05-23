@@ -37,11 +37,11 @@ contract OracleRelayer is Authorizable, Disableable, IOracleRelayer {
   OracleRelayerParams internal _params;
   mapping(bytes32 => OracleRelayerCollateralParams) internal _cParams;
 
-  function params() external view override returns (OracleRelayerParams memory) {
+  function params() external view override returns (OracleRelayerParams memory _oracleRelayerParams) {
     return _params;
   }
 
-  function cParams(bytes32 _cType) external view returns (OracleRelayerCollateralParams memory) {
+  function cParams(bytes32 _cType) external view returns (OracleRelayerCollateralParams memory _oracleRelayerCParams) {
     return _cParams[_cType];
   }
 

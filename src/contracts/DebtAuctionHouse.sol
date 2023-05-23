@@ -57,7 +57,7 @@ contract DebtAuctionHouse is Authorizable, Disableable, IDebtAuctionHouse {
   // --- Params ---
   DebtAuctionHouseParams internal _params;
 
-  function params() external view returns (DebtAuctionHouseParams memory) {
+  function params() external view returns (DebtAuctionHouseParams memory _dahParams) {
     return _params;
   }
 

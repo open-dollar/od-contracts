@@ -50,7 +50,7 @@ contract SurplusAuctionHouse is Authorizable, Disableable, ISurplusAuctionHouse 
   // --- Params ---
   SurplusAuctionHouseParams internal _params;
 
-  function params() external view returns (SurplusAuctionHouseParams memory) {
+  function params() external view returns (SurplusAuctionHouseParams memory _sahParams) {
     return _params;
   }
 

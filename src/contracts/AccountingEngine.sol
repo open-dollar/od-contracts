@@ -49,9 +49,9 @@ contract AccountingEngine is Authorizable, Disableable, IAccountingEngine {
   address public extraSurplusReceiver;
 
   // --- Params ---
-  AccountingEngineParams _params;
+  AccountingEngineParams internal _params;
 
-  function params() external view returns (AccountingEngineParams memory) {
+  function params() external view returns (AccountingEngineParams memory _accEngineParams) {
     return _params;
   }
 
@@ -82,17 +82,17 @@ contract AccountingEngine is Authorizable, Disableable, IAccountingEngine {
   /**
    * @notice Returns the amount of bad debt that is not in the debtQueue and is not currently handled by debt auctions
    */
-  function unqueuedUnauctionedDebt() public view returns (uint256) {
+  function unqueuedUnauctionedDebt() public view returns (uint256 _unqueuedUnauctionedDebt) {
     return (safeEngine.debtBalance(address(this)) - totalQueuedDebt) - totalOnAuctionDebt;
   }
 
   /**
    * @notice Returns a bool indicating whether the AccountingEngine can currently print protocol tokens using debt auctions
    */
-  function canPrintProtocolTokens() public view returns (bool) {
+  function canPrintProtocolTokens() public view returns (bool _canPrintProtocolTokens) {
     if (address(systemStakingPool) == address(0)) return true;
-    try systemStakingPool.canPrintProtocolTokens() returns (bool ok) {
-      return ok;
+    try systemStakingPool.canPrintProtocolTokens() returns (bool _ok) {
+      return _ok;
     } catch (bytes memory) {
       return true;
     }

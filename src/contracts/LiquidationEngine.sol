@@ -53,11 +53,11 @@ contract LiquidationEngine is Authorizable, Disableable, ILiquidationEngine {
   LiquidationEngineParams internal _params;
   mapping(bytes32 _cType => LiquidationEngineCollateralParams) internal _cParams;
 
-  function params() external view returns (LiquidationEngineParams memory) {
+  function params() external view returns (LiquidationEngineParams memory _liqEngineParams) {
     return _params;
   }
 
-  function cParams(bytes32 _cType) external view returns (LiquidationEngineCollateralParams memory) {
+  function cParams(bytes32 _cType) external view returns (LiquidationEngineCollateralParams memory _liqEngineCParams) {
     return _cParams[_cType];
   }
 
@@ -248,7 +248,10 @@ contract LiquidationEngine is Authorizable, Disableable, ILiquidationEngine {
    * @param  _cType The collateral type stored in the SAFE
    * @param  _safe The SAFE's address/handler
    */
-  function getLimitAdjustedDebtToCover(bytes32 _cType, address _safe) external view returns (uint256) {
+  function getLimitAdjustedDebtToCover(
+    bytes32 _cType,
+    address _safe
+  ) external view returns (uint256 _limitAdjustedDebtToCover) {
     uint256 _accumulatedRate = safeEngine.cData(_cType).accumulatedRate;
     uint256 _generatedDebt = safeEngine.safes(_cType, _safe).generatedDebt;
     LiquidationEngineCollateralParams memory __cParams = _cParams[_cType];
