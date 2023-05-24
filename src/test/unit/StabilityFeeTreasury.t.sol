@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {Math, RAY, WAD, HUNDRED} from '@libraries/Math.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
@@ -14,6 +13,8 @@ import {
   StabilityFeeTreasuryForTest,
   StabilityFeeTreasuryForInternalCallsTest
 } from '@contracts/for-test/StabilityFeeTreasuryForTest.sol';
+import {Math, RAY, WAD, HUNDRED} from '@libraries/Math.sol';
+import {Assertions} from '@libraries/Assertions.sol';
 import {HaiTest} from '@test/utils/HaiTest.t.sol';
 import {StdStorage, stdStorage} from 'forge-std/StdStorage.sol';
 
@@ -235,11 +236,11 @@ contract Unit_StabilityFeeTreasury_Constructor is Base {
 
 contract Unit_StabilityFeeTreasury_ModifyParameters is Base {
   function test_ModifyParameters(IStabilityFeeTreasury.StabilityFeeTreasuryParams memory _fuzz) public authorized {
-    vm.assume(_fuzz.treasuryCapacity >= _fuzz.minimumFundsRequired);
+    vm.assume(_fuzz.treasuryCapacity >= _fuzz.minFundsRequired);
 
     stabilityFeeTreasury.modifyParameters('expensesMultiplier', abi.encode(_fuzz.expensesMultiplier));
     stabilityFeeTreasury.modifyParameters('treasuryCapacity', abi.encode(_fuzz.treasuryCapacity));
-    stabilityFeeTreasury.modifyParameters('minimumFundsRequired', abi.encode(_fuzz.minimumFundsRequired));
+    stabilityFeeTreasury.modifyParameters('minimumFundsRequired', abi.encode(_fuzz.minFundsRequired));
     stabilityFeeTreasury.modifyParameters('pullFundsMinThreshold', abi.encode(_fuzz.pullFundsMinThreshold));
     stabilityFeeTreasury.modifyParameters('surplusTransferDelay', abi.encode(_fuzz.surplusTransferDelay));
 
@@ -262,14 +263,9 @@ contract Unit_StabilityFeeTreasury_ModifyParameters is Base {
     stabilityFeeTreasury.modifyParameters('unrecognizedParam', abi.encode(0));
   }
 
-  function test_Revert_ModifyParameters_ExtraSurplusReceiver0() public authorized {
-    vm.expectRevert('StabilityFeeTreasury/null-addr');
+  function test_Revert_ModifyParameters_ExtraSurplusReceiver() public authorized {
+    vm.expectRevert(Assertions.NullAddress.selector);
     stabilityFeeTreasury.modifyParameters('extraSurplusReceiver', abi.encode(0));
-  }
-
-  function test_Revert_ModifyParameters_ExtraSurplusReceiver1() public authorized {
-    vm.expectRevert('StabilityFeeTreasury/accounting-engine-cannot-be-treasury');
-    stabilityFeeTreasury.modifyParameters('extraSurplusReceiver', abi.encode(stabilityFeeTreasury));
   }
 }
 

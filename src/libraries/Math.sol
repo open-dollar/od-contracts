@@ -8,14 +8,7 @@ uint256 constant WAD = 10 ** 18;
 uint256 constant HUNDRED = 100;
 
 library Math {
-  error InvalidSub();
-  error InvalidMul();
   error IntOverflow();
-  error NotGreaterThan(uint256 _x, uint256 _y);
-  error NotLesserThan(uint256 _x, uint256 _y);
-  error NotGreaterOrEqualThan(uint256 _x, uint256 _y);
-  error NotLesserOrEqualThan(uint256 _x, uint256 _y);
-  error NullAddress();
 
   function add(uint256 _x, int256 _y) internal pure returns (uint256 _add) {
     if (_y >= 0) {
@@ -124,31 +117,5 @@ library Math {
 
   function absolute(int256 _x) internal pure returns (uint256 _z) {
     _z = (_x < 0) ? uint256(-_x) : uint256(_x);
-  }
-
-  // --- Assertions ---
-  function assertGt(uint256 _x, uint256 _y) internal pure returns (uint256 __x) {
-    if (_x <= _y) revert NotGreaterThan(_x, _y);
-    return _x;
-  }
-
-  function assertGtEq(uint256 _x, uint256 _y) internal pure returns (uint256 __x) {
-    if (_x < _y) revert NotGreaterOrEqualThan(_x, _y);
-    return _x;
-  }
-
-  function assertLt(uint256 _x, uint256 _y) internal pure returns (uint256 __x) {
-    if (_x >= _y) revert NotLesserThan(_x, _y);
-    return _x;
-  }
-
-  function assertLtEq(uint256 _x, uint256 _y) internal pure returns (uint256 __x) {
-    if (_x > _y) revert NotLesserOrEqualThan(_x, _y);
-    return _x;
-  }
-
-  function assertNonNull(address _address) internal pure returns (address __address) {
-    if (_address == address(0)) revert NullAddress();
-    return _address;
   }
 }

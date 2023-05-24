@@ -12,7 +12,7 @@ interface IStabilityFeeTreasury is IAuthorizable, IDisableable, IModifiable {
   struct StabilityFeeTreasuryParams {
     uint256 expensesMultiplier;
     uint256 treasuryCapacity;
-    uint256 minimumFundsRequired;
+    uint256 minFundsRequired;
     uint256 pullFundsMinThreshold;
     uint256 surplusTransferDelay;
   }

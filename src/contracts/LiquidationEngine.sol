@@ -28,10 +28,11 @@ import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {Disableable} from '@contracts/utils/Disableable.sol';
 import {Math, RAY, WAD, MAX_RAD} from '@libraries/Math.sol';
 import {Encoding} from '@libraries/Encoding.sol';
+import {Assertions} from '@libraries/Assertions.sol';
 
 contract LiquidationEngine is Authorizable, Disableable, ILiquidationEngine {
   using Encoding for bytes;
-  using Math for uint256;
+  using Assertions for uint256;
 
   // --- SAFE Saviours ---
   // Contracts that can save SAFEs from liquidation

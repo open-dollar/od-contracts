@@ -2,6 +2,7 @@
 pragma solidity 0.8.19;
 
 import {Math, RAY} from '@libraries/Math.sol';
+import {Assertions} from '@libraries/Assertions.sol';
 import {IOracle} from '@interfaces/IOracle.sol';
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
 import {IPIDController} from '@interfaces/IPIDController.sol';
@@ -173,7 +174,7 @@ contract Unit_PIDRateSetter_ModifyParameters is Base {
   }
 
   function test_Revert_ModifyParameters_UpdateRateDelayIs0() public authorized {
-    vm.expectRevert(abi.encodeWithSelector(Math.NotGreaterThan.selector, 0, 0));
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NotGreaterThan.selector, 0, 0));
 
     pidRateSetter.modifyParameters('updateRateDelay', abi.encode(0));
   }
@@ -181,7 +182,7 @@ contract Unit_PIDRateSetter_ModifyParameters is Base {
   function test_Revert_ModifyParameters_DefaultLeakGt1(uint256 _defaultLeak) public authorized {
     vm.assume(_defaultLeak > 1);
 
-    vm.expectRevert(abi.encodeWithSelector(Math.NotLesserOrEqualThan.selector, _defaultLeak, 1));
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NotLesserOrEqualThan.selector, _defaultLeak, 1));
 
     pidRateSetter.modifyParameters('defaultLeak', abi.encode(_defaultLeak));
   }

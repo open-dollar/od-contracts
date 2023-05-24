@@ -27,9 +27,12 @@ import {Disableable} from '@contracts/utils/Disableable.sol';
 
 import {Math, RAY, HUNDRED} from '@libraries/Math.sol';
 import {Encoding} from '@libraries/Encoding.sol';
+import {Assertions} from '@libraries/Assertions.sol';
 
 contract StabilityFeeTreasury is Authorizable, Disableable, IStabilityFeeTreasury {
   using Encoding for bytes;
+  using Assertions for uint256;
+  using Assertions for address;
 
   // --- Registry ---
   SAFEEngineLike public safeEngine;
@@ -226,8 +229,8 @@ contract StabilityFeeTreasury is Authorizable, Disableable, IStabilityFeeTreasur
       ? _params.expensesMultiplier * _latestExpenses / HUNDRED
       : _params.treasuryCapacity;
     // Make sure to keep at least minimum funds
-    _remainingFunds = (_params.expensesMultiplier * _latestExpenses / HUNDRED <= _params.minimumFundsRequired)
-      ? _params.minimumFundsRequired
+    _remainingFunds = (_params.expensesMultiplier * _latestExpenses / HUNDRED <= _params.minFundsRequired)
+      ? _params.minFundsRequired
       : _remainingFunds;
     // Set internal vars
     accumulatorTag = expensesAccumulator;
@@ -250,38 +253,16 @@ contract StabilityFeeTreasury is Authorizable, Disableable, IStabilityFeeTreasur
   }
 
   // --- Administration ---
-  /**
-   * @notice Modify parameters
-   * @param  _parameter The name of the contract whose address will be changed
-   * @param  _data New address for the contract
-   */
-  function modifyParameters(bytes32 _parameter, bytes memory _data) external isAuthorized whenEnabled {
+  function modifyParameters(bytes32 _param, bytes memory _data) external isAuthorized whenEnabled {
     uint256 _uint256 = _data.toUint256();
 
-    if (_parameter == 'extraSurplusReceiver') extraSurplusReceiver = _validateSurplusReceiver(_data.toAddress());
-    else if (_parameter == 'expensesMultiplier') _params.expensesMultiplier = _uint256;
-    else if (_parameter == 'treasuryCapacity') _params.treasuryCapacity = _validateTreasuryCapacity(_uint256);
-    else if (_parameter == 'minimumFundsRequired') _params.minimumFundsRequired = _validateMinFundsReceived(_uint256);
-    else if (_parameter == 'pullFundsMinThreshold') _params.pullFundsMinThreshold = _uint256;
-    else if (_parameter == 'surplusTransferDelay') _params.surplusTransferDelay = _uint256;
+    if (_param == 'extraSurplusReceiver') extraSurplusReceiver = _data.toAddress().assertNonNull();
+    else if (_param == 'expensesMultiplier') _params.expensesMultiplier = _uint256;
+    else if (_param == 'treasuryCapacity') _params.treasuryCapacity = _uint256.assertGtEq(_params.minFundsRequired);
+    else if (_param == 'minimumFundsRequired') _params.minFundsRequired = _uint256.assertLtEq(_params.treasuryCapacity);
+    else if (_param == 'pullFundsMinThreshold') _params.pullFundsMinThreshold = _uint256;
+    else if (_param == 'surplusTransferDelay') _params.surplusTransferDelay = _uint256;
     else revert UnrecognizedParam();
-    emit ModifyParameters(_parameter, GLOBAL_PARAM, _data);
-  }
-
-  function _validateSurplusReceiver(address _address) internal view returns (address _surplusReceiver) {
-    // NOTE: why these checks?
-    require(_address != address(0), 'StabilityFeeTreasury/null-addr');
-    require(_address != address(this), 'StabilityFeeTreasury/accounting-engine-cannot-be-treasury');
-    return _address;
-  }
-
-  function _validateTreasuryCapacity(uint256 _uint256) internal view returns (uint256 _treasuryCapacity) {
-    require(_uint256 >= _params.minimumFundsRequired, 'StabilityFeeTreasury/capacity-lower-than-min-funds');
-    return _uint256;
-  }
-
-  function _validateMinFundsReceived(uint256 _uint256) internal view returns (uint256 _minFundsReceived) {
-    require(_uint256 <= _params.treasuryCapacity, 'StabilityFeeTreasury/min-funds-higher-than-capacity');
-    return _uint256;
+    emit ModifyParameters(_param, GLOBAL_PARAM, _data);
   }
 }

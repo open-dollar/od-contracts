@@ -7,7 +7,8 @@ import {IToken} from '@interfaces/external/IToken.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IModifiable, GLOBAL_PARAM} from '@interfaces/utils/IModifiable.sol';
-import {WAD, HUNDRED} from '@libraries/Math.sol';
+import {Math, WAD, HUNDRED} from '@libraries/Math.sol';
+import {Assertions} from '@libraries/Assertions.sol';
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 
 abstract contract Base is HaiTest {
@@ -935,10 +936,8 @@ contract Unit_SurplusAuctionHouse_ModifyParameters is Base {
     assertEq(surplusAuctionHouse.protocolTokenBidReceiver(), _protocolTokenBidReceiver);
   }
 
-  function test_Revert_ProtocolTokenBidReceiver_NullAddress() public {
-    vm.startPrank(authorizedAccount);
-
-    vm.expectRevert('SurplusAuctionHouse/null-address');
+  function test_Revert_ProtocolTokenBidReceiver_NullAddress() public happyPath {
+    vm.expectRevert(Assertions.NullAddress.selector);
 
     surplusAuctionHouse.modifyParameters('protocolTokenBidReceiver', abi.encode(0));
   }

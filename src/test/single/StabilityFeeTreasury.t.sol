@@ -136,7 +136,7 @@ contract SingleStabilityFeeTreasuryTest is DSTest {
     assertEq(_params.treasuryCapacity, 0);
     assertEq(_params.expensesMultiplier, HUNDRED);
     assertEq(stabilityFeeTreasury.expensesAccumulator(), 0);
-    assertEq(_params.minimumFundsRequired, 0);
+    assertEq(_params.minFundsRequired, 0);
     systemCoin.transfer(address(stabilityFeeTreasury), 1 ether);
     assertEq(systemCoin.balanceOf(address(stabilityFeeTreasury)), 1 ether);
     hevm.warp(block.timestamp + 1 seconds);
@@ -153,7 +153,7 @@ contract SingleStabilityFeeTreasuryTest is DSTest {
     assertEq(_params.treasuryCapacity, rad(50 ether));
     assertEq(_params.expensesMultiplier, HUNDRED);
     assertEq(stabilityFeeTreasury.expensesAccumulator(), 0);
-    assertEq(_params.minimumFundsRequired, rad(50 ether));
+    assertEq(_params.minFundsRequired, rad(50 ether));
     systemCoin.transfer(address(stabilityFeeTreasury), 1 ether);
     assertEq(systemCoin.balanceOf(address(stabilityFeeTreasury)), 1 ether);
     hevm.warp(block.timestamp + 1 seconds);

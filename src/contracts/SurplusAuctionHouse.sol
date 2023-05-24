@@ -25,10 +25,12 @@ import {Disableable} from '@contracts/utils/Disableable.sol';
 
 import {WAD, HUNDRED} from '@libraries/Math.sol';
 import {Encoding} from '@libraries/Encoding.sol';
+import {Assertions} from '@libraries/Assertions.sol';
 
 // This thing lets you auction surplus for protocol tokens. 50% of the protocol tokens are sent to another address and the rest are burned
 contract SurplusAuctionHouse is Authorizable, Disableable, ISurplusAuctionHouse {
   using Encoding for bytes;
+  using Assertions for address;
 
   bytes32 public constant AUCTION_HOUSE_TYPE = bytes32('SURPLUS');
   bytes32 public constant SURPLUS_AUCTION_TYPE = bytes32('MIXED-STRAT');
@@ -190,7 +192,7 @@ contract SurplusAuctionHouse is Authorizable, Disableable, ISurplusAuctionHouse 
   function modifyParameters(bytes32 _param, bytes memory _data) external isAuthorized {
     uint256 _uint256 = _data.toUint256();
 
-    if (_param == 'protocolTokenBidReceiver') protocolTokenBidReceiver = _validateNonNull(_data.toAddress());
+    if (_param == 'protocolTokenBidReceiver') protocolTokenBidReceiver = _data.toAddress().assertNonNull();
     else if (_param == 'bidIncrease') _params.bidIncrease = _uint256;
     else if (_param == 'bidDuration') _params.bidDuration = uint48(_uint256);
     else if (_param == 'totalAuctionLength') _params.totalAuctionLength = uint48(_uint256);
@@ -198,10 +200,5 @@ contract SurplusAuctionHouse is Authorizable, Disableable, ISurplusAuctionHouse 
     else revert UnrecognizedParam();
 
     emit ModifyParameters(_param, GLOBAL_PARAM, _data);
-  }
-
-  function _validateNonNull(address _address) internal pure returns (address _nonNullAddress) {
-    require(_address != address(0), 'SurplusAuctionHouse/null-address');
-    return _address;
   }
 }

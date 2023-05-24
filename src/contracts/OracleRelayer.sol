@@ -25,10 +25,12 @@ import {Disableable} from '@contracts/utils/Disableable.sol';
 
 import {Math, RAY, WAD} from '@libraries/Math.sol';
 import {Encoding} from '@libraries/Encoding.sol';
+import {Assertions} from '@libraries/Assertions.sol';
 
 contract OracleRelayer is Authorizable, Disableable, IOracleRelayer {
-  using Math for uint256;
   using Encoding for bytes;
+  using Math for uint256;
+  using Assertions for uint256;
 
   // --- Registry ---
   SAFEEngineLike public safeEngine;

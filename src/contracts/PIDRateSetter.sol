@@ -24,11 +24,13 @@ import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
 import {Math, RAY} from '@libraries/Math.sol';
 import {Encoding} from '@libraries/Encoding.sol';
+import {Assertions} from '@libraries/Assertions.sol';
 
 contract PIDRateSetter is Authorizable, IPIDRateSetter {
-  using Math for uint256;
-  using Math for address;
   using Encoding for bytes;
+  using Math for uint256;
+  using Assertions for uint256;
+  using Assertions for address;
 
   // --- Registry ---
   // OSM or medianizer for the system coin

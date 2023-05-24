@@ -16,7 +16,7 @@ library Encoding {
 
   function toAddress(bytes memory _data) internal pure returns (address _address) {
     assembly {
-      _address := mload(add(_data, 0x20)) // TODO: test if this is correct
+      _address := mload(add(_data, 0x20))
     }
   }
 }
