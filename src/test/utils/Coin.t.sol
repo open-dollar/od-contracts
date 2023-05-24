@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0
 /// Coin.t.sol -- tests for Coin.sol
 
 // Copyright (C) 2015-2020  DappHub, LLC

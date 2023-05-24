@@ -4,16 +4,11 @@ pragma solidity 0.8.19;
 import {ISAFEEngine as SAFEEngineLike} from '@interfaces/ISAFEEngine.sol';
 
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
+import {IModifiablePerCollateral, GLOBAL_PARAM} from '@interfaces/utils/IModifiablePerCollateral.sol';
 
-interface ITaxCollector is IAuthorizable {
+interface ITaxCollector is IAuthorizable, IModifiablePerCollateral {
   // --- Events ---
   event InitializeCollateralType(bytes32 _cType);
-  event ModifyParameters(bytes32 _cType, bytes32 _param, uint256 _data);
-  event ModifyParameters(bytes32 _param, uint256 _data);
-  event ModifyParameters(bytes32 _param, address _data);
-  event ModifyParameters(bytes32 _cType, address _receiver, bool _val);
-  event ModifyParameters(bytes32 _cType, uint256 _taxPercentage, address _receiver);
-  // NOTE: bytes32(collateralType) is left for future compatibility
   event SetPrimaryReceiver(bytes32 indexed _cType, address indexed _receiver);
   // NOTE: (taxPercentage, canTakeBackTax) = (0, false) means that the receiver is removed
   event SetSecondaryReceiver(
@@ -32,6 +27,7 @@ interface ITaxCollector is IAuthorizable {
 
   // SF receiver
   struct TaxReceiver {
+    address receiver;
     // Whether this receiver can accept a negative rate (taking SF from it)
     bool canTakeBackTax; // [bool]
     // Percentage of SF allocated to this receiver
@@ -40,24 +36,18 @@ interface ITaxCollector is IAuthorizable {
 
   function collateralTypes(bytes32 _cType) external view returns (uint256 _stabilityFee, uint256 _updateTime);
   function secondaryReceiverAllotedTax(bytes32 _cType) external view returns (uint256 _secondaryReceiverAllotedTax);
-  // TODO: remove the underscore from this method
-  function _secondaryTaxReceivers(
+  function secondaryTaxReceiver(
     bytes32 _cType,
     address _receiver
-  ) external view returns (bool _canTakeBackTax, uint128 _taxPercentage);
+  ) external view returns (TaxReceiver memory _secondaryTaxReceiver);
   function primaryTaxReceiver() external view returns (address _primaryTaxReceiver);
   function globalStabilityFee() external view returns (uint256 _globalStabilityFee);
   function maxSecondaryReceivers() external view returns (uint256 _maxSecondaryReceivers);
   function WHOLE_TAX_CUT() external view returns (uint256 _WHOLE_TAX_CUT);
   function safeEngine() external view returns (SAFEEngineLike _safeEngine);
 
-  // --- Administration ---
+  // --- Admin ---
   function initializeCollateralType(bytes32 _cType) external;
-  function modifyParameters(bytes32 _cType, bytes32 _param, uint256 _data) external;
-  function modifyParameters(bytes32 _param, uint256 _data) external;
-  function modifyParameters(bytes32 _param, address _data) external;
-  function modifyParameters(bytes32 _cType, address _receiver, bool _val) external;
-  function modifyParameters(bytes32 _cType, uint256 _taxPercentage, address _receiver) external;
 
   // --- Tax Collection Utils ---
   function collectedManyTax(uint256 _start, uint256 _end) external view returns (bool _ok);

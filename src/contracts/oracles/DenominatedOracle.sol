@@ -20,7 +20,7 @@ contract DenominatedOracle is IBaseOracle, IDenominatedOracle {
 
   // --- Data ---
   /**
-   * @notice Concatenated symbols of the two price sources used for quoting 
+   * @notice Concatenated symbols of the two price sources used for quoting
    *         (e.g. '(WBTC / ETH) * (ETH / USD)')
    * @dev    The order of the symbols must follow a continuous chain of tokens
    * @inheritdoc IBaseOracle

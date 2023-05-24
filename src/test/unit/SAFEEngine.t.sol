@@ -158,10 +158,9 @@ contract Unit_SAFEEngine_ModifyParameters is Base {
     safeEngine.modifyParameters('safeDebtCeiling', abi.encode(_fuzz.safeDebtCeiling));
     safeEngine.modifyParameters('globalDebtCeiling', abi.encode(_fuzz.globalDebtCeiling));
 
-    (bool _success, bytes memory _data) = address(safeEngine).staticcall(abi.encodeWithSignature('params()'));
+    ISAFEEngine.SAFEEngineParams memory _params = safeEngine.params();
 
-    assert(_success);
-    assertEq(keccak256(abi.encode(_fuzz)), keccak256(_data));
+    assertEq(abi.encode(_params), abi.encode(_fuzz));
   }
 
   function test_ModifyParameters_PerCollateral(
@@ -171,11 +170,9 @@ contract Unit_SAFEEngine_ModifyParameters is Base {
     safeEngine.modifyParameters(_cType, 'debtCeiling', abi.encode(_fuzz.debtCeiling));
     safeEngine.modifyParameters(_cType, 'debtFloor', abi.encode(_fuzz.debtFloor));
 
-    (bool _success, bytes memory _data) =
-      address(safeEngine).staticcall(abi.encodeWithSignature('cParams(bytes32)', _cType));
+    ISAFEEngine.SAFEEngineCollateralParams memory _cParams = safeEngine.cParams(_cType);
 
-    assert(_success);
-    assertEq(keccak256(abi.encode(_fuzz)), keccak256(_data));
+    assertEq(abi.encode(_cParams), abi.encode(_fuzz));
   }
 
   function test_Revert_ModifyParameters_UnrecognizedParam() public authorized {

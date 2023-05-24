@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-// SingleGlobalSettlement.t.sol
+/// SingleGlobalSettlement.t.sol
 
 // Copyright (C) 2017  DappHub, LLC
 // Copyright (C) 2018 Rain <rainbreak@riseup.net>

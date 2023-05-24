@@ -14,28 +14,35 @@
 
 pragma solidity 0.8.19;
 
-import {ITaxCollector, SAFEEngineLike} from '@interfaces/ITaxCollector.sol';
+import {ITaxCollector, SAFEEngineLike, GLOBAL_PARAM} from '@interfaces/ITaxCollector.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
 import {Math, RAY} from '@libraries/Math.sol';
+import {Encoding} from '@libraries/Encoding.sol';
 import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
 
 contract TaxCollector is Authorizable, ITaxCollector {
   using Math for uint256;
+  using Encoding for bytes;
   using EnumerableSet for EnumerableSet.AddressSet;
   using EnumerableSet for EnumerableSet.Bytes32Set;
 
   // --- Data ---
   // Data about each collateral type
   mapping(bytes32 => CollateralType) public collateralTypes;
-  // Percentage of each collateral's SF that goes to other addresses apart from the primary receiver
-  mapping(bytes32 => uint256) public secondaryReceiverAllotedTax; // [%ray]
   // Each collateral type that sends SF to a specific tax receiver
   mapping(address => EnumerableSet.Bytes32Set) internal _secondaryReceiverRevenueSources;
   // Tax receiver data
-  // NOTE: underscore is used to avoid name collisions with the getter
-  mapping(bytes32 => mapping(address => TaxReceiver)) public _secondaryTaxReceivers;
+  mapping(bytes32 => mapping(address => TaxReceiver)) internal _secondaryTaxReceivers;
+
+  function secondaryTaxReceiver(bytes32 _cType, address _receiver) external view returns (TaxReceiver memory) {
+    return _secondaryTaxReceivers[_cType][_receiver];
+  }
+
+  // TODO: mv to cData
+  // Percentage of each collateral's SF that goes to other addresses apart from the primary receiver
+  mapping(bytes32 => uint256) public secondaryReceiverAllotedTax; // [%ray]
 
   // The address that always receives some SF
   address public primaryTaxReceiver;
@@ -51,6 +58,7 @@ contract TaxCollector is Authorizable, ITaxCollector {
   // Enumerable set with tax receiver data
   EnumerableSet.AddressSet internal _secondaryReceivers;
 
+  // --- Registry ---
   SAFEEngineLike public safeEngine;
 
   // --- Init ---
@@ -70,122 +78,6 @@ contract TaxCollector is Authorizable, ITaxCollector {
     collateralType_.updateTime = block.timestamp;
     _collateralList.add(_cType);
     emit InitializeCollateralType(_cType);
-  }
-
-  /**
-   * @notice Modify collateral specific uint256 params
-   * @param _cType Collateral type who's parameter is modified
-   * @param _param The name of the parameter modified
-   * @param _data New value for the parameter
-   */
-  function modifyParameters(bytes32 _cType, bytes32 _param, uint256 _data) external isAuthorized {
-    require(block.timestamp == collateralTypes[_cType].updateTime, 'TaxCollector/update-time-not-now');
-    if (_param == 'stabilityFee') collateralTypes[_cType].stabilityFee = _data;
-    else revert('TaxCollector/modify-unrecognized-param');
-    emit ModifyParameters(_cType, _param, _data);
-  }
-
-  /**
-   * @notice Modify general uint256 params
-   * @param _param The name of the parameter modified
-   * @param _data New value for the parameter
-   */
-  function modifyParameters(bytes32 _param, uint256 _data) external isAuthorized {
-    if (_param == 'globalStabilityFee') globalStabilityFee = _data;
-    else if (_param == 'maxSecondaryReceivers') maxSecondaryReceivers = _data;
-    else revert('TaxCollector/modify-unrecognized-param');
-    emit ModifyParameters(_param, _data);
-  }
-
-  /**
-   * @notice Modify general address params
-   * @param _param The name of the parameter modified
-   * @param _data New value for the parameter
-   */
-  function modifyParameters(bytes32 _param, address _data) external isAuthorized {
-    require(_data != address(0), 'TaxCollector/null-data');
-    if (_param == 'primaryTaxReceiver') primaryTaxReceiver = _data;
-    else revert('TaxCollector/modify-unrecognized-param');
-    emit SetPrimaryReceiver(bytes32(0), _data);
-    emit ModifyParameters(_param, _data);
-  }
-
-  /**
-   * @notice Set whether a tax receiver can incur negative fees
-   * @param _cType Collateral type giving fees to the tax receiver
-   * @param _receiver Receiver address
-   * @param _val Value that specifies whether a tax receiver can incur negative rates
-   */
-  function modifyParameters(bytes32 _cType, address _receiver, bool _val) public isAuthorized {
-    if (_secondaryReceivers.contains(_receiver) && _secondaryReceiverRevenueSources[_receiver].contains(_cType)) {
-      _secondaryTaxReceivers[_cType][_receiver].canTakeBackTax = _val;
-    } else {
-      revert('TaxCollector/unknown-tax-receiver');
-    }
-    emit ModifyParameters(_cType, _receiver, _val);
-  }
-
-  /**
-   * @notice Create or modify a secondary tax receiver's data
-   * @param _cType Collateral type that will give SF to the tax receiver
-   * @param _taxPercentage Percentage of SF offered to the tax receiver
-   * @param _receiver Receiver address
-   */
-  function modifyParameters(bytes32 _cType, uint256 _taxPercentage, address _receiver) public isAuthorized {
-    _setSecondaryTaxReceiver(_cType, uint128(_taxPercentage), _receiver);
-    emit ModifyParameters(_cType, _taxPercentage, _receiver);
-  }
-
-  // --- Tax Receiver Utils ---
-  /**
-   * @notice Add a new secondary tax receiver or update data (add a new SF source or modify % of SF taken from a collateral type)
-   * @param _cType Collateral type that will give SF to the tax receiver
-   * @param _taxPercentage Percentage of SF offered to the tax receiver (ray%)
-   * @param _receiver Tax receiver address
-   */
-  function _setSecondaryTaxReceiver(bytes32 _cType, uint128 _taxPercentage, address _receiver) internal {
-    require(_receiver != address(0), 'TaxCollector/null-account');
-    require(_receiver != primaryTaxReceiver, 'TaxCollector/primary-receiver-cannot-be-secondary');
-
-    if (_secondaryReceivers.add(_receiver)) {
-      require(_secondaryReceivers.length() <= maxSecondaryReceivers, 'TaxCollector/exceeds-max-receiver-limit');
-      require(_taxPercentage > 0, 'TaxCollector/null-sf');
-      require(
-        secondaryReceiverAllotedTax[_cType] + _taxPercentage < WHOLE_TAX_CUT, 'TaxCollector/tax-cut-exceeds-hundred'
-      );
-
-      secondaryReceiverAllotedTax[_cType] += _taxPercentage;
-      _secondaryTaxReceivers[_cType][_receiver].taxPercentage = _taxPercentage;
-      _secondaryReceiverRevenueSources[_receiver].add(_cType);
-    } else {
-      if (_taxPercentage == 0) {
-        secondaryReceiverAllotedTax[_cType] -= _secondaryTaxReceivers[_cType][_receiver].taxPercentage;
-
-        _secondaryReceiverRevenueSources[_receiver].remove(_cType);
-        if (_secondaryReceiverRevenueSources[_receiver].length() == 0) {
-          _secondaryReceivers.remove(_receiver);
-        }
-
-        delete(_secondaryTaxReceivers[_cType][_receiver]);
-      } else {
-        uint256 _secondaryReceiverAllotedTax = (
-          secondaryReceiverAllotedTax[_cType] - _secondaryTaxReceivers[_cType][_receiver].taxPercentage
-        ) + _taxPercentage;
-        require(_secondaryReceiverAllotedTax < WHOLE_TAX_CUT, 'TaxCollector/tax-cut-too-big');
-
-        secondaryReceiverAllotedTax[_cType] = _secondaryReceiverAllotedTax;
-        _secondaryTaxReceivers[_cType][_receiver].taxPercentage = _taxPercentage;
-        // NOTE: if it was already added it just ignores it
-        _secondaryReceiverRevenueSources[_receiver].add(_cType);
-      }
-    }
-
-    emit SetSecondaryReceiver(
-      _cType,
-      _receiver,
-      _secondaryTaxReceivers[_cType][_receiver].taxPercentage,
-      _secondaryTaxReceivers[_cType][_receiver].canTakeBackTax
-    );
   }
 
   // --- Tax Collection Utils ---
@@ -367,5 +259,104 @@ contract TaxCollector is Authorizable, ITaxCollector {
         emit DistributeTax(_cType, _receiver, _currentTaxCut);
       }
     }
+  }
+
+  // --- Admin ---
+  /**
+   * @notice Modify general parameters
+   * @param _param The name of the parameter modified
+   * @param _data New value for the parameter
+   */
+  function modifyParameters(bytes32 _param, bytes memory _data) external isAuthorized {
+    uint256 _uint256 = _data.toUint256();
+
+    if (_param == 'primaryTaxReceiver') _setPrimaryTaxReceiver(_data.toAddress());
+    else if (_param == 'globalStabilityFee') globalStabilityFee = _uint256;
+    else if (_param == 'maxSecondaryReceivers') maxSecondaryReceivers = _uint256;
+    else revert UnrecognizedParam();
+
+    emit ModifyParameters(_param, GLOBAL_PARAM, _data);
+  }
+
+  function _setPrimaryTaxReceiver(address _primaryTaxReceiver) internal {
+    require(_primaryTaxReceiver != address(0), 'TaxCollector/null-data');
+    primaryTaxReceiver = _primaryTaxReceiver;
+    emit SetPrimaryReceiver(GLOBAL_PARAM, _primaryTaxReceiver);
+  }
+
+  /**
+   * @notice Modify collateral specific params
+   * @param _cType Collateral type we modify params for
+   * @param _param The name of the parameter modified
+   * @param _data New value for the parameter
+   */
+  function modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) external isAuthorized {
+    if (_param == 'stabilityFee') _setStabilityFee(_cType, _data.toUint256());
+    else if (_param == 'secondaryTaxReceiver') _setSecondaryTaxReceiver(_cType, abi.decode(_data, (TaxReceiver)));
+    else revert UnrecognizedParam();
+
+    emit ModifyParameters(_param, _cType, _data);
+  }
+
+  /**
+   * @notice Set a new stability fee for a collateral type
+   * @dev    Needs to be called at the exact time the SF is collected
+   * @param _cType Collateral type we update the stability fee for
+   * @param _stabilityFee The SF value to set
+   */
+  function _setStabilityFee(bytes32 _cType, uint256 _stabilityFee) internal {
+    require(block.timestamp == collateralTypes[_cType].updateTime, 'TaxCollector/update-time-not-now');
+    collateralTypes[_cType].stabilityFee = _stabilityFee;
+  }
+
+  /**
+   * @notice Add a new secondary tax receiver or update data (add a new SF source or modify % of SF taken from a collateral type)
+   * @param _cType Collateral type that will give SF to the tax receiver
+   * @param _data Encoded data containing the receiver, tax percentage, and whether it supports negative tax
+   */
+  function _setSecondaryTaxReceiver(bytes32 _cType, TaxReceiver memory _data) internal {
+    require(_data.receiver != address(0), 'TaxCollector/null-account');
+    require(_data.receiver != primaryTaxReceiver, 'TaxCollector/primary-receiver-cannot-be-secondary');
+
+    if (_secondaryReceivers.add(_data.receiver)) {
+      require(_secondaryReceivers.length() <= maxSecondaryReceivers, 'TaxCollector/exceeds-max-receiver-limit');
+      require(_data.taxPercentage > 0, 'TaxCollector/null-sf');
+      require(
+        secondaryReceiverAllotedTax[_cType] + _data.taxPercentage < WHOLE_TAX_CUT,
+        'TaxCollector/tax-cut-exceeds-hundred'
+      );
+
+      secondaryReceiverAllotedTax[_cType] += _data.taxPercentage;
+      _secondaryReceiverRevenueSources[_data.receiver].add(_cType);
+      _secondaryTaxReceivers[_cType][_data.receiver] = _data;
+    } else {
+      if (_data.taxPercentage == 0) {
+        secondaryReceiverAllotedTax[_cType] -= _secondaryTaxReceivers[_cType][_data.receiver].taxPercentage;
+
+        _secondaryReceiverRevenueSources[_data.receiver].remove(_cType);
+        if (_secondaryReceiverRevenueSources[_data.receiver].length() == 0) {
+          _secondaryReceivers.remove(_data.receiver);
+        }
+
+        delete(_secondaryTaxReceivers[_cType][_data.receiver]);
+      } else {
+        uint256 _secondaryReceiverAllotedTax = (
+          secondaryReceiverAllotedTax[_cType] - _secondaryTaxReceivers[_cType][_data.receiver].taxPercentage
+        ) + _data.taxPercentage;
+        require(_secondaryReceiverAllotedTax < WHOLE_TAX_CUT, 'TaxCollector/tax-cut-too-big');
+
+        secondaryReceiverAllotedTax[_cType] = _secondaryReceiverAllotedTax;
+        _secondaryTaxReceivers[_cType][_data.receiver] = _data;
+        // NOTE: if it was already added it just ignores it
+        _secondaryReceiverRevenueSources[_data.receiver].add(_cType);
+      }
+    }
+
+    emit SetSecondaryReceiver(
+      _cType,
+      _data.receiver,
+      _secondaryTaxReceivers[_cType][_data.receiver].taxPercentage,
+      _secondaryTaxReceivers[_cType][_data.receiver].canTakeBackTax
+    );
   }
 }

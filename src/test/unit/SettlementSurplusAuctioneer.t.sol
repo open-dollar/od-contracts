@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
 import {
@@ -340,12 +340,12 @@ contract Unit_SettlementSurplusAuctioneer_ModifyParameters is Base {
     assertEq(address(settlementSurplusAuctioneer.surplusAuctionHouse()), _surplusAuctionHouse);
   }
 
-  function test_Revert_UnrecognizedParam() public {
+  function test_Revert_UnrecognizedParam(bytes memory _data) public {
     vm.startPrank(authorizedAccount);
 
     vm.expectRevert(IModifiable.UnrecognizedParam.selector);
 
-    settlementSurplusAuctioneer.modifyParameters('unrecognizedParam', abi.encode(0));
+    settlementSurplusAuctioneer.modifyParameters('unrecognizedParam', _data);
   }
 
   function test_Emit_ModifyParameters(address _surplusAuctionHouse) public happyPath {

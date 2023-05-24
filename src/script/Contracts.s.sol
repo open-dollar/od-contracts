@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import {SAFEEngine} from '@contracts/SAFEEngine.sol';
-import {TaxCollector} from '@contracts/TaxCollector.sol';
+import {TaxCollector, ITaxCollector} from '@contracts/TaxCollector.sol';
 import {AccountingEngine} from '@contracts/AccountingEngine.sol';
 import {LiquidationEngine} from '@contracts/LiquidationEngine.sol';
 import {CoinJoin} from '@contracts/utils/CoinJoin.sol';

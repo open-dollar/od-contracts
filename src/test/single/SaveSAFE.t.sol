@@ -173,7 +173,7 @@ contract SingleSaveSAFETest is DSTest {
 
     taxCollector = new TaxCollector(address(safeEngine));
     taxCollector.initializeCollateralType('gold');
-    taxCollector.modifyParameters('primaryTaxReceiver', address(accountingEngine));
+    taxCollector.modifyParameters('primaryTaxReceiver', abi.encode(accountingEngine));
     safeEngine.addAuthorization(address(taxCollector));
 
     liquidationEngine = new LiquidationEngine(address(safeEngine));

@@ -943,7 +943,7 @@ contract Unit_DebtAuctionHouse_ModifyParameters is Base {
 
     IDebtAuctionHouse.DebtAuctionHouseParams memory _params = debtAuctionHouse.params();
 
-    assertEq(keccak256(abi.encode(_params)), keccak256(abi.encode(_fuzz)));
+    assertEq(abi.encode(_params), abi.encode(_fuzz));
   }
 
   function test_Set_ProtocolToken(address _protocolToken) public happyPath {
@@ -958,12 +958,12 @@ contract Unit_DebtAuctionHouse_ModifyParameters is Base {
     assertEq(debtAuctionHouse.accountingEngine(), _accountingEngine);
   }
 
-  function test_Revert_UnrecognizedParam() public {
+  function test_Revert_UnrecognizedParam(bytes memory _data) public {
     vm.startPrank(authorizedAccount);
 
     vm.expectRevert(IModifiable.UnrecognizedParam.selector);
 
-    debtAuctionHouse.modifyParameters('unrecognizedParam', abi.encode(0));
+    debtAuctionHouse.modifyParameters('unrecognizedParam', _data);
   }
 
   function test_Emit_ModifyParameters(address _accountingEngine) public happyPath {

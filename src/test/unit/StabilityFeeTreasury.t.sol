@@ -244,10 +244,9 @@ contract Unit_StabilityFeeTreasury_ModifyParameters is Base {
     stabilityFeeTreasury.modifyParameters('pullFundsMinThreshold', abi.encode(_fuzz.pullFundsMinThreshold));
     stabilityFeeTreasury.modifyParameters('surplusTransferDelay', abi.encode(_fuzz.surplusTransferDelay));
 
-    (bool _success, bytes memory _data) = address(stabilityFeeTreasury).staticcall(abi.encodeWithSignature('params()'));
+    IStabilityFeeTreasury.StabilityFeeTreasuryParams memory _params = stabilityFeeTreasury.params();
 
-    assert(_success);
-    assertEq(keccak256(abi.encode(_fuzz)), keccak256(_data));
+    assertEq(abi.encode(_params), abi.encode(_fuzz));
   }
 
   function test_ModifyParameters_ExtraSurplusReceiver(address _extraSurplusReceiver) public authorized {

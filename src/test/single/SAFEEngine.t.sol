@@ -466,8 +466,8 @@ contract SingleSAFEDebtLimitTest is DSTest {
 
     taxCollector = new TaxCollector(address(safeEngine));
     taxCollector.initializeCollateralType('gold');
-    taxCollector.modifyParameters('primaryTaxReceiver', address(0x1234));
-    taxCollector.modifyParameters('gold', 'stabilityFee', 1_000_000_564_701_133_626_865_910_626); // 5% / day
+    taxCollector.modifyParameters('primaryTaxReceiver', abi.encode(address(0x1234)));
+    taxCollector.modifyParameters('gold', 'stabilityFee', abi.encode(1_000_000_564_701_133_626_865_910_626)); // 5% / day
     safeEngine.addAuthorization(address(taxCollector));
 
     gold.approve(address(collateralA));
@@ -796,7 +796,7 @@ contract SingleLiquidationTest is DSTest {
 
     taxCollector = new TaxCollector(address(safeEngine));
     taxCollector.initializeCollateralType('gold');
-    taxCollector.modifyParameters('primaryTaxReceiver', address(accountingEngine));
+    taxCollector.modifyParameters('primaryTaxReceiver', abi.encode(accountingEngine));
     safeEngine.addAuthorization(address(taxCollector));
 
     liquidationEngine = new LiquidationEngine(address(safeEngine));

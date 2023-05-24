@@ -4,6 +4,7 @@ pragma solidity 0.8.19;
 import {TaxCollectorForTest, ITaxCollector} from '@contracts/for-test/TaxCollectorForTest.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
+import {IModifiable, GLOBAL_PARAM} from '@interfaces/utils/IModifiablePerCollateral.sol';
 import {Math, RAY} from '@libraries/Math.sol';
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 
@@ -668,5 +669,127 @@ contract Unit_TaxCollector_DistributeTax is Base {
     emit DistributeTax(collateralTypeA, receiver, _currentTaxCut);
 
     taxCollector.distributeTax(collateralTypeA, receiver, _debtAmount, _deltaRate);
+  }
+}
+
+contract Unit_TaxCollector_ModifyParameters is Base {
+  event ModifyParameters(bytes32 indexed _param, bytes32 indexed _cType, bytes _data);
+  event SetPrimaryReceiver(bytes32 indexed _cType, address indexed _receiver);
+
+  modifier happyPath() {
+    vm.startPrank(authorizedAccount);
+    _;
+  }
+
+  function test_Revert_Unauthorized(bytes32 _param, bytes memory _data) public {
+    vm.expectRevert(IAuthorizable.Unauthorized.selector);
+
+    taxCollector.modifyParameters(_param, _data);
+  }
+
+  function test_Set_PrimaryTaxReceiver(address _primaryTaxReceiver) public happyPath {
+    vm.assume(_primaryTaxReceiver != address(0));
+
+    taxCollector.modifyParameters('primaryTaxReceiver', abi.encode(_primaryTaxReceiver));
+
+    assertEq(taxCollector.primaryTaxReceiver(), _primaryTaxReceiver);
+  }
+
+  function test_Emit_SetPrimaryReceiver(address _primaryTaxReceiver) public happyPath {
+    vm.assume(_primaryTaxReceiver != address(0));
+
+    expectEmitNoIndex();
+    emit SetPrimaryReceiver(GLOBAL_PARAM, _primaryTaxReceiver);
+
+    taxCollector.modifyParameters('primaryTaxReceiver', abi.encode(_primaryTaxReceiver));
+  }
+
+  function test_Revert_PrimaryTaxReceiver_NullData() public {
+    vm.startPrank(authorizedAccount);
+
+    vm.expectRevert('TaxCollector/null-data');
+
+    taxCollector.modifyParameters('primaryTaxReceiver', abi.encode(0));
+  }
+
+  function test_Set_GlobalStabilityFee(uint256 _globalStabilityFee) public happyPath {
+    taxCollector.modifyParameters('globalStabilityFee', abi.encode(_globalStabilityFee));
+
+    assertEq(taxCollector.globalStabilityFee(), _globalStabilityFee);
+  }
+
+  function test_Set_MaxSecondaryReceivers(uint256 _maxSecondaryReceivers) public happyPath {
+    taxCollector.modifyParameters('maxSecondaryReceivers', abi.encode(_maxSecondaryReceivers));
+
+    assertEq(taxCollector.maxSecondaryReceivers(), _maxSecondaryReceivers);
+  }
+
+  function test_Revert_UnrecognizedParam(bytes memory _data) public {
+    vm.startPrank(authorizedAccount);
+
+    vm.expectRevert(IModifiable.UnrecognizedParam.selector);
+
+    taxCollector.modifyParameters('unrecognizedParam', _data);
+  }
+
+  function test_Emit_ModifyParameters(address _primaryTaxReceiver) public happyPath {
+    vm.assume(_primaryTaxReceiver != address(0));
+
+    expectEmitNoIndex();
+    emit ModifyParameters('primaryTaxReceiver', GLOBAL_PARAM, abi.encode(_primaryTaxReceiver));
+
+    taxCollector.modifyParameters('primaryTaxReceiver', abi.encode(_primaryTaxReceiver));
+  }
+}
+
+contract Unit_TaxCollector_ModifyParametersPerCollateral is Base {
+  event ModifyParameters(bytes32 indexed _param, bytes32 indexed _cType, bytes _data);
+
+  modifier happyPath() {
+    vm.startPrank(authorizedAccount);
+    _;
+  }
+
+  function test_Revert_Unauthorized(bytes32 _cType, bytes32 _param, bytes memory _data) public {
+    vm.expectRevert(IAuthorizable.Unauthorized.selector);
+
+    taxCollector.modifyParameters(_cType, _param, _data);
+  }
+
+  function test_Set_StabilityFee(bytes32 _cType, uint256 _stabilityFeeFuzzed) public happyPath {
+    _mockCollateralType(_cType, 0, block.timestamp);
+
+    taxCollector.modifyParameters(_cType, 'stabilityFee', abi.encode(_stabilityFeeFuzzed));
+
+    (uint256 _stabilityFee,) = taxCollector.collateralTypes(_cType);
+    assertEq(_stabilityFee, _stabilityFeeFuzzed);
+  }
+
+  function test_Revert_StabilityFee_UpdateTimeNotNow(bytes32 _cType, uint256 _stabilityFee, uint256 _updateTime) public {
+    vm.startPrank(authorizedAccount);
+    vm.assume(_updateTime != block.timestamp);
+
+    _mockCollateralType(_cType, 0, _updateTime);
+
+    vm.expectRevert('TaxCollector/update-time-not-now');
+
+    taxCollector.modifyParameters(_cType, 'stabilityFee', abi.encode(_stabilityFee));
+  }
+
+  function test_Revert_UnrecognizedParam(bytes32 _cType, bytes memory _data) public {
+    vm.startPrank(authorizedAccount);
+
+    vm.expectRevert(IModifiable.UnrecognizedParam.selector);
+
+    taxCollector.modifyParameters(_cType, 'unrecognizedParam', _data);
+  }
+
+  function test_Emit_ModifyParameters(bytes32 _cType, uint256 _stabilityFee) public happyPath {
+    _mockCollateralType(_cType, 0, block.timestamp);
+
+    expectEmitNoIndex();
+    emit ModifyParameters('stabilityFee', _cType, abi.encode(_stabilityFee));
+
+    taxCollector.modifyParameters(_cType, 'stabilityFee', abi.encode(_stabilityFee));
   }
 }

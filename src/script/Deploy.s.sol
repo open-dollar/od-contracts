@@ -161,7 +161,7 @@ abstract contract Deploy is Script, Contracts {
 
     // setup registry
     debtAuctionHouse.modifyParameters('accountingEngine', abi.encode(accountingEngine));
-    taxCollector.modifyParameters('primaryTaxReceiver', address(accountingEngine));
+    taxCollector.modifyParameters('primaryTaxReceiver', abi.encode(accountingEngine));
     liquidationEngine.modifyParameters('accountingEngine', abi.encode(accountingEngine));
     accountingEngine.modifyParameters('protocolTokenAuthority', abi.encode(protocolToken));
 
@@ -192,12 +192,12 @@ abstract contract Deploy is Script, Contracts {
 
     // setup params
     safeEngine.modifyParameters('globalDebtCeiling', abi.encode(_params.globalDebtCeiling));
-    taxCollector.modifyParameters('globalStabilityFee', _params.globalStabilityFee);
+    taxCollector.modifyParameters('globalStabilityFee', abi.encode(_params.globalStabilityFee));
     accountingEngine.modifyParameters('debtAuctionMintedTokens', abi.encode(_params.debtAuctionMintedTokens));
     accountingEngine.modifyParameters('debtAuctionBidSize', abi.encode(_params.bidAuctionSize));
     accountingEngine.modifyParameters('surplusAmount', abi.encode(_params.surplusAmount));
     surplusAuctionHouse.modifyParameters('protocolTokenBidReceiver', abi.encode(_params.surplusAuctionBidReceiver));
-    taxCollector.modifyParameters('maxSecondaryReceivers', _params.maxSecondaryReceivers);
+    taxCollector.modifyParameters('maxSecondaryReceivers', abi.encode(_params.maxSecondaryReceivers));
   }
 
   function _setupCollateral(CollateralParams memory _params) internal {
@@ -222,10 +222,17 @@ abstract contract Deploy is Script, Contracts {
 
     // setup params
     safeEngine.modifyParameters(_params.name, 'debtCeiling', abi.encode(_params.debtCeiling));
-    taxCollector.modifyParameters(_params.name, 'stabilityFee', _params.stabilityFee);
-    // TODO: change for `addSecondaryTaxReceiver` method
+    taxCollector.modifyParameters(_params.name, 'stabilityFee', abi.encode(_params.stabilityFee));
     taxCollector.modifyParameters(
-      _params.name, _params.percentageOfStabilityFeeToTreasury, address(stabilityFeeTreasury)
+      _params.name,
+      'secondaryTaxReceiver',
+      abi.encode(
+        ITaxCollector.TaxReceiver({
+          receiver: address(stabilityFeeTreasury),
+          canTakeBackTax: false,
+          taxPercentage: uint128(_params.percentageOfStabilityFeeToTreasury)
+        })
+      )
     );
     oracleRelayer.modifyParameters(_params.name, 'safetyCRatio', abi.encode(_params.safetyCRatio));
     oracleRelayer.modifyParameters(_params.name, 'liquidationCRatio', abi.encode(_params.liquidationRatio));

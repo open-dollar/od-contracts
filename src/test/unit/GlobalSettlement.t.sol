@@ -1276,12 +1276,12 @@ contract Unit_GlobalSettlement_ModifyParameters is Base {
     assertEq(globalSettlement.shutdownCooldown(), _shutdownCooldown);
   }
 
-  function test_Revert_UnrecognizedParam() public {
+  function test_Revert_UnrecognizedParam(bytes memory _data) public {
     vm.startPrank(authorizedAccount);
 
     vm.expectRevert(IModifiable.UnrecognizedParam.selector);
 
-    globalSettlement.modifyParameters('unrecognizedParam', abi.encode(0));
+    globalSettlement.modifyParameters('unrecognizedParam', _data);
   }
 
   function test_Emit_ModifyParameters(uint256 _shutdownCooldown) public happyPath {

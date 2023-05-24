@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Unlicensed
+// SPDX-License-Identifier: GPL-3.0
 /// MockMockOracleRelayer.sol
 
 pragma solidity 0.8.19;

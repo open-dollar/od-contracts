@@ -797,7 +797,7 @@ contract Unit_SurplusAuctionHouse_SettleAuction is Base {
   }
 
   function testFail_Call_ProtocolToken_Burn(SurplusAuction memory _auction, uint256 _recyclingPercentage) public {
-    uint256 _recyclingPercentage = 100;
+    _recyclingPercentage = 100;
 
     (, uint256 _amountToBurn) = _assumeHappyPath(_auction, _recyclingPercentage);
     _mockValues(_auction, _recyclingPercentage);
@@ -921,7 +921,7 @@ contract Unit_SurplusAuctionHouse_ModifyParameters is Base {
 
     ISurplusAuctionHouse.SurplusAuctionHouseParams memory _params = surplusAuctionHouse.params();
 
-    assertEq(keccak256(abi.encode(_params)), keccak256(abi.encode(_fuzz)));
+    assertEq(abi.encode(_params), abi.encode(_fuzz));
   }
 
   function test_Set_ProtocolTokenBidReceiver(address _protocolTokenBidReceiver) public happyPath {
@@ -938,12 +938,12 @@ contract Unit_SurplusAuctionHouse_ModifyParameters is Base {
     surplusAuctionHouse.modifyParameters('protocolTokenBidReceiver', abi.encode(0));
   }
 
-  function test_Revert_UnrecognizedParam() public {
+  function test_Revert_UnrecognizedParam(bytes memory _data) public {
     vm.startPrank(authorizedAccount);
 
     vm.expectRevert(IModifiable.UnrecognizedParam.selector);
 
-    surplusAuctionHouse.modifyParameters('unrecognizedParam', abi.encode(0));
+    surplusAuctionHouse.modifyParameters('unrecognizedParam', _data);
   }
 
   function test_Emit_ModifyParameters(address _protocolTokenBidReceiver) public happyPath {
