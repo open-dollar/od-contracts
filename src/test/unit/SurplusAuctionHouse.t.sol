@@ -791,9 +791,7 @@ contract Unit_SurplusAuctionHouse_SettleAuction is Base {
 
     _mockValues(_auction, _recyclingPercentage);
 
-    vm.expectCall(
-      address(mockProtocolToken), abi.encodeCall(mockProtocolToken.burn, (address(surplusAuctionHouse), _amountToBurn))
-    );
+    vm.expectCall(address(mockProtocolToken), abi.encodeWithSignature('burn(uint256)', _amountToBurn));
 
     surplusAuctionHouse.settleAuction(_auction.id);
   }
@@ -804,9 +802,7 @@ contract Unit_SurplusAuctionHouse_SettleAuction is Base {
     (, uint256 _amountToBurn) = _assumeHappyPath(_auction, _recyclingPercentage);
     _mockValues(_auction, _recyclingPercentage);
 
-    vm.expectCall(
-      address(mockProtocolToken), abi.encodeCall(mockProtocolToken.burn, (address(surplusAuctionHouse), _amountToBurn))
-    );
+    vm.expectCall(address(mockProtocolToken), abi.encodeWithSignature('burn(uint256)', _amountToBurn));
 
     surplusAuctionHouse.settleAuction(_auction.id);
   }

@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
+import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
+
 struct CollateralParams {
   bytes32 name;
+  IBaseOracle oracle;
   uint256 /* wad */ liquidationPenalty;
   uint256 /* rad */ liquidationQuantity;
   uint256 /* rad */ debtCeiling;
@@ -72,6 +75,8 @@ uint256 constant TEST_ETH_A_SF_APR = 1.05e18; // 5%/yr
 uint256 constant TEST_ETH_PRICE = 1000e18; // 1 ETH = 1000 HAI
 
 // TKN Collateral Params
+bytes32 constant WSTETH = bytes32('WSTETH');
+
 bytes32 constant TKN = bytes32('TKN');
 uint256 constant TKN_LIQUIDATION_PENALTY = 1.1e18;
 uint256 constant TKN_LIQUIDATION_QUANTITY = 100_000e45;

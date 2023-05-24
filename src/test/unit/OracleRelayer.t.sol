@@ -5,7 +5,7 @@ import {Math, RAY, WAD} from '@libraries/Math.sol';
 import {StdStorage, stdStorage} from 'forge-std/StdStorage.sol';
 
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
-import {IOracle} from '@interfaces/IOracle.sol';
+import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IModifiablePerCollateral} from '@interfaces/utils/IModifiablePerCollateral.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
@@ -375,7 +375,7 @@ contract Unit_OracleRelayer_UpdateCollateralPrice is Base {
     public
     happyPathValidityNoUpdate(_scenario)
   {
-    vm.expectCall(address(mockOracle), abi.encodeWithSelector(IOracle.getResultWithValidity.selector));
+    vm.expectCall(address(mockOracle), abi.encodeWithSelector(IBaseOracle.getResultWithValidity.selector));
 
     oracleRelayer.updateCollateralPrice(collateralType);
   }
@@ -384,7 +384,7 @@ contract Unit_OracleRelayer_UpdateCollateralPrice is Base {
     public
     happyPathValidityWithUpdate(_scenario)
   {
-    vm.expectCall(address(mockOracle), abi.encodeWithSelector(IOracle.getResultWithValidity.selector));
+    vm.expectCall(address(mockOracle), abi.encodeWithSelector(IBaseOracle.getResultWithValidity.selector));
 
     oracleRelayer.updateCollateralPrice(collateralType);
   }

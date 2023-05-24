@@ -4,16 +4,27 @@ pragma solidity 0.8.19;
 import 'forge-std/Script.sol';
 import '@script/Contracts.s.sol';
 import '@script/Params.s.sol';
+import '@script/Registry.s.sol';
 import '@libraries/Math.sol';
 
-contract Deploy is Script, Contracts {
+abstract contract Deploy is Script, Contracts {
   uint256 public chainId;
   address public deployer;
   uint256 internal _deployerPk = 69; // for tests
 
+  bytes32[] public collateralTypes;
+  mapping(bytes32 => CollateralParams) public collateralParams;
+
+  function _setupEnvironment() internal virtual {}
+
   function run() public {
     deployer = vm.addr(_deployerPk);
+    vm.startBroadcast(_deployerPk);
 
+    // Environment may be different for each network
+    _setupEnvironment();
+
+    // Common deployment routine for all networks
     deployAndSetup(
       GlobalParams({
         debtAuctionMintedTokens: INITIAL_DEBT_AUCTION_MINTED_TOKENS,
@@ -37,44 +48,21 @@ contract Deploy is Script, Contracts {
         feedbackOutputUpperBound: PID_FEEDBACK_OUTPUT_UPPER_BOUND,
         periodSize: PID_PERIOD_SIZE,
         updateRate: PID_UPDATE_RATE
-      }),
-      HAI_INITIAL_PRICE
+      })
     );
+    vm.stopBroadcast();
 
-    deployETHCollateral(
-      CollateralParams({
-        name: ETH_A,
-        liquidationPenalty: ETH_A_LIQUIDATION_PENALTY,
-        liquidationQuantity: ETH_A_LIQUIDATION_QUANTITY,
-        debtCeiling: ETH_A_DEBT_CEILING,
-        safetyCRatio: ETH_A_SAFETY_C_RATIO,
-        liquidationRatio: ETH_A_LIQUIDATION_RATIO,
-        stabilityFee: ETH_A_STABILITY_FEE,
-        percentageOfStabilityFeeToTreasury: PERCENTAGE_OF_STABILITY_FEE_TO_TREASURY
-      }),
-      TEST_ETH_PRICE
-    );
+    // Loop through the collateral types configured in the environment
+    for (uint256 _i; _i < collateralTypes.length; _i++) {
+      bytes32 _cType = collateralTypes[_i];
 
-    deployTokenCollateral(
-      CollateralParams({
-        name: TKN,
-        liquidationPenalty: TKN_LIQUIDATION_PENALTY,
-        liquidationQuantity: TKN_LIQUIDATION_QUANTITY,
-        debtCeiling: TKN_DEBT_CEILING,
-        safetyCRatio: TKN_SAFETY_C_RATIO,
-        liquidationRatio: TKN_LIQUIDATION_RATIO,
-        stabilityFee: TKN_STABILITY_FEE,
-        percentageOfStabilityFeeToTreasury: PERCENTAGE_OF_STABILITY_FEE_TO_TREASURY
-      }),
-      TEST_TKN_PRICE
-    );
+      if (_cType == ETH_A) deployETHCollateral(collateralParams[_cType]);
+      else deployTokenCollateral(collateralParams[_cType]);
+    }
   }
 
-  function deployETHCollateral(CollateralParams memory _params, uint256 _initialPrice) public {
+  function deployETHCollateral(CollateralParams memory _params) public {
     vm.startBroadcast(_deployerPk);
-
-    // deploy oracle for test
-    oracle[ETH_A] = new OracleForTest(_initialPrice);
 
     // deploy ETHJoin and CollateralAuctionHouse
     ethJoin = new ETHJoin(address(safeEngine), ETH_A);
@@ -84,16 +72,14 @@ contract Deploy is Script, Contracts {
         _collateralType: ETH_A
         });
 
-    _setupCollateral(_params, address(oracle[ETH_A]));
+    collateralJoin[ETH_A] = CollateralJoin(address(ethJoin));
 
+    _setupCollateral(_params);
     vm.stopBroadcast();
   }
 
-  function deployTokenCollateral(CollateralParams memory _params, uint256 _initialPrice) public {
+  function deployTokenCollateral(CollateralParams memory _params) public {
     vm.startBroadcast(_deployerPk);
-
-    // deploy oracle for test
-    oracle[_params.name] = new OracleForTest(_initialPrice);
 
     // deploy Collateral, CollateralJoin and CollateralAuctionHouse
     collateral[_params.name] = new ERC20ForTest(); // TODO: replace for token
@@ -108,8 +94,7 @@ contract Deploy is Script, Contracts {
         _collateralType: _params.name
         });
 
-    _setupCollateral(_params, address(oracle[_params.name]));
-
+    _setupCollateral(_params);
     vm.stopBroadcast();
   }
 
@@ -133,7 +118,7 @@ contract Deploy is Script, Contracts {
     // token adapters
     coinJoin.removeAuthorization(deployer);
     ethJoin.removeAuthorization(deployer);
-    collateralJoin[TKN].removeAuthorization(deployer);
+    collateralJoin[WSTETH].removeAuthorization(deployer);
 
     // auction houses
     surplusAuctionHouse.removeAuthorization(deployer);
@@ -141,14 +126,12 @@ contract Deploy is Script, Contracts {
 
     // collateral auction houses
     collateralAuctionHouse[ETH_A].removeAuthorization(deployer);
-    collateralAuctionHouse[TKN].removeAuthorization(deployer);
+    collateralAuctionHouse[WSTETH].removeAuthorization(deployer);
 
     vm.stopBroadcast();
   }
 
   function deployAndSetup(GlobalParams memory _params) public {
-    vm.startBroadcast(_deployerPk);
-
     // deploy Tokens
     coin = new Coin('HAI Index Token', 'HAI', chainId);
     protocolToken = new Coin('Protocol Token', 'KITE', chainId);
@@ -206,8 +189,6 @@ contract Deploy is Script, Contracts {
     accountingEngine.addAuthorization(address(globalSettlement));
     globalSettlement.modifyParameters('oracleRelayer', abi.encode(oracleRelayer));
     oracleRelayer.addAuthorization(address(globalSettlement));
-    // globalSettlement.modifyParameters('coinSavingsAccount', abi.encode(oracleRelayer));
-    // coinSavingsAccount.addAuthorization(address(globalSettlement));
 
     // setup params
     safeEngine.modifyParameters('globalDebtCeiling', abi.encode(_params.globalDebtCeiling));
@@ -217,27 +198,22 @@ contract Deploy is Script, Contracts {
     accountingEngine.modifyParameters('surplusAmount', abi.encode(_params.surplusAmount));
     surplusAuctionHouse.modifyParameters('protocolTokenBidReceiver', abi.encode(_params.surplusAuctionBidReceiver));
     taxCollector.modifyParameters('maxSecondaryReceivers', _params.maxSecondaryReceivers);
-
-    vm.stopBroadcast();
   }
 
-  function _setupCollateral(CollateralParams memory _params, address _collateralOracle) internal {
-    address _collateralJoin = _params.name == ETH_A ? address(ethJoin) : address(collateralJoin[_params.name]);
-    safeEngine.addAuthorization(_collateralJoin);
+  function _setupCollateral(CollateralParams memory _params) internal {
+    safeEngine.addAuthorization(address(collateralJoin[_params.name]));
 
-    oracleRelayer.modifyParameters(_params.name, 'oracle', abi.encode(_collateralOracle));
+    oracleRelayer.modifyParameters(_params.name, 'oracle', abi.encode(_params.oracle));
 
     safeEngine.initializeCollateralType(_params.name);
     taxCollector.initializeCollateralType(_params.name);
 
     collateralAuctionHouse[_params.name].addAuthorization(address(liquidationEngine));
     liquidationEngine.addAuthorization(address(collateralAuctionHouse[_params.name]));
-    // collateralAuctionHouse[_params.name].addAuthorization(address(globalSettlement));
-    // TODO: change for a FSM oracle
 
     // setup registry
     collateralAuctionHouse[_params.name].modifyParameters('oracleRelayer', address(oracleRelayer));
-    collateralAuctionHouse[_params.name].modifyParameters('collateralFSM', address(_collateralOracle));
+    collateralAuctionHouse[_params.name].modifyParameters('collateralFSM', address(_params.oracle));
     liquidationEngine.modifyParameters(
       _params.name, 'collateralAuctionHouse', abi.encode(collateralAuctionHouse[_params.name])
     );
@@ -261,10 +237,7 @@ contract Deploy is Script, Contracts {
     oracleRelayer.updateCollateralPrice(_params.name);
   }
 
-  function deployPIDController(PIDParams memory _params, uint256 _haiInitialPrice) public {
-    vm.startBroadcast(_deployerPk);
-    oracle[HAI] = new OracleForTest(_haiInitialPrice);
-
+  function deployPIDController(PIDParams memory _params) public {
     pidController = new PIDController({
       _Kp: _params.proportionalGain,
       _Ki: _params.integralGain,
@@ -291,21 +264,84 @@ contract Deploy is Script, Contracts {
 
     // initialize
     pidRateSetter.updateRate();
-
-    vm.stopBroadcast();
   }
 }
 
 contract DeployMainnet is Deploy {
-  constructor() {
+  function setUp() public {
     _deployerPk = uint256(vm.envBytes32('OP_MAINNET_DEPLOYER_PK'));
     chainId = 10;
+  }
+
+  function _setupEnvironment() internal virtual override {
+    // Setup oracle feeds
+    IBaseOracle _ethUSDPriceFeed = new ChainlinkRelayer(OP_CHAINLINK_ETH_USD_FEED, 1 hours);
+    IBaseOracle _wstethETHPriceFeed = new ChainlinkRelayer(OP_CHAINLINK_WSTETH_ETH_FEED, 1 hours);
+
+    IBaseOracle _wstethUSDPriceFeed = new DenominatedOracle({
+      _priceSource: _wstethETHPriceFeed,
+      _denominationPriceSource: _ethUSDPriceFeed,
+      _inverted: false
+    });
+
+    oracle[ETH_A] = new DelayedOracle(_ethUSDPriceFeed, 1 hours);
+    oracle[WSTETH] = new DelayedOracle(_wstethUSDPriceFeed, 1 hours);
+
+    oracle[HAI] = new OracleForTest(HAI_INITIAL_PRICE); // 1 HAI = 1 USD
+
+    collateralTypes.push(ETH_A);
+    collateralParams[ETH_A] = CollateralParams({
+      name: ETH_A,
+      oracle: oracle[ETH_A],
+      liquidationPenalty: ETH_A_LIQUIDATION_PENALTY,
+      liquidationQuantity: ETH_A_LIQUIDATION_QUANTITY,
+      debtCeiling: ETH_A_DEBT_CEILING,
+      safetyCRatio: ETH_A_SAFETY_C_RATIO,
+      liquidationRatio: ETH_A_LIQUIDATION_RATIO,
+      stabilityFee: ETH_A_STABILITY_FEE,
+      percentageOfStabilityFeeToTreasury: PERCENTAGE_OF_STABILITY_FEE_TO_TREASURY
+    });
+
+    collateralTypes.push(WSTETH);
+    collateralParams[WSTETH] = CollateralParams({
+      name: WSTETH,
+      oracle: oracle[WSTETH],
+      liquidationPenalty: TKN_LIQUIDATION_PENALTY,
+      liquidationQuantity: TKN_LIQUIDATION_QUANTITY,
+      debtCeiling: TKN_DEBT_CEILING,
+      safetyCRatio: TKN_SAFETY_C_RATIO,
+      liquidationRatio: TKN_LIQUIDATION_RATIO,
+      stabilityFee: TKN_STABILITY_FEE,
+      percentageOfStabilityFeeToTreasury: PERCENTAGE_OF_STABILITY_FEE_TO_TREASURY
+    });
   }
 }
 
 contract DeployGoerli is Deploy {
-  constructor() {
+  function setUp() public {
     _deployerPk = uint256(vm.envBytes32('OP_GOERLI_DEPLOYER_PK'));
     chainId = 420;
+  }
+
+  function _setupEnvironment() internal virtual override {
+    // Setup oracle feeds
+    oracle[HAI] = new OracleForTest(HAI_INITIAL_PRICE); // 1 HAI = 1 USD
+
+    IBaseOracle _ethUSDPriceFeed = new ChainlinkRelayer(OP_GOERLI_CHAINLINK_ETH_USD_FEED, 1 hours);
+    oracle[ETH_A] = new DelayedOracle(_ethUSDPriceFeed, 1 hours);
+
+    // Setup collateral params
+    collateralTypes.push(ETH_A);
+    collateralParams[ETH_A] = CollateralParams({
+      name: ETH_A,
+      oracle: oracle[ETH_A],
+      liquidationPenalty: ETH_A_LIQUIDATION_PENALTY,
+      liquidationQuantity: ETH_A_LIQUIDATION_QUANTITY,
+      debtCeiling: ETH_A_DEBT_CEILING,
+      safetyCRatio: ETH_A_SAFETY_C_RATIO,
+      liquidationRatio: ETH_A_LIQUIDATION_RATIO,
+      stabilityFee: ETH_A_STABILITY_FEE,
+      percentageOfStabilityFeeToTreasury: PERCENTAGE_OF_STABILITY_FEE_TO_TREASURY
+    });
   }
 }

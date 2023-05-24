@@ -165,7 +165,7 @@ contract SurplusAuctionHouse is Authorizable, Disableable, ISurplusAuctionHouse 
 
     uint256 _amountToBurn = bids[_id].bidAmount - _amountToSend;
     if (_amountToBurn > 0) {
-      protocolToken.burn(address(this), _amountToBurn);
+      protocolToken.burn(_amountToBurn);
     }
 
     delete bids[_id];

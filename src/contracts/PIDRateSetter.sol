@@ -17,7 +17,7 @@
 pragma solidity 0.8.19;
 
 import {IPIDRateSetter, GLOBAL_PARAM} from '@interfaces/IPIDRateSetter.sol';
-import {IOracle as OracleLike} from '@interfaces/IOracle.sol';
+import {IBaseOracle as OracleLike} from '@interfaces/oracles/IBaseOracle.sol';
 import {IOracleRelayer as OracleRelayerLike} from '@interfaces/IOracleRelayer.sol';
 import {IPIDController as PIDCalculator} from '@interfaces/IPIDController.sol';
 import {Authorizable} from '@contracts/utils/Authorizable.sol';

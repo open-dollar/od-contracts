@@ -4,6 +4,7 @@ pragma solidity 0.8.19;
 import '@script/Params.s.sol';
 import './Common.t.sol';
 import {Math} from '@libraries/Math.sol';
+import {OracleForTest} from '@contracts/for-test/OracleForTest.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 
 contract E2EGlobalSettlementTest is Common {
@@ -21,6 +22,8 @@ contract E2EGlobalSettlementTest is Common {
   function test_global_settlement_multicollateral() public {
     _multiCollateralSetup();
 
+    assertEq(oracleRelayer.redemptionPrice(), HAI_INITIAL_PRICE * 1e9);
+
     // NOTE: all collaterals have COLLATERAL_PRICE
     // alice has a 20% LTV
     ISAFEEngine.SAFE memory _aliceSafe = safeEngine.safes('TKN-A', alice);
@@ -35,10 +38,8 @@ contract E2EGlobalSettlementTest is Common {
     assertEq(_carolSafe.generatedDebt.rdiv(_carolSafe.lockedCollateral * COLLATERAL_PRICE), 0.6e9);
 
     // NOTE: now B and C collaterals have less value
-    oracle['TKN-B'].setPriceAndValidity(COLLATERAL_B_DROP, true); // price 1 TKN-B = 75 HAI
-    oracleRelayer.updateCollateralPrice('TKN-B');
-    oracle['TKN-C'].setPriceAndValidity(COLLATERAL_C_DROP, true); // price 1 TKN-C = 5 HAI
-    oracleRelayer.updateCollateralPrice('TKN-C');
+    _setCollateralPrice('TKN-B', COLLATERAL_B_DROP);
+    _setCollateralPrice('TKN-C', COLLATERAL_C_DROP);
 
     vm.prank(deployer);
     globalSettlement.shutdownSystem();
@@ -319,23 +320,28 @@ contract E2EGlobalSettlementTest is Common {
   }
 
   function _multiCollateralSetup() internal {
+    oracle['TKN-A'] = new OracleForTest(COLLATERAL_PRICE);
+    oracle['TKN-B'] = new OracleForTest(COLLATERAL_PRICE);
+    oracle['TKN-C'] = new OracleForTest(COLLATERAL_PRICE);
+
     deployment.deployTokenCollateral(
       CollateralParams({
         name: 'TKN-A',
+        oracle: oracle['TKN-A'],
         liquidationPenalty: RAY,
         liquidationQuantity: LIQUIDATION_QUANTITY,
         debtCeiling: type(uint256).max,
         safetyCRatio: LIQUIDATION_RATIO,
         liquidationRatio: LIQUIDATION_RATIO,
-        stabilityFee: RAY,
+        stabilityFee: 0,
         percentageOfStabilityFeeToTreasury: 0
-      }),
-      COLLATERAL_PRICE
+      })
     );
 
     deployment.deployTokenCollateral(
       CollateralParams({
         name: 'TKN-B',
+        oracle: oracle['TKN-B'],
         liquidationPenalty: RAY,
         liquidationQuantity: LIQUIDATION_QUANTITY,
         debtCeiling: type(uint256).max,
@@ -343,13 +349,13 @@ contract E2EGlobalSettlementTest is Common {
         liquidationRatio: LIQUIDATION_RATIO,
         stabilityFee: 0,
         percentageOfStabilityFeeToTreasury: 0
-      }),
-      COLLATERAL_PRICE
+      })
     );
 
     deployment.deployTokenCollateral(
       CollateralParams({
         name: 'TKN-C',
+        oracle: oracle['TKN-C'],
         liquidationPenalty: RAY,
         liquidationQuantity: LIQUIDATION_QUANTITY,
         debtCeiling: type(uint256).max,
@@ -357,8 +363,7 @@ contract E2EGlobalSettlementTest is Common {
         liquidationRatio: LIQUIDATION_RATIO,
         stabilityFee: 0,
         percentageOfStabilityFeeToTreasury: 0
-      }),
-      COLLATERAL_PRICE
+      })
     );
 
     safeEngine = deployment.safeEngine();
@@ -368,9 +373,6 @@ contract E2EGlobalSettlementTest is Common {
     collateralJoin['TKN-A'] = deployment.collateralJoin('TKN-A');
     collateralJoin['TKN-B'] = deployment.collateralJoin('TKN-B');
     collateralJoin['TKN-C'] = deployment.collateralJoin('TKN-C');
-    oracle['TKN-A'] = deployment.oracle('TKN-A');
-    oracle['TKN-B'] = deployment.oracle('TKN-B');
-    oracle['TKN-C'] = deployment.oracle('TKN-C');
     oracleRelayer = deployment.oracleRelayer();
 
     _joinTKN(alice, collateralJoin['TKN-A'], COLLAT);

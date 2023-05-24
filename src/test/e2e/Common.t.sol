@@ -4,8 +4,9 @@ pragma solidity 0.8.19;
 import {PRBTest} from 'prb-test/PRBTest.sol';
 import '@script/Params.s.sol';
 import {Deploy} from '@script/Deploy.s.sol';
-import {Contracts, OracleForTest, CollateralJoin, ERC20ForTest} from '@script/Contracts.s.sol';
-import {IOracle} from '@interfaces/IOracle.sol';
+import {Contracts, CollateralJoin, ERC20ForTest} from '@script/Contracts.s.sol';
+import {OracleForTest} from '@contracts/for-test/OracleForTest.sol';
+import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {Math} from '@libraries/Math.sol';
 
 uint256 constant YEAR = 365 days;
@@ -20,8 +21,42 @@ interface ICollateralJoinLike {
   function collateralType() external view returns (bytes32);
 }
 
+contract DeployForTest is Deploy {
+  function _setupEnvironment() internal virtual override {
+    oracle[HAI] = new OracleForTest(HAI_INITIAL_PRICE); // 1 HAI = 1 USD
+    oracle[ETH_A] = new OracleForTest(TEST_ETH_PRICE); // 1 ETH = 2000 USD
+    oracle[TKN] = new OracleForTest(TEST_TKN_PRICE); // 1 TKN = 1 USD
+
+    collateralTypes.push(ETH_A);
+    collateralParams[ETH_A] = CollateralParams({
+      name: ETH_A,
+      oracle: oracle[ETH_A],
+      liquidationPenalty: ETH_A_LIQUIDATION_PENALTY,
+      liquidationQuantity: ETH_A_LIQUIDATION_QUANTITY,
+      debtCeiling: ETH_A_DEBT_CEILING,
+      safetyCRatio: ETH_A_SAFETY_C_RATIO,
+      liquidationRatio: ETH_A_LIQUIDATION_RATIO,
+      stabilityFee: ETH_A_STABILITY_FEE,
+      percentageOfStabilityFeeToTreasury: PERCENTAGE_OF_STABILITY_FEE_TO_TREASURY
+    });
+
+    collateralTypes.push(TKN);
+    collateralParams[TKN] = CollateralParams({
+      name: TKN,
+      oracle: oracle[TKN],
+      liquidationPenalty: TKN_LIQUIDATION_PENALTY,
+      liquidationQuantity: TKN_LIQUIDATION_QUANTITY,
+      debtCeiling: TKN_DEBT_CEILING,
+      safetyCRatio: TKN_SAFETY_C_RATIO,
+      liquidationRatio: TKN_LIQUIDATION_RATIO,
+      stabilityFee: TKN_STABILITY_FEE,
+      percentageOfStabilityFeeToTreasury: PERCENTAGE_OF_STABILITY_FEE_TO_TREASURY
+    });
+  }
+}
+
 abstract contract Common is PRBTest, Contracts {
-  Deploy deployment;
+  DeployForTest deployment;
   address deployer;
 
   address alice = address(0x420);
@@ -32,7 +67,7 @@ abstract contract Common is PRBTest, Contracts {
   uint256 auctionId;
 
   function setUp() public {
-    deployment = new Deploy();
+    deployment = new DeployForTest();
     deployment.run();
     deployer = deployment.deployer();
 
@@ -95,8 +130,11 @@ abstract contract Common is PRBTest, Contracts {
   }
 
   function _setCollateralPrice(bytes32 _collateral, uint256 _price) internal {
-    IOracle _oracle = oracleRelayer.cParams(_collateral).oracle;
-    OracleForTest(address(_oracle)).setPriceAndValidity(_price, true);
+    IBaseOracle _oracle = oracleRelayer.cParams(_collateral).oracle;
+    vm.mockCall(
+      address(_oracle), abi.encodeWithSelector(IBaseOracle.getResultWithValidity.selector), abi.encode(_price, true)
+    );
+    vm.mockCall(address(_oracle), abi.encodeWithSelector(IBaseOracle.read.selector), abi.encode(_price));
     oracleRelayer.updateCollateralPrice(_collateral);
   }
 

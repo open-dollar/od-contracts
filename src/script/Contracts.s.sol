@@ -11,43 +11,50 @@ import {CollateralJoin} from '@contracts/utils/CollateralJoin.sol';
 import {SurplusAuctionHouse} from '@contracts/SurplusAuctionHouse.sol';
 import {DebtAuctionHouse} from '@contracts/DebtAuctionHouse.sol';
 import {IncreasingDiscountCollateralAuctionHouse as CollateralAuctionHouse} from '@contracts/CollateralAuctionHouse.sol';
-import {Coin} from '@contracts/utils/Coin.sol';
 import {GlobalSettlement} from '@contracts/settlement/GlobalSettlement.sol';
-// TODO: import {ESM} from "@contracts/ESM.sol";
 import {StabilityFeeTreasury} from '@contracts/StabilityFeeTreasury.sol';
 import {OracleRelayer} from '@contracts/OracleRelayer.sol';
 import {PIDController} from '@contracts/PIDController.sol';
 import {PIDRateSetter} from '@contracts/PIDRateSetter.sol';
 
+import {DenominatedOracle} from '@contracts/oracles/DenominatedOracle.sol';
+import {DelayedOracle} from '@contracts/oracles/DelayedOracle.sol';
+import {ChainlinkRelayer} from '@contracts/oracles/ChainlinkRelayer.sol';
+import {UniV3Relayer} from '@contracts/oracles/UniV3Relayer.sol';
+
+import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
+
+import {CoinForTest as Coin} from '@contracts/for-test/CoinForTest.sol';
+import {ERC20ForTest, ERC20, IERC20} from '@contracts/for-test/ERC20ForTest.sol';
 import {OracleForTest} from '@contracts/for-test/OracleForTest.sol';
 
-import {ERC20ForTest, ERC20, IERC20} from '@contracts/for-test/ERC20ForTest.sol';
-
-contract Contracts {
+abstract contract Contracts {
+  // --- Base contracts ---
   SAFEEngine public safeEngine;
   TaxCollector public taxCollector;
   AccountingEngine public accountingEngine;
   LiquidationEngine public liquidationEngine;
   StabilityFeeTreasury public stabilityFeeTreasury;
-
-  Coin public coin;
-  Coin public protocolToken;
-  CoinJoin public coinJoin;
-  ETHJoin public ethJoin;
-
+  OracleRelayer public oracleRelayer;
   SurplusAuctionHouse public surplusAuctionHouse;
   DebtAuctionHouse public debtAuctionHouse;
-
-  mapping(bytes32 => ERC20ForTest) public collateral;
-  mapping(bytes32 => CollateralJoin) public collateralJoin;
   mapping(bytes32 => CollateralAuctionHouse) public collateralAuctionHouse;
 
-  OracleRelayer public oracleRelayer;
-  mapping(bytes32 => OracleForTest) public oracle;
+  // --- Token contracts ---
+  Coin public protocolToken;
+  Coin public coin;
+  mapping(bytes32 => ERC20ForTest) public collateral;
+  CoinJoin public coinJoin;
+  ETHJoin public ethJoin;
+  mapping(bytes32 => CollateralJoin) public collateralJoin;
 
+  // --- Oracle contracts ---
+  mapping(bytes32 => IBaseOracle) public oracle;
+
+  // --- PID contracts ---
   PIDController public pidController;
   PIDRateSetter public pidRateSetter;
 
+  // --- Settlement contracts ---
   GlobalSettlement public globalSettlement;
-  // ESM public esm;
 }

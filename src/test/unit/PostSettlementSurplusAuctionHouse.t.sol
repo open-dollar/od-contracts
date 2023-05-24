@@ -619,7 +619,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_SettleAuction is Base {
   function test_Call_ProtocolToken_Burn(SurplusAuction memory _auction) public happyPath(_auction) {
     vm.expectCall(
       address(mockProtocolToken),
-      abi.encodeCall(mockProtocolToken.burn, (address(postSettlementSurplusAuctionHouse), _auction.bidAmount))
+      abi.encodeWithSignature('burn(address,uint256)', address(postSettlementSurplusAuctionHouse), _auction.bidAmount)
     );
 
     postSettlementSurplusAuctionHouse.settleAuction(_auction.id);

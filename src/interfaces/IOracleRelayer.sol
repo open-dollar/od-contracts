@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {IOracle as OracleLike} from '@interfaces/IOracle.sol';
+import {IBaseOracle as OracleLike} from '@interfaces/oracles/IBaseOracle.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiablePerCollateral, GLOBAL_PARAM} from '@interfaces/utils/IModifiablePerCollateral.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';

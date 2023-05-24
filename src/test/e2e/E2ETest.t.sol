@@ -48,8 +48,7 @@ contract E2ETest is Common {
     _joinETH(address(this), COLLAT);
     _openSafe(address(this), address(ethJoin), int256(COLLAT), int256(DEBT));
 
-    oracle[ETH_A].setPriceAndValidity(TEST_ETH_PRICE_DROP, true);
-    oracleRelayer.updateCollateralPrice(ETH_A);
+    _setCollateralPrice(ETH_A, TEST_ETH_PRICE_DROP);
 
     liquidationEngine.liquidateSAFE(ETH_A, address(this));
 

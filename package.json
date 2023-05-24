@@ -39,7 +39,8 @@
   },
   "dependencies": {
     "@defi-wonderland/solidity-utils": "0.0.0-4298c6c6",
-    "@openzeppelin/contracts": "4.8.2"
+    "@openzeppelin/contracts": "4.8.2",
+    "@uniswap/v3-periphery": "https://github.com/Uniswap/v3-periphery.git#0.8"
   },
   "devDependencies": {
     "@commitlint/cli": "17.0.3",

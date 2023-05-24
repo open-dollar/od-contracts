@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {IOracle} from '@interfaces/IOracle.sol';
+import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {OracleRelayer} from '@contracts/OracleRelayer.sol';
 
 contract OracleRelayerForTest is OracleRelayer {
@@ -9,7 +9,7 @@ contract OracleRelayerForTest is OracleRelayer {
 
   // function to mock oracle since we can get a slot with sdstorage
   function setCTypeOracle(bytes32 _cType, address _oracle) external {
-    _cParams[_cType].oracle = IOracle(_oracle);
+    _cParams[_cType].oracle = IBaseOracle(_oracle);
   }
 
   function setRedemptionPrice(uint256 _price) external {

@@ -8,7 +8,7 @@ import {IOracleRelayer as OracleRelayerLike} from '@interfaces/IOracleRelayer.so
 import {IDisableable as CoinSavingsAccountLike} from '@interfaces/utils/IDisableable.sol';
 import {IStabilityFeeTreasury as StabilityFeeTreasuryLike} from '@interfaces/IStabilityFeeTreasury.sol';
 import {ICollateralAuctionHouse as CollateralAuctionHouseLike} from '@interfaces/ICollateralAuctionHouse.sol';
-import {IOracle as OracleLike} from '@interfaces/IOracle.sol';
+import {IBaseOracle as OracleLike} from '@interfaces/oracles/IBaseOracle.sol';
 
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';

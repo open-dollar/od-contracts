@@ -115,7 +115,7 @@ contract Unit_CoinJoin_Join is Base {
     _;
   }
 
-  function _assumeHappyPath(uint256 _wad) internal {
+  function _assumeHappyPath(uint256 _wad) internal pure {
     vm.assume(notOverflowMul(RAY, _wad));
   }
 
@@ -137,7 +137,7 @@ contract Unit_CoinJoin_Join is Base {
   }
 
   function test_Call_SystemCoin_Burn(address _account, uint256 _wad) public happyPath(_wad) {
-    vm.expectCall(address(mockSystemCoin), abi.encodeCall(mockSystemCoin.burn, (user, _wad)));
+    vm.expectCall(address(mockSystemCoin), abi.encodeWithSignature('burn(address,uint256)', user, _wad));
 
     coinJoin.join(_account, _wad);
   }
@@ -160,7 +160,7 @@ contract Unit_CoinJoin_Exit is Base {
     _;
   }
 
-  function _assumeHappyPath(uint256 _wad) internal {
+  function _assumeHappyPath(uint256 _wad) internal pure {
     vm.assume(notOverflowMul(RAY, _wad));
   }
 

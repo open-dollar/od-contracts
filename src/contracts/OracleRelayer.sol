@@ -17,7 +17,7 @@
 pragma solidity 0.8.19;
 
 import {ISAFEEngine as SAFEEngineLike} from '@interfaces/ISAFEEngine.sol';
-import {IOracle as OracleLike} from '@interfaces/IOracle.sol';
+import {IBaseOracle as OracleLike} from '@interfaces/oracles/IBaseOracle.sol';
 import {IOracleRelayer, GLOBAL_PARAM} from '@interfaces/IOracleRelayer.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';

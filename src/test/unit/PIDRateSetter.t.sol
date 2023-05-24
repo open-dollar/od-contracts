@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import {Math, RAY} from '@libraries/Math.sol';
 import {Assertions} from '@libraries/Assertions.sol';
-import {IOracle} from '@interfaces/IOracle.sol';
+import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
 import {IPIDController} from '@interfaces/IPIDController.sol';
 import {IPIDRateSetter} from '@interfaces/IPIDRateSetter.sol';
@@ -20,7 +20,7 @@ contract Base is HaiTest {
   uint256 periodSize = 3600;
   IPIDRateSetter pidRateSetter;
   IOracleRelayer mockOracleRelayer = IOracleRelayer(mockContract('mockOracleRelayer'));
-  IOracle mockOracle = IOracle(mockContract('mockOracle'));
+  IBaseOracle mockOracle = IBaseOracle(mockContract('mockOracle'));
   IPIDController mockPIDController = IPIDController(mockContract('mockPIDController'));
 
   function _createDefaulPIDRateSetter() internal returns (PIDRateSetter _pidRateSetter) {
@@ -40,7 +40,9 @@ contract Base is HaiTest {
 
   function _mockOrclGetResultWithValidity(uint256 _result, bool _valid) internal {
     vm.mockCall(
-      address(mockOracle), abi.encodeWithSelector(IOracle.getResultWithValidity.selector), abi.encode(_result, _valid)
+      address(mockOracle),
+      abi.encodeWithSelector(IBaseOracle.getResultWithValidity.selector),
+      abi.encode(_result, _valid)
     );
   }
 
@@ -192,7 +194,7 @@ contract Unit_PIDRateSetter_GetMarketPrice is Base {
   function test_Call_Orcl_GetResultWithValidity(uint256 _result) public {
     _mockOrclGetResultWithValidity(_result, true);
 
-    vm.expectCall(address(mockOracle), abi.encodeWithSelector(IOracle.getResultWithValidity.selector));
+    vm.expectCall(address(mockOracle), abi.encodeWithSelector(IBaseOracle.getResultWithValidity.selector));
     pidRateSetter.getMarketPrice();
   }
 
@@ -208,7 +210,7 @@ contract Unit_PIDRateSetter_GetRedemptionAndMarketPrices is Base {
     _mockOrclGetResultWithValidity(_result, true);
     _mockOracleRelayerRedemptionPrice(_redemptionPrice);
 
-    vm.expectCall(address(mockOracle), abi.encodeWithSelector(IOracle.getResultWithValidity.selector));
+    vm.expectCall(address(mockOracle), abi.encodeWithSelector(IBaseOracle.getResultWithValidity.selector));
     pidRateSetter.getRedemptionAndMarketPrices();
   }
 
@@ -300,7 +302,7 @@ contract Unit_PIDRateSetter_UpdateRate is Base {
     public
     happyPathDefaultLeakIsOne(_scenario)
   {
-    vm.expectCall(address(mockOracle), abi.encodeWithSelector(IOracle.getResultWithValidity.selector));
+    vm.expectCall(address(mockOracle), abi.encodeWithSelector(IBaseOracle.getResultWithValidity.selector));
 
     pidRateSetter.updateRate();
   }
@@ -309,7 +311,7 @@ contract Unit_PIDRateSetter_UpdateRate is Base {
     public
     happyPathDefaultLeakIsZero(_scenario)
   {
-    vm.expectCall(address(mockOracle), abi.encodeWithSelector(IOracle.getResultWithValidity.selector));
+    vm.expectCall(address(mockOracle), abi.encodeWithSelector(IBaseOracle.getResultWithValidity.selector));
 
     pidRateSetter.updateRate();
   }

@@ -8,4 +8,5 @@ interface IToken {
   function move(address _source, address _destination, uint256 _amount) external;
   function push(address _guy, uint256 _wad) external;
   function burn(address _account, uint256 _amount) external;
+  function burn(uint256 _amount) external;
 }

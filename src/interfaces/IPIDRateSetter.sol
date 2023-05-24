@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import {IPIDController} from '@interfaces/IPIDController.sol';
-import {IOracle} from '@interfaces/IOracle.sol';
+import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiable, GLOBAL_PARAM} from '@interfaces/utils/IModifiable.sol';
@@ -23,7 +23,7 @@ interface IPIDRateSetter is IAuthorizable, IModifiable {
   }
 
   // --- Registry ---
-  function oracle() external view returns (IOracle _oracle);
+  function oracle() external view returns (IBaseOracle _oracle);
   function oracleRelayer() external view returns (IOracleRelayer _oracleRelayer);
   function pidCalculator() external view returns (IPIDController _pidCalculator);
 

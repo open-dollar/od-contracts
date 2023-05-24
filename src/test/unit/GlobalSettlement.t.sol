@@ -9,7 +9,7 @@ import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
 import {IDisableable as ICoinSavingsAccount} from '@interfaces/utils/IDisableable.sol';
 import {IStabilityFeeTreasury} from '@interfaces/IStabilityFeeTreasury.sol';
 import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
-import {IOracle} from '@interfaces/IOracle.sol';
+import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IModifiable, GLOBAL_PARAM} from '@interfaces/utils/IModifiable.sol';
@@ -30,7 +30,7 @@ abstract contract Base is HaiTest {
   ICoinSavingsAccount mockCoinSavingsAccount = ICoinSavingsAccount(mockContract('CoinSavingsAccount'));
   IStabilityFeeTreasury mockStabilityFeeTreasury = IStabilityFeeTreasury(mockContract('StabilityFeeTreasury'));
   ICollateralAuctionHouse mockCollateralAuctionHouse = ICollateralAuctionHouse(mockContract('CollateralAuctionHouse'));
-  IOracle mockOracle = IOracle(mockContract('Oracle'));
+  IBaseOracle mockOracle = IBaseOracle(mockContract('Oracle'));
 
   GlobalSettlement globalSettlement;
 

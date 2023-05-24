@@ -20,7 +20,8 @@ pragma solidity 0.8.19;
 
 import {ISAFEEngine as SAFEEngineLike} from '@interfaces/ISAFEEngine.sol';
 import {IOracleRelayer as OracleRelayerLike} from '@interfaces/IOracleRelayer.sol';
-import {IOracle as OracleLike} from '@interfaces/IOracle.sol';
+import {IBaseOracle as OracleLike} from '@interfaces/oracles/IBaseOracle.sol';
+import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
 import {ILiquidationEngine as LiquidationEngineLike} from '@interfaces/ILiquidationEngine.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
@@ -91,7 +92,7 @@ contract IncreasingDiscountCollateralAuctionHouse is Authorizable {
   uint256 public minSystemCoinMarketDeviation = 0.999e18; // [wad]
 
   OracleRelayerLike public oracleRelayer;
-  OracleLike public collateralFSM;
+  IDelayedOracle public collateralFSM;
   OracleLike public systemCoinOracle;
   LiquidationEngineLike public liquidationEngine;
 
@@ -181,7 +182,7 @@ contract IncreasingDiscountCollateralAuctionHouse is Authorizable {
     if (_parameter == 'oracleRelayer') {
       oracleRelayer = OracleRelayerLike(_data);
     } else if (_parameter == 'collateralFSM') {
-      collateralFSM = OracleLike(_data);
+      collateralFSM = IDelayedOracle(_data);
       // Check that priceSource() is implemented
       collateralFSM.priceSource();
     } else if (_parameter == 'systemCoinOracle') {
@@ -244,15 +245,15 @@ contract IncreasingDiscountCollateralAuctionHouse is Authorizable {
    */
   function getCollateralMarketPrice() public view returns (uint256 _priceFeed) {
     // Fetch the collateral market address from the collateral FSM
-    address _marketOracle;
-    try collateralFSM.priceSource() returns (address __marketOracle) {
+    OracleLike _marketOracle;
+    try collateralFSM.priceSource() returns (OracleLike __marketOracle) {
       _marketOracle = __marketOracle;
     } catch (bytes memory) {}
 
-    if (_marketOracle == address(0)) return 0;
+    if (address(_marketOracle) == address(0)) return 0;
 
     // wrapped call toward the collateral market
-    try OracleLike(_marketOracle).getResultWithValidity() returns (uint256 _price, bool _valid) {
+    try _marketOracle.getResultWithValidity() returns (uint256 _price, bool _valid) {
       if (_valid) {
         _priceFeed = _price;
       }

@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {IOracle} from '@interfaces/IOracle.sol';
+import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 
-contract OracleForTest is IOracle {
-  uint256 price = 1 ether;
+contract OracleForTest is IBaseOracle {
+  uint256 price;
   bool validity = true;
+  string public symbol;
 
   constructor(uint256 _price) {
     price = _price;
@@ -21,8 +22,8 @@ contract OracleForTest is IOracle {
     validity = _validity;
   }
 
-  function priceSource() public pure returns (address) {
-    return address(0);
+  function priceSource() public view returns (address) {
+    return address(this);
   }
 
   function read() external view returns (uint256 _value) {
