@@ -36,7 +36,10 @@ contract TaxCollector is Authorizable, ITaxCollector {
   // Tax receiver data
   mapping(bytes32 => mapping(address => TaxReceiver)) internal _secondaryTaxReceivers;
 
-  function secondaryTaxReceiver(bytes32 _cType, address _receiver) external view returns (TaxReceiver memory) {
+  function secondaryTaxReceiver(
+    bytes32 _cType,
+    address _receiver
+  ) external view returns (TaxReceiver memory _secondaryTaxReceiver) {
     return _secondaryTaxReceivers[_cType][_receiver];
   }
 
@@ -66,16 +69,15 @@ contract TaxCollector is Authorizable, ITaxCollector {
     safeEngine = SAFEEngineLike(_safeEngine);
   }
 
-  // --- Admin ---
   /**
    * @notice Initialize a brand new collateral type
    * @param _cType Collateral type name (e.g ETH-A, TBTC-B)
    */
   function initializeCollateralType(bytes32 _cType) external isAuthorized {
-    CollateralType storage collateralType_ = collateralTypes[_cType];
-    require(collateralType_.stabilityFee == 0, 'TaxCollector/collateral-type-already-init');
-    collateralType_.stabilityFee = RAY;
-    collateralType_.updateTime = block.timestamp;
+    CollateralType storage _collateralType = collateralTypes[_cType];
+    require(_collateralType.stabilityFee == 0, 'TaxCollector/collateral-type-already-init');
+    _collateralType.stabilityFee = RAY;
+    _collateralType.updateTime = block.timestamp;
     _collateralList.add(_cType);
     emit InitializeCollateralType(_cType);
   }

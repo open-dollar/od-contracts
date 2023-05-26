@@ -424,31 +424,33 @@ contract SAFEEngine is Authorizable, Disableable, ISAFEEngine {
   // --- Administration ---
   /**
    * @notice Modify general params
-   * @param _parameter The name of the parameter modified
+   * @param _param The name of the parameter modified
    * @param _data New value for the parameter
    */
-  function modifyParameters(bytes32 _parameter, bytes memory _data) external isAuthorized whenEnabled {
+  function modifyParameters(bytes32 _param, bytes memory _data) external isAuthorized whenEnabled {
     uint256 _uint256 = _data.toUint256();
 
-    if (_parameter == 'globalDebtCeiling') _params.globalDebtCeiling = _uint256;
-    else if (_parameter == 'safeDebtCeiling') _params.safeDebtCeiling = _uint256;
+    if (_param == 'globalDebtCeiling') _params.globalDebtCeiling = _uint256;
+    else if (_param == 'safeDebtCeiling') _params.safeDebtCeiling = _uint256;
     else revert UnrecognizedParam();
-    emit ModifyParameters(_parameter, GLOBAL_PARAM, _data);
+
+    emit ModifyParameters(_param, GLOBAL_PARAM, _data);
   }
 
   /**
    * @notice Modify collateral specific params
    * @param _cType Collateral type we modify params for
-   * @param _parameter The name of the parameter modified
+   * @param _param The name of the parameter modified
    * @param _data New value for the parameter
    */
-  function modifyParameters(bytes32 _cType, bytes32 _parameter, bytes memory _data) public isAuthorized whenEnabled {
+  function modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) public isAuthorized whenEnabled {
     uint256 _uint256 = _data.toUint256();
 
-    if (_parameter == 'debtCeiling') _cParams[_cType].debtCeiling = _uint256;
-    else if (_parameter == 'debtFloor') _cParams[_cType].debtFloor = _uint256;
+    if (_param == 'debtCeiling') _cParams[_cType].debtCeiling = _uint256;
+    else if (_param == 'debtFloor') _cParams[_cType].debtFloor = _uint256;
     else revert UnrecognizedParam();
-    emit ModifyParameters(_cType, _parameter, _data);
+
+    emit ModifyParameters(_param, _cType, _data);
   }
 
   // --- Modifiers ---

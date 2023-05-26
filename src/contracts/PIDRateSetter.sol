@@ -112,7 +112,7 @@ contract PIDRateSetter is Authorizable, IPIDRateSetter {
     _redemptionPrice = oracleRelayer.redemptionPrice();
   }
 
-  // --- Administration ---
+  // --- Admin ---
   function modifyParameters(bytes32 _param, bytes memory _data) external isAuthorized {
     address _address = _data.toAddress();
     uint256 _uint256 = _data.toUint256();

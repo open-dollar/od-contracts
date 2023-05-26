@@ -74,7 +74,7 @@ contract E2EStabilityFeeTreasuryTest is Common {
 
     // Set total allowance to _rad
     stabilityFeeTreasury.setTotalAllowance(deployer, _rad);
-    stabilityFeeTreasury.pullFunds(alice, address(stabilityFeeTreasury.systemCoin()), _wad);
+    stabilityFeeTreasury.pullFunds(alice, _wad);
     vm.stopPrank();
 
     // Assertions
@@ -122,7 +122,7 @@ contract E2EStabilityFeeTreasuryTest is Common {
     assertEq(safeEngine.debtBalance(address(stabilityFeeTreasury)), _debt);
 
     stabilityFeeTreasury.setTotalAllowance(deployer, _rad);
-    stabilityFeeTreasury.pullFunds(alice, address(stabilityFeeTreasury.systemCoin()), _wad);
+    stabilityFeeTreasury.pullFunds(alice, _wad);
     vm.stopPrank();
 
     // Assertions
@@ -149,7 +149,7 @@ contract E2EStabilityFeeTreasuryTest is Common {
     // Executing pulling 100% of funds and setting bob as destination
     vm.startPrank(deployer);
     stabilityFeeTreasury.setTotalAllowance(deployer, _wad * RAY);
-    stabilityFeeTreasury.pullFunds(bob, address(stabilityFeeTreasury.systemCoin()), _wad);
+    stabilityFeeTreasury.pullFunds(bob, _wad);
     vm.stopPrank();
 
     // Assertions

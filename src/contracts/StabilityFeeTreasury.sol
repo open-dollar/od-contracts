@@ -169,18 +169,15 @@ contract StabilityFeeTreasury is Authorizable, Disableable, IStabilityFeeTreasur
   /**
    * @notice Pull stability fees from the treasury (if your allowance permits)
    * @param  _dstAccount Address to transfer funds to
-   * @param  _token Address of the token to transfer (in this case it must be the address of the ERC20 system coin).
-   *              Used only to adhere to a standard for automated, on-chain treasuries
    * @param  _wad Amount of system coins (SF) to transfer (expressed as an 18 decimal number but the contract will transfer
    *             internal system coins that have 45 decimals)
    */
-  function pullFunds(address _dstAccount, address _token, uint256 _wad) external {
+  function pullFunds(address _dstAccount, uint256 _wad) external {
     if (_dstAccount == address(this)) return;
     require(allowance[msg.sender].total >= _wad * RAY, 'StabilityFeeTreasury/not-allowed');
     require(_dstAccount != address(0), 'StabilityFeeTreasury/null-dst');
     require(_dstAccount != extraSurplusReceiver, 'StabilityFeeTreasury/dst-cannot-be-accounting');
     require(_wad > 0, 'StabilityFeeTreasury/null-transfer-amount');
-    require(_token == address(systemCoin), 'StabilityFeeTreasury/token-unavailable');
     if (allowance[msg.sender].perBlock > 0) {
       require(
         pulledPerBlock[msg.sender][block.number] + (_wad * RAY) <= allowance[msg.sender].perBlock,
@@ -207,7 +204,7 @@ contract StabilityFeeTreasury is Authorizable, Disableable, IStabilityFeeTreasur
     // Transfer money
     safeEngine.transferInternalCoins(address(this), _dstAccount, _wad * RAY);
 
-    emit PullFunds(msg.sender, _dstAccount, _token, _wad * RAY, expensesAccumulator);
+    emit PullFunds(msg.sender, _dstAccount, _wad * RAY, expensesAccumulator);
   }
 
   // --- Treasury Maintenance ---
@@ -252,7 +249,7 @@ contract StabilityFeeTreasury is Authorizable, Disableable, IStabilityFeeTreasur
     }
   }
 
-  // --- Administration ---
+  // --- Admin ---
   function modifyParameters(bytes32 _param, bytes memory _data) external isAuthorized whenEnabled {
     uint256 _uint256 = _data.toUint256();
 
@@ -263,6 +260,7 @@ contract StabilityFeeTreasury is Authorizable, Disableable, IStabilityFeeTreasur
     else if (_param == 'pullFundsMinThreshold') _params.pullFundsMinThreshold = _uint256;
     else if (_param == 'surplusTransferDelay') _params.surplusTransferDelay = _uint256;
     else revert UnrecognizedParam();
+
     emit ModifyParameters(_param, GLOBAL_PARAM, _data);
   }
 }

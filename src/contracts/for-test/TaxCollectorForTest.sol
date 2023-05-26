@@ -35,11 +35,15 @@ contract TaxCollectorForTest is TaxCollector {
   using EnumerableSet for EnumerableSet.AddressSet;
   using EnumerableSet for EnumerableSet.Bytes32Set;
 
-  function secondaryReceiversAmount() external view returns (uint256) {
+  function secondaryReceiversAmount() external view returns (uint256 _secondaryReceiversAmount) {
     return _secondaryReceivers.length();
   }
 
-  function secondaryReceiverRevenueSources(address _receiver) external view returns (uint256) {
+  function secondaryReceiverRevenueSources(address _receiver)
+    external
+    view
+    returns (uint256 _secondaryReceiverRevenueSourcesAmount)
+  {
     return _secondaryReceiverRevenueSources[_receiver].length();
   }
 }

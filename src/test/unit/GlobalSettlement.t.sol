@@ -103,14 +103,14 @@ abstract contract Base is HaiTest {
 
   function _mockOracleRelayerCollateralParams(
     bytes32 _cType,
-    address _orcl,
+    address _oracle,
     uint256 _safetyCRatio,
     uint256 _liquidationCRatio
   ) internal {
     vm.mockCall(
       address(mockOracleRelayer),
       abi.encodeCall(mockOracleRelayer.cParams, (_cType)),
-      abi.encode(_orcl, _safetyCRatio, _liquidationCRatio)
+      abi.encode(_oracle, _safetyCRatio, _liquidationCRatio)
     );
   }
 

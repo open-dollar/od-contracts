@@ -274,6 +274,7 @@ contract LiquidationEngine is Authorizable, Disableable, ILiquidationEngine {
     if (_param == 'onAuctionSystemCoinLimit') _params.onAuctionSystemCoinLimit = _data.toUint256();
     else if (_param == 'accountingEngine') accountingEngine = abi.decode(_data, (AccountingEngineLike));
     else revert UnrecognizedParam();
+
     emit ModifyParameters(_param, GLOBAL_PARAM, _data);
   }
 

@@ -660,9 +660,7 @@ contract Unit_StabilityFeeTreasury_GiveFunds is Base {
 }
 
 contract Unit_StabilityFeeTreasury_PullFunds is Base {
-  event PullFunds(
-    address indexed _sender, address indexed _dstAccount, address _token, uint256 _rad, uint256 _expensesAccumulator
-  );
+  event PullFunds(address indexed _sender, address indexed _dstAccount, uint256 _rad, uint256 _expensesAccumulator);
 
   function setUp() public virtual override {
     super.setUp();
@@ -780,7 +778,7 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     public
     happyPathAllowancePerBlockNotZero(_pullFundsScenario)
   {
-    stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, address(mockSystemCoin), _pullFundsScenario._wad);
+    stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, _pullFundsScenario._wad);
 
     assertEq(
       stabilityFeeTreasury.pulledPerBlock(user, block.number),
@@ -795,7 +793,7 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     expectEmitNoIndex();
     emit CalledJoinAllCoins();
 
-    stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, address(mockSystemCoin), _pullFundsScenario._wad);
+    stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, _pullFundsScenario._wad);
   }
 
   function test_Call_Internal_SettleDebt(PullFundsScenario memory _pullFundsScenario)
@@ -805,14 +803,14 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     expectEmitNoIndex();
     emit CalledSettleDebt();
 
-    stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, address(mockSystemCoin), _pullFundsScenario._wad);
+    stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, _pullFundsScenario._wad);
   }
 
   function test_Set_Allowance(PullFundsScenario memory _pullFundsScenario)
     public
     happyPathAllowancePerBlockNotZero(_pullFundsScenario)
   {
-    stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, address(mockSystemCoin), _pullFundsScenario._wad);
+    stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, _pullFundsScenario._wad);
 
     (uint256 _totalAllowance,) = stabilityFeeTreasury.allowance(user);
 
@@ -823,7 +821,7 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     public
     happyPathAllowancePerBlockNotZero(_pullFundsScenario)
   {
-    stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, address(mockSystemCoin), _pullFundsScenario._wad);
+    stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, _pullFundsScenario._wad);
 
     assertEq(
       stabilityFeeTreasury.expensesAccumulator(),
@@ -845,7 +843,7 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
       )
     );
 
-    stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, address(mockSystemCoin), _pullFundsScenario._wad);
+    stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, _pullFundsScenario._wad);
   }
 
   function test_Emit_PullFunds(PullFundsScenario memory _pullFundsScenario)
@@ -856,12 +854,11 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     emit PullFunds(
       user,
       _pullFundsScenario._dstAccount,
-      address(mockSystemCoin),
       _pullFundsScenario._wad * RAY,
       _pullFundsScenario._initialExpensesAccumulator + _pullFundsScenario._wad * RAY
     );
 
-    stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, address(mockSystemCoin), _pullFundsScenario._wad);
+    stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, _pullFundsScenario._wad);
   }
 
   function test_Emit_PullFunds_AllowancePerBlockZero(PullFundsScenario memory _pullFundsScenario)
@@ -872,20 +869,19 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     emit PullFunds(
       user,
       _pullFundsScenario._dstAccount,
-      address(mockSystemCoin),
       _pullFundsScenario._wad * RAY,
       _pullFundsScenario._initialExpensesAccumulator + _pullFundsScenario._wad * RAY
     );
 
-    stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, address(mockSystemCoin), _pullFundsScenario._wad);
+    stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, _pullFundsScenario._wad);
   }
 
   function testFail_Emit_PullFunds_DstAccIsStabilityFeeTreasury() public {
     uint256 _wad = 1;
     vm.expectEmit(true, false, false, true);
-    emit PullFunds(user, address(stabilityFeeTreasury), address(mockSystemCoin), 1 * RAY, _wad * RAY);
+    emit PullFunds(user, address(stabilityFeeTreasury), 1 * RAY, _wad * RAY);
 
-    stabilityFeeTreasury.pullFunds(address(stabilityFeeTreasury), address(mockSystemCoin), _wad);
+    stabilityFeeTreasury.pullFunds(address(stabilityFeeTreasury), _wad);
   }
 
   function test_Revert_NotAllowed(PullFundsScenario memory _pullFundsScenario) public {
@@ -896,7 +892,7 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     vm.expectRevert(bytes('StabilityFeeTreasury/not-allowed'));
 
     vm.prank(user);
-    stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, address(mockSystemCoin), _pullFundsScenario._wad);
+    stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, _pullFundsScenario._wad);
   }
 
   function test_Revert_NullDst(PullFundsScenario memory _pullFundsScenario) public {
@@ -908,7 +904,7 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     vm.expectRevert(bytes('StabilityFeeTreasury/null-dst'));
 
     vm.prank(user);
-    stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, address(mockSystemCoin), _pullFundsScenario._wad);
+    stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, _pullFundsScenario._wad);
   }
 
   function test_Revert_DstIsAccounting(PullFundsScenario memory _pullFundsScenario) public {
@@ -922,7 +918,7 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     vm.expectRevert(bytes('StabilityFeeTreasury/dst-cannot-be-accounting'));
 
     vm.prank(user);
-    stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, address(mockSystemCoin), _pullFundsScenario._wad);
+    stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, _pullFundsScenario._wad);
   }
 
   function test_Revert_NullTransferAmount(PullFundsScenario memory _pullFundsScenario) public {
@@ -937,21 +933,7 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     vm.expectRevert(bytes('StabilityFeeTreasury/null-transfer-amount'));
 
     vm.prank(user);
-    stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, address(mockSystemCoin), _pullFundsScenario._wad);
-  }
-
-  function test_Revert_UnAvailableToken(PullFundsScenario memory _pullFundsScenario) public {
-    vm.assume(_notStabilityFeeTreasuryDstAcc(_pullFundsScenario));
-    vm.assume(_allowed(_pullFundsScenario));
-    vm.assume(_notNullDstAcc(_pullFundsScenario));
-    vm.assume(_notAccountingDstAcc(_pullFundsScenario));
-    vm.assume(_notNullTransferAmmount(_pullFundsScenario));
-
-    _mockValues(_pullFundsScenario, 0);
-    vm.expectRevert(bytes('StabilityFeeTreasury/token-unavailable'));
-
-    vm.prank(user);
-    stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, newAddress(), _pullFundsScenario._wad);
+    stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, _pullFundsScenario._wad);
   }
 
   function test_Revert_PerBlockLimitExceeded(PullFundsScenario memory _pullFundsScenario) public {
@@ -967,7 +949,7 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     vm.expectRevert(bytes('StabilityFeeTreasury/per-block-limit-exceeded'));
 
     vm.prank(user);
-    stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, address(mockSystemCoin), _pullFundsScenario._wad);
+    stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, _pullFundsScenario._wad);
   }
 
   function test_Revert_BadDebt(PullFundsScenario memory _pullFundsScenario, uint256 _debt) public {
@@ -984,7 +966,7 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     vm.expectRevert(bytes('StabilityFeeTreasury/outstanding-bad-debt'));
 
     vm.prank(user);
-    stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, address(mockSystemCoin), _pullFundsScenario._wad);
+    stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, _pullFundsScenario._wad);
   }
 
   function test_Revert_NotEnoguhFunds(PullFundsScenario memory _pullFundsScenario) public {
@@ -1001,7 +983,7 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     vm.expectRevert(bytes('StabilityFeeTreasury/not-enough-funds'));
 
     vm.prank(user);
-    stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, address(mockSystemCoin), _pullFundsScenario._wad);
+    stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, _pullFundsScenario._wad);
   }
 
   function test_Revert_BelowPullFundsMinThreshold(PullFundsScenario memory _pullFundsScenario) public {
@@ -1019,7 +1001,7 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     vm.expectRevert(bytes('StabilityFeeTreasury/below-pullFunds-min-threshold'));
 
     vm.prank(user);
-    stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, address(mockSystemCoin), _pullFundsScenario._wad);
+    stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, _pullFundsScenario._wad);
   }
 }
 

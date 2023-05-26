@@ -22,9 +22,7 @@ interface IStabilityFeeTreasury is IAuthorizable, IDisableable, IModifiable {
   event SetPerBlockAllowance(address indexed account, uint256 rad);
   event GiveFunds(address indexed _account, uint256 _rad, uint256 _expensesAccumulator);
   event TakeFunds(address indexed _account, uint256 _rad);
-  event PullFunds(
-    address indexed _sender, address indexed _dstAccount, address _token, uint256 _rad, uint256 _expensesAccumulator
-  );
+  event PullFunds(address indexed _sender, address indexed _dstAccount, uint256 _rad, uint256 _expensesAccumulator);
   event TransferSurplusFunds(address _extraSurplusReceiver, uint256 _fundsToTransfer);
 
   // --- Structs ---
@@ -37,7 +35,7 @@ interface IStabilityFeeTreasury is IAuthorizable, IDisableable, IModifiable {
   function setPerBlockAllowance(address _account, uint256 _rad) external;
   function giveFunds(address _account, uint256 _rad) external;
   function takeFunds(address _account, uint256 _rad) external;
-  function pullFunds(address _destinationAccount, address _token, uint256 _wad) external;
+  function pullFunds(address _destinationAccount, uint256 _wad) external;
   function transferSurplusFunds() external;
   function safeEngine() external view returns (ISAFEEngine _safeEngine);
   function coinJoin() external view returns (ICoinJoin _coinJoin);
