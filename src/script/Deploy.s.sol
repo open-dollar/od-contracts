@@ -253,7 +253,7 @@ abstract contract Deploy is Script, Contracts {
       _noiseBarrier: _params.noiseBarrier,
       _feedbackOutputUpperBound: _params.feedbackOutputUpperBound,
       _feedbackOutputLowerBound: _params.feedbackOutputLowerBound,
-      _importedState: new int256[](0)
+      _importedState: IPIDController.DeviationObservation(0,0,0)
     });
 
     pidRateSetter = new PIDRateSetter({

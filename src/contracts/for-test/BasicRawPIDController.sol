@@ -6,21 +6,21 @@ import {RAY} from '@libraries/Math.sol';
 
 contract BasicRawPIDController is RawPIDController {
   constructor(
-    int256 Kp_,
-    int256 Ki_,
-    uint256 perSecondCumulativeLeak_,
-    uint256 integralPeriodSize_,
-    int256[] memory importedState
+    int256 _Kp,
+    int256 _Ki,
+    uint256 _perSecondCumulativeLeak,
+    uint256 _integralPeriodSize,
+    DeviationObservation memory _importedState
   )
     RawPIDController(
-      Kp_,
-      Ki_,
-      perSecondCumulativeLeak_,
-      integralPeriodSize_,
+      _Kp,
+      _Ki,
+      _perSecondCumulativeLeak,
+      _integralPeriodSize,
       1,
       type(uint256).max - RAY - 2,
       -int256(RAY - 1),
-      importedState
+      _importedState
     )
   {}
 

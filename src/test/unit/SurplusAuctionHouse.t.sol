@@ -796,8 +796,8 @@ contract Unit_SurplusAuctionHouse_SettleAuction is Base {
     surplusAuctionHouse.settleAuction(_auction.id);
   }
 
-  function testFail_Call_ProtocolToken_Burn(SurplusAuction memory _auction, uint256 _recyclingPercentage) public {
-    _recyclingPercentage = 100;
+  function testFail_Call_ProtocolToken_Burn(SurplusAuction memory _auction) public {
+    uint256 _recyclingPercentage = 100;
 
     (, uint256 _amountToBurn) = _assumeHappyPath(_auction, _recyclingPercentage);
     _mockValues(_auction, _recyclingPercentage);

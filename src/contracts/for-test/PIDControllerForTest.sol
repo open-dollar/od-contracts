@@ -15,7 +15,7 @@ contract PIDControllerForTest is PIDController, InternalCallsExtension {
     uint256 _noiseBarrier,
     uint256 _feedbackOutputUpperBound,
     int256 _feedbackOutputLowerBound,
-    int256[] memory _importedState,
+    DeviationObservation memory _importedState,
     MockPIDController _mockPIDController
   )
     PIDController(
@@ -59,13 +59,13 @@ contract PIDControllerForTest is PIDController, InternalCallsExtension {
     }
   }
 
-  bool callSupper_getNextPriceDeviationCumulative = true;
+  bool callSupper_getNextDeviationCumulative = true;
 
-  function setCallSupper_getNextPriceDeviationCumulative(bool _callSuper) external {
-    callSupper_getNextPriceDeviationCumulative = _callSuper;
+  function setCallSupper_getNextDeviationCumulative(bool _callSuper) external {
+    callSupper_getNextDeviationCumulative = _callSuper;
   }
 
-  function _getNextPriceDeviationCumulative(
+  function _getNextDeviationCumulative(
     int256 _proportionalTerm,
     uint256 _accumulatedLeak
   )
@@ -76,12 +76,12 @@ contract PIDControllerForTest is PIDController, InternalCallsExtension {
     returns (int256 _leakedPlusNewTimeAdjustedDeviation, int256 _newTimeAdjustedDeviation)
   {
     watcher.calledInternal(
-      abi.encodeWithSignature('_getNextPriceDeviationCumulative(int256,uint256)', _proportionalTerm, _accumulatedLeak)
+      abi.encodeWithSignature('_getNextDeviationCumulative(int256,uint256)', _proportionalTerm, _accumulatedLeak)
     );
-    if (callSuper || callSupper_getNextPriceDeviationCumulative) {
-      return super._getNextPriceDeviationCumulative(_proportionalTerm, _accumulatedLeak);
+    if (callSuper || callSupper_getNextDeviationCumulative) {
+      return super._getNextDeviationCumulative(_proportionalTerm, _accumulatedLeak);
     } else {
-      return mockPIDController.mock_getNextPriceDeviationCumulative(_proportionalTerm, _accumulatedLeak);
+      return mockPIDController.mock_getNextDeviationCumulative(_proportionalTerm, _accumulatedLeak);
     }
   }
 
@@ -146,61 +146,23 @@ contract PIDControllerForTest is PIDController, InternalCallsExtension {
     }
   }
 
-  function _oll() internal view virtual override returns (uint256) {
-    watcher.calledInternal(abi.encodeWithSignature('_oll()'));
-    if (callSuper) {
-      return super._oll();
-    } else {
-      return mockPIDController.mock_oll();
-    }
+  bool callSupper_updateDeviation = true;
+
+  function setCallSupper_updateDeviation(bool _callSuper) external {
+    callSupper_updateDeviation = _callSuper;
   }
 
-  function _getLastProportionalTerm() internal view virtual override returns (int256) {
-    watcher.calledInternal(abi.encodeWithSignature('_getLastProportionalTerm()'));
-    if (callSuper) {
-      return super._getLastProportionalTerm();
-    } else {
-      return mockPIDController.mock_getLastProportionalTerm();
-    }
-  }
-
-  bool callSupper_updateDeviationHistory = true;
-
-  function setCallSupper_updateDeviationHistory(bool _callSuper) external {
-    callSupper_updateDeviationHistory = _callSuper;
-  }
-
-  function _updateDeviationHistory(int256 proportionalTerm, uint256 accumulatedLeak) internal virtual override {
+  function _updateDeviation(
+    int256 proportionalTerm,
+    uint256 accumulatedLeak
+  ) internal virtual override returns (int256 _newCumulativeDeviation) {
     watcher.calledInternal(
-      abi.encodeWithSignature('_updateDeviationHistory(int256,uint256)', proportionalTerm, accumulatedLeak)
+      abi.encodeWithSignature('_updateDeviation(int256,uint256)', proportionalTerm, accumulatedLeak)
     );
-    if (callSuper || callSupper_updateDeviationHistory) {
-      super._updateDeviationHistory(proportionalTerm, accumulatedLeak);
+    if (callSuper || callSupper_updateDeviation) {
+      return super._updateDeviation(proportionalTerm, accumulatedLeak);
     } else {
-      mockPIDController.mock_updateDeviationHistory(proportionalTerm, accumulatedLeak);
-    }
-  }
-
-  bool callSupper_getNextRedemptionRate = true;
-
-  function setCallSupper_getNextRedemptionRate(bool _callSuper) external {
-    callSupper_getNextRedemptionRate = _callSuper;
-  }
-
-  function _getNextRedemptionRate(
-    uint256 _marketPrice,
-    uint256 _redemptionPrice,
-    uint256 _accumulatedLeak
-  ) internal view virtual override returns (uint256, int256, int256) {
-    watcher.calledInternal(
-      abi.encodeWithSignature(
-        '_getNextRedemptionRate(uint256,uint256,uint256)', _marketPrice, _redemptionPrice, _accumulatedLeak
-      )
-    );
-    if (callSuper || callSupper_getNextRedemptionRate) {
-      return super._getNextRedemptionRate(_marketPrice, _redemptionPrice, _accumulatedLeak);
-    } else {
-      return mockPIDController.mock_getNextRedemptionRate(_marketPrice, _redemptionPrice, _accumulatedLeak);
+      return mockPIDController.mock_updateDeviation(proportionalTerm, accumulatedLeak);
     }
   }
 
@@ -211,22 +173,17 @@ contract PIDControllerForTest is PIDController, InternalCallsExtension {
     return _getProportionalTerm(_marketPrice, _redemptionPrice);
   }
 
-  function call_updateDeviationHistory(int256 _proportionalTerm, uint256 _accumulatedLeak) external virtual {
-    _updateDeviationHistory(_proportionalTerm, _accumulatedLeak);
+  function call_updateDeviation(int256 _proportionalTerm, uint256 _accumulatedLeak) external virtual {
+    _updateDeviation(_proportionalTerm, _accumulatedLeak);
   }
 
-  function push_mockDeviationObservation(IPIDController.DeviationObservation memory _deviationObservation) public {
-    deviationObservations.push(_deviationObservation);
+  function push_mockDeviationObservation(IPIDController.DeviationObservation memory _deviation) public {
+    _deviationObservation = _deviation;
   }
 
   function setControllerGains(int256 _kp, int256 _ki) external {
     _controllerGains.Kp = _kp;
     _controllerGains.Ki = _ki;
-  }
-
-  // stdstore not available for int256
-  function setPriceDeviationCumulative(int256 _priceDeviationCumulative) external {
-    priceDeviationCumulative = _priceDeviationCumulative;
   }
 
   // stdstore not available for address
@@ -248,10 +205,10 @@ contract MockPIDController {
     uint256 redemptionPrice
   ) external view virtual returns (int256 _proportionalTerm) {}
 
-  function mock_getNextPriceDeviationCumulative(
+  function mock_getNextDeviationCumulative(
     int256 proportionalTerm,
     uint256 accumulatedLeak
-  ) external view virtual returns (int256 _cumulativeDeviation, int256 _newTimeAdjustedDeviation) {}
+  ) external view virtual returns (int256 _integralDeviation, int256 _newTimeAdjustedDeviation) {}
 
   function mock_getGainAdjustedPIOutput(
     int256 _proportionalTerm,
@@ -265,16 +222,15 @@ contract MockPIDController {
 
   function mock_getBoundedRedemptionRate(int256 _piOutput) external view virtual returns (uint256) {}
 
-  function mock_oll() external view virtual returns (uint256) {}
-
   function mock_getGainAdjustedTerms(
     int256 proportionalTerm,
     int256 integralTerm
   ) external view virtual returns (int256 _ajustedProportionalTerm, int256 _adjustedIntegralTerm) {}
 
-  function mock_getLastProportionalTerm() external view virtual returns (int256) {}
-
-  function mock_updateDeviationHistory(int256 _proportionalTerm, uint256 _accumulatedLeak) external virtual {}
+  function mock_updateDeviation(
+    int256 _proportionalTerm,
+    uint256 _accumulatedLeak
+  ) external virtual returns (int256 _newCumulativeDeviation) {}
 
   function mock_getNextRedemptionRate(
     uint256 _marketPrice,

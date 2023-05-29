@@ -21,13 +21,19 @@ contract PIDController is Authorizable, IPIDController {
 
   // --- Fluctuating/Dynamic Variables ---
   // Array of observations storing the latest timestamp as well as the proportional and integral terms
-  DeviationObservation[] public deviationObservations;
-  // Array of historical priceDeviationCumulative
-  int256[] public historicalCumulativeDeviations;
+  DeviationObservation internal _deviationObservation;
+
+  function deviation() external view returns (DeviationObservation memory _deviation) {
+    return _deviationObservation;
+  }
 
   // -- Static & Default Variables ---
   // The Kp and Ki values used in this calculator
   ControllerGains internal _controllerGains;
+
+  function controllerGains() external view returns (ControllerGains memory _cGains) {
+    return _controllerGains;
+  }
 
   // The minimum percentage deviation from the redemption price that allows the contract to calculate a non null redemption rate
   uint256 public noiseBarrier; // [WAD]
@@ -36,12 +42,8 @@ contract PIDController is Authorizable, IPIDController {
   uint256 public feedbackOutputUpperBound; // [RAY]
   // The minimum value allowed for the redemption rate
   int256 public feedbackOutputLowerBound; // [RAY]
-  // The integral term (sum of deviations at each computeRate call minus the leak applied at every call)
-  int256 public priceDeviationCumulative; // [RAY]
   // The per second leak applied to priceDeviationCumulative before the latest deviation is added
   uint256 public perSecondCumulativeLeak; // [RAY]
-  // Timestamp of the last update
-  uint256 public lastUpdateTime; // [timestamp]
   // The minimum delay between two computeRate calls
   uint256 public integralPeriodSize; // [seconds]
 
@@ -53,7 +55,7 @@ contract PIDController is Authorizable, IPIDController {
     uint256 _noiseBarrier,
     uint256 _feedbackOutputUpperBound,
     int256 _feedbackOutputLowerBound,
-    int256[] memory _importedState // TODO: replace for struct
+    DeviationObservation memory _importedState
   ) Authorizable(msg.sender) {
     require(
       _feedbackOutputUpperBound < _POSITIVE_RATE_LIMIT && _feedbackOutputUpperBound > 0,
@@ -74,22 +76,10 @@ contract PIDController is Authorizable, IPIDController {
     perSecondCumulativeLeak = _perSecondCumulativeLeak;
     noiseBarrier = _noiseBarrier;
 
-    if (_importedState.length > 0) {
-      require(uint256(_importedState[0]) <= block.timestamp, 'PIDController/invalid-imported-time');
-      priceDeviationCumulative = _importedState[3];
-      lastUpdateTime = uint256(_importedState[0]);
-      if (_importedState[4] > 0) {
-        deviationObservations.push(
-          DeviationObservation(uint256(_importedState[4]), _importedState[1], _importedState[2])
-        );
-      }
-
-      historicalCumulativeDeviations.push(priceDeviationCumulative);
+    if (_importedState.timestamp > 0) {
+      require(_importedState.timestamp <= block.timestamp, 'PIDController/invalid-imported-time');
+      _deviationObservation = _importedState;
     }
-  }
-
-  function controllerGains() external view returns (ControllerGains memory _cGains) {
-    return _controllerGains;
   }
 
   /**
@@ -139,24 +129,22 @@ contract PIDController is Authorizable, IPIDController {
     uint256 _accumulatedLeak
   ) external returns (uint256 _newRedemptionRate) {
     require(msg.sender == seedProposer, 'PIDController/only-seed-proposer');
-
     // Ensure that at least integralPeriodSize seconds passed since the last update or that this is the first update
-    require((block.timestamp - lastUpdateTime) >= integralPeriodSize || lastUpdateTime == 0, 'PIDController/wait-more');
+    require(
+      _timeSinceLastUpdate() >= integralPeriodSize || _deviationObservation.timestamp == 0, 'PIDController/wait-more'
+    );
+
     int256 _proportionalTerm = _getProportionalTerm(_marketPrice, _redemptionPrice);
-
     // Update the integral term by passing the proportional (current deviation) and the total leak that will be applied to the integral
-    _updateDeviationHistory(_proportionalTerm, _accumulatedLeak);
-
-    // Set the last update time to now
-    lastUpdateTime = block.timestamp;
+    int256 _integralTerm = _updateDeviation(_proportionalTerm, _accumulatedLeak);
     // Multiply P by Kp and I by Ki and then sum P & I in order to return the result
-    int256 _piOutput = _getGainAdjustedPIOutput(_proportionalTerm, priceDeviationCumulative);
-    // If the P * Kp + I * Ki output breaks the noise barrier, you can recompute a non null rate. Also make sure the sum is not null
-    if (_breaksNoiseBarrier(Math.absolute(_piOutput), _redemptionPrice) && _piOutput != 0) {
+    int256 _piOutput = _getGainAdjustedPIOutput(_proportionalTerm, _integralTerm);
+    // If the P * Kp + I * Ki output breaks the noise barrier, you can recompute a non null rate
+    if (_breaksNoiseBarrier(Math.absolute(_piOutput), _redemptionPrice)) {
       // Get the new redemption rate by taking into account the feedbackOutputUpperBound and feedbackOutputLowerBound
-      _newRedemptionRate = _getBoundedRedemptionRate(_piOutput);
-      return _newRedemptionRate;
+      return _getBoundedRedemptionRate(_piOutput);
     } else {
+      // If controller output is below noise barrier, return RAY
       return RAY;
     }
   }
@@ -187,6 +175,7 @@ contract PIDController is Authorizable, IPIDController {
   }
 
   function _breaksNoiseBarrier(uint256 _piSum, uint256 _redemptionPrice) internal view virtual returns (bool _breaksNb) {
+    if (_piSum == 0) return false;
     uint256 _deltaNoise = 2 * WAD - noiseBarrier;
     return _piSum >= _redemptionPrice.wmul(_deltaNoise) - _redemptionPrice;
   }
@@ -228,15 +217,20 @@ contract PIDController is Authorizable, IPIDController {
   }
 
   /**
-   * @notice Push new observations in deviationObservations & historicalCumulativeDeviations while also updating priceDeviationCumulative
+   * @notice Push new observations in deviationObservations while also updating priceDeviationCumulative
    * @param  _proportionalTerm The proportionalTerm
    * @param  _accumulatedLeak The total leak (similar to a negative interest rate) applied to priceDeviationCumulative before proportionalTerm is added to it
    */
-  function _updateDeviationHistory(int256 _proportionalTerm, uint256 _accumulatedLeak) internal virtual {
-    (int256 _virtualDeviationCumulative,) = _getNextPriceDeviationCumulative(_proportionalTerm, _accumulatedLeak);
-    priceDeviationCumulative = _virtualDeviationCumulative;
-    historicalCumulativeDeviations.push(priceDeviationCumulative);
-    deviationObservations.push(DeviationObservation(block.timestamp, _proportionalTerm, priceDeviationCumulative));
+  function _updateDeviation(
+    int256 _proportionalTerm,
+    uint256 _accumulatedLeak
+  ) internal virtual returns (int256 _integralTerm) {
+    int256 _appliedDeviation;
+    (_integralTerm, _appliedDeviation) = _getNextDeviationCumulative(_proportionalTerm, _accumulatedLeak);
+    // Update the last deviation observation
+    _deviationObservation = DeviationObservation(block.timestamp, _proportionalTerm, _integralTerm);
+    // Emit event to track the deviation history and the applied leak
+    emit UpdateDeviation(_proportionalTerm, _integralTerm, _appliedDeviation);
   }
 
   /**
@@ -244,22 +238,22 @@ contract PIDController is Authorizable, IPIDController {
    * @param  _proportionalTerm The proportional term (redemptionPrice - marketPrice)
    * @param  _accumulatedLeak The total leak applied to priceDeviationCumulative before it is summed with the new time adjusted deviation
    */
-  function getNextPriceDeviationCumulative(
+  function getNextDeviationCumulative(
     int256 _proportionalTerm,
     uint256 _accumulatedLeak
-  ) external view returns (int256, int256) {
-    return _getNextPriceDeviationCumulative(_proportionalTerm, _accumulatedLeak);
+  ) external view returns (int256 _nextDeviationCumulative, int256 _appliedDeviation) {
+    return _getNextDeviationCumulative(_proportionalTerm, _accumulatedLeak);
   }
 
-  function _getNextPriceDeviationCumulative(
+  function _getNextDeviationCumulative(
     int256 _proportionalTerm,
     uint256 _accumulatedLeak
-  ) internal view virtual returns (int256, int256) {
-    int256 _lastProportionalTerm = _getLastProportionalTerm();
+  ) internal view virtual returns (int256 _nextDeviationCumulative, int256 _appliedDeviation) {
+    int256 _lastProportionalTerm = _deviationObservation.proportional;
     uint256 _timeElapsed = _timeSinceLastUpdate();
     int256 _newTimeAdjustedDeviation =
       int256(_proportionalTerm).riemannSum(_lastProportionalTerm) * int256(_timeElapsed);
-    int256 _leakedPriceCumulative = _accumulatedLeak.rmul(priceDeviationCumulative);
+    int256 _leakedPriceCumulative = _accumulatedLeak.rmul(_deviationObservation.integral);
 
     return (_leakedPriceCumulative + _newTimeAdjustedDeviation, _newTimeAdjustedDeviation);
   }
@@ -269,64 +263,22 @@ contract PIDController is Authorizable, IPIDController {
    * @param _marketPrice The system coin market price
    * @param _redemptionPrice The system coin redemption price
    * @param _accumulatedLeak The total leak applied to priceDeviationCumulative before it is summed with the proportionalTerm
+   * @dev   This method is used to provide a view of the next redemption rate without updating the state of the controller
    */
   function getNextRedemptionRate(
     uint256 _marketPrice,
     uint256 _redemptionPrice,
     uint256 _accumulatedLeak
-  ) external view virtual returns (uint256 _redemptionRate, int256 _proportionalTerm, int256 _cumulativeDeviation) {
-    return _getNextRedemptionRate(_marketPrice, _redemptionPrice, _accumulatedLeak);
-  }
-
-  function _getNextRedemptionRate(
-    uint256 _marketPrice,
-    uint256 _redemptionPrice,
-    uint256 _accumulatedLeak
-  ) internal view virtual returns (uint256 _newRedemptionRate, int256 _proportionalTerm, int256 _cumulativeDeviation) {
+  ) external view returns (uint256 _redemptionRate, int256 _proportionalTerm, int256 _integralTerm) {
     _proportionalTerm = _getProportionalTerm(_marketPrice, _redemptionPrice);
-    (_cumulativeDeviation,) = _getNextPriceDeviationCumulative(_proportionalTerm, _accumulatedLeak);
-    int256 _piOutput = _getGainAdjustedPIOutput(_proportionalTerm, _cumulativeDeviation);
-    if (_breaksNoiseBarrier(Math.absolute(_piOutput), _redemptionPrice) && _piOutput != 0) {
-      _newRedemptionRate = _getBoundedRedemptionRate(_piOutput);
-      return (_newRedemptionRate, _proportionalTerm, _cumulativeDeviation);
+    (_integralTerm,) = _getNextDeviationCumulative(_proportionalTerm, _accumulatedLeak);
+    int256 _piOutput = _getGainAdjustedPIOutput(_proportionalTerm, _integralTerm);
+    if (_breaksNoiseBarrier(Math.absolute(_piOutput), _redemptionPrice)) {
+      _redemptionRate = _getBoundedRedemptionRate(_piOutput);
+      return (_redemptionRate, _proportionalTerm, _integralTerm);
     } else {
-      return (RAY, _proportionalTerm, _cumulativeDeviation);
+      return (RAY, _proportionalTerm, _integralTerm);
     }
-  }
-
-  /**
-   * @notice Return the last proportional term stored in deviationObservations
-   */
-  function getLastProportionalTerm() external view returns (int256 _lastProportionalTerm) {
-    return _getLastProportionalTerm();
-  }
-
-  function _getLastProportionalTerm() internal view virtual returns (int256 _lastProportionalTerm) {
-    if (_oll() == 0) return 0;
-    return deviationObservations[_oll() - 1].proportional;
-  }
-
-  /**
-   * @notice Return the last integral term stored in deviationObservations
-   */
-  function getLastIntegralTerm() external view returns (int256 _lastIntegralTerm) {
-    return _getLastIntegralTerm();
-  }
-
-  function _getLastIntegralTerm() internal view virtual returns (int256 _lastIntegralTerm) {
-    if (_oll() == 0) return 0;
-    return deviationObservations[_oll() - 1].integral;
-  }
-
-  /**
-   * @notice Return the length of deviationObservations
-   */
-  function oll() external view returns (uint256 __oll) {
-    return _oll();
-  }
-
-  function _oll() internal view virtual returns (uint256 __oll) {
-    return deviationObservations.length;
   }
 
   /**
@@ -337,7 +289,7 @@ contract PIDController is Authorizable, IPIDController {
   }
 
   function _timeSinceLastUpdate() internal view returns (uint256 _elapsed) {
-    return lastUpdateTime == 0 ? 0 : block.timestamp - lastUpdateTime;
+    return _deviationObservation.timestamp == 0 ? 0 : block.timestamp - _deviationObservation.timestamp;
   }
 
   // --- Administration ---
@@ -398,7 +350,7 @@ contract PIDController is Authorizable, IPIDController {
       _controllerGains.Ki = val;
     } else if (parameter == 'priceDeviationCumulative') {
       require(_controllerGains.Ki == 0, 'PIDController/cannot-set-priceDeviationCumulative');
-      priceDeviationCumulative = val;
+      _deviationObservation.integral = val;
     } else {
       revert('PIDController/modify-unrecognized-param');
     }

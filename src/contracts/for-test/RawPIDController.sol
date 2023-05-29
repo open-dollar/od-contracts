@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {PIDController} from '@contracts/PIDController.sol';
+import {PIDController, IPIDController} from '@contracts/PIDController.sol';
 import {Math} from '@libraries/Math.sol';
 
 contract RawPIDController is PIDController {
@@ -9,24 +9,24 @@ contract RawPIDController is PIDController {
   using Math for int256;
 
   constructor(
-    int256 Kp_,
-    int256 Ki_,
-    uint256 perSecondCumulativeLeak_,
-    uint256 integralPeriodSize_,
-    uint256 noiseBarrier_,
-    uint256 feedbackOutputUpperBound_,
-    int256 feedbackOutputLowerBound_,
-    int256[] memory importedState
+    int256 _Kp,
+    int256 _Ki,
+    uint256 _perSecondCumulativeLeak,
+    uint256 _integralPeriodSize,
+    uint256 _noiseBarrier,
+    uint256 _feedbackOutputUpperBound,
+    int256 _feedbackOutputLowerBound,
+    DeviationObservation memory _importedState
   )
     PIDController(
-      Kp_,
-      Ki_,
-      perSecondCumulativeLeak_,
-      integralPeriodSize_,
-      noiseBarrier_,
-      feedbackOutputUpperBound_,
-      feedbackOutputLowerBound_,
-      importedState
+      _Kp,
+      _Ki,
+      _perSecondCumulativeLeak,
+      _integralPeriodSize,
+      _noiseBarrier,
+      _feedbackOutputUpperBound,
+      _feedbackOutputLowerBound,
+      _importedState
     )
   {}
 

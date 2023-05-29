@@ -13,7 +13,7 @@ import {DebtAuctionHouse} from '@contracts/DebtAuctionHouse.sol';
 import {IncreasingDiscountCollateralAuctionHouse as CollateralAuctionHouse} from '@contracts/CollateralAuctionHouse.sol';
 import {GlobalSettlement} from '@contracts/settlement/GlobalSettlement.sol';
 import {StabilityFeeTreasury} from '@contracts/StabilityFeeTreasury.sol';
-import {PIDController} from '@contracts/PIDController.sol';
+import {PIDController, IPIDController} from '@contracts/PIDController.sol';
 import {PIDRateSetter} from '@contracts/PIDRateSetter.sol';
 
 import {OracleRelayer} from '@contracts/OracleRelayer.sol';
