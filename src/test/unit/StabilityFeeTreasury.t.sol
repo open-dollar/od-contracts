@@ -112,14 +112,14 @@ contract Base is HaiTest {
       .depth(0).checked_write(_rad);
   }
 
-  function _mockPerBlockAllowance(address _account, uint256 _rad) internal {
+  function _mockPerHourAllowance(address _account, uint256 _rad) internal {
     stdstore.target(address(stabilityFeeTreasury)).sig(IStabilityFeeTreasury.allowance.selector).with_key(_account)
       .depth(1).checked_write(_rad);
   }
 
-  function _mockPulledPerBlock(address _account, uint256 _blockNumber, uint256 _value) internal {
-    stdstore.target(address(stabilityFeeTreasury)).sig(IStabilityFeeTreasury.pulledPerBlock.selector).with_key(_account)
-      .with_key(_blockNumber).checked_write(_value);
+  function _mockPulledPerHour(address _account, uint256 _blockHour, uint256 _value) internal {
+    stdstore.target(address(stabilityFeeTreasury)).sig(IStabilityFeeTreasury.pulledPerHour.selector).with_key(_account)
+      .with_key(_blockHour).checked_write(_value);
   }
 
   function _mockAccumulatorTag(uint256 _tag) internal {
@@ -448,24 +448,24 @@ contract Unit_StabilityFeeTreasury_SetTotalAllowance is Base {
   }
 }
 
-contract Unit_StabilityFeeTreasury_SetPerBlockAllowance is Base {
-  event SetPerBlockAllowance(address indexed _account, uint256 _rad);
+contract Unit_StabilityFeeTreasury_SetPerHourAllowance is Base {
+  event SetPerHourAllowance(address indexed _account, uint256 _rad);
 
   function test_Set_Allowance(address _account, uint256 _rad) public authorized {
     vm.assume(_account != address(stabilityFeeTreasury) && _account != address(0));
 
-    stabilityFeeTreasury.setPerBlockAllowance(_account, _rad);
-    (, uint256 _perBlock) = stabilityFeeTreasury.allowance(_account);
-    assertEq(_perBlock, _rad);
+    stabilityFeeTreasury.setPerHourAllowance(_account, _rad);
+    (, uint256 _perHour) = stabilityFeeTreasury.allowance(_account);
+    assertEq(_perHour, _rad);
   }
 
-  function test_Emit_SetPerBlockAllowance(address _account, uint256 _rad) public authorized {
+  function test_Emit_SetPerHourAllowance(address _account, uint256 _rad) public authorized {
     vm.assume(_account != address(stabilityFeeTreasury) && _account != address(0));
     vm.expectEmit(true, false, false, true);
 
-    emit SetPerBlockAllowance(_account, _rad);
+    emit SetPerHourAllowance(_account, _rad);
 
-    stabilityFeeTreasury.setPerBlockAllowance(_account, _rad);
+    stabilityFeeTreasury.setPerHourAllowance(_account, _rad);
   }
 
   function test_Revert_NotAuthorized(address _account, uint256 _rad) public {
@@ -477,13 +477,13 @@ contract Unit_StabilityFeeTreasury_SetPerBlockAllowance is Base {
   function test_Revert_AccountIsTreasury() public authorized {
     vm.expectRevert(bytes('StabilityFeeTreasury/account-cannot-be-treasury'));
 
-    stabilityFeeTreasury.setPerBlockAllowance(address(stabilityFeeTreasury), type(uint256).max);
+    stabilityFeeTreasury.setPerHourAllowance(address(stabilityFeeTreasury), type(uint256).max);
   }
 
   function test_Revert_NullAccount() public authorized {
     vm.expectRevert(bytes('StabilityFeeTreasury/null-account'));
 
-    stabilityFeeTreasury.setPerBlockAllowance(address(0), type(uint256).max);
+    stabilityFeeTreasury.setPerHourAllowance(address(0), type(uint256).max);
   }
 }
 
@@ -674,8 +674,8 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     address _dstAccount;
     uint256 _wad;
     uint256 _totalAllowance;
-    uint256 _allowancePerBlock;
-    uint256 _initialPulledPerBlock;
+    uint256 _allowancePerHour;
+    uint256 _initialPulledPerHour;
     uint256 _safeEngineCoinBalance;
     uint256 _pullFundsMinThreshold;
     uint256 _initialExpensesAccumulator;
@@ -702,14 +702,14 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     return _pullFundsScenario._wad > 0; // avoid null transfer ammount error
   }
 
-  function _allowancePerBlockNotZero(PullFundsScenario memory _pullFundsScenario) internal pure returns (bool) {
-    return _pullFundsScenario._allowancePerBlock > 0; //enter if statement for require
+  function _allowancePerHourNotZero(PullFundsScenario memory _pullFundsScenario) internal pure returns (bool) {
+    return _pullFundsScenario._allowancePerHour > 0; //enter if statement for require
   }
 
-  function _notPerBlockLimitExceeded(PullFundsScenario memory _pullFundsScenario) internal pure returns (bool) {
-    vm.assume(notOverflowAdd(_pullFundsScenario._initialPulledPerBlock, _pullFundsScenario._wad * RAY));
-    return _pullFundsScenario._initialPulledPerBlock + (_pullFundsScenario._wad * RAY)
-      <= _pullFundsScenario._allowancePerBlock; //avoid StabilityFeeTreasury/per-block-limit-exceeded
+  function _notPerHourLimitExceeded(PullFundsScenario memory _pullFundsScenario) internal pure returns (bool) {
+    vm.assume(notOverflowAdd(_pullFundsScenario._initialPulledPerHour, _pullFundsScenario._wad * RAY));
+    return
+      _pullFundsScenario._initialPulledPerHour + (_pullFundsScenario._wad * RAY) <= _pullFundsScenario._allowancePerHour; //avoid StabilityFeeTreasury/per-block-limit-exceeded
   }
 
   function _enoughFunds(PullFundsScenario memory _pullFundsScenario) internal pure returns (bool) {
@@ -726,69 +726,69 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
 
   function _mockValues(PullFundsScenario memory _pullFundsScenario, uint256 _safeEngineDebtBalance) internal {
     _mockTotalAllowance(user, _pullFundsScenario._totalAllowance);
-    _mockPerBlockAllowance(user, _pullFundsScenario._allowancePerBlock);
-    _mockPulledPerBlock(user, block.number, _pullFundsScenario._initialPulledPerBlock);
+    _mockPerHourAllowance(user, _pullFundsScenario._allowancePerHour);
+    _mockPulledPerHour(user, block.timestamp / 3600, _pullFundsScenario._initialPulledPerHour);
     _mockSafeEngineDebtBalance(_safeEngineDebtBalance); // avoid StabilityFeeTreasury/outstanding-bad-debt
     _mockSafeEngineCoinBalance(_pullFundsScenario._safeEngineCoinBalance);
     _mockPullFundsMinThreshold(_pullFundsScenario._pullFundsMinThreshold);
     _mockExpensesAccumulator(_pullFundsScenario._initialExpensesAccumulator);
   }
 
-  function _assumeHappyPathAllowancePerBlockNotZero(PullFundsScenario memory _pullFundsScenario) internal view {
+  function _assumeHappyPathAllowancePerHourNotZero(PullFundsScenario memory _pullFundsScenario) internal view {
     vm.assume(_notStabilityFeeTreasuryDstAcc(_pullFundsScenario));
     vm.assume(_allowed(_pullFundsScenario));
     vm.assume(_notNullDstAcc(_pullFundsScenario));
     vm.assume(_notAccountingDstAcc(_pullFundsScenario));
     vm.assume(_notNullTransferAmmount(_pullFundsScenario));
-    vm.assume(_allowancePerBlockNotZero(_pullFundsScenario));
-    vm.assume(_notPerBlockLimitExceeded(_pullFundsScenario));
+    vm.assume(_allowancePerHourNotZero(_pullFundsScenario));
+    vm.assume(_notPerHourLimitExceeded(_pullFundsScenario));
     vm.assume(_enoughFunds(_pullFundsScenario));
     vm.assume(_notBelowPullFundsMinThreshold(_pullFundsScenario));
     _notOverflowExpensesAccumulator(_pullFundsScenario);
   }
 
-  function _assumeHappyPathAllowancePerBlockZero(PullFundsScenario memory _pullFundsScenario) internal view {
+  function _assumeHappyPathAllowancePerHourZero(PullFundsScenario memory _pullFundsScenario) internal view {
     vm.assume(_notStabilityFeeTreasuryDstAcc(_pullFundsScenario));
     vm.assume(_allowed(_pullFundsScenario));
     vm.assume(_notNullDstAcc(_pullFundsScenario));
     vm.assume(_notAccountingDstAcc(_pullFundsScenario));
     vm.assume(_notNullTransferAmmount(_pullFundsScenario));
-    vm.assume(notOverflowAdd(_pullFundsScenario._initialPulledPerBlock, _pullFundsScenario._wad * RAY));
+    vm.assume(notOverflowAdd(_pullFundsScenario._initialPulledPerHour, _pullFundsScenario._wad * RAY));
     vm.assume(_enoughFunds(_pullFundsScenario));
     vm.assume(_notBelowPullFundsMinThreshold(_pullFundsScenario));
     _notOverflowExpensesAccumulator(_pullFundsScenario);
   }
 
-  modifier happyPathAllowancePerBlockNotZero(PullFundsScenario memory _pullFundsScenario) {
-    _assumeHappyPathAllowancePerBlockNotZero(_pullFundsScenario);
+  modifier happyPathAllowancePerHourNotZero(PullFundsScenario memory _pullFundsScenario) {
+    _assumeHappyPathAllowancePerHourNotZero(_pullFundsScenario);
     _mockValues({_pullFundsScenario: _pullFundsScenario, _safeEngineDebtBalance: 0});
     vm.prank(user);
     _;
   }
 
-  modifier happyPathAllowancePerBlockZero(PullFundsScenario memory _pullFundsScenario) {
-    _assumeHappyPathAllowancePerBlockZero(_pullFundsScenario);
-    _pullFundsScenario._allowancePerBlock = 0;
+  modifier happyPathAllowancePerHourZero(PullFundsScenario memory _pullFundsScenario) {
+    _assumeHappyPathAllowancePerHourZero(_pullFundsScenario);
+    _pullFundsScenario._allowancePerHour = 0;
     _mockValues({_pullFundsScenario: _pullFundsScenario, _safeEngineDebtBalance: 0});
     vm.prank(user);
     _;
   }
 
-  function test_Set_PulledPerBlock(PullFundsScenario memory _pullFundsScenario)
+  function test_Set_PulledPerHour(PullFundsScenario memory _pullFundsScenario)
     public
-    happyPathAllowancePerBlockNotZero(_pullFundsScenario)
+    happyPathAllowancePerHourNotZero(_pullFundsScenario)
   {
     stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, _pullFundsScenario._wad);
 
     assertEq(
-      stabilityFeeTreasury.pulledPerBlock(user, block.number),
-      _pullFundsScenario._initialPulledPerBlock + (_pullFundsScenario._wad * RAY)
+      stabilityFeeTreasury.pulledPerHour(user, block.timestamp / 3600),
+      _pullFundsScenario._initialPulledPerHour + (_pullFundsScenario._wad * RAY)
     );
   }
 
   function test_Call_Internal_JoinAllCoins(PullFundsScenario memory _pullFundsScenario)
     public
-    happyPathAllowancePerBlockNotZero(_pullFundsScenario)
+    happyPathAllowancePerHourNotZero(_pullFundsScenario)
   {
     expectEmitNoIndex();
     emit CalledJoinAllCoins();
@@ -798,7 +798,7 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
 
   function test_Call_Internal_SettleDebt(PullFundsScenario memory _pullFundsScenario)
     public
-    happyPathAllowancePerBlockNotZero(_pullFundsScenario)
+    happyPathAllowancePerHourNotZero(_pullFundsScenario)
   {
     expectEmitNoIndex();
     emit CalledSettleDebt();
@@ -808,7 +808,7 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
 
   function test_Set_Allowance(PullFundsScenario memory _pullFundsScenario)
     public
-    happyPathAllowancePerBlockNotZero(_pullFundsScenario)
+    happyPathAllowancePerHourNotZero(_pullFundsScenario)
   {
     stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, _pullFundsScenario._wad);
 
@@ -819,7 +819,7 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
 
   function test_Set_ExpensesAccumulator(PullFundsScenario memory _pullFundsScenario)
     public
-    happyPathAllowancePerBlockNotZero(_pullFundsScenario)
+    happyPathAllowancePerHourNotZero(_pullFundsScenario)
   {
     stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, _pullFundsScenario._wad);
 
@@ -831,7 +831,7 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
 
   function test_Call_TransferInternalCoins(PullFundsScenario memory _pullFundsScenario)
     public
-    happyPathAllowancePerBlockNotZero(_pullFundsScenario)
+    happyPathAllowancePerHourNotZero(_pullFundsScenario)
   {
     vm.expectCall(
       address(mockSafeEngine),
@@ -848,7 +848,7 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
 
   function test_Emit_PullFunds(PullFundsScenario memory _pullFundsScenario)
     public
-    happyPathAllowancePerBlockNotZero(_pullFundsScenario)
+    happyPathAllowancePerHourNotZero(_pullFundsScenario)
   {
     vm.expectEmit(true, false, false, true);
     emit PullFunds(
@@ -861,9 +861,9 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, _pullFundsScenario._wad);
   }
 
-  function test_Emit_PullFunds_AllowancePerBlockZero(PullFundsScenario memory _pullFundsScenario)
+  function test_Emit_PullFunds_AllowancePerHourZero(PullFundsScenario memory _pullFundsScenario)
     public
-    happyPathAllowancePerBlockZero(_pullFundsScenario)
+    happyPathAllowancePerHourZero(_pullFundsScenario)
   {
     vm.expectEmit(true, false, false, true);
     emit PullFunds(
@@ -936,14 +936,14 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, _pullFundsScenario._wad);
   }
 
-  function test_Revert_PerBlockLimitExceeded(PullFundsScenario memory _pullFundsScenario) public {
+  function test_Revert_PerHourLimitExceeded(PullFundsScenario memory _pullFundsScenario) public {
     vm.assume(_notStabilityFeeTreasuryDstAcc(_pullFundsScenario));
     vm.assume(_allowed(_pullFundsScenario));
     vm.assume(_notNullDstAcc(_pullFundsScenario));
     vm.assume(_notAccountingDstAcc(_pullFundsScenario));
     vm.assume(_notNullTransferAmmount(_pullFundsScenario));
-    vm.assume(_allowancePerBlockNotZero(_pullFundsScenario));
-    vm.assume(!_notPerBlockLimitExceeded(_pullFundsScenario));
+    vm.assume(_allowancePerHourNotZero(_pullFundsScenario));
+    vm.assume(!_notPerHourLimitExceeded(_pullFundsScenario));
 
     _mockValues(_pullFundsScenario, 0);
     vm.expectRevert(bytes('StabilityFeeTreasury/per-block-limit-exceeded'));
@@ -958,8 +958,8 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     vm.assume(_notNullDstAcc(_pullFundsScenario));
     vm.assume(_notAccountingDstAcc(_pullFundsScenario));
     vm.assume(_notNullTransferAmmount(_pullFundsScenario));
-    vm.assume(_allowancePerBlockNotZero(_pullFundsScenario));
-    vm.assume(_notPerBlockLimitExceeded(_pullFundsScenario));
+    vm.assume(_allowancePerHourNotZero(_pullFundsScenario));
+    vm.assume(_notPerHourLimitExceeded(_pullFundsScenario));
     vm.assume(_debt > 0);
 
     _mockValues(_pullFundsScenario, _debt);
@@ -975,8 +975,8 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     vm.assume(_notNullDstAcc(_pullFundsScenario));
     vm.assume(_notAccountingDstAcc(_pullFundsScenario));
     vm.assume(_notNullTransferAmmount(_pullFundsScenario));
-    vm.assume(_allowancePerBlockNotZero(_pullFundsScenario));
-    vm.assume(_notPerBlockLimitExceeded(_pullFundsScenario));
+    vm.assume(_allowancePerHourNotZero(_pullFundsScenario));
+    vm.assume(_notPerHourLimitExceeded(_pullFundsScenario));
     vm.assume(!_enoughFunds(_pullFundsScenario));
 
     _mockValues(_pullFundsScenario, 0);
@@ -992,8 +992,8 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     vm.assume(_notNullDstAcc(_pullFundsScenario));
     vm.assume(_notAccountingDstAcc(_pullFundsScenario));
     vm.assume(_notNullTransferAmmount(_pullFundsScenario));
-    vm.assume(_allowancePerBlockNotZero(_pullFundsScenario));
-    vm.assume(_notPerBlockLimitExceeded(_pullFundsScenario));
+    vm.assume(_allowancePerHourNotZero(_pullFundsScenario));
+    vm.assume(_notPerHourLimitExceeded(_pullFundsScenario));
     vm.assume(_enoughFunds(_pullFundsScenario));
     vm.assume(!_notBelowPullFundsMinThreshold(_pullFundsScenario));
 

@@ -48,10 +48,10 @@ contract StabilityFeeTreasury is Authorizable, Disableable, IStabilityFeeTreasur
   }
 
   // --- Data ---
-  // Mapping of total and per block allowances
+  // Mapping of total and per hour allowances
   mapping(address => Allowance) public allowance;
-  // Mapping that keeps track of how much surplus an authorized address has pulled each block
-  mapping(address => mapping(uint256 => uint256)) public pulledPerBlock;
+  // Mapping that keeps track of how much surplus an authorized address has pulled each hour
+  mapping(address => mapping(uint256 => uint256)) public pulledPerHour;
   uint256 public expensesAccumulator; // expenses accumulator [rad]
   uint256 public accumulatorTag; // latest tagged accumulator price [rad]
   uint256 public latestSurplusTransferTime; // latest timestamp when transferSurplusFunds was called [seconds]
@@ -122,14 +122,14 @@ contract StabilityFeeTreasury is Authorizable, Disableable, IStabilityFeeTreasur
   }
 
   /**
-   * @notice Modify an address' per block allowance in order to withdraw SF from the treasury
+   * @notice Modify an address' per hour allowance in order to withdraw SF from the treasury
    * @param  _account The approved address
-   * @param  _rad The per block approved amount of SF to withdraw (number with 45 decimals)
+   * @param  _rad The per hour approved amount of SF to withdraw (number with 45 decimals)
    */
-  function setPerBlockAllowance(address _account, uint256 _rad) external isAuthorized accountNotTreasury(_account) {
+  function setPerHourAllowance(address _account, uint256 _rad) external isAuthorized accountNotTreasury(_account) {
     require(_account != address(0), 'StabilityFeeTreasury/null-account');
-    allowance[_account].perBlock = _rad;
-    emit SetPerBlockAllowance(_account, _rad);
+    allowance[_account].perHour = _rad;
+    emit SetPerHourAllowance(_account, _rad);
   }
 
   // --- Stability Fee Transfer (Governance) ---
@@ -178,14 +178,14 @@ contract StabilityFeeTreasury is Authorizable, Disableable, IStabilityFeeTreasur
     require(_dstAccount != address(0), 'StabilityFeeTreasury/null-dst');
     require(_dstAccount != extraSurplusReceiver, 'StabilityFeeTreasury/dst-cannot-be-accounting');
     require(_wad > 0, 'StabilityFeeTreasury/null-transfer-amount');
-    if (allowance[msg.sender].perBlock > 0) {
+    if (allowance[msg.sender].perHour > 0) {
       require(
-        pulledPerBlock[msg.sender][block.number] + (_wad * RAY) <= allowance[msg.sender].perBlock,
+        pulledPerHour[msg.sender][block.timestamp / 3600] + (_wad * RAY) <= allowance[msg.sender].perHour,
         'StabilityFeeTreasury/per-block-limit-exceeded'
       );
     }
 
-    pulledPerBlock[msg.sender][block.number] += (_wad * RAY);
+    pulledPerHour[msg.sender][block.timestamp / 3600] += (_wad * RAY);
 
     _joinAllCoins();
     _settleDebt();

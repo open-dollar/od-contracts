@@ -19,7 +19,7 @@ interface IStabilityFeeTreasury is IAuthorizable, IDisableable, IModifiable {
 
   // --- Events ---
   event SetTotalAllowance(address indexed _account, uint256 _rad);
-  event SetPerBlockAllowance(address indexed account, uint256 rad);
+  event SetPerHourAllowance(address indexed account, uint256 rad);
   event GiveFunds(address indexed _account, uint256 _rad, uint256 _expensesAccumulator);
   event TakeFunds(address indexed _account, uint256 _rad);
   event PullFunds(address indexed _sender, address indexed _dstAccount, uint256 _rad, uint256 _expensesAccumulator);
@@ -28,11 +28,11 @@ interface IStabilityFeeTreasury is IAuthorizable, IDisableable, IModifiable {
   // --- Structs ---
   struct Allowance {
     uint256 total;
-    uint256 perBlock;
+    uint256 perHour;
   }
 
   function setTotalAllowance(address _account, uint256 _rad) external;
-  function setPerBlockAllowance(address _account, uint256 _rad) external;
+  function setPerHourAllowance(address _account, uint256 _rad) external;
   function giveFunds(address _account, uint256 _rad) external;
   function takeFunds(address _account, uint256 _rad) external;
   function pullFunds(address _destinationAccount, uint256 _wad) external;
@@ -43,9 +43,9 @@ interface IStabilityFeeTreasury is IAuthorizable, IDisableable, IModifiable {
   function systemCoin() external view returns (ISystemCoin _systemCoin);
   function latestSurplusTransferTime() external view returns (uint256 _latestSurplusTransferTime);
   function settleDebt() external;
-  function allowance(address _account) external view returns (uint256 _total, uint256 _perBlock);
+  function allowance(address _account) external view returns (uint256 _total, uint256 _perHour);
   function expensesAccumulator() external view returns (uint256 _expensesAccumulator);
-  function pulledPerBlock(address _account, uint256 _blockNumber) external view returns (uint256 _pulledPerBlock);
+  function pulledPerHour(address _account, uint256 _blockHour) external view returns (uint256 _pulledPerHour);
   function accumulatorTag() external view returns (uint256 _accumulatorTag);
 
   function params() external view returns (StabilityFeeTreasuryParams memory _params);

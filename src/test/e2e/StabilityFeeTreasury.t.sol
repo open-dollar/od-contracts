@@ -83,7 +83,7 @@ contract E2EStabilityFeeTreasuryTest is Common {
     (uint256 _totalAllowance,) = stabilityFeeTreasury.allowance(deployer);
     assertEq(_totalAllowance, 0); // deployer used all allowance
     assertEq(stabilityFeeTreasury.expensesAccumulator(), _previousExpensesAccumulator + _rad);
-    assertEq(stabilityFeeTreasury.pulledPerBlock(deployer, block.number), _rad);
+    assertEq(stabilityFeeTreasury.pulledPerHour(deployer, block.timestamp / 3600), _rad);
   }
 
   function test_transfer_surplus_funds() public {
