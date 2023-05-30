@@ -99,7 +99,7 @@ contract E2ETest is Common {
     collateralAuctionHouse[ETH_A].buyCollateral(1, _amountToBid);
 
     // NOTE: bids(1) is deleted
-    (uint256 _amountToSell,,,,,,,,) = collateralAuctionHouse[ETH_A].bids(1);
+    uint256 _amountToSell = collateralAuctionHouse[ETH_A].bids(1).amountToSell;
     assertEq(_amountToSell, 0);
   }
 
@@ -119,7 +119,7 @@ contract E2ETest is Common {
     collateralAuctionHouse[ETH_A].buyCollateral(1, _amountToBid);
 
     // NOTE: bids(1) is NOT deleted
-    (uint256 _amountToSell,,,,,,,,) = collateralAuctionHouse[ETH_A].bids(1);
+    uint256 _amountToSell = collateralAuctionHouse[ETH_A].bids(1).amountToSell;
     assertGt(_amountToSell, 0);
   }
 

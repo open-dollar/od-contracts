@@ -879,8 +879,8 @@ contract SingleLiquidationTest is DSTest {
     safeEngine.updateCollateralPrice('gold', ray(2 ether), ray(2 ether)); // now unsafe
 
     uint256 auction = liquidationEngine.liquidateSAFE('gold', address(this));
-    (, uint256 amountToRaise,,,,,,,) = collateralAuctionHouse.bids(auction);
-    assertEq(amountToRaise, MAX_LIQUIDATION_QUANTITY / 10 ** 27 * 10 ** 27);
+    IncreasingDiscountCollateralAuctionHouse.Bid memory _bid = collateralAuctionHouse.bids(auction);
+    assertEq(_bid.amountToRaise, MAX_LIQUIDATION_QUANTITY / 10 ** 27 * 10 ** 27);
   }
 
   function testFail_liquidate_forced_over_max_liquidation_quantity() public {
@@ -922,9 +922,9 @@ contract SingleLiquidationTest is DSTest {
     // all debt goes to the accounting engine
     assertEq(accountingEngine.totalQueuedDebt(), rad(100 ether));
     // auction is for all collateral
-    (uint256 amountToSell, uint256 amountToRaise,,,,,,,) = collateralAuctionHouse.bids(auction);
-    assertEq(amountToSell, 40 ether);
-    assertEq(amountToRaise, rad(110 ether));
+    IncreasingDiscountCollateralAuctionHouse.Bid memory _bid = collateralAuctionHouse.bids(auction);
+    assertEq(_bid.amountToSell, 40 ether);
+    assertEq(_bid.amountToRaise, rad(110 ether));
   }
 
   function test_liquidate_over_liquidation_quantity() public {
@@ -946,9 +946,9 @@ contract SingleLiquidationTest is DSTest {
     // all debt goes to the accounting engine
     assertEq(accountingEngine.totalQueuedDebt(), rad(75 ether));
     // auction is for all collateral
-    (uint256 amountToSell, uint256 amountToRaise,,,,,,,) = collateralAuctionHouse.bids(auction);
-    assertEq(amountToSell, 30 ether);
-    assertEq(amountToRaise, rad(82.5 ether));
+    IncreasingDiscountCollateralAuctionHouse.Bid memory _bid = collateralAuctionHouse.bids(auction);
+    assertEq(_bid.amountToSell, 30 ether);
+    assertEq(_bid.amountToRaise, rad(82.5 ether));
   }
 
   function test_liquidate_happy_safe() public {

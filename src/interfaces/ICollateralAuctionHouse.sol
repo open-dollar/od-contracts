@@ -4,7 +4,6 @@ pragma solidity 0.8.19;
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 
 interface ICollateralAuctionHouse is IAuthorizable {
-  function coinName() external view returns (bytes32 _name);
   function bidAmount(uint256 _id) external view returns (uint256 _rad);
   function raisedAmount(uint256 _id) external view returns (uint256 _rad);
   function remainingAmountToSell(uint256 _id) external view returns (uint256 _wad);
