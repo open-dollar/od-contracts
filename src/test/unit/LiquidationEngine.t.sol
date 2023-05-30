@@ -188,11 +188,6 @@ abstract contract Base is HaiTest {
     );
   }
 
-  function _mockMutex(bytes32 _cType, address _safe, uint8 _mutex) internal {
-    stdstore.target(address(liquidationEngine)).sig(ILiquidationEngine.mutex.selector).with_key(_cType).with_key(_safe)
-      .checked_write(_mutex);
-  }
-
   function _mockContractEnabled(uint256 _enabled) internal {
     stdstore.target(address(liquidationEngine)).sig(IDisableable.contractEnabled.selector).checked_write(_enabled);
   }
@@ -1386,21 +1381,6 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
       address(collateralAuctionHouseForTest),
       auctionId
     );
-
-    liquidationEngine.liquidateSAFE(collateralType, safe);
-  }
-
-  function test_Set_Mutex(Liquidation memory _liquidation) public happyPathFullLiquidation(_liquidation) {
-    liquidationEngine.liquidateSAFE(collateralType, safe);
-
-    assertEq(liquidationEngine.mutex(collateralType, safe), 0);
-  }
-
-  function test_Revert_NonNullMutex(uint8 _mutex) public {
-    vm.assume(_mutex != 0);
-    _mockMutex(collateralType, safe, _mutex);
-
-    vm.expectRevert(bytes('LiquidationEngine/non-null-mutex'));
 
     liquidationEngine.liquidateSAFE(collateralType, safe);
   }

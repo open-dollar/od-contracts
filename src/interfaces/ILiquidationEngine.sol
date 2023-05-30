@@ -58,7 +58,6 @@ interface ILiquidationEngine is IAuthorizable, IDisableable, IModifiablePerColla
   function currentOnAuctionSystemCoins() external view returns (uint256 _currentOnAuctionSystemCoins);
   function safeSaviours(address _saviour) external view returns (uint256 _canSave);
   function chosenSAFESaviour(bytes32 _collateralType, address _safe) external view returns (address _saviour);
-  function mutex(bytes32 _collateralType, address _safe) external view returns (uint8 _mutex);
 
   // --- Methods ---
   function removeCoinsFromAuction(uint256 _rad) external;

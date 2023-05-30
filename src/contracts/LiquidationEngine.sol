@@ -29,8 +29,9 @@ import {Disableable} from '@contracts/utils/Disableable.sol';
 import {Math, RAY, WAD, MAX_RAD} from '@libraries/Math.sol';
 import {Encoding} from '@libraries/Encoding.sol';
 import {Assertions} from '@libraries/Assertions.sol';
+import {ReentrancyGuard} from '@openzeppelin/security/ReentrancyGuard.sol';
 
-contract LiquidationEngine is Authorizable, Disableable, ILiquidationEngine {
+contract LiquidationEngine is Authorizable, Disableable, ReentrancyGuard, ILiquidationEngine {
   using Encoding for bytes;
   using Assertions for uint256;
 
@@ -40,8 +41,6 @@ contract LiquidationEngine is Authorizable, Disableable, ILiquidationEngine {
 
   // Saviour contract chosen for each SAFE by its creator
   mapping(bytes32 => mapping(address => address)) public chosenSAFESaviour;
-  // Mutex used to block against re-entrancy when 'liquidateSAFE' passes execution to a saviour
-  mapping(bytes32 => mapping(address => uint8)) public mutex;
 
   // Current amount of system coins out for liquidation
   uint256 public currentOnAuctionSystemCoins; // [rad]
@@ -121,10 +120,7 @@ contract LiquidationEngine is Authorizable, Disableable, ILiquidationEngine {
    * @param  _cType The SAFE's collateral type
    * @param  _safe The SAFE's address
    */
-  function liquidateSAFE(bytes32 _cType, address _safe) external whenEnabled returns (uint256 _auctionId) {
-    require(mutex[_cType][_safe] == 0, 'LiquidationEngine/non-null-mutex');
-    mutex[_cType][_safe] = 1;
-
+  function liquidateSAFE(bytes32 _cType, address _safe) external whenEnabled nonReentrant returns (uint256 _auctionId) {
     uint256 _debtFloor = safeEngine.cParams(_cType).debtFloor;
     SAFEEngineLike.SAFEEngineCollateralData memory _safeEngCData = safeEngine.cData(_cType);
     SAFEEngineLike.SAFE memory _safeData = safeEngine.safes(_cType, _safe);
@@ -230,8 +226,6 @@ contract LiquidationEngine is Authorizable, Disableable, ILiquidationEngine {
         _auctionId
       );
     }
-
-    mutex[_cType][_safe] = 0;
   }
 
   /**
