@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {ISAFEEngine as SAFEEngineLike} from '@interfaces/ISAFEEngine.sol';
+import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiablePerCollateral, GLOBAL_PARAM} from '@interfaces/utils/IModifiablePerCollateral.sol';
@@ -44,7 +44,7 @@ interface ITaxCollector is IAuthorizable, IModifiablePerCollateral {
   function globalStabilityFee() external view returns (uint256 _globalStabilityFee);
   function maxSecondaryReceivers() external view returns (uint256 _maxSecondaryReceivers);
   function WHOLE_TAX_CUT() external view returns (uint256 _WHOLE_TAX_CUT);
-  function safeEngine() external view returns (SAFEEngineLike _safeEngine);
+  function safeEngine() external view returns (ISAFEEngine _safeEngine);
 
   // --- Admin ---
   function initializeCollateralType(bytes32 _cType) external;

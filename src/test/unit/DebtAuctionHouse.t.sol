@@ -407,7 +407,7 @@ contract Unit_DebtAuctionHouse_RestartAuction is Base {
 
     _mockValues(_auction, 0, 0, 0);
 
-    vm.expectRevert('DebtAuctionHouse/auction-never-started');
+    vm.expectRevert(IDebtAuctionHouse.DAH_AuctionNeverStarted.selector);
 
     debtAuctionHouse.restartAuction(_auction.id);
   }
@@ -417,18 +417,18 @@ contract Unit_DebtAuctionHouse_RestartAuction is Base {
 
     _mockValues(_auction, _auctionsStarted, 0, 0);
 
-    vm.expectRevert('DebtAuctionHouse/auction-never-started');
+    vm.expectRevert(IDebtAuctionHouse.DAH_AuctionNeverStarted.selector);
 
     debtAuctionHouse.restartAuction(_auction.id);
   }
 
   function test_Revert_NotFinished(DebtAuction memory _auction, uint256 _auctionsStarted) public {
     vm.assume(_auction.id > 0 && _auction.id <= _auctionsStarted);
-    vm.assume(_auction.auctionDeadline >= block.timestamp);
+    vm.assume(_auction.auctionDeadline > block.timestamp);
 
     _mockValues(_auction, _auctionsStarted, 0, 0);
 
-    vm.expectRevert('DebtAuctionHouse/not-finished');
+    vm.expectRevert(IDebtAuctionHouse.DAH_AuctionNotFinished.selector);
 
     debtAuctionHouse.restartAuction(_auction.id);
   }
@@ -440,7 +440,7 @@ contract Unit_DebtAuctionHouse_RestartAuction is Base {
 
     _mockValues(_auction, _auctionsStarted, 0, 0);
 
-    vm.expectRevert('DebtAuctionHouse/bid-already-placed');
+    vm.expectRevert(IDebtAuctionHouse.DAH_BidAlreadyPlaced.selector);
 
     debtAuctionHouse.restartAuction(_auction.id);
   }
@@ -545,7 +545,7 @@ contract Unit_DebtAuctionHouse_DecreaseSoldAmount is Base {
 
     _mockValues(_auction, 0, 0, 0);
 
-    vm.expectRevert('DebtAuctionHouse/high-bidder-not-set');
+    vm.expectRevert(IDebtAuctionHouse.DAH_HighBidderNotSet.selector);
 
     debtAuctionHouse.decreaseSoldAmount(_auction.id, _amountToBuy, _bid);
   }
@@ -556,7 +556,7 @@ contract Unit_DebtAuctionHouse_DecreaseSoldAmount is Base {
 
     _mockValues(_auction, 0, 0, 0);
 
-    vm.expectRevert('DebtAuctionHouse/bid-already-expired');
+    vm.expectRevert(IDebtAuctionHouse.DAH_BidAlreadyExpired.selector);
 
     debtAuctionHouse.decreaseSoldAmount(_auction.id, _amountToBuy, _bid);
   }
@@ -568,7 +568,7 @@ contract Unit_DebtAuctionHouse_DecreaseSoldAmount is Base {
 
     _mockValues(_auction, 0, 0, 0);
 
-    vm.expectRevert('DebtAuctionHouse/auction-already-expired');
+    vm.expectRevert(IDebtAuctionHouse.DAH_AuctionAlreadyExpired.selector);
 
     debtAuctionHouse.decreaseSoldAmount(_auction.id, _amountToBuy, _bid);
   }
@@ -581,7 +581,7 @@ contract Unit_DebtAuctionHouse_DecreaseSoldAmount is Base {
 
     _mockValues(_auction, 0, 0, 0);
 
-    vm.expectRevert('DebtAuctionHouse/not-matching-bid');
+    vm.expectRevert(IDebtAuctionHouse.DAH_NotMatchingBid.selector);
 
     debtAuctionHouse.decreaseSoldAmount(_auction.id, _amountToBuy, _bid);
   }
@@ -594,7 +594,7 @@ contract Unit_DebtAuctionHouse_DecreaseSoldAmount is Base {
 
     _mockValues(_auction, 0, 0, 0);
 
-    vm.expectRevert('DebtAuctionHouse/amount-bought-not-lower');
+    vm.expectRevert(IDebtAuctionHouse.DAH_AmountBoughtNotLower.selector);
 
     debtAuctionHouse.decreaseSoldAmount(_auction.id, _amountToBuy, _auction.bidAmount);
   }
@@ -614,7 +614,7 @@ contract Unit_DebtAuctionHouse_DecreaseSoldAmount is Base {
 
     _mockValues(_auction, _bidDecrease, 0, 0);
 
-    vm.expectRevert('DebtAuctionHouse/insufficient-decrease');
+    vm.expectRevert(IDebtAuctionHouse.DAH_InsufficientDecrease.selector);
 
     debtAuctionHouse.decreaseSoldAmount(_auction.id, _amountToBuy, _auction.bidAmount);
   }
@@ -767,18 +767,18 @@ contract Unit_DebtAuctionHouse_SettleAuction is Base {
 
     _mockValues(_auction, 0);
 
-    vm.expectRevert('DebtAuctionHouse/not-finished');
+    vm.expectRevert(IDebtAuctionHouse.DAH_AuctionNotFinished.selector);
 
     debtAuctionHouse.settleAuction(_auction.id);
   }
 
   function test_Revert_NotFinished_1(DebtAuction memory _auction) public {
-    vm.assume(_auction.bidExpiry >= block.timestamp);
-    vm.assume(_auction.auctionDeadline >= block.timestamp);
+    vm.assume(_auction.bidExpiry > block.timestamp);
+    vm.assume(_auction.auctionDeadline > block.timestamp);
 
     _mockValues(_auction, 0);
 
-    vm.expectRevert('DebtAuctionHouse/not-finished');
+    vm.expectRevert(IDebtAuctionHouse.DAH_AuctionNotFinished.selector);
 
     debtAuctionHouse.settleAuction(_auction.id);
   }
@@ -865,7 +865,7 @@ contract Unit_DebtAuctionHouse_TerminateAuctionPrematurely is Base {
 
     _mockValues(_auction, 0);
 
-    vm.expectRevert('DebtAuctionHouse/high-bidder-not-set');
+    vm.expectRevert(IDebtAuctionHouse.DAH_HighBidderNotSet.selector);
 
     debtAuctionHouse.terminateAuctionPrematurely(_auction.id);
   }

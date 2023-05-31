@@ -18,7 +18,7 @@
 
 pragma solidity 0.8.19;
 
-import {IETHJoin, SAFEEngineLike} from '@interfaces/utils/IETHJoin.sol';
+import {IETHJoin, ISAFEEngine} from '@interfaces/utils/IETHJoin.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {Disableable} from '@contracts/utils/Disableable.sol';
@@ -42,7 +42,7 @@ contract ETHJoin is Authorizable, Disableable, IETHJoin {
 
   // --- Data ---
   // SAFE database
-  SAFEEngineLike public safeEngine;
+  ISAFEEngine public safeEngine;
   // Collateral type name
   bytes32 public collateralType;
   // Number of decimals ETH has
@@ -50,7 +50,7 @@ contract ETHJoin is Authorizable, Disableable, IETHJoin {
 
   // --- Init ---
   constructor(address _safeEngine, bytes32 _cType) Authorizable(msg.sender) {
-    safeEngine = SAFEEngineLike(_safeEngine);
+    safeEngine = ISAFEEngine(_safeEngine);
     collateralType = _cType;
     decimals = 18;
   }
@@ -82,6 +82,6 @@ contract ETHJoin is Authorizable, Disableable, IETHJoin {
     safeEngine.modifyCollateralBalance(collateralType, msg.sender, -_wad.toIntNotOverflow());
     emit Exit(msg.sender, _account, _wad);
     (bool _success,) = _account.call{value: _wad}('');
-    require(_success, 'ETHJoin/failed-transfer');
+    if (!_success) revert ETHJoin_FailedTransfer();
   }
 }

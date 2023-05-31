@@ -180,7 +180,7 @@ contract Unit_SettlementSurplusAuctioneer_AuctionSurplus is Base {
 
     _mockContractEnabled(_contractEnabled);
 
-    vm.expectRevert('SettlementSurplusAuctioneer/accounting-engine-still-enabled');
+    vm.expectRevert(ISettlementSurplusAuctioneer.SSA_AccountingEngineStillEnabled.selector);
 
     settlementSurplusAuctioneer.auctionSurplus();
   }
@@ -191,7 +191,7 @@ contract Unit_SettlementSurplusAuctioneer_AuctionSurplus is Base {
 
     _mockValues(_lastSurplusTime, _surplusDelay, 0, 0, 0, 0);
 
-    vm.expectRevert('SettlementSurplusAuctioneer/surplus-auction-delay-not-passed');
+    vm.expectRevert(ISettlementSurplusAuctioneer.SSA_SurplusAuctionDelayNotPassed.selector);
 
     settlementSurplusAuctioneer.auctionSurplus();
   }

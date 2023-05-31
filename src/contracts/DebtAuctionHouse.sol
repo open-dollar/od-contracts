@@ -19,11 +19,7 @@
 pragma solidity 0.8.19;
 
 import {
-  IDebtAuctionHouse,
-  SAFEEngineLike,
-  TokenLike,
-  AccountingEngineLike,
-  GLOBAL_PARAM
+  IDebtAuctionHouse, ISAFEEngine, IToken, IAccountingEngine, GLOBAL_PARAM
 } from '@interfaces/IDebtAuctionHouse.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
@@ -48,9 +44,9 @@ contract DebtAuctionHouse is Authorizable, Disableable, IDebtAuctionHouse {
 
   // --- Registry ---
   // SAFE database
-  SAFEEngineLike public safeEngine;
+  ISAFEEngine public safeEngine;
   // Protocol token address
-  TokenLike public protocolToken;
+  IToken public protocolToken;
   // Accounting engine
   address public accountingEngine;
 
@@ -63,8 +59,8 @@ contract DebtAuctionHouse is Authorizable, Disableable, IDebtAuctionHouse {
 
   // --- Init ---
   constructor(address _safeEngine, address _protocolToken) Authorizable(msg.sender) {
-    safeEngine = SAFEEngineLike(_safeEngine);
-    protocolToken = TokenLike(_protocolToken);
+    safeEngine = ISAFEEngine(_safeEngine);
+    protocolToken = IToken(_protocolToken);
 
     _params = DebtAuctionHouseParams({
       bidDecrease: 1.05e18,
@@ -115,9 +111,9 @@ contract DebtAuctionHouse is Authorizable, Disableable, IDebtAuctionHouse {
    * @param _id ID of the auction to restart
    */
   function restartAuction(uint256 _id) external {
-    require(_id > 0 && _id <= auctionsStarted, 'DebtAuctionHouse/auction-never-started');
-    require(bids[_id].auctionDeadline < block.timestamp, 'DebtAuctionHouse/not-finished');
-    require(bids[_id].bidExpiry == 0, 'DebtAuctionHouse/bid-already-placed');
+    if (_id == 0 || _id > auctionsStarted) revert DAH_AuctionNeverStarted();
+    if (bids[_id].auctionDeadline > block.timestamp) revert DAH_AuctionNotFinished();
+    if (bids[_id].bidExpiry != 0) revert DAH_BidAlreadyPlaced();
     bids[_id].amountToSell = (_params.amountSoldIncrease * bids[_id].amountToSell) / WAD;
     bids[_id].auctionDeadline = uint48(block.timestamp) + _params.totalAuctionLength;
     emit RestartAuction(_id, bids[_id].auctionDeadline);
@@ -131,22 +127,20 @@ contract DebtAuctionHouse is Authorizable, Disableable, IDebtAuctionHouse {
    * @param _bid New system coin bid (must always equal the total amount raised by the auction) (rad)
    */
   function decreaseSoldAmount(uint256 _id, uint256 _amountToBuy, uint256 _bid) external whenEnabled {
-    require(bids[_id].highBidder != address(0), 'DebtAuctionHouse/high-bidder-not-set');
-    require(bids[_id].bidExpiry > block.timestamp || bids[_id].bidExpiry == 0, 'DebtAuctionHouse/bid-already-expired');
-    require(bids[_id].auctionDeadline > block.timestamp, 'DebtAuctionHouse/auction-already-expired');
+    if (bids[_id].highBidder == address(0)) revert DAH_HighBidderNotSet();
+    if (bids[_id].bidExpiry <= block.timestamp && bids[_id].bidExpiry != 0) revert DAH_BidAlreadyExpired();
+    if (bids[_id].auctionDeadline <= block.timestamp) revert DAH_AuctionAlreadyExpired();
 
-    require(_bid == bids[_id].bidAmount, 'DebtAuctionHouse/not-matching-bid');
-    require(_amountToBuy < bids[_id].amountToSell, 'DebtAuctionHouse/amount-bought-not-lower');
-    require(
-      _params.bidDecrease * _amountToBuy <= bids[_id].amountToSell * WAD, 'DebtAuctionHouse/insufficient-decrease'
-    );
+    if (_bid != bids[_id].bidAmount) revert DAH_NotMatchingBid();
+    if (_amountToBuy >= bids[_id].amountToSell) revert DAH_AmountBoughtNotLower();
+    if (_params.bidDecrease * _amountToBuy > bids[_id].amountToSell * WAD) revert DAH_InsufficientDecrease();
 
     safeEngine.transferInternalCoins(msg.sender, bids[_id].highBidder, _bid);
 
     // on first bid submitted, clear as much totalOnAuctionDebt as possible
     if (bids[_id].bidExpiry == 0) {
-      uint256 _totalOnAuctionDebt = AccountingEngineLike(bids[_id].highBidder).totalOnAuctionDebt();
-      AccountingEngineLike(bids[_id].highBidder).cancelAuctionedDebtWithSurplus(Math.min(_bid, _totalOnAuctionDebt));
+      uint256 _totalOnAuctionDebt = IAccountingEngine(bids[_id].highBidder).totalOnAuctionDebt();
+      IAccountingEngine(bids[_id].highBidder).cancelAuctionedDebtWithSurplus(Math.min(_bid, _totalOnAuctionDebt));
     }
 
     bids[_id].highBidder = msg.sender;
@@ -161,10 +155,9 @@ contract DebtAuctionHouse is Authorizable, Disableable, IDebtAuctionHouse {
    * @param _id ID of the auction to settle
    */
   function settleAuction(uint256 _id) external whenEnabled {
-    require(
-      bids[_id].bidExpiry != 0 && (bids[_id].bidExpiry < block.timestamp || bids[_id].auctionDeadline < block.timestamp),
-      'DebtAuctionHouse/not-finished'
-    );
+    if (
+      bids[_id].bidExpiry == 0 || (bids[_id].bidExpiry > block.timestamp && bids[_id].auctionDeadline > block.timestamp)
+    ) revert DAH_AuctionNotFinished();
     protocolToken.mint(bids[_id].highBidder, bids[_id].amountToSell);
     --activeDebtAuctions;
     delete bids[_id];
@@ -176,7 +169,7 @@ contract DebtAuctionHouse is Authorizable, Disableable, IDebtAuctionHouse {
    * @param _id ID of the auction to terminate
    */
   function terminateAuctionPrematurely(uint256 _id) external whenDisabled {
-    require(bids[_id].highBidder != address(0), 'DebtAuctionHouse/high-bidder-not-set');
+    if (bids[_id].highBidder == address(0)) revert DAH_HighBidderNotSet();
     safeEngine.createUnbackedDebt(accountingEngine, bids[_id].highBidder, bids[_id].bidAmount);
     emit TerminateAuctionPrematurely(_id, msg.sender, bids[_id].highBidder, bids[_id].bidAmount, activeDebtAuctions);
     delete bids[_id];
@@ -192,7 +185,7 @@ contract DebtAuctionHouse is Authorizable, Disableable, IDebtAuctionHouse {
     address _address = _data.toAddress();
     uint256 _uint256 = _data.toUint256();
 
-    if (_param == 'protocolToken') protocolToken = TokenLike(_address);
+    if (_param == 'protocolToken') protocolToken = IToken(_address);
     else if (_param == 'accountingEngine') accountingEngine = _address;
     else if (_param == 'bidDecrease') _params.bidDecrease = _uint256;
     else if (_param == 'amountSoldIncrease') _params.amountSoldIncrease = _uint256;

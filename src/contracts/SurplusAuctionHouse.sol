@@ -18,7 +18,7 @@
 
 pragma solidity 0.8.19;
 
-import {ISurplusAuctionHouse, SAFEEngineLike, TokenLike, GLOBAL_PARAM} from '@interfaces/ISurplusAuctionHouse.sol';
+import {ISurplusAuctionHouse, ISAFEEngine, IToken, GLOBAL_PARAM} from '@interfaces/ISurplusAuctionHouse.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {Disableable} from '@contracts/utils/Disableable.sol';
@@ -43,9 +43,9 @@ contract SurplusAuctionHouse is Authorizable, Disableable, ISurplusAuctionHouse 
 
   // --- Registry ---
   // SAFE database
-  SAFEEngineLike public safeEngine;
+  ISAFEEngine public safeEngine;
   // Protocol token address
-  TokenLike public protocolToken;
+  IToken public protocolToken;
   // Receiver of protocol tokens
   address public protocolTokenBidReceiver;
 
@@ -58,8 +58,8 @@ contract SurplusAuctionHouse is Authorizable, Disableable, ISurplusAuctionHouse 
 
   // --- Init ---
   constructor(address _safeEngine, address _protocolToken, uint256 _recyclingPercentage) Authorizable(msg.sender) {
-    safeEngine = SAFEEngineLike(_safeEngine);
-    protocolToken = TokenLike(_protocolToken);
+    safeEngine = ISAFEEngine(_safeEngine);
+    protocolToken = IToken(_protocolToken);
 
     _params = SurplusAuctionHouseParams({
       bidIncrease: 1.05e18,
@@ -89,10 +89,7 @@ contract SurplusAuctionHouse is Authorizable, Disableable, ISurplusAuctionHouse 
     uint256 _amountToSell,
     uint256 _initialBid
   ) external isAuthorized whenEnabled returns (uint256 _id) {
-    require(
-      _params.recyclingPercentage == 0 || protocolTokenBidReceiver != address(0),
-      'SurplusAuctionHouse/null-prot-token-receiver'
-    );
+    if (protocolTokenBidReceiver == address(0) && _params.recyclingPercentage != 0) revert SAH_NullProtTokenReceiver();
     _id = ++auctionsStarted;
 
     bids[_id].bidAmount = _initialBid;
@@ -110,9 +107,9 @@ contract SurplusAuctionHouse is Authorizable, Disableable, ISurplusAuctionHouse 
    * @param _id ID of the auction to restart
    */
   function restartAuction(uint256 _id) external {
-    require(_id > 0 && _id <= auctionsStarted, 'SurplusAuctionHouse/auction-never-started');
-    require(bids[_id].auctionDeadline < block.timestamp, 'SurplusAuctionHouse/not-finished');
-    require(bids[_id].bidExpiry == 0, 'SurplusAuctionHouse/bid-already-placed');
+    if (_id == 0 || _id > auctionsStarted) revert SAH_AuctionNeverStarted();
+    if (bids[_id].auctionDeadline > block.timestamp) revert SAH_AuctionNotFinished();
+    if (bids[_id].bidExpiry != 0) revert SAH_BidAlreadyPlaced();
     bids[_id].auctionDeadline = uint48(block.timestamp) + _params.totalAuctionLength;
     emit RestartAuction(_id, bids[_id].auctionDeadline);
   }
@@ -124,15 +121,13 @@ contract SurplusAuctionHouse is Authorizable, Disableable, ISurplusAuctionHouse 
    * @param _bid New bid submitted (wad)
    */
   function increaseBidSize(uint256 _id, uint256 _amountToBuy, uint256 _bid) external whenEnabled {
-    require(bids[_id].highBidder != address(0), 'SurplusAuctionHouse/high-bidder-not-set');
-    require(
-      bids[_id].bidExpiry > block.timestamp || bids[_id].bidExpiry == 0, 'SurplusAuctionHouse/bid-already-expired'
-    );
-    require(bids[_id].auctionDeadline > block.timestamp, 'SurplusAuctionHouse/auction-already-expired');
+    if (bids[_id].highBidder == address(0)) revert SAH_HighBidderNotSet();
+    if (bids[_id].bidExpiry <= block.timestamp && bids[_id].bidExpiry != 0) revert SAH_BidAlreadyExpired();
+    if (bids[_id].auctionDeadline <= block.timestamp) revert SAH_AuctionAlreadyExpired();
 
-    require(_amountToBuy == bids[_id].amountToSell, 'SurplusAuctionHouse/amounts-not-matching');
-    require(_bid > bids[_id].bidAmount, 'SurplusAuctionHouse/bid-not-higher');
-    require(_bid * WAD >= _params.bidIncrease * bids[_id].bidAmount, 'SurplusAuctionHouse/insufficient-increase');
+    if (_amountToBuy != bids[_id].amountToSell) revert SAH_AmountsNotMatching();
+    if (_bid <= bids[_id].bidAmount) revert SAH_BidNotHigher();
+    if (_bid * WAD < _params.bidIncrease * bids[_id].bidAmount) revert SAH_InsufficientIncrease();
 
     if (msg.sender != bids[_id].highBidder) {
       protocolToken.move(msg.sender, bids[_id].highBidder, bids[_id].bidAmount);
@@ -151,10 +146,9 @@ contract SurplusAuctionHouse is Authorizable, Disableable, ISurplusAuctionHouse 
    * @param _id ID of the auction to settle
    */
   function settleAuction(uint256 _id) external whenEnabled {
-    require(
-      bids[_id].bidExpiry != 0 && (bids[_id].bidExpiry < block.timestamp || bids[_id].auctionDeadline < block.timestamp),
-      'SurplusAuctionHouse/not-finished'
-    );
+    if (
+      bids[_id].bidExpiry == 0 || (bids[_id].bidExpiry > block.timestamp && bids[_id].auctionDeadline > block.timestamp)
+    ) revert SAH_AuctionNotFinished();
     safeEngine.transferInternalCoins(address(this), bids[_id].highBidder, bids[_id].amountToSell);
 
     uint256 _amountToSend = bids[_id].bidAmount * _params.recyclingPercentage / HUNDRED;
@@ -177,7 +171,7 @@ contract SurplusAuctionHouse is Authorizable, Disableable, ISurplusAuctionHouse 
    * @param _id ID of the auction to settle/terminate
    */
   function terminateAuctionPrematurely(uint256 _id) external whenDisabled {
-    require(bids[_id].highBidder != address(0), 'SurplusAuctionHouse/high-bidder-not-set');
+    if (bids[_id].highBidder == address(0)) revert SAH_HighBidderNotSet();
     protocolToken.push(bids[_id].highBidder, bids[_id].bidAmount);
     emit TerminateAuctionPrematurely(_id, msg.sender, bids[_id].highBidder, bids[_id].bidAmount);
     delete bids[_id];

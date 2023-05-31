@@ -17,10 +17,6 @@ uint256 constant COLLAT = 1e18;
 uint256 constant DEBT = 500e18; // LVT 50%
 uint256 constant TEST_ETH_PRICE_DROP = 100e18; // 1 ETH = 100 HAI
 
-interface ICollateralJoinLike {
-  function collateralType() external view returns (bytes32);
-}
-
 contract DeployForTest is Deploy {
   function _setupEnvironment() internal virtual override {
     oracle[HAI] = new OracleForTest(HAI_INITIAL_PRICE); // 1 HAI = 1 USD
@@ -118,7 +114,7 @@ abstract contract Common is PRBTest, Contracts {
     safeEngine.approveSAFEModification(_collateralJoin);
 
     safeEngine.modifySAFECollateralization({
-      _cType: ICollateralJoinLike(_collateralJoin).collateralType(),
+      _cType: CollateralJoin(_collateralJoin).collateralType(),
       _safe: _user,
       _collateralSource: _user,
       _debtDestination: _user,

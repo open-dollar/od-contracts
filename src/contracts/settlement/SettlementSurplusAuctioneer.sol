@@ -20,9 +20,9 @@ pragma solidity 0.8.19;
 
 import {
   ISettlementSurplusAuctioneer,
-  AccountingEngineLike,
-  SAFEEngineLike,
-  SurplusAuctionHouseLike,
+  IAccountingEngine,
+  ISAFEEngine,
+  ISurplusAuctionHouse,
   GLOBAL_PARAM
 } from '@interfaces/settlement/ISettlementSurplusAuctioneer.sol';
 
@@ -39,15 +39,15 @@ contract SettlementSurplusAuctioneer is Authorizable, ISettlementSurplusAuctione
   uint256 public lastSurplusTime;
 
   // --- Registry ---
-  AccountingEngineLike public accountingEngine;
-  SurplusAuctionHouseLike public surplusAuctionHouse;
-  SAFEEngineLike public safeEngine;
+  IAccountingEngine public accountingEngine;
+  ISurplusAuctionHouse public surplusAuctionHouse;
+  ISAFEEngine public safeEngine;
 
   // --- Init ---
   constructor(address _accountingEngine, address _surplusAuctionHouse) Authorizable(msg.sender) {
-    accountingEngine = AccountingEngineLike(_accountingEngine);
-    surplusAuctionHouse = SurplusAuctionHouseLike(_surplusAuctionHouse);
-    safeEngine = SAFEEngineLike(address(accountingEngine.safeEngine()));
+    accountingEngine = IAccountingEngine(_accountingEngine);
+    surplusAuctionHouse = ISurplusAuctionHouse(_surplusAuctionHouse);
+    safeEngine = ISAFEEngine(address(accountingEngine.safeEngine()));
     safeEngine.approveSAFEModification(address(surplusAuctionHouse));
   }
 
@@ -58,14 +58,11 @@ contract SettlementSurplusAuctioneer is Authorizable, ISettlementSurplusAuctione
    *      start a new auction.
    */
   function auctionSurplus() external returns (uint256 _id) {
-    require(accountingEngine.contractEnabled() == 0, 'SettlementSurplusAuctioneer/accounting-engine-still-enabled');
-    AccountingEngineLike.AccountingEngineParams memory _accountingEngineParams = accountingEngine.params();
-    require(
-      block.timestamp >= lastSurplusTime + _accountingEngineParams.surplusDelay,
-      'SettlementSurplusAuctioneer/surplus-auction-delay-not-passed'
-    );
+    if (accountingEngine.contractEnabled() != 0) revert SSA_AccountingEngineStillEnabled();
+    IAccountingEngine.AccountingEngineParams memory _accEngineParams = accountingEngine.params();
+    if (block.timestamp < lastSurplusTime + _accEngineParams.surplusDelay) revert SSA_SurplusAuctionDelayNotPassed();
     lastSurplusTime = block.timestamp;
-    uint256 _amountToSell = Math.min(safeEngine.coinBalance(address(this)), _accountingEngineParams.surplusAmount);
+    uint256 _amountToSell = Math.min(safeEngine.coinBalance(address(this)), _accEngineParams.surplusAmount);
     if (_amountToSell > 0) {
       _id = surplusAuctionHouse.startAuction(_amountToSell, 0);
       emit AuctionSurplus(_id, lastSurplusTime, safeEngine.coinBalance(address(this)));
@@ -81,7 +78,7 @@ contract SettlementSurplusAuctioneer is Authorizable, ISettlementSurplusAuctione
   function modifyParameters(bytes32 _param, bytes memory _data) external isAuthorized {
     address _address = _data.toAddress();
 
-    if (_param == 'accountingEngine') accountingEngine = AccountingEngineLike(_address);
+    if (_param == 'accountingEngine') accountingEngine = IAccountingEngine(_address);
     else if (_param == 'surplusAuctionHouse') _setSurplusAuctionHouse(_address);
     else revert UnrecognizedParam();
 
@@ -90,7 +87,7 @@ contract SettlementSurplusAuctioneer is Authorizable, ISettlementSurplusAuctione
 
   function _setSurplusAuctionHouse(address _address) internal {
     safeEngine.denySAFEModification(address(surplusAuctionHouse));
-    surplusAuctionHouse = SurplusAuctionHouseLike(_address);
+    surplusAuctionHouse = ISurplusAuctionHouse(_address);
     safeEngine.approveSAFEModification(_address);
   }
 }

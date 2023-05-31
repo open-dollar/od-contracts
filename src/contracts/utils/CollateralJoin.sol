@@ -18,8 +18,7 @@
 
 pragma solidity 0.8.19;
 
-import {ICollateralJoin, ISAFEEngine} from '@interfaces/utils/ICollateralJoin.sol';
-import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
+import {ICollateralJoin, ISAFEEngine, IERC20Metadata} from '@interfaces/utils/ICollateralJoin.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {Disableable} from '@contracts/utils/Disableable.sol';

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {ISAFEEngine as SAFEEngineLike} from '@interfaces/ISAFEEngine.sol';
-import {IToken as TokenLike} from '@interfaces/external/IToken.sol';
+import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
+import {IToken} from '@interfaces/external/IToken.sol';
 
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
@@ -19,6 +19,18 @@ interface ISurplusAuctionHouse is IAuthorizable, IDisableable, IModifiable {
   );
   event SettleAuction(uint256 indexed _id);
   event TerminateAuctionPrematurely(uint256 indexed _id, address _sender, address _highBidder, uint256 _bidAmount);
+
+  // --- Errors ---
+  error SAH_AuctionNeverStarted();
+  error SAH_AuctionNotFinished();
+  error SAH_AuctionAlreadyExpired();
+  error SAH_BidAlreadyPlaced();
+  error SAH_BidAlreadyExpired();
+  error SAH_AmountsNotMatching();
+  error SAH_BidNotHigher();
+  error SAH_InsufficientIncrease();
+  error SAH_HighBidderNotSet();
+  error SAH_NullProtTokenReceiver();
 
   // --- Data ---
   struct Bid {
@@ -54,8 +66,8 @@ interface ISurplusAuctionHouse is IAuthorizable, IDisableable, IModifiable {
   function auctionsStarted() external view returns (uint256 _auctionsStarted);
 
   // --- Registry ---
-  function safeEngine() external view returns (SAFEEngineLike _safeEngine);
-  function protocolToken() external view returns (TokenLike _protocolToken);
+  function safeEngine() external view returns (ISAFEEngine _safeEngine);
+  function protocolToken() external view returns (IToken _protocolToken);
   function protocolTokenBidReceiver() external view returns (address _protocolTokenBidReceiver);
 
   // --- Params ---

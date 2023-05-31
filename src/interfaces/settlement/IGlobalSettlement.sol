@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {ISAFEEngine as SAFEEngineLike} from '@interfaces/ISAFEEngine.sol';
-import {ILiquidationEngine as LiquidationEngineLike} from '@interfaces/ILiquidationEngine.sol';
-import {IAccountingEngine as AccountingEngineLike} from '@interfaces/IAccountingEngine.sol';
-import {IOracleRelayer as OracleRelayerLike} from '@interfaces/IOracleRelayer.sol';
-import {IDisableable as CoinSavingsAccountLike} from '@interfaces/utils/IDisableable.sol';
-import {IStabilityFeeTreasury as StabilityFeeTreasuryLike} from '@interfaces/IStabilityFeeTreasury.sol';
-import {ICollateralAuctionHouse as CollateralAuctionHouseLike} from '@interfaces/ICollateralAuctionHouse.sol';
-import {IBaseOracle as OracleLike} from '@interfaces/oracles/IBaseOracle.sol';
+import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
+import {ILiquidationEngine} from '@interfaces/ILiquidationEngine.sol';
+import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
+import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
+import {IDisableable as ICoinSavingsAccount} from '@interfaces/utils/IDisableable.sol';
+import {IStabilityFeeTreasury} from '@interfaces/IStabilityFeeTreasury.sol';
+import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
+import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
@@ -28,6 +28,18 @@ interface IGlobalSettlement is IAuthorizable, IDisableable, IModifiable {
     bytes32 indexed _cType, address indexed _sender, uint256 _coinsAmount, uint256 _collateralAmount
   );
 
+  // --- Errors ---
+  error GS_FinalCollateralPriceAlreadyDefined();
+  error GS_FinalCollateralPriceNotDefined();
+  error GS_SafeDebtNotZero();
+  error GS_OutstandingCoinSupplyNotZero();
+  error GS_OutstandingCoinSupplyZero();
+  error GS_SurplusNotZero();
+  error GS_ShutdownCooldownNotFinished();
+  error GS_CollateralCashPriceAlreadyDefined();
+  error GS_CollateralCashPriceNotDefined();
+  error GS_InsufficientBagBalance();
+
   // --- Data ---
   function shutdownTime() external view returns (uint256 _shutdownTime);
   function shutdownCooldown() external view returns (uint256 _shutdownCooldown);
@@ -42,12 +54,12 @@ interface IGlobalSettlement is IAuthorizable, IDisableable, IModifiable {
   function coinsUsedToRedeem(bytes32 _cType, address _coinHolder) external view returns (uint256 _coinsUsedToRedeem);
 
   // --- Registry ---
-  function safeEngine() external view returns (SAFEEngineLike _safeEngine);
-  function liquidationEngine() external view returns (LiquidationEngineLike _liquidationEngine);
-  function accountingEngine() external view returns (AccountingEngineLike _accountingEngine);
-  function oracleRelayer() external view returns (OracleRelayerLike _oracleRelayer);
-  function coinSavingsAccount() external view returns (CoinSavingsAccountLike _coinSavingsAccount);
-  function stabilityFeeTreasury() external view returns (StabilityFeeTreasuryLike _stabilityFeeTreasury);
+  function safeEngine() external view returns (ISAFEEngine _safeEngine);
+  function liquidationEngine() external view returns (ILiquidationEngine _liquidationEngine);
+  function accountingEngine() external view returns (IAccountingEngine _accountingEngine);
+  function oracleRelayer() external view returns (IOracleRelayer _oracleRelayer);
+  function coinSavingsAccount() external view returns (ICoinSavingsAccount _coinSavingsAccount);
+  function stabilityFeeTreasury() external view returns (IStabilityFeeTreasury _stabilityFeeTreasury);
 
   // --- Settlement ---
   function shutdownSystem() external;

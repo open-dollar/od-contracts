@@ -18,7 +18,7 @@
 
 pragma solidity 0.8.19;
 
-import {ICoinJoin, SAFEEngineLike, DSTokenLike} from '@interfaces/utils/ICoinJoin.sol';
+import {ICoinJoin, ISAFEEngine, IToken} from '@interfaces/utils/ICoinJoin.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {Disableable} from '@contracts/utils/Disableable.sol';
@@ -40,16 +40,16 @@ import {RAY} from '@libraries/Math.sol';
 contract CoinJoin is Authorizable, Disableable, ICoinJoin {
   // --- Data ---
   // SAFE database
-  SAFEEngineLike public safeEngine;
+  ISAFEEngine public safeEngine;
   // Coin created by the system; this is the external, ERC-20 representation, not the internal 'coinBalance'
-  DSTokenLike public systemCoin;
+  IToken public systemCoin;
   // Number of decimals the system coin has
   uint256 public decimals;
 
   // --- Init ---
   constructor(address _safeEngine, address _systemCoin) Authorizable(msg.sender) {
-    safeEngine = SAFEEngineLike(_safeEngine);
-    systemCoin = DSTokenLike(_systemCoin);
+    safeEngine = ISAFEEngine(_safeEngine);
+    systemCoin = IToken(_systemCoin);
     decimals = 18;
   }
 

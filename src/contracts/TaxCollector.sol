@@ -14,7 +14,7 @@
 
 pragma solidity 0.8.19;
 
-import {ITaxCollector, SAFEEngineLike, GLOBAL_PARAM} from '@interfaces/ITaxCollector.sol';
+import {ITaxCollector, ISAFEEngine, GLOBAL_PARAM} from '@interfaces/ITaxCollector.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
@@ -62,11 +62,11 @@ contract TaxCollector is Authorizable, ITaxCollector {
   EnumerableSet.AddressSet internal _secondaryReceivers;
 
   // --- Registry ---
-  SAFEEngineLike public safeEngine;
+  ISAFEEngine public safeEngine;
 
   // --- Init ---
   constructor(address _safeEngine) Authorizable(msg.sender) {
-    safeEngine = SAFEEngineLike(_safeEngine);
+    safeEngine = ISAFEEngine(_safeEngine);
   }
 
   /**

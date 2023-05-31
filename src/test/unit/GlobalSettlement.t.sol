@@ -422,7 +422,7 @@ contract Unit_GlobalSettlement_FreezeCollateralType is Base {
 
     _mockValues(_cType, _finalCoinPerCollateralPrice, 0, 0, 0);
 
-    vm.expectRevert('GlobalSettlement/final-collateral-price-already-defined');
+    vm.expectRevert(IGlobalSettlement.GS_FinalCollateralPriceAlreadyDefined.selector);
 
     globalSettlement.freezeCollateralType(_cType);
   }
@@ -515,7 +515,7 @@ contract Unit_GlobalSettlement_FastTrackAuction is Base {
   }
 
   function test_Revert_FinalCollateralPriceNotDefined(FastTrackAuctionStruct memory _auction) public {
-    vm.expectRevert('GlobalSettlement/final-collateral-price-not-defined');
+    vm.expectRevert(IGlobalSettlement.GS_FinalCollateralPriceNotDefined.selector);
 
     globalSettlement.fastTrackAuction(_auction.collateralType, _auction.id);
   }
@@ -686,7 +686,7 @@ contract Unit_GlobalSettlement_ProcessSAFE is Base {
   }
 
   function test_Revert_FinalCollateralPriceNotDefined(ProcessSAFEStruct memory _safeData) public {
-    vm.expectRevert('GlobalSettlement/final-collateral-price-not-defined');
+    vm.expectRevert(IGlobalSettlement.GS_FinalCollateralPriceNotDefined.selector);
 
     globalSettlement.processSAFE(_safeData.collateralType, _safeData.safe);
   }
@@ -794,7 +794,7 @@ contract Unit_GlobalSettlement_FreeCollateral is Base {
 
     _mockValues(_cType, _lockedCollateral, _generatedDebt);
 
-    vm.expectRevert('GlobalSettlement/safe-debt-not-zero');
+    vm.expectRevert(IGlobalSettlement.GS_SafeDebtNotZero.selector);
 
     globalSettlement.freeCollateral(_cType);
   }
@@ -878,7 +878,7 @@ contract Unit_GlobalSettlement_SetOutstandingCoinSupply is Base {
 
     _mockValues(0, 0, _outstandingCoinSupply, 0, 0);
 
-    vm.expectRevert('GlobalSettlement/outstanding-coin-supply-not-zero');
+    vm.expectRevert(IGlobalSettlement.GS_OutstandingCoinSupplyNotZero.selector);
 
     globalSettlement.setOutstandingCoinSupply();
   }
@@ -888,7 +888,7 @@ contract Unit_GlobalSettlement_SetOutstandingCoinSupply is Base {
 
     _mockValues(0, 0, 0, _coinBalance, 0);
 
-    vm.expectRevert('GlobalSettlement/surplus-not-zero');
+    vm.expectRevert(IGlobalSettlement.GS_SurplusNotZero.selector);
 
     globalSettlement.setOutstandingCoinSupply();
   }
@@ -899,7 +899,7 @@ contract Unit_GlobalSettlement_SetOutstandingCoinSupply is Base {
 
     _mockValues(_shutdownTime, _shutdownCooldown, 0, 0, 0);
 
-    vm.expectRevert('GlobalSettlement/shutdown-cooldown-not-finished');
+    vm.expectRevert(IGlobalSettlement.GS_ShutdownCooldownNotFinished.selector);
 
     globalSettlement.setOutstandingCoinSupply();
   }
@@ -967,7 +967,7 @@ contract Unit_GlobalSettlement_CalculateCashPrice is Base {
   }
 
   function test_Revert_OutstandingCoinSupplyZero(bytes32 _cType) public {
-    vm.expectRevert('GlobalSettlement/outstanding-coin-supply-zero');
+    vm.expectRevert(IGlobalSettlement.GS_OutstandingCoinSupplyZero.selector);
 
     globalSettlement.calculateCashPrice(_cType);
   }
@@ -982,7 +982,7 @@ contract Unit_GlobalSettlement_CalculateCashPrice is Base {
 
     _mockValues(_cType, _outstandingCoinSupply, 0, 0, 0, _collateralCashPrice, 0);
 
-    vm.expectRevert('GlobalSettlement/collateral-cash-price-already-defined');
+    vm.expectRevert(IGlobalSettlement.GS_CollateralCashPriceAlreadyDefined.selector);
 
     globalSettlement.calculateCashPrice(_cType);
   }
@@ -1071,7 +1071,7 @@ contract Unit_GlobalSettlement_PrepareCoinsForRedeeming is Base {
   }
 
   function test_Revert_OutstandingCoinSupplyZero(uint256 _coinAmount) public {
-    vm.expectRevert('GlobalSettlement/outstanding-coin-supply-zero');
+    vm.expectRevert(IGlobalSettlement.GS_OutstandingCoinSupplyZero.selector);
 
     globalSettlement.prepareCoinsForRedeeming(_coinAmount);
   }
@@ -1149,7 +1149,7 @@ contract Unit_GlobalSettlement_RedeemCollateral is Base {
   }
 
   function test_Revert_CollateralCashPriceNotDefined(RedeemCollateralStruct memory _collateralData) public {
-    vm.expectRevert('GlobalSettlement/collateral-cash-price-not-defined');
+    vm.expectRevert(IGlobalSettlement.GS_CollateralCashPriceNotDefined.selector);
 
     globalSettlement.redeemCollateral(_collateralData.collateralType, _collateralData.coinsAmount);
   }
@@ -1163,7 +1163,7 @@ contract Unit_GlobalSettlement_RedeemCollateral is Base {
 
     _mockValues(_collateralData);
 
-    vm.expectRevert('GlobalSettlement/insufficient-bag-balance');
+    vm.expectRevert(IGlobalSettlement.GS_InsufficientBagBalance.selector);
 
     globalSettlement.redeemCollateral(_collateralData.collateralType, _collateralData.coinsAmount);
   }

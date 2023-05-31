@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {ETHJoin} from '@contracts/utils/ETHJoin.sol';
+import {ETHJoin, IETHJoin} from '@contracts/utils/ETHJoin.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
@@ -184,7 +184,7 @@ contract Unit_ETHJoin_Exit is Base {
   function test_Revert_FailedTransfer(address _account, uint256 _wad) public {
     vm.assume(int256(_wad) > 0);
 
-    vm.expectRevert('ETHJoin/failed-transfer');
+    vm.expectRevert(IETHJoin.ETHJoin_FailedTransfer.selector);
 
     ethJoin.exit(_account, _wad);
   }

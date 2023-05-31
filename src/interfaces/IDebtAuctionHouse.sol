@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {ISAFEEngine as SAFEEngineLike} from '@interfaces/ISAFEEngine.sol';
-import {IToken as TokenLike} from '@interfaces/external/IToken.sol';
-import {IAccountingEngine as AccountingEngineLike} from '@interfaces/IAccountingEngine.sol';
+import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
+import {IToken} from '@interfaces/external/IToken.sol';
+import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
 
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
@@ -28,6 +28,17 @@ interface IDebtAuctionHouse is IAuthorizable, IDisableable, IModifiable {
   event TerminateAuctionPrematurely(
     uint256 indexed _id, address _sender, address _highBidder, uint256 _bidAmount, uint256 _activeDebtAuctions
   );
+
+  // --- Errors ---
+  error DAH_AuctionNeverStarted();
+  error DAH_AuctionNotFinished();
+  error DAH_AuctionAlreadyExpired();
+  error DAH_BidAlreadyPlaced();
+  error DAH_BidAlreadyExpired();
+  error DAH_NotMatchingBid();
+  error DAH_AmountBoughtNotLower();
+  error DAH_InsufficientDecrease();
+  error DAH_HighBidderNotSet();
 
   // --- Data ---
   struct Bid {
@@ -64,8 +75,8 @@ interface IDebtAuctionHouse is IAuthorizable, IDisableable, IModifiable {
   function activeDebtAuctions() external view returns (uint256 _activeDebtAuctions);
 
   // --- Registry ---
-  function safeEngine() external view returns (SAFEEngineLike _safeEngine);
-  function protocolToken() external view returns (TokenLike _protocolToken);
+  function safeEngine() external view returns (ISAFEEngine _safeEngine);
+  function protocolToken() external view returns (IToken _protocolToken);
   function accountingEngine() external view returns (address _accountingEngine);
 
   // --- Params ---

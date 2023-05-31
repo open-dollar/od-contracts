@@ -21,14 +21,14 @@ pragma solidity 0.8.19;
 
 import {
   IGlobalSettlement,
-  SAFEEngineLike,
-  LiquidationEngineLike,
-  AccountingEngineLike,
-  OracleRelayerLike,
-  CoinSavingsAccountLike,
-  StabilityFeeTreasuryLike,
-  CollateralAuctionHouseLike,
-  OracleLike,
+  ISAFEEngine,
+  ILiquidationEngine,
+  IAccountingEngine,
+  IOracleRelayer,
+  ICoinSavingsAccount,
+  IStabilityFeeTreasury,
+  ICollateralAuctionHouse,
+  IBaseOracle,
   GLOBAL_PARAM
 } from '@interfaces/settlement/IGlobalSettlement.sol';
 
@@ -133,12 +133,12 @@ contract GlobalSettlement is Authorizable, Disableable, IGlobalSettlement {
   mapping(bytes32 => mapping(address => uint256)) public coinsUsedToRedeem; // [wad]
 
   // --- Registry ---
-  SAFEEngineLike public safeEngine;
-  LiquidationEngineLike public liquidationEngine;
-  AccountingEngineLike public accountingEngine;
-  OracleRelayerLike public oracleRelayer;
-  CoinSavingsAccountLike public coinSavingsAccount;
-  StabilityFeeTreasuryLike public stabilityFeeTreasury;
+  ISAFEEngine public safeEngine;
+  ILiquidationEngine public liquidationEngine;
+  IAccountingEngine public accountingEngine;
+  IOracleRelayer public oracleRelayer;
+  ICoinSavingsAccount public coinSavingsAccount;
+  IStabilityFeeTreasury public stabilityFeeTreasury;
 
   // --- Init ---
   constructor() Authorizable(msg.sender) {}
@@ -159,14 +159,10 @@ contract GlobalSettlement is Authorizable, Disableable, IGlobalSettlement {
     safeEngine.disableContract();
     liquidationEngine.disableContract();
     // treasury must be disabled before the accounting engine so that all surplus is gathered in one place
-    if (address(stabilityFeeTreasury) != address(0)) {
-      stabilityFeeTreasury.disableContract();
-    }
+    if (address(stabilityFeeTreasury) != address(0)) stabilityFeeTreasury.disableContract();
     accountingEngine.disableContract();
     oracleRelayer.disableContract();
-    if (address(coinSavingsAccount) != address(0)) {
-      coinSavingsAccount.disableContract();
-    }
+    if (address(coinSavingsAccount) != address(0)) coinSavingsAccount.disableContract();
     emit ShutdownSystem();
   }
 
@@ -175,9 +171,9 @@ contract GlobalSettlement is Authorizable, Disableable, IGlobalSettlement {
    * @param _cType The collateral type to calculate the price for
    */
   function freezeCollateralType(bytes32 _cType) external whenDisabled {
-    require(finalCoinPerCollateralPrice[_cType] == 0, 'GlobalSettlement/final-collateral-price-already-defined');
+    if (finalCoinPerCollateralPrice[_cType] != 0) revert GS_FinalCollateralPriceAlreadyDefined();
     collateralTotalDebt[_cType] = safeEngine.cData(_cType).debtAmount;
-    OracleLike _oracle = oracleRelayer.cParams(_cType).oracle;
+    IBaseOracle _oracle = oracleRelayer.cParams(_cType).oracle;
     // redemptionPrice is a ray, orcl returns a wad
     finalCoinPerCollateralPrice[_cType] = oracleRelayer.redemptionPrice().wdiv(_oracle.read());
     emit FreezeCollateralType(_cType, finalCoinPerCollateralPrice[_cType]);
@@ -189,10 +185,10 @@ contract GlobalSettlement is Authorizable, Disableable, IGlobalSettlement {
    * @param _auctionId The ID of the auction to be fast tracked
    */
   function fastTrackAuction(bytes32 _cType, uint256 _auctionId) external {
-    require(finalCoinPerCollateralPrice[_cType] != 0, 'GlobalSettlement/final-collateral-price-not-defined');
+    if (finalCoinPerCollateralPrice[_cType] == 0) revert GS_FinalCollateralPriceNotDefined();
 
     address _auctionHouse = liquidationEngine.cParams(_cType).collateralAuctionHouse;
-    CollateralAuctionHouseLike _collateralAuctionHouse = CollateralAuctionHouseLike(_auctionHouse);
+    ICollateralAuctionHouse _collateralAuctionHouse = ICollateralAuctionHouse(_auctionHouse);
     uint256 _accumulatedRate = safeEngine.cData(_cType).accumulatedRate;
 
     uint256 _bidAmount = _collateralAuctionHouse.bidAmount(_auctionId);
@@ -225,9 +221,9 @@ contract GlobalSettlement is Authorizable, Disableable, IGlobalSettlement {
    * @param _safe The SAFE to be processed
    */
   function processSAFE(bytes32 _cType, address _safe) external {
-    require(finalCoinPerCollateralPrice[_cType] != 0, 'GlobalSettlement/final-collateral-price-not-defined');
+    if (finalCoinPerCollateralPrice[_cType] == 0) revert GS_FinalCollateralPriceNotDefined();
     uint256 _accumulatedRate = safeEngine.cData(_cType).accumulatedRate;
-    SAFEEngineLike.SAFE memory _safeData = safeEngine.safes(_cType, _safe);
+    ISAFEEngine.SAFE memory _safeData = safeEngine.safes(_cType, _safe);
 
     uint256 _amountOwed = _safeData.generatedDebt.rmul(_accumulatedRate).rmul(finalCoinPerCollateralPrice[_cType]);
     uint256 _minCollateral = Math.min(_safeData.lockedCollateral, _amountOwed);
@@ -250,8 +246,8 @@ contract GlobalSettlement is Authorizable, Disableable, IGlobalSettlement {
    * @param _cType The collateral type to free
    */
   function freeCollateral(bytes32 _cType) external whenDisabled {
-    SAFEEngineLike.SAFE memory _safeData = safeEngine.safes(_cType, msg.sender);
-    require(_safeData.generatedDebt == 0, 'GlobalSettlement/safe-debt-not-zero');
+    ISAFEEngine.SAFE memory _safeData = safeEngine.safes(_cType, msg.sender);
+    if (_safeData.generatedDebt != 0) revert GS_SafeDebtNotZero();
     safeEngine.confiscateSAFECollateralAndDebt(
       _cType, msg.sender, msg.sender, address(accountingEngine), -_safeData.lockedCollateral.toIntNotOverflow(), 0
     );
@@ -263,9 +259,9 @@ contract GlobalSettlement is Authorizable, Disableable, IGlobalSettlement {
    * @dev There must be no remaining surplus in the accounting engine
    */
   function setOutstandingCoinSupply() external whenDisabled {
-    require(outstandingCoinSupply == 0, 'GlobalSettlement/outstanding-coin-supply-not-zero');
-    require(safeEngine.coinBalance(address(accountingEngine)) == 0, 'GlobalSettlement/surplus-not-zero');
-    require(block.timestamp >= shutdownTime + shutdownCooldown, 'GlobalSettlement/shutdown-cooldown-not-finished');
+    if (outstandingCoinSupply != 0) revert GS_OutstandingCoinSupplyNotZero();
+    if (safeEngine.coinBalance(address(accountingEngine)) != 0) revert GS_SurplusNotZero();
+    if (block.timestamp < shutdownTime + shutdownCooldown) revert GS_ShutdownCooldownNotFinished();
     outstandingCoinSupply = safeEngine.globalDebt();
     emit SetOutstandingCoinSupply(outstandingCoinSupply);
   }
@@ -275,8 +271,8 @@ contract GlobalSettlement is Authorizable, Disableable, IGlobalSettlement {
    * @param _cType The collateral whose cash price will be calculated
    */
   function calculateCashPrice(bytes32 _cType) external {
-    require(outstandingCoinSupply != 0, 'GlobalSettlement/outstanding-coin-supply-zero');
-    require(collateralCashPrice[_cType] == 0, 'GlobalSettlement/collateral-cash-price-already-defined');
+    if (outstandingCoinSupply == 0) revert GS_OutstandingCoinSupplyZero();
+    if (collateralCashPrice[_cType] != 0) revert GS_CollateralCashPriceAlreadyDefined();
 
     uint256 _accumulatedRate = safeEngine.cData(_cType).accumulatedRate;
     uint256 _redemptionAdjustedDebt =
@@ -292,7 +288,7 @@ contract GlobalSettlement is Authorizable, Disableable, IGlobalSettlement {
    * @param _coinAmount The amount of internal system coins to add into the bag
    */
   function prepareCoinsForRedeeming(uint256 _coinAmount) external {
-    require(outstandingCoinSupply != 0, 'GlobalSettlement/outstanding-coin-supply-zero');
+    if (outstandingCoinSupply == 0) revert GS_OutstandingCoinSupplyZero();
     safeEngine.transferInternalCoins(msg.sender, address(accountingEngine), _coinAmount * RAY);
     coinBag[msg.sender] += _coinAmount;
     emit PrepareCoinsForRedeeming(msg.sender, coinBag[msg.sender]);
@@ -304,11 +300,11 @@ contract GlobalSettlement is Authorizable, Disableable, IGlobalSettlement {
    * @param _coinsAmount The amount of internal coins to use from your bag
    */
   function redeemCollateral(bytes32 _cType, uint256 _coinsAmount) external {
-    require(collateralCashPrice[_cType] != 0, 'GlobalSettlement/collateral-cash-price-not-defined');
+    if (collateralCashPrice[_cType] == 0) revert GS_CollateralCashPriceNotDefined();
     uint256 _collateralAmount = _coinsAmount.rmul(collateralCashPrice[_cType]);
     safeEngine.transferCollateral(_cType, address(this), msg.sender, _collateralAmount);
     coinsUsedToRedeem[_cType][msg.sender] += _coinsAmount;
-    require(coinsUsedToRedeem[_cType][msg.sender] <= coinBag[msg.sender], 'GlobalSettlement/insufficient-bag-balance');
+    if (coinsUsedToRedeem[_cType][msg.sender] > coinBag[msg.sender]) revert GS_InsufficientBagBalance();
     emit RedeemCollateral(_cType, msg.sender, _coinsAmount, _collateralAmount);
   }
 
@@ -321,12 +317,12 @@ contract GlobalSettlement is Authorizable, Disableable, IGlobalSettlement {
   function modifyParameters(bytes32 _param, bytes memory _data) external isAuthorized whenEnabled {
     address _address = _data.toAddress();
 
-    if (_param == 'safeEngine') safeEngine = SAFEEngineLike(_address);
-    else if (_param == 'liquidationEngine') liquidationEngine = LiquidationEngineLike(_address);
-    else if (_param == 'accountingEngine') accountingEngine = AccountingEngineLike(_address);
-    else if (_param == 'oracleRelayer') oracleRelayer = OracleRelayerLike(_address);
-    else if (_param == 'coinSavingsAccount') coinSavingsAccount = CoinSavingsAccountLike(_address);
-    else if (_param == 'stabilityFeeTreasury') stabilityFeeTreasury = StabilityFeeTreasuryLike(_address);
+    if (_param == 'safeEngine') safeEngine = ISAFEEngine(_address);
+    else if (_param == 'liquidationEngine') liquidationEngine = ILiquidationEngine(_address);
+    else if (_param == 'accountingEngine') accountingEngine = IAccountingEngine(_address);
+    else if (_param == 'oracleRelayer') oracleRelayer = IOracleRelayer(_address);
+    else if (_param == 'coinSavingsAccount') coinSavingsAccount = ICoinSavingsAccount(_address);
+    else if (_param == 'stabilityFeeTreasury') stabilityFeeTreasury = IStabilityFeeTreasury(_address);
     else if (_param == 'shutdownCooldown') shutdownCooldown = _data.toUint256();
     else revert UnrecognizedParam();
 

@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {CollateralJoin, IERC20Metadata} from '@contracts/utils/CollateralJoin.sol';
-import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
+import {CollateralJoin} from '@contracts/utils/CollateralJoin.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
-import {ISystemCoin} from '@interfaces/external/ISystemCoin.sol';
+import {IERC20Metadata, IERC20} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {Math} from '@libraries/Math.sol';
@@ -39,7 +38,7 @@ abstract contract Base is HaiTest {
   }
 
   function _mockDecimals(uint256 _decimals) internal {
-    vm.mockCall(address(mockCollateral), abi.encodeCall(IERC20Metadata.decimals, ()), abi.encode(_decimals));
+    vm.mockCall(address(mockCollateral), abi.encodeCall(mockCollateral.decimals, ()), abi.encode(_decimals));
   }
 
   function _mockTransfer(address _account, uint256 _amount, bool _success) internal {
@@ -65,15 +64,25 @@ contract Unit_CollateralJoin_Constructor is Base {
   event AddAuthorization(address _account);
 
   modifier happyPath(uint256 _decimals) {
-    vm.assume(_decimals <= 18);
-    _mockDecimals(_decimals);
     vm.startPrank(user);
+
+    _assumeHappyPath(_decimals);
+    _mockValues(_decimals);
     _;
+  }
+
+  function _assumeHappyPath(uint256 _decimals) internal pure {
+    vm.assume(_decimals <= 18);
+  }
+
+  function _mockValues(uint256 _decimals) internal {
+    _mockDecimals(_decimals);
   }
 
   function test_Revert_Gt18Decimals(uint256 _decimals) public {
     vm.assume(_decimals > 18);
-    _mockDecimals(_decimals);
+
+    _mockValues(_decimals);
 
     // reverts with uint-underflow
     vm.expectRevert();
@@ -154,20 +163,24 @@ contract Unit_CollateralJoin_DisableContract is Base {
 contract Unit_CollateralJoin_Join is Base {
   event Join(address _sender, address _account, uint256 _wad);
 
-  modifier happyPath(uint256 _wad) {
+  modifier happyPath(uint256 _wad, uint256 _decimals) {
     vm.startPrank(user);
 
-    _assumeHappyPath(_wad);
-    _mockValues(_wad);
+    _assumeHappyPath(_wad, _decimals);
+    _mockValues(_wad, _decimals, true);
+
+    collateralJoin = new CollateralJoin(address(mockSafeEngine), collateralType, address(mockCollateral));
     _;
   }
 
-  function _assumeHappyPath(uint256 _wad) internal pure {
+  function _assumeHappyPath(uint256 _wad, uint256 _decimals) internal pure {
     vm.assume(notOverflowInt256(_wad));
+    vm.assume(_decimals <= 18);
   }
 
-  function _mockValues(uint256 _wad) internal {
-    _mockTransferFrom(user, address(collateralJoin), _wad, true);
+  function _mockValues(uint256 _wad, uint256 _decimals, bool _transferFrom) internal {
+    _mockDecimals(_decimals);
+    _mockTransferFrom(user, address(collateralJoin), _wad, _transferFrom);
   }
 
   function test_Revert_ContractIsDisabled(address _account, uint256 _wad) public {
@@ -186,31 +199,22 @@ contract Unit_CollateralJoin_Join is Base {
     collateralJoin.join(_account, _wad);
   }
 
-  function test_Revert_FailedTransfer(address _account, uint256 _wad) public {
+  function test_Revert_FailedTransfer(address _account, uint256 _wad, uint256 _decimals) public {
     vm.startPrank(user);
-    vm.assume(int256(_wad) >= 0);
+    vm.assume(notOverflowInt256(_wad));
 
-    _mockTransferFrom(user, address(collateralJoin), _wad, false);
+    _mockValues(_wad, _decimals, false);
 
     vm.expectRevert('SafeERC20: ERC20 operation did not succeed');
 
     collateralJoin.join(_account, _wad);
   }
 
-  function test_Call_Collateral_TransferFrom(address _account, uint256 _wad, uint256 _decimals) public happyPath(_wad) {
-    vm.assume(_decimals <= 18);
-    _mockDecimals(_decimals);
-    collateralJoin = new CollateralJoin(address(mockSafeEngine), collateralType, address(mockCollateral));
-
-    vm.expectCall(
-      address(mockCollateral),
-      abi.encodeCall(IERC20.transferFrom, (user, address(collateralJoin), _wad / 10 ** (18 - _decimals)))
-    );
-
-    collateralJoin.join(_account, _wad);
-  }
-
-  function test_Call_SafeEngine_ModifyCollateralBalance(address _account, uint256 _wad) public happyPath(_wad) {
+  function test_Call_SafeEngine_ModifyCollateralBalance(
+    address _account,
+    uint256 _wad,
+    uint256 _decimals
+  ) public happyPath(_wad, _decimals) {
     vm.expectCall(
       address(mockSafeEngine),
       abi.encodeCall(mockSafeEngine.modifyCollateralBalance, (collateralType, _account, int256(_wad)))
@@ -219,7 +223,20 @@ contract Unit_CollateralJoin_Join is Base {
     collateralJoin.join(_account, _wad);
   }
 
-  function test_Emit_Join(address _account, uint256 _wad) public happyPath(_wad) {
+  function test_Call_Collateral_TransferFrom(
+    address _account,
+    uint256 _wad,
+    uint256 _decimals
+  ) public happyPath(_wad, _decimals) {
+    vm.expectCall(
+      address(mockCollateral),
+      abi.encodeCall(IERC20.transferFrom, (user, address(collateralJoin), _wad / 10 ** (18 - _decimals)))
+    );
+
+    collateralJoin.join(_account, _wad);
+  }
+
+  function test_Emit_Join(address _account, uint256 _wad, uint256 _decimals) public happyPath(_wad, _decimals) {
     expectEmitNoIndex();
     emit Join(user, _account, _wad);
 
@@ -230,20 +247,24 @@ contract Unit_CollateralJoin_Join is Base {
 contract Unit_CollateralJoin_Exit is Base {
   event Exit(address _sender, address _account, uint256 _wad);
 
-  modifier happyPath(address _account, uint256 _wad) {
+  modifier happyPath(address _account, uint256 _wad, uint256 _decimals) {
     vm.startPrank(user);
 
-    _assumeHappyPath(_wad);
-    _mockValues(_account, _wad);
+    _assumeHappyPath(_wad, _decimals);
+    _mockValues(_account, _wad, _decimals, true);
+
+    collateralJoin = new CollateralJoin(address(mockSafeEngine), collateralType, address(mockCollateral));
     _;
   }
 
-  function _assumeHappyPath(uint256 _wad) internal pure {
+  function _assumeHappyPath(uint256 _wad, uint256 _decimals) internal pure {
     vm.assume(notOverflowInt256(_wad));
+    vm.assume(_decimals <= 18);
   }
 
-  function _mockValues(address _account, uint256 _wad) internal {
-    _mockTransfer(_account, _wad, true);
+  function _mockValues(address _account, uint256 _wad, uint256 _decimals, bool _transfer) internal {
+    _mockDecimals(_decimals);
+    _mockTransfer(_account, _wad, _transfer);
   }
 
   function test_Revert_IntOverflow(address _account, uint256 _wad) public {
@@ -254,34 +275,21 @@ contract Unit_CollateralJoin_Exit is Base {
     collateralJoin.exit(_account, _wad);
   }
 
-  function test_Revert_FailedTransfer(address _account, uint256 _wad) public {
+  function test_Revert_FailedTransfer(address _account, uint256 _wad, uint256 _decimals) public {
     vm.assume(notOverflowInt256(_wad));
 
-    _mockTransfer(_account, _wad, false);
+    _mockValues(_account, _wad, _decimals, false);
 
     vm.expectRevert('SafeERC20: ERC20 operation did not succeed');
 
     collateralJoin.exit(_account, _wad);
   }
 
-  function test_Call_Collateral_Transfer(
+  function test_Call_SafeEngine_ModifyCollateralBalance(
     address _account,
     uint256 _wad,
     uint256 _decimals
-  ) public happyPath(_account, _wad) {
-    vm.assume(_decimals <= 18);
-    _mockDecimals(_decimals);
-    collateralJoin = new CollateralJoin(address(mockSafeEngine), collateralType, address(mockCollateral));
-
-    vm.expectCall(address(mockCollateral), abi.encodeCall(IERC20.transfer, (_account, _wad / 10 ** (18 - _decimals))));
-
-    collateralJoin.exit(_account, _wad);
-  }
-
-  function test_Call_SafeEngine_ModifyCollateralBalance(
-    address _account,
-    uint256 _wad
-  ) public happyPath(_account, _wad) {
+  ) public happyPath(_account, _wad, _decimals) {
     vm.expectCall(
       address(mockSafeEngine),
       abi.encodeCall(mockSafeEngine.modifyCollateralBalance, (collateralType, user, -int256(_wad)))
@@ -290,7 +298,21 @@ contract Unit_CollateralJoin_Exit is Base {
     collateralJoin.exit(_account, _wad);
   }
 
-  function test_Emit_Exit(address _account, uint256 _wad) public happyPath(_account, _wad) {
+  function test_Call_Collateral_Transfer(
+    address _account,
+    uint256 _wad,
+    uint256 _decimals
+  ) public happyPath(_account, _wad, _decimals) {
+    vm.expectCall(address(mockCollateral), abi.encodeCall(IERC20.transfer, (_account, _wad / 10 ** (18 - _decimals))));
+
+    collateralJoin.exit(_account, _wad);
+  }
+
+  function test_Emit_Exit(
+    address _account,
+    uint256 _wad,
+    uint256 _decimals
+  ) public happyPath(_account, _wad, _decimals) {
     expectEmitNoIndex();
     emit Exit(user, _account, _wad);
 

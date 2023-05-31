@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {ISAFEEngine as SAFEEngineLike} from '@interfaces/ISAFEEngine.sol';
-import {IToken as TokenLike} from '@interfaces/external/IToken.sol';
+import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
+import {IToken} from '@interfaces/external/IToken.sol';
 
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiable, GLOBAL_PARAM} from '@interfaces/utils/IModifiable.sol';
@@ -17,6 +17,17 @@ interface IPostSettlementSurplusAuctionHouse is IAuthorizable, IModifiable {
     uint256 indexed _id, address _highBidder, uint256 _amountToBuy, uint256 _bid, uint256 _bidExpiry
   );
   event SettleAuction(uint256 indexed _id);
+
+  // --- Errors ---
+  error PSSAH_AuctionNeverStarted();
+  error PSSAH_AuctionNotFinished();
+  error PSSAH_AuctionAlreadyExpired();
+  error PSSAH_BidAlreadyPlaced();
+  error PSSAH_BidAlreadyExpired();
+  error PSSAH_AmountsNotMatching();
+  error PSSAH_BidNotHigher();
+  error PSSAH_InsufficientIncrease();
+  error PSSAH_HighBidderNotSet();
 
   // --- Data ---
   struct Bid {
@@ -51,8 +62,8 @@ interface IPostSettlementSurplusAuctionHouse is IAuthorizable, IModifiable {
   function auctionsStarted() external view returns (uint256 _auctionsStarted);
 
   // --- Registry ---
-  function safeEngine() external view returns (SAFEEngineLike _safeEngine);
-  function protocolToken() external view returns (TokenLike _protocolToken);
+  function safeEngine() external view returns (ISAFEEngine _safeEngine);
+  function protocolToken() external view returns (IToken _protocolToken);
 
   // --- Params ---
   function params() external view returns (PostSettlementSAHParams memory _params);

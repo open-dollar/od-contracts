@@ -273,7 +273,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_RestartAuction is Base {
 
     _mockValues(_auction, 0, 0);
 
-    vm.expectRevert('PostSettlementSurplusAuctionHouse/auction-never-started');
+    vm.expectRevert(IPostSettlementSurplusAuctionHouse.PSSAH_AuctionNeverStarted.selector);
 
     postSettlementSurplusAuctionHouse.restartAuction(_auction.id);
   }
@@ -283,18 +283,18 @@ contract Unit_PostSettlementSurplusAuctionHouse_RestartAuction is Base {
 
     _mockValues(_auction, _auctionsStarted, 0);
 
-    vm.expectRevert('PostSettlementSurplusAuctionHouse/auction-never-started');
+    vm.expectRevert(IPostSettlementSurplusAuctionHouse.PSSAH_AuctionNeverStarted.selector);
 
     postSettlementSurplusAuctionHouse.restartAuction(_auction.id);
   }
 
   function test_Revert_NotFinished(SurplusAuction memory _auction, uint256 _auctionsStarted) public {
     vm.assume(_auction.id > 0 && _auction.id <= _auctionsStarted);
-    vm.assume(_auction.auctionDeadline >= block.timestamp);
+    vm.assume(_auction.auctionDeadline > block.timestamp);
 
     _mockValues(_auction, _auctionsStarted, 0);
 
-    vm.expectRevert('PostSettlementSurplusAuctionHouse/not-finished');
+    vm.expectRevert(IPostSettlementSurplusAuctionHouse.PSSAH_AuctionNotFinished.selector);
 
     postSettlementSurplusAuctionHouse.restartAuction(_auction.id);
   }
@@ -306,7 +306,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_RestartAuction is Base {
 
     _mockValues(_auction, _auctionsStarted, 0);
 
-    vm.expectRevert('PostSettlementSurplusAuctionHouse/bid-already-placed');
+    vm.expectRevert(IPostSettlementSurplusAuctionHouse.PSSAH_BidAlreadyPlaced.selector);
 
     postSettlementSurplusAuctionHouse.restartAuction(_auction.id);
   }
@@ -375,7 +375,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_IncreaseBidSize is Base {
 
     _mockValues(_auction, 0, 0);
 
-    vm.expectRevert('PostSettlementSurplusAuctionHouse/high-bidder-not-set');
+    vm.expectRevert(IPostSettlementSurplusAuctionHouse.PSSAH_HighBidderNotSet.selector);
 
     postSettlementSurplusAuctionHouse.increaseBidSize(_auction.id, _amountToBuy, _bid);
   }
@@ -386,7 +386,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_IncreaseBidSize is Base {
 
     _mockValues(_auction, 0, 0);
 
-    vm.expectRevert('PostSettlementSurplusAuctionHouse/bid-already-expired');
+    vm.expectRevert(IPostSettlementSurplusAuctionHouse.PSSAH_BidAlreadyExpired.selector);
 
     postSettlementSurplusAuctionHouse.increaseBidSize(_auction.id, _amountToBuy, _bid);
   }
@@ -398,7 +398,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_IncreaseBidSize is Base {
 
     _mockValues(_auction, 0, 0);
 
-    vm.expectRevert('PostSettlementSurplusAuctionHouse/auction-already-expired');
+    vm.expectRevert(IPostSettlementSurplusAuctionHouse.PSSAH_AuctionAlreadyExpired.selector);
 
     postSettlementSurplusAuctionHouse.increaseBidSize(_auction.id, _amountToBuy, _bid);
   }
@@ -411,7 +411,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_IncreaseBidSize is Base {
 
     _mockValues(_auction, 0, 0);
 
-    vm.expectRevert('PostSettlementSurplusAuctionHouse/amounts-not-matching');
+    vm.expectRevert(IPostSettlementSurplusAuctionHouse.PSSAH_AmountsNotMatching.selector);
 
     postSettlementSurplusAuctionHouse.increaseBidSize(_auction.id, _amountToBuy, _bid);
   }
@@ -424,7 +424,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_IncreaseBidSize is Base {
 
     _mockValues(_auction, 0, 0);
 
-    vm.expectRevert('PostSettlementSurplusAuctionHouse/bid-not-higher');
+    vm.expectRevert(IPostSettlementSurplusAuctionHouse.PSSAH_BidNotHigher.selector);
 
     postSettlementSurplusAuctionHouse.increaseBidSize(_auction.id, _auction.amountToSell, _bid);
   }
@@ -440,7 +440,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_IncreaseBidSize is Base {
 
     _mockValues(_auction, _bidIncrease, 0);
 
-    vm.expectRevert('PostSettlementSurplusAuctionHouse/insufficient-increase');
+    vm.expectRevert(IPostSettlementSurplusAuctionHouse.PSSAH_InsufficientIncrease.selector);
 
     postSettlementSurplusAuctionHouse.increaseBidSize(_auction.id, _auction.amountToSell, _bid);
   }
@@ -588,18 +588,18 @@ contract Unit_PostSettlementSurplusAuctionHouse_SettleAuction is Base {
 
     _mockValues(_auction);
 
-    vm.expectRevert('PostSettlementSurplusAuctionHouse/not-finished');
+    vm.expectRevert(IPostSettlementSurplusAuctionHouse.PSSAH_AuctionNotFinished.selector);
 
     postSettlementSurplusAuctionHouse.settleAuction(_auction.id);
   }
 
   function test_Revert_NotFinished_1(SurplusAuction memory _auction) public {
-    vm.assume(_auction.bidExpiry >= block.timestamp);
-    vm.assume(_auction.auctionDeadline >= block.timestamp);
+    vm.assume(_auction.bidExpiry > block.timestamp);
+    vm.assume(_auction.auctionDeadline > block.timestamp);
 
     _mockValues(_auction);
 
-    vm.expectRevert('PostSettlementSurplusAuctionHouse/not-finished');
+    vm.expectRevert(IPostSettlementSurplusAuctionHouse.PSSAH_AuctionNotFinished.selector);
 
     postSettlementSurplusAuctionHouse.settleAuction(_auction.id);
   }

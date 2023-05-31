@@ -25,7 +25,7 @@ import {ICoinJoin as CoinJoinLike} from '@interfaces/utils/ICoinJoin.sol';
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {Disableable} from '@contracts/utils/Disableable.sol';
 
-import {Math, RAY, HUNDRED} from '@libraries/Math.sol';
+import {Math, RAY, HOUR, HUNDRED} from '@libraries/Math.sol';
 import {Encoding} from '@libraries/Encoding.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 
@@ -180,12 +180,12 @@ contract StabilityFeeTreasury is Authorizable, Disableable, IStabilityFeeTreasur
     require(_wad > 0, 'StabilityFeeTreasury/null-transfer-amount');
     if (allowance[msg.sender].perHour > 0) {
       require(
-        pulledPerHour[msg.sender][block.timestamp / 3600] + (_wad * RAY) <= allowance[msg.sender].perHour,
+        pulledPerHour[msg.sender][block.timestamp / HOUR] + (_wad * RAY) <= allowance[msg.sender].perHour,
         'StabilityFeeTreasury/per-block-limit-exceeded'
       );
     }
 
-    pulledPerHour[msg.sender][block.timestamp / 3600] += (_wad * RAY);
+    pulledPerHour[msg.sender][block.timestamp / HOUR] += (_wad * RAY);
 
     _joinAllCoins();
     _settleDebt();

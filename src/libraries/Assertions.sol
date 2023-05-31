@@ -10,6 +10,7 @@ library Assertions {
   error IntNotLesserThan(int256 _x, int256 _y);
   error IntNotGreaterOrEqualThan(int256 _x, int256 _y);
   error IntNotLesserOrEqualThan(int256 _x, int256 _y);
+  error NullAmount();
   error NullAddress();
 
   // --- Assertions ---
@@ -51,6 +52,11 @@ library Assertions {
 
   function assertLtEq(int256 _x, int256 _y) internal pure returns (int256 __x) {
     if (_x > _y) revert IntNotLesserOrEqualThan(_x, _y);
+    return _x;
+  }
+
+  function assertNonNull(uint256 _x) internal pure returns (uint256 __x) {
+    if (_x == 0) revert NullAmount();
     return _x;
   }
 

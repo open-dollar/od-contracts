@@ -3,6 +3,8 @@ pragma solidity 0.8.19;
 
 import './Common.t.sol';
 
+import {HOUR} from '@libraries/Math.sol';
+
 contract E2EStabilityFeeTreasuryTest is Common {
   uint256 constant INITIAL_DEBT = 1000e18;
 
@@ -83,7 +85,7 @@ contract E2EStabilityFeeTreasuryTest is Common {
     (uint256 _totalAllowance,) = stabilityFeeTreasury.allowance(deployer);
     assertEq(_totalAllowance, 0); // deployer used all allowance
     assertEq(stabilityFeeTreasury.expensesAccumulator(), _previousExpensesAccumulator + _rad);
-    assertEq(stabilityFeeTreasury.pulledPerHour(deployer, block.timestamp / 3600), _rad);
+    assertEq(stabilityFeeTreasury.pulledPerHour(deployer, block.timestamp / HOUR), _rad);
   }
 
   function test_transfer_surplus_funds() public {

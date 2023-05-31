@@ -13,7 +13,7 @@ import {
   StabilityFeeTreasuryForTest,
   StabilityFeeTreasuryForInternalCallsTest
 } from '@contracts/for-test/StabilityFeeTreasuryForTest.sol';
-import {Math, RAY, WAD, HUNDRED} from '@libraries/Math.sol';
+import {Math, RAY, WAD, HOUR, HUNDRED} from '@libraries/Math.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 import {HaiTest} from '@test/utils/HaiTest.t.sol';
 import {StdStorage, stdStorage} from 'forge-std/StdStorage.sol';
@@ -727,7 +727,7 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
   function _mockValues(PullFundsScenario memory _pullFundsScenario, uint256 _safeEngineDebtBalance) internal {
     _mockTotalAllowance(user, _pullFundsScenario._totalAllowance);
     _mockPerHourAllowance(user, _pullFundsScenario._allowancePerHour);
-    _mockPulledPerHour(user, block.timestamp / 3600, _pullFundsScenario._initialPulledPerHour);
+    _mockPulledPerHour(user, block.timestamp / HOUR, _pullFundsScenario._initialPulledPerHour);
     _mockSafeEngineDebtBalance(_safeEngineDebtBalance); // avoid StabilityFeeTreasury/outstanding-bad-debt
     _mockSafeEngineCoinBalance(_pullFundsScenario._safeEngineCoinBalance);
     _mockPullFundsMinThreshold(_pullFundsScenario._pullFundsMinThreshold);
@@ -781,7 +781,7 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, _pullFundsScenario._wad);
 
     assertEq(
-      stabilityFeeTreasury.pulledPerHour(user, block.timestamp / 3600),
+      stabilityFeeTreasury.pulledPerHour(user, block.timestamp / HOUR),
       _pullFundsScenario._initialPulledPerHour + (_pullFundsScenario._wad * RAY)
     );
   }

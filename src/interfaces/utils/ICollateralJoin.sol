@@ -40,7 +40,6 @@ interface ICollateralJoin is IAuthorizable, IDisableable {
   function multiplier() external view returns (uint256 _multiplier);
 
   // --- Methods ---
-
   /**
    * @notice Join collateral in the system
    * @param _account Account to which we add collateral into the system

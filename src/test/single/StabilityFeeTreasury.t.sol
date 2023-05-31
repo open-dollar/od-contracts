@@ -9,6 +9,8 @@ import {StabilityFeeTreasury} from '@contracts/StabilityFeeTreasury.sol';
 import {IStabilityFeeTreasury} from '@interfaces/IStabilityFeeTreasury.sol';
 import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
 
+import {HOUR} from '@libraries/Math.sol';
+
 abstract contract Hevm {
   function warp(uint256) public virtual;
 }
@@ -266,7 +268,7 @@ contract SingleStabilityFeeTreasuryTest is DSTest {
     usr.pullFunds(address(stabilityFeeTreasury), address(usr), 0.9 ether);
     (uint256 total,) = stabilityFeeTreasury.allowance(address(usr));
     assertEq(total, rad(9.1 ether));
-    assertEq(stabilityFeeTreasury.pulledPerHour(address(usr), block.timestamp / 3600), rad(0.9 ether));
+    assertEq(stabilityFeeTreasury.pulledPerHour(address(usr), block.timestamp / HOUR), rad(0.9 ether));
     assertEq(systemCoin.balanceOf(address(usr)), 0);
     assertEq(systemCoin.balanceOf(address(stabilityFeeTreasury)), 0);
     assertEq(safeEngine.coinBalance(address(usr)), rad(0.9 ether));
@@ -314,7 +316,7 @@ contract SingleStabilityFeeTreasuryTest is DSTest {
 
     (uint256 total,) = stabilityFeeTreasury.allowance(address(usr));
     assertEq(total, rad(9.1 ether));
-    assertEq(stabilityFeeTreasury.pulledPerHour(address(usr), block.timestamp / 3600), rad(0.9 ether));
+    assertEq(stabilityFeeTreasury.pulledPerHour(address(usr), block.timestamp / HOUR), rad(0.9 ether));
     assertEq(systemCoin.balanceOf(address(usr)), 0);
     assertEq(systemCoin.balanceOf(address(stabilityFeeTreasury)), 0);
     assertEq(safeEngine.coinBalance(address(usr)), rad(0.9 ether));
@@ -332,7 +334,7 @@ contract SingleStabilityFeeTreasuryTest is DSTest {
 
     (uint256 total,) = stabilityFeeTreasury.allowance(address(usr));
     assertEq(total, rad(9.1 ether));
-    assertEq(stabilityFeeTreasury.pulledPerHour(address(usr), block.timestamp / 3600), rad(0.9 ether));
+    assertEq(stabilityFeeTreasury.pulledPerHour(address(usr), block.timestamp / HOUR), rad(0.9 ether));
     assertEq(systemCoin.balanceOf(address(usr)), 0);
     assertEq(systemCoin.balanceOf(address(stabilityFeeTreasury)), 0);
     assertEq(safeEngine.coinBalance(address(usr)), rad(0.9 ether));

@@ -20,8 +20,8 @@ pragma solidity 0.8.19;
 
 import {
   IPostSettlementSurplusAuctionHouse,
-  SAFEEngineLike,
-  TokenLike,
+  ISAFEEngine,
+  IToken,
   GLOBAL_PARAM
 } from '@interfaces/settlement/IPostSettlementSurplusAuctionHouse.sol';
 
@@ -44,9 +44,9 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, IPostSettlementSurpl
 
   // --- Registry ---
   // SAFE database
-  SAFEEngineLike public safeEngine;
+  ISAFEEngine public safeEngine;
   // Protocol token address
-  TokenLike public protocolToken;
+  IToken public protocolToken;
 
   // --- Params ---
   PostSettlementSAHParams internal _params;
@@ -57,8 +57,8 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, IPostSettlementSurpl
 
   // --- Init ---
   constructor(address _safeEngine, address _protocolToken) Authorizable(msg.sender) {
-    safeEngine = SAFEEngineLike(_safeEngine);
-    protocolToken = TokenLike(_protocolToken);
+    safeEngine = ISAFEEngine(_safeEngine);
+    protocolToken = IToken(_protocolToken);
 
     _params = PostSettlementSAHParams({bidIncrease: 1.05e18, bidDuration: 3 hours, totalAuctionLength: 2 days});
   }
@@ -87,9 +87,9 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, IPostSettlementSurpl
    * @param _id ID of the auction to restart
    */
   function restartAuction(uint256 _id) external {
-    require(_id > 0 && _id <= auctionsStarted, 'PostSettlementSurplusAuctionHouse/auction-never-started');
-    require(bids[_id].auctionDeadline < block.timestamp, 'PostSettlementSurplusAuctionHouse/not-finished');
-    require(bids[_id].bidExpiry == 0, 'PostSettlementSurplusAuctionHouse/bid-already-placed');
+    if (_id == 0 || _id > auctionsStarted) revert PSSAH_AuctionNeverStarted();
+    if (bids[_id].auctionDeadline > block.timestamp) revert PSSAH_AuctionNotFinished();
+    if (bids[_id].bidExpiry != 0) revert PSSAH_BidAlreadyPlaced();
     bids[_id].auctionDeadline = uint48(block.timestamp) + _params.totalAuctionLength;
     emit RestartAuction(_id, bids[_id].auctionDeadline);
   }
@@ -101,18 +101,13 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, IPostSettlementSurpl
    * @param _bid New bid submitted (rad)
    */
   function increaseBidSize(uint256 _id, uint256 _amountToBuy, uint256 _bid) external {
-    require(bids[_id].highBidder != address(0), 'PostSettlementSurplusAuctionHouse/high-bidder-not-set');
-    require(
-      bids[_id].bidExpiry > block.timestamp || bids[_id].bidExpiry == 0,
-      'PostSettlementSurplusAuctionHouse/bid-already-expired'
-    );
-    require(bids[_id].auctionDeadline > block.timestamp, 'PostSettlementSurplusAuctionHouse/auction-already-expired');
+    if (bids[_id].highBidder == address(0)) revert PSSAH_HighBidderNotSet();
+    if (bids[_id].bidExpiry <= block.timestamp && bids[_id].bidExpiry != 0) revert PSSAH_BidAlreadyExpired();
+    if (bids[_id].auctionDeadline <= block.timestamp) revert PSSAH_AuctionAlreadyExpired();
 
-    require(_amountToBuy == bids[_id].amountToSell, 'PostSettlementSurplusAuctionHouse/amounts-not-matching');
-    require(_bid > bids[_id].bidAmount, 'PostSettlementSurplusAuctionHouse/bid-not-higher');
-    require(
-      _bid * WAD >= _params.bidIncrease * bids[_id].bidAmount, 'PostSettlementSurplusAuctionHouse/insufficient-increase'
-    );
+    if (_amountToBuy != bids[_id].amountToSell) revert PSSAH_AmountsNotMatching();
+    if (_bid <= bids[_id].bidAmount) revert PSSAH_BidNotHigher();
+    if (_bid * WAD < _params.bidIncrease * bids[_id].bidAmount) revert PSSAH_InsufficientIncrease();
 
     if (msg.sender != bids[_id].highBidder) {
       protocolToken.move(msg.sender, bids[_id].highBidder, bids[_id].bidAmount);
@@ -131,10 +126,9 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, IPostSettlementSurpl
    * @param _id ID of the auction to settle
    */
   function settleAuction(uint256 _id) external {
-    require(
-      bids[_id].bidExpiry != 0 && (bids[_id].bidExpiry < block.timestamp || bids[_id].auctionDeadline < block.timestamp),
-      'PostSettlementSurplusAuctionHouse/not-finished'
-    );
+    if (
+      bids[_id].bidExpiry == 0 || (bids[_id].bidExpiry > block.timestamp && bids[_id].auctionDeadline > block.timestamp)
+    ) revert PSSAH_AuctionNotFinished();
     safeEngine.transferInternalCoins(address(this), bids[_id].highBidder, bids[_id].amountToSell);
     protocolToken.burn(address(this), bids[_id].bidAmount);
     delete bids[_id];
