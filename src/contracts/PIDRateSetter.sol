@@ -17,39 +17,38 @@
 pragma solidity 0.8.19;
 
 import {IPIDRateSetter, GLOBAL_PARAM} from '@interfaces/IPIDRateSetter.sol';
-import {IBaseOracle as OracleLike} from '@interfaces/oracles/IBaseOracle.sol';
+import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {IOracleRelayer as OracleRelayerLike} from '@interfaces/IOracleRelayer.sol';
 import {IPIDController as PIDCalculator} from '@interfaces/IPIDController.sol';
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
-import {Math, RAY} from '@libraries/Math.sol';
 import {Encoding} from '@libraries/Encoding.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 
 contract PIDRateSetter is Authorizable, IPIDRateSetter {
   using Encoding for bytes;
-  using Math for uint256;
   using Assertions for uint256;
   using Assertions for address;
 
   // --- Registry ---
-  // OSM or medianizer for the system coin
-  OracleLike public oracle;
-  // OracleRelayer where the redemption price is stored
+  /// @inheritdoc IPIDRateSetter
+  IBaseOracle public oracle;
+  /// @inheritdoc IPIDRateSetter
   OracleRelayerLike public oracleRelayer;
-  // Calculator for the redemption rate
+  /// @inheritdoc IPIDRateSetter
   PIDCalculator public pidCalculator;
 
   // --- Params ---
   PIDRateSetterParams internal _params;
 
+  /// @inheritdoc IPIDRateSetter
   function params() external view returns (PIDRateSetterParams memory _pidRateSetterParams) {
     return _params;
   }
 
   // --- Data ---
-  // When the price feed was last updated
-  uint256 public lastUpdateTime; // [timestamp]
+  /// @inheritdoc IPIDRateSetter
+  uint256 public lastUpdateTime;
 
   // --- Init ---
   constructor(
@@ -58,38 +57,28 @@ contract PIDRateSetter is Authorizable, IPIDRateSetter {
     address _pidCalculator,
     uint256 _updateRateDelay
   ) Authorizable(msg.sender) {
-    require(_oracleRelayer != address(0), 'PIDRateSetter/null-oracle-relayer');
-    require(_oracle != address(0), 'PIDRateSetter/null-oracle');
-    require(_pidCalculator != address(0), 'PIDRateSetter/null-calculator');
-
-    oracleRelayer = OracleRelayerLike(_oracleRelayer);
-    oracle = OracleLike(_oracle);
-    pidCalculator = PIDCalculator(_pidCalculator);
-
-    // TODO: require params at constructor
-    _params = PIDRateSetterParams({updateRateDelay: _updateRateDelay, defaultLeak: 1});
+    oracleRelayer = OracleRelayerLike(_oracleRelayer.assertNonNull());
+    oracle = IBaseOracle(_oracle.assertNonNull());
+    pidCalculator = PIDCalculator(_pidCalculator.assertNonNull());
+    _params.updateRateDelay = _updateRateDelay.assertGt(0);
   }
 
   // --- Methods ---
-  /**
-   * @notice Compute and set a new redemption rate
-   */
+
+  /// @inheritdoc IPIDRateSetter
   function updateRate() external {
     // Check delay between calls
-    require(block.timestamp - lastUpdateTime >= _params.updateRateDelay, 'PIDRateSetter/wait-more');
+    if (block.timestamp - lastUpdateTime < _params.updateRateDelay) revert RateSetterCooldown();
+
     // Get price feed updates
     (uint256 _marketPrice, bool _hasValidValue) = oracle.getResultWithValidity();
-    // If the oracle has a value
-    require(_hasValidValue, 'PIDRateSetter/invalid-oracle-value');
-    // If the price is non-zero
-    require(_marketPrice > 0, 'PIDRateSetter/null-price');
+    // Check if the oracle has a valid value and the price is non-zero
+    if (!_hasValidValue || _marketPrice == 0) revert InvalidPriceFeed();
+
     // Get (and update if old) the latest redemption price
     uint256 _redemptionPrice = oracleRelayer.redemptionPrice();
-    // Calculate the rate
-    uint256 _iapcr = (_params.defaultLeak == 1)
-      ? RAY
-      : pidCalculator.perSecondCumulativeLeak().rpow(pidCalculator.timeSinceLastUpdate());
-    uint256 _redemptionRate = pidCalculator.computeRate(_marketPrice, _redemptionPrice, _iapcr);
+    // Send latest redemption price to the PID calculator to calculate the redemption rate
+    uint256 _redemptionRate = pidCalculator.computeRate(_marketPrice, _redemptionPrice);
     // Store the timestamp of the update
     lastUpdateTime = block.timestamp;
     // Update the rate using the setter relayer
@@ -97,16 +86,12 @@ contract PIDRateSetter is Authorizable, IPIDRateSetter {
   }
 
   // --- Getters ---
-  /**
-   * @notice Get the market price from the system coin oracle
-   */
+  /// @inheritdoc IPIDRateSetter
   function getMarketPrice() external view returns (uint256 _marketPrice) {
     (_marketPrice,) = oracle.getResultWithValidity();
   }
 
-  /**
-   * @notice Get the redemption and the market prices for the system coin
-   */
+  /// @inheritdoc IPIDRateSetter
   function getRedemptionAndMarketPrices() external returns (uint256 _marketPrice, uint256 _redemptionPrice) {
     (_marketPrice,) = oracle.getResultWithValidity();
     _redemptionPrice = oracleRelayer.redemptionPrice();
@@ -117,11 +102,10 @@ contract PIDRateSetter is Authorizable, IPIDRateSetter {
     address _address = _data.toAddress();
     uint256 _uint256 = _data.toUint256();
 
-    if (_param == 'oracle') oracle = OracleLike(_address.assertNonNull());
+    if (_param == 'oracle') oracle = IBaseOracle(_address.assertNonNull());
     else if (_param == 'oracleRelayer') oracleRelayer = OracleRelayerLike(_address.assertNonNull());
     else if (_param == 'pidCalculator') pidCalculator = PIDCalculator(_address.assertNonNull());
     else if (_param == 'updateRateDelay') _params.updateRateDelay = _uint256.assertGt(0);
-    else if (_param == 'defaultLeak') _params.defaultLeak = _uint256.assertLtEq(1);
     else revert UnrecognizedParam();
 
     emit ModifyParameters(_param, GLOBAL_PARAM, _data);

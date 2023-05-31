@@ -193,7 +193,7 @@ contract PIDControllerForTest is PIDController, InternalCallsExtension {
 
   // stdstore not available for uint256
   function setFeedbackOutputLowerBound(int256 _feedbackOutputLowerBound) external {
-    feedbackOutputLowerBound = _feedbackOutputLowerBound;
+    _params.feedbackOutputLowerBound = _feedbackOutputLowerBound;
   }
 }
 

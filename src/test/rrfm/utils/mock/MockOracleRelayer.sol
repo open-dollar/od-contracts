@@ -106,10 +106,14 @@ contract MockOracleRelayer {
     // Return updated redemption price
     return _redemptionPrice;
   }
+
+  function updateRedemptionRate(uint256 rate) external {
+    redemptionRate = rate;
+  }
+
   /**
    * @notice Fetch the latest redemption price by first updating it
    */
-
   function redemptionPrice() public returns (uint256) {
     if (block.timestamp > redemptionPriceUpdateTime) return updateRedemptionPrice();
     return _redemptionPrice;

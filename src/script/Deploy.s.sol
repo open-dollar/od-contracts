@@ -264,7 +264,7 @@ abstract contract Deploy is Script, Contracts {
     });
 
     // setup registry
-    pidController.modifyParameters('seedProposer', address(pidRateSetter));
+    pidController.modifyParameters('seedProposer', abi.encode(pidRateSetter));
 
     // auth
     oracleRelayer.addAuthorization(address(pidRateSetter));

@@ -5,29 +5,9 @@ import 'ds-test/test.sol';
 
 import {MockPIDCalculator} from '../utils/mock/MockPIDCalculator.sol';
 import {PIDRateSetter} from '@contracts/PIDRateSetter.sol';
+import {OracleForTest as OracleForTest} from '@contracts/for-test/OracleForTest.sol';
 
 import {OracleRelayer as MockOracleRelayer} from '@contracts/OracleRelayer.sol';
-
-contract Feed {
-  bytes32 public price;
-  bool public validPrice;
-  uint256 public lastUpdateTime;
-
-  constructor(uint256 price_, bool validPrice_) {
-    price = bytes32(price_);
-    validPrice = validPrice_;
-    lastUpdateTime = block.timestamp;
-  }
-
-  function updateTokenPrice(uint256 price_) external {
-    price = bytes32(price_);
-    lastUpdateTime = block.timestamp;
-  }
-
-  function getResultWithValidity() external view returns (uint256, bool) {
-    return (uint256(price), validPrice);
-  }
-}
 
 abstract contract Hevm {
   function warp(uint256) public virtual;
@@ -41,7 +21,7 @@ contract PIDRateSetterTest is DSTest {
   PIDRateSetter rateSetter;
 
   MockPIDCalculator calculator;
-  Feed orcl;
+  OracleForTest orcl;
 
   uint256 periodSize = 3600;
 
@@ -54,7 +34,7 @@ contract PIDRateSetterTest is DSTest {
 
     oracleRelayer = new MockOracleRelayer(address(69));
 
-    orcl = new Feed(1 ether, true);
+    orcl = new OracleForTest(1 ether);
 
     calculator = new MockPIDCalculator();
     rateSetter = new PIDRateSetter(
@@ -63,7 +43,6 @@ contract PIDRateSetterTest is DSTest {
           address(calculator),
           periodSize
         );
-    rateSetter.modifyParameters('defaultLeak', abi.encode(0));
     oracleRelayer.addAuthorization(address(rateSetter));
   }
 
@@ -137,18 +116,6 @@ contract PIDRateSetterTest is DSTest {
     assertEq(block.timestamp - rateSetter.lastUpdateTime() - rateSetter.params().updateRateDelay, 359_996_401);
 
     rateSetter.updateRate();
-  }
-
-  function test_null_default_leak() public {
-    rateSetter.modifyParameters('defaultLeak', abi.encode(1));
-
-    hevm.warp(block.timestamp + periodSize);
-    rateSetter.updateRate();
-    assertEq(oracleRelayer.redemptionRate(), RAY + 2);
-
-    hevm.warp(block.timestamp + periodSize);
-    rateSetter.updateRate();
-    assertEq(oracleRelayer.redemptionRate(), RAY + 2);
   }
 
   function test_oracle_relayer_bounded_rate() public {

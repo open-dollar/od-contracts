@@ -14,7 +14,7 @@ contract MockPIDCalculator {
     }
   }
 
-  function computeRate(uint256, uint256, uint256) external virtual returns (uint256) {
+  function computeRate(uint256, uint256) external virtual returns (uint256) {
     return validated;
   }
 
