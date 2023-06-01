@@ -4,13 +4,25 @@ pragma solidity 0.8.19;
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ISurplusAuctionHouse} from '@interfaces/ISurplusAuctionHouse.sol';
 import {IDebtAuctionHouse} from '@interfaces/IDebtAuctionHouse.sol';
-import {IProtocolTokenAuthority} from '@interfaces/external/IProtocolTokenAuthority.sol';
-import {ISystemStakingPool} from '@interfaces/external/ISystemStakingPool.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IModifiable, GLOBAL_PARAM} from '@interfaces/utils/IModifiable.sol';
 
 interface IAccountingEngine is IAuthorizable, IDisableable, IModifiable {
+  // --- Errors ---
+  error AccEng_DebtAuctionDisabled();
+  error AccEng_SurplusAuctionDisabled();
+  error AccEng_SurplusTransferDisabled();
+  error AccEng_InsufficientDebt();
+  error AccEng_InsufficientSurplus();
+  error AccEng_SurplusNotZero();
+  error AccEng_DebtNotZero();
+  error AccEng_NullAmount();
+  error AccEng_NullSurplusReceiver();
+  error AccEng_SurplusCooldown();
+  error AccEng_PopDebtCooldown();
+  error AccEng_PostSettlementCooldown();
+
   // --- Events ---
   event PushDebtToQueue(uint256 indexed _timestamp, uint256 _debtQueueBlock, uint256 _totalQueuedDebt);
   event PopDebtFromQueue(uint256 indexed _timestamp, uint256 _debtQueueBlock, uint256 _totalQueuedDebt);
@@ -53,10 +65,6 @@ interface IAccountingEngine is IAuthorizable, IDisableable, IModifiable {
   function surplusAuctionHouse() external view returns (ISurplusAuctionHouse _surplusAuctionHouse);
   //Contract that handles auctions for debt that couldn't be covered by collateral auctions
   function debtAuctionHouse() external view returns (IDebtAuctionHouse _debtAuctionHouse);
-  // Permissions registry for who can burn and mint protocol tokens
-  function protocolTokenAuthority() external view returns (IProtocolTokenAuthority _protocolTokenAuthority);
-  // Staking pool for protocol tokens
-  function systemStakingPool() external view returns (ISystemStakingPool _systemStakingPool);
   // Contract that auctions extra surplus after settlement is triggered
   function postSettlementSurplusDrain() external view returns (address _postSettlementSurplusDrain);
   // Address that receives extra surplus transfers
@@ -68,6 +76,7 @@ interface IAccountingEngine is IAuthorizable, IDisableable, IModifiable {
   function debtQueue(uint256 _blockTimestamp) external view returns (uint256 _debtQueue);
   function lastSurplusTime() external view returns (uint256 _lastSurplusTime);
   function unqueuedUnauctionedDebt() external view returns (uint256 _unqueuedUnauctionedDebt);
+  function disableTimestamp() external view returns (uint256 _disableTimestamp);
 
   // --- Methods ---
   function auctionDebt() external returns (uint256 _id);

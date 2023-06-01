@@ -16,26 +16,6 @@ abstract contract Hevm {
   function warp(uint256) public virtual;
 }
 
-contract ProtocolTokenAuthority {
-  mapping(address => uint256) public authorizedAccounts;
-
-  /**
-   * @notice Add auth to an account
-   * @param account Account to add auth to
-   */
-  function addAuthorization(address account) external {
-    authorizedAccounts[account] = 1;
-  }
-  /**
-   * @notice Remove auth from an account
-   * @param account Account to remove auth from
-   */
-
-  function removeAuthorization(address account) external {
-    authorizedAccounts[account] = 0;
-  }
-}
-
 contract SingleAccountingEngineTest is DSTest {
   Hevm hevm;
 
@@ -46,7 +26,6 @@ contract SingleAccountingEngineTest is DSTest {
   SAH_TWO surplusAuctionHouseTwo;
   SettlementSurplusAuctioneer postSettlementSurplusDrain;
   Gem protocolToken;
-  ProtocolTokenAuthority tokenAuthority;
 
   function setUp() public {
     hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
@@ -70,11 +49,6 @@ contract SingleAccountingEngineTest is DSTest {
     accountingEngine.modifyParameters('debtAuctionMintedTokens', abi.encode(200 ether));
 
     safeEngine.approveSAFEModification(address(debtAuctionHouse));
-
-    tokenAuthority = new ProtocolTokenAuthority();
-    tokenAuthority.addAuthorization(address(debtAuctionHouse));
-
-    accountingEngine.modifyParameters('protocolTokenAuthority', abi.encode(tokenAuthority));
   }
 
   function _try_popDebtFromQueue(uint256 era) internal returns (bool ok) {
@@ -178,13 +152,8 @@ contract SingleAccountingEngineTest is DSTest {
     assertTrue(_try_popDebtFromQueue(tic));
   }
 
-  function test_no_debt_auction_not_auth_permitted() public {
-    tokenAuthority.removeAuthorization(address(debtAuctionHouse));
-    assertTrue(!can_auction_debt());
-  }
-
-  function test_no_debt_auction_token_auth_not_set() public {
-    accountingEngine.modifyParameters('protocolTokenAuthority', abi.encode(address(0)));
+  function test_no_debt_auction_no_bid_size() public {
+    accountingEngine.modifyParameters('debtAuctionBidSize', abi.encode(0));
     assertTrue(!can_auction_debt());
   }
 
