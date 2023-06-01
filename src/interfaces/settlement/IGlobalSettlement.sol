@@ -5,7 +5,6 @@ import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ILiquidationEngine} from '@interfaces/ILiquidationEngine.sol';
 import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
-import {IDisableable as ICoinSavingsAccount} from '@interfaces/utils/IDisableable.sol';
 import {IStabilityFeeTreasury} from '@interfaces/IStabilityFeeTreasury.sol';
 import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
@@ -58,7 +57,6 @@ interface IGlobalSettlement is IAuthorizable, IDisableable, IModifiable {
   function liquidationEngine() external view returns (ILiquidationEngine _liquidationEngine);
   function accountingEngine() external view returns (IAccountingEngine _accountingEngine);
   function oracleRelayer() external view returns (IOracleRelayer _oracleRelayer);
-  function coinSavingsAccount() external view returns (ICoinSavingsAccount _coinSavingsAccount);
   function stabilityFeeTreasury() external view returns (IStabilityFeeTreasury _stabilityFeeTreasury);
 
   // --- Settlement ---

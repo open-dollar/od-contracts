@@ -370,10 +370,11 @@ contract SAFEEngine is Authorizable, Disableable, ISAFEEngine {
   }
 
   /**
-   * @notice Usually called by CoinSavingsAccount in order to create unbacked debt
-   * @param _debtDestination Usually AccountingEngine that can settle uncovered debt with surplus
-   * @param _coinDestination Usually CoinSavingsAccount that passes the new coins to depositors
+   * @notice Allows an authorized contract to create debt without collateral
+   * @param _debtDestination The account that will receive the newly created debt
+   * @param _coinDestination The account that will receive the newly created coins
    * @param _rad Amount of debt to create
+   * @dev   Usually called by DebtAuctionHouse in order to terminate auctions prematurely post settlement
    */
   function createUnbackedDebt(address _debtDestination, address _coinDestination, uint256 _rad) external isAuthorized {
     debtBalance[_debtDestination] += _rad;
@@ -393,10 +394,11 @@ contract SAFEEngine is Authorizable, Disableable, ISAFEEngine {
 
   // --- Rates ---
   /**
-   * @notice Usually called by TaxCollector in order to accrue interest on a specific collateral type
+   * @notice Allows an authorized contract to accrue interest on a specific collateral type
    * @param _cType Collateral type we accrue interest for
    * @param _surplusDst Destination for the newly created surplus
    * @param _rateMultiplier Multiplier applied to the debtAmount in order to calculate the surplus [ray]
+   * @dev   The rateMultiplier is usually calculated by the TaxCollector contract
    */
   function updateAccumulatedRate(
     bytes32 _cType,

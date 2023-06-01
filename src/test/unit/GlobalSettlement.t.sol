@@ -6,7 +6,6 @@ import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ILiquidationEngine} from '@interfaces/ILiquidationEngine.sol';
 import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
-import {IDisableable as ICoinSavingsAccount} from '@interfaces/utils/IDisableable.sol';
 import {IStabilityFeeTreasury} from '@interfaces/IStabilityFeeTreasury.sol';
 import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
@@ -27,7 +26,6 @@ abstract contract Base is HaiTest {
   ILiquidationEngine mockLiquidationEngine = ILiquidationEngine(mockContract('LiquidationEngine'));
   IAccountingEngine mockAccountingEngine = IAccountingEngine(mockContract('AccountingEngine'));
   IOracleRelayer mockOracleRelayer = IOracleRelayer(mockContract('OracleRelayer'));
-  ICoinSavingsAccount mockCoinSavingsAccount = ICoinSavingsAccount(mockContract('CoinSavingsAccount'));
   IStabilityFeeTreasury mockStabilityFeeTreasury = IStabilityFeeTreasury(mockContract('StabilityFeeTreasury'));
   ICollateralAuctionHouse mockCollateralAuctionHouse = ICollateralAuctionHouse(mockContract('CollateralAuctionHouse'));
   IBaseOracle mockOracle = IBaseOracle(mockContract('Oracle'));
@@ -228,12 +226,6 @@ abstract contract Base is HaiTest {
     );
   }
 
-  function _mockCoinSavingsAccount(address _coinSavingsAccount) internal {
-    stdstore.target(address(globalSettlement)).sig(IGlobalSettlement.coinSavingsAccount.selector).checked_write(
-      _coinSavingsAccount
-    );
-  }
-
   function _mockStabilityFeeTreasury(address _stabilityFeeTreasury) internal {
     stdstore.target(address(globalSettlement)).sig(IGlobalSettlement.stabilityFeeTreasury.selector).checked_write(
       _stabilityFeeTreasury
@@ -285,7 +277,6 @@ contract Unit_GlobalSettlement_ShutdownSystem is Base {
     _mockLiquidationEngine(address(mockLiquidationEngine));
     _mockAccountingEngine(address(mockAccountingEngine));
     _mockOracleRelayer(address(mockOracleRelayer));
-    _mockCoinSavingsAccount(address(mockCoinSavingsAccount));
     _mockStabilityFeeTreasury(address(mockStabilityFeeTreasury));
   }
 
@@ -352,20 +343,6 @@ contract Unit_GlobalSettlement_ShutdownSystem is Base {
 
   function test_Call_OracleRelayer_DisableContract() public happyPath {
     vm.expectCall(address(mockOracleRelayer), abi.encodeCall(mockOracleRelayer.disableContract, ()));
-
-    globalSettlement.shutdownSystem();
-  }
-
-  function test_Call_CoinSavingsAccount_DisableContract() public happyPath {
-    vm.expectCall(address(mockCoinSavingsAccount), abi.encodeCall(mockCoinSavingsAccount.disableContract, ()));
-
-    globalSettlement.shutdownSystem();
-  }
-
-  function testFail_Call_CoinSavingsAccount_DisableContract() public happyPath {
-    _mockCoinSavingsAccount(address(0));
-
-    vm.expectCall(address(mockCoinSavingsAccount), abi.encodeCall(mockCoinSavingsAccount.disableContract, ()));
 
     globalSettlement.shutdownSystem();
   }
@@ -1256,12 +1233,6 @@ contract Unit_GlobalSettlement_ModifyParameters is Base {
     globalSettlement.modifyParameters('oracleRelayer', abi.encode(_oracleRelayer));
 
     assertEq(address(globalSettlement.oracleRelayer()), _oracleRelayer);
-  }
-
-  function test_Set_CoinSavingsAccount(address _coinSavingsAccount) public happyPath {
-    globalSettlement.modifyParameters('coinSavingsAccount', abi.encode(_coinSavingsAccount));
-
-    assertEq(address(globalSettlement.coinSavingsAccount()), _coinSavingsAccount);
   }
 
   function test_Set_StabilityFeeTreasury(address _stabilityFeeTreasury) public happyPath {

@@ -25,7 +25,6 @@ import {
   ILiquidationEngine,
   IAccountingEngine,
   IOracleRelayer,
-  ICoinSavingsAccount,
   IStabilityFeeTreasury,
   ICollateralAuctionHouse,
   IBaseOracle,
@@ -137,7 +136,6 @@ contract GlobalSettlement is Authorizable, Disableable, IGlobalSettlement {
   ILiquidationEngine public liquidationEngine;
   IAccountingEngine public accountingEngine;
   IOracleRelayer public oracleRelayer;
-  ICoinSavingsAccount public coinSavingsAccount;
   IStabilityFeeTreasury public stabilityFeeTreasury;
 
   // --- Init ---
@@ -162,7 +160,6 @@ contract GlobalSettlement is Authorizable, Disableable, IGlobalSettlement {
     if (address(stabilityFeeTreasury) != address(0)) stabilityFeeTreasury.disableContract();
     accountingEngine.disableContract();
     oracleRelayer.disableContract();
-    if (address(coinSavingsAccount) != address(0)) coinSavingsAccount.disableContract();
     emit ShutdownSystem();
   }
 
@@ -321,7 +318,6 @@ contract GlobalSettlement is Authorizable, Disableable, IGlobalSettlement {
     else if (_param == 'liquidationEngine') liquidationEngine = ILiquidationEngine(_address);
     else if (_param == 'accountingEngine') accountingEngine = IAccountingEngine(_address);
     else if (_param == 'oracleRelayer') oracleRelayer = IOracleRelayer(_address);
-    else if (_param == 'coinSavingsAccount') coinSavingsAccount = ICoinSavingsAccount(_address);
     else if (_param == 'stabilityFeeTreasury') stabilityFeeTreasury = IStabilityFeeTreasury(_address);
     else if (_param == 'shutdownCooldown') shutdownCooldown = _data.toUint256();
     else revert UnrecognizedParam();
