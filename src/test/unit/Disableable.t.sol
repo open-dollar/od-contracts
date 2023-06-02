@@ -32,12 +32,14 @@ contract Unit_Disableable_DisableContract is Base {
   event DisableContract();
 
   function test_Set_ContractEnabled() public {
+    vm.prank(deployer);
     disableable.disableContract();
 
     assertEq(disableable.contractEnabled(), 0);
   }
 
   function test_Emit_DisableContract() public {
+    vm.prank(deployer);
     expectEmitNoIndex();
     emit DisableContract();
 
@@ -47,6 +49,7 @@ contract Unit_Disableable_DisableContract is Base {
 
 contract Unit_Disableable_WhenEnabled is Base {
   function test_Revert_ContractIsDisabled() public {
+    vm.prank(deployer);
     _mockContractEnabled(0);
 
     vm.expectRevert(IDisableable.ContractIsDisabled.selector);
@@ -55,6 +58,7 @@ contract Unit_Disableable_WhenEnabled is Base {
   }
 
   function testFail_WhenEnabled() public {
+    vm.prank(deployer);
     vm.expectRevert(IDisableable.ContractIsDisabled.selector);
 
     disableable.whenEnabledModifier();
@@ -63,6 +67,7 @@ contract Unit_Disableable_WhenEnabled is Base {
 
 contract Unit_Disableable_WhenDisabled is Base {
   modifier happyPath() {
+    vm.prank(deployer);
     _mockContractEnabled(0);
     _;
   }

@@ -96,13 +96,6 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
     emit DisconnectSAFESaviour(_saviour);
   }
 
-  /**
-   * @notice Disable this contract (normally called by GlobalSettlement)
-   */
-  function disableContract() external isAuthorized whenEnabled {
-    _disableContract();
-  }
-
   // --- SAFE Liquidation ---
   /**
    * @notice Choose a saviour contract for your SAFE

@@ -130,13 +130,6 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
     emit InitializeCollateralType(_cType);
   }
 
-  /**
-   * @notice Disable this contract (normally called by GlobalSettlement)
-   */
-  function disableContract() external isAuthorized {
-    _disableContract();
-  }
-
   // --- Fungibility ---
   /**
    * @notice Join/exit collateral into and and out of the system

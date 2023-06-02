@@ -210,24 +210,24 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
     emit TransferExtraSurplus(extraSurplusReceiver, lastSurplusTime, _newCoinBalance);
   }
 
+  // --- Shutdown ---
+  
   /**
    * @notice Disable this contract (normally called by Global Settlement)
    * @dev When it's being disabled, the contract will record the current timestamp. Afterwards,
    *      the contract tries to settle as much debt as possible (if there's any) with any surplus that's
    *      left in the AccountingEngine
-   *
    */
-  function disableContract() external isAuthorized whenEnabled {
+  function _onContractDisable() internal override {
     totalQueuedDebt = 0;
     totalOnAuctionDebt = 0;
-
     disableTimestamp = block.timestamp;
-    _disableContract();
 
     surplusAuctionHouse.disableContract();
     debtAuctionHouse.disableContract();
 
-    safeEngine.settleDebt(Math.min(safeEngine.coinBalance(address(this)), safeEngine.debtBalance(address(this))));
+    uint256 _debtToSettle = Math.min(safeEngine.coinBalance(address(this)), safeEngine.debtBalance(address(this)));
+    safeEngine.settleDebt(_debtToSettle);
   }
 
   /**

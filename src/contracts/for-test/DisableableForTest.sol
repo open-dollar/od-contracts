@@ -2,13 +2,10 @@
 pragma solidity 0.8.19;
 
 import {Disableable, IDisableable} from '@contracts/utils/Disableable.sol';
+import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
 contract DisableableForTest is Disableable {
-  constructor() Disableable() {}
-
-  function disableContract() external {
-    _disableContract();
-  }
+  constructor() Disableable() Authorizable(msg.sender) {}
 
   function whenEnabledModifier() external whenEnabled {}
 

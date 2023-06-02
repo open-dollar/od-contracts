@@ -5,7 +5,7 @@ import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
-interface ISAFEEngine is IDisableable, IAuthorizable, IModifiable {
+interface ISAFEEngine is IAuthorizable, IModifiable, IDisableable {
   // --- Events ---
   event ApproveSAFEModification(address _sender, address _account);
   event DenySAFEModification(address _sender, address _account);

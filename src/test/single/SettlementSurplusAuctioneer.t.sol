@@ -41,6 +41,8 @@ contract SingleSettlementSurplusAuctioneerTest is DSTest {
     accountingEngine = new AccountingEngine(address(safeEngine), address(disableable1), address(disableable2));
     protocolToken = new DSDelegateToken('', '');
 
+    disableable1.addAuthorization(address(accountingEngine));
+    disableable2.addAuthorization(address(accountingEngine));
     accountingEngine.modifyParameters('surplusAmount', abi.encode(100 ether * 10 ** 9));
     accountingEngine.modifyParameters('surplusDelay', abi.encode(3600));
 

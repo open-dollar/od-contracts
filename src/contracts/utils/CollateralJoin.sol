@@ -60,14 +60,6 @@ contract CollateralJoin is Authorizable, Disableable, ICollateralJoin {
     multiplier = 18 - decimals;
   }
 
-  // --- Shutdown ---
-  /**
-   * @notice Disable this contract
-   */
-  function disableContract() external isAuthorized whenEnabled {
-    _disableContract();
-  }
-
   // --- Methods ---
   /**
    * @dev This function locks collateral in the adapter and creates a representation of

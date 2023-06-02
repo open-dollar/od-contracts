@@ -77,13 +77,15 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
     systemCoin.approve(address(coinJoin), type(uint256).max);
   }
 
+  // --- Shutdown ---
+
   /**
    * @notice Disable this contract (normally called by GlobalSettlement)
    */
-  function disableContract() external isAuthorized whenEnabled {
-    _disableContract();
+  function _onContractDisable() internal override {
     _joinAllCoins();
-    safeEngine.transferInternalCoins(address(this), extraSurplusReceiver, safeEngine.coinBalance(address(this)));
+    uint256 _coinBalance = safeEngine.coinBalance(address(this));
+    safeEngine.transferInternalCoins(address(this), extraSurplusReceiver, _coinBalance);
   }
 
   /**

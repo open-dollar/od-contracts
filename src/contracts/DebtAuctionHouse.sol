@@ -73,11 +73,11 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
   }
 
   // --- Shutdown ---
+  
   /**
    * @notice Disable the auction house (usually called by the AccountingEngine)
    */
-  function disableContract() external isAuthorized {
-    _disableContract();
+  function _onContractDisable() internal override {
     accountingEngine = msg.sender;
     delete activeDebtAuctions;
   }

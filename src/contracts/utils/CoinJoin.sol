@@ -53,14 +53,6 @@ contract CoinJoin is Authorizable, Disableable, ICoinJoin {
     decimals = 18;
   }
 
-  // --- Shutdown ---
-  /**
-   * @notice Disable this contract
-   */
-  function disableContract() external isAuthorized whenEnabled {
-    _disableContract();
-  }
-
   /**
    * @notice Join system coins in the system
    * @dev Exited coins have 18 decimals but inside the system they have 45 (rad) decimals.

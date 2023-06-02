@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-interface IDisableable {
+import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
+
+interface IDisableable is IAuthorizable {
   // --- Events ---
   event DisableContract();
 

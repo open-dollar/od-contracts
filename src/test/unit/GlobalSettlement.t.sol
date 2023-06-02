@@ -255,6 +255,7 @@ contract Unit_GlobalSettlement_Constructor is Base {
 
 contract Unit_GlobalSettlement_DisableContract is Base {
   function test_Revert_NonDisableable() public {
+    vm.startPrank(deployer);
     vm.expectRevert(IDisableable.NonDisableable.selector);
 
     globalSettlement.disableContract();
@@ -300,13 +301,6 @@ contract Unit_GlobalSettlement_ShutdownSystem is Base {
     globalSettlement.shutdownSystem();
 
     assertEq(globalSettlement.shutdownTime(), block.timestamp);
-  }
-
-  function test_Emit_DisableContract() public happyPath {
-    expectEmitNoIndex();
-    emit DisableContract();
-
-    globalSettlement.shutdownSystem();
   }
 
   function test_Call_SafeEngine_DisableContract() public happyPath {

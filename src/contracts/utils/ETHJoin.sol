@@ -55,14 +55,6 @@ contract ETHJoin is Authorizable, Disableable, IETHJoin {
     decimals = 18;
   }
 
-  // --- Shutdown ---
-  /**
-   * @notice Disable this contract
-   */
-  function disableContract() external isAuthorized whenEnabled {
-    _disableContract();
-  }
-
   /**
    * @notice Join ETH in the system
    * @param _account Account that will receive the ETH representation inside the system

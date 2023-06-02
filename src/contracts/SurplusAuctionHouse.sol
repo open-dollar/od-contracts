@@ -73,13 +73,13 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
   }
 
   // --- Shutdown ---
+  
   /**
    * @notice Disable the auction house (usually called by AccountingEngine)
-   *
    */
-  function disableContract() external isAuthorized whenEnabled {
-    _disableContract();
-    safeEngine.transferInternalCoins(address(this), msg.sender, safeEngine.coinBalance(address(this)));
+  function _onContractDisable() internal override {
+    uint256 _coinBalance = safeEngine.coinBalance(address(this));
+    safeEngine.transferInternalCoins(address(this), msg.sender, _coinBalance);
   }
 
   // --- Auction ---

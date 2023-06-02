@@ -143,7 +143,9 @@ contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettl
   constructor() Authorizable(msg.sender) {}
 
   // --- Shutdown ---
-  function disableContract() external pure {
+  
+  /// @dev Avoids externally disabling this contract
+  function _onContractDisable() internal pure override {
     revert NonDisableable();
   }
 
@@ -153,7 +155,7 @@ contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettl
    */
   function shutdownSystem() external isAuthorized whenEnabled {
     shutdownTime = block.timestamp;
-    _disableContract();
+    contractEnabled = 0;
 
     safeEngine.disableContract();
     liquidationEngine.disableContract();

@@ -122,11 +122,12 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
     redemptionRate = _redemptionRate;
   }
 
+  // --- Shutdown ---
+  
   /**
    * @notice Disable this contract (normally called by GlobalSettlement)
    */
-  function disableContract() external isAuthorized whenEnabled {
-    _disableContract();
+  function _onContractDisable() internal override {
     redemptionRate = RAY;
   }
 
