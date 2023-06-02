@@ -249,9 +249,9 @@ contract IncreasingDiscountCollateralAuctionHouseForTest is
     }
   }
 
-  function mock_pushBid(Bid memory _bid) external {
+  function mock_pushBid(Auction memory _auction) external {
     uint256 _id = ++auctionsStarted;
-    _bids[_id] = _bid;
+    _auctions[_id] = _auction;
   }
 
   function call_getBoughtCollateral(

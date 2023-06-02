@@ -6,8 +6,9 @@ import {ILiquidationEngine} from '@interfaces/ILiquidationEngine.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
+import {IModifiable, GLOBAL_PARAM} from '@interfaces/utils/IModifiable.sol';
 
-interface IIncreasingDiscountCollateralAuctionHouse is ICollateralAuctionHouse {
+interface IIncreasingDiscountCollateralAuctionHouse is ICollateralAuctionHouse, IModifiable {
   // --- Events ---
   event StartAuction(
     uint256 _id,
@@ -18,18 +19,40 @@ interface IIncreasingDiscountCollateralAuctionHouse is ICollateralAuctionHouse {
     uint256 _startingDiscount,
     uint256 _maxDiscount,
     uint256 _perSecondDiscountUpdateRate,
-    uint48 _discountIncreaseDeadline,
     address indexed _forgoneCollateralReceiver,
     address indexed _auctionIncomeRecipient
   );
-  event ModifyParameters(bytes32 _parameter, uint256 _data);
-  event ModifyParameters(bytes32 _parameter, address _data);
   event BuyCollateral(uint256 indexed _id, uint256 _wad, uint256 _boughtCollateral);
   event SettleAuction(uint256 indexed _id, uint256 _leftoverCollateral);
   event TerminateAuctionPrematurely(uint256 indexed _id, address _sender, uint256 _collateralAmount);
 
   // --- Data ---
-  struct Bid {
+  struct CollateralAuctionHouseParams {
+    // Minimum acceptable bid
+    uint256 minimumBid; // [wad]
+    // Minimum discount (compared to the system coin's current redemption price) at which collateral is being sold
+    uint256 minDiscount;
+    // Maximum discount (compared to the system coin's current redemption price) at which collateral is being sold
+    uint256 maxDiscount;
+    // Rate at which the discount will be updated in an auction
+    uint256 perSecondDiscountUpdateRate;
+    // Max lower bound deviation that the collateral market can have compared to the FSM price
+    uint256 lowerCollateralDeviation;
+    // Max upper bound deviation that the collateral market can have compared to the FSM price
+    uint256 upperCollateralDeviation;
+  }
+
+  // NOTE: to be moved to CollateralAuctionHouseFactory
+  struct CollateralAuctionHouseSystemCoinParams {
+    // Min deviation for the system coin market result compared to the redemption price in order to take the market into account
+    uint256 minSystemCoinDeviation;
+    // Max lower bound deviation that the system coin oracle price feed can have compared to the systemCoinOracle price
+    uint256 lowerSystemCoinDeviation;
+    // Max upper bound deviation that the system coin oracle price feed can have compared to the systemCoinOracle price
+    uint256 upperSystemCoinDeviation;
+  }
+
+  struct Auction {
     // How much collateral is sold in an auction
     uint256 amountToSell; // [wad]
     // Total/max amount of coins to raise
@@ -42,13 +65,15 @@ interface IIncreasingDiscountCollateralAuctionHouse is ICollateralAuctionHouse {
     uint256 perSecondDiscountUpdateRate; // [ray]
     // Last time when the current discount was updated
     uint256 latestDiscountUpdateTime; // [unix timestamp]
-    // Deadline after which the discount cannot increase anymore
-    uint48 discountIncreaseDeadline; // [unix epoch time]
     // Who (which SAFE) receives leftover collateral that is not sold in the auction; usually the liquidated SAFE
     address forgoneCollateralReceiver;
     // Who receives the coins raised by the auction; usually the accounting engine
     address auctionIncomeRecipient;
   }
+
+  function auctions(uint256 _auctionId) external view returns (Auction memory _auction);
+  function cParams() external view returns (CollateralAuctionHouseParams memory _cParams);
+  function params() external view returns (CollateralAuctionHouseSystemCoinParams memory _params);
 
   function getApproximateCollateralBought(
     uint256 _id,
@@ -66,8 +91,6 @@ interface IIncreasingDiscountCollateralAuctionHouse is ICollateralAuctionHouse {
   function liquidationEngine() external view returns (ILiquidationEngine _liquidationEngine);
 
   function collateralType() external view returns (bytes32 _collateralType);
-
-  function bids(uint256 _id) external view returns (Bid memory _bid);
 
   function getDiscountedCollateralPrice(
     uint256 _collateralFsmPriceFeedValue,
@@ -113,27 +136,7 @@ interface IIncreasingDiscountCollateralAuctionHouse is ICollateralAuctionHouse {
 
   function collateralFSM() external view returns (IDelayedOracle _collateralFSM);
 
-  function minSystemCoinMarketDeviation() external view returns (uint256 _minSystemCoinMarketDeviation); // [wad]
-
-  function upperSystemCoinMarketDeviation() external view returns (uint256 _upperSystemCoinMarketDeviation); // [wad]
-
-  function lowerSystemCoinMarketDeviation() external view returns (uint256 _lowerSystemCoinMarketDeviation); // [wad]
-
-  function upperCollateralMarketDeviation() external view returns (uint256 _upperCollateralMarketDeviation); // [wad]
-
-  function lowerCollateralMarketDeviation() external view returns (uint256 _lowerCollateralMarketDeviation); // [wad]
-
-  function minimumBid() external view returns (uint256 _minimumBid); // [wad]
-
-  function minDiscount() external view returns (uint256 _minDiscount); // [wad]
-
-  function maxDiscount() external view returns (uint256 _maxDiscount); // [wad]
-
-  function perSecondDiscountUpdateRate() external view returns (uint256 _perSecondDiscountUpdateRate); // [ray]
-
   function auctionsStarted() external view returns (uint256 _auctionsStarted);
-
-  function maxDiscountUpdateRateTimeline() external view returns (uint256 _maxDiscountUpdateRateTimeline); // [seconds]
 
   function lastReadRedemptionPrice() external view returns (uint256 _lastReadRedemptionPrice);
 }

@@ -211,8 +211,8 @@ abstract contract Deploy is Script, Contracts {
     liquidationEngine.addAuthorization(address(collateralAuctionHouse[_params.name]));
 
     // setup registry
-    collateralAuctionHouse[_params.name].modifyParameters('oracleRelayer', address(oracleRelayer));
-    collateralAuctionHouse[_params.name].modifyParameters('collateralFSM', address(_params.oracle));
+    collateralAuctionHouse[_params.name].modifyParameters('oracleRelayer', abi.encode(oracleRelayer));
+    collateralAuctionHouse[_params.name].modifyParameters('collateralFSM', abi.encode(_params.oracle));
     liquidationEngine.modifyParameters(
       _params.name, 'collateralAuctionHouse', abi.encode(collateralAuctionHouse[_params.name])
     );

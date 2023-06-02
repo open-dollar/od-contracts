@@ -186,8 +186,8 @@ contract SingleGlobalSettlementTest is DSTest {
     safeEngine.approveSAFEModification(address(_collateralAuctionHouse));
     _collateralAuctionHouse.addAuthorization(address(globalSettlement));
     _collateralAuctionHouse.addAuthorization(address(liquidationEngine));
-    _collateralAuctionHouse.modifyParameters('oracleRelayer', address(oracleRelayer));
-    _collateralAuctionHouse.modifyParameters('collateralFSM', address(oracleFSM));
+    _collateralAuctionHouse.modifyParameters('oracleRelayer', abi.encode(oracleRelayer));
+    _collateralAuctionHouse.modifyParameters('collateralFSM', abi.encode(oracleFSM));
     oracleFSM.updateCollateralPrice(bytes32(200 * WAD));
 
     // Start with English auction house

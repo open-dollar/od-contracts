@@ -93,7 +93,7 @@ contract SingleDebtAuctionHouseTest is DSTest {
     bob = address(new Guy(debtAuctionHouse));
     accountingEngine = new DummyAccountingEngine();
 
-    debtAuctionHouse.modifyParameters('accountingEngine', abi.encode(address(accountingEngine)));
+    debtAuctionHouse.modifyParameters('accountingEngine', abi.encode(accountingEngine));
     debtAuctionHouse.addAuthorization(address(accountingEngine));
     debtAuctionHouse.removeAuthorization(address(this));
 

@@ -89,7 +89,7 @@ contract E2ETest is Common {
     _setCollateralPrice(ETH_A, TEST_ETH_PRICE_DROP);
     liquidationEngine.liquidateSAFE(ETH_A, address(this));
 
-    uint256 _discount = collateralAuctionHouse[ETH_A].minDiscount();
+    uint256 _discount = collateralAuctionHouse[ETH_A].cParams().minDiscount;
     uint256 _amountToBid = Math.wmul(Math.wmul(COLLAT, _discount), TEST_ETH_PRICE_DROP);
     // NOTE: getExpectedCollateralBought doesn't have a previous reference (lastReadRedemptionPrice)
     (uint256 _expectedCollateral,) = collateralAuctionHouse[ETH_A].getCollateralBought(1, _amountToBid);
@@ -98,8 +98,8 @@ contract E2ETest is Common {
     safeEngine.approveSAFEModification(address(collateralAuctionHouse[ETH_A]));
     collateralAuctionHouse[ETH_A].buyCollateral(1, _amountToBid);
 
-    // NOTE: bids(1) is deleted
-    uint256 _amountToSell = collateralAuctionHouse[ETH_A].bids(1).amountToSell;
+    // NOTE: auctions(1) is deleted
+    uint256 _amountToSell = collateralAuctionHouse[ETH_A].auctions(1).amountToSell;
     assertEq(_amountToSell, 0);
   }
 
@@ -109,7 +109,7 @@ contract E2ETest is Common {
     _setCollateralPrice(ETH_A, TEST_ETH_PRICE_DROP);
     liquidationEngine.liquidateSAFE(ETH_A, address(this));
 
-    uint256 _discount = collateralAuctionHouse[ETH_A].minDiscount();
+    uint256 _discount = collateralAuctionHouse[ETH_A].cParams().minDiscount;
     uint256 _amountToBid = Math.wmul(Math.wmul(COLLAT, _discount), TEST_ETH_PRICE_DROP) / 2;
     // NOTE: getExpectedCollateralBought doesn't have a previous reference (lastReadRedemptionPrice)
     (uint256 _expectedCollateral,) = collateralAuctionHouse[ETH_A].getCollateralBought(1, _amountToBid);
@@ -118,8 +118,8 @@ contract E2ETest is Common {
     safeEngine.approveSAFEModification(address(collateralAuctionHouse[ETH_A]));
     collateralAuctionHouse[ETH_A].buyCollateral(1, _amountToBid);
 
-    // NOTE: bids(1) is NOT deleted
-    uint256 _amountToSell = collateralAuctionHouse[ETH_A].bids(1).amountToSell;
+    // NOTE: auctions(1) is NOT deleted
+    uint256 _amountToSell = collateralAuctionHouse[ETH_A].auctions(1).amountToSell;
     assertGt(_amountToSell, 0);
   }
 

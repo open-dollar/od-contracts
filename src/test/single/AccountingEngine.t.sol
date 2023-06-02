@@ -206,7 +206,7 @@ contract SingleAccountingEngineTest is DSTest {
   }
 
   function test_transfer_surplus_when_not_permitted() public {
-    accountingEngine.modifyParameters('extraSurplusReceiver', abi.encode(address(1)));
+    accountingEngine.modifyParameters('extraSurplusReceiver', abi.encode(1));
     accountingEngine.modifyParameters('surplusAmount', abi.encode(uint256(100 ether)));
     safeEngine.createUnbackedDebt(address(0), address(accountingEngine), rad(100 ether));
     assertTrue(!can_TransferSurplus());
@@ -221,14 +221,14 @@ contract SingleAccountingEngineTest is DSTest {
 
   function test_transfer_surplus_when_amount_not_defined() public {
     accountingEngine.modifyParameters('surplusIsTransferred', abi.encode(1));
-    accountingEngine.modifyParameters('extraSurplusReceiver', abi.encode(address(1)));
+    accountingEngine.modifyParameters('extraSurplusReceiver', abi.encode(1));
     safeEngine.createUnbackedDebt(address(0), address(accountingEngine), rad(100 ether));
     assertTrue(!can_auctionSurplus());
   }
 
   function test_surplus_transfer() public {
     accountingEngine.modifyParameters('surplusIsTransferred', abi.encode(1));
-    accountingEngine.modifyParameters('extraSurplusReceiver', abi.encode(address(1)));
+    accountingEngine.modifyParameters('extraSurplusReceiver', abi.encode(1));
     accountingEngine.modifyParameters('surplusAmount', abi.encode(100 ether));
     safeEngine.createUnbackedDebt(address(0), address(accountingEngine), rad(100 ether));
     assertTrue(!can_auctionSurplus());
@@ -237,7 +237,7 @@ contract SingleAccountingEngineTest is DSTest {
 
   function test_surplus_transfer_twice_in_a_row() public {
     accountingEngine.modifyParameters('surplusIsTransferred', abi.encode(1));
-    accountingEngine.modifyParameters('extraSurplusReceiver', abi.encode(address(1)));
+    accountingEngine.modifyParameters('extraSurplusReceiver', abi.encode(1));
     accountingEngine.modifyParameters('surplusAmount', abi.encode(100 ether));
     safeEngine.createUnbackedDebt(address(0), address(accountingEngine), rad(200 ether));
     accountingEngine.transferExtraSurplus();
@@ -249,7 +249,7 @@ contract SingleAccountingEngineTest is DSTest {
 
   function test_surplus_transfer_after_waiting() public {
     accountingEngine.modifyParameters('surplusIsTransferred', abi.encode(1));
-    accountingEngine.modifyParameters('extraSurplusReceiver', abi.encode(address(1)));
+    accountingEngine.modifyParameters('extraSurplusReceiver', abi.encode(1));
     accountingEngine.modifyParameters('surplusAmount', abi.encode(100 ether));
     accountingEngine.modifyParameters('surplusDelay', abi.encode(1));
     safeEngine.createUnbackedDebt(address(0), address(accountingEngine), rad(200 ether));
@@ -312,7 +312,7 @@ contract SingleAccountingEngineTest is DSTest {
 
   function test_no_transfer_surplus_pending_debt() public {
     accountingEngine.modifyParameters('surplusIsTransferred', abi.encode(1));
-    accountingEngine.modifyParameters('extraSurplusReceiver', abi.encode(address(1)));
+    accountingEngine.modifyParameters('extraSurplusReceiver', abi.encode(1));
     accountingEngine.modifyParameters('surplusAmount', abi.encode(0 ether));
 
     _popDebtFromQueue(100 ether);
@@ -329,7 +329,7 @@ contract SingleAccountingEngineTest is DSTest {
 
   function test_no_transfer_surplus_nonzero_bad_debt() public {
     accountingEngine.modifyParameters('surplusIsTransferred', abi.encode(1));
-    accountingEngine.modifyParameters('extraSurplusReceiver', abi.encode(address(1)));
+    accountingEngine.modifyParameters('extraSurplusReceiver', abi.encode(1));
     accountingEngine.modifyParameters('surplusAmount', abi.encode(0));
 
     _popDebtFromQueue(100 ether);
@@ -348,7 +348,7 @@ contract SingleAccountingEngineTest is DSTest {
 
   function test_no_transfer_surplus_pending_debt_auction() public {
     accountingEngine.modifyParameters('surplusIsTransferred', abi.encode(1));
-    accountingEngine.modifyParameters('extraSurplusReceiver', abi.encode(address(1)));
+    accountingEngine.modifyParameters('extraSurplusReceiver', abi.encode(1));
 
     _popDebtFromQueue(100 ether);
     accountingEngine.debtAuctionHouse();
@@ -370,7 +370,7 @@ contract SingleAccountingEngineTest is DSTest {
 
   function test_no_transfer_surplus_pending_settleDebt() public {
     accountingEngine.modifyParameters('surplusIsTransferred', abi.encode(1));
-    accountingEngine.modifyParameters('extraSurplusReceiver', abi.encode(address(1)));
+    accountingEngine.modifyParameters('extraSurplusReceiver', abi.encode(1));
 
     _popDebtFromQueue(100 ether);
     uint256 id = accountingEngine.auctionDebt();
@@ -393,7 +393,7 @@ contract SingleAccountingEngineTest is DSTest {
 
   function test_no_transfer_surplus_after_good_debt_auction() public {
     accountingEngine.modifyParameters('surplusIsTransferred', abi.encode(1));
-    accountingEngine.modifyParameters('extraSurplusReceiver', abi.encode(address(1)));
+    accountingEngine.modifyParameters('extraSurplusReceiver', abi.encode(1));
 
     _popDebtFromQueue(100 ether);
     uint256 id = accountingEngine.auctionDebt();
