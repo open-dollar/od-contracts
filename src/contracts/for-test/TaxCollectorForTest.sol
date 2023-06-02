@@ -14,6 +14,10 @@ contract TaxCollectorForTest is TaxCollector {
     _distributeTax(_cType, _receiver, _debtAmount, _deltaRate);
   }
 
+  function setPrimaryTaxReceiver(address _receiver) external {
+    _params.primaryTaxReceiver = _receiver;
+  }
+
   function addSecondaryTaxReceiver(
     bytes32 _cType,
     address _receiver,
@@ -21,6 +25,7 @@ contract TaxCollectorForTest is TaxCollector {
     uint128 _taxPercentage
   ) external {
     _secondaryTaxReceivers[_cType][_receiver] = ITaxCollector.TaxReceiver(_receiver, _canTakeBackTax, _taxPercentage);
+    _secondaryReceiverRevenueSources[_receiver].add(_cType);
   }
 
   function addToCollateralList(bytes32 _cType) external {

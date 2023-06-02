@@ -17,12 +17,27 @@ interface ITaxCollector is IAuthorizable, IModifiablePerCollateral {
   event CollectTax(bytes32 indexed _cType, uint256 _latestAccumulatedRate, int256 _deltaRate);
   event DistributeTax(bytes32 indexed _cType, address indexed _target, int256 _taxCut);
 
+  // --- Errors ---
+  error CollateralTypeAlreadyInitialized();
+
   // --- Data ---
-  struct CollateralType {
-    // Per second borrow rate for this specific collateral type
+  struct TaxCollectorParams {
+    address primaryTaxReceiver;
+    uint256 globalStabilityFee;
+    uint256 maxSecondaryReceivers;
+  }
+
+  struct TaxCollectorCollateralParams {
     uint256 stabilityFee;
-    // When SF was last collected for this collateral type
+  }
+
+  struct TaxCollectorCollateralData {
+    // Per second borrow rate for this specific collateral type to be applied at the next taxation
+    uint256 nextStabilityFee;
+    // When Stability Fee was last collected for this collateral type
     uint256 updateTime;
+    // Percentage of each collateral's SF that goes to other addresses apart from the primary receiver
+    uint256 secondaryReceiverAllotedTax; // [%ray]
   }
 
   // SF receiver
@@ -34,15 +49,14 @@ interface ITaxCollector is IAuthorizable, IModifiablePerCollateral {
     uint128 taxPercentage; // [ray%]
   }
 
-  function collateralTypes(bytes32 _cType) external view returns (uint256 _stabilityFee, uint256 _updateTime);
-  function secondaryReceiverAllotedTax(bytes32 _cType) external view returns (uint256 _secondaryReceiverAllotedTax);
+  function params() external view returns (TaxCollectorParams memory);
+  function cParams(bytes32 _cType) external view returns (TaxCollectorCollateralParams memory);
+  function cData(bytes32 _cType) external view returns (TaxCollectorCollateralData memory);
+
   function secondaryTaxReceiver(
     bytes32 _cType,
     address _receiver
   ) external view returns (TaxReceiver memory _secondaryTaxReceiver);
-  function primaryTaxReceiver() external view returns (address _primaryTaxReceiver);
-  function globalStabilityFee() external view returns (uint256 _globalStabilityFee);
-  function maxSecondaryReceivers() external view returns (uint256 _maxSecondaryReceivers);
   function WHOLE_TAX_CUT() external view returns (uint256 _WHOLE_TAX_CUT);
   function safeEngine() external view returns (ISAFEEngine _safeEngine);
 
@@ -60,7 +74,7 @@ interface ITaxCollector is IAuthorizable, IModifiablePerCollateral {
   function isSecondaryReceiver(address _receiver) external view returns (bool _isSecondaryReceiver);
 
   // --- Views ---
-  function collateralListList() external view returns (bytes32[] memory _collateralListList);
+  function collateralList() external view returns (bytes32[] memory _collateralList);
   function secondaryReceiversList() external view returns (address[] memory _secondaryReceiversList);
   function secondaryReceiverRevenueSourcesList(address _secondaryReceiver)
     external

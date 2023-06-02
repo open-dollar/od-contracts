@@ -222,6 +222,8 @@ abstract contract Deploy is Script, Contracts {
     // setup params
     safeEngine.modifyParameters(_params.name, 'debtCeiling', abi.encode(_params.debtCeiling));
     taxCollector.modifyParameters(_params.name, 'stabilityFee', abi.encode(_params.stabilityFee));
+    taxCollector.taxSingle(_params.name);
+
     taxCollector.modifyParameters(
       _params.name,
       'secondaryTaxReceiver',
