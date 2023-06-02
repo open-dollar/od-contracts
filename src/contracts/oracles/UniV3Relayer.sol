@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {IUniV3Relayer, IBaseOracle} from '@interfaces/oracles/IUniV3Relayer.sol';
+import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
+import {IUniV3Relayer} from '@interfaces/oracles/IUniV3Relayer.sol';
 import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
-import {OracleLibrary, IUniswapV3Pool} from '@uniswap/v3-periphery/contracts/libraries/OracleLibrary.sol';
 import {IUniswapV3Factory} from '@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol';
+import {OracleLibrary, IUniswapV3Pool} from '@uniswap/v3-periphery/contracts/libraries/OracleLibrary.sol';
 
 /**
  * @title  UniV3Relayer

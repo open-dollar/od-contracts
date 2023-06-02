@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {IJob, IStabilityFeeTreasury} from '@interfaces/jobs/IJob.sol';
+import {IJob} from '@interfaces/jobs/IJob.sol';
+import {IStabilityFeeTreasury} from '@interfaces/IStabilityFeeTreasury.sol';
 
 abstract contract Job is IJob {
   // --- Data ---

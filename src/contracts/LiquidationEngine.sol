@@ -18,20 +18,22 @@
 
 pragma solidity 0.8.19;
 
-import {ICollateralAuctionHouse as CollateralAuctionHouseLike} from '@interfaces/ICollateralAuctionHouse.sol';
-import {ISAFESaviour as SAFESaviourLike} from '@interfaces/external/ISAFESaviour.sol';
-import {ISAFEEngine as SAFEEngineLike} from '@interfaces/ISAFEEngine.sol';
-import {IAccountingEngine as AccountingEngineLike} from '@interfaces/IAccountingEngine.sol';
-import {ILiquidationEngine, GLOBAL_PARAM} from '@interfaces/ILiquidationEngine.sol';
+import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
+import {ISAFESaviour} from '@interfaces/external/ISAFESaviour.sol';
+import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
+import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
+import {ILiquidationEngine} from '@interfaces/ILiquidationEngine.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
+import {Modifiable} from '@contracts/utils/Modifiable.sol';
 import {Disableable} from '@contracts/utils/Disableable.sol';
-import {Math, RAY, WAD, MAX_RAD} from '@libraries/Math.sol';
+
+import {ReentrancyGuard} from '@openzeppelin/security/ReentrancyGuard.sol';
 import {Encoding} from '@libraries/Encoding.sol';
 import {Assertions} from '@libraries/Assertions.sol';
-import {ReentrancyGuard} from '@openzeppelin/security/ReentrancyGuard.sol';
+import {Math, RAY, WAD, MAX_RAD} from '@libraries/Math.sol';
 
-contract LiquidationEngine is Authorizable, Disableable, ReentrancyGuard, ILiquidationEngine {
+contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyGuard, ILiquidationEngine {
   using Encoding for bytes;
   using Assertions for uint256;
 
@@ -46,8 +48,8 @@ contract LiquidationEngine is Authorizable, Disableable, ReentrancyGuard, ILiqui
   uint256 public currentOnAuctionSystemCoins; // [rad]
 
   // --- Registry ---
-  SAFEEngineLike public safeEngine;
-  AccountingEngineLike public accountingEngine;
+  ISAFEEngine public safeEngine;
+  IAccountingEngine public accountingEngine;
 
   // --- Params ---
   LiquidationEngineParams internal _params;
@@ -63,10 +65,10 @@ contract LiquidationEngine is Authorizable, Disableable, ReentrancyGuard, ILiqui
 
   // --- Init ---
   constructor(address _safeEngine) Authorizable(msg.sender) {
-    safeEngine = SAFEEngineLike(_safeEngine);
+    safeEngine = ISAFEEngine(_safeEngine);
 
     _params.onAuctionSystemCoinLimit = type(uint256).max;
-    emit ModifyParameters('onAuctionSystemCoinLimit', GLOBAL_PARAM, abi.encode(type(uint256).max));
+    emit ModifyParameters('onAuctionSystemCoinLimit', _GLOBAL_PARAM, abi.encode(type(uint256).max));
   }
 
   /**
@@ -75,7 +77,7 @@ contract LiquidationEngine is Authorizable, Disableable, ReentrancyGuard, ILiqui
    */
   function connectSAFESaviour(address _saviour) external isAuthorized {
     (bool _ok, uint256 _collateralAdded, uint256 _liquidatorReward) =
-      SAFESaviourLike(_saviour).saveSAFE(address(this), '', address(0));
+      ISAFESaviour(_saviour).saveSAFE(address(this), '', address(0));
     require(_ok, 'LiquidationEngine/saviour-not-ok');
     require(
       (_collateralAdded == type(uint256).max) && (_liquidatorReward == type(uint256).max),
@@ -122,8 +124,8 @@ contract LiquidationEngine is Authorizable, Disableable, ReentrancyGuard, ILiqui
    */
   function liquidateSAFE(bytes32 _cType, address _safe) external whenEnabled nonReentrant returns (uint256 _auctionId) {
     uint256 _debtFloor = safeEngine.cParams(_cType).debtFloor;
-    SAFEEngineLike.SAFEEngineCollateralData memory _safeEngCData = safeEngine.cData(_cType);
-    SAFEEngineLike.SAFE memory _safeData = safeEngine.safes(_cType, _safe);
+    ISAFEEngine.SAFEEngineCollateralData memory _safeEngCData = safeEngine.cData(_cType);
+    ISAFEEngine.SAFE memory _safeData = safeEngine.safes(_cType, _safe);
 
     require(
       (_safeEngCData.liquidationPrice > 0)
@@ -140,7 +142,7 @@ contract LiquidationEngine is Authorizable, Disableable, ReentrancyGuard, ILiqui
     );
 
     if (chosenSAFESaviour[_cType][_safe] != address(0) && safeSaviours[chosenSAFESaviour[_cType][_safe]] == 1) {
-      try SAFESaviourLike(chosenSAFESaviour[_cType][_safe]).saveSAFE(msg.sender, _cType, _safe) returns (
+      try ISAFESaviour(chosenSAFESaviour[_cType][_safe]).saveSAFE(msg.sender, _cType, _safe) returns (
         bool _ok, uint256 _collateralAddedOrDebtRepaid, uint256
       ) {
         if (_ok && _collateralAddedOrDebtRepaid > 0) {
@@ -153,7 +155,7 @@ contract LiquidationEngine is Authorizable, Disableable, ReentrancyGuard, ILiqui
 
     // Checks that the saviour didn't take collateral or add more debt to the SAFE
     {
-      SAFEEngineLike.SAFE memory _newSafeData = safeEngine.safes(_cType, _safe);
+      ISAFEEngine.SAFE memory _newSafeData = safeEngine.safes(_cType, _safe);
       require(
         _newSafeData.lockedCollateral >= _safeData.lockedCollateral
           && _newSafeData.generatedDebt <= _safeData.generatedDebt,
@@ -205,7 +207,7 @@ contract LiquidationEngine is Authorizable, Disableable, ReentrancyGuard, ILiqui
         uint256 _amountToRaise = _limitAdjustedDebt * _safeEngCData.accumulatedRate * __cParams.liquidationPenalty / WAD;
         currentOnAuctionSystemCoins += _amountToRaise;
 
-        _auctionId = CollateralAuctionHouseLike(__cParams.collateralAuctionHouse).startAuction({
+        _auctionId = ICollateralAuctionHouse(__cParams.collateralAuctionHouse).startAuction({
           _forgoneCollateralReceiver: _safe,
           _initialBidder: address(accountingEngine),
           _amountToRaise: _amountToRaise,
@@ -259,34 +261,20 @@ contract LiquidationEngine is Authorizable, Disableable, ReentrancyGuard, ILiqui
   }
 
   // --- Administration ---
-  /**
-   * @notice Modify parameters
-   * @param  _param The name of the parameter modified
-   * @param  _data Value for the new parameter
-   */
-  function modifyParameters(bytes32 _param, bytes memory _data) external isAuthorized {
-    if (_param == 'onAuctionSystemCoinLimit') _params.onAuctionSystemCoinLimit = _data.toUint256();
-    else if (_param == 'accountingEngine') accountingEngine = abi.decode(_data, (AccountingEngineLike));
-    else revert UnrecognizedParam();
 
-    emit ModifyParameters(_param, GLOBAL_PARAM, _data);
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
+    if (_param == 'onAuctionSystemCoinLimit') _params.onAuctionSystemCoinLimit = _data.toUint256();
+    else if (_param == 'accountingEngine') accountingEngine = abi.decode(_data, (IAccountingEngine));
+    else revert UnrecognizedParam();
   }
 
-  /**
-   * @notice Modify liquidation params
-   * @param  _cType The collateral type we change parameters for
-   * @param  _param The name of the parameter modified
-   * @param  _data New value for the parameter
-   */
-  function modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) external isAuthorized {
+  function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override {
     uint256 _uint256 = _data.toUint256();
 
     if (_param == 'liquidationPenalty') _cParams[_cType].liquidationPenalty = _uint256;
     else if (_param == 'liquidationQuantity') _cParams[_cType].liquidationQuantity = _uint256.assertLtEq(MAX_RAD);
     else if (_param == 'collateralAuctionHouse') _setCollateralAuctionHouse(_cType, _data.toAddress());
     else revert UnrecognizedParam();
-
-    emit ModifyParameters(_param, _cType, _data);
   }
 
   function _setCollateralAuctionHouse(bytes32 _cType, address _newCollateralAuctionHouse) internal {

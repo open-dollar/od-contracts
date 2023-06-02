@@ -5,7 +5,7 @@ import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IToken} from '@interfaces/external/IToken.sol';
 
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
-import {IModifiable, GLOBAL_PARAM} from '@interfaces/utils/IModifiable.sol';
+import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
 interface IPostSettlementSurplusAuctionHouse is IAuthorizable, IModifiable {
   // --- Events ---

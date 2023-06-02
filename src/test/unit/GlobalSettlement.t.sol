@@ -11,7 +11,7 @@ import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
-import {IModifiable, GLOBAL_PARAM} from '@interfaces/utils/IModifiable.sol';
+import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {Math, RAY, WAD} from '@libraries/Math.sol';
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 
@@ -1257,7 +1257,7 @@ contract Unit_GlobalSettlement_ModifyParameters is Base {
 
   function test_Emit_ModifyParameters(uint256 _shutdownCooldown) public happyPath {
     expectEmitNoIndex();
-    emit ModifyParameters('shutdownCooldown', GLOBAL_PARAM, abi.encode(_shutdownCooldown));
+    emit ModifyParameters('shutdownCooldown', bytes32(0), abi.encode(_shutdownCooldown));
 
     globalSettlement.modifyParameters('shutdownCooldown', abi.encode(_shutdownCooldown));
   }

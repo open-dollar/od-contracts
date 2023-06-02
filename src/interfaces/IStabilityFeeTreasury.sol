@@ -6,7 +6,7 @@ import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ICoinJoin} from '@interfaces/utils/ICoinJoin.sol';
 import {ISystemCoin} from '@interfaces/external/ISystemCoin.sol';
-import {IModifiable, GLOBAL_PARAM} from '@interfaces/utils/IModifiable.sol';
+import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
 interface IStabilityFeeTreasury is IAuthorizable, IDisableable, IModifiable {
   struct StabilityFeeTreasuryParams {

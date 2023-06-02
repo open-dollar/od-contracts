@@ -7,7 +7,7 @@ import {StdStorage, stdStorage} from 'forge-std/StdStorage.sol';
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
-import {IModifiablePerCollateral} from '@interfaces/utils/IModifiablePerCollateral.sol';
+import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 
 import {HaiTest} from '@test/utils/HaiTest.t.sol';

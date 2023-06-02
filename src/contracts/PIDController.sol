@@ -1,17 +1,20 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
+import {IPIDController} from '@interfaces/IPIDController.sol';
+
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
-import {IPIDController, GLOBAL_PARAM} from '@interfaces/IPIDController.sol';
-import {Math, WAD, RAY} from '@libraries/Math.sol';
+import {Modifiable} from '@contracts/utils/Modifiable.sol';
+
 import {Encoding} from '@libraries/Encoding.sol';
 import {Assertions} from '@libraries/Assertions.sol';
+import {Math, WAD, RAY} from '@libraries/Math.sol';
 
 /**
  * @title PIDController
  * @notice Redemption Rate Feedback Mechanism (RRFM) controller that implements a PI controller
  */
-contract PIDController is Authorizable, IPIDController {
+contract PIDController is Authorizable, Modifiable, IPIDController {
   using Math for uint256;
   using Math for int256;
   using Encoding for bytes;
@@ -250,7 +253,8 @@ contract PIDController is Authorizable, IPIDController {
   }
 
   // --- Administration ---
-  function modifyParameters(bytes32 _param, bytes memory _data) external isAuthorized {
+  
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     uint256 _uint256 = _data.toUint256();
     int256 _int256 = _data.toInt256();
 
@@ -279,7 +283,5 @@ contract PIDController is Authorizable, IPIDController {
     } else {
       revert UnrecognizedParam();
     }
-
-    emit ModifyParameters(_param, GLOBAL_PARAM, _data);
   }
 }

@@ -16,24 +16,25 @@
 
 pragma solidity 0.8.19;
 
-import {ISAFEEngine as SAFEEngineLike} from '@interfaces/ISAFEEngine.sol';
-import {IBaseOracle as OracleLike} from '@interfaces/oracles/IBaseOracle.sol';
-import {IOracleRelayer, GLOBAL_PARAM} from '@interfaces/IOracleRelayer.sol';
+import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
+import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
+import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
+import {Modifiable} from '@contracts/utils/Modifiable.sol';
 import {Disableable} from '@contracts/utils/Disableable.sol';
 
-import {Math, RAY, WAD} from '@libraries/Math.sol';
 import {Encoding} from '@libraries/Encoding.sol';
 import {Assertions} from '@libraries/Assertions.sol';
+import {Math, RAY, WAD} from '@libraries/Math.sol';
 
-contract OracleRelayer is Authorizable, Disableable, IOracleRelayer {
+contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer {
   using Encoding for bytes;
   using Math for uint256;
   using Assertions for uint256;
 
   // --- Registry ---
-  SAFEEngineLike public safeEngine;
+  ISAFEEngine public safeEngine;
 
   // --- Params ---
   OracleRelayerParams internal _params;
@@ -56,7 +57,7 @@ contract OracleRelayer is Authorizable, Disableable, IOracleRelayer {
 
   // --- Init ---
   constructor(address _safeEngine) Authorizable(msg.sender) {
-    safeEngine = SAFEEngineLike(_safeEngine);
+    safeEngine = ISAFEEngine(_safeEngine);
     _redemptionPrice = RAY;
     redemptionRate = RAY;
     redemptionPriceUpdateTime = block.timestamp;
@@ -131,7 +132,7 @@ contract OracleRelayer is Authorizable, Disableable, IOracleRelayer {
 
   // --- Administration ---
 
-  function modifyParameters(bytes32 _param, bytes memory _data) external isAuthorized whenEnabled {
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled {
     uint256 _uint256 = _data.toUint256();
 
     require(_uint256 > 0, 'OracleRelayer/null-data');
@@ -140,19 +141,15 @@ contract OracleRelayer is Authorizable, Disableable, IOracleRelayer {
     else if (_param == 'redemptionRateUpperBound') _params.redemptionRateUpperBound = _uint256.assertGt(RAY);
     else if (_param == 'redemptionRateLowerBound') _params.redemptionRateLowerBound = _uint256.assertLt(RAY);
     else revert UnrecognizedParam();
-
-    emit ModifyParameters(_param, GLOBAL_PARAM, _data);
   }
 
-  function modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) external isAuthorized whenEnabled {
+  function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override whenEnabled {
     uint256 _uint256 = _data.toUint256();
     OracleRelayerCollateralParams storage __cParams = _cParams[_cType];
 
     if (_param == 'safetyCRatio') __cParams.safetyCRatio = _uint256.assertGtEq(__cParams.liquidationCRatio);
     else if (_param == 'liquidationCRatio') __cParams.liquidationCRatio = _uint256.assertLtEq(__cParams.safetyCRatio);
-    else if (_param == 'oracle') __cParams.oracle = abi.decode(_data, (OracleLike));
+    else if (_param == 'oracle') __cParams.oracle = abi.decode(_data, (IBaseOracle));
     else revert UnrecognizedParam();
-
-    emit ModifyParameters(_param, _cType, _data);
   }
 }

@@ -1,17 +1,18 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {
-  IAccountingJob, IAccountingEngine, IStabilityFeeTreasury, GLOBAL_PARAM
-} from '@interfaces/jobs/IAccountingJob.sol';
+import {IAccountingJob} from '@interfaces/jobs/IAccountingJob.sol';
+import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
+import {IStabilityFeeTreasury} from '@interfaces/IStabilityFeeTreasury.sol';
 
 import {Job} from '@contracts/jobs/Job.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
+import {Modifiable} from '@contracts/utils/Modifiable.sol';
 
 import {Encoding} from '@libraries/Encoding.sol';
 
-contract AccountingJob is Job, Authorizable, IAccountingJob {
+contract AccountingJob is Job, Authorizable, Modifiable, IAccountingJob {
   using Encoding for bytes;
 
   // --- Data ---
@@ -58,8 +59,9 @@ contract AccountingJob is Job, Authorizable, IAccountingJob {
     accountingEngine.transferExtraSurplus();
   }
 
-  // --- Admin ---
-  function modifyParameters(bytes32 _param, bytes memory _data) external isAuthorized {
+  // --- Administration ---
+  
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     address _address = _data.toAddress();
     bool _bool = _data.toBool();
 
@@ -71,7 +73,5 @@ contract AccountingJob is Job, Authorizable, IAccountingJob {
     else if (_param == 'shouldWorkTransferExtraSurplus') shouldWorkTransferExtraSurplus = _bool;
     else if (_param == 'rewardAmount') rewardAmount = _data.toUint256();
     else revert UnrecognizedParam();
-
-    emit ModifyParameters(_param, GLOBAL_PARAM, _data);
   }
 }

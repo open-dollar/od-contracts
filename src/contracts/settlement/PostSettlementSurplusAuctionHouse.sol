@@ -21,16 +21,18 @@ pragma solidity 0.8.19;
 import {
   IPostSettlementSurplusAuctionHouse,
   ISAFEEngine,
-  IToken,
-  GLOBAL_PARAM
+  IToken
 } from '@interfaces/settlement/IPostSettlementSurplusAuctionHouse.sol';
+import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
+import {IToken} from '@interfaces/external/IToken.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
+import {Modifiable} from '@contracts/utils/Modifiable.sol';
 
-import {WAD} from '@libraries/Math.sol';
 import {Encoding} from '@libraries/Encoding.sol';
+import {WAD} from '@libraries/Math.sol';
 
-contract PostSettlementSurplusAuctionHouse is Authorizable, IPostSettlementSurplusAuctionHouse {
+contract PostSettlementSurplusAuctionHouse is Authorizable, Modifiable, IPostSettlementSurplusAuctionHouse {
   using Encoding for bytes;
 
   bytes32 public constant AUCTION_HOUSE_TYPE = bytes32('SURPLUS');
@@ -135,20 +137,14 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, IPostSettlementSurpl
     emit SettleAuction(_id);
   }
 
-  // --- Admin ---
-  /**
-   * @notice Modify uint256 parameters
-   * @param _param The name of the parameter modified
-   * @param _data New value for the parameter
-   */
-  function modifyParameters(bytes32 _param, bytes memory _data) external isAuthorized {
+  // --- Administration ---
+  
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     uint256 _uint256 = _data.toUint256();
 
     if (_param == 'bidIncrease') _params.bidIncrease = _uint256;
     else if (_param == 'bidDuration') _params.bidDuration = uint48(_uint256);
     else if (_param == 'totalAuctionLength') _params.totalAuctionLength = uint48(_uint256);
     else revert UnrecognizedParam();
-
-    emit ModifyParameters(_param, GLOBAL_PARAM, _data);
   }
 }

@@ -5,7 +5,7 @@ import {IPIDController} from '@interfaces/IPIDController.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
-import {IModifiable, GLOBAL_PARAM} from '@interfaces/utils/IModifiable.sol';
+import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
 interface IPIDRateSetter is IAuthorizable, IModifiable {
   // --- Errors ---

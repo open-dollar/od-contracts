@@ -18,17 +18,20 @@
 
 pragma solidity 0.8.19;
 
-import {ISurplusAuctionHouse, ISAFEEngine, IToken, GLOBAL_PARAM} from '@interfaces/ISurplusAuctionHouse.sol';
+import {ISurplusAuctionHouse} from '@interfaces/ISurplusAuctionHouse.sol';
+import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
+import {IToken} from '@interfaces/external/IToken.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
+import {Modifiable} from '@contracts/utils/Modifiable.sol';
 import {Disableable} from '@contracts/utils/Disableable.sol';
 
-import {WAD, HUNDRED} from '@libraries/Math.sol';
 import {Encoding} from '@libraries/Encoding.sol';
 import {Assertions} from '@libraries/Assertions.sol';
+import {WAD, HUNDRED} from '@libraries/Math.sol';
 
 // This thing lets you auction surplus for protocol tokens. 50% of the protocol tokens are sent to another address and the rest are burned
-contract SurplusAuctionHouse is Authorizable, Disableable, ISurplusAuctionHouse {
+contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusAuctionHouse {
   using Encoding for bytes;
   using Assertions for address;
 
@@ -177,13 +180,9 @@ contract SurplusAuctionHouse is Authorizable, Disableable, ISurplusAuctionHouse 
     delete bids[_id];
   }
 
-  // --- Admin ---
-  /**
-   * @notice Modify parameters
-   * @param _param The name of the parameter modified
-   * @param _data New value for the parameter
-   */
-  function modifyParameters(bytes32 _param, bytes memory _data) external isAuthorized {
+  // --- Administration ---
+  
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     uint256 _uint256 = _data.toUint256();
 
     if (_param == 'protocolTokenBidReceiver') protocolTokenBidReceiver = _data.toAddress().assertNonNull();
@@ -192,7 +191,5 @@ contract SurplusAuctionHouse is Authorizable, Disableable, ISurplusAuctionHouse 
     else if (_param == 'totalAuctionLength') _params.totalAuctionLength = uint48(_uint256);
     else if (_param == 'recyclingPercentage') _params.recyclingPercentage = _uint256;
     else revert UnrecognizedParam();
-
-    emit ModifyParameters(_param, GLOBAL_PARAM, _data);
   }
 }

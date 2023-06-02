@@ -7,7 +7,7 @@ import {IToken} from '@interfaces/external/IToken.sol';
 import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
-import {IModifiable, GLOBAL_PARAM} from '@interfaces/utils/IModifiable.sol';
+import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {Math, WAD} from '@libraries/Math.sol';
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 
@@ -968,7 +968,7 @@ contract Unit_DebtAuctionHouse_ModifyParameters is Base {
 
   function test_Emit_ModifyParameters(address _accountingEngine) public happyPath {
     expectEmitNoIndex();
-    emit ModifyParameters('accountingEngine', GLOBAL_PARAM, abi.encode(_accountingEngine));
+    emit ModifyParameters('accountingEngine', bytes32(0), abi.encode(_accountingEngine));
 
     debtAuctionHouse.modifyParameters('accountingEngine', abi.encode(_accountingEngine));
   }

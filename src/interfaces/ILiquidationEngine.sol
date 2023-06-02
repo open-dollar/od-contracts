@@ -5,9 +5,9 @@ import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
-import {IModifiablePerCollateral, GLOBAL_PARAM} from '@interfaces/utils/IModifiablePerCollateral.sol';
+import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
-interface ILiquidationEngine is IAuthorizable, IDisableable, IModifiablePerCollateral {
+interface ILiquidationEngine is IAuthorizable, IDisableable, IModifiable {
   // --- Events ---
   event ConnectSAFESaviour(address _saviour);
   event DisconnectSAFESaviour(address _saviour);

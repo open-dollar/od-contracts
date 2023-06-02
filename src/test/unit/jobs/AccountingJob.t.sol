@@ -6,7 +6,7 @@ import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
 import {IStabilityFeeTreasury} from '@interfaces/IStabilityFeeTreasury.sol';
 import {IJob} from '@interfaces/jobs/IJob.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
-import {IModifiable, GLOBAL_PARAM} from '@interfaces/utils/IModifiable.sol';
+import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 
 abstract contract Base is HaiTest {
@@ -329,7 +329,7 @@ contract Unit_AccountingJob_ModifyParameters is Base {
 
   function test_Emit_ModifyParameters(uint256 _rewardAmount) public happyPath {
     expectEmitNoIndex();
-    emit ModifyParameters('rewardAmount', GLOBAL_PARAM, abi.encode(_rewardAmount));
+    emit ModifyParameters('rewardAmount', bytes32(0), abi.encode(_rewardAmount));
 
     accountingJob.modifyParameters('rewardAmount', abi.encode(_rewardAmount));
   }

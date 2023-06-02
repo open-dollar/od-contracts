@@ -6,7 +6,7 @@ import {ISurplusAuctionHouse} from '@interfaces/ISurplusAuctionHouse.sol';
 import {IDebtAuctionHouse} from '@interfaces/IDebtAuctionHouse.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
-import {IModifiable, GLOBAL_PARAM} from '@interfaces/utils/IModifiable.sol';
+import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
 interface IAccountingEngine is IAuthorizable, IDisableable, IModifiable {
   // --- Errors ---

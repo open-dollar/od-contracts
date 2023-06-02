@@ -4,9 +4,9 @@ pragma solidity 0.8.19;
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
-import {IModifiablePerCollateral, GLOBAL_PARAM} from '@interfaces/utils/IModifiablePerCollateral.sol';
+import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
-interface ITaxCollector is IAuthorizable, IModifiablePerCollateral {
+interface ITaxCollector is IAuthorizable, IModifiable {
   // --- Events ---
   event InitializeCollateralType(bytes32 _cType);
   event SetPrimaryReceiver(bytes32 indexed _cType, address indexed _receiver);
@@ -60,7 +60,7 @@ interface ITaxCollector is IAuthorizable, IModifiablePerCollateral {
   function WHOLE_TAX_CUT() external view returns (uint256 _WHOLE_TAX_CUT);
   function safeEngine() external view returns (ISAFEEngine _safeEngine);
 
-  // --- Admin ---
+  // --- Administration ---
   function initializeCollateralType(bytes32 _cType) external;
 
   // --- Tax Collection Utils ---

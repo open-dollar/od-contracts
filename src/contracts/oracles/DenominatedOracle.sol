@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {IDenominatedOracle, IBaseOracle} from '@interfaces/oracles/IDenominatedOracle.sol';
+import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
+import {IDenominatedOracle} from '@interfaces/oracles/IDenominatedOracle.sol';
+
 import {Math, WAD} from '@libraries/Math.sol';
 
 /**

@@ -1,22 +1,20 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {
-  IOracleJob,
-  IOracleRelayer,
-  IDelayedOracle,
-  IPIDRateSetter,
-  IStabilityFeeTreasury,
-  GLOBAL_PARAM
-} from '@interfaces/jobs/IOracleJob.sol';
+import {IOracleJob} from '@interfaces/jobs/IOracleJob.sol';
+import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
+import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
+import {IPIDRateSetter} from '@interfaces/IPIDRateSetter.sol';
+import {IStabilityFeeTreasury} from '@interfaces/IStabilityFeeTreasury.sol';
 
 import {Job} from '@contracts/jobs/Job.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
+import {Modifiable} from '@contracts/utils/Modifiable.sol';
 
 import {Encoding} from '@libraries/Encoding.sol';
 
-contract OracleJob is Job, Authorizable, IOracleJob {
+contract OracleJob is Job, Authorizable, Modifiable, IOracleJob {
   using Encoding for bytes;
 
   // --- Data ---
@@ -56,8 +54,9 @@ contract OracleJob is Job, Authorizable, IOracleJob {
     pidRateSetter.updateRate();
   }
 
-  // --- Admin ---
-  function modifyParameters(bytes32 _param, bytes memory _data) external isAuthorized {
+  // --- Administration ---
+  
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     address _address = _data.toAddress();
     bool _bool = _data.toBool();
 
@@ -68,7 +67,5 @@ contract OracleJob is Job, Authorizable, IOracleJob {
     else if (_param == 'shouldWorkUpdateRate') shouldWorkUpdateRate = _bool;
     else if (_param == 'rewardAmount') rewardAmount = _data.toUint256();
     else revert UnrecognizedParam();
-
-    emit ModifyParameters(_param, GLOBAL_PARAM, _data);
   }
 }

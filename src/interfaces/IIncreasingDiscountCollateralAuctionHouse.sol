@@ -6,7 +6,8 @@ import {ILiquidationEngine} from '@interfaces/ILiquidationEngine.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
-import {IModifiable, GLOBAL_PARAM} from '@interfaces/utils/IModifiable.sol';
+import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
+import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
 interface IIncreasingDiscountCollateralAuctionHouse is ICollateralAuctionHouse, IModifiable {
   // --- Events ---

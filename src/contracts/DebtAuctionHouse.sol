@@ -18,18 +18,20 @@
 
 pragma solidity 0.8.19;
 
-import {
-  IDebtAuctionHouse, ISAFEEngine, IToken, IAccountingEngine, GLOBAL_PARAM
-} from '@interfaces/IDebtAuctionHouse.sol';
+import {IDebtAuctionHouse} from '@interfaces/IDebtAuctionHouse.sol';
+import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
+import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
+import {IToken} from '@interfaces/external/IToken.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
+import {Modifiable} from '@contracts/utils/Modifiable.sol';
 import {Disableable} from '@contracts/utils/Disableable.sol';
 
 import {Math, WAD} from '@libraries/Math.sol';
 import {Encoding} from '@libraries/Encoding.sol';
 
 // This thing creates protocol tokens on demand in return for system coins
-contract DebtAuctionHouse is Authorizable, Disableable, IDebtAuctionHouse {
+contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuctionHouse {
   using Encoding for bytes;
 
   bytes32 public constant AUCTION_HOUSE_TYPE = bytes32('DEBT');
@@ -175,13 +177,9 @@ contract DebtAuctionHouse is Authorizable, Disableable, IDebtAuctionHouse {
     delete bids[_id];
   }
 
-  // --- Admin ---
-  /**
-   * @notice Modify parameters
-   * @param _param The name of the parameter modified
-   * @param _data New value for the parameter
-   */
-  function modifyParameters(bytes32 _param, bytes memory _data) external isAuthorized whenEnabled {
+  // --- Administration ---
+  
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled {
     address _address = _data.toAddress();
     uint256 _uint256 = _data.toUint256();
 
@@ -192,7 +190,5 @@ contract DebtAuctionHouse is Authorizable, Disableable, IDebtAuctionHouse {
     else if (_param == 'bidDuration') _params.bidDuration = uint48(_uint256);
     else if (_param == 'totalAuctionLength') _params.totalAuctionLength = uint48(_uint256);
     else revert UnrecognizedParam();
-
-    emit ModifyParameters(_param, GLOBAL_PARAM, _data);
   }
 }

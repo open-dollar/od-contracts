@@ -18,14 +18,16 @@
 
 pragma solidity 0.8.19;
 
-import {ISAFEEngine, GLOBAL_PARAM} from '@interfaces/ISAFEEngine.sol';
-import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
-import {Math, RAY} from '@libraries/Math.sol';
-import {Encoding} from '@libraries/Encoding.sol';
-import {Authorizable} from '@contracts/utils/Authorizable.sol';
+import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
+
+import {Authorizable, IAuthorizable} from '@contracts/utils/Authorizable.sol';
+import {Modifiable} from '@contracts/utils/Modifiable.sol';
 import {Disableable} from '@contracts/utils/Disableable.sol';
 
-contract SAFEEngine is Authorizable, Disableable, ISAFEEngine {
+import {Encoding} from '@libraries/Encoding.sol';
+import {Math, RAY} from '@libraries/Math.sol';
+
+contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
   using Math for uint256;
   using Encoding for bytes;
 
@@ -119,14 +121,9 @@ contract SAFEEngine is Authorizable, Disableable, ISAFEEngine {
   // --- Init ---
   constructor() Authorizable(msg.sender) {
     _params.safeDebtCeiling = type(uint256).max;
-    emit ModifyParameters('safeDebtCeiling', GLOBAL_PARAM, abi.encode(type(uint256).max));
+    emit ModifyParameters('safeDebtCeiling', _GLOBAL_PARAM, abi.encode(type(uint256).max));
   }
 
-  // --- Administration ---
-  /**
-   * @notice Creates a brand new collateral type
-   * @param _cType Collateral type name (e.g ETH-A, TBTC-B)
-   */
   function initializeCollateralType(bytes32 _cType) external isAuthorized {
     require(_cData[_cType].accumulatedRate == 0, 'SAFEEngine/collateral-type-already-exists');
     _cData[_cType].accumulatedRate = RAY;
@@ -424,35 +421,21 @@ contract SAFEEngine is Authorizable, Disableable, ISAFEEngine {
   }
 
   // --- Administration ---
-  /**
-   * @notice Modify general params
-   * @param _param The name of the parameter modified
-   * @param _data New value for the parameter
-   */
-  function modifyParameters(bytes32 _param, bytes memory _data) external isAuthorized whenEnabled {
+  
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled {
     uint256 _uint256 = _data.toUint256();
 
     if (_param == 'globalDebtCeiling') _params.globalDebtCeiling = _uint256;
     else if (_param == 'safeDebtCeiling') _params.safeDebtCeiling = _uint256;
     else revert UnrecognizedParam();
-
-    emit ModifyParameters(_param, GLOBAL_PARAM, _data);
   }
 
-  /**
-   * @notice Modify collateral specific params
-   * @param _cType Collateral type we modify params for
-   * @param _param The name of the parameter modified
-   * @param _data New value for the parameter
-   */
-  function modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) public isAuthorized whenEnabled {
+  function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override whenEnabled {
     uint256 _uint256 = _data.toUint256();
 
     if (_param == 'debtCeiling') _cParams[_cType].debtCeiling = _uint256;
     else if (_param == 'debtFloor') _cParams[_cType].debtFloor = _uint256;
     else revert UnrecognizedParam();
-
-    emit ModifyParameters(_param, _cType, _data);
   }
 
   // --- Modifiers ---

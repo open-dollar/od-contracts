@@ -23,21 +23,23 @@ import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
 import {ILiquidationEngine} from '@interfaces/ILiquidationEngine.sol';
-import {
-  IIncreasingDiscountCollateralAuctionHouse,
-  GLOBAL_PARAM
-} from '@interfaces/IIncreasingDiscountCollateralAuctionHouse.sol';
+import {IIncreasingDiscountCollateralAuctionHouse} from '@interfaces/IIncreasingDiscountCollateralAuctionHouse.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
+import {Modifiable} from '@contracts/utils/Modifiable.sol';
+
 import {Assertions} from '@libraries/Assertions.sol';
 import {Encoding} from '@libraries/Encoding.sol';
-
 import {Math, RAY, WAD} from '@libraries/Math.sol';
 
 /*
    This thing lets you sell some collateral at an increasing discount in order to instantly recapitalize the system
 */
-contract IncreasingDiscountCollateralAuctionHouse is Authorizable, IIncreasingDiscountCollateralAuctionHouse {
+contract IncreasingDiscountCollateralAuctionHouse is
+  Authorizable,
+  Modifiable,
+  IIncreasingDiscountCollateralAuctionHouse
+{
   using Math for uint256;
   using Encoding for bytes;
   using Assertions for uint256;
@@ -680,8 +682,9 @@ contract IncreasingDiscountCollateralAuctionHouse is Authorizable, IIncreasingDi
     return _auctions[_id].amountToRaise;
   }
 
-  // --- Admin ---
-  function modifyParameters(bytes32 _param, bytes memory _data) external isAuthorized {
+  // --- Administration ---
+  
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     uint256 _uint256 = _data.toUint256();
     address _address = _data.toAddress();
 
@@ -702,8 +705,6 @@ contract IncreasingDiscountCollateralAuctionHouse is Authorizable, IIncreasingDi
     else if (_param == 'upperSystemCoinDeviation') _params.upperSystemCoinDeviation = _uint256.assertLtEq(WAD);
     else if (_param == 'minSystemCoinDeviation') _params.minSystemCoinDeviation = _uint256;
     else revert UnrecognizedParam();
-
-    emit ModifyParameters(_param, GLOBAL_PARAM, _data);
   }
 
   function _validateCollateralFSM(address _delayedOracle) internal view returns (IDelayedOracle _collateralFSM) {

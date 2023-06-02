@@ -14,15 +14,17 @@
 
 pragma solidity 0.8.19;
 
-import {ITaxCollector, ISAFEEngine, GLOBAL_PARAM} from '@interfaces/ITaxCollector.sol';
+import {ITaxCollector} from '@interfaces/ITaxCollector.sol';
+import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
+import {Modifiable} from '@contracts/utils/Modifiable.sol';
 
-import {Math, RAY} from '@libraries/Math.sol';
 import {Encoding} from '@libraries/Encoding.sol';
+import {Math, RAY} from '@libraries/Math.sol';
 import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
 
-contract TaxCollector is Authorizable, ITaxCollector {
+contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
   using Math for uint256;
   using Encoding for bytes;
   using EnumerableSet for EnumerableSet.AddressSet;
@@ -285,41 +287,31 @@ contract TaxCollector is Authorizable, ITaxCollector {
     }
   }
 
-  // --- Admin ---
-  /**
-   * @notice Modify general parameters
-   * @param _param The name of the parameter modified
-   * @param _data New value for the parameter
-   */
-  function modifyParameters(bytes32 _param, bytes memory _data) external isAuthorized {
+  // --- Administration ---
+  
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     uint256 _uint256 = _data.toUint256();
 
     if (_param == 'primaryTaxReceiver') _setPrimaryTaxReceiver(_data.toAddress());
     else if (_param == 'globalStabilityFee') _params.globalStabilityFee = _uint256;
     else if (_param == 'maxSecondaryReceivers') _params.maxSecondaryReceivers = _uint256;
     else revert UnrecognizedParam();
-
-    emit ModifyParameters(_param, GLOBAL_PARAM, _data);
   }
 
-  function _setPrimaryTaxReceiver(address _primaryTaxReceiver) internal {
-    require(_primaryTaxReceiver != address(0), 'TaxCollector/null-data');
-    _params.primaryTaxReceiver = _primaryTaxReceiver;
-    emit SetPrimaryReceiver(GLOBAL_PARAM, _primaryTaxReceiver);
-  }
-
-  /**
-   * @notice Modify collateral specific params
-   * @param _cType Collateral type we modify params for
-   * @param _param The name of the parameter modified
-   * @param _data New value for the parameter
-   */
-  function modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) external isAuthorized {
+  function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override {
     if (_param == 'stabilityFee') _cParams[_cType].stabilityFee = _data.toUint256();
     else if (_param == 'secondaryTaxReceiver') _setSecondaryTaxReceiver(_cType, abi.decode(_data, (TaxReceiver)));
     else revert UnrecognizedParam();
+  }
 
-    emit ModifyParameters(_param, _cType, _data);
+  /**
+   * @notice Sets the primary tax receiver, the address that receives the unallocated SF from all collateral types
+   * @param _primaryTaxReceiver Address of the primary tax receiver
+   */
+  function _setPrimaryTaxReceiver(address _primaryTaxReceiver) internal {
+    require(_primaryTaxReceiver != address(0), 'TaxCollector/null-data');
+    _params.primaryTaxReceiver = _primaryTaxReceiver;
+    emit SetPrimaryReceiver(_GLOBAL_PARAM, _primaryTaxReceiver);
   }
 
   /**

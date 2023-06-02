@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
-import {IModifiable, GLOBAL_PARAM} from '@interfaces/utils/IModifiable.sol';
+import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
 interface IPIDController is IAuthorizable, IModifiable {
   // --- Errors ---

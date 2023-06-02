@@ -8,7 +8,7 @@ import {
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IToken} from '@interfaces/external/IToken.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
-import {IModifiable, GLOBAL_PARAM} from '@interfaces/utils/IModifiable.sol';
+import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {WAD} from '@libraries/Math.sol';
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 
@@ -684,7 +684,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_ModifyParameters is Base {
 
   function test_Emit_ModifyParameters(uint256 _bidIncrease) public happyPath {
     expectEmitNoIndex();
-    emit ModifyParameters('bidIncrease', GLOBAL_PARAM, abi.encode(_bidIncrease));
+    emit ModifyParameters('bidIncrease', bytes32(0), abi.encode(_bidIncrease));
 
     postSettlementSurplusAuctionHouse.modifyParameters('bidIncrease', abi.encode(_bidIncrease));
   }

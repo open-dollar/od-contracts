@@ -8,7 +8,7 @@ import {IPIDRateSetter} from '@interfaces/IPIDRateSetter.sol';
 import {IJob, IStabilityFeeTreasury} from '@interfaces/jobs/IJob.sol';
 
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
-import {IModifiable, GLOBAL_PARAM} from '@interfaces/utils/IModifiable.sol';
+import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
 interface IOracleJob is IJob, IAuthorizable, IModifiable {
   // --- Errors ---

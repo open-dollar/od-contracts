@@ -18,20 +18,18 @@
 
 pragma solidity 0.8.19;
 
-import {
-  ISettlementSurplusAuctioneer,
-  IAccountingEngine,
-  ISAFEEngine,
-  ISurplusAuctionHouse,
-  GLOBAL_PARAM
-} from '@interfaces/settlement/ISettlementSurplusAuctioneer.sol';
+import {ISettlementSurplusAuctioneer} from '@interfaces/settlement/ISettlementSurplusAuctioneer.sol';
+import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
+import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
+import {ISurplusAuctionHouse} from '@interfaces/ISurplusAuctionHouse.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
+import {Modifiable} from '@contracts/utils/Modifiable.sol';
 
 import {Math} from '@libraries/Math.sol';
 import {Encoding} from '@libraries/Encoding.sol';
 
-contract SettlementSurplusAuctioneer is Authorizable, ISettlementSurplusAuctioneer {
+contract SettlementSurplusAuctioneer is Authorizable, Modifiable, ISettlementSurplusAuctioneer {
   using Encoding for bytes;
 
   // --- Data ---
@@ -69,20 +67,14 @@ contract SettlementSurplusAuctioneer is Authorizable, ISettlementSurplusAuctione
     }
   }
 
-  // --- Admin ---
-  /**
-   * @notice Modify parameters
-   * @param _param The name of the contract whose address will be changed
-   * @param _data New address for the contract
-   */
-  function modifyParameters(bytes32 _param, bytes memory _data) external isAuthorized {
+  // --- Administration ---
+  
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     address _address = _data.toAddress();
 
     if (_param == 'accountingEngine') accountingEngine = IAccountingEngine(_address);
     else if (_param == 'surplusAuctionHouse') _setSurplusAuctionHouse(_address);
     else revert UnrecognizedParam();
-
-    emit ModifyParameters(_param, GLOBAL_PARAM, _data);
   }
 
   function _setSurplusAuctionHouse(address _address) internal {

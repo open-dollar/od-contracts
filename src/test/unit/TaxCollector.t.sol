@@ -4,7 +4,7 @@ pragma solidity 0.8.19;
 import {TaxCollectorForTest, ITaxCollector} from '@contracts/for-test/TaxCollectorForTest.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
-import {IModifiable, GLOBAL_PARAM} from '@interfaces/utils/IModifiablePerCollateral.sol';
+import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {Math, RAY} from '@libraries/Math.sol';
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 
@@ -721,7 +721,7 @@ contract Unit_TaxCollector_ModifyParameters is Base {
     vm.assume(_primaryTaxReceiver != address(0));
 
     expectEmitNoIndex();
-    emit SetPrimaryReceiver(GLOBAL_PARAM, _primaryTaxReceiver);
+    emit SetPrimaryReceiver(bytes32(0), _primaryTaxReceiver);
 
     taxCollector.modifyParameters('primaryTaxReceiver', abi.encode(_primaryTaxReceiver));
   }
@@ -758,7 +758,7 @@ contract Unit_TaxCollector_ModifyParameters is Base {
     vm.assume(_primaryTaxReceiver != address(0));
 
     expectEmitNoIndex();
-    emit ModifyParameters('primaryTaxReceiver', GLOBAL_PARAM, abi.encode(_primaryTaxReceiver));
+    emit ModifyParameters('primaryTaxReceiver', bytes32(0), abi.encode(_primaryTaxReceiver));
 
     taxCollector.modifyParameters('primaryTaxReceiver', abi.encode(_primaryTaxReceiver));
   }

@@ -9,7 +9,7 @@ import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ISurplusAuctionHouse} from '@interfaces/ISurplusAuctionHouse.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
-import {IModifiable, GLOBAL_PARAM} from '@interfaces/utils/IModifiable.sol';
+import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 
 abstract contract Base is HaiTest {
@@ -350,7 +350,7 @@ contract Unit_SettlementSurplusAuctioneer_ModifyParameters is Base {
 
   function test_Emit_ModifyParameters(address _surplusAuctionHouse) public happyPath {
     expectEmitNoIndex();
-    emit ModifyParameters('surplusAuctionHouse', GLOBAL_PARAM, abi.encode(_surplusAuctionHouse));
+    emit ModifyParameters('surplusAuctionHouse', bytes32(0), abi.encode(_surplusAuctionHouse));
 
     settlementSurplusAuctioneer.modifyParameters('surplusAuctionHouse', abi.encode(_surplusAuctionHouse));
   }

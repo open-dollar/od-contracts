@@ -19,6 +19,7 @@
 
 pragma solidity 0.8.19;
 
+// TODO: address all contracts as IDisableable unless we need the interface to interact with them
 import {
   IGlobalSettlement,
   ISAFEEngine,
@@ -27,15 +28,15 @@ import {
   IOracleRelayer,
   IStabilityFeeTreasury,
   ICollateralAuctionHouse,
-  IBaseOracle,
-  GLOBAL_PARAM
+  IBaseOracle
 } from '@interfaces/settlement/IGlobalSettlement.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
+import {Modifiable} from '@contracts/utils/Modifiable.sol';
 import {Disableable} from '@contracts/utils/Disableable.sol';
 
-import {Math, RAY} from '@libraries/Math.sol';
 import {Encoding} from '@libraries/Encoding.sol';
+import {Math, RAY} from '@libraries/Math.sol';
 
 /*
     This is the Global Settlement module. It is an
@@ -105,7 +106,7 @@ import {Encoding} from '@libraries/Encoding.sol';
         - the amount of collateral available to redeem is limited by how big your bag is
 */
 
-contract GlobalSettlement is Authorizable, Disableable, IGlobalSettlement {
+contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettlement {
   using Math for uint256;
   using Encoding for bytes;
 
@@ -305,13 +306,9 @@ contract GlobalSettlement is Authorizable, Disableable, IGlobalSettlement {
     emit RedeemCollateral(_cType, msg.sender, _coinsAmount, _collateralAmount);
   }
 
-  // --- Admin ---
-  /**
-   * @notice Modify parameters
-   * @param _param The name of the parameter modified
-   * @param _data New value for the parameter
-   */
-  function modifyParameters(bytes32 _param, bytes memory _data) external isAuthorized whenEnabled {
+  // --- Administration ---
+  
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled {
     address _address = _data.toAddress();
 
     if (_param == 'safeEngine') safeEngine = ISAFEEngine(_address);
@@ -321,7 +318,5 @@ contract GlobalSettlement is Authorizable, Disableable, IGlobalSettlement {
     else if (_param == 'stabilityFeeTreasury') stabilityFeeTreasury = IStabilityFeeTreasury(_address);
     else if (_param == 'shutdownCooldown') shutdownCooldown = _data.toUint256();
     else revert UnrecognizedParam();
-
-    emit ModifyParameters(_param, GLOBAL_PARAM, _data);
   }
 }

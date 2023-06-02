@@ -15,7 +15,7 @@ interface IAuthorizable {
   function authorizedAccounts(address _account) external view returns (uint256 _authorized);
   function authorizedAccounts() external view returns (address[] memory _accounts);
 
-  // --- Admin ---
+  // --- Administration ---
   function addAuthorization(address _account) external;
   function removeAuthorization(address _account) external;
 }

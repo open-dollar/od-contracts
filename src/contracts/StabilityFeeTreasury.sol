@@ -18,26 +18,28 @@
 
 pragma solidity 0.8.19;
 
-import {IStabilityFeeTreasury, GLOBAL_PARAM} from '@interfaces/IStabilityFeeTreasury.sol';
-import {ISAFEEngine as SAFEEngineLike} from '@interfaces/ISAFEEngine.sol';
-import {ISystemCoin as SystemCoinLike} from '@interfaces/external/ISystemCoin.sol';
-import {ICoinJoin as CoinJoinLike} from '@interfaces/utils/ICoinJoin.sol';
+import {IStabilityFeeTreasury} from '@interfaces/IStabilityFeeTreasury.sol';
+import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
+import {ISystemCoin} from '@interfaces/external/ISystemCoin.sol';
+import {ICoinJoin} from '@interfaces/utils/ICoinJoin.sol';
+
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
+import {Modifiable} from '@contracts/utils/Modifiable.sol';
 import {Disableable} from '@contracts/utils/Disableable.sol';
 
-import {Math, RAY, HOUR, HUNDRED} from '@libraries/Math.sol';
 import {Encoding} from '@libraries/Encoding.sol';
 import {Assertions} from '@libraries/Assertions.sol';
+import {Math, RAY, HOUR, HUNDRED} from '@libraries/Math.sol';
 
-contract StabilityFeeTreasury is Authorizable, Disableable, IStabilityFeeTreasury {
+contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabilityFeeTreasury {
   using Encoding for bytes;
   using Assertions for uint256;
   using Assertions for address;
 
   // --- Registry ---
-  SAFEEngineLike public safeEngine;
-  SystemCoinLike public systemCoin;
-  CoinJoinLike public coinJoin;
+  ISAFEEngine public safeEngine;
+  ISystemCoin public systemCoin;
+  ICoinJoin public coinJoin;
   address public extraSurplusReceiver;
 
   // --- Params ---
@@ -62,13 +64,13 @@ contract StabilityFeeTreasury is Authorizable, Disableable, IStabilityFeeTreasur
   }
 
   constructor(address _safeEngine, address _extraSurplusReceiver, address _coinJoin) Authorizable(msg.sender) {
-    require(address(CoinJoinLike(_coinJoin).systemCoin()) != address(0), 'StabilityFeeTreasury/null-system-coin');
+    require(address(ICoinJoin(_coinJoin).systemCoin()) != address(0), 'StabilityFeeTreasury/null-system-coin');
     require(_extraSurplusReceiver != address(0), 'StabilityFeeTreasury/null-surplus-receiver');
 
-    safeEngine = SAFEEngineLike(_safeEngine);
+    safeEngine = ISAFEEngine(_safeEngine);
     extraSurplusReceiver = _extraSurplusReceiver;
-    coinJoin = CoinJoinLike(_coinJoin);
-    systemCoin = SystemCoinLike(address(coinJoin.systemCoin()));
+    coinJoin = ICoinJoin(_coinJoin);
+    systemCoin = ISystemCoin(address(coinJoin.systemCoin()));
     latestSurplusTransferTime = block.timestamp;
     _params.expensesMultiplier = HUNDRED;
 
@@ -249,8 +251,9 @@ contract StabilityFeeTreasury is Authorizable, Disableable, IStabilityFeeTreasur
     }
   }
 
-  // --- Admin ---
-  function modifyParameters(bytes32 _param, bytes memory _data) external isAuthorized whenEnabled {
+  // --- Administration ---
+  
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled {
     uint256 _uint256 = _data.toUint256();
 
     if (_param == 'extraSurplusReceiver') extraSurplusReceiver = _data.toAddress().assertNonNull();
@@ -260,7 +263,5 @@ contract StabilityFeeTreasury is Authorizable, Disableable, IStabilityFeeTreasur
     else if (_param == 'pullFundsMinThreshold') _params.pullFundsMinThreshold = _uint256;
     else if (_param == 'surplusTransferDelay') _params.surplusTransferDelay = _uint256;
     else revert UnrecognizedParam();
-
-    emit ModifyParameters(_param, GLOBAL_PARAM, _data);
   }
 }

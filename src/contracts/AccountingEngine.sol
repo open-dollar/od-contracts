@@ -18,18 +18,19 @@
 
 pragma solidity 0.8.19;
 
-import {IAccountingEngine, GLOBAL_PARAM} from '@interfaces/IAccountingEngine.sol';
-import {IDebtAuctionHouse as DebtAuctionHouseLike} from '@interfaces/IDebtAuctionHouse.sol';
-import {ISurplusAuctionHouse as SurplusAuctionHouseLike} from '@interfaces/ISurplusAuctionHouse.sol';
-import {ISAFEEngine as SAFEEngineLike} from '@interfaces/ISAFEEngine.sol';
+import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
+import {IDebtAuctionHouse} from '@interfaces/IDebtAuctionHouse.sol';
+import {ISurplusAuctionHouse} from '@interfaces/ISurplusAuctionHouse.sol';
+import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 
 import {Authorizable, IAuthorizable} from '@contracts/utils/Authorizable.sol';
 import {Disableable} from '@contracts/utils/Disableable.sol';
+import {Modifiable} from '@contracts/utils/Modifiable.sol';
 
 import {Encoding} from '@libraries/Encoding.sol';
 import {Math} from '@libraries/Math.sol';
 
-contract AccountingEngine is Authorizable, Disableable, IAccountingEngine {
+contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingEngine {
   using Encoding for bytes;
 
   // --- Auth ---
@@ -38,9 +39,9 @@ contract AccountingEngine is Authorizable, Disableable, IAccountingEngine {
   }
 
   // --- Registry ---
-  SAFEEngineLike public safeEngine;
-  SurplusAuctionHouseLike public surplusAuctionHouse;
-  DebtAuctionHouseLike public debtAuctionHouse;
+  ISAFEEngine public safeEngine;
+  ISurplusAuctionHouse public surplusAuctionHouse;
+  IDebtAuctionHouse public debtAuctionHouse;
   address public postSettlementSurplusDrain;
   address public extraSurplusReceiver;
 
@@ -65,9 +66,9 @@ contract AccountingEngine is Authorizable, Disableable, IAccountingEngine {
 
   // --- Init ---
   constructor(address _safeEngine, address _surplusAuctionHouse, address _debtAuctionHouse) Authorizable(msg.sender) {
-    safeEngine = SAFEEngineLike(_safeEngine);
-    surplusAuctionHouse = SurplusAuctionHouseLike(_surplusAuctionHouse);
-    debtAuctionHouse = DebtAuctionHouseLike(_debtAuctionHouse);
+    safeEngine = ISAFEEngine(_safeEngine);
+    surplusAuctionHouse = ISurplusAuctionHouse(_surplusAuctionHouse);
+    debtAuctionHouse = IDebtAuctionHouse(_debtAuctionHouse);
 
     safeEngine.approveSAFEModification(_surplusAuctionHouse);
 
@@ -253,12 +254,8 @@ contract AccountingEngine is Authorizable, Disableable, IAccountingEngine {
   }
 
   // --- Administration ---
-  /**
-   * @notice Modify a parameter
-   * @param _param The name of the parameter modified
-   * @param _data New value for the parameter
-   */
-  function modifyParameters(bytes32 _param, bytes memory _data) external isAuthorized {
+
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     uint256 _uint256 = _data.toUint256();
     address _address = _data.toAddress();
 
@@ -273,17 +270,15 @@ contract AccountingEngine is Authorizable, Disableable, IAccountingEngine {
     else if (_param == 'surplusBuffer') _params.surplusBuffer = _uint256;
     // registry
     else if (_param == 'surplusAuctionHouse') _setSurplusAuctionHouse(_address);
-    else if (_param == 'debtAuctionHouse') debtAuctionHouse = DebtAuctionHouseLike(_address);
+    else if (_param == 'debtAuctionHouse') debtAuctionHouse = IDebtAuctionHouse(_address);
     else if (_param == 'postSettlementSurplusDrain') postSettlementSurplusDrain = _address;
     else if (_param == 'extraSurplusReceiver') extraSurplusReceiver = _address;
     else revert UnrecognizedParam();
-
-    emit ModifyParameters(_param, GLOBAL_PARAM, _data);
   }
 
   function _setSurplusAuctionHouse(address _surplusAuctionHouse) internal {
     safeEngine.denySAFEModification(address(surplusAuctionHouse));
-    surplusAuctionHouse = SurplusAuctionHouseLike(_surplusAuctionHouse);
+    surplusAuctionHouse = ISurplusAuctionHouse(_surplusAuctionHouse);
     safeEngine.approveSAFEModification(_surplusAuctionHouse);
   }
 }

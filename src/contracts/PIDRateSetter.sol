@@ -16,16 +16,18 @@
 
 pragma solidity 0.8.19;
 
-import {IPIDRateSetter, GLOBAL_PARAM} from '@interfaces/IPIDRateSetter.sol';
+import {IPIDRateSetter} from '@interfaces/IPIDRateSetter.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
-import {IOracleRelayer as OracleRelayerLike} from '@interfaces/IOracleRelayer.sol';
-import {IPIDController as PIDCalculator} from '@interfaces/IPIDController.sol';
+import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
+import {IPIDController} from '@interfaces/IPIDController.sol';
+
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
+import {Modifiable} from '@contracts/utils/Modifiable.sol';
 
 import {Encoding} from '@libraries/Encoding.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 
-contract PIDRateSetter is Authorizable, IPIDRateSetter {
+contract PIDRateSetter is Authorizable, Modifiable, IPIDRateSetter {
   using Encoding for bytes;
   using Assertions for uint256;
   using Assertions for address;
@@ -34,9 +36,9 @@ contract PIDRateSetter is Authorizable, IPIDRateSetter {
   /// @inheritdoc IPIDRateSetter
   IBaseOracle public oracle;
   /// @inheritdoc IPIDRateSetter
-  OracleRelayerLike public oracleRelayer;
+  IOracleRelayer public oracleRelayer;
   /// @inheritdoc IPIDRateSetter
-  PIDCalculator public pidCalculator;
+  IPIDController public pidCalculator;
 
   // --- Params ---
   PIDRateSetterParams internal _params;
@@ -57,9 +59,9 @@ contract PIDRateSetter is Authorizable, IPIDRateSetter {
     address _pidCalculator,
     uint256 _updateRateDelay
   ) Authorizable(msg.sender) {
-    oracleRelayer = OracleRelayerLike(_oracleRelayer.assertNonNull());
+    oracleRelayer = IOracleRelayer(_oracleRelayer.assertNonNull());
     oracle = IBaseOracle(_oracle.assertNonNull());
-    pidCalculator = PIDCalculator(_pidCalculator.assertNonNull());
+    pidCalculator = IPIDController(_pidCalculator.assertNonNull());
     _params.updateRateDelay = _updateRateDelay.assertGt(0);
   }
 
@@ -97,17 +99,16 @@ contract PIDRateSetter is Authorizable, IPIDRateSetter {
     _redemptionPrice = oracleRelayer.redemptionPrice();
   }
 
-  // --- Admin ---
-  function modifyParameters(bytes32 _param, bytes memory _data) external isAuthorized {
+  // --- Administration ---
+  
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     address _address = _data.toAddress();
     uint256 _uint256 = _data.toUint256();
 
     if (_param == 'oracle') oracle = IBaseOracle(_address.assertNonNull());
-    else if (_param == 'oracleRelayer') oracleRelayer = OracleRelayerLike(_address.assertNonNull());
-    else if (_param == 'pidCalculator') pidCalculator = PIDCalculator(_address.assertNonNull());
+    else if (_param == 'oracleRelayer') oracleRelayer = IOracleRelayer(_address.assertNonNull());
+    else if (_param == 'pidCalculator') pidCalculator = IPIDController(_address.assertNonNull());
     else if (_param == 'updateRateDelay') _params.updateRateDelay = _uint256.assertGt(0);
     else revert UnrecognizedParam();
-
-    emit ModifyParameters(_param, GLOBAL_PARAM, _data);
   }
 }

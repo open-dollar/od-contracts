@@ -6,7 +6,7 @@ import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IToken} from '@interfaces/external/IToken.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
-import {IModifiable, GLOBAL_PARAM} from '@interfaces/utils/IModifiable.sol';
+import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {Math, WAD, HUNDRED} from '@libraries/Math.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
@@ -950,7 +950,7 @@ contract Unit_SurplusAuctionHouse_ModifyParameters is Base {
     vm.assume(_protocolTokenBidReceiver != address(0));
 
     expectEmitNoIndex();
-    emit ModifyParameters('protocolTokenBidReceiver', GLOBAL_PARAM, abi.encode(_protocolTokenBidReceiver));
+    emit ModifyParameters('protocolTokenBidReceiver', bytes32(0), abi.encode(_protocolTokenBidReceiver));
 
     surplusAuctionHouse.modifyParameters('protocolTokenBidReceiver', abi.encode(_protocolTokenBidReceiver));
   }
