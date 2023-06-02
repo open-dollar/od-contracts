@@ -4,11 +4,11 @@ pragma solidity 0.8.19;
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 
 interface IDelayedOracle is IBaseOracle {
+  // --- Events ---
+  event UpdateResult(uint256 _newMedian, uint256 _lastUpdateTime);
+
   // --- Errors ---
   error DelayHasNotElapsed();
-
-  // --- Events ---
-  event UpdateResult(uint256 newMedian, uint256 lastUpdateTime);
 
   // --- Structs ---
   struct Feed {

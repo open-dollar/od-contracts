@@ -30,26 +30,29 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
   using EnumerableSet for EnumerableSet.AddressSet;
   using EnumerableSet for EnumerableSet.Bytes32Set;
 
+  // --- Constants ---
+  uint256 public constant WHOLE_TAX_CUT = 10 ** 29;
+
   // --- Registry ---
   ISAFEEngine public safeEngine;
 
   // --- Data ---
   TaxCollectorParams internal _params;
 
-  function params() external view returns (TaxCollectorParams memory) {
+  function params() external view returns (TaxCollectorParams memory _taxCollectorParams) {
     return _params;
   }
 
   mapping(bytes32 => TaxCollectorCollateralParams) internal _cParams;
 
-  function cParams(bytes32 _cType) external view returns (TaxCollectorCollateralParams memory) {
+  function cParams(bytes32 _cType) external view returns (TaxCollectorCollateralParams memory _taxCollectorCParams) {
     return _cParams[_cType];
   }
 
   // Data about each collateral type
   mapping(bytes32 => TaxCollectorCollateralData) internal _cData;
 
-  function cData(bytes32 _cType) external view returns (TaxCollectorCollateralData memory) {
+  function cData(bytes32 _cType) external view returns (TaxCollectorCollateralData memory _taxCollectorCData) {
     return _cData[_cType];
   }
 
@@ -64,8 +67,6 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
   ) external view returns (TaxReceiver memory _secondaryTaxReceiver) {
     return _secondaryTaxReceivers[_cType][_receiver];
   }
-
-  uint256 public constant WHOLE_TAX_CUT = 10 ** 29;
 
   // All collateral types
   EnumerableSet.Bytes32Set internal _collateralList;
@@ -288,7 +289,7 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
   }
 
   // --- Administration ---
-  
+
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     uint256 _uint256 = _data.toUint256();
 

@@ -18,6 +18,7 @@ pragma solidity 0.8.19;
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
+// solhint-disable
 contract Coin is Authorizable {
   // --- ERC20 Data ---
   // The name of this coin

@@ -100,7 +100,7 @@ contract PIDRateSetter is Authorizable, Modifiable, IPIDRateSetter {
   }
 
   // --- Administration ---
-  
+
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     address _address = _data.toAddress();
     uint256 _uint256 = _data.toUint256();

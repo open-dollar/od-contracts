@@ -252,7 +252,7 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
   }
 
   // --- Administration ---
-  
+
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled {
     uint256 _uint256 = _data.toUint256();
 

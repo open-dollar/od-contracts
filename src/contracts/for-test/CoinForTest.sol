@@ -27,15 +27,15 @@ contract CoinForTest is ERC20, Authorizable {
     _burn(_usr, _wad);
   }
 
-  function push(address usr, uint256 amount) external {
-    transfer(usr, amount);
+  function push(address _usr, uint256 _amount) external {
+    transfer(_usr, _amount);
   }
 
-  function pull(address usr, uint256 amount) external {
-    transferFrom(usr, msg.sender, amount);
+  function pull(address _usr, uint256 _amount) external {
+    transferFrom(_usr, msg.sender, _amount);
   }
 
-  function move(address src, address dst, uint256 amount) external {
-    transferFrom(src, dst, amount);
+  function move(address _src, address _dst, uint256 _amount) external {
+    transferFrom(_src, _dst, _amount);
   }
 }

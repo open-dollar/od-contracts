@@ -3,6 +3,7 @@ pragma solidity 0.8.19;
 
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 
+// solhint-disable
 contract OracleForTest is IBaseOracle {
   uint256 price;
   bool validity = true;

@@ -4,12 +4,13 @@ pragma solidity 0.8.19;
 import {IPIDController, PIDController} from '@contracts/PIDController.sol';
 import {InternalCallsWatcher, InternalCallsExtension} from '@test/utils/InternalCallsWatcher.sol';
 
+// solhint-disable
 contract PIDControllerForTest is PIDController, InternalCallsExtension {
   MockPIDController public mockPIDController;
 
   constructor(
-    int256 _Kp,
-    int256 _Ki,
+    int256 _kp,
+    int256 _ki,
     uint256 _perSecondCumulativeLeak,
     uint256 _integralPeriodSize,
     uint256 _noiseBarrier,
@@ -19,8 +20,8 @@ contract PIDControllerForTest is PIDController, InternalCallsExtension {
     MockPIDController _mockPIDController
   )
     PIDController(
-      _Kp,
-      _Ki,
+      _kp,
+      _ki,
       _perSecondCumulativeLeak,
       _integralPeriodSize,
       _noiseBarrier,
@@ -182,8 +183,8 @@ contract PIDControllerForTest is PIDController, InternalCallsExtension {
   }
 
   function setControllerGains(int256 _kp, int256 _ki) external {
-    _controllerGains.Kp = _kp;
-    _controllerGains.Ki = _ki;
+    _controllerGains.kp = _kp;
+    _controllerGains.ki = _ki;
   }
 
   // stdstore not available for address

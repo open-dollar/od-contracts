@@ -9,6 +9,15 @@ import {ISystemCoin} from '@interfaces/external/ISystemCoin.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
 interface IStabilityFeeTreasury is IAuthorizable, IDisableable, IModifiable {
+  // --- Events ---
+  event SetTotalAllowance(address indexed _account, uint256 _rad);
+  event SetPerHourAllowance(address indexed _account, uint256 _rad);
+  event GiveFunds(address indexed _account, uint256 _rad, uint256 _expensesAccumulator);
+  event TakeFunds(address indexed _account, uint256 _rad);
+  event PullFunds(address indexed _sender, address indexed _dstAccount, uint256 _rad, uint256 _expensesAccumulator);
+  event TransferSurplusFunds(address _extraSurplusReceiver, uint256 _fundsToTransfer);
+
+  // --- Structs ---
   struct StabilityFeeTreasuryParams {
     uint256 expensesMultiplier;
     uint256 treasuryCapacity;
@@ -17,15 +26,6 @@ interface IStabilityFeeTreasury is IAuthorizable, IDisableable, IModifiable {
     uint256 surplusTransferDelay;
   }
 
-  // --- Events ---
-  event SetTotalAllowance(address indexed _account, uint256 _rad);
-  event SetPerHourAllowance(address indexed account, uint256 rad);
-  event GiveFunds(address indexed _account, uint256 _rad, uint256 _expensesAccumulator);
-  event TakeFunds(address indexed _account, uint256 _rad);
-  event PullFunds(address indexed _sender, address indexed _dstAccount, uint256 _rad, uint256 _expensesAccumulator);
-  event TransferSurplusFunds(address _extraSurplusReceiver, uint256 _fundsToTransfer);
-
-  // --- Structs ---
   struct Allowance {
     uint256 total;
     uint256 perHour;

@@ -247,8 +247,8 @@ abstract contract Deploy is Script, Contracts {
 
   function deployPIDController(PIDParams memory _params) public {
     pidController = new PIDController({
-      _Kp: _params.proportionalGain,
-      _Ki: _params.integralGain,
+      _kp: _params.proportionalGain,
+      _ki: _params.integralGain,
       _perSecondCumulativeLeak: _params.perSecondCumulativeLeak,
       _integralPeriodSize: _params.periodSize, // TODO: rename ips to ps
       _noiseBarrier: _params.noiseBarrier,

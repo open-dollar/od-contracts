@@ -125,7 +125,7 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
     _settleDebt(_rad);
   }
 
-  function _settleDebt(uint256 _rad) public returns (uint256 _coinBalance, uint256 _debtBalance) {
+  function _settleDebt(uint256 _rad) internal returns (uint256 _coinBalance, uint256 _debtBalance) {
     _coinBalance = safeEngine.coinBalance(address(this));
     _debtBalance = safeEngine.debtBalance(address(this));
     if (_rad > _coinBalance) revert AccEng_InsufficientSurplus();
@@ -161,7 +161,7 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
   function auctionDebt() external returns (uint256 _id) {
     if (_params.debtAuctionBidSize == 0) revert AccEng_DebtAuctionDisabled();
     if (_params.debtAuctionBidSize > unqueuedUnauctionedDebt()) revert AccEng_InsufficientDebt();
-    (uint256 _newCoinBalance, uint256 _newDebtBalance) = _settleDebt(safeEngine.coinBalance(address(this)));
+    (, uint256 _newDebtBalance) = _settleDebt(safeEngine.coinBalance(address(this)));
 
     totalOnAuctionDebt = totalOnAuctionDebt + _params.debtAuctionBidSize;
     _id = debtAuctionHouse.startAuction(address(this), _params.debtAuctionMintedTokens, _params.debtAuctionBidSize);

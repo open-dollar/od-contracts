@@ -5,12 +5,12 @@ import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
 interface IPIDController is IAuthorizable, IModifiable {
+  // --- Events ---
+  event UpdateDeviation(int256 _proportionalDeviation, int256 _integralDeviation, int256 _deltaIntegralDeviation);
+
   // --- Errors ---
   error OnlySeedProposer();
   error ComputeRateCooldown();
-
-  // --- Events ---
-  event UpdateDeviation(int256 _proportionalDeviation, int256 _integralDeviation, int256 _deltaIntegralDeviation);
 
   // --- Structs ---
   struct PIDControllerParams {
@@ -37,9 +37,9 @@ interface IPIDController is IAuthorizable, IModifiable {
 
   struct ControllerGains {
     // This value is multiplied with the proportional term
-    int256 Kp; // [WAD]
+    int256 kp; // [WAD]
     // This value is multiplied with priceDeviationCumulative
-    int256 Ki; // [WAD]
+    int256 ki; // [WAD]
   }
 
   // --- Registry ---
@@ -54,7 +54,7 @@ interface IPIDController is IAuthorizable, IModifiable {
   /**
    * @notice Returns the last deviation observation, containting latest timestamp, proportional and integral terms
    */
-  function deviation() external view returns (DeviationObservation memory);
+  function deviation() external view returns (DeviationObservation memory _deviation);
 
   /**
    * @notice Returns the Kp and Ki values used in this calculator

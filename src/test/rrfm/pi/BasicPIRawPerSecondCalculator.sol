@@ -120,8 +120,8 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
     assertEq(calculator.params().perSecondCumulativeLeak, perSecondCumulativeLeak);
     assertEq(calculator.deviation().timestamp, 0);
     assertEq(calculator.deviation().integral, 0);
-    assertEq(Kp, calculator.controllerGains().Ki);
-    assertEq(Ki, calculator.controllerGains().Kp);
+    assertEq(Kp, calculator.controllerGains().ki);
+    assertEq(Ki, calculator.controllerGains().kp);
     assertEq(calculator.timeSinceLastUpdate(), 0);
   }
 
@@ -135,8 +135,8 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
     assertEq(calculator.params().integralPeriodSize, uint256(2));
     assertEq(calculator.params().perSecondCumulativeLeak, TWENTY_SEVEN_DECIMAL_NUMBER - 5);
 
-    assertEq(int256(1), calculator.controllerGains().Ki);
-    assertEq(int256(1), calculator.controllerGains().Kp);
+    assertEq(int256(1), calculator.controllerGains().ki);
+    assertEq(int256(1), calculator.controllerGains().kp);
   }
 
   function test_get_new_rate_no_proportional_no_integral() public {
@@ -155,8 +155,8 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
     assertEq(calculator.params().integralPeriodSize, integralPeriodSize);
     assertEq(calculator.deviation().integral, 0);
     assertEq(calculator.params().perSecondCumulativeLeak, perSecondCumulativeLeak);
-    assertEq(Kp, calculator.controllerGains().Ki);
-    assertEq(Ki, calculator.controllerGains().Kp);
+    assertEq(Kp, calculator.controllerGains().ki);
+    assertEq(Ki, calculator.controllerGains().kp);
     assertEq(calculator.timeSinceLastUpdate(), 0);
   }
 

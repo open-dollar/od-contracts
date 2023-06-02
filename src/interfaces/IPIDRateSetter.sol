@@ -8,15 +8,15 @@ import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
 interface IPIDRateSetter is IAuthorizable, IModifiable {
-  // --- Errors ---
-  error InvalidPriceFeed();
-  error RateSetterCooldown();
-
   // --- Events ---
   event UpdateRedemptionRate(uint256 _marketPrice, uint256 _redemptionPrice, uint256 _redemptionRate);
   event FailUpdateRedemptionRate(
     uint256 _marketPrice, uint256 _redemptionPrice, uint256 _redemptionRate, bytes _reason
   );
+
+  // --- Errors ---
+  error InvalidPriceFeed();
+  error RateSetterCooldown();
 
   // --- Structs ---
   struct PIDRateSetterParams {
@@ -41,7 +41,7 @@ interface IPIDRateSetter is IAuthorizable, IModifiable {
   function pidCalculator() external view returns (IPIDController _pidCalculator);
 
   // --- Params ---
-  function params() external view returns (PIDRateSetterParams memory);
+  function params() external view returns (PIDRateSetterParams memory _params);
 
   // --- Data ---
   /**

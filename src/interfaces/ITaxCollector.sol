@@ -49,15 +49,17 @@ interface ITaxCollector is IAuthorizable, IModifiable {
     uint128 taxPercentage; // [ray%]
   }
 
-  function params() external view returns (TaxCollectorParams memory);
-  function cParams(bytes32 _cType) external view returns (TaxCollectorCollateralParams memory);
-  function cData(bytes32 _cType) external view returns (TaxCollectorCollateralData memory);
+  // solhint-disable-next-line func-name-mixedcase
+  function WHOLE_TAX_CUT() external view returns (uint256 _wholeTaxCut);
+
+  function params() external view returns (TaxCollectorParams memory _params);
+  function cParams(bytes32 _cType) external view returns (TaxCollectorCollateralParams memory _cParams);
+  function cData(bytes32 _cType) external view returns (TaxCollectorCollateralData memory _cData);
 
   function secondaryTaxReceiver(
     bytes32 _cType,
     address _receiver
   ) external view returns (TaxReceiver memory _secondaryTaxReceiver);
-  function WHOLE_TAX_CUT() external view returns (uint256 _WHOLE_TAX_CUT);
   function safeEngine() external view returns (ISAFEEngine _safeEngine);
 
   // --- Administration ---

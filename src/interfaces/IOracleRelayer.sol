@@ -8,16 +8,16 @@ import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 
 interface IOracleRelayer is IAuthorizable, IModifiable, IDisableable {
-  // --- Errors ---
-  error RedemptionPriceNotUpdated();
-
   // --- Events ---
   event UpdateRedemptionPrice(uint256 _redemptionPrice);
   event UpdateCollateralPrice(
     bytes32 indexed _collateralType, uint256 _priceFeedValue, uint256 _safetyPrice, uint256 _liquidationPrice
   );
 
-  // --- Data ---
+  // --- Errors ---
+  error RedemptionPriceNotUpdated();
+
+  // --- Structs ---
   struct OracleRelayerParams {
     // Upper bound for the per-second redemption rate
     uint256 redemptionRateUpperBound; // [ray]

@@ -120,7 +120,7 @@ contract PRawPerSecondCalculatorTest is DSTest {
     assertEq(calculator.params().feedbackOutputLowerBound, feedbackOutputLowerBound);
     assertEq(calculator.params().integralPeriodSize, periodSize);
     assertEq(calculator.deviation().timestamp, 0);
-    assertEq(Kp, calculator.controllerGains().Kp);
+    assertEq(Kp, calculator.controllerGains().kp);
   }
 
   function test_modify_parameters() public {
@@ -136,7 +136,7 @@ contract PRawPerSecondCalculatorTest is DSTest {
     assertEq(calculator.params().feedbackOutputUpperBound, uint256(TWENTY_SEVEN_DECIMAL_NUMBER + 1));
     assertEq(calculator.params().feedbackOutputLowerBound, -int256(1));
 
-    assertEq(int256(1), calculator.controllerGains().Kp);
+    assertEq(int256(1), calculator.controllerGains().kp);
   }
 
   function test_get_new_rate_no_proportional() public {
@@ -155,7 +155,7 @@ contract PRawPerSecondCalculatorTest is DSTest {
     assertEq(calculator.params().feedbackOutputLowerBound, feedbackOutputLowerBound);
     assertEq(calculator.deviation().timestamp, 0);
     assertEq(calculator.params().integralPeriodSize, periodSize);
-    assertEq(Kp, calculator.controllerGains().Kp);
+    assertEq(Kp, calculator.controllerGains().kp);
   }
 
   function test_first_update_rate_no_deviation() public {

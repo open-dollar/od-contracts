@@ -210,9 +210,9 @@ contract IncreasingDiscountCollateralAuctionHouse is
     virtual
     returns (uint256 _floorPrice)
   {
-    uint256 minFloorDeviatedPrice = _redemptionPrice.wmul(_params.minSystemCoinDeviation);
+    uint256 _minFloorDeviatedPrice = _redemptionPrice.wmul(_params.minSystemCoinDeviation);
     _floorPrice = _redemptionPrice.wmul(_params.lowerSystemCoinDeviation);
-    _floorPrice = _floorPrice <= minFloorDeviatedPrice ? _floorPrice : _redemptionPrice;
+    _floorPrice = _floorPrice <= _minFloorDeviatedPrice ? _floorPrice : _redemptionPrice;
   }
 
   /**
@@ -229,9 +229,9 @@ contract IncreasingDiscountCollateralAuctionHouse is
     virtual
     returns (uint256 _ceilingPrice)
   {
-    uint256 minCeilingDeviatedPrice = _redemptionPrice.wmul(2 * WAD - _params.minSystemCoinDeviation);
+    uint256 _minCeilingDeviatedPrice = _redemptionPrice.wmul(2 * WAD - _params.minSystemCoinDeviation);
     _ceilingPrice = _redemptionPrice.wmul(2 * WAD - _params.upperSystemCoinDeviation);
-    _ceilingPrice = _ceilingPrice >= minCeilingDeviatedPrice ? _ceilingPrice : _redemptionPrice;
+    _ceilingPrice = _ceilingPrice >= _minCeilingDeviatedPrice ? _ceilingPrice : _redemptionPrice;
   }
 
   /**
@@ -311,16 +311,16 @@ contract IncreasingDiscountCollateralAuctionHouse is
     uint256 _collateralFsmPriceFeedValue,
     uint256 _collateralMarketPriceFeedValue
   ) internal view virtual returns (uint256 _adjustedMarketPrice) {
-    uint256 floorPrice = _collateralFsmPriceFeedValue.wmul(_cParams.lowerCollateralDeviation);
-    uint256 ceilingPrice = _collateralFsmPriceFeedValue.wmul(2 * WAD - _cParams.upperCollateralDeviation);
+    uint256 _floorPrice = _collateralFsmPriceFeedValue.wmul(_cParams.lowerCollateralDeviation);
+    uint256 _ceilingPrice = _collateralFsmPriceFeedValue.wmul(2 * WAD - _cParams.upperCollateralDeviation);
 
     _adjustedMarketPrice =
       (_collateralMarketPriceFeedValue == 0) ? _collateralFsmPriceFeedValue : _collateralMarketPriceFeedValue;
 
     if (_adjustedMarketPrice < _collateralFsmPriceFeedValue) {
-      _adjustedMarketPrice = Math.max(_adjustedMarketPrice, floorPrice);
+      _adjustedMarketPrice = Math.max(_adjustedMarketPrice, _floorPrice);
     } else {
-      _adjustedMarketPrice = Math.min(_adjustedMarketPrice, ceilingPrice);
+      _adjustedMarketPrice = Math.min(_adjustedMarketPrice, _ceilingPrice);
     }
   }
 
@@ -403,16 +403,16 @@ contract IncreasingDiscountCollateralAuctionHouse is
       return (false, _wad);
     }
 
-    uint256 remainingToRaise = _auctions[_id].amountToRaise;
+    uint256 _remainingToRaise = _auctions[_id].amountToRaise;
 
     // bound max amount offered in exchange for collateral
     _adjustedBid = _wad;
-    if (_adjustedBid * RAY > remainingToRaise) {
-      _adjustedBid = (remainingToRaise / RAY) + 1;
+    if (_adjustedBid * RAY > _remainingToRaise) {
+      _adjustedBid = (_remainingToRaise / RAY) + 1;
     }
 
-    remainingToRaise = _adjustedBid * RAY > remainingToRaise ? 0 : _auctions[_id].amountToRaise - _adjustedBid * RAY;
-    _valid = remainingToRaise == 0 || remainingToRaise >= RAY;
+    _remainingToRaise = _adjustedBid * RAY > _remainingToRaise ? 0 : _auctions[_id].amountToRaise - _adjustedBid * RAY;
+    _valid = _remainingToRaise == 0 || _remainingToRaise >= RAY;
   }
 
   // --- Core Auction Logic ---
@@ -572,16 +572,16 @@ contract IncreasingDiscountCollateralAuctionHouse is
     lastReadRedemptionPrice = oracleRelayer.redemptionPrice();
 
     // check that the collateral FSM doesn't return an invalid value
-    (uint256 collateralFsmPriceFeedValue, uint256 systemCoinPriceFeedValue) =
+    (uint256 _collateralFsmPriceFeedValue, uint256 _systemCoinPriceFeedValue) =
       _getCollateralFSMAndFinalSystemCoinPrices(lastReadRedemptionPrice);
-    require(collateralFsmPriceFeedValue > 0, 'IncreasingDiscountCollateralAuctionHouse/collateral-fsm-invalid-value');
+    require(_collateralFsmPriceFeedValue > 0, 'IncreasingDiscountCollateralAuctionHouse/collateral-fsm-invalid-value');
 
     // get the amount of collateral bought
     uint256 _boughtCollateral = _getBoughtCollateral(
       _id,
-      collateralFsmPriceFeedValue,
+      _collateralFsmPriceFeedValue,
       _getCollateralMarketPrice(),
-      systemCoinPriceFeedValue,
+      _systemCoinPriceFeedValue,
       _adjustedBid,
       _updateCurrentDiscount(_id)
     );
@@ -659,31 +659,31 @@ contract IncreasingDiscountCollateralAuctionHouse is
   /**
    * @dev Deprecated
    */
-  function bidAmount(uint256) external pure returns (uint256) {
+  function bidAmount(uint256) external pure returns (uint256 _bidAmount) {
     return 0;
   }
 
-  function remainingAmountToSell(uint256 _id) external view returns (uint256) {
+  function remainingAmountToSell(uint256 _id) external view returns (uint256 _remainingAmountToSell) {
     return _auctions[_id].amountToSell;
   }
 
-  function forgoneCollateralReceiver(uint256 _id) external view returns (address) {
+  function forgoneCollateralReceiver(uint256 _id) external view returns (address _forgoneCollateralReceiver) {
     return _auctions[_id].forgoneCollateralReceiver;
   }
 
   /**
    * @dev Deprecated
    */
-  function raisedAmount(uint256) external pure returns (uint256) {
+  function raisedAmount(uint256) external pure returns (uint256 _raisedAmount) {
     return 0;
   }
 
-  function amountToRaise(uint256 _id) external view returns (uint256) {
+  function amountToRaise(uint256 _id) external view returns (uint256 _amountToRaise) {
     return _auctions[_id].amountToRaise;
   }
 
   // --- Administration ---
-  
+
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     uint256 _uint256 = _data.toUint256();
     address _address = _data.toAddress();

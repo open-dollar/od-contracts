@@ -7,6 +7,7 @@ import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
 import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
 
+// solhint-disable
 contract CollateralAuctionHouseForTest {
   uint256 auctionId = 123_456;
 

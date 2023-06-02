@@ -13,7 +13,7 @@ abstract contract Modifiable is IModifiable, Authorizable {
   // --- Constants ---
 
   /// @dev Used to emit a global parameter modification event
-  bytes32 constant internal _GLOBAL_PARAM = bytes32(0);
+  bytes32 internal constant _GLOBAL_PARAM = bytes32(0);
 
   // --- External methods ---
 
@@ -35,6 +35,7 @@ abstract contract Modifiable is IModifiable, Authorizable {
    * @notice Internal function to be overriden with custom logic to modify parameters
    * @dev    This function is set to revert if not overriden
    */
+  // solhint-disable-next-line no-unused-vars
   function _modifyParameters(bytes32 _parameter, bytes memory _data) internal virtual {
     revert UnrecognizedParam();
   }
@@ -43,6 +44,7 @@ abstract contract Modifiable is IModifiable, Authorizable {
    * @notice Internal function to be overriden with custom logic to modify collateral parameters
    * @dev    This function is set to revert if not overriden
    */
+  // solhint-disable-next-line no-unused-vars
   function _modifyParameters(bytes32 _cType, bytes32 _parameter, bytes memory _data) internal virtual {
     revert UnrecognizedParam();
   }

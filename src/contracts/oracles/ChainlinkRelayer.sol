@@ -24,12 +24,12 @@ contract ChainlinkRelayer is IBaseOracle, IChainlinkRelayer {
   /// @inheritdoc IChainlinkRelayer
   uint256 public staleThreshold;
 
-  constructor(address aggregator, uint256 _staleThreshold) {
-    require(aggregator != address(0), 'ChainlinkRelayer/null-aggregator');
+  constructor(address _aggregator, uint256 _staleThreshold) {
+    require(_aggregator != address(0), 'ChainlinkRelayer/null-aggregator');
     require(_staleThreshold > 0, 'ChainlinkRelayer/null-stale-threshold');
 
     staleThreshold = _staleThreshold;
-    chainlinkFeed = IChainlinkOracle(aggregator);
+    chainlinkFeed = IChainlinkOracle(_aggregator);
 
     multiplier = 18 - chainlinkFeed.decimals();
     symbol = chainlinkFeed.description();
@@ -59,11 +59,11 @@ contract ChainlinkRelayer is IBaseOracle, IChainlinkRelayer {
     _result = _parseResult(_aggregatorResult);
   }
 
-  function _parseResult(int256 _chainlinkResult) internal view returns (uint256) {
+  function _parseResult(int256 _chainlinkResult) internal view returns (uint256 _result) {
     return uint256(_chainlinkResult) * 10 ** multiplier;
   }
 
-  function _isValidFeed(uint256 _feedTimestamp) internal view returns (bool) {
+  function _isValidFeed(uint256 _feedTimestamp) internal view returns (bool _valid) {
     uint256 _now = block.timestamp;
     if (_feedTimestamp > _now) return false;
     return _now - _feedTimestamp <= staleThreshold;

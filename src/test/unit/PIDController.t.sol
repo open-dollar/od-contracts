@@ -27,8 +27,8 @@ contract Base is HaiTest {
   function _createPidController(IPIDController.DeviationObservation memory _importedState) internal {
     vm.prank(deployer);
     pidController = new PIDControllerForTest({
-      _Kp: params.proportionalGain,
-      _Ki: params.integralGain,
+      _kp: params.proportionalGain,
+      _ki: params.integralGain,
       _perSecondCumulativeLeak: params.perSecondCumulativeLeak,
       _integralPeriodSize: params.periodSize,
       _noiseBarrier: params.noiseBarrier,
@@ -188,11 +188,11 @@ contract Base is HaiTest {
 
 contract Unit_PIDController_Constructor is Base {
   function test_Set_ProportionalGain() public {
-    assertEq(pidController.controllerGains().Kp, params.proportionalGain);
+    assertEq(pidController.controllerGains().kp, params.proportionalGain);
   }
 
   function test_Set_IntegralGain() public {
-    assertEq(pidController.controllerGains().Ki, params.integralGain);
+    assertEq(pidController.controllerGains().ki, params.integralGain);
   }
 
   function test_Set_PerSecondCumulativeLeak() public {
@@ -1251,12 +1251,12 @@ contract Unit_PIDController_ControllerGains is Base {
   function test_Return_ControllerGains_Kp(int256 _proportionalGain, int256 _integralGain) public {
     PIDControllerForTest(address(pidController)).setControllerGains(_proportionalGain, _integralGain);
 
-    assertEq(pidController.controllerGains().Kp, _proportionalGain);
+    assertEq(pidController.controllerGains().kp, _proportionalGain);
   }
 
   function test_Return_ControllerGains_Ki(int256 _proportionalGain, int256 _integralGain) public {
     PIDControllerForTest(address(pidController)).setControllerGains(_proportionalGain, _integralGain);
 
-    assertEq(pidController.controllerGains().Ki, _integralGain);
+    assertEq(pidController.controllerGains().ki, _integralGain);
   }
 }

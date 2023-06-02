@@ -51,8 +51,8 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
   }
 
   constructor(
-    int256 _Kp,
-    int256 _Ki,
+    int256 _kp,
+    int256 _ki,
     uint256 _perSecondCumulativeLeak,
     uint256 _integralPeriodSize,
     uint256 _noiseBarrier,
@@ -69,8 +69,8 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
     });
 
     _controllerGains = ControllerGains({
-      Kp: _Kp.assertGtEq(-int256(WAD)).assertLtEq(int256(WAD)),
-      Ki: _Ki.assertGtEq(-int256(WAD)).assertLtEq(int256(WAD))
+      kp: _kp.assertGtEq(-int256(WAD)).assertLtEq(int256(WAD)),
+      ki: _ki.assertGtEq(-int256(WAD)).assertLtEq(int256(WAD))
     });
 
     if (_importedState.timestamp > 0) {
@@ -158,7 +158,10 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
   }
 
   /// @inheritdoc IPIDController
-  function getGainAdjustedPIOutput(int256 _proportionalTerm, int256 _integralTerm) external view returns (int256) {
+  function getGainAdjustedPIOutput(
+    int256 _proportionalTerm,
+    int256 _integralTerm
+  ) external view returns (int256 _gainAdjustedPIOutput) {
     return _getGainAdjustedPIOutput(_proportionalTerm, _integralTerm);
   }
 
@@ -174,7 +177,7 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
     int256 _proportionalTerm,
     int256 _integralTerm
   ) internal view virtual returns (int256 _ajustedProportionalTerm, int256 _adjustedIntegralTerm) {
-    return (_controllerGains.Kp.wmul(_proportionalTerm), _controllerGains.Ki.wmul(_integralTerm));
+    return (_controllerGains.kp.wmul(_proportionalTerm), _controllerGains.ki.wmul(_integralTerm));
   }
 
   /// @inheritdoc IPIDController
@@ -253,7 +256,7 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
   }
 
   // --- Administration ---
-  
+
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     uint256 _uint256 = _data.toUint256();
     int256 _int256 = _data.toInt256();
@@ -273,12 +276,12 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
     } else if (_param == 'feedbackOutputLowerBound') {
       _params.feedbackOutputLowerBound = _int256.assertLt(0).assertGtEq(-int256(_NEGATIVE_RATE_LIMIT));
     } else if (_param == 'kp') {
-      _controllerGains.Kp = _int256.assertGtEq(-int256(WAD)).assertLtEq(int256(WAD));
+      _controllerGains.kp = _int256.assertGtEq(-int256(WAD)).assertLtEq(int256(WAD));
     } else if (_param == 'ki') {
-      _controllerGains.Ki = _int256.assertGtEq(-int256(WAD)).assertLtEq(int256(WAD));
+      _controllerGains.ki = _int256.assertGtEq(-int256(WAD)).assertLtEq(int256(WAD));
     } else if (_param == 'priceDeviationCumulative') {
       // TODO: remove this setter
-      require(_controllerGains.Ki == 0, 'PIDController/cannot-set-priceDeviationCumulative');
+      require(_controllerGains.ki == 0, 'PIDController/cannot-set-priceDeviationCumulative');
       _deviationObservation.integral = _int256;
     } else {
       revert UnrecognizedParam();

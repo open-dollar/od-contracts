@@ -4,13 +4,14 @@ pragma solidity 0.8.19;
 import {PIDController, IPIDController} from '@contracts/PIDController.sol';
 import {Math} from '@libraries/Math.sol';
 
+// solhint-disable
 contract RawPIDController is PIDController {
   using Math for uint256;
   using Math for int256;
 
   constructor(
-    int256 _Kp,
-    int256 _Ki,
+    int256 _kp,
+    int256 _ki,
     uint256 _perSecondCumulativeLeak,
     uint256 _integralPeriodSize,
     uint256 _noiseBarrier,
@@ -19,8 +20,8 @@ contract RawPIDController is PIDController {
     DeviationObservation memory _importedState
   )
     PIDController(
-      _Kp,
-      _Ki,
+      _kp,
+      _ki,
       _perSecondCumulativeLeak,
       _integralPeriodSize,
       _noiseBarrier,

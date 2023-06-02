@@ -19,5 +19,6 @@ contract SAFEEngineForTest {
   }
 
   /// @dev Adds fallback to be able to mock any call without implementing it
+  // solhint-disable-next-line payable-fallback
   fallback() external {}
 }

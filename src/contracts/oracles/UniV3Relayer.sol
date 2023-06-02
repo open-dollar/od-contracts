@@ -96,7 +96,7 @@ contract UniV3Relayer is IBaseOracle, IUniV3Relayer {
     _result = _parseResult(_quoteAmount);
   }
 
-  function _parseResult(uint256 _quoteResult) internal view returns (uint256) {
+  function _parseResult(uint256 _quoteResult) internal view returns (uint256 _result) {
     return _quoteResult * 10 ** multiplier;
   }
 }
