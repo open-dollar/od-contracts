@@ -123,7 +123,7 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
   }
 
   // --- Shutdown ---
-  
+
   /**
    * @notice Disable this contract (normally called by GlobalSettlement)
    */

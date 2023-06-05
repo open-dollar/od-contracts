@@ -73,7 +73,7 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
   }
 
   // --- Shutdown ---
-  
+
   /**
    * @notice Disable the auction house (usually called by the AccountingEngine)
    */

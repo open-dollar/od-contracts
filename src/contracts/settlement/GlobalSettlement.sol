@@ -143,7 +143,7 @@ contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettl
   constructor() Authorizable(msg.sender) {}
 
   // --- Shutdown ---
-  
+
   /// @dev Avoids externally disabling this contract
   function _onContractDisable() internal pure override {
     revert NonDisableable();

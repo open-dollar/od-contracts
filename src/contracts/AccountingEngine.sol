@@ -211,7 +211,7 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
   }
 
   // --- Shutdown ---
-  
+
   /**
    * @notice Disable this contract (normally called by Global Settlement)
    * @dev When it's being disabled, the contract will record the current timestamp. Afterwards,

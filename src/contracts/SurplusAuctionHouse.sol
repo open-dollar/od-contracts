@@ -73,7 +73,7 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
   }
 
   // --- Shutdown ---
-  
+
   /**
    * @notice Disable the auction house (usually called by AccountingEngine)
    */
