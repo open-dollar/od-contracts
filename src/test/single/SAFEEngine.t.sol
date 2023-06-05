@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
-pragma experimental ABIEncoderV2;
 
 import 'ds-test/test.sol';
 import {DSToken as DSDelegateToken} from '@contracts/for-test/DSToken.sol';
