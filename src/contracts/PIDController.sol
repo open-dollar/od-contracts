@@ -20,6 +20,7 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
   using Encoding for bytes;
   using Assertions for uint256;
   using Assertions for int256;
+  using Assertions for address;
 
   uint256 internal constant _NEGATIVE_RATE_LIMIT = RAY - 1;
   uint256 internal constant _POSITIVE_RATE_LIMIT = type(uint256).max - RAY - 1;
@@ -112,10 +113,10 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
 
   /// @inheritdoc IPIDController
   function computeRate(uint256 _marketPrice, uint256 _redemptionPrice) external returns (uint256 _newRedemptionRate) {
-    if (msg.sender != seedProposer) revert OnlySeedProposer();
+    if (msg.sender != seedProposer) revert PIDController_OnlySeedProposer();
     // Ensure that at least integralPeriodSize seconds passed since the last update or that this is the first update
     if (_timeSinceLastUpdate() < _params.integralPeriodSize && _deviationObservation.timestamp != 0) {
-      revert ComputeRateCooldown();
+      revert PIDController_ComputeRateCooldown();
     }
     int256 _proportionalTerm = _getProportionalTerm(_marketPrice, _redemptionPrice);
     // Update the integral term by passing the proportional (current deviation) and the total leak that will be applied to the integral
@@ -262,26 +263,24 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
     int256 _int256 = _data.toInt256();
 
     if (_param == 'seedProposer') {
-      seedProposer = _data.toAddress();
+      seedProposer = _data.toAddress().assertNonNull();
     } else if (_param == 'noiseBarrier') {
-      _params.noiseBarrier = _uint256.assertGt(0).assertLtEq(WAD);
+      _params.noiseBarrier = _uint256.assertNonNull().assertLtEq(WAD);
     } else if (_param == 'integralPeriodSize') {
-      _params.integralPeriodSize = _uint256.assertGt(0);
-    } else if (_param == 'periodSize') {
-      _params.integralPeriodSize = _uint256.assertGt(0);
+      _params.integralPeriodSize = _uint256.assertNonNull();
     } else if (_param == 'feedbackOutputUpperBound') {
-      _params.feedbackOutputUpperBound = _uint256.assertGt(0).assertLt(_POSITIVE_RATE_LIMIT);
-    } else if (_param == 'perSecondCumulativeLeak') {
-      _params.perSecondCumulativeLeak = _uint256.assertLtEq(RAY);
+      _params.feedbackOutputUpperBound = _uint256.assertNonNull().assertLt(_POSITIVE_RATE_LIMIT);
     } else if (_param == 'feedbackOutputLowerBound') {
       _params.feedbackOutputLowerBound = _int256.assertLt(0).assertGtEq(-int256(_NEGATIVE_RATE_LIMIT));
+    } else if (_param == 'perSecondCumulativeLeak') {
+      _params.perSecondCumulativeLeak = _uint256.assertLtEq(RAY);
     } else if (_param == 'kp') {
       _controllerGains.kp = _int256.assertGtEq(-int256(WAD)).assertLtEq(int256(WAD));
     } else if (_param == 'ki') {
       _controllerGains.ki = _int256.assertGtEq(-int256(WAD)).assertLtEq(int256(WAD));
     } else if (_param == 'priceDeviationCumulative') {
-      // TODO: remove this setter
-      require(_controllerGains.ki == 0, 'PIDController/cannot-set-priceDeviationCumulative');
+      // Allows governance to set a starting value for the integral term (only when the integral gain is off)
+      if (_controllerGains.ki != 0) revert PIDController_CannotSetPriceDeviationCumulative();
       _deviationObservation.integral = _int256;
     } else {
       revert UnrecognizedParam();

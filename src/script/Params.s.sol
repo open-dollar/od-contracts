@@ -33,7 +33,7 @@ struct PIDParams {
   uint256 /* ray */ perSecondCumulativeLeak;
   int256 /*  ray */ feedbackOutputLowerBound;
   uint256 /* ray */ feedbackOutputUpperBound;
-  uint256 periodSize;
+  uint256 integralPeriodSize;
   uint256 updateRate;
 }
 

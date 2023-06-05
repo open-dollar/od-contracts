@@ -126,7 +126,7 @@ contract PRawPerSecondCalculatorTest is DSTest {
   function test_modify_parameters() public {
     // Uint
     calculator.modifyParameters('noiseBarrier', abi.encode(EIGHTEEN_DECIMAL_NUMBER));
-    calculator.modifyParameters('periodSize', abi.encode(uint256(2)));
+    calculator.modifyParameters('integralPeriodSize', abi.encode(uint256(2)));
     calculator.modifyParameters('kp', abi.encode(int256(1)));
     calculator.modifyParameters('feedbackOutputUpperBound', abi.encode(uint256(TWENTY_SEVEN_DECIMAL_NUMBER + 1)));
     calculator.modifyParameters('feedbackOutputLowerBound', abi.encode(-int256(1)));

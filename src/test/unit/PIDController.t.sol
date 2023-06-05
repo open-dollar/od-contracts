@@ -30,7 +30,7 @@ contract Base is HaiTest {
       _kp: params.proportionalGain,
       _ki: params.integralGain,
       _perSecondCumulativeLeak: params.perSecondCumulativeLeak,
-      _integralPeriodSize: params.periodSize,
+      _integralPeriodSize: params.integralPeriodSize,
       _noiseBarrier: params.noiseBarrier,
       _feedbackOutputUpperBound: params.feedbackOutputUpperBound,
       _feedbackOutputLowerBound: params.feedbackOutputLowerBound,
@@ -47,7 +47,7 @@ contract Base is HaiTest {
       perSecondCumulativeLeak: PID_PER_SECOND_CUMULATIVE_LEAK,
       feedbackOutputLowerBound: -int256(NEGATIVE_RATE_LIMIT),
       feedbackOutputUpperBound: POSITIVE_RATE_LIMIT / 2,
-      periodSize: PID_PERIOD_SIZE,
+      integralPeriodSize: PID_PERIOD_SIZE,
       updateRate: PID_UPDATE_RATE
     });
 
@@ -85,7 +85,10 @@ contract Base is HaiTest {
   }
 
   function _mockFeedbackOutputLowerBound(int256 _feedbackOutputLowerBound) internal {
-    PIDControllerForTest(address(pidController)).setFeedbackOutputLowerBound(_feedbackOutputLowerBound);
+    // casts to uint256 because stdstore does not support int256
+    stdstore.target(address(pidController)).sig(IPIDController.params.selector).depth(4).checked_write(
+      uint256(_feedbackOutputLowerBound)
+    );
   }
 
   // --- Deviation Terms ---
@@ -99,20 +102,30 @@ contract Base is HaiTest {
   }
 
   function _mockLastUpdateTime(uint256 _updateTime) internal {
-    stdstore.target(address(pidController)).sig(IPIDController.deviation.selector).depth(0).checked_write(
-      uint256(_updateTime)
-    );
+    stdstore.target(address(pidController)).sig(IPIDController.deviation.selector).depth(0).checked_write(_updateTime);
   }
 
   function _mockProportionalTerm(int256 _proportionalTerm) internal {
+    // casts to uint256 because stdstore does not support int256
     stdstore.target(address(pidController)).sig(IPIDController.deviation.selector).depth(1).checked_write(
       uint256(_proportionalTerm)
     );
   }
 
   function _mockIntegralTerm(int256 _proportionalTerm) internal {
+    // casts to uint256 because stdstore does not support int256
     stdstore.target(address(pidController)).sig(IPIDController.deviation.selector).depth(2).checked_write(
       uint256(_proportionalTerm)
+    );
+  }
+
+  function _mockControllerGains(IPIDController.ControllerGains memory _gains) internal {
+    stdstore.target(address(pidController)).sig(IPIDController.controllerGains.selector).depth(0).checked_write(
+      // casts to uint256 because stdstore does not support int256
+      uint256(_gains.kp)
+    );
+    stdstore.target(address(pidController)).sig(IPIDController.controllerGains.selector).depth(1).checked_write(
+      uint256(_gains.ki)
     );
   }
 
@@ -200,7 +213,7 @@ contract Unit_PIDController_Constructor is Base {
   }
 
   function test_Set_IntegralPeriodSize() public {
-    assertEq(pidController.params().integralPeriodSize, params.periodSize);
+    assertEq(pidController.params().integralPeriodSize, params.integralPeriodSize);
   }
 
   function test_Set_NoiseBarrier() public {
@@ -302,9 +315,9 @@ contract Unit_PIDController_Constructor is Base {
   }
 
   function test_Revert_Invalid_IntergralPeriodSize() public {
-    params.periodSize = 0;
+    params.integralPeriodSize = 0;
 
-    vm.expectRevert(abi.encodeWithSelector(Assertions.NotGreaterThan.selector, params.periodSize, 0));
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NotGreaterThan.selector, params.integralPeriodSize, 0));
 
     _createPidController(IPIDController.DeviationObservation(0, 0, 0));
   }
@@ -688,7 +701,7 @@ contract Unit_PID_Controller_GetGainAdjustedTerms is Base {
   modifier happyPath(GetGainAdjustedTermsScenario memory _scenario) {
     vm.assume(notOverflowMul(_scenario.kp, _scenario.proportionalTerm));
     vm.assume(notOverflowMul(_scenario.ki, _scenario.integralTerm));
-    PIDControllerForTest(address(pidController)).setControllerGains(_scenario.kp, _scenario.ki);
+    _mockControllerGains(IPIDController.ControllerGains(_scenario.kp, _scenario.ki));
     _;
   }
 
@@ -714,7 +727,7 @@ contract Unit_PID_Controller_GetGainAdjustedTerms is Base {
   }
 }
 
-contract Unit_GetGainAdjustedPIOutput is Base {
+contract Unit_PID_Controller_GetGainAdjustedPIOutput is Base {
   function setUp() public virtual override {
     super.setUp();
     setCallSuper(false);
@@ -1168,7 +1181,7 @@ contract Unit_PIDController_ComputeRate is Base {
   ) public breaksNoiseBarrier(_scenario) {
     vm.assume(_user != deployer);
 
-    vm.expectRevert(IPIDController.OnlySeedProposer.selector);
+    vm.expectRevert(IPIDController.PIDController_OnlySeedProposer.selector);
 
     vm.prank(_user);
     pidController.computeRate(_scenario.marketPrice, _scenario.redemptionPrice);
@@ -1180,13 +1193,13 @@ contract Unit_PIDController_ComputeRate is Base {
     vm.assume(_scenario.timestamp - _scenario.lastUpdateTime < _scenario.integralPeriodSize);
     _mockValues(_scenario, true);
 
-    vm.expectRevert(IPIDController.ComputeRateCooldown.selector);
+    vm.expectRevert(IPIDController.PIDController_ComputeRateCooldown.selector);
 
     pidController.computeRate(_scenario.marketPrice, _scenario.redemptionPrice);
   }
 }
 
-contract Unit_GetBoundedPIOutput is Base {
+contract Unit_PIDController_GetBoundedPIOutput is Base {
   function _mockValues(int256 _feedbackOutputLowerBound, uint256 _feedbackOutputUpperBound) internal {
     _mockFeedbackOutputUpperBound(_feedbackOutputUpperBound);
     _mockFeedbackOutputLowerBound(_feedbackOutputLowerBound);
@@ -1249,14 +1262,152 @@ contract Unit_GetBoundedPIOutput is Base {
 
 contract Unit_PIDController_ControllerGains is Base {
   function test_Return_ControllerGains_Kp(int256 _proportionalGain, int256 _integralGain) public {
-    PIDControllerForTest(address(pidController)).setControllerGains(_proportionalGain, _integralGain);
+    _mockControllerGains(IPIDController.ControllerGains(_proportionalGain, _integralGain));
 
     assertEq(pidController.controllerGains().kp, _proportionalGain);
   }
 
   function test_Return_ControllerGains_Ki(int256 _proportionalGain, int256 _integralGain) public {
-    PIDControllerForTest(address(pidController)).setControllerGains(_proportionalGain, _integralGain);
+    _mockControllerGains(IPIDController.ControllerGains(_proportionalGain, _integralGain));
 
     assertEq(pidController.controllerGains().ki, _integralGain);
+  }
+}
+
+contract Unit_PIDController_ModifyParameters is Base {
+  function test_ModifyParameters(
+    address _fuzzSeedProposer,
+    IPIDController.PIDControllerParams memory _fuzz,
+    IPIDController.ControllerGains memory _fuzzGains
+  ) public authorized {
+    vm.assume(_fuzzSeedProposer != address(0));
+    vm.assume(_fuzz.noiseBarrier > 0 && _fuzz.noiseBarrier <= WAD);
+    vm.assume(_fuzz.integralPeriodSize > 0);
+    vm.assume(_fuzz.feedbackOutputUpperBound > 0 && _fuzz.feedbackOutputUpperBound < type(uint256).max - RAY - 1);
+    vm.assume(_fuzz.feedbackOutputLowerBound > -int256(RAY - 1) && _fuzz.feedbackOutputLowerBound < 0);
+    vm.assume(_fuzz.perSecondCumulativeLeak <= RAY);
+    vm.assume(_fuzzGains.kp >= -int256(WAD) && _fuzzGains.kp <= int256(WAD));
+    vm.assume(_fuzzGains.ki >= -int256(WAD) && _fuzzGains.ki <= int256(WAD));
+
+    pidController.modifyParameters('seedProposer', abi.encode(_fuzzSeedProposer));
+    pidController.modifyParameters('noiseBarrier', abi.encode(_fuzz.noiseBarrier));
+    pidController.modifyParameters('integralPeriodSize', abi.encode(_fuzz.integralPeriodSize));
+    pidController.modifyParameters('feedbackOutputUpperBound', abi.encode(_fuzz.feedbackOutputUpperBound));
+    pidController.modifyParameters('feedbackOutputLowerBound', abi.encode(_fuzz.feedbackOutputLowerBound));
+    pidController.modifyParameters('perSecondCumulativeLeak', abi.encode(_fuzz.perSecondCumulativeLeak));
+    pidController.modifyParameters('kp', abi.encode(_fuzzGains.kp));
+    pidController.modifyParameters('ki', abi.encode(_fuzzGains.ki));
+
+    address _seedProposer = pidController.seedProposer();
+    IPIDController.PIDControllerParams memory _params = pidController.params();
+    IPIDController.ControllerGains memory _controllerGains = pidController.controllerGains();
+
+    assertEq(_fuzzSeedProposer, _seedProposer);
+    assertEq(abi.encode(_fuzz), abi.encode(_params));
+    assertEq(abi.encode(_fuzzGains), abi.encode(_controllerGains));
+  }
+
+  function test_Set_PriceDeviationCumulative(
+    int256 _proportionalGain,
+    uint256 _priceDeviationCumulative
+  ) public authorized {
+    _mockControllerGains(IPIDController.ControllerGains(_proportionalGain, 0));
+    pidController.modifyParameters('priceDeviationCumulative', abi.encode(_priceDeviationCumulative));
+
+    assertEq(pidController.deviation().integral, int256(_priceDeviationCumulative));
+  }
+
+  function test_Revert_NullSeedProposer() public authorized {
+    vm.expectRevert(Assertions.NullAddress.selector);
+
+    pidController.modifyParameters('seedProposer', abi.encode(address(0)));
+  }
+
+  function test_Revert_InvalidNoiseBarrier(uint256 _noiseBarrier) public authorized {
+    if (_noiseBarrier == 0) {
+      vm.expectRevert(Assertions.NullAmount.selector);
+    } else if (_noiseBarrier > WAD) {
+      vm.expectRevert(abi.encodeWithSelector(Assertions.NotLesserOrEqualThan.selector, _noiseBarrier, WAD));
+    }
+
+    pidController.modifyParameters('noiseBarrier', abi.encode(_noiseBarrier));
+  }
+
+  function test_Revert_InvalidIntegralPeriodSize() public authorized {
+    vm.expectRevert(Assertions.NullAmount.selector);
+
+    pidController.modifyParameters('integralPeriodSize', abi.encode(0));
+  }
+
+  function test_Revert_InvalidFeedbackOutputUpperBound(uint256 _feedbackOutputUpperBound) public authorized {
+    if (_feedbackOutputUpperBound == 0) {
+      vm.expectRevert(Assertions.NullAmount.selector);
+    } else if (_feedbackOutputUpperBound >= type(uint256).max - RAY - 1) {
+      vm.expectRevert(
+        abi.encodeWithSelector(
+          Assertions.NotLesserThan.selector, _feedbackOutputUpperBound, type(uint256).max - RAY - 1
+        )
+      );
+    }
+
+    pidController.modifyParameters('feedbackOutputUpperBound', abi.encode(_feedbackOutputUpperBound));
+  }
+
+  function test_Revert_FeedbackOutputLowerBound(int256 _feedbackOutputLowerBound) public authorized {
+    if (_feedbackOutputLowerBound >= 0) {
+      vm.expectRevert(abi.encodeWithSelector(Assertions.IntNotLesserThan.selector, _feedbackOutputLowerBound, 0));
+    } else if (_feedbackOutputLowerBound < -int256(RAY - 1)) {
+      vm.expectRevert(
+        abi.encodeWithSelector(
+          Assertions.IntNotGreaterOrEqualThan.selector, _feedbackOutputLowerBound, -int256(RAY - 1)
+        )
+      );
+    }
+
+    pidController.modifyParameters('feedbackOutputLowerBound', abi.encode(_feedbackOutputLowerBound));
+  }
+
+  function test_Revert_InvalidPerSecondCumulativeLeak(uint256 _perSecondCumulativeLeak) public authorized {
+    if (_perSecondCumulativeLeak > RAY) {
+      vm.expectRevert(abi.encodeWithSelector(Assertions.NotLesserOrEqualThan.selector, _perSecondCumulativeLeak, RAY));
+    }
+
+    pidController.modifyParameters('perSecondCumulativeLeak', abi.encode(_perSecondCumulativeLeak));
+  }
+
+  function test_Revert_InvalidProportionalGain(int256 _proportionalGain) public authorized {
+    if (_proportionalGain > int256(WAD)) {
+      vm.expectRevert(
+        abi.encodeWithSelector(Assertions.IntNotLesserOrEqualThan.selector, _proportionalGain, int256(WAD))
+      );
+    } else if (_proportionalGain < -int256(WAD)) {
+      vm.expectRevert(
+        abi.encodeWithSelector(Assertions.IntNotGreaterOrEqualThan.selector, _proportionalGain, -int256(WAD))
+      );
+    }
+
+    pidController.modifyParameters('kp', abi.encode(_proportionalGain));
+  }
+
+  function test_Revert_InvalidIntegralGain(int256 _integralGain) public authorized {
+    if (_integralGain > int256(WAD)) {
+      vm.expectRevert(abi.encodeWithSelector(Assertions.IntNotLesserOrEqualThan.selector, _integralGain, int256(WAD)));
+    } else if (_integralGain < -int256(WAD)) {
+      vm.expectRevert(abi.encodeWithSelector(Assertions.IntNotGreaterOrEqualThan.selector, _integralGain, -int256(WAD)));
+    }
+
+    pidController.modifyParameters('ki', abi.encode(_integralGain));
+  }
+
+  function test_Revert_PriceDeviationCumulative(
+    IPIDController.ControllerGains memory _gains,
+    uint256 _priceDeviationCumulative
+  ) public authorized {
+    vm.assume(_gains.ki != 0); // turn on the integral gain
+    _mockControllerGains(_gains);
+
+    vm.expectRevert(IPIDController.PIDController_CannotSetPriceDeviationCumulative.selector);
+
+    pidController.modifyParameters('priceDeviationCumulative', abi.encode(_priceDeviationCumulative));
   }
 }

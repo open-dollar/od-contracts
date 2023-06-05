@@ -46,7 +46,7 @@ abstract contract Deploy is Script, Contracts {
         perSecondCumulativeLeak: PID_PER_SECOND_CUMULATIVE_LEAK,
         feedbackOutputLowerBound: PID_FEEDBACK_OUTPUT_LOWER_BOUND,
         feedbackOutputUpperBound: PID_FEEDBACK_OUTPUT_UPPER_BOUND,
-        periodSize: PID_PERIOD_SIZE,
+        integralPeriodSize: PID_PERIOD_SIZE,
         updateRate: PID_UPDATE_RATE
       })
     );
@@ -250,7 +250,7 @@ abstract contract Deploy is Script, Contracts {
       _kp: _params.proportionalGain,
       _ki: _params.integralGain,
       _perSecondCumulativeLeak: _params.perSecondCumulativeLeak,
-      _integralPeriodSize: _params.periodSize, // TODO: rename ips to ps
+      _integralPeriodSize: _params.integralPeriodSize,
       _noiseBarrier: _params.noiseBarrier,
       _feedbackOutputUpperBound: _params.feedbackOutputUpperBound,
       _feedbackOutputLowerBound: _params.feedbackOutputLowerBound,

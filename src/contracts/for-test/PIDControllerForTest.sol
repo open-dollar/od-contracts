@@ -43,7 +43,7 @@ contract PIDControllerForTest is PIDController, InternalCallsExtension {
   }
 
   function call_getBoundedPIOutput(int256 _piOutput) external view returns (int256 _boundedPIOutput) {
-    return _getBoundedPIOutput(_piOutput);
+    return super._getBoundedPIOutput(_piOutput);
   }
 
   function _getProportionalTerm(
@@ -171,30 +171,16 @@ contract PIDControllerForTest is PIDController, InternalCallsExtension {
     uint256 _marketPrice,
     uint256 _redemptionPrice
   ) external view returns (int256 _proportionalTerm) {
-    return _getProportionalTerm(_marketPrice, _redemptionPrice);
+    return super._getProportionalTerm(_marketPrice, _redemptionPrice);
   }
 
   function call_updateDeviation(int256 _proportionalTerm, uint256 _accumulatedLeak) external virtual {
-    _updateDeviation(_proportionalTerm, _accumulatedLeak);
-  }
-
-  function push_mockDeviationObservation(IPIDController.DeviationObservation memory _deviation) public {
-    _deviationObservation = _deviation;
-  }
-
-  function setControllerGains(int256 _kp, int256 _ki) external {
-    _controllerGains.kp = _kp;
-    _controllerGains.ki = _ki;
+    super._updateDeviation(_proportionalTerm, _accumulatedLeak);
   }
 
   // stdstore not available for address
   function setSeedProposer(address _seedProposer) external {
     seedProposer = _seedProposer;
-  }
-
-  // stdstore not available for uint256
-  function setFeedbackOutputLowerBound(int256 _feedbackOutputLowerBound) external {
-    _params.feedbackOutputLowerBound = _feedbackOutputLowerBound;
   }
 }
 

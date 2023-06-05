@@ -9,8 +9,12 @@ interface IPIDController is IAuthorizable, IModifiable {
   event UpdateDeviation(int256 _proportionalDeviation, int256 _integralDeviation, int256 _deltaIntegralDeviation);
 
   // --- Errors ---
-  error OnlySeedProposer();
-  error ComputeRateCooldown();
+  /// @notice Throws if the caller of `updateRate` is not the seed proposer
+  error PIDController_OnlySeedProposer();
+  /// @notice Throws if the call to `updateRate` is too soon since last update
+  error PIDController_ComputeRateCooldown();
+  /// @notice Throws when trying to set the integral term with the integral gain set on
+  error PIDController_CannotSetPriceDeviationCumulative();
 
   // --- Structs ---
   struct PIDControllerParams {
