@@ -32,9 +32,9 @@ import {SurplusAuctionHouse} from '@contracts/SurplusAuctionHouse.sol';
 import {DebtAuctionHouse} from '@contracts/DebtAuctionHouse.sol';
 import {CollateralJoin} from '@contracts/utils/CollateralJoin.sol';
 import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
-import {OracleRelayer} from '@contracts/OracleRelayer.sol';
 import {GlobalSettlement} from '@contracts/settlement/GlobalSettlement.sol';
 import {SettlementSurplusAuctioneer} from '@contracts/settlement/SettlementSurplusAuctioneer.sol';
+import {OracleRelayerForTest} from '@contracts/for-test/OracleRelayerForTest.sol';
 
 import {Math, RAY, WAD} from '@libraries/Math.sol';
 
@@ -126,7 +126,7 @@ contract SingleGlobalSettlementTest is DSTest {
   GlobalSettlement globalSettlement;
   AccountingEngine accountingEngine;
   LiquidationEngine liquidationEngine;
-  OracleRelayer oracleRelayer;
+  OracleRelayerForTest oracleRelayer;
   StabilityFeeTreasury stabilityFeeTreasury;
   SettlementSurplusAuctioneer postSettlementSurplusDrain;
 
@@ -246,7 +246,7 @@ contract SingleGlobalSettlementTest is DSTest {
     safeEngine.addAuthorization(address(liquidationEngine));
     accountingEngine.addAuthorization(address(liquidationEngine));
 
-    oracleRelayer = new OracleRelayer(address(safeEngine));
+    oracleRelayer = new OracleRelayerForTest(address(safeEngine));
     safeEngine.modifyParameters('globalDebtCeiling', abi.encode(rad(10_000_000 ether)));
     safeEngine.addAuthorization(address(oracleRelayer));
 
@@ -659,7 +659,7 @@ contract SingleGlobalSettlementTest is DSTest {
     // collateral price is 5
     gold.oracleSecurityModule.updateCollateralPrice(bytes32(5 * WAD));
     // redemption price is 0.5
-    oracleRelayer.modifyParameters('redemptionPrice', abi.encode(ray(0.5 ether)));
+    oracleRelayer.setRedemptionPrice(ray(0.5 ether));
 
     globalSettlement.shutdownSystem();
     globalSettlement.freezeCollateralType('gold');
@@ -744,7 +744,7 @@ contract SingleGlobalSettlementTest is DSTest {
     // collateral price is 5
     gold.oracleSecurityModule.updateCollateralPrice(bytes32(5 * WAD));
     // redemption price is 0.5
-    oracleRelayer.modifyParameters('redemptionPrice', abi.encode(ray(2 ether)));
+    oracleRelayer.setRedemptionPrice(ray(2 ether));
 
     globalSettlement.shutdownSystem();
     globalSettlement.freezeCollateralType('gold');

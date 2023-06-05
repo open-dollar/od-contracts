@@ -136,11 +136,8 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled {
     uint256 _uint256 = _data.toUint256();
 
-    require(_uint256 > 0, 'OracleRelayer/null-data');
-    // TODO: why is there a method to update the redemptionPrice?
-    if (_param == 'redemptionPrice') _redemptionPrice = _uint256;
-    else if (_param == 'redemptionRateUpperBound') _params.redemptionRateUpperBound = _uint256.assertGt(RAY);
-    else if (_param == 'redemptionRateLowerBound') _params.redemptionRateLowerBound = _uint256.assertLt(RAY);
+    if (_param == 'redemptionRateUpperBound') _params.redemptionRateUpperBound = _uint256.assertGt(RAY);
+    else if (_param == 'redemptionRateLowerBound') _params.redemptionRateLowerBound = _uint256.assertGt(0).assertLt(RAY);
     else revert UnrecognizedParam();
   }
 
