@@ -9,8 +9,9 @@ import {
 contract PostSettlementSurplusAuctionHouseForTest is PostSettlementSurplusAuctionHouse {
   constructor(
     address _safeEngine,
-    address _protocolToken
-  ) PostSettlementSurplusAuctionHouse(_safeEngine, _protocolToken) {}
+    address _protocolToken,
+    PostSettlementSAHParams memory _pssahParams
+  ) PostSettlementSurplusAuctionHouse(_safeEngine, _protocolToken, _pssahParams) {}
 
   function addBid(
     uint256 _id,

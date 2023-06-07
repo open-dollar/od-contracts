@@ -33,10 +33,18 @@ abstract contract Base is HaiTest {
 
   DebtAuctionHouseForTest debtAuctionHouse;
 
+  IDebtAuctionHouse.DebtAuctionHouseParams debtAuctionHouseParams = IDebtAuctionHouse.DebtAuctionHouseParams({
+    bidDecrease: 1.05e18,
+    amountSoldIncrease: 1.5e18,
+    bidDuration: 3 hours,
+    totalAuctionLength: 2 days
+  });
+
   function setUp() public virtual {
     vm.startPrank(deployer);
 
-    debtAuctionHouse = new DebtAuctionHouseForTest(address(mockSafeEngine), address(mockProtocolToken));
+    debtAuctionHouse =
+      new DebtAuctionHouseForTest(address(mockSafeEngine), address(mockProtocolToken), debtAuctionHouseParams);
     label(address(debtAuctionHouse), 'DebtAuctionHouse');
 
     debtAuctionHouse.addAuthorization(authorizedAccount);
@@ -130,7 +138,8 @@ contract Unit_DebtAuctionHouse_Constructor is Base {
     expectEmitNoIndex();
     emit AddAuthorization(user);
 
-    debtAuctionHouse = new DebtAuctionHouseForTest(address(mockSafeEngine), address(mockProtocolToken));
+    debtAuctionHouse =
+      new DebtAuctionHouseForTest(address(mockSafeEngine), address(mockProtocolToken), debtAuctionHouseParams);
   }
 
   function test_Set_ContractEnabled() public happyPath {
@@ -138,13 +147,13 @@ contract Unit_DebtAuctionHouse_Constructor is Base {
   }
 
   function test_Set_SafeEngine(address _safeEngine) public happyPath {
-    debtAuctionHouse = new DebtAuctionHouseForTest(_safeEngine, address(mockProtocolToken));
+    debtAuctionHouse = new DebtAuctionHouseForTest(_safeEngine, address(mockProtocolToken), debtAuctionHouseParams);
 
     assertEq(address(debtAuctionHouse.safeEngine()), _safeEngine);
   }
 
   function test_Set_ProtocolToken(address _protocolToken) public happyPath {
-    debtAuctionHouse = new DebtAuctionHouseForTest(address(mockSafeEngine), _protocolToken);
+    debtAuctionHouse = new DebtAuctionHouseForTest(address(mockSafeEngine), _protocolToken, debtAuctionHouseParams);
 
     assertEq(address(debtAuctionHouse.protocolToken()), _protocolToken);
   }
@@ -163,6 +172,10 @@ contract Unit_DebtAuctionHouse_Constructor is Base {
 
   function test_Set_TotalAuctionLength() public happyPath {
     assertEq(debtAuctionHouse.params().totalAuctionLength, 2 days);
+  }
+
+  function test_Set_DAH_Params() public {
+    assertEq(abi.encode(debtAuctionHouse.params()), abi.encode(debtAuctionHouseParams));
   }
 }
 

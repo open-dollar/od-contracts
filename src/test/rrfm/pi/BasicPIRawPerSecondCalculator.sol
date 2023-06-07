@@ -43,9 +43,10 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
     oracleRelayer = new MockOracleRelayer();
     orcl = new OracleForTest(1 ether);
 
+    IPIDController.ControllerGains memory _pidControllerGains = IPIDController.ControllerGains({kp: Kp, ki: Ki});
+
     calculator = new BasicPIRawPerSecondCalculator(
-        Kp,
-        Ki,
+        _pidControllerGains,
         perSecondCumulativeLeak,
         integralPeriodSize,
         importedState

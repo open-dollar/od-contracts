@@ -43,16 +43,15 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
   }
 
   // --- Init ---
-  constructor(address _safeEngine, address _protocolToken, uint256 _recyclingPercentage) Authorizable(msg.sender) {
+  constructor(
+    address _safeEngine,
+    address _protocolToken,
+    SurplusAuctionHouseParams memory _sahParams
+  ) Authorizable(msg.sender) {
     safeEngine = ISAFEEngine(_safeEngine);
     protocolToken = IToken(_protocolToken);
 
-    _params = SurplusAuctionHouseParams({
-      bidIncrease: 1.05e18,
-      bidDuration: 3 hours,
-      totalAuctionLength: 2 days,
-      recyclingPercentage: _recyclingPercentage
-    });
+    _params = _sahParams;
   }
 
   // --- Shutdown ---

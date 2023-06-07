@@ -102,9 +102,9 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
   uint256 public globalUnbackedDebt; // [rad]
 
   // --- Init ---
-  constructor() Authorizable(msg.sender) {
-    _params.safeDebtCeiling = type(uint256).max;
-    emit ModifyParameters('safeDebtCeiling', _GLOBAL_PARAM, abi.encode(type(uint256).max));
+  constructor(SAFEEngineParams memory _safeEngineParams) Authorizable(msg.sender) {
+    _params = _safeEngineParams;
+    emit ModifyParameters('safeDebtCeiling', _GLOBAL_PARAM, abi.encode(_safeEngineParams.safeDebtCeiling));
   }
 
   function initializeCollateralType(bytes32 _cType) external isAuthorized {

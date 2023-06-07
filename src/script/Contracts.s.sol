@@ -1,22 +1,25 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {SAFEEngine} from '@contracts/SAFEEngine.sol';
+import {ISAFEEngine, SAFEEngine} from '@contracts/SAFEEngine.sol';
 import {TaxCollector, ITaxCollector} from '@contracts/TaxCollector.sol';
-import {AccountingEngine} from '@contracts/AccountingEngine.sol';
-import {LiquidationEngine} from '@contracts/LiquidationEngine.sol';
+import {IAccountingEngine, AccountingEngine} from '@contracts/AccountingEngine.sol';
+import {ILiquidationEngine, LiquidationEngine} from '@contracts/LiquidationEngine.sol';
 import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
 import {ETHJoin} from '@contracts/utils/ETHJoin.sol';
 import {CollateralJoin} from '@contracts/utils/CollateralJoin.sol';
-import {SurplusAuctionHouse} from '@contracts/SurplusAuctionHouse.sol';
-import {DebtAuctionHouse} from '@contracts/DebtAuctionHouse.sol';
-import {IncreasingDiscountCollateralAuctionHouse as CollateralAuctionHouse} from '@contracts/CollateralAuctionHouse.sol';
+import {ISurplusAuctionHouse, SurplusAuctionHouse} from '@contracts/SurplusAuctionHouse.sol';
+import {IDebtAuctionHouse, DebtAuctionHouse} from '@contracts/DebtAuctionHouse.sol';
+import {
+  IIncreasingDiscountCollateralAuctionHouse,
+  IncreasingDiscountCollateralAuctionHouse as CollateralAuctionHouse
+} from '@contracts/CollateralAuctionHouse.sol';
 import {GlobalSettlement} from '@contracts/settlement/GlobalSettlement.sol';
-import {StabilityFeeTreasury} from '@contracts/StabilityFeeTreasury.sol';
+import {IStabilityFeeTreasury, StabilityFeeTreasury} from '@contracts/StabilityFeeTreasury.sol';
 import {PIDController, IPIDController} from '@contracts/PIDController.sol';
 import {PIDRateSetter} from '@contracts/PIDRateSetter.sol';
 
-import {OracleRelayer} from '@contracts/OracleRelayer.sol';
+import {IOracleRelayer, OracleRelayer} from '@contracts/OracleRelayer.sol';
 import {DenominatedOracle} from '@contracts/oracles/DenominatedOracle.sol';
 import {DelayedOracle} from '@contracts/oracles/DelayedOracle.sol';
 import {ChainlinkRelayer} from '@contracts/oracles/ChainlinkRelayer.sol';

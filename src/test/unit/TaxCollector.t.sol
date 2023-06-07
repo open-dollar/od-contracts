@@ -45,10 +45,13 @@ abstract contract Base is HaiTest {
   // Input parameters
   address receiver;
 
+  ITaxCollector.TaxCollectorParams taxCollectorParams =
+    ITaxCollector.TaxCollectorParams({primaryTaxReceiver: address(0), globalStabilityFee: 0, maxSecondaryReceivers: 0});
+
   function setUp() public virtual {
     vm.startPrank(deployer);
 
-    taxCollector = new TaxCollectorForTest(address(mockSafeEngine));
+    taxCollector = new TaxCollectorForTest(address(mockSafeEngine), taxCollectorParams);
     label(address(taxCollector), 'TaxCollector');
 
     taxCollector.addAuthorization(authorizedAccount);
@@ -246,13 +249,17 @@ contract Unit_TaxCollector_Constructor is Base {
     expectEmitNoIndex();
     emit AddAuthorization(user);
 
-    taxCollector = new TaxCollectorForTest(address(mockSafeEngine));
+    taxCollector = new TaxCollectorForTest(address(mockSafeEngine), taxCollectorParams);
   }
 
   function test_Set_SafeEngine(address _safeEngine) public happyPath {
-    taxCollector = new TaxCollectorForTest(_safeEngine);
+    taxCollector = new TaxCollectorForTest(_safeEngine, taxCollectorParams);
 
     assertEq(address(taxCollector.safeEngine()), _safeEngine);
+  }
+
+  function test_Set_TaxCollectorParams() public {
+    assertEq(abi.encode(taxCollector.params()), abi.encode(taxCollectorParams));
   }
 }
 

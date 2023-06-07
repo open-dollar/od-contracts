@@ -42,10 +42,13 @@ abstract contract Base is HaiTest {
   ICollateralAuctionHouse collateralAuctionHouseForTest =
     ICollateralAuctionHouse(address(new CollateralAuctionHouseForTest()));
 
+  ILiquidationEngine.LiquidationEngineParams liquidationEngineParams =
+    ILiquidationEngine.LiquidationEngineParams({onAuctionSystemCoinLimit: type(uint256).max});
+
   function setUp() public virtual {
     vm.prank(deployer);
 
-    liquidationEngine = new LiquidationEngineForTest(address(mockSafeEngine));
+    liquidationEngine = new LiquidationEngineForTest(address(mockSafeEngine), liquidationEngineParams);
     label(address(liquidationEngine), 'LiquidationEngine');
   }
 
@@ -298,14 +301,18 @@ contract Unit_LiquidationEngine_Constructor is Base {
     emit AddAuthorization(deployer);
 
     vm.prank(deployer);
-    new LiquidationEngine(address(mockSafeEngine));
+    new LiquidationEngine(address(mockSafeEngine), liquidationEngineParams);
   }
 
   function test_Emit_ModifyParameters() public {
     vm.expectEmit(true, true, false, false);
     emit ModifyParameters('onAuctionSystemCoinLimit', bytes32(0), abi.encode(type(uint256).max));
 
-    new LiquidationEngine(address(mockSafeEngine));
+    new LiquidationEngine(address(mockSafeEngine), liquidationEngineParams);
+  }
+
+  function test_Set_LiquidationEngine_Param() public {
+    assertEq(abi.encode(liquidationEngine.params()), abi.encode(liquidationEngineParams));
   }
 }
 

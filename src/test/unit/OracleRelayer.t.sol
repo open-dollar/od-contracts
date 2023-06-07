@@ -25,10 +25,13 @@ abstract contract Base is HaiTest {
   bytes32 collateralType = 'ETH-A';
   address deployer = label('deployer');
 
+  IOracleRelayer.OracleRelayerParams oracleRelayerParams =
+    IOracleRelayer.OracleRelayerParams({redemptionRateUpperBound: RAY * WAD, redemptionRateLowerBound: 1});
+
   function setUp() public virtual {
     vm.startPrank(deployer);
     mockSafeEngine = new SAFEEngineForTest();
-    oracleRelayer = new OracleRelayerForTest(address(mockSafeEngine));
+    oracleRelayer = new OracleRelayerForTest(address(mockSafeEngine), oracleRelayerParams);
     mockOracle = new OracleForTest(1 ether);
     vm.stopPrank();
   }
@@ -107,6 +110,10 @@ contract Unit_OracleRelayer_Constructor is Base {
   function test_Set_Authorizable() public {
     assertEq(IAuthorizable(address(oracleRelayer)).authorizedAccounts(deployer), 1);
   }
+
+  function test_Set_OracleRelayer_Params() public {
+    assertEq(abi.encode(oracleRelayer.params()), abi.encode(oracleRelayerParams));
+  }
 }
 
 contract Unit_OracleRelayer_DisableContract is Base {
@@ -147,7 +154,7 @@ contract Unit_OracleRelayer_RedemptionPrice is Base {
 
   function setUp() public virtual override {
     vm.prank(deployer);
-    oracleRelayer = new OracleRelayerForInternalCallsTest(address(mockSafeEngine));
+    oracleRelayer = new OracleRelayerForInternalCallsTest(address(mockSafeEngine), oracleRelayerParams);
   }
 
   function test_Get_RedemptionPrice_Call_Internal_UpdateRedemptionPrice(
@@ -201,7 +208,7 @@ contract Unit_OracleRelayer_Internal_UpdateRedemptionPrice is Base {
 
   function setUp() public virtual override {
     vm.prank(deployer);
-    oracleRelayer = new OracleRelayerForTest(address(mockSafeEngine));
+    oracleRelayer = new OracleRelayerForTest(address(mockSafeEngine), oracleRelayerParams);
   }
 
   struct UpdateRedemptionPriceScenario {
@@ -393,7 +400,7 @@ contract Unit_OracleRelayer_UpdateCollateralPrice is Base {
     public
     happyPathValidityNoUpdate(_scenario)
   {
-    oracleRelayer = new OracleRelayerForInternalCallsTest(address(mockSafeEngine));
+    oracleRelayer = new OracleRelayerForInternalCallsTest(address(mockSafeEngine), oracleRelayerParams);
     OracleRelayerForInternalCallsTest(address(oracleRelayer)).setCTypeOracle(collateralType, address(mockOracle));
 
     _assumeHappyPathValidatyWithoutUpdateRedemptionPrice(_scenario);
@@ -408,7 +415,7 @@ contract Unit_OracleRelayer_UpdateCollateralPrice is Base {
   function test_Call_Internal_GetRedemptionPrice_ValidityWithPriceUpdate(UpdateCollateralPriceScenario memory _scenario)
     public
   {
-    oracleRelayer = new OracleRelayerForInternalCallsTest(address(mockSafeEngine));
+    oracleRelayer = new OracleRelayerForInternalCallsTest(address(mockSafeEngine), oracleRelayerParams);
     OracleRelayerForInternalCallsTest(address(oracleRelayer)).setCTypeOracle(collateralType, address(mockOracle));
 
     _assumeHappyPathValidatyWithUpdateRedemptionPrice(_scenario);

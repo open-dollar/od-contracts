@@ -7,7 +7,7 @@ import {MockPIDCalculator} from '../utils/mock/MockPIDCalculator.sol';
 import {PIDRateSetter} from '@contracts/PIDRateSetter.sol';
 import {OracleForTest as OracleForTest} from '@contracts/for-test/OracleForTest.sol';
 
-import {OracleRelayer as MockOracleRelayer} from '@contracts/OracleRelayer.sol';
+import {IOracleRelayer, OracleRelayer as MockOracleRelayer} from '@contracts/OracleRelayer.sol';
 
 abstract contract Hevm {
   function warp(uint256) public virtual;
@@ -32,7 +32,9 @@ contract PIDRateSetterTest is DSTest {
     hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     hevm.warp(604_411_200);
 
-    oracleRelayer = new MockOracleRelayer(address(69));
+    IOracleRelayer.OracleRelayerParams memory _oracleRelayerParams =
+      IOracleRelayer.OracleRelayerParams({redemptionRateUpperBound: RAY * WAD, redemptionRateLowerBound: 1});
+    oracleRelayer = new MockOracleRelayer(address(69), _oracleRelayerParams);
 
     orcl = new OracleForTest(1 ether);
 

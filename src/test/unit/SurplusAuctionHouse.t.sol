@@ -37,16 +37,31 @@ abstract contract Base is HaiTest {
   // SurplusAuctionHouse storage
   address protocolTokenBidReceiver = newAddress();
 
+  ISurplusAuctionHouse.SurplusAuctionHouseParams sahParams;
+
   function setUp() public virtual {
     vm.startPrank(deployer);
 
-    surplusAuctionHouse =
-      new SurplusAuctionHouseForTest(address(mockSafeEngine), address(mockProtocolToken), RECYCLING_PERCENTAGE);
-    label(address(surplusAuctionHouse), 'SurplusAuctionHouse');
-
+    _createSurplusAuctionHouse(address(mockSafeEngine), address(mockProtocolToken), RECYCLING_PERCENTAGE);
     surplusAuctionHouse.addAuthorization(authorizedAccount);
 
     vm.stopPrank();
+  }
+
+  function _createSurplusAuctionHouse(
+    address _safeEngine,
+    address _protocolToken,
+    uint256 _recyclingPercentage
+  ) internal {
+    sahParams = ISurplusAuctionHouse.SurplusAuctionHouseParams({
+      bidIncrease: 1.05e18,
+      bidDuration: 3 hours,
+      totalAuctionLength: 2 days,
+      recyclingPercentage: _recyclingPercentage
+    });
+
+    surplusAuctionHouse = new SurplusAuctionHouseForTest(_safeEngine, _protocolToken, sahParams);
+    label(address(surplusAuctionHouse), 'SurplusAuctionHouse');
   }
 
   function _mockCoinBalance(address _coinAddress, uint256 _coinBalance) internal {
@@ -130,8 +145,7 @@ contract Unit_SurplusAuctionHouse_Constructor is Base {
     expectEmitNoIndex();
     emit AddAuthorization(user);
 
-    surplusAuctionHouse =
-      new SurplusAuctionHouseForTest(address(mockSafeEngine), address(mockProtocolToken), RECYCLING_PERCENTAGE);
+    _createSurplusAuctionHouse(address(mockSafeEngine), address(mockProtocolToken), RECYCLING_PERCENTAGE);
   }
 
   function test_Set_ContractEnabled() public happyPath {
@@ -139,13 +153,13 @@ contract Unit_SurplusAuctionHouse_Constructor is Base {
   }
 
   function test_Set_SafeEngine(address _safeEngine) public happyPath {
-    surplusAuctionHouse = new SurplusAuctionHouseForTest(_safeEngine, address(mockProtocolToken), RECYCLING_PERCENTAGE);
+    _createSurplusAuctionHouse(_safeEngine, address(mockProtocolToken), RECYCLING_PERCENTAGE);
 
     assertEq(address(surplusAuctionHouse.safeEngine()), _safeEngine);
   }
 
   function test_Set_ProtocolToken(address _protocolToken) public happyPath {
-    surplusAuctionHouse = new SurplusAuctionHouseForTest(address(mockSafeEngine), _protocolToken, RECYCLING_PERCENTAGE);
+    _createSurplusAuctionHouse(address(mockSafeEngine), _protocolToken, RECYCLING_PERCENTAGE);
 
     assertEq(address(surplusAuctionHouse.protocolToken()), _protocolToken);
   }
@@ -163,10 +177,13 @@ contract Unit_SurplusAuctionHouse_Constructor is Base {
   }
 
   function test_Set_RecyclingPercentage(uint256 _recyclingPercentage) public happyPath {
-    surplusAuctionHouse =
-      new SurplusAuctionHouseForTest(address(mockSafeEngine), address(mockProtocolToken), _recyclingPercentage);
+    _createSurplusAuctionHouse(address(mockSafeEngine), address(mockProtocolToken), _recyclingPercentage);
 
     assertEq(surplusAuctionHouse.params().recyclingPercentage, _recyclingPercentage);
+  }
+
+  function test_Set_SurplusAuctionHouse_Params() public {
+    assertEq(abi.encode(surplusAuctionHouse.params()), abi.encode(sahParams));
   }
 }
 

@@ -4,11 +4,14 @@ pragma solidity 0.8.19;
 import 'ds-test/test.sol';
 import {ERC20ForTest as Gem} from '@contracts/for-test/ERC20ForTest.sol';
 
-import {SAFEEngine} from '@contracts/SAFEEngine.sol';
-import {AccountingEngine} from '@contracts/AccountingEngine.sol';
-import {DebtAuctionHouse as DAH} from '@contracts/DebtAuctionHouse.sol';
-import {SurplusAuctionHouse as SAH_ONE} from '@contracts/SurplusAuctionHouse.sol';
-import {PostSettlementSurplusAuctionHouse as SAH_TWO} from '@contracts/settlement/PostSettlementSurplusAuctionHouse.sol';
+import {ISAFEEngine, SAFEEngine} from '@contracts/SAFEEngine.sol';
+import {IAccountingEngine, AccountingEngine} from '@contracts/AccountingEngine.sol';
+import {IDebtAuctionHouse, DebtAuctionHouse as DAH} from '@contracts/DebtAuctionHouse.sol';
+import {ISurplusAuctionHouse, SurplusAuctionHouse as SAH_ONE} from '@contracts/SurplusAuctionHouse.sol';
+import {
+  IPostSettlementSurplusAuctionHouse,
+  PostSettlementSurplusAuctionHouse as SAH_TWO
+} from '@contracts/settlement/PostSettlementSurplusAuctionHouse.sol';
 import {SettlementSurplusAuctioneer} from '@contracts/settlement/SettlementSurplusAuctioneer.sol';
 import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
 
@@ -31,22 +34,46 @@ contract SingleAccountingEngineTest is DSTest {
     hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     hevm.warp(604_411_200);
 
-    safeEngine = new SAFEEngine();
+    ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
+      ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 0});
+    safeEngine = new SAFEEngine(_safeEngineParams);
 
     protocolToken = new Gem();
-    debtAuctionHouse = new DAH(address(safeEngine), address(protocolToken));
-    surplusAuctionHouseOne = new SAH_ONE(address(safeEngine), address(protocolToken), 0);
+
+    IDebtAuctionHouse.DebtAuctionHouseParams memory _debtAuctionHouseParams = IDebtAuctionHouse.DebtAuctionHouseParams({
+      bidDecrease: 1.05e18,
+      amountSoldIncrease: 1.5e18,
+      bidDuration: 3 hours,
+      totalAuctionLength: 2 days
+    });
+
+    debtAuctionHouse = new DAH(address(safeEngine), address(protocolToken), _debtAuctionHouseParams);
+    ISurplusAuctionHouse.SurplusAuctionHouseParams memory _sahParams = ISurplusAuctionHouse.SurplusAuctionHouseParams({
+      bidIncrease: 1.05e18,
+      bidDuration: 3 hours,
+      totalAuctionLength: 2 days,
+      recyclingPercentage: 0
+    });
+
+    surplusAuctionHouseOne = new SAH_ONE(address(safeEngine), address(protocolToken), _sahParams);
+
+    IAccountingEngine.AccountingEngineParams memory _accountingEngineParams = IAccountingEngine.AccountingEngineParams({
+      surplusIsTransferred: 0,
+      surplusDelay: 0,
+      popDebtDelay: 0,
+      disableCooldown: 0,
+      surplusAmount: rad(100 ether),
+      surplusBuffer: 0,
+      debtAuctionMintedTokens: 200 ether,
+      debtAuctionBidSize: rad(100 ether)
+    });
 
     accountingEngine = new AccountingEngine(
-          address(safeEngine), address(surplusAuctionHouseOne), address(debtAuctionHouse)
+          address(safeEngine), address(surplusAuctionHouseOne), address(debtAuctionHouse), _accountingEngineParams
         );
     surplusAuctionHouseOne.addAuthorization(address(accountingEngine));
 
     debtAuctionHouse.addAuthorization(address(accountingEngine));
-
-    accountingEngine.modifyParameters('surplusAmount', abi.encode(rad(100 ether)));
-    accountingEngine.modifyParameters('debtAuctionBidSize', abi.encode(rad(100 ether)));
-    accountingEngine.modifyParameters('debtAuctionMintedTokens', abi.encode(200 ether));
 
     safeEngine.approveSAFEModification(address(debtAuctionHouse));
   }
@@ -119,8 +146,22 @@ contract SingleAccountingEngineTest is DSTest {
   }
 
   function test_change_auction_houses() public {
-    SAH_ONE newSAH_ONE = new SAH_ONE(address(safeEngine), address(protocolToken), 0);
-    DAH newDAH = new DAH(address(safeEngine), address(protocolToken));
+    ISurplusAuctionHouse.SurplusAuctionHouseParams memory _sahParams = ISurplusAuctionHouse.SurplusAuctionHouseParams({
+      bidIncrease: 1.05e18,
+      bidDuration: 3 hours,
+      totalAuctionLength: 2 days,
+      recyclingPercentage: 0
+    });
+
+    SAH_ONE newSAH_ONE = new SAH_ONE(address(safeEngine), address(protocolToken), _sahParams);
+
+    DAH newDAH = new DAH(address(safeEngine), address(protocolToken), 
+    IDebtAuctionHouse.DebtAuctionHouseParams({
+      bidDecrease: 1.05e18,
+      amountSoldIncrease: 1.5e18,
+      bidDuration: 3 hours,
+      totalAuctionLength: 2 days
+    }));
 
     newSAH_ONE.addAuthorization(address(accountingEngine));
     newDAH.addAuthorization(address(accountingEngine));
@@ -262,7 +303,9 @@ contract SingleAccountingEngineTest is DSTest {
 
   function test_settlement_auction_surplus() public {
     // Post settlement auction house setup
-    surplusAuctionHouseTwo = new SAH_TWO(address(safeEngine), address(protocolToken));
+    IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams memory _pssahParams = IPostSettlementSurplusAuctionHouse
+      .PostSettlementSAHParams({bidIncrease: 1.05e18, bidDuration: 3 hours, totalAuctionLength: 2 days});
+    surplusAuctionHouseTwo = new SAH_TWO(address(safeEngine), address(protocolToken), _pssahParams);
     // Auctioneer setup
     postSettlementSurplusDrain =
       new SettlementSurplusAuctioneer(address(accountingEngine), address(surplusAuctionHouseTwo));
@@ -276,7 +319,9 @@ contract SingleAccountingEngineTest is DSTest {
 
   function test_settlement_delay_transfer_surplus() public {
     // Post settlement auction house setup
-    surplusAuctionHouseTwo = new SAH_TWO(address(safeEngine), address(protocolToken));
+    IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams memory _pssahParams = IPostSettlementSurplusAuctionHouse
+      .PostSettlementSAHParams({bidIncrease: 1.05e18, bidDuration: 3 hours, totalAuctionLength: 2 days});
+    surplusAuctionHouseTwo = new SAH_TWO(address(safeEngine), address(protocolToken), _pssahParams);
     // Auctioneer setup
     postSettlementSurplusDrain =
       new SettlementSurplusAuctioneer(address(accountingEngine), address(surplusAuctionHouseTwo));

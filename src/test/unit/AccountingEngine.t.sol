@@ -25,10 +25,22 @@ abstract contract Base is HaiTest {
   IDebtAuctionHouse mockSurplusAuctionHouse = IDebtAuctionHouse(mockContract('mockSurplusAuctionHouse'));
   IAccountingEngine accountingEngine;
 
+  IAccountingEngine.AccountingEngineParams accountingEngineParams = IAccountingEngine.AccountingEngineParams({
+    surplusIsTransferred: 0,
+    surplusDelay: 0,
+    popDebtDelay: 0,
+    disableCooldown: 0,
+    surplusAmount: 0,
+    surplusBuffer: 0,
+    debtAuctionMintedTokens: 0,
+    debtAuctionBidSize: 0
+  });
+
   function setUp() public virtual {
     vm.startPrank(deployer);
+
     accountingEngine =
-      new AccountingEngine(address(mockSafeEngine), address(mockSurplusAuctionHouse), address(mockDebtAuctionHouse));
+    new AccountingEngine(address(mockSafeEngine), address(mockSurplusAuctionHouse), address(mockDebtAuctionHouse), accountingEngineParams);
     vm.stopPrank();
   }
 
@@ -190,6 +202,10 @@ contract Unit_AccountingEngine_Constructor is Base {
     assertEq(address(accountingEngine.safeEngine()), address(mockSafeEngine));
     assertEq(address(accountingEngine.surplusAuctionHouse()), address(mockSurplusAuctionHouse));
     assertEq(address(accountingEngine.debtAuctionHouse()), address(mockDebtAuctionHouse));
+  }
+
+  function test_Set_AccountingEngineParams() public {
+    assertEq(abi.encode(accountingEngine.params()), abi.encode(accountingEngineParams));
   }
 }
 

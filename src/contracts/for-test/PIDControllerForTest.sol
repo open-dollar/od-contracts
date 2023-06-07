@@ -9,27 +9,11 @@ contract PIDControllerForTest is PIDController, InternalCallsExtension {
   MockPIDController public mockPIDController;
 
   constructor(
-    int256 _kp,
-    int256 _ki,
-    uint256 _perSecondCumulativeLeak,
-    uint256 _integralPeriodSize,
-    uint256 _noiseBarrier,
-    uint256 _feedbackOutputUpperBound,
-    int256 _feedbackOutputLowerBound,
+    ControllerGains memory __controllerGains,
+    PIDControllerParams memory __params,
     DeviationObservation memory _importedState,
     MockPIDController _mockPIDController
-  )
-    PIDController(
-      _kp,
-      _ki,
-      _perSecondCumulativeLeak,
-      _integralPeriodSize,
-      _noiseBarrier,
-      _feedbackOutputUpperBound,
-      _feedbackOutputLowerBound,
-      _importedState
-    )
-  {
+  ) PIDController(__controllerGains, __params, _importedState) {
     mockPIDController = _mockPIDController;
   }
 

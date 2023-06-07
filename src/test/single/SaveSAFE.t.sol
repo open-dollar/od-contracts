@@ -4,17 +4,25 @@ pragma solidity 0.8.19;
 import 'ds-test/test.sol';
 import {DSToken as DSDelegateToken} from '@contracts/for-test/DSToken.sol';
 
-import {SAFEEngine} from '@contracts/SAFEEngine.sol';
-import {LiquidationEngine} from '@contracts/LiquidationEngine.sol';
-import {AccountingEngine} from '@contracts/AccountingEngine.sol';
-import {TaxCollector} from '@contracts/TaxCollector.sol';
+import {ISAFEEngine, SAFEEngine} from '@contracts/SAFEEngine.sol';
+import {ILiquidationEngine, LiquidationEngine} from '@contracts/LiquidationEngine.sol';
+import {IAccountingEngine, AccountingEngine} from '@contracts/AccountingEngine.sol';
+import {ITaxCollector, TaxCollector} from '@contracts/TaxCollector.sol';
 import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
 import {ETHJoin} from '@contracts/utils/ETHJoin.sol';
 import {CollateralJoin} from '@contracts/utils/CollateralJoin.sol';
 import {OracleRelayer} from '@contracts/OracleRelayer.sol';
-import {DebtAuctionHouse} from '@contracts/DebtAuctionHouse.sol';
-import {IncreasingDiscountCollateralAuctionHouse} from '@contracts/CollateralAuctionHouse.sol';
-import {PostSettlementSurplusAuctionHouse} from '@contracts/settlement/PostSettlementSurplusAuctionHouse.sol';
+import {IDebtAuctionHouse, DebtAuctionHouse} from '@contracts/DebtAuctionHouse.sol';
+import {
+  IIncreasingDiscountCollateralAuctionHouse,
+  IncreasingDiscountCollateralAuctionHouse
+} from '@contracts/CollateralAuctionHouse.sol';
+import {
+  IPostSettlementSurplusAuctionHouse,
+  PostSettlementSurplusAuctionHouse
+} from '@contracts/settlement/PostSettlementSurplusAuctionHouse.sol';
+
+import {RAY, WAD} from '@libraries/Math.sol';
 
 abstract contract Hevm {
   function warp(uint256) public virtual;
@@ -157,26 +165,55 @@ contract SingleSaveSAFETest is DSTest {
     protocolToken = new DSDelegateToken('GOV', 'GOV');
     protocolToken.mint(100 ether);
 
-    safeEngine = new SAFEEngine();
-    safeEngine = safeEngine;
+    ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
+      ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: rad(1000 ether)});
+    safeEngine = new SAFEEngine(_safeEngineParams);
 
-    surplusAuctionHouse = new PostSettlementSurplusAuctionHouse(address(safeEngine), address(protocolToken));
-    debtAuctionHouse = new DebtAuctionHouse(address(safeEngine), address(protocolToken));
+    IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams memory _pssahParams = IPostSettlementSurplusAuctionHouse
+      .PostSettlementSAHParams({bidIncrease: 1.05e18, bidDuration: 3 hours, totalAuctionLength: 2 days});
+    surplusAuctionHouse =
+      new PostSettlementSurplusAuctionHouse(address(safeEngine), address(protocolToken), _pssahParams);
+
+    IDebtAuctionHouse.DebtAuctionHouseParams memory _debtAuctionHouseParams = IDebtAuctionHouse.DebtAuctionHouseParams({
+      bidDecrease: 1.05e18,
+      amountSoldIncrease: 1.5e18,
+      bidDuration: 3 hours,
+      totalAuctionLength: 2 days
+    });
+    debtAuctionHouse = new DebtAuctionHouse(address(safeEngine), address(protocolToken), _debtAuctionHouseParams);
+
+    IAccountingEngine.AccountingEngineParams memory _accountingEngineParams = IAccountingEngine.AccountingEngineParams({
+      surplusIsTransferred: 0,
+      surplusDelay: 0,
+      popDebtDelay: 0,
+      disableCooldown: 0,
+      surplusAmount: 0,
+      surplusBuffer: 0,
+      debtAuctionMintedTokens: 0,
+      debtAuctionBidSize: 0
+    });
 
     accountingEngine = new AccountingEngine(
-          address(safeEngine), address(surplusAuctionHouse), address(debtAuctionHouse)
+          address(safeEngine), address(surplusAuctionHouse), address(debtAuctionHouse), _accountingEngineParams
         );
     surplusAuctionHouse.addAuthorization(address(accountingEngine));
     debtAuctionHouse.addAuthorization(address(accountingEngine));
     debtAuctionHouse.modifyParameters('accountingEngine', abi.encode(accountingEngine));
     safeEngine.addAuthorization(address(accountingEngine));
 
-    taxCollector = new TaxCollector(address(safeEngine));
+    ITaxCollector.TaxCollectorParams memory _taxCollectorParams = ITaxCollector.TaxCollectorParams({
+      primaryTaxReceiver: address(accountingEngine),
+      globalStabilityFee: 0,
+      maxSecondaryReceivers: 0
+    });
+
+    taxCollector = new TaxCollector(address(safeEngine), _taxCollectorParams);
     taxCollector.initializeCollateralType('gold');
-    taxCollector.modifyParameters('primaryTaxReceiver', abi.encode(accountingEngine));
     safeEngine.addAuthorization(address(taxCollector));
 
-    liquidationEngine = new LiquidationEngine(address(safeEngine));
+    ILiquidationEngine.LiquidationEngineParams memory _liquidationEngineParams =
+      ILiquidationEngine.LiquidationEngineParams({onAuctionSystemCoinLimit: type(uint256).max});
+    liquidationEngine = new LiquidationEngine(address(safeEngine), _liquidationEngineParams);
     liquidationEngine.modifyParameters('accountingEngine', abi.encode(accountingEngine));
     safeEngine.addAuthorization(address(liquidationEngine));
     accountingEngine.addAuthorization(address(liquidationEngine));
@@ -192,10 +229,25 @@ contract SingleSaveSAFETest is DSTest {
 
     safeEngine.updateCollateralPrice('gold', ray(1 ether), ray(1 ether));
     safeEngine.modifyParameters('gold', 'debtCeiling', abi.encode(rad(1000 ether)));
-    safeEngine.modifyParameters('globalDebtCeiling', abi.encode(rad(1000 ether)));
 
+    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams =
+    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams({
+      lowerSystemCoinDeviation: WAD, // 0% deviation
+      upperSystemCoinDeviation: WAD, // 0% deviation
+      minSystemCoinDeviation: 0.999e18 // 0.1% deviation
+    });
+
+    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams =
+    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams({
+      minDiscount: 0.95e18, // 5% discount
+      maxDiscount: 0.95e18, // 5% discount
+      perSecondDiscountUpdateRate: RAY, // [ray]
+      lowerCollateralDeviation: 0.9e18, // 10% deviation
+      upperCollateralDeviation: 0.95e18, // 5% deviation
+      minimumBid: 1e18 // 1 system coin
+    });
     collateralAuctionHouse =
-      new IncreasingDiscountCollateralAuctionHouse(address(safeEngine), address(liquidationEngine), 'gold');
+    new IncreasingDiscountCollateralAuctionHouse(address(safeEngine), address(liquidationEngine), 'gold', _cahParams, _cahCParams);
     collateralAuctionHouse.addAuthorization(address(liquidationEngine));
 
     liquidationEngine.addAuthorization(address(collateralAuctionHouse));

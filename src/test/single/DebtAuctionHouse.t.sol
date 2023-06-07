@@ -4,8 +4,8 @@ pragma solidity 0.8.19;
 import {DSTest} from 'ds-test/test.sol';
 import {DSToken as DSDelegateToken} from '@contracts/for-test/DSToken.sol';
 
-import {DebtAuctionHouse} from '@contracts/DebtAuctionHouse.sol';
-import {SAFEEngine} from '@contracts/SAFEEngine.sol';
+import {IDebtAuctionHouse, DebtAuctionHouse} from '@contracts/DebtAuctionHouse.sol';
+import {ISAFEEngine, SAFEEngine} from '@contracts/SAFEEngine.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 
 abstract contract Hevm {
@@ -84,10 +84,19 @@ contract SingleDebtAuctionHouseTest is DSTest {
     hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     hevm.warp(604_411_200);
 
-    safeEngine = new SAFEEngine();
+    ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
+      ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 0});
+    safeEngine = new SAFEEngine(_safeEngineParams);
     protocolToken = new DSDelegateToken('', '');
 
-    debtAuctionHouse = new DebtAuctionHouse(address(safeEngine), address(protocolToken));
+    IDebtAuctionHouse.DebtAuctionHouseParams memory _debtAuctionHouseParams = IDebtAuctionHouse.DebtAuctionHouseParams({
+      bidDecrease: 1.05e18,
+      amountSoldIncrease: 1.5e18,
+      bidDuration: 3 hours,
+      totalAuctionLength: 2 days
+    });
+
+    debtAuctionHouse = new DebtAuctionHouse(address(safeEngine), address(protocolToken), _debtAuctionHouseParams);
 
     ali = address(new Guy(debtAuctionHouse));
     bob = address(new Guy(debtAuctionHouse));

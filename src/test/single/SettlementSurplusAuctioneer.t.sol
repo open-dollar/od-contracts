@@ -5,10 +5,13 @@ import 'ds-test/test.sol';
 import {DSToken as DSDelegateToken} from '@contracts/for-test/DSToken.sol';
 import {DisableableForTest} from '@contracts/for-test/DisableableForTest.sol';
 
-import {PostSettlementSurplusAuctionHouse} from '@contracts/settlement/PostSettlementSurplusAuctionHouse.sol';
+import {
+  IPostSettlementSurplusAuctionHouse,
+  PostSettlementSurplusAuctionHouse
+} from '@contracts/settlement/PostSettlementSurplusAuctionHouse.sol';
 import {SettlementSurplusAuctioneer} from '@contracts/settlement/SettlementSurplusAuctioneer.sol';
-import {SAFEEngine} from '@contracts/SAFEEngine.sol';
-import {AccountingEngine} from '@contracts/AccountingEngine.sol';
+import {ISAFEEngine, SAFEEngine} from '@contracts/SAFEEngine.sol';
+import {IAccountingEngine, AccountingEngine} from '@contracts/AccountingEngine.sol';
 import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
 import {Coin} from '@contracts/utils/Coin.sol';
 
@@ -37,16 +40,33 @@ contract SingleSettlementSurplusAuctioneerTest is DSTest {
     DisableableForTest disableable1 = new DisableableForTest();
     DisableableForTest disableable2 = new DisableableForTest();
 
-    safeEngine = new SAFEEngine();
-    accountingEngine = new AccountingEngine(address(safeEngine), address(disableable1), address(disableable2));
+    ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
+      ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 0});
+
+    safeEngine = new SAFEEngine(_safeEngineParams);
+
+    IAccountingEngine.AccountingEngineParams memory _accountingEngineParams = IAccountingEngine.AccountingEngineParams({
+      surplusIsTransferred: 0,
+      surplusDelay: 3600,
+      popDebtDelay: 0,
+      disableCooldown: 0,
+      surplusAmount: 100 ether * 10 ** 9,
+      surplusBuffer: 0,
+      debtAuctionMintedTokens: 0,
+      debtAuctionBidSize: 0
+    });
+
+    accountingEngine =
+      new AccountingEngine(address(safeEngine), address(disableable1), address(disableable2), _accountingEngineParams);
     protocolToken = new DSDelegateToken('', '');
 
     disableable1.addAuthorization(address(accountingEngine));
     disableable2.addAuthorization(address(accountingEngine));
-    accountingEngine.modifyParameters('surplusAmount', abi.encode(100 ether * 10 ** 9));
-    accountingEngine.modifyParameters('surplusDelay', abi.encode(3600));
 
-    surplusAuctionHouse = new PostSettlementSurplusAuctionHouse(address(safeEngine), address(protocolToken));
+    IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams memory _pssahParams = IPostSettlementSurplusAuctionHouse
+      .PostSettlementSAHParams({bidIncrease: 1.05e18, bidDuration: 3 hours, totalAuctionLength: 2 days});
+    surplusAuctionHouse =
+      new PostSettlementSurplusAuctionHouse(address(safeEngine), address(protocolToken), _pssahParams);
     surplusAuctioneer = new SettlementSurplusAuctioneer(address(accountingEngine), address(surplusAuctionHouse));
     surplusAuctionHouse.addAuthorization(address(surplusAuctioneer));
 

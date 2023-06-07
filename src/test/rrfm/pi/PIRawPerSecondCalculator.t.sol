@@ -46,14 +46,19 @@ contract PIRawPerSecondCalculatorTest is DSTest {
     oracleRelayer = new MockOracleRelayer();
     orcl = new OracleForTest(1 ether);
 
+    IPIDController.ControllerGains memory _pidControllerGains = IPIDController.ControllerGains({kp: Kp, ki: Ki});
+
+    IPIDController.PIDControllerParams memory _pidControllerParams = IPIDController.PIDControllerParams({
+      integralPeriodSize: integralPeriodSize,
+      perSecondCumulativeLeak: perSecondCumulativeLeak,
+      noiseBarrier: noiseBarrier,
+      feedbackOutputUpperBound: feedbackOutputUpperBound,
+      feedbackOutputLowerBound: feedbackOutputLowerBound
+    });
+
     calculator = new PIRawPerSecondCalculator(
-        Kp,
-        Ki,
-        perSecondCumulativeLeak,
-        integralPeriodSize,
-        noiseBarrier,
-        feedbackOutputUpperBound,
-        feedbackOutputLowerBound,
+        _pidControllerGains,
+        _pidControllerParams,
         importedState
       );
 

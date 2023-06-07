@@ -41,13 +41,12 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
   uint256 public redemptionPriceUpdateTime; // [unix epoch time]
 
   // --- Init ---
-  constructor(address _safeEngine) Authorizable(msg.sender) {
+  constructor(address _safeEngine, OracleRelayerParams memory _oracleRelayerParams) Authorizable(msg.sender) {
     safeEngine = ISAFEEngine(_safeEngine);
     _redemptionPrice = RAY;
     redemptionRate = RAY;
     redemptionPriceUpdateTime = block.timestamp;
-    _params.redemptionRateUpperBound = RAY * WAD;
-    _params.redemptionRateLowerBound = 1;
+    _params = _oracleRelayerParams;
   }
 
   // --- Redemption Price Update ---
@@ -121,9 +120,13 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled {
     uint256 _uint256 = _data.toUint256();
 
-    if (_param == 'redemptionRateUpperBound') _params.redemptionRateUpperBound = _uint256.assertGt(RAY);
-    else if (_param == 'redemptionRateLowerBound') _params.redemptionRateLowerBound = _uint256.assertGt(0).assertLt(RAY);
-    else revert UnrecognizedParam();
+    if (_param == 'redemptionRateUpperBound') {
+      _params.redemptionRateUpperBound = _uint256.assertGt(RAY);
+    } else if (_param == 'redemptionRateLowerBound') {
+      _params.redemptionRateLowerBound = _uint256.assertGt(0).assertLt(RAY);
+    } else {
+      revert UnrecognizedParam();
+    }
   }
 
   function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override whenEnabled {

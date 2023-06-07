@@ -43,16 +43,14 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
   }
 
   // --- Init ---
-  constructor(address _safeEngine, address _protocolToken) Authorizable(msg.sender) {
+  constructor(
+    address _safeEngine,
+    address _protocolToken,
+    DebtAuctionHouseParams memory _dahParams
+  ) Authorizable(msg.sender) {
     safeEngine = ISAFEEngine(_safeEngine);
     protocolToken = IToken(_protocolToken);
-
-    _params = DebtAuctionHouseParams({
-      bidDecrease: 1.05e18,
-      amountSoldIncrease: 1.5e18,
-      bidDuration: 3 hours,
-      totalAuctionLength: 2 days
-    });
+    _params = _dahParams;
   }
 
   // --- Shutdown ---

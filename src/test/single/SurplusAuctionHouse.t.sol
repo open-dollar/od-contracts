@@ -4,9 +4,12 @@ pragma solidity 0.8.19;
 import 'ds-test/test.sol';
 import {DSToken as DSDelegateToken} from '@contracts/for-test/DSToken.sol';
 
-import {SurplusAuctionHouse} from '@contracts/SurplusAuctionHouse.sol';
-import {PostSettlementSurplusAuctionHouse} from '@contracts/settlement/PostSettlementSurplusAuctionHouse.sol';
-import {SAFEEngine} from '@contracts/SAFEEngine.sol';
+import {ISurplusAuctionHouse, SurplusAuctionHouse} from '@contracts/SurplusAuctionHouse.sol';
+import {
+  IPostSettlementSurplusAuctionHouse,
+  PostSettlementSurplusAuctionHouse
+} from '@contracts/settlement/PostSettlementSurplusAuctionHouse.sol';
+import {ISAFEEngine, SAFEEngine} from '@contracts/SAFEEngine.sol';
 
 import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
 import {Coin} from '@contracts/utils/Coin.sol';
@@ -128,10 +131,18 @@ contract SingleBurningSurplusAuctionHouseTest is DSTest {
     hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     hevm.warp(604_411_200);
 
-    safeEngine = new SAFEEngine();
+    ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
+      ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 0});
+    safeEngine = new SAFEEngine(_safeEngineParams);
     protocolToken = new DSDelegateToken('', '');
 
-    surplusAuctionHouse = new SurplusAuctionHouse(address(safeEngine), address(protocolToken), 0);
+    ISurplusAuctionHouse.SurplusAuctionHouseParams memory _sahParams = ISurplusAuctionHouse.SurplusAuctionHouseParams({
+      bidIncrease: 1.05e18,
+      bidDuration: 3 hours,
+      totalAuctionLength: 2 days,
+      recyclingPercentage: 0
+    });
+    surplusAuctionHouse = new SurplusAuctionHouse(address(safeEngine), address(protocolToken), _sahParams);
 
     ali = address(new GuyBurningSurplusAuction(surplusAuctionHouse));
     bob = address(new GuyBurningSurplusAuction(surplusAuctionHouse));
@@ -250,10 +261,19 @@ contract SingleRecyclingSurplusAuctionHouseTest is DSTest {
     hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     hevm.warp(604_411_200);
 
-    safeEngine = new SAFEEngine();
+    ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
+      ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 0});
+    safeEngine = new SAFEEngine(_safeEngineParams);
     protocolToken = new DSDelegateToken('', '');
 
-    surplusAuctionHouse = new SurplusAuctionHouse(address(safeEngine), address(protocolToken), 100);
+    ISurplusAuctionHouse.SurplusAuctionHouseParams memory _sahParams = ISurplusAuctionHouse.SurplusAuctionHouseParams({
+      bidIncrease: 1.05e18,
+      bidDuration: 3 hours,
+      totalAuctionLength: 2 days,
+      recyclingPercentage: 100
+    });
+
+    surplusAuctionHouse = new SurplusAuctionHouse(address(safeEngine), address(protocolToken), _sahParams);
 
     ali = address(new GuyRecyclingSurplusAuction(surplusAuctionHouse));
     bob = address(new GuyRecyclingSurplusAuction(surplusAuctionHouse));
@@ -385,10 +405,18 @@ contract SingleMixedStratSurplusAuctionHouseTest is DSTest {
     hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     hevm.warp(604_411_200);
 
-    safeEngine = new SAFEEngine();
+    ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
+      ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 0});
+    safeEngine = new SAFEEngine(_safeEngineParams);
     protocolToken = new DSDelegateToken('', '');
 
-    surplusAuctionHouse = new SurplusAuctionHouse(address(safeEngine), address(protocolToken), 50);
+    ISurplusAuctionHouse.SurplusAuctionHouseParams memory _sahParams = ISurplusAuctionHouse.SurplusAuctionHouseParams({
+      bidIncrease: 1.05e18,
+      bidDuration: 3 hours,
+      totalAuctionLength: 2 days,
+      recyclingPercentage: 50
+    });
+    surplusAuctionHouse = new SurplusAuctionHouse(address(safeEngine), address(protocolToken), _sahParams);
 
     ali = address(new GuyRecyclingSurplusAuction(surplusAuctionHouse));
     bob = address(new GuyRecyclingSurplusAuction(surplusAuctionHouse));
@@ -523,10 +551,15 @@ contract SinglePostSettlementSurplusAuctionHouseTest is DSTest {
     hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     hevm.warp(604_411_200);
 
-    safeEngine = new SAFEEngine();
+    ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
+      ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 0});
+    safeEngine = new SAFEEngine(_safeEngineParams);
     protocolToken = new DSDelegateToken('', '');
 
-    surplusAuctionHouse = new PostSettlementSurplusAuctionHouse(address(safeEngine), address(protocolToken));
+    IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams memory _pssahParams = IPostSettlementSurplusAuctionHouse
+      .PostSettlementSAHParams({bidIncrease: 1.05e18, bidDuration: 3 hours, totalAuctionLength: 2 days});
+    surplusAuctionHouse =
+      new PostSettlementSurplusAuctionHouse(address(safeEngine), address(protocolToken), _pssahParams);
 
     ali = address(new GuyPostSurplusAuction(surplusAuctionHouse));
     bob = address(new GuyPostSurplusAuction(surplusAuctionHouse));

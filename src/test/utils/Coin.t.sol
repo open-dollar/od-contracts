@@ -5,10 +5,12 @@ import 'ds-test/test.sol';
 import {DSToken as DSDelegateToken} from '@contracts/for-test/DSToken.sol';
 
 import {Coin} from '@contracts/utils/Coin.sol';
-import {SAFEEngine} from '@contracts/SAFEEngine.sol';
+import {ISAFEEngine, SAFEEngine} from '@contracts/SAFEEngine.sol';
 import {AccountingEngine} from '@contracts/AccountingEngine.sol';
 import {CollateralJoin} from '@contracts/utils/CollateralJoin.sol';
-import {OracleRelayer} from '@contracts/OracleRelayer.sol';
+import {IOracleRelayer, OracleRelayer} from '@contracts/OracleRelayer.sol';
+
+import {RAY, WAD} from '@libraries/Math.sol';
 
 contract Feed {
   bytes32 public priceFeedValue;
@@ -120,8 +122,12 @@ contract CoinTest is DSTest {
     hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     hevm.warp(604_411_200);
 
-    safeEngine = new SAFEEngine();
-    oracleRelayer = new OracleRelayer(address(safeEngine));
+    ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
+      ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: rad(1000 ether)});
+    safeEngine = new SAFEEngine(_safeEngineParams);
+    IOracleRelayer.OracleRelayerParams memory _oracleRelayerParams =
+      IOracleRelayer.OracleRelayerParams({redemptionRateUpperBound: RAY * WAD, redemptionRateLowerBound: 1});
+    oracleRelayer = new OracleRelayer(address(safeEngine), _oracleRelayerParams);
     safeEngine.addAuthorization(address(oracleRelayer));
 
     gold = new DSDelegateToken('GEM', 'GEM');
@@ -135,7 +141,6 @@ contract CoinTest is DSTest {
     collateralA = new CollateralJoin(address(safeEngine), 'gold', address(gold));
 
     safeEngine.modifyParameters('gold', 'debtCeiling', abi.encode(rad(1000 ether)));
-    safeEngine.modifyParameters('globalDebtCeiling', abi.encode(rad(1000 ether)));
 
     gold.approve(address(collateralA));
     gold.approve(address(safeEngine));

@@ -4,7 +4,10 @@ pragma solidity 0.8.19;
 import {TaxCollector, ITaxCollector, EnumerableSet} from '@contracts/TaxCollector.sol';
 
 contract TaxCollectorForTest is TaxCollector {
-  constructor(address _safeEngine) TaxCollector(_safeEngine) {}
+  constructor(
+    address _safeEngine,
+    TaxCollectorParams memory _taxCollectorParams
+  ) TaxCollector(_safeEngine, _taxCollectorParams) {}
 
   function splitTaxIncome(bytes32 _cType, uint256 _debtAmount, int256 _deltaRate) external {
     _splitTaxIncome(_cType, _debtAmount, _deltaRate);

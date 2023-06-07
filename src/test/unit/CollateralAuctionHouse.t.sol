@@ -39,10 +39,28 @@ contract Base is HaiTest {
   IIncreasingDiscountCollateralAuctionHouse auctionHouse;
   IOracleRelayer mockOracleRelayer = IOracleRelayer(mockContract('mockOracleRelayer'));
 
+  IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams cahParams =
+  IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams({
+    lowerSystemCoinDeviation: WAD, // 0% deviation
+    upperSystemCoinDeviation: WAD, // 0% deviation
+    minSystemCoinDeviation: 0.999e18 // 0.1% deviation
+  });
+
+  IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams cahCParams =
+  IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams({
+    minDiscount: 0.95e18, // 5% discount
+    maxDiscount: 0.95e18, // 5% discount
+    perSecondDiscountUpdateRate: RAY, // [ray]
+    lowerCollateralDeviation: 0.9e18, // 10% deviation
+    upperCollateralDeviation: 0.95e18, // 5% deviation
+    minimumBid: 1e18 // 1 system coin
+  });
+
   function setUp() public virtual {
     vm.prank(deployer);
+
     auctionHouse =
-    new IncreasingDiscountCollateralAuctionHouseForTest(mockSafeEngine, mockLiquidationEngine, mockCollateralType, mockCollateralAuctionHouse);
+    new IncreasingDiscountCollateralAuctionHouseForTest(mockSafeEngine, mockLiquidationEngine, mockCollateralType, mockCollateralAuctionHouse, cahParams, cahCParams);
     watcher = address(IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse)).watcher());
     IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse)).setCollateralFSM(
       IDelayedOracle(address(mockCollateralFSM))
@@ -297,6 +315,14 @@ contract Unit_CollateralAuctionHouse_Constructor is Base {
 
   function test_Set_AuthorizedAccounts() public {
     assertEq(auctionHouse.authorizedAccounts(deployer), 1);
+  }
+
+  function test_Set_CAH_Params() public {
+    assertEq(abi.encode(auctionHouse.cParams()), abi.encode(cahCParams));
+  }
+
+  function test_Set_CAH_SystemCoin_Params() public {
+    assertEq(abi.encode(auctionHouse.params()), abi.encode(cahParams));
   }
 }
 

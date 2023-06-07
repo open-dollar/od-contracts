@@ -32,8 +32,10 @@ contract IncreasingDiscountCollateralAuctionHouseForTest is
     address _safeEngine,
     address _liquidationEngine,
     bytes32 _collateralType,
-    MockCollateralAuctionHouse _mockCollateralAuctionHouse
-  ) IncreasingDiscountCollateralAuctionHouse(_safeEngine, _liquidationEngine, _collateralType) {
+    MockCollateralAuctionHouse _mockCollateralAuctionHouse,
+    CollateralAuctionHouseSystemCoinParams memory _cahParams,
+    CollateralAuctionHouseParams memory _cahCParams
+  ) IncreasingDiscountCollateralAuctionHouse(_safeEngine, _liquidationEngine, _collateralType, _cahParams, _cahCParams) {
     mockCollateralAuctionHouse = _mockCollateralAuctionHouse;
   }
 

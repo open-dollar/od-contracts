@@ -66,10 +66,29 @@ abstract contract Deploy is Script, Contracts {
 
     // deploy ETHJoin and CollateralAuctionHouse
     ethJoin = new ETHJoin(address(safeEngine), ETH_A);
+    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams =
+    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams({
+      lowerSystemCoinDeviation: WAD, // 0% deviation
+      upperSystemCoinDeviation: WAD, // 0% deviation
+      minSystemCoinDeviation: 0.999e18 // 0.1% deviation
+    });
+
+    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams =
+    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams({
+      minDiscount: 0.95e18, // 5% discount
+      maxDiscount: 0.95e18, // 5% discount
+      perSecondDiscountUpdateRate: RAY, // [ray]
+      lowerCollateralDeviation: 0.9e18, // 10% deviation
+      upperCollateralDeviation: 0.95e18, // 5% deviation
+      minimumBid: 1e18 // 1 system coin
+    });
+
     collateralAuctionHouse[ETH_A] = new CollateralAuctionHouse({
         _safeEngine: address(safeEngine), 
         _liquidationEngine: address(liquidationEngine), 
-        _collateralType: ETH_A
+        _collateralType: ETH_A,
+        _cahParams: _cahParams,
+        _cahCParams: _cahCParams
         });
 
     collateralJoin[ETH_A] = CollateralJoin(address(ethJoin));
@@ -88,10 +107,30 @@ abstract contract Deploy is Script, Contracts {
         _cType: _params.name, 
         _collateral: address(collateral[_params.name])
         });
+
+    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams =
+    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams({
+      lowerSystemCoinDeviation: WAD, // 0% deviation
+      upperSystemCoinDeviation: WAD, // 0% deviation
+      minSystemCoinDeviation: 0.999e18 // 0.1% deviation
+    });
+
+    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams =
+    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams({
+      minDiscount: 0.95e18, // 5% discount
+      maxDiscount: 0.95e18, // 5% discount
+      perSecondDiscountUpdateRate: RAY, // [ray]
+      lowerCollateralDeviation: 0.9e18, // 10% deviation
+      upperCollateralDeviation: 0.95e18, // 5% deviation
+      minimumBid: 1e18 // 1 system coin
+    });
+
     collateralAuctionHouse[_params.name] = new CollateralAuctionHouse({
         _safeEngine: address(safeEngine), 
         _liquidationEngine: address(liquidationEngine), 
-        _collateralType: _params.name
+        _collateralType: _params.name,
+        _cahParams: _cahParams,
+        _cahCParams: _cahCParams
         });
 
     _setupCollateral(_params);
@@ -137,23 +176,72 @@ abstract contract Deploy is Script, Contracts {
     protocolToken = new Coin('Protocol Token', 'KITE', chainId);
 
     // deploy Base contracts
-    safeEngine = new SAFEEngine();
-    oracleRelayer = new OracleRelayer(address(safeEngine));
-    taxCollector = new TaxCollector(address(safeEngine));
-    liquidationEngine = new LiquidationEngine(address(safeEngine));
+    ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
+      ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: _params.globalDebtCeiling});
+    safeEngine = new SAFEEngine(_safeEngineParams);
+
+    IOracleRelayer.OracleRelayerParams memory _oracleRelayerParams =
+      IOracleRelayer.OracleRelayerParams({redemptionRateUpperBound: RAY * WAD, redemptionRateLowerBound: 1});
+    oracleRelayer = new OracleRelayer(address(safeEngine), _oracleRelayerParams);
+
+    ILiquidationEngine.LiquidationEngineParams memory _liquidationEngineParams =
+      ILiquidationEngine.LiquidationEngineParams({onAuctionSystemCoinLimit: type(uint256).max});
+    liquidationEngine = new LiquidationEngine(address(safeEngine), _liquidationEngineParams);
 
     coinJoin = new CoinJoin(address(safeEngine), address(coin));
-    surplusAuctionHouse =
-      new SurplusAuctionHouse(address(safeEngine), address(protocolToken), _params.surplusAuctionRecyclingPercentage);
-    debtAuctionHouse = new DebtAuctionHouse(address(safeEngine), address(protocolToken));
+
+    ISurplusAuctionHouse.SurplusAuctionHouseParams memory _sahParams = ISurplusAuctionHouse.SurplusAuctionHouseParams({
+      bidIncrease: 1.05e18,
+      bidDuration: 3 hours,
+      totalAuctionLength: 2 days,
+      recyclingPercentage: _params.surplusAuctionRecyclingPercentage
+    });
+    surplusAuctionHouse = new SurplusAuctionHouse(address(safeEngine), address(protocolToken), _sahParams);
+
+    IDebtAuctionHouse.DebtAuctionHouseParams memory _debtAuctionHouseParams = IDebtAuctionHouse.DebtAuctionHouseParams({
+      bidDecrease: 1.05e18,
+      amountSoldIncrease: 1.5e18,
+      bidDuration: 3 hours,
+      totalAuctionLength: 2 days
+    });
+
+    debtAuctionHouse = new DebtAuctionHouse(address(safeEngine), address(protocolToken), _debtAuctionHouseParams);
+
+    IAccountingEngine.AccountingEngineParams memory _accountingEngineParams = IAccountingEngine.AccountingEngineParams({
+      surplusIsTransferred: 0,
+      surplusDelay: 0,
+      popDebtDelay: 0,
+      disableCooldown: 0,
+      surplusAmount: _params.surplusAmount,
+      surplusBuffer: 0,
+      debtAuctionMintedTokens: _params.debtAuctionMintedTokens,
+      debtAuctionBidSize: _params.bidAuctionSize
+    });
 
     accountingEngine =
-      new AccountingEngine(address(safeEngine), address(surplusAuctionHouse), address(debtAuctionHouse));
+    new AccountingEngine(address(safeEngine), address(surplusAuctionHouse), address(debtAuctionHouse), _accountingEngineParams);
+
+    ITaxCollector.TaxCollectorParams memory _taxCollectorParams = ITaxCollector.TaxCollectorParams({
+      primaryTaxReceiver: address(accountingEngine),
+      globalStabilityFee: _params.globalStabilityFee,
+      maxSecondaryReceivers: _params.maxSecondaryReceivers
+    });
+    taxCollector = new TaxCollector(address(safeEngine), _taxCollectorParams);
+
+    IStabilityFeeTreasury.StabilityFeeTreasuryParams memory _stabilityFeeTreasuryParams = IStabilityFeeTreasury
+      .StabilityFeeTreasuryParams({
+      expensesMultiplier: HUNDRED,
+      treasuryCapacity: 0,
+      minFundsRequired: 0,
+      pullFundsMinThreshold: 0,
+      surplusTransferDelay: 0
+    });
 
     stabilityFeeTreasury = new StabilityFeeTreasury(
           address(safeEngine),
           address(accountingEngine),
-          address(coinJoin)
+          address(coinJoin),
+          _stabilityFeeTreasuryParams
         );
 
     // TODO: deploy PostSettlementSurplusAuctionHouse & SettlementSurplusAuctioneer
@@ -161,7 +249,6 @@ abstract contract Deploy is Script, Contracts {
 
     // setup registry
     debtAuctionHouse.modifyParameters('accountingEngine', abi.encode(accountingEngine));
-    taxCollector.modifyParameters('primaryTaxReceiver', abi.encode(accountingEngine));
     liquidationEngine.modifyParameters('accountingEngine', abi.encode(accountingEngine));
 
     // auth
@@ -190,13 +277,7 @@ abstract contract Deploy is Script, Contracts {
     oracleRelayer.addAuthorization(address(globalSettlement));
 
     // setup params
-    safeEngine.modifyParameters('globalDebtCeiling', abi.encode(_params.globalDebtCeiling));
-    taxCollector.modifyParameters('globalStabilityFee', abi.encode(_params.globalStabilityFee));
-    accountingEngine.modifyParameters('debtAuctionMintedTokens', abi.encode(_params.debtAuctionMintedTokens));
-    accountingEngine.modifyParameters('debtAuctionBidSize', abi.encode(_params.bidAuctionSize));
-    accountingEngine.modifyParameters('surplusAmount', abi.encode(_params.surplusAmount));
     surplusAuctionHouse.modifyParameters('protocolTokenBidReceiver', abi.encode(_params.surplusAuctionBidReceiver));
-    taxCollector.modifyParameters('maxSecondaryReceivers', abi.encode(_params.maxSecondaryReceivers));
   }
 
   function _setupCollateral(CollateralParams memory _params) internal {
@@ -246,14 +327,20 @@ abstract contract Deploy is Script, Contracts {
   }
 
   function deployPIDController(PIDParams memory _params) public {
+    IPIDController.ControllerGains memory _pidControllerGains =
+      IPIDController.ControllerGains({kp: _params.proportionalGain, ki: _params.integralGain});
+
+    IPIDController.PIDControllerParams memory _pidControllerParams = IPIDController.PIDControllerParams({
+      integralPeriodSize: _params.integralPeriodSize,
+      perSecondCumulativeLeak: _params.perSecondCumulativeLeak,
+      noiseBarrier: _params.noiseBarrier,
+      feedbackOutputUpperBound: _params.feedbackOutputUpperBound,
+      feedbackOutputLowerBound: _params.feedbackOutputLowerBound
+    });
+
     pidController = new PIDController({
-      _kp: _params.proportionalGain,
-      _ki: _params.integralGain,
-      _perSecondCumulativeLeak: _params.perSecondCumulativeLeak,
-      _integralPeriodSize: _params.integralPeriodSize,
-      _noiseBarrier: _params.noiseBarrier,
-      _feedbackOutputUpperBound: _params.feedbackOutputUpperBound,
-      _feedbackOutputLowerBound: _params.feedbackOutputLowerBound,
+      _cGains: _pidControllerGains,
+      _pidParams: _pidControllerParams,
       _importedState: IPIDController.DeviationObservation(0,0,0)
     });
 

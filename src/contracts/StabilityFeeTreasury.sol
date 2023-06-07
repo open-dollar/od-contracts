@@ -46,7 +46,12 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
     _;
   }
 
-  constructor(address _safeEngine, address _extraSurplusReceiver, address _coinJoin) Authorizable(msg.sender) {
+  constructor(
+    address _safeEngine,
+    address _extraSurplusReceiver,
+    address _coinJoin,
+    StabilityFeeTreasuryParams memory _sfTreasuryParams
+  ) Authorizable(msg.sender) {
     require(address(ICoinJoin(_coinJoin).systemCoin()) != address(0), 'StabilityFeeTreasury/null-system-coin');
     require(_extraSurplusReceiver != address(0), 'StabilityFeeTreasury/null-surplus-receiver');
 
@@ -55,7 +60,7 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
     coinJoin = ICoinJoin(_coinJoin);
     systemCoin = ISystemCoin(address(coinJoin.systemCoin()));
     latestSurplusTransferTime = block.timestamp;
-    _params.expensesMultiplier = HUNDRED;
+    _params = _sfTreasuryParams;
 
     systemCoin.approve(address(coinJoin), type(uint256).max);
   }

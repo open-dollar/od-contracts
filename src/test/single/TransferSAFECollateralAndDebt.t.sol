@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import 'ds-test/test.sol';
 
-import {SAFEEngine} from '@contracts/SAFEEngine.sol';
+import {ISAFEEngine, SAFEEngine} from '@contracts/SAFEEngine.sol';
 
 contract Guy {
   SAFEEngine public safeEngine;
@@ -106,7 +106,9 @@ contract SingleTransferSAFECollateralAndDebtTest is DSTest {
   }
 
   function setUp() public {
-    safeEngine = new SAFEEngine();
+    ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
+      ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: rad(1000 ether)});
+    safeEngine = new SAFEEngine(_safeEngineParams);
     ali = new Guy(safeEngine);
     bob = new Guy(safeEngine);
     a = address(ali);
@@ -115,7 +117,6 @@ contract SingleTransferSAFECollateralAndDebtTest is DSTest {
     safeEngine.initializeCollateralType('collateralTokens');
     safeEngine.updateCollateralPrice('collateralTokens', ray(0.5 ether), ray(0.5 ether));
     safeEngine.modifyParameters('collateralTokens', 'debtCeiling', abi.encode(rad(1000 ether)));
-    safeEngine.modifyParameters('globalDebtCeiling', abi.encode(rad(1000 ether)));
 
     safeEngine.addAuthorization(a);
     safeEngine.addAuthorization(b);

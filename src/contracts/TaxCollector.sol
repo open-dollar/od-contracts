@@ -61,8 +61,9 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
   EnumerableSet.AddressSet internal _secondaryReceivers;
 
   // --- Init ---
-  constructor(address _safeEngine) Authorizable(msg.sender) {
+  constructor(address _safeEngine, TaxCollectorParams memory _taxCollectorParams) Authorizable(msg.sender) {
     safeEngine = ISAFEEngine(_safeEngine);
+    _params = _taxCollectorParams;
   }
 
   /**

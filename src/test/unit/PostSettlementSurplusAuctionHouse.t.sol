@@ -33,11 +33,14 @@ abstract contract Base is HaiTest {
 
   PostSettlementSurplusAuctionHouseForTest postSettlementSurplusAuctionHouse;
 
+  IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams pssahParams = IPostSettlementSurplusAuctionHouse
+    .PostSettlementSAHParams({bidIncrease: 1.05e18, bidDuration: 3 hours, totalAuctionLength: 2 days});
+
   function setUp() public virtual {
     vm.startPrank(deployer);
 
     postSettlementSurplusAuctionHouse =
-      new PostSettlementSurplusAuctionHouseForTest(address(mockSafeEngine), address(mockProtocolToken));
+      new PostSettlementSurplusAuctionHouseForTest(address(mockSafeEngine), address(mockProtocolToken), pssahParams);
     label(address(postSettlementSurplusAuctionHouse), 'PostSettlementSurplusAuctionHouse');
 
     postSettlementSurplusAuctionHouse.addAuthorization(authorizedAccount);
@@ -103,19 +106,19 @@ contract Unit_PostSettlementSurplusAuctionHouse_Constructor is Base {
     emit AddAuthorization(user);
 
     postSettlementSurplusAuctionHouse =
-      new PostSettlementSurplusAuctionHouseForTest(address(mockSafeEngine), address(mockProtocolToken));
+      new PostSettlementSurplusAuctionHouseForTest(address(mockSafeEngine), address(mockProtocolToken), pssahParams);
   }
 
   function test_Set_SafeEngine(address _safeEngine) public happyPath {
     postSettlementSurplusAuctionHouse =
-      new PostSettlementSurplusAuctionHouseForTest(_safeEngine, address(mockProtocolToken));
+      new PostSettlementSurplusAuctionHouseForTest(_safeEngine, address(mockProtocolToken), pssahParams);
 
     assertEq(address(postSettlementSurplusAuctionHouse.safeEngine()), _safeEngine);
   }
 
   function test_Set_ProtocolToken(address _protocolToken) public happyPath {
     postSettlementSurplusAuctionHouse =
-      new PostSettlementSurplusAuctionHouseForTest(address(mockSafeEngine), _protocolToken);
+      new PostSettlementSurplusAuctionHouseForTest(address(mockSafeEngine), _protocolToken, pssahParams);
 
     assertEq(address(postSettlementSurplusAuctionHouse.protocolToken()), _protocolToken);
   }
@@ -130,6 +133,10 @@ contract Unit_PostSettlementSurplusAuctionHouse_Constructor is Base {
 
   function test_Set_TotalAuctionLength() public happyPath {
     assertEq(postSettlementSurplusAuctionHouse.params().totalAuctionLength, 2 days);
+  }
+
+  function test_Set_PSSAH_Params() public {
+    assertEq(abi.encode(postSettlementSurplusAuctionHouse.params()), abi.encode(pssahParams));
   }
 }
 

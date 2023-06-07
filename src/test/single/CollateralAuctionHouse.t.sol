@@ -3,12 +3,12 @@ pragma solidity 0.8.19;
 
 import 'ds-test/test.sol';
 
-import {SAFEEngine} from '@contracts/SAFEEngine.sol';
+import {ISAFEEngine, SAFEEngine} from '@contracts/SAFEEngine.sol';
 import {
   IIncreasingDiscountCollateralAuctionHouse,
   IncreasingDiscountCollateralAuctionHouse
 } from '@contracts/CollateralAuctionHouse.sol';
-import {OracleRelayerForTest} from '@contracts/for-test/OracleRelayerForTest.sol';
+import {IOracleRelayer, OracleRelayerForTest} from '@contracts/for-test/OracleRelayerForTest.sol';
 
 import {Math, WAD, RAY, RAD} from '@libraries/Math.sol';
 
@@ -134,15 +134,39 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     hevm.warp(604_411_200);
 
-    safeEngine = new SAFEEngine();
+    ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
+      ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 0});
+    safeEngine = new SAFEEngine(_safeEngineParams);
 
     safeEngine.initializeCollateralType('collateralType');
 
     liquidationEngine = new DummyLiquidationEngine(rad(1000 ether));
-    collateralAuctionHouse =
-      new IncreasingDiscountCollateralAuctionHouse(address(safeEngine), address(liquidationEngine), 'collateralType');
 
-    oracleRelayer = new OracleRelayerForTest(address(safeEngine));
+    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams =
+    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams({
+      lowerSystemCoinDeviation: WAD, // 0% deviation
+      upperSystemCoinDeviation: WAD, // 0% deviation
+      minSystemCoinDeviation: 0.999e18 // 0.1% deviation
+    });
+
+    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams =
+    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams({
+      minDiscount: 0.95e18, // 5% discount
+      maxDiscount: 0.95e18, // 5% discount
+      perSecondDiscountUpdateRate: RAY, // [ray]
+      lowerCollateralDeviation: 0.9e18, // 10% deviation
+      upperCollateralDeviation: 0.95e18, // 5% deviation
+      minimumBid: 1e18 // 1 system coin
+    });
+
+    collateralAuctionHouse =
+    new IncreasingDiscountCollateralAuctionHouse(address(safeEngine), address(liquidationEngine), 'collateralType',
+         _cahParams,
+         _cahCParams);
+
+    IOracleRelayer.OracleRelayerParams memory _oracleRelayerParams =
+      IOracleRelayer.OracleRelayerParams({redemptionRateUpperBound: RAY * WAD, redemptionRateLowerBound: 1});
+    oracleRelayer = new OracleRelayerForTest(address(safeEngine), _oracleRelayerParams);
     oracleRelayer.setRedemptionPrice(5 * RAY);
     collateralAuctionHouse.modifyParameters('oracleRelayer', abi.encode(oracleRelayer));
 

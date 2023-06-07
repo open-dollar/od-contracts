@@ -41,11 +41,15 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, Modifiable, IPostSet
   }
 
   // --- Init ---
-  constructor(address _safeEngine, address _protocolToken) Authorizable(msg.sender) {
+  constructor(
+    address _safeEngine,
+    address _protocolToken,
+    PostSettlementSAHParams memory _pssahParams
+  ) Authorizable(msg.sender) {
     safeEngine = ISAFEEngine(_safeEngine);
     protocolToken = IToken(_protocolToken);
 
-    _params = PostSettlementSAHParams({bidIncrease: 1.05e18, bidDuration: 3 hours, totalAuctionLength: 2 days});
+    _params = _pssahParams;
   }
 
   // --- Auction ---

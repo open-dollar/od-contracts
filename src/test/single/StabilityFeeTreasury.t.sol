@@ -4,7 +4,7 @@ pragma solidity 0.8.19;
 import 'ds-test/test.sol';
 
 import {Coin} from '@contracts/utils/Coin.sol';
-import {SAFEEngine} from '@contracts/SAFEEngine.sol';
+import {ISAFEEngine, SAFEEngine} from '@contracts/SAFEEngine.sol';
 import {StabilityFeeTreasury} from '@contracts/StabilityFeeTreasury.sol';
 import {IStabilityFeeTreasury} from '@interfaces/IStabilityFeeTreasury.sol';
 import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
@@ -68,10 +68,24 @@ contract SingleStabilityFeeTreasuryTest is DSTest {
 
     usr = new Usr();
 
-    safeEngine = new SAFEEngine();
+    ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
+      ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 0});
+
+    safeEngine = new SAFEEngine(_safeEngineParams);
     systemCoin = new Coin('Coin', 'COIN', 99);
     systemCoinA = new CoinJoin(address(safeEngine), address(systemCoin));
-    stabilityFeeTreasury = new StabilityFeeTreasury(address(safeEngine), alice, address(systemCoinA));
+
+    IStabilityFeeTreasury.StabilityFeeTreasuryParams memory _stabilityFeeTreasuryParams = IStabilityFeeTreasury
+      .StabilityFeeTreasuryParams({
+      expensesMultiplier: HUNDRED,
+      treasuryCapacity: 0,
+      minFundsRequired: 0,
+      pullFundsMinThreshold: 0,
+      surplusTransferDelay: 0
+    });
+
+    stabilityFeeTreasury =
+      new StabilityFeeTreasury(address(safeEngine), alice, address(systemCoinA), _stabilityFeeTreasuryParams);
 
     systemCoin.addAuthorization(address(systemCoinA));
     stabilityFeeTreasury.addAuthorization(address(systemCoinA));

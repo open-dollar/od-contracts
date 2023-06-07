@@ -34,6 +34,15 @@ contract Base is HaiTest {
   ISystemCoin mockSystemCoin = ISystemCoin(mockContract('systemCoin'));
   IStabilityFeeTreasury stabilityFeeTreasury;
 
+  IStabilityFeeTreasury.StabilityFeeTreasuryParams stabilityFeeTreasuryParams = IStabilityFeeTreasury
+    .StabilityFeeTreasuryParams({
+    expensesMultiplier: HUNDRED,
+    treasuryCapacity: 0,
+    minFundsRequired: 0,
+    pullFundsMinThreshold: 0,
+    surplusTransferDelay: 0
+  });
+
   function _mockCoinJoinSystemCoin(address _systemCoin) internal {
     vm.mockCall(address(mockCoinJoin), abi.encodeWithSelector(ICoinJoin.systemCoin.selector), abi.encode(_systemCoin));
   }
@@ -171,7 +180,7 @@ contract Base is HaiTest {
 
     vm.prank(deployer);
     stabilityFeeTreasury =
-      new StabilityFeeTreasury(address(mockSafeEngine), mockExtraSurplusReceiver, address(mockCoinJoin));
+    new StabilityFeeTreasury(address(mockSafeEngine), mockExtraSurplusReceiver, address(mockCoinJoin), stabilityFeeTreasuryParams);
   }
 
   modifier authorized() {
@@ -216,7 +225,7 @@ contract Unit_StabilityFeeTreasury_Constructor is Base {
       abi.encodeWithSelector(ISystemCoin.approve.selector, address(mockCoinJoin), type(uint256).max)
     );
     stabilityFeeTreasury =
-      new StabilityFeeTreasury(address(mockSafeEngine), mockExtraSurplusReceiver, address(mockCoinJoin));
+    new StabilityFeeTreasury(address(mockSafeEngine), mockExtraSurplusReceiver, address(mockCoinJoin), stabilityFeeTreasuryParams);
   }
 
   function test_Revert_NullSystemCoin() public {
@@ -224,13 +233,18 @@ contract Unit_StabilityFeeTreasury_Constructor is Base {
 
     vm.expectRevert(bytes('StabilityFeeTreasury/null-system-coin'));
     stabilityFeeTreasury =
-      new StabilityFeeTreasury(address(mockSafeEngine), mockExtraSurplusReceiver, address(mockCoinJoin));
+    new StabilityFeeTreasury(address(mockSafeEngine), mockExtraSurplusReceiver, address(mockCoinJoin), stabilityFeeTreasuryParams);
   }
 
   function test_Revert_NullSurplusReceiver() public {
     vm.expectRevert(bytes('StabilityFeeTreasury/null-surplus-receiver'));
 
-    stabilityFeeTreasury = new StabilityFeeTreasury(address(mockSafeEngine), address(0), address(mockCoinJoin));
+    stabilityFeeTreasury =
+      new StabilityFeeTreasury(address(mockSafeEngine), address(0), address(mockCoinJoin), stabilityFeeTreasuryParams);
+  }
+
+  function test_Set_StabilityFeeTreasury_Params() public {
+    assertEq(abi.encode(stabilityFeeTreasury.params()), abi.encode(stabilityFeeTreasuryParams));
   }
 }
 
@@ -275,7 +289,7 @@ contract Unit_StabilityFeeTreasuty_DisableContract is Base {
     super.setUp();
     vm.prank(deployer);
     stabilityFeeTreasury =
-    new StabilityFeeTreasuryForInternalCallsTest(address(mockSafeEngine), mockExtraSurplusReceiver, address(mockCoinJoin));
+    new StabilityFeeTreasuryForInternalCallsTest(address(mockSafeEngine), mockExtraSurplusReceiver, address(mockCoinJoin), stabilityFeeTreasuryParams);
 
     _mockSystemCoinsBalanceOf(1);
     _mockCoinJoinJoin();
@@ -506,7 +520,7 @@ contract Unit_StabilityFeeTreasury_GiveFunds is Base {
 
     vm.prank(deployer);
     stabilityFeeTreasury =
-    new StabilityFeeTreasuryForInternalCallsTest(address(mockSafeEngine), mockExtraSurplusReceiver, address(mockCoinJoin));
+    new StabilityFeeTreasuryForInternalCallsTest(address(mockSafeEngine), mockExtraSurplusReceiver, address(mockCoinJoin), stabilityFeeTreasuryParams);
   }
 
   function _assumeHappyPath(address _account) internal view {
@@ -642,7 +656,7 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
 
     vm.prank(deployer);
     stabilityFeeTreasury =
-    new StabilityFeeTreasuryForInternalCallsTest(address(mockSafeEngine), mockExtraSurplusReceiver, address(mockCoinJoin));
+    new StabilityFeeTreasuryForInternalCallsTest(address(mockSafeEngine), mockExtraSurplusReceiver, address(mockCoinJoin), stabilityFeeTreasuryParams);
   }
 
   struct PullFundsScenario {
@@ -988,7 +1002,7 @@ contract Unit_StabilityFeeTreasury_TransferSurplusFunds is Base {
 
     vm.prank(deployer);
     stabilityFeeTreasury =
-    new StabilityFeeTreasuryForInternalCallsTest(address(mockSafeEngine), mockExtraSurplusReceiver, address(mockCoinJoin));
+    new StabilityFeeTreasuryForInternalCallsTest(address(mockSafeEngine), mockExtraSurplusReceiver, address(mockCoinJoin), stabilityFeeTreasuryParams);
   }
 
   struct TransferSurplusFundsScenario {
@@ -1442,7 +1456,7 @@ contract Unit_StabilityFeeTreasury_JoinAllCoins is Base {
 
     vm.prank(deployer);
     stabilityFeeTreasury =
-      new StabilityFeeTreasuryForTest(address(mockSafeEngine), mockExtraSurplusReceiver, address(mockCoinJoin));
+    new StabilityFeeTreasuryForTest(address(mockSafeEngine), mockExtraSurplusReceiver, address(mockCoinJoin), stabilityFeeTreasuryParams);
   }
 
   function test_Call_SystemCoin_BalanceOf(uint256 _balance) public {

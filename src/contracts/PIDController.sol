@@ -32,7 +32,7 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
   // --- Data ---
   PIDControllerParams internal _params;
 
-  function params() external view returns (PIDControllerParams memory _pidCParams) {
+  function params() external view returns (PIDControllerParams memory _pidParams) {
     return _params;
   }
 
@@ -52,27 +52,21 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
   }
 
   constructor(
-    int256 _kp,
-    int256 _ki,
-    uint256 _perSecondCumulativeLeak,
-    uint256 _integralPeriodSize,
-    uint256 _noiseBarrier,
-    uint256 _feedbackOutputUpperBound,
-    int256 _feedbackOutputLowerBound,
+    ControllerGains memory _cGains,
+    PIDControllerParams memory _pidParams,
     DeviationObservation memory _importedState
   ) Authorizable(msg.sender) {
-    _params = PIDControllerParams({
-      feedbackOutputUpperBound: _feedbackOutputUpperBound.assertGt(0).assertLt(_POSITIVE_RATE_LIMIT),
-      feedbackOutputLowerBound: _feedbackOutputLowerBound.assertGtEq(-int256(_NEGATIVE_RATE_LIMIT)).assertLt(0),
-      integralPeriodSize: _integralPeriodSize.assertGt(0),
-      perSecondCumulativeLeak: _perSecondCumulativeLeak,
-      noiseBarrier: _noiseBarrier.assertGt(0).assertLtEq(WAD)
-    });
+    _pidParams.feedbackOutputUpperBound.assertGt(0).assertLt(_POSITIVE_RATE_LIMIT);
+    _pidParams.feedbackOutputLowerBound.assertGtEq(-int256(_NEGATIVE_RATE_LIMIT)).assertLt(0);
+    _pidParams.integralPeriodSize.assertGt(0);
+    _pidParams.noiseBarrier.assertGt(0).assertLtEq(WAD);
 
-    _controllerGains = ControllerGains({
-      kp: _kp.assertGtEq(-int256(WAD)).assertLtEq(int256(WAD)),
-      ki: _ki.assertGtEq(-int256(WAD)).assertLtEq(int256(WAD))
-    });
+    _cGains.kp.assertGtEq(-int256(WAD)).assertLtEq(int256(WAD));
+    _cGains.ki.assertGtEq(-int256(WAD)).assertLtEq(int256(WAD));
+
+    _params = _pidParams;
+
+    _controllerGains = _cGains;
 
     if (_importedState.timestamp > 0) {
       _deviationObservation = DeviationObservation({

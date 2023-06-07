@@ -48,7 +48,12 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
   uint256 public disableTimestamp; // [unix timestamp]
 
   // --- Init ---
-  constructor(address _safeEngine, address _surplusAuctionHouse, address _debtAuctionHouse) Authorizable(msg.sender) {
+  constructor(
+    address _safeEngine,
+    address _surplusAuctionHouse,
+    address _debtAuctionHouse,
+    AccountingEngineParams memory _accEngineParams
+  ) Authorizable(msg.sender) {
     safeEngine = ISAFEEngine(_safeEngine);
     surplusAuctionHouse = ISurplusAuctionHouse(_surplusAuctionHouse);
     debtAuctionHouse = IDebtAuctionHouse(_debtAuctionHouse);
@@ -56,6 +61,8 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
     safeEngine.approveSAFEModification(_surplusAuctionHouse);
 
     lastSurplusTime = block.timestamp;
+
+    _params = _accEngineParams;
   }
 
   // --- Getters ---

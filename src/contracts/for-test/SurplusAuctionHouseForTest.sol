@@ -7,8 +7,8 @@ contract SurplusAuctionHouseForTest is SurplusAuctionHouse {
   constructor(
     address _safeEngine,
     address _protocolToken,
-    uint256 _recyclingPercentage
-  ) SurplusAuctionHouse(_safeEngine, _protocolToken, _recyclingPercentage) {}
+    SurplusAuctionHouseParams memory _sahParams
+  ) SurplusAuctionHouse(_safeEngine, _protocolToken, _sahParams) {}
 
   function addBid(
     uint256 _id,

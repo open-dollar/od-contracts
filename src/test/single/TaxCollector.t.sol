@@ -4,8 +4,7 @@ pragma solidity 0.8.19;
 import 'ds-test/test.sol';
 
 import {TaxCollectorForTest as TaxCollector, ITaxCollector} from '@contracts/for-test/TaxCollectorForTest.sol';
-import {SAFEEngine} from '@contracts/SAFEEngine.sol';
-import {ISAFEEngine as SAFEEngineLike} from '@interfaces/ISAFEEngine.sol';
+import {ISAFEEngine, SAFEEngine} from '@contracts/SAFEEngine.sol';
 
 abstract contract Hevm {
   function warp(uint256) public virtual;
@@ -44,8 +43,16 @@ contract SingleTaxCollectorTest is DSTest {
     hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     hevm.warp(604_411_200);
 
-    safeEngine = new SAFEEngine();
-    taxCollector = new TaxCollector(address(safeEngine));
+    ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
+      ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 0});
+    safeEngine = new SAFEEngine(_safeEngineParams);
+
+    ITaxCollector.TaxCollectorParams memory _taxCollectorParams = ITaxCollector.TaxCollectorParams({
+      primaryTaxReceiver: address(0),
+      globalStabilityFee: 0,
+      maxSecondaryReceivers: 0
+    });
+    taxCollector = new TaxCollector(address(safeEngine), _taxCollectorParams);
     safeEngine.addAuthorization(address(taxCollector));
     safeEngine.initializeCollateralType('i');
 
@@ -53,7 +60,7 @@ contract SingleTaxCollectorTest is DSTest {
   }
 
   function draw(bytes32 collateralType, uint256 _coin) internal {
-    SAFEEngineLike.SAFEEngineCollateralParams memory _safeEngineCParams = safeEngine.cParams(collateralType);
+    ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCParams = safeEngine.cParams(collateralType);
     uint256 _globalDebtCeiling = safeEngine.params().globalDebtCeiling;
     safeEngine.modifyParameters('globalDebtCeiling', abi.encode(_globalDebtCeiling + rad(_coin)));
     safeEngine.modifyParameters(collateralType, 'debtCeiling', abi.encode(_safeEngineCParams.debtCeiling + rad(_coin)));

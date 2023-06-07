@@ -26,14 +26,21 @@ contract Base is HaiTest {
 
   function _createPidController(IPIDController.DeviationObservation memory _importedState) internal {
     vm.prank(deployer);
+
+    IPIDController.ControllerGains memory _pidControllerGains =
+      IPIDController.ControllerGains({kp: params.proportionalGain, ki: params.integralGain});
+
+    IPIDController.PIDControllerParams memory _pidControllerParams = IPIDController.PIDControllerParams({
+      integralPeriodSize: params.integralPeriodSize,
+      perSecondCumulativeLeak: params.perSecondCumulativeLeak,
+      noiseBarrier: params.noiseBarrier,
+      feedbackOutputUpperBound: params.feedbackOutputUpperBound,
+      feedbackOutputLowerBound: params.feedbackOutputLowerBound
+    });
+
     pidController = new PIDControllerForTest({
-      _kp: params.proportionalGain,
-      _ki: params.integralGain,
-      _perSecondCumulativeLeak: params.perSecondCumulativeLeak,
-      _integralPeriodSize: params.integralPeriodSize,
-      _noiseBarrier: params.noiseBarrier,
-      _feedbackOutputUpperBound: params.feedbackOutputUpperBound,
-      _feedbackOutputLowerBound: params.feedbackOutputLowerBound,
+      __controllerGains: _pidControllerGains,
+      __params: _pidControllerParams,
       _importedState: _importedState,
       _mockPIDController: mockPIDController
   });

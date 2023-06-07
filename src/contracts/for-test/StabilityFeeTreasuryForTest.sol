@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {StabilityFeeTreasury} from '@contracts/StabilityFeeTreasury.sol';
+import {IStabilityFeeTreasury, StabilityFeeTreasury} from '@contracts/StabilityFeeTreasury.sol';
 
 contract StabilityFeeTreasuryForInternalCallsTest is StabilityFeeTreasury {
   constructor(
     address _safeEngine,
     address _extraSurplusReceiver,
-    address _coinJoin
-  ) StabilityFeeTreasury(_safeEngine, _extraSurplusReceiver, _coinJoin) {}
+    address _coinJoin,
+    StabilityFeeTreasuryParams memory _sfTreasuryParams
+  ) StabilityFeeTreasury(_safeEngine, _extraSurplusReceiver, _coinJoin, _sfTreasuryParams) {}
 
   event CalledJoinAllCoins();
   event CalledSettleDebt();
@@ -27,8 +28,9 @@ contract StabilityFeeTreasuryForTest is StabilityFeeTreasury {
   constructor(
     address _safeEngine,
     address _extraSurplusReceiver,
-    address _coinJoin
-  ) StabilityFeeTreasury(_safeEngine, _extraSurplusReceiver, _coinJoin) {}
+    address _coinJoin,
+    StabilityFeeTreasuryParams memory _sfTreasuryParams
+  ) StabilityFeeTreasury(_safeEngine, _extraSurplusReceiver, _coinJoin, _sfTreasuryParams) {}
 
   event CalledJoinAllCoins();
   event CalledSettleDebt();

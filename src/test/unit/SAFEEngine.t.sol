@@ -27,6 +27,9 @@ abstract contract Base is HaiTest {
   address coinDestination = newAddress();
   address surplusDst = newAddress();
 
+  ISAFEEngine.SAFEEngineParams safeEngineParams =
+    ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 0});
+
   // Test collateral type
   bytes32 collateralType = bytes32('collateralTest');
 
@@ -34,7 +37,8 @@ abstract contract Base is HaiTest {
 
   function setUp() public virtual {
     vm.prank(deployer);
-    safeEngine = new SAFEEngine();
+
+    safeEngine = new SAFEEngine(safeEngineParams);
   }
 
   modifier authorized() {
@@ -141,7 +145,7 @@ contract Unit_SAFEEngine_Constructor is Base {
     expectEmitNoIndex();
     emit AddAuthorization(deployer);
     vm.prank(deployer);
-    safeEngine = new SAFEEngine();
+    safeEngine = new SAFEEngine(safeEngineParams);
   }
 
   function test_Emit_ModifyParameters() public {
@@ -149,7 +153,11 @@ contract Unit_SAFEEngine_Constructor is Base {
     emit ModifyParameters('safeDebtCeiling', bytes32(0), abi.encode(type(uint256).max));
 
     vm.prank(deployer);
-    safeEngine = new SAFEEngine();
+    safeEngine = new SAFEEngine(safeEngineParams);
+  }
+
+  function test_Set_SAFEEngine_Params() public {
+    assertEq(abi.encode(safeEngine.params()), abi.encode(safeEngineParams));
   }
 }
 

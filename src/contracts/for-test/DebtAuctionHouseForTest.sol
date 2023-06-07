@@ -4,7 +4,11 @@ pragma solidity 0.8.19;
 import {DebtAuctionHouse, IDebtAuctionHouse} from '@contracts/DebtAuctionHouse.sol';
 
 contract DebtAuctionHouseForTest is DebtAuctionHouse {
-  constructor(address _safeEngine, address _protocolToken) DebtAuctionHouse(_safeEngine, _protocolToken) {}
+  constructor(
+    address _safeEngine,
+    address _protocolToken,
+    DebtAuctionHouseParams memory _params
+  ) DebtAuctionHouse(_safeEngine, _protocolToken, _params) {}
 
   function addBid(
     uint256 _id,

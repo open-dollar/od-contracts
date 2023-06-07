@@ -47,10 +47,10 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
   }
 
   // --- Init ---
-  constructor(address _safeEngine) Authorizable(msg.sender) {
+  constructor(address _safeEngine, LiquidationEngineParams memory _liqEngineParams) Authorizable(msg.sender) {
     safeEngine = ISAFEEngine(_safeEngine);
 
-    _params.onAuctionSystemCoinLimit = type(uint256).max;
+    _params = _liqEngineParams;
     emit ModifyParameters('onAuctionSystemCoinLimit', _GLOBAL_PARAM, abi.encode(type(uint256).max));
   }
 

@@ -65,25 +65,20 @@ contract IncreasingDiscountCollateralAuctionHouse is
   }
 
   // --- Init ---
-  constructor(address _safeEngine, address _liquidationEngine, bytes32 _collateralType) Authorizable(msg.sender) {
+  constructor(
+    address _safeEngine,
+    address _liquidationEngine,
+    bytes32 _collateralType,
+    CollateralAuctionHouseSystemCoinParams memory _cahParams,
+    CollateralAuctionHouseParams memory _cahCParams
+  ) Authorizable(msg.sender) {
     safeEngine = ISAFEEngine(_safeEngine);
     liquidationEngine = ILiquidationEngine(_liquidationEngine);
     collateralType = _collateralType;
 
-    _params = CollateralAuctionHouseSystemCoinParams({
-      lowerSystemCoinDeviation: WAD, // 0% deviation
-      upperSystemCoinDeviation: WAD, // 0% deviation
-      minSystemCoinDeviation: 0.999e18 // 0.1% deviation
-    });
+    _params = _cahParams;
 
-    _cParams = CollateralAuctionHouseParams({
-      minDiscount: 0.95e18, // 5% discount
-      maxDiscount: 0.95e18, // 5% discount
-      perSecondDiscountUpdateRate: RAY, // [ray]
-      lowerCollateralDeviation: 0.9e18, // 10% deviation
-      upperCollateralDeviation: 0.95e18, // 5% deviation
-      minimumBid: 1e18 // 1 system coin
-    });
+    _cParams = _cahCParams;
   }
 
   // --- Private Auction Utils ---

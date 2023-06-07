@@ -41,14 +41,19 @@ contract PRawPerSecondCalculatorTest is DSTest {
     oracleRelayer = new MockOracleRelayer();
     orcl = new OracleForTest(1 ether);
 
+    IPIDController.ControllerGains memory _pidControllerGains = IPIDController.ControllerGains({kp: Kp, ki: 0});
+
+    IPIDController.PIDControllerParams memory _pidControllerParams = IPIDController.PIDControllerParams({
+      integralPeriodSize: periodSize,
+      perSecondCumulativeLeak: TWENTY_SEVEN_DECIMAL_NUMBER,
+      noiseBarrier: noiseBarrier,
+      feedbackOutputUpperBound: feedbackOutputUpperBound,
+      feedbackOutputLowerBound: feedbackOutputLowerBound
+    });
+
     calculator = new PRawPerSecondCalculator(
-        Kp,
-        0, // Ki
-        TWENTY_SEVEN_DECIMAL_NUMBER, // perSecondCumulativeLeak
-        periodSize,
-        noiseBarrier,
-        feedbackOutputUpperBound,
-        feedbackOutputLowerBound,
+      _pidControllerGains,
+      _pidControllerParams,
         IPIDController.DeviationObservation(0,0,0)
       );
 
