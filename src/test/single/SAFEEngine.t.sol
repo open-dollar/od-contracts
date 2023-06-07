@@ -579,8 +579,6 @@ contract SingleJoinTest is DSTest {
   DSDelegateToken coin;
   address me;
 
-  uint256 constant WAD = 10 ** 18;
-
   function setUp() public {
     ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
       ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 0});

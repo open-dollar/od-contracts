@@ -21,13 +21,13 @@ interface IPIDController is IAuthorizable, IModifiable {
     // The minimum delay between two computeRate calls
     uint256 /* seconds */ integralPeriodSize;
     // The per second leak applied to priceDeviationCumulative before the latest deviation is added
-    uint256 /* ray */ perSecondCumulativeLeak;
+    uint256 /* RAY */ perSecondCumulativeLeak;
     // The minimum percentage deviation from the redemption price that allows the contract to calculate a non null redemption rate
-    uint256 /* wad */ noiseBarrier;
+    uint256 /* WAD */ noiseBarrier;
     // The maximum value allowed for the redemption rate
-    uint256 /* ray */ feedbackOutputUpperBound;
+    uint256 /* RAY */ feedbackOutputUpperBound;
     // The minimum value allowed for the redemption rate
-    int256 /* ray */ feedbackOutputLowerBound;
+    int256 /* RAY */ feedbackOutputLowerBound;
   }
 
   struct DeviationObservation {
@@ -41,9 +41,9 @@ interface IPIDController is IAuthorizable, IModifiable {
 
   struct ControllerGains {
     // This value is multiplied with the proportional term
-    int256 kp; // [WAD]
+    int256 /* WAD */ kp;
     // This value is multiplied with priceDeviationCumulative
-    int256 ki; // [WAD]
+    int256 /* WAD */ ki;
   }
 
   // --- Registry ---

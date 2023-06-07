@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import '@script/Params.s.sol';
-import './Common.t.sol';
+import {Common, COLLAT, DEBT, TEST_ETH_PRICE_DROP} from './Common.t.sol';
 import {Math} from '@libraries/Math.sol';
 import {OracleForTest} from '@contracts/for-test/OracleForTest.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
+import {ETH_A, HAI_INITIAL_PRICE} from '@script/Params.s.sol';
+import {RAY, YEAR} from '@libraries/Math.sol';
 
 contract E2EGlobalSettlementTest is Common {
   using Math for uint256;
@@ -85,15 +86,15 @@ contract E2EGlobalSettlementTest is Common {
        * alice can take 73% of TKN-B collateral
        */
       uint256 _aliceBRemainder = _releaseRemainingCollateral(alice, 'TKN-B');
-      assertAlmostEq(_aliceBRemainder, 0.733e18, 0.001e18);
+      assertApproxEqAbs(_aliceBRemainder, 0.733e18, 0.001e18);
 
       // bob can take 33% of TKN-B collateral
       uint256 _bobBRemainder = _releaseRemainingCollateral(bob, 'TKN-B');
-      assertAlmostEq(_bobBRemainder, 0.333e18, 0.001e18);
+      assertApproxEqAbs(_bobBRemainder, 0.333e18, 0.001e18);
 
       // carol can take 20% of TKN-B collateral
       uint256 _carolBRemainder = _releaseRemainingCollateral(carol, 'TKN-B');
-      assertAlmostEq(_carolBRemainder, 0.2e18, 0.001e18);
+      assertApproxEqAbs(_carolBRemainder, 0.2e18, 0.001e18);
 
       _totalBToRedeem = 3 * COLLAT - (_aliceBRemainder + _bobBRemainder + _carolBRemainder);
     }
@@ -108,7 +109,7 @@ contract E2EGlobalSettlementTest is Common {
      * alice is short 3 TKN-C
      */
     globalSettlement.processSAFE('TKN-C', alice);
-    assertAlmostEq(globalSettlement.collateralShortfall('TKN-C'), 3e18, 0.001e18);
+    assertApproxEqAbs(globalSettlement.collateralShortfall('TKN-C'), 3e18, 0.001e18);
 
     /**
      * bob debt = 50 HAI
@@ -117,7 +118,7 @@ contract E2EGlobalSettlementTest is Common {
      * bob is short 9 TKN-C
      */
     globalSettlement.processSAFE('TKN-C', bob);
-    assertAlmostEq(globalSettlement.collateralShortfall('TKN-C'), 3e18 + 9e18, 0.001e18);
+    assertApproxEqAbs(globalSettlement.collateralShortfall('TKN-C'), 3e18 + 9e18, 0.001e18);
 
     /**
      * carol debt = 60 HAI
@@ -126,7 +127,7 @@ contract E2EGlobalSettlementTest is Common {
      * carol is short 11 TKN-C
      */
     globalSettlement.processSAFE('TKN-C', carol);
-    assertAlmostEq(globalSettlement.collateralShortfall('TKN-C'), 3e18 + 9e18 + 11e18, 0.001e18);
+    assertApproxEqAbs(globalSettlement.collateralShortfall('TKN-C'), 3e18 + 9e18 + 11e18, 0.001e18);
 
     {
       /**
@@ -175,14 +176,16 @@ contract E2EGlobalSettlementTest is Common {
 
       uint256 _collatAPrice = RAY.rdiv(COLLATERAL_PRICE * 1e9);
       assertEq(globalSettlement.finalCoinPerCollateralPrice('TKN-A'), _collatAPrice);
-      assertAlmostEq(_collateralACashPrice, (_totalADebt * 1e9).rmul(_collatAPrice).rdiv(_totalCoins * 1e9), 0.001e18);
+      assertApproxEqAbs(
+        _collateralACashPrice, (_totalADebt * 1e9).rmul(_collatAPrice).rdiv(_totalCoins * 1e9), 0.001e18
+      );
 
-      assertAlmostEq(_aliceRedeemedCollateral, uint256(_aliceCoins).rmul(_collateralACashPrice), 0.001e18);
-      assertAlmostEq(_bobRedeemedCollateral, uint256(_bobCoins).rmul(_collateralACashPrice), 0.001e18);
-      assertAlmostEq(_carolRedeemedCollateral, uint256(_carolCoins).rmul(_collateralACashPrice), 0.001e18);
+      assertApproxEqAbs(_aliceRedeemedCollateral, uint256(_aliceCoins).rmul(_collateralACashPrice), 0.001e18);
+      assertApproxEqAbs(_bobRedeemedCollateral, uint256(_bobCoins).rmul(_collateralACashPrice), 0.001e18);
+      assertApproxEqAbs(_carolRedeemedCollateral, uint256(_carolCoins).rmul(_collateralACashPrice), 0.001e18);
 
       // NOTE: contract may have some dust left
-      assertAlmostEq(
+      assertApproxEqAbs(
         collateral['TKN-A'].balanceOf(alice) + collateral['TKN-A'].balanceOf(bob) + collateral['TKN-A'].balanceOf(carol),
         3 * COLLAT,
         0.001e18
@@ -201,14 +204,16 @@ contract E2EGlobalSettlementTest is Common {
 
       uint256 _collatBPrice = RAY.rdiv(COLLATERAL_B_DROP * 1e9);
       assertEq(globalSettlement.finalCoinPerCollateralPrice('TKN-B'), _collatBPrice);
-      assertAlmostEq(_collateralBCashPrice, (_totalBDebt * 1e9).rmul(_collatBPrice).rdiv(_totalCoins * 1e9), 0.001e18);
+      assertApproxEqAbs(
+        _collateralBCashPrice, (_totalBDebt * 1e9).rmul(_collatBPrice).rdiv(_totalCoins * 1e9), 0.001e18
+      );
 
-      assertAlmostEq(_aliceRedeemedCollateral, uint256(_aliceCoins).rmul(_collateralBCashPrice), 0.001e18);
-      assertAlmostEq(_bobRedeemedCollateral, uint256(_bobCoins).rmul(_collateralBCashPrice), 0.001e18);
-      assertAlmostEq(_carolRedeemedCollateral, uint256(_carolCoins).rmul(_collateralBCashPrice), 0.001e18);
+      assertApproxEqAbs(_aliceRedeemedCollateral, uint256(_aliceCoins).rmul(_collateralBCashPrice), 0.001e18);
+      assertApproxEqAbs(_bobRedeemedCollateral, uint256(_bobCoins).rmul(_collateralBCashPrice), 0.001e18);
+      assertApproxEqAbs(_carolRedeemedCollateral, uint256(_carolCoins).rmul(_collateralBCashPrice), 0.001e18);
 
       // NOTE: contract may have some dust left
-      assertAlmostEq(
+      assertApproxEqAbs(
         collateral['TKN-B'].balanceOf(alice) + collateral['TKN-B'].balanceOf(bob) + collateral['TKN-B'].balanceOf(carol),
         3 * COLLAT,
         0.001e18
@@ -228,33 +233,21 @@ contract E2EGlobalSettlementTest is Common {
 
       uint256 _collatCPrice = RAY.rdiv(COLLATERAL_C_DROP * 1e9);
       assertEq(globalSettlement.finalCoinPerCollateralPrice('TKN-C'), _collatCPrice);
-      assertAlmostEq(
+      assertApproxEqAbs(
         _collateralCCashPrice, ((_totalCDebt * 1e9).rmul(_collatCPrice) - 23e18 * 1e9).rdiv(_totalCoins * 1e9), 0.001e18
       );
 
-      assertAlmostEq(_aliceRedeemedCollateral, uint256(_aliceCoins).rmul(_collateralCCashPrice), 0.001e18);
-      assertAlmostEq(_bobRedeemedCollateral, uint256(_bobCoins).rmul(_collateralCCashPrice), 0.001e18);
-      assertAlmostEq(_carolRedeemedCollateral, uint256(_carolCoins).rmul(_collateralCCashPrice), 0.001e18);
+      assertApproxEqAbs(_aliceRedeemedCollateral, uint256(_aliceCoins).rmul(_collateralCCashPrice), 0.001e18);
+      assertApproxEqAbs(_bobRedeemedCollateral, uint256(_bobCoins).rmul(_collateralCCashPrice), 0.001e18);
+      assertApproxEqAbs(_carolRedeemedCollateral, uint256(_carolCoins).rmul(_collateralCCashPrice), 0.001e18);
 
       // NOTE: contract may have some dust left
-      assertAlmostEq(
+      assertApproxEqAbs(
         collateral['TKN-C'].balanceOf(alice) + collateral['TKN-C'].balanceOf(bob) + collateral['TKN-C'].balanceOf(carol),
         3 * COLLAT,
         0.001e18
       );
     }
-
-    emit LogNamedUint256('alice A', collateral['TKN-A'].balanceOf(alice));
-    emit LogNamedUint256('bob A', collateral['TKN-A'].balanceOf(bob));
-    emit LogNamedUint256('carol A', collateral['TKN-A'].balanceOf(carol));
-
-    emit LogNamedUint256('alice B', collateral['TKN-B'].balanceOf(alice));
-    emit LogNamedUint256('bob B', collateral['TKN-B'].balanceOf(bob));
-    emit LogNamedUint256('carol B', collateral['TKN-B'].balanceOf(carol));
-
-    emit LogNamedUint256('alice C', collateral['TKN-C'].balanceOf(alice));
-    emit LogNamedUint256('bob C', collateral['TKN-C'].balanceOf(bob));
-    emit LogNamedUint256('carol C', collateral['TKN-C'].balanceOf(carol));
   }
 
   function test_global_settlement() public {
@@ -320,61 +313,6 @@ contract E2EGlobalSettlementTest is Common {
   }
 
   function _multiCollateralSetup() internal {
-    oracle['TKN-A'] = new OracleForTest(COLLATERAL_PRICE);
-    oracle['TKN-B'] = new OracleForTest(COLLATERAL_PRICE);
-    oracle['TKN-C'] = new OracleForTest(COLLATERAL_PRICE);
-
-    deployment.deployTokenCollateral(
-      CollateralParams({
-        name: 'TKN-A',
-        oracle: oracle['TKN-A'],
-        liquidationPenalty: RAY,
-        liquidationQuantity: LIQUIDATION_QUANTITY,
-        debtCeiling: type(uint256).max,
-        safetyCRatio: LIQUIDATION_RATIO,
-        liquidationRatio: LIQUIDATION_RATIO,
-        stabilityFee: 0,
-        percentageOfStabilityFeeToTreasury: 0
-      })
-    );
-
-    deployment.deployTokenCollateral(
-      CollateralParams({
-        name: 'TKN-B',
-        oracle: oracle['TKN-B'],
-        liquidationPenalty: RAY,
-        liquidationQuantity: LIQUIDATION_QUANTITY,
-        debtCeiling: type(uint256).max,
-        safetyCRatio: LIQUIDATION_RATIO,
-        liquidationRatio: LIQUIDATION_RATIO,
-        stabilityFee: 0,
-        percentageOfStabilityFeeToTreasury: 0
-      })
-    );
-
-    deployment.deployTokenCollateral(
-      CollateralParams({
-        name: 'TKN-C',
-        oracle: oracle['TKN-C'],
-        liquidationPenalty: RAY,
-        liquidationQuantity: LIQUIDATION_QUANTITY,
-        debtCeiling: type(uint256).max,
-        safetyCRatio: LIQUIDATION_RATIO,
-        liquidationRatio: LIQUIDATION_RATIO,
-        stabilityFee: 0,
-        percentageOfStabilityFeeToTreasury: 0
-      })
-    );
-
-    safeEngine = deployment.safeEngine();
-    collateral['TKN-A'] = deployment.collateral('TKN-A');
-    collateral['TKN-B'] = deployment.collateral('TKN-B');
-    collateral['TKN-C'] = deployment.collateral('TKN-C');
-    collateralJoin['TKN-A'] = deployment.collateralJoin('TKN-A');
-    collateralJoin['TKN-B'] = deployment.collateralJoin('TKN-B');
-    collateralJoin['TKN-C'] = deployment.collateralJoin('TKN-C');
-    oracleRelayer = deployment.oracleRelayer();
-
     _joinTKN(alice, collateralJoin['TKN-A'], COLLAT);
     _joinTKN(alice, collateralJoin['TKN-B'], COLLAT);
     _joinTKN(alice, collateralJoin['TKN-C'], COLLAT);

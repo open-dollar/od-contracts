@@ -39,9 +39,16 @@ interface IGlobalSettlement is IAuthorizable, IDisableable, IModifiable {
   error GS_CollateralCashPriceNotDefined();
   error GS_InsufficientBagBalance();
 
+  // --- Structs ---
+
+  struct GlobalSettlementParams {
+    uint256 shutdownCooldown;
+  }
+
   // --- Data ---
+  function params() external view returns (GlobalSettlementParams memory _globalSettlementParams);
+
   function shutdownTime() external view returns (uint256 _shutdownTime);
-  function shutdownCooldown() external view returns (uint256 _shutdownCooldown);
   function outstandingCoinSupply() external view returns (uint256 _outstandingCoinSupply);
 
   function finalCoinPerCollateralPrice(bytes32 _cType) external view returns (uint256 _finalCoinPerCollateralPrice);

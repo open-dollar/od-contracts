@@ -254,7 +254,7 @@ contract Unit_StabilityFeeTreasury_ModifyParameters is Base {
 
     stabilityFeeTreasury.modifyParameters('expensesMultiplier', abi.encode(_fuzz.expensesMultiplier));
     stabilityFeeTreasury.modifyParameters('treasuryCapacity', abi.encode(_fuzz.treasuryCapacity));
-    stabilityFeeTreasury.modifyParameters('minimumFundsRequired', abi.encode(_fuzz.minFundsRequired));
+    stabilityFeeTreasury.modifyParameters('minFundsRequired', abi.encode(_fuzz.minFundsRequired));
     stabilityFeeTreasury.modifyParameters('pullFundsMinThreshold', abi.encode(_fuzz.pullFundsMinThreshold));
     stabilityFeeTreasury.modifyParameters('surplusTransferDelay', abi.encode(_fuzz.surplusTransferDelay));
 

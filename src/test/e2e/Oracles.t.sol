@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {PRBTest} from 'prb-test/PRBTest.sol';
+import {HaiTest} from '@test/utils/HaiTest.t.sol';
 import {IChainlinkOracle} from '@interfaces/oracles/IChainlinkOracle.sol';
 
 import {ChainlinkRelayer, IBaseOracle} from '@contracts/oracles/ChainlinkRelayer.sol';
@@ -14,7 +14,7 @@ import {OP_CHAINLINK_ETH_USD_FEED, OP_CHAINLINK_WSTETH_ETH_FEED, OP_WETH, OP_WBT
 
 import {Math, WAD} from '@libraries/Math.sol';
 
-contract OracleSetup is PRBTest {
+contract OracleSetup is HaiTest {
   using Math for uint256;
 
   uint256 FORK_BLOCK = 99_000_000;
@@ -123,7 +123,7 @@ contract OracleSetup is PRBTest {
   function test_DenominatedOracleInverted() public {
     IDenominatedOracle usdPriceSource = new DenominatedOracle(wethUsdPriceSource, wethUsdPriceSource, true);
 
-    assertAlmostEq(usdPriceSource.read(), WAD, 1e9); // 1 USD = 1 USD (with 18 decimals)
+    assertApproxEqAbs(usdPriceSource.read(), WAD, 1e9); // 1 USD = 1 USD (with 18 decimals)
   }
 
   function test_DenominatedOracleInvertedSymbol() public {

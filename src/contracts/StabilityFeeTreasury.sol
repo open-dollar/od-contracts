@@ -249,7 +249,7 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
     if (_param == 'extraSurplusReceiver') extraSurplusReceiver = _data.toAddress().assertNonNull();
     else if (_param == 'expensesMultiplier') _params.expensesMultiplier = _uint256;
     else if (_param == 'treasuryCapacity') _params.treasuryCapacity = _uint256.assertGtEq(_params.minFundsRequired);
-    else if (_param == 'minimumFundsRequired') _params.minFundsRequired = _uint256.assertLtEq(_params.treasuryCapacity);
+    else if (_param == 'minFundsRequired') _params.minFundsRequired = _uint256.assertLtEq(_params.treasuryCapacity);
     else if (_param == 'pullFundsMinThreshold') _params.pullFundsMinThreshold = _uint256;
     else if (_param == 'surplusTransferDelay') _params.surplusTransferDelay = _uint256;
     else revert UnrecognizedParam();

@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import './Common.t.sol';
 
-import {HOUR} from '@libraries/Math.sol';
+import {HOUR, YEAR} from '@libraries/Math.sol';
 
 contract E2EStabilityFeeTreasuryTest is Common {
   uint256 constant INITIAL_DEBT = 1000e18;

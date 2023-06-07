@@ -76,9 +76,9 @@ interface ISurplusAuctionHouse is IAuthorizable, IDisableable, IModifiable {
   function params() external view returns (SurplusAuctionHouseParams memory _params);
 
   // --- Auction ---
-  function startAuction(uint256 /* rad */ _amountToSell, uint256 /* wad */ _initialBid) external returns (uint256 _id);
+  function startAuction(uint256 /* RAD */ _amountToSell, uint256 /* WAD */ _initialBid) external returns (uint256 _id);
   function restartAuction(uint256 _id) external;
-  function increaseBidSize(uint256 _id, uint256 /* rad */ _amountToBuy, uint256 /* wad */ _bid) external;
+  function increaseBidSize(uint256 _id, uint256 /* RAD */ _amountToBuy, uint256 /* WAD */ _bid) external;
   function settleAuction(uint256 _id) external;
   function terminateAuctionPrematurely(uint256 _id) external;
 }

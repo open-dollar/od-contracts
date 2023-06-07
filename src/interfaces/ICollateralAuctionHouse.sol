@@ -13,9 +13,9 @@ interface ICollateralAuctionHouse is IAuthorizable {
   function startAuction(
     address _forgoneCollateralReceiver,
     address _initialBidder,
-    uint256 /* rad */ _amountToRaise,
-    uint256 /* wad */ _collateralToSell,
-    uint256 /* rad */ _initialBid
+    uint256 /* RAD */ _amountToRaise,
+    uint256 /* WAD */ _collateralToSell,
+    uint256 /* RAD */ _initialBid
   ) external returns (uint256 _id);
   function settleAuction(uint256 _id) external;
 }

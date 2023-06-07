@@ -162,7 +162,7 @@ abstract contract Base is HaiTest {
   }
 
   function _mockShutdownCooldown(uint256 _shutdownCooldown) internal {
-    stdstore.target(address(globalSettlement)).sig(IGlobalSettlement.shutdownCooldown.selector).checked_write(
+    stdstore.target(address(globalSettlement)).sig(IGlobalSettlement.params.selector).depth(0).checked_write(
       _shutdownCooldown
     );
   }
@@ -1232,7 +1232,7 @@ contract Unit_GlobalSettlement_ModifyParameters is Base {
   function test_Set_ShutdownCooldown(uint256 _shutdownCooldown) public happyPath {
     globalSettlement.modifyParameters('shutdownCooldown', abi.encode(_shutdownCooldown));
 
-    assertEq(globalSettlement.shutdownCooldown(), _shutdownCooldown);
+    assertEq(globalSettlement.params().shutdownCooldown, _shutdownCooldown);
   }
 
   function test_Revert_UnrecognizedParam(bytes memory _data) public {

@@ -9,12 +9,12 @@ interface ISAFEEngine is IAuthorizable, IModifiable, IDisableable {
   // --- Events ---
   event ApproveSAFEModification(address _sender, address _account);
   event DenySAFEModification(address _sender, address _account);
-  event InitializeCollateralType(bytes32 _collateralType);
-  event ModifyCollateralBalance(bytes32 indexed _collateralType, address indexed _account, int256 _wad);
-  event TransferCollateral(bytes32 indexed _collateralType, address indexed _src, address indexed _dst, uint256 _wad);
+  event InitializeCollateralType(bytes32 _cType);
+  event ModifyCollateralBalance(bytes32 indexed _cType, address indexed _account, int256 _wad);
+  event TransferCollateral(bytes32 indexed _cType, address indexed _src, address indexed _dst, uint256 _wad);
   event TransferInternalCoins(address indexed _src, address indexed _dst, uint256 _rad);
   event ModifySAFECollateralization(
-    bytes32 indexed _collateralType,
+    bytes32 indexed _cType,
     address indexed _safe,
     address _collateralSource,
     address _debtDestination,
@@ -25,7 +25,7 @@ interface ISAFEEngine is IAuthorizable, IModifiable, IDisableable {
     uint256 _globalDebt
   );
   event TransferSAFECollateralAndDebt(
-    bytes32 indexed _collateralType,
+    bytes32 indexed _cType,
     address indexed _src,
     address indexed _dst,
     int256 _deltaCollateral,
@@ -36,7 +36,7 @@ interface ISAFEEngine is IAuthorizable, IModifiable, IDisableable {
     uint256 _dstGeneratedDebt
   );
   event ConfiscateSAFECollateralAndDebt(
-    bytes32 indexed _collateralType,
+    bytes32 indexed _cType,
     address indexed _safe,
     address _collateralCounterparty,
     address _debtCounterparty,
@@ -62,11 +62,7 @@ interface ISAFEEngine is IAuthorizable, IModifiable, IDisableable {
     uint256 _globalDebt
   );
   event UpdateAccumulatedRate(
-    bytes32 indexed _collateralType,
-    address _surplusDst,
-    int256 _rateMultiplier,
-    uint256 _dstCoinBalance,
-    uint256 _globalDebt
+    bytes32 indexed _cType, address _surplusDst, int256 _rateMultiplier, uint256 _dstCoinBalance, uint256 _globalDebt
   );
   event UpdateCollateralPrice(bytes32 indexed _cType, uint256 _safetyPrice, uint256 _liquidationPrice);
 
@@ -110,49 +106,49 @@ interface ISAFEEngine is IAuthorizable, IModifiable, IDisableable {
   function debtBalance(address _coinAddress) external view returns (uint256 _debtBalance);
   function settleDebt(uint256 _rad) external;
   function transferInternalCoins(address _source, address _destination, uint256 _rad) external;
-  function transferCollateral(bytes32 _collateralType, address _source, address _destination, uint256 _wad) external;
+  function transferCollateral(bytes32 _cType, address _source, address _destination, uint256 _wad) external;
   function canModifySAFE(address _safe, address _account) external view returns (bool _allowed);
   function approveSAFEModification(address _account) external;
   function denySAFEModification(address _acount) external;
   function createUnbackedDebt(address _debtDestination, address _coinDestination, uint256 _rad) external;
 
   function params() external view returns (SAFEEngineParams memory _params);
-  function cData(bytes32 _collateralType) external view returns (SAFEEngineCollateralData memory _collateralData);
-  function cParams(bytes32 _collateralType) external view returns (SAFEEngineCollateralParams memory _collateralParams);
-  function safes(bytes32 _collateralType, address _safeAddress) external view returns (SAFE memory _safeData);
+  function cData(bytes32 _cType) external view returns (SAFEEngineCollateralData memory _collateralData);
+  function cParams(bytes32 _cType) external view returns (SAFEEngineCollateralParams memory _collateralParams);
+  function safes(bytes32 _cType, address _safeAddress) external view returns (SAFE memory _safeData);
 
   function globalDebt() external returns (uint256 _globalDebt);
   function confiscateSAFECollateralAndDebt(
-    bytes32 _collateralType,
+    bytes32 _cType,
     address _safe,
     address _collateralSource,
     address _debtDestination,
     int256 _deltaCollateral,
     int256 _deltaDebt
   ) external;
-  function updateAccumulatedRate(bytes32 _collateralType, address _surplusDst, int256 _rateMultiplier) external;
-  function updateCollateralPrice(bytes32 _collateralType, uint256 _safetyPrice, uint256 _liquidationPrice) external;
+  function updateAccumulatedRate(bytes32 _cType, address _surplusDst, int256 _rateMultiplier) external;
+  function updateCollateralPrice(bytes32 _cType, uint256 _safetyPrice, uint256 _liquidationPrice) external;
 
-  function initializeCollateralType(bytes32 _collateralType) external;
-  function modifyCollateralBalance(bytes32 _collateralType, address _account, int256 _wad) external;
+  function initializeCollateralType(bytes32 _cType) external;
+  function modifyCollateralBalance(bytes32 _cType, address _account, int256 _wad) external;
   function modifySAFECollateralization(
-    bytes32 _collateralType,
+    bytes32 _cType,
     address _safe,
     address _collateralSource,
     address _debtDestination,
-    int256 /* wad */ _deltaCollateral,
-    int256 /* wad */ _deltaDebt
+    int256 /* WAD */ _deltaCollateral,
+    int256 /* WAD */ _deltaDebt
   ) external;
 
   function transferSAFECollateralAndDebt(
-    bytes32 _collateralType,
+    bytes32 _cType,
     address _src,
     address _dst,
-    int256 /* wad */ _deltaCollateral,
-    int256 /* wad */ _deltaDebt
+    int256 /* WAD */ _deltaCollateral,
+    int256 /* WAD */ _deltaDebt
   ) external;
 
-  function tokenCollateral(bytes32 _collateralType, address _account) external view returns (uint256 _tokenCollateral);
+  function tokenCollateral(bytes32 _cType, address _account) external view returns (uint256 _tokenCollateral);
   function globalUnbackedDebt() external view returns (uint256 _globalUnbackedDebt);
   function safeRights(address _account, address _safe) external view returns (uint256 _safeRights);
 }

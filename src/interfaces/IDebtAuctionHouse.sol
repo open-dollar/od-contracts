@@ -86,11 +86,11 @@ interface IDebtAuctionHouse is IAuthorizable, IDisableable, IModifiable {
   // --- Auction ---
   function startAuction(
     address _incomeReceiver,
-    uint256 /* wad */ _amountToSell,
-    uint256 /* rad */ _initialBid
+    uint256 /* WAD */ _amountToSell,
+    uint256 /* RAD */ _initialBid
   ) external returns (uint256 _id);
   function restartAuction(uint256 _id) external;
-  function decreaseSoldAmount(uint256 _id, uint256 /* wad */ _amountToBuy, uint256 /* rad */ _bid) external;
+  function decreaseSoldAmount(uint256 _id, uint256 /* WAD */ _amountToBuy, uint256 /* RAD */ _bid) external;
   function settleAuction(uint256 _id) external;
   function terminateAuctionPrematurely(uint256 _id) external;
 }

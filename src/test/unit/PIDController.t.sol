@@ -12,8 +12,9 @@ import {Assertions} from '@libraries/Assertions.sol';
 import '@script/Params.s.sol';
 
 contract Base is HaiTest {
-  PIDParams params;
   IPIDController pidController;
+  IPIDController.PIDControllerParams params;
+  IPIDController.ControllerGains gains;
   address watcher;
   address deployer = label('deployer');
 
@@ -21,6 +22,14 @@ contract Base is HaiTest {
 
   uint256 internal constant NEGATIVE_RATE_LIMIT = RAY - 1;
   uint256 internal constant POSITIVE_RATE_LIMIT = type(uint256).max - RAY - 1;
+  int256 constant PID_INTEGRAL_GAIN = 1e18;
+  int256 constant PID_PROPORTIONAL_GAIN = 1e18;
+  uint256 constant PID_PER_SECOND_CUMULATIVE_LEAK = 999_997_208_243_937_652_252_849_536; // 1% per hour
+  uint256 constant PID_NOISE_BARRIER = 1e18;
+  uint256 constant PID_FEEDBACK_OUTPUT_UPPER_BOUND = 1e45; // unbounded
+  int256 constant PID_FEEDBACK_OUTPUT_LOWER_BOUND = -int256(1e27 - 1); // unbounded
+  uint256 constant PID_PERIOD_SIZE = 1 hours;
+  uint256 constant PID_UPDATE_RATE = 1 days;
 
   MockPIDController mockPIDController = new MockPIDController();
 
@@ -28,7 +37,7 @@ contract Base is HaiTest {
     vm.prank(deployer);
 
     IPIDController.ControllerGains memory _pidControllerGains =
-      IPIDController.ControllerGains({kp: params.proportionalGain, ki: params.integralGain});
+      IPIDController.ControllerGains({kp: gains.kp, ki: gains.ki});
 
     IPIDController.PIDControllerParams memory _pidControllerParams = IPIDController.PIDControllerParams({
       integralPeriodSize: params.integralPeriodSize,
@@ -47,16 +56,15 @@ contract Base is HaiTest {
   }
 
   function setUp() public virtual {
-    params = PIDParams({
-      proportionalGain: PID_PROPORTIONAL_GAIN,
-      integralGain: PID_INTEGRAL_GAIN,
+    params = IPIDController.PIDControllerParams({
       noiseBarrier: PID_NOISE_BARRIER,
       perSecondCumulativeLeak: PID_PER_SECOND_CUMULATIVE_LEAK,
       feedbackOutputLowerBound: -int256(NEGATIVE_RATE_LIMIT),
       feedbackOutputUpperBound: POSITIVE_RATE_LIMIT / 2,
-      integralPeriodSize: PID_PERIOD_SIZE,
-      updateRate: PID_UPDATE_RATE
+      integralPeriodSize: PID_PERIOD_SIZE
     });
+
+    gains = IPIDController.ControllerGains({kp: 1e9, ki: 1e9});
 
     _createPidController(IPIDController.DeviationObservation(0, 0, 0));
     watcher = address(PIDControllerForTest(address(pidController)).watcher());
@@ -208,11 +216,11 @@ contract Base is HaiTest {
 
 contract Unit_PIDController_Constructor is Base {
   function test_Set_ProportionalGain() public {
-    assertEq(pidController.controllerGains().kp, params.proportionalGain);
+    assertEq(pidController.controllerGains().kp, gains.kp);
   }
 
   function test_Set_IntegralGain() public {
-    assertEq(pidController.controllerGains().ki, params.integralGain);
+    assertEq(pidController.controllerGains().ki, gains.ki);
   }
 
   function test_Set_PerSecondCumulativeLeak() public {
@@ -348,7 +356,7 @@ contract Unit_PIDController_Constructor is Base {
 
   function test_Revert_Invalid_Kp(int256 _kp) public {
     vm.assume(_kp > type(int256).min && Math.absolute(_kp) > WAD);
-    params.proportionalGain = _kp;
+    gains.kp = _kp;
 
     if (_kp < 0) {
       vm.expectRevert(abi.encodeWithSelector(Assertions.IntNotGreaterOrEqualThan.selector, _kp, -int256(WAD)));
@@ -361,7 +369,7 @@ contract Unit_PIDController_Constructor is Base {
 
   function test_Revert_Invalid_Ki(int256 _ki) public {
     vm.assume(_ki > type(int256).min && Math.absolute(_ki) > WAD);
-    params.integralGain = _ki;
+    gains.ki = _ki;
 
     if (_ki < 0) {
       vm.expectRevert(abi.encodeWithSelector(Assertions.IntNotGreaterOrEqualThan.selector, _ki, -int256(WAD)));

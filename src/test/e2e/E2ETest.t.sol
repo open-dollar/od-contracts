@@ -1,9 +1,19 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import './Common.t.sol';
-import '@script/Params.s.sol';
-import {Math} from '@libraries/Math.sol';
+import {Common, COLLAT, DEBT, TEST_ETH_PRICE_DROP, RAD_DELTA} from './Common.t.sol';
+
+import {ETH_A, SURPLUS_AUCTION_BID_RECEIVER} from '@script/Params.s.sol';
+import {
+  INITIAL_DEBT_AUCTION_MINTED_TOKENS,
+  BID_AUCTION_SIZE,
+  SURPLUS_AUCTION_SIZE,
+  PERCENTAGE_OF_STABILITY_FEE_TO_TREASURY
+} from '@test/e2e/TestParams.s.sol';
+
+import {Math, RAY, YEAR} from '@libraries/Math.sol';
+
+uint256 constant TEST_ETH_A_SF_APR = 1.05e18; // 5%/yr
 
 contract E2ETest is Common {
   using Math for uint256;
@@ -37,7 +47,7 @@ contract E2ETest is Common {
     taxCollector.taxSingle(ETH_A);
 
     uint256 _globalDebtAfterTax = safeEngine.globalDebt();
-    assertAlmostEq(_globalDebtAfterTax, Math.wmul(DEBT, TEST_ETH_A_SF_APR) * RAY, RAD_DELTA); // RAD
+    assertApproxEqAbs(_globalDebtAfterTax, Math.wmul(DEBT, TEST_ETH_A_SF_APR) * RAY, RAD_DELTA); // RAD
 
     uint256 _accountingEngineCoins =
       safeEngine.coinBalance(address(accountingEngine)).rmul(100 * RAY).rdiv(PERCENTAGE_OF_STABILITY_FEE_TO_TREASURY);

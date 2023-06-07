@@ -95,8 +95,6 @@ contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettl
   // --- Data ---
   // The timestamp when settlement was triggered
   uint256 public shutdownTime;
-  // The amount of time post settlement during which no processing takes place
-  uint256 public shutdownCooldown;
   // The outstanding supply of system coins computed during the setOutstandingCoinSupply() phase
   uint256 public outstandingCoinSupply; // [rad]
 
@@ -120,6 +118,12 @@ contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettl
   IAccountingEngine public accountingEngine;
   IOracleRelayer public oracleRelayer;
   IStabilityFeeTreasury public stabilityFeeTreasury;
+
+  GlobalSettlementParams internal _params;
+
+  function params() external view returns (GlobalSettlementParams memory _globalSettlementParams) {
+    return _params;
+  }
 
   // --- Init ---
   constructor() Authorizable(msg.sender) {}
@@ -243,7 +247,7 @@ contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettl
   function setOutstandingCoinSupply() external whenDisabled {
     if (outstandingCoinSupply != 0) revert GS_OutstandingCoinSupplyNotZero();
     if (safeEngine.coinBalance(address(accountingEngine)) != 0) revert GS_SurplusNotZero();
-    if (block.timestamp < shutdownTime + shutdownCooldown) revert GS_ShutdownCooldownNotFinished();
+    if (block.timestamp < shutdownTime + _params.shutdownCooldown) revert GS_ShutdownCooldownNotFinished();
     outstandingCoinSupply = safeEngine.globalDebt();
     emit SetOutstandingCoinSupply(outstandingCoinSupply);
   }
@@ -300,7 +304,7 @@ contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettl
     else if (_param == 'accountingEngine') accountingEngine = IAccountingEngine(_address);
     else if (_param == 'oracleRelayer') oracleRelayer = IOracleRelayer(_address);
     else if (_param == 'stabilityFeeTreasury') stabilityFeeTreasury = IStabilityFeeTreasury(_address);
-    else if (_param == 'shutdownCooldown') shutdownCooldown = _data.toUint256();
+    else if (_param == 'shutdownCooldown') _params.shutdownCooldown = _data.toUint256();
     else revert UnrecognizedParam();
   }
 }
