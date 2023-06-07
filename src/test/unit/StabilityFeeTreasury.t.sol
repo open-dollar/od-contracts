@@ -283,11 +283,6 @@ contract Unit_StabilityFeeTreasuty_DisableContract is Base {
     _mockSafeEngineTransferInternalCoins();
   }
 
-  function test_Set_ContractEnabled() public authorized {
-    stabilityFeeTreasury.disableContract();
-    assertEq(stabilityFeeTreasury.contractEnabled(), 0);
-  }
-
   function test_Call_Internal_JoinAllCoins() public authorized {
     expectEmitNoIndex();
     emit CalledJoinAllCoins();
@@ -313,26 +308,6 @@ contract Unit_StabilityFeeTreasuty_DisableContract is Base {
         mockSafeEngine.coinBalance(address(stabilityFeeTreasury))
       )
     );
-
-    stabilityFeeTreasury.disableContract();
-  }
-
-  function test_Emit_DisableContract() public authorized {
-    expectEmitNoIndex();
-    emit DisableContract();
-
-    stabilityFeeTreasury.disableContract();
-  }
-
-  function test_Revert_NotAuthorized() public {
-    vm.expectRevert(IAuthorizable.Unauthorized.selector);
-
-    stabilityFeeTreasury.disableContract();
-  }
-
-  function test_Revert_AlreadyDisable() public authorized {
-    _mockContractEnabled(0);
-    vm.expectRevert(IDisableable.ContractIsDisabled.selector);
 
     stabilityFeeTreasury.disableContract();
   }

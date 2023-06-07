@@ -208,12 +208,6 @@ contract Unit_OracleJob_ModifyParameters is Base {
     _;
   }
 
-  function test_Revert_Unauthorized(bytes32 _param, bytes memory _data) public {
-    vm.expectRevert(IAuthorizable.Unauthorized.selector);
-
-    oracleJob.modifyParameters(_param, _data);
-  }
-
   function test_Set_OracleRelayer(address _oracleRelayer) public happyPath {
     oracleJob.modifyParameters('oracleRelayer', abi.encode(_oracleRelayer));
 
@@ -256,12 +250,5 @@ contract Unit_OracleJob_ModifyParameters is Base {
     vm.expectRevert(IModifiable.UnrecognizedParam.selector);
 
     oracleJob.modifyParameters('unrecognizedParam', _data);
-  }
-
-  function test_Emit_ModifyParameters(uint256 _rewardAmount) public happyPath {
-    expectEmitNoIndex();
-    emit ModifyParameters('rewardAmount', bytes32(0), abi.encode(_rewardAmount));
-
-    oracleJob.modifyParameters('rewardAmount', abi.encode(_rewardAmount));
   }
 }

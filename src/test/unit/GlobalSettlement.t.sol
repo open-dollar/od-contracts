@@ -1189,12 +1189,6 @@ contract Unit_GlobalSettlement_ModifyParameters is Base {
     _;
   }
 
-  function test_Revert_Unauthorized(bytes32 _param, bytes memory _data) public {
-    vm.expectRevert(IAuthorizable.Unauthorized.selector);
-
-    globalSettlement.modifyParameters(_param, _data);
-  }
-
   function test_Revert_ContractIsDisabled(bytes32 _param, bytes memory _data) public {
     vm.startPrank(authorizedAccount);
 
@@ -1247,12 +1241,5 @@ contract Unit_GlobalSettlement_ModifyParameters is Base {
     vm.expectRevert(IModifiable.UnrecognizedParam.selector);
 
     globalSettlement.modifyParameters('unrecognizedParam', _data);
-  }
-
-  function test_Emit_ModifyParameters(uint256 _shutdownCooldown) public happyPath {
-    expectEmitNoIndex();
-    emit ModifyParameters('shutdownCooldown', bytes32(0), abi.encode(_shutdownCooldown));
-
-    globalSettlement.modifyParameters('shutdownCooldown', abi.encode(_shutdownCooldown));
   }
 }

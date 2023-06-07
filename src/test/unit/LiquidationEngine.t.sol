@@ -375,29 +375,6 @@ contract Unit_LiquidationEngine_ModifyParameters is Base {
   }
 }
 
-contract Unit_LiquidationEngine_DisableContract is Base {
-  event DisableContract();
-
-  function test_Set_ContractEnabled() public authorized {
-    liquidationEngine.disableContract();
-
-    assertEq(liquidationEngine.contractEnabled(), 0);
-  }
-
-  function test_Emit_DisableContract() public authorized {
-    expectEmitNoIndex();
-    emit DisableContract();
-
-    liquidationEngine.disableContract();
-  }
-
-  function test_Revert_NotAuthorized() public {
-    vm.expectRevert(IAuthorizable.Unauthorized.selector);
-
-    liquidationEngine.disableContract();
-  }
-}
-
 contract Unit_LiquidationEngine_RemoveCoinsFromAuction is Base {
   event UpdateCurrentOnAuctionSystemCoins(uint256 _currentOnAuctionSystemCoins);
 

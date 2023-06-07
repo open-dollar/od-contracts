@@ -174,19 +174,6 @@ contract Unit_DebtAuctionHouse_DisableContract is Base {
     _;
   }
 
-  function test_Revert_Unauthorized() public {
-    vm.expectRevert(IAuthorizable.Unauthorized.selector);
-
-    debtAuctionHouse.disableContract();
-  }
-
-  function test_Emit_DisableContract() public happyPath {
-    expectEmitNoIndex();
-    emit DisableContract();
-
-    debtAuctionHouse.disableContract();
-  }
-
   function test_Set_AccountingEngine() public happyPath {
     debtAuctionHouse.disableContract();
 
@@ -919,12 +906,6 @@ contract Unit_DebtAuctionHouse_ModifyParameters is Base {
     _;
   }
 
-  function test_Revert_Unauthorized(bytes32 _param, bytes memory _data) public {
-    vm.expectRevert(IAuthorizable.Unauthorized.selector);
-
-    debtAuctionHouse.modifyParameters(_param, _data);
-  }
-
   function test_Revert_ContractIsDisabled(bytes32 _param, bytes memory _data) public {
     vm.startPrank(authorizedAccount);
 
@@ -964,12 +945,5 @@ contract Unit_DebtAuctionHouse_ModifyParameters is Base {
     vm.expectRevert(IModifiable.UnrecognizedParam.selector);
 
     debtAuctionHouse.modifyParameters('unrecognizedParam', _data);
-  }
-
-  function test_Emit_ModifyParameters(address _accountingEngine) public happyPath {
-    expectEmitNoIndex();
-    emit ModifyParameters('accountingEngine', bytes32(0), abi.encode(_accountingEngine));
-
-    debtAuctionHouse.modifyParameters('accountingEngine', abi.encode(_accountingEngine));
   }
 }

@@ -2,6 +2,7 @@
 pragma solidity 0.8.19;
 
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
+
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
 /**
@@ -18,15 +19,15 @@ abstract contract Modifiable is IModifiable, Authorizable {
   // --- External methods ---
 
   /// @inheritdoc IModifiable
-  function modifyParameters(bytes32 _parameter, bytes memory _data) external isAuthorized {
-    _modifyParameters(_parameter, _data);
-    emit ModifyParameters(_parameter, _GLOBAL_PARAM, _data);
+  function modifyParameters(bytes32 _param, bytes memory _data) external isAuthorized {
+    _modifyParameters(_param, _data);
+    emit ModifyParameters(_param, _GLOBAL_PARAM, _data);
   }
 
   /// @inheritdoc IModifiable
-  function modifyParameters(bytes32 _cType, bytes32 _parameter, bytes memory _data) external isAuthorized {
-    _modifyParameters(_cType, _parameter, _data);
-    emit ModifyParameters(_parameter, _cType, _data);
+  function modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) external isAuthorized {
+    _modifyParameters(_cType, _param, _data);
+    emit ModifyParameters(_param, _cType, _data);
   }
 
   // --- Internal virtual methods ---
@@ -36,7 +37,7 @@ abstract contract Modifiable is IModifiable, Authorizable {
    * @dev    This function is set to revert if not overriden
    */
   // solhint-disable-next-line no-unused-vars
-  function _modifyParameters(bytes32 _parameter, bytes memory _data) internal virtual {
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal virtual {
     revert UnrecognizedParam();
   }
 
@@ -45,7 +46,7 @@ abstract contract Modifiable is IModifiable, Authorizable {
    * @dev    This function is set to revert if not overriden
    */
   // solhint-disable-next-line no-unused-vars
-  function _modifyParameters(bytes32 _cType, bytes32 _parameter, bytes memory _data) internal virtual {
+  function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal virtual {
     revert UnrecognizedParam();
   }
 }

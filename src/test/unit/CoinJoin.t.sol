@@ -73,38 +73,6 @@ contract Unit_CoinJoin_Constructor is Base {
   }
 }
 
-contract Unit_CoinJoin_DisableContract is Base {
-  event DisableContract();
-
-  modifier happyPath() {
-    vm.startPrank(authorizedAccount);
-    _;
-  }
-
-  function test_Revert_Unauthorized() public {
-    vm.expectRevert(IAuthorizable.Unauthorized.selector);
-
-    coinJoin.disableContract();
-  }
-
-  function test_Revert_ContractIsDisabled() public {
-    vm.startPrank(authorizedAccount);
-
-    _mockContractEnabled(0);
-
-    vm.expectRevert(IDisableable.ContractIsDisabled.selector);
-
-    coinJoin.disableContract();
-  }
-
-  function test_Emit_DisableContract() public happyPath {
-    expectEmitNoIndex();
-    emit DisableContract();
-
-    coinJoin.disableContract();
-  }
-}
-
 contract Unit_CoinJoin_Join is Base {
   event Join(address _sender, address _account, uint256 _wad);
 

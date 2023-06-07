@@ -5,7 +5,13 @@ import {Disableable, IDisableable} from '@contracts/utils/Disableable.sol';
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
 contract DisableableForTest is Disableable {
+  event OnContractDisable();
+
   constructor() Disableable() Authorizable(msg.sender) {}
+
+  function _onContractDisable() internal override {
+    emit OnContractDisable();
+  }
 
   function whenEnabledModifier() external whenEnabled {}
 

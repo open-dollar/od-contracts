@@ -1905,26 +1905,3 @@ contract Unit_SAFEEngine_InitializeCollateralType is Base {
     safeEngine.initializeCollateralType(_collateralType);
   }
 }
-
-contract Unit_SAFEEngine_DisableContract is Base {
-  event DisableContract();
-
-  function test_Set_ContractEnabled() public authorized {
-    safeEngine.disableContract();
-
-    assertEq(safeEngine.contractEnabled(), 0);
-  }
-
-  function test_Emit_DisableContract() public authorized {
-    expectEmitNoIndex();
-    emit DisableContract();
-
-    safeEngine.disableContract();
-  }
-
-  function test_Revert_NotAuthorized() public {
-    vm.expectRevert(IAuthorizable.Unauthorized.selector);
-
-    safeEngine.disableContract();
-  }
-}

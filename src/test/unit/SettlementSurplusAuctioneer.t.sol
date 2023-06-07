@@ -313,12 +313,6 @@ contract Unit_SettlementSurplusAuctioneer_ModifyParameters is Base {
     _;
   }
 
-  function test_Revert_Unauthorized(bytes32 _param, bytes memory _data) public {
-    vm.expectRevert(IAuthorizable.Unauthorized.selector);
-
-    settlementSurplusAuctioneer.modifyParameters(_param, _data);
-  }
-
   function test_Set_AccountingEngine(address _accountingEngine) public happyPath {
     settlementSurplusAuctioneer.modifyParameters('accountingEngine', abi.encode(_accountingEngine));
 
@@ -346,12 +340,5 @@ contract Unit_SettlementSurplusAuctioneer_ModifyParameters is Base {
     vm.expectRevert(IModifiable.UnrecognizedParam.selector);
 
     settlementSurplusAuctioneer.modifyParameters('unrecognizedParam', _data);
-  }
-
-  function test_Emit_ModifyParameters(address _surplusAuctionHouse) public happyPath {
-    expectEmitNoIndex();
-    emit ModifyParameters('surplusAuctionHouse', bytes32(0), abi.encode(_surplusAuctionHouse));
-
-    settlementSurplusAuctioneer.modifyParameters('surplusAuctionHouse', abi.encode(_surplusAuctionHouse));
   }
 }

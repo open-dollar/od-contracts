@@ -654,12 +654,6 @@ contract Unit_PostSettlementSurplusAuctionHouse_ModifyParameters is Base {
     _;
   }
 
-  function test_Revert_Unauthorized(bytes32 _param, bytes memory _data) public {
-    vm.expectRevert(IAuthorizable.Unauthorized.selector);
-
-    postSettlementSurplusAuctionHouse.modifyParameters(_param, _data);
-  }
-
   function test_Set_Parameters(IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams memory _fuzz)
     public
     happyPath
@@ -680,12 +674,5 @@ contract Unit_PostSettlementSurplusAuctionHouse_ModifyParameters is Base {
     vm.expectRevert(IModifiable.UnrecognizedParam.selector);
 
     postSettlementSurplusAuctionHouse.modifyParameters('unrecognizedParam', _data);
-  }
-
-  function test_Emit_ModifyParameters(uint256 _bidIncrease) public happyPath {
-    expectEmitNoIndex();
-    emit ModifyParameters('bidIncrease', bytes32(0), abi.encode(_bidIncrease));
-
-    postSettlementSurplusAuctionHouse.modifyParameters('bidIncrease', abi.encode(_bidIncrease));
   }
 }

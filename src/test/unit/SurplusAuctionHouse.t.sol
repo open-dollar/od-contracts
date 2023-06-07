@@ -184,29 +184,6 @@ contract Unit_SurplusAuctionHouse_DisableContract is Base {
     _mockCoinBalance(address(surplusAuctionHouse), _coinBalance);
   }
 
-  function test_Revert_Unauthorized() public {
-    vm.expectRevert(IAuthorizable.Unauthorized.selector);
-
-    surplusAuctionHouse.disableContract();
-  }
-
-  function test_Revert_ContractIsDisabled() public {
-    vm.startPrank(authorizedAccount);
-
-    _mockContractEnabled(0);
-
-    vm.expectRevert(IDisableable.ContractIsDisabled.selector);
-
-    surplusAuctionHouse.disableContract();
-  }
-
-  function test_Emit_DisableContract(uint256 _coinBalance) public happyPath(_coinBalance) {
-    expectEmitNoIndex();
-    emit DisableContract();
-
-    surplusAuctionHouse.disableContract();
-  }
-
   function test_Call_SafeEngine_TransferInternalCoins(uint256 _coinBalance) public happyPath(_coinBalance) {
     vm.expectCall(
       address(mockSafeEngine),
@@ -907,12 +884,6 @@ contract Unit_SurplusAuctionHouse_ModifyParameters is Base {
     _;
   }
 
-  function test_Revert_Unauthorized(bytes32 _param, bytes memory _data) public {
-    vm.expectRevert(IAuthorizable.Unauthorized.selector);
-
-    surplusAuctionHouse.modifyParameters(_param, _data);
-  }
-
   function test_Set_Parameters(ISurplusAuctionHouse.SurplusAuctionHouseParams memory _fuzz) public happyPath {
     surplusAuctionHouse.modifyParameters('bidIncrease', abi.encode(_fuzz.bidIncrease));
     surplusAuctionHouse.modifyParameters('bidDuration', abi.encode(_fuzz.bidDuration));
@@ -944,14 +915,5 @@ contract Unit_SurplusAuctionHouse_ModifyParameters is Base {
     vm.expectRevert(IModifiable.UnrecognizedParam.selector);
 
     surplusAuctionHouse.modifyParameters('unrecognizedParam', _data);
-  }
-
-  function test_Emit_ModifyParameters(address _protocolTokenBidReceiver) public happyPath {
-    vm.assume(_protocolTokenBidReceiver != address(0));
-
-    expectEmitNoIndex();
-    emit ModifyParameters('protocolTokenBidReceiver', bytes32(0), abi.encode(_protocolTokenBidReceiver));
-
-    surplusAuctionHouse.modifyParameters('protocolTokenBidReceiver', abi.encode(_protocolTokenBidReceiver));
   }
 }

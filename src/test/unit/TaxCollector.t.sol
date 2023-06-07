@@ -237,20 +237,19 @@ abstract contract Base is HaiTest {
 contract Unit_TaxCollector_Constructor is Base {
   event AddAuthorization(address _account);
 
-  function setUp() public override {
-    Base.setUp();
-
+  modifier happyPath() {
     vm.startPrank(user);
+    _;
   }
 
-  function test_Emit_AddAuthorization() public {
+  function test_Emit_AddAuthorization() public happyPath {
     expectEmitNoIndex();
     emit AddAuthorization(user);
 
     taxCollector = new TaxCollectorForTest(address(mockSafeEngine));
   }
 
-  function test_Set_SafeEngine(address _safeEngine) public {
+  function test_Set_SafeEngine(address _safeEngine) public happyPath {
     taxCollector = new TaxCollectorForTest(_safeEngine);
 
     assertEq(address(taxCollector.safeEngine()), _safeEngine);
@@ -703,12 +702,6 @@ contract Unit_TaxCollector_ModifyParameters is Base {
     _;
   }
 
-  function test_Revert_Unauthorized(bytes32 _param, bytes memory _data) public {
-    vm.expectRevert(IAuthorizable.Unauthorized.selector);
-
-    taxCollector.modifyParameters(_param, _data);
-  }
-
   function test_Set_PrimaryTaxReceiver(address _primaryTaxReceiver) public happyPath {
     vm.assume(_primaryTaxReceiver != address(0));
 
@@ -753,15 +746,6 @@ contract Unit_TaxCollector_ModifyParameters is Base {
 
     taxCollector.modifyParameters('unrecognizedParam', _data);
   }
-
-  function test_Emit_ModifyParameters(address _primaryTaxReceiver) public happyPath {
-    vm.assume(_primaryTaxReceiver != address(0));
-
-    expectEmitNoIndex();
-    emit ModifyParameters('primaryTaxReceiver', bytes32(0), abi.encode(_primaryTaxReceiver));
-
-    taxCollector.modifyParameters('primaryTaxReceiver', abi.encode(_primaryTaxReceiver));
-  }
 }
 
 contract Unit_TaxCollector_ModifyParametersPerCollateral is Base {
@@ -770,12 +754,6 @@ contract Unit_TaxCollector_ModifyParametersPerCollateral is Base {
   modifier happyPath() {
     vm.startPrank(authorizedAccount);
     _;
-  }
-
-  function test_Revert_Unauthorized(bytes32 _cType, bytes32 _param, bytes memory _data) public {
-    vm.expectRevert(IAuthorizable.Unauthorized.selector);
-
-    taxCollector.modifyParameters(_cType, _param, _data);
   }
 
   function test_Set_StabilityFee(bytes32 _cType, uint256 _stabilityFeeFuzzed) public happyPath {
@@ -793,15 +771,5 @@ contract Unit_TaxCollector_ModifyParametersPerCollateral is Base {
     vm.expectRevert(IModifiable.UnrecognizedParam.selector);
 
     taxCollector.modifyParameters(_cType, 'unrecognizedParam', _data);
-  }
-
-  function test_Emit_ModifyParameters(bytes32 _cType, uint256 _stabilityFee) public happyPath {
-    _mockCollateralList(_cType);
-    _mockCollateralData(_cType, 0, block.timestamp);
-
-    expectEmitNoIndex();
-    emit ModifyParameters('stabilityFee', _cType, abi.encode(_stabilityFee));
-
-    taxCollector.modifyParameters(_cType, 'stabilityFee', abi.encode(_stabilityFee));
   }
 }

@@ -271,12 +271,6 @@ contract Unit_AccountingJob_ModifyParameters is Base {
     _;
   }
 
-  function test_Revert_Unauthorized(bytes32 _param, bytes memory _data) public {
-    vm.expectRevert(IAuthorizable.Unauthorized.selector);
-
-    accountingJob.modifyParameters(_param, _data);
-  }
-
   function test_Set_AccountingEngine(address _accountingEngine) public happyPath {
     accountingJob.modifyParameters('accountingEngine', abi.encode(_accountingEngine));
 
@@ -325,12 +319,5 @@ contract Unit_AccountingJob_ModifyParameters is Base {
     vm.expectRevert(IModifiable.UnrecognizedParam.selector);
 
     accountingJob.modifyParameters('unrecognizedParam', _data);
-  }
-
-  function test_Emit_ModifyParameters(uint256 _rewardAmount) public happyPath {
-    expectEmitNoIndex();
-    emit ModifyParameters('rewardAmount', bytes32(0), abi.encode(_rewardAmount));
-
-    accountingJob.modifyParameters('rewardAmount', abi.encode(_rewardAmount));
   }
 }

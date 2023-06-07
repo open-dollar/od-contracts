@@ -2,19 +2,27 @@
 pragma solidity 0.8.19;
 
 import {DisableableForTest, IDisableable} from '@contracts/for-test/DisableableForTest.sol';
+import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 
 abstract contract Base is HaiTest {
   using stdStorage for StdStorage;
 
   address deployer = label('deployer');
+  address authorizedAccount = label('authorizedAccount');
+  address user = label('user');
 
   DisableableForTest disableable;
 
   function setUp() public virtual {
-    vm.prank(deployer);
+    vm.startPrank(deployer);
+
     disableable = new DisableableForTest();
     label(address(disableable), 'Disableable');
+
+    disableable.addAuthorization(authorizedAccount);
+
+    vm.stopPrank();
   }
 
   function _mockContractEnabled(uint256 _contractEnabled) internal {
@@ -23,23 +31,64 @@ abstract contract Base is HaiTest {
 }
 
 contract Unit_Disableable_Constructor is Base {
-  function test_Set_ContractEnabled() public {
+  event AddAuthorization(address _account);
+
+  modifier happyPath() {
+    vm.startPrank(user);
+    _;
+  }
+
+  function test_Emit_AddAuthorization() public happyPath {
+    expectEmitNoIndex();
+    emit AddAuthorization(user);
+
+    disableable = new DisableableForTest();
+  }
+
+  function test_Set_ContractEnabled() public happyPath {
     assertEq(disableable.contractEnabled(), 1);
   }
 }
 
 contract Unit_Disableable_DisableContract is Base {
   event DisableContract();
+  event OnContractDisable();
 
-  function test_Set_ContractEnabled() public {
-    vm.prank(deployer);
+  modifier happyPath() {
+    vm.startPrank(authorizedAccount);
+    _;
+  }
+
+  function test_Revert_Unauthorized() public {
+    vm.expectRevert(IAuthorizable.Unauthorized.selector);
+
+    disableable.disableContract();
+  }
+
+  function test_Revert_ContractIsDisabled() public {
+    vm.startPrank(authorizedAccount);
+
+    _mockContractEnabled(0);
+
+    vm.expectRevert(IDisableable.ContractIsDisabled.selector);
+
+    disableable.disableContract();
+  }
+
+  function test_Set_ContractEnabled() public happyPath {
     disableable.disableContract();
 
     assertEq(disableable.contractEnabled(), 0);
   }
 
-  function test_Emit_DisableContract() public {
-    vm.prank(deployer);
+  function test_Emit_OnContractDisable() public happyPath {
+    expectEmitNoIndex();
+    emit OnContractDisable();
+
+    disableable.disableContract();
+  }
+
+  function test_Emit_DisableContract() public happyPath {
     expectEmitNoIndex();
     emit DisableContract();
 
@@ -49,7 +98,6 @@ contract Unit_Disableable_DisableContract is Base {
 
 contract Unit_Disableable_WhenEnabled is Base {
   function test_Revert_ContractIsDisabled() public {
-    vm.prank(deployer);
     _mockContractEnabled(0);
 
     vm.expectRevert(IDisableable.ContractIsDisabled.selector);
@@ -58,7 +106,6 @@ contract Unit_Disableable_WhenEnabled is Base {
   }
 
   function testFail_WhenEnabled() public {
-    vm.prank(deployer);
     vm.expectRevert(IDisableable.ContractIsDisabled.selector);
 
     disableable.whenEnabledModifier();
@@ -67,7 +114,6 @@ contract Unit_Disableable_WhenEnabled is Base {
 
 contract Unit_Disableable_WhenDisabled is Base {
   modifier happyPath() {
-    vm.prank(deployer);
     _mockContractEnabled(0);
     _;
   }
