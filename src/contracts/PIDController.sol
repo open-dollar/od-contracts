@@ -97,8 +97,8 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
     _boundedPIOutput = _piOutput;
     if (_piOutput < _params.feedbackOutputLowerBound) {
       _boundedPIOutput = _params.feedbackOutputLowerBound;
-    } else if (_piOutput > int256(_params.feedbackOutputUpperBound)) {
-      _boundedPIOutput = int256(_params.feedbackOutputUpperBound); // REVIEW: Unsafe cast. Check param assertions
+    } else if (_piOutput > _params.feedbackOutputUpperBound.toInt()) {
+      _boundedPIOutput = int256(_params.feedbackOutputUpperBound);
     }
     return _boundedPIOutput;
   }
@@ -136,7 +136,7 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
     uint256 _scaledMarketPrice = _marketPrice * 1e9;
 
     // Calculate the proportional term as (redemptionPrice - marketPrice) * RAY / redemptionPrice
-    _proportionalTerm = _redemptionPrice.sub(_scaledMarketPrice).rdiv(int256(_redemptionPrice)); // REVIEW: Is safe cast?
+    _proportionalTerm = _redemptionPrice.sub(_scaledMarketPrice).rdiv(int256(_redemptionPrice)); // safe cast: cannot overflow because minuend of sub
 
     return _proportionalTerm;
   }
@@ -214,7 +214,7 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
   ) internal view virtual returns (int256 _nextDeviationCumulative, int256 _appliedDeviation) {
     int256 _lastProportionalTerm = _deviationObservation.proportional;
     uint256 _timeElapsed = _timeSinceLastUpdate();
-    int256 _newTimeAdjustedDeviation = _proportionalTerm.riemannSum(_lastProportionalTerm) * int256(_timeElapsed); // REVIEW: Safe cast... for now xD
+    int256 _newTimeAdjustedDeviation = _proportionalTerm.riemannSum(_lastProportionalTerm) * int256(_timeElapsed);
     int256 _leakedPriceCumulative = _accumulatedLeak.rmul(_deviationObservation.integral);
 
     return (_leakedPriceCumulative + _newTimeAdjustedDeviation, _newTimeAdjustedDeviation);

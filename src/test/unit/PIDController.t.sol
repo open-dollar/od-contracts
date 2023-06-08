@@ -1221,7 +1221,7 @@ contract Unit_PIDController_GetBoundedPIOutput is Base {
   }
 
   function _happyPath(int256 _feedbackOutputLowerBound, uint256 _feedbackOutputUpperBound) internal pure {
-    vm.assume(_feedbackOutputUpperBound <= uint256(type(int256).max));
+    vm.assume(_feedbackOutputUpperBound <= uint256(type(int256).max)); // REVIEW: Assumptions not made in param assertions
     vm.assume(_feedbackOutputLowerBound > type(int256).min);
     vm.assume(_feedbackOutputUpperBound >= uint256(_feedbackOutputLowerBound));
   }
