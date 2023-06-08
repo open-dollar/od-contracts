@@ -115,8 +115,8 @@ abstract contract Deploy is Params, Script, Contracts {
     stabilityFeeTreasury.removeAuthorization(deployer);
 
     // tokens
-    coin.addAuthorization(_governor); // TODO: rm in production env
-    coin.removeAuthorization(deployer);
+    systemCoin.addAuthorization(_governor); // TODO: rm in production env
+    systemCoin.removeAuthorization(deployer);
     protocolToken.addAuthorization(_governor);
     protocolToken.removeAuthorization(deployer);
 
@@ -139,9 +139,8 @@ abstract contract Deploy is Params, Script, Contracts {
 
   function deployContracts() public {
     // deploy Tokens
-    // TODO: deprecate CoinForTest in favour of SystemCoin and ProtocolToken
-    coin = new CoinForTest('HAI Index Token', 'HAI', chainId);
-    protocolToken = new CoinForTest('Protocol Token', 'KITE', chainId);
+    systemCoin = new SystemCoin('HAI Index Token', 'HAI');
+    protocolToken = new ProtocolToken('Protocol Token', 'KITE');
 
     // deploy Base contracts
     safeEngine = new SAFEEngine(_safeEngineParams);
@@ -150,7 +149,7 @@ abstract contract Deploy is Params, Script, Contracts {
 
     liquidationEngine = new LiquidationEngine(address(safeEngine), _liquidationEngineParams);
 
-    coinJoin = new CoinJoin(address(safeEngine), address(coin));
+    coinJoin = new CoinJoin(address(safeEngine), address(systemCoin));
     surplusAuctionHouse =
       new SurplusAuctionHouse(address(safeEngine), address(protocolToken), _surplusAuctionHouseParams);
     debtAuctionHouse = new DebtAuctionHouse(address(safeEngine), address(protocolToken), _debtAuctionHouseParams);
@@ -209,7 +208,7 @@ abstract contract Deploy is Params, Script, Contracts {
     debtAuctionHouse.addAuthorization(address(accountingEngine)); // startAuction
     accountingEngine.addAuthorization(address(liquidationEngine)); // pushDebtToQueue
     protocolToken.addAuthorization(address(debtAuctionHouse)); // mint
-    coin.addAuthorization(address(coinJoin)); // mint
+    systemCoin.addAuthorization(address(coinJoin)); // mint
   }
 
   function _setupCollateral(bytes32 _cType) internal {

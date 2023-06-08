@@ -3,12 +3,13 @@ pragma solidity 0.8.19;
 
 import {ISurplusAuctionHouse} from '@interfaces/ISurplusAuctionHouse.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
-import {IToken} from '@interfaces/external/IToken.sol';
+import {IProtocolToken} from '@interfaces/tokens/IProtocolToken.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {Modifiable} from '@contracts/utils/Modifiable.sol';
 import {Disableable} from '@contracts/utils/Disableable.sol';
 
+import {SafeERC20} from '@openzeppelin/token/ERC20/utils/SafeERC20.sol';
 import {Encoding} from '@libraries/Encoding.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 import {WAD, HUNDRED} from '@libraries/Math.sol';
@@ -17,6 +18,7 @@ import {WAD, HUNDRED} from '@libraries/Math.sol';
 contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusAuctionHouse {
   using Encoding for bytes;
   using Assertions for address;
+  using SafeERC20 for IProtocolToken;
 
   bytes32 public constant AUCTION_HOUSE_TYPE = bytes32('SURPLUS');
   bytes32 public constant SURPLUS_AUCTION_TYPE = bytes32('MIXED-STRAT');
@@ -31,7 +33,7 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
   // SAFE database
   ISAFEEngine public safeEngine;
   // Protocol token address
-  IToken public protocolToken;
+  IProtocolToken public protocolToken;
   // Receiver of protocol tokens
   address public protocolTokenBidReceiver;
 
@@ -49,7 +51,7 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
     SurplusAuctionHouseParams memory _sahParams
   ) Authorizable(msg.sender) validParams {
     safeEngine = ISAFEEngine(_safeEngine);
-    protocolToken = IToken(_protocolToken);
+    protocolToken = IProtocolToken(_protocolToken);
 
     _params = _sahParams;
   }
@@ -115,10 +117,10 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
     if (_bid * WAD < _params.bidIncrease * bids[_id].bidAmount) revert SAH_InsufficientIncrease();
 
     if (msg.sender != bids[_id].highBidder) {
-      protocolToken.transferFrom(msg.sender, bids[_id].highBidder, bids[_id].bidAmount);
+      protocolToken.safeTransferFrom(msg.sender, bids[_id].highBidder, bids[_id].bidAmount);
       bids[_id].highBidder = msg.sender;
     }
-    protocolToken.transferFrom(msg.sender, address(this), _bid - bids[_id].bidAmount);
+    protocolToken.safeTransferFrom(msg.sender, address(this), _bid - bids[_id].bidAmount);
 
     bids[_id].bidAmount = _bid;
     bids[_id].bidExpiry = uint48(block.timestamp) + _params.bidDuration;
@@ -138,7 +140,7 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
 
     uint256 _amountToSend = bids[_id].bidAmount * _params.recyclingPercentage / HUNDRED;
     if (_amountToSend > 0) {
-      protocolToken.transfer(protocolTokenBidReceiver, _amountToSend);
+      protocolToken.safeTransfer(protocolTokenBidReceiver, _amountToSend);
     }
 
     uint256 _amountToBurn = bids[_id].bidAmount - _amountToSend;
@@ -156,7 +158,7 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
    */
   function terminateAuctionPrematurely(uint256 _id) external whenDisabled {
     if (bids[_id].highBidder == address(0)) revert SAH_HighBidderNotSet();
-    protocolToken.transfer(bids[_id].highBidder, bids[_id].bidAmount);
+    protocolToken.safeTransfer(bids[_id].highBidder, bids[_id].bidAmount);
     emit TerminateAuctionPrematurely(_id, msg.sender, bids[_id].highBidder, bids[_id].bidAmount);
     delete bids[_id];
   }

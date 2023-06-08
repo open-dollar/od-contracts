@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import 'ds-test/test.sol';
-import {DSToken as DSDelegateToken} from '@contracts/for-test/DSToken.sol';
+import {CoinForTest} from '@contracts/for-test/CoinForTest.sol';
 
 import {ISAFEEngine, SAFEEngine} from '@contracts/SAFEEngine.sol';
 import {ILiquidationEngine, LiquidationEngine} from '@contracts/LiquidationEngine.sol';
@@ -120,7 +120,7 @@ contract SingleSaveSAFETest is DSTest {
   SAFEEngine safeEngine;
   AccountingEngine accountingEngine;
   LiquidationEngine liquidationEngine;
-  DSDelegateToken gold;
+  CoinForTest gold;
   TaxCollector taxCollector;
 
   CollateralJoin collateralA;
@@ -129,7 +129,7 @@ contract SingleSaveSAFETest is DSTest {
   DebtAuctionHouse debtAuctionHouse;
   PostSettlementSurplusAuctionHouse surplusAuctionHouse;
 
-  DSDelegateToken protocolToken;
+  CoinForTest protocolToken;
 
   address me;
 
@@ -162,7 +162,7 @@ contract SingleSaveSAFETest is DSTest {
     hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     hevm.warp(604_411_200);
 
-    protocolToken = new DSDelegateToken('GOV', 'GOV');
+    protocolToken = new CoinForTest('GOV', 'GOV');
     protocolToken.mint(100 ether);
 
     ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
@@ -218,13 +218,13 @@ contract SingleSaveSAFETest is DSTest {
     safeEngine.addAuthorization(address(liquidationEngine));
     accountingEngine.addAuthorization(address(liquidationEngine));
 
-    gold = new DSDelegateToken('GEM', 'GEM');
+    gold = new CoinForTest('GEM', 'GEM');
     gold.mint(1000 ether);
 
     safeEngine.initializeCollateralType('gold');
     collateralA = new CollateralJoin(address(safeEngine), 'gold', address(gold));
     safeEngine.addAuthorization(address(collateralA));
-    gold.approve(address(collateralA));
+    gold.approve(address(collateralA), type(uint256).max);
     collateralA.join(address(this), 1000 ether);
 
     safeEngine.updateCollateralPrice('gold', ray(1 ether), ray(1 ether));
@@ -260,8 +260,9 @@ contract SingleSaveSAFETest is DSTest {
 
     safeEngine.approveSAFEModification(address(collateralAuctionHouse));
     safeEngine.approveSAFEModification(address(debtAuctionHouse));
-    gold.approve(address(safeEngine));
-    protocolToken.approve(address(surplusAuctionHouse));
+    gold.addAuthorization(address(safeEngine));
+
+    protocolToken.approve(address(surplusAuctionHouse), type(uint256).max);
 
     me = address(this);
   }

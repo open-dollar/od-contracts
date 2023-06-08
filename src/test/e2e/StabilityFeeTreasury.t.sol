@@ -154,7 +154,7 @@ contract E2EStabilityFeeTreasuryTest is Common {
 
     // Transferring coin tokens to stabilityFeeTreasury
     vm.startPrank(alice);
-    coin.transfer(address(stabilityFeeTreasury), _wad);
+    systemCoin.transfer(address(stabilityFeeTreasury), _wad);
     vm.stopPrank();
 
     // Executing pulling 100% of funds and setting bob as destination

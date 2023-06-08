@@ -1,22 +1,20 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {
-  IPostSettlementSurplusAuctionHouse,
-  ISAFEEngine,
-  IToken
-} from '@interfaces/settlement/IPostSettlementSurplusAuctionHouse.sol';
+import {IPostSettlementSurplusAuctionHouse} from '@interfaces/settlement/IPostSettlementSurplusAuctionHouse.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
-import {IToken} from '@interfaces/external/IToken.sol';
+import {IProtocolToken} from '@interfaces/tokens/IProtocolToken.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {Modifiable} from '@contracts/utils/Modifiable.sol';
 
+import {SafeERC20} from '@openzeppelin/token/ERC20/utils/SafeERC20.sol';
 import {Encoding} from '@libraries/Encoding.sol';
 import {WAD} from '@libraries/Math.sol';
 
 contract PostSettlementSurplusAuctionHouse is Authorizable, Modifiable, IPostSettlementSurplusAuctionHouse {
   using Encoding for bytes;
+  using SafeERC20 for IProtocolToken;
 
   bytes32 public constant AUCTION_HOUSE_TYPE = bytes32('SURPLUS');
   bytes32 public constant SURPLUS_AUCTION_TYPE = bytes32('POST-SETTLEMENT');
@@ -31,7 +29,7 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, Modifiable, IPostSet
   // SAFE database
   ISAFEEngine public safeEngine;
   // Protocol token address
-  IToken public protocolToken;
+  IProtocolToken public protocolToken;
 
   // --- Params ---
   PostSettlementSAHParams internal _params;
@@ -47,7 +45,7 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, Modifiable, IPostSet
     PostSettlementSAHParams memory _pssahParams
   ) Authorizable(msg.sender) validParams {
     safeEngine = ISAFEEngine(_safeEngine);
-    protocolToken = IToken(_protocolToken);
+    protocolToken = IProtocolToken(_protocolToken);
 
     _params = _pssahParams;
   }
@@ -99,10 +97,10 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, Modifiable, IPostSet
     if (_bid * WAD < _params.bidIncrease * bids[_id].bidAmount) revert PSSAH_InsufficientIncrease();
 
     if (msg.sender != bids[_id].highBidder) {
-      protocolToken.transferFrom(msg.sender, bids[_id].highBidder, bids[_id].bidAmount);
+      protocolToken.safeTransferFrom(msg.sender, bids[_id].highBidder, bids[_id].bidAmount);
       bids[_id].highBidder = msg.sender;
     }
-    protocolToken.transferFrom(msg.sender, address(this), _bid - bids[_id].bidAmount);
+    protocolToken.safeTransferFrom(msg.sender, address(this), _bid - bids[_id].bidAmount);
 
     bids[_id].bidAmount = _bid;
     bids[_id].bidExpiry = uint48(block.timestamp) + _params.bidDuration;
@@ -119,7 +117,7 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, Modifiable, IPostSet
       bids[_id].bidExpiry == 0 || (bids[_id].bidExpiry > block.timestamp && bids[_id].auctionDeadline > block.timestamp)
     ) revert PSSAH_AuctionNotFinished();
     safeEngine.transferInternalCoins(address(this), bids[_id].highBidder, bids[_id].amountToSell);
-    protocolToken.burn(address(this), bids[_id].bidAmount);
+    protocolToken.burn(bids[_id].bidAmount);
     delete bids[_id];
     emit SettleAuction(_id);
   }

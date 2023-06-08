@@ -5,7 +5,7 @@ import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ICoinJoin} from '@interfaces/utils/ICoinJoin.sol';
-import {ISystemCoin} from '@interfaces/external/ISystemCoin.sol';
+import {ISystemCoin} from '@interfaces/tokens/ISystemCoin.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
 interface IStabilityFeeTreasury is IAuthorizable, IDisableable, IModifiable {

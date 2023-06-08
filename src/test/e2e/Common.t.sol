@@ -107,7 +107,7 @@ abstract contract Common is HaiTest, DeployForTest {
 
   function _joinCoins(address _user, uint256 _amount) internal virtual {
     vm.startPrank(_user);
-    coin.approve(address(coinJoin), _amount);
+    systemCoin.approve(address(coinJoin), _amount);
     coinJoin.join(_user, _amount);
     vm.stopPrank();
   }

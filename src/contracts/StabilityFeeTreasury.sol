@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import {IStabilityFeeTreasury} from '@interfaces/IStabilityFeeTreasury.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
-import {ISystemCoin} from '@interfaces/external/ISystemCoin.sol';
+import {ISystemCoin} from '@interfaces/tokens/ISystemCoin.sol';
 import {ICoinJoin} from '@interfaces/utils/ICoinJoin.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';

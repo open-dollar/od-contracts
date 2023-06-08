@@ -6,7 +6,7 @@ import {
   IPostSettlementSurplusAuctionHouse
 } from '@contracts/for-test/PostSettlementSurplusAuctionHouseForTest.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
-import {IToken} from '@interfaces/external/IToken.sol';
+import {IProtocolToken} from '@interfaces/tokens/IProtocolToken.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {WAD} from '@libraries/Math.sol';
@@ -29,7 +29,7 @@ abstract contract Base is HaiTest {
   address user = label('user');
 
   ISAFEEngine mockSafeEngine = ISAFEEngine(mockContract('SafeEngine'));
-  IToken mockProtocolToken = IToken(mockContract('ProtocolToken'));
+  IProtocolToken mockProtocolToken = IProtocolToken(mockContract('ProtocolToken'));
 
   PostSettlementSurplusAuctionHouseForTest postSettlementSurplusAuctionHouse;
 
@@ -624,10 +624,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_SettleAuction is Base {
   }
 
   function test_Call_ProtocolToken_Burn(SurplusAuction memory _auction) public happyPath(_auction) {
-    vm.expectCall(
-      address(mockProtocolToken),
-      abi.encodeWithSignature('burn(address,uint256)', address(postSettlementSurplusAuctionHouse), _auction.bidAmount)
-    );
+    vm.expectCall(address(mockProtocolToken), abi.encodeWithSignature('burn(uint256)', _auction.bidAmount));
 
     postSettlementSurplusAuctionHouse.settleAuction(_auction.id);
   }

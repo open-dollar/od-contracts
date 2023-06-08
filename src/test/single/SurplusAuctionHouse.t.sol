@@ -2,7 +2,6 @@
 pragma solidity 0.8.19;
 
 import 'ds-test/test.sol';
-import {DSToken as DSDelegateToken} from '@contracts/for-test/DSToken.sol';
 
 import {ISurplusAuctionHouse, SurplusAuctionHouse} from '@contracts/SurplusAuctionHouse.sol';
 import {
@@ -12,7 +11,8 @@ import {
 import {ISAFEEngine, SAFEEngine} from '@contracts/SAFEEngine.sol';
 
 import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
-import {Coin} from '@contracts/utils/Coin.sol';
+import {SystemCoin} from '@contracts/tokens/SystemCoin.sol';
+import {ProtocolToken} from '@contracts/tokens/ProtocolToken.sol';
 
 abstract contract Hevm {
   function warp(uint256) public virtual;
@@ -23,8 +23,8 @@ contract GuyBurningSurplusAuction {
 
   constructor(SurplusAuctionHouse surplusAuctionHouse_) {
     surplusAuctionHouse = surplusAuctionHouse_;
-    SAFEEngine(address(surplusAuctionHouse.safeEngine())).approveSAFEModification(address(surplusAuctionHouse));
-    DSDelegateToken(address(surplusAuctionHouse.protocolToken())).approve(address(surplusAuctionHouse));
+    surplusAuctionHouse.safeEngine().approveSAFEModification(address(surplusAuctionHouse));
+    surplusAuctionHouse.protocolToken().approve(address(surplusAuctionHouse), type(uint256).max);
   }
 
   function increaseBidSize(uint256 id, uint256 amountToBuy, uint256 bid) public {
@@ -56,8 +56,8 @@ contract GuyRecyclingSurplusAuction {
 
   constructor(SurplusAuctionHouse surplusAuctionHouse_) {
     surplusAuctionHouse = surplusAuctionHouse_;
-    SAFEEngine(address(surplusAuctionHouse.safeEngine())).approveSAFEModification(address(surplusAuctionHouse));
-    DSDelegateToken(address(surplusAuctionHouse.protocolToken())).approve(address(surplusAuctionHouse));
+    surplusAuctionHouse.safeEngine().approveSAFEModification(address(surplusAuctionHouse));
+    surplusAuctionHouse.protocolToken().approve(address(surplusAuctionHouse), type(uint256).max);
   }
 
   function increaseBidSize(uint256 id, uint256 amountToBuy, uint256 bid) public {
@@ -89,8 +89,8 @@ contract GuyPostSurplusAuction {
 
   constructor(PostSettlementSurplusAuctionHouse surplusAuctionHouse_) {
     surplusAuctionHouse = surplusAuctionHouse_;
-    SAFEEngine(address(surplusAuctionHouse.safeEngine())).approveSAFEModification(address(surplusAuctionHouse));
-    DSDelegateToken(address(surplusAuctionHouse.protocolToken())).approve(address(surplusAuctionHouse));
+    surplusAuctionHouse.safeEngine().approveSAFEModification(address(surplusAuctionHouse));
+    surplusAuctionHouse.protocolToken().approve(address(surplusAuctionHouse), type(uint256).max);
   }
 
   function increaseBidSize(uint256 id, uint256 amountToBuy, uint256 bid) public {
@@ -122,7 +122,7 @@ contract SingleBurningSurplusAuctionHouseTest is DSTest {
 
   SurplusAuctionHouse surplusAuctionHouse;
   SAFEEngine safeEngine;
-  DSDelegateToken protocolToken;
+  ProtocolToken protocolToken;
 
   address ali;
   address bob;
@@ -134,7 +134,7 @@ contract SingleBurningSurplusAuctionHouseTest is DSTest {
     ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
       ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 0});
     safeEngine = new SAFEEngine(_safeEngineParams);
-    protocolToken = new DSDelegateToken('', '');
+    protocolToken = new ProtocolToken('', '');
 
     ISurplusAuctionHouse.SurplusAuctionHouseParams memory _sahParams = ISurplusAuctionHouse.SurplusAuctionHouseParams({
       bidIncrease: 1.05e18,
@@ -148,15 +148,12 @@ contract SingleBurningSurplusAuctionHouseTest is DSTest {
     bob = address(new GuyBurningSurplusAuction(surplusAuctionHouse));
 
     safeEngine.approveSAFEModification(address(surplusAuctionHouse));
-    protocolToken.approve(address(surplusAuctionHouse));
 
     safeEngine.createUnbackedDebt(address(this), address(this), 1000 ether);
 
-    protocolToken.mint(1000 ether);
-    protocolToken.setOwner(address(surplusAuctionHouse));
-
-    protocolToken.push(ali, 200 ether);
-    protocolToken.push(bob, 200 ether);
+    protocolToken.mint(address(this), 1000 ether);
+    protocolToken.transfer(ali, 200 ether);
+    protocolToken.transfer(bob, 200 ether);
   }
 
   function test_start_auction() public {
@@ -252,7 +249,7 @@ contract SingleRecyclingSurplusAuctionHouseTest is DSTest {
 
   SurplusAuctionHouse surplusAuctionHouse;
   SAFEEngine safeEngine;
-  DSDelegateToken protocolToken;
+  ProtocolToken protocolToken;
 
   address ali;
   address bob;
@@ -264,7 +261,7 @@ contract SingleRecyclingSurplusAuctionHouseTest is DSTest {
     ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
       ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 0});
     safeEngine = new SAFEEngine(_safeEngineParams);
-    protocolToken = new DSDelegateToken('', '');
+    protocolToken = new ProtocolToken('', '');
 
     ISurplusAuctionHouse.SurplusAuctionHouseParams memory _sahParams = ISurplusAuctionHouse.SurplusAuctionHouseParams({
       bidIncrease: 1.05e18,
@@ -279,15 +276,13 @@ contract SingleRecyclingSurplusAuctionHouseTest is DSTest {
     bob = address(new GuyRecyclingSurplusAuction(surplusAuctionHouse));
 
     safeEngine.approveSAFEModification(address(surplusAuctionHouse));
-    protocolToken.approve(address(surplusAuctionHouse));
 
     safeEngine.createUnbackedDebt(address(this), address(this), 1000 ether);
 
-    protocolToken.mint(1000 ether);
-    protocolToken.setOwner(address(surplusAuctionHouse));
+    protocolToken.mint(address(this), 1000 ether);
 
-    protocolToken.push(ali, 200 ether);
-    protocolToken.push(bob, 200 ether);
+    protocolToken.transfer(ali, 200 ether);
+    protocolToken.transfer(bob, 200 ether);
   }
 
   function test_start_auction() public {
@@ -396,7 +391,7 @@ contract SingleMixedStratSurplusAuctionHouseTest is DSTest {
 
   SurplusAuctionHouse surplusAuctionHouse;
   SAFEEngine safeEngine;
-  DSDelegateToken protocolToken;
+  ProtocolToken protocolToken;
 
   address ali;
   address bob;
@@ -408,7 +403,7 @@ contract SingleMixedStratSurplusAuctionHouseTest is DSTest {
     ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
       ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 0});
     safeEngine = new SAFEEngine(_safeEngineParams);
-    protocolToken = new DSDelegateToken('', '');
+    protocolToken = new ProtocolToken('', '');
 
     ISurplusAuctionHouse.SurplusAuctionHouseParams memory _sahParams = ISurplusAuctionHouse.SurplusAuctionHouseParams({
       bidIncrease: 1.05e18,
@@ -422,15 +417,13 @@ contract SingleMixedStratSurplusAuctionHouseTest is DSTest {
     bob = address(new GuyRecyclingSurplusAuction(surplusAuctionHouse));
 
     safeEngine.approveSAFEModification(address(surplusAuctionHouse));
-    protocolToken.approve(address(surplusAuctionHouse));
 
     safeEngine.createUnbackedDebt(address(this), address(this), 1000 ether);
 
-    protocolToken.mint(1000 ether);
-    protocolToken.setOwner(address(surplusAuctionHouse));
+    protocolToken.mint(address(this), 1000 ether);
 
-    protocolToken.push(ali, 200 ether);
-    protocolToken.push(bob, 200 ether);
+    protocolToken.transfer(ali, 200 ether);
+    protocolToken.transfer(bob, 200 ether);
   }
 
   function test_start_auction() public {
@@ -542,7 +535,7 @@ contract SinglePostSettlementSurplusAuctionHouseTest is DSTest {
 
   PostSettlementSurplusAuctionHouse surplusAuctionHouse;
   SAFEEngine safeEngine;
-  DSDelegateToken protocolToken;
+  ProtocolToken protocolToken;
 
   address ali;
   address bob;
@@ -554,7 +547,7 @@ contract SinglePostSettlementSurplusAuctionHouseTest is DSTest {
     ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
       ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 0});
     safeEngine = new SAFEEngine(_safeEngineParams);
-    protocolToken = new DSDelegateToken('', '');
+    protocolToken = new ProtocolToken('', '');
 
     IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams memory _pssahParams = IPostSettlementSurplusAuctionHouse
       .PostSettlementSAHParams({bidIncrease: 1.05e18, bidDuration: 3 hours, totalAuctionLength: 2 days});
@@ -565,15 +558,13 @@ contract SinglePostSettlementSurplusAuctionHouseTest is DSTest {
     bob = address(new GuyPostSurplusAuction(surplusAuctionHouse));
 
     safeEngine.approveSAFEModification(address(surplusAuctionHouse));
-    protocolToken.approve(address(surplusAuctionHouse));
 
     safeEngine.createUnbackedDebt(address(this), address(this), 1000 ether);
 
-    protocolToken.mint(1000 ether);
-    protocolToken.setOwner(address(surplusAuctionHouse));
+    protocolToken.mint(address(this), 1000 ether);
 
-    protocolToken.push(ali, 200 ether);
-    protocolToken.push(bob, 200 ether);
+    protocolToken.transfer(ali, 200 ether);
+    protocolToken.transfer(bob, 200 ether);
   }
 
   function test_start_auction() public {

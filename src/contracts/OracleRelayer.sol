@@ -123,13 +123,9 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled validParams {
     uint256 _uint256 = _data.toUint256();
 
-    if (_param == 'redemptionRateUpperBound') {
-      _params.redemptionRateUpperBound = _uint256;
-    } else if (_param == 'redemptionRateLowerBound') {
-      _params.redemptionRateLowerBound = _uint256;
-    } else {
-      revert UnrecognizedParam();
-    }
+    if (_param == 'redemptionRateUpperBound') _params.redemptionRateUpperBound = _uint256;
+    else if (_param == 'redemptionRateLowerBound') _params.redemptionRateLowerBound = _uint256;
+    else revert UnrecognizedParam();
   }
 
   function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override whenEnabled {

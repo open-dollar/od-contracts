@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
+import {SystemCoin, ISystemCoin} from '@contracts/tokens/SystemCoin.sol';
+import {ProtocolToken, IProtocolToken} from '@contracts/tokens/ProtocolToken.sol';
 import {SAFEEngine, ISAFEEngine} from '@contracts/SAFEEngine.sol';
 import {TaxCollector, ITaxCollector} from '@contracts/TaxCollector.sol';
 import {AccountingEngine, IAccountingEngine} from '@contracts/AccountingEngine.sol';
@@ -64,8 +66,8 @@ abstract contract Contracts {
   mapping(bytes32 => ICollateralAuctionHouse) public collateralAuctionHouse;
 
   // --- Token contracts ---
-  CoinForTest public coin;
-  CoinForTest public protocolToken;
+  IProtocolToken public protocolToken;
+  ISystemCoin public systemCoin;
   mapping(bytes32 => IERC20Metadata) public collateral;
   ICoinJoin public coinJoin;
   IETHJoin public ethJoin;

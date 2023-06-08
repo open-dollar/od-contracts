@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
-import {IToken} from '@interfaces/external/IToken.sol';
+import {IProtocolToken} from '@interfaces/tokens/IProtocolToken.sol';
 
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
@@ -65,7 +65,7 @@ interface IPostSettlementSurplusAuctionHouse is IAuthorizable, IModifiable {
 
   // --- Registry ---
   function safeEngine() external view returns (ISAFEEngine _safeEngine);
-  function protocolToken() external view returns (IToken _protocolToken);
+  function protocolToken() external view returns (IProtocolToken _protocolToken);
 
   // --- Params ---
   function params() external view returns (PostSettlementSAHParams memory _params);

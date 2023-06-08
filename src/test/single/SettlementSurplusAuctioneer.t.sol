@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import 'ds-test/test.sol';
-import {DSToken as DSDelegateToken} from '@contracts/for-test/DSToken.sol';
+import {CoinForTest} from '@contracts/for-test/CoinForTest.sol';
 import {DisableableForTest} from '@contracts/for-test/DisableableForTest.sol';
 
 import {
@@ -13,7 +13,6 @@ import {SettlementSurplusAuctioneer} from '@contracts/settlement/SettlementSurpl
 import {ISAFEEngine, SAFEEngine} from '@contracts/SAFEEngine.sol';
 import {IAccountingEngine, AccountingEngine} from '@contracts/AccountingEngine.sol';
 import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
-import {Coin} from '@contracts/utils/Coin.sol';
 
 abstract contract Hevm {
   function warp(uint256) public virtual;
@@ -26,7 +25,7 @@ contract SingleSettlementSurplusAuctioneerTest is DSTest {
   PostSettlementSurplusAuctionHouse surplusAuctionHouse;
   AccountingEngine accountingEngine;
   SAFEEngine safeEngine;
-  DSDelegateToken protocolToken;
+  CoinForTest protocolToken;
 
   uint256 constant ONE = 10 ** 27;
 
@@ -58,7 +57,7 @@ contract SingleSettlementSurplusAuctioneerTest is DSTest {
 
     accountingEngine =
       new AccountingEngine(address(safeEngine), address(disableable1), address(disableable2), _accountingEngineParams);
-    protocolToken = new DSDelegateToken('', '');
+    protocolToken = new CoinForTest('', '');
 
     disableable1.addAuthorization(address(accountingEngine));
     disableable2.addAuthorization(address(accountingEngine));
@@ -71,12 +70,11 @@ contract SingleSettlementSurplusAuctioneerTest is DSTest {
     surplusAuctionHouse.addAuthorization(address(surplusAuctioneer));
 
     safeEngine.approveSAFEModification(address(surplusAuctionHouse));
-    protocolToken.approve(address(surplusAuctionHouse));
 
     safeEngine.createUnbackedDebt(address(this), address(this), 1000 ether);
 
     protocolToken.mint(1000 ether);
-    protocolToken.setOwner(address(surplusAuctionHouse));
+    protocolToken.approve(address(surplusAuctionHouse), type(uint256).max);
   }
 
   function test_modify_parameters() public {

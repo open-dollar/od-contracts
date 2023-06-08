@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import 'ds-test/test.sol';
-import {DSToken as DSDelegateToken} from '@contracts/for-test/DSToken.sol';
+import {CoinForTest} from '@contracts/for-test/CoinForTest.sol';
 
 import {SAFEEngine} from '@contracts/SAFEEngine.sol';
 import {ILiquidationEngine, LiquidationEngine} from '@contracts/LiquidationEngine.sol';
@@ -116,7 +116,7 @@ contract Usr {
   }
 
   function approve(address _token, address _target, uint256 _wad) external {
-    DSDelegateToken(_token).approve(_target, _wad);
+    CoinForTest(_token).approve(_target, _wad);
   }
 
   function join(address _adapter, address _safe, uint256 _wad) external {
@@ -157,8 +157,8 @@ contract Usr {
 
 contract SingleModifySAFECollateralizationTest is DSTest {
   SAFEEngine safeEngine;
-  DSDelegateToken gold;
-  DSDelegateToken stable;
+  CoinForTest gold;
+  CoinForTest stable;
   TaxCollector taxCollector;
 
   CollateralJoin collateralA;
@@ -198,7 +198,7 @@ contract SingleModifySAFECollateralizationTest is DSTest {
       ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: rad(1000 ether)});
     safeEngine = new SAFEEngine(_safeEngineParams);
 
-    gold = new DSDelegateToken('GEM', '');
+    gold = new CoinForTest('GEM', '');
     gold.mint(1000 ether);
 
     safeEngine.initializeCollateralType('gold');
@@ -218,12 +218,9 @@ contract SingleModifySAFECollateralizationTest is DSTest {
     taxCollector.initializeCollateralType('gold');
     safeEngine.addAuthorization(address(taxCollector));
 
-    gold.approve(address(collateralA));
-    gold.approve(address(safeEngine));
-
-    safeEngine.addAuthorization(address(safeEngine));
     safeEngine.addAuthorization(address(collateralA));
 
+    gold.approve(address(collateralA), type(uint256).max);
     collateralA.join(address(this), 1000 ether);
 
     me = address(this);
@@ -420,8 +417,8 @@ contract SingleSAFEDebtLimitTest is DSTest {
   Hevm hevm;
 
   SAFEEngine safeEngine;
-  DSDelegateToken gold;
-  DSDelegateToken stable;
+  CoinForTest gold;
+  CoinForTest stable;
   TaxCollector taxCollector;
 
   CollateralJoin collateralA;
@@ -467,7 +464,7 @@ contract SingleSAFEDebtLimitTest is DSTest {
       ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: rad(1000 ether)});
     safeEngine = new SAFEEngine(_safeEngineParams);
 
-    gold = new DSDelegateToken('GEM', '');
+    gold = new CoinForTest('GEM', '');
     gold.mint(1000 ether);
 
     safeEngine.initializeCollateralType('gold');
@@ -488,8 +485,7 @@ contract SingleSAFEDebtLimitTest is DSTest {
     taxCollector.modifyParameters('gold', 'stabilityFee', abi.encode(1_000_000_564_701_133_626_865_910_626)); // 5% / day
     safeEngine.addAuthorization(address(taxCollector));
 
-    gold.approve(address(collateralA));
-    gold.approve(address(safeEngine));
+    gold.approve(address(collateralA), type(uint256).max);
 
     safeEngine.addAuthorization(address(safeEngine));
     safeEngine.addAuthorization(address(collateralA));
@@ -572,11 +568,11 @@ contract SingleSAFEDebtLimitTest is DSTest {
 
 contract SingleJoinTest is DSTest {
   SAFEEngine safeEngine;
-  DSDelegateToken collateral;
+  CoinForTest collateral;
   CollateralJoin collateralA;
   ETHJoin ethA;
   CoinJoin coinA;
-  DSDelegateToken coin;
+  CoinForTest coin;
   address me;
 
   function setUp() public {
@@ -586,17 +582,17 @@ contract SingleJoinTest is DSTest {
 
     safeEngine.initializeCollateralType('ETH');
 
-    collateral = new DSDelegateToken('Gem', 'Gem');
+    collateral = new CoinForTest('Gem', 'Gem');
     collateralA = new CollateralJoin(address(safeEngine), 'collateral', address(collateral));
     safeEngine.addAuthorization(address(collateralA));
 
     ethA = new ETHJoin(address(safeEngine), 'ETH');
     safeEngine.addAuthorization(address(ethA));
 
-    coin = new DSDelegateToken('Coin', 'Coin');
+    coin = new CoinForTest('Coin', 'Coin');
     coinA = new CoinJoin(address(safeEngine), address(coin));
     safeEngine.addAuthorization(address(coinA));
-    coin.setOwner(address(coinA));
+    coin.addAuthorization(address(coinA));
 
     me = address(this);
   }
@@ -730,7 +726,7 @@ contract SingleLiquidationTest is DSTest {
   SAFEEngine safeEngine;
   AccountingEngine accountingEngine;
   LiquidationEngine liquidationEngine;
-  DSDelegateToken gold;
+  CoinForTest gold;
   TaxCollector taxCollector;
   OracleRelayer oracleRelayer;
   DummyFSM oracleFSM;
@@ -741,7 +737,7 @@ contract SingleLiquidationTest is DSTest {
   DebtAuctionHouse debtAuctionHouse;
   PostSettlementSurplusAuctionHouse surplusAuctionHouse;
 
-  DSDelegateToken protocolToken;
+  CoinForTest protocolToken;
 
   address me;
 
@@ -774,7 +770,7 @@ contract SingleLiquidationTest is DSTest {
     hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     hevm.warp(604_411_200);
 
-    protocolToken = new DSDelegateToken('GOV', '');
+    protocolToken = new CoinForTest('GOV', '');
     protocolToken.mint(100 ether);
 
     ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
@@ -832,13 +828,14 @@ contract SingleLiquidationTest is DSTest {
     safeEngine.addAuthorization(address(liquidationEngine));
     accountingEngine.addAuthorization(address(liquidationEngine));
 
-    gold = new DSDelegateToken('GEM', '');
+    gold = new CoinForTest('GEM', '');
     gold.mint(1000 ether);
 
     safeEngine.initializeCollateralType('gold');
     collateralA = new CollateralJoin(address(safeEngine), 'gold', address(gold));
     safeEngine.addAuthorization(address(collateralA));
-    gold.approve(address(collateralA));
+
+    gold.approve(address(collateralA), type(uint256).max);
     collateralA.join(address(this), 1000 ether);
 
     safeEngine.updateCollateralPrice('gold', ray(1 ether), ray(1 ether));
@@ -887,8 +884,8 @@ contract SingleLiquidationTest is DSTest {
 
     safeEngine.approveSAFEModification(address(collateralAuctionHouse));
     safeEngine.approveSAFEModification(address(debtAuctionHouse));
-    gold.approve(address(safeEngine));
-    protocolToken.approve(address(surplusAuctionHouse));
+    gold.addAuthorization(address(safeEngine));
+    protocolToken.addAuthorization(address(debtAuctionHouse));
 
     me = address(this);
   }
@@ -1065,12 +1062,14 @@ contract SingleLiquidationTest is DSTest {
 
     assertEq(protocolToken.balanceOf(address(this)), 100 ether);
     hevm.warp(block.timestamp + 4 hours);
-    protocolToken.setOwner(address(debtAuctionHouse));
+
     debtAuctionHouse.settleAuction(f1);
     assertEq(protocolToken.balanceOf(address(this)), 1100 ether);
   }
 
   function test_liquidate_when_system_surplus() public {
+    protocolToken.approve(address(surplusAuctionHouse), type(uint256).max);
+
     // get some surplus
     safeEngine.createUnbackedDebt(address(0), address(accountingEngine), rad(100 ether));
     assertEq(safeEngine.coinBalance(address(accountingEngine)), rad(100 ether));
@@ -1085,8 +1084,9 @@ contract SingleLiquidationTest is DSTest {
     assertEq(protocolToken.balanceOf(address(this)), 100 ether);
     surplusAuctionHouse.increaseBidSize(id, rad(100 ether), 10 ether);
     hevm.warp(block.timestamp + 4 hours);
-    protocolToken.setOwner(address(surplusAuctionHouse));
+
     surplusAuctionHouse.settleAuction(id);
+
     assertEq(safeEngine.coinBalance(address(this)), rad(100 ether));
     assertEq(protocolToken.balanceOf(address(this)), 90 ether);
   }

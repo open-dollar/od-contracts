@@ -28,7 +28,7 @@ contract E2ETest is Common {
   function test_exit_join() public {
     _generateDebt(address(this), address(collateralJoin[ETH_A]), int256(COLLAT), int256(DEBT));
 
-    assertEq(coin.balanceOf(address(this)), DEBT);
+    assertEq(systemCoin.balanceOf(address(this)), DEBT);
   }
 
   function test_stability_fee() public {
