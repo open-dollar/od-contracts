@@ -29,11 +29,11 @@ library Math {
   }
 
   function sub(uint256 _x, uint256 _y) internal pure returns (int256 _sub) {
-    return toIntNotOverflow(_x) - toIntNotOverflow(_y);
+    return toInt(_x) - toInt(_y);
   }
 
   function mul(uint256 _x, int256 _y) internal pure returns (int256 _mul) {
-    return toIntNotOverflow(_x) * _y;
+    return toInt(_x) * _y;
   }
 
   function rmul(uint256 _x, uint256 _y) internal pure returns (uint256 _rmul) {
@@ -41,7 +41,7 @@ library Math {
   }
 
   function rmul(uint256 _x, int256 y) internal pure returns (int256 _rmul) {
-    return (toIntNotOverflow(_x) * y) / int256(RAY);
+    return (toInt(_x) * y) / int256(RAY);
   }
 
   function wmul(uint256 _x, uint256 _y) internal pure returns (uint256 _wmul) {
@@ -49,7 +49,7 @@ library Math {
   }
 
   function wmul(uint256 _x, int256 _y) internal pure returns (int256 _wmul) {
-    return (toIntNotOverflow(_x) * _y) / int256(WAD);
+    return (toInt(_x) * _y) / int256(WAD);
   }
 
   function wmul(int256 _x, int256 _y) internal pure returns (int256 _wmul) {
@@ -107,7 +107,7 @@ library Math {
     _min = (_x <= _y) ? _x : _y;
   }
 
-  function toIntNotOverflow(uint256 _x) internal pure returns (int256 _int) {
+  function toInt(uint256 _x) internal pure returns (int256 _int) {
     _int = int256(_x);
     if (_int < 0) revert IntOverflow();
   }

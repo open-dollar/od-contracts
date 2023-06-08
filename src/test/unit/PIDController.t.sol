@@ -291,7 +291,7 @@ contract Unit_PIDController_Constructor is Base {
   function test_Revert_FeedbackOutputUpperBoundIsZero() public {
     params.feedbackOutputUpperBound = 0;
 
-    vm.expectRevert(abi.encodeWithSelector(Assertions.NotGreaterThan.selector, params.feedbackOutputUpperBound, 0));
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NullAmount.selector));
 
     _createPidController(IPIDController.DeviationObservation(0, 0, 0));
   }

@@ -1653,7 +1653,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
       })
     );
 
-    vm.expectRevert(bytes('LiquidationEngine/collateral-or-debt-overflow'));
+    vm.expectRevert(Math.IntOverflow.selector);
 
     liquidationEngine.liquidateSAFE(collateralType, safe);
   }
@@ -1679,7 +1679,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
       })
     );
 
-    vm.expectRevert(bytes('LiquidationEngine/collateral-or-debt-overflow'));
+    vm.expectRevert(Math.IntOverflow.selector);
 
     liquidationEngine.liquidateSAFE(collateralType, safe);
   }

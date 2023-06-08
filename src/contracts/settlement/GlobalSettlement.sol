@@ -195,8 +195,8 @@ contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettl
       _forgoneCollateralReceiver,
       address(this),
       address(accountingEngine),
-      _collateralToSell.toIntNotOverflow(),
-      _debt.toIntNotOverflow()
+      _collateralToSell.toInt(),
+      _debt.toInt()
     );
     emit FastTrackAuction(_cType, _auctionId, collateralTotalDebt[_cType]);
   }
@@ -221,7 +221,7 @@ contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettl
       address(this),
       address(accountingEngine),
       -int256(_minCollateral), // safe cast: cannot overflow because result of rmul
-      -_safeData.generatedDebt.toIntNotOverflow()
+      -_safeData.generatedDebt.toInt()
     );
 
     emit ProcessSAFE(_cType, _safe, collateralShortfall[_cType]);
@@ -234,10 +234,11 @@ contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettl
   function freeCollateral(bytes32 _cType) external whenDisabled {
     ISAFEEngine.SAFE memory _safeData = safeEngine.safes(_cType, msg.sender);
     if (_safeData.generatedDebt != 0) revert GS_SafeDebtNotZero();
+    int256 _lockedCollateral = -_safeData.lockedCollateral.toInt();
     safeEngine.confiscateSAFECollateralAndDebt(
-      _cType, msg.sender, msg.sender, address(accountingEngine), -_safeData.lockedCollateral.toIntNotOverflow(), 0
+      _cType, msg.sender, msg.sender, address(accountingEngine), _lockedCollateral, 0
     );
-    emit FreeCollateral(_cType, msg.sender, -_safeData.lockedCollateral.toIntNotOverflow());
+    emit FreeCollateral(_cType, msg.sender, _lockedCollateral);
   }
 
   /**
