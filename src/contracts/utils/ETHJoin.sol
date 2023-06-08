@@ -41,20 +41,18 @@ contract ETHJoin is Authorizable, Disableable, IETHJoin {
   /**
    * @notice Join ETH in the system
    * @param _account Account that will receive the ETH representation inside the system
-   *
    */
   function join(address _account) external payable whenEnabled {
-    safeEngine.modifyCollateralBalance(collateralType, _account, msg.value.toIntNotOverflow());
+    safeEngine.modifyCollateralBalance(collateralType, _account, msg.value.toInt());
     emit Join(msg.sender, _account, msg.value);
   }
 
   /**
    * @notice Exit ETH from the system
    * @param _account Account that will receive the ETH representation inside the system
-   *
    */
   function exit(address _account, uint256 _wad) external {
-    safeEngine.modifyCollateralBalance(collateralType, msg.sender, -_wad.toIntNotOverflow());
+    safeEngine.modifyCollateralBalance(collateralType, msg.sender, -_wad.toInt());
     emit Exit(msg.sender, _account, _wad);
     (bool _success,) = _account.call{value: _wad}('');
     if (!_success) revert ETHJoin_FailedTransfer();

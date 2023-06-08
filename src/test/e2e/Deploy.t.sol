@@ -15,7 +15,7 @@ import {
   ICoinJoin,
   IETHJoin,
   ICollateralJoin,
-  IERC20,
+  IERC20Metadata,
   CoinForTest,
   IModifiable,
   IAuthorizable

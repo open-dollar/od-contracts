@@ -256,26 +256,23 @@ contract E2EGlobalSettlementTest is Common {
     // carol has a safe that provides surplus (active surplus auction)
     // dave has a healthy active safe
 
-    _joinETH(alice, COLLAT);
-    _openSafe(alice, address(ethJoin), int256(COLLAT), int256(DEBT));
-    _joinETH(bob, COLLAT);
-    _openSafe(bob, address(ethJoin), int256(COLLAT), int256(DEBT));
-    _joinETH(carol, COLLAT);
-    _openSafe(carol, address(ethJoin), int256(COLLAT), int256(DEBT));
+    _generateDebt(alice, address(collateralJoin[ETH_A]), int256(COLLAT), int256(DEBT));
+    _generateDebt(bob, address(collateralJoin[ETH_A]), int256(COLLAT), int256(DEBT));
+    _generateDebt(carol, address(collateralJoin[ETH_A]), int256(COLLAT), int256(DEBT));
 
     _setCollateralPrice(ETH_A, TEST_ETH_PRICE_DROP); // price 1 ETH = 100 HAI
     liquidationEngine.liquidateSAFE(ETH_A, alice);
     accountingEngine.popDebtFromQueue(block.timestamp);
-    uint256 debtAuction = accountingEngine.auctionDebt(); // active debt auction
+    accountingEngine.auctionDebt(); // active debt auction
 
     uint256 collateralAuction = liquidationEngine.liquidateSAFE(ETH_A, bob); // active collateral auction
 
     _collectFees(50 * YEAR);
-    uint256 surplusAuction = accountingEngine.auctionSurplus(); // active surplus auction
+    accountingEngine.auctionSurplus(); // active surplus auction
 
     // NOTE: why DEBT/10 not-safe? (price dropped to 1/10)
-    _joinETH(dave, COLLAT);
-    _openSafe(dave, address(ethJoin), int256(COLLAT), int256(DEBT / 100)); // active healthy safe
+    _lockETH(dave, COLLAT);
+    _generateDebt(dave, address(collateralJoin[ETH_A]), int256(COLLAT), int256(DEBT / 100)); // active healthy safe
 
     vm.prank(deployer);
     globalSettlement.shutdownSystem();
@@ -313,26 +310,17 @@ contract E2EGlobalSettlementTest is Common {
   }
 
   function _multiCollateralSetup() internal {
-    _joinTKN(alice, collateralJoin['TKN-A'], COLLAT);
-    _joinTKN(alice, collateralJoin['TKN-B'], COLLAT);
-    _joinTKN(alice, collateralJoin['TKN-C'], COLLAT);
-    _openSafe(alice, address(collateralJoin['TKN-A']), int256(COLLAT), int256(ALICE_DEBT));
-    _openSafe(alice, address(collateralJoin['TKN-B']), int256(COLLAT), int256(ALICE_DEBT));
-    _openSafe(alice, address(collateralJoin['TKN-C']), int256(COLLAT), int256(ALICE_DEBT));
+    _generateDebt(alice, address(collateralJoin['TKN-A']), int256(COLLAT), int256(ALICE_DEBT));
+    _generateDebt(alice, address(collateralJoin['TKN-B']), int256(COLLAT), int256(ALICE_DEBT));
+    _generateDebt(alice, address(collateralJoin['TKN-C']), int256(COLLAT), int256(ALICE_DEBT));
 
-    _joinTKN(bob, collateralJoin['TKN-A'], COLLAT);
-    _joinTKN(bob, collateralJoin['TKN-B'], COLLAT);
-    _joinTKN(bob, collateralJoin['TKN-C'], COLLAT);
-    _openSafe(bob, address(collateralJoin['TKN-A']), int256(COLLAT), int256(BOB_DEBT));
-    _openSafe(bob, address(collateralJoin['TKN-B']), int256(COLLAT), int256(BOB_DEBT));
-    _openSafe(bob, address(collateralJoin['TKN-C']), int256(COLLAT), int256(BOB_DEBT));
+    _generateDebt(bob, address(collateralJoin['TKN-A']), int256(COLLAT), int256(BOB_DEBT));
+    _generateDebt(bob, address(collateralJoin['TKN-B']), int256(COLLAT), int256(BOB_DEBT));
+    _generateDebt(bob, address(collateralJoin['TKN-C']), int256(COLLAT), int256(BOB_DEBT));
 
-    _joinTKN(carol, collateralJoin['TKN-A'], COLLAT);
-    _joinTKN(carol, collateralJoin['TKN-B'], COLLAT);
-    _joinTKN(carol, collateralJoin['TKN-C'], COLLAT);
-    _openSafe(carol, address(collateralJoin['TKN-A']), int256(COLLAT), int256(CAROL_DEBT));
-    _openSafe(carol, address(collateralJoin['TKN-B']), int256(COLLAT), int256(CAROL_DEBT));
-    _openSafe(carol, address(collateralJoin['TKN-C']), int256(COLLAT), int256(CAROL_DEBT));
+    _generateDebt(carol, address(collateralJoin['TKN-A']), int256(COLLAT), int256(CAROL_DEBT));
+    _generateDebt(carol, address(collateralJoin['TKN-B']), int256(COLLAT), int256(CAROL_DEBT));
+    _generateDebt(carol, address(collateralJoin['TKN-C']), int256(COLLAT), int256(CAROL_DEBT));
   }
 
   function _releaseRemainingCollateral(
@@ -350,6 +338,7 @@ contract E2EGlobalSettlementTest is Common {
   }
 
   function _prepareCoinsForRedeeming(address _account, uint256 _amount) internal {
+    _joinCoins(_account, _amount); // has prank
     vm.startPrank(_account);
     safeEngine.approveSAFEModification(address(globalSettlement));
     globalSettlement.prepareCoinsForRedeeming(_amount);

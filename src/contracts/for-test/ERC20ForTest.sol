@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {ERC20, IERC20} from 'isolmate/tokens/ERC20.sol';
+import {ERC20} from '@openzeppelin/token/ERC20/ERC20.sol';
+import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
 
-contract ERC20ForTest is ERC20 {
-  constructor() ERC20('TOKEN', 'TKN', 18) {}
+contract ERC20ForTest is IERC20Metadata, ERC20 {
+  constructor() ERC20('TOKEN', 'TKN') {}
 
   function mint(uint256 _wad) external {
     _mint(msg.sender, _wad);

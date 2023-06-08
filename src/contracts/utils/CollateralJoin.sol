@@ -50,7 +50,7 @@ contract CollateralJoin is Authorizable, Disableable, ICollateralJoin {
    * @inheritdoc ICollateralJoin
    */
   function join(address _account, uint256 _wad) external whenEnabled {
-    safeEngine.modifyCollateralBalance(collateralType, _account, _wad.toIntNotOverflow());
+    safeEngine.modifyCollateralBalance(collateralType, _account, _wad.toInt());
     collateral.safeTransferFrom(msg.sender, address(this), _wad / 10 ** multiplier);
     emit Join(msg.sender, _account, _wad);
   }
@@ -62,7 +62,7 @@ contract CollateralJoin is Authorizable, Disableable, ICollateralJoin {
    * @inheritdoc ICollateralJoin
    */
   function exit(address _account, uint256 _wad) external {
-    safeEngine.modifyCollateralBalance(collateralType, msg.sender, -_wad.toIntNotOverflow());
+    safeEngine.modifyCollateralBalance(collateralType, msg.sender, -_wad.toInt());
     collateral.safeTransfer(_account, _wad / 10 ** multiplier);
     emit Exit(msg.sender, _account, _wad);
   }

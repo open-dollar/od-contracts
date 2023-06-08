@@ -461,7 +461,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_IncreaseBidSize is Base {
     vm.expectCall(
       address(mockProtocolToken),
       abi.encodeCall(
-        mockProtocolToken.move,
+        mockProtocolToken.transferFrom,
         (_auction.highBidder, address(postSettlementSurplusAuctionHouse), _bid - _auction.bidAmount)
       )
     );
@@ -478,7 +478,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_IncreaseBidSize is Base {
   ) public happyPath(_auction, _bid, _bidIncrease, _bidDuration) {
     vm.expectCall(
       address(mockProtocolToken),
-      abi.encodeCall(mockProtocolToken.move, (_auction.highBidder, _auction.highBidder, _auction.bidAmount))
+      abi.encodeCall(mockProtocolToken.transferFrom, (_auction.highBidder, _auction.highBidder, _auction.bidAmount))
     );
 
     changePrank(_auction.highBidder);
@@ -493,12 +493,12 @@ contract Unit_PostSettlementSurplusAuctionHouse_IncreaseBidSize is Base {
   ) public happyPath(_auction, _bid, _bidIncrease, _bidDuration) {
     vm.expectCall(
       address(mockProtocolToken),
-      abi.encodeCall(mockProtocolToken.move, (user, _auction.highBidder, _auction.bidAmount))
+      abi.encodeCall(mockProtocolToken.transferFrom, (user, _auction.highBidder, _auction.bidAmount))
     );
     vm.expectCall(
       address(mockProtocolToken),
       abi.encodeCall(
-        mockProtocolToken.move, (user, address(postSettlementSurplusAuctionHouse), _bid - _auction.bidAmount)
+        mockProtocolToken.transferFrom, (user, address(postSettlementSurplusAuctionHouse), _bid - _auction.bidAmount)
       )
     );
 

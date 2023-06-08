@@ -26,12 +26,20 @@ import {ChainlinkRelayer} from '@contracts/oracles/ChainlinkRelayer.sol';
 import {UniV3Relayer} from '@contracts/oracles/UniV3Relayer.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 
-import {ERC20ForTest, ERC20, IERC20} from '@contracts/for-test/ERC20ForTest.sol';
+import {ERC20ForTest, ERC20} from '@contracts/for-test/ERC20ForTest.sol';
 import {CoinForTest} from '@contracts/for-test/CoinForTest.sol';
 import {OracleForTest} from '@contracts/for-test/OracleForTest.sol';
+import {ETHJoinForTest} from '@contracts/for-test/ETHJoinForTest.sol';
 
+import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
+
+// proxy contracts for UI
+import {BasicActions} from '@contracts/proxies/actions/BasicActions.sol';
+import {HaiProxyRegistry} from '@contracts/proxies/HaiProxyRegistry.sol';
+import {HaiProxyFactory} from '@contracts/proxies/HaiProxyFactory.sol';
+import {HaiSafeManager} from '@contracts/proxies/HaiSafeManager.sol';
 
 /**
  * @title  Contracts
@@ -58,7 +66,7 @@ abstract contract Contracts {
   // --- Token contracts ---
   CoinForTest public coin;
   CoinForTest public protocolToken;
-  mapping(bytes32 => ERC20ForTest) public collateral;
+  mapping(bytes32 => IERC20Metadata) public collateral;
   ICoinJoin public coinJoin;
   IETHJoin public ethJoin;
   mapping(bytes32 => ICollateralJoin) public collateralJoin;
@@ -72,4 +80,10 @@ abstract contract Contracts {
 
   // --- Settlement contracts ---
   IGlobalSettlement public globalSettlement;
+
+  // --- Proxy contracts ---
+  BasicActions public proxyActions;
+  HaiProxyRegistry public proxyRegistry;
+  HaiProxyFactory public dsProxyFactory;
+  HaiSafeManager public safeManager;
 }

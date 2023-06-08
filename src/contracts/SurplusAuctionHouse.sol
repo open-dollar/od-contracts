@@ -115,10 +115,10 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
     if (_bid * WAD < _params.bidIncrease * bids[_id].bidAmount) revert SAH_InsufficientIncrease();
 
     if (msg.sender != bids[_id].highBidder) {
-      protocolToken.move(msg.sender, bids[_id].highBidder, bids[_id].bidAmount);
+      protocolToken.transferFrom(msg.sender, bids[_id].highBidder, bids[_id].bidAmount);
       bids[_id].highBidder = msg.sender;
     }
-    protocolToken.move(msg.sender, address(this), _bid - bids[_id].bidAmount);
+    protocolToken.transferFrom(msg.sender, address(this), _bid - bids[_id].bidAmount);
 
     bids[_id].bidAmount = _bid;
     bids[_id].bidExpiry = uint48(block.timestamp) + _params.bidDuration;
@@ -138,8 +138,7 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
 
     uint256 _amountToSend = bids[_id].bidAmount * _params.recyclingPercentage / HUNDRED;
     if (_amountToSend > 0) {
-      protocolToken.push(protocolTokenBidReceiver, _amountToSend);
-      // protocolToken.move(address(this), protocolTokenBidReceiver, _amountToSend);
+      protocolToken.transfer(protocolTokenBidReceiver, _amountToSend);
     }
 
     uint256 _amountToBurn = bids[_id].bidAmount - _amountToSend;
@@ -157,7 +156,7 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
    */
   function terminateAuctionPrematurely(uint256 _id) external whenDisabled {
     if (bids[_id].highBidder == address(0)) revert SAH_HighBidderNotSet();
-    protocolToken.push(bids[_id].highBidder, bids[_id].bidAmount);
+    protocolToken.transfer(bids[_id].highBidder, bids[_id].bidAmount);
     emit TerminateAuctionPrematurely(_id, msg.sender, bids[_id].highBidder, bids[_id].bidAmount);
     delete bids[_id];
   }

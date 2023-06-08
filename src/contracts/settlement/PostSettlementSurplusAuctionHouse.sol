@@ -99,10 +99,10 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, Modifiable, IPostSet
     if (_bid * WAD < _params.bidIncrease * bids[_id].bidAmount) revert PSSAH_InsufficientIncrease();
 
     if (msg.sender != bids[_id].highBidder) {
-      protocolToken.move(msg.sender, bids[_id].highBidder, bids[_id].bidAmount);
+      protocolToken.transferFrom(msg.sender, bids[_id].highBidder, bids[_id].bidAmount);
       bids[_id].highBidder = msg.sender;
     }
-    protocolToken.move(msg.sender, address(this), _bid - bids[_id].bidAmount);
+    protocolToken.transferFrom(msg.sender, address(this), _bid - bids[_id].bidAmount);
 
     bids[_id].bidAmount = _bid;
     bids[_id].bidExpiry = uint48(block.timestamp) + _params.bidDuration;
