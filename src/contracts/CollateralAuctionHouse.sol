@@ -26,6 +26,7 @@ contract IncreasingDiscountCollateralAuctionHouse is
   using Math for uint256;
   using Encoding for bytes;
   using Assertions for uint256;
+  using Assertions for address;
 
   bytes32 public constant AUCTION_HOUSE_TYPE = bytes32('COLLATERAL');
   bytes32 public constant AUCTION_TYPE = bytes32('INCREASING_DISCOUNT');
@@ -71,13 +72,14 @@ contract IncreasingDiscountCollateralAuctionHouse is
     bytes32 _collateralType,
     CollateralAuctionHouseSystemCoinParams memory _cahParams,
     CollateralAuctionHouseParams memory _cahCParams
-  ) Authorizable(msg.sender) {
+  ) Authorizable(msg.sender) validParams {
+    _safeEngine.assertNonNull();
+
     safeEngine = ISAFEEngine(_safeEngine);
     liquidationEngine = ILiquidationEngine(_liquidationEngine);
     collateralType = _collateralType;
 
     _params = _cahParams;
-
     _cParams = _cahCParams;
   }
 
@@ -662,7 +664,7 @@ contract IncreasingDiscountCollateralAuctionHouse is
 
   // --- Administration ---
 
-  function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override validParams {
     uint256 _uint256 = _data.toUint256();
     address _address = _data.toAddress();
 
@@ -672,15 +674,15 @@ contract IncreasingDiscountCollateralAuctionHouse is
     else if (_param == 'systemCoinOracle') systemCoinOracle = IBaseOracle(_address);
     else if (_param == 'liquidationEngine') liquidationEngine = ILiquidationEngine(_address);
     // CAH Params
-    else if (_param == 'minDiscount') _cParams.minDiscount = _uint256.assertGtEq(_cParams.maxDiscount).assertLtEq(WAD);
-    else if (_param == 'maxDiscount') _cParams.maxDiscount = _uint256.assertGt(0).assertLtEq(_cParams.minDiscount);
-    else if (_param == 'perSecondDiscountUpdateRate') _cParams.perSecondDiscountUpdateRate = _uint256.assertLtEq(RAY);
-    else if (_param == 'lowerCollateralDeviation') _cParams.lowerCollateralDeviation = _uint256.assertLtEq(WAD);
-    else if (_param == 'upperCollateralDeviation') _cParams.upperCollateralDeviation = _uint256.assertLtEq(WAD);
+    else if (_param == 'minDiscount') _cParams.minDiscount = _uint256;
+    else if (_param == 'maxDiscount') _cParams.maxDiscount = _uint256;
+    else if (_param == 'perSecondDiscountUpdateRate') _cParams.perSecondDiscountUpdateRate = _uint256;
+    else if (_param == 'lowerCollateralDeviation') _cParams.lowerCollateralDeviation = _uint256;
+    else if (_param == 'upperCollateralDeviation') _cParams.upperCollateralDeviation = _uint256;
     else if (_param == 'minimumBid') _cParams.minimumBid = _uint256;
     // SystemCoin Params
-    else if (_param == 'lowerSystemCoinDeviation') _params.lowerSystemCoinDeviation = _uint256.assertLtEq(WAD);
-    else if (_param == 'upperSystemCoinDeviation') _params.upperSystemCoinDeviation = _uint256.assertLtEq(WAD);
+    else if (_param == 'lowerSystemCoinDeviation') _params.lowerSystemCoinDeviation = _uint256;
+    else if (_param == 'upperSystemCoinDeviation') _params.upperSystemCoinDeviation = _uint256;
     else if (_param == 'minSystemCoinDeviation') _params.minSystemCoinDeviation = _uint256;
     else revert UnrecognizedParam();
   }
@@ -688,5 +690,21 @@ contract IncreasingDiscountCollateralAuctionHouse is
   function _validateCollateralFSM(address _delayedOracle) internal view returns (IDelayedOracle _collateralFSM) {
     _collateralFSM = IDelayedOracle(_delayedOracle);
     _collateralFSM.priceSource();
+  }
+
+  function _validateParameters() internal view override {
+    // Collateral Auction House
+    _cParams.minDiscount.assertGtEq(_cParams.maxDiscount).assertLtEq(WAD);
+    _cParams.maxDiscount.assertGt(0).assertLtEq(_cParams.minDiscount);
+    _cParams.perSecondDiscountUpdateRate.assertLtEq(RAY);
+    _cParams.lowerCollateralDeviation.assertLtEq(WAD);
+    _cParams.upperCollateralDeviation.assertLtEq(WAD);
+
+    // SystemCoin Auction House
+    _params.lowerSystemCoinDeviation.assertLtEq(WAD);
+    _params.upperSystemCoinDeviation.assertLtEq(WAD);
+
+    // Liquidation Engine
+    address(liquidationEngine).assertNonNull();
   }
 }

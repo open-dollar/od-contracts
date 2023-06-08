@@ -11,6 +11,7 @@ import {IDebtAuctionHouse} from '@interfaces/IDebtAuctionHouse.sol';
 import {ISurplusAuctionHouse} from '@interfaces/ISurplusAuctionHouse.sol';
 import {AccountingEngine} from '@contracts/AccountingEngine.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
+import {Assertions} from '@libraries/Assertions.sol';
 
 import {Math} from '@libraries/Math.sol';
 
@@ -206,6 +207,21 @@ contract Unit_AccountingEngine_Constructor is Base {
 
   function test_Set_AccountingEngineParams() public {
     assertEq(abi.encode(accountingEngine.params()), abi.encode(accountingEngineParams));
+  }
+
+  function test_Revert_NullSafeEngine() public {
+    vm.expectRevert(Assertions.NullAddress.selector);
+    new AccountingEngine(address(0), address(mockSurplusAuctionHouse), address(mockDebtAuctionHouse), accountingEngineParams);
+  }
+
+  function test_Revert_NullSurplusAuctionHouse() public {
+    vm.expectRevert(Assertions.NullAddress.selector);
+    new AccountingEngine(address(mockSafeEngine), address(0), address(mockDebtAuctionHouse), accountingEngineParams);
+  }
+
+  function test_Revert_NullDebtAuctionHouse() public {
+    vm.expectRevert(Assertions.NullAddress.selector);
+    new AccountingEngine(address(mockSafeEngine), address(mockSurplusAuctionHouse), address(0), accountingEngineParams);
   }
 }
 

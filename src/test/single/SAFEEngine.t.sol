@@ -209,7 +209,7 @@ contract SingleModifySAFECollateralizationTest is DSTest {
     safeEngine.modifyParameters('gold', 'debtCeiling', abi.encode(rad(1000 ether)));
 
     ITaxCollector.TaxCollectorParams memory _taxCollectorParams = ITaxCollector.TaxCollectorParams({
-      primaryTaxReceiver: address(0),
+      primaryTaxReceiver: address(0x744),
       globalStabilityFee: 0,
       maxSecondaryReceivers: 0
     });

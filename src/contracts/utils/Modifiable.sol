@@ -49,4 +49,14 @@ abstract contract Modifiable is IModifiable, Authorizable {
   function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal virtual {
     revert UnrecognizedParam();
   }
+
+  /**
+   * @notice Internal function to be overriden with custom logic to validate parameters
+   */
+  function _validateParameters() internal virtual {}
+
+  modifier validParams() {
+    _;
+    _validateParameters();
+  }
 }

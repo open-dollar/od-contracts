@@ -47,7 +47,7 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
     address _safeEngine,
     address _protocolToken,
     SurplusAuctionHouseParams memory _sahParams
-  ) Authorizable(msg.sender) {
+  ) Authorizable(msg.sender) validParams {
     safeEngine = ISAFEEngine(_safeEngine);
     protocolToken = IToken(_protocolToken);
 
@@ -164,9 +164,10 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
 
   // --- Administration ---
 
-  function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override validParams {
     uint256 _uint256 = _data.toUint256();
 
+    // TODO: incorporate protocolTokenBidReceiver to _params
     if (_param == 'protocolTokenBidReceiver') protocolTokenBidReceiver = _data.toAddress().assertNonNull();
     else if (_param == 'bidIncrease') _params.bidIncrease = _uint256;
     else if (_param == 'bidDuration') _params.bidDuration = uint48(_uint256);

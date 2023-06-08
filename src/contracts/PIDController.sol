@@ -55,17 +55,8 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
     ControllerGains memory _cGains,
     PIDControllerParams memory _pidParams,
     DeviationObservation memory _importedState
-  ) Authorizable(msg.sender) {
-    _pidParams.feedbackOutputUpperBound.assertGt(0).assertLt(_POSITIVE_RATE_LIMIT);
-    _pidParams.feedbackOutputLowerBound.assertGtEq(-int256(_NEGATIVE_RATE_LIMIT)).assertLt(0);
-    _pidParams.integralPeriodSize.assertGt(0);
-    _pidParams.noiseBarrier.assertGt(0).assertLtEq(WAD);
-
-    _cGains.kp.assertGtEq(-int256(WAD)).assertLtEq(int256(WAD));
-    _cGains.ki.assertGtEq(-int256(WAD)).assertLtEq(int256(WAD));
-
+  ) Authorizable(msg.sender) validParams {
     _params = _pidParams;
-
     _controllerGains = _cGains;
 
     if (_importedState.timestamp > 0) {
@@ -252,26 +243,26 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
 
   // --- Administration ---
 
-  function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override validParams {
     uint256 _uint256 = _data.toUint256();
     int256 _int256 = _data.toInt256();
 
     if (_param == 'seedProposer') {
       seedProposer = _data.toAddress().assertNonNull();
     } else if (_param == 'noiseBarrier') {
-      _params.noiseBarrier = _uint256.assertNonNull().assertLtEq(WAD);
+      _params.noiseBarrier = _uint256;
     } else if (_param == 'integralPeriodSize') {
-      _params.integralPeriodSize = _uint256.assertNonNull();
+      _params.integralPeriodSize = _uint256;
     } else if (_param == 'feedbackOutputUpperBound') {
-      _params.feedbackOutputUpperBound = _uint256.assertNonNull().assertLt(_POSITIVE_RATE_LIMIT);
+      _params.feedbackOutputUpperBound = _uint256;
     } else if (_param == 'feedbackOutputLowerBound') {
-      _params.feedbackOutputLowerBound = _int256.assertLt(0).assertGtEq(-int256(_NEGATIVE_RATE_LIMIT));
+      _params.feedbackOutputLowerBound = _int256;
     } else if (_param == 'perSecondCumulativeLeak') {
-      _params.perSecondCumulativeLeak = _uint256.assertLtEq(RAY);
+      _params.perSecondCumulativeLeak = _uint256;
     } else if (_param == 'kp') {
-      _controllerGains.kp = _int256.assertGtEq(-int256(WAD)).assertLtEq(int256(WAD));
+      _controllerGains.kp = _int256;
     } else if (_param == 'ki') {
-      _controllerGains.ki = _int256.assertGtEq(-int256(WAD)).assertLtEq(int256(WAD));
+      _controllerGains.ki = _int256;
     } else if (_param == 'priceDeviationCumulative') {
       // Allows governance to set a starting value for the integral term (only when the integral gain is off)
       if (_controllerGains.ki != 0) revert PIDController_CannotSetPriceDeviationCumulative();
@@ -279,5 +270,16 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
     } else {
       revert UnrecognizedParam();
     }
+  }
+
+  function _validateParameters() internal view override {
+    _params.integralPeriodSize.assertNonNull();
+    _params.noiseBarrier.assertNonNull().assertLtEq(WAD);
+    _params.feedbackOutputUpperBound.assertNonNull().assertLt(_POSITIVE_RATE_LIMIT);
+    _params.feedbackOutputLowerBound.assertLt(0).assertGtEq(-int256(_NEGATIVE_RATE_LIMIT));
+    _params.perSecondCumulativeLeak.assertLtEq(RAY);
+
+    _controllerGains.kp.assertGtEq(-int256(WAD)).assertLtEq(int256(WAD));
+    _controllerGains.ki.assertGtEq(-int256(WAD)).assertLtEq(int256(WAD));
   }
 }

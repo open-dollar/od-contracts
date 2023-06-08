@@ -51,7 +51,7 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
     address _extraSurplusReceiver,
     address _coinJoin,
     StabilityFeeTreasuryParams memory _sfTreasuryParams
-  ) Authorizable(msg.sender) {
+  ) Authorizable(msg.sender) validParams {
     require(address(ICoinJoin(_coinJoin).systemCoin()) != address(0), 'StabilityFeeTreasury/null-system-coin');
     require(_extraSurplusReceiver != address(0), 'StabilityFeeTreasury/null-surplus-receiver');
 
@@ -243,15 +243,20 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
 
   // --- Administration ---
 
-  function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled {
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled validParams {
     uint256 _uint256 = _data.toUint256();
 
     if (_param == 'extraSurplusReceiver') extraSurplusReceiver = _data.toAddress().assertNonNull();
     else if (_param == 'expensesMultiplier') _params.expensesMultiplier = _uint256;
-    else if (_param == 'treasuryCapacity') _params.treasuryCapacity = _uint256.assertGtEq(_params.minFundsRequired);
-    else if (_param == 'minFundsRequired') _params.minFundsRequired = _uint256.assertLtEq(_params.treasuryCapacity);
+    else if (_param == 'treasuryCapacity') _params.treasuryCapacity = _uint256;
+    else if (_param == 'minFundsRequired') _params.minFundsRequired = _uint256;
     else if (_param == 'pullFundsMinThreshold') _params.pullFundsMinThreshold = _uint256;
     else if (_param == 'surplusTransferDelay') _params.surplusTransferDelay = _uint256;
     else revert UnrecognizedParam();
+  }
+
+  function _validateParameters() internal view override {
+    _params.treasuryCapacity.assertGtEq(_params.minFundsRequired);
+    _params.minFundsRequired.assertLtEq(_params.treasuryCapacity);
   }
 }

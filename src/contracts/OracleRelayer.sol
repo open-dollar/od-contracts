@@ -41,7 +41,10 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
   uint256 public redemptionPriceUpdateTime; // [unix epoch time]
 
   // --- Init ---
-  constructor(address _safeEngine, OracleRelayerParams memory _oracleRelayerParams) Authorizable(msg.sender) {
+  constructor(
+    address _safeEngine,
+    OracleRelayerParams memory _oracleRelayerParams
+  ) Authorizable(msg.sender) validParams {
     safeEngine = ISAFEEngine(_safeEngine);
     _redemptionPrice = RAY;
     redemptionRate = RAY;
@@ -117,13 +120,13 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
 
   // --- Administration ---
 
-  function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled {
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled validParams {
     uint256 _uint256 = _data.toUint256();
 
     if (_param == 'redemptionRateUpperBound') {
-      _params.redemptionRateUpperBound = _uint256.assertGt(RAY);
+      _params.redemptionRateUpperBound = _uint256;
     } else if (_param == 'redemptionRateLowerBound') {
-      _params.redemptionRateLowerBound = _uint256.assertGt(0).assertLt(RAY);
+      _params.redemptionRateLowerBound = _uint256;
     } else {
       revert UnrecognizedParam();
     }
@@ -137,5 +140,10 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
     else if (_param == 'liquidationCRatio') __cParams.liquidationCRatio = _uint256.assertLtEq(__cParams.safetyCRatio);
     else if (_param == 'oracle') __cParams.oracle = abi.decode(_data, (IBaseOracle));
     else revert UnrecognizedParam();
+  }
+
+  function _validateParameters() internal view override {
+    _params.redemptionRateUpperBound.assertGt(RAY);
+    _params.redemptionRateLowerBound.assertGt(0).assertLt(RAY);
   }
 }

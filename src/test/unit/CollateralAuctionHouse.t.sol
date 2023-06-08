@@ -20,6 +20,7 @@ import {
 } from '@contracts/for-test/CollateralAuctionHouseForTest.sol';
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
 import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
+import {Assertions} from '@libraries/Assertions.sol';
 
 import '@script/Params.s.sol';
 
@@ -323,6 +324,16 @@ contract Unit_CollateralAuctionHouse_Constructor is Base {
 
   function test_Set_CAH_SystemCoin_Params() public {
     assertEq(abi.encode(auctionHouse.params()), abi.encode(cahParams));
+  }
+
+  function test_Revert_Null_SafeEngine() public {
+    vm.expectRevert(Assertions.NullAddress.selector);
+    new IncreasingDiscountCollateralAuctionHouseForTest(address(0), mockLiquidationEngine, mockCollateralType, mockCollateralAuctionHouse, cahParams, cahCParams);
+  }
+
+  function test_Revert_Null_LiquidationEngine() public {
+    vm.expectRevert(Assertions.NullAddress.selector);
+    new IncreasingDiscountCollateralAuctionHouseForTest(mockSafeEngine, address(0), mockCollateralType, mockCollateralAuctionHouse, cahParams, cahCParams);
   }
 }
 

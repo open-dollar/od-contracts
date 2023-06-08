@@ -291,7 +291,7 @@ contract Unit_PIDController_Constructor is Base {
   function test_Revert_FeedbackOutputUpperBoundIsZero() public {
     params.feedbackOutputUpperBound = 0;
 
-    vm.expectRevert(abi.encodeWithSelector(Assertions.NotGreaterThan.selector, params.feedbackOutputUpperBound, 0));
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NullAmount.selector));
 
     _createPidController(IPIDController.DeviationObservation(0, 0, 0));
   }
@@ -332,7 +332,7 @@ contract Unit_PIDController_Constructor is Base {
   function test_Revert_Invalid_IntergralPeriodSize() public {
     params.integralPeriodSize = 0;
 
-    vm.expectRevert(abi.encodeWithSelector(Assertions.NotGreaterThan.selector, params.integralPeriodSize, 0));
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NullAmount.selector));
 
     _createPidController(IPIDController.DeviationObservation(0, 0, 0));
   }
@@ -340,7 +340,7 @@ contract Unit_PIDController_Constructor is Base {
   function test_Revert_NoiseBarrierIsZero() public {
     params.noiseBarrier = 0;
 
-    vm.expectRevert(abi.encodeWithSelector(Assertions.NotGreaterThan.selector, params.noiseBarrier, 0));
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NullAmount.selector));
 
     _createPidController(IPIDController.DeviationObservation(0, 0, 0));
   }
@@ -1326,6 +1326,7 @@ contract Unit_PIDController_ModifyParameters is Base {
     int256 _proportionalGain,
     uint256 _priceDeviationCumulative
   ) public authorized {
+    vm.assume(_proportionalGain >= -int256(WAD) && _proportionalGain <= int256(WAD));
     _mockControllerGains(IPIDController.ControllerGains(_proportionalGain, 0));
     pidController.modifyParameters('priceDeviationCumulative', abi.encode(_priceDeviationCumulative));
 

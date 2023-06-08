@@ -117,7 +117,7 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
   uint256 public globalUnbackedDebt; // [rad]
 
   // --- Init ---
-  constructor(SAFEEngineParams memory _safeEngineParams) Authorizable(msg.sender) {
+  constructor(SAFEEngineParams memory _safeEngineParams) Authorizable(msg.sender) validParams {
     _params = _safeEngineParams;
     emit ModifyParameters('safeDebtCeiling', _GLOBAL_PARAM, abi.encode(_safeEngineParams.safeDebtCeiling));
   }
@@ -413,7 +413,7 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
 
   // --- Administration ---
 
-  function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled {
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled validParams {
     uint256 _uint256 = _data.toUint256();
 
     if (_param == 'globalDebtCeiling') _params.globalDebtCeiling = _uint256;

@@ -47,7 +47,7 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
     address _safeEngine,
     address _protocolToken,
     DebtAuctionHouseParams memory _dahParams
-  ) Authorizable(msg.sender) {
+  ) Authorizable(msg.sender) validParams {
     safeEngine = ISAFEEngine(_safeEngine);
     protocolToken = IToken(_protocolToken);
     _params = _dahParams;
@@ -160,7 +160,7 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
 
   // --- Administration ---
 
-  function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled {
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled validParams {
     address _address = _data.toAddress();
     uint256 _uint256 = _data.toUint256();
 

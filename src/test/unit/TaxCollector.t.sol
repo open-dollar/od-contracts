@@ -45,8 +45,11 @@ abstract contract Base is HaiTest {
   // Input parameters
   address receiver;
 
-  ITaxCollector.TaxCollectorParams taxCollectorParams =
-    ITaxCollector.TaxCollectorParams({primaryTaxReceiver: address(0), globalStabilityFee: 0, maxSecondaryReceivers: 0});
+  ITaxCollector.TaxCollectorParams taxCollectorParams = ITaxCollector.TaxCollectorParams({
+    primaryTaxReceiver: primaryTaxReceiver,
+    globalStabilityFee: 0,
+    maxSecondaryReceivers: 0
+  });
 
   function setUp() public virtual {
     vm.startPrank(deployer);

@@ -12,9 +12,11 @@ import {Modifiable} from '@contracts/utils/Modifiable.sol';
 
 import {Encoding} from '@libraries/Encoding.sol';
 import {Math} from '@libraries/Math.sol';
+import {Assertions} from '@libraries/Assertions.sol';
 
 contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingEngine {
   using Encoding for bytes;
+  using Assertions for address;
 
   // --- Auth ---
   function addAuthorization(address _account) external override(Authorizable, IAuthorizable) isAuthorized whenEnabled {
@@ -53,7 +55,11 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
     address _surplusAuctionHouse,
     address _debtAuctionHouse,
     AccountingEngineParams memory _accEngineParams
-  ) Authorizable(msg.sender) {
+  ) Authorizable(msg.sender) validParams {
+    _safeEngine.assertNonNull();
+    _surplusAuctionHouse.assertNonNull();
+    _debtAuctionHouse.assertNonNull();
+
     safeEngine = ISAFEEngine(_safeEngine);
     surplusAuctionHouse = ISurplusAuctionHouse(_surplusAuctionHouse);
     debtAuctionHouse = IDebtAuctionHouse(_debtAuctionHouse);
@@ -245,7 +251,7 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
 
   // --- Administration ---
 
-  function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override validParams {
     uint256 _uint256 = _data.toUint256();
     address _address = _data.toAddress();
 

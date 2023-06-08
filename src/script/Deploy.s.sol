@@ -27,7 +27,7 @@ abstract contract Deploy is Params, Script, Contracts {
   function run() public {
     deployer = vm.addr(_deployerPk);
     vm.startBroadcast(_deployerPk);
-    
+
     // Environment may be different for each network
     _setupEnvironment();
 
@@ -69,7 +69,6 @@ abstract contract Deploy is Params, Script, Contracts {
         });
 
     collateralJoin[ETH_A] = CollateralJoin(address(ethJoin));
-
   }
 
   function deployCollateralContracts(bytes32 _cType) public {
@@ -135,7 +134,6 @@ abstract contract Deploy is Params, Script, Contracts {
       collateralAuctionHouse[_cType].addAuthorization(_governor);
       collateralAuctionHouse[_cType].removeAuthorization(deployer);
     }
-
   }
 
   function deployContracts() public {
@@ -192,7 +190,6 @@ abstract contract Deploy is Params, Script, Contracts {
   }
 
   function _setupContracts() internal {
-
     // setup registry
     debtAuctionHouse.modifyParameters('accountingEngine', abi.encode(accountingEngine));
     liquidationEngine.modifyParameters('accountingEngine', abi.encode(accountingEngine));
@@ -244,7 +241,6 @@ abstract contract Deploy is Params, Script, Contracts {
   }
 
   function deployPIDController() public {
-
     pidController = new PIDController({
       _cGains: _pidControllerGains,
       _pidParams: _pidControllerParams,

@@ -61,7 +61,7 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
   EnumerableSet.AddressSet internal _secondaryReceivers;
 
   // --- Init ---
-  constructor(address _safeEngine, TaxCollectorParams memory _taxCollectorParams) Authorizable(msg.sender) {
+  constructor(address _safeEngine, TaxCollectorParams memory _taxCollectorParams) Authorizable(msg.sender) validParams {
     safeEngine = ISAFEEngine(_safeEngine);
     _params = _taxCollectorParams;
   }
@@ -278,7 +278,7 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
 
   // --- Administration ---
 
-  function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override validParams {
     uint256 _uint256 = _data.toUint256();
 
     if (_param == 'primaryTaxReceiver') _setPrimaryTaxReceiver(_data.toAddress());
@@ -293,12 +293,15 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
     else revert UnrecognizedParam();
   }
 
+  function _validateParameters() internal view override {
+    require(_params.primaryTaxReceiver != address(0), 'TaxCollector/null-data');
+  }
+
   /**
    * @notice Sets the primary tax receiver, the address that receives the unallocated SF from all collateral types
    * @param _primaryTaxReceiver Address of the primary tax receiver
    */
   function _setPrimaryTaxReceiver(address _primaryTaxReceiver) internal {
-    require(_primaryTaxReceiver != address(0), 'TaxCollector/null-data');
     _params.primaryTaxReceiver = _primaryTaxReceiver;
     emit SetPrimaryReceiver(_GLOBAL_PARAM, _primaryTaxReceiver);
   }
