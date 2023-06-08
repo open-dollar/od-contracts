@@ -7,7 +7,7 @@ import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {IStabilityFeeTreasury} from '@interfaces/IStabilityFeeTreasury.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ICoinJoin} from '@interfaces/utils/ICoinJoin.sol';
-import {ISystemCoin} from '@interfaces/external/ISystemCoin.sol';
+import {ISystemCoin} from '@interfaces/tokens/ISystemCoin.sol';
 import {StabilityFeeTreasury} from '@contracts/StabilityFeeTreasury.sol';
 import {
   StabilityFeeTreasuryForTest,
@@ -17,6 +17,8 @@ import {Math, RAY, WAD, HOUR, HUNDRED} from '@libraries/Math.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 import {HaiTest} from '@test/utils/HaiTest.t.sol';
 import {StdStorage, stdStorage} from 'forge-std/StdStorage.sol';
+
+import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
 
 contract Base is HaiTest {
   using stdStorage for StdStorage;
@@ -49,16 +51,14 @@ contract Base is HaiTest {
 
   function _mockSystemCoinApprove(address _account, uint256 _amount, bool _success) internal {
     vm.mockCall(
-      address(mockSystemCoin),
-      abi.encodeWithSelector(ISystemCoin.approve.selector, _account, _amount),
-      abi.encode(_success)
+      address(mockSystemCoin), abi.encodeWithSelector(IERC20.approve.selector, _account, _amount), abi.encode(_success)
     );
   }
 
   function _mockSystemCoinsBalanceOf(uint256 _balance) internal {
     vm.mockCall(
       address(mockSystemCoin),
-      abi.encodeWithSelector(ISystemCoin.balanceOf.selector, address(stabilityFeeTreasury)),
+      abi.encodeWithSelector(IERC20.balanceOf.selector, address(stabilityFeeTreasury)),
       abi.encode(_balance)
     );
   }
@@ -221,8 +221,7 @@ contract Unit_StabilityFeeTreasury_Constructor is Base {
 
   function test_Call_SystemCoin_Approve() public {
     vm.expectCall(
-      address(mockSystemCoin),
-      abi.encodeWithSelector(ISystemCoin.approve.selector, address(mockCoinJoin), type(uint256).max)
+      address(mockSystemCoin), abi.encodeWithSelector(IERC20.approve.selector, address(mockCoinJoin), type(uint256).max)
     );
     stabilityFeeTreasury =
     new StabilityFeeTreasury(address(mockSafeEngine), mockExtraSurplusReceiver, address(mockCoinJoin), stabilityFeeTreasuryParams);
@@ -1464,7 +1463,7 @@ contract Unit_StabilityFeeTreasury_JoinAllCoins is Base {
     _mockSystemCoinsBalanceOf(_balance);
 
     vm.expectCall(
-      address(mockSystemCoin), abi.encodeWithSelector(ISystemCoin.balanceOf.selector, address(stabilityFeeTreasury)), 2
+      address(mockSystemCoin), abi.encodeWithSelector(IERC20.balanceOf.selector, address(stabilityFeeTreasury)), 2
     );
 
     StabilityFeeTreasuryForTest(address(stabilityFeeTreasury)).callJoinAllCoins();
@@ -1485,7 +1484,7 @@ contract Unit_StabilityFeeTreasury_JoinAllCoins is Base {
     _mockSystemCoinsBalanceOf(0);
 
     vm.expectCall(
-      address(mockSystemCoin), abi.encodeWithSelector(ISystemCoin.balanceOf.selector, address(stabilityFeeTreasury)), 1
+      address(mockSystemCoin), abi.encodeWithSelector(IERC20.balanceOf.selector, address(stabilityFeeTreasury)), 1
     );
 
     StabilityFeeTreasuryForTest(address(stabilityFeeTreasury)).callJoinAllCoins();

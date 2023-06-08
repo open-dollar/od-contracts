@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import 'ds-test/test.sol';
 
-import {Coin} from '@contracts/utils/Coin.sol';
+import {SystemCoin} from '@contracts/tokens/SystemCoin.sol';
 import {ISAFEEngine, SAFEEngine} from '@contracts/SAFEEngine.sol';
 import {StabilityFeeTreasury} from '@contracts/StabilityFeeTreasury.sol';
 import {IStabilityFeeTreasury} from '@interfaces/IStabilityFeeTreasury.sol';
@@ -33,7 +33,7 @@ contract Usr {
   }
 
   function approve(address systemCoin, address gal) external {
-    Coin(systemCoin).approve(gal, uint256(int256(-1)));
+    SystemCoin(systemCoin).approve(gal, uint256(int256(-1)));
   }
 }
 
@@ -43,7 +43,7 @@ contract SingleStabilityFeeTreasuryTest is DSTest {
   SAFEEngine safeEngine;
   StabilityFeeTreasury stabilityFeeTreasury;
 
-  Coin systemCoin;
+  SystemCoin systemCoin;
   CoinJoin systemCoinA;
 
   Usr usr;
@@ -72,7 +72,7 @@ contract SingleStabilityFeeTreasuryTest is DSTest {
       ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 0});
 
     safeEngine = new SAFEEngine(_safeEngineParams);
-    systemCoin = new Coin('Coin', 'COIN', 99);
+    systemCoin = new SystemCoin('Coin', 'COIN');
     systemCoinA = new CoinJoin(address(safeEngine), address(systemCoin));
 
     IStabilityFeeTreasury.StabilityFeeTreasuryParams memory _stabilityFeeTreasuryParams = IStabilityFeeTreasury

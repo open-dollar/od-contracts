@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import {DSTest} from 'ds-test/test.sol';
-import {DSToken as DSDelegateToken} from '@contracts/for-test/DSToken.sol';
+import {ProtocolToken} from '@contracts/tokens/ProtocolToken.sol';
 
 import {IDebtAuctionHouse, DebtAuctionHouse} from '@contracts/DebtAuctionHouse.sol';
 import {ISAFEEngine, SAFEEngine} from '@contracts/SAFEEngine.sol';
@@ -17,8 +17,8 @@ contract Guy {
 
   constructor(DebtAuctionHouse debtAuctionHouse_) {
     debtAuctionHouse = debtAuctionHouse_;
-    SAFEEngine(address(debtAuctionHouse.safeEngine())).approveSAFEModification(address(debtAuctionHouse));
-    DSDelegateToken(address(debtAuctionHouse.protocolToken())).approve(address(debtAuctionHouse));
+    debtAuctionHouse.safeEngine().approveSAFEModification(address(debtAuctionHouse));
+    debtAuctionHouse.protocolToken().approve(address(debtAuctionHouse), type(uint256).max);
   }
 
   function decreaseSoldAmount(uint256 id, uint256 amountToBuy, uint256 bid) public {
@@ -72,7 +72,7 @@ contract SingleDebtAuctionHouseTest is DSTest {
 
   DebtAuctionHouse debtAuctionHouse;
   SAFEEngine safeEngine;
-  DSDelegateToken protocolToken;
+  ProtocolToken protocolToken;
   DummyAccountingEngine accountingEngine;
 
   address ali;
@@ -87,7 +87,7 @@ contract SingleDebtAuctionHouseTest is DSTest {
     ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
       ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 0});
     safeEngine = new SAFEEngine(_safeEngineParams);
-    protocolToken = new DSDelegateToken('', '');
+    protocolToken = new ProtocolToken('', '');
 
     IDebtAuctionHouse.DebtAuctionHouseParams memory _debtAuctionHouseParams = IDebtAuctionHouse.DebtAuctionHouseParams({
       bidDecrease: 1.05e18,
@@ -108,7 +108,8 @@ contract SingleDebtAuctionHouseTest is DSTest {
 
     safeEngine.approveSAFEModification(address(debtAuctionHouse));
     safeEngine.addAuthorization(address(debtAuctionHouse));
-    protocolToken.approve(address(debtAuctionHouse));
+
+    protocolToken.addAuthorization(address(debtAuctionHouse));
 
     safeEngine.createUnbackedDebt(address(this), address(this), 1000 ether);
 
@@ -154,7 +155,6 @@ contract SingleDebtAuctionHouseTest is DSTest {
 
     hevm.warp(block.timestamp + 5 weeks);
     assertEq(protocolToken.totalSupply(), 0 ether);
-    protocolToken.setOwner(address(debtAuctionHouse));
     Guy(bob).settleAuction(id);
     // marked auction in the accounting engine
     assertEq(debtAuctionHouse.activeDebtAuctions(), 0);
@@ -188,7 +188,6 @@ contract SingleDebtAuctionHouseTest is DSTest {
 
     hevm.warp(block.timestamp + 5 weeks);
     assertEq(protocolToken.totalSupply(), 0 ether);
-    protocolToken.setOwner(address(debtAuctionHouse));
     Guy(bob).settleAuction(id);
     // marked auction in the accounting engine
     assertEq(debtAuctionHouse.activeDebtAuctions(), 0);

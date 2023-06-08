@@ -25,7 +25,7 @@ contract SettlementSurplusAuctioneer is Authorizable, Modifiable, ISettlementSur
   ISAFEEngine public safeEngine;
 
   // --- Init ---
-  constructor(address _accountingEngine, address _surplusAuctionHouse) Authorizable(msg.sender) {
+  constructor(address _accountingEngine, address _surplusAuctionHouse) Authorizable(msg.sender) validParams {
     accountingEngine = IAccountingEngine(_accountingEngine);
     surplusAuctionHouse = ISurplusAuctionHouse(_surplusAuctionHouse);
     safeEngine = ISAFEEngine(address(accountingEngine.safeEngine()));
@@ -52,7 +52,7 @@ contract SettlementSurplusAuctioneer is Authorizable, Modifiable, ISettlementSur
 
   // --- Administration ---
 
-  function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override validParams {
     address _address = _data.toAddress();
 
     if (_param == 'accountingEngine') accountingEngine = IAccountingEngine(_address);

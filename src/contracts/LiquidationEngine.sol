@@ -48,7 +48,10 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
   }
 
   // --- Init ---
-  constructor(address _safeEngine, LiquidationEngineParams memory _liqEngineParams) Authorizable(msg.sender) {
+  constructor(
+    address _safeEngine,
+    LiquidationEngineParams memory _liqEngineParams
+  ) Authorizable(msg.sender) validParams {
     safeEngine = ISAFEEngine(_safeEngine);
 
     _params = _liqEngineParams;
@@ -236,7 +239,7 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
 
   // --- Administration ---
 
-  function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override validParams {
     if (_param == 'onAuctionSystemCoinLimit') _params.onAuctionSystemCoinLimit = _data.toUint256();
     else if (_param == 'accountingEngine') accountingEngine = abi.decode(_data, (IAccountingEngine));
     else revert UnrecognizedParam();

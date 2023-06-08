@@ -4,7 +4,7 @@ pragma solidity 0.8.19;
 import {IDebtAuctionHouse} from '@interfaces/IDebtAuctionHouse.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
-import {IToken} from '@interfaces/external/IToken.sol';
+import {IProtocolToken} from '@interfaces/tokens/IProtocolToken.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {Modifiable} from '@contracts/utils/Modifiable.sol';
@@ -31,7 +31,7 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
   // SAFE database
   ISAFEEngine public safeEngine;
   // Protocol token address
-  IToken public protocolToken;
+  IProtocolToken public protocolToken;
   // Accounting engine
   address public accountingEngine;
 
@@ -47,9 +47,9 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
     address _safeEngine,
     address _protocolToken,
     DebtAuctionHouseParams memory _dahParams
-  ) Authorizable(msg.sender) {
+  ) Authorizable(msg.sender) validParams {
     safeEngine = ISAFEEngine(_safeEngine);
-    protocolToken = IToken(_protocolToken);
+    protocolToken = IProtocolToken(_protocolToken);
     _params = _dahParams;
   }
 
@@ -160,11 +160,11 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
 
   // --- Administration ---
 
-  function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled {
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled validParams {
     address _address = _data.toAddress();
     uint256 _uint256 = _data.toUint256();
 
-    if (_param == 'protocolToken') protocolToken = IToken(_address);
+    if (_param == 'protocolToken') protocolToken = IProtocolToken(_address);
     else if (_param == 'accountingEngine') accountingEngine = _address;
     else if (_param == 'bidDecrease') _params.bidDecrease = _uint256;
     else if (_param == 'amountSoldIncrease') _params.amountSoldIncrease = _uint256;

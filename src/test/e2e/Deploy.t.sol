@@ -2,25 +2,6 @@
 pragma solidity 0.8.19;
 
 import {HaiTest} from '@test/utils/HaiTest.t.sol';
-import {
-  ISAFEEngine,
-  ITaxCollector,
-  IAccountingEngine,
-  ILiquidationEngine,
-  IStabilityFeeTreasury,
-  ISurplusAuctionHouse,
-  IDebtAuctionHouse,
-  ICollateralAuctionHouse,
-  IOracleRelayer,
-  ICoinJoin,
-  IETHJoin,
-  ICollateralJoin,
-  IERC20,
-  CoinForTest,
-  IModifiable,
-  IAuthorizable
-} from '@script/Contracts.s.sol';
-import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
 import {Deploy, DeployMainnet, DeployGoerli} from '@script/Deploy.s.sol';
 
 import {WETH, WSTETH} from '@script/Params.s.sol';
@@ -45,7 +26,7 @@ abstract contract CommonDeploymentTest is HaiTest, Deploy {
 
   // Coin (system)
   function test_Coin_Auth() public {
-    assertEq(coin.authorizedAccounts(address(coinJoin)), 1);
+    assertEq(systemCoin.authorizedAccounts(address(coinJoin)), 1);
   }
 
   // SurplusAuctionHouse
@@ -84,7 +65,7 @@ abstract contract CommonDeploymentTest is HaiTest, Deploy {
     assertEq(debtAuctionHouse.authorizedAccounts(deployer), 0);
 
     // tokens
-    assertEq(coin.authorizedAccounts(deployer), 0);
+    assertEq(systemCoin.authorizedAccounts(deployer), 0);
     assertEq(protocolToken.authorizedAccounts(deployer), 0);
 
     // token adapters and collateral auction houses

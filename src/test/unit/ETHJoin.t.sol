@@ -85,7 +85,7 @@ contract Unit_ETHJoin_Join is Base {
     _;
   }
 
-  function _assumeHappyPath(uint256 _wad) internal {
+  function _assumeHappyPath(uint256 _wad) internal pure {
     vm.assume(notOverflowInt256(_wad));
   }
 
@@ -137,7 +137,7 @@ contract Unit_ETHJoin_Exit is Base {
     _;
   }
 
-  function _assumeHappyPath(uint256 _wad) internal {
+  function _assumeHappyPath(uint256 _wad) internal pure {
     vm.assume(notOverflowInt256(_wad));
   }
 

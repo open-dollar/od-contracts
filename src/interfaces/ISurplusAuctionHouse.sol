@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
-import {IToken} from '@interfaces/external/IToken.sol';
+import {IProtocolToken} from '@interfaces/tokens/IProtocolToken.sol';
 
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
@@ -69,7 +69,7 @@ interface ISurplusAuctionHouse is IAuthorizable, IDisableable, IModifiable {
 
   // --- Registry ---
   function safeEngine() external view returns (ISAFEEngine _safeEngine);
-  function protocolToken() external view returns (IToken _protocolToken);
+  function protocolToken() external view returns (IProtocolToken _protocolToken);
   function protocolTokenBidReceiver() external view returns (address _protocolTokenBidReceiver);
 
   // --- Params ---

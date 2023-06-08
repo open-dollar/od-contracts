@@ -8,8 +8,7 @@ uint256 constant TEST_ETH_PRICE = 1000e18; // 1 ETH = 1000 HAI
 uint256 constant TEST_TKN_PRICE = 1e18; // 1 TKN = 1 HAI
 
 uint256 constant INITIAL_DEBT_AUCTION_MINTED_TOKENS = 1e18;
-uint256 constant BID_AUCTION_SIZE = 100e45;
-uint256 constant SURPLUS_AUCTION_SIZE = 100e45;
+uint256 constant ONE_HUNDRED_COINS = 100e45;
 uint256 constant PERCENTAGE_OF_STABILITY_FEE_TO_TREASURY = 50e27;
 
 abstract contract TestParams is Params, Contracts {
@@ -26,10 +25,10 @@ abstract contract TestParams is Params, Contracts {
       surplusDelay: 0, // no delay
       popDebtDelay: 0, // no delay
       disableCooldown: 0, // no cooldown
-      surplusAmount: SURPLUS_AUCTION_SIZE, // 100 COINs
+      surplusAmount: ONE_HUNDRED_COINS, // 100 COINs
       surplusBuffer: 0, // no buffer
       debtAuctionMintedTokens: INITIAL_DEBT_AUCTION_MINTED_TOKENS, // 1 PROTOCOL TOKEN
-      debtAuctionBidSize: BID_AUCTION_SIZE // 100 COINs
+      debtAuctionBidSize: ONE_HUNDRED_COINS // 100 COINs
     });
 
     _debtAuctionHouseParams = IDebtAuctionHouse.DebtAuctionHouseParams({

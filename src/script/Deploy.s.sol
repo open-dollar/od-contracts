@@ -59,7 +59,8 @@ abstract contract Deploy is Params, Script, Contracts {
 
   function deployEthCollateralContracts() public {
     // deploy ETHJoin and CollateralAuctionHouse
-    ethJoin = new ETHJoin(address(safeEngine), ETH_A);
+    // NOTE: deploying ETHJoinForTest to make it work with current tests
+    ethJoin = new ETHJoinForTest(address(safeEngine), ETH_A);
     collateralAuctionHouse[ETH_A] = new CollateralAuctionHouse({
         _safeEngine: address(safeEngine), 
         _liquidationEngine: address(liquidationEngine), 
@@ -114,8 +115,8 @@ abstract contract Deploy is Params, Script, Contracts {
     stabilityFeeTreasury.removeAuthorization(deployer);
 
     // tokens
-    coin.addAuthorization(_governor); // TODO: rm in production env
-    coin.removeAuthorization(deployer);
+    systemCoin.addAuthorization(_governor); // TODO: rm in production env
+    systemCoin.removeAuthorization(deployer);
     protocolToken.addAuthorization(_governor);
     protocolToken.removeAuthorization(deployer);
 
@@ -138,9 +139,8 @@ abstract contract Deploy is Params, Script, Contracts {
 
   function deployContracts() public {
     // deploy Tokens
-    // TODO: deprecate CoinForTest in favour of SystemCoin and ProtocolToken
-    coin = new CoinForTest('HAI Index Token', 'HAI', chainId);
-    protocolToken = new CoinForTest('Protocol Token', 'KITE', chainId);
+    systemCoin = new SystemCoin('HAI Index Token', 'HAI');
+    protocolToken = new ProtocolToken('Protocol Token', 'KITE');
 
     // deploy Base contracts
     safeEngine = new SAFEEngine(_safeEngineParams);
@@ -149,7 +149,7 @@ abstract contract Deploy is Params, Script, Contracts {
 
     liquidationEngine = new LiquidationEngine(address(safeEngine), _liquidationEngineParams);
 
-    coinJoin = new CoinJoin(address(safeEngine), address(coin));
+    coinJoin = new CoinJoin(address(safeEngine), address(systemCoin));
     surplusAuctionHouse =
       new SurplusAuctionHouse(address(safeEngine), address(protocolToken), _surplusAuctionHouseParams);
     debtAuctionHouse = new DebtAuctionHouse(address(safeEngine), address(protocolToken), _debtAuctionHouseParams);
@@ -169,6 +169,7 @@ abstract contract Deploy is Params, Script, Contracts {
         );
 
     _deployGlobalSettlement();
+    _deployProxyContracts(address(safeEngine));
   }
 
   // TODO: deploy PostSettlementSurplusAuctionHouse & SettlementSurplusAuctioneer
@@ -207,7 +208,7 @@ abstract contract Deploy is Params, Script, Contracts {
     debtAuctionHouse.addAuthorization(address(accountingEngine)); // startAuction
     accountingEngine.addAuthorization(address(liquidationEngine)); // pushDebtToQueue
     protocolToken.addAuthorization(address(debtAuctionHouse)); // mint
-    coin.addAuthorization(address(coinJoin)); // mint
+    systemCoin.addAuthorization(address(coinJoin)); // mint
   }
 
   function _setupCollateral(bytes32 _cType) internal {
@@ -263,6 +264,13 @@ abstract contract Deploy is Params, Script, Contracts {
     // initialize
     pidRateSetter.updateRate();
   }
+
+  function _deployProxyContracts(address _safeEngine) internal {
+    dsProxyFactory = new HaiProxyFactory();
+    proxyRegistry = new HaiProxyRegistry(address(dsProxyFactory));
+    safeManager = new HaiSafeManager(_safeEngine);
+    proxyActions = new BasicActions();
+  }
 }
 
 contract DeployMainnet is MainnetParams, Deploy {
@@ -287,7 +295,7 @@ contract DeployMainnet is MainnetParams, Deploy {
     oracle[WSTETH] = new DelayedOracle(_wstethUSDPriceFeed, 1 hours);
 
     // TODO: change collateral => ERC20ForTest for IERC20
-    collateral[WETH] = ERC20ForTest(OP_WETH);
+    collateral[WETH] = IERC20Metadata(OP_WETH);
     collateral[WSTETH] = ERC20ForTest(OP_WSTETH);
 
     collateralTypes.push(WETH);
@@ -318,8 +326,7 @@ contract DeployGoerli is GoerliParams, Deploy {
     oracle[WETH] = new DelayedOracle(_ethUSDPriceFeed, 1 hours);
     oracle[OP] = new DelayedOracle(_opUSDPriceFeed, 1 hours);
 
-    // TODO: change collateral => ERC20ForTest for IERC20
-    collateral[WETH] = ERC20ForTest(OP_GOERLI_WETH);
+    collateral[WETH] = IERC20Metadata(OP_GOERLI_WETH);
     collateral[OP] = ERC20ForTest(OP_GOERLI_OPTIMISM);
 
     // Setup collateral params

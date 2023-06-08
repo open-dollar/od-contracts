@@ -41,7 +41,6 @@ contract ETHJoin is Authorizable, Disableable, IETHJoin {
   /**
    * @notice Join ETH in the system
    * @param _account Account that will receive the ETH representation inside the system
-   *
    */
   function join(address _account) external payable whenEnabled {
     safeEngine.modifyCollateralBalance(collateralType, _account, msg.value.toInt());
@@ -51,7 +50,6 @@ contract ETHJoin is Authorizable, Disableable, IETHJoin {
   /**
    * @notice Exit ETH from the system
    * @param _account Account that will receive the ETH representation inside the system
-   *
    */
   function exit(address _account, uint256 _wad) external {
     safeEngine.modifyCollateralBalance(collateralType, msg.sender, -_wad.toInt());

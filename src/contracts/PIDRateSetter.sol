@@ -43,7 +43,7 @@ contract PIDRateSetter is Authorizable, Modifiable, IPIDRateSetter {
     address _oracle,
     address _pidCalculator,
     uint256 _updateRateDelay
-  ) Authorizable(msg.sender) {
+  ) Authorizable(msg.sender) validParams {
     oracleRelayer = IOracleRelayer(_oracleRelayer.assertNonNull());
     oracle = IBaseOracle(_oracle.assertNonNull());
     pidCalculator = IPIDController(_pidCalculator.assertNonNull());
@@ -86,14 +86,18 @@ contract PIDRateSetter is Authorizable, Modifiable, IPIDRateSetter {
 
   // --- Administration ---
 
-  function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override validParams {
     address _address = _data.toAddress();
     uint256 _uint256 = _data.toUint256();
 
     if (_param == 'oracle') oracle = IBaseOracle(_address.assertNonNull());
     else if (_param == 'oracleRelayer') oracleRelayer = IOracleRelayer(_address.assertNonNull());
     else if (_param == 'pidCalculator') pidCalculator = IPIDController(_address.assertNonNull());
-    else if (_param == 'updateRateDelay') _params.updateRateDelay = _uint256.assertGt(0);
+    else if (_param == 'updateRateDelay') _params.updateRateDelay = _uint256;
     else revert UnrecognizedParam();
+  }
+
+  function _validateParameters() internal view override {
+    _params.updateRateDelay.assertGt(0);
   }
 }

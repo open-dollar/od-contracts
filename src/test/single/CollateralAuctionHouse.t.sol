@@ -1499,6 +1499,7 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), rad(950 ether));
 
     IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+
     assertEq(_auction.amountToSell, 0);
     assertEq(_auction.amountToRaise, 0);
     assertEq(_auction.currentDiscount, 0);

@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
-import {IToken} from '@interfaces/external/IToken.sol';
+import {ISystemCoin} from '@interfaces/tokens/ISystemCoin.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {RAY} from '@libraries/Math.sol';
@@ -17,7 +17,7 @@ abstract contract Base is HaiTest {
   address user = label('user');
 
   ISAFEEngine mockSafeEngine = ISAFEEngine(mockContract('SafeEngine'));
-  IToken mockSystemCoin = IToken(mockContract('SystemCoin'));
+  ISystemCoin mockSystemCoin = ISystemCoin(mockContract('SystemCoin'));
 
   CoinJoin coinJoin;
 

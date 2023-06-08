@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import {DebtAuctionHouseForTest, IDebtAuctionHouse} from '@contracts/for-test/DebtAuctionHouseForTest.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
-import {IToken} from '@interfaces/external/IToken.sol';
+import {IProtocolToken} from '@interfaces/tokens/IProtocolToken.sol';
 import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
@@ -28,7 +28,7 @@ abstract contract Base is HaiTest {
   address user = label('user');
 
   ISAFEEngine mockSafeEngine = ISAFEEngine(mockContract('SafeEngine'));
-  IToken mockProtocolToken = IToken(mockContract('ProtocolToken'));
+  IProtocolToken mockProtocolToken = IProtocolToken(mockContract('ProtocolToken'));
   IAccountingEngine mockAccountingEngine = IAccountingEngine(mockContract('AccountingEngine'));
 
   DebtAuctionHouseForTest debtAuctionHouse;

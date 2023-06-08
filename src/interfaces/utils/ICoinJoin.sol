@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
-import {IToken} from '@interfaces/external/IToken.sol';
+import {ISystemCoin} from '@interfaces/tokens/ISystemCoin.sol';
 
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
@@ -14,7 +14,7 @@ interface ICoinJoin is IAuthorizable, IDisableable {
 
   // --- Data ---
   function safeEngine() external view returns (ISAFEEngine _safeEngine);
-  function systemCoin() external view returns (IToken _systemCoin);
+  function systemCoin() external view returns (ISystemCoin _systemCoin);
   function decimals() external view returns (uint256 _decimals);
 
   function join(address _account, uint256 _wad) external;

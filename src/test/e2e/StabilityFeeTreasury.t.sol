@@ -10,10 +10,15 @@ contract E2EStabilityFeeTreasuryTest is Common {
 
   function _gatherFees(uint256 _wad, uint256 _timeElapsed) internal {
     // Funding alice
-    _joinETH(alice, _wad);
+    _lockETH(alice, _wad);
 
     // opening alice safe
-    _openSafe({_user: alice, _collateralJoin: address(ethJoin), _deltaCollat: int256(_wad), _deltaDebt: int256(_wad)});
+    _generateDebt({
+      _user: alice,
+      _collateralJoin: address(collateralJoin[ETH_A]),
+      _deltaCollat: int256(_wad),
+      _deltaDebt: int256(_wad)
+    });
 
     // Collecting 1 year of fees
     _collectFees(1 * _timeElapsed);
@@ -42,14 +47,17 @@ contract E2EStabilityFeeTreasuryTest is Common {
   function test_take_funds() public {
     uint256 _wad = INITIAL_DEBT;
 
-    // Funding alice
-    _joinETH(alice, _wad);
-
     // opening alice safe
-    _openSafe({_user: alice, _collateralJoin: address(ethJoin), _deltaCollat: int256(_wad), _deltaDebt: int256(_wad)});
+    _generateDebt({
+      _user: alice,
+      _collateralJoin: address(collateralJoin[ETH_A]),
+      _deltaCollat: int256(_wad),
+      _deltaDebt: int256(_wad)
+    });
 
     vm.prank(alice);
     safeEngine.approveSAFEModification(address(stabilityFeeTreasury));
+    _joinCoins(alice, _wad);
 
     vm.prank(deployer);
     // Executing take funds method with the 100% of alice's balance
@@ -136,16 +144,17 @@ contract E2EStabilityFeeTreasuryTest is Common {
   function test_join_coins_before_pull() public {
     uint256 _wad = INITIAL_DEBT;
 
-    // Funding alice
-    _joinETH(alice, _wad);
     // opening alice safe
-    _openSafe({_user: alice, _collateralJoin: address(ethJoin), _deltaCollat: int256(_wad), _deltaDebt: int256(_wad)});
+    _generateDebt({
+      _user: alice,
+      _collateralJoin: address(collateralJoin[ETH_A]),
+      _deltaCollat: int256(_wad),
+      _deltaDebt: int256(_wad)
+    });
 
     // Transferring coin tokens to stabilityFeeTreasury
     vm.startPrank(alice);
-    safeEngine.approveSAFEModification(address(coinJoin));
-    coinJoin.exit(address(alice), _wad);
-    coin.transfer(address(stabilityFeeTreasury), _wad);
+    systemCoin.transfer(address(stabilityFeeTreasury), _wad);
     vm.stopPrank();
 
     // Executing pulling 100% of funds and setting bob as destination

@@ -48,7 +48,7 @@ contract SingleTaxCollectorTest is DSTest {
     safeEngine = new SAFEEngine(_safeEngineParams);
 
     ITaxCollector.TaxCollectorParams memory _taxCollectorParams = ITaxCollector.TaxCollectorParams({
-      primaryTaxReceiver: address(0),
+      primaryTaxReceiver: address(0x744),
       globalStabilityFee: 0,
       maxSecondaryReceivers: 0
     });
