@@ -3,18 +3,20 @@ line_length = 120
 tab_width = 2
 bracket_spacing = false
 int_types = 'long'
+multiline_func_header = 'params_first'
 quote_style = 'single'
 number_underscore = 'thousands'
-multiline_func_header = 'params_first'
+wrap_comments = false
 
 [profile.default]
-solc = '0.6.7'
+solc = '0.8.19'
 src = 'src'
 test = 'src/test'
 out = 'out'
 libs = ['lib']
 fuzz_runs = 1000
 optimizer_runs = 10_000
+block_timestamp = 1675855961
 
 [profile.optimized]
 via_ir = true

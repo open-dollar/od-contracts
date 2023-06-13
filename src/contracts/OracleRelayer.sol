@@ -1,312 +1,145 @@
-/// OracleRelayer.sol
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity 0.8.19;
 
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
-//
-// You should have received a copy of the GNU Affero General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
+import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
+import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
 
-pragma solidity 0.6.7;
+import {Authorizable} from '@contracts/utils/Authorizable.sol';
+import {Modifiable} from '@contracts/utils/Modifiable.sol';
+import {Disableable} from '@contracts/utils/Disableable.sol';
 
-import {ISAFEEngine as SAFEEngineLike} from '../interfaces/ISAFEEngine.sol';
+import {Encoding} from '@libraries/Encoding.sol';
+import {Assertions} from '@libraries/Assertions.sol';
+import {Math, RAY, WAD} from '@libraries/Math.sol';
 
-import {IOracle as OracleLike} from '../interfaces/IOracle.sol';
+contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer {
+  using Encoding for bytes;
+  using Math for uint256;
+  using Assertions for uint256;
 
-contract OracleRelayer {
-  // --- Auth ---
-  mapping(address => uint256) public authorizedAccounts;
-  /**
-   * @notice Add auth to an account
-   * @param account Account to add auth to
-   */
+  // --- Registry ---
+  ISAFEEngine public safeEngine;
 
-  function addAuthorization(address account) external isAuthorized {
-    authorizedAccounts[account] = 1;
-    emit AddAuthorization(account);
-  }
-  /**
-   * @notice Remove auth from an account
-   * @param account Account to remove auth from
-   */
+  // --- Params ---
+  OracleRelayerParams internal _params;
+  mapping(bytes32 => OracleRelayerCollateralParams) internal _cParams;
 
-  function removeAuthorization(address account) external isAuthorized {
-    authorizedAccounts[account] = 0;
-    emit RemoveAuthorization(account);
-  }
-  /**
-   * @notice Checks whether msg.sender can call an authed function
-   *
-   */
-
-  modifier isAuthorized() {
-    require(authorizedAccounts[msg.sender] == 1, 'OracleRelayer/account-not-authorized');
-    _;
+  function params() external view override returns (OracleRelayerParams memory _oracleRelayerParams) {
+    return _params;
   }
 
-  // --- Data ---
-  struct CollateralType {
-    // Usually an oracle security module that enforces delays to fresh price feeds
-    OracleLike orcl;
-    // CRatio used to compute the 'safePrice' - the price used when generating debt in SAFEEngine
-    uint256 safetyCRatio;
-    // CRatio used to compute the 'liquidationPrice' - the price used when liquidating SAFEs
-    uint256 liquidationCRatio;
+  function cParams(bytes32 _cType) external view returns (OracleRelayerCollateralParams memory _oracleRelayerCParams) {
+    return _cParams[_cType];
   }
 
-  // Data about each collateral type
-  mapping(bytes32 => CollateralType) public collateralTypes;
-
-  SAFEEngineLike public safeEngine;
-
-  // Whether this contract is enabled
-  uint256 public contractEnabled;
   // Virtual redemption price (not the most updated value)
   uint256 internal _redemptionPrice; // [ray]
   // The force that changes the system users' incentives by changing the redemption price
   uint256 public redemptionRate; // [ray]
   // Last time when the redemption price was changed
   uint256 public redemptionPriceUpdateTime; // [unix epoch time]
-  // Upper bound for the per-second redemption rate
-  uint256 public redemptionRateUpperBound; // [ray]
-  // Lower bound for the per-second redemption rate
-  uint256 public redemptionRateLowerBound; // [ray]
-
-  // --- Events ---
-  event AddAuthorization(address account);
-  event RemoveAuthorization(address account);
-  event DisableContract();
-  event ModifyParameters(bytes32 collateralType, bytes32 parameter, address addr);
-  event ModifyParameters(bytes32 parameter, uint256 data);
-  event ModifyParameters(bytes32 collateralType, bytes32 parameter, uint256 data);
-  event UpdateRedemptionPrice(uint256 redemptionPrice);
-  event UpdateCollateralPrice(
-    bytes32 indexed collateralType, uint256 priceFeedValue, uint256 safetyPrice, uint256 liquidationPrice
-  );
 
   // --- Init ---
-  constructor(address safeEngine_) public {
-    authorizedAccounts[msg.sender] = 1;
-
-    safeEngine = SAFEEngineLike(safeEngine_);
+  constructor(
+    address _safeEngine,
+    OracleRelayerParams memory _oracleRelayerParams
+  ) Authorizable(msg.sender) validParams {
+    safeEngine = ISAFEEngine(_safeEngine);
     _redemptionPrice = RAY;
     redemptionRate = RAY;
-    redemptionPriceUpdateTime = now;
-    redemptionRateUpperBound = RAY * WAD;
-    redemptionRateLowerBound = 1;
-    contractEnabled = 1;
-
-    emit AddAuthorization(msg.sender);
-  }
-
-  // --- Math ---
-  uint256 constant WAD = 10 ** 18;
-  uint256 constant RAY = 10 ** 27;
-
-  function subtract(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    z = x - y;
-    require(z <= x, 'OracleRelayer/sub-underflow');
-  }
-
-  function multiply(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require(y == 0 || (z = x * y) / y == x, 'OracleRelayer/mul-overflow');
-  }
-
-  function rmultiply(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    // always rounds down
-    z = multiply(x, y) / RAY;
-  }
-
-  function rdivide(uint256 x, uint256 y) internal pure returns (uint256 z) {
-    require(y > 0, 'OracleRelayer/rdiv-by-zero');
-    z = multiply(x, RAY) / y;
-  }
-
-  function rpower(uint256 x, uint256 n, uint256 base) internal pure returns (uint256 z) {
-    assembly {
-      switch x
-      case 0 {
-        switch n
-        case 0 { z := base }
-        default { z := 0 }
-      }
-      default {
-        switch mod(n, 2)
-        case 0 { z := base }
-        default { z := x }
-        let half := div(base, 2) // for rounding.
-        for { n := div(n, 2) } n { n := div(n, 2) } {
-          let xx := mul(x, x)
-          if iszero(eq(div(xx, x), x)) { revert(0, 0) }
-          let xxRound := add(xx, half)
-          if lt(xxRound, xx) { revert(0, 0) }
-          x := div(xxRound, base)
-          if mod(n, 2) {
-            let zx := mul(z, x)
-            if and(iszero(iszero(x)), iszero(eq(div(zx, x), z))) { revert(0, 0) }
-            let zxRound := add(zx, half)
-            if lt(zxRound, zx) { revert(0, 0) }
-            z := div(zxRound, base)
-          }
-        }
-      }
-    }
-  }
-
-  // --- Administration ---
-  /**
-   * @notice Modify oracle price feed addresses
-   * @param collateralType Collateral whose oracle we change
-   * @param parameter Name of the parameter
-   * @param addr New oracle address
-   */
-  function modifyParameters(bytes32 collateralType, bytes32 parameter, address addr) external isAuthorized {
-    require(contractEnabled == 1, 'OracleRelayer/contract-not-enabled');
-    if (parameter == 'orcl') collateralTypes[collateralType].orcl = OracleLike(addr);
-    else revert('OracleRelayer/modify-unrecognized-param');
-    emit ModifyParameters(collateralType, parameter, addr);
-  }
-  /**
-   * @notice Modify redemption rate/price related parameters
-   * @param parameter Name of the parameter
-   * @param data New param value
-   */
-
-  function modifyParameters(bytes32 parameter, uint256 data) external isAuthorized {
-    require(contractEnabled == 1, 'OracleRelayer/contract-not-enabled');
-    require(data > 0, 'OracleRelayer/null-data');
-    if (parameter == 'redemptionPrice') {
-      _redemptionPrice = data;
-    } else if (parameter == 'redemptionRate') {
-      require(now == redemptionPriceUpdateTime, 'OracleRelayer/redemption-price-not-updated');
-      uint256 adjustedRate = data;
-      if (data > redemptionRateUpperBound) {
-        adjustedRate = redemptionRateUpperBound;
-      } else if (data < redemptionRateLowerBound) {
-        adjustedRate = redemptionRateLowerBound;
-      }
-      redemptionRate = adjustedRate;
-    } else if (parameter == 'redemptionRateUpperBound') {
-      require(data > RAY, 'OracleRelayer/invalid-redemption-rate-upper-bound');
-      redemptionRateUpperBound = data;
-    } else if (parameter == 'redemptionRateLowerBound') {
-      require(data < RAY, 'OracleRelayer/invalid-redemption-rate-lower-bound');
-      redemptionRateLowerBound = data;
-    } else {
-      revert('OracleRelayer/modify-unrecognized-param');
-    }
-    emit ModifyParameters(parameter, data);
-  }
-  /**
-   * @notice Modify CRatio related parameters
-   * @param collateralType Collateral whose parameters we change
-   * @param parameter Name of the parameter
-   * @param data New param value
-   */
-
-  function modifyParameters(bytes32 collateralType, bytes32 parameter, uint256 data) external isAuthorized {
-    require(contractEnabled == 1, 'OracleRelayer/contract-not-enabled');
-    if (parameter == 'safetyCRatio') {
-      require(
-        data >= collateralTypes[collateralType].liquidationCRatio, 'OracleRelayer/safety-lower-than-liquidation-cratio'
-      );
-      collateralTypes[collateralType].safetyCRatio = data;
-    } else if (parameter == 'liquidationCRatio') {
-      require(
-        data <= collateralTypes[collateralType].safetyCRatio, 'OracleRelayer/safety-lower-than-liquidation-cratio'
-      );
-      collateralTypes[collateralType].liquidationCRatio = data;
-    } else {
-      revert('OracleRelayer/modify-unrecognized-param');
-    }
-    emit ModifyParameters(collateralType, parameter, data);
+    redemptionPriceUpdateTime = block.timestamp;
+    _params = _oracleRelayerParams;
   }
 
   // --- Redemption Price Update ---
   /**
    * @notice Update the redemption price using the current redemption rate
    */
-  function updateRedemptionPrice() internal returns (uint256) {
+  function _updateRedemptionPrice() internal virtual returns (uint256 _updatedPrice) {
     // Update redemption price
-    _redemptionPrice =
-      rmultiply(rpower(redemptionRate, subtract(now, redemptionPriceUpdateTime), RAY), _redemptionPrice);
-    if (_redemptionPrice == 0) _redemptionPrice = 1;
-    redemptionPriceUpdateTime = now;
-    emit UpdateRedemptionPrice(_redemptionPrice);
-    // Return updated redemption price
-    return _redemptionPrice;
+    _updatedPrice = redemptionRate.rpow(block.timestamp - redemptionPriceUpdateTime).rmul(_redemptionPrice);
+    if (_updatedPrice == 0) _updatedPrice = 1;
+    redemptionPriceUpdateTime = block.timestamp;
+    emit UpdateRedemptionPrice(_updatedPrice);
   }
+
   /**
    * @notice Fetch the latest redemption price by first updating it
    */
+  function redemptionPrice() external returns (uint256 _updatedPrice) {
+    return _getRedemptionPrice();
+  }
 
-  function redemptionPrice() public returns (uint256) {
-    if (now > redemptionPriceUpdateTime) return updateRedemptionPrice();
+  function _getRedemptionPrice() internal virtual returns (uint256 _updatedPrice) {
+    if (block.timestamp > redemptionPriceUpdateTime) return _updateRedemptionPrice();
     return _redemptionPrice;
   }
 
   // --- Update value ---
   /**
    * @notice Update the collateral price inside the system (inside SAFEEngine)
-   * @param collateralType The collateral we want to update prices (safety and liquidation prices) for
+   * @param  _cType The collateral we want to update prices (safety and liquidation prices) for
    */
-  function updateCollateralPrice(bytes32 collateralType) external {
-    (uint256 priceFeedValue, bool hasValidValue) = collateralTypes[collateralType].orcl.getResultWithValidity();
-    uint256 redemptionPrice_ = redemptionPrice();
-    uint256 safetyPrice_ = hasValidValue
-      ? rdivide(
-        rdivide(multiply(uint256(priceFeedValue), 10 ** 9), redemptionPrice_),
-        collateralTypes[collateralType].safetyCRatio
-      )
+  function updateCollateralPrice(bytes32 _cType) external {
+    (uint256 _priceFeedValue, bool _hasValidValue) = _cParams[_cType].oracle.getResultWithValidity();
+    uint256 _updatedRedemptionPrice = _getRedemptionPrice();
+
+    uint256 _safetyPrice = _hasValidValue
+      ? (uint256(_priceFeedValue) * uint256(10 ** 9)).rdiv(_updatedRedemptionPrice).rdiv(_cParams[_cType].safetyCRatio)
       : 0;
-    uint256 liquidationPrice_ = hasValidValue
-      ? rdivide(
-        rdivide(multiply(uint256(priceFeedValue), 10 ** 9), redemptionPrice_),
-        collateralTypes[collateralType].liquidationCRatio
+    uint256 _liquidationPrice = _hasValidValue
+      ? (uint256(_priceFeedValue) * uint256(10 ** 9)).rdiv(_updatedRedemptionPrice).rdiv(
+        _cParams[_cType].liquidationCRatio
       )
       : 0;
 
-    safeEngine.modifyParameters(collateralType, 'safetyPrice', safetyPrice_);
-    safeEngine.modifyParameters(collateralType, 'liquidationPrice', liquidationPrice_);
-    emit UpdateCollateralPrice(collateralType, priceFeedValue, safetyPrice_, liquidationPrice_);
+    safeEngine.updateCollateralPrice(_cType, _safetyPrice, _liquidationPrice);
+    emit UpdateCollateralPrice(_cType, _priceFeedValue, _safetyPrice, _liquidationPrice);
   }
+
+  function updateRedemptionRate(uint256 _redemptionRate) external isAuthorized {
+    if (block.timestamp != redemptionPriceUpdateTime) revert RedemptionPriceNotUpdated();
+
+    if (_redemptionRate > _params.redemptionRateUpperBound) {
+      _redemptionRate = _params.redemptionRateUpperBound;
+    } else if (_redemptionRate < _params.redemptionRateLowerBound) {
+      _redemptionRate = _params.redemptionRateLowerBound;
+    }
+    redemptionRate = _redemptionRate;
+  }
+
+  // --- Shutdown ---
 
   /**
    * @notice Disable this contract (normally called by GlobalSettlement)
    */
-  function disableContract() external isAuthorized {
-    contractEnabled = 0;
+  function _onContractDisable() internal override {
     redemptionRate = RAY;
-    emit DisableContract();
   }
 
-  /**
-   * @notice Fetch the safety CRatio of a specific collateral type
-   * @param collateralType The collateral type we want the safety CRatio for
-   */
-  function safetyCRatio(bytes32 collateralType) public view returns (uint256) {
-    return collateralTypes[collateralType].safetyCRatio;
-  }
-  /**
-   * @notice Fetch the liquidation CRatio of a specific collateral type
-   * @param collateralType The collateral type we want the liquidation CRatio for
-   */
+  // --- Administration ---
 
-  function liquidationCRatio(bytes32 collateralType) public view returns (uint256) {
-    return collateralTypes[collateralType].liquidationCRatio;
-  }
-  /**
-   * @notice Fetch the oracle price feed of a specific collateral type
-   * @param collateralType The collateral type we want the oracle price feed for
-   */
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled validParams {
+    uint256 _uint256 = _data.toUint256();
 
-  function orcl(bytes32 collateralType) public view returns (address) {
-    return address(collateralTypes[collateralType].orcl);
+    if (_param == 'redemptionRateUpperBound') _params.redemptionRateUpperBound = _uint256;
+    else if (_param == 'redemptionRateLowerBound') _params.redemptionRateLowerBound = _uint256;
+    else revert UnrecognizedParam();
+  }
+
+  function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override whenEnabled {
+    uint256 _uint256 = _data.toUint256();
+    OracleRelayerCollateralParams storage __cParams = _cParams[_cType];
+
+    if (_param == 'safetyCRatio') __cParams.safetyCRatio = _uint256.assertGtEq(__cParams.liquidationCRatio);
+    else if (_param == 'liquidationCRatio') __cParams.liquidationCRatio = _uint256.assertLtEq(__cParams.safetyCRatio);
+    else if (_param == 'oracle') __cParams.oracle = abi.decode(_data, (IBaseOracle));
+    else revert UnrecognizedParam();
+  }
+
+  function _validateParameters() internal view override {
+    _params.redemptionRateUpperBound.assertGt(RAY);
+    _params.redemptionRateLowerBound.assertGt(0).assertLt(RAY);
   }
 }

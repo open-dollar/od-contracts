@@ -1,174 +1,156 @@
-pragma solidity 0.6.7;
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity 0.8.19;
 
-import {DSTest} from 'ds-test/test.sol';
-import {
-  Deploy,
-  SAFEEngine,
-  TaxCollector,
-  AccountingEngine,
-  LiquidationEngine,
-  StabilityFeeTreasury,
-  CoinSavingsAccount,
-  MixedStratSurplusAuctionHouse as SurplusAuctionHouse,
-  DebtAuctionHouse,
-  IncreasingDiscountCollateralAuctionHouse as CollateralAuctionHouse,
-  OracleRelayer,
-  Coin,
-  CoinJoin
-} from '../../../script/Deploy.s.sol';
+import {HaiTest} from '@test/utils/HaiTest.t.sol';
+import {Deploy, DeployMainnet, DeployGoerli} from '@script/Deploy.s.sol';
 
-contract DeploymentTest is DSTest {
-  Deploy public deployment;
+import {ParamSetter, WETH, WSTETH} from '@script/Params.s.sol';
 
-  function setUp() public {
-    deployment = new Deploy();
-    deployment.run();
-  }
+import {Contracts} from '@script/Contracts.s.sol';
+import {GoerliDeployment} from '@script/GoerliDeployment.s.sol';
 
+abstract contract CommonDeploymentTest is HaiTest, Deploy {
   // SAFEEngine
-  function test_deployment_auth_safe_engine() public {
-    SAFEEngine _safeEngine = deployment.safeEngine();
+  function test_SAFEEngine_Auth() public {
+    assertEq(safeEngine.authorizedAccounts(address(oracleRelayer)), 1);
+    assertEq(safeEngine.authorizedAccounts(address(taxCollector)), 1);
+    assertEq(safeEngine.authorizedAccounts(address(debtAuctionHouse)), 1);
+    assertEq(safeEngine.authorizedAccounts(address(liquidationEngine)), 1);
 
-    assertEq(_safeEngine.authorizedAccounts(address(deployment.oracleRelayer())), 1);
-    assertEq(_safeEngine.authorizedAccounts(address(deployment.taxCollector())), 1);
-    assertEq(_safeEngine.authorizedAccounts(address(deployment.coinSavingsAccount())), 1);
-    assertEq(_safeEngine.authorizedAccounts(address(deployment.debtAuctionHouse())), 1);
-    assertEq(_safeEngine.authorizedAccounts(address(deployment.liquidationEngine())), 1);
-
-    assert(_safeEngine.canModifySAFE(address(deployment.accountingEngine()), address(deployment.surplusAuctionHouse())));
+    assert(safeEngine.canModifySAFE(address(accountingEngine), address(surplusAuctionHouse)));
   }
 
-  function test_deployment_params_safe_engine() public {
-    SAFEEngine _safeEngine = deployment.safeEngine();
-
-    assertEq(_safeEngine.safeDebtCeiling(), uint256(-1));
-  }
-
-  // TaxCollector
-  function test_deployment_params_tax_collector() public {
-    TaxCollector _taxCollector = deployment.taxCollector();
-
-    assertEq(address(_taxCollector.safeEngine()), address(deployment.safeEngine()));
+  function test_SAFEEngine_Params() public view {
+    ParamSetter._checkParams(address(safeEngine), abi.encode(_safeEngineParams));
   }
 
   // AccountingEngine
-  function test_deployment_auth_accounting_engine() public {
-    AccountingEngine _accountingEngine = deployment.accountingEngine();
-
-    assertEq(_accountingEngine.authorizedAccounts(address(deployment.liquidationEngine())), 1);
+  function test_AccountingEntine_Auth() public {
+    assertEq(accountingEngine.authorizedAccounts(address(liquidationEngine)), 1);
   }
 
-  function test_deployment_params_accounting_engine() public {
-    AccountingEngine _accountingEngine = deployment.accountingEngine();
-
-    assertEq(address(_accountingEngine.safeEngine()), address(deployment.safeEngine()));
-    assertEq(address(_accountingEngine.surplusAuctionHouse()), address(deployment.surplusAuctionHouse()));
-    assertEq(address(_accountingEngine.debtAuctionHouse()), address(deployment.debtAuctionHouse()));
-  }
-
-  // LiquidationEngine
-  function test_deployment_params_liquidation_engine() public {
-    LiquidationEngine _liquidationEngine = deployment.liquidationEngine();
-
-    assertEq(address(_liquidationEngine.safeEngine()), address(deployment.safeEngine()));
-    // on script
-    assertEq(address(_liquidationEngine.accountingEngine()), address(deployment.accountingEngine()));
-  }
-
-  // StabilityFeeTreasury
-  function test_deployment_params_sf_treasury() public {
-    StabilityFeeTreasury _sfTreasury = deployment.stabilityFeeTreasury();
-
-    assertEq(address(_sfTreasury.safeEngine()), address(deployment.safeEngine()));
-    assertEq(address(_sfTreasury.extraSurplusReceiver()), address(deployment.accountingEngine()));
-    assertEq(address(_sfTreasury.coinJoin()), address(deployment.coinJoin()));
-    assertEq(address(_sfTreasury.systemCoin()), address(deployment.coin()));
-
-    assertEq(deployment.coin().allowance(address(_sfTreasury), address(deployment.coinJoin())), uint256(-1));
-  }
-
-  // CoinSavingsAccount
-  function test_deployment_params_coin_savings_account() public {
-    CoinSavingsAccount _coinSavingsAcc = deployment.coinSavingsAccount();
-
-    assertEq(address(_coinSavingsAcc.safeEngine()), address(deployment.safeEngine()));
+  function test_AccountingEntine_Params() public view {
+    ParamSetter._checkParams(address(accountingEngine), abi.encode(_accountingEngineParams));
   }
 
   // Coin (system)
-  function test_deployment_auth_coin() public {
-    Coin _coin = deployment.coin();
-
-    assertEq(_coin.authorizedAccounts(address(deployment.coinJoin())), 1);
+  function test_Coin_Auth() public {
+    assertEq(systemCoin.authorizedAccounts(address(coinJoin)), 1);
   }
-
-  // CoinJoin
-  function test_deployment_params_coin_join() public {
-    CoinJoin _coinJoin = deployment.coinJoin();
-
-    assertEq(address(_coinJoin.safeEngine()), address(deployment.safeEngine()));
-  }
-
-  // TODO: CollateralJoin
 
   // SurplusAuctionHouse
-  function test_deployment_auth_surplus_auction_house() public {
-    SurplusAuctionHouse _surplusAuctionHouse = deployment.surplusAuctionHouse();
-
-    assertEq(_surplusAuctionHouse.authorizedAccounts(address(deployment.accountingEngine())), 1);
+  function test_SurplusAuctionHouse_Auth() public {
+    assertEq(surplusAuctionHouse.authorizedAccounts(address(accountingEngine)), 1);
   }
 
-  function test_deployment_params_surplus_auction_house() public {
-    SurplusAuctionHouse _surplusAuctionHouse = deployment.surplusAuctionHouse();
-
-    assertEq(address(_surplusAuctionHouse.safeEngine()), address(deployment.safeEngine()));
-    assertEq(address(_surplusAuctionHouse.protocolToken()), address(deployment.protocolToken()));
+  function test_SurplusAuctionHouse_Params() public view {
+    ParamSetter._checkParams(address(surplusAuctionHouse), abi.encode(_surplusAuctionHouseParams));
   }
 
   // DebtAuctionHouse
-  function test_deployment_auth_debt_auction_house() public {
-    DebtAuctionHouse _debtAuctionHouse = deployment.debtAuctionHouse();
-
-    assertEq(_debtAuctionHouse.authorizedAccounts(address(deployment.accountingEngine())), 1);
+  function test_DebtAuctionHouse_Auth() public {
+    assertEq(debtAuctionHouse.authorizedAccounts(address(accountingEngine)), 1);
   }
 
-  function test_deployment_params_debt_auction_house() public {
-    DebtAuctionHouse _debtAuctionHouse = deployment.debtAuctionHouse();
-
-    assertEq(address(_debtAuctionHouse.safeEngine()), address(deployment.safeEngine()));
-    assertEq(address(_debtAuctionHouse.protocolToken()), address(deployment.protocolToken()));
+  function test_DebtAuctionHouse_Params() public view {
+    ParamSetter._checkParams(address(debtAuctionHouse), abi.encode(_debtAuctionHouseParams));
   }
 
-  // TODO: CollateralAuctionHouse
-  function test_deployment_auth_collateral_auction_house() public {
-    CollateralAuctionHouse _collateralAuctionHouse = deployment.collateralAuctionHouse();
-
-    assertEq(_collateralAuctionHouse.authorizedAccounts(address(deployment.liquidationEngine())), 1);
+  function test_CollateralAuctionHouse_Auth() public {
+    for (uint256 _i; _i < collateralTypes.length; _i++) {
+      bytes32 _cType = collateralTypes[_i];
+      assertEq(collateralAuctionHouse[_cType].authorizedAccounts(address(liquidationEngine)), 1);
+    }
   }
 
-  function test_deployment_params_collateral_auction_house() public {
-    CollateralAuctionHouse _collateralAuctionHouse = deployment.collateralAuctionHouse();
-
-    assertEq(address(_collateralAuctionHouse.safeEngine()), address(deployment.safeEngine()));
-    assertEq(address(_collateralAuctionHouse.liquidationEngine()), address(deployment.liquidationEngine()));
-    assertEq(_collateralAuctionHouse.collateralType(), deployment.COLLATERAL_TYPE());
+  function test_CollateralAuctionHouse_Params() public view {
+    for (uint256 _i; _i < collateralTypes.length; _i++) {
+      bytes32 _cType = collateralTypes[_i];
+      ParamSetter._checkParams(
+        address(collateralAuctionHouse[_cType]), abi.encode(_collateralAuctionHouseSystemCoinParams)
+      );
+      // TODO: manually test CParams (bc is called without the cType)
+      // ParamSetter._checkCParams(address(collateralAuctionHouse[_cType]), abi.encode(_collateralAuctionHouseCParams[_cType]), _cType);
+    }
   }
 
-  // OracleRelayer
-  function test_deployment_params_debt_oracle_relayer() public {
-    OracleRelayer _oracleRelayer = deployment.oracleRelayer();
-
-    assertEq(address(_oracleRelayer.safeEngine()), address(deployment.safeEngine()));
-
-    // TODO: replace for actual oracle
-    assertEq(address(_oracleRelayer.orcl(deployment.COLLATERAL_TYPE())), address(deployment.oracleForTest()));
+  function test_Revoke_Auth() public {
+    _test_Authorizations(deployer, false);
   }
 
-  function test_deployment_revoke_auth() public {
-    // TODO: fix test
-    // address _deployer = address(deployment.deployer());
-    // deployment.revoke();
+  function test_Grant_Auth() public {
+    _test_Authorizations(governor, true);
+  }
 
-    // assertEq(deployment.safeEngine().authorizedAccounts(_deployer), 0);
-    // ...
+  function _test_Authorizations(address _target, bool _shouldHavePermissions) internal {
+    uint256 _permission = _shouldHavePermissions ? 1 : 0;
+
+    // base contracts
+    assertEq(safeEngine.authorizedAccounts(_target), _permission);
+    assertEq(oracleRelayer.authorizedAccounts(_target), _permission);
+    assertEq(taxCollector.authorizedAccounts(_target), _permission);
+    assertEq(stabilityFeeTreasury.authorizedAccounts(_target), _permission);
+    assertEq(liquidationEngine.authorizedAccounts(_target), _permission);
+    assertEq(accountingEngine.authorizedAccounts(_target), _permission);
+    assertEq(surplusAuctionHouse.authorizedAccounts(_target), _permission);
+    assertEq(debtAuctionHouse.authorizedAccounts(_target), _permission);
+
+    // tokens
+    assertEq(systemCoin.authorizedAccounts(_target), _permission);
+    assertEq(protocolToken.authorizedAccounts(_target), _permission);
+
+    // token adapters and collateral auction houses
+    assertEq(coinJoin.authorizedAccounts(_target), _permission);
+
+    for (uint256 _i; _i < collateralTypes.length; _i++) {
+      bytes32 _cType = collateralTypes[_i];
+      assertEq(collateralJoin[_cType].authorizedAccounts(_target), _permission);
+      assertEq(collateralAuctionHouse[_cType].authorizedAccounts(_target), _permission);
+    }
+  }
+}
+
+contract E2EDeploymentMainnetTest is DeployMainnet, CommonDeploymentTest {
+  uint256 FORK_BLOCK = 99_000_000;
+
+  function setUp() public override {
+    vm.createSelectFork(vm.rpcUrl('mainnet'), FORK_BLOCK);
+    governor = address(69);
+    super.setUp();
+    run();
+  }
+
+  function _setupEnvironment() internal override(DeployMainnet, Deploy) {
+    super._setupEnvironment();
+  }
+}
+
+contract E2EDeploymentGoerliTest is DeployGoerli, CommonDeploymentTest {
+  uint256 FORK_BLOCK = 10_000_000;
+
+  function setUp() public override {
+    vm.createSelectFork(vm.rpcUrl('goerli'), FORK_BLOCK);
+    governor = address(69);
+    super.setUp();
+    run();
+  }
+
+  function _setupEnvironment() internal override(DeployGoerli, Deploy) {
+    super._setupEnvironment();
+  }
+}
+
+contract GoerliDeploymentTest is GoerliDeployment, CommonDeploymentTest {
+  function setUp() public {
+    vm.createSelectFork(vm.rpcUrl('goerli'), GOERLI_DEPLOYMENT_BLOCK);
+    _getEnvironmentParams();
+  }
+
+  function test_Oracles_Auth() public {
+    assertEq(haiOracleForTest.authorizedAccounts(deployer), 0);
+    assertEq(haiOracleForTest.authorizedAccounts(governor), 1);
+
+    assertEq(opEthOracleForTest.authorizedAccounts(deployer), 0);
+    assertEq(opEthOracleForTest.authorizedAccounts(governor), 1);
   }
 }

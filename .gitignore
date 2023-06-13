@@ -7,10 +7,13 @@ node_modules
 cache
 out
 out-via-ir
-broadcast
+broadcast/**/run-*.json
 
 # Config files
 .env
 
 # Avoid ignoring gitkeep
 !/**/.gitkeep
+
+lcov.info
+.vscode/

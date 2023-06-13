@@ -1,42 +1,21 @@
-pragma solidity 0.6.7;
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity 0.8.19;
 
 import 'ds-test/test.sol';
-import {DSDelegateToken} from 'ds-token/delegate.sol';
+import {CoinForTest} from '@contracts/for-test/CoinForTest.sol';
+import {DisableableForTest} from '@contracts/for-test/DisableableForTest.sol';
 
-import {PostSettlementSurplusAuctionHouse} from '../../contracts/SurplusAuctionHouse.sol';
-import '../../contracts/SettlementSurplusAuctioneer.sol';
-import {TestSAFEEngine as SAFEEngine} from './SAFEEngine.t.sol';
-import {CoinJoin} from '../../contracts/utils/CoinJoin.sol';
-import {Coin} from '../../contracts/utils/Coin.sol';
+import {
+  IPostSettlementSurplusAuctionHouse,
+  PostSettlementSurplusAuctionHouse
+} from '@contracts/settlement/PostSettlementSurplusAuctionHouse.sol';
+import {SettlementSurplusAuctioneer} from '@contracts/settlement/SettlementSurplusAuctioneer.sol';
+import {ISAFEEngine, SAFEEngine} from '@contracts/SAFEEngine.sol';
+import {IAccountingEngine, AccountingEngine} from '@contracts/AccountingEngine.sol';
+import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
 
 abstract contract Hevm {
   function warp(uint256) public virtual;
-}
-
-contract AccountingEngine {
-  uint256 public contractEnabled = 1;
-  uint256 public surplusAuctionDelay;
-  uint256 public surplusAuctionAmountToSell;
-
-  address public safeEngine;
-
-  function modifyParameters(bytes32 parameter, uint256 data) external {
-    if (parameter == 'surplusAuctionDelay') surplusAuctionDelay = data;
-    else if (parameter == 'surplusAuctionAmountToSell') surplusAuctionAmountToSell = data;
-    else revert('AccountingEngine/modify-unrecognized-param');
-  }
-
-  function modifyParameters(bytes32 parameter, address data) external {
-    if (parameter == 'safeEngine') {
-      safeEngine = data;
-    } else {
-      revert('AccountingEngine/modify-unrecognized-param');
-    }
-  }
-
-  function toggle() external {
-    contractEnabled = (contractEnabled == 1) ? 0 : 1;
-  }
 }
 
 contract SingleSettlementSurplusAuctioneerTest is DSTest {
@@ -46,36 +25,61 @@ contract SingleSettlementSurplusAuctioneerTest is DSTest {
   PostSettlementSurplusAuctionHouse surplusAuctionHouse;
   AccountingEngine accountingEngine;
   SAFEEngine safeEngine;
-  DSDelegateToken protocolToken;
+  CoinForTest protocolToken;
+
+  uint256 constant ONE = 10 ** 27;
+
+  function rad(uint256 wad) internal pure returns (uint256) {
+    return wad * ONE;
+  }
 
   function setUp() public {
     hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
-    hevm.warp(604_411_200);
 
-    safeEngine = new SAFEEngine();
-    accountingEngine = new AccountingEngine();
-    protocolToken = new DSDelegateToken('', '');
+    DisableableForTest disableable1 = new DisableableForTest();
+    DisableableForTest disableable2 = new DisableableForTest();
 
-    accountingEngine.modifyParameters('safeEngine', address(safeEngine));
-    accountingEngine.modifyParameters('surplusAuctionAmountToSell', 100 ether * 10 ** 9);
-    accountingEngine.modifyParameters('surplusAuctionDelay', 3600);
+    ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
+      ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 0});
 
-    surplusAuctionHouse = new PostSettlementSurplusAuctionHouse(address(safeEngine), address(protocolToken));
+    safeEngine = new SAFEEngine(_safeEngineParams);
+
+    IAccountingEngine.AccountingEngineParams memory _accountingEngineParams = IAccountingEngine.AccountingEngineParams({
+      surplusIsTransferred: 0,
+      surplusDelay: 3600,
+      popDebtDelay: 0,
+      disableCooldown: 0,
+      surplusAmount: 100 ether * 10 ** 9,
+      surplusBuffer: 0,
+      debtAuctionMintedTokens: 0,
+      debtAuctionBidSize: 0
+    });
+
+    accountingEngine =
+      new AccountingEngine(address(safeEngine), address(disableable1), address(disableable2), _accountingEngineParams);
+    protocolToken = new CoinForTest('', '');
+
+    disableable1.addAuthorization(address(accountingEngine));
+    disableable2.addAuthorization(address(accountingEngine));
+
+    IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams memory _pssahParams = IPostSettlementSurplusAuctionHouse
+      .PostSettlementSAHParams({bidIncrease: 1.05e18, bidDuration: 3 hours, totalAuctionLength: 2 days});
+    surplusAuctionHouse =
+      new PostSettlementSurplusAuctionHouse(address(safeEngine), address(protocolToken), _pssahParams);
     surplusAuctioneer = new SettlementSurplusAuctioneer(address(accountingEngine), address(surplusAuctionHouse));
     surplusAuctionHouse.addAuthorization(address(surplusAuctioneer));
 
     safeEngine.approveSAFEModification(address(surplusAuctionHouse));
-    protocolToken.approve(address(surplusAuctionHouse));
 
     safeEngine.createUnbackedDebt(address(this), address(this), 1000 ether);
 
     protocolToken.mint(1000 ether);
-    protocolToken.setOwner(address(surplusAuctionHouse));
+    protocolToken.approve(address(surplusAuctionHouse), type(uint256).max);
   }
 
   function test_modify_parameters() public {
-    surplusAuctioneer.modifyParameters('accountingEngine', address(0x1234));
-    surplusAuctioneer.modifyParameters('surplusAuctionHouse', address(0x1234));
+    surplusAuctioneer.modifyParameters('accountingEngine', abi.encode(0x1234));
+    surplusAuctioneer.modifyParameters('surplusAuctionHouse', abi.encode(0x1234));
 
     assertEq(safeEngine.safeRights(address(surplusAuctioneer), address(surplusAuctionHouse)), 0);
     assertEq(safeEngine.safeRights(address(surplusAuctioneer), address(0x1234)), 1);
@@ -85,20 +89,20 @@ contract SingleSettlementSurplusAuctioneerTest is DSTest {
   }
 
   function testFail_auction_when_accounting_still_enabled() public {
-    safeEngine.mint(address(surplusAuctioneer), 100 ether * 10 ** 9);
+    safeEngine.createUnbackedDebt(address(0), address(surplusAuctioneer), rad(100 ether * 10 ** 9));
     surplusAuctioneer.auctionSurplus();
   }
 
   function testFail_auction_without_waiting_for_delay() public {
-    accountingEngine.toggle();
-    safeEngine.mint(address(surplusAuctioneer), 500 ether * 10 ** 9);
+    accountingEngine.disableContract();
+    safeEngine.createUnbackedDebt(address(0), address(surplusAuctioneer), rad(500 ether * 10 ** 9));
     surplusAuctioneer.auctionSurplus();
     surplusAuctioneer.auctionSurplus();
   }
 
   function test_auction_surplus() public {
-    accountingEngine.toggle();
-    safeEngine.mint(address(surplusAuctioneer), 500 ether * 10 ** 9);
+    accountingEngine.disableContract();
+    safeEngine.createUnbackedDebt(address(0), address(surplusAuctioneer), rad(500 ether * 10 ** 9));
     uint256 id = surplusAuctioneer.auctionSurplus();
     assertEq(id, 1);
     (uint256 bidAmount, uint256 amountToSell, address highBidder,,) = surplusAuctionHouse.bids(id);
@@ -108,18 +112,18 @@ contract SingleSettlementSurplusAuctioneerTest is DSTest {
   }
 
   function test_trigger_second_auction_after_delay() public {
-    accountingEngine.toggle();
-    safeEngine.mint(address(surplusAuctioneer), 500 ether * 10 ** 9);
+    accountingEngine.disableContract();
+    safeEngine.createUnbackedDebt(address(0), address(surplusAuctioneer), rad(500 ether * 10 ** 9));
     surplusAuctioneer.auctionSurplus();
-    hevm.warp(now + accountingEngine.surplusAuctionDelay());
+    hevm.warp(block.timestamp + accountingEngine.params().surplusDelay);
     surplusAuctioneer.auctionSurplus();
   }
 
   function test_nothing_to_auction() public {
-    accountingEngine.toggle();
-    safeEngine.mint(address(surplusAuctioneer), 1);
+    accountingEngine.disableContract();
+    safeEngine.createUnbackedDebt(address(0), address(surplusAuctioneer), rad(1));
     surplusAuctioneer.auctionSurplus();
-    hevm.warp(now + accountingEngine.surplusAuctionDelay());
+    hevm.warp(block.timestamp + accountingEngine.params().surplusDelay);
     uint256 id = surplusAuctioneer.auctionSurplus();
     assertEq(id, 0);
     (uint256 bidAmount, uint256 amountToSell, address highBidder,,) = surplusAuctionHouse.bids(2);

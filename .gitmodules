@@ -1,17 +1,14 @@
-[submodule "lib/ds-token"]
-	path = lib/ds-token
-	url = https://github.com/reflexer-labs/ds-token.git
 [submodule "lib/ds-test"]
-	path = lib/ds-test
-	url = https://github.com/dapphub/ds-test
+		path = lib/ds-test
+		url = https://github.com/dapphub/ds-test
 [submodule "lib/forge-std"]
-	path = lib/forge-std
-	url = https://github.com/brockelmore/forge-std
-	branch = v1.5.0
+		path = lib/forge-std
+		url = https://github.com/brockelmore/forge-std
+		branch = chore/v1.5.4
 [submodule "lib/isolmate"]
-	path = lib/isolmate
-	url = https://github.com/defi-wonderland/isolmate
+		path = lib/isolmate
+		url = https://github.com/defi-wonderland/isolmate
 [submodule "lib/prb-test"]
-	path = lib/prb-test
-	url = https://github.com/paulrberg/prb-test
-	branch = v0.5.0
+		path = lib/prb-test
+		url = https://github.com/paulrberg/prb-test
+	    branch = 0.5.5

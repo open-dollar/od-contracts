@@ -18,6 +18,7 @@
     "avoid-low-level-calls": "off",
     "no-inline-assembly": "off",
     "quotes": ["error", "single"],
+    "reason-string": "off",
     "defi-wonderland/contract-data-order": "warn",
     "defi-wonderland/enum-name-camelcase": "warn",
     "defi-wonderland/immutable-name-snakecase": "warn",

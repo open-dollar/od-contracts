@@ -1,0 +1,9 @@
+@defi-wonderland/solidity-utils/=node_modules/@defi-wonderland/solidity-utils/solidity/
+@openzeppelin/=node_modules/@openzeppelin/contracts/
+@uniswap/=node_modules/@uniswap/
+
+@contracts/=src/contracts/
+@interfaces/=src/interfaces/
+@libraries/=src/libraries/
+@script/=src/script/
+@test/=src/test/

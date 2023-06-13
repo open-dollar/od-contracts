@@ -4,6 +4,6 @@
 # Run linters on staged files
 npx lint-staged
 # Run forge snapshot to build contracts and get gas report
-forge snapshot
+FOUNDRY_FUZZ_RUNS=64 FOUNDRY_FUZZ_MAX_TEST_REJECTS=500000 FOUNDRY_FUZZ_SEED=420 forge snapshot
 # Stage the snapshot
 git add .gas-snapshot

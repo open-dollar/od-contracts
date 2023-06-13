@@ -1,49 +1,35 @@
-/// Coin.t.sol -- tests for Coin.sol
-
-// Copyright (C) 2015-2020  DappHub, LLC
-
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-pragma solidity 0.6.7;
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity 0.8.19;
 
 import 'ds-test/test.sol';
-import 'ds-token/delegate.sol';
+import {CoinForTest} from '@contracts/for-test/CoinForTest.sol';
 
-import {Coin} from '../../contracts/utils/Coin.sol';
-import {SAFEEngine} from '../../contracts/SAFEEngine.sol';
-import {AccountingEngine} from '../../contracts/AccountingEngine.sol';
-import {CollateralJoin} from '../../contracts/utils/CollateralJoin.sol';
-import {OracleRelayer} from '../../contracts/OracleRelayer.sol';
+import {SystemCoin} from '@contracts/tokens/SystemCoin.sol';
+import {ISAFEEngine, SAFEEngine} from '@contracts/SAFEEngine.sol';
+import {AccountingEngine} from '@contracts/AccountingEngine.sol';
+import {CollateralJoin} from '@contracts/utils/CollateralJoin.sol';
+import {IOracleRelayer, OracleRelayer} from '@contracts/OracleRelayer.sol';
+
+import {RAY, WAD} from '@libraries/Math.sol';
 
 contract Feed {
   bytes32 public priceFeedValue;
   bool public hasValidValue;
 
-  constructor(uint256 initPrice, bool initHas) public {
+  constructor(uint256 initPrice, bool initHas) {
     priceFeedValue = bytes32(initPrice);
     hasValidValue = initHas;
   }
 
-  function getResultWithValidity() external returns (bytes32, bool) {
+  function getResultWithValidity() external view returns (bytes32, bool) {
     return (priceFeedValue, hasValidValue);
   }
 }
 
 contract TokenUser {
-  Coin token;
+  SystemCoin token;
 
-  constructor(Coin token_) public {
+  constructor(SystemCoin token_) {
     token = token_;
   }
 
@@ -68,7 +54,7 @@ contract TokenUser {
   }
 
   function doApprove(address guy) public returns (bool) {
-    return token.approve(guy, uint256(-1));
+    return token.approve(guy, uint256(int256(-1)));
   }
 
   function doMint(uint256 wad) public {
@@ -92,7 +78,7 @@ abstract contract Hevm {
   function warp(uint256) public virtual;
 }
 
-contract CoinTest is DSTest {
+contract SystemCoinTest is DSTest {
   uint256 constant initialBalanceThis = 1000;
   uint256 constant initialBalanceCal = 100;
 
@@ -100,10 +86,10 @@ contract CoinTest is DSTest {
   OracleRelayer oracleRelayer;
 
   CollateralJoin collateralA;
-  DSDelegateToken gold;
+  CoinForTest gold;
   Feed goldFeed;
 
-  Coin token;
+  SystemCoin token;
   Hevm hevm;
 
   address user1;
@@ -136,28 +122,32 @@ contract CoinTest is DSTest {
     hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     hevm.warp(604_411_200);
 
-    safeEngine = new SAFEEngine();
-    oracleRelayer = new OracleRelayer(address(safeEngine));
+    ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
+      ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: rad(1000 ether)});
+    safeEngine = new SAFEEngine(_safeEngineParams);
+    IOracleRelayer.OracleRelayerParams memory _oracleRelayerParams =
+      IOracleRelayer.OracleRelayerParams({redemptionRateUpperBound: RAY * WAD, redemptionRateLowerBound: 1});
+    oracleRelayer = new OracleRelayer(address(safeEngine), _oracleRelayerParams);
     safeEngine.addAuthorization(address(oracleRelayer));
 
-    gold = new DSDelegateToken('GEM', 'GEM');
+    gold = new CoinForTest('GEM', 'GEM');
     gold.mint(1000 ether);
     safeEngine.initializeCollateralType('gold');
     goldFeed = new Feed(1 ether, true);
-    oracleRelayer.modifyParameters('gold', 'orcl', address(goldFeed));
-    oracleRelayer.modifyParameters('gold', 'safetyCRatio', 1_000_000_000_000_000_000_000_000_000);
-    oracleRelayer.modifyParameters('gold', 'liquidationCRatio', 1_000_000_000_000_000_000_000_000_000);
+    oracleRelayer.modifyParameters('gold', 'oracle', abi.encode(goldFeed));
+    oracleRelayer.modifyParameters('gold', 'safetyCRatio', abi.encode(1_000_000_000_000_000_000_000_000_000));
+    oracleRelayer.modifyParameters('gold', 'liquidationCRatio', abi.encode(1_000_000_000_000_000_000_000_000_000));
     oracleRelayer.updateCollateralPrice('gold');
     collateralA = new CollateralJoin(address(safeEngine), 'gold', address(gold));
 
-    safeEngine.modifyParameters('gold', 'debtCeiling', rad(1000 ether));
-    safeEngine.modifyParameters('globalDebtCeiling', rad(1000 ether));
+    safeEngine.modifyParameters('gold', 'debtCeiling', abi.encode(rad(1000 ether)));
 
-    gold.approve(address(collateralA));
-    gold.approve(address(safeEngine));
+    gold.addAuthorization(address(collateralA));
+    gold.addAuthorization(address(safeEngine));
 
     safeEngine.addAuthorization(address(collateralA));
 
+    gold.approve(address(collateralA), uint256(int256(-1)));
     collateralA.join(address(this), 1000 ether);
 
     token = createToken();
@@ -182,30 +172,26 @@ contract CoinTest is DSTest {
   }
 
   function lockedCollateral(bytes32 collateralType, address safe) internal view returns (uint256) {
-    (uint256 lockedCollateral_, uint256 generatedDebt_) = safeEngine.safes(collateralType, safe);
-    generatedDebt_;
+    uint256 lockedCollateral_ = safeEngine.safes(collateralType, safe).lockedCollateral;
     return lockedCollateral_;
   }
 
-  function art(bytes32 collateralType, address urn) internal view returns (uint256) {
-    (uint256 lockedCollateral_, uint256 generatedDebt_) = safeEngine.safes(collateralType, urn);
-    lockedCollateral_;
+  function generatedDebt(bytes32 collateralType, address urn) internal view returns (uint256) {
+    uint256 generatedDebt_ = safeEngine.safes(collateralType, urn).generatedDebt;
     return generatedDebt_;
   }
 
-  function createToken() internal returns (Coin) {
-    return new Coin('Rai', 'RAI', 99);
+  function createToken() internal returns (SystemCoin) {
+    return new SystemCoin('Hai', 'HAI');
   }
 
   function testSetup() public {
     assertEq(oracleRelayer.redemptionPrice(), 10 ** 27);
     assertEq(token.balanceOf(self), initialBalanceThis);
     assertEq(token.balanceOf(cal), initialBalanceCal);
-    assertEq(token.chainId(), 99);
-    assertEq(keccak256(abi.encodePacked(token.version())), keccak256(abi.encodePacked('1')));
     token.mint(self, 0);
-    (,, uint256 safetyPrice,,,) = safeEngine.collateralTypes('gold');
-    assertEq(safetyPrice, ray(1 ether));
+    uint256 _safetyPrice = safeEngine.cData('gold').safetyPrice;
+    assertEq(_safetyPrice, ray(1 ether));
   }
 
   function testSetupPrecondition() public {
@@ -348,14 +334,14 @@ contract CoinTest is DSTest {
 
   function testTrusting() public {
     assertEq(token.allowance(self, user2), 0);
-    token.approve(user2, uint256(-1));
-    assertEq(token.allowance(self, user2), uint256(-1));
+    token.approve(user2, uint256(int256(-1)));
+    assertEq(token.allowance(self, user2), uint256(int256(-1)));
     token.approve(user2, 0);
     assertEq(token.allowance(self, user2), 0);
   }
 
   function testTrustedTransferFrom() public {
-    token.approve(user1, uint256(-1));
+    token.approve(user1, uint256(int256(-1)));
     TokenUser(user1).doTransferFrom(self, user2, 200);
     assertEq(token.balanceOf(user2), 200);
   }
@@ -373,15 +359,15 @@ contract CoinTest is DSTest {
   function testApproveWillNotModifyAllowance() public {
     assertEq(token.allowance(self, user1), 0);
     assertEq(token.balanceOf(user1), 0);
-    token.approve(user1, uint256(-1));
-    assertEq(token.allowance(self, user1), uint256(-1));
+    token.approve(user1, uint256(int256(-1)));
+    assertEq(token.allowance(self, user1), uint256(int256(-1)));
     TokenUser(user1).doTransferFrom(self, user1, 1000);
     assertEq(token.balanceOf(user1), 1000);
-    assertEq(token.allowance(self, user1), uint256(-1));
+    assertEq(token.allowance(self, user1), uint256(int256(-1)));
   }
 
   /* NOTE: commenting failing test
-    function testCoinAddress() public {
+    function testSystemCoinAddress() public {
         //The coin address generated by hevm
         //used for signature generation testing
         assertEq(address(token), address(0x0b7108E278c2E77E4e4f5c93d9E5e9A11AC837FC));
@@ -394,38 +380,38 @@ contract CoinTest is DSTest {
     }
     */
 
-  //TODO: remake with v,r,s for coin now that we changed the DOMAIN SEPARATOR because of the dai->coin renaming
+  // TODO: remake with v,r,s for coin now that we changed the DOMAIN SEPARATOR because of the dai->coin renaming
 
   // function testPermit() public {
   //     assertEq(token.nonces(cal), 0);
   //     assertEq(token.allowance(cal, del), 0);
   //     token.permit(cal, del, 0, 0, true, v, r, s);
-  //     assertEq(token.allowance(cal, del),uint(-1));
+  //     assertEq(token.allowance(cal, del),uint256(int256(-1)));
   //     assertEq(token.nonces(cal),1);
   // }
 
-  function testFailPermitAddress0() public {
-    v = 0;
-    token.permit(address(0), del, 0, 0, true, v, r, s);
-  }
+  // function testFailPermitAddress0() public {
+  //   v = 0;
+  //   token.permit(address(0), del, 0, 0, true, v, r, s);
+  // }
 
   //TODO: remake with _v,_r,_s for coin now that we changed the DOMAIN SEPARATOR because of the dai->coin renaming
 
   // function testPermitWithExpiry() public {
-  //     assertEq(now, 604411200);
+  //     assertEq(block.timestamp, 604411200);
   //     token.permit(cal, del, 0, 604411200 + 1 hours, true, _v, _r, _s);
-  //     assertEq(token.allowance(cal, del),uint(-1));
+  //     assertEq(token.allowance(cal, del),uint256(int256(-1)));
   //     assertEq(token.nonces(cal),1);
   // }
 
-  function testFailPermitWithExpiry() public {
-    hevm.warp(now + 2 hours);
-    assertEq(now, 604_411_200 + 2 hours);
-    token.permit(cal, del, 0, 1, true, _v, _r, _s);
-  }
+  // function testFailPermitWithExpiry() public {
+  //   hevm.warp(block.timestamp + 2 hours);
+  //   assertEq(block.timestamp, 604_411_200 + 2 hours);
+  //   token.permit(cal, del, 0, 1, true, _v, _r, _s);
+  // }
 
-  function testFailReplay() public {
-    token.permit(cal, del, 0, 0, true, v, r, s);
-    token.permit(cal, del, 0, 0, true, v, r, s);
-  }
+  // function testFailReplay() public {
+  //   token.permit(cal, del, 0, 0, true, v, r, s);
+  //   token.permit(cal, del, 0, 0, true, v, r, s);
+  // }
 }

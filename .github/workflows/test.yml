@@ -50,7 +50,10 @@ jobs:
       - name: Install forge dependencies
         run: forge install
 
-      - name: Precompile using 0.6.7 and via-ir=false
+      - name: Install yarn dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Precompile using 0.8.19 and via-ir=false
         run: yarn build
 
       - name: "Create env file"
@@ -58,6 +61,8 @@ jobs:
           touch .env
           echo OP_MAINNET_RPC="${{ secrets.OP_MAINNET_RPC }}" >> .env
           echo OP_GOERLI_RPC="${{ secrets.OP_GOERLI_RPC }}" >> .env
+          echo OP_MAINNET_DEPLOYER_PK="${{ secrets.TEST_DEPLOYER_PK }}" >> .env
+          echo OP_GOERLI_DEPLOYER_PK="${{ secrets.TEST_DEPLOYER_PK }}" >> .env
           cat .env
 
       - name: Run tests
