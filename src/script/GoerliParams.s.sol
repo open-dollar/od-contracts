@@ -8,6 +8,8 @@ abstract contract GoerliParams is Params, Contracts {
   uint256 constant OP_GOERLI_OP_ETH_PRICE_FEED = 0.001e18;
 
   function _getEnvironmentParams() internal override {
+    governor = 0x8125aAa8F7912aEb500553a5b1710BB16f7A6C65;
+
     _safeEngineParams = ISAFEEngine.SAFEEngineParams({
       safeDebtCeiling: 10_000_000 * WAD, // 10M COINs
       globalDebtCeiling: 10_000_000_000 * RAD // 10B COINs
@@ -41,11 +43,11 @@ abstract contract GoerliParams is Params, Contracts {
     _collateralAuctionHouseSystemCoinParams = ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams({
       lowerSystemCoinDeviation: WAD, // 0% deviation
       upperSystemCoinDeviation: WAD, // 0% deviation
-      minSystemCoinDeviation: 0.999e18 // 0.1% deviation
+      minSystemCoinDeviation: WAD // 0% deviation
     });
 
     _liquidationEngineParams = ILiquidationEngine.LiquidationEngineParams({
-      onAuctionSystemCoinLimit: 10_000 * RAD // 10_000 COINs
+      onAuctionSystemCoinLimit: 500_000 * RAD // 500k COINs
     });
 
     _stabilityFeeTreasuryParams = IStabilityFeeTreasury.StabilityFeeTreasuryParams({

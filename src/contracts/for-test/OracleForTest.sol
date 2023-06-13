@@ -14,18 +14,18 @@ contract OracleForTest is IBaseOracle {
     price = _price;
   }
 
-  function getResultWithValidity() public view returns (uint256 _price, bool _validity) {
+  function getResultWithValidity() external view returns (uint256 _price, bool _validity) {
     _checkThrowsError();
     _price = price;
     _validity = validity;
   }
 
-  function setPriceAndValidity(uint256 _price, bool _validity) public {
+  function setPriceAndValidity(uint256 _price, bool _validity) public virtual {
     price = _price;
     validity = _validity;
   }
 
-  function priceSource() public view returns (address) {
+  function priceSource() external view returns (address) {
     _checkThrowsError();
     return address(this);
   }
@@ -34,7 +34,7 @@ contract OracleForTest is IBaseOracle {
     return price;
   }
 
-  function setThrowsError(bool _throwError) external {
+  function setThrowsError(bool _throwError) public virtual {
     throwsError = _throwError;
   }
 

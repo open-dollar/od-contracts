@@ -73,11 +73,8 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
   function initializeCollateralType(bytes32 _cType) external isAuthorized {
     if (!_collateralList.add(_cType)) revert CollateralTypeAlreadyInitialized();
 
-    _cData[_cType] = TaxCollectorCollateralData({
-      nextStabilityFee: _params.globalStabilityFee,
-      updateTime: block.timestamp,
-      secondaryReceiverAllotedTax: 0
-    });
+    _cData[_cType] =
+      TaxCollectorCollateralData({nextStabilityFee: RAY, updateTime: block.timestamp, secondaryReceiverAllotedTax: 0});
 
     emit InitializeCollateralType(_cType);
   }

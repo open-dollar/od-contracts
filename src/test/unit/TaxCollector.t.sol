@@ -291,11 +291,10 @@ contract Unit_TaxCollector_InitializeCollateralType is Base {
     taxCollector.initializeCollateralType(_cType);
   }
 
-  function test_Set_CollateralTypeStabilityFee(bytes32 _cType, uint256 _globalStabilityFee) public happyPath {
-    _mockGlobalStabilityFee(_globalStabilityFee);
+  function test_Set_CollateralTypeStabilityFee(bytes32 _cType) public happyPath {
     taxCollector.initializeCollateralType(_cType);
 
-    assertEq(taxCollector.cData(_cType).nextStabilityFee, _globalStabilityFee);
+    assertEq(taxCollector.cData(_cType).nextStabilityFee, RAY);
   }
 
   function test_Set_CollateralTypeUpdateTime(bytes32 _cType) public happyPath {
