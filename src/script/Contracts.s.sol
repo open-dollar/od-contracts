@@ -31,6 +31,7 @@ import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {ERC20ForTest, ERC20} from '@contracts/for-test/ERC20ForTest.sol';
 import {CoinForTest} from '@contracts/for-test/CoinForTest.sol';
 import {OracleForTest} from '@contracts/for-test/OracleForTest.sol';
+import {OracleForTestnet} from '@contracts/for-test/OracleForTestnet.sol';
 import {ETHJoinForTest} from '@contracts/for-test/ETHJoinForTest.sol';
 
 import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
@@ -88,4 +89,9 @@ abstract contract Contracts {
   HaiProxyRegistry public proxyRegistry;
   HaiProxyFactory public dsProxyFactory;
   HaiSafeManager public safeManager;
+
+  // --- For test contracts ---
+  OracleForTestnet public haiOracleForTest;
+  OracleForTestnet public ethUsdOracleForTest;
+  OracleForTestnet public opEthOracleForTest;
 }

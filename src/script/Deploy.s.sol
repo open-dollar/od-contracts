@@ -90,7 +90,7 @@ abstract contract Deploy is Params, Script, Contracts {
   }
 
   function revokeTo(address _governor) public {
-    if (_governor == deployer || _governor == address(0)) return;
+    if (!_shouldRevoke()) return;
 
     // base contracts
     safeEngine.addAuthorization(_governor);
@@ -120,6 +120,12 @@ abstract contract Deploy is Params, Script, Contracts {
     protocolToken.addAuthorization(_governor);
     protocolToken.removeAuthorization(deployer);
 
+    // pid controller
+    pidController.addAuthorization(_governor);
+    pidController.removeAuthorization(deployer);
+    pidRateSetter.addAuthorization(_governor);
+    pidRateSetter.removeAuthorization(deployer);
+
     // token adapters
     coinJoin.addAuthorization(_governor);
     coinJoin.removeAuthorization(deployer);
@@ -135,6 +141,10 @@ abstract contract Deploy is Params, Script, Contracts {
       collateralAuctionHouse[_cType].addAuthorization(_governor);
       collateralAuctionHouse[_cType].removeAuthorization(deployer);
     }
+
+    // global settlement
+    globalSettlement.addAuthorization(_governor);
+    globalSettlement.removeAuthorization(deployer);
   }
 
   function deployContracts() public {
@@ -232,6 +242,8 @@ abstract contract Deploy is Params, Script, Contracts {
     collateralAuctionHouse[_cType].modifyParameters('collateralFSM', abi.encode(oracle[_cType]));
 
     // setup params
+    // NOTE: omitted at broadcast/420/deployment.json
+    // TODO: failing bc out of gas (script has same timestamp and doesn't calculate correctly the gas limit)
     taxCollector.taxSingle(_cType);
 
     // setup global settlement
@@ -271,6 +283,10 @@ abstract contract Deploy is Params, Script, Contracts {
     safeManager = new HaiSafeManager(_safeEngine);
     proxyActions = new BasicActions();
   }
+
+  function _shouldRevoke() internal view returns (bool) {
+    return governor != deployer && governor != address(0);
+  }
 }
 
 contract DeployMainnet is MainnetParams, Deploy {
@@ -294,7 +310,7 @@ contract DeployMainnet is MainnetParams, Deploy {
     oracle[WETH] = new DelayedOracle(_ethUSDPriceFeed, 1 hours);
     oracle[WSTETH] = new DelayedOracle(_wstethUSDPriceFeed, 1 hours);
 
-    // TODO: change collateral => ERC20ForTest for IERC20
+    // TODO: change ERC20ForTest for IERC20(WSTETH) (use whale for tests)
     collateral[WETH] = IERC20Metadata(OP_WETH);
     collateral[WSTETH] = ERC20ForTest(OP_WSTETH);
 
@@ -313,10 +329,15 @@ contract DeployGoerli is GoerliParams, Deploy {
 
   function _setupEnvironment() internal virtual override {
     // Setup oracle feeds
-    oracle[HAI] = new OracleForTest(HAI_INITIAL_PRICE); // 1 HAI = 1 USD
+
+    oracle[HAI] = new OracleForTestnet(HAI_INITIAL_PRICE); // 1 HAI = 1 USD
+    haiOracleForTest = OracleForTestnet(address(oracle[HAI]));
 
     IBaseOracle _ethUSDPriceFeed = new ChainlinkRelayer(OP_GOERLI_CHAINLINK_ETH_USD_FEED, 1 hours);
-    OracleForTest _opETHPriceFeed = new OracleForTest(OP_GOERLI_OP_ETH_PRICE_FEED);
+
+    OracleForTestnet _opETHPriceFeed = new OracleForTestnet(OP_GOERLI_OP_ETH_PRICE_FEED);
+    opEthOracleForTest = OracleForTestnet(address(_opETHPriceFeed));
+
     DenominatedOracle _opUSDPriceFeed = new DenominatedOracle({
       _priceSource: _opETHPriceFeed,
       _denominationPriceSource: _ethUSDPriceFeed,
@@ -334,5 +355,15 @@ contract DeployGoerli is GoerliParams, Deploy {
     collateralTypes.push(OP);
 
     _getEnvironmentParams();
+
+    // Revoke oracles authorizations
+
+    if (_shouldRevoke()) {
+      haiOracleForTest.addAuthorization(governor);
+      opEthOracleForTest.addAuthorization(governor);
+
+      haiOracleForTest.removeAuthorization(deployer);
+      opEthOracleForTest.removeAuthorization(deployer);
+    }
   }
 }

@@ -4,9 +4,10 @@ pragma solidity 0.8.19;
 import {HaiTest} from '@test/utils/HaiTest.t.sol';
 import {Deploy, DeployMainnet, DeployGoerli} from '@script/Deploy.s.sol';
 
-import {WETH, WSTETH} from '@script/Params.s.sol';
+import {ParamSetter, WETH, WSTETH} from '@script/Params.s.sol';
 
 import {Contracts} from '@script/Contracts.s.sol';
+import {GoerliDeployment} from '@script/GoerliDeployment.s.sol';
 
 abstract contract CommonDeploymentTest is HaiTest, Deploy {
   // SAFEEngine
@@ -19,9 +20,17 @@ abstract contract CommonDeploymentTest is HaiTest, Deploy {
     assert(safeEngine.canModifySAFE(address(accountingEngine), address(surplusAuctionHouse)));
   }
 
+  function test_SAFEEngine_Params() public view {
+    ParamSetter._checkParams(address(safeEngine), abi.encode(_safeEngineParams));
+  }
+
   // AccountingEngine
   function test_AccountingEntine_Auth() public {
     assertEq(accountingEngine.authorizedAccounts(address(liquidationEngine)), 1);
+  }
+
+  function test_AccountingEntine_Params() public view {
+    ParamSetter._checkParams(address(accountingEngine), abi.encode(_accountingEngineParams));
   }
 
   // Coin (system)
@@ -34,9 +43,17 @@ abstract contract CommonDeploymentTest is HaiTest, Deploy {
     assertEq(surplusAuctionHouse.authorizedAccounts(address(accountingEngine)), 1);
   }
 
+  function test_SurplusAuctionHouse_Params() public view {
+    ParamSetter._checkParams(address(surplusAuctionHouse), abi.encode(_surplusAuctionHouseParams));
+  }
+
   // DebtAuctionHouse
   function test_DebtAuctionHouse_Auth() public {
     assertEq(debtAuctionHouse.authorizedAccounts(address(accountingEngine)), 1);
+  }
+
+  function test_DebtAuctionHouse_Params() public view {
+    ParamSetter._checkParams(address(debtAuctionHouse), abi.encode(_debtAuctionHouseParams));
   }
 
   function test_CollateralAuctionHouse_Auth() public {
@@ -46,35 +63,49 @@ abstract contract CommonDeploymentTest is HaiTest, Deploy {
     }
   }
 
-  function test_ETHCollateralAuctionHouse_Auth() public {
+  function test_CollateralAuctionHouse_Params() public view {
     for (uint256 _i; _i < collateralTypes.length; _i++) {
       bytes32 _cType = collateralTypes[_i];
-      assertEq(collateralAuctionHouse[_cType].authorizedAccounts(address(liquidationEngine)), 1);
+      ParamSetter._checkParams(
+        address(collateralAuctionHouse[_cType]), abi.encode(_collateralAuctionHouseSystemCoinParams)
+      );
+      // TODO: manually test CParams (bc is called without the cType)
+      // ParamSetter._checkCParams(address(collateralAuctionHouse[_cType]), abi.encode(_collateralAuctionHouseCParams[_cType]), _cType);
     }
   }
 
   function test_Revoke_Auth() public {
+    _test_Authorizations(deployer, false);
+  }
+
+  function test_Grant_Auth() public {
+    _test_Authorizations(governor, true);
+  }
+
+  function _test_Authorizations(address _target, bool _shouldHavePermissions) internal {
+    uint256 _permission = _shouldHavePermissions ? 1 : 0;
+
     // base contracts
-    assertEq(safeEngine.authorizedAccounts(deployer), 0);
-    assertEq(oracleRelayer.authorizedAccounts(deployer), 0);
-    assertEq(taxCollector.authorizedAccounts(deployer), 0);
-    assertEq(stabilityFeeTreasury.authorizedAccounts(deployer), 0);
-    assertEq(liquidationEngine.authorizedAccounts(deployer), 0);
-    assertEq(accountingEngine.authorizedAccounts(deployer), 0);
-    assertEq(surplusAuctionHouse.authorizedAccounts(deployer), 0);
-    assertEq(debtAuctionHouse.authorizedAccounts(deployer), 0);
+    assertEq(safeEngine.authorizedAccounts(_target), _permission);
+    assertEq(oracleRelayer.authorizedAccounts(_target), _permission);
+    assertEq(taxCollector.authorizedAccounts(_target), _permission);
+    assertEq(stabilityFeeTreasury.authorizedAccounts(_target), _permission);
+    assertEq(liquidationEngine.authorizedAccounts(_target), _permission);
+    assertEq(accountingEngine.authorizedAccounts(_target), _permission);
+    assertEq(surplusAuctionHouse.authorizedAccounts(_target), _permission);
+    assertEq(debtAuctionHouse.authorizedAccounts(_target), _permission);
 
     // tokens
-    assertEq(systemCoin.authorizedAccounts(deployer), 0);
-    assertEq(protocolToken.authorizedAccounts(deployer), 0);
+    assertEq(systemCoin.authorizedAccounts(_target), _permission);
+    assertEq(protocolToken.authorizedAccounts(_target), _permission);
 
     // token adapters and collateral auction houses
-    assertEq(coinJoin.authorizedAccounts(deployer), 0);
+    assertEq(coinJoin.authorizedAccounts(_target), _permission);
 
     for (uint256 _i; _i < collateralTypes.length; _i++) {
       bytes32 _cType = collateralTypes[_i];
-      assertEq(collateralJoin[_cType].authorizedAccounts(deployer), 0);
-      assertEq(collateralAuctionHouse[_cType].authorizedAccounts(deployer), 0);
+      assertEq(collateralJoin[_cType].authorizedAccounts(_target), _permission);
+      assertEq(collateralAuctionHouse[_cType].authorizedAccounts(_target), _permission);
     }
   }
 }
@@ -106,5 +137,20 @@ contract E2EDeploymentGoerliTest is DeployGoerli, CommonDeploymentTest {
 
   function _setupEnvironment() internal override(DeployGoerli, Deploy) {
     super._setupEnvironment();
+  }
+}
+
+contract GoerliDeploymentTest is GoerliDeployment, CommonDeploymentTest {
+  function setUp() public {
+    vm.createSelectFork(vm.rpcUrl('goerli'), GOERLI_DEPLOYMENT_BLOCK);
+    _getEnvironmentParams();
+  }
+
+  function test_Oracles_Auth() public {
+    assertEq(haiOracleForTest.authorizedAccounts(deployer), 0);
+    assertEq(haiOracleForTest.authorizedAccounts(governor), 1);
+
+    assertEq(opEthOracleForTest.authorizedAccounts(deployer), 0);
+    assertEq(opEthOracleForTest.authorizedAccounts(governor), 1);
   }
 }
