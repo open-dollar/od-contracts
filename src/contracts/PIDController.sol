@@ -23,7 +23,7 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
   using Assertions for address;
 
   uint256 internal constant _NEGATIVE_RATE_LIMIT = RAY - 1;
-  uint256 internal constant _POSITIVE_RATE_LIMIT = type(uint256).max - RAY - 1;
+  uint256 internal constant _POSITIVE_RATE_LIMIT = uint256(type(int256).max);
 
   // --- Registry ---
   /// @inheritdoc IPIDController
@@ -77,7 +77,7 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
     int256 _boundedPIOutput = _getBoundedPIOutput(_piOutput);
 
     // feedbackOutputLowerBound will never be less than NEGATIVE_RATE_LIMIT : RAY - 1,
-    // and feedbackOutputUpperBound will never be greater than POSITIVE_RATE_LIMIT : type(uint256).max - RAY - 1
+    // and feedbackOutputUpperBound will never be greater than POSITIVE_RATE_LIMIT : uint256(type(int256).max)
     // boundedPIOutput can be safely added to RAY
     _newRedemptionRate = _boundedPIOutput < -int256(RAY) ? _NEGATIVE_RATE_LIMIT : RAY.add(_boundedPIOutput);
 
@@ -274,7 +274,7 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
   function _validateParameters() internal view override {
     _params.integralPeriodSize.assertNonNull();
     _params.noiseBarrier.assertNonNull().assertLtEq(WAD);
-    _params.feedbackOutputUpperBound.assertNonNull().assertLt(_POSITIVE_RATE_LIMIT);
+    _params.feedbackOutputUpperBound.assertNonNull().assertLtEq(_POSITIVE_RATE_LIMIT);
     _params.feedbackOutputLowerBound.assertLt(0).assertGtEq(-int256(_NEGATIVE_RATE_LIMIT));
     _params.perSecondCumulativeLeak.assertLtEq(RAY);
 
