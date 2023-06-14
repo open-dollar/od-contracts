@@ -69,6 +69,11 @@ abstract contract Common is HaiTest, DeployForTest {
   function setUp() public {
     run();
 
+    for (uint256 i = 0; i < collateralTypes.length; i++) {
+      bytes32 _cType = collateralTypes[i];
+      taxCollector.taxSingle(_cType);
+    }
+
     vm.label(deployer, 'Deployer');
     vm.label(alice, 'Alice');
     vm.label(bob, 'Bob');

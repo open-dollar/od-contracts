@@ -241,11 +241,6 @@ abstract contract Deploy is Params, Script, Contracts {
     collateralAuctionHouse[_cType].modifyParameters('oracleRelayer', abi.encode(oracleRelayer));
     collateralAuctionHouse[_cType].modifyParameters('collateralFSM', abi.encode(oracle[_cType]));
 
-    // setup params
-    // NOTE: omitted at broadcast/420/deployment.json
-    // TODO: failing bc out of gas (script has same timestamp and doesn't calculate correctly the gas limit)
-    taxCollector.taxSingle(_cType);
-
     // setup global settlement
     collateralAuctionHouse[_cType].addAuthorization(address(globalSettlement)); // terminateAuctionPrematurely
 
