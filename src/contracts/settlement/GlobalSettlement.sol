@@ -234,10 +234,11 @@ contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettl
   function freeCollateral(bytes32 _cType) external whenDisabled {
     ISAFEEngine.SAFE memory _safeData = safeEngine.safes(_cType, msg.sender);
     if (_safeData.generatedDebt != 0) revert GS_SafeDebtNotZero();
+    int256 _lockedCollateral = -_safeData.lockedCollateral.toInt();
     safeEngine.confiscateSAFECollateralAndDebt(
-      _cType, msg.sender, msg.sender, address(accountingEngine), -_safeData.lockedCollateral.toInt(), 0
+      _cType, msg.sender, msg.sender, address(accountingEngine), _lockedCollateral, 0
     );
-    emit FreeCollateral(_cType, msg.sender, -_safeData.lockedCollateral.toInt());
+    emit FreeCollateral(_cType, msg.sender, _lockedCollateral);
   }
 
   /**

@@ -17,6 +17,7 @@ import {Assertions} from '@libraries/Assertions.sol';
 import {Math, RAY, WAD, MAX_RAD} from '@libraries/Math.sol';
 
 contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyGuard, ILiquidationEngine {
+  using Math for uint256;
   using Encoding for bytes;
   using Assertions for uint256;
 
@@ -171,12 +172,9 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
         Math.min(_safeData.lockedCollateral, _safeData.lockedCollateral * _limitAdjustedDebt / _safeData.generatedDebt);
 
       require(_collateralToSell > 0, 'LiquidationEngine/null-collateral-to-sell');
-      require(
-        _collateralToSell <= 2 ** 255 && _limitAdjustedDebt <= 2 ** 255, 'LiquidationEngine/collateral-or-debt-overflow'
-      );
 
       safeEngine.confiscateSAFECollateralAndDebt(
-        _cType, _safe, address(this), address(accountingEngine), -int256(_collateralToSell), -int256(_limitAdjustedDebt)
+        _cType, _safe, address(this), address(accountingEngine), -_collateralToSell.toInt(), -_limitAdjustedDebt.toInt()
       );
       accountingEngine.pushDebtToQueue(_limitAdjustedDebt * _safeEngCData.accumulatedRate);
 

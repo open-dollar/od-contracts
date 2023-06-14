@@ -246,6 +246,7 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
   function _distributeTax(bytes32 _cType, address _receiver, uint256 _debtAmount, int256 _deltaRate) internal {
     // Check how many coins the receiver has and negate the value
     int256 _coinBalance = -safeEngine.coinBalance(_receiver).toInt();
+    int256 __debtAmount = _debtAmount.toInt();
 
     TaxReceiver memory _taxReceiver = _secondaryTaxReceivers[_cType][_receiver];
     // Compute the % out of SF that should be allocated to the receiver
@@ -257,8 +258,8 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
      * If SF is negative and a tax receiver doesn't have enough coins to absorb the loss,
      *           compute a new tax cut that can be absorbed
      */
-    _currentTaxCut = _debtAmount.mul(_currentTaxCut) < 0 && _coinBalance > _debtAmount.mul(_currentTaxCut)
-      ? _coinBalance / int256(_debtAmount)
+    _currentTaxCut = __debtAmount * _currentTaxCut < 0 && _coinBalance > __debtAmount * _currentTaxCut
+      ? _coinBalance / __debtAmount
       : _currentTaxCut;
 
     /**

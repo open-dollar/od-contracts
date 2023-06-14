@@ -21,7 +21,7 @@ contract Base is HaiTest {
   using stdStorage for StdStorage;
 
   uint256 internal constant NEGATIVE_RATE_LIMIT = RAY - 1;
-  uint256 internal constant POSITIVE_RATE_LIMIT = type(uint256).max - RAY - 1;
+  uint256 internal constant POSITIVE_RATE_LIMIT = uint256(type(int256).max);
   int256 constant PID_INTEGRAL_GAIN = 1e18;
   int256 constant PID_PROPORTIONAL_GAIN = 1e18;
   uint256 constant PID_PER_SECOND_CUMULATIVE_LEAK = 999_997_208_243_937_652_252_849_536; // 1% per hour
@@ -297,12 +297,12 @@ contract Unit_PIDController_Constructor is Base {
   }
 
   function test_Revert_Invalid_FeedbackOutputUpperBound(uint256 _feedbackUpperBound) public {
-    vm.assume(_feedbackUpperBound > 0 && _feedbackUpperBound > type(uint256).max - RAY - 1);
+    vm.assume(_feedbackUpperBound > 0 && _feedbackUpperBound > POSITIVE_RATE_LIMIT);
     params.feedbackOutputUpperBound = _feedbackUpperBound;
 
     vm.expectRevert(
       abi.encodeWithSelector(
-        Assertions.NotLesserThan.selector, params.feedbackOutputUpperBound, type(uint256).max - RAY - 1
+        Assertions.NotLesserOrEqualThan.selector, params.feedbackOutputUpperBound, POSITIVE_RATE_LIMIT
       )
     );
 
@@ -319,11 +319,13 @@ contract Unit_PIDController_Constructor is Base {
   }
 
   function test_Revert_Invalid_FeedbackOutputLowerBound(int256 _feedbackLowerBound) public {
-    vm.assume(_feedbackLowerBound < -(int256(RAY - 1)));
+    vm.assume(_feedbackLowerBound < -(int256(NEGATIVE_RATE_LIMIT)));
     params.feedbackOutputLowerBound = _feedbackLowerBound;
 
     vm.expectRevert(
-      abi.encodeWithSelector(Assertions.IntNotGreaterOrEqualThan.selector, _feedbackLowerBound, -(int256(RAY - 1)))
+      abi.encodeWithSelector(
+        Assertions.IntNotGreaterOrEqualThan.selector, _feedbackLowerBound, -(int256(NEGATIVE_RATE_LIMIT))
+      )
     );
 
     _createPidController(IPIDController.DeviationObservation(0, 0, 0));
@@ -416,14 +418,14 @@ contract Unit_PIDController_GetBoundedRedemptionRate is Base {
 
   modifier negativeBoundedPIOutput(int256 _boundedPIOutput) {
     // Checks that boundedPIOutput is never less than NEGATIVE_RATE_LIMIT, the setters should prevent this
-    vm.assume(_boundedPIOutput < 0 && _boundedPIOutput >= -int256(RAY - 1));
+    vm.assume(_boundedPIOutput < 0 && _boundedPIOutput >= -int256(NEGATIVE_RATE_LIMIT));
     _mockBoundedPIOutput(_boundedPIOutput);
     _;
   }
 
   modifier positiveBoundedPIOutput(int256 _boundedPIOutput) {
-    // Checks that boundedPIOutput is never greater or equal than POSITIVE_RATE_LIMIT, the setters should prevent this
-    vm.assume(_boundedPIOutput >= 0 && uint256(_boundedPIOutput) < type(uint256).max - RAY - 1);
+    // Checks that boundedPIOutput is never greater than POSITIVE_RATE_LIMIT, the setters should prevent this
+    vm.assume(_boundedPIOutput >= 0 && uint256(_boundedPIOutput) <= POSITIVE_RATE_LIMIT);
     _mockBoundedPIOutput(_boundedPIOutput);
     _;
   }
@@ -1298,8 +1300,8 @@ contract Unit_PIDController_ModifyParameters is Base {
     vm.assume(_fuzzSeedProposer != address(0));
     vm.assume(_fuzz.noiseBarrier > 0 && _fuzz.noiseBarrier <= WAD);
     vm.assume(_fuzz.integralPeriodSize > 0);
-    vm.assume(_fuzz.feedbackOutputUpperBound > 0 && _fuzz.feedbackOutputUpperBound < type(uint256).max - RAY - 1);
-    vm.assume(_fuzz.feedbackOutputLowerBound > -int256(RAY - 1) && _fuzz.feedbackOutputLowerBound < 0);
+    vm.assume(_fuzz.feedbackOutputUpperBound > 0 && _fuzz.feedbackOutputUpperBound < POSITIVE_RATE_LIMIT);
+    vm.assume(_fuzz.feedbackOutputLowerBound > -int256(NEGATIVE_RATE_LIMIT) && _fuzz.feedbackOutputLowerBound < 0);
     vm.assume(_fuzz.perSecondCumulativeLeak <= RAY);
     vm.assume(_fuzzGains.kp >= -int256(WAD) && _fuzzGains.kp <= int256(WAD));
     vm.assume(_fuzzGains.ki >= -int256(WAD) && _fuzzGains.ki <= int256(WAD));
@@ -1358,11 +1360,9 @@ contract Unit_PIDController_ModifyParameters is Base {
   function test_Revert_InvalidFeedbackOutputUpperBound(uint256 _feedbackOutputUpperBound) public authorized {
     if (_feedbackOutputUpperBound == 0) {
       vm.expectRevert(Assertions.NullAmount.selector);
-    } else if (_feedbackOutputUpperBound >= type(uint256).max - RAY - 1) {
+    } else if (_feedbackOutputUpperBound > POSITIVE_RATE_LIMIT) {
       vm.expectRevert(
-        abi.encodeWithSelector(
-          Assertions.NotLesserThan.selector, _feedbackOutputUpperBound, type(uint256).max - RAY - 1
-        )
+        abi.encodeWithSelector(Assertions.NotLesserOrEqualThan.selector, _feedbackOutputUpperBound, POSITIVE_RATE_LIMIT)
       );
     }
 
@@ -1372,10 +1372,10 @@ contract Unit_PIDController_ModifyParameters is Base {
   function test_Revert_FeedbackOutputLowerBound(int256 _feedbackOutputLowerBound) public authorized {
     if (_feedbackOutputLowerBound >= 0) {
       vm.expectRevert(abi.encodeWithSelector(Assertions.IntNotLesserThan.selector, _feedbackOutputLowerBound, 0));
-    } else if (_feedbackOutputLowerBound < -int256(RAY - 1)) {
+    } else if (_feedbackOutputLowerBound < -int256(NEGATIVE_RATE_LIMIT)) {
       vm.expectRevert(
         abi.encodeWithSelector(
-          Assertions.IntNotGreaterOrEqualThan.selector, _feedbackOutputLowerBound, -int256(RAY - 1)
+          Assertions.IntNotGreaterOrEqualThan.selector, _feedbackOutputLowerBound, -int256(NEGATIVE_RATE_LIMIT)
         )
       );
     }
