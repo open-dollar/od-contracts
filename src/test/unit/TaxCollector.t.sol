@@ -5,8 +5,11 @@ import {TaxCollectorForTest, ITaxCollector} from '@contracts/for-test/TaxCollect
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
-import {Math, RAY} from '@libraries/Math.sol';
+
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
+
+import {Math, RAY} from '@libraries/Math.sol';
+import {Assertions} from '@libraries/Assertions.sol';
 
 abstract contract Base is HaiTest {
   using Math for uint256;
@@ -44,6 +47,9 @@ abstract contract Base is HaiTest {
 
   // Input parameters
   address receiver;
+
+  ITaxCollector.TaxCollectorCollateralParams taxCollectorCollateralParams =
+    ITaxCollector.TaxCollectorCollateralParams({stabilityFee: 0});
 
   ITaxCollector.TaxCollectorParams taxCollectorParams = ITaxCollector.TaxCollectorParams({
     primaryTaxReceiver: primaryTaxReceiver,
@@ -256,13 +262,22 @@ contract Unit_TaxCollector_Constructor is Base {
   }
 
   function test_Set_SafeEngine(address _safeEngine) public happyPath {
+    vm.assume(_safeEngine != address(0));
     taxCollector = new TaxCollectorForTest(_safeEngine, taxCollectorParams);
 
     assertEq(address(taxCollector.safeEngine()), _safeEngine);
   }
 
-  function test_Set_TaxCollectorParams() public {
-    assertEq(abi.encode(taxCollector.params()), abi.encode(taxCollectorParams));
+  function test_Set_TaxCollectorParams(ITaxCollector.TaxCollectorParams memory _taxCollectorParams) public {
+    vm.assume(_taxCollectorParams.primaryTaxReceiver != address(0));
+    taxCollector = new TaxCollectorForTest(address(mockSafeEngine), _taxCollectorParams);
+    assertEq(abi.encode(taxCollector.params()), abi.encode(_taxCollectorParams));
+  }
+
+  function test_Revert_Null_SafeEngine() public {
+    vm.expectRevert(Assertions.NullAddress.selector);
+
+    new TaxCollectorForTest(address(0), taxCollectorParams);
   }
 }
 
@@ -277,7 +292,7 @@ contract Unit_TaxCollector_InitializeCollateralType is Base {
   function test_Revert_Unauthorized(bytes32 _cType) public {
     vm.expectRevert(IAuthorizable.Unauthorized.selector);
 
-    taxCollector.initializeCollateralType(_cType);
+    taxCollector.initializeCollateralType(_cType, taxCollectorCollateralParams);
   }
 
   function test_Revert_CollateralTypeAlreadyInit(bytes32 _cType) public {
@@ -288,23 +303,23 @@ contract Unit_TaxCollector_InitializeCollateralType is Base {
 
     vm.expectRevert(ITaxCollector.CollateralTypeAlreadyInitialized.selector);
 
-    taxCollector.initializeCollateralType(_cType);
+    taxCollector.initializeCollateralType(_cType, taxCollectorCollateralParams);
   }
 
   function test_Set_CollateralTypeStabilityFee(bytes32 _cType) public happyPath {
-    taxCollector.initializeCollateralType(_cType);
+    taxCollector.initializeCollateralType(_cType, taxCollectorCollateralParams);
 
     assertEq(taxCollector.cData(_cType).nextStabilityFee, RAY);
   }
 
   function test_Set_CollateralTypeUpdateTime(bytes32 _cType) public happyPath {
-    taxCollector.initializeCollateralType(_cType);
+    taxCollector.initializeCollateralType(_cType, taxCollectorCollateralParams);
 
     assertEq(taxCollector.cData(_cType).updateTime, block.timestamp);
   }
 
   function test_Set_CollateralList(bytes32 _cType) public happyPath {
-    taxCollector.initializeCollateralType(_cType);
+    taxCollector.initializeCollateralType(_cType, taxCollectorCollateralParams);
     assertEq(taxCollector.collateralList()[0], _cType);
   }
 
@@ -312,7 +327,7 @@ contract Unit_TaxCollector_InitializeCollateralType is Base {
     expectEmitNoIndex();
     emit InitializeCollateralType(_cType);
 
-    taxCollector.initializeCollateralType(_cType);
+    taxCollector.initializeCollateralType(_cType, taxCollectorCollateralParams);
   }
 }
 

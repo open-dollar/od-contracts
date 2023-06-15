@@ -20,6 +20,7 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
   using Math for uint256;
   using Encoding for bytes;
   using Assertions for uint256;
+  using Assertions for address;
 
   // --- SAFE Saviours ---
   // Contracts that can save SAFEs from liquidation
@@ -52,7 +53,7 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
     address _safeEngine,
     LiquidationEngineParams memory _liqEngineParams
   ) Authorizable(msg.sender) validParams {
-    safeEngine = ISAFEEngine(_safeEngine);
+    safeEngine = ISAFEEngine(_safeEngine.assertNonNull());
 
     _params = _liqEngineParams;
     emit ModifyParameters('onAuctionSystemCoinLimit', _GLOBAL_PARAM, abi.encode(type(uint256).max));
@@ -204,6 +205,19 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
   }
 
   /**
+   * @notice Initialize a brand new collateral type
+   * @param _cType Collateral type name (e.g ETH-A, TBTC-B)
+   */
+  function initializeCollateralType(
+    bytes32 _cType,
+    LiquidationEngineCollateralParams memory _collateralParams
+  ) external isAuthorized validCParams(_cType) {
+    require(_cParams[_cType].collateralAuctionHouse == address(0), 'LiquidationEngine/cType-already-initialized');
+    _setCollateralAuctionHouse(_cType, _collateralParams.collateralAuctionHouse);
+    _cParams[_cType] = _collateralParams;
+  }
+
+  /**
    * @notice Remove debt that was being auctioned
    * @param  _rad The amount of debt to withdraw from currentOnAuctionSystemCoins
    */
@@ -241,18 +255,25 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
     else revert UnrecognizedParam();
   }
 
-  function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override {
+  function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override validCParams(_cType) {
     uint256 _uint256 = _data.toUint256();
 
     if (_param == 'liquidationPenalty') _cParams[_cType].liquidationPenalty = _uint256;
-    else if (_param == 'liquidationQuantity') _cParams[_cType].liquidationQuantity = _uint256.assertLtEq(MAX_RAD);
+    else if (_param == 'liquidationQuantity') _cParams[_cType].liquidationQuantity = _uint256;
     else if (_param == 'collateralAuctionHouse') _setCollateralAuctionHouse(_cType, _data.toAddress());
     else revert UnrecognizedParam();
   }
 
+  function _validateCParameters(bytes32 _cType) internal view override {
+    LiquidationEngineCollateralParams memory _collateralParams = _cParams[_cType];
+    address(_collateralParams.collateralAuctionHouse).assertNonNull();
+    _collateralParams.liquidationQuantity.assertLtEq(MAX_RAD);
+  }
+
   function _setCollateralAuctionHouse(bytes32 _cType, address _newCollateralAuctionHouse) internal {
-    safeEngine.denySAFEModification(_cParams[_cType].collateralAuctionHouse);
-    _cParams[_cType].collateralAuctionHouse = _newCollateralAuctionHouse;
+    LiquidationEngineCollateralParams storage __cParams = _cParams[_cType];
+    safeEngine.denySAFEModification(__cParams.collateralAuctionHouse);
+    __cParams.collateralAuctionHouse = _newCollateralAuctionHouse;
     safeEngine.approveSAFEModification(_newCollateralAuctionHouse);
   }
 }

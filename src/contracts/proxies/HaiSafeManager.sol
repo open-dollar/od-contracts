@@ -7,10 +7,12 @@ import {LiquidationEngine} from '@contracts/LiquidationEngine.sol';
 
 import {Math} from '@libraries/Math.sol';
 import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
+import {Assertions} from '@libraries/Assertions.sol';
 
 contract HaiSafeManager {
   using Math for uint256;
   using EnumerableSet for EnumerableSet.UintSet;
+  using Assertions for address;
 
   struct SAFEData {
     address owner;
@@ -61,7 +63,7 @@ contract HaiSafeManager {
   }
 
   constructor(address _safeEngine) {
-    safeEngine = _safeEngine;
+    safeEngine = _safeEngine.assertNonNull();
   }
 
   // --- Getters ---

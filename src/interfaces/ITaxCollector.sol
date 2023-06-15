@@ -63,7 +63,7 @@ interface ITaxCollector is IAuthorizable, IModifiable {
   function safeEngine() external view returns (ISAFEEngine _safeEngine);
 
   // --- Administration ---
-  function initializeCollateralType(bytes32 _cType) external;
+  function initializeCollateralType(bytes32 _cType, TaxCollectorCollateralParams memory _collateralParams) external;
 
   // --- Tax Collection Utils ---
   function collectedManyTax(uint256 _start, uint256 _end) external view returns (bool _ok);

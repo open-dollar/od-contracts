@@ -47,7 +47,7 @@ contract PIDRateSetter is Authorizable, Modifiable, IPIDRateSetter {
     oracleRelayer = IOracleRelayer(_oracleRelayer.assertNonNull());
     oracle = IBaseOracle(_oracle.assertNonNull());
     pidCalculator = IPIDController(_pidCalculator.assertNonNull());
-    _params.updateRateDelay = _updateRateDelay.assertGt(0);
+    _params.updateRateDelay = _updateRateDelay;
   }
 
   // --- Methods ---

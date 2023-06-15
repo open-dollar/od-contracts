@@ -5,8 +5,10 @@ import {ETHJoin, IETHJoin} from '@contracts/utils/ETHJoin.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
-import {Math} from '@libraries/Math.sol';
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
+
+import {Math} from '@libraries/Math.sol';
+import {Assertions} from '@libraries/Assertions.sol';
 
 abstract contract Base is HaiTest {
   using stdStorage for StdStorage;
@@ -59,6 +61,7 @@ contract Unit_ETHJoin_Constructor is Base {
   }
 
   function test_Set_SafeEngine(address _safeEngine) public happyPath {
+    vm.assume(_safeEngine != address(0));
     ethJoin = new ETHJoin(_safeEngine, collateralType);
 
     assertEq(address(ethJoin.safeEngine()), _safeEngine);
@@ -72,6 +75,12 @@ contract Unit_ETHJoin_Constructor is Base {
 
   function test_Set_Decimals() public happyPath {
     assertEq(ethJoin.decimals(), 18);
+  }
+
+  function test_Revert_Null_SafeEngine() public {
+    vm.expectRevert(Assertions.NullAddress.selector);
+
+    ethJoin = new ETHJoin(address(0), collateralType);
   }
 }
 

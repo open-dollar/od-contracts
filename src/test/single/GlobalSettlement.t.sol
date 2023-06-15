@@ -154,12 +154,13 @@ contract SingleGlobalSettlementTest is DSTest {
     // initial collateral price of 5
     oracleFSM.updateCollateralPrice(bytes32(5 * WAD));
 
-    safeEngine.initializeCollateralType(_encodedName);
+    ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
+      ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: rad(10_000_000 ether), debtFloor: 0});
+    safeEngine.initializeCollateralType(_encodedName, _safeEngineCollateralParams);
     CollateralJoin collateralJoin = new CollateralJoin(address(safeEngine), _encodedName, address(newCollateral));
     newCollateral.approve(address(collateralJoin), type(uint256).max);
 
     safeEngine.updateCollateralPrice(_encodedName, ray(3 ether), ray(3 ether));
-    safeEngine.modifyParameters(_encodedName, 'debtCeiling', abi.encode(rad(10_000_000 ether))); // 10M
 
     safeEngine.addAuthorization(address(collateralJoin));
 
@@ -256,13 +257,11 @@ contract SingleGlobalSettlementTest is DSTest {
 
     accountingEngine =
     new AccountingEngine(address(safeEngine), address(surplusAuctionHouseOne), address(debtAuctionHouse), _accountingEngineParams);
-    postSettlementSurplusDrain = new SettlementSurplusAuctioneer(address(accountingEngine), address(0));
+    postSettlementSurplusDrain = new SettlementSurplusAuctioneer(address(accountingEngine), address(0x45));
     surplusAuctionHouseOne.addAuthorization(address(postSettlementSurplusDrain));
 
     accountingEngine.modifyParameters('postSettlementSurplusDrain', abi.encode(postSettlementSurplusDrain));
     safeEngine.addAuthorization(address(accountingEngine));
-
-    debtAuctionHouse.modifyParameters('accountingEngine', abi.encode(accountingEngine));
 
     ILiquidationEngine.LiquidationEngineParams memory _liquidationEngineParams =
       ILiquidationEngine.LiquidationEngineParams({onAuctionSystemCoinLimit: type(uint256).max});

@@ -132,15 +132,16 @@ contract SystemCoinTest is DSTest {
 
     gold = new CoinForTest('GEM', 'GEM');
     gold.mint(1000 ether);
-    safeEngine.initializeCollateralType('gold');
+
+    ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
+      ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: rad(1000 ether), debtFloor: 0});
+    safeEngine.initializeCollateralType('gold', _safeEngineCollateralParams);
     goldFeed = new Feed(1 ether, true);
     oracleRelayer.modifyParameters('gold', 'oracle', abi.encode(goldFeed));
     oracleRelayer.modifyParameters('gold', 'safetyCRatio', abi.encode(1_000_000_000_000_000_000_000_000_000));
     oracleRelayer.modifyParameters('gold', 'liquidationCRatio', abi.encode(1_000_000_000_000_000_000_000_000_000));
     oracleRelayer.updateCollateralPrice('gold');
     collateralA = new CollateralJoin(address(safeEngine), 'gold', address(gold));
-
-    safeEngine.modifyParameters('gold', 'debtCeiling', abi.encode(rad(1000 ether)));
 
     gold.addAuthorization(address(collateralA));
     gold.addAuthorization(address(safeEngine));

@@ -3,8 +3,11 @@ pragma solidity 0.8.19;
 
 import {HaiProxyFactory} from '@contracts/proxies/HaiProxyFactory.sol';
 import {HaiProxy} from '@contracts/proxies/HaiProxy.sol';
+import {Assertions} from '@libraries/Assertions.sol';
 
 contract HaiProxyRegistry {
+  using Assertions for address;
+
   mapping(address _owner => HaiProxy) public proxies;
   HaiProxyFactory public factory;
 
@@ -12,7 +15,7 @@ contract HaiProxyRegistry {
   event Build(address _usr, address _proxy);
 
   constructor(address _factory) {
-    factory = HaiProxyFactory(_factory);
+    factory = HaiProxyFactory(_factory.assertNonNull());
   }
 
   // deploys a new proxy instance

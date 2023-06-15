@@ -9,6 +9,8 @@ import {Disableable} from '@contracts/utils/Disableable.sol';
 import {Math} from '@libraries/Math.sol';
 import {SafeERC20} from '@openzeppelin/token/ERC20/utils/SafeERC20.sol';
 
+import {Assertions} from '@libraries/Assertions.sol';
+
 /**
  * @title  CollateralJoin
  * @notice This contract allows to connect the SAFEEngine to arbitrary external token implementations
@@ -18,6 +20,7 @@ import {SafeERC20} from '@openzeppelin/token/ERC20/utils/SafeERC20.sol';
 contract CollateralJoin is Authorizable, Disableable, ICollateralJoin {
   using Math for uint256;
   using SafeERC20 for IERC20Metadata;
+  using Assertions for address;
 
   // --- Registry ---
   /// @inheritdoc ICollateralJoin
@@ -35,7 +38,7 @@ contract CollateralJoin is Authorizable, Disableable, ICollateralJoin {
 
   // --- Init ---
   constructor(address _safeEngine, bytes32 _cType, address _collateral) Authorizable(msg.sender) {
-    safeEngine = ISAFEEngine(_safeEngine);
+    safeEngine = ISAFEEngine(_safeEngine.assertNonNull());
     collateralType = _cType;
     collateral = IERC20Metadata(_collateral);
     decimals = collateral.decimals();

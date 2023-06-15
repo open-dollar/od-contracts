@@ -12,6 +12,8 @@ import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 
+import {Assertions} from '@libraries/Assertions.sol';
+
 abstract contract Base is HaiTest {
   using stdStorage for StdStorage;
 
@@ -136,6 +138,18 @@ contract Unit_SettlementSurplusAuctioneer_Constructor is Base {
 
     settlementSurplusAuctioneer =
       new SettlementSurplusAuctioneer(address(mockAccountingEngine), address(mockSurplusAuctionHouse));
+  }
+
+  function test_Revert_Null_AccountingEngine() public {
+    vm.expectRevert(Assertions.NullAddress.selector);
+
+    new SettlementSurplusAuctioneer(address(0), address(mockSurplusAuctionHouse));
+  }
+
+  function test_Revert_Null_SurplusAuctionHouse() public {
+    vm.expectRevert(Assertions.NullAddress.selector);
+
+    new SettlementSurplusAuctioneer(address(mockAccountingEngine), address(0));
   }
 }
 

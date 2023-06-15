@@ -7,6 +7,7 @@ import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {Disableable} from '@contracts/utils/Disableable.sol';
 
 import {Math} from '@libraries/Math.sol';
+import {Assertions} from '@libraries/Assertions.sol';
 
 /*
     Here we provide ETHJoin adapter (for native Ether)
@@ -22,6 +23,7 @@ import {Math} from '@libraries/Math.sol';
 
 contract ETHJoin is Authorizable, Disableable, IETHJoin {
   using Math for uint256;
+  using Assertions for address;
 
   // --- Data ---
   // SAFE database
@@ -33,7 +35,7 @@ contract ETHJoin is Authorizable, Disableable, IETHJoin {
 
   // --- Init ---
   constructor(address _safeEngine, bytes32 _cType) Authorizable(msg.sender) {
-    safeEngine = ISAFEEngine(_safeEngine);
+    safeEngine = ISAFEEngine(_safeEngine.assertNonNull());
     collateralType = _cType;
     decimals = 18;
   }

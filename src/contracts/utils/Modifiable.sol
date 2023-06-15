@@ -53,10 +53,21 @@ abstract contract Modifiable is IModifiable, Authorizable {
   /**
    * @notice Internal function to be overriden with custom logic to validate parameters
    */
-  function _validateParameters() internal virtual {}
+  function _validateParameters() internal view virtual {}
 
+  /**
+   * @notice Internal function to be overriden with custom logic to validate collateral parameters
+   */
+  function _validateCParameters(bytes32 _cType) internal view virtual {}
+
+  // --- Modifiers ---
   modifier validParams() {
     _;
     _validateParameters();
+  }
+
+  modifier validCParams(bytes32 _cType) {
+    _;
+    _validateCParameters(_cType);
   }
 }

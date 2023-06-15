@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {Math, RAY, WAD} from '@libraries/Math.sol';
 import {StdStorage, stdStorage} from 'forge-std/StdStorage.sol';
 
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
@@ -15,6 +14,9 @@ import {OracleRelayer} from '@contracts/OracleRelayer.sol';
 import {SAFEEngine} from '@contracts/SAFEEngine.sol';
 import {OracleForTest} from '@contracts/for-test/OracleForTest.sol';
 import {OracleRelayerForTest, OracleRelayerForInternalCallsTest} from '@contracts/for-test/OracleRelayerForTest.sol';
+
+import {Math, RAY, WAD} from '@libraries/Math.sol';
+import {Assertions} from '@libraries/Assertions.sol';
 
 abstract contract Base is HaiTest {
   using stdStorage for StdStorage;
@@ -111,8 +113,18 @@ contract Unit_OracleRelayer_Constructor is Base {
     assertEq(IAuthorizable(address(oracleRelayer)).authorizedAccounts(deployer), 1);
   }
 
-  function test_Set_OracleRelayer_Params() public {
-    assertEq(abi.encode(oracleRelayer.params()), abi.encode(oracleRelayerParams));
+  function test_Set_OracleRelayer_Params(IOracleRelayer.OracleRelayerParams memory _oracleRelayerParams) public {
+    vm.assume(_oracleRelayerParams.redemptionRateUpperBound > RAY);
+    vm.assume(_oracleRelayerParams.redemptionRateLowerBound > 0 && _oracleRelayerParams.redemptionRateLowerBound < RAY);
+    oracleRelayer = new OracleRelayer(address(mockSafeEngine), _oracleRelayerParams);
+
+    assertEq(abi.encode(oracleRelayer.params()), abi.encode(_oracleRelayerParams));
+  }
+
+  function test_Revert_Null_SafeEngine() public {
+    vm.expectRevert(Assertions.NullAddress.selector);
+
+    new OracleRelayer(address(0), oracleRelayerParams);
   }
 }
 
@@ -153,6 +165,7 @@ contract Unit_OracleRelayer_RedemptionPrice is Base {
   event UpdateRedemptionPriceCalled();
 
   function setUp() public virtual override {
+    super.setUp();
     vm.prank(deployer);
     oracleRelayer = new OracleRelayerForInternalCallsTest(address(mockSafeEngine), oracleRelayerParams);
   }
@@ -207,6 +220,7 @@ contract Unit_OracleRelayer_Internal_UpdateRedemptionPrice is Base {
   event UpdateRedemptionPrice(uint256 _redemptionPrice);
 
   function setUp() public virtual override {
+    super.setUp();
     vm.prank(deployer);
     oracleRelayer = new OracleRelayerForTest(address(mockSafeEngine), oracleRelayerParams);
   }

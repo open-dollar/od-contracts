@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {Math, RAY, WAD} from '@libraries/Math.sol';
-
 import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
 import {ISAFESaviour} from '@interfaces/external/ISAFESaviour.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
@@ -19,6 +17,9 @@ import {AccountingEngineForTest} from '@contracts/for-test/AccountingEngineForTe
 import {CollateralAuctionHouseForTest} from '@contracts/for-test/CollateralAuctionHouseForTest.sol';
 import {HaiTest} from '@test/utils/HaiTest.t.sol';
 import {StdStorage, stdStorage} from 'forge-std/StdStorage.sol';
+
+import {Math, RAY, WAD} from '@libraries/Math.sol';
+import {Assertions} from '@libraries/Assertions.sol';
 
 abstract contract Base is HaiTest {
   using stdStorage for StdStorage;
@@ -311,8 +312,17 @@ contract Unit_LiquidationEngine_Constructor is Base {
     new LiquidationEngine(address(mockSafeEngine), liquidationEngineParams);
   }
 
-  function test_Set_LiquidationEngine_Param() public {
-    assertEq(abi.encode(liquidationEngine.params()), abi.encode(liquidationEngineParams));
+  function test_Set_LiquidationEngine_Param(ILiquidationEngine.LiquidationEngineParams memory _liquidationEngineParams)
+    public
+  {
+    liquidationEngine = new LiquidationEngine(address(mockSafeEngine), _liquidationEngineParams);
+    assertEq(abi.encode(liquidationEngine.params()), abi.encode(_liquidationEngineParams));
+  }
+
+  function test_Revert_Null_SafeEngine() public {
+    vm.expectRevert(Assertions.NullAddress.selector);
+
+    new LiquidationEngine(address(0), liquidationEngineParams);
   }
 }
 
@@ -329,6 +339,7 @@ contract Unit_LiquidationEngine_ModifyParameters is Base {
     bytes32 _cType,
     ILiquidationEngine.LiquidationEngineCollateralParams memory _fuzz
   ) public authorized {
+    vm.assume(_fuzz.collateralAuctionHouse != address(0));
     liquidationEngine.modifyParameters(_cType, 'collateralAuctionHouse', abi.encode(_fuzz.collateralAuctionHouse));
     liquidationEngine.modifyParameters(_cType, 'liquidationPenalty', abi.encode(_fuzz.liquidationPenalty));
     vm.assume(_fuzz.liquidationQuantity <= type(uint256).max / RAY);
@@ -359,6 +370,7 @@ contract Unit_LiquidationEngine_ModifyParameters is Base {
     address _previousCAH,
     address _newCAH
   ) public authorized {
+    vm.assume(_newCAH != address(0));
     LiquidationEngineForTest(address(liquidationEngine)).setCollateralAuctionHouse(_cType, _previousCAH);
 
     vm.expectCall(

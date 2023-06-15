@@ -98,8 +98,7 @@ library ParamSetter {
     ISAFEEngine _safeEngine,
     ISAFEEngine.SAFEEngineCollateralParams memory _cParams
   ) internal {
-    _safeEngine.modifyParameters(_cType, 'debtCeiling', abi.encode(_cParams.debtCeiling));
-    _safeEngine.modifyParameters(_cType, 'debtFloor', abi.encode(_cParams.debtFloor));
+    _safeEngine.initializeCollateralType(_cType, _cParams);
 
     _checkCParams(address(_safeEngine), _cType, abi.encode(_cParams));
   }
@@ -132,10 +131,7 @@ library ParamSetter {
     ILiquidationEngine _liquidationEngine,
     ILiquidationEngine.LiquidationEngineCollateralParams memory _params
   ) internal {
-    _liquidationEngine.modifyParameters(_cType, 'collateralAuctionHouse', abi.encode(_params.collateralAuctionHouse));
-    _liquidationEngine.modifyParameters(_cType, 'liquidationPenalty', abi.encode(_params.liquidationPenalty));
-    _liquidationEngine.modifyParameters(_cType, 'liquidationQuantity', abi.encode(_params.liquidationQuantity));
-
+    _liquidationEngine.initializeCollateralType(_cType, _params);
     _checkCParams(address(_liquidationEngine), _cType, abi.encode(_params));
   }
 
@@ -177,7 +173,7 @@ library ParamSetter {
     ITaxCollector.TaxCollectorCollateralParams memory _params,
     ITaxCollector.TaxReceiver memory _secondaryTaxReceiver
   ) internal {
-    _taxCollector.modifyParameters(_cType, 'stabilityFee', abi.encode(_params.stabilityFee));
+    _taxCollector.initializeCollateralType(_cType, _params);
     _taxCollector.modifyParameters(_cType, 'secondaryTaxReceiver', abi.encode(_secondaryTaxReceiver));
 
     _checkCParams(address(_taxCollector), _cType, abi.encode(_params));
@@ -270,9 +266,7 @@ library ParamSetter {
     IOracleRelayer _oracleRelayer,
     IOracleRelayer.OracleRelayerCollateralParams memory _cParams
   ) internal {
-    _oracleRelayer.modifyParameters(_cType, 'oracle', abi.encode(_cParams.oracle));
-    _oracleRelayer.modifyParameters(_cType, 'safetyCRatio', abi.encode(_cParams.safetyCRatio));
-    _oracleRelayer.modifyParameters(_cType, 'liquidationCRatio', abi.encode(_cParams.liquidationCRatio));
+    _oracleRelayer.initializeCollateralType(_cType, _cParams);
 
     _checkCParams(address(_oracleRelayer), _cType, abi.encode(_cParams));
   }

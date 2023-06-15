@@ -50,8 +50,8 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
     address _protocolToken,
     SurplusAuctionHouseParams memory _sahParams
   ) Authorizable(msg.sender) validParams {
-    safeEngine = ISAFEEngine(_safeEngine);
-    protocolToken = IProtocolToken(_protocolToken);
+    safeEngine = ISAFEEngine(_safeEngine.assertNonNull());
+    protocolToken = IProtocolToken(_protocolToken.assertNonNull());
 
     _params = _sahParams;
   }

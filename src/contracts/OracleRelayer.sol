@@ -17,6 +17,7 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
   using Encoding for bytes;
   using Math for uint256;
   using Assertions for uint256;
+  using Assertions for address;
 
   // --- Registry ---
   ISAFEEngine public safeEngine;
@@ -45,7 +46,7 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
     address _safeEngine,
     OracleRelayerParams memory _oracleRelayerParams
   ) Authorizable(msg.sender) validParams {
-    safeEngine = ISAFEEngine(_safeEngine);
+    safeEngine = ISAFEEngine(_safeEngine.assertNonNull());
     _redemptionPrice = RAY;
     redemptionRate = RAY;
     redemptionPriceUpdateTime = block.timestamp;
@@ -109,6 +110,14 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
     redemptionRate = _redemptionRate;
   }
 
+  function initializeCollateralType(
+    bytes32 _cType,
+    OracleRelayerCollateralParams memory _collateralParams
+  ) external isAuthorized validCParams(_cType) {
+    if (address(_cParams[_cType].oracle) != address(0)) revert OracleRelayer_CollateralTypeAlreadyInitialized();
+    _cParams[_cType] = _collateralParams;
+  }
+
   // --- Shutdown ---
 
   /**
@@ -128,12 +137,16 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
     else revert UnrecognizedParam();
   }
 
-  function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override whenEnabled {
+  function _modifyParameters(
+    bytes32 _cType,
+    bytes32 _param,
+    bytes memory _data
+  ) internal override whenEnabled validCParams(_cType) {
     uint256 _uint256 = _data.toUint256();
     OracleRelayerCollateralParams storage __cParams = _cParams[_cType];
 
-    if (_param == 'safetyCRatio') __cParams.safetyCRatio = _uint256.assertGtEq(__cParams.liquidationCRatio);
-    else if (_param == 'liquidationCRatio') __cParams.liquidationCRatio = _uint256.assertLtEq(__cParams.safetyCRatio);
+    if (_param == 'safetyCRatio') __cParams.safetyCRatio = _uint256;
+    else if (_param == 'liquidationCRatio') __cParams.liquidationCRatio = _uint256;
     else if (_param == 'oracle') __cParams.oracle = abi.decode(_data, (IBaseOracle));
     else revert UnrecognizedParam();
   }
@@ -141,5 +154,12 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
   function _validateParameters() internal view override {
     _params.redemptionRateUpperBound.assertGt(RAY);
     _params.redemptionRateLowerBound.assertGt(0).assertLt(RAY);
+  }
+
+  function _validateCParameters(bytes32 _cType) internal view override {
+    OracleRelayerCollateralParams memory _collateralParams = _cParams[_cType];
+    _collateralParams.safetyCRatio.assertGtEq(_collateralParams.liquidationCRatio);
+    _collateralParams.liquidationCRatio.assertLtEq(_collateralParams.safetyCRatio);
+    address(_collateralParams.oracle).assertNonNull();
   }
 }

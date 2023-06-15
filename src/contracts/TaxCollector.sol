@@ -11,9 +11,12 @@ import {Encoding} from '@libraries/Encoding.sol';
 import {Math, RAY} from '@libraries/Math.sol';
 import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
 
+import {Assertions} from '@libraries/Assertions.sol';
+
 contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
   using Math for uint256;
   using Encoding for bytes;
+  using Assertions for address;
   using EnumerableSet for EnumerableSet.AddressSet;
   using EnumerableSet for EnumerableSet.Bytes32Set;
 
@@ -62,19 +65,23 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
 
   // --- Init ---
   constructor(address _safeEngine, TaxCollectorParams memory _taxCollectorParams) Authorizable(msg.sender) validParams {
-    safeEngine = ISAFEEngine(_safeEngine);
+    safeEngine = ISAFEEngine(_safeEngine.assertNonNull());
     _params = _taxCollectorParams;
   }
 
   /**
    * @notice Initialize a brand new collateral type
    * @param _cType Collateral type name (e.g ETH-A, TBTC-B)
+   * @param _collateralParams Collateral type parameters
    */
-  function initializeCollateralType(bytes32 _cType) external isAuthorized {
+  function initializeCollateralType(
+    bytes32 _cType,
+    TaxCollectorCollateralParams memory _collateralParams
+  ) external isAuthorized {
     if (!_collateralList.add(_cType)) revert CollateralTypeAlreadyInitialized();
-
     _cData[_cType] =
       TaxCollectorCollateralData({nextStabilityFee: RAY, updateTime: block.timestamp, secondaryReceiverAllotedTax: 0});
+    _cParams[_cType] = _collateralParams;
 
     emit InitializeCollateralType(_cType);
   }
@@ -285,7 +292,7 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
     else revert UnrecognizedParam();
   }
 
-  function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override {
+  function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override validCParams(_cType) {
     if (_param == 'stabilityFee') _cParams[_cType].stabilityFee = _data.toUint256();
     else if (_param == 'secondaryTaxReceiver') _setSecondaryTaxReceiver(_cType, abi.decode(_data, (TaxReceiver)));
     else revert UnrecognizedParam();

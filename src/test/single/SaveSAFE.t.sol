@@ -198,7 +198,6 @@ contract SingleSaveSAFETest is DSTest {
         );
     surplusAuctionHouse.addAuthorization(address(accountingEngine));
     debtAuctionHouse.addAuthorization(address(accountingEngine));
-    debtAuctionHouse.modifyParameters('accountingEngine', abi.encode(accountingEngine));
     safeEngine.addAuthorization(address(accountingEngine));
 
     ITaxCollector.TaxCollectorParams memory _taxCollectorParams = ITaxCollector.TaxCollectorParams({
@@ -208,7 +207,9 @@ contract SingleSaveSAFETest is DSTest {
     });
 
     taxCollector = new TaxCollector(address(safeEngine), _taxCollectorParams);
-    taxCollector.initializeCollateralType('gold');
+    ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
+      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: 0});
+    taxCollector.initializeCollateralType('gold', _taxCollectorCollateralParams);
     safeEngine.addAuthorization(address(taxCollector));
 
     ILiquidationEngine.LiquidationEngineParams memory _liquidationEngineParams =
@@ -221,14 +222,15 @@ contract SingleSaveSAFETest is DSTest {
     gold = new CoinForTest('GEM', 'GEM');
     gold.mint(1000 ether);
 
-    safeEngine.initializeCollateralType('gold');
+    ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
+      ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: rad(1000 ether), debtFloor: 0});
+    safeEngine.initializeCollateralType('gold', _safeEngineCollateralParams);
     collateralA = new CollateralJoin(address(safeEngine), 'gold', address(gold));
     safeEngine.addAuthorization(address(collateralA));
     gold.approve(address(collateralA), type(uint256).max);
     collateralA.join(address(this), 1000 ether);
 
     safeEngine.updateCollateralPrice('gold', ray(1 ether), ray(1 ether));
-    safeEngine.modifyParameters('gold', 'debtCeiling', abi.encode(rad(1000 ether)));
 
     IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams =
     IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams({

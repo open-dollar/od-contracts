@@ -20,9 +20,10 @@ import {
 } from '@contracts/for-test/CollateralAuctionHouseForTest.sol';
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
 import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
-import {Assertions} from '@libraries/Assertions.sol';
 
 import '@script/Params.s.sol';
+
+import {Assertions} from '@libraries/Assertions.sol';
 
 contract Base is HaiTest {
   using stdStorage for StdStorage;
@@ -318,12 +319,29 @@ contract Unit_CollateralAuctionHouse_Constructor is Base {
     assertEq(auctionHouse.authorizedAccounts(deployer), 1);
   }
 
-  function test_Set_CAH_Params() public {
-    assertEq(abi.encode(auctionHouse.cParams()), abi.encode(cahCParams));
+  function test_Set_CAH_Params(
+    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams
+  ) public {
+    vm.assume(_cahParams.lowerSystemCoinDeviation <= WAD);
+    vm.assume(_cahParams.upperSystemCoinDeviation <= WAD);
+    auctionHouse =
+    new IncreasingDiscountCollateralAuctionHouse(mockSafeEngine, mockLiquidationEngine, mockCollateralType, _cahParams, cahCParams);
+
+    assertEq(abi.encode(auctionHouse.params()), abi.encode(_cahParams));
   }
 
-  function test_Set_CAH_SystemCoin_Params() public {
-    assertEq(abi.encode(auctionHouse.params()), abi.encode(cahParams));
+  function test_Set_CAH_SystemCoin_Params(
+    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams
+  ) public {
+    vm.assume(_cahCParams.minDiscount >= _cahCParams.maxDiscount && _cahCParams.minDiscount <= WAD);
+    vm.assume(_cahCParams.maxDiscount > 0 && _cahCParams.maxDiscount <= _cahCParams.minDiscount);
+    vm.assume(_cahCParams.perSecondDiscountUpdateRate <= RAY);
+    vm.assume(_cahCParams.lowerCollateralDeviation <= WAD);
+    vm.assume(_cahCParams.upperCollateralDeviation <= WAD);
+
+    auctionHouse =
+    new IncreasingDiscountCollateralAuctionHouse(mockSafeEngine, mockLiquidationEngine, mockCollateralType, cahParams, _cahCParams);
+    assertEq(abi.encode(auctionHouse.cParams()), abi.encode(_cahCParams));
   }
 
   function test_Revert_Null_SafeEngine() public {

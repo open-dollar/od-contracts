@@ -52,9 +52,9 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
     address _coinJoin,
     StabilityFeeTreasuryParams memory _sfTreasuryParams
   ) Authorizable(msg.sender) validParams {
-    safeEngine = ISAFEEngine(_safeEngine);
+    safeEngine = ISAFEEngine(_safeEngine.assertNonNull());
+    coinJoin = ICoinJoin(_coinJoin.assertNonNull());
     extraSurplusReceiver = _extraSurplusReceiver;
-    coinJoin = ICoinJoin(_coinJoin);
     systemCoin = ISystemCoin(address(coinJoin.systemCoin()).assertNonNull());
     latestSurplusTransferTime = block.timestamp;
     _params = _sfTreasuryParams;

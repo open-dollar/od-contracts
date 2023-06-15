@@ -140,7 +140,9 @@ contract SingleAccountingEngineTest is DSTest {
 
   function _popDebtFromQueue(uint256 wad) internal {
     accountingEngine.pushDebtToQueue(rad(wad));
-    safeEngine.initializeCollateralType('');
+    ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
+      ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: 0, debtFloor: 0});
+    safeEngine.initializeCollateralType('', _safeEngineCollateralParams);
     safeEngine.createUnbackedDebt(address(accountingEngine), address(0), rad(wad));
     accountingEngine.popDebtFromQueue(block.timestamp);
   }

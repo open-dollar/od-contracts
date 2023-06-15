@@ -11,10 +11,12 @@ import {Modifiable} from '@contracts/utils/Modifiable.sol';
 import {SafeERC20} from '@openzeppelin/token/ERC20/utils/SafeERC20.sol';
 import {Encoding} from '@libraries/Encoding.sol';
 import {WAD} from '@libraries/Math.sol';
+import {Assertions} from '@libraries/Assertions.sol';
 
 contract PostSettlementSurplusAuctionHouse is Authorizable, Modifiable, IPostSettlementSurplusAuctionHouse {
   using Encoding for bytes;
   using SafeERC20 for IProtocolToken;
+  using Assertions for address;
 
   bytes32 public constant AUCTION_HOUSE_TYPE = bytes32('SURPLUS');
   bytes32 public constant SURPLUS_AUCTION_TYPE = bytes32('POST-SETTLEMENT');
@@ -44,8 +46,8 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, Modifiable, IPostSet
     address _protocolToken,
     PostSettlementSAHParams memory _pssahParams
   ) Authorizable(msg.sender) validParams {
-    safeEngine = ISAFEEngine(_safeEngine);
-    protocolToken = IProtocolToken(_protocolToken);
+    safeEngine = ISAFEEngine(_safeEngine.assertNonNull());
+    protocolToken = IProtocolToken(_protocolToken.assertNonNull());
 
     _params = _pssahParams;
   }

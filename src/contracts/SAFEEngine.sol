@@ -122,9 +122,13 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
     emit ModifyParameters('safeDebtCeiling', _GLOBAL_PARAM, abi.encode(_safeEngineParams.safeDebtCeiling));
   }
 
-  function initializeCollateralType(bytes32 _cType) external isAuthorized {
+  function initializeCollateralType(
+    bytes32 _cType,
+    SAFEEngineCollateralParams memory _collateralParams
+  ) external isAuthorized {
     require(_cData[_cType].accumulatedRate == 0, 'SAFEEngine/collateral-type-already-exists');
     _cData[_cType].accumulatedRate = RAY;
+    _cParams[_cType] = _collateralParams;
     emit InitializeCollateralType(_cType);
   }
 
@@ -421,7 +425,11 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
     else revert UnrecognizedParam();
   }
 
-  function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override whenEnabled {
+  function _modifyParameters(
+    bytes32 _cType,
+    bytes32 _param,
+    bytes memory _data
+  ) internal override whenEnabled validCParams(_cType) {
     uint256 _uint256 = _data.toUint256();
 
     if (_param == 'debtCeiling') _cParams[_cType].debtCeiling = _uint256;

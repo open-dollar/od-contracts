@@ -205,8 +205,12 @@ contract Unit_AccountingEngine_Constructor is Base {
     assertEq(address(accountingEngine.debtAuctionHouse()), address(mockDebtAuctionHouse));
   }
 
-  function test_Set_AccountingEngineParams() public {
-    assertEq(abi.encode(accountingEngine.params()), abi.encode(accountingEngineParams));
+  function test_Set_AccountingEngineParams(IAccountingEngine.AccountingEngineParams memory _accountingEngineParams)
+    public
+  {
+    accountingEngine =
+    new AccountingEngine(address(mockSafeEngine), address(mockSurplusAuctionHouse), address(mockDebtAuctionHouse), _accountingEngineParams);
+    assertEq(abi.encode(accountingEngine.params()), abi.encode(_accountingEngineParams));
   }
 
   function test_Revert_NullSafeEngine() public {
@@ -242,6 +246,7 @@ contract Unit_AccountingEngine_ModifyParameters is Base {
   }
 
   function test_ModifyParameters_SurplusAuctionHouse(address _surplusAuctionHouse) public authorized {
+    vm.assume(_surplusAuctionHouse != address(0));
     address _previousSurplusAuctionHouse = address(accountingEngine.surplusAuctionHouse());
     vm.expectCall(
       address(mockSafeEngine),
@@ -260,6 +265,7 @@ contract Unit_AccountingEngine_ModifyParameters is Base {
   }
 
   function test_ModifyParameters_DebtAuctionHouse(address _debtAuctionHouse) public authorized {
+    vm.assume(_debtAuctionHouse != address(0));
     accountingEngine.modifyParameters('debtAuctionHouse', abi.encode(_debtAuctionHouse));
 
     assertEq(_debtAuctionHouse, address(accountingEngine.debtAuctionHouse()));

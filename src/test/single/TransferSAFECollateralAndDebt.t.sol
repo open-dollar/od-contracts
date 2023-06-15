@@ -114,9 +114,10 @@ contract SingleTransferSAFECollateralAndDebtTest is DSTest {
     a = address(ali);
     b = address(bob);
 
-    safeEngine.initializeCollateralType('collateralTokens');
+    ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
+      ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: rad(1000 ether), debtFloor: 0});
+    safeEngine.initializeCollateralType('collateralTokens', _safeEngineCollateralParams);
     safeEngine.updateCollateralPrice('collateralTokens', ray(0.5 ether), ray(0.5 ether));
-    safeEngine.modifyParameters('collateralTokens', 'debtCeiling', abi.encode(rad(1000 ether)));
 
     safeEngine.addAuthorization(a);
     safeEngine.addAuthorization(b);

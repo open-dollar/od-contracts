@@ -1,15 +1,19 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {DebtAuctionHouseForTest, IDebtAuctionHouse} from '@contracts/for-test/DebtAuctionHouseForTest.sol';
+import {
+  DebtAuctionHouseForTest, IDebtAuctionHouse, DebtAuctionHouse
+} from '@contracts/for-test/DebtAuctionHouseForTest.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IProtocolToken} from '@interfaces/tokens/IProtocolToken.sol';
 import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
-import {Math, WAD} from '@libraries/Math.sol';
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
+
+import {Math, WAD} from '@libraries/Math.sol';
+import {Assertions} from '@libraries/Assertions.sol';
 
 abstract contract Base is HaiTest {
   using stdStorage for StdStorage;
@@ -147,12 +151,14 @@ contract Unit_DebtAuctionHouse_Constructor is Base {
   }
 
   function test_Set_SafeEngine(address _safeEngine) public happyPath {
+    vm.assume(_safeEngine != address(0));
     debtAuctionHouse = new DebtAuctionHouseForTest(_safeEngine, address(mockProtocolToken), debtAuctionHouseParams);
 
     assertEq(address(debtAuctionHouse.safeEngine()), _safeEngine);
   }
 
   function test_Set_ProtocolToken(address _protocolToken) public happyPath {
+    vm.assume(_protocolToken != address(0));
     debtAuctionHouse = new DebtAuctionHouseForTest(address(mockSafeEngine), _protocolToken, debtAuctionHouseParams);
 
     assertEq(address(debtAuctionHouse.protocolToken()), _protocolToken);
@@ -174,8 +180,17 @@ contract Unit_DebtAuctionHouse_Constructor is Base {
     assertEq(debtAuctionHouse.params().totalAuctionLength, 2 days);
   }
 
-  function test_Set_DAH_Params() public {
-    assertEq(abi.encode(debtAuctionHouse.params()), abi.encode(debtAuctionHouseParams));
+  function test_Set_DAH_Params(IDebtAuctionHouse.DebtAuctionHouseParams memory _debtAuctionHouseParams) public {
+    DebtAuctionHouse _debtAuctionHouse =
+      new DebtAuctionHouse(address(mockSafeEngine), address(mockProtocolToken), _debtAuctionHouseParams);
+
+    assertEq(abi.encode(_debtAuctionHouse.params()), abi.encode(_debtAuctionHouseParams));
+  }
+
+  function test_Revert_Null_SafeEngine() public {
+    vm.expectRevert(Assertions.NullAddress.selector);
+
+    new DebtAuctionHouse(address(0), address(mockProtocolToken), debtAuctionHouseParams);
   }
 }
 
@@ -947,15 +962,10 @@ contract Unit_DebtAuctionHouse_ModifyParameters is Base {
   }
 
   function test_Set_ProtocolToken(address _protocolToken) public happyPath {
+    vm.assume(_protocolToken != address(0));
     debtAuctionHouse.modifyParameters('protocolToken', abi.encode(_protocolToken));
 
     assertEq(address(debtAuctionHouse.protocolToken()), _protocolToken);
-  }
-
-  function test_Set_AccountingEngine(address _accountingEngine) public happyPath {
-    debtAuctionHouse.modifyParameters('accountingEngine', abi.encode(_accountingEngine));
-
-    assertEq(debtAuctionHouse.accountingEngine(), _accountingEngine);
   }
 
   function test_Revert_UnrecognizedParam(bytes memory _data) public {

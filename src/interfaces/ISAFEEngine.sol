@@ -129,7 +129,7 @@ interface ISAFEEngine is IAuthorizable, IModifiable, IDisableable {
   function updateAccumulatedRate(bytes32 _cType, address _surplusDst, int256 _rateMultiplier) external;
   function updateCollateralPrice(bytes32 _cType, uint256 _safetyPrice, uint256 _liquidationPrice) external;
 
-  function initializeCollateralType(bytes32 _cType) external;
+  function initializeCollateralType(bytes32 _cType, SAFEEngineCollateralParams memory _collateralParams) external;
   function modifyCollateralBalance(bytes32 _cType, address _account, int256 _wad) external;
   function modifySAFECollateralization(
     bytes32 _cType,

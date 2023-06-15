@@ -12,10 +12,12 @@ import {Disableable} from '@contracts/utils/Disableable.sol';
 
 import {Math, WAD} from '@libraries/Math.sol';
 import {Encoding} from '@libraries/Encoding.sol';
+import {Assertions} from '@libraries/Assertions.sol';
 
 // This thing creates protocol tokens on demand in return for system coins
 contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuctionHouse {
   using Encoding for bytes;
+  using Assertions for address;
 
   bytes32 public constant AUCTION_HOUSE_TYPE = bytes32('DEBT');
 
@@ -48,8 +50,8 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
     address _protocolToken,
     DebtAuctionHouseParams memory _dahParams
   ) Authorizable(msg.sender) validParams {
-    safeEngine = ISAFEEngine(_safeEngine);
-    protocolToken = IProtocolToken(_protocolToken);
+    safeEngine = ISAFEEngine(_safeEngine.assertNonNull());
+    protocolToken = IProtocolToken(_protocolToken); // Validated in _validateParameters()
     _params = _dahParams;
   }
 
@@ -165,11 +167,14 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
     uint256 _uint256 = _data.toUint256();
 
     if (_param == 'protocolToken') protocolToken = IProtocolToken(_address);
-    else if (_param == 'accountingEngine') accountingEngine = _address;
     else if (_param == 'bidDecrease') _params.bidDecrease = _uint256;
     else if (_param == 'amountSoldIncrease') _params.amountSoldIncrease = _uint256;
     else if (_param == 'bidDuration') _params.bidDuration = uint48(_uint256);
     else if (_param == 'totalAuctionLength') _params.totalAuctionLength = uint48(_uint256);
     else revert UnrecognizedParam();
+  }
+
+  function _validateParameters() internal view override {
+    address(protocolToken).assertNonNull();
   }
 }

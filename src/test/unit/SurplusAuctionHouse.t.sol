@@ -1,15 +1,17 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {SurplusAuctionHouseForTest, ISurplusAuctionHouse} from '@contracts/for-test/SurplusAuctionHouseForTest.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IProtocolToken} from '@interfaces/tokens/IProtocolToken.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
+
+import {SurplusAuctionHouseForTest, ISurplusAuctionHouse} from '@contracts/for-test/SurplusAuctionHouseForTest.sol';
+import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
+
 import {Math, WAD, HUNDRED} from '@libraries/Math.sol';
 import {Assertions} from '@libraries/Assertions.sol';
-import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 
 abstract contract Base is HaiTest {
   using stdStorage for StdStorage;
@@ -153,12 +155,14 @@ contract Unit_SurplusAuctionHouse_Constructor is Base {
   }
 
   function test_Set_SafeEngine(address _safeEngine) public happyPath {
+    vm.assume(_safeEngine != address(0));
     _createSurplusAuctionHouse(_safeEngine, address(mockProtocolToken), RECYCLING_PERCENTAGE);
 
     assertEq(address(surplusAuctionHouse.safeEngine()), _safeEngine);
   }
 
   function test_Set_ProtocolToken(address _protocolToken) public happyPath {
+    vm.assume(_protocolToken != address(0));
     _createSurplusAuctionHouse(address(mockSafeEngine), _protocolToken, RECYCLING_PERCENTAGE);
 
     assertEq(address(surplusAuctionHouse.protocolToken()), _protocolToken);
@@ -182,8 +186,21 @@ contract Unit_SurplusAuctionHouse_Constructor is Base {
     assertEq(surplusAuctionHouse.params().recyclingPercentage, _recyclingPercentage);
   }
 
-  function test_Set_SurplusAuctionHouse_Params() public {
-    assertEq(abi.encode(surplusAuctionHouse.params()), abi.encode(sahParams));
+  function test_Set_SurplusAuctionHouse_Params(ISurplusAuctionHouse.SurplusAuctionHouseParams memory _sahParams) public {
+    surplusAuctionHouse = new SurplusAuctionHouseForTest(newAddress(), newAddress(), _sahParams);
+    assertEq(abi.encode(surplusAuctionHouse.params()), abi.encode(_sahParams));
+  }
+
+  function test_Revert_Null_SafeEngine() public {
+    vm.expectRevert(Assertions.NullAddress.selector);
+
+    _createSurplusAuctionHouse(address(0), address(mockProtocolToken), RECYCLING_PERCENTAGE);
+  }
+
+  function test_Revert_Null_ProtocolToken() public {
+    vm.expectRevert(Assertions.NullAddress.selector);
+
+    _createSurplusAuctionHouse(address(mockSafeEngine), address(0), RECYCLING_PERCENTAGE);
   }
 }
 

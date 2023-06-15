@@ -56,13 +56,9 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
     address _debtAuctionHouse,
     AccountingEngineParams memory _accEngineParams
   ) Authorizable(msg.sender) validParams {
-    _safeEngine.assertNonNull();
-    _surplusAuctionHouse.assertNonNull();
-    _debtAuctionHouse.assertNonNull();
-
-    safeEngine = ISAFEEngine(_safeEngine);
-    surplusAuctionHouse = ISurplusAuctionHouse(_surplusAuctionHouse);
-    debtAuctionHouse = IDebtAuctionHouse(_debtAuctionHouse);
+    safeEngine = ISAFEEngine(_safeEngine.assertNonNull());
+    surplusAuctionHouse = ISurplusAuctionHouse(_surplusAuctionHouse); // Validated in _validateParameters()
+    debtAuctionHouse = IDebtAuctionHouse(_debtAuctionHouse); // Validated in _validateParameters()
 
     safeEngine.approveSAFEModification(_surplusAuctionHouse);
 
@@ -285,5 +281,10 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
     safeEngine.denySAFEModification(address(surplusAuctionHouse));
     surplusAuctionHouse = ISurplusAuctionHouse(_surplusAuctionHouse);
     safeEngine.approveSAFEModification(_surplusAuctionHouse);
+  }
+
+  function _validateParameters() internal view override {
+    address(surplusAuctionHouse).assertNonNull();
+    address(debtAuctionHouse).assertNonNull();
   }
 }

@@ -6,8 +6,10 @@ import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IERC20Metadata, IERC20} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
-import {Math} from '@libraries/Math.sol';
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
+
+import {Math} from '@libraries/Math.sol';
+import {Assertions} from '@libraries/Assertions.sol';
 
 abstract contract Base is HaiTest {
   using stdStorage for StdStorage;
@@ -125,6 +127,12 @@ contract Unit_CollateralJoin_Constructor is Base {
     collateralJoin = new CollateralJoin(address(mockSafeEngine), collateralType, address(mockCollateral));
 
     assertEq(collateralJoin.multiplier(), 18 - _decimals);
+  }
+
+  function test_Revert_NullSafeEngine() public {
+    vm.expectRevert(Assertions.NullAddress.selector);
+
+    collateralJoin = new CollateralJoin(address(0), collateralType, address(mockCollateral));
   }
 }
 

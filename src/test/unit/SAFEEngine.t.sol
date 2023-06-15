@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {Math, RAY} from '@libraries/Math.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
@@ -10,6 +9,7 @@ import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {SAFEEngine} from '@contracts/SAFEEngine.sol';
 import {HaiTest} from '@test/utils/HaiTest.t.sol';
 import {StdStorage, stdStorage} from 'forge-std/StdStorage.sol';
+
 import {Math, RAY, WAD} from '@libraries/Math.sol';
 
 abstract contract Base is HaiTest {
@@ -156,8 +156,9 @@ contract Unit_SAFEEngine_Constructor is Base {
     safeEngine = new SAFEEngine(safeEngineParams);
   }
 
-  function test_Set_SAFEEngine_Params() public {
-    assertEq(abi.encode(safeEngine.params()), abi.encode(safeEngineParams));
+  function test_Set_SAFEEngine_Params(ISAFEEngine.SAFEEngineParams memory _safeEngineParams) public {
+    safeEngine = new SAFEEngine(_safeEngineParams);
+    assertEq(abi.encode(safeEngine.params()), abi.encode(_safeEngineParams));
   }
 }
 
@@ -1874,10 +1875,13 @@ contract Unit_SAFEEngine_CanModifySafe is Base {
 }
 
 contract Unit_SAFEEngine_InitializeCollateralType is Base {
+  ISAFEEngine.SAFEEngineCollateralParams safeEngineCollateralParams =
+    ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: 0, debtFloor: 0});
+
   event InitializeCollateralType(bytes32 _collateralType);
 
   function test_Set_AccummulatedRate(bytes32 _collateralType) public authorized {
-    safeEngine.initializeCollateralType(_collateralType);
+    safeEngine.initializeCollateralType(_collateralType, safeEngineCollateralParams);
 
     uint256 _accumulatedRate = safeEngine.cData(_collateralType).accumulatedRate;
     assertEq(_accumulatedRate, RAY);
@@ -1887,13 +1891,13 @@ contract Unit_SAFEEngine_InitializeCollateralType is Base {
     expectEmitNoIndex();
     emit InitializeCollateralType(_collateralType);
 
-    safeEngine.initializeCollateralType(_collateralType);
+    safeEngine.initializeCollateralType(_collateralType, safeEngineCollateralParams);
   }
 
   function test_Revert_NotAuthorized(bytes32 _collateralType) public {
     vm.expectRevert(IAuthorizable.Unauthorized.selector);
 
-    safeEngine.initializeCollateralType(_collateralType);
+    safeEngine.initializeCollateralType(_collateralType, safeEngineCollateralParams);
   }
 
   function test_Revert_CollateralTypeAlreadyExists(bytes32 _collateralType, uint256 _accumulatedRate) public authorized {
@@ -1910,6 +1914,6 @@ contract Unit_SAFEEngine_InitializeCollateralType is Base {
 
     vm.expectRevert(bytes('SAFEEngine/collateral-type-already-exists'));
 
-    safeEngine.initializeCollateralType(_collateralType);
+    safeEngine.initializeCollateralType(_collateralType, safeEngineCollateralParams);
   }
 }

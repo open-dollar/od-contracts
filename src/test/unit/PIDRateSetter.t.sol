@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {Math, RAY} from '@libraries/Math.sol';
-import {Assertions} from '@libraries/Assertions.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
 import {IPIDController} from '@interfaces/IPIDController.sol';
@@ -10,14 +8,16 @@ import {IPIDRateSetter} from '@interfaces/IPIDRateSetter.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
 import {PIDRateSetter} from '@contracts/PIDRateSetter.sol';
-import {Assertions} from '@libraries/Assertions.sol';
 
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
+
+import {Math, RAY} from '@libraries/Math.sol';
+import {Assertions} from '@libraries/Assertions.sol';
 
 contract Base is HaiTest {
   using stdStorage for StdStorage;
 
-  address deployer = address(deployer);
+  address deployer = label('deployer');
   uint256 periodSize = 3600;
   IPIDRateSetter pidRateSetter;
   IOracleRelayer mockOracleRelayer = IOracleRelayer(mockContract('mockOracleRelayer'));

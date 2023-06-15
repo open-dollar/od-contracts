@@ -201,12 +201,13 @@ contract SingleModifySAFECollateralizationTest is DSTest {
     gold = new CoinForTest('GEM', '');
     gold.mint(1000 ether);
 
-    safeEngine.initializeCollateralType('gold');
+    ISAFEEngine.SAFEEngineCollateralParams memory _collateralParams =
+      ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: rad(1000 ether), debtFloor: 0});
+    safeEngine.initializeCollateralType('gold', _collateralParams);
 
     collateralA = new CollateralJoin(address(safeEngine), 'gold', address(gold));
 
     safeEngine.updateCollateralPrice('gold', ray(1 ether), ray(1 ether));
-    safeEngine.modifyParameters('gold', 'debtCeiling', abi.encode(rad(1000 ether)));
 
     ITaxCollector.TaxCollectorParams memory _taxCollectorParams = ITaxCollector.TaxCollectorParams({
       primaryTaxReceiver: address(0x744),
@@ -215,7 +216,9 @@ contract SingleModifySAFECollateralizationTest is DSTest {
     });
 
     taxCollector = new TaxCollector(address(safeEngine), _taxCollectorParams);
-    taxCollector.initializeCollateralType('gold');
+    ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
+      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: 0});
+    taxCollector.initializeCollateralType('gold', _taxCollectorCollateralParams);
     safeEngine.addAuthorization(address(taxCollector));
 
     safeEngine.addAuthorization(address(collateralA));
@@ -467,12 +470,13 @@ contract SingleSAFEDebtLimitTest is DSTest {
     gold = new CoinForTest('GEM', '');
     gold.mint(1000 ether);
 
-    safeEngine.initializeCollateralType('gold');
+    ISAFEEngine.SAFEEngineCollateralParams memory _collateralParams =
+      ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: rad(1000 ether), debtFloor: 0});
+    safeEngine.initializeCollateralType('gold', _collateralParams);
 
     collateralA = new CollateralJoin(address(safeEngine), 'gold', address(gold));
 
     safeEngine.updateCollateralPrice('gold', ray(1 ether), ray(1 ether));
-    safeEngine.modifyParameters('gold', 'debtCeiling', abi.encode(rad(1000 ether)));
 
     ITaxCollector.TaxCollectorParams memory _taxCollectorParams = ITaxCollector.TaxCollectorParams({
       primaryTaxReceiver: address(0x1234),
@@ -481,7 +485,9 @@ contract SingleSAFEDebtLimitTest is DSTest {
     });
 
     taxCollector = new TaxCollector(address(safeEngine), _taxCollectorParams);
-    taxCollector.initializeCollateralType('gold');
+    ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
+      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: 0});
+    taxCollector.initializeCollateralType('gold', _taxCollectorCollateralParams);
     taxCollector.modifyParameters('gold', 'stabilityFee', abi.encode(1_000_000_564_701_133_626_865_910_626)); // 5% / day
     safeEngine.addAuthorization(address(taxCollector));
 
@@ -580,7 +586,9 @@ contract SingleJoinTest is DSTest {
       ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 0});
     safeEngine = new SAFEEngine(_safeEngineParams);
 
-    safeEngine.initializeCollateralType('ETH');
+    ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
+      ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: 0, debtFloor: 0});
+    safeEngine.initializeCollateralType('ETH', _safeEngineCollateralParams);
 
     collateral = new CoinForTest('Gem', 'Gem');
     collateralA = new CollateralJoin(address(safeEngine), 'collateral', address(collateral));
@@ -809,7 +817,6 @@ contract SingleLiquidationTest is DSTest {
         );
     surplusAuctionHouse.addAuthorization(address(accountingEngine));
     debtAuctionHouse.addAuthorization(address(accountingEngine));
-    debtAuctionHouse.modifyParameters('accountingEngine', abi.encode(accountingEngine));
     safeEngine.addAuthorization(address(accountingEngine));
 
     ITaxCollector.TaxCollectorParams memory _taxCollectorParams = ITaxCollector.TaxCollectorParams({
@@ -818,7 +825,9 @@ contract SingleLiquidationTest is DSTest {
       maxSecondaryReceivers: 0
     });
     taxCollector = new TaxCollector(address(safeEngine), _taxCollectorParams);
-    taxCollector.initializeCollateralType('gold');
+    ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
+      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: 0});
+    taxCollector.initializeCollateralType('gold', _taxCollectorCollateralParams);
     safeEngine.addAuthorization(address(taxCollector));
 
     ILiquidationEngine.LiquidationEngineParams memory _liquidationEngineParams =
@@ -831,7 +840,9 @@ contract SingleLiquidationTest is DSTest {
     gold = new CoinForTest('GEM', '');
     gold.mint(1000 ether);
 
-    safeEngine.initializeCollateralType('gold');
+    ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
+      ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: rad(1000 ether), debtFloor: 0});
+    safeEngine.initializeCollateralType('gold', _safeEngineCollateralParams);
     collateralA = new CollateralJoin(address(safeEngine), 'gold', address(gold));
     safeEngine.addAuthorization(address(collateralA));
 
@@ -839,7 +850,6 @@ contract SingleLiquidationTest is DSTest {
     collateralA.join(address(this), 1000 ether);
 
     safeEngine.updateCollateralPrice('gold', ray(1 ether), ray(1 ether));
-    safeEngine.modifyParameters('gold', 'debtCeiling', abi.encode(rad(1000 ether)));
     safeEngine.modifyParameters('globalDebtCeiling', abi.encode(rad(1000 ether)));
 
     IOracleRelayer.OracleRelayerParams memory _oracleRelayerParams =
@@ -1369,9 +1379,10 @@ contract SingleAccumulateRatesTest is DSTest {
       ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: rad(100 ether)});
 
     safeEngine = new SAFEEngine(_safeEngineParams);
-    safeEngine.initializeCollateralType('gold');
+    ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
+      ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: rad(100 ether), debtFloor: 0});
+    safeEngine.initializeCollateralType('gold', _safeEngineCollateralParams);
     safeEngine.modifyParameters('globalDebtCeiling', abi.encode(rad(100 ether)));
-    safeEngine.modifyParameters('gold', 'debtCeiling', abi.encode(rad(100 ether)));
   }
 
   function _generateDebt(bytes32 _collateralType, uint256 _coin) internal {

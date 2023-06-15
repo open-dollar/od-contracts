@@ -65,4 +65,8 @@ interface ILiquidationEngine is IAuthorizable, IDisableable, IModifiable {
   function disconnectSAFESaviour(address _saviour) external;
   function protectSAFE(bytes32 _collateralType, address _safe, address _saviour) external;
   function liquidateSAFE(bytes32 _collateralType, address _safe) external returns (uint256 _auctionId);
+  function initializeCollateralType(
+    bytes32 _cType,
+    LiquidationEngineCollateralParams memory _collateralParams
+  ) external;
 }

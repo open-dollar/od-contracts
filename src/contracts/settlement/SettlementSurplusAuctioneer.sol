@@ -11,9 +11,11 @@ import {Modifiable} from '@contracts/utils/Modifiable.sol';
 
 import {Math} from '@libraries/Math.sol';
 import {Encoding} from '@libraries/Encoding.sol';
+import {Assertions} from '@libraries/Assertions.sol';
 
 contract SettlementSurplusAuctioneer is Authorizable, Modifiable, ISettlementSurplusAuctioneer {
   using Encoding for bytes;
+  using Assertions for address;
 
   // --- Data ---
   // Last time when this contract triggered a surplus auction
@@ -26,8 +28,8 @@ contract SettlementSurplusAuctioneer is Authorizable, Modifiable, ISettlementSur
 
   // --- Init ---
   constructor(address _accountingEngine, address _surplusAuctionHouse) Authorizable(msg.sender) validParams {
-    accountingEngine = IAccountingEngine(_accountingEngine);
-    surplusAuctionHouse = ISurplusAuctionHouse(_surplusAuctionHouse);
+    accountingEngine = IAccountingEngine(_accountingEngine.assertNonNull());
+    surplusAuctionHouse = ISurplusAuctionHouse(_surplusAuctionHouse.assertNonNull());
     safeEngine = ISAFEEngine(address(accountingEngine.safeEngine()));
     safeEngine.approveSAFEModification(address(surplusAuctionHouse));
   }

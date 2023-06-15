@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {Math, RAY, WAD} from '@libraries/Math.sol';
-
 import {IPIDController, PIDController} from '@contracts/PIDController.sol';
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 import {InternalCallsWatcher, InternalCallsExtension} from '@test/utils/InternalCallsWatcher.sol';
 import {PIDControllerForTest, MockPIDController} from '@contracts/for-test/PIDControllerForTest.sol';
-import {Assertions} from '@libraries/Assertions.sol';
 
 import '@script/Params.s.sol';
+
+import {Math, RAY, WAD} from '@libraries/Math.sol';
+import {Assertions} from '@libraries/Assertions.sol';
 
 contract Base is HaiTest {
   IPIDController pidController;
@@ -286,6 +286,27 @@ contract Unit_PIDController_Constructor is Base {
     assertEq(_deviation.timestamp, 0);
     assertEq(_deviation.proportional, 0);
     assertEq(_deviation.integral, 0);
+  }
+
+  function test_Set_PIDControllerParams(IPIDController.PIDControllerParams memory _controllerParams) public {
+    vm.assume(_controllerParams.integralPeriodSize != 0);
+    vm.assume(_controllerParams.noiseBarrier != 0 && _controllerParams.noiseBarrier <= WAD);
+    vm.assume(
+      _controllerParams.feedbackOutputUpperBound != 0
+        && _controllerParams.feedbackOutputUpperBound <= POSITIVE_RATE_LIMIT
+    );
+    vm.assume(
+      _controllerParams.feedbackOutputLowerBound < 0
+        && _controllerParams.feedbackOutputLowerBound >= -int256(NEGATIVE_RATE_LIMIT)
+    );
+    vm.assume(_controllerParams.perSecondCumulativeLeak <= RAY);
+
+    pidController = new PIDController({
+      _cGains: IPIDController.ControllerGains({kp: 1e9, ki: 1e9}),
+      _pidParams: _controllerParams,
+      _importedState: IPIDController.DeviationObservation(0, 0, 0)
+  });
+    assertEq(abi.encode(pidController.params()), abi.encode(_controllerParams));
   }
 
   function test_Revert_FeedbackOutputUpperBoundIsZero() public {

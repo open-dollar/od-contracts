@@ -138,7 +138,9 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
       ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 0});
     safeEngine = new SAFEEngine(_safeEngineParams);
 
-    safeEngine.initializeCollateralType('collateralType');
+    ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
+      ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: 0, debtFloor: 0});
+    safeEngine.initializeCollateralType('collateralType', _safeEngineCollateralParams);
 
     liquidationEngine = new DummyLiquidationEngine(rad(1000 ether));
 

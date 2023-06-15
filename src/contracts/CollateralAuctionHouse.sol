@@ -73,10 +73,8 @@ contract IncreasingDiscountCollateralAuctionHouse is
     CollateralAuctionHouseSystemCoinParams memory _cahParams,
     CollateralAuctionHouseParams memory _cahCParams
   ) Authorizable(msg.sender) validParams {
-    _safeEngine.assertNonNull();
-
-    safeEngine = ISAFEEngine(_safeEngine);
-    liquidationEngine = ILiquidationEngine(_liquidationEngine);
+    safeEngine = ISAFEEngine(_safeEngine.assertNonNull());
+    liquidationEngine = ILiquidationEngine(_liquidationEngine); // LiquidationEngine is validated at _validateParameters()
     collateralType = _collateralType;
 
     _params = _cahParams;

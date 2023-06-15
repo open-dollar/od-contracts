@@ -16,6 +16,7 @@ interface IOracleRelayer is IAuthorizable, IModifiable, IDisableable {
 
   // --- Errors ---
   error RedemptionPriceNotUpdated();
+  error OracleRelayer_CollateralTypeAlreadyInitialized();
 
   // --- Structs ---
   struct OracleRelayerParams {
@@ -49,4 +50,5 @@ interface IOracleRelayer is IAuthorizable, IModifiable, IDisableable {
   function redemptionPrice() external returns (uint256 _redemptionPrice);
   function updateCollateralPrice(bytes32 _collateralType) external;
   function updateRedemptionRate(uint256 _redemptionRate) external;
+  function initializeCollateralType(bytes32 _cType, OracleRelayerCollateralParams memory _collateralParams) external;
 }

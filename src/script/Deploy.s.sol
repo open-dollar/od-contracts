@@ -202,7 +202,6 @@ abstract contract Deploy is Params, Script, Contracts {
 
   function _setupContracts() internal {
     // setup registry
-    debtAuctionHouse.modifyParameters('accountingEngine', abi.encode(accountingEngine));
     liquidationEngine.modifyParameters('accountingEngine', abi.encode(accountingEngine));
 
     // TODO: change for protocolTokenBidReceiver
@@ -222,9 +221,6 @@ abstract contract Deploy is Params, Script, Contracts {
   }
 
   function _setupCollateral(bytes32 _cType) internal {
-    safeEngine.initializeCollateralType(_cType);
-    taxCollector.initializeCollateralType(_cType);
-
     ParamSetter._setupSAFEEngineCollateral(_cType, safeEngine, _safeEngineCParams[_cType]);
     ParamSetter._setupTaxCollectorCollateral(
       _cType, taxCollector, _taxCollectorCParams[_cType], _taxCollectorSecondaryTaxReceiver

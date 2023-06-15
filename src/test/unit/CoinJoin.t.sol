@@ -6,8 +6,10 @@ import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ISystemCoin} from '@interfaces/tokens/ISystemCoin.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
-import {RAY} from '@libraries/Math.sol';
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
+
+import {RAY} from '@libraries/Math.sol';
+import {Assertions} from '@libraries/Assertions.sol';
 
 abstract contract Base is HaiTest {
   using stdStorage for StdStorage;
@@ -57,12 +59,14 @@ contract Unit_CoinJoin_Constructor is Base {
   }
 
   function test_Set_SafeEngine(address _safeEngine) public happyPath {
+    vm.assume(_safeEngine != address(0));
     coinJoin = new CoinJoin(_safeEngine, address(mockSystemCoin));
 
     assertEq(address(coinJoin.safeEngine()), _safeEngine);
   }
 
   function test_Set_SystemCoin(address _systemCoin) public happyPath {
+    vm.assume(_systemCoin != address(0));
     coinJoin = new CoinJoin(address(mockSafeEngine), _systemCoin);
 
     assertEq(address(coinJoin.systemCoin()), _systemCoin);
@@ -70,6 +74,18 @@ contract Unit_CoinJoin_Constructor is Base {
 
   function test_Set_Decimals() public happyPath {
     assertEq(coinJoin.decimals(), 18);
+  }
+
+  function test_Revert_NullSafeEngine() public {
+    vm.expectRevert(Assertions.NullAddress.selector);
+
+    coinJoin = new CoinJoin(address(0), address(mockSystemCoin));
+  }
+
+  function test_Revert_NullSystemCoin() public {
+    vm.expectRevert(Assertions.NullAddress.selector);
+
+    coinJoin = new CoinJoin(address(mockSafeEngine), address(0));
   }
 }
 

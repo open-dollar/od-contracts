@@ -3,14 +3,17 @@ pragma solidity 0.8.19;
 
 import {
   PostSettlementSurplusAuctionHouseForTest,
+  PostSettlementSurplusAuctionHouse,
   IPostSettlementSurplusAuctionHouse
 } from '@contracts/for-test/PostSettlementSurplusAuctionHouseForTest.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IProtocolToken} from '@interfaces/tokens/IProtocolToken.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
-import {WAD} from '@libraries/Math.sol';
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
+
+import {WAD} from '@libraries/Math.sol';
+import {Assertions} from '@libraries/Assertions.sol';
 
 abstract contract Base is HaiTest {
   using stdStorage for StdStorage;
@@ -110,6 +113,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_Constructor is Base {
   }
 
   function test_Set_SafeEngine(address _safeEngine) public happyPath {
+    vm.assume(_safeEngine != address(0));
     postSettlementSurplusAuctionHouse =
       new PostSettlementSurplusAuctionHouseForTest(_safeEngine, address(mockProtocolToken), pssahParams);
 
@@ -117,6 +121,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_Constructor is Base {
   }
 
   function test_Set_ProtocolToken(address _protocolToken) public happyPath {
+    vm.assume(_protocolToken != address(0));
     postSettlementSurplusAuctionHouse =
       new PostSettlementSurplusAuctionHouseForTest(address(mockSafeEngine), _protocolToken, pssahParams);
 
@@ -135,8 +140,22 @@ contract Unit_PostSettlementSurplusAuctionHouse_Constructor is Base {
     assertEq(postSettlementSurplusAuctionHouse.params().totalAuctionLength, 2 days);
   }
 
-  function test_Set_PSSAH_Params() public {
-    assertEq(abi.encode(postSettlementSurplusAuctionHouse.params()), abi.encode(pssahParams));
+  function test_Set_PSSAH_Params(IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams memory _pssahParams) public {
+    PostSettlementSurplusAuctionHouse _postSettlementSurplusAuctionHouse =
+      new PostSettlementSurplusAuctionHouse(address(mockSafeEngine), address(mockProtocolToken), _pssahParams);
+    assertEq(abi.encode(_postSettlementSurplusAuctionHouse.params()), abi.encode(_pssahParams));
+  }
+
+  function test_Revert_Null_SafeEngine() public {
+    vm.expectRevert(Assertions.NullAddress.selector);
+
+    new PostSettlementSurplusAuctionHouseForTest(address(0), address(mockProtocolToken), pssahParams);
+  }
+
+  function test_Revert_Null_ProtocolToken() public {
+    vm.expectRevert(Assertions.NullAddress.selector);
+
+    new PostSettlementSurplusAuctionHouseForTest(address(mockSafeEngine), address(0), pssahParams);
   }
 }
 

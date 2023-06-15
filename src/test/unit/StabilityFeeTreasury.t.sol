@@ -8,17 +8,19 @@ import {IStabilityFeeTreasury} from '@interfaces/IStabilityFeeTreasury.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ICoinJoin} from '@interfaces/utils/ICoinJoin.sol';
 import {ISystemCoin} from '@interfaces/tokens/ISystemCoin.sol';
+
 import {StabilityFeeTreasury} from '@contracts/StabilityFeeTreasury.sol';
 import {
   StabilityFeeTreasuryForTest,
   StabilityFeeTreasuryForInternalCallsTest
 } from '@contracts/for-test/StabilityFeeTreasuryForTest.sol';
-import {Math, RAY, WAD, HOUR, HUNDRED} from '@libraries/Math.sol';
-import {Assertions} from '@libraries/Assertions.sol';
 import {HaiTest} from '@test/utils/HaiTest.t.sol';
 import {StdStorage, stdStorage} from 'forge-std/StdStorage.sol';
 
 import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
+
+import {Math, RAY, WAD, HOUR, HUNDRED} from '@libraries/Math.sol';
+import {Assertions} from '@libraries/Assertions.sol';
 
 contract Base is HaiTest {
   using stdStorage for StdStorage;
@@ -242,8 +244,21 @@ contract Unit_StabilityFeeTreasury_Constructor is Base {
       new StabilityFeeTreasury(address(mockSafeEngine), address(0), address(mockCoinJoin), stabilityFeeTreasuryParams);
   }
 
-  function test_Set_StabilityFeeTreasury_Params() public {
-    assertEq(abi.encode(stabilityFeeTreasury.params()), abi.encode(stabilityFeeTreasuryParams));
+  function test_Revert_Null_SafeEngine() public {
+    vm.expectRevert(Assertions.NullAddress.selector);
+
+    stabilityFeeTreasury =
+      new StabilityFeeTreasury(address(0), mockExtraSurplusReceiver, address(mockCoinJoin), stabilityFeeTreasuryParams);
+  }
+
+  function test_Set_StabilityFeeTreasury_Params(
+    IStabilityFeeTreasury.StabilityFeeTreasuryParams memory _stabilityFeeTreasuryParams
+  ) public {
+    vm.assume(_stabilityFeeTreasuryParams.treasuryCapacity >= _stabilityFeeTreasuryParams.minFundsRequired);
+    vm.assume(_stabilityFeeTreasuryParams.minFundsRequired <= _stabilityFeeTreasuryParams.treasuryCapacity);
+    stabilityFeeTreasury =
+    new StabilityFeeTreasury(address(mockSafeEngine), mockExtraSurplusReceiver, address(mockCoinJoin), _stabilityFeeTreasuryParams);
+    assertEq(abi.encode(stabilityFeeTreasury.params()), abi.encode(_stabilityFeeTreasuryParams));
   }
 }
 
