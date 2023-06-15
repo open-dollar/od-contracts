@@ -217,7 +217,8 @@ contract Unit_CollateralJoin_Join is Base {
   ) public happyPath(_wad, _decimals) {
     vm.expectCall(
       address(mockSafeEngine),
-      abi.encodeCall(mockSafeEngine.modifyCollateralBalance, (collateralType, _account, int256(_wad)))
+      abi.encodeCall(mockSafeEngine.modifyCollateralBalance, (collateralType, _account, int256(_wad))),
+      1
     );
 
     collateralJoin.join(_account, _wad);
@@ -230,7 +231,8 @@ contract Unit_CollateralJoin_Join is Base {
   ) public happyPath(_wad, _decimals) {
     vm.expectCall(
       address(mockCollateral),
-      abi.encodeCall(IERC20.transferFrom, (user, address(collateralJoin), _wad / 10 ** (18 - _decimals)))
+      abi.encodeCall(IERC20.transferFrom, (user, address(collateralJoin), _wad / 10 ** (18 - _decimals))),
+      1
     );
 
     collateralJoin.join(_account, _wad);
@@ -292,7 +294,8 @@ contract Unit_CollateralJoin_Exit is Base {
   ) public happyPath(_account, _wad, _decimals) {
     vm.expectCall(
       address(mockSafeEngine),
-      abi.encodeCall(mockSafeEngine.modifyCollateralBalance, (collateralType, user, -int256(_wad)))
+      abi.encodeCall(mockSafeEngine.modifyCollateralBalance, (collateralType, user, -int256(_wad))),
+      1
     );
 
     collateralJoin.exit(_account, _wad);
@@ -303,7 +306,9 @@ contract Unit_CollateralJoin_Exit is Base {
     uint256 _wad,
     uint256 _decimals
   ) public happyPath(_account, _wad, _decimals) {
-    vm.expectCall(address(mockCollateral), abi.encodeCall(IERC20.transfer, (_account, _wad / 10 ** (18 - _decimals))));
+    vm.expectCall(
+      address(mockCollateral), abi.encodeCall(IERC20.transfer, (_account, _wad / 10 ** (18 - _decimals))), 1
+    );
 
     collateralJoin.exit(_account, _wad);
   }

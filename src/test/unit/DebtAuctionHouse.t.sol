@@ -627,7 +627,31 @@ contract Unit_DebtAuctionHouse_DecreaseSoldAmount is Base {
   ) public happyPath(_auction, _amountToBuy, _params.bidDecrease, _params.bidDuration, _totalOnAuctionDebt) {
     vm.expectCall(
       address(mockSafeEngine),
-      abi.encodeCall(mockSafeEngine.transferInternalCoins, (user, _auction.highBidder, _auction.bidAmount))
+      abi.encodeCall(mockSafeEngine.transferInternalCoins, (user, _auction.highBidder, _auction.bidAmount)),
+      1
+    );
+
+    debtAuctionHouse.decreaseSoldAmount(_auction.id, _amountToBuy, _auction.bidAmount);
+  }
+
+  function test_NotCall_HighBidder_CancelAuctionedDebtWithSurplus(
+    DebtAuction memory _auction,
+    uint256 _amountToBuy,
+    uint256 _bidDecrease,
+    uint48 _bidDuration,
+    uint256 _totalOnAuctionDebt
+  ) public {
+    vm.assume(_auction.bidExpiry > block.timestamp);
+
+    _assumeHappyPath(_auction, _amountToBuy, _bidDecrease, _bidDuration);
+    _mockValues(_auction, _bidDecrease, _bidDuration, _totalOnAuctionDebt);
+
+    vm.expectCall(
+      address(mockAccountingEngine),
+      abi.encodeCall(
+        mockAccountingEngine.cancelAuctionedDebtWithSurplus, (Math.min(_auction.bidAmount, _totalOnAuctionDebt))
+      ),
+      0
     );
 
     debtAuctionHouse.decreaseSoldAmount(_auction.id, _amountToBuy, _auction.bidAmount);
@@ -649,29 +673,8 @@ contract Unit_DebtAuctionHouse_DecreaseSoldAmount is Base {
       address(mockAccountingEngine),
       abi.encodeCall(
         mockAccountingEngine.cancelAuctionedDebtWithSurplus, (Math.min(_auction.bidAmount, _totalOnAuctionDebt))
-      )
-    );
-
-    debtAuctionHouse.decreaseSoldAmount(_auction.id, _amountToBuy, _auction.bidAmount);
-  }
-
-  function testFail_Call_HighBidder_CancelAuctionedDebtWithSurplus(
-    DebtAuction memory _auction,
-    uint256 _amountToBuy,
-    uint256 _bidDecrease,
-    uint48 _bidDuration,
-    uint256 _totalOnAuctionDebt
-  ) public {
-    vm.assume(_auction.bidExpiry > block.timestamp);
-
-    _assumeHappyPath(_auction, _amountToBuy, _bidDecrease, _bidDuration);
-    _mockValues(_auction, _bidDecrease, _bidDuration, _totalOnAuctionDebt);
-
-    vm.expectCall(
-      address(mockAccountingEngine),
-      abi.encodeCall(
-        mockAccountingEngine.cancelAuctionedDebtWithSurplus, (Math.min(_auction.bidAmount, _totalOnAuctionDebt))
-      )
+      ),
+      1
     );
 
     debtAuctionHouse.decreaseSoldAmount(_auction.id, _amountToBuy, _auction.bidAmount);
@@ -788,7 +791,9 @@ contract Unit_DebtAuctionHouse_SettleAuction is Base {
     uint256 _activeDebtAuctions
   ) public happyPath(_auction, _activeDebtAuctions) {
     vm.expectCall(
-      address(mockProtocolToken), abi.encodeCall(mockProtocolToken.mint, (_auction.highBidder, _auction.amountToSell))
+      address(mockProtocolToken),
+      abi.encodeCall(mockProtocolToken.mint, (_auction.highBidder, _auction.amountToSell)),
+      1
     );
 
     debtAuctionHouse.settleAuction(_auction.id);
@@ -878,7 +883,8 @@ contract Unit_DebtAuctionHouse_TerminateAuctionPrematurely is Base {
       address(mockSafeEngine),
       abi.encodeCall(
         mockSafeEngine.createUnbackedDebt, (address(mockAccountingEngine), _auction.highBidder, _auction.bidAmount)
-      )
+      ),
+      1
     );
 
     debtAuctionHouse.terminateAuctionPrematurely(_auction.id);

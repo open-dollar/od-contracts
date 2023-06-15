@@ -58,7 +58,7 @@ contract Unit_Job_Reward is Base {
 
   function test_Call_StabilityFeeTreasury_PullFunds(uint256 _rewardAmount) public happyPath(_rewardAmount) {
     vm.expectCall(
-      address(mockStabilityFeeTreasury), abi.encodeCall(mockStabilityFeeTreasury.pullFunds, (user, _rewardAmount))
+      address(mockStabilityFeeTreasury), abi.encodeCall(mockStabilityFeeTreasury.pullFunds, (user, _rewardAmount)), 1
     );
 
     job.rewardModifier();

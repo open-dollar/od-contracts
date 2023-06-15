@@ -219,7 +219,8 @@ contract Unit_PostSettlementSurplusAuctionHouse_StartAuction is Base {
       abi.encodeCall(
         mockSafeEngine.transferInternalCoins,
         (authorizedAccount, address(postSettlementSurplusAuctionHouse), _amountToSell)
-      )
+      ),
+      1
     );
 
     postSettlementSurplusAuctionHouse.startAuction(_amountToSell, _initialBid);
@@ -460,25 +461,16 @@ contract Unit_PostSettlementSurplusAuctionHouse_IncreaseBidSize is Base {
   ) public happyPath(_auction, _bid, _bidIncrease, _bidDuration) {
     vm.expectCall(
       address(mockProtocolToken),
+      abi.encodeCall(mockProtocolToken.transferFrom, (_auction.highBidder, _auction.highBidder, _auction.bidAmount)),
+      0
+    );
+    vm.expectCall(
+      address(mockProtocolToken),
       abi.encodeCall(
         mockProtocolToken.transferFrom,
         (_auction.highBidder, address(postSettlementSurplusAuctionHouse), _bid - _auction.bidAmount)
-      )
-    );
-
-    changePrank(_auction.highBidder);
-    postSettlementSurplusAuctionHouse.increaseBidSize(_auction.id, _auction.amountToSell, _bid);
-  }
-
-  function testFail_Call_ProtocolToken_Move_0(
-    SurplusAuction memory _auction,
-    uint256 _bid,
-    uint256 _bidIncrease,
-    uint48 _bidDuration
-  ) public happyPath(_auction, _bid, _bidIncrease, _bidDuration) {
-    vm.expectCall(
-      address(mockProtocolToken),
-      abi.encodeCall(mockProtocolToken.transferFrom, (_auction.highBidder, _auction.highBidder, _auction.bidAmount))
+      ),
+      1
     );
 
     changePrank(_auction.highBidder);
@@ -493,13 +485,15 @@ contract Unit_PostSettlementSurplusAuctionHouse_IncreaseBidSize is Base {
   ) public happyPath(_auction, _bid, _bidIncrease, _bidDuration) {
     vm.expectCall(
       address(mockProtocolToken),
-      abi.encodeCall(mockProtocolToken.transferFrom, (user, _auction.highBidder, _auction.bidAmount))
+      abi.encodeCall(mockProtocolToken.transferFrom, (user, _auction.highBidder, _auction.bidAmount)),
+      1
     );
     vm.expectCall(
       address(mockProtocolToken),
       abi.encodeCall(
         mockProtocolToken.transferFrom, (user, address(postSettlementSurplusAuctionHouse), _bid - _auction.bidAmount)
-      )
+      ),
+      1
     );
 
     postSettlementSurplusAuctionHouse.increaseBidSize(_auction.id, _auction.amountToSell, _bid);
@@ -617,14 +611,15 @@ contract Unit_PostSettlementSurplusAuctionHouse_SettleAuction is Base {
       abi.encodeCall(
         mockSafeEngine.transferInternalCoins,
         (address(postSettlementSurplusAuctionHouse), _auction.highBidder, _auction.amountToSell)
-      )
+      ),
+      1
     );
 
     postSettlementSurplusAuctionHouse.settleAuction(_auction.id);
   }
 
   function test_Call_ProtocolToken_Burn(SurplusAuction memory _auction) public happyPath(_auction) {
-    vm.expectCall(address(mockProtocolToken), abi.encodeWithSignature('burn(uint256)', _auction.bidAmount));
+    vm.expectCall(address(mockProtocolToken), abi.encodeWithSignature('burn(uint256)', _auction.bidAmount), 1);
 
     postSettlementSurplusAuctionHouse.settleAuction(_auction.id);
   }

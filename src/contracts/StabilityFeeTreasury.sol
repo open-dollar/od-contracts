@@ -52,13 +52,10 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
     address _coinJoin,
     StabilityFeeTreasuryParams memory _sfTreasuryParams
   ) Authorizable(msg.sender) validParams {
-    require(address(ICoinJoin(_coinJoin).systemCoin()) != address(0), 'StabilityFeeTreasury/null-system-coin');
-    require(_extraSurplusReceiver != address(0), 'StabilityFeeTreasury/null-surplus-receiver');
-
     safeEngine = ISAFEEngine(_safeEngine);
     extraSurplusReceiver = _extraSurplusReceiver;
     coinJoin = ICoinJoin(_coinJoin);
-    systemCoin = ISystemCoin(address(coinJoin.systemCoin()));
+    systemCoin = ISystemCoin(address(coinJoin.systemCoin()).assertNonNull());
     latestSurplusTransferTime = block.timestamp;
     _params = _sfTreasuryParams;
 
@@ -72,16 +69,17 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
    */
   function _onContractDisable() internal override {
     _joinAllCoins();
-    uint256 _coinBalance = safeEngine.coinBalance(address(this));
-    safeEngine.transferInternalCoins(address(this), extraSurplusReceiver, _coinBalance);
+    uint256 _coinBalanceSelf = safeEngine.coinBalance(address(this));
+    safeEngine.transferInternalCoins(address(this), extraSurplusReceiver, _coinBalanceSelf);
   }
 
   /**
    * @notice Join all ERC20 system coins that the treasury has inside the SAFEEngine
    */
   function _joinAllCoins() internal virtual {
-    if (systemCoin.balanceOf(address(this)) > 0) {
-      coinJoin.join(address(this), systemCoin.balanceOf(address(this)));
+    uint256 _systemCoinBalance = systemCoin.balanceOf(address(this));
+    if (_systemCoinBalance > 0) {
+      coinJoin.join(address(this), _systemCoinBalance);
     }
   }
 
@@ -89,15 +87,20 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
    * @notice Settle as much bad debt as possible (if this contract has any)
    */
   function settleDebt() external virtual {
-    _settleDebt();
+    _settleDebt(safeEngine.coinBalance(address(this)), safeEngine.debtBalance(address(this)));
   }
 
-  function _settleDebt() internal virtual {
-    uint256 _coinBalanceSelf = safeEngine.coinBalance(address(this));
-    uint256 _debtBalanceSelf = safeEngine.debtBalance(address(this));
-
-    if (_debtBalanceSelf > 0) {
-      safeEngine.settleDebt(Math.min(_coinBalanceSelf, _debtBalanceSelf));
+  function _settleDebt(
+    uint256 _coinBalance,
+    uint256 _debtBalance
+  ) internal virtual returns (uint256 _newCoinBalance, uint256 _newDebtBalance) {
+    _newCoinBalance = _coinBalance;
+    _newDebtBalance = _debtBalance;
+    if (_debtBalance > 0) {
+      uint256 _debtToSettle = Math.min(_coinBalance, _debtBalance);
+      safeEngine.settleDebt(_debtToSettle);
+      _newCoinBalance -= _debtToSettle;
+      _newDebtBalance -= _debtToSettle;
     }
   }
 
@@ -134,10 +137,11 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
     require(_account != address(0), 'StabilityFeeTreasury/null-account');
 
     _joinAllCoins();
-    _settleDebt();
+    (uint256 _coinBalance, uint256 _debtBalance) =
+      _settleDebt(safeEngine.coinBalance(address(this)), safeEngine.debtBalance(address(this)));
 
-    require(safeEngine.debtBalance(address(this)) == 0, 'StabilityFeeTreasury/outstanding-bad-debt');
-    require(safeEngine.coinBalance(address(this)) >= _rad, 'StabilityFeeTreasury/not-enough-funds');
+    require(_debtBalance == 0, 'StabilityFeeTreasury/outstanding-bad-debt');
+    require(_coinBalance >= _rad, 'StabilityFeeTreasury/not-enough-funds');
 
     if (_account != extraSurplusReceiver) {
       expensesAccumulator += _rad;
@@ -180,14 +184,12 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
     pulledPerHour[msg.sender][block.timestamp / HOUR] += (_wad * RAY);
 
     _joinAllCoins();
-    _settleDebt();
+    (uint256 _coinBalance, uint256 _debtBalance) =
+      _settleDebt(safeEngine.coinBalance(address(this)), safeEngine.debtBalance(address(this)));
 
-    require(safeEngine.debtBalance(address(this)) == 0, 'StabilityFeeTreasury/outstanding-bad-debt');
-    require(safeEngine.coinBalance(address(this)) >= _wad * RAY, 'StabilityFeeTreasury/not-enough-funds');
-    require(
-      safeEngine.coinBalance(address(this)) >= _params.pullFundsMinThreshold,
-      'StabilityFeeTreasury/below-pullFunds-min-threshold'
-    );
+    require(_debtBalance == 0, 'StabilityFeeTreasury/outstanding-bad-debt');
+    require(_coinBalance >= _wad * RAY, 'StabilityFeeTreasury/not-enough-funds');
+    require(_coinBalance >= _params.pullFundsMinThreshold, 'StabilityFeeTreasury/below-pullFunds-min-threshold');
 
     // Update allowance and accumulator
     allowance[msg.sender].total -= (_wad * RAY);
@@ -227,13 +229,15 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
     // Join all coins in system
     _joinAllCoins();
     // Settle outstanding bad debt
-    _settleDebt();
+    (uint256 _coinBalance, uint256 _debtBalance) =
+      _settleDebt(safeEngine.coinBalance(address(this)), safeEngine.debtBalance(address(this)));
+
     // Check that there's no bad debt left
-    require(safeEngine.debtBalance(address(this)) == 0, 'StabilityFeeTreasury/outstanding-bad-debt');
+    require(_debtBalance == 0, 'StabilityFeeTreasury/outstanding-bad-debt');
     // Check if we have too much money
-    if (safeEngine.coinBalance(address(this)) > _remainingFunds) {
+    if (_coinBalance > _remainingFunds) {
       // Make sure that we still keep min SF in treasury
-      uint256 _fundsToTransfer = safeEngine.coinBalance(address(this)) - _remainingFunds;
+      uint256 _fundsToTransfer = _coinBalance - _remainingFunds;
       // Transfer surplus to accounting engine
       safeEngine.transferInternalCoins(address(this), extraSurplusReceiver, _fundsToTransfer);
       // Emit event
@@ -246,7 +250,7 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled validParams {
     uint256 _uint256 = _data.toUint256();
 
-    if (_param == 'extraSurplusReceiver') extraSurplusReceiver = _data.toAddress().assertNonNull();
+    if (_param == 'extraSurplusReceiver') extraSurplusReceiver = _data.toAddress();
     else if (_param == 'expensesMultiplier') _params.expensesMultiplier = _uint256;
     else if (_param == 'treasuryCapacity') _params.treasuryCapacity = _uint256;
     else if (_param == 'minFundsRequired') _params.minFundsRequired = _uint256;
@@ -256,6 +260,7 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
   }
 
   function _validateParameters() internal view override {
+    extraSurplusReceiver.assertNonNull();
     _params.treasuryCapacity.assertGtEq(_params.minFundsRequired);
     _params.minFundsRequired.assertLtEq(_params.treasuryCapacity);
   }

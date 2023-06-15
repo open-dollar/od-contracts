@@ -1015,7 +1015,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
   }
 
   function test_Call_SafeEngine_CData(Liquidation memory _liquidation) public happyPathFullLiquidation(_liquidation) {
-    vm.expectCall(address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.cData.selector, collateralType), 2);
+    vm.expectCall(address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.cData.selector, collateralType), 1);
 
     liquidationEngine.liquidateSAFE(collateralType, safe);
   }
@@ -1027,7 +1027,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
   }
 
   function test_Call_SafeEngine_Safes(Liquidation memory _liquidation) public happyPathFullLiquidation(_liquidation) {
-    vm.expectCall(address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.safes.selector, collateralType, safe), 3);
+    vm.expectCall(address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.safes.selector, collateralType, safe), 1);
 
     liquidationEngine.liquidateSAFE(collateralType, safe);
   }

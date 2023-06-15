@@ -674,7 +674,7 @@ contract Unit_AccountingEngine_AuctionDebt is Base {
     _mockValues(_scenario, 1);
 
     vm.expectCall(
-      address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.coinBalance.selector, address(accountingEngine)), 2
+      address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.coinBalance.selector, address(accountingEngine)), 1
     );
 
     accountingEngine.auctionDebt();
@@ -811,7 +811,7 @@ contract Unit_AccountingEngine_AuctionSurplus is Base {
     _mockValues(0, 0, _scenario);
 
     vm.expectCall(
-      address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.debtBalance.selector, address(accountingEngine)), 2
+      address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.debtBalance.selector, address(accountingEngine)), 1
     );
 
     accountingEngine.auctionSurplus();
@@ -1148,7 +1148,7 @@ contract Unit_AccountingEngine_TransferPostSettlementSurplus is Base {
     uint256 _debtBalance = _scenario.debtBalance - _debtToSettle;
 
     vm.expectEmit(true, false, false, true);
-    emit TransferPostSettlementSurplus(postSettlementSurplusDrain, _coinBalance, _debtBalance);
+    emit TransferPostSettlementSurplus(postSettlementSurplusDrain, 0, _debtBalance);
 
     accountingEngine.transferPostSettlementSurplus();
   }

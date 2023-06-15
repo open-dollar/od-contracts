@@ -230,13 +230,13 @@ contract Unit_StabilityFeeTreasury_Constructor is Base {
   function test_Revert_NullSystemCoin() public {
     _mockCoinJoinSystemCoin(address(0));
 
-    vm.expectRevert(bytes('StabilityFeeTreasury/null-system-coin'));
+    vm.expectRevert(Assertions.NullAddress.selector);
     stabilityFeeTreasury =
     new StabilityFeeTreasury(address(mockSafeEngine), mockExtraSurplusReceiver, address(mockCoinJoin), stabilityFeeTreasuryParams);
   }
 
   function test_Revert_NullSurplusReceiver() public {
-    vm.expectRevert(bytes('StabilityFeeTreasury/null-surplus-receiver'));
+    vm.expectRevert(Assertions.NullAddress.selector);
 
     stabilityFeeTreasury =
       new StabilityFeeTreasury(address(mockSafeEngine), address(0), address(mockCoinJoin), stabilityFeeTreasuryParams);
@@ -281,7 +281,7 @@ contract Unit_StabilityFeeTreasury_ModifyParameters is Base {
   }
 }
 
-contract Unit_StabilityFeeTreasuty_DisableContract is Base {
+contract Unit_StabilityFeeTreasury_DisableContract is Base {
   event DisableContract();
 
   function setUp() public virtual override {
@@ -1463,7 +1463,7 @@ contract Unit_StabilityFeeTreasury_JoinAllCoins is Base {
     _mockSystemCoinsBalanceOf(_balance);
 
     vm.expectCall(
-      address(mockSystemCoin), abi.encodeWithSelector(IERC20.balanceOf.selector, address(stabilityFeeTreasury)), 2
+      address(mockSystemCoin), abi.encodeWithSelector(IERC20.balanceOf.selector, address(stabilityFeeTreasury)), 1
     );
 
     StabilityFeeTreasuryForTest(address(stabilityFeeTreasury)).callJoinAllCoins();

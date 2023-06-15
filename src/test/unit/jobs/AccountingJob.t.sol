@@ -139,7 +139,7 @@ contract Unit_AccountingJob_WorkPopDebtFromQueue is Base {
 
   function test_Call_AccountingEngine_PopDebtFromQueue(uint256 _debtBlockTimestamp) public happyPath {
     vm.expectCall(
-      address(mockAccountingEngine), abi.encodeCall(mockAccountingEngine.popDebtFromQueue, (_debtBlockTimestamp))
+      address(mockAccountingEngine), abi.encodeCall(mockAccountingEngine.popDebtFromQueue, (_debtBlockTimestamp)), 1
     );
 
     accountingJob.workPopDebtFromQueue(_debtBlockTimestamp);
@@ -177,7 +177,7 @@ contract Unit_AccountingJob_WorkAuctionDebt is Base {
   }
 
   function test_Call_AccountingEngine_AuctionDebt(uint256 _id) public happyPath(_id) {
-    vm.expectCall(address(mockAccountingEngine), abi.encodeCall(mockAccountingEngine.auctionDebt, ()));
+    vm.expectCall(address(mockAccountingEngine), abi.encodeCall(mockAccountingEngine.auctionDebt, ()), 1);
 
     accountingJob.workAuctionDebt();
   }
@@ -214,7 +214,7 @@ contract Unit_AccountingJob_WorkAuctionSurplus is Base {
   }
 
   function test_Call_AccountingEngine_AuctionSurplus(uint256 _id) public happyPath(_id) {
-    vm.expectCall(address(mockAccountingEngine), abi.encodeCall(mockAccountingEngine.auctionSurplus, ()));
+    vm.expectCall(address(mockAccountingEngine), abi.encodeCall(mockAccountingEngine.auctionSurplus, ()), 1);
 
     accountingJob.workAuctionSurplus();
   }
@@ -250,7 +250,7 @@ contract Unit_AccountingJob_WorkTransferExtraSurplus is Base {
   }
 
   function test_Call_AccountingEngine_TransferExtraSurplus() public happyPath {
-    vm.expectCall(address(mockAccountingEngine), abi.encodeCall(mockAccountingEngine.transferExtraSurplus, ()));
+    vm.expectCall(address(mockAccountingEngine), abi.encodeCall(mockAccountingEngine.transferExtraSurplus, ()), 1);
 
     accountingJob.workTransferExtraSurplus();
   }

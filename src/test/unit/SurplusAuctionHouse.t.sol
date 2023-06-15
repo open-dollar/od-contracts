@@ -206,7 +206,8 @@ contract Unit_SurplusAuctionHouse_DisableContract is Base {
       address(mockSafeEngine),
       abi.encodeCall(
         mockSafeEngine.transferInternalCoins, (address(surplusAuctionHouse), authorizedAccount, _coinBalance)
-      )
+      ),
+      1
     );
 
     surplusAuctionHouse.disableContract();
@@ -323,7 +324,8 @@ contract Unit_SurplusAuctionHouse_StartAuction is Base {
       address(mockSafeEngine),
       abi.encodeCall(
         mockSafeEngine.transferInternalCoins, (authorizedAccount, address(surplusAuctionHouse), _amountToSell)
-      )
+      ),
+      1
     );
 
     surplusAuctionHouse.startAuction(_amountToSell, _initialBid);
@@ -572,24 +574,15 @@ contract Unit_SurplusAuctionHouse_IncreaseBidSize is Base {
   ) public happyPath(_auction, _bid, _bidIncrease, _bidDuration) {
     vm.expectCall(
       address(mockProtocolToken),
-      abi.encodeCall(
-        mockProtocolToken.transferFrom, (_auction.highBidder, address(surplusAuctionHouse), _bid - _auction.bidAmount)
-      )
+      abi.encodeCall(mockProtocolToken.transferFrom, (_auction.highBidder, _auction.highBidder, _auction.bidAmount)),
+      0
     );
-
-    changePrank(_auction.highBidder);
-    surplusAuctionHouse.increaseBidSize(_auction.id, _auction.amountToSell, _bid);
-  }
-
-  function testFail_Call_ProtocolToken_Move_0(
-    SurplusAuction memory _auction,
-    uint256 _bid,
-    uint256 _bidIncrease,
-    uint48 _bidDuration
-  ) public happyPath(_auction, _bid, _bidIncrease, _bidDuration) {
     vm.expectCall(
       address(mockProtocolToken),
-      abi.encodeCall(mockProtocolToken.transferFrom, (_auction.highBidder, _auction.highBidder, _auction.bidAmount))
+      abi.encodeCall(
+        mockProtocolToken.transferFrom, (_auction.highBidder, address(surplusAuctionHouse), _bid - _auction.bidAmount)
+      ),
+      1
     );
 
     changePrank(_auction.highBidder);
@@ -604,11 +597,13 @@ contract Unit_SurplusAuctionHouse_IncreaseBidSize is Base {
   ) public happyPath(_auction, _bid, _bidIncrease, _bidDuration) {
     vm.expectCall(
       address(mockProtocolToken),
-      abi.encodeCall(mockProtocolToken.transferFrom, (user, _auction.highBidder, _auction.bidAmount))
+      abi.encodeCall(mockProtocolToken.transferFrom, (user, _auction.highBidder, _auction.bidAmount)),
+      1
     );
     vm.expectCall(
       address(mockProtocolToken),
-      abi.encodeCall(mockProtocolToken.transferFrom, (user, address(surplusAuctionHouse), _bid - _auction.bidAmount))
+      abi.encodeCall(mockProtocolToken.transferFrom, (user, address(surplusAuctionHouse), _bid - _auction.bidAmount)),
+      1
     );
 
     surplusAuctionHouse.increaseBidSize(_auction.id, _auction.amountToSell, _bid);
@@ -747,7 +742,23 @@ contract Unit_SurplusAuctionHouse_SettleAuction is Base {
       address(mockSafeEngine),
       abi.encodeCall(
         mockSafeEngine.transferInternalCoins, (address(surplusAuctionHouse), _auction.highBidder, _auction.amountToSell)
-      )
+      ),
+      1
+    );
+
+    surplusAuctionHouse.settleAuction(_auction.id);
+  }
+
+  function test_NotCall_ProtocolToken_Push(SurplusAuction memory _auction) public {
+    uint256 _recyclingPercentage = 0;
+
+    (uint256 _amountToSend,) = _assumeHappyPath(_auction, _recyclingPercentage);
+    _mockValues(_auction, _recyclingPercentage);
+
+    vm.expectCall(
+      address(mockProtocolToken),
+      abi.encodeCall(mockProtocolToken.transfer, (protocolTokenBidReceiver, _amountToSend)),
+      0
     );
 
     surplusAuctionHouse.settleAuction(_auction.id);
@@ -760,21 +771,21 @@ contract Unit_SurplusAuctionHouse_SettleAuction is Base {
     _mockValues(_auction, _recyclingPercentage);
 
     vm.expectCall(
-      address(mockProtocolToken), abi.encodeCall(mockProtocolToken.transfer, (protocolTokenBidReceiver, _amountToSend))
+      address(mockProtocolToken),
+      abi.encodeCall(mockProtocolToken.transfer, (protocolTokenBidReceiver, _amountToSend)),
+      1
     );
 
     surplusAuctionHouse.settleAuction(_auction.id);
   }
 
-  function testFail_Call_ProtocolToken_Push(SurplusAuction memory _auction) public {
-    uint256 _recyclingPercentage = 0;
+  function test_NotCall_ProtocolToken_Burn(SurplusAuction memory _auction) public {
+    uint256 _recyclingPercentage = 100;
 
-    (uint256 _amountToSend,) = _assumeHappyPath(_auction, _recyclingPercentage);
+    (, uint256 _amountToBurn) = _assumeHappyPath(_auction, _recyclingPercentage);
     _mockValues(_auction, _recyclingPercentage);
 
-    vm.expectCall(
-      address(mockProtocolToken), abi.encodeCall(mockProtocolToken.transfer, (protocolTokenBidReceiver, _amountToSend))
-    );
+    vm.expectCall(address(mockProtocolToken), abi.encodeWithSignature('burn(uint256)', _amountToBurn), 0);
 
     surplusAuctionHouse.settleAuction(_auction.id);
   }
@@ -785,18 +796,7 @@ contract Unit_SurplusAuctionHouse_SettleAuction is Base {
 
     _mockValues(_auction, _recyclingPercentage);
 
-    vm.expectCall(address(mockProtocolToken), abi.encodeWithSignature('burn(uint256)', _amountToBurn));
-
-    surplusAuctionHouse.settleAuction(_auction.id);
-  }
-
-  function testFail_Call_ProtocolToken_Burn(SurplusAuction memory _auction) public {
-    uint256 _recyclingPercentage = 100;
-
-    (, uint256 _amountToBurn) = _assumeHappyPath(_auction, _recyclingPercentage);
-    _mockValues(_auction, _recyclingPercentage);
-
-    vm.expectCall(address(mockProtocolToken), abi.encodeWithSignature('burn(uint256)', _amountToBurn));
+    vm.expectCall(address(mockProtocolToken), abi.encodeWithSignature('burn(uint256)', _amountToBurn), 1);
 
     surplusAuctionHouse.settleAuction(_auction.id);
   }
@@ -866,7 +866,9 @@ contract Unit_SurplusAuctionHouse_TerminateAuctionPrematurely is Base {
 
   function test_Call_ProtocolToken_Push(SurplusAuction memory _auction) public happyPath(_auction) {
     vm.expectCall(
-      address(mockProtocolToken), abi.encodeCall(mockProtocolToken.transfer, (_auction.highBidder, _auction.bidAmount))
+      address(mockProtocolToken),
+      abi.encodeCall(mockProtocolToken.transfer, (_auction.highBidder, _auction.bidAmount)),
+      1
     );
 
     surplusAuctionHouse.terminateAuctionPrematurely(_auction.id);

@@ -2,7 +2,6 @@
 pragma solidity 0.8.19;
 
 import {ETHJoin} from '@contracts/utils/ETHJoin.sol';
-
 import {Math} from '@libraries/Math.sol';
 
 /*

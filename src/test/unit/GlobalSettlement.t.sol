@@ -304,39 +304,39 @@ contract Unit_GlobalSettlement_ShutdownSystem is Base {
   }
 
   function test_Call_SafeEngine_DisableContract() public happyPath {
-    vm.expectCall(address(mockSafeEngine), abi.encodeCall(mockSafeEngine.disableContract, ()));
+    vm.expectCall(address(mockSafeEngine), abi.encodeCall(mockSafeEngine.disableContract, ()), 1);
 
     globalSettlement.shutdownSystem();
   }
 
   function test_Call_LiquidationEngine_DisableContract() public happyPath {
-    vm.expectCall(address(mockLiquidationEngine), abi.encodeCall(mockLiquidationEngine.disableContract, ()));
+    vm.expectCall(address(mockLiquidationEngine), abi.encodeCall(mockLiquidationEngine.disableContract, ()), 1);
+
+    globalSettlement.shutdownSystem();
+  }
+
+  function test_NotCall_StabilityFeeTreasury_DisableContract() public happyPath {
+    _mockStabilityFeeTreasury(address(0));
+
+    vm.expectCall(address(mockStabilityFeeTreasury), abi.encodeCall(mockStabilityFeeTreasury.disableContract, ()), 0);
 
     globalSettlement.shutdownSystem();
   }
 
   function test_Call_StabilityFeeTreasury_DisableContract() public happyPath {
-    vm.expectCall(address(mockStabilityFeeTreasury), abi.encodeCall(mockStabilityFeeTreasury.disableContract, ()));
-
-    globalSettlement.shutdownSystem();
-  }
-
-  function testFail_Call_StabilityFeeTreasury_DisableContract() public happyPath {
-    _mockStabilityFeeTreasury(address(0));
-
-    vm.expectCall(address(mockStabilityFeeTreasury), abi.encodeCall(mockStabilityFeeTreasury.disableContract, ()));
+    vm.expectCall(address(mockStabilityFeeTreasury), abi.encodeCall(mockStabilityFeeTreasury.disableContract, ()), 1);
 
     globalSettlement.shutdownSystem();
   }
 
   function test_Call_AccountingEngine_DisableContract() public happyPath {
-    vm.expectCall(address(mockAccountingEngine), abi.encodeCall(mockAccountingEngine.disableContract, ()));
+    vm.expectCall(address(mockAccountingEngine), abi.encodeCall(mockAccountingEngine.disableContract, ()), 1);
 
     globalSettlement.shutdownSystem();
   }
 
   function test_Call_OracleRelayer_DisableContract() public happyPath {
-    vm.expectCall(address(mockOracleRelayer), abi.encodeCall(mockOracleRelayer.disableContract, ()));
+    vm.expectCall(address(mockOracleRelayer), abi.encodeCall(mockOracleRelayer.disableContract, ()), 1);
 
     globalSettlement.shutdownSystem();
   }
@@ -532,14 +532,16 @@ contract Unit_GlobalSettlement_FastTrackAuction is Base {
       abi.encodeCall(
         mockSafeEngine.createUnbackedDebt,
         (address(mockAccountingEngine), address(mockAccountingEngine), _auction.amountToRaise - _auction.raisedAmount)
-      )
+      ),
+      1
     );
     vm.expectCall(
       address(mockSafeEngine),
       abi.encodeCall(
         mockSafeEngine.createUnbackedDebt,
         (address(mockAccountingEngine), address(globalSettlement), _auction.bidAmount)
-      )
+      ),
+      1
     );
 
     globalSettlement.fastTrackAuction(_auction.collateralType, _auction.id);
@@ -551,7 +553,8 @@ contract Unit_GlobalSettlement_FastTrackAuction is Base {
   {
     vm.expectCall(
       address(mockSafeEngine),
-      abi.encodeCall(mockSafeEngine.approveSAFEModification, (address(mockCollateralAuctionHouse)))
+      abi.encodeCall(mockSafeEngine.approveSAFEModification, (address(mockCollateralAuctionHouse))),
+      1
     );
 
     globalSettlement.fastTrackAuction(_auction.collateralType, _auction.id);
@@ -563,7 +566,8 @@ contract Unit_GlobalSettlement_FastTrackAuction is Base {
   {
     vm.expectCall(
       address(mockCollateralAuctionHouse),
-      abi.encodeCall(mockCollateralAuctionHouse.terminateAuctionPrematurely, (_auction.id))
+      abi.encodeCall(mockCollateralAuctionHouse.terminateAuctionPrematurely, (_auction.id)),
+      1
     );
 
     globalSettlement.fastTrackAuction(_auction.collateralType, _auction.id);
@@ -594,7 +598,8 @@ contract Unit_GlobalSettlement_FastTrackAuction is Base {
           int256(_auction.amountToSell),
           int256(_debt)
         )
-      )
+      ),
+      1
     );
 
     globalSettlement.fastTrackAuction(_auction.collateralType, _auction.id);
@@ -712,7 +717,8 @@ contract Unit_GlobalSettlement_ProcessSAFE is Base {
           -int256(_minCollateral),
           -int256(_safeData.generatedDebt)
         )
-      )
+      ),
+      1
     );
 
     globalSettlement.processSAFE(_safeData.collateralType, _safeData.safe);
@@ -790,7 +796,8 @@ contract Unit_GlobalSettlement_FreeCollateral is Base {
       abi.encodeCall(
         mockSafeEngine.confiscateSAFECollateralAndDebt,
         (_cType, user, user, address(mockAccountingEngine), -int256(_lockedCollateral), 0)
-      )
+      ),
+      1
     );
 
     globalSettlement.freeCollateral(_cType);
@@ -1054,7 +1061,8 @@ contract Unit_GlobalSettlement_PrepareCoinsForRedeeming is Base {
   ) public happyPath(_coinAmount, _outstandingCoinSupply, _coinBag) {
     vm.expectCall(
       address(mockSafeEngine),
-      abi.encodeCall(mockSafeEngine.transferInternalCoins, (user, address(mockAccountingEngine), _coinAmount * RAY))
+      abi.encodeCall(mockSafeEngine.transferInternalCoins, (user, address(mockAccountingEngine), _coinAmount * RAY)),
+      1
     );
 
     globalSettlement.prepareCoinsForRedeeming(_coinAmount);
@@ -1153,7 +1161,8 @@ contract Unit_GlobalSettlement_RedeemCollateral is Base {
           user,
           _collateralData.coinsAmount.rmul(_collateralData.collateralCashPrice)
         )
-      )
+      ),
+      1
     );
 
     globalSettlement.redeemCollateral(_collateralData.collateralType, _collateralData.coinsAmount);

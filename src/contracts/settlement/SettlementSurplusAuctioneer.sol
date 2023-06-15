@@ -43,10 +43,11 @@ contract SettlementSurplusAuctioneer is Authorizable, Modifiable, ISettlementSur
     IAccountingEngine.AccountingEngineParams memory _accEngineParams = accountingEngine.params();
     if (block.timestamp < lastSurplusTime + _accEngineParams.surplusDelay) revert SSA_SurplusAuctionDelayNotPassed();
     lastSurplusTime = block.timestamp;
-    uint256 _amountToSell = Math.min(safeEngine.coinBalance(address(this)), _accEngineParams.surplusAmount);
+    uint256 _coinBalance = safeEngine.coinBalance(address(this));
+    uint256 _amountToSell = Math.min(_coinBalance, _accEngineParams.surplusAmount);
     if (_amountToSell > 0) {
       _id = surplusAuctionHouse.startAuction(_amountToSell, 0);
-      emit AuctionSurplus(_id, lastSurplusTime, safeEngine.coinBalance(address(this)));
+      emit AuctionSurplus(_id, lastSurplusTime, _coinBalance - _amountToSell);
     }
   }
 

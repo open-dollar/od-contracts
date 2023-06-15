@@ -126,25 +126,21 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
         bool _ok, uint256 _collateralAddedOrDebtRepaid, uint256
       ) {
         if (_ok && _collateralAddedOrDebtRepaid > 0) {
+          // Checks that the saviour didn't take collateral or add more debt to the SAFE
+          ISAFEEngine.SAFE memory _newSafeData = safeEngine.safes(_cType, _safe);
+          require(
+            _newSafeData.lockedCollateral >= _safeData.lockedCollateral
+              && _newSafeData.generatedDebt <= _safeData.generatedDebt,
+            'LiquidationEngine/invalid-safe-saviour-operation'
+          );
+          _safeEngCData = safeEngine.cData(_cType);
+          _safeData = _newSafeData;
           emit SaveSAFE(_cType, _safe, _collateralAddedOrDebtRepaid);
         }
       } catch (bytes memory _revertReason) {
         emit FailedSAFESave(_revertReason);
       }
     }
-
-    // Checks that the saviour didn't take collateral or add more debt to the SAFE
-    {
-      ISAFEEngine.SAFE memory _newSafeData = safeEngine.safes(_cType, _safe);
-      require(
-        _newSafeData.lockedCollateral >= _safeData.lockedCollateral
-          && _newSafeData.generatedDebt <= _safeData.generatedDebt,
-        'LiquidationEngine/invalid-safe-saviour-operation'
-      );
-    }
-
-    _safeEngCData = safeEngine.cData(_cType);
-    _safeData = safeEngine.safes(_cType, _safe);
 
     if (
       (_safeEngCData.liquidationPrice > 0)
@@ -241,7 +237,7 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
 
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override validParams {
     if (_param == 'onAuctionSystemCoinLimit') _params.onAuctionSystemCoinLimit = _data.toUint256();
-    else if (_param == 'accountingEngine') accountingEngine = abi.decode(_data, (IAccountingEngine));
+    else if (_param == 'accountingEngine') accountingEngine = IAccountingEngine(_data.toAddress());
     else revert UnrecognizedParam();
   }
 

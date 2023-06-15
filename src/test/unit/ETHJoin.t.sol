@@ -112,7 +112,8 @@ contract Unit_ETHJoin_Join is Base {
   function test_Call_SafeEngine_ModifyCollateralBalance(address _account, uint256 _wad) public happyPath(_wad) {
     vm.expectCall(
       address(mockSafeEngine),
-      abi.encodeCall(mockSafeEngine.modifyCollateralBalance, (collateralType, _account, int256(_wad)))
+      abi.encodeCall(mockSafeEngine.modifyCollateralBalance, (collateralType, _account, int256(_wad))),
+      1
     );
 
     ethJoin.join{value: _wad}(_account);
@@ -160,7 +161,8 @@ contract Unit_ETHJoin_Exit is Base {
   function test_Call_SafeEngine_ModifyCollateralBalance(uint256 _wad) public happyPath(_wad) {
     vm.expectCall(
       address(mockSafeEngine),
-      abi.encodeCall(mockSafeEngine.modifyCollateralBalance, (collateralType, user, -int256(_wad)))
+      abi.encodeCall(mockSafeEngine.modifyCollateralBalance, (collateralType, user, -int256(_wad))),
+      1
     );
 
     ethJoin.exit(randomAccount, _wad);

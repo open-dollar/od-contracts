@@ -2,6 +2,7 @@
 pragma solidity 0.8.19;
 
 import {IStabilityFeeTreasury, StabilityFeeTreasury} from '@contracts/StabilityFeeTreasury.sol';
+import {Math} from '@libraries/Math.sol';
 
 contract StabilityFeeTreasuryForInternalCallsTest is StabilityFeeTreasury {
   constructor(
@@ -19,8 +20,12 @@ contract StabilityFeeTreasuryForInternalCallsTest is StabilityFeeTreasury {
     emit CalledJoinAllCoins();
   }
 
-  function _settleDebt() internal virtual override {
+  function _settleDebt(
+    uint256 _coinBalance,
+    uint256 _debtBalance
+  ) internal virtual override returns (uint256 _newCoinBalance, uint256 _newDebtBalance) {
     emit CalledSettleDebt();
+    return (_coinBalance, _debtBalance);
   }
 }
 

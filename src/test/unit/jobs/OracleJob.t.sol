@@ -151,7 +151,7 @@ contract Unit_OracleJob_WorkUpdateCollateralPrice is Base {
   }
 
   function test_Call_OracleRelayer_UpdateCollateralPrice(bytes32 _cType) public happyPath(_cType) {
-    vm.expectCall(address(mockOracleRelayer), abi.encodeCall(mockOracleRelayer.updateCollateralPrice, (_cType)));
+    vm.expectCall(address(mockOracleRelayer), abi.encodeCall(mockOracleRelayer.updateCollateralPrice, (_cType)), 1);
 
     oracleJob.workUpdateCollateralPrice(_cType);
   }
@@ -187,7 +187,7 @@ contract Unit_OracleJob_WorkUpdateRate is Base {
   }
 
   function test_Call_PIDRateSetter_UpdateRate() public happyPath {
-    vm.expectCall(address(mockPIDRateSetter), abi.encodeCall(mockPIDRateSetter.updateRate, ()));
+    vm.expectCall(address(mockPIDRateSetter), abi.encodeCall(mockPIDRateSetter.updateRate, ()), 1);
 
     oracleJob.workUpdateRate();
   }

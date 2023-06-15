@@ -98,14 +98,15 @@ contract Unit_CoinJoin_Join is Base {
   function test_Call_SafeEngine_TransferInternalCoins(address _account, uint256 _wad) public happyPath(_wad) {
     vm.expectCall(
       address(mockSafeEngine),
-      abi.encodeCall(mockSafeEngine.transferInternalCoins, (address(coinJoin), _account, RAY * _wad))
+      abi.encodeCall(mockSafeEngine.transferInternalCoins, (address(coinJoin), _account, RAY * _wad)),
+      1
     );
 
     coinJoin.join(_account, _wad);
   }
 
   function test_Call_SystemCoin_Burn(address _account, uint256 _wad) public happyPath(_wad) {
-    vm.expectCall(address(mockSystemCoin), abi.encodeWithSignature('burn(address,uint256)', user, _wad));
+    vm.expectCall(address(mockSystemCoin), abi.encodeWithSignature('burn(address,uint256)', user, _wad), 1);
 
     coinJoin.join(_account, _wad);
   }
@@ -151,14 +152,15 @@ contract Unit_CoinJoin_Exit is Base {
   function test_Call_SafeEngine_TransferInternalCoins(address _account, uint256 _wad) public happyPath(_wad) {
     vm.expectCall(
       address(mockSafeEngine),
-      abi.encodeCall(mockSafeEngine.transferInternalCoins, (user, address(coinJoin), RAY * _wad))
+      abi.encodeCall(mockSafeEngine.transferInternalCoins, (user, address(coinJoin), RAY * _wad)),
+      1
     );
 
     coinJoin.exit(_account, _wad);
   }
 
   function test_Call_SystemCoin_Mint(address _account, uint256 _wad) public happyPath(_wad) {
-    vm.expectCall(address(mockSystemCoin), abi.encodeCall(mockSystemCoin.mint, (_account, _wad)));
+    vm.expectCall(address(mockSystemCoin), abi.encodeCall(mockSystemCoin.mint, (_account, _wad)), 1);
 
     coinJoin.exit(_account, _wad);
   }

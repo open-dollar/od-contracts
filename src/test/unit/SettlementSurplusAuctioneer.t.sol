@@ -130,7 +130,8 @@ contract Unit_SettlementSurplusAuctioneer_Constructor is Base {
   function test_Call_SafeEngine_ApproveSAFEModification() public happyPath {
     vm.expectCall(
       address(mockSafeEngine),
-      abi.encodeCall(mockSafeEngine.approveSAFEModification, (address(mockSurplusAuctionHouse)))
+      abi.encodeCall(mockSafeEngine.approveSAFEModification, (address(mockSurplusAuctionHouse))),
+      1
     );
 
     settlementSurplusAuctioneer =
@@ -264,7 +265,24 @@ contract Unit_SettlementSurplusAuctioneer_AuctionSurplus is Base {
     vm.assume(_coinBalance > 0);
 
     expectEmitNoIndex();
-    emit AuctionSurplus(_idA, block.timestamp, _coinBalance);
+    emit AuctionSurplus(_idA, block.timestamp, 0);
+
+    settlementSurplusAuctioneer.auctionSurplus();
+  }
+
+  function testFail_Emit_AuctionSurplus_A(
+    uint256 _lastSurplusTime,
+    uint256 _surplusDelay,
+    uint256 _surplusAmount,
+    uint256 _coinBalance,
+    uint256 _idA,
+    uint256 _idB
+  ) public happyPath(_lastSurplusTime, _surplusDelay, _surplusAmount, _coinBalance, _idA, _idB) {
+    vm.assume(_coinBalance < _surplusAmount);
+    vm.assume(_coinBalance == 0);
+
+    expectEmitNoIndex();
+    emit AuctionSurplus(_idA, block.timestamp, 0);
 
     settlementSurplusAuctioneer.auctionSurplus();
   }
@@ -281,12 +299,12 @@ contract Unit_SettlementSurplusAuctioneer_AuctionSurplus is Base {
     vm.assume(_surplusAmount > 0);
 
     expectEmitNoIndex();
-    emit AuctionSurplus(_idB, block.timestamp, _coinBalance);
+    emit AuctionSurplus(_idB, block.timestamp, _coinBalance - _surplusAmount);
 
     settlementSurplusAuctioneer.auctionSurplus();
   }
 
-  function testFail_Emit_AuctionSurplus(
+  function testFail_Emit_AuctionSurplus_B(
     uint256 _lastSurplusTime,
     uint256 _surplusDelay,
     uint256 _surplusAmount,
@@ -294,12 +312,11 @@ contract Unit_SettlementSurplusAuctioneer_AuctionSurplus is Base {
     uint256 _idA,
     uint256 _idB
   ) public happyPath(_lastSurplusTime, _surplusDelay, _surplusAmount, _coinBalance, _idA, _idB) {
-    vm.assume(
-      _coinBalance < _surplusAmount && _coinBalance == 0 || _coinBalance >= _surplusAmount && _surplusAmount == 0
-    );
+    vm.assume(_coinBalance >= _surplusAmount);
+    vm.assume(_surplusAmount == 0);
 
     expectEmitNoIndex();
-    emit AuctionSurplus(0, block.timestamp, _coinBalance);
+    emit AuctionSurplus(_idB, block.timestamp, _coinBalance - _surplusAmount);
 
     settlementSurplusAuctioneer.auctionSurplus();
   }

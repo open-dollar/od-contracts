@@ -660,7 +660,8 @@ contract Unit_TaxCollector_DistributeTax is Base {
 
     vm.expectCall(
       address(mockSafeEngine),
-      abi.encodeCall(mockSafeEngine.updateAccumulatedRate, (collateralTypeA, receiver, _currentTaxCut))
+      abi.encodeCall(mockSafeEngine.updateAccumulatedRate, (collateralTypeA, receiver, _currentTaxCut)),
+      1
     );
 
     taxCollector.distributeTax(collateralTypeA, receiver, _debtAmount, _deltaRate);
