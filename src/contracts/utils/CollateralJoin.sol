@@ -16,7 +16,7 @@ import {Assertions} from '@libraries/Assertions.sol';
 /**
  * @title  CollateralJoin
  * @notice This contract allows to connect the SAFEEngine to arbitrary external token implementations
- * @dev    For well behaved ERC20 tokens with less than 18 decimals
+ * @dev    For well behaved ERC20 tokens with less than 18 decimals.
  *         All Join adapters need to implement two basic methods: `join` and `exit`
  */
 contract CollateralJoin is Authorizable, Disableable, ICollateralJoin {
@@ -57,9 +57,10 @@ contract CollateralJoin is Authorizable, Disableable, ICollateralJoin {
    *      the locked collateral inside the system. The representation uses 18 decimals.
    * @inheritdoc ICollateralJoin
    */
-  function join(address _account, uint256 _wad) external whenEnabled whenFactoryEnabled {
+  function join(address _account, uint256 _wei) external whenEnabled whenFactoryEnabled {
+    collateral.safeTransferFrom(msg.sender, address(this), _wei);
+    uint256 _wad = _wei * 10 ** multiplier; // convert to 18 decimals [wad]
     safeEngine.modifyCollateralBalance(collateralType, _account, _wad.toInt());
-    collateral.safeTransferFrom(msg.sender, address(this), _wad / 10 ** multiplier);
     emit Join(msg.sender, _account, _wad);
   }
 
@@ -69,9 +70,10 @@ contract CollateralJoin is Authorizable, Disableable, ICollateralJoin {
    *      the same decimals as the original collateral token.
    * @inheritdoc ICollateralJoin
    */
-  function exit(address _account, uint256 _wad) external {
+  function exit(address _account, uint256 _wei) external {
+    collateral.safeTransfer(_account, _wei);
+    uint256 _wad = _wei * 10 ** multiplier; // convert to 18 decimals [wad]
     safeEngine.modifyCollateralBalance(collateralType, msg.sender, -_wad.toInt());
-    collateral.safeTransfer(_account, _wad / 10 ** multiplier);
     emit Exit(msg.sender, _account, _wad);
   }
 
