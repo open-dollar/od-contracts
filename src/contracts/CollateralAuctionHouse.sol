@@ -685,7 +685,7 @@ contract IncreasingDiscountCollateralAuctionHouse is
     else revert UnrecognizedParam();
   }
 
-  function _validateCollateralFSM(address _delayedOracle) internal view returns (IDelayedOracle _collateralFSM) {
+  function _validateCollateralFSM(address _delayedOracle) internal view virtual returns (IDelayedOracle _collateralFSM) {
     _collateralFSM = IDelayedOracle(_delayedOracle);
     _collateralFSM.priceSource();
   }

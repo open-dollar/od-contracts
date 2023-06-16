@@ -8,6 +8,7 @@ import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
+import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
 
 interface IIncreasingDiscountCollateralAuctionHouse is ICollateralAuctionHouse, IModifiable {
   // --- Events ---
@@ -140,4 +141,8 @@ interface IIncreasingDiscountCollateralAuctionHouse is ICollateralAuctionHouse, 
   function auctionsStarted() external view returns (uint256 _auctionsStarted);
 
   function lastReadRedemptionPrice() external view returns (uint256 _lastReadRedemptionPrice);
+
+  function oracleRelayer() external view returns (IOracleRelayer _oracleRelayer);
+
+  function systemCoinOracle() external view returns (IBaseOracle _systemCoinOracle);
 }

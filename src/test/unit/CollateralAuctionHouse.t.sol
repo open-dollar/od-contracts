@@ -296,6 +296,14 @@ contract Base is HaiTest {
     );
   }
 
+  function _mockCollateralFSMPriceSource(address _delayedOracle, address _collateralFSM) internal {
+    vm.mockCall(
+      _delayedOracle,
+      abi.encodeWithSelector(IDelayedOracle.priceSource.selector),
+      abi.encode(IDelayedOracle(_collateralFSM))
+    );
+  }
+
   modifier authorized() {
     vm.startPrank(deployer);
     _;
@@ -422,6 +430,214 @@ contract Unit_CollateralAuctionHouse_ForgoneCollateralReceiver is Base {
     );
 
     assertEq(auctionHouse.forgoneCollateralReceiver(_auctionsAmount), _forgoneCollateralReceiver);
+  }
+}
+
+contract Unit_CollateralAuctionHouse_ModifyParameters is Base {
+  function setUp() public override {
+    super.setUp();
+    _setCallSuper(false);
+  }
+
+  function test_Modify_OracleRelayer(address _oracleRelayer) public authorized {
+    auctionHouse.modifyParameters('oracleRelayer', abi.encode(_oracleRelayer));
+
+    assertEq(address(auctionHouse.oracleRelayer()), _oracleRelayer);
+  }
+
+  function test_Modify_CollateralFSM(address _collateralFSM) public authorized {
+    vm.assume(address(_collateralFSM) != address(0));
+    _mockCollateralFSMPriceSource(_collateralFSM, _collateralFSM);
+    auctionHouse.modifyParameters('collateralFSM', abi.encode(_collateralFSM));
+
+    assertEq(address(auctionHouse.collateralFSM()), _collateralFSM);
+  }
+
+  function test_Modify_CollateralFSM_Call_IDelayedOracle_PriceSource(address _collateralFSM) public authorized {
+    vm.assume(address(_collateralFSM) != address(0));
+    _mockCollateralFSMPriceSource(_collateralFSM, _collateralFSM);
+    vm.expectCall(_collateralFSM, abi.encodeWithSelector(IDelayedOracle.priceSource.selector), 1);
+    auctionHouse.modifyParameters('collateralFSM', abi.encode(_collateralFSM));
+  }
+
+  function test_Modify_SystemCoinOracle(address _systemCoinOracle) public authorized {
+    auctionHouse.modifyParameters('systemCoinOracle', abi.encode(_systemCoinOracle));
+
+    assertEq(address(auctionHouse.systemCoinOracle()), _systemCoinOracle);
+  }
+
+  function test_Modify_LiquidationEngine(address _liquidationEngine) public authorized {
+    vm.assume(_liquidationEngine != address(0));
+    auctionHouse.modifyParameters('liquidationEngine', abi.encode(_liquidationEngine));
+
+    assertEq(address(auctionHouse.liquidationEngine()), _liquidationEngine);
+  }
+
+  function test_Revert_Null_LiquidationEngineAddress() public authorized {
+    vm.expectRevert(Assertions.NullAddress.selector);
+    auctionHouse.modifyParameters('liquidationEngine', abi.encode(address(0)));
+  }
+
+  function _validParameters(
+    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _fuzz
+  ) internal pure returns (bool) {
+    return _fuzz.lowerSystemCoinDeviation <= WAD && _fuzz.upperSystemCoinDeviation <= WAD;
+  }
+
+  function test_ModifyParameters(
+    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _fuzz
+  ) public authorized {
+    vm.assume(_validParameters(_fuzz));
+
+    auctionHouse.modifyParameters('lowerSystemCoinDeviation', abi.encode(_fuzz.lowerSystemCoinDeviation));
+    auctionHouse.modifyParameters('upperSystemCoinDeviation', abi.encode(_fuzz.upperSystemCoinDeviation));
+    auctionHouse.modifyParameters('minSystemCoinDeviation', abi.encode(_fuzz.minSystemCoinDeviation));
+
+    assertEq(abi.encode(auctionHouse.params()), abi.encode(_fuzz));
+  }
+
+  function test_Revert_InvalidParams_LowerSystemCoinDeviation(
+    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _fuzz
+  ) public authorized {
+    vm.assume(_fuzz.upperSystemCoinDeviation <= WAD);
+    vm.assume(_fuzz.lowerSystemCoinDeviation > WAD);
+    _mockUpperSystemCoinMarketDeviation(_fuzz.upperSystemCoinDeviation);
+
+    vm.expectRevert();
+    auctionHouse.modifyParameters('lowerSystemCoinDeviation', abi.encode(_fuzz.lowerSystemCoinDeviation));
+  }
+
+  function test_Revert_InvalidParams_UpperSystemCoinDeviation(
+    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _fuzz
+  ) public authorized {
+    vm.assume(_fuzz.upperSystemCoinDeviation > WAD);
+    vm.assume(_fuzz.lowerSystemCoinDeviation <= WAD);
+    _mockLowerSystemCoinMarketDeviation(_fuzz.lowerSystemCoinDeviation);
+
+    vm.expectRevert();
+    auctionHouse.modifyParameters('upperSystemCoinDeviation', abi.encode(_fuzz.upperSystemCoinDeviation));
+  }
+
+  function _validCParams(IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams memory _fuzz)
+    internal
+    pure
+    returns (bool)
+  {
+    return _fuzz.minDiscount >= _fuzz.maxDiscount && _fuzz.minDiscount <= WAD && _fuzz.maxDiscount > 0
+      && _fuzz.maxDiscount <= _fuzz.minDiscount && _fuzz.perSecondDiscountUpdateRate <= RAY
+      && _fuzz.lowerCollateralDeviation <= WAD && _fuzz.upperCollateralDeviation <= WAD;
+  }
+
+  modifier validPreviousCParams() {
+    _mockMinDiscount(WAD);
+    _mockMaxDiscount(1);
+    _;
+  }
+
+  function test_Modify_CollateralAuctionHouseParams(
+    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams memory _fuzz
+  ) public authorized validPreviousCParams {
+    vm.assume(_validCParams(_fuzz));
+
+    auctionHouse.modifyParameters('minDiscount', abi.encode(_fuzz.minDiscount));
+    auctionHouse.modifyParameters('maxDiscount', abi.encode(_fuzz.maxDiscount));
+    auctionHouse.modifyParameters('perSecondDiscountUpdateRate', abi.encode(_fuzz.perSecondDiscountUpdateRate));
+    auctionHouse.modifyParameters('lowerCollateralDeviation', abi.encode(_fuzz.lowerCollateralDeviation));
+    auctionHouse.modifyParameters('upperCollateralDeviation', abi.encode(_fuzz.upperCollateralDeviation));
+    auctionHouse.modifyParameters('minimumBid', abi.encode(_fuzz.minimumBid));
+
+    assertEq(abi.encode(auctionHouse.cParams()), abi.encode(_fuzz));
+  }
+
+  function test_Revert_Invalid_CollateralAuctionHouseParams_MinDiscount(
+    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams memory _fuzz
+  ) public authorized validPreviousCParams {
+    vm.assume(_fuzz.minDiscount < _fuzz.maxDiscount || _fuzz.minDiscount > WAD || _fuzz.maxDiscount > _fuzz.minDiscount); //invalid params
+    vm.assume(
+      _fuzz.maxDiscount > 0 && _fuzz.perSecondDiscountUpdateRate <= RAY && _fuzz.lowerCollateralDeviation <= WAD
+        && _fuzz.upperCollateralDeviation <= WAD
+    );
+    _mockMaxDiscount(_fuzz.maxDiscount);
+    _mockPerSecondDiscountUpdateRate(_fuzz.perSecondDiscountUpdateRate);
+    _mockLowerCollateralMarketDeviation(_fuzz.lowerCollateralDeviation);
+    _mockUpperCollateralMarketDeviation(_fuzz.upperCollateralDeviation);
+
+    vm.expectRevert();
+    auctionHouse.modifyParameters('minDiscount', abi.encode(_fuzz.minDiscount));
+  }
+
+  function test_Revert_Invalid_CollateralAuctionHouseParams_MaxDiscount(
+    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams memory _fuzz
+  ) public authorized validPreviousCParams {
+    vm.assume(
+      _fuzz.minDiscount < _fuzz.maxDiscount || _fuzz.minDiscount > WAD || _fuzz.maxDiscount == 0
+        || _fuzz.maxDiscount > _fuzz.minDiscount
+    ); // invalid params
+    vm.assume(
+      _fuzz.perSecondDiscountUpdateRate <= RAY && _fuzz.lowerCollateralDeviation <= WAD
+        && _fuzz.upperCollateralDeviation <= WAD
+    );
+    _mockMinDiscount(_fuzz.minDiscount);
+    _mockPerSecondDiscountUpdateRate(_fuzz.perSecondDiscountUpdateRate);
+    _mockLowerCollateralMarketDeviation(_fuzz.lowerCollateralDeviation);
+    _mockUpperCollateralMarketDeviation(_fuzz.upperCollateralDeviation);
+
+    vm.expectRevert();
+    auctionHouse.modifyParameters('maxDiscount', abi.encode(_fuzz.maxDiscount));
+  }
+
+  function test_Revert_Invalid_CollateralAuctionHouseParams_PerSecondDiscountUpdateRate(
+    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams memory _fuzz
+  ) public authorized validPreviousCParams {
+    vm.assume(
+      _fuzz.minDiscount >= _fuzz.maxDiscount && _fuzz.minDiscount <= WAD && _fuzz.maxDiscount > 0
+        && _fuzz.maxDiscount <= _fuzz.minDiscount && _fuzz.lowerCollateralDeviation <= WAD
+        && _fuzz.upperCollateralDeviation <= WAD
+    );
+    vm.assume(_fuzz.perSecondDiscountUpdateRate > RAY); // invalid param
+    _mockMaxDiscount(_fuzz.maxDiscount);
+    _mockMinDiscount(_fuzz.minDiscount);
+    _mockLowerCollateralMarketDeviation(_fuzz.lowerCollateralDeviation);
+    _mockUpperCollateralMarketDeviation(_fuzz.upperCollateralDeviation);
+
+    vm.expectRevert();
+    auctionHouse.modifyParameters('perSecondDiscountUpdateRate', abi.encode(_fuzz.perSecondDiscountUpdateRate));
+  }
+
+  function test_Revert_Invalid_CollateralAuctionHouseParams_LowerCollateralDeviation(
+    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams memory _fuzz
+  ) public authorized validPreviousCParams {
+    vm.assume(
+      _fuzz.minDiscount >= _fuzz.maxDiscount && _fuzz.minDiscount <= WAD && _fuzz.maxDiscount > 0
+        && _fuzz.maxDiscount <= _fuzz.minDiscount && _fuzz.perSecondDiscountUpdateRate <= RAY
+        && _fuzz.upperCollateralDeviation <= WAD
+    );
+    vm.assume(_fuzz.lowerCollateralDeviation > WAD); // invalid param
+    _mockMaxDiscount(_fuzz.maxDiscount);
+    _mockMinDiscount(_fuzz.minDiscount);
+    _mockPerSecondDiscountUpdateRate(_fuzz.perSecondDiscountUpdateRate);
+    _mockUpperCollateralMarketDeviation(_fuzz.upperCollateralDeviation);
+
+    vm.expectRevert();
+    auctionHouse.modifyParameters('lowerCollateralDeviation', abi.encode(_fuzz.lowerCollateralDeviation));
+  }
+
+  function test_Revert_Invalid_CollateralAuctionHouseParams_UpperCollateralDeviation(
+    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams memory _fuzz
+  ) public authorized validPreviousCParams {
+    vm.assume(
+      _fuzz.minDiscount >= _fuzz.maxDiscount && _fuzz.minDiscount <= WAD && _fuzz.maxDiscount > 0
+        && _fuzz.maxDiscount <= _fuzz.minDiscount && _fuzz.perSecondDiscountUpdateRate <= RAY
+        && _fuzz.lowerCollateralDeviation <= WAD
+    );
+    vm.assume(_fuzz.upperCollateralDeviation > WAD); // invalid param
+    _mockMaxDiscount(_fuzz.maxDiscount);
+    _mockMinDiscount(_fuzz.minDiscount);
+    _mockPerSecondDiscountUpdateRate(_fuzz.perSecondDiscountUpdateRate);
+    _mockLowerCollateralMarketDeviation(_fuzz.lowerCollateralDeviation);
+
+    vm.expectRevert();
+    auctionHouse.modifyParameters('upperCollateralDeviation', abi.encode(_fuzz.upperCollateralDeviation));
   }
 }
 

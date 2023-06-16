@@ -128,6 +128,125 @@ contract Unit_OracleRelayer_Constructor is Base {
   }
 }
 
+contract Unit_OracleRelayer_ModifyParameters is Base {
+  function _validOracleRelayerParams(IOracleRelayer.OracleRelayerParams memory _fuzz) internal pure returns (bool) {
+    return (
+      _fuzz.redemptionRateUpperBound > RAY && _fuzz.redemptionRateLowerBound > 0 && _fuzz.redemptionRateLowerBound < RAY
+    );
+  }
+
+  modifier previousValidCTypeParams(bytes32 _cType) {
+    OracleRelayerForTest(address(oracleRelayer)).setCTypeOracle(_cType, newAddress());
+    _mockCTypeSafetyCRatio(_cType, type(uint256).max);
+    _mockCTypeLiquidationCRatio(_cType, 0);
+    _;
+  }
+
+  function _validOracleRelayerCollateralParams(IOracleRelayer.OracleRelayerCollateralParams memory _fuzz)
+    internal
+    pure
+    returns (bool)
+  {
+    return (
+      _fuzz.safetyCRatio >= _fuzz.liquidationCRatio && _fuzz.liquidationCRatio <= _fuzz.safetyCRatio
+        && address(_fuzz.oracle) != address(0)
+    );
+  }
+
+  function test_ModifyParameters(IOracleRelayer.OracleRelayerParams memory _fuzz) public authorized {
+    vm.assume(_validOracleRelayerParams(_fuzz));
+
+    oracleRelayer.modifyParameters('redemptionRateUpperBound', abi.encode(_fuzz.redemptionRateUpperBound));
+    oracleRelayer.modifyParameters('redemptionRateLowerBound', abi.encode(_fuzz.redemptionRateLowerBound));
+
+    assertEq(abi.encode(oracleRelayer.params()), abi.encode(_fuzz));
+  }
+
+  function test_ModifyParameters_PerCollateral(
+    bytes32 _cType,
+    IOracleRelayer.OracleRelayerCollateralParams memory _fuzz
+  ) public authorized previousValidCTypeParams(_cType) {
+    vm.assume(_validOracleRelayerCollateralParams(_fuzz));
+    oracleRelayer.modifyParameters(_cType, 'safetyCRatio', abi.encode(_fuzz.safetyCRatio));
+    oracleRelayer.modifyParameters(_cType, 'liquidationCRatio', abi.encode(_fuzz.liquidationCRatio));
+    oracleRelayer.modifyParameters(_cType, 'oracle', abi.encode(_fuzz.oracle));
+
+    IOracleRelayer.OracleRelayerCollateralParams memory _cParams = oracleRelayer.cParams(_cType);
+
+    assertEq(abi.encode(_cParams), abi.encode(_fuzz));
+  }
+
+  function test_Revert_InvalidOracleRelayerParams_RedemptionRateLowerBound(
+    IOracleRelayer.OracleRelayerParams memory _fuzz
+  ) public authorized {
+    vm.assume(_fuzz.redemptionRateUpperBound > RAY);
+    _mockRedemptionRateUpperBound(_fuzz.redemptionRateUpperBound);
+    vm.assume(_fuzz.redemptionRateLowerBound == 0 || _fuzz.redemptionRateLowerBound >= RAY);
+
+    vm.expectRevert();
+
+    oracleRelayer.modifyParameters('redemptionRateLowerBound', abi.encode(_fuzz.redemptionRateLowerBound));
+  }
+
+  function test_Revert_InvalidOracleRelayerParams_RedemptionRateUpperBound(
+    IOracleRelayer.OracleRelayerParams memory _fuzz
+  ) public authorized {
+    vm.assume(_fuzz.redemptionRateLowerBound > 0 && _fuzz.redemptionRateLowerBound < RAY);
+    vm.assume(_fuzz.redemptionRateUpperBound <= RAY);
+    _mockRedemptionRateLowerBound(_fuzz.redemptionRateLowerBound);
+
+    vm.expectRevert();
+
+    oracleRelayer.modifyParameters('redemptionRateUpperBound', abi.encode(_fuzz.redemptionRateUpperBound));
+  }
+
+  function test_Revert_ModifyParameters_UnrecognizedParam() public authorized {
+    vm.expectRevert(IModifiable.UnrecognizedParam.selector);
+    oracleRelayer.modifyParameters('unrecognizedParam', abi.encode(0));
+  }
+
+  function test_Revert_Invalid_OracleRelayerCollateralParams_ModifySafetyCRatio(
+    bytes32 _cType,
+    IOracleRelayer.OracleRelayerCollateralParams memory _fuzz
+  ) public authorized {
+    vm.assume(_fuzz.safetyCRatio < _fuzz.liquidationCRatio);
+
+    OracleRelayerForTest(address(oracleRelayer)).setCTypeOracle(_cType, newAddress());
+    _mockCTypeLiquidationCRatio(_cType, _fuzz.liquidationCRatio);
+
+    vm.expectRevert();
+    oracleRelayer.modifyParameters(_cType, 'safetyCRatio', abi.encode(_fuzz.safetyCRatio));
+  }
+
+  function test_Revert_Invalid_OracleRelayerCollateralParams_LiquidationyCRatio(
+    bytes32 _cType,
+    IOracleRelayer.OracleRelayerCollateralParams memory _fuzz
+  ) public authorized {
+    vm.assume(_fuzz.safetyCRatio < _fuzz.liquidationCRatio);
+
+    OracleRelayerForTest(address(oracleRelayer)).setCTypeOracle(_cType, newAddress());
+    _mockCTypeSafetyCRatio(_cType, _fuzz.safetyCRatio);
+
+    vm.expectRevert();
+    oracleRelayer.modifyParameters(_cType, 'liquidationCRatio', abi.encode(_fuzz.liquidationCRatio));
+  }
+
+  function test_Revert_ModifyParameters_PerCollateral(bytes32 _cType)
+    public
+    authorized
+    previousValidCTypeParams(_cType)
+  {
+    vm.expectRevert(Assertions.NullAddress.selector);
+
+    oracleRelayer.modifyParameters(_cType, 'oracle', abi.encode(address(0)));
+  }
+
+  function test_Revert_ModifyParameters_PerCollateral_UnrecognizedParam(bytes32 _cType) public authorized {
+    vm.expectRevert(IModifiable.UnrecognizedParam.selector);
+    oracleRelayer.modifyParameters(_cType, 'unrecognizedParam', abi.encode(0));
+  }
+}
+
 contract Unit_OracleRelayer_DisableContract is Base {
   function test_Set_RedemptionRate() public authorized {
     _mockRedemptionRate(0);
