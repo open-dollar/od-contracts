@@ -11,7 +11,7 @@ uint256 constant INITIAL_DEBT_AUCTION_MINTED_TOKENS = 1e18;
 uint256 constant ONE_HUNDRED_COINS = 100e45;
 uint256 constant PERCENTAGE_OF_STABILITY_FEE_TO_TREASURY = 50e27;
 
-abstract contract TestParams is Params, Contracts {
+abstract contract TestParams is Contracts, Params {
   // --- ForTest Params ---
 
   function _getEnvironmentParams() internal override {

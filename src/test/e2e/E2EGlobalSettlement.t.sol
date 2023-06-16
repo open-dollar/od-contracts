@@ -8,7 +8,11 @@ import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ETH_A, HAI_INITIAL_PRICE} from '@script/Params.s.sol';
 import {RAY, YEAR} from '@libraries/Math.sol';
 
-contract E2EGlobalSettlementTest is Common {
+import {BaseUser} from '@test/scopes/BaseUser.t.sol';
+import {DirectUser} from '@test/scopes/DirectUser.t.sol';
+import {ProxyUser} from '@test/scopes/ProxyUser.t.sol';
+
+abstract contract E2EGlobalSettlementTest is BaseUser, Common {
   using Math for uint256;
 
   uint256 LIQUIDATION_QUANTITY = 1000e45;
@@ -357,3 +361,10 @@ contract E2EGlobalSettlementTest is Common {
     vm.stopPrank();
   }
 }
+
+// --- Scoped test contracts ---
+
+contract E2EDirectUserGlobalSettlementTest is DirectUser, E2EGlobalSettlementTest {}
+
+// TODO: uncomment after implementing Proxy actions for GlobalSettlement
+// contract E2EProxyUserGlobalSettlementTest is ProxyUser, E2EGlobalSettlementTest {}

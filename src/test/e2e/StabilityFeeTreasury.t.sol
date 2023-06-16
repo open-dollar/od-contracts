@@ -1,11 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import './Common.t.sol';
+import {Common, ETH_A, RAY} from './Common.t.sol';
+
+import {BaseUser} from '@test/scopes/BaseUser.t.sol';
+import {DirectUser} from '@test/scopes/DirectUser.t.sol';
+import {ProxyUser} from '@test/scopes/ProxyUser.t.sol';
 
 import {HOUR, YEAR} from '@libraries/Math.sol';
 
-contract E2EStabilityFeeTreasuryTest is Common {
+abstract contract E2EStabilityFeeTreasuryTest is BaseUser, Common {
   uint256 constant INITIAL_DEBT = 1000e18;
 
   function _gatherFees(uint256 _wad, uint256 _timeElapsed) internal {
@@ -168,3 +172,10 @@ contract E2EStabilityFeeTreasuryTest is Common {
     assertEq(safeEngine.coinBalance(address(stabilityFeeTreasury)), 0);
   }
 }
+
+// --- Scoped test contracts ---
+
+contract E2EDirectUserStabilityFeeTreasuryTest is DirectUser, E2EStabilityFeeTreasuryTest {}
+
+// TODO: uncomment after implementing Proxy actions for StabilityFeeTreasury and jobs
+// contract E2EProxyUserStabilityFeeTreasuryTest is ProxyUser, E2EStabilityFeeTreasuryTest {}

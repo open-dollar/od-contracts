@@ -4,26 +4,19 @@ pragma solidity 0.8.19;
 import {Ownable} from '@contracts/utils/Ownable.sol';
 
 contract HaiProxy is Ownable {
+  error TargetAddressRequired();
+  error TargetCallFailed(bytes _response);
+
   constructor(address _owner) Ownable(_owner) {}
 
-  function execute(address _target, bytes memory _data) public payable onlyOwner returns (bytes memory _response) {
-    require(_target != address(0), 'ds-proxy-target-address-required');
+  function execute(address _target, bytes memory _data) external payable onlyOwner returns (bytes memory _response) {
+    if (_target == address(0)) revert TargetAddressRequired();
 
-    // call contract in current context
-    assembly {
-      let _succeeded := delegatecall(sub(gas(), 5000), _target, add(_data, 0x20), mload(_data), 0, 0)
-      let size := returndatasize()
+    bool _succeeded;
+    (_succeeded, _response) = _target.delegatecall(_data);
 
-      _response := mload(0x40)
-      mstore(0x40, add(_response, and(add(add(size, 0x20), 0x1f), not(0x1f))))
-      mstore(_response, size)
-      returndatacopy(add(_response, 0x20), 0, size)
-
-      switch iszero(_succeeded)
-      case 1 {
-        // throw if delegatecall failed
-        revert(add(_response, 0x20), size)
-      }
+    if (!_succeeded) {
+      revert TargetCallFailed(_response);
     }
   }
 }

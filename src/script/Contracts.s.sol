@@ -46,6 +46,7 @@ import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 
 // --- Proxy Contracts ---
 import {BasicActions} from '@contracts/proxies/actions/BasicActions.sol';
+import {HaiProxy} from '@contracts/proxies/HaiProxy.sol';
 import {HaiProxyRegistry} from '@contracts/proxies/HaiProxyRegistry.sol';
 import {HaiProxyFactory} from '@contracts/proxies/HaiProxyFactory.sol';
 import {HaiSafeManager} from '@contracts/proxies/HaiSafeManager.sol';

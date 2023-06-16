@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import '@script/Params.s.sol';
 
-abstract contract GoerliParams is Params, Contracts {
+abstract contract GoerliParams is Contracts, Params {
   // --- Testnet Params ---
   uint256 constant OP_GOERLI_OP_ETH_PRICE_FEED = 0.001e18;
 

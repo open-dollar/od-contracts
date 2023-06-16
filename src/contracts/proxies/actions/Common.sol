@@ -7,21 +7,31 @@ import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
 // solhint-disable
 // TODO: enable linter
 contract Common {
+  error OnlyDelegateCalls();
+
+  address immutable THIS = address(this);
+
   // Internal functions
 
-  function _coinJoin_join(address _apt, address _safeHandler, uint256 _wad) internal {
+  function _coinJoin_join(address _joinAdapter, address _safeHandler, uint256 _wad) internal {
     // NOTE: assumes systemCoin uses 18 decimals
     // Approves adapter to take the COIN amount
-    CoinJoin(_apt).systemCoin().approve(_apt, _wad);
+    CoinJoin(_joinAdapter).systemCoin().approve(_joinAdapter, _wad);
     // Joins COIN into the safeEngine
-    CoinJoin(_apt).join(_safeHandler, _wad);
+    CoinJoin(_joinAdapter).join(_safeHandler, _wad);
   }
 
   // Public functions
-  function coinJoin_join(address _apt, address _safeHandler, uint256 _wad) public {
+  // TODO: make internal and external
+  function coinJoin_join(address _joinAdapter, address _safeHandler, uint256 _wad) public {
     // Gets COIN from the user's wallet
-    CoinJoin(_apt).systemCoin().transferFrom(msg.sender, address(this), _wad);
+    CoinJoin(_joinAdapter).systemCoin().transferFrom(msg.sender, address(this), _wad);
 
-    _coinJoin_join(_apt, _safeHandler, _wad);
+    _coinJoin_join(_joinAdapter, _safeHandler, _wad);
+  }
+
+  modifier delegateCall() {
+    if (address(this) == THIS) revert OnlyDelegateCalls();
+    _;
   }
 }

@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import '@script/Params.s.sol';
 
-abstract contract MainnetParams is Params, Contracts {
+abstract contract MainnetParams is Contracts, Params {
   // --- Mainnet Params ---
   function _getEnvironmentParams() internal override {
     _safeEngineParams = ISAFEEngine.SAFEEngineParams({

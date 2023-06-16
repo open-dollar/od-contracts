@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import {Common, COLLAT, DEBT, TEST_ETH_PRICE_DROP, RAD_DELTA} from './Common.t.sol';
 
-import {ETH_A, SURPLUS_AUCTION_BID_RECEIVER} from '@script/Params.s.sol';
+import {SURPLUS_AUCTION_BID_RECEIVER} from '@script/Params.s.sol';
 import {
   INITIAL_DEBT_AUCTION_MINTED_TOKENS,
   ONE_HUNDRED_COINS,
@@ -12,34 +12,41 @@ import {
 
 import {Math, RAY, YEAR} from '@libraries/Math.sol';
 
+import {BaseUser} from '@test/scopes/BaseUser.t.sol';
+import {DirectUser} from '@test/scopes/DirectUser.t.sol';
+import {ProxyUser} from '@test/scopes/ProxyUser.t.sol';
+import {BaseCType} from '@test/scopes/BaseCType.t.sol';
+import {ETHCType} from '@test/scopes/ETHCType.t.sol';
+import {TKNCType} from '@test/scopes/TKNCType.t.sol';
+
 uint256 constant TEST_ETH_A_SF_APR = 1.05e18; // 5%/yr
 
-contract E2ETest is Common {
+abstract contract E2ETest is BaseUser, BaseCType, Common {
   using Math for uint256;
 
   function test_open_safe() public {
-    _generateDebt(address(this), address(collateralJoin[ETH_A]), int256(COLLAT), int256(DEBT));
+    _generateDebt(address(this), address(collateralJoin[_cType()]), int256(COLLAT), int256(DEBT));
 
-    (uint256 _generatedDebt, uint256 _lockedCollateral) = _getSafeStatus(ETH_A, address(this));
+    (uint256 _generatedDebt, uint256 _lockedCollateral) = _getSafeStatus(_cType(), address(this));
     assertEq(_generatedDebt, DEBT);
     assertEq(_lockedCollateral, COLLAT);
   }
 
   function test_exit_join() public {
-    _generateDebt(address(this), address(collateralJoin[ETH_A]), int256(COLLAT), int256(DEBT));
+    _generateDebt(address(this), address(collateralJoin[_cType()]), int256(COLLAT), int256(DEBT));
 
     assertEq(systemCoin.balanceOf(address(this)), DEBT);
   }
 
   function test_stability_fee() public {
-    _generateDebt(address(this), address(collateralJoin[ETH_A]), int256(COLLAT), int256(DEBT));
+    _generateDebt(address(this), address(collateralJoin[_cType()]), int256(COLLAT), int256(DEBT));
 
     uint256 _globalDebt;
     _globalDebt = safeEngine.globalDebt();
     assertEq(_globalDebt, DEBT * RAY); // RAD
 
     vm.warp(block.timestamp + YEAR);
-    taxCollector.taxSingle(ETH_A);
+    taxCollector.taxSingle(_cType());
 
     uint256 _globalDebtAfterTax = safeEngine.globalDebt();
     assertApproxEqAbs(_globalDebtAfterTax, Math.wmul(DEBT, TEST_ETH_A_SF_APR) * RAY, RAD_DELTA); // RAD
@@ -50,88 +57,87 @@ contract E2ETest is Common {
   }
 
   function test_liquidation() public {
-    _generateDebt(address(this), address(collateralJoin[ETH_A]), int256(COLLAT), int256(DEBT));
+    _generateDebt(address(this), address(collateralJoin[_cType()]), int256(COLLAT), int256(DEBT));
 
-    _setCollateralPrice(ETH_A, TEST_ETH_PRICE_DROP);
+    _setCollateralPrice(_cType(), TEST_ETH_PRICE_DROP);
 
-    _liquidateSAFE(ETH_A, address(this));
+    _liquidateSAFE(_cType(), address(this));
 
-    assertEq(safeEngine.safes(ETH_A, address(this)).lockedCollateral, 0);
-    assertEq(safeEngine.safes(ETH_A, address(this)).generatedDebt, 0);
+    assertEq(safeEngine.safes(_cType(), address(this)).lockedCollateral, 0);
+    assertEq(safeEngine.safes(_cType(), address(this)).generatedDebt, 0);
   }
 
   function test_liquidation_by_price_drop() public {
-    _generateDebt(address(this), address(collateralJoin[ETH_A]), int256(COLLAT), int256(DEBT));
+    _generateDebt(address(this), address(collateralJoin[_cType()]), int256(COLLAT), int256(DEBT));
 
     // NOTE: LVT for price = 1000 is 50%
-    _setCollateralPrice(ETH_A, 675e18); // LVT = 74,0% = 1/1.35
+    _setCollateralPrice(_cType(), 675e18); // LVT = 74,0% = 1/1.35
 
-    // vm.expectRevert('LiquidationEngine/safe-not-unsafe');
-    // _liquidateSAFE(ETH_A, address(this));
+    vm.expectRevert('LiquidationEngine/safe-not-unsafe');
+    _liquidateSAFE(_cType(), address(this));
 
-    _setCollateralPrice(ETH_A, 674e18); // LVT = 74,1% > 1/1.35
-    _liquidateSAFE(ETH_A, address(this));
+    _setCollateralPrice(_cType(), 674e18); // LVT = 74,1% > 1/1.35
+    _liquidateSAFE(_cType(), address(this));
   }
 
   function test_liquidation_by_fees() public {
-    _generateDebt(address(this), address(collateralJoin[ETH_A]), int256(COLLAT), int256(DEBT));
+    _generateDebt(address(this), address(collateralJoin[_cType()]), int256(COLLAT), int256(DEBT));
 
     _collectFees(8 * YEAR); // 1.05^8 = 148%
 
-    // TODO: fix liquidation test for E2EProxy implementation
-    // vm.expectRevert('LiquidationEngine/safe-not-unsafe');
-    // _liquidateSAFE(ETH_A, address(this));
+    vm.expectRevert('LiquidationEngine/safe-not-unsafe');
+    _liquidateSAFE(_cType(), address(this));
 
     _collectFees(YEAR); // 1.05^9 = 153%
-    _liquidateSAFE(ETH_A, address(this));
+    _liquidateSAFE(_cType(), address(this));
   }
 
   function test_collateral_auction() public {
-    _generateDebt(address(this), address(collateralJoin[ETH_A]), int256(COLLAT), int256(DEBT));
-    _setCollateralPrice(ETH_A, TEST_ETH_PRICE_DROP);
-    _liquidateSAFE(ETH_A, address(this));
+    _generateDebt(address(this), address(collateralJoin[_cType()]), int256(COLLAT), int256(DEBT));
+    _setCollateralPrice(_cType(), TEST_ETH_PRICE_DROP);
+    _liquidateSAFE(_cType(), address(this));
 
-    uint256 _discount = collateralAuctionHouse[ETH_A].cParams().minDiscount;
+    uint256 _discount = collateralAuctionHouse[_cType()].cParams().minDiscount;
     uint256 _amountToBid = Math.wmul(Math.wmul(COLLAT, _discount), TEST_ETH_PRICE_DROP);
     // NOTE: getExpectedCollateralBought doesn't have a previous reference (lastReadRedemptionPrice)
-    (uint256 _expectedCollateral,) = collateralAuctionHouse[ETH_A].getCollateralBought(1, _amountToBid);
+    (uint256 _expectedCollateral,) = collateralAuctionHouse[_cType()].getCollateralBought(1, _amountToBid);
     assertEq(_expectedCollateral, COLLAT);
 
     _joinCoins(address(this), _amountToBid);
 
-    safeEngine.approveSAFEModification(address(collateralAuctionHouse[ETH_A]));
-    collateralAuctionHouse[ETH_A].buyCollateral(1, _amountToBid);
+    safeEngine.approveSAFEModification(address(collateralAuctionHouse[_cType()]));
+    collateralAuctionHouse[_cType()].buyCollateral(1, _amountToBid);
 
     // NOTE: auctions(1) is deleted
-    uint256 _amountToSell = collateralAuctionHouse[ETH_A].auctions(1).amountToSell;
+    uint256 _amountToSell = collateralAuctionHouse[_cType()].auctions(1).amountToSell;
     assertEq(_amountToSell, 0);
   }
 
   function test_collateral_auction_partial() public {
-    _generateDebt(address(this), address(collateralJoin[ETH_A]), int256(COLLAT), int256(DEBT));
-    _setCollateralPrice(ETH_A, TEST_ETH_PRICE_DROP);
-    _liquidateSAFE(ETH_A, address(this));
+    _generateDebt(address(this), address(collateralJoin[_cType()]), int256(COLLAT), int256(DEBT));
+    _setCollateralPrice(_cType(), TEST_ETH_PRICE_DROP);
+    _liquidateSAFE(_cType(), address(this));
 
-    uint256 _discount = collateralAuctionHouse[ETH_A].cParams().minDiscount;
+    uint256 _discount = collateralAuctionHouse[_cType()].cParams().minDiscount;
     uint256 _amountToBid = Math.wmul(Math.wmul(COLLAT, _discount), TEST_ETH_PRICE_DROP) / 2;
     // NOTE: getExpectedCollateralBought doesn't have a previous reference (lastReadRedemptionPrice)
-    (uint256 _expectedCollateral,) = collateralAuctionHouse[ETH_A].getCollateralBought(1, _amountToBid);
+    (uint256 _expectedCollateral,) = collateralAuctionHouse[_cType()].getCollateralBought(1, _amountToBid);
     assertEq(_expectedCollateral, COLLAT / 2);
 
     _joinCoins(address(this), _amountToBid);
 
-    safeEngine.approveSAFEModification(address(collateralAuctionHouse[ETH_A]));
-    collateralAuctionHouse[ETH_A].buyCollateral(1, _amountToBid);
+    safeEngine.approveSAFEModification(address(collateralAuctionHouse[_cType()]));
+    collateralAuctionHouse[_cType()].buyCollateral(1, _amountToBid);
 
     // NOTE: auctions(1) is NOT deleted
-    uint256 _amountToSell = collateralAuctionHouse[ETH_A].auctions(1).amountToSell;
+    uint256 _amountToSell = collateralAuctionHouse[_cType()].auctions(1).amountToSell;
     assertGt(_amountToSell, 0);
   }
 
   function test_debt_auction() public {
-    _generateDebt(address(this), address(collateralJoin[ETH_A]), int256(COLLAT), int256(DEBT));
-    _setCollateralPrice(ETH_A, TEST_ETH_PRICE_DROP);
-    _liquidateSAFE(ETH_A, address(this));
+    _generateDebt(address(this), address(collateralJoin[_cType()]), int256(COLLAT), int256(DEBT));
+    _setCollateralPrice(_cType(), TEST_ETH_PRICE_DROP);
+    _liquidateSAFE(_cType(), address(this));
 
     accountingEngine.popDebtFromQueue(block.timestamp);
     accountingEngine.auctionDebt();
@@ -165,7 +171,7 @@ contract E2ETest is Common {
   }
 
   function test_surplus_auction() public {
-    _generateDebt(address(this), address(collateralJoin[ETH_A]), int256(COLLAT), int256(DEBT));
+    _generateDebt(address(this), address(collateralJoin[_cType()]), int256(COLLAT), int256(DEBT));
     uint256 INITIAL_BID = 1e18;
 
     // mint protocol tokens to bid with
@@ -201,3 +207,13 @@ contract E2ETest is Common {
     assertEq(protocolToken.balanceOf(address(this)), 0);
   }
 }
+
+// --- Scoped test contracts ---
+
+contract E2ETestDirectUserETH is DirectUser, ETHCType, E2ETest {}
+
+contract E2ETestProxyUserETH is ProxyUser, ETHCType, E2ETest {}
+
+// TODO: uncomment and fix tests
+// contract E2ETestDirectUserTKN is DirectUser, TKNCType, E2ETest {}
+// contract E2ETestProxyUserTKN is ProxyUser, TKNCType, E2ETest {}

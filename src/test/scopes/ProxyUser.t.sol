@@ -1,24 +1,30 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {ICollateralJoin, ISAFEEngine} from '@script/Contracts.s.sol';
+import {ScriptBase} from 'forge-std/Script.sol';
 import {ETH_A} from '@script/Params.s.sol';
-
+import {
+  Contracts,
+  ICollateralJoin,
+  ERC20ForTest,
+  IERC20Metadata,
+  ISAFEEngine,
+  BasicActions,
+  HaiProxy
+} from '@script/Contracts.s.sol';
 import {IWeth} from '@interfaces/external/IWeth.sol';
-import {E2ETest} from '@test/e2e/E2ETest.t.sol';
+import {BaseUser} from '@test/scopes/BaseUser.t.sol';
 
-import {HaiProxy} from '@contracts/proxies/HaiProxy.sol';
-import {BasicActions} from '@contracts/proxies/actions/BasicActions.sol';
-
-contract E2EProxyTest is E2ETest {
+abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
   mapping(address => HaiProxy) proxy;
   mapping(address => mapping(bytes32 => uint256)) safe;
+  mapping(address => mapping(bytes32 => address)) safeHandler;
 
   function _getSafeStatus(
     bytes32 _cType,
     address _user
   ) internal virtual override returns (uint256 _generatedDebt, uint256 _lockedCollateral) {
-    uint256 _safeId = _getSafe(_user, ETH_A);
+    (uint256 _safeId,) = _getSafe(_user, ETH_A);
     address _safeHandler = safeManager.safeData(_safeId).safeHandler;
 
     ISAFEEngine.SAFE memory _safe = safeEngine.safes(_cType, _safeHandler);
@@ -29,7 +35,7 @@ contract E2EProxyTest is E2ETest {
   function _lockETH(address _user, uint256 _collatAmount) internal virtual override {
     vm.startPrank(_user);
     HaiProxy _proxy = _getProxy(_user);
-    uint256 _safe = _getSafe(_user, ETH_A);
+    (uint256 _safeId,) = _getSafe(_user, ETH_A);
 
     IWeth(address(collateral[ETH_A])).deposit{value: _collatAmount}();
     collateral[ETH_A].approve(address(_proxy), _collatAmount);
@@ -38,7 +44,7 @@ contract E2EProxyTest is E2ETest {
     //   BasicActions.lockTokenCollateral.selector,
     //   address(safeManager),
     //   address(collateralJoin[ETH_A]),
-    //   _safe,
+    //   _safeId,
     //   _collatAmount,
     //   true
     // );
@@ -48,9 +54,37 @@ contract E2EProxyTest is E2ETest {
     vm.stopPrank();
   }
 
+  function _joinTKN(address _user, address _collateralJoin, uint256 _amount) internal virtual override {
+    // TODO: add proxy implementation
+    vm.startPrank(_user);
+    IERC20Metadata _collateral = ICollateralJoin(_collateralJoin).collateral();
+
+    ERC20ForTest(address(_collateral)).mint(_user, _amount);
+
+    _collateral.approve(_collateralJoin, _amount);
+    ICollateralJoin(_collateralJoin).join(_user, _amount);
+    vm.stopPrank();
+  }
+
+  function _joinCoins(address _user, uint256 _amount) internal virtual override {
+    // TODO: add proxy implementation
+    vm.startPrank(_user);
+    systemCoin.approve(address(coinJoin), _amount);
+    coinJoin.join(_user, _amount);
+    vm.stopPrank();
+  }
+
+  function _exitCoin(address _user, uint256 _amount) internal virtual override {
+    // TODO: add proxy implementation
+    vm.startPrank(_user);
+    safeEngine.approveSAFEModification(address(coinJoin));
+    coinJoin.exit(_user, _amount);
+    vm.stopPrank();
+  }
+
   function _liquidateSAFE(bytes32 _cType, address _user) internal virtual override {
-    uint256 _safe = _getSafe(_user, _cType);
-    liquidationEngine.liquidateSAFE(_cType, safeManager.safeData(_safe).safeHandler);
+    (, address _safeHandler) = _getSafe(_user, _cType);
+    liquidationEngine.liquidateSAFE(_cType, _safeHandler);
   }
 
   function _generateDebt(
@@ -61,10 +95,10 @@ contract E2EProxyTest is E2ETest {
   ) internal virtual override {
     HaiProxy _proxy = _getProxy(_user);
     bytes32 _cType = ICollateralJoin(_collateralJoin).collateralType();
-    uint256 _safe = _getSafe(_user, _cType);
+    (uint256 _safeId,) = _getSafe(_user, _cType);
 
     if (_cType == ETH_A) _lockETH(_user, uint256(_collatAmount));
-    else _joinTKN(_user, ICollateralJoin(_collateralJoin), uint256(_collatAmount));
+    else _joinTKN(_user, _collateralJoin, uint256(_collatAmount));
 
     vm.startPrank(_user);
 
@@ -74,7 +108,7 @@ contract E2EProxyTest is E2ETest {
       address(taxCollector),
       address(collateralJoin[ETH_A]),
       address(coinJoin),
-      _safe,
+      _safeId,
       _collatAmount,
       _deltaDebt, // wad
       true
@@ -91,7 +125,7 @@ contract E2EProxyTest is E2ETest {
     return proxy[_user];
   }
 
-  function _getSafe(address _user, bytes32 _collateralType) internal returns (uint256 _safe) {
+  function _getSafe(address _user, bytes32 _collateralType) internal returns (uint256 _safeId, address _safeHandler) {
     HaiProxy _proxy = _getProxy(_user);
 
     if (safe[_user][_collateralType] == 0) {
@@ -99,9 +133,14 @@ contract E2EProxyTest is E2ETest {
         abi.encodeWithSelector(BasicActions.openSAFE.selector, address(safeManager), _collateralType, address(_proxy));
 
       (bytes memory _response) = _proxy.execute(address(proxyActions), _callData);
-      safe[_user][_collateralType] = abi.decode(_response, (uint256));
+      _safeId = abi.decode(_response, (uint256));
+      _safeHandler = safeManager.safeData(_safeId).safeHandler;
+
+      // store safeId and safeHandler in local storage
+      safe[_user][_collateralType] = _safeId;
+      safeHandler[_user][_collateralType] = _safeHandler;
     }
 
-    return safe[_user][_collateralType];
+    return (safe[_user][_collateralType], safeHandler[_user][_collateralType]);
   }
 }

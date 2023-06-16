@@ -18,7 +18,7 @@ import {GoerliParams} from '@script/GoerliParams.s.sol';
 import {MainnetParams} from '@script/MainnetParams.s.sol';
 import '@script/Registry.s.sol';
 
-abstract contract Deploy is Params, Script, Contracts {
+abstract contract Deploy is Contracts, Params, Script {
   uint256 public chainId;
   uint256 internal _deployerPk = 69; // for tests
 

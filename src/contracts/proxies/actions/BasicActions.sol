@@ -21,23 +21,25 @@ import {Common} from '@contracts/proxies/actions/Common.sol';
  * - import all interfaces (not contracts)
  */
 
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-// WARNING: These functions meant to be used as a a library for a HaiProxy. Some are unsafe if you call them directly.
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 // solhint-disable
 // TODO: enable linter
+/**
+ * @title BasicActions
+ * @notice All methods here are executed as delegatecalls from the user's proxy
+ */
 contract BasicActions is Common {
   using Math for uint256;
 
   // Internal functions
 
-  /// @notice Gets delta debt generated (Total Safe debt minus available safeHandler COIN balance)
-  /// @param _safeEngine address
-  /// @param _taxCollector address
-  /// @param _safeHandler address
-  /// @param _collateralType bytes32
-  /// @return _deltaDebt
+  /**
+   * @notice Gets delta debt generated (Total Safe debt minus available safeHandler COIN balance)
+   * @param _safeEngine address
+   * @param _taxCollector address
+   * @param _safeHandler address
+   * @param _collateralType bytes32
+   * @param _wad uint
+   */
   function _getGeneratedDeltaDebt(
     address _safeEngine,
     address _taxCollector,
@@ -61,16 +63,18 @@ contract BasicActions is Common {
     }
   }
 
-  /// @notice Gets repaid delta debt generated (rate adjusted debt)
-  /// @param _safeEngine address
-  /// @param _coin uint amount
-  /// @param _safe uint - safeId
-  /// @param _collateralType bytes32
-  /// @return _deltaDebt
+  /**
+   * @notice Gets repaid delta debt generated (rate adjusted debt)
+   * @param _safeEngine address
+   * @param _coin uint amount
+   * @param _safeId uint - safeId
+   * @param _collateralType bytes32
+   * @return _deltaDebt uint - amount of debt to be repayed
+   */
   function _getRepaidDeltaDebt(
     address _safeEngine,
     uint256 _coin,
-    address _safe,
+    address _safeId,
     bytes32 _collateralType
   ) internal view returns (int256 _deltaDebt) {
     // Gets actual rate from the safeEngine
@@ -78,7 +82,7 @@ contract BasicActions is Common {
     require(_rate > 0, 'invalid-collateral-type');
 
     // Gets actual generatedDebt value of the safe
-    ISAFEEngine.SAFE memory _safeData = ISAFEEngine(_safeEngine).safes(_collateralType, _safe);
+    ISAFEEngine.SAFE memory _safeData = ISAFEEngine(_safeEngine).safes(_collateralType, _safeId);
 
     // Uses the whole coin balance in the safeEngine to reduce the debt
     _deltaDebt = (_coin / _rate).toInt();
@@ -86,22 +90,24 @@ contract BasicActions is Common {
     _deltaDebt = uint256(_deltaDebt) <= _safeData.generatedDebt ? -_deltaDebt : -_safeData.generatedDebt.toInt();
   }
 
-  /// @notice Gets repaid debt (rate adjusted rate minus COIN balance available in usr's address)
-  /// @param _safeEngine address
-  /// @param _usr address
-  /// @param _safe uint
-  /// @param _collateralType address
-  /// @return _wad
+  /**
+   * @notice Gets repaid debt (rate adjusted rate minus COIN balance available in usr's address)
+   * @param _safeEngine address
+   * @param _usr address
+   * @param _safeId uint - safeId
+   * @param _collateralType  bytes32
+   * @return _wad
+   */
   function _getRepaidAlDebt(
     address _safeEngine,
     address _usr,
-    address _safe,
+    address _safeId,
     bytes32 _collateralType
   ) internal view returns (uint256 _wad) {
     // Gets actual rate from the safeEngine
     uint256 _rate = ISAFEEngine(_safeEngine).cData(_collateralType).accumulatedRate;
     // Gets actual generatedDebt value of the safe
-    ISAFEEngine.SAFE memory _safeData = ISAFEEngine(_safeEngine).safes(_collateralType, _safe);
+    ISAFEEngine.SAFE memory _safeData = ISAFEEngine(_safeEngine).safes(_collateralType, _safeId);
     // Gets actual coin amount in the safe
     uint256 _coin = ISAFEEngine(_safeEngine).coinBalance(_usr);
 
@@ -112,305 +118,379 @@ contract BasicActions is Common {
     _wad = _wad * RAY < _rad ? _wad + 1 : _wad;
   }
 
-  /// @notice Generates Debt (and sends coin balance to address to)
-  /// @param _manager address
-  /// @param _taxCollector address
-  /// @param _coinJoin address
-  /// @param _safe uint
-  /// @param _wad uint - amount of debt to be generated
-  /// @param _to address - receiver of the balance of generated COIN
+  /**
+   * @notice Generates debt and sends COIN amount to `_to` address
+   * @param _manager address
+   * @param _taxCollector address
+   * @param _coinJoin address
+   * @param _safeId uint - safeId
+   * @param _wad uint - amount of debt to be generated
+   * @param _to address - receiver of the balance of generated COIN
+   */
   function _generateDebt(
     address _manager,
     address _taxCollector,
     address _coinJoin,
-    uint256 _safe,
+    uint256 _safeId,
     uint256 _wad,
     address _to
   ) internal {
-    address safeEngine = HaiSafeManager(_manager).safeEngine();
-    HaiSafeManager.SAFEData memory _safeInfo = HaiSafeManager(_manager).safeData(_safe);
+    address _safeEngine = HaiSafeManager(_manager).safeEngine();
+    HaiSafeManager.SAFEData memory _safeInfo = HaiSafeManager(_manager).safeData(_safeId);
     // Generates debt in the SAFE
     modifySAFECollateralization(
       _manager,
-      _safe,
+      _safeId,
       0,
-      _getGeneratedDeltaDebt(safeEngine, _taxCollector, _safeInfo.safeHandler, _safeInfo.collateralType, _wad)
+      _getGeneratedDeltaDebt(_safeEngine, _taxCollector, _safeInfo.safeHandler, _safeInfo.collateralType, _wad)
     );
     // Moves the COIN amount (balance in the safeEngine in rad) to proxy's address
-    transferInternalCoins(_manager, _safe, address(this), _wad * RAY);
+    transferInternalCoins(_manager, _safeId, address(this), _wad * RAY);
     // Allows adapter to access to proxy's COIN balance in the safeEngine
-    if (!ISAFEEngine(safeEngine).canModifySAFE(address(this), address(_coinJoin))) {
-      ISAFEEngine(safeEngine).approveSAFEModification(_coinJoin);
+    if (!ISAFEEngine(_safeEngine).canModifySAFE(address(this), address(_coinJoin))) {
+      ISAFEEngine(_safeEngine).approveSAFEModification(_coinJoin);
     }
     // Exits COIN to this contract
     CoinJoin(_coinJoin).exit(_to, _wad);
   }
 
-  /// @notice Repays debt
-  /// @param manager address
-  /// @param coinJoin address
-  /// @param safe uint
-  /// @param wad uint - amount of debt to be repayed
-  function _repayDebt(address manager, address coinJoin, uint256 safe, uint256 wad, bool transferFromCaller) internal {
-    address safeEngine = HaiSafeManager(manager).safeEngine();
-    HaiSafeManager.SAFEData memory _safeInfo = HaiSafeManager(manager).safeData(safe);
+  /**
+   * @notice Repays debt
+   * @param _manager address
+   * @param _coinJoin addres
+   * @param _safeId uint - safeId
+   * @param _wad uint - amount of debt to be repayed
+   * @param _transferFromCaller bool
+   */
+  function _repayDebt(
+    address _manager,
+    address _coinJoin,
+    uint256 _safeId,
+    uint256 _wad,
+    bool _transferFromCaller
+  ) internal {
+    address _safeEngine = HaiSafeManager(_manager).safeEngine();
+    HaiSafeManager.SAFEData memory _safeInfo = HaiSafeManager(_manager).safeData(_safeId);
 
-    if (_safeInfo.owner == address(this) || HaiSafeManager(manager).safeCan(_safeInfo.owner, safe, address(this)) == 1)
-    {
+    if (
+      _safeInfo.owner == address(this) || HaiSafeManager(_manager).safeCan(_safeInfo.owner, _safeId, address(this)) == 1
+    ) {
       // Joins COIN amount into the safeEngine
-      if (transferFromCaller) coinJoin_join(coinJoin, _safeInfo.safeHandler, wad);
-      else _coinJoin_join(coinJoin, _safeInfo.safeHandler, wad);
+      if (_transferFromCaller) coinJoin_join(_coinJoin, _safeInfo.safeHandler, _wad);
+      else _coinJoin_join(_coinJoin, _safeInfo.safeHandler, _wad);
       // Paybacks debt to the SAFE
       modifySAFECollateralization(
-        manager,
-        safe,
+        _manager,
+        _safeId,
         0,
         _getRepaidDeltaDebt(
-          safeEngine,
-          ISAFEEngine(safeEngine).coinBalance(_safeInfo.safeHandler),
+          _safeEngine,
+          ISAFEEngine(_safeEngine).coinBalance(_safeInfo.safeHandler),
           _safeInfo.safeHandler,
           _safeInfo.collateralType
         )
       );
     } else {
       // Joins COIN amount into the safeEngine
-      if (transferFromCaller) coinJoin_join(coinJoin, address(this), wad);
-      else _coinJoin_join(coinJoin, address(this), wad);
+      if (_transferFromCaller) coinJoin_join(_coinJoin, address(this), _wad);
+      else _coinJoin_join(_coinJoin, address(this), _wad);
       // Paybacks debt to the SAFE
-      ISAFEEngine(safeEngine).modifySAFECollateralization(
+      ISAFEEngine(_safeEngine).modifySAFECollateralization(
         _safeInfo.collateralType,
         _safeInfo.safeHandler,
         address(this),
         address(this),
         0,
-        _getRepaidDeltaDebt(safeEngine, wad * RAY, _safeInfo.safeHandler, _safeInfo.collateralType)
+        _getRepaidDeltaDebt(_safeEngine, _wad * RAY, _safeInfo.safeHandler, _safeInfo.collateralType)
       );
     }
   }
 
   // Public functions
 
-  /// @notice ERC20 transfer
-  /// @param collateral address - address of ERC20 collateral
-  /// @param dst address - Transfer destination
-  /// @param amt address - Amount to transfer
-  function transfer(address collateral, address dst, uint256 amt) external {
-    IERC20Metadata(collateral).transfer(dst, amt);
+  /**
+   * @notice ERC20 transfer
+   * @param _collateral address - address of ERC20 collateral
+   * @param _dst address - Transfer destination
+   * @param _amt address - Amount to transfer
+   */
+  function transfer(address _collateral, address _dst, uint256 _amt) external delegateCall {
+    IERC20Metadata(_collateral).transfer(_dst, _amt);
   }
 
-  /// @notice Approves an address to modify the Safe
-  /// @param safeEngine address
-  /// @param usr address - Address allowed to modify Safe
-  function approveSAFEModification(address safeEngine, address usr) external {
-    ISAFEEngine(safeEngine).approveSAFEModification(usr);
+  /**
+   * @notice Approves an address to modify the Safe
+   * @param _safeEngine address
+   * @param _usr address - Address allowed to modify Safe
+   */
+  function approveSAFEModification(address _safeEngine, address _usr) external delegateCall {
+    ISAFEEngine(_safeEngine).approveSAFEModification(_usr);
   }
 
-  /// @notice Denies an address to modify the Safe
-  /// @param safeEngine address
-  /// @param usr address - Address disallowed to modify Safe
-  function denySAFEModification(address safeEngine, address usr) external {
-    ISAFEEngine(safeEngine).denySAFEModification(usr);
+  /**
+   * @notice Denies an address to modify the Safe
+   * @param _safeEngine address
+   * @param _usr address - Address disallowed to modify Safe
+   */
+  function denySAFEModification(address _safeEngine, address _usr) external delegateCall {
+    ISAFEEngine(_safeEngine).denySAFEModification(_usr);
   }
 
-  /// @notice Opens a brand new Safe
-  /// @param manager address - Safe Manager
-  /// @param collateralType bytes32 - collateral type
-  /// @param usr address - Owner of the safe
-  function openSAFE(address manager, bytes32 collateralType, address usr) public returns (uint256 safe) {
-    safe = HaiSafeManager(manager).openSAFE(collateralType, usr);
+  /**
+   * @notice Opens a brand new Safe
+   * @param _manager address
+   * @param _collateralType bytes32
+   * @param _usr address
+   */
+  function openSAFE(
+    address _manager,
+    bytes32 _collateralType,
+    address _usr
+  ) public delegateCall returns (uint256 _safeId) {
+    _safeId = HaiSafeManager(_manager).openSAFE(_collateralType, _usr);
   }
 
-  /// @notice Transfer the ownership of a proxy owned Safe
-  /// @param manager address - Safe Manager
-  /// @param safe uint - Safe Id
-  /// @param usr address - Owner of the safe
-  function transferSAFEOwnership(address manager, uint256 safe, address usr) public {
-    HaiSafeManager(manager).transferSAFEOwnership(safe, usr);
+  /**
+   * @notice Transfer the ownership of a proxy owned Safe
+   * @param _manager address
+   * @param _safeId uint - Safe Id
+   * @param _usr address - Owner of the safe
+   */
+  function transferSAFEOwnership(address _manager, uint256 _safeId, address _usr) public delegateCall {
+    HaiSafeManager(_manager).transferSAFEOwnership(_safeId, _usr);
   }
 
-  /// @notice Transfer the ownership to a new proxy owned by a different address
-  /// @param proxyRegistry address - Safe Manager
-  /// @param manager address - Safe Manager
-  /// @param safe uint - Safe Id
-  /// @param dst address - Owner of the new proxy
-  function transferSAFEOwnershipToProxy(address proxyRegistry, address manager, uint256 safe, address dst) external {
+  /**
+   * @notice Transfer the ownership to a new proxy owned by a different address
+   * @param _proxyRegistry address
+   * @param _manager address
+   * @param _safeId uint - Safe Id
+   * @param _dst address - Owner of the new proxy
+   */
+  function transferSAFEOwnershipToProxy(
+    address _proxyRegistry,
+    address _manager,
+    uint256 _safeId,
+    address _dst
+  ) external delegateCall {
     // Gets actual proxy address
-    HaiProxy proxy = HaiProxyRegistry(proxyRegistry).proxies(dst);
+    HaiProxy _proxy = HaiProxyRegistry(_proxyRegistry).proxies(_dst);
     // Checks if the proxy address already existed and dst address is still the owner
-    if (address(proxy) == address(0) || proxy.owner() != dst) {
+    if (address(_proxy) == address(0) || _proxy.owner() != _dst) {
       uint256 csize;
       assembly {
-        csize := extcodesize(dst)
+        csize := extcodesize(_dst)
       }
       // We want to avoid creating a proxy for a contract address that might not be able to handle proxies, then losing the SAFE
       require(csize == 0, 'dst-is-a-contract');
       // Creates the proxy for the dst address
-      proxy = HaiProxy(HaiProxyRegistry(proxyRegistry).build(dst));
+      _proxy = HaiProxy(HaiProxyRegistry(_proxyRegistry).build(_dst));
     }
     // Transfers SAFE to the dst proxy
-    transferSAFEOwnership(manager, safe, address(proxy));
+    transferSAFEOwnership(_manager, _safeId, address(_proxy));
   }
 
-  /// @notice Allow/disallow a usr address to manage the safe
-  /// @param manager address - Safe Manager
-  /// @param safe uint - Safe Id
-  /// @param usr address - usr address
-  /// uint ok - 1 for allowed
-  function allowSAFE(address manager, uint256 safe, address usr, uint256 ok) external {
-    HaiSafeManager(manager).allowSAFE(safe, usr, ok);
+  /**
+   * @notice Allow/disallow a usr address to manage the safe
+   * @param _manager address
+   * @param _safeId uint - Safe Id
+   * @param _usr address
+   * @param _ok uint - 1 for allowed
+   */
+  function allowSAFE(address _manager, uint256 _safeId, address _usr, uint256 _ok) external delegateCall {
+    HaiSafeManager(_manager).allowSAFE(_safeId, _usr, _ok);
   }
 
-  /// @notice Allow/disallow a usr address to quit to the sender handler
-  /// @param manager address - Safe Manager
-  /// @param usr address - usr address
-  /// uint ok - 1 for allowed
-  function allowHandler(address manager, address usr, uint256 ok) external {
-    HaiSafeManager(manager).allowHandler(usr, ok);
+  /**
+   * @notice Allow/disallow a usr address to quit to the sender handler
+   * @param _manager address
+   * @param _usr address
+   * @param _ok uint - 1 for allowed
+   */
+  function allowHandler(address _manager, address _usr, uint256 _ok) external delegateCall {
+    HaiSafeManager(_manager).allowHandler(_usr, _ok);
   }
 
-  /// @notice Transfer wad amount of safe collateral from the safe address to a dst address.
-  /// @param manager address - Safe Manager
-  /// @param safe uint - Safe Id
-  /// @param dst address - destination address
-  /// uint wad - amount
-  function transferCollateral(address manager, uint256 safe, address dst, uint256 wad) public {
-    HaiSafeManager(manager).transferCollateral(safe, dst, wad);
+  /**
+   * @notice Transfer wad amount of safe collateral from the safe address to a dst address.
+   * @param _manager address
+   * @param _safeId uint - Safe Id
+   * @param _dst address - destination address
+   * @param _wad uint - amount
+   */
+  function transferCollateral(address _manager, uint256 _safeId, address _dst, uint256 _wad) public delegateCall {
+    HaiSafeManager(_manager).transferCollateral(_safeId, _dst, _wad);
   }
 
-  /// @notice Transfer rad amount of COIN from the safe address to a dst address.
-  /// @param manager address - Safe Manager
-  /// @param safe uint - Safe Id
-  /// @param dst address - destination address
-  /// uint rad - amount
-  function transferInternalCoins(address manager, uint256 safe, address dst, uint256 rad) public {
-    HaiSafeManager(manager).transferInternalCoins(safe, dst, rad);
+  /**
+   * @notice Transfer rad amount of COIN from the safe address to a dst address.
+   * @param _manager address
+   * @param _safeId uint - Safe Id
+   * @param _dst address - destination address
+   * @param _rad uin - amount
+   */
+  function transferInternalCoins(address _manager, uint256 _safeId, address _dst, uint256 _rad) public delegateCall {
+    HaiSafeManager(_manager).transferInternalCoins(_safeId, _dst, _rad);
   }
 
-  /// @notice Modify a SAFE's collateralization ratio while keeping the generated COIN or collateral freed in the SAFE handler address.
-  /// @param manager address - Safe Manager
-  /// @param safe uint - Safe Id
-  /// @param deltaCollateral - int
-  /// @param deltaDebt - int
-  function modifySAFECollateralization(address manager, uint256 safe, int256 deltaCollateral, int256 deltaDebt) public {
-    HaiSafeManager(manager).modifySAFECollateralization(safe, deltaCollateral, deltaDebt);
+  /**
+   * @notice Modify a SAFE's collateralization ratio while keeping the generated COIN or collateral freed in the SAFE handler address.
+   * @param _manager address
+   * @param _safeId uint - Safe Id
+   * @param _deltaCollateral int
+   * @param _deltaDebt int
+   */
+  function modifySAFECollateralization(
+    address _manager,
+    uint256 _safeId,
+    int256 _deltaCollateral,
+    int256 _deltaDebt
+  ) public delegateCall {
+    HaiSafeManager(_manager).modifySAFECollateralization(_safeId, _deltaCollateral, _deltaDebt);
   }
 
-  /// @notice Quit the system, migrating the safe (lockedCollateral, generatedDebt) to a different dst handler
-  /// @param manager address - Safe Manager
-  /// @param safe uint - Safe Id
-  /// @param dst - destination handler
-  function quitSystem(address manager, uint256 safe, address dst) external {
-    HaiSafeManager(manager).quitSystem(safe, dst);
+  /**
+   * @notice Quit the system, migrating the safe (lockedCollateral, generatedDebt) to a different dst handler
+   * @param _manager address
+   * @param _safeId uint - Safe Id
+   * @param _dst address - destination handler
+   */
+  function quitSystem(address _manager, uint256 _safeId, address _dst) external delegateCall {
+    HaiSafeManager(_manager).quitSystem(_safeId, _dst);
   }
 
-  /// @notice Import a position from src handler to the handler owned by safe
-  /// @param manager address - Safe Manager
-  /// @param src - source handler
-  /// @param safe uint - Safe Id
-  function enterSystem(address manager, address src, uint256 safe) external {
-    HaiSafeManager(manager).enterSystem(src, safe);
+  /**
+   * @notice Import a position from src handler to the handler owned by safe
+   * @param _manager address
+   * @param _src address - source handler
+   * @param _safeId uint - Safe Id
+   */
+  function enterSystem(address _manager, address _src, uint256 _safeId) external delegateCall {
+    HaiSafeManager(_manager).enterSystem(_src, _safeId);
   }
 
-  /// @notice Move a position from safeSrc handler to the safeDst handler
-  /// @param manager address - Safe Manager
-  /// @param safeSrc uint - Source Safe Id
-  /// @param safeDst uint - Destination Safe Id
-  function moveSAFE(address manager, uint256 safeSrc, uint256 safeDst) external {
-    HaiSafeManager(manager).moveSAFE(safeSrc, safeDst);
+  /**
+   * @notice Move a position from safeSrc handler to the safeDst handler
+   * @param _manager address
+   * @param _srcSafeId uint - Source Safe Id
+   * @param _dstSafeId uint - Destination Safe Id
+   */
+  function moveSAFE(address _manager, uint256 _srcSafeId, uint256 _dstSafeId) external delegateCall {
+    HaiSafeManager(_manager).moveSAFE(_srcSafeId, _dstSafeId);
   }
 
-  /// @notice Generates debt and sends COIN amount to msg.sender
-  /// @param manager address
-  /// @param taxCollector address
-  /// @param coinJoin address
-  /// @param safe uint - Safe Id
-  /// @param wad uint - Amount
-  function generateDebt(address manager, address taxCollector, address coinJoin, uint256 safe, uint256 wad) public {
-    _generateDebt(manager, taxCollector, coinJoin, safe, wad, msg.sender);
+  /**
+   * @notice Generates debt and sends COIN amount to msg.sender
+   * @param _manager address
+   * @param _taxCollector address
+   * @param _coinJoin address
+   * @param _safeId uint - Safe Id
+   * @param _wad uint
+   */
+  function generateDebt(
+    address _manager,
+    address _taxCollector,
+    address _coinJoin,
+    uint256 _safeId,
+    uint256 _wad
+  ) public delegateCall {
+    _generateDebt(_manager, _taxCollector, _coinJoin, _safeId, _wad, msg.sender);
   }
 
-  /// @notice Repays debt
-  /// @param manager address
-  /// @param coinJoin address
-  /// @param safe uint - Safe Id
-  /// @param wad uint - Amount
-  function repayDebt(address manager, address coinJoin, uint256 safe, uint256 wad) public {
-    _repayDebt(manager, coinJoin, safe, wad, true);
+  /**
+   * @notice Repays debt
+   * @param _manager address
+   * @param _coinJoin address
+   * @param _safeId uint - Safe Id
+   * @param _wad uint - Amount
+   */
+  function repayDebt(address _manager, address _coinJoin, uint256 _safeId, uint256 _wad) public delegateCall {
+    _repayDebt(_manager, _coinJoin, _safeId, _wad, true);
   }
 
-  function _tokenCollateralJoin_join(address apt, address safe, uint256 wad, bool transferFrom) internal {
+  function _tokenCollateralJoin_join(address _joinAdapter, address _safe, uint256 _wad, bool _transferFrom) internal {
     // Only executes for tokens that have approval/transferFrom implementation
-    CollateralJoin _collateralJoin = CollateralJoin(apt);
-    if (transferFrom) {
-      IERC20Metadata token = IERC20Metadata(_collateralJoin.collateral());
+    CollateralJoin _collateralJoin = CollateralJoin(_joinAdapter);
+    if (_transferFrom) {
+      IERC20Metadata _token = IERC20Metadata(_collateralJoin.collateral());
       // Gets token from the user's wallet
-      token.transferFrom(msg.sender, address(this), wad);
+      _token.transferFrom(msg.sender, address(this), _wad);
       // Approves adapter to take the token amount
-      token.approve(apt, wad);
+      _token.approve(_joinAdapter, _wad);
     }
     // Joins token collateral into the safeEngine
-    _collateralJoin.join(safe, wad);
+    _collateralJoin.join(_safe, _wad);
   }
 
   function lockTokenCollateral(
-    address manager,
-    address collateralJoin,
-    uint256 safe,
-    uint256 wad,
-    bool transferFrom
-  ) public {
-    HaiSafeManager.SAFEData memory _safeInfo = HaiSafeManager(manager).safeData(safe);
+    address _manager,
+    address _collateralJoin,
+    uint256 _safeId,
+    uint256 _wad,
+    bool _transferFrom
+  ) public delegateCall {
+    HaiSafeManager.SAFEData memory _safeInfo = HaiSafeManager(_manager).safeData(_safeId);
 
     // Takes token amount from user's wallet and joins into the safeEngine
-    _tokenCollateralJoin_join(collateralJoin, address(this), wad, transferFrom);
+    _tokenCollateralJoin_join(_collateralJoin, address(this), _wad, _transferFrom);
     // Locks token amount into the SAFE
-    ISAFEEngine(HaiSafeManager(manager).safeEngine()).modifySAFECollateralization(
-      _safeInfo.collateralType, _safeInfo.safeHandler, address(this), address(this), wad.toInt(), 0
+    ISAFEEngine(HaiSafeManager(_manager).safeEngine()).modifySAFECollateralization(
+      _safeInfo.collateralType, _safeInfo.safeHandler, address(this), address(this), _wad.toInt(), 0
     );
   }
 
-  function freeTokenCollateral(address manager, address collateralJoin, uint256 safe, uint256 wad) public {
+  function freeTokenCollateral(
+    address _manager,
+    address _collateralJoin,
+    uint256 _safeId,
+    uint256 _wad
+  ) public delegateCall {
     // Unlocks token amount from the SAFE
-    modifySAFECollateralization(manager, safe, -wad.toInt(), 0);
+    modifySAFECollateralization(_manager, _safeId, -_wad.toInt(), 0);
     // Moves the amount from the SAFE handler to proxy's address
-    transferCollateral(manager, safe, address(this), wad);
+    transferCollateral(_manager, _safeId, address(this), _wad);
     // Exits token amount to the user's wallet as a token
-    CollateralJoin(collateralJoin).exit(msg.sender, wad);
+    CollateralJoin(_collateralJoin).exit(msg.sender, _wad);
   }
 
-  function exitTokenCollateral(address manager, address collateralJoin, uint256 safe, uint256 wad) public {
+  function exitTokenCollateral(
+    address _manager,
+    address _collateralJoin,
+    uint256 _safeId,
+    uint256 _wad
+  ) public delegateCall {
     // Moves the amount from the SAFE handler to proxy's address
-    transferCollateral(manager, safe, address(this), wad);
+    transferCollateral(_manager, _safeId, address(this), _wad);
 
     // Exits token amount to the user's wallet as a token
-    CollateralJoin(collateralJoin).exit(msg.sender, wad);
+    CollateralJoin(_collateralJoin).exit(msg.sender, _wad);
   }
 
-  function repayAllDebt(address manager, address coinJoin, uint256 safe) public {
-    address safeEngine = HaiSafeManager(manager).safeEngine();
-    HaiSafeManager.SAFEData memory _safeInfo = HaiSafeManager(manager).safeData(safe);
+  function repayAllDebt(address _manager, address _coinJoin, uint256 _safeId) public delegateCall {
+    address _safeEngine = HaiSafeManager(_manager).safeEngine();
+    HaiSafeManager.SAFEData memory _safeInfo = HaiSafeManager(_manager).safeData(_safeId);
 
-    ISAFEEngine.SAFE memory _safeData = ISAFEEngine(safeEngine).safes(_safeInfo.collateralType, _safeInfo.safeHandler);
+    ISAFEEngine.SAFE memory _safeData = ISAFEEngine(_safeEngine).safes(_safeInfo.collateralType, _safeInfo.safeHandler);
 
-    address own = _safeInfo.owner;
-    if (own == address(this) || HaiSafeManager(manager).safeCan(own, safe, address(this)) == 1) {
+    address _owner = _safeInfo.owner;
+    if (_owner == address(this) || HaiSafeManager(_manager).safeCan(_owner, _safeId, address(this)) == 1) {
       // Joins COIN amount into the safeEngine
       coinJoin_join(
-        coinJoin,
+        _coinJoin,
         _safeInfo.safeHandler,
-        _getRepaidAlDebt(safeEngine, _safeInfo.safeHandler, _safeInfo.safeHandler, _safeInfo.collateralType)
+        _getRepaidAlDebt(_safeEngine, _safeInfo.safeHandler, _safeInfo.safeHandler, _safeInfo.collateralType)
       );
       // Paybacks debt to the SAFE
-      modifySAFECollateralization(manager, safe, 0, -int256(_safeData.generatedDebt));
+      modifySAFECollateralization(_manager, _safeId, 0, -int256(_safeData.generatedDebt));
     } else {
       // Joins COIN amount into the safeEngine
       coinJoin_join(
-        coinJoin,
+        _coinJoin,
         address(this),
-        _getRepaidAlDebt(safeEngine, address(this), _safeInfo.safeHandler, _safeInfo.collateralType)
+        _getRepaidAlDebt(_safeEngine, address(this), _safeInfo.safeHandler, _safeInfo.collateralType)
       );
       // Paybacks debt to the SAFE
-      ISAFEEngine(safeEngine).modifySAFECollateralization(
+      ISAFEEngine(_safeEngine).modifySAFECollateralization(
         _safeInfo.collateralType,
         _safeInfo.safeHandler,
         address(this),
@@ -430,7 +510,7 @@ contract BasicActions is Common {
     uint256 _collateralAmount,
     uint256 _deltaWad,
     bool _transferFrom
-  ) public {
+  ) public delegateCall {
     address safeEngine = HaiSafeManager(_manager).safeEngine();
     HaiSafeManager.SAFEData memory _safeInfo = HaiSafeManager(_manager).safeData(_safe);
 
@@ -462,7 +542,7 @@ contract BasicActions is Common {
     uint256 _collateralAmount,
     uint256 _deltaWad,
     bool _transferFrom
-  ) public returns (uint256 _safe) {
+  ) public delegateCall returns (uint256 _safe) {
     _safe = openSAFE(_manager, _collateralType, address(this));
     lockTokenCollateralAndGenerateDebt(
       _manager, _taxCollector, _collateralJoin, _coinJoin, _safe, _collateralAmount, _deltaWad, _transferFrom
@@ -476,7 +556,7 @@ contract BasicActions is Common {
     uint256 _safe,
     uint256 _collateralWad,
     uint256 _deltaWad
-  ) external {
+  ) external delegateCall {
     HaiSafeManager.SAFEData memory _safeInfo = HaiSafeManager(_manager).safeData(_safe);
     // Joins COIN amount into the safeEngine
     coinJoin_join(_coinJoin, _safeInfo.safeHandler, _deltaWad);
@@ -504,7 +584,7 @@ contract BasicActions is Common {
     address _coinJoin,
     uint256 _safe,
     uint256 _collateralWad
-  ) public {
+  ) public delegateCall {
     address _safeEngine = HaiSafeManager(_manager).safeEngine();
     HaiSafeManager.SAFEData memory _safeInfo = HaiSafeManager(_manager).safeData(_safe);
 

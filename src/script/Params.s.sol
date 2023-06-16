@@ -25,14 +25,14 @@ import {WAD, RAY, RAD} from '@libraries/Math.sol';
 // --- Utils ---
 
 // HAI Params
-bytes32 constant HAI = bytes32('HAI');
+bytes32 constant HAI = bytes32('HAI'); // 0x4841490000000000000000000000000000000000000000000000000000000000
 uint256 constant HAI_INITIAL_PRICE = 1e18; // 1 HAI = 1 USD
 
 // Collateral Names
-bytes32 constant ETH_A = bytes32('ETH-A');
-bytes32 constant WETH = bytes32('WETH');
-bytes32 constant WSTETH = bytes32('WSTETH');
-bytes32 constant OP = bytes32('OP');
+bytes32 constant ETH_A = bytes32('ETH-A'); // 0x4554482d41000000000000000000000000000000000000000000000000000000
+bytes32 constant WETH = bytes32('WETH'); // 0x5745544800000000000000000000000000000000000000000000000000000000
+bytes32 constant WSTETH = bytes32('WSTETH'); // 0x5753544554480000000000000000000000000000000000000000000000000000
+bytes32 constant OP = bytes32('OP'); // 0x4f50000000000000000000000000000000000000000000000000000000000000
 
 uint256 constant MINUS_0_5_PERCENT_PER_HOUR = 999_998_607_628_240_588_157_433_861;
 uint256 constant MINUS_1_PERCENT_PER_HOUR = 999_997_208_243_937_652_252_849_536;
@@ -181,7 +181,7 @@ library ParamSetter {
   }
 
   function _setupCollateralAuctionHouse(
-    bytes32 _cType,
+    bytes32, // cType (to be used after CAH factory is implemented)
     ICollateralAuctionHouse _collateralAuctionHouse,
     ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cParams,
     ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _params
