@@ -78,7 +78,7 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
     bytes32 _cType,
     TaxCollectorCollateralParams memory _collateralParams
   ) external isAuthorized {
-    if (!_collateralList.add(_cType)) revert CollateralTypeAlreadyInitialized();
+    if (!_collateralList.add(_cType)) revert TC_CollateralTypeAlreadyInitialized();
     _cData[_cType] =
       TaxCollectorCollateralData({nextStabilityFee: RAY, updateTime: block.timestamp, secondaryReceiverAllotedTax: 0});
     _cParams[_cType] = _collateralParams;

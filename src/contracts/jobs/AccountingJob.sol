@@ -40,22 +40,22 @@ contract AccountingJob is Job, Authorizable, Modifiable, IAccountingJob {
 
   // --- Job ---
   function workPopDebtFromQueue(uint256 _debtBlockTimestamp) external reward {
-    if (!shouldWorkPopDebtFromQueue) revert NotWorkable();
+    if (!shouldWorkPopDebtFromQueue) revert AccountingJob_NotWorkable();
     accountingEngine.popDebtFromQueue(_debtBlockTimestamp);
   }
 
   function workAuctionDebt() external reward {
-    if (!shouldWorkAuctionDebt) revert NotWorkable();
+    if (!shouldWorkAuctionDebt) revert AccountingJob_NotWorkable();
     accountingEngine.auctionDebt();
   }
 
   function workAuctionSurplus() external reward {
-    if (!shouldWorkAuctionSurplus) revert NotWorkable();
+    if (!shouldWorkAuctionSurplus) revert AccountingJob_NotWorkable();
     accountingEngine.auctionSurplus();
   }
 
   function workTransferExtraSurplus() external reward {
-    if (!shouldWorkTransferExtraSurplus) revert NotWorkable();
+    if (!shouldWorkTransferExtraSurplus) revert AccountingJob_NotWorkable();
     accountingEngine.transferExtraSurplus();
   }
 

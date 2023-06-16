@@ -8,6 +8,7 @@ import {SystemCoin} from '@contracts/tokens/SystemCoin.sol';
 import {ISAFEEngine, SAFEEngine} from '@contracts/SAFEEngine.sol';
 import {AccountingEngine} from '@contracts/AccountingEngine.sol';
 import {CollateralJoin} from '@contracts/utils/CollateralJoin.sol';
+import {CollateralJoinFactory} from '@contracts/utils/CollateralJoinFactory.sol';
 import {IOracleRelayer, OracleRelayer} from '@contracts/OracleRelayer.sol';
 
 import {RAY, WAD} from '@libraries/Math.sol';
@@ -76,6 +77,7 @@ contract TokenUser {
 
 abstract contract Hevm {
   function warp(uint256) public virtual;
+  function prank(address) external virtual;
 }
 
 contract SystemCoinTest is DSTest {
@@ -85,6 +87,7 @@ contract SystemCoinTest is DSTest {
   SAFEEngine safeEngine;
   OracleRelayer oracleRelayer;
 
+  CollateralJoinFactory collateralJoinFactory;
   CollateralJoin collateralA;
   CoinForTest gold;
   Feed goldFeed;
@@ -141,7 +144,8 @@ contract SystemCoinTest is DSTest {
     oracleRelayer.modifyParameters('gold', 'safetyCRatio', abi.encode(1_000_000_000_000_000_000_000_000_000));
     oracleRelayer.modifyParameters('gold', 'liquidationCRatio', abi.encode(1_000_000_000_000_000_000_000_000_000));
     oracleRelayer.updateCollateralPrice('gold');
-    collateralA = new CollateralJoin(address(safeEngine), 'gold', address(gold));
+    collateralJoinFactory = new CollateralJoinFactory(address(safeEngine));
+    collateralA = CollateralJoin(collateralJoinFactory.deployCollateralJoin('gold', address(gold)));
 
     gold.addAuthorization(address(collateralA));
     gold.addAuthorization(address(safeEngine));

@@ -10,7 +10,7 @@ import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
 interface IAccountingJob is IJob, IAuthorizable, IModifiable {
   // --- Errors ---
-  error NotWorkable();
+  error AccountingJob_NotWorkable();
 
   // --- Data ---
   function shouldWorkPopDebtFromQueue() external view returns (bool _shouldWorkPopDebtFromQueue);

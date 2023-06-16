@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {ICollateralJoin, ISAFEEngine, IERC20Metadata} from '@interfaces/utils/ICollateralJoin.sol';
+import {
+  ICollateralJoin, ICollateralJoinFactory, ISAFEEngine, IERC20Metadata
+} from '@interfaces/utils/ICollateralJoin.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {Disableable} from '@contracts/utils/Disableable.sol';
@@ -24,6 +26,8 @@ contract CollateralJoin is Authorizable, Disableable, ICollateralJoin {
 
   // --- Registry ---
   /// @inheritdoc ICollateralJoin
+  ICollateralJoinFactory public collateralJoinFactory;
+  /// @inheritdoc ICollateralJoin
   ISAFEEngine public safeEngine;
   /// @inheritdoc ICollateralJoin
   IERC20Metadata public collateral;
@@ -38,6 +42,7 @@ contract CollateralJoin is Authorizable, Disableable, ICollateralJoin {
 
   // --- Init ---
   constructor(address _safeEngine, bytes32 _cType, address _collateral) Authorizable(msg.sender) {
+    collateralJoinFactory = ICollateralJoinFactory(msg.sender);
     safeEngine = ISAFEEngine(_safeEngine.assertNonNull());
     collateralType = _cType;
     collateral = IERC20Metadata(_collateral);
@@ -52,7 +57,7 @@ contract CollateralJoin is Authorizable, Disableable, ICollateralJoin {
    *      the locked collateral inside the system. The representation uses 18 decimals.
    * @inheritdoc ICollateralJoin
    */
-  function join(address _account, uint256 _wad) external whenEnabled {
+  function join(address _account, uint256 _wad) external whenEnabled whenFactoryEnabled {
     safeEngine.modifyCollateralBalance(collateralType, _account, _wad.toInt());
     collateral.safeTransferFrom(msg.sender, address(this), _wad / 10 ** multiplier);
     emit Join(msg.sender, _account, _wad);
@@ -68,5 +73,10 @@ contract CollateralJoin is Authorizable, Disableable, ICollateralJoin {
     safeEngine.modifyCollateralBalance(collateralType, msg.sender, -_wad.toInt());
     collateral.safeTransfer(_account, _wad / 10 ** multiplier);
     emit Exit(msg.sender, _account, _wad);
+  }
+
+  modifier whenFactoryEnabled() {
+    if (collateralJoinFactory.contractEnabled() == 0) revert CollateralJoin_FactoryIsDisabled();
+    _;
   }
 }

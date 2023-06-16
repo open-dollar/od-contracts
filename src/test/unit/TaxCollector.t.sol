@@ -301,7 +301,7 @@ contract Unit_TaxCollector_InitializeCollateralType is Base {
     _mockCollateralList(_cType);
     _mockCollateralData(_cType, RAY, 0);
 
-    vm.expectRevert(ITaxCollector.CollateralTypeAlreadyInitialized.selector);
+    vm.expectRevert(ITaxCollector.TC_CollateralTypeAlreadyInitialized.selector);
 
     taxCollector.initializeCollateralType(_cType, taxCollectorCollateralParams);
   }

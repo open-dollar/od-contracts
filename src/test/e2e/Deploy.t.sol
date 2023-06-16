@@ -95,6 +95,12 @@ abstract contract CommonDeploymentTest is HaiTest, Deploy {
     assertEq(surplusAuctionHouse.authorizedAccounts(_target), _permission);
     assertEq(debtAuctionHouse.authorizedAccounts(_target), _permission);
 
+    if (address(collateralJoinFactory) != address(0)) {
+      // checks for collateral join factory
+      // TODO: rm when deploying factory to Goerli
+      assertEq(collateralJoinFactory.authorizedAccounts(_target), _permission);
+    }
+
     // tokens
     assertEq(systemCoin.authorizedAccounts(_target), _permission);
     assertEq(protocolToken.authorizedAccounts(_target), _permission);
@@ -104,7 +110,9 @@ abstract contract CommonDeploymentTest is HaiTest, Deploy {
 
     for (uint256 _i; _i < collateralTypes.length; _i++) {
       bytes32 _cType = collateralTypes[_i];
-      assertEq(collateralJoin[_cType].authorizedAccounts(_target), _permission);
+      if (address(collateralJoinFactory) == address(0)) {
+        assertEq(collateralJoin[_cType].authorizedAccounts(_target), _permission);
+      }
       assertEq(collateralAuctionHouse[_cType].authorizedAccounts(_target), _permission);
     }
   }

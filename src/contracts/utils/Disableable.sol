@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
+
+import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
 abstract contract Disableable is IDisableable, Authorizable {
   // --- Data ---

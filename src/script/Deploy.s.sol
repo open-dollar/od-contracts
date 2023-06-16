@@ -73,12 +73,10 @@ abstract contract Deploy is Params, Script, Contracts {
   }
 
   function deployCollateralContracts(bytes32 _cType) public {
-    // deploy Collateral, CollateralJoin and CollateralAuctionHouse
-    collateralJoin[_cType] = new CollateralJoin({
-        _safeEngine: address(safeEngine), 
-        _cType: _cType, 
-        _collateral: address(collateral[_cType])
-        });
+    // deploy CollateralJoin and CollateralAuctionHouse
+    collateralJoin[_cType] = CollateralJoin(
+      collateralJoinFactory.deployCollateralJoin({_cType: _cType, _collateral: address(collateral[_cType])})
+    );
 
     collateralAuctionHouse[_cType] = new CollateralAuctionHouse({
         _safeEngine: address(safeEngine), 
@@ -130,14 +128,15 @@ abstract contract Deploy is Params, Script, Contracts {
     coinJoin.addAuthorization(_governor);
     coinJoin.removeAuthorization(deployer);
 
+    collateralJoinFactory.addAuthorization(_governor);
+    collateralJoinFactory.removeAuthorization(deployer);
+
     if (address(ethJoin) != address(0)) {
       ethJoin.addAuthorization(_governor);
       ethJoin.removeAuthorization(deployer);
     }
     for (uint256 _i; _i < collateralTypes.length; _i++) {
       bytes32 _cType = collateralTypes[_i];
-      collateralJoin[_cType].addAuthorization(_governor);
-      collateralJoin[_cType].removeAuthorization(deployer);
       collateralAuctionHouse[_cType].addAuthorization(_governor);
       collateralAuctionHouse[_cType].removeAuthorization(deployer);
     }
@@ -177,6 +176,8 @@ abstract contract Deploy is Params, Script, Contracts {
           address(coinJoin),
           _stabilityFeeTreasuryParams
         );
+
+    collateralJoinFactory = new CollateralJoinFactory(address(safeEngine));
 
     _deployGlobalSettlement();
     _deployProxyContracts(address(safeEngine));

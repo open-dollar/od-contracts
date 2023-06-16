@@ -11,6 +11,7 @@ import {ITaxCollector, TaxCollector} from '@contracts/TaxCollector.sol';
 import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
 import {ETHJoin} from '@contracts/utils/ETHJoin.sol';
 import {CollateralJoin} from '@contracts/utils/CollateralJoin.sol';
+import {CollateralJoinFactory} from '@contracts/utils/CollateralJoinFactory.sol';
 import {IOracleRelayer, OracleRelayer} from '@contracts/OracleRelayer.sol';
 
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
@@ -30,6 +31,7 @@ import {
 abstract contract Hevm {
   function warp(uint256) public virtual;
   function store(address, bytes32, bytes32) external virtual;
+  function prank(address) external virtual;
 }
 
 contract DummyFSM {
@@ -156,11 +158,14 @@ contract Usr {
 }
 
 contract SingleModifySAFECollateralizationTest is DSTest {
+  Hevm hevm;
+
   SAFEEngine safeEngine;
   CoinForTest gold;
   CoinForTest stable;
   TaxCollector taxCollector;
 
+  CollateralJoinFactory collateralJoinFactory;
   CollateralJoin collateralA;
   address me;
 
@@ -194,6 +199,8 @@ contract SingleModifySAFECollateralizationTest is DSTest {
   }
 
   function setUp() public {
+    hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
+
     ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
       ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: rad(1000 ether)});
     safeEngine = new SAFEEngine(_safeEngineParams);
@@ -205,7 +212,8 @@ contract SingleModifySAFECollateralizationTest is DSTest {
       ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: rad(1000 ether), debtFloor: 0});
     safeEngine.initializeCollateralType('gold', _collateralParams);
 
-    collateralA = new CollateralJoin(address(safeEngine), 'gold', address(gold));
+    collateralJoinFactory = new CollateralJoinFactory(address(safeEngine));
+    collateralA = CollateralJoin(collateralJoinFactory.deployCollateralJoin('gold', address(gold)));
 
     safeEngine.updateCollateralPrice('gold', ray(1 ether), ray(1 ether));
 
@@ -424,6 +432,7 @@ contract SingleSAFEDebtLimitTest is DSTest {
   CoinForTest stable;
   TaxCollector taxCollector;
 
+  CollateralJoinFactory collateralJoinFactory;
   CollateralJoin collateralA;
   address me;
 
@@ -474,7 +483,8 @@ contract SingleSAFEDebtLimitTest is DSTest {
       ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: rad(1000 ether), debtFloor: 0});
     safeEngine.initializeCollateralType('gold', _collateralParams);
 
-    collateralA = new CollateralJoin(address(safeEngine), 'gold', address(gold));
+    collateralJoinFactory = new CollateralJoinFactory(address(safeEngine));
+    collateralA = CollateralJoin(collateralJoinFactory.deployCollateralJoin('gold', address(gold)));
 
     safeEngine.updateCollateralPrice('gold', ray(1 ether), ray(1 ether));
 
@@ -573,8 +583,11 @@ contract SingleSAFEDebtLimitTest is DSTest {
 }
 
 contract SingleJoinTest is DSTest {
+  Hevm hevm;
+
   SAFEEngine safeEngine;
   CoinForTest collateral;
+  CollateralJoinFactory collateralJoinFactory;
   CollateralJoin collateralA;
   ETHJoin ethA;
   CoinJoin coinA;
@@ -582,6 +595,8 @@ contract SingleJoinTest is DSTest {
   address me;
 
   function setUp() public {
+    hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
+
     ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
       ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 0});
     safeEngine = new SAFEEngine(_safeEngineParams);
@@ -591,7 +606,8 @@ contract SingleJoinTest is DSTest {
     safeEngine.initializeCollateralType('ETH', _safeEngineCollateralParams);
 
     collateral = new CoinForTest('Gem', 'Gem');
-    collateralA = new CollateralJoin(address(safeEngine), 'collateral', address(collateral));
+    collateralJoinFactory = new CollateralJoinFactory(address(safeEngine));
+    collateralA = CollateralJoin(collateralJoinFactory.deployCollateralJoin('collateral', address(collateral)));
     safeEngine.addAuthorization(address(collateralA));
 
     ethA = new ETHJoin(address(safeEngine), 'ETH');
@@ -608,6 +624,11 @@ contract SingleJoinTest is DSTest {
   function try_disable_contract(address a) public payable returns (bool ok) {
     string memory _sig = 'disableContract()';
     (ok,) = a.call(abi.encodeWithSignature(_sig));
+  }
+
+  function try_disable_collateralJoin(address cJoin) public payable returns (bool ok) {
+    string memory _sig = 'disableCollateralJoin(address)';
+    (ok,) = address(collateralJoinFactory).call(abi.encodeWithSignature(_sig, cJoin));
   }
 
   function try_join_tokenCollateral(address usr, uint256 wad) public returns (bool ok) {
@@ -632,7 +653,7 @@ contract SingleJoinTest is DSTest {
     collateral.approve(address(collateralA), 20 ether);
     assertTrue(try_join_tokenCollateral(address(this), 10 ether));
     assertEq(safeEngine.tokenCollateral('collateral', me), 10 ether);
-    assertTrue(try_disable_contract(address(collateralA)));
+    assertTrue(try_disable_collateralJoin(address(collateralA)));
     assertTrue(!try_join_tokenCollateral(address(this), 10 ether));
     assertEq(safeEngine.tokenCollateral('collateral', me), 10 ether);
   }
@@ -691,8 +712,8 @@ contract SingleJoinTest is DSTest {
   }
 
   function test_disable_contract_no_access() public {
-    collateralA.removeAuthorization(address(this));
-    assertTrue(!try_disable_contract(address(collateralA)));
+    collateralJoinFactory.removeAuthorization(address(this));
+    assertTrue(!try_disable_collateralJoin(address(collateralA)));
     ethA.removeAuthorization(address(this));
     assertTrue(!try_disable_contract(address(ethA)));
     coinA.removeAuthorization(address(this));
@@ -739,6 +760,7 @@ contract SingleLiquidationTest is DSTest {
   OracleRelayer oracleRelayer;
   DummyFSM oracleFSM;
 
+  CollateralJoinFactory collateralJoinFactory;
   CollateralJoin collateralA;
 
   IncreasingDiscountCollateralAuctionHouse collateralAuctionHouse;
@@ -843,7 +865,8 @@ contract SingleLiquidationTest is DSTest {
     ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
       ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: rad(1000 ether), debtFloor: 0});
     safeEngine.initializeCollateralType('gold', _safeEngineCollateralParams);
-    collateralA = new CollateralJoin(address(safeEngine), 'gold', address(gold));
+    collateralJoinFactory = new CollateralJoinFactory(address(safeEngine));
+    collateralA = CollateralJoin(collateralJoinFactory.deployCollateralJoin('gold', address(gold)));
     safeEngine.addAuthorization(address(collateralA));
 
     gold.approve(address(collateralA), type(uint256).max);

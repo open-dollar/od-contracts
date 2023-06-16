@@ -132,7 +132,7 @@ contract Unit_AccountingJob_WorkPopDebtFromQueue is Base {
   function test_Revert_NotWorkable(uint256 _debtBlockTimestamp) public {
     _mockValues(false);
 
-    vm.expectRevert(IAccountingJob.NotWorkable.selector);
+    vm.expectRevert(IAccountingJob.AccountingJob_NotWorkable.selector);
 
     accountingJob.workPopDebtFromQueue(_debtBlockTimestamp);
   }
@@ -171,7 +171,7 @@ contract Unit_AccountingJob_WorkAuctionDebt is Base {
   function test_Revert_NotWorkable() public {
     _mockValues(false, 0);
 
-    vm.expectRevert(IAccountingJob.NotWorkable.selector);
+    vm.expectRevert(IAccountingJob.AccountingJob_NotWorkable.selector);
 
     accountingJob.workAuctionDebt();
   }
@@ -208,7 +208,7 @@ contract Unit_AccountingJob_WorkAuctionSurplus is Base {
   function test_Revert_NotWorkable() public {
     _mockValues(false, 0);
 
-    vm.expectRevert(IAccountingJob.NotWorkable.selector);
+    vm.expectRevert(IAccountingJob.AccountingJob_NotWorkable.selector);
 
     accountingJob.workAuctionSurplus();
   }
@@ -244,7 +244,7 @@ contract Unit_AccountingJob_WorkTransferExtraSurplus is Base {
   function test_Revert_NotWorkable() public {
     _mockValues(false);
 
-    vm.expectRevert(IAccountingJob.NotWorkable.selector);
+    vm.expectRevert(IAccountingJob.AccountingJob_NotWorkable.selector);
 
     accountingJob.workTransferExtraSurplus();
   }

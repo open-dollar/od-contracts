@@ -11,6 +11,7 @@ import {ITaxCollector, TaxCollector} from '@contracts/TaxCollector.sol';
 import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
 import {ETHJoin} from '@contracts/utils/ETHJoin.sol';
 import {CollateralJoin} from '@contracts/utils/CollateralJoin.sol';
+import {CollateralJoinFactory} from '@contracts/utils/CollateralJoinFactory.sol';
 import {OracleRelayer} from '@contracts/OracleRelayer.sol';
 import {IDebtAuctionHouse, DebtAuctionHouse} from '@contracts/DebtAuctionHouse.sol';
 import {
@@ -26,6 +27,7 @@ import {RAY, WAD} from '@libraries/Math.sol';
 
 abstract contract Hevm {
   function warp(uint256) public virtual;
+  function prank(address) external virtual;
 }
 
 contract Feed {
@@ -123,6 +125,7 @@ contract SingleSaveSAFETest is DSTest {
   CoinForTest gold;
   TaxCollector taxCollector;
 
+  CollateralJoinFactory collateralJoinFactory;
   CollateralJoin collateralA;
 
   IncreasingDiscountCollateralAuctionHouse collateralAuctionHouse;
@@ -225,7 +228,8 @@ contract SingleSaveSAFETest is DSTest {
     ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
       ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: rad(1000 ether), debtFloor: 0});
     safeEngine.initializeCollateralType('gold', _safeEngineCollateralParams);
-    collateralA = new CollateralJoin(address(safeEngine), 'gold', address(gold));
+    collateralJoinFactory = new CollateralJoinFactory(address(safeEngine));
+    collateralA = CollateralJoin(collateralJoinFactory.deployCollateralJoin('gold', address(gold)));
     safeEngine.addAuthorization(address(collateralA));
     gold.approve(address(collateralA), type(uint256).max);
     collateralA.join(address(this), 1000 ether);

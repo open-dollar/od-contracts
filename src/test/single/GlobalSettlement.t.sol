@@ -15,6 +15,7 @@ import {
 import {ISurplusAuctionHouse, SurplusAuctionHouse} from '@contracts/SurplusAuctionHouse.sol';
 import {IDebtAuctionHouse, DebtAuctionHouse} from '@contracts/DebtAuctionHouse.sol';
 import {CollateralJoin} from '@contracts/utils/CollateralJoin.sol';
+import {CollateralJoinFactory} from '@contracts/utils/CollateralJoinFactory.sol';
 import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
 import {GlobalSettlement} from '@contracts/settlement/GlobalSettlement.sol';
 import {SettlementSurplusAuctioneer} from '@contracts/settlement/SettlementSurplusAuctioneer.sol';
@@ -24,6 +25,7 @@ import {Math, RAY, WAD, HUNDRED} from '@libraries/Math.sol';
 
 abstract contract Hevm {
   function warp(uint256) public virtual;
+  function prank(address) external virtual;
 }
 
 contract DummyFSM {
@@ -117,6 +119,7 @@ contract SingleGlobalSettlementTest is DSTest {
   CoinForTest protocolToken;
   CoinForTest systemCoin;
   CoinJoin coinJoin;
+  CollateralJoinFactory collateralJoinFactory;
 
   struct CollateralType {
     DummyFSM oracleSecurityModule;
@@ -157,7 +160,8 @@ contract SingleGlobalSettlementTest is DSTest {
     ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
       ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: rad(10_000_000 ether), debtFloor: 0});
     safeEngine.initializeCollateralType(_encodedName, _safeEngineCollateralParams);
-    CollateralJoin collateralJoin = new CollateralJoin(address(safeEngine), _encodedName, address(newCollateral));
+    CollateralJoin collateralJoin =
+      CollateralJoin(collateralJoinFactory.deployCollateralJoin(_encodedName, address(newCollateral)));
     newCollateral.approve(address(collateralJoin), type(uint256).max);
 
     safeEngine.updateCollateralPrice(_encodedName, ray(3 ether), ray(3 ether));
@@ -216,6 +220,7 @@ contract SingleGlobalSettlementTest is DSTest {
     protocolToken = new CoinForTest('GOV', 'GOV');
     systemCoin = new CoinForTest('Coin', 'Coin');
     coinJoin = new CoinJoin(address(safeEngine), address(systemCoin));
+    collateralJoinFactory = new CollateralJoinFactory(address(safeEngine));
 
     ISurplusAuctionHouse.SurplusAuctionHouseParams memory _sahParams = ISurplusAuctionHouse.SurplusAuctionHouseParams({
       bidIncrease: 1.05e18,

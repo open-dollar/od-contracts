@@ -41,16 +41,16 @@ contract OracleJob is Job, Authorizable, Modifiable, IOracleJob {
 
   // --- Job ---
   function workUpdateCollateralPrice(bytes32 _cType) external reward {
-    if (!shouldWorkUpdateCollateralPrice) revert NotWorkable();
+    if (!shouldWorkUpdateCollateralPrice) revert OracleJob_NotWorkable();
 
     IDelayedOracle _delayedOracle = IDelayedOracle(address(oracleRelayer.cParams(_cType).oracle));
-    if (!_delayedOracle.updateResult()) revert InvalidPrice();
+    if (!_delayedOracle.updateResult()) revert OracleJob_InvalidPrice();
 
     oracleRelayer.updateCollateralPrice(_cType);
   }
 
   function workUpdateRate() external reward {
-    if (!shouldWorkUpdateRate) revert NotWorkable();
+    if (!shouldWorkUpdateRate) revert OracleJob_NotWorkable();
     pidRateSetter.updateRate();
   }
 
