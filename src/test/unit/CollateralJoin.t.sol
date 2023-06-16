@@ -154,7 +154,6 @@ contract Unit_CollateralJoin_Join is Base {
   event Join(address _sender, address _account, uint256 _wad);
 
   modifier happyPath(uint256 _wei, uint256 _decimals) {
-
     _assumeHappyPath(_wei, _decimals);
     _mockValues(_wei, _decimals, true);
 
