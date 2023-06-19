@@ -5,8 +5,6 @@ import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadat
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 
 interface ISystemCoin is IERC20Metadata, IAuthorizable {
-  error SystemCoin_CannotTransferToThisAddress();
-
   function mint(address _account, uint256 _amount) external;
   function burn(address _account, uint256 _amount) external;
   function burn(uint256 _amount) external;
