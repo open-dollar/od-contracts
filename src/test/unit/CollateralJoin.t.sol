@@ -49,7 +49,7 @@ abstract contract Base is HaiTest {
     );
   }
 
-  function _mockDecimals(uint256 _decimals) internal {
+  function _mockDecimals(uint8 _decimals) internal {
     vm.mockCall(address(mockCollateral), abi.encodeCall(mockCollateral.decimals, ()), abi.encode(_decimals));
   }
 
@@ -75,7 +75,7 @@ abstract contract Base is HaiTest {
 contract Unit_CollateralJoin_Constructor is Base {
   event AddAuthorization(address _account);
 
-  modifier happyPath(uint256 _decimals) {
+  modifier happyPath(uint8 _decimals) {
     vm.startPrank(address(mockCollateralJoinFactory));
 
     _assumeHappyPath(_decimals);
@@ -83,15 +83,15 @@ contract Unit_CollateralJoin_Constructor is Base {
     _;
   }
 
-  function _assumeHappyPath(uint256 _decimals) internal pure {
+  function _assumeHappyPath(uint8 _decimals) internal pure {
     vm.assume(_decimals <= 18);
   }
 
-  function _mockValues(uint256 _decimals) internal {
+  function _mockValues(uint8 _decimals) internal {
     _mockDecimals(_decimals);
   }
 
-  function test_Revert_Gt18Decimals(uint256 _decimals) public {
+  function test_Revert_Gt18Decimals(uint8 _decimals) public {
     vm.assume(_decimals > 18);
 
     _mockValues(_decimals);
@@ -102,42 +102,42 @@ contract Unit_CollateralJoin_Constructor is Base {
     collateralJoin = new CollateralJoinForTest(address(mockSafeEngine), collateralType, address(mockCollateral));
   }
 
-  function test_Emit_AddAuthorization(uint256 _decimals) public happyPath(_decimals) {
+  function test_Emit_AddAuthorization(uint8 _decimals) public happyPath(_decimals) {
     expectEmitNoIndex();
     emit AddAuthorization(address(mockCollateralJoinFactory));
 
     collateralJoin = new CollateralJoinForTest(address(mockSafeEngine), collateralType, address(mockCollateral));
   }
 
-  function test_Set_ContractEnabled(uint256 _decimals) public happyPath(_decimals) {
+  function test_Set_ContractEnabled(uint8 _decimals) public happyPath(_decimals) {
     assertEq(collateralJoin.contractEnabled(), 1);
   }
 
-  function test_Set_CollateralJoinFactory(uint256 _decimals) public happyPath(_decimals) {
+  function test_Set_CollateralJoinFactory(uint8 _decimals) public happyPath(_decimals) {
     assertEq(address(collateralJoin.collateralJoinFactory()), address(mockCollateralJoinFactory));
   }
 
-  function test_Set_SafeEngine(uint256 _decimals) public happyPath(_decimals) {
+  function test_Set_SafeEngine(uint8 _decimals) public happyPath(_decimals) {
     assertEq(address(collateralJoin.safeEngine()), address(mockSafeEngine));
   }
 
-  function test_Set_CollateralType(bytes32 _cType, uint256 _decimals) public happyPath(_decimals) {
+  function test_Set_CollateralType(bytes32 _cType, uint8 _decimals) public happyPath(_decimals) {
     collateralJoin = new CollateralJoinForTest(address(mockSafeEngine), _cType, address(mockCollateral));
 
     assertEq(collateralJoin.collateralType(), _cType);
   }
 
-  function test_Set_Collateral(uint256 _decimals) public happyPath(_decimals) {
+  function test_Set_Collateral(uint8 _decimals) public happyPath(_decimals) {
     assertEq(address(collateralJoin.collateral()), address(mockCollateral));
   }
 
-  function test_Set_Decimals(uint256 _decimals) public happyPath(_decimals) {
+  function test_Set_Decimals(uint8 _decimals) public happyPath(_decimals) {
     collateralJoin = new CollateralJoinForTest(address(mockSafeEngine), collateralType, address(mockCollateral));
 
     assertEq(collateralJoin.decimals(), _decimals);
   }
 
-  function test_Set_Multiplier(uint256 _decimals) public happyPath(_decimals) {
+  function test_Set_Multiplier(uint8 _decimals) public happyPath(_decimals) {
     collateralJoin = new CollateralJoinForTest(address(mockSafeEngine), collateralType, address(mockCollateral));
 
     assertEq(collateralJoin.multiplier(), 18 - _decimals);
@@ -153,7 +153,7 @@ contract Unit_CollateralJoin_Constructor is Base {
 contract Unit_CollateralJoin_Join is Base {
   event Join(address _sender, address _account, uint256 _wad);
 
-  modifier happyPath(uint256 _wei, uint256 _decimals) {
+  modifier happyPath(uint256 _wei, uint8 _decimals) {
     _assumeHappyPath(_wei, _decimals);
     _mockValues(_wei, _decimals, true);
 
@@ -164,13 +164,13 @@ contract Unit_CollateralJoin_Join is Base {
     _;
   }
 
-  function _assumeHappyPath(uint256 _wei, uint256 _decimals) internal pure {
+  function _assumeHappyPath(uint256 _wei, uint8 _decimals) internal pure {
     vm.assume(_decimals <= 18);
     vm.assume(notOverflowMul(_wei, 10 ** (18 - _decimals)));
     vm.assume(notOverflowInt256(_wei * 10 ** (18 - _decimals)));
   }
 
-  function _mockValues(uint256 _wei, uint256 _decimals, bool _transferFrom) internal {
+  function _mockValues(uint256 _wei, uint8 _decimals, bool _transferFrom) internal {
     _mockFactoryEnabled(1);
     _mockDecimals(_decimals);
     _mockTransferFrom(user, address(collateralJoin), _wei, _transferFrom);
@@ -184,12 +184,12 @@ contract Unit_CollateralJoin_Join is Base {
     collateralJoin.join(_account, _wei);
   }
 
-  function test_Revert_FactoryIsDisabled(address _account, uint256 _wad) public {
+  function test_Revert_FactoryIsDisabled(address _account, uint256 _wei) public {
     _mockFactoryEnabled(0);
 
     vm.expectRevert(ICollateralJoin.CollateralJoin_FactoryIsDisabled.selector);
 
-    collateralJoin.join(_account, _wad);
+    collateralJoin.join(_account, _wei);
   }
 
   function test_Revert_IntOverflow(address _account, uint256 _wei) public {
@@ -202,7 +202,7 @@ contract Unit_CollateralJoin_Join is Base {
     collateralJoin.join(_account, _wei);
   }
 
-  function test_Revert_FailedTransfer(address _account, uint256 _wei, uint256 _decimals) public {
+  function test_Revert_FailedTransfer(address _account, uint256 _wei, uint8 _decimals) public {
     vm.startPrank(user);
     vm.assume(notOverflowInt256(_wei));
 
@@ -216,7 +216,7 @@ contract Unit_CollateralJoin_Join is Base {
   function test_Call_SafeEngine_ModifyCollateralBalance(
     address _account,
     uint256 _wei,
-    uint256 _decimals
+    uint8 _decimals
   ) public happyPath(_wei, _decimals) {
     uint256 _wad = _wei * 10 ** (18 - _decimals);
 
@@ -232,7 +232,7 @@ contract Unit_CollateralJoin_Join is Base {
   function test_Call_Collateral_TransferFrom(
     address _account,
     uint256 _wei,
-    uint256 _decimals
+    uint8 _decimals
   ) public happyPath(_wei, _decimals) {
     vm.expectCall(
       address(mockCollateral), abi.encodeCall(IERC20.transferFrom, (user, address(collateralJoin), _wei)), 1
@@ -241,7 +241,7 @@ contract Unit_CollateralJoin_Join is Base {
     collateralJoin.join(_account, _wei);
   }
 
-  function test_Emit_Join(address _account, uint256 _wei, uint256 _decimals) public happyPath(_wei, _decimals) {
+  function test_Emit_Join(address _account, uint256 _wei, uint8 _decimals) public happyPath(_wei, _decimals) {
     uint256 _wad = _wei * 10 ** (18 - _decimals);
 
     expectEmitNoIndex();
@@ -254,25 +254,24 @@ contract Unit_CollateralJoin_Join is Base {
 contract Unit_CollateralJoin_Exit is Base {
   event Exit(address _sender, address _account, uint256 _wad);
 
-  modifier happyPath(address _account, uint256 _wei, uint256 _decimals) {
-    vm.prank(address(mockCollateralJoinFactory));
-
+  modifier happyPath(address _account, uint256 _wei, uint8 _decimals) {
     _assumeHappyPath(_wei, _decimals);
     _mockValues(_account, _wei, _decimals, true);
 
+    vm.prank(address(mockCollateralJoinFactory));
     collateralJoin = new CollateralJoinForTest(address(mockSafeEngine), collateralType, address(mockCollateral));
 
     vm.startPrank(user);
     _;
   }
 
-  function _assumeHappyPath(uint256 _wei, uint256 _decimals) internal pure {
+  function _assumeHappyPath(uint256 _wei, uint8 _decimals) internal pure {
     vm.assume(_decimals <= 18);
     vm.assume(notOverflowMul(_wei, 10 ** (18 - _decimals)));
     vm.assume(notOverflowInt256(_wei * 10 ** (18 - _decimals)));
   }
 
-  function _mockValues(address _account, uint256 _wei, uint256 _decimals, bool _transfer) internal {
+  function _mockValues(address _account, uint256 _wei, uint8 _decimals, bool _transfer) internal {
     _mockDecimals(_decimals);
     _mockTransfer(_account, _wei, _transfer);
   }
@@ -285,7 +284,7 @@ contract Unit_CollateralJoin_Exit is Base {
     collateralJoin.exit(_account, _wei);
   }
 
-  function test_Revert_FailedTransfer(address _account, uint256 _wei, uint256 _decimals) public {
+  function test_Revert_FailedTransfer(address _account, uint256 _wei, uint8 _decimals) public {
     vm.assume(notOverflowInt256(_wei));
 
     _mockValues(_account, _wei, _decimals, false);
@@ -298,7 +297,7 @@ contract Unit_CollateralJoin_Exit is Base {
   function test_Call_SafeEngine_ModifyCollateralBalance(
     address _account,
     uint256 _wei,
-    uint256 _decimals
+    uint8 _decimals
   ) public happyPath(_account, _wei, _decimals) {
     uint256 _wad = _wei * 10 ** (18 - _decimals);
 
@@ -314,18 +313,14 @@ contract Unit_CollateralJoin_Exit is Base {
   function test_Call_Collateral_Transfer(
     address _account,
     uint256 _wei,
-    uint256 _decimals
+    uint8 _decimals
   ) public happyPath(_account, _wei, _decimals) {
     vm.expectCall(address(mockCollateral), abi.encodeCall(IERC20.transfer, (_account, _wei)), 1);
 
     collateralJoin.exit(_account, _wei);
   }
 
-  function test_Emit_Exit(
-    address _account,
-    uint256 _wei,
-    uint256 _decimals
-  ) public happyPath(_account, _wei, _decimals) {
+  function test_Emit_Exit(address _account, uint256 _wei, uint8 _decimals) public happyPath(_account, _wei, _decimals) {
     uint256 _wad = _wei * 10 ** (18 - _decimals);
 
     expectEmitNoIndex();

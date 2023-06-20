@@ -90,7 +90,7 @@ contract DelayedOracle is IBaseOracle, IDelayedOracle {
    * @dev View function that queries the standard price source
    */
   function _getPriceSourceResult() internal view returns (uint256 _priceFeedValue, bool _hasValidValue) {
-    return IBaseOracle(priceSource).getResultWithValidity();
+    return priceSource.getResultWithValidity();
   }
 
   /**

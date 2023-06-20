@@ -36,7 +36,7 @@ abstract contract Base is HaiTest {
     vm.stopPrank();
   }
 
-  function _mockDecimals(uint256 _decimals) internal {
+  function _mockDecimals(uint8 _decimals) internal {
     vm.mockCall(address(mockCollateral), abi.encodeCall(mockCollateral.decimals, ()), abi.encode(_decimals));
   }
 
@@ -74,7 +74,7 @@ contract Unit_CollateralJoinFactory_Constructor is Base {
 contract Unit_CollateralJoinFactory_DeployCollateralJoin is Base {
   event DeployCollateralJoin(bytes32 indexed _cType, address indexed _collateral, address indexed _collateralJoin);
 
-  modifier happyPath(uint256 _decimals) {
+  modifier happyPath(uint8 _decimals) {
     vm.startPrank(authorizedAccount);
 
     _assumeHappyPath(_decimals);
@@ -82,11 +82,11 @@ contract Unit_CollateralJoinFactory_DeployCollateralJoin is Base {
     _;
   }
 
-  function _assumeHappyPath(uint256 _decimals) internal pure {
+  function _assumeHappyPath(uint8 _decimals) internal pure {
     vm.assume(_decimals <= 18);
   }
 
-  function _mockValues(uint256 _decimals) internal {
+  function _mockValues(uint8 _decimals) internal {
     _mockDecimals(_decimals);
   }
 
@@ -106,7 +106,7 @@ contract Unit_CollateralJoinFactory_DeployCollateralJoin is Base {
     collateralJoinFactory.deployCollateralJoin(_cType, address(mockCollateral));
   }
 
-  function test_Deploy_CollateralJoin(bytes32 _cType, uint256 _decimals) public happyPath(_decimals) {
+  function test_Deploy_CollateralJoin(bytes32 _cType, uint8 _decimals) public happyPath(_decimals) {
     collateralJoinFactory.deployCollateralJoin(_cType, address(mockCollateral));
 
     assertEq(address(collateralJoin).code, type(CollateralJoin).runtimeCode);
@@ -117,20 +117,20 @@ contract Unit_CollateralJoinFactory_DeployCollateralJoin is Base {
     assertEq(collateralJoin.collateralType(), _cType);
   }
 
-  function test_Set_CollateralJoins(bytes32 _cType, uint256 _decimals) public happyPath(_decimals) {
+  function test_Set_CollateralJoins(bytes32 _cType, uint8 _decimals) public happyPath(_decimals) {
     collateralJoinFactory.deployCollateralJoin(_cType, address(mockCollateral));
 
     assertEq(collateralJoinFactory.collateralJoinsList()[0], address(collateralJoin));
   }
 
-  function test_Emit_DeployCollateralJoin(bytes32 _cType, uint256 _decimals) public happyPath(_decimals) {
+  function test_Emit_DeployCollateralJoin(bytes32 _cType, uint8 _decimals) public happyPath(_decimals) {
     expectEmitNoIndex();
     emit DeployCollateralJoin(_cType, address(mockCollateral), address(collateralJoin));
 
     collateralJoinFactory.deployCollateralJoin(_cType, address(mockCollateral));
   }
 
-  function test_Return_CollateralJoin(bytes32 _cType, uint256 _decimals) public happyPath(_decimals) {
+  function test_Return_CollateralJoin(bytes32 _cType, uint8 _decimals) public happyPath(_decimals) {
     assertEq(collateralJoinFactory.deployCollateralJoin(_cType, address(mockCollateral)), address(collateralJoin));
   }
 }
