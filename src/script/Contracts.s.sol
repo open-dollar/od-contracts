@@ -83,6 +83,7 @@ abstract contract Contracts {
   mapping(bytes32 => ICollateralJoin) public collateralJoin;
 
   // --- Oracle contracts ---
+  IBaseOracle public systemCoinOracle;
   mapping(bytes32 => IBaseOracle) public oracle;
 
   // --- PID contracts ---

@@ -13,6 +13,7 @@ import {ETHJoin} from '@contracts/utils/ETHJoin.sol';
 import {CollateralJoin} from '@contracts/utils/CollateralJoin.sol';
 import {CollateralJoinFactory} from '@contracts/utils/CollateralJoinFactory.sol';
 import {IOracleRelayer, OracleRelayer} from '@contracts/OracleRelayer.sol';
+import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 
@@ -803,6 +804,8 @@ contract SingleLiquidationTest is DSTest {
     protocolToken = new CoinForTest('GOV', '');
     protocolToken.mint(100 ether);
 
+    IBaseOracle mockSystemCoinOracle = IBaseOracle(address(0x123));
+
     ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
       ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 0});
 
@@ -877,7 +880,7 @@ contract SingleLiquidationTest is DSTest {
 
     IOracleRelayer.OracleRelayerParams memory _oracleRelayerParams =
       IOracleRelayer.OracleRelayerParams({redemptionRateUpperBound: RAY * WAD, redemptionRateLowerBound: 1});
-    oracleRelayer = new OracleRelayer(address(safeEngine), _oracleRelayerParams);
+    oracleRelayer = new OracleRelayer(address(safeEngine), mockSystemCoinOracle, _oracleRelayerParams);
     safeEngine.addAuthorization(address(oracleRelayer));
 
     oracleFSM = new DummyFSM();

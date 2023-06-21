@@ -21,6 +21,7 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
 
   // --- Registry ---
   ISAFEEngine public safeEngine;
+  IBaseOracle public systemCoinOracle;
 
   // --- Params ---
   OracleRelayerParams internal _params;
@@ -44,13 +45,23 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
   // --- Init ---
   constructor(
     address _safeEngine,
+    IBaseOracle _systemCoinOracle,
     OracleRelayerParams memory _oracleRelayerParams
   ) Authorizable(msg.sender) validParams {
     safeEngine = ISAFEEngine(_safeEngine.assertNonNull());
+    systemCoinOracle = _systemCoinOracle;
     _redemptionPrice = RAY;
     redemptionRate = RAY;
     redemptionPriceUpdateTime = block.timestamp;
     _params = _oracleRelayerParams;
+  }
+
+  /**
+   * @notice Fetch the market price from the system coin oracle
+   */
+  function marketPrice() external view returns (uint256 _marketPrice) {
+    (uint256 _priceFeedValue, bool _hasValidValue) = systemCoinOracle.getResultWithValidity();
+    if (_hasValidValue) return _priceFeedValue;
   }
 
   // --- Redemption Price Update ---
@@ -82,6 +93,7 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
    * @notice Update the collateral price inside the system (inside SAFEEngine)
    * @param  _cType The collateral we want to update prices (safety and liquidation prices) for
    */
+  // TODO: make whenEnabled HAI-169
   function updateCollateralPrice(bytes32 _cType) external {
     (uint256 _priceFeedValue, bool _hasValidValue) = _cParams[_cType].oracle.getResultWithValidity();
     uint256 _updatedRedemptionPrice = _getRedemptionPrice();
@@ -99,6 +111,7 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
     emit UpdateCollateralPrice(_cType, _priceFeedValue, _safetyPrice, _liquidationPrice);
   }
 
+  // TODO: make whenEnabled HAI-169
   function updateRedemptionRate(uint256 _redemptionRate) external isAuthorized {
     if (block.timestamp != redemptionPriceUpdateTime) revert RedemptionPriceNotUpdated();
 
@@ -154,6 +167,7 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
   function _validateParameters() internal view override {
     _params.redemptionRateUpperBound.assertGt(RAY);
     _params.redemptionRateLowerBound.assertGt(0).assertLt(RAY);
+    address(systemCoinOracle).assertNonNull();
   }
 
   function _validateCParameters(bytes32 _cType) internal view override {

@@ -26,8 +26,7 @@ contract Base is HaiTest {
 
   function _createDefaulPIDRateSetter() internal returns (PIDRateSetter _pidRateSetter) {
     vm.prank(deployer);
-    _pidRateSetter =
-      new PIDRateSetter(address(mockOracleRelayer), address(mockOracle), address(mockPIDController), periodSize);
+    _pidRateSetter = new PIDRateSetter(address(mockOracleRelayer), address(mockPIDController), periodSize);
   }
 
   function setUp() public virtual {
@@ -39,11 +38,9 @@ contract Base is HaiTest {
     _;
   }
 
-  function _mockOrclGetResultWithValidity(uint256 _result, bool _valid) internal {
+  function _mockOracleRelayerMarketPrice(uint256 _result) internal {
     vm.mockCall(
-      address(mockOracle),
-      abi.encodeWithSelector(IBaseOracle.getResultWithValidity.selector),
-      abi.encode(_result, _valid)
+      address(mockOracleRelayer), abi.encodeWithSelector(IOracleRelayer.marketPrice.selector), abi.encode(_result)
     );
   }
 
@@ -87,10 +84,6 @@ contract Unit_PIDRateSetter_Constructor is Base {
     assertEq(address(pidRateSetter.oracleRelayer()), address(mockOracleRelayer));
   }
 
-  function test_Set_Oracle() public {
-    assertEq(address(pidRateSetter.oracle()), address(mockOracle));
-  }
-
   function test_Set_PIDCalculator() public {
     assertEq(address(pidRateSetter.pidCalculator()), address(mockPIDController));
   }
@@ -105,17 +98,12 @@ contract Unit_PIDRateSetter_Constructor is Base {
 
   function test_Revert_NullOracleRelayerAddress() public {
     vm.expectRevert(Assertions.NullAddress.selector);
-    new PIDRateSetter(address(0), address(mockOracle), address(mockPIDController), periodSize);
-  }
-
-  function test_Revert_NullOrcl() public {
-    vm.expectRevert(Assertions.NullAddress.selector);
-    new PIDRateSetter(address(mockOracleRelayer), address(0), address(mockPIDController), periodSize);
+    new PIDRateSetter(address(0), address(mockPIDController), periodSize);
   }
 
   function test_Revert_NullCalculator() public {
     vm.expectRevert(Assertions.NullAddress.selector);
-    new PIDRateSetter(address(mockOracleRelayer), address(mockOracle), address(0), periodSize);
+    new PIDRateSetter(address(mockOracleRelayer), address(0), periodSize);
   }
 }
 
@@ -127,13 +115,6 @@ contract Unit_PIDRateSetter_ModifyParameters is Base {
     IPIDRateSetter.PIDRateSetterParams memory _params = pidRateSetter.params();
 
     assertEq(abi.encode(_fuzz), abi.encode(_params));
-  }
-
-  function test_ModifyParameters_Set_Oracle(address _oracle) public authorized {
-    vm.assume(_oracle != address(0));
-    pidRateSetter.modifyParameters('oracle', abi.encode(_oracle));
-
-    assertEq(address(pidRateSetter.oracle()), _oracle);
   }
 
   function test_ModifyParameters_Set_OracleRelayer(address _oracleRelayer) public authorized {
@@ -154,55 +135,6 @@ contract Unit_PIDRateSetter_ModifyParameters is Base {
     vm.expectRevert(abi.encodeWithSelector(Assertions.NotGreaterThan.selector, 0, 0));
 
     pidRateSetter.modifyParameters('updateRateDelay', abi.encode(0));
-  }
-}
-
-contract Unit_PIDRateSetter_GetMarketPrice is Base {
-  function test_Call_Orcl_GetResultWithValidity(uint256 _result) public {
-    _mockOrclGetResultWithValidity(_result, true);
-
-    vm.expectCall(address(mockOracle), abi.encodeWithSelector(IBaseOracle.getResultWithValidity.selector));
-    pidRateSetter.getMarketPrice();
-  }
-
-  function test_Return_Orcl_Result(uint256 _result) public {
-    _mockOrclGetResultWithValidity(_result, true);
-
-    assertEq(pidRateSetter.getMarketPrice(), _result);
-  }
-}
-
-contract Unit_PIDRateSetter_GetRedemptionAndMarketPrices is Base {
-  function test_Call_Orcl_GetResultWithValidity(uint256 _result, uint256 _redemptionPrice) public {
-    _mockOrclGetResultWithValidity(_result, true);
-    _mockOracleRelayerRedemptionPrice(_redemptionPrice);
-
-    vm.expectCall(address(mockOracle), abi.encodeWithSelector(IBaseOracle.getResultWithValidity.selector));
-    pidRateSetter.getRedemptionAndMarketPrices();
-  }
-
-  function test_Call_OracleRelayer_RedemptionPrice(uint256 _result, uint256 _redemptionPrice) public {
-    _mockOrclGetResultWithValidity(_result, true);
-    _mockOracleRelayerRedemptionPrice(_redemptionPrice);
-
-    vm.expectCall(address(mockOracleRelayer), abi.encodeWithSelector(IOracleRelayer.redemptionPrice.selector));
-    pidRateSetter.getRedemptionAndMarketPrices();
-  }
-
-  function test_Return_Orcl_Result(uint256 _result, uint256 _redemptionPrice) public {
-    _mockOrclGetResultWithValidity(_result, true);
-    _mockOracleRelayerRedemptionPrice(_redemptionPrice);
-
-    (uint256 _marketPrice,) = pidRateSetter.getRedemptionAndMarketPrices();
-    assertEq(_marketPrice, _result);
-  }
-
-  function test_Return_OracleRelayer_RedemptionPrice(uint256 _result, uint256 _redemptionPrc) public {
-    _mockOrclGetResultWithValidity(_result, true);
-    _mockOracleRelayerRedemptionPrice(_redemptionPrc);
-
-    (, uint256 _redemptionPrice) = pidRateSetter.getRedemptionAndMarketPrices();
-    assertEq(_redemptionPrice, _redemptionPrc);
   }
 }
 
@@ -231,7 +163,7 @@ contract Unit_PIDRateSetter_UpdateRate is Base {
   }
 
   function _mockValues(UpdateRateScenario memory _scenario) internal {
-    _mockOrclGetResultWithValidity(_scenario.marketPrice, true);
+    _mockOracleRelayerMarketPrice(_scenario.marketPrice);
     _mockOracleRelayerRedemptionPrice(_scenario.redemptionPrice);
     _mockOracleRelayerUpdateRedemptionRate();
     _mockPIDControllerComputeRate(_scenario.marketPrice, _scenario.redemptionPrice, _scenario.computedRate);
@@ -243,8 +175,8 @@ contract Unit_PIDRateSetter_UpdateRate is Base {
     assertEq(pidRateSetter.lastUpdateTime(), block.timestamp);
   }
 
-  function test_Call_Orcl_GetResultWithValidity(UpdateRateScenario memory _scenario) public happyPath(_scenario) {
-    vm.expectCall(address(mockOracle), abi.encodeWithSelector(IBaseOracle.getResultWithValidity.selector));
+  function test_Call_OracleRelayer_MarketPrice(UpdateRateScenario memory _scenario) public happyPath(_scenario) {
+    vm.expectCall(address(mockOracleRelayer), abi.encodeWithSelector(IOracleRelayer.marketPrice.selector));
 
     pidRateSetter.updateRate();
   }
@@ -279,14 +211,6 @@ contract Unit_PIDRateSetter_UpdateRate is Base {
     _mockUpdateRateDelay(_updateRateDelay);
 
     vm.expectRevert(IPIDRateSetter.RateSetterCooldown.selector);
-
-    pidRateSetter.updateRate();
-  }
-
-  function test_Revert_InvalidOracleValue(UpdateRateScenario memory _scenario) public {
-    _mockOrclGetResultWithValidity(_scenario.marketPrice, false);
-
-    vm.expectRevert(IPIDRateSetter.InvalidPriceFeed.selector);
 
     pidRateSetter.updateRate();
   }

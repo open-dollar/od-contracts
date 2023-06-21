@@ -22,6 +22,7 @@ abstract contract Base is HaiTest {
   using stdStorage for StdStorage;
 
   IOracleRelayer oracleRelayer;
+  IBaseOracle mockSystemCoinOracle;
   SAFEEngineForTest mockSafeEngine;
   OracleForTest mockOracle;
   bytes32 collateralType = 'ETH-A';
@@ -33,7 +34,8 @@ abstract contract Base is HaiTest {
   function setUp() public virtual {
     vm.startPrank(deployer);
     mockSafeEngine = new SAFEEngineForTest();
-    oracleRelayer = new OracleRelayerForTest(address(mockSafeEngine), oracleRelayerParams);
+    mockSystemCoinOracle = IBaseOracle(address(0x123));
+    oracleRelayer = new OracleRelayerForTest(address(mockSafeEngine), mockSystemCoinOracle, oracleRelayerParams);
     mockOracle = new OracleForTest(1 ether);
     vm.stopPrank();
   }
@@ -116,7 +118,7 @@ contract Unit_OracleRelayer_Constructor is Base {
   function test_Set_OracleRelayer_Params(IOracleRelayer.OracleRelayerParams memory _oracleRelayerParams) public {
     vm.assume(_oracleRelayerParams.redemptionRateUpperBound > RAY);
     vm.assume(_oracleRelayerParams.redemptionRateLowerBound > 0 && _oracleRelayerParams.redemptionRateLowerBound < RAY);
-    oracleRelayer = new OracleRelayer(address(mockSafeEngine), _oracleRelayerParams);
+    oracleRelayer = new OracleRelayer(address(mockSafeEngine), mockSystemCoinOracle, _oracleRelayerParams);
 
     assertEq(abi.encode(oracleRelayer.params()), abi.encode(_oracleRelayerParams));
   }
@@ -124,7 +126,13 @@ contract Unit_OracleRelayer_Constructor is Base {
   function test_Revert_Null_SafeEngine() public {
     vm.expectRevert(Assertions.NullAddress.selector);
 
-    new OracleRelayer(address(0), oracleRelayerParams);
+    new OracleRelayer(address(0), mockSystemCoinOracle, oracleRelayerParams);
+  }
+
+  function test_Revert_Null_SystemCoinOracle() public {
+    vm.expectRevert(Assertions.NullAddress.selector);
+
+    new OracleRelayer(address(mockSafeEngine), IBaseOracle(address(0)), oracleRelayerParams);
   }
 }
 
@@ -280,13 +288,25 @@ contract Unit_OracleRelayer_Orcl is Base {
   }
 }
 
+contract Unit_OracleRelayer_MarketPrice is Base {
+  /**
+   * TODO:
+   * - mock system coin oracle and check how it behaves
+   * - test the return values
+   */
+  function setUp() public virtual override {
+    super.setUp();
+  }
+}
+
 contract Unit_OracleRelayer_RedemptionPrice is Base {
   event UpdateRedemptionPriceCalled();
 
   function setUp() public virtual override {
     super.setUp();
     vm.prank(deployer);
-    oracleRelayer = new OracleRelayerForInternalCallsTest(address(mockSafeEngine), oracleRelayerParams);
+    oracleRelayer =
+      new OracleRelayerForInternalCallsTest(address(mockSafeEngine), mockSystemCoinOracle, oracleRelayerParams);
   }
 
   function test_Get_RedemptionPrice_Call_Internal_UpdateRedemptionPrice(
@@ -341,7 +361,7 @@ contract Unit_OracleRelayer_Internal_UpdateRedemptionPrice is Base {
   function setUp() public virtual override {
     super.setUp();
     vm.prank(deployer);
-    oracleRelayer = new OracleRelayerForTest(address(mockSafeEngine), oracleRelayerParams);
+    oracleRelayer = new OracleRelayerForTest(address(mockSafeEngine), mockSystemCoinOracle, oracleRelayerParams);
   }
 
   struct UpdateRedemptionPriceScenario {
@@ -533,7 +553,8 @@ contract Unit_OracleRelayer_UpdateCollateralPrice is Base {
     public
     happyPathValidityNoUpdate(_scenario)
   {
-    oracleRelayer = new OracleRelayerForInternalCallsTest(address(mockSafeEngine), oracleRelayerParams);
+    oracleRelayer =
+      new OracleRelayerForInternalCallsTest(address(mockSafeEngine), mockSystemCoinOracle, oracleRelayerParams);
     OracleRelayerForInternalCallsTest(address(oracleRelayer)).setCTypeOracle(collateralType, address(mockOracle));
 
     _assumeHappyPathValidatyWithoutUpdateRedemptionPrice(_scenario);
@@ -548,7 +569,8 @@ contract Unit_OracleRelayer_UpdateCollateralPrice is Base {
   function test_Call_Internal_GetRedemptionPrice_ValidityWithPriceUpdate(UpdateCollateralPriceScenario memory _scenario)
     public
   {
-    oracleRelayer = new OracleRelayerForInternalCallsTest(address(mockSafeEngine), oracleRelayerParams);
+    oracleRelayer =
+      new OracleRelayerForInternalCallsTest(address(mockSafeEngine), mockSystemCoinOracle, oracleRelayerParams);
     OracleRelayerForInternalCallsTest(address(oracleRelayer)).setCTypeOracle(collateralType, address(mockOracle));
 
     _assumeHappyPathValidatyWithUpdateRedemptionPrice(_scenario);

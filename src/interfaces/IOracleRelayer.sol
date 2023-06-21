@@ -38,11 +38,17 @@ interface IOracleRelayer is IAuthorizable, IModifiable, IDisableable {
   // --- Registry ---
   function safeEngine() external view returns (ISAFEEngine _safeEngine);
 
+  /**
+   * @notice The oracle used to fetch the system coin market price
+   */
+  function systemCoinOracle() external view returns (IBaseOracle _systemCoinOracle);
+
   // --- Params ---
   function params() external view returns (OracleRelayerParams memory _params);
   function cParams(bytes32) external view returns (OracleRelayerCollateralParams memory _cParams);
 
   // --- Data ---
+  function marketPrice() external view returns (uint256 _marketPrice);
   function redemptionRate() external view returns (uint256 _redemptionRate);
   function redemptionPriceUpdateTime() external view returns (uint256 _redemptionPriceUpdateTime);
 

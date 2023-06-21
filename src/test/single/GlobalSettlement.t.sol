@@ -20,6 +20,7 @@ import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
 import {GlobalSettlement} from '@contracts/settlement/GlobalSettlement.sol';
 import {SettlementSurplusAuctioneer} from '@contracts/settlement/SettlementSurplusAuctioneer.sol';
 import {IOracleRelayer, OracleRelayerForTest} from '@contracts/for-test/OracleRelayerForTest.sol';
+import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 
 import {Math, RAY, WAD, HUNDRED} from '@libraries/Math.sol';
 
@@ -214,6 +215,8 @@ contract SingleGlobalSettlementTest is DSTest {
     hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     hevm.warp(604_411_200);
 
+    IBaseOracle _mockSystemCoinOracle = IBaseOracle(address(0x123));
+
     ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
       ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: rad(10_000_000 ether)});
     safeEngine = new SAFEEngine(_safeEngineParams);
@@ -277,7 +280,7 @@ contract SingleGlobalSettlementTest is DSTest {
 
     IOracleRelayer.OracleRelayerParams memory _oracleRelayerParams =
       IOracleRelayer.OracleRelayerParams({redemptionRateUpperBound: RAY * WAD, redemptionRateLowerBound: 1});
-    oracleRelayer = new OracleRelayerForTest(address(safeEngine), _oracleRelayerParams);
+    oracleRelayer = new OracleRelayerForTest(address(safeEngine), _mockSystemCoinOracle, _oracleRelayerParams);
     safeEngine.addAuthorization(address(oracleRelayer));
 
     IStabilityFeeTreasury.StabilityFeeTreasuryParams memory _stabilityFeeTreasuryParams = IStabilityFeeTreasury

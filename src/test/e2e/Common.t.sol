@@ -37,7 +37,7 @@ contract DeployForTest is TestParams, Deploy {
   function _setupEnvironment() internal virtual override {
     WETH9 weth = WETH9(payable(0x4200000000000000000000000000000000000006));
 
-    oracle[HAI] = new OracleForTest(HAI_INITIAL_PRICE); // 1 HAI = 1 USD
+    systemCoinOracle = new OracleForTest(HAI_INITIAL_PRICE); // 1 HAI = 1 USD
     oracle[ETH_A] = new OracleForTest(TEST_ETH_PRICE); // 1 ETH = 2000 USD
     oracle[TKN] = new OracleForTest(TEST_TKN_PRICE); // 1 TKN = 1 USD
 

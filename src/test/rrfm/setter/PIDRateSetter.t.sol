@@ -32,16 +32,15 @@ contract PIDRateSetterTest is DSTest {
     hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     hevm.warp(604_411_200);
 
+    orcl = new OracleForTest(1 ether);
+
     IOracleRelayer.OracleRelayerParams memory _oracleRelayerParams =
       IOracleRelayer.OracleRelayerParams({redemptionRateUpperBound: RAY * WAD, redemptionRateLowerBound: 1});
-    oracleRelayer = new MockOracleRelayer(address(69), _oracleRelayerParams);
-
-    orcl = new OracleForTest(1 ether);
+    oracleRelayer = new MockOracleRelayer(address(69), orcl, _oracleRelayerParams);
 
     calculator = new MockPIDCalculator();
     rateSetter = new PIDRateSetter(
           address(oracleRelayer),
-          address(orcl),
           address(calculator),
           periodSize
         );
@@ -55,23 +54,15 @@ contract PIDRateSetterTest is DSTest {
 
   function test_modify_parameters() public {
     // Modify
-    rateSetter.modifyParameters('oracle', abi.encode(0x12));
     rateSetter.modifyParameters('oracleRelayer', abi.encode(0x12));
     rateSetter.modifyParameters('pidCalculator', abi.encode(0x12));
     rateSetter.modifyParameters('updateRateDelay', abi.encode(1));
 
     // Check
-    assertTrue(address(rateSetter.oracle()) == address(0x12));
     assertTrue(address(rateSetter.oracleRelayer()) == address(0x12));
     assertTrue(address(rateSetter.pidCalculator()) == address(0x12));
 
     assertEq(rateSetter.params().updateRateDelay, 1);
-  }
-
-  function test_get_redemption_and_market_prices() public {
-    (uint256 marketPrice, uint256 redemptionPrice) = rateSetter.getRedemptionAndMarketPrices();
-    assertEq(marketPrice, 1 ether);
-    assertEq(redemptionPrice, RAY);
   }
 
   function test_first_update_rate_no_warp() public {

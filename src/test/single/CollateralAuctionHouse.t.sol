@@ -9,6 +9,7 @@ import {
   IncreasingDiscountCollateralAuctionHouse
 } from '@contracts/CollateralAuctionHouse.sol';
 import {IOracleRelayer, OracleRelayerForTest} from '@contracts/for-test/OracleRelayerForTest.sol';
+import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 
 import {Math, WAD, RAY, RAD} from '@libraries/Math.sol';
 
@@ -166,19 +167,19 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
          _cahParams,
          _cahCParams);
 
-    IOracleRelayer.OracleRelayerParams memory _oracleRelayerParams =
-      IOracleRelayer.OracleRelayerParams({redemptionRateUpperBound: RAY * WAD, redemptionRateLowerBound: 1});
-    oracleRelayer = new OracleRelayerForTest(address(safeEngine), _oracleRelayerParams);
-    oracleRelayer.setRedemptionPrice(5 * RAY);
-    collateralAuctionHouse.modifyParameters('oracleRelayer', abi.encode(oracleRelayer));
-
-    collateralFSM = new Feed(bytes32(uint256(0)), true);
-    collateralAuctionHouse.modifyParameters('collateralFSM', abi.encode(collateralFSM));
-
-    collateralMedian = new Feed(bytes32(uint256(0)), true);
     systemCoinMedian = new Feed(bytes32(uint256(0)), true);
+    collateralMedian = new Feed(bytes32(uint256(0)), true);
+    collateralFSM = new Feed(bytes32(uint256(0)), true);
 
     collateralFSM.set_price_source(address(collateralMedian));
+
+    IOracleRelayer.OracleRelayerParams memory _oracleRelayerParams =
+      IOracleRelayer.OracleRelayerParams({redemptionRateUpperBound: RAY * WAD, redemptionRateLowerBound: 1});
+    oracleRelayer =
+      new OracleRelayerForTest(address(safeEngine), IBaseOracle(address(systemCoinMedian)), _oracleRelayerParams);
+    oracleRelayer.setRedemptionPrice(5 * RAY);
+    collateralAuctionHouse.modifyParameters('oracleRelayer', abi.encode(oracleRelayer));
+    collateralAuctionHouse.modifyParameters('collateralFSM', abi.encode(collateralFSM));
 
     ali = address(new Guy(collateralAuctionHouse));
     bob = address(new Guy(collateralAuctionHouse));

@@ -154,7 +154,7 @@ abstract contract Deploy is Contracts, Params, Script {
     // deploy Base contracts
     safeEngine = new SAFEEngine(_safeEngineParams);
 
-    oracleRelayer = new OracleRelayer(address(safeEngine), _oracleRelayerParams);
+    oracleRelayer = new OracleRelayer(address(safeEngine), systemCoinOracle, _oracleRelayerParams);
 
     liquidationEngine = new LiquidationEngine(address(safeEngine), _liquidationEngineParams);
 
@@ -254,7 +254,6 @@ abstract contract Deploy is Contracts, Params, Script {
 
     pidRateSetter = new PIDRateSetter({
      _oracleRelayer: address(oracleRelayer),
-     _oracle: address(oracle[HAI]),
      _pidCalculator: address(pidController),
      _updateRateDelay: _pidRateSetterParams.updateRateDelay
     });
@@ -298,7 +297,7 @@ contract DeployMainnet is MainnetParams, Deploy {
       _inverted: false
     });
 
-    oracle[HAI] = new OracleForTest(HAI_INITIAL_PRICE); // 1 HAI = 1 USD
+    systemCoinOracle = new OracleForTest(HAI_INITIAL_PRICE); // 1 HAI = 1 USD
     oracle[WETH] = new DelayedOracle(_ethUSDPriceFeed, 1 hours);
     oracle[WSTETH] = new DelayedOracle(_wstethUSDPriceFeed, 1 hours);
 
@@ -322,8 +321,8 @@ contract DeployGoerli is GoerliParams, Deploy {
   function _setupEnvironment() internal virtual override {
     // Setup oracle feeds
 
-    oracle[HAI] = new OracleForTestnet(HAI_INITIAL_PRICE); // 1 HAI = 1 USD
-    haiOracleForTest = OracleForTestnet(address(oracle[HAI]));
+    systemCoinOracle = new OracleForTestnet(HAI_INITIAL_PRICE); // 1 HAI = 1 USD
+    haiOracleForTest = OracleForTestnet(address(systemCoinOracle));
 
     IBaseOracle _ethUSDPriceFeed = new ChainlinkRelayer(OP_GOERLI_CHAINLINK_ETH_USD_FEED, 1 hours);
 

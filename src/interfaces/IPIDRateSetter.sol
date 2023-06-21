@@ -25,10 +25,6 @@ interface IPIDRateSetter is IAuthorizable, IModifiable {
   }
 
   // --- Registry ---
-  /**
-   * @notice The oracle used to fetch the system coin market price
-   */
-  function oracle() external view returns (IBaseOracle _oracle);
 
   /**
    * @notice The oracle relayer where the redemption price and rate are stored
@@ -49,18 +45,7 @@ interface IPIDRateSetter is IAuthorizable, IModifiable {
    */
   function lastUpdateTime() external view returns (uint256 _lastUpdateTime);
 
-  /**
-   * @notice Get the market price from the system coin oracle
-   */
-  function getMarketPrice() external view returns (uint256 _marketPrice);
-
   // --- Methods ---
-  /**
-   * @notice Get (and update) the redemption price and the market price for the system coin
-   * @return _redemptionPrice
-   * @return _marketPrice
-   */
-  function getRedemptionAndMarketPrices() external returns (uint256 _redemptionPrice, uint256 _marketPrice);
 
   /**
    * @notice Compute and set a new redemption rate

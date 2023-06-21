@@ -7,8 +7,9 @@ import {IOracleRelayer, OracleRelayer} from '@contracts/OracleRelayer.sol';
 contract OracleRelayerForTest is OracleRelayer {
   constructor(
     address _safeEngine,
+    IBaseOracle _systemCoinOracle,
     OracleRelayerParams memory _oracleRelayerParams
-  ) OracleRelayer(_safeEngine, _oracleRelayerParams) {}
+  ) OracleRelayer(_safeEngine, _systemCoinOracle, _oracleRelayerParams) {}
 
   // function to mock oracle since we can get a slot with sdstorage
   function setCTypeOracle(bytes32 _cType, address _oracle) external {
@@ -30,8 +31,9 @@ contract OracleRelayerForInternalCallsTest is OracleRelayerForTest {
 
   constructor(
     address _safeEngine,
+    IBaseOracle _systemCoinOracle,
     OracleRelayerParams memory _oracleRelayerParams
-  ) OracleRelayerForTest(_safeEngine, _oracleRelayerParams) {}
+  ) OracleRelayerForTest(_safeEngine, _systemCoinOracle, _oracleRelayerParams) {}
 
   function _updateRedemptionPrice() internal override returns (uint256 _redemptionPrice) {
     emit UpdateRedemptionPriceCalled();
