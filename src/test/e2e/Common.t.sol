@@ -38,15 +38,15 @@ contract DeployForTest is TestParams, Deploy {
     WETH9 weth = WETH9(payable(0x4200000000000000000000000000000000000006));
 
     systemCoinOracle = new OracleForTest(HAI_INITIAL_PRICE); // 1 HAI = 1 USD
-    oracle[ETH_A] = new OracleForTest(TEST_ETH_PRICE); // 1 ETH = 2000 USD
-    oracle[TKN] = new OracleForTest(TEST_TKN_PRICE); // 1 TKN = 1 USD
+    delayedOracle[ETH_A] = new OracleForTest(TEST_ETH_PRICE); // 1 ETH = 2000 USD
+    delayedOracle[TKN] = new OracleForTest(TEST_TKN_PRICE); // 1 TKN = 1 USD
 
     collateral[ETH_A] = IERC20Metadata(address(weth));
     collateral[TKN] = new ERC20ForTest();
 
-    oracle['TKN-A'] = new OracleForTest(COLLATERAL_PRICE);
-    oracle['TKN-B'] = new OracleForTest(COLLATERAL_PRICE);
-    oracle['TKN-C'] = new OracleForTest(COLLATERAL_PRICE);
+    delayedOracle['TKN-A'] = new OracleForTest(COLLATERAL_PRICE);
+    delayedOracle['TKN-B'] = new OracleForTest(COLLATERAL_PRICE);
+    delayedOracle['TKN-C'] = new OracleForTest(COLLATERAL_PRICE);
 
     collateral['TKN-A'] = new ERC20ForTest();
     collateral['TKN-B'] = new ERC20ForTest();

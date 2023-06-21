@@ -136,13 +136,9 @@ interface IIncreasingDiscountCollateralAuctionHouse is ICollateralAuctionHouse, 
     view
     returns (uint256 _cFsmPriceFeedValue, uint256 _sCoinAdjustedPrice);
 
-  function collateralFSM() external view returns (IDelayedOracle _collateralFSM);
-
   function auctionsStarted() external view returns (uint256 _auctionsStarted);
 
   function lastReadRedemptionPrice() external view returns (uint256 _lastReadRedemptionPrice);
 
   function oracleRelayer() external view returns (IOracleRelayer _oracleRelayer);
-
-  function systemCoinOracle() external view returns (IBaseOracle _systemCoinOracle);
 }

@@ -35,6 +35,29 @@ abstract contract Hevm {
   function prank(address) external virtual;
 }
 
+contract DummyFeed {
+  address public priceSource;
+  bool validPrice;
+  uint256 price;
+
+  function getResultWithValidity() public view returns (uint256, bool) {
+    return (price, validPrice);
+  }
+
+  function read() public view returns (uint256) {
+    uint256 _price;
+    bool _validPrice;
+    (_price, _validPrice) = getResultWithValidity();
+    require(_validPrice, 'not-valid');
+    return uint256(_price);
+  }
+
+  function setPrice(uint256 _newPrice) public {
+    price = _newPrice;
+    validPrice = true;
+  }
+}
+
 contract DummyFSM {
   address public priceSource;
   bool validPrice;
@@ -804,7 +827,8 @@ contract SingleLiquidationTest is DSTest {
     protocolToken = new CoinForTest('GOV', '');
     protocolToken.mint(100 ether);
 
-    IBaseOracle mockSystemCoinOracle = IBaseOracle(address(0x123));
+    DummyFeed mockSystemCoinOracle = new DummyFeed();
+    mockSystemCoinOracle.setPrice(1 ether);
 
     ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
       ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 0});
@@ -880,7 +904,11 @@ contract SingleLiquidationTest is DSTest {
 
     IOracleRelayer.OracleRelayerParams memory _oracleRelayerParams =
       IOracleRelayer.OracleRelayerParams({redemptionRateUpperBound: RAY * WAD, redemptionRateLowerBound: 1});
-    oracleRelayer = new OracleRelayer(address(safeEngine), mockSystemCoinOracle, _oracleRelayerParams);
+    oracleRelayer = new OracleRelayer({
+        _safeEngine: address(safeEngine), 
+        _systemCoinOracle: IBaseOracle(address(mockSystemCoinOracle)), 
+        _oracleRelayerParams: _oracleRelayerParams
+        });
     safeEngine.addAuthorization(address(oracleRelayer));
 
     oracleFSM = new DummyFSM();
@@ -908,7 +936,6 @@ contract SingleLiquidationTest is DSTest {
     new IncreasingDiscountCollateralAuctionHouse(address(safeEngine), address(liquidationEngine), 'gold', _cahParams, _cahCParams);
     collateralAuctionHouse.addAuthorization(address(liquidationEngine));
     collateralAuctionHouse.modifyParameters('oracleRelayer', abi.encode(oracleRelayer));
-    collateralAuctionHouse.modifyParameters('collateralFSM', abi.encode(oracleFSM));
 
     liquidationEngine.addAuthorization(address(collateralAuctionHouse));
     liquidationEngine.modifyParameters('gold', 'collateralAuctionHouse', abi.encode(collateralAuctionHouse));

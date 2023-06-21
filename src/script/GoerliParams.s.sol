@@ -95,13 +95,13 @@ abstract contract GoerliParams is Contracts, Params {
     // --- Collaterals Params ---
 
     _oracleRelayerCParams[WETH] = IOracleRelayer.OracleRelayerCollateralParams({
-      oracle: oracle[WETH],
+      oracle: delayedOracle[WETH],
       safetyCRatio: 1.35e27, // 135%
       liquidationCRatio: 1.35e27 // 135%
     });
 
     _oracleRelayerCParams[OP] = IOracleRelayer.OracleRelayerCollateralParams({
-      oracle: oracle[OP],
+      oracle: delayedOracle[OP],
       safetyCRatio: 1.5e27, // 150%
       liquidationCRatio: 1.5e27 // 150%
     });

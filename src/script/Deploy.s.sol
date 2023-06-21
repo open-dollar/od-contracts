@@ -236,7 +236,6 @@ abstract contract Deploy is Contracts, Params, Script {
 
     // setup registry
     collateralAuctionHouse[_cType].modifyParameters('oracleRelayer', abi.encode(oracleRelayer));
-    collateralAuctionHouse[_cType].modifyParameters('collateralFSM', abi.encode(oracle[_cType]));
 
     // setup global settlement
     collateralAuctionHouse[_cType].addAuthorization(address(globalSettlement)); // terminateAuctionPrematurely
@@ -298,8 +297,8 @@ contract DeployMainnet is MainnetParams, Deploy {
     });
 
     systemCoinOracle = new OracleForTest(HAI_INITIAL_PRICE); // 1 HAI = 1 USD
-    oracle[WETH] = new DelayedOracle(_ethUSDPriceFeed, 1 hours);
-    oracle[WSTETH] = new DelayedOracle(_wstethUSDPriceFeed, 1 hours);
+    delayedOracle[WETH] = new DelayedOracle(_ethUSDPriceFeed, 1 hours);
+    delayedOracle[WSTETH] = new DelayedOracle(_wstethUSDPriceFeed, 1 hours);
 
     // TODO: change ERC20ForTest for IERC20(WSTETH) (use whale for tests)
     collateral[WETH] = IERC20Metadata(OP_WETH);
@@ -335,8 +334,8 @@ contract DeployGoerli is GoerliParams, Deploy {
       _inverted: false
     });
 
-    oracle[WETH] = new DelayedOracle(_ethUSDPriceFeed, 1 hours);
-    oracle[OP] = new DelayedOracle(_opUSDPriceFeed, 1 hours);
+    delayedOracle[WETH] = new DelayedOracle(_ethUSDPriceFeed, 1 hours);
+    delayedOracle[OP] = new DelayedOracle(_opUSDPriceFeed, 1 hours);
 
     collateral[WETH] = IERC20Metadata(OP_GOERLI_WETH);
     collateral[OP] = ERC20ForTest(OP_GOERLI_OPTIMISM);

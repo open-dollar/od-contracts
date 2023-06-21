@@ -21,6 +21,7 @@ import {GlobalSettlement} from '@contracts/settlement/GlobalSettlement.sol';
 import {SettlementSurplusAuctioneer} from '@contracts/settlement/SettlementSurplusAuctioneer.sol';
 import {IOracleRelayer, OracleRelayerForTest} from '@contracts/for-test/OracleRelayerForTest.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
+import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
 
 import {Math, RAY, WAD, HUNDRED} from '@libraries/Math.sol';
 
@@ -54,6 +55,29 @@ contract DummyFSM {
   function restart() public /* note auth */ {
     // unset the value
     validPrice = false;
+  }
+}
+
+// TODO: refactor and deprecate
+contract DummyFeed {
+  bool validPrice;
+  uint256 price;
+
+  function getResultWithValidity() public view returns (uint256, bool) {
+    return (price, validPrice);
+  }
+
+  function read() public view returns (uint256) {
+    uint256 _price;
+    bool _validPrice;
+    (_price, _validPrice) = getResultWithValidity();
+    require(_validPrice, 'not-valid');
+    return uint256(_price);
+  }
+
+  function setPrice(uint256 _newPrice) public /* note auth */ {
+    price = _newPrice;
+    validPrice = true;
   }
 }
 
@@ -151,9 +175,13 @@ contract SingleGlobalSettlementTest is DSTest {
     newCollateral.mint(20 ether);
 
     DummyFSM oracleFSM = new DummyFSM();
-    oracleRelayer.modifyParameters(_encodedName, 'oracle', abi.encode(oracleFSM));
-    oracleRelayer.modifyParameters(_encodedName, 'safetyCRatio', abi.encode(ray(1.5 ether)));
-    oracleRelayer.modifyParameters(_encodedName, 'liquidationCRatio', abi.encode(ray(1.5 ether)));
+    IOracleRelayer.OracleRelayerCollateralParams memory _oracleRelayerCollateralParams = IOracleRelayer
+      .OracleRelayerCollateralParams({
+      oracle: IDelayedOracle(address(oracleFSM)),
+      safetyCRatio: ray(1.5 ether),
+      liquidationCRatio: ray(1.5 ether)
+    });
+    oracleRelayer.initializeCollateralType(_encodedName, _oracleRelayerCollateralParams);
 
     // initial collateral price of 5
     oracleFSM.updateCollateralPrice(bytes32(5 * WAD));
@@ -191,7 +219,6 @@ contract SingleGlobalSettlementTest is DSTest {
     _collateralAuctionHouse.addAuthorization(address(globalSettlement));
     _collateralAuctionHouse.addAuthorization(address(liquidationEngine));
     _collateralAuctionHouse.modifyParameters('oracleRelayer', abi.encode(oracleRelayer));
-    _collateralAuctionHouse.modifyParameters('collateralFSM', abi.encode(oracleFSM));
     oracleFSM.updateCollateralPrice(bytes32(200 * WAD));
 
     // Start with English auction house
@@ -215,7 +242,8 @@ contract SingleGlobalSettlementTest is DSTest {
     hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     hevm.warp(604_411_200);
 
-    IBaseOracle _mockSystemCoinOracle = IBaseOracle(address(0x123));
+    DummyFeed _mockSystemCoinOracle = new DummyFeed();
+    _mockSystemCoinOracle.setPrice(1 ether);
 
     ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
       ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: rad(10_000_000 ether)});
@@ -280,7 +308,11 @@ contract SingleGlobalSettlementTest is DSTest {
 
     IOracleRelayer.OracleRelayerParams memory _oracleRelayerParams =
       IOracleRelayer.OracleRelayerParams({redemptionRateUpperBound: RAY * WAD, redemptionRateLowerBound: 1});
-    oracleRelayer = new OracleRelayerForTest(address(safeEngine), _mockSystemCoinOracle, _oracleRelayerParams);
+    oracleRelayer = new OracleRelayerForTest({
+      _safeEngine: address(safeEngine), 
+      _systemCoinOracle: IBaseOracle(address(_mockSystemCoinOracle)), 
+      _oracleRelayerParams: _oracleRelayerParams
+      });
     safeEngine.addAuthorization(address(oracleRelayer));
 
     IStabilityFeeTreasury.StabilityFeeTreasuryParams memory _stabilityFeeTreasuryParams = IStabilityFeeTreasury

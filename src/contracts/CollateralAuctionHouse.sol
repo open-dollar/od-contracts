@@ -34,8 +34,6 @@ contract IncreasingDiscountCollateralAuctionHouse is
   // --- Registry ---
   ISAFEEngine public safeEngine;
   IOracleRelayer public oracleRelayer;
-  IDelayedOracle public collateralFSM;
-  IBaseOracle public systemCoinOracle;
   ILiquidationEngine public liquidationEngine;
 
   // --- Data ---
@@ -135,9 +133,11 @@ contract IncreasingDiscountCollateralAuctionHouse is
   }
 
   function _getCollateralMarketPrice() internal view virtual returns (uint256 _priceFeed) {
-    // Fetch the collateral market address from the collateral FSM
+    // Fetch the collateral market address from the oracle relayer
+    IDelayedOracle _delayedOracle = IDelayedOracle(address(oracleRelayer.cParams(collateralType).oracle));
     IBaseOracle _marketOracle;
-    try collateralFSM.priceSource() returns (IBaseOracle __marketOracle) {
+
+    try _delayedOracle.priceSource() returns (IBaseOracle __marketOracle) {
       _marketOracle = __marketOracle;
     } catch (bytes memory) {}
 
@@ -162,10 +162,11 @@ contract IncreasingDiscountCollateralAuctionHouse is
   }
 
   function _getSystemCoinMarketPrice() internal view virtual returns (uint256 _priceFeed) {
-    if (address(systemCoinOracle) == address(0)) return 0;
+    IBaseOracle _systemCoinOracle = oracleRelayer.systemCoinOracle();
+    if (address(_systemCoinOracle) == address(0)) return 0;
 
     // wrapped call toward the system coin oracle
-    try systemCoinOracle.getResultWithValidity() returns (uint256 _price, bool _valid) {
+    try _systemCoinOracle.getResultWithValidity() returns (uint256 _price, bool _valid) {
       if (_valid) {
         _priceFeed = uint256(_price) * 10 ** 9; // scale to RAY
       }
@@ -235,7 +236,9 @@ contract IncreasingDiscountCollateralAuctionHouse is
     require(
       _systemCoinRedemptionPrice > 0, 'IncreasingDiscountCollateralAuctionHouse/invalid-redemption-price-provided'
     );
-    (uint256 _collateralFsmPriceFeedValue, bool _collateralFsmHasValidValue) = collateralFSM.getResultWithValidity();
+
+    IDelayedOracle _delayedOracle = IDelayedOracle(address(oracleRelayer.cParams(collateralType).oracle));
+    (uint256 _collateralFsmPriceFeedValue, bool _collateralFsmHasValidValue) = _delayedOracle.getResultWithValidity();
     if (!_collateralFsmHasValidValue) {
       return (0, 0);
     }
@@ -668,8 +671,6 @@ contract IncreasingDiscountCollateralAuctionHouse is
 
     // Registry
     if (_param == 'oracleRelayer') oracleRelayer = IOracleRelayer(_address);
-    else if (_param == 'collateralFSM') collateralFSM = _validateCollateralFSM(_address);
-    else if (_param == 'systemCoinOracle') systemCoinOracle = IBaseOracle(_address);
     else if (_param == 'liquidationEngine') liquidationEngine = ILiquidationEngine(_address);
     // CAH Params
     else if (_param == 'minDiscount') _cParams.minDiscount = _uint256;
@@ -683,11 +684,6 @@ contract IncreasingDiscountCollateralAuctionHouse is
     else if (_param == 'upperSystemCoinDeviation') _params.upperSystemCoinDeviation = _uint256;
     else if (_param == 'minSystemCoinDeviation') _params.minSystemCoinDeviation = _uint256;
     else revert UnrecognizedParam();
-  }
-
-  function _validateCollateralFSM(address _delayedOracle) internal view virtual returns (IDelayedOracle _collateralFSM) {
-    _collateralFSM = IDelayedOracle(_delayedOracle);
-    _collateralFSM.priceSource();
   }
 
   function _validateParameters() internal view override {

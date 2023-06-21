@@ -32,12 +32,12 @@ interface IDelayedOracle is IBaseOracle {
   /**
    * @notice The delay in seconds that should elapse between updates
    */
-  function updateDelay() external returns (uint256 _updateDelay);
+  function updateDelay() external view returns (uint256 _updateDelay);
 
   /**
    * @notice The timestamp of the last update
    */
-  function lastUpdateTime() external returns (uint256 _lastUpdateTime);
+  function lastUpdateTime() external view returns (uint256 _lastUpdateTime);
 
   /**
    * @notice Indicates if a delay has passed since the last update

@@ -279,14 +279,6 @@ contract IncreasingDiscountCollateralAuctionHouseForTest is
     return super._updateCurrentDiscount(_id);
   }
 
-  function setCollateralFSM(IDelayedOracle _collateralFSM) external {
-    collateralFSM = _collateralFSM;
-  }
-
-  function setSystemCoinOracle(IBaseOracle _systemCoinOracle) external {
-    systemCoinOracle = _systemCoinOracle;
-  }
-
   function setOracleRelayer(IOracleRelayer _oracleRelayer) external {
     oracleRelayer = _oracleRelayer;
   }

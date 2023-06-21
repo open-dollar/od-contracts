@@ -64,10 +64,16 @@ contract Base is HaiTest {
     auctionHouse =
     new IncreasingDiscountCollateralAuctionHouseForTest(mockSafeEngine, mockLiquidationEngine, mockCollateralType, mockCollateralAuctionHouse, cahParams, cahCParams);
     watcher = address(IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse)).watcher());
-    IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse)).setCollateralFSM(
-      IDelayedOracle(address(mockCollateralFSM))
+    vm.mockCall(
+      address(mockOracleRelayer),
+      abi.encodeWithSelector(IOracleRelayer.cParams.selector, mockCollateralType),
+      abi.encode(mockCollateralFSM, 0, 0)
     );
-    IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse)).setSystemCoinOracle(mockSystemCoinOracle);
+    vm.mockCall(
+      address(mockOracleRelayer),
+      abi.encodeWithSelector(IOracleRelayer.systemCoinOracle.selector),
+      abi.encode(mockSystemCoinOracle)
+    );
     IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse)).setOracleRelayer(mockOracleRelayer);
   }
 
@@ -443,27 +449,6 @@ contract Unit_CollateralAuctionHouse_ModifyParameters is Base {
     auctionHouse.modifyParameters('oracleRelayer', abi.encode(_oracleRelayer));
 
     assertEq(address(auctionHouse.oracleRelayer()), _oracleRelayer);
-  }
-
-  function test_Modify_CollateralFSM(address _collateralFSM) public authorized {
-    vm.assume(address(_collateralFSM) != address(0));
-    _mockCollateralFSMPriceSource(_collateralFSM, _collateralFSM);
-    auctionHouse.modifyParameters('collateralFSM', abi.encode(_collateralFSM));
-
-    assertEq(address(auctionHouse.collateralFSM()), _collateralFSM);
-  }
-
-  function test_Modify_CollateralFSM_Call_IDelayedOracle_PriceSource(address _collateralFSM) public authorized {
-    vm.assume(address(_collateralFSM) != address(0));
-    _mockCollateralFSMPriceSource(_collateralFSM, _collateralFSM);
-    vm.expectCall(_collateralFSM, abi.encodeWithSelector(IDelayedOracle.priceSource.selector), 1);
-    auctionHouse.modifyParameters('collateralFSM', abi.encode(_collateralFSM));
-  }
-
-  function test_Modify_SystemCoinOracle(address _systemCoinOracle) public authorized {
-    auctionHouse.modifyParameters('systemCoinOracle', abi.encode(_systemCoinOracle));
-
-    assertEq(address(auctionHouse.systemCoinOracle()), _systemCoinOracle);
   }
 
   function test_Modify_LiquidationEngine(address _liquidationEngine) public authorized {
@@ -1007,11 +992,6 @@ contract Unit_CollateralAuctionHouse_GetSystemCoinMarketPrice is Base {
     vm.expectCall(address(mockSystemCoinOracle), abi.encodeWithSelector(IBaseOracle.getResultWithValidity.selector));
 
     auctionHouse.getSystemCoinMarketPrice();
-  }
-
-  function test_Return_Zero_SystemCoinOracleZeroAddress() public {
-    IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse)).setSystemCoinOracle(IBaseOracle(address(0)));
-    assertEq(auctionHouse.getSystemCoinMarketPrice(), 0);
   }
 
   function test_Return_Zero_ResultNotValid() public {

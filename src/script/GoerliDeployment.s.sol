@@ -14,8 +14,8 @@ abstract contract GoerliDeployment is Contracts, GoerliParams {
   constructor() {
     haiOracleForTest = OracleForTestnet(0x0256791C87b519e45DEFbf2c94D8DE8ed7C7111a);
     opEthOracleForTest = OracleForTestnet(0x792910b35954c9Ac2F1C4A5DD888f4d46e3472Ba);
-    oracle[WETH] = DelayedOracle(0x74558a1470c714BB5E24a6ba998905Ee5F3F0A25);
-    oracle[OP] = DelayedOracle(0x6171f9dB883E3bcC1804Ef17Eb1199133E27058D);
+    delayedOracle[WETH] = DelayedOracle(0x74558a1470c714BB5E24a6ba998905Ee5F3F0A25);
+    delayedOracle[OP] = DelayedOracle(0x6171f9dB883E3bcC1804Ef17Eb1199133E27058D);
     systemCoin = SystemCoin(0xEaE90F3b07fBE00921173298FF04f416398f7101);
     protocolToken = ProtocolToken(0x64ff820bbD2947B2f2D4355D4852F17eb0156D9A);
     safeEngine = SAFEEngine(0xDfd2D62b3eC9BF6F52547c570B5AC2136D9756E4);

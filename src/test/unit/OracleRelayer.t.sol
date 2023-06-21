@@ -5,6 +5,7 @@ import {StdStorage, stdStorage} from 'forge-std/StdStorage.sol';
 
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
+import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
@@ -91,6 +92,10 @@ contract Unit_OracleRelayer_Constructor is Base {
     assertEq(address(oracleRelayer.safeEngine()), address(mockSafeEngine));
   }
 
+  function test_Set_SystemCoinOracle() public {
+    assertEq(address(oracleRelayer.systemCoinOracle()), address(mockSystemCoinOracle));
+  }
+
   function test_Set_RedemptionPrice() public {
     assertEq(oracleRelayer.redemptionPrice(), RAY);
   }
@@ -172,16 +177,30 @@ contract Unit_OracleRelayer_ModifyParameters is Base {
 
   function test_ModifyParameters_PerCollateral(
     bytes32 _cType,
-    IOracleRelayer.OracleRelayerCollateralParams memory _fuzz
+    IOracleRelayer.OracleRelayerCollateralParams memory _fuzz,
+    address _fuzzPriceSource
   ) public authorized previousValidCTypeParams(_cType) {
     vm.assume(_validOracleRelayerCollateralParams(_fuzz));
     oracleRelayer.modifyParameters(_cType, 'safetyCRatio', abi.encode(_fuzz.safetyCRatio));
     oracleRelayer.modifyParameters(_cType, 'liquidationCRatio', abi.encode(_fuzz.liquidationCRatio));
+
+    vm.mockCall(
+      address(_fuzz.oracle), abi.encodeWithSelector(IDelayedOracle.priceSource.selector), abi.encode(_fuzzPriceSource)
+    );
     oracleRelayer.modifyParameters(_cType, 'oracle', abi.encode(_fuzz.oracle));
 
     IOracleRelayer.OracleRelayerCollateralParams memory _cParams = oracleRelayer.cParams(_cType);
 
     assertEq(abi.encode(_cParams), abi.encode(_fuzz));
+  }
+
+  function test_Revert_InvalidOracleRelayerParams_NonDelayedOracle(
+    bytes32 _cType,
+    address _nonDelayedOracle
+  ) public authorized {
+    vm.expectRevert();
+    // NOTE: doesn't mockCall for `priceSource`
+    oracleRelayer.modifyParameters(_cType, 'oracle', abi.encode(_nonDelayedOracle));
   }
 
   function test_Revert_InvalidOracleRelayerParams_RedemptionRateLowerBound(

@@ -3,6 +3,7 @@ pragma solidity 0.8.19;
 
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
+import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
@@ -128,6 +129,7 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
     OracleRelayerCollateralParams memory _collateralParams
   ) external isAuthorized validCParams(_cType) {
     if (address(_cParams[_cType].oracle) != address(0)) revert OracleRelayer_CollateralTypeAlreadyInitialized();
+    _validateDelayedOracle(address(_collateralParams.oracle));
     _cParams[_cType] = _collateralParams;
   }
 
@@ -145,7 +147,8 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled validParams {
     uint256 _uint256 = _data.toUint256();
 
-    if (_param == 'redemptionRateUpperBound') _params.redemptionRateUpperBound = _uint256;
+    if (_param == 'systemCoinOracle') systemCoinOracle = IBaseOracle(_data.toAddress().assertNonNull());
+    else if (_param == 'redemptionRateUpperBound') _params.redemptionRateUpperBound = _uint256;
     else if (_param == 'redemptionRateLowerBound') _params.redemptionRateLowerBound = _uint256;
     else revert UnrecognizedParam();
   }
@@ -160,8 +163,14 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
 
     if (_param == 'safetyCRatio') __cParams.safetyCRatio = _uint256;
     else if (_param == 'liquidationCRatio') __cParams.liquidationCRatio = _uint256;
-    else if (_param == 'oracle') __cParams.oracle = abi.decode(_data, (IBaseOracle));
+    else if (_param == 'oracle') __cParams.oracle = _validateDelayedOracle(_data.toAddress());
     else revert UnrecognizedParam();
+  }
+
+  function _validateDelayedOracle(address _oracle) internal view returns (IDelayedOracle _delayedOracle) {
+    // Checks if the delayed oracle priceSource is implemented
+    _delayedOracle = IDelayedOracle(_oracle.assertNonNull());
+    _delayedOracle.priceSource();
   }
 
   function _validateParameters() internal view override {

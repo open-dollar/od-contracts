@@ -100,7 +100,7 @@ abstract contract TestParams is Contracts, Params {
     // --- ETH Params ---
 
     _oracleRelayerCParams[ETH_A] = IOracleRelayer.OracleRelayerCollateralParams({
-      oracle: oracle[ETH_A],
+      oracle: delayedOracle[ETH_A],
       safetyCRatio: 1.35e27, // 135%
       liquidationCRatio: 1.35e27 // 135%
     });
@@ -133,17 +133,17 @@ abstract contract TestParams is Contracts, Params {
     // --- TKN Params ---
 
     _oracleRelayerCParams[TKN] = IOracleRelayer.OracleRelayerCollateralParams({
-      oracle: oracle[TKN],
+      oracle: delayedOracle[TKN],
       safetyCRatio: 1.5e27, // 150%
       liquidationCRatio: 1.5e27 // 150%
     });
 
     _oracleRelayerCParams['TKN-A'] = _oracleRelayerCParams[TKN];
-    _oracleRelayerCParams['TKN-A'].oracle = oracle['TKN-A'];
+    _oracleRelayerCParams['TKN-A'].oracle = delayedOracle['TKN-A'];
     _oracleRelayerCParams['TKN-B'] = _oracleRelayerCParams[TKN];
-    _oracleRelayerCParams['TKN-B'].oracle = oracle['TKN-B'];
+    _oracleRelayerCParams['TKN-B'].oracle = delayedOracle['TKN-B'];
     _oracleRelayerCParams['TKN-C'] = _oracleRelayerCParams[TKN];
-    _oracleRelayerCParams['TKN-C'].oracle = oracle['TKN-C'];
+    _oracleRelayerCParams['TKN-C'].oracle = delayedOracle['TKN-C'];
 
     _taxCollectorCParams[TKN] = ITaxCollector.TaxCollectorCollateralParams({
       // NOTE: 42%/yr => 1.^(1/yr) = 1 + 11,11926e-9

@@ -21,11 +21,11 @@ import {PIDRateSetter, IPIDRateSetter} from '@contracts/PIDRateSetter.sol';
 
 // --- Oracles ---
 import {OracleRelayer, IOracleRelayer} from '@contracts/OracleRelayer.sol';
+import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
+import {DelayedOracle, IDelayedOracle} from '@contracts/oracles/DelayedOracle.sol';
 import {DenominatedOracle} from '@contracts/oracles/DenominatedOracle.sol';
-import {DelayedOracle} from '@contracts/oracles/DelayedOracle.sol';
 import {ChainlinkRelayer} from '@contracts/oracles/ChainlinkRelayer.sol';
 import {UniV3Relayer} from '@contracts/oracles/UniV3Relayer.sol';
-import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 
 // --- Tokens ---
 import {ERC20ForTest, ERC20} from '@contracts/for-test/ERC20ForTest.sol';
@@ -84,7 +84,7 @@ abstract contract Contracts {
 
   // --- Oracle contracts ---
   IBaseOracle public systemCoinOracle;
-  mapping(bytes32 => IBaseOracle) public oracle;
+  mapping(bytes32 => IDelayedOracle) public delayedOracle;
 
   // --- PID contracts ---
   IPIDController public pidController;

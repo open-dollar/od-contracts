@@ -91,13 +91,13 @@ abstract contract MainnetParams is Contracts, Params {
     // --- Collateral Params ---
 
     _oracleRelayerCParams[WETH] = IOracleRelayer.OracleRelayerCollateralParams({
-      oracle: oracle[WETH],
+      oracle: delayedOracle[WETH],
       safetyCRatio: 1.35e27, // 135%
       liquidationCRatio: 1.35e27 // 135%
     });
 
     _oracleRelayerCParams[WSTETH] = IOracleRelayer.OracleRelayerCollateralParams({
-      oracle: oracle[WSTETH],
+      oracle: delayedOracle[WSTETH],
       safetyCRatio: 1.35e27, // 135%
       liquidationCRatio: 1.35e27 // 135%
     });

@@ -2,6 +2,7 @@
 pragma solidity 0.8.19;
 
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
+import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
 import {IOracleRelayer, OracleRelayer} from '@contracts/OracleRelayer.sol';
 
 contract OracleRelayerForTest is OracleRelayer {
@@ -13,7 +14,7 @@ contract OracleRelayerForTest is OracleRelayer {
 
   // function to mock oracle since we can get a slot with sdstorage
   function setCTypeOracle(bytes32 _cType, address _oracle) external {
-    _cParams[_cType].oracle = IBaseOracle(_oracle);
+    _cParams[_cType].oracle = IDelayedOracle(_oracle);
   }
 
   function setRedemptionPrice(uint256 _price) external {
