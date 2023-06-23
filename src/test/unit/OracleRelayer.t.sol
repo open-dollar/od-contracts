@@ -9,6 +9,7 @@ import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
+import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 
 import {HaiTest} from '@test/utils/HaiTest.t.sol';
 import {OracleRelayer} from '@contracts/OracleRelayer.sol';
@@ -35,7 +36,7 @@ abstract contract Base is HaiTest {
   function setUp() public virtual {
     vm.startPrank(deployer);
     mockSafeEngine = new SAFEEngineForTest();
-    mockSystemCoinOracle = IBaseOracle(address(0x123));
+    mockSystemCoinOracle = IBaseOracle(mockContract('SystemCoinOracle'));
     oracleRelayer = new OracleRelayerForTest(address(mockSafeEngine), mockSystemCoinOracle, oracleRelayerParams);
     mockOracle = new OracleForTest(1 ether);
     vm.stopPrank();
@@ -44,6 +45,10 @@ abstract contract Base is HaiTest {
   modifier authorized() {
     vm.startPrank(deployer);
     _;
+  }
+
+  function _mockContractEnabled(uint256 _contractEnabled) internal {
+    stdstore.target(address(oracleRelayer)).sig(IDisableable.contractEnabled.selector).checked_write(_contractEnabled);
   }
 
   function _mockRedemptionRate(uint256 _redemptionRate) internal {
@@ -272,6 +277,22 @@ contract Unit_OracleRelayer_ModifyParameters is Base {
     vm.expectRevert(IModifiable.UnrecognizedParam.selector);
     oracleRelayer.modifyParameters(_cType, 'unrecognizedParam', abi.encode(0));
   }
+
+  function test_Revert_ModifyParameters_ContractIsDisabled() public authorized {
+    _mockContractEnabled(0);
+
+    vm.expectRevert(IDisableable.ContractIsDisabled.selector);
+
+    oracleRelayer.modifyParameters('unrecognizedParam', abi.encode(0));
+  }
+
+  function test_Revert_ModifyParameters_PerCollateral_ContractIsDisabled(bytes32 _cType) public authorized {
+    _mockContractEnabled(0);
+
+    vm.expectRevert(IDisableable.ContractIsDisabled.selector);
+
+    oracleRelayer.modifyParameters(_cType, 'unrecognizedParam', abi.encode(0));
+  }
 }
 
 contract Unit_OracleRelayer_DisableContract is Base {
@@ -308,13 +329,18 @@ contract Unit_OracleRelayer_Orcl is Base {
 }
 
 contract Unit_OracleRelayer_MarketPrice is Base {
-  /**
-   * TODO:
-   * - mock system coin oracle and check how it behaves
-   * - test the return values
-   */
-  function setUp() public virtual override {
-    super.setUp();
+  function test_Return_MarketPrice(uint256 _priceFeedValue, bool _hasValidValue) public {
+    vm.mockCall(
+      address(mockSystemCoinOracle),
+      abi.encodeCall(mockSystemCoinOracle.getResultWithValidity, ()),
+      abi.encode(_priceFeedValue, _hasValidValue)
+    );
+
+    if (_hasValidValue) {
+      assertEq(oracleRelayer.marketPrice(), _priceFeedValue);
+    } else {
+      assertEq(oracleRelayer.marketPrice(), 0);
+    }
   }
 }
 
@@ -550,6 +576,14 @@ contract Unit_OracleRelayer_UpdateCollateralPrice is Base {
       (uint256(_scenario.priceFeedValue) * uint256(10 ** 9)).rdiv(_redemptionPrice).rdiv(_scenario.liquidationCRatio);
   }
 
+  function test_Revert_ContractIsDisabled() public {
+    _mockContractEnabled(0);
+
+    vm.expectRevert(IDisableable.ContractIsDisabled.selector);
+
+    oracleRelayer.updateCollateralPrice(collateralType);
+  }
+
   function test_Call_Orcl_GetResultWithValidity_ValidityNoPriceUpdate(UpdateCollateralPriceScenario memory _scenario)
     public
     happyPathValidityNoUpdate(_scenario)
@@ -736,6 +770,20 @@ contract Unit_OracleRelayer_UpdateRedemptionRate is Base {
     vm.warp(block.timestamp + _timeSinceLastRedemptionPriceUpdate);
 
     vm.expectRevert(IOracleRelayer.RedemptionPriceNotUpdated.selector);
+
+    oracleRelayer.updateRedemptionRate(_redemptionRate);
+  }
+
+  function test_Revert_ContractIsDisabled(uint256 _redemptionRate) public authorized {
+    _mockContractEnabled(0);
+
+    vm.expectRevert(IDisableable.ContractIsDisabled.selector);
+
+    oracleRelayer.updateRedemptionRate(_redemptionRate);
+  }
+
+  function test_Revert_Unauthorized(uint256 _redemptionRate) public {
+    vm.expectRevert(IAuthorizable.Unauthorized.selector);
 
     oracleRelayer.updateRedemptionRate(_redemptionRate);
   }

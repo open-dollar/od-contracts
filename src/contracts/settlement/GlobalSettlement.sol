@@ -297,7 +297,7 @@ contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettl
 
   // --- Administration ---
 
-  function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled validParams {
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled {
     address _address = _data.toAddress();
 
     if (_param == 'safeEngine') safeEngine = ISAFEEngine(_address);

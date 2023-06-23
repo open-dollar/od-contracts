@@ -417,7 +417,7 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
 
   // --- Administration ---
 
-  function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled validParams {
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled {
     uint256 _uint256 = _data.toUint256();
 
     if (_param == 'globalDebtCeiling') _params.globalDebtCeiling = _uint256;
@@ -425,11 +425,7 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
     else revert UnrecognizedParam();
   }
 
-  function _modifyParameters(
-    bytes32 _cType,
-    bytes32 _param,
-    bytes memory _data
-  ) internal override whenEnabled validCParams(_cType) {
+  function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override whenEnabled {
     uint256 _uint256 = _data.toUint256();
 
     if (_param == 'debtCeiling') _cParams[_cType].debtCeiling = _uint256;

@@ -249,13 +249,13 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
 
   // --- Administration ---
 
-  function _modifyParameters(bytes32 _param, bytes memory _data) internal override validParams {
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     if (_param == 'onAuctionSystemCoinLimit') _params.onAuctionSystemCoinLimit = _data.toUint256();
     else if (_param == 'accountingEngine') accountingEngine = IAccountingEngine(_data.toAddress());
     else revert UnrecognizedParam();
   }
 
-  function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override validCParams(_cType) {
+  function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override {
     uint256 _uint256 = _data.toUint256();
 
     if (_param == 'liquidationPenalty') _cParams[_cType].liquidationPenalty = _uint256;

@@ -283,7 +283,7 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
 
   // --- Administration ---
 
-  function _modifyParameters(bytes32 _param, bytes memory _data) internal override validParams {
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     uint256 _uint256 = _data.toUint256();
 
     if (_param == 'primaryTaxReceiver') _setPrimaryTaxReceiver(_data.toAddress());
@@ -292,7 +292,7 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
     else revert UnrecognizedParam();
   }
 
-  function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override validCParams(_cType) {
+  function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override {
     if (_param == 'stabilityFee') _cParams[_cType].stabilityFee = _data.toUint256();
     else if (_param == 'secondaryTaxReceiver') _setSecondaryTaxReceiver(_cType, abi.decode(_data, (TaxReceiver)));
     else revert UnrecognizedParam();

@@ -55,7 +55,7 @@ contract SettlementSurplusAuctioneer is Authorizable, Modifiable, ISettlementSur
 
   // --- Administration ---
 
-  function _modifyParameters(bytes32 _param, bytes memory _data) internal override validParams {
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     address _address = _data.toAddress();
 
     if (_param == 'accountingEngine') accountingEngine = IAccountingEngine(_address);

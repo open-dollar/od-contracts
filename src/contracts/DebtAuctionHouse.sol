@@ -162,7 +162,7 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
 
   // --- Administration ---
 
-  function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled validParams {
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled {
     address _address = _data.toAddress();
     uint256 _uint256 = _data.toUint256();
 

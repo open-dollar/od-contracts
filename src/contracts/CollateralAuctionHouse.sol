@@ -676,7 +676,7 @@ contract IncreasingDiscountCollateralAuctionHouse is
 
   // --- Administration ---
 
-  function _modifyParameters(bytes32 _param, bytes memory _data) internal virtual override validParams {
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal virtual override {
     uint256 _uint256 = _data.toUint256();
     address _address = _data.toAddress();
 
@@ -690,7 +690,7 @@ contract IncreasingDiscountCollateralAuctionHouse is
     else revert UnrecognizedParam();
   }
 
-  function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override validCParams(_cType) {
+  function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override {
     uint256 _uint256 = _data.toUint256();
 
     // CAH Params

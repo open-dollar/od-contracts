@@ -126,7 +126,7 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, Modifiable, IPostSet
 
   // --- Administration ---
 
-  function _modifyParameters(bytes32 _param, bytes memory _data) internal override validParams {
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     uint256 _uint256 = _data.toUint256();
 
     if (_param == 'bidIncrease') _params.bidIncrease = _uint256;

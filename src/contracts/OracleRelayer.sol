@@ -94,8 +94,7 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
    * @notice Update the collateral price inside the system (inside SAFEEngine)
    * @param  _cType The collateral we want to update prices (safety and liquidation prices) for
    */
-  // TODO: make whenEnabled HAI-169
-  function updateCollateralPrice(bytes32 _cType) external {
+  function updateCollateralPrice(bytes32 _cType) external whenEnabled {
     (uint256 _priceFeedValue, bool _hasValidValue) = _cParams[_cType].oracle.getResultWithValidity();
     uint256 _updatedRedemptionPrice = _getRedemptionPrice();
 
@@ -112,8 +111,7 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
     emit UpdateCollateralPrice(_cType, _priceFeedValue, _safetyPrice, _liquidationPrice);
   }
 
-  // TODO: make whenEnabled HAI-169
-  function updateRedemptionRate(uint256 _redemptionRate) external isAuthorized {
+  function updateRedemptionRate(uint256 _redemptionRate) external isAuthorized whenEnabled {
     if (block.timestamp != redemptionPriceUpdateTime) revert RedemptionPriceNotUpdated();
 
     if (_redemptionRate > _params.redemptionRateUpperBound) {
@@ -144,7 +142,7 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
 
   // --- Administration ---
 
-  function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled validParams {
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled {
     uint256 _uint256 = _data.toUint256();
 
     if (_param == 'systemCoinOracle') systemCoinOracle = IBaseOracle(_data.toAddress().assertNonNull());
@@ -153,11 +151,7 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
     else revert UnrecognizedParam();
   }
 
-  function _modifyParameters(
-    bytes32 _cType,
-    bytes32 _param,
-    bytes memory _data
-  ) internal override whenEnabled validCParams(_cType) {
+  function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override whenEnabled {
     uint256 _uint256 = _data.toUint256();
     OracleRelayerCollateralParams storage __cParams = _cParams[_cType];
 
