@@ -29,4 +29,23 @@ abstract contract BaseUser {
   function _exitCoin(address _user, uint256 _amount) internal virtual;
 
   function _liquidateSAFE(bytes32 _cType, address _user) internal virtual;
+
+  function _buyCollateral(
+    address _user,
+    address _collateral,
+    address _collateralAuctionHouse,
+    uint256 _auctionId,
+    uint256 _amountToBid
+  ) internal virtual;
+
+  function _buyProtocolToken(
+    address _user,
+    uint256 _auctionId,
+    uint256 _amountToBuy,
+    uint256 _amountToBid
+  ) internal virtual;
+
+  function _settleDebtAuction(address _user, uint256 _auctionId) internal virtual;
+
+  function _buySystemCoin(address _user, uint256 _auctionId, uint256 _amountToBid) internal virtual;
 }

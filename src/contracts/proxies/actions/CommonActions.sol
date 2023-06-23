@@ -6,7 +6,7 @@ import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
 
 // solhint-disable
 // TODO: enable linter
-contract Common {
+contract CommonActions {
   error OnlyDelegateCalls();
 
   address immutable THIS = address(this);

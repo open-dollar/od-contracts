@@ -3,7 +3,14 @@ pragma solidity 0.8.19;
 
 import {ScriptBase} from 'forge-std/Script.sol';
 import {ETH_A} from '@script/Params.s.sol';
-import {Contracts, ICollateralJoin, ERC20ForTest, IERC20Metadata, ISAFEEngine} from '@script/Contracts.s.sol';
+import {
+  Contracts,
+  ICollateralJoin,
+  ERC20ForTest,
+  IERC20Metadata,
+  ISAFEEngine,
+  ICollateralAuctionHouse
+} from '@script/Contracts.s.sol';
 import {BaseUser} from '@test/scopes/BaseUser.t.sol';
 
 abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
@@ -81,5 +88,38 @@ abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
     vm.stopPrank();
 
     _exitCoin(_user, uint256(_deltaDebt));
+  }
+
+  function _buyCollateral(
+    address _user,
+    address,
+    address _collateralAuctionHouse,
+    uint256 _auctionId,
+    uint256 _amountToBid
+  ) internal override {
+    vm.startPrank(_user);
+    safeEngine.approveSAFEModification(_collateralAuctionHouse);
+    ICollateralAuctionHouse(_collateralAuctionHouse).buyCollateral(_auctionId, _amountToBid);
+    vm.stopPrank();
+  }
+
+  function _buyProtocolToken(
+    address _user,
+    uint256 _auctionId,
+    uint256 _amountToBuy,
+    uint256 _amountToBid
+  ) internal override {
+    vm.startPrank(_user);
+    safeEngine.approveSAFEModification(address(debtAuctionHouse));
+    debtAuctionHouse.decreaseSoldAmount(_auctionId, _amountToBuy, _amountToBid);
+    vm.stopPrank();
+  }
+
+  function _settleDebtAuction(address, uint256 _auctionId) internal override {
+    debtAuctionHouse.settleAuction(_auctionId);
+  }
+
+  function _buySystemCoin(address _user, uint256 _auctionId, uint256 _amountToBid) internal override {
+    // TODO: missing SurplusAuctionHouse E2E test
   }
 }

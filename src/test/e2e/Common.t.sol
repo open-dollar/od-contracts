@@ -75,7 +75,7 @@ abstract contract Common is DeployForTest, HaiTest {
 
   uint256 auctionId;
 
-  function setUp() public {
+  function setUp() public virtual {
     run();
 
     for (uint256 i = 0; i < collateralTypes.length; i++) {
@@ -99,8 +99,8 @@ abstract contract Common is DeployForTest, HaiTest {
     oracleRelayer.updateCollateralPrice(_collateral);
   }
 
-  function _collectFees(uint256 _timeToWarp) internal {
+  function _collectFees(bytes32 _cType, uint256 _timeToWarp) internal {
     vm.warp(block.timestamp + _timeToWarp);
-    taxCollector.taxSingle(ETH_A);
+    taxCollector.taxSingle(_cType);
   }
 }

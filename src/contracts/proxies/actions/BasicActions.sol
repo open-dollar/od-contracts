@@ -13,7 +13,7 @@ import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadat
 
 import {Math, WAD, RAY, RAD} from '@libraries/Math.sol';
 
-import {Common} from '@contracts/proxies/actions/Common.sol';
+import {CommonActions} from '@contracts/proxies/actions/CommonActions.sol';
 
 /**
  * TODO:
@@ -28,7 +28,7 @@ import {Common} from '@contracts/proxies/actions/Common.sol';
  * @title BasicActions
  * @notice All methods here are executed as delegatecalls from the user's proxy
  */
-contract BasicActions is Common {
+contract BasicActions is CommonActions {
   using Math for uint256;
 
   // Internal functions

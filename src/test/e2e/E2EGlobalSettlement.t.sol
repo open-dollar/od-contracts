@@ -271,7 +271,7 @@ abstract contract E2EGlobalSettlementTest is BaseUser, Common {
 
     uint256 collateralAuction = liquidationEngine.liquidateSAFE(ETH_A, bob); // active collateral auction
 
-    _collectFees(50 * YEAR);
+    _collectFees(ETH_A, 50 * YEAR);
     accountingEngine.auctionSurplus(); // active surplus auction
 
     // NOTE: why DEBT/10 not-safe? (price dropped to 1/10)

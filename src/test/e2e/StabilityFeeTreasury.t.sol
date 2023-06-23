@@ -25,7 +25,7 @@ abstract contract E2EStabilityFeeTreasuryTest is BaseUser, Common {
     });
 
     // Collecting 1 year of fees
-    _collectFees(1 * _timeElapsed);
+    _collectFees(ETH_A, 1 * _timeElapsed);
   }
 
   function test_give_funds() public {
