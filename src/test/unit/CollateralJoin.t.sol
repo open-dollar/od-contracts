@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {CollateralJoinForTest, ICollateralJoin} from '@contracts/for-test/CollateralJoinForTest.sol';
-import {ICollateralJoinFactory} from '@interfaces/utils/ICollateralJoinFactory.sol';
+import {CollateralJoin, ICollateralJoin} from '@contracts/utils/CollateralJoin.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IERC20Metadata, IERC20} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
@@ -19,34 +18,25 @@ abstract contract Base is HaiTest {
   address authorizedAccount = label('authorizedAccount');
   address user = label('user');
 
-  ICollateralJoinFactory mockCollateralJoinFactory = ICollateralJoinFactory(mockContract('CollateralJoinFactory'));
   ISAFEEngine mockSafeEngine = ISAFEEngine(mockContract('SafeEngine'));
   IERC20Metadata mockCollateral = IERC20Metadata(mockContract('Collateral'));
 
-  CollateralJoinForTest collateralJoin;
+  CollateralJoin collateralJoin;
 
   // CollateralJoin storage
   bytes32 collateralType = 'collateralType';
 
   function setUp() public virtual {
-    vm.startPrank(address(mockCollateralJoinFactory));
+    vm.startPrank(deployer);
 
     _mockDecimals(18);
 
-    collateralJoin = new CollateralJoinForTest(address(mockSafeEngine), collateralType, address(mockCollateral));
+    collateralJoin = new CollateralJoin(address(mockSafeEngine), collateralType, address(mockCollateral));
     label(address(collateralJoin), 'CollateralJoin');
 
     collateralJoin.addAuthorization(authorizedAccount);
 
     vm.stopPrank();
-  }
-
-  function _mockFactoryEnabled(uint256 _factoryEnabled) internal {
-    vm.mockCall(
-      address(mockCollateralJoinFactory),
-      abi.encodeCall(mockCollateralJoinFactory.contractEnabled, ()),
-      abi.encode(_factoryEnabled)
-    );
   }
 
   function _mockDecimals(uint8 _decimals) internal {
@@ -76,7 +66,7 @@ contract Unit_CollateralJoin_Constructor is Base {
   event AddAuthorization(address _account);
 
   modifier happyPath(uint8 _decimals) {
-    vm.startPrank(address(mockCollateralJoinFactory));
+    vm.startPrank(user);
 
     _assumeHappyPath(_decimals);
     _mockValues(_decimals);
@@ -99,22 +89,18 @@ contract Unit_CollateralJoin_Constructor is Base {
     // reverts with uint-underflow
     vm.expectRevert();
 
-    collateralJoin = new CollateralJoinForTest(address(mockSafeEngine), collateralType, address(mockCollateral));
+    collateralJoin = new CollateralJoin(address(mockSafeEngine), collateralType, address(mockCollateral));
   }
 
   function test_Emit_AddAuthorization(uint8 _decimals) public happyPath(_decimals) {
     expectEmitNoIndex();
-    emit AddAuthorization(address(mockCollateralJoinFactory));
+    emit AddAuthorization(user);
 
-    collateralJoin = new CollateralJoinForTest(address(mockSafeEngine), collateralType, address(mockCollateral));
+    collateralJoin = new CollateralJoin(address(mockSafeEngine), collateralType, address(mockCollateral));
   }
 
   function test_Set_ContractEnabled(uint8 _decimals) public happyPath(_decimals) {
     assertEq(collateralJoin.contractEnabled(), 1);
-  }
-
-  function test_Set_CollateralJoinFactory(uint8 _decimals) public happyPath(_decimals) {
-    assertEq(address(collateralJoin.collateralJoinFactory()), address(mockCollateralJoinFactory));
   }
 
   function test_Set_SafeEngine(uint8 _decimals) public happyPath(_decimals) {
@@ -122,7 +108,7 @@ contract Unit_CollateralJoin_Constructor is Base {
   }
 
   function test_Set_CollateralType(bytes32 _cType, uint8 _decimals) public happyPath(_decimals) {
-    collateralJoin = new CollateralJoinForTest(address(mockSafeEngine), _cType, address(mockCollateral));
+    collateralJoin = new CollateralJoin(address(mockSafeEngine), _cType, address(mockCollateral));
 
     assertEq(collateralJoin.collateralType(), _cType);
   }
@@ -132,13 +118,13 @@ contract Unit_CollateralJoin_Constructor is Base {
   }
 
   function test_Set_Decimals(uint8 _decimals) public happyPath(_decimals) {
-    collateralJoin = new CollateralJoinForTest(address(mockSafeEngine), collateralType, address(mockCollateral));
+    collateralJoin = new CollateralJoin(address(mockSafeEngine), collateralType, address(mockCollateral));
 
     assertEq(collateralJoin.decimals(), _decimals);
   }
 
   function test_Set_Multiplier(uint8 _decimals) public happyPath(_decimals) {
-    collateralJoin = new CollateralJoinForTest(address(mockSafeEngine), collateralType, address(mockCollateral));
+    collateralJoin = new CollateralJoin(address(mockSafeEngine), collateralType, address(mockCollateral));
 
     assertEq(collateralJoin.multiplier(), 18 - _decimals);
   }
@@ -146,7 +132,7 @@ contract Unit_CollateralJoin_Constructor is Base {
   function test_Revert_NullSafeEngine() public {
     vm.expectRevert(Assertions.NullAddress.selector);
 
-    collateralJoin = new CollateralJoinForTest(address(0), collateralType, address(mockCollateral));
+    collateralJoin = new CollateralJoin(address(0), collateralType, address(mockCollateral));
   }
 }
 
@@ -154,13 +140,12 @@ contract Unit_CollateralJoin_Join is Base {
   event Join(address _sender, address _account, uint256 _wad);
 
   modifier happyPath(uint256 _wei, uint8 _decimals) {
+    vm.startPrank(user);
+
     _assumeHappyPath(_wei, _decimals);
     _mockValues(_wei, _decimals, true);
 
-    vm.prank(address(mockCollateralJoinFactory));
-    collateralJoin = new CollateralJoinForTest(address(mockSafeEngine), collateralType, address(mockCollateral));
-
-    vm.startPrank(user);
+    collateralJoin = new CollateralJoin(address(mockSafeEngine), collateralType, address(mockCollateral));
     _;
   }
 
@@ -171,7 +156,6 @@ contract Unit_CollateralJoin_Join is Base {
   }
 
   function _mockValues(uint256 _wei, uint8 _decimals, bool _transferFrom) internal {
-    _mockFactoryEnabled(1);
     _mockDecimals(_decimals);
     _mockTransferFrom(user, address(collateralJoin), _wei, _transferFrom);
   }
@@ -180,14 +164,6 @@ contract Unit_CollateralJoin_Join is Base {
     _mockContractEnabled(0);
 
     vm.expectRevert(IDisableable.ContractIsDisabled.selector);
-
-    collateralJoin.join(_account, _wei);
-  }
-
-  function test_Revert_FactoryIsDisabled(address _account, uint256 _wei) public {
-    _mockFactoryEnabled(0);
-
-    vm.expectRevert(ICollateralJoin.CollateralJoin_FactoryIsDisabled.selector);
 
     collateralJoin.join(_account, _wei);
   }
@@ -255,13 +231,12 @@ contract Unit_CollateralJoin_Exit is Base {
   event Exit(address _sender, address _account, uint256 _wad);
 
   modifier happyPath(address _account, uint256 _wei, uint8 _decimals) {
+    vm.startPrank(user);
+
     _assumeHappyPath(_wei, _decimals);
     _mockValues(_account, _wei, _decimals, true);
 
-    vm.prank(address(mockCollateralJoinFactory));
-    collateralJoin = new CollateralJoinForTest(address(mockSafeEngine), collateralType, address(mockCollateral));
-
-    vm.startPrank(user);
+    collateralJoin = new CollateralJoin(address(mockSafeEngine), collateralType, address(mockCollateral));
     _;
   }
 
@@ -327,26 +302,5 @@ contract Unit_CollateralJoin_Exit is Base {
     emit Exit(user, _account, _wad);
 
     collateralJoin.exit(_account, _wei);
-  }
-}
-
-contract Unit_CollateralJoin_WhenFactoryEnabled is Base {
-  modifier happyPath() {
-    _mockFactoryEnabled(1);
-    _;
-  }
-
-  function test_Revert_FactoryIsDisabled() public {
-    _mockFactoryEnabled(0);
-
-    vm.expectRevert(ICollateralJoin.CollateralJoin_FactoryIsDisabled.selector);
-
-    collateralJoin.whenFactoryEnabledModifier();
-  }
-
-  function testFail_WhenFactoryEnabled() public happyPath {
-    vm.expectRevert(ICollateralJoin.CollateralJoin_FactoryIsDisabled.selector);
-
-    collateralJoin.whenFactoryEnabledModifier();
   }
 }

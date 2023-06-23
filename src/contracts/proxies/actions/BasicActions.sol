@@ -8,7 +8,8 @@ import {HaiProxy} from '@contracts/proxies/HaiProxy.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
 import {TaxCollector} from '@contracts/TaxCollector.sol';
-import {CollateralJoin, IERC20Metadata} from '@contracts/utils/CollateralJoin.sol';
+import {CollateralJoin} from '@contracts/utils/CollateralJoin.sol';
+import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
 
 import {Math, WAD, RAY, RAD} from '@libraries/Math.sol';
 

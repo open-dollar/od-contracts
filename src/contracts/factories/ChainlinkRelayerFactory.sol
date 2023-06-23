@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {IChainlinkRelayerFactory} from '@interfaces/oracles/IChainlinkRelayerFactory.sol';
+import {IChainlinkRelayerFactory} from '@interfaces/factories/IChainlinkRelayerFactory.sol';
 
-import {ChainlinkRelayer} from '@contracts/oracles/ChainlinkRelayer.sol';
+import {ChainlinkRelayerChild} from '@contracts/factories/ChainlinkRelayerChild.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
@@ -23,7 +23,7 @@ contract ChainlinkRelayerFactory is Authorizable, IChainlinkRelayerFactory {
     address _aggregator,
     uint256 _staleThreshold
   ) external isAuthorized returns (address _chainlinkRelayer) {
-    _chainlinkRelayer = address(new ChainlinkRelayer(_aggregator, _staleThreshold));
+    _chainlinkRelayer = address(new ChainlinkRelayerChild(_aggregator, _staleThreshold));
     _chainlinkRelayers.add(_chainlinkRelayer);
     emit NewChainlinkRelayer(_chainlinkRelayer, _aggregator, _staleThreshold);
   }

@@ -11,8 +11,8 @@ import {ITaxCollector, TaxCollector} from '@contracts/TaxCollector.sol';
 import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
 import {ETHJoin} from '@contracts/utils/ETHJoin.sol';
 import {CollateralJoin} from '@contracts/utils/CollateralJoin.sol';
-import {CollateralJoinFactory} from '@contracts/utils/CollateralJoinFactory.sol';
-import {OracleRelayer} from '@contracts/OracleRelayer.sol';
+import {CollateralJoinFactory} from '@contracts/factories/CollateralJoinFactory.sol';
+import {OracleRelayer, IOracleRelayer} from '@contracts/OracleRelayer.sol';
 import {IDebtAuctionHouse, DebtAuctionHouse} from '@contracts/DebtAuctionHouse.sol';
 import {
   IIncreasingDiscountCollateralAuctionHouse,
@@ -22,6 +22,7 @@ import {
   IPostSettlementSurplusAuctionHouse,
   PostSettlementSurplusAuctionHouse
 } from '@contracts/settlement/PostSettlementSurplusAuctionHouse.sol';
+import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 
 import {RAY, WAD} from '@libraries/Math.sol';
 
@@ -120,6 +121,8 @@ contract SingleSaveSAFETest is DSTest {
   Hevm hevm;
 
   SAFEEngine safeEngine;
+  Feed systemCoinFeed;
+  OracleRelayer oracleRelayer;
   AccountingEngine accountingEngine;
   LiquidationEngine liquidationEngine;
   CoinForTest gold;
@@ -171,6 +174,13 @@ contract SingleSaveSAFETest is DSTest {
     ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
       ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: rad(1000 ether)});
     safeEngine = new SAFEEngine(_safeEngineParams);
+
+    systemCoinFeed = new Feed(1 ether, true);
+
+    IOracleRelayer.OracleRelayerParams memory _oracleRelayerParams =
+      IOracleRelayer.OracleRelayerParams({redemptionRateUpperBound: 1e45, redemptionRateLowerBound: 1});
+    oracleRelayer =
+    new OracleRelayer({_safeEngine: address(safeEngine), _systemCoinOracle: IBaseOracle(address(systemCoinFeed)), _oracleRelayerParams: _oracleRelayerParams});
 
     IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams memory _pssahParams = IPostSettlementSurplusAuctionHouse
       .PostSettlementSAHParams({bidIncrease: 1.05e18, bidDuration: 3 hours, totalAuctionLength: 2 days});
@@ -253,7 +263,7 @@ contract SingleSaveSAFETest is DSTest {
       minimumBid: 1e18 // 1 system coin
     });
     collateralAuctionHouse =
-    new IncreasingDiscountCollateralAuctionHouse(address(safeEngine), address(liquidationEngine), 'gold', _cahParams, _cahCParams);
+    new IncreasingDiscountCollateralAuctionHouse(address(safeEngine), address(oracleRelayer), address(liquidationEngine), 'gold', _cahParams, _cahCParams);
     collateralAuctionHouse.addAuthorization(address(liquidationEngine));
 
     liquidationEngine.addAuthorization(address(collateralAuctionHouse));

@@ -15,7 +15,7 @@ import {
 import {ISurplusAuctionHouse, SurplusAuctionHouse} from '@contracts/SurplusAuctionHouse.sol';
 import {IDebtAuctionHouse, DebtAuctionHouse} from '@contracts/DebtAuctionHouse.sol';
 import {CollateralJoin} from '@contracts/utils/CollateralJoin.sol';
-import {CollateralJoinFactory} from '@contracts/utils/CollateralJoinFactory.sol';
+import {CollateralJoinFactory} from '@contracts/factories/CollateralJoinFactory.sol';
 import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
 import {GlobalSettlement} from '@contracts/settlement/GlobalSettlement.sol';
 import {SettlementSurplusAuctioneer} from '@contracts/settlement/SettlementSurplusAuctioneer.sol';
@@ -214,11 +214,11 @@ contract SingleGlobalSettlementTest is DSTest {
       minimumBid: 1e18 // 1 system coin
     });
     IncreasingDiscountCollateralAuctionHouse _collateralAuctionHouse =
-    new IncreasingDiscountCollateralAuctionHouse(address(safeEngine), address(liquidationEngine), _encodedName, _cahParams, _cahCParams);
+    new IncreasingDiscountCollateralAuctionHouse(address(safeEngine), address(oracleRelayer), address(liquidationEngine), _encodedName, _cahParams, _cahCParams);
+
     safeEngine.approveSAFEModification(address(_collateralAuctionHouse));
     _collateralAuctionHouse.addAuthorization(address(globalSettlement));
     _collateralAuctionHouse.addAuthorization(address(liquidationEngine));
-    _collateralAuctionHouse.modifyParameters('oracleRelayer', abi.encode(oracleRelayer));
     oracleFSM.updateCollateralPrice(bytes32(200 * WAD));
 
     // Start with English auction house

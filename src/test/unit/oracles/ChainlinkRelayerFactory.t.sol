@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {ChainlinkRelayerFactory} from '@contracts/oracles/ChainlinkRelayerFactory.sol';
-import {ChainlinkRelayer} from '@contracts/oracles/ChainlinkRelayer.sol';
+import {ChainlinkRelayerFactory} from '@contracts/factories/ChainlinkRelayerFactory.sol';
+import {ChainlinkRelayerChild} from '@contracts/factories/ChainlinkRelayerChild.sol';
 import {IChainlinkOracle} from '@interfaces/oracles/IChainlinkOracle.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
@@ -17,8 +17,8 @@ abstract contract Base is HaiTest {
   IChainlinkOracle mockChainlinkFeed = IChainlinkOracle(mockContract('ChainlinkOracle'));
 
   ChainlinkRelayerFactory chainlinkRelayerFactory;
-  ChainlinkRelayer chainlinkRelayer = ChainlinkRelayer(
-    label(address(0x0000000000000000000000007f85e9e000597158aed9320b5a5e11ab8cc7329a), 'ChainlinkRelayer')
+  ChainlinkRelayerChild chainlinkRelayerChild = ChainlinkRelayerChild(
+    label(address(0x0000000000000000000000007f85e9e000597158aed9320b5a5e11ab8cc7329a), 'ChainlinkRelayerChild')
   );
 
   function setUp() public virtual {
@@ -84,18 +84,18 @@ contract Unit_ChainlinkRelayerFactory_DeployChainlinkRelayer is Base {
     chainlinkRelayerFactory.deployChainlinkRelayer(address(mockChainlinkFeed), _staleThreshold);
   }
 
-  function test_Deploy_ChainlinkRelayer(
+  function test_Deploy_ChainlinkRelayerChild(
     uint256 _staleThreshold,
     uint8 _decimals,
     string memory _description
   ) public happyPath(_staleThreshold, _decimals, _description) {
     chainlinkRelayerFactory.deployChainlinkRelayer(address(mockChainlinkFeed), _staleThreshold);
 
-    assertEq(address(chainlinkRelayer).code, type(ChainlinkRelayer).runtimeCode);
+    assertEq(address(chainlinkRelayerChild).code, type(ChainlinkRelayerChild).runtimeCode);
 
     // params
-    assertEq(address(chainlinkRelayer.chainlinkFeed()), address(mockChainlinkFeed));
-    assertEq(chainlinkRelayer.staleThreshold(), _staleThreshold);
+    assertEq(address(chainlinkRelayerChild.chainlinkFeed()), address(mockChainlinkFeed));
+    assertEq(chainlinkRelayerChild.staleThreshold(), _staleThreshold);
   }
 
   function test_Set_ChainlinkRelayers(
@@ -105,7 +105,7 @@ contract Unit_ChainlinkRelayerFactory_DeployChainlinkRelayer is Base {
   ) public happyPath(_staleThreshold, _decimals, _description) {
     chainlinkRelayerFactory.deployChainlinkRelayer(address(mockChainlinkFeed), _staleThreshold);
 
-    assertEq(chainlinkRelayerFactory.chainlinkRelayersList()[0], address(chainlinkRelayer));
+    assertEq(chainlinkRelayerFactory.chainlinkRelayersList()[0], address(chainlinkRelayerChild));
   }
 
   function test_Emit_NewChainlinkRelayer(
@@ -114,7 +114,7 @@ contract Unit_ChainlinkRelayerFactory_DeployChainlinkRelayer is Base {
     string memory _description
   ) public happyPath(_staleThreshold, _decimals, _description) {
     expectEmitNoIndex();
-    emit NewChainlinkRelayer(address(chainlinkRelayer), address(mockChainlinkFeed), _staleThreshold);
+    emit NewChainlinkRelayer(address(chainlinkRelayerChild), address(mockChainlinkFeed), _staleThreshold);
 
     chainlinkRelayerFactory.deployChainlinkRelayer(address(mockChainlinkFeed), _staleThreshold);
   }
@@ -126,7 +126,7 @@ contract Unit_ChainlinkRelayerFactory_DeployChainlinkRelayer is Base {
   ) public happyPath(_staleThreshold, _decimals, _description) {
     assertEq(
       chainlinkRelayerFactory.deployChainlinkRelayer(address(mockChainlinkFeed), _staleThreshold),
-      address(chainlinkRelayer)
+      address(chainlinkRelayerChild)
     );
   }
 }

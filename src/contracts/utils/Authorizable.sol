@@ -19,11 +19,11 @@ abstract contract Authorizable is IAuthorizable {
   // --- Views ---
   /**
    * @notice Checks whether an account is authorized
-   * @return _isAuthorized Whether the account is authorized (1) or not (0)
+   * @return _authorized Whether the account is authorized (1) or not (0)
    * @dev This method allows backward compatibility with the old `authorizedAccounts` mapping
    */
-  function authorizedAccounts(address _account) external view returns (uint256 _isAuthorized) {
-    if (_authorizedAccounts.contains(_account)) return 1;
+  function authorizedAccounts(address _account) external view returns (uint256 _authorized) {
+    if (_isAuthorized(_account)) return 1;
   }
 
   /**
@@ -68,12 +68,16 @@ abstract contract Authorizable is IAuthorizable {
     }
   }
 
+  function _isAuthorized(address _account) internal view virtual returns (bool _authorized) {
+    return _authorizedAccounts.contains(_account);
+  }
+
   // --- Modifiers ---
   /**
    * @notice Checks whether msg.sender can call an authed function
    */
   modifier isAuthorized() {
-    if (!_authorizedAccounts.contains(msg.sender)) revert Unauthorized();
+    if (!_isAuthorized(msg.sender)) revert Unauthorized();
     _;
   }
 }

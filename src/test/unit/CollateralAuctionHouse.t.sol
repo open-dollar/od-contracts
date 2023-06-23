@@ -12,6 +12,7 @@ import {
   IncreasingDiscountCollateralAuctionHouse
 } from '@contracts/CollateralAuctionHouse.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
+import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {OracleForTest} from '@contracts/for-test/OracleForTest.sol';
 import {
@@ -31,6 +32,7 @@ contract Base is HaiTest {
   address deployer = label('deployer');
   address mockSafeEngine = label('mockSafeEngine');
   address mockLiquidationEngine = label('mockLiquidationEngine');
+  address mockOracleRelayer = label('mockOracleRelayer');
   bytes32 mockCollateralType = 'mockCollateralType';
   address watcher;
   MockCollateralAuctionHouse mockCollateralAuctionHouse = new MockCollateralAuctionHouse();
@@ -39,7 +41,6 @@ contract Base is HaiTest {
   OracleForTest mockSystemCoinOracle = new OracleForTest(1 ether);
 
   IIncreasingDiscountCollateralAuctionHouse auctionHouse;
-  IOracleRelayer mockOracleRelayer = IOracleRelayer(mockContract('mockOracleRelayer'));
 
   IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams cahParams =
   IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams({
@@ -62,7 +63,7 @@ contract Base is HaiTest {
     vm.prank(deployer);
 
     auctionHouse =
-    new IncreasingDiscountCollateralAuctionHouseForTest(mockSafeEngine, mockLiquidationEngine, mockCollateralType, mockCollateralAuctionHouse, cahParams, cahCParams);
+    new IncreasingDiscountCollateralAuctionHouseForTest(mockSafeEngine, mockOracleRelayer, mockLiquidationEngine, mockCollateralType, mockCollateralAuctionHouse, cahParams, cahCParams);
     watcher = address(IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse)).watcher());
     vm.mockCall(
       address(mockOracleRelayer),
@@ -74,7 +75,6 @@ contract Base is HaiTest {
       abi.encodeWithSelector(IOracleRelayer.systemCoinOracle.selector),
       abi.encode(mockSystemCoinOracle)
     );
-    IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse)).setOracleRelayer(mockOracleRelayer);
   }
 
   function _setCallSuper(bool _callSuper) internal {
@@ -321,6 +321,10 @@ contract Unit_CollateralAuctionHouse_Constructor is Base {
     assertEq(address(auctionHouse.safeEngine()), mockSafeEngine);
   }
 
+  function test_Set_OracleRelayer() public {
+    assertEq(address(auctionHouse.oracleRelayer()), mockOracleRelayer);
+  }
+
   function test_Set_LiquidationEngine() public {
     assertEq(address(auctionHouse.liquidationEngine()), mockLiquidationEngine);
   }
@@ -339,7 +343,7 @@ contract Unit_CollateralAuctionHouse_Constructor is Base {
     vm.assume(_cahParams.lowerSystemCoinDeviation <= WAD);
     vm.assume(_cahParams.upperSystemCoinDeviation <= WAD);
     auctionHouse =
-    new IncreasingDiscountCollateralAuctionHouse(mockSafeEngine, mockLiquidationEngine, mockCollateralType, _cahParams, cahCParams);
+    new IncreasingDiscountCollateralAuctionHouse(mockSafeEngine, mockOracleRelayer, mockLiquidationEngine, mockCollateralType, _cahParams, cahCParams);
 
     assertEq(abi.encode(auctionHouse.params()), abi.encode(_cahParams));
   }
@@ -354,18 +358,23 @@ contract Unit_CollateralAuctionHouse_Constructor is Base {
     vm.assume(_cahCParams.upperCollateralDeviation <= WAD);
 
     auctionHouse =
-    new IncreasingDiscountCollateralAuctionHouse(mockSafeEngine, mockLiquidationEngine, mockCollateralType, cahParams, _cahCParams);
+    new IncreasingDiscountCollateralAuctionHouse(mockSafeEngine, mockOracleRelayer, mockLiquidationEngine, mockCollateralType, cahParams, _cahCParams);
     assertEq(abi.encode(auctionHouse.cParams()), abi.encode(_cahCParams));
   }
 
   function test_Revert_Null_SafeEngine() public {
     vm.expectRevert(Assertions.NullAddress.selector);
-    new IncreasingDiscountCollateralAuctionHouseForTest(address(0), mockLiquidationEngine, mockCollateralType, mockCollateralAuctionHouse, cahParams, cahCParams);
+    new IncreasingDiscountCollateralAuctionHouseForTest(address(0), mockOracleRelayer, mockLiquidationEngine, mockCollateralType, mockCollateralAuctionHouse, cahParams, cahCParams);
+  }
+
+  function test_Revert_Null_OracleRelayer() public {
+    vm.expectRevert(Assertions.NullAddress.selector);
+    new IncreasingDiscountCollateralAuctionHouseForTest(mockSafeEngine, address(0), mockLiquidationEngine, mockCollateralType, mockCollateralAuctionHouse, cahParams, cahCParams);
   }
 
   function test_Revert_Null_LiquidationEngine() public {
     vm.expectRevert(Assertions.NullAddress.selector);
-    new IncreasingDiscountCollateralAuctionHouseForTest(mockSafeEngine, address(0), mockCollateralType, mockCollateralAuctionHouse, cahParams, cahCParams);
+    new IncreasingDiscountCollateralAuctionHouseForTest(mockSafeEngine, mockOracleRelayer, address(0), mockCollateralType, mockCollateralAuctionHouse, cahParams, cahCParams);
   }
 }
 
@@ -446,6 +455,7 @@ contract Unit_CollateralAuctionHouse_ModifyParameters is Base {
   }
 
   function test_Modify_OracleRelayer(address _oracleRelayer) public authorized {
+    vm.assume(_oracleRelayer != address(0));
     auctionHouse.modifyParameters('oracleRelayer', abi.encode(_oracleRelayer));
 
     assertEq(address(auctionHouse.oracleRelayer()), _oracleRelayer);
@@ -456,6 +466,11 @@ contract Unit_CollateralAuctionHouse_ModifyParameters is Base {
     auctionHouse.modifyParameters('liquidationEngine', abi.encode(_liquidationEngine));
 
     assertEq(address(auctionHouse.liquidationEngine()), _liquidationEngine);
+  }
+
+  function test_Revert_Null_OracleRelayer() public authorized {
+    vm.expectRevert(Assertions.NullAddress.selector);
+    auctionHouse.modifyParameters('oracleRelayer', abi.encode(address(0)));
   }
 
   function test_Revert_Null_LiquidationEngineAddress() public authorized {
@@ -524,14 +539,29 @@ contract Unit_CollateralAuctionHouse_ModifyParameters is Base {
   ) public authorized validPreviousCParams {
     vm.assume(_validCParams(_fuzz));
 
-    auctionHouse.modifyParameters('minDiscount', abi.encode(_fuzz.minDiscount));
-    auctionHouse.modifyParameters('maxDiscount', abi.encode(_fuzz.maxDiscount));
-    auctionHouse.modifyParameters('perSecondDiscountUpdateRate', abi.encode(_fuzz.perSecondDiscountUpdateRate));
-    auctionHouse.modifyParameters('lowerCollateralDeviation', abi.encode(_fuzz.lowerCollateralDeviation));
-    auctionHouse.modifyParameters('upperCollateralDeviation', abi.encode(_fuzz.upperCollateralDeviation));
-    auctionHouse.modifyParameters('minimumBid', abi.encode(_fuzz.minimumBid));
+    auctionHouse.modifyParameters(mockCollateralType, 'minDiscount', abi.encode(_fuzz.minDiscount));
+    auctionHouse.modifyParameters(mockCollateralType, 'maxDiscount', abi.encode(_fuzz.maxDiscount));
+    auctionHouse.modifyParameters(
+      mockCollateralType, 'perSecondDiscountUpdateRate', abi.encode(_fuzz.perSecondDiscountUpdateRate)
+    );
+    auctionHouse.modifyParameters(
+      mockCollateralType, 'lowerCollateralDeviation', abi.encode(_fuzz.lowerCollateralDeviation)
+    );
+    auctionHouse.modifyParameters(
+      mockCollateralType, 'upperCollateralDeviation', abi.encode(_fuzz.upperCollateralDeviation)
+    );
+    auctionHouse.modifyParameters(mockCollateralType, 'minimumBid', abi.encode(_fuzz.minimumBid));
 
     assertEq(abi.encode(auctionHouse.cParams()), abi.encode(_fuzz));
+  }
+
+  function test_Revert_Invalid_CollateralType(
+    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams memory _fuzz
+  ) public authorized validPreviousCParams {
+    vm.assume(_validCParams(_fuzz));
+
+    vm.expectRevert(IModifiable.UnrecognizedCollateralType.selector);
+    auctionHouse.modifyParameters('invalidCollateralType', 'minDiscount', abi.encode(_fuzz.minDiscount));
   }
 
   function test_Revert_Invalid_CollateralAuctionHouseParams_MinDiscount(
@@ -548,7 +578,7 @@ contract Unit_CollateralAuctionHouse_ModifyParameters is Base {
     _mockUpperCollateralMarketDeviation(_fuzz.upperCollateralDeviation);
 
     vm.expectRevert();
-    auctionHouse.modifyParameters('minDiscount', abi.encode(_fuzz.minDiscount));
+    auctionHouse.modifyParameters(mockCollateralType, 'minDiscount', abi.encode(_fuzz.minDiscount));
   }
 
   function test_Revert_Invalid_CollateralAuctionHouseParams_MaxDiscount(
@@ -568,7 +598,7 @@ contract Unit_CollateralAuctionHouse_ModifyParameters is Base {
     _mockUpperCollateralMarketDeviation(_fuzz.upperCollateralDeviation);
 
     vm.expectRevert();
-    auctionHouse.modifyParameters('maxDiscount', abi.encode(_fuzz.maxDiscount));
+    auctionHouse.modifyParameters(mockCollateralType, 'maxDiscount', abi.encode(_fuzz.maxDiscount));
   }
 
   function test_Revert_Invalid_CollateralAuctionHouseParams_PerSecondDiscountUpdateRate(
@@ -586,7 +616,9 @@ contract Unit_CollateralAuctionHouse_ModifyParameters is Base {
     _mockUpperCollateralMarketDeviation(_fuzz.upperCollateralDeviation);
 
     vm.expectRevert();
-    auctionHouse.modifyParameters('perSecondDiscountUpdateRate', abi.encode(_fuzz.perSecondDiscountUpdateRate));
+    auctionHouse.modifyParameters(
+      mockCollateralType, 'perSecondDiscountUpdateRate', abi.encode(_fuzz.perSecondDiscountUpdateRate)
+    );
   }
 
   function test_Revert_Invalid_CollateralAuctionHouseParams_LowerCollateralDeviation(
@@ -604,7 +636,9 @@ contract Unit_CollateralAuctionHouse_ModifyParameters is Base {
     _mockUpperCollateralMarketDeviation(_fuzz.upperCollateralDeviation);
 
     vm.expectRevert();
-    auctionHouse.modifyParameters('lowerCollateralDeviation', abi.encode(_fuzz.lowerCollateralDeviation));
+    auctionHouse.modifyParameters(
+      mockCollateralType, 'lowerCollateralDeviation', abi.encode(_fuzz.lowerCollateralDeviation)
+    );
   }
 
   function test_Revert_Invalid_CollateralAuctionHouseParams_UpperCollateralDeviation(
@@ -622,7 +656,9 @@ contract Unit_CollateralAuctionHouse_ModifyParameters is Base {
     _mockLowerCollateralMarketDeviation(_fuzz.lowerCollateralDeviation);
 
     vm.expectRevert();
-    auctionHouse.modifyParameters('upperCollateralDeviation', abi.encode(_fuzz.upperCollateralDeviation));
+    auctionHouse.modifyParameters(
+      mockCollateralType, 'upperCollateralDeviation', abi.encode(_fuzz.upperCollateralDeviation)
+    );
   }
 }
 

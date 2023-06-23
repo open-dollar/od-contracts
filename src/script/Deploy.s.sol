@@ -62,8 +62,9 @@ abstract contract Deploy is Contracts, Params, Script {
     // NOTE: deploying ETHJoinForTest to make it work with current tests
     ethJoin = new ETHJoinForTest(address(safeEngine), ETH_A);
     collateralAuctionHouse[ETH_A] = new CollateralAuctionHouse({
-        _safeEngine: address(safeEngine), 
-        _liquidationEngine: address(liquidationEngine), 
+        _safeEngine: address(safeEngine),
+        __oracleRelayer: address(oracleRelayer), 
+        __liquidationEngine: address(liquidationEngine), 
         _collateralType: ETH_A,
         _cahParams: _collateralAuctionHouseSystemCoinParams,
         _cahCParams: _collateralAuctionHouseCParams[ETH_A]
@@ -80,7 +81,8 @@ abstract contract Deploy is Contracts, Params, Script {
 
     collateralAuctionHouse[_cType] = new CollateralAuctionHouse({
         _safeEngine: address(safeEngine), 
-        _liquidationEngine: address(liquidationEngine), 
+        __oracleRelayer: address(oracleRelayer),
+        __liquidationEngine: address(liquidationEngine), 
         _collateralType: _cType,
         _cahParams: _collateralAuctionHouseSystemCoinParams,
         _cahCParams: _collateralAuctionHouseCParams[_cType]
@@ -222,6 +224,7 @@ abstract contract Deploy is Contracts, Params, Script {
   }
 
   function _setupCollateral(bytes32 _cType) internal {
+    // TODO: deprecate ParamSetter in favour of `initializeCollateralType`
     ParamSetter._setupSAFEEngineCollateral(_cType, safeEngine, _safeEngineCParams[_cType]);
     ParamSetter._setupTaxCollectorCollateral(
       _cType, taxCollector, _taxCollectorCParams[_cType], _taxCollectorSecondaryTaxReceiver
@@ -231,11 +234,9 @@ abstract contract Deploy is Contracts, Params, Script {
 
     safeEngine.addAuthorization(address(collateralJoin[_cType]));
 
+    // TODO: make liquidationEngine authed in CAHFactory
     collateralAuctionHouse[_cType].addAuthorization(address(liquidationEngine));
     liquidationEngine.addAuthorization(address(collateralAuctionHouse[_cType]));
-
-    // setup registry
-    collateralAuctionHouse[_cType].modifyParameters('oracleRelayer', abi.encode(oracleRelayer));
 
     // setup global settlement
     collateralAuctionHouse[_cType].addAuthorization(address(globalSettlement)); // terminateAuctionPrematurely

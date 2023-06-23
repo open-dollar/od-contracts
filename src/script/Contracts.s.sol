@@ -38,7 +38,7 @@ import {ETHJoinForTest} from '@contracts/for-test/ETHJoinForTest.sol';
 import {CoinJoin, ICoinJoin} from '@contracts/utils/CoinJoin.sol';
 import {ETHJoin, IETHJoin} from '@contracts/utils/ETHJoin.sol';
 import {CollateralJoin, ICollateralJoin} from '@contracts/utils/CollateralJoin.sol';
-import {CollateralJoinFactory, ICollateralJoinFactory} from '@contracts/utils/CollateralJoinFactory.sol';
+import {CollateralJoinFactory, ICollateralJoinFactory} from '@contracts/factories/CollateralJoinFactory.sol';
 
 import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';

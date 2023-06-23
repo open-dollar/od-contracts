@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {IDelayedOracleFactory} from '@interfaces/oracles/IDelayedOracleFactory.sol';
+import {IDelayedOracleFactory} from '@interfaces/factories/IDelayedOracleFactory.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 
-import {DelayedOracle} from '@contracts/oracles/DelayedOracle.sol';
+import {DelayedOracleChild} from '@contracts/factories/DelayedOracleChild.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
@@ -24,9 +24,9 @@ contract DelayedOracleFactory is Authorizable, IDelayedOracleFactory {
     IBaseOracle _priceSource,
     uint256 _updateDelay
   ) external isAuthorized returns (address _delayedOracle) {
-    _delayedOracle = address(new DelayedOracle(_priceSource, _updateDelay));
+    _delayedOracle = address(new DelayedOracleChild(_priceSource, _updateDelay));
     _delayedOracles.add(_delayedOracle);
-    emit NewDelayedOracle(_delayedOracle, _priceSource, _updateDelay);
+    emit NewDelayedOracle(_delayedOracle, address(_priceSource), _updateDelay);
   }
 
   // --- Views ---

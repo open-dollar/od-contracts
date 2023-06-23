@@ -21,14 +21,18 @@ abstract contract Disableable is IDisableable, Authorizable {
   /// @dev Method is instantiated, if not overriden it will just return
   function _onContractDisable() internal virtual {}
 
+  function _isEnabled() internal view virtual returns (bool _enabled) {
+    return contractEnabled == 1;
+  }
+
   // --- Modifiers ---
   modifier whenEnabled() {
-    if (contractEnabled == 0) revert ContractIsDisabled();
+    if (!_isEnabled()) revert ContractIsDisabled();
     _;
   }
 
   modifier whenDisabled() {
-    if (contractEnabled == 1) revert ContractIsEnabled();
+    if (_isEnabled()) revert ContractIsEnabled();
     _;
   }
 }

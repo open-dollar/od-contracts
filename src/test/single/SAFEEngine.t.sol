@@ -11,7 +11,7 @@ import {ITaxCollector, TaxCollector} from '@contracts/TaxCollector.sol';
 import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
 import {ETHJoin} from '@contracts/utils/ETHJoin.sol';
 import {CollateralJoin} from '@contracts/utils/CollateralJoin.sol';
-import {CollateralJoinFactory} from '@contracts/utils/CollateralJoinFactory.sol';
+import {CollateralJoinFactory} from '@contracts/factories/CollateralJoinFactory.sol';
 import {IOracleRelayer, OracleRelayer} from '@contracts/OracleRelayer.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 
@@ -933,9 +933,8 @@ contract SingleLiquidationTest is DSTest {
       minimumBid: 1e18 // 1 system coin
     });
     collateralAuctionHouse =
-    new IncreasingDiscountCollateralAuctionHouse(address(safeEngine), address(liquidationEngine), 'gold', _cahParams, _cahCParams);
+    new IncreasingDiscountCollateralAuctionHouse(address(safeEngine), address(oracleRelayer), address(liquidationEngine), 'gold', _cahParams, _cahCParams);
     collateralAuctionHouse.addAuthorization(address(liquidationEngine));
-    collateralAuctionHouse.modifyParameters('oracleRelayer', abi.encode(oracleRelayer));
 
     liquidationEngine.addAuthorization(address(collateralAuctionHouse));
     liquidationEngine.modifyParameters('gold', 'collateralAuctionHouse', abi.encode(collateralAuctionHouse));
@@ -1248,7 +1247,7 @@ contract SingleLiquidationTest is DSTest {
     assertEq(accountingEngine.unqueuedUnauctionedDebt(), 0 ether);
     assertEq(safeEngine.tokenCollateral('gold', address(this)), 900 ether);
 
-    collateralAuctionHouse.modifyParameters('minimumBid', abi.encode(1 ether));
+    collateralAuctionHouse.modifyParameters('gold', 'minimumBid', abi.encode(1 ether));
     liquidationEngine.modifyParameters('onAuctionSystemCoinLimit', abi.encode(rad(75 ether)));
     liquidationEngine.modifyParameters('gold', 'liquidationQuantity', abi.encode(rad(100 ether)));
     assertEq(liquidationEngine.params().onAuctionSystemCoinLimit, rad(75 ether));

@@ -30,12 +30,22 @@ contract IncreasingDiscountCollateralAuctionHouseForTest is
 
   constructor(
     address _safeEngine,
+    address _oracleRelayer,
     address _liquidationEngine,
     bytes32 _collateralType,
     MockCollateralAuctionHouse _mockCollateralAuctionHouse,
     CollateralAuctionHouseSystemCoinParams memory _cahParams,
     CollateralAuctionHouseParams memory _cahCParams
-  ) IncreasingDiscountCollateralAuctionHouse(_safeEngine, _liquidationEngine, _collateralType, _cahParams, _cahCParams) {
+  )
+    IncreasingDiscountCollateralAuctionHouse(
+      _safeEngine,
+      _oracleRelayer,
+      _liquidationEngine,
+      _collateralType,
+      _cahParams,
+      _cahCParams
+    )
+  {
     mockCollateralAuctionHouse = _mockCollateralAuctionHouse;
   }
 
@@ -277,10 +287,6 @@ contract IncreasingDiscountCollateralAuctionHouseForTest is
 
   function call_updateCurrentDiscount(uint256 _id) external returns (uint256) {
     return super._updateCurrentDiscount(_id);
-  }
-
-  function setOracleRelayer(IOracleRelayer _oracleRelayer) external {
-    oracleRelayer = _oracleRelayer;
   }
 }
 

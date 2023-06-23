@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {IUniV3RelayerFactory} from '@interfaces/oracles/IUniV3RelayerFactory.sol';
+import {IUniV3RelayerFactory} from '@interfaces/factories/IUniV3RelayerFactory.sol';
 
-import {UniV3Relayer} from '@contracts/oracles/UniV3Relayer.sol';
+import {UniV3RelayerChild} from '@contracts/factories/UniV3RelayerChild.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
@@ -25,7 +25,7 @@ contract UniV3RelayerFactory is Authorizable, IUniV3RelayerFactory {
     uint24 _feeTier,
     uint32 _quotePeriod
   ) external isAuthorized returns (address _uniV3Relayer) {
-    _uniV3Relayer = address(new UniV3Relayer(_baseToken, _quoteToken, _feeTier, _quotePeriod));
+    _uniV3Relayer = address(new UniV3RelayerChild(_baseToken, _quoteToken, _feeTier, _quotePeriod));
     _uniV3Relayers.add(_uniV3Relayer);
     emit NewUniV3Relayer(_uniV3Relayer, _baseToken, _quoteToken, _feeTier, _quotePeriod);
   }

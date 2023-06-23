@@ -8,7 +8,7 @@ import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 interface IDenominatedOracleFactory is IAuthorizable {
   // --- Events ---
   event NewDenominatedOracle(
-    address indexed _denominatedOracle, IBaseOracle _priceSource, IBaseOracle _denominationPriceSource, bool _inverted
+    address indexed _denominatedOracle, address _priceSource, address _denominationPriceSource, bool _inverted
   );
 
   // --- Methods ---

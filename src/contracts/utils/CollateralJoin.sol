@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {
-  ICollateralJoin, ICollateralJoinFactory, ISAFEEngine, IERC20Metadata
-} from '@interfaces/utils/ICollateralJoin.sol';
+import {ICollateralJoin} from '@interfaces/utils/ICollateralJoin.sol';
+import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
+import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {Disableable} from '@contracts/utils/Disableable.sol';
@@ -26,8 +26,6 @@ contract CollateralJoin is Authorizable, Disableable, ICollateralJoin {
 
   // --- Registry ---
   /// @inheritdoc ICollateralJoin
-  ICollateralJoinFactory public collateralJoinFactory;
-  /// @inheritdoc ICollateralJoin
   ISAFEEngine public safeEngine;
   /// @inheritdoc ICollateralJoin
   IERC20Metadata public collateral;
@@ -42,7 +40,6 @@ contract CollateralJoin is Authorizable, Disableable, ICollateralJoin {
 
   // --- Init ---
   constructor(address _safeEngine, bytes32 _cType, address _collateral) Authorizable(msg.sender) {
-    collateralJoinFactory = ICollateralJoinFactory(msg.sender);
     safeEngine = ISAFEEngine(_safeEngine.assertNonNull());
     collateralType = _cType;
     collateral = IERC20Metadata(_collateral);
@@ -57,7 +54,7 @@ contract CollateralJoin is Authorizable, Disableable, ICollateralJoin {
    *      the locked collateral inside the system. The representation uses 18 decimals.
    * @inheritdoc ICollateralJoin
    */
-  function join(address _account, uint256 _wei) external whenEnabled whenFactoryEnabled {
+  function join(address _account, uint256 _wei) external whenEnabled {
     collateral.safeTransferFrom(msg.sender, address(this), _wei);
     uint256 _wad = _wei * 10 ** multiplier; // convert to 18 decimals [wad]
     safeEngine.modifyCollateralBalance(collateralType, _account, _wad.toInt());
@@ -75,10 +72,5 @@ contract CollateralJoin is Authorizable, Disableable, ICollateralJoin {
     uint256 _wad = _wei * 10 ** multiplier; // convert to 18 decimals [wad]
     safeEngine.modifyCollateralBalance(collateralType, msg.sender, -_wad.toInt());
     emit Exit(msg.sender, _account, _wad);
-  }
-
-  modifier whenFactoryEnabled() {
-    if (collateralJoinFactory.contractEnabled() == 0) revert CollateralJoin_FactoryIsDisabled();
-    _;
   }
 }

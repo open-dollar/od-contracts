@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {ICollateralJoinFactory} from '@interfaces/utils/ICollateralJoinFactory.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
 
@@ -13,15 +12,7 @@ interface ICollateralJoin is IAuthorizable, IDisableable {
   event Join(address _sender, address _account, uint256 _wad);
   event Exit(address _sender, address _account, uint256 _wad);
 
-  // --- Errors ---
-  error CollateralJoin_FactoryIsDisabled();
-
   // --- Registry ---
-  /**
-   * @notice CollateralJoinFactory contract
-   */
-  function collateralJoinFactory() external view returns (ICollateralJoinFactory _collateralJoinFactory);
-
   /**
    * @notice SAFEEngine contract
    */

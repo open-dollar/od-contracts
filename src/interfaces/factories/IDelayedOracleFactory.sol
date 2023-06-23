@@ -7,7 +7,7 @@ import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 
 interface IDelayedOracleFactory is IAuthorizable {
   // --- Events ---
-  event NewDelayedOracle(address indexed _delayedOracle, IBaseOracle _priceSource, uint256 _updateDelay);
+  event NewDelayedOracle(address indexed _delayedOracle, address _priceSource, uint256 _updateDelay);
 
   // --- Methods ---
   function deployDelayedOracle(

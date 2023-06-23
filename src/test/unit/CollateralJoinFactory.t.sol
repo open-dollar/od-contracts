@@ -4,7 +4,7 @@ pragma solidity 0.8.19;
 import {
   CollateralJoinFactoryForTest, ICollateralJoinFactory
 } from '@contracts/for-test/CollateralJoinFactoryForTest.sol';
-import {CollateralJoin} from '@contracts/utils/CollateralJoin.sol';
+import {CollateralJoinChild} from '@contracts/factories/CollateralJoinChild.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
@@ -22,8 +22,9 @@ abstract contract Base is HaiTest {
   IERC20Metadata mockCollateral = IERC20Metadata(mockContract('Collateral'));
 
   CollateralJoinFactoryForTest collateralJoinFactory;
-  CollateralJoin collateralJoin =
-    CollateralJoin(label(address(0x0000000000000000000000007f85e9e000597158aed9320b5a5e11ab8cc7329a), 'CollateralJoin'));
+  CollateralJoinChild collateralJoinChild = CollateralJoinChild(
+    label(address(0x0000000000000000000000007f85e9e000597158aed9320b5a5e11ab8cc7329a), 'CollateralJoinChild')
+  );
 
   function setUp() public virtual {
     vm.startPrank(deployer);
@@ -106,32 +107,32 @@ contract Unit_CollateralJoinFactory_DeployCollateralJoin is Base {
     collateralJoinFactory.deployCollateralJoin(_cType, address(mockCollateral));
   }
 
-  function test_Deploy_CollateralJoin(bytes32 _cType, uint8 _decimals) public happyPath(_decimals) {
+  function test_Deploy_CollateralJoinChild(bytes32 _cType, uint8 _decimals) public happyPath(_decimals) {
     collateralJoinFactory.deployCollateralJoin(_cType, address(mockCollateral));
 
-    assertEq(address(collateralJoin).code, type(CollateralJoin).runtimeCode);
+    assertEq(address(collateralJoinChild).code, type(CollateralJoinChild).runtimeCode);
 
     // params
-    assertEq(address(collateralJoin.safeEngine()), address(mockSafeEngine));
-    assertEq(address(collateralJoin.collateral()), address(mockCollateral));
-    assertEq(collateralJoin.collateralType(), _cType);
+    assertEq(address(collateralJoinChild.safeEngine()), address(mockSafeEngine));
+    assertEq(address(collateralJoinChild.collateral()), address(mockCollateral));
+    assertEq(collateralJoinChild.collateralType(), _cType);
   }
 
   function test_Set_CollateralJoins(bytes32 _cType, uint8 _decimals) public happyPath(_decimals) {
     collateralJoinFactory.deployCollateralJoin(_cType, address(mockCollateral));
 
-    assertEq(collateralJoinFactory.collateralJoinsList()[0], address(collateralJoin));
+    assertEq(collateralJoinFactory.collateralJoinsList()[0], address(collateralJoinChild));
   }
 
   function test_Emit_DeployCollateralJoin(bytes32 _cType, uint8 _decimals) public happyPath(_decimals) {
     expectEmitNoIndex();
-    emit DeployCollateralJoin(_cType, address(mockCollateral), address(collateralJoin));
+    emit DeployCollateralJoin(_cType, address(mockCollateral), address(collateralJoinChild));
 
     collateralJoinFactory.deployCollateralJoin(_cType, address(mockCollateral));
   }
 
   function test_Return_CollateralJoin(bytes32 _cType, uint8 _decimals) public happyPath(_decimals) {
-    assertEq(collateralJoinFactory.deployCollateralJoin(_cType, address(mockCollateral)), address(collateralJoin));
+    assertEq(collateralJoinFactory.deployCollateralJoin(_cType, address(mockCollateral)), address(collateralJoinChild));
   }
 }
 
@@ -140,9 +141,9 @@ contract Unit_CollateralJoinFactory_DisableCollateralJoin is Base {
 
   modifier happyPath() {
     vm.startPrank(authorizedAccount);
-    vm.etch(address(collateralJoin), new bytes(0x1));
+    vm.etch(address(collateralJoinChild), new bytes(0x1));
 
-    _mockValues(address(collateralJoin));
+    _mockValues(address(collateralJoinChild));
     _;
   }
 
@@ -165,21 +166,21 @@ contract Unit_CollateralJoinFactory_DisableCollateralJoin is Base {
   }
 
   function test_Set_CollateralJoins() public happyPath {
-    collateralJoinFactory.disableCollateralJoin(address(collateralJoin));
+    collateralJoinFactory.disableCollateralJoin(address(collateralJoinChild));
 
     assertEq(collateralJoinFactory.collateralJoinsList(), new address[](0));
   }
 
   function test_Call_CollateralJoin_DisableContract() public happyPath {
-    vm.expectCall(address(collateralJoin), abi.encodeCall(collateralJoin.disableContract, ()));
+    vm.expectCall(address(collateralJoinChild), abi.encodeCall(collateralJoinChild.disableContract, ()));
 
-    collateralJoinFactory.disableCollateralJoin(address(collateralJoin));
+    collateralJoinFactory.disableCollateralJoin(address(collateralJoinChild));
   }
 
   function test_Emit_DisableCollateralJoin() public happyPath {
     expectEmitNoIndex();
-    emit DisableCollateralJoin(address(collateralJoin));
+    emit DisableCollateralJoin(address(collateralJoinChild));
 
-    collateralJoinFactory.disableCollateralJoin(address(collateralJoin));
+    collateralJoinFactory.disableCollateralJoin(address(collateralJoinChild));
   }
 }

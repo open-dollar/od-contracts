@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {DelayedOracleFactory} from '@contracts/oracles/DelayedOracleFactory.sol';
-import {DelayedOracle} from '@contracts/oracles/DelayedOracle.sol';
+import {DelayedOracleFactory} from '@contracts/factories/DelayedOracleFactory.sol';
+import {DelayedOracleChild} from '@contracts/factories/DelayedOracleChild.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
@@ -17,8 +17,9 @@ abstract contract Base is HaiTest {
   IBaseOracle mockPriceSource = IBaseOracle(mockContract('PriceSource'));
 
   DelayedOracleFactory delayedOracleFactory;
-  DelayedOracle delayedOracle =
-    DelayedOracle(label(address(0x0000000000000000000000007f85e9e000597158aed9320b5a5e11ab8cc7329a), 'DelayedOracle'));
+  DelayedOracleChild delayedOracleChild = DelayedOracleChild(
+    label(address(0x0000000000000000000000007f85e9e000597158aed9320b5a5e11ab8cc7329a), 'DelayedOracleChild')
+  );
 
   function setUp() public virtual {
     vm.startPrank(deployer);
@@ -61,7 +62,7 @@ contract Unit_DelayedOracleFactory_Constructor is Base {
 }
 
 contract Unit_DelayedOracleFactory_DeployDelayedOracle is Base {
-  event NewDelayedOracle(address indexed _delayedOracle, IBaseOracle _priceSource, uint256 _updateDelay);
+  event NewDelayedOracle(address indexed _delayedOracle, address _priceSource, uint256 _updateDelay);
 
   modifier happyPath(uint256 _updateDelay, string memory _symbol, uint256 _result, bool _validity) {
     vm.startPrank(authorizedAccount);
@@ -86,7 +87,7 @@ contract Unit_DelayedOracleFactory_DeployDelayedOracle is Base {
     delayedOracleFactory.deployDelayedOracle(mockPriceSource, _updateDelay);
   }
 
-  function test_Deploy_DelayedOracle(
+  function test_Deploy_DelayedOracleChild(
     uint256 _updateDelay,
     string memory _symbol,
     uint256 _result,
@@ -94,11 +95,11 @@ contract Unit_DelayedOracleFactory_DeployDelayedOracle is Base {
   ) public happyPath(_updateDelay, _symbol, _result, _validity) {
     delayedOracleFactory.deployDelayedOracle(mockPriceSource, _updateDelay);
 
-    assertEq(address(delayedOracle).code, type(DelayedOracle).runtimeCode);
+    assertEq(address(delayedOracleChild).code, type(DelayedOracleChild).runtimeCode);
 
     // params
-    assertEq(address(delayedOracle.priceSource()), address(mockPriceSource));
-    assertEq(delayedOracle.updateDelay(), _updateDelay);
+    assertEq(address(delayedOracleChild.priceSource()), address(mockPriceSource));
+    assertEq(delayedOracleChild.updateDelay(), _updateDelay);
   }
 
   function test_Set_DelayedOracles(
@@ -109,7 +110,7 @@ contract Unit_DelayedOracleFactory_DeployDelayedOracle is Base {
   ) public happyPath(_updateDelay, _symbol, _result, _validity) {
     delayedOracleFactory.deployDelayedOracle(mockPriceSource, _updateDelay);
 
-    assertEq(delayedOracleFactory.delayedOraclesList()[0], address(delayedOracle));
+    assertEq(delayedOracleFactory.delayedOraclesList()[0], address(delayedOracleChild));
   }
 
   function test_Emit_NewDelayedOracle(
@@ -119,7 +120,7 @@ contract Unit_DelayedOracleFactory_DeployDelayedOracle is Base {
     bool _validity
   ) public happyPath(_updateDelay, _symbol, _result, _validity) {
     expectEmitNoIndex();
-    emit NewDelayedOracle(address(delayedOracle), mockPriceSource, _updateDelay);
+    emit NewDelayedOracle(address(delayedOracleChild), address(mockPriceSource), _updateDelay);
 
     delayedOracleFactory.deployDelayedOracle(mockPriceSource, _updateDelay);
   }
@@ -130,6 +131,6 @@ contract Unit_DelayedOracleFactory_DeployDelayedOracle is Base {
     uint256 _result,
     bool _validity
   ) public happyPath(_updateDelay, _symbol, _result, _validity) {
-    assertEq(delayedOracleFactory.deployDelayedOracle(mockPriceSource, _updateDelay), address(delayedOracle));
+    assertEq(delayedOracleFactory.deployDelayedOracle(mockPriceSource, _updateDelay), address(delayedOracleChild));
   }
 }
