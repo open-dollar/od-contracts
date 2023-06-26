@@ -10,7 +10,6 @@ interface ISAFEEngine is IAuthorizable, IModifiable, IDisableable {
   event ApproveSAFEModification(address _sender, address _account);
   event DenySAFEModification(address _sender, address _account);
   event InitializeCollateralType(bytes32 _cType);
-  event ModifyCollateralBalance(bytes32 indexed _cType, address indexed _account, int256 _wad);
   event TransferCollateral(bytes32 indexed _cType, address indexed _src, address indexed _dst, uint256 _wad);
   event TransferInternalCoins(address indexed _src, address indexed _dst, uint256 _rad);
   event ModifySAFECollateralization(
@@ -19,55 +18,33 @@ interface ISAFEEngine is IAuthorizable, IModifiable, IDisableable {
     address _collateralSource,
     address _debtDestination,
     int256 _deltaCollateral,
-    int256 _deltaDebt,
-    uint256 _lockedCollateral,
-    uint256 _generatedDebt,
-    uint256 _globalDebt
+    int256 _deltaDebt
   );
   event TransferSAFECollateralAndDebt(
-    bytes32 indexed _cType,
-    address indexed _src,
-    address indexed _dst,
-    int256 _deltaCollateral,
-    int256 _deltaDebt,
-    uint256 _srcLockedCollateral,
-    uint256 _srcGeneratedDebt,
-    uint256 _dstLockedCollateral,
-    uint256 _dstGeneratedDebt
+    bytes32 indexed _cType, address indexed _src, address indexed _dst, int256 _deltaCollateral, int256 _deltaDebt
   );
   event ConfiscateSAFECollateralAndDebt(
     bytes32 indexed _cType,
     address indexed _safe,
-    address _collateralCounterparty,
-    address _debtCounterparty,
+    address _collateralSource,
+    address _debtDestination,
     int256 _deltaCollateral,
-    int256 _deltaDebt,
-    uint256 _globalUnbackedDebt
+    int256 _deltaDebt
   );
-  event SettleDebt(
-    address indexed _account,
-    uint256 _rad,
-    uint256 _debtBalance,
-    uint256 _coinBalance,
-    uint256 _globalUnbackedDebt,
-    uint256 _globalDebt
-  );
-  event CreateUnbackedDebt(
-    address indexed _debtDestination,
-    address indexed _coinDestination,
-    uint256 _rad,
-    uint256 _debtDstBalance,
-    uint256 _coinDstBalance,
-    uint256 _globalUnbackedDebt,
-    uint256 _globalDebt
-  );
-  event UpdateAccumulatedRate(
-    bytes32 indexed _cType, address _surplusDst, int256 _rateMultiplier, uint256 _dstCoinBalance, uint256 _globalDebt
-  );
+  event SettleDebt(address indexed _account, uint256 _rad);
+  event CreateUnbackedDebt(address indexed _debtDestination, address indexed _coinDestination, uint256 _rad);
+  event UpdateAccumulatedRate(bytes32 indexed _cType, address _surplusDst, int256 _rateMultiplier);
   event UpdateCollateralPrice(bytes32 indexed _cType, uint256 _safetyPrice, uint256 _liquidationPrice);
 
   // --- Errors ---
   error NotSAFEAllowed();
+  error SafeDebtCeiling();
+  error CollateralDebtCeiling();
+  error GlobalDebtCeiling();
+  error SAFENotSafe();
+  error NotCollateralSrcAllowed();
+  error NotDebtDstAllowed();
+  error DustySAFE();
 
   // --- Structs ---
   struct SAFE {

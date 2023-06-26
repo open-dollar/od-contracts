@@ -170,27 +170,31 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
 
       require(_collateralToSell > 0, 'LiquidationEngine/null-collateral-to-sell');
 
-      safeEngine.confiscateSAFECollateralAndDebt(
-        _cType, _safe, address(this), address(accountingEngine), -_collateralToSell.toInt(), -_limitAdjustedDebt.toInt()
-      );
+      safeEngine.confiscateSAFECollateralAndDebt({
+        _cType: _cType,
+        _safe: _safe,
+        _collateralSource: address(this),
+        _debtDestination: address(accountingEngine),
+        _deltaCollateral: -_collateralToSell.toInt(),
+        _deltaDebt: -_limitAdjustedDebt.toInt()
+      });
+
       accountingEngine.pushDebtToQueue(_limitAdjustedDebt * _safeEngCData.accumulatedRate);
 
-      {
-        // This calcuation will overflow if multiply(limitAdjustedDebt, accumulatedRate) exceeds ~10^14,
-        // i.e. the maximum amountToRaise is roughly 100 trillion system coins.
-        uint256 _amountToRaise = _limitAdjustedDebt * _safeEngCData.accumulatedRate * __cParams.liquidationPenalty / WAD;
-        currentOnAuctionSystemCoins += _amountToRaise;
+      // This calcuation will overflow if multiply(limitAdjustedDebt, accumulatedRate) exceeds ~10^14,
+      // i.e. the maximum amountToRaise is roughly 100 trillion system coins.
+      uint256 _amountToRaise = _limitAdjustedDebt * _safeEngCData.accumulatedRate * __cParams.liquidationPenalty / WAD;
+      currentOnAuctionSystemCoins += _amountToRaise;
 
-        _auctionId = ICollateralAuctionHouse(__cParams.collateralAuctionHouse).startAuction({
-          _forgoneCollateralReceiver: _safe,
-          _initialBidder: address(accountingEngine),
-          _amountToRaise: _amountToRaise,
-          _collateralToSell: _collateralToSell,
-          _initialBid: 0
-        });
+      _auctionId = ICollateralAuctionHouse(__cParams.collateralAuctionHouse).startAuction({
+        _forgoneCollateralReceiver: _safe,
+        _initialBidder: address(accountingEngine),
+        _amountToRaise: _amountToRaise,
+        _collateralToSell: _collateralToSell,
+        _initialBid: 0
+      });
 
-        emit UpdateCurrentOnAuctionSystemCoins(currentOnAuctionSystemCoins);
-      }
+      emit UpdateCurrentOnAuctionSystemCoins(currentOnAuctionSystemCoins);
 
       emit Liquidate(
         _cType,

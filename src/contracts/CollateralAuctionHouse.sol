@@ -448,7 +448,12 @@ contract IncreasingDiscountCollateralAuctionHouse is
     _auctions[_id].auctionIncomeRecipient = _auctionIncomeRecipient;
     _auctions[_id].amountToRaise = _amountToRaise;
 
-    safeEngine.transferCollateral(collateralType, msg.sender, address(this), _amountToSell);
+    safeEngine.transferCollateral({
+      _cType: collateralType,
+      _source: msg.sender,
+      _destination: address(this),
+      _wad: _amountToSell
+    });
 
     emit StartAuction(
       _id,
@@ -598,8 +603,18 @@ contract IncreasingDiscountCollateralAuctionHouse is
     );
 
     // transfer the bid to the income recipient and the collateral to the bidder
-    safeEngine.transferInternalCoins(msg.sender, _auctions[_id].auctionIncomeRecipient, _adjustedBid * RAY);
-    safeEngine.transferCollateral(collateralType, address(this), msg.sender, _boughtCollateral);
+    safeEngine.transferInternalCoins({
+      _source: msg.sender,
+      _destination: _auctions[_id].auctionIncomeRecipient,
+      _rad: _adjustedBid * RAY
+    });
+
+    safeEngine.transferCollateral({
+      _cType: collateralType,
+      _source: address(this),
+      _destination: msg.sender,
+      _wad: _boughtCollateral
+    });
 
     // Emit the buy event
     emit BuyCollateral(_id, _adjustedBid, _boughtCollateral);
@@ -615,9 +630,13 @@ contract IncreasingDiscountCollateralAuctionHouse is
     // If the auction raised the whole amount or all collateral was sold,
     // send remaining collateral to the forgone receiver
     if (_soldAll) {
-      safeEngine.transferCollateral(
-        collateralType, address(this), _auctions[_id].forgoneCollateralReceiver, _auctions[_id].amountToSell
-      );
+      safeEngine.transferCollateral({
+        _cType: collateralType,
+        _source: address(this),
+        _destination: _auctions[_id].forgoneCollateralReceiver,
+        _wad: _auctions[_id].amountToSell
+      });
+
       delete _auctions[_id];
       emit SettleAuction(_id, _auctions[_id].amountToSell);
     }
@@ -641,7 +660,14 @@ contract IncreasingDiscountCollateralAuctionHouse is
       'IncreasingDiscountCollateralAuctionHouse/inexistent-auction'
     );
     liquidationEngine().removeCoinsFromAuction(_auctions[_id].amountToRaise);
-    safeEngine.transferCollateral(collateralType, address(this), msg.sender, _auctions[_id].amountToSell);
+
+    safeEngine.transferCollateral({
+      _cType: collateralType,
+      _source: address(this),
+      _destination: msg.sender,
+      _wad: _auctions[_id].amountToSell
+    });
+
     delete _auctions[_id];
     emit TerminateAuctionPrematurely(_id, msg.sender, _auctions[_id].amountToSell);
   }

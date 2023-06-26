@@ -155,7 +155,13 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
    */
   function terminateAuctionPrematurely(uint256 _id) external whenDisabled {
     if (bids[_id].highBidder == address(0)) revert DAH_HighBidderNotSet();
-    safeEngine.createUnbackedDebt(accountingEngine, bids[_id].highBidder, bids[_id].bidAmount);
+
+    safeEngine.createUnbackedDebt({
+      _debtDestination: accountingEngine,
+      _coinDestination: bids[_id].highBidder,
+      _rad: bids[_id].bidAmount
+    });
+
     emit TerminateAuctionPrematurely(_id, msg.sender, bids[_id].highBidder, bids[_id].bidAmount, activeDebtAuctions);
     delete bids[_id];
   }
