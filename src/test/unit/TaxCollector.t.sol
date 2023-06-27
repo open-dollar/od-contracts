@@ -540,6 +540,15 @@ contract Unit_TaxCollector_TaxSingle is Base {
     Base.setUpTaxSingle(collateralTypeA);
   }
 
+  function test_Revert_NullNextStabilityFee() public {
+    _mockGlobalStabilityFee(0);
+    _mockStabilityFee(collateralTypeA, 0);
+
+    vm.expectRevert(Assertions.NullAmount.selector);
+
+    taxCollector.taxSingle(collateralTypeA);
+  }
+
   function test_Return_AlreadyLatestAccumulatedRate(uint256 _updateTime) public {
     vm.assume(block.timestamp <= _updateTime);
 

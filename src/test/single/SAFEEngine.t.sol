@@ -14,6 +14,7 @@ import {CollateralJoin} from '@contracts/utils/CollateralJoin.sol';
 import {CollateralJoinFactory} from '@contracts/factories/CollateralJoinFactory.sol';
 import {IOracleRelayer, OracleRelayer} from '@contracts/OracleRelayer.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
+import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
 
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 
@@ -912,9 +913,15 @@ contract SingleLiquidationTest is DSTest {
     safeEngine.addAuthorization(address(oracleRelayer));
 
     oracleFSM = new DummyFSM();
-    oracleRelayer.modifyParameters('gold', 'oracle', abi.encode(oracleFSM));
-    oracleRelayer.modifyParameters('gold', 'safetyCRatio', abi.encode(ray(1.5 ether)));
-    oracleRelayer.modifyParameters('gold', 'liquidationCRatio', abi.encode(ray(1.5 ether)));
+
+    oracleRelayer.initializeCollateralType(
+      'gold',
+      IOracleRelayer.OracleRelayerCollateralParams({
+        oracle: IDelayedOracle(address(oracleFSM)),
+        safetyCRatio: ray(1.5 ether),
+        liquidationCRatio: ray(1.5 ether)
+      })
+    );
 
     IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams =
     IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams({

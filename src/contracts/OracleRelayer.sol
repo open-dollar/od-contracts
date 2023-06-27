@@ -176,7 +176,7 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
   function _validateCParameters(bytes32 _cType) internal view override {
     OracleRelayerCollateralParams memory _collateralParams = _cParams[_cType];
     _collateralParams.safetyCRatio.assertGtEq(_collateralParams.liquidationCRatio);
-    _collateralParams.liquidationCRatio.assertLtEq(_collateralParams.safetyCRatio);
+    _collateralParams.liquidationCRatio.assertGtEq(RAY);
     address(_collateralParams.oracle).assertNonNull();
   }
 }

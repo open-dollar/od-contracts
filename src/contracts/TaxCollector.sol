@@ -16,6 +16,7 @@ import {Assertions} from '@libraries/Assertions.sol';
 contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
   using Math for uint256;
   using Encoding for bytes;
+  using Assertions for uint256;
   using Assertions for address;
   using EnumerableSet for EnumerableSet.AddressSet;
   using EnumerableSet for EnumerableSet.Bytes32Set;
@@ -206,7 +207,7 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
 
     if (block.timestamp <= __cData.updateTime) {
       _latestAccumulatedRate = safeEngine.cData(_cType).accumulatedRate;
-      _cData[_cType].nextStabilityFee = _params.globalStabilityFee + _cParams[_cType].stabilityFee;
+      _cData[_cType].nextStabilityFee = _getNextStabilityFee(_cType);
       return _latestAccumulatedRate;
     }
     (, int256 _deltaRate) = taxSingleOutcome(_cType);
@@ -215,11 +216,16 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
     _splitTaxIncome(_cType, _debtAmount, _deltaRate);
     _latestAccumulatedRate = safeEngine.cData(_cType).accumulatedRate;
     __cData.updateTime = block.timestamp;
-    __cData.nextStabilityFee = _params.globalStabilityFee + _cParams[_cType].stabilityFee;
+    __cData.nextStabilityFee = _getNextStabilityFee(_cType);
     _cData[_cType] = __cData;
 
     emit CollectTax(_cType, _latestAccumulatedRate, _deltaRate);
     return _latestAccumulatedRate;
+  }
+
+  function _getNextStabilityFee(bytes32 _cType) internal view returns (uint256 _nextStabilityFee) {
+    // NOTE: either a globalSF or perCollateralSF needs to be set
+    return (_params.globalStabilityFee + _cParams[_cType].stabilityFee).assertNonNull();
   }
 
   /**

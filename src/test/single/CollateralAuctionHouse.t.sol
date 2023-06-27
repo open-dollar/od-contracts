@@ -188,8 +188,8 @@ abstract contract SingleIncreasingDiscountCollateralAuctionHouseTest is HaiTest 
     IOracleRelayer.OracleRelayerCollateralParams memory _oracleRelayerCParams = IOracleRelayer
       .OracleRelayerCollateralParams({
       oracle: IDelayedOracle(address(collateralFSM)),
-      safetyCRatio: 1e18,
-      liquidationCRatio: 1e18
+      safetyCRatio: 1e27,
+      liquidationCRatio: 1e27
     });
     oracleRelayer.initializeCollateralType('collateralType', _oracleRelayerCParams);
 

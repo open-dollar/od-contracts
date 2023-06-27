@@ -166,7 +166,7 @@ contract Unit_OracleRelayer_ModifyParameters is Base {
     returns (bool)
   {
     return (
-      _fuzz.safetyCRatio >= _fuzz.liquidationCRatio && _fuzz.liquidationCRatio <= _fuzz.safetyCRatio
+      _fuzz.liquidationCRatio >= 1e27 && _fuzz.safetyCRatio >= _fuzz.liquidationCRatio
         && address(_fuzz.oracle) != address(0)
     );
   }
@@ -186,6 +186,9 @@ contract Unit_OracleRelayer_ModifyParameters is Base {
     address _fuzzPriceSource
   ) public authorized previousValidCTypeParams(_cType) {
     vm.assume(_validOracleRelayerCollateralParams(_fuzz));
+    // NOTE: needs to have a valid liqCRatio to pass the `modifyParameters` check
+    _mockCTypeLiquidationCRatio(_cType, 1e27);
+
     oracleRelayer.modifyParameters(_cType, 'safetyCRatio', abi.encode(_fuzz.safetyCRatio));
     oracleRelayer.modifyParameters(_cType, 'liquidationCRatio', abi.encode(_fuzz.liquidationCRatio));
 
@@ -206,6 +209,18 @@ contract Unit_OracleRelayer_ModifyParameters is Base {
     vm.expectRevert();
     // NOTE: doesn't mockCall for `priceSource`
     oracleRelayer.modifyParameters(_cType, 'oracle', abi.encode(_nonDelayedOracle));
+  }
+
+  function test_Revert_InvalidOracleRelayerParams_LiquidationCRatioBelowRAY(
+    bytes32 _cType,
+    uint256 _liquidationCRatio
+  ) public authorized {
+    _mockCTypeSafetyCRatio(_cType, 1e27);
+    vm.assume(_liquidationCRatio < 1e27);
+
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NotGreaterOrEqualThan.selector, _liquidationCRatio, 1e27));
+
+    oracleRelayer.modifyParameters(_cType, 'liquidationCRatio', abi.encode(_liquidationCRatio));
   }
 
   function test_Revert_InvalidOracleRelayerParams_RedemptionRateLowerBound(
