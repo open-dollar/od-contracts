@@ -1053,7 +1053,7 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
     uint256 _newSafeDebt = _scenario.safeData.generatedDebt.add(_scenario.deltaDebt);
     uint256 _totalDebtIssued = _scenario.cData.accumulatedRate * _newSafeDebt;
     vm.assume(_newSafeDebt > 0);
-    vm.assume(_debtFloor < type(uint256).max);
+    vm.assume(_totalDebtIssued < type(uint256).max);
     _debtFloor = _totalDebtIssued + 1;
     _mockValues(_scenario);
     _mockCollateralParams(
