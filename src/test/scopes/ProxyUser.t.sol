@@ -27,7 +27,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
   function _getSafeStatus(
     bytes32 _cType,
     address _user
-  ) internal virtual override returns (uint256 _generatedDebt, uint256 _lockedCollateral) {
+  ) internal override returns (uint256 _generatedDebt, uint256 _lockedCollateral) {
     (uint256 _safeId,) = _getSafe(_user, _cType);
     address _safeHandler = safeManager.safeData(_safeId).safeHandler;
 
@@ -36,7 +36,14 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     _lockedCollateral = _safe.lockedCollateral;
   }
 
-  function _lockETH(address _user, uint256 _collatAmount) internal virtual override {
+  function _getCollateralBalance(address _user, bytes32 _cType) internal view override returns (uint256 _wad) {
+    IERC20Metadata _collateral = collateral[_cType];
+    uint256 _decimals = _collateral.decimals();
+    uint256 _wei = _collateral.balanceOf(_user);
+    _wad = _wei * 10 ** (18 - _decimals);
+  }
+
+  function _lockETH(address _user, uint256 _collatAmount) internal override {
     vm.startPrank(_user);
     HaiProxy _proxy = _getProxy(_user);
     (uint256 _safeId,) = _getSafe(_user, ETH_A);
@@ -58,20 +65,26 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     vm.stopPrank();
   }
 
-  function _joinTKN(address _user, address _collateralJoin, uint256 _amount) internal virtual override {
+  function _joinTKN(address _user, address _collateralJoin, uint256 _amount) internal override {
     HaiProxy _proxy = _getProxy(_user);
 
     vm.startPrank(_user);
     IERC20Metadata _collateral = ICollateralJoin(_collateralJoin).collateral();
+    uint256 _decimals = _collateral.decimals();
+    uint256 _wei = _amount / 10 ** (18 - _decimals);
 
-    ERC20ForTest(address(_collateral)).mint(_user, _amount);
+    ERC20ForTest(address(_collateral)).mint(_user, _wei);
 
-    _collateral.approve(address(_proxy), _amount);
+    _collateral.approve(address(_proxy), _wei);
     // ICollateralJoin(_collateralJoin).join(_user, _amount);
     vm.stopPrank();
   }
 
-  function _joinCoins(address _user, uint256 _amount) internal virtual override {
+  function _exitCollateral(address _user, address _collateralJoin, uint256 _amount) internal override {
+    // NOTE: proxy implementation already exits collateral
+  }
+
+  function _joinCoins(address _user, uint256 _amount) internal override {
     HaiProxy _proxy = _getProxy(_user);
 
     vm.startPrank(_user);
@@ -84,11 +97,11 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     vm.stopPrank();
   }
 
-  function _exitCoin(address _user, uint256 _amount) internal virtual override {
+  function _exitCoin(address _user, uint256 _amount) internal override {
     // proxy implementation already exits coins
   }
 
-  function _liquidateSAFE(bytes32 _cType, address _user) internal virtual override {
+  function _liquidateSAFE(bytes32 _cType, address _user) internal override {
     (, address _safeHandler) = _getSafe(_user, _cType);
     liquidationEngine.liquidateSAFE(_cType, _safeHandler);
   }
@@ -98,7 +111,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     address _collateralJoin,
     int256 _collatAmount,
     int256 _deltaDebt
-  ) internal virtual override {
+  ) internal override {
     HaiProxy _proxy = _getProxy(_user);
     bytes32 _cType = ICollateralJoin(_collateralJoin).collateralType();
     (uint256 _safeId,) = _getSafe(_user, _cType);
@@ -120,6 +133,32 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
       true
     );
 
+    _proxy.execute(address(proxyActions), _callData);
+    vm.stopPrank();
+  }
+
+  function _repayDebtAndExit(
+    address _user,
+    address _collateralJoin,
+    uint256 _deltaCollat,
+    uint256 _deltaDebt
+  ) internal override {
+    HaiProxy _proxy = _getProxy(_user);
+    bytes32 _cType = ICollateralJoin(_collateralJoin).collateralType();
+    (uint256 _safeId,) = _getSafe(_user, _cType);
+
+    bytes memory _callData = abi.encodeWithSelector(
+      BasicActions.repayDebtAndFreeTokenCollateral.selector,
+      address(safeManager),
+      _collateralJoin,
+      address(coinJoin),
+      _safeId,
+      _deltaCollat,
+      _deltaDebt
+    );
+
+    vm.startPrank(_user);
+    systemCoin.approve(address(_proxy), _deltaDebt);
     _proxy.execute(address(proxyActions), _callData);
     vm.stopPrank();
   }

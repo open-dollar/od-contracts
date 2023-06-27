@@ -5,7 +5,7 @@ import '@script/Contracts.s.sol';
 import {Script} from 'forge-std/Script.sol';
 import {
   Params,
-  ParamSetter,
+  ParamChecker,
   HAI,
   WETH,
   ETH_A,
@@ -14,19 +14,17 @@ import {
   SURPLUS_AUCTION_BID_RECEIVER,
   HAI_INITIAL_PRICE
 } from '@script/Params.s.sol';
+import {Common} from '@script/Common.s.sol';
 import {GoerliParams} from '@script/GoerliParams.s.sol';
 import {MainnetParams} from '@script/MainnetParams.s.sol';
 import '@script/Registry.s.sol';
 
-abstract contract Deploy is Contracts, Params, Script {
-  uint256 public chainId;
-  uint256 internal _deployerPk = 69; // for tests
-
+abstract contract Deploy is Common, Script {
   function _setupEnvironment() internal virtual {}
 
   function run() public {
     deployer = vm.addr(_deployerPk);
-    vm.startBroadcast(_deployerPk);
+    vm.startBroadcast(deployer);
 
     // Environment may be different for each network
     _setupEnvironment();
@@ -53,230 +51,8 @@ abstract contract Deploy is Contracts, Params, Script {
       _setupCollateral(_cType);
     }
 
-    revokeTo(governor);
+    revokeAllTo(governor);
     vm.stopBroadcast();
-  }
-
-  function deployEthCollateralContracts() public {
-    // deploy ETHJoin and CollateralAuctionHouse
-    // NOTE: deploying ETHJoinForTest to make it work with current tests
-    ethJoin = new ETHJoinForTest(address(safeEngine), ETH_A);
-    collateralAuctionHouse[ETH_A] = new CollateralAuctionHouse({
-        _safeEngine: address(safeEngine),
-        __oracleRelayer: address(oracleRelayer), 
-        __liquidationEngine: address(liquidationEngine), 
-        _collateralType: ETH_A,
-        _cahParams: _collateralAuctionHouseSystemCoinParams,
-        _cahCParams: _collateralAuctionHouseCParams[ETH_A]
-        });
-
-    collateralJoin[ETH_A] = CollateralJoin(address(ethJoin));
-  }
-
-  function deployCollateralContracts(bytes32 _cType) public {
-    // deploy CollateralJoin and CollateralAuctionHouse
-    collateralJoin[_cType] = CollateralJoin(
-      collateralJoinFactory.deployCollateralJoin({_cType: _cType, _collateral: address(collateral[_cType])})
-    );
-
-    collateralAuctionHouse[_cType] = new CollateralAuctionHouse({
-        _safeEngine: address(safeEngine), 
-        __oracleRelayer: address(oracleRelayer),
-        __liquidationEngine: address(liquidationEngine), 
-        _collateralType: _cType,
-        _cahParams: _collateralAuctionHouseSystemCoinParams,
-        _cahCParams: _collateralAuctionHouseCParams[_cType]
-        });
-  }
-
-  function revokeTo(address _governor) public {
-    if (!_shouldRevoke()) return;
-
-    // base contracts
-    safeEngine.addAuthorization(_governor);
-    safeEngine.removeAuthorization(deployer);
-    liquidationEngine.addAuthorization(_governor);
-    liquidationEngine.removeAuthorization(deployer);
-    accountingEngine.addAuthorization(_governor);
-    accountingEngine.removeAuthorization(deployer);
-    oracleRelayer.addAuthorization(_governor);
-    oracleRelayer.removeAuthorization(deployer);
-
-    // auction houses
-    surplusAuctionHouse.addAuthorization(_governor);
-    surplusAuctionHouse.removeAuthorization(deployer);
-    debtAuctionHouse.addAuthorization(_governor);
-    debtAuctionHouse.removeAuthorization(deployer);
-
-    // tax
-    taxCollector.addAuthorization(_governor);
-    taxCollector.removeAuthorization(deployer);
-    stabilityFeeTreasury.addAuthorization(_governor);
-    stabilityFeeTreasury.removeAuthorization(deployer);
-
-    // tokens
-    systemCoin.addAuthorization(_governor); // TODO: rm in production env
-    systemCoin.removeAuthorization(deployer);
-    protocolToken.addAuthorization(_governor);
-    protocolToken.removeAuthorization(deployer);
-
-    // pid controller
-    pidController.addAuthorization(_governor);
-    pidController.removeAuthorization(deployer);
-    pidRateSetter.addAuthorization(_governor);
-    pidRateSetter.removeAuthorization(deployer);
-
-    // token adapters
-    coinJoin.addAuthorization(_governor);
-    coinJoin.removeAuthorization(deployer);
-
-    collateralJoinFactory.addAuthorization(_governor);
-    collateralJoinFactory.removeAuthorization(deployer);
-
-    if (address(ethJoin) != address(0)) {
-      ethJoin.addAuthorization(_governor);
-      ethJoin.removeAuthorization(deployer);
-    }
-    for (uint256 _i; _i < collateralTypes.length; _i++) {
-      bytes32 _cType = collateralTypes[_i];
-      collateralAuctionHouse[_cType].addAuthorization(_governor);
-      collateralAuctionHouse[_cType].removeAuthorization(deployer);
-    }
-
-    // global settlement
-    globalSettlement.addAuthorization(_governor);
-    globalSettlement.removeAuthorization(deployer);
-  }
-
-  function deployContracts() public {
-    // deploy Tokens
-    systemCoin = new SystemCoin('HAI Index Token', 'HAI');
-    protocolToken = new ProtocolToken('Protocol Token', 'KITE');
-
-    // deploy Base contracts
-    safeEngine = new SAFEEngine(_safeEngineParams);
-
-    oracleRelayer = new OracleRelayer(address(safeEngine), systemCoinOracle, _oracleRelayerParams);
-
-    liquidationEngine = new LiquidationEngine(address(safeEngine), _liquidationEngineParams);
-
-    coinJoin = new CoinJoin(address(safeEngine), address(systemCoin));
-    surplusAuctionHouse =
-      new SurplusAuctionHouse(address(safeEngine), address(protocolToken), _surplusAuctionHouseParams);
-    debtAuctionHouse = new DebtAuctionHouse(address(safeEngine), address(protocolToken), _debtAuctionHouseParams);
-
-    accountingEngine =
-    new AccountingEngine(address(safeEngine), address(surplusAuctionHouse), address(debtAuctionHouse), _accountingEngineParams);
-
-    // TODO: deploy in separate module
-    _getEnvironmentParams();
-    taxCollector = new TaxCollector(address(safeEngine), _taxCollectorParams);
-
-    stabilityFeeTreasury = new StabilityFeeTreasury(
-          address(safeEngine),
-          address(accountingEngine),
-          address(coinJoin),
-          _stabilityFeeTreasuryParams
-        );
-
-    collateralJoinFactory = new CollateralJoinFactory(address(safeEngine));
-
-    _deployGlobalSettlement();
-    _deployProxyContracts(address(safeEngine));
-  }
-
-  // TODO: deploy PostSettlementSurplusAuctionHouse & SettlementSurplusAuctioneer
-  function _deployGlobalSettlement() internal {
-    globalSettlement = new GlobalSettlement();
-
-    // setup globalSettlement [auth: disableContract]
-    // TODO: add key contracts to constructor
-    globalSettlement.modifyParameters('safeEngine', abi.encode(safeEngine));
-    safeEngine.addAuthorization(address(globalSettlement));
-    globalSettlement.modifyParameters('liquidationEngine', abi.encode(liquidationEngine));
-    liquidationEngine.addAuthorization(address(globalSettlement));
-    globalSettlement.modifyParameters('stabilityFeeTreasury', abi.encode(stabilityFeeTreasury));
-    stabilityFeeTreasury.addAuthorization(address(globalSettlement));
-    globalSettlement.modifyParameters('accountingEngine', abi.encode(accountingEngine));
-    accountingEngine.addAuthorization(address(globalSettlement));
-    globalSettlement.modifyParameters('oracleRelayer', abi.encode(oracleRelayer));
-    oracleRelayer.addAuthorization(address(globalSettlement));
-  }
-
-  function _setupContracts() internal {
-    // setup registry
-    liquidationEngine.modifyParameters('accountingEngine', abi.encode(accountingEngine));
-
-    // TODO: change for protocolTokenBidReceiver
-    surplusAuctionHouse.modifyParameters('protocolTokenBidReceiver', abi.encode(SURPLUS_AUCTION_BID_RECEIVER));
-
-    // auth
-    safeEngine.addAuthorization(address(oracleRelayer)); // modifyParameters
-    safeEngine.addAuthorization(address(coinJoin)); // transferInternalCoins
-    safeEngine.addAuthorization(address(taxCollector)); // updateAccumulatedRate
-    safeEngine.addAuthorization(address(debtAuctionHouse)); // transferInternalCoins [createUnbackedDebt]
-    safeEngine.addAuthorization(address(liquidationEngine)); // confiscateSAFECollateralAndDebt
-    surplusAuctionHouse.addAuthorization(address(accountingEngine)); // startAuction
-    debtAuctionHouse.addAuthorization(address(accountingEngine)); // startAuction
-    accountingEngine.addAuthorization(address(liquidationEngine)); // pushDebtToQueue
-    protocolToken.addAuthorization(address(debtAuctionHouse)); // mint
-    systemCoin.addAuthorization(address(coinJoin)); // mint
-  }
-
-  function _setupCollateral(bytes32 _cType) internal {
-    // TODO: deprecate ParamSetter in favour of `initializeCollateralType`
-    ParamSetter._setupSAFEEngineCollateral(_cType, safeEngine, _safeEngineCParams[_cType]);
-    ParamSetter._setupTaxCollectorCollateral(
-      _cType, taxCollector, _taxCollectorCParams[_cType], _taxCollectorSecondaryTaxReceiver
-    );
-    ParamSetter._setupOracleRelayerCollateral(_cType, oracleRelayer, _oracleRelayerCParams[_cType]);
-    ParamSetter._setupLiquidationEngineCollateral(_cType, liquidationEngine, _liquidationEngineCParams[_cType]);
-
-    safeEngine.addAuthorization(address(collateralJoin[_cType]));
-
-    // TODO: make liquidationEngine authed in CAHFactory
-    collateralAuctionHouse[_cType].addAuthorization(address(liquidationEngine));
-    liquidationEngine.addAuthorization(address(collateralAuctionHouse[_cType]));
-
-    // setup global settlement
-    collateralAuctionHouse[_cType].addAuthorization(address(globalSettlement)); // terminateAuctionPrematurely
-
-    // setup initial price
-    oracleRelayer.updateCollateralPrice(_cType);
-  }
-
-  function deployPIDController() public {
-    pidController = new PIDController({
-      _cGains: _pidControllerGains,
-      _pidParams: _pidControllerParams,
-      _importedState: IPIDController.DeviationObservation(0,0,0)
-    });
-
-    pidRateSetter = new PIDRateSetter({
-     _oracleRelayer: address(oracleRelayer),
-     _pidCalculator: address(pidController),
-     _updateRateDelay: _pidRateSetterParams.updateRateDelay
-    });
-
-    // setup registry
-    pidController.modifyParameters('seedProposer', abi.encode(pidRateSetter));
-
-    // auth
-    oracleRelayer.addAuthorization(address(pidRateSetter));
-
-    // initialize
-    pidRateSetter.updateRate();
-  }
-
-  function _deployProxyContracts(address _safeEngine) internal {
-    dsProxyFactory = new HaiProxyFactory();
-    proxyRegistry = new HaiProxyRegistry(address(dsProxyFactory));
-    safeManager = new HaiSafeManager(_safeEngine);
-    proxyActions = new BasicActions();
-  }
-
-  function _shouldRevoke() internal view returns (bool) {
-    return governor != deployer && governor != address(0);
   }
 }
 

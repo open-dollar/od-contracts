@@ -9,6 +9,7 @@ import {
   Contracts,
   ICollateralJoin,
   ERC20ForTest,
+  ERC20ForTestnet,
   IERC20Metadata,
   OracleForTest,
   IBaseOracle,
@@ -47,16 +48,19 @@ contract DeployForTest is TestParams, Deploy {
     delayedOracle['TKN-A'] = new OracleForTest(COLLATERAL_PRICE);
     delayedOracle['TKN-B'] = new OracleForTest(COLLATERAL_PRICE);
     delayedOracle['TKN-C'] = new OracleForTest(COLLATERAL_PRICE);
+    delayedOracle['TKN-8D'] = new OracleForTest(COLLATERAL_PRICE);
 
     collateral['TKN-A'] = new ERC20ForTest();
     collateral['TKN-B'] = new ERC20ForTest();
     collateral['TKN-C'] = new ERC20ForTest();
+    collateral['TKN-8D'] = new ERC20ForTestnet('8 Decimals TKN', 'TKN', 8);
 
     collateralTypes.push(ETH_A);
     collateralTypes.push(TKN);
     collateralTypes.push('TKN-A');
     collateralTypes.push('TKN-B');
     collateralTypes.push('TKN-C');
+    collateralTypes.push('TKN-8D');
 
     _getEnvironmentParams();
   }

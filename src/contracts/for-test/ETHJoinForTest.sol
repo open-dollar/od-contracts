@@ -4,18 +4,7 @@ pragma solidity 0.8.19;
 import {ETHJoin} from '@contracts/utils/ETHJoin.sol';
 import {Math} from '@libraries/Math.sol';
 
-/*
-    Here we provide ETHJoin adapter (for native Ether)
-    to connect the SAFEEngine to arbitrary external token implementations,
-    creating a bounded context for the SAFEEngine. 
-    In practice, adapter implementations will be varied and specific to
-    individual collateral types, accounting for different transfer
-    semantics and token standards.
-    Adapters need to implement two basic methods:
-      - `join`: enter collateral into the system
-      - `exit`: remove collateral from the system
-*/
-
+// TODO: deprecate this contract for ETH scope
 contract ETHJoinForTest is ETHJoin {
   using Math for uint256;
 

@@ -2,10 +2,10 @@
 pragma solidity 0.8.19;
 
 /**
- * @title  BaseCType
+ * @title  Base_CType
  * @notice Abstract contract containing the collateral type to be used in the tests
  * @dev    Used to override it with different implementations (e.g. ETH_A, WSTETH)
  */
-abstract contract BaseCType {
+abstract contract Base_CType {
   function _cType() internal virtual returns (bytes32);
 }

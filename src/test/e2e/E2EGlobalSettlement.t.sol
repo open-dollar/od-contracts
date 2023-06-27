@@ -190,7 +190,8 @@ abstract contract E2EGlobalSettlementTest is BaseUser, Common {
 
       // NOTE: contract may have some dust left
       assertApproxEqAbs(
-        collateral['TKN-A'].balanceOf(alice) + collateral['TKN-A'].balanceOf(bob) + collateral['TKN-A'].balanceOf(carol),
+        _getCollateralBalance(alice, 'TKN-A') + _getCollateralBalance(bob, 'TKN-A')
+          + _getCollateralBalance(carol, 'TKN-A'),
         3 * COLLAT,
         0.001e18
       );
@@ -218,7 +219,8 @@ abstract contract E2EGlobalSettlementTest is BaseUser, Common {
 
       // NOTE: contract may have some dust left
       assertApproxEqAbs(
-        collateral['TKN-B'].balanceOf(alice) + collateral['TKN-B'].balanceOf(bob) + collateral['TKN-B'].balanceOf(carol),
+        _getCollateralBalance(alice, 'TKN-B') + _getCollateralBalance(bob, 'TKN-B')
+          + _getCollateralBalance(carol, 'TKN-B'),
         3 * COLLAT,
         0.001e18
       );
@@ -247,7 +249,8 @@ abstract contract E2EGlobalSettlementTest is BaseUser, Common {
 
       // NOTE: contract may have some dust left
       assertApproxEqAbs(
-        collateral['TKN-C'].balanceOf(alice) + collateral['TKN-C'].balanceOf(bob) + collateral['TKN-C'].balanceOf(carol),
+        _getCollateralBalance(alice, 'TKN-C') + _getCollateralBalance(bob, 'TKN-C')
+          + _getCollateralBalance(carol, 'TKN-C'),
         3 * COLLAT,
         0.001e18
       );
@@ -335,9 +338,9 @@ abstract contract E2EGlobalSettlementTest is BaseUser, Common {
     if (_remainderCollateral > 0) {
       vm.startPrank(_account);
       globalSettlement.freeCollateral(_cType);
-      collateralJoin[_cType].exit(_account, _remainderCollateral);
-      assertEq(collateral[_cType].balanceOf(_account), _remainderCollateral);
       vm.stopPrank();
+      _exitCollateral(_account, address(collateralJoin[_cType]), _remainderCollateral);
+      assertEq(_getCollateralBalance(_account, _cType), _remainderCollateral);
     }
   }
 
@@ -357,13 +360,14 @@ abstract contract E2EGlobalSettlementTest is BaseUser, Common {
     vm.startPrank(_account);
     globalSettlement.redeemCollateral(_cType, _coinsAmount);
     _collateralAmount = safeEngine.tokenCollateral(_cType, _account);
-    collateralJoin[_cType].exit(_account, _collateralAmount);
     vm.stopPrank();
+    _exitCollateral(_account, address(collateralJoin[_cType]), _collateralAmount);
   }
 }
 
 // --- Scoped test contracts ---
 
+// TODO: fix expectations for lesser decimals ERC20s (for 0 decimals, delta should be 1)
 contract E2EDirectUserGlobalSettlementTest is DirectUser, E2EGlobalSettlementTest {}
 
 // TODO: uncomment after implementing Proxy actions for GlobalSettlement

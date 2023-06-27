@@ -97,94 +97,42 @@ abstract contract TestParams is Contracts, Params {
 
     _pidRateSetterParams = IPIDRateSetter.PIDRateSetterParams({updateRateDelay: 1 days});
 
-    // --- ETH Params ---
+    // --- Collateral Params ---
+    // NOTE: all collateral types have the same params in test environment
+    for (uint256 _i; _i < collateralTypes.length; _i++) {
+      bytes32 _cType = collateralTypes[_i];
 
-    _oracleRelayerCParams[ETH_A] = IOracleRelayer.OracleRelayerCollateralParams({
-      oracle: delayedOracle[ETH_A],
-      safetyCRatio: 1.35e27, // 135%
-      liquidationCRatio: 1.35e27 // 135%
-    });
+      _oracleRelayerCParams[_cType] = IOracleRelayer.OracleRelayerCollateralParams({
+        oracle: delayedOracle[_cType],
+        safetyCRatio: 1.35e27, // 135%
+        liquidationCRatio: 1.35e27 // 135%
+      });
 
-    _taxCollectorCParams[ETH_A] = ITaxCollector.TaxCollectorCollateralParams({
-      // NOTE: 5%/yr => 1.05^(1/yr) = 1 + 1.54713e-9
-      stabilityFee: RAY + 1.54713e18 // RAY
-    });
+      _taxCollectorCParams[_cType] = ITaxCollector.TaxCollectorCollateralParams({
+        // NOTE: 5%/yr => 1.05^(1/yr) = 1 + 1.54713e-9
+        stabilityFee: RAY + 1.54713e18 // RAY
+      });
 
-    _safeEngineCParams[ETH_A] = ISAFEEngine.SAFEEngineCollateralParams({
-      debtCeiling: 1_000_000_000 * RAD, // RAD
-      debtFloor: 0 // RAD
-    });
+      _safeEngineCParams[_cType] = ISAFEEngine.SAFEEngineCollateralParams({
+        debtCeiling: 1_000_000_000 * RAD, // RAD
+        debtFloor: 0 // RAD
+      });
 
-    _liquidationEngineCParams[ETH_A] = ILiquidationEngine.LiquidationEngineCollateralParams({
-      collateralAuctionHouse: address(collateralAuctionHouse[ETH_A]),
-      liquidationPenalty: 1.1e18, // WAD
-      liquidationQuantity: 100_000e45 // RAD
-    });
+      _liquidationEngineCParams[_cType] = ILiquidationEngine.LiquidationEngineCollateralParams({
+        collateralAuctionHouse: address(collateralAuctionHouse[_cType]),
+        liquidationPenalty: 1.1e18, // WAD
+        liquidationQuantity: 100_000e45 // RAD
+      });
 
-    _collateralAuctionHouseCParams[ETH_A] = ICollateralAuctionHouse.CollateralAuctionHouseParams({
-      minimumBid: 0, // no min
-      minDiscount: WAD, // no discount
-      maxDiscount: 0.9e18, // -10%
-      perSecondDiscountUpdateRate: MINUS_0_5_PERCENT_PER_HOUR, // RAY
-      lowerCollateralDeviation: 0.99e18, // -1%
-      upperCollateralDeviation: 0.99e18 // 1%
-    });
-
-    // --- TKN Params ---
-
-    _oracleRelayerCParams[TKN] = IOracleRelayer.OracleRelayerCollateralParams({
-      oracle: delayedOracle[TKN],
-      safetyCRatio: 1.5e27, // 150%
-      liquidationCRatio: 1.5e27 // 150%
-    });
-
-    _oracleRelayerCParams['TKN-A'] = _oracleRelayerCParams[TKN];
-    _oracleRelayerCParams['TKN-A'].oracle = delayedOracle['TKN-A'];
-    _oracleRelayerCParams['TKN-B'] = _oracleRelayerCParams[TKN];
-    _oracleRelayerCParams['TKN-B'].oracle = delayedOracle['TKN-B'];
-    _oracleRelayerCParams['TKN-C'] = _oracleRelayerCParams[TKN];
-    _oracleRelayerCParams['TKN-C'].oracle = delayedOracle['TKN-C'];
-
-    _taxCollectorCParams[TKN] = ITaxCollector.TaxCollectorCollateralParams({
-      // NOTE: 42%/yr => 1.^(1/yr) = 1 + 11,11926e-9
-      stabilityFee: RAY + 11.11926e18 // + 42%/yr
-    });
-
-    _taxCollectorCParams['TKN-A'] = _taxCollectorCParams[TKN];
-    _taxCollectorCParams['TKN-B'] = _taxCollectorCParams[TKN];
-    _taxCollectorCParams['TKN-C'] = _taxCollectorCParams[TKN];
-
-    _safeEngineCParams[TKN] = ISAFEEngine.SAFEEngineCollateralParams({
-      debtCeiling: 100_000_000 * RAD, // 100M COINs
-      debtFloor: 0 // 0 COINs
-    });
-
-    _safeEngineCParams['TKN-A'] = _safeEngineCParams[TKN];
-    _safeEngineCParams['TKN-B'] = _safeEngineCParams[TKN];
-    _safeEngineCParams['TKN-C'] = _safeEngineCParams[TKN];
-
-    _liquidationEngineCParams[TKN] = ILiquidationEngine.LiquidationEngineCollateralParams({
-      collateralAuctionHouse: address(collateralAuctionHouse[TKN]),
-      liquidationPenalty: 1.15e18, // WAD
-      liquidationQuantity: 50_000e45 // RAD
-    });
-
-    _liquidationEngineCParams['TKN-A'] = _liquidationEngineCParams[TKN];
-    _liquidationEngineCParams['TKN-B'] = _liquidationEngineCParams[TKN];
-    _liquidationEngineCParams['TKN-C'] = _liquidationEngineCParams[TKN];
-
-    _collateralAuctionHouseCParams[TKN] = ICollateralAuctionHouse.CollateralAuctionHouseParams({
-      minimumBid: 0, // no min
-      minDiscount: WAD, // no discount
-      maxDiscount: 0.9e18, // -10%
-      perSecondDiscountUpdateRate: MINUS_0_5_PERCENT_PER_HOUR, // RAY
-      lowerCollateralDeviation: 0.99e18, // -1%
-      upperCollateralDeviation: 0.99e18 // 1%
-    });
-
-    _collateralAuctionHouseCParams['TKN-A'] = _collateralAuctionHouseCParams[TKN];
-    _collateralAuctionHouseCParams['TKN-B'] = _collateralAuctionHouseCParams[TKN];
-    _collateralAuctionHouseCParams['TKN-C'] = _collateralAuctionHouseCParams[TKN];
+      _collateralAuctionHouseCParams[_cType] = ICollateralAuctionHouse.CollateralAuctionHouseParams({
+        minimumBid: 0, // no min
+        minDiscount: WAD, // no discount
+        maxDiscount: 0.9e18, // -10%
+        perSecondDiscountUpdateRate: MINUS_0_5_PERCENT_PER_HOUR, // RAY
+        lowerCollateralDeviation: 0.99e18, // -1%
+        upperCollateralDeviation: 0.99e18 // 1%
+      });
+    }
 
     // --- Global Settlement Params ---
 

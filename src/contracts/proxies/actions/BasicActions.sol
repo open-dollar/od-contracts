@@ -412,15 +412,20 @@ contract BasicActions is CommonActions {
   function _tokenCollateralJoin_join(address _joinAdapter, address _safe, uint256 _wad, bool _transferFrom) internal {
     // Only executes for tokens that have approval/transferFrom implementation
     CollateralJoin _collateralJoin = CollateralJoin(_joinAdapter);
+    IERC20Metadata _token = IERC20Metadata(_collateralJoin.collateral());
+    uint256 _decimals = _token.decimals();
+    // Transforms the token amount into ERC20 native decimals
+    uint256 _wei = _wad / 10 ** (18 - _decimals);
+
     if (_transferFrom) {
-      IERC20Metadata _token = IERC20Metadata(_collateralJoin.collateral());
       // Gets token from the user's wallet
-      _token.transferFrom(msg.sender, address(this), _wad);
+      _token.transferFrom(msg.sender, address(this), _wei);
       // Approves adapter to take the token amount
-      _token.approve(_joinAdapter, _wad);
+      _token.approve(_joinAdapter, _wei);
     }
+
     // Joins token collateral into the safeEngine
-    _collateralJoin.join(_safe, _wad);
+    _collateralJoin.join(_safe, _wei);
   }
 
   function lockTokenCollateral(
@@ -446,12 +451,17 @@ contract BasicActions is CommonActions {
     uint256 _safeId,
     uint256 _wad
   ) public delegateCall {
+    // Calculates wei amount in collateral token decimals
+    uint256 _decimals = CollateralJoin(_collateralJoin).decimals();
+    uint256 _wei = _wad / 10 ** (18 - _decimals);
+    // Rounds down wad amount to collateral token precision
+    _wad = _wei * 10 ** (18 - _decimals);
     // Unlocks token amount from the SAFE
     modifySAFECollateralization(_manager, _safeId, -_wad.toInt(), 0);
     // Moves the amount from the SAFE handler to proxy's address
     transferCollateral(_manager, _safeId, address(this), _wad);
     // Exits token amount to the user's wallet as a token
-    CollateralJoin(_collateralJoin).exit(msg.sender, _wad);
+    CollateralJoin(_collateralJoin).exit(msg.sender, _wei);
   }
 
   function exitTokenCollateral(
@@ -460,11 +470,15 @@ contract BasicActions is CommonActions {
     uint256 _safeId,
     uint256 _wad
   ) public delegateCall {
+    // Calculates wei amount in collateral token decimals
+    uint256 _decimals = CollateralJoin(_collateralJoin).decimals();
+    uint256 _wei = _wad / 10 ** (18 - _decimals);
+    // Rounds down wad amount to collateral token precision
+    _wad = _wei * 10 ** (18 - _decimals);
     // Moves the amount from the SAFE handler to proxy's address
     transferCollateral(_manager, _safeId, address(this), _wad);
-
     // Exits token amount to the user's wallet as a token
-    CollateralJoin(_collateralJoin).exit(msg.sender, _wad);
+    CollateralJoin(_collateralJoin).exit(msg.sender, _wei);
   }
 
   function repayAllDebt(address _manager, address _coinJoin, uint256 _safeId) public delegateCall {
@@ -575,8 +589,10 @@ contract BasicActions is CommonActions {
     );
     // Moves the amount from the SAFE handler to proxy's address
     transferCollateral(_manager, _safe, address(this), _collateralWad);
+    uint256 _decimals = CollateralJoin(_collateralJoin).decimals();
+    uint256 _wei = _collateralWad / 10 ** (18 - _decimals);
     // Exits token amount to the user's wallet as a token
-    CollateralJoin(_collateralJoin).exit(msg.sender, _collateralWad);
+    CollateralJoin(_collateralJoin).exit(msg.sender, _wei);
   }
 
   function repayAllDebtAndFreeTokenCollateral(
@@ -601,7 +617,9 @@ contract BasicActions is CommonActions {
     modifySAFECollateralization(_manager, _safe, -_collateralWad.toInt(), -_safeData.generatedDebt.toInt());
     // Moves the amount from the SAFE handler to proxy's address
     transferCollateral(_manager, _safe, address(this), _collateralWad);
+    uint256 _decimals = CollateralJoin(_collateralJoin).decimals();
+    uint256 _wei = _collateralWad / 10 ** (18 - _decimals);
     // Exits token amount to the user's wallet as a token
-    CollateralJoin(_collateralJoin).exit(msg.sender, _collateralWad);
+    CollateralJoin(_collateralJoin).exit(msg.sender, _wei);
   }
 }

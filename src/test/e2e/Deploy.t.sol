@@ -4,7 +4,7 @@ pragma solidity 0.8.19;
 import {HaiTest} from '@test/utils/HaiTest.t.sol';
 import {Deploy, DeployMainnet, DeployGoerli} from '@script/Deploy.s.sol';
 
-import {ParamSetter, WETH, WSTETH} from '@script/Params.s.sol';
+import {ParamChecker, WETH, WSTETH} from '@script/Params.s.sol';
 
 import {Contracts} from '@script/Contracts.s.sol';
 import {GoerliDeployment} from '@script/GoerliDeployment.s.sol';
@@ -21,7 +21,7 @@ abstract contract CommonDeploymentTest is HaiTest, Deploy {
   }
 
   function test_SAFEEngine_Params() public view {
-    ParamSetter._checkParams(address(safeEngine), abi.encode(_safeEngineParams));
+    ParamChecker._checkParams(address(safeEngine), abi.encode(_safeEngineParams));
   }
 
   // AccountingEngine
@@ -30,7 +30,7 @@ abstract contract CommonDeploymentTest is HaiTest, Deploy {
   }
 
   function test_AccountingEntine_Params() public view {
-    ParamSetter._checkParams(address(accountingEngine), abi.encode(_accountingEngineParams));
+    ParamChecker._checkParams(address(accountingEngine), abi.encode(_accountingEngineParams));
   }
 
   // Coin (system)
@@ -44,7 +44,7 @@ abstract contract CommonDeploymentTest is HaiTest, Deploy {
   }
 
   function test_SurplusAuctionHouse_Params() public view {
-    ParamSetter._checkParams(address(surplusAuctionHouse), abi.encode(_surplusAuctionHouseParams));
+    ParamChecker._checkParams(address(surplusAuctionHouse), abi.encode(_surplusAuctionHouseParams));
   }
 
   // DebtAuctionHouse
@@ -53,7 +53,7 @@ abstract contract CommonDeploymentTest is HaiTest, Deploy {
   }
 
   function test_DebtAuctionHouse_Params() public view {
-    ParamSetter._checkParams(address(debtAuctionHouse), abi.encode(_debtAuctionHouseParams));
+    ParamChecker._checkParams(address(debtAuctionHouse), abi.encode(_debtAuctionHouseParams));
   }
 
   function test_CollateralAuctionHouse_Auth() public {
@@ -66,11 +66,11 @@ abstract contract CommonDeploymentTest is HaiTest, Deploy {
   function test_CollateralAuctionHouse_Params() public view {
     for (uint256 _i; _i < collateralTypes.length; _i++) {
       bytes32 _cType = collateralTypes[_i];
-      ParamSetter._checkParams(
+      ParamChecker._checkParams(
         address(collateralAuctionHouse[_cType]), abi.encode(_collateralAuctionHouseSystemCoinParams)
       );
       // TODO: manually test CParams (bc is called without the cType)
-      // ParamSetter._checkCParams(address(collateralAuctionHouse[_cType]), abi.encode(_collateralAuctionHouseCParams[_cType]), _cType);
+      // ParamChecker._checkCParams(address(collateralAuctionHouse[_cType]), abi.encode(_collateralAuctionHouseCParams[_cType]), _cType);
     }
   }
 

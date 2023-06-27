@@ -29,6 +29,7 @@ import {UniV3Relayer} from '@contracts/oracles/UniV3Relayer.sol';
 
 // --- Tokens ---
 import {ERC20ForTest, ERC20} from '@contracts/for-test/ERC20ForTest.sol';
+import {ERC20ForTestnet} from '@contracts/for-test/ERC20ForTestnet.sol';
 import {CoinForTest} from '@contracts/for-test/CoinForTest.sol';
 import {OracleForTest} from '@contracts/for-test/OracleForTest.sol';
 import {OracleForTestnet} from '@contracts/for-test/OracleForTestnet.sol';
@@ -38,8 +39,15 @@ import {ETHJoinForTest} from '@contracts/for-test/ETHJoinForTest.sol';
 import {CoinJoin, ICoinJoin} from '@contracts/utils/CoinJoin.sol';
 import {ETHJoin, IETHJoin} from '@contracts/utils/ETHJoin.sol';
 import {CollateralJoin, ICollateralJoin} from '@contracts/utils/CollateralJoin.sol';
-import {CollateralJoinFactory, ICollateralJoinFactory} from '@contracts/factories/CollateralJoinFactory.sol';
 
+// --- Factories ---
+import {CollateralJoinFactory, ICollateralJoinFactory} from '@contracts/factories/CollateralJoinFactory.sol';
+import {
+  CollateralAuctionHouseFactory,
+  ICollateralAuctionHouseFactory
+} from '@contracts/factories/CollateralAuctionHouseFactory.sol';
+
+// --- Interfaces ---
 import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
@@ -58,8 +66,10 @@ import {HaiSafeManager} from '@contracts/proxies/HaiSafeManager.sol';
  */
 abstract contract Contracts {
   // --- Helpers ---
+  uint256 public chainId;
   address public deployer;
   address public governor;
+  address public delegate;
   bytes32[] public collateralTypes;
 
   // --- Base contracts ---
@@ -79,7 +89,6 @@ abstract contract Contracts {
   mapping(bytes32 => IERC20Metadata) public collateral;
   ICoinJoin public coinJoin;
   IETHJoin public ethJoin;
-  ICollateralJoinFactory public collateralJoinFactory;
   mapping(bytes32 => ICollateralJoin) public collateralJoin;
 
   // --- Oracle contracts ---
@@ -89,6 +98,10 @@ abstract contract Contracts {
   // --- PID contracts ---
   IPIDController public pidController;
   IPIDRateSetter public pidRateSetter;
+
+  // --- Factory contracts ---
+  CollateralJoinFactory public collateralJoinFactory;
+  CollateralAuctionHouseFactory public collateralAuctionHouseFactory;
 
   // --- Settlement contracts ---
   IGlobalSettlement public globalSettlement;

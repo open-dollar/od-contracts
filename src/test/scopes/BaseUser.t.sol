@@ -13,9 +13,13 @@ abstract contract BaseUser {
     address _user
   ) internal virtual returns (uint256 _generatedDebt, uint256 _lockedCollateral);
 
+  function _getCollateralBalance(address _user, bytes32 _cType) internal view virtual returns (uint256 _wad);
+
   function _lockETH(address _user, uint256 _amount) internal virtual;
 
   function _joinTKN(address _user, address _collateralJoin, uint256 _amount) internal virtual;
+
+  function _exitCollateral(address _user, address _collateralJoin, uint256 _amount) internal virtual;
 
   function _joinCoins(address _user, uint256 _amount) internal virtual;
 
@@ -24,6 +28,13 @@ abstract contract BaseUser {
     address _collateralJoin,
     int256 _deltaCollat,
     int256 _deltaDebt
+  ) internal virtual;
+
+  function _repayDebtAndExit(
+    address _user,
+    address _collateralJoin,
+    uint256 _deltaCollat,
+    uint256 _deltaDebt
   ) internal virtual;
 
   function _exitCoin(address _user, uint256 _amount) internal virtual;
