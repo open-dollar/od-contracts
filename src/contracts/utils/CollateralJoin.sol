@@ -19,7 +19,7 @@ import {Assertions} from '@libraries/Assertions.sol';
  * @dev    For well behaved ERC20 tokens with less than 18 decimals.
  *         All Join adapters need to implement two basic methods: `join` and `exit`
  */
-contract CollateralJoin is Authorizable, Disableable, ICollateralJoin {
+contract CollateralJoin is Disableable, ICollateralJoin {
   using Math for uint256;
   using SafeERC20 for IERC20Metadata;
   using Assertions for address;

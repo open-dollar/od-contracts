@@ -13,16 +13,24 @@ abstract contract Common is Contracts, Params {
     // deploy ETHJoin and CollateralAuctionHouse
     // NOTE: deploying ETHJoinForTest to make it work with current tests
     ethJoin = new ETHJoinForTest(address(safeEngine), ETH_A);
-    collateralAuctionHouse[ETH_A] = new CollateralAuctionHouse({
-        _safeEngine: address(safeEngine), 
-        __oracleRelayer: address(oracleRelayer),
-        __liquidationEngine: address(liquidationEngine), 
-        _collateralType: ETH_A,
-        _cahParams: _collateralAuctionHouseSystemCoinParams,
-        _cahCParams: _collateralAuctionHouseCParams[ETH_A]
-        });
+
+    if (address(collateralAuctionHouseFactory) != address(0)) {
+      collateralAuctionHouse[ETH_A] = ICollateralAuctionHouse(
+        collateralAuctionHouseFactory.deployCollateralAuctionHouse(ETH_A, _collateralAuctionHouseCParams[ETH_A])
+      );
+    } else {
+      collateralAuctionHouse[ETH_A] = new CollateralAuctionHouse({
+          _safeEngine: address(safeEngine), 
+          __oracleRelayer: address(oracleRelayer),
+          __liquidationEngine: address(liquidationEngine), 
+          _collateralType: ETH_A,
+          _cahParams: _collateralAuctionHouseSystemCoinParams,
+          _cahCParams: _collateralAuctionHouseCParams[ETH_A]
+          });
+    }
 
     collateralJoin[ETH_A] = CollateralJoin(address(ethJoin));
+    safeEngine.addAuthorization(address(ethJoin));
   }
 
   function deployCollateralContracts(bytes32 _cType) public {
@@ -40,14 +48,20 @@ abstract contract Common is Contracts, Params {
         });
     }
 
-    collateralAuctionHouse[_cType] = new CollateralAuctionHouse({
-        _safeEngine: address(safeEngine), 
-        __oracleRelayer: address(oracleRelayer),
-        __liquidationEngine: address(liquidationEngine), 
-        _collateralType: _cType,
-        _cahParams: _collateralAuctionHouseSystemCoinParams,
-        _cahCParams: _collateralAuctionHouseCParams[_cType]
-        });
+    if (address(collateralAuctionHouseFactory) != address(0)) {
+      collateralAuctionHouse[_cType] = ICollateralAuctionHouse(
+        collateralAuctionHouseFactory.deployCollateralAuctionHouse(_cType, _collateralAuctionHouseCParams[_cType])
+      );
+    } else {
+      collateralAuctionHouse[_cType] = new CollateralAuctionHouse({
+          _safeEngine: address(safeEngine), 
+          __oracleRelayer: address(oracleRelayer),
+          __liquidationEngine: address(liquidationEngine), 
+          _collateralType: _cType,
+          _cahParams: _collateralAuctionHouseSystemCoinParams,
+          _cahCParams: _collateralAuctionHouseCParams[_cType]
+          });
+    }
   }
 
   function revokeAllTo(address _governor) public {
@@ -173,15 +187,21 @@ abstract contract Common is Contracts, Params {
 
     oracleRelayer = new OracleRelayer(address(safeEngine), systemCoinOracle, _oracleRelayerParams);
 
-    liquidationEngine = new LiquidationEngine(address(safeEngine), _liquidationEngineParams);
-
-    coinJoin = new CoinJoin(address(safeEngine), address(systemCoin));
     surplusAuctionHouse =
       new SurplusAuctionHouse(address(safeEngine), address(protocolToken), _surplusAuctionHouseParams);
     debtAuctionHouse = new DebtAuctionHouse(address(safeEngine), address(protocolToken), _debtAuctionHouseParams);
 
     accountingEngine =
     new AccountingEngine(address(safeEngine), address(surplusAuctionHouse), address(debtAuctionHouse), _accountingEngineParams);
+
+    liquidationEngine = new LiquidationEngine(address(safeEngine), address(accountingEngine), _liquidationEngineParams);
+
+    collateralAuctionHouseFactory =
+    new CollateralAuctionHouseFactory(address(safeEngine), address(oracleRelayer), address(liquidationEngine), _collateralAuctionHouseSystemCoinParams);
+
+    // deploy Token adapters
+    coinJoin = new CoinJoin(address(safeEngine), address(systemCoin));
+    collateralJoinFactory = new CollateralJoinFactory(address(safeEngine));
 
     // TODO: deploy in separate module
     _getEnvironmentParams();
@@ -193,8 +213,6 @@ abstract contract Common is Contracts, Params {
           address(coinJoin),
           _stabilityFeeTreasuryParams
         );
-
-    collateralJoinFactory = new CollateralJoinFactory(address(safeEngine));
 
     _deployGlobalSettlement();
     _deployProxyContracts(address(safeEngine));
@@ -216,12 +234,11 @@ abstract contract Common is Contracts, Params {
     accountingEngine.addAuthorization(address(globalSettlement));
     globalSettlement.modifyParameters('oracleRelayer', abi.encode(oracleRelayer));
     oracleRelayer.addAuthorization(address(globalSettlement));
+
+    collateralAuctionHouseFactory.addAuthorization(address(globalSettlement));
   }
 
   function _setupContracts() internal {
-    // setup registry
-    liquidationEngine.modifyParameters('accountingEngine', abi.encode(accountingEngine));
-
     // TODO: change for protocolTokenBidReceiver
     surplusAuctionHouse.modifyParameters('protocolTokenBidReceiver', abi.encode(SURPLUS_AUCTION_BID_RECEIVER));
 
@@ -236,6 +253,8 @@ abstract contract Common is Contracts, Params {
     accountingEngine.addAuthorization(address(liquidationEngine)); // pushDebtToQueue
     protocolToken.addAuthorization(address(debtAuctionHouse)); // mint
     systemCoin.addAuthorization(address(coinJoin)); // mint
+
+    safeEngine.addAuthorization(address(collateralJoinFactory)); // addAuthorization(cJoin child)
   }
 
   function _setupCollateral(bytes32 _cType) internal {
@@ -247,14 +266,6 @@ abstract contract Common is Contracts, Params {
     if (_taxCollectorSecondaryTaxReceiver.receiver != address(0)) {
       taxCollector.modifyParameters(_cType, 'secondaryTaxReceiver', abi.encode(_taxCollectorSecondaryTaxReceiver));
     }
-
-    safeEngine.addAuthorization(address(collateralJoin[_cType]));
-
-    collateralAuctionHouse[_cType].addAuthorization(address(liquidationEngine));
-    liquidationEngine.addAuthorization(address(collateralAuctionHouse[_cType]));
-
-    // setup global settlement
-    collateralAuctionHouse[_cType].addAuthorization(address(globalSettlement)); // terminateAuctionPrematurely
 
     // setup initial price
     oracleRelayer.updateCollateralPrice(_cType);

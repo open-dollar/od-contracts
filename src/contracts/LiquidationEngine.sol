@@ -51,9 +51,11 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
   // --- Init ---
   constructor(
     address _safeEngine,
+    address _accountingEngine,
     LiquidationEngineParams memory _liqEngineParams
   ) Authorizable(msg.sender) validParams {
     safeEngine = ISAFEEngine(_safeEngine.assertNonNull());
+    accountingEngine = IAccountingEngine(_accountingEngine);
 
     _params = _liqEngineParams;
     emit ModifyParameters('onAuctionSystemCoinLimit', _GLOBAL_PARAM, abi.encode(type(uint256).max));
@@ -268,6 +270,10 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
     else revert UnrecognizedParam();
   }
 
+  function _validateParameters() internal view override {
+    address(accountingEngine).assertNonNull();
+  }
+
   function _validateCParameters(bytes32 _cType) internal view override {
     LiquidationEngineCollateralParams memory _collateralParams = _cParams[_cType];
     address(_collateralParams.collateralAuctionHouse).assertNonNull();
@@ -276,8 +282,12 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
 
   function _setCollateralAuctionHouse(bytes32 _cType, address _newCollateralAuctionHouse) internal {
     LiquidationEngineCollateralParams storage __cParams = _cParams[_cType];
-    safeEngine.denySAFEModification(__cParams.collateralAuctionHouse);
+    if (__cParams.collateralAuctionHouse != address(0)) {
+      safeEngine.denySAFEModification(__cParams.collateralAuctionHouse);
+      _removeAuthorization(__cParams.collateralAuctionHouse);
+    }
     __cParams.collateralAuctionHouse = _newCollateralAuctionHouse;
     safeEngine.approveSAFEModification(_newCollateralAuctionHouse);
+    _addAuthorization(_newCollateralAuctionHouse);
   }
 }

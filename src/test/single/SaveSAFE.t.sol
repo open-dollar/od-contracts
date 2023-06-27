@@ -227,8 +227,7 @@ contract SingleSaveSAFETest is DSTest {
 
     ILiquidationEngine.LiquidationEngineParams memory _liquidationEngineParams =
       ILiquidationEngine.LiquidationEngineParams({onAuctionSystemCoinLimit: type(uint256).max});
-    liquidationEngine = new LiquidationEngine(address(safeEngine), _liquidationEngineParams);
-    liquidationEngine.modifyParameters('accountingEngine', abi.encode(accountingEngine));
+    liquidationEngine = new LiquidationEngine(address(safeEngine), address(accountingEngine), _liquidationEngineParams);
     safeEngine.addAuthorization(address(liquidationEngine));
     accountingEngine.addAuthorization(address(liquidationEngine));
 
@@ -239,8 +238,8 @@ contract SingleSaveSAFETest is DSTest {
       ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: rad(1000 ether), debtFloor: 0});
     safeEngine.initializeCollateralType('gold', _safeEngineCollateralParams);
     collateralJoinFactory = new CollateralJoinFactory(address(safeEngine));
+    safeEngine.addAuthorization(address(collateralJoinFactory));
     collateralA = CollateralJoin(collateralJoinFactory.deployCollateralJoin('gold', address(gold)));
-    safeEngine.addAuthorization(address(collateralA));
     gold.approve(address(collateralA), type(uint256).max);
     collateralA.join(address(this), 1000 ether);
 
@@ -264,9 +263,7 @@ contract SingleSaveSAFETest is DSTest {
     });
     collateralAuctionHouse =
     new IncreasingDiscountCollateralAuctionHouse(address(safeEngine), address(oracleRelayer), address(liquidationEngine), 'gold', _cahParams, _cahCParams);
-    collateralAuctionHouse.addAuthorization(address(liquidationEngine));
 
-    liquidationEngine.addAuthorization(address(collateralAuctionHouse));
     liquidationEngine.modifyParameters('gold', 'collateralAuctionHouse', abi.encode(collateralAuctionHouse));
     liquidationEngine.modifyParameters('gold', 'liquidationPenalty', abi.encode(1 ether));
 

@@ -11,4 +11,9 @@ abstract contract DisableableChild is Disableable, FactoryChild, IDisableableChi
   function _isEnabled() internal view virtual override returns (bool _enabled) {
     return super._isEnabled() && IDisableable(factory).contractEnabled() == 1;
   }
+
+  // NOTE: avoids a contract from being directly disabled
+  function _onContractDisable() internal virtual override onlyFactory {
+    super._onContractDisable();
+  }
 }

@@ -47,6 +47,7 @@ contract CollateralAuctionHouseChild is
     )
   {}
 
+  // NOTE: child implementation reads params from factory
   function params()
     public
     view
@@ -56,6 +57,7 @@ contract CollateralAuctionHouseChild is
     return ICollateralAuctionHouseFactory(factory).params();
   }
 
+  // NOTE: child implementation reads liquidationEngine from factory
   function liquidationEngine()
     public
     view
@@ -65,6 +67,10 @@ contract CollateralAuctionHouseChild is
     return ILiquidationEngine(ICollateralAuctionHouseFactory(factory).liquidationEngine());
   }
 
+  // NOTE: avoids adding authorization to address(0) on constructor
+  function _setLiquidationEngine(address _newLiquidationEngine) internal override {}
+
+  // NOTE: child implementation reads oracleRelayer from factory
   function oracleRelayer()
     public
     view

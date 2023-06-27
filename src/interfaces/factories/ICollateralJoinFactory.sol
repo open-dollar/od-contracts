@@ -10,13 +10,17 @@ interface ICollateralJoinFactory is IAuthorizable, IDisableable {
   event DisableCollateralJoin(address indexed _collateralJoin);
 
   // --- Errors ---
-  error CollateralJoinFactory_NotCollateralJoin();
+  error CollateralJoinFactory_CollateralJoinExistent();
+  error CollateralJoinFactory_CollateralJoinNonExistent();
+
+  // --- Registry ---
+  function safeEngine() external view returns (address _safeEngine);
+
+  // --- Data ---
+  function collateralTypesList() external view returns (bytes32[] memory _collateralTypesList);
+  function collateralJoinsList() external view returns (address[] memory _collateralJoinsList);
 
   // --- Methods ---
   function deployCollateralJoin(bytes32 _cType, address _collateral) external returns (address _collateralJoin);
-  function disableCollateralJoin(address _collateralJoin) external;
-
-  // --- Views ---
-  function safeEngine() external view returns (address _safeEngine);
-  function collateralJoinsList() external view returns (address[] memory _collateralJoinsList);
+  function disableCollateralJoin(bytes32 _cType) external;
 }

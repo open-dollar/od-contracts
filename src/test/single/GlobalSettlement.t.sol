@@ -195,8 +195,6 @@ contract SingleGlobalSettlementTest is DSTest {
 
     safeEngine.updateCollateralPrice(_encodedName, ray(3 ether), ray(3 ether));
 
-    safeEngine.addAuthorization(address(collateralJoin));
-
     IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams =
     IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams({
       lowerSystemCoinDeviation: WAD, // 0% deviation
@@ -218,12 +216,9 @@ contract SingleGlobalSettlementTest is DSTest {
 
     safeEngine.approveSAFEModification(address(_collateralAuctionHouse));
     _collateralAuctionHouse.addAuthorization(address(globalSettlement));
-    _collateralAuctionHouse.addAuthorization(address(liquidationEngine));
     oracleFSM.updateCollateralPrice(bytes32(200 * WAD));
 
     // Start with English auction house
-    liquidationEngine.addAuthorization(address(_collateralAuctionHouse));
-
     liquidationEngine.modifyParameters(_encodedName, 'collateralAuctionHouse', abi.encode(_collateralAuctionHouse));
     liquidationEngine.modifyParameters(_encodedName, 'liquidationPenalty', abi.encode(1 ether));
     liquidationEngine.modifyParameters(
@@ -252,6 +247,7 @@ contract SingleGlobalSettlementTest is DSTest {
     systemCoin = new CoinForTest('Coin', 'Coin');
     coinJoin = new CoinJoin(address(safeEngine), address(systemCoin));
     collateralJoinFactory = new CollateralJoinFactory(address(safeEngine));
+    safeEngine.addAuthorization(address(collateralJoinFactory));
 
     ISurplusAuctionHouse.SurplusAuctionHouseParams memory _sahParams = ISurplusAuctionHouse.SurplusAuctionHouseParams({
       bidIncrease: 1.05e18,
@@ -301,8 +297,7 @@ contract SingleGlobalSettlementTest is DSTest {
 
     ILiquidationEngine.LiquidationEngineParams memory _liquidationEngineParams =
       ILiquidationEngine.LiquidationEngineParams({onAuctionSystemCoinLimit: type(uint256).max});
-    liquidationEngine = new LiquidationEngine(address(safeEngine), _liquidationEngineParams);
-    liquidationEngine.modifyParameters('accountingEngine', abi.encode(accountingEngine));
+    liquidationEngine = new LiquidationEngine(address(safeEngine), address(accountingEngine), _liquidationEngineParams);
     safeEngine.addAuthorization(address(liquidationEngine));
     accountingEngine.addAuthorization(address(liquidationEngine));
 
@@ -337,6 +332,8 @@ contract SingleGlobalSettlementTest is DSTest {
     oracleRelayer.addAuthorization(address(globalSettlement));
     liquidationEngine.addAuthorization(address(globalSettlement));
     stabilityFeeTreasury.addAuthorization(address(globalSettlement));
+    collateralJoinFactory.addAuthorization(address(globalSettlement));
+
     surplusAuctionHouseOne.addAuthorization(address(accountingEngine));
     debtAuctionHouse.addAuthorization(address(accountingEngine));
   }

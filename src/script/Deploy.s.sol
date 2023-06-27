@@ -31,6 +31,7 @@ abstract contract Deploy is Common, Script {
 
     // Common deployment routine for all networks
     deployContracts();
+    _setupContracts();
 
     for (uint256 _i; _i < collateralTypes.length; _i++) {
       bytes32 _cType = collateralTypes[_i];
@@ -42,7 +43,6 @@ abstract contract Deploy is Common, Script {
     // Get parameters from Params.s.sol
     _getEnvironmentParams();
 
-    _setupContracts();
     deployPIDController();
 
     // Loop through the collateral types configured in the environment
@@ -114,8 +114,8 @@ contract DeployGoerli is GoerliParams, Deploy {
     delayedOracle[WETH] = new DelayedOracle(_ethUSDPriceFeed, 1 hours);
     delayedOracle[OP] = new DelayedOracle(_opUSDPriceFeed, 1 hours);
 
-    collateral[WETH] = IERC20Metadata(OP_GOERLI_WETH);
-    collateral[OP] = ERC20ForTest(OP_GOERLI_OPTIMISM);
+    collateral[WETH] = IERC20Metadata(OP_WETH);
+    collateral[OP] = ERC20ForTest(OP_OPTIMISM);
 
     // Setup collateral params
     collateralTypes.push(WETH);

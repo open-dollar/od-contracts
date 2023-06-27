@@ -11,9 +11,7 @@ import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
 import {LiquidationEngine} from '@contracts/LiquidationEngine.sol';
-import {AccountingEngine} from '@contracts/AccountingEngine.sol';
 import {LiquidationEngineForTest} from '@contracts/for-test/LiquidationEngineForTest.sol';
-import {AccountingEngineForTest} from '@contracts/for-test/AccountingEngineForTest.sol';
 import {CollateralAuctionHouseForTest} from '@contracts/for-test/CollateralAuctionHouseForTest.sol';
 import {HaiTest} from '@test/utils/HaiTest.t.sol';
 import {StdStorage, stdStorage} from 'forge-std/StdStorage.sol';
@@ -31,15 +29,16 @@ abstract contract Base is HaiTest {
   address safe = label('safe');
   address mockCollateralAuctionHouse = label('collateralTypeSampleAuctionHouse');
   address mockSaviour = label('saviour');
-  address mockAccountingEngine = label('accountingEngine');
   address user = label('user');
 
   bytes32 collateralType = 'collateralTypeSample';
 
   ISAFEEngine mockSafeEngine = ISAFEEngine(mockContract('SAFEEngine'));
+  IAccountingEngine mockAccountingEngine = IAccountingEngine(mockContract('AccountingEngine'));
+
   ILiquidationEngine liquidationEngine;
 
-  IAccountingEngine accountingEngineForTest = IAccountingEngine(address(new AccountingEngineForTest()));
+  // NOTE: calculating _limitAdjustedDebt to mock call is complex, so we use a contract for test
   ICollateralAuctionHouse collateralAuctionHouseForTest =
     ICollateralAuctionHouse(address(new CollateralAuctionHouseForTest()));
 
@@ -49,7 +48,8 @@ abstract contract Base is HaiTest {
   function setUp() public virtual {
     vm.prank(deployer);
 
-    liquidationEngine = new LiquidationEngineForTest(address(mockSafeEngine), liquidationEngineParams);
+    liquidationEngine =
+      new LiquidationEngineForTest(address(mockSafeEngine), address(mockAccountingEngine), liquidationEngineParams);
     label(address(liquidationEngine), 'LiquidationEngine');
   }
 
@@ -170,7 +170,9 @@ abstract contract Base is HaiTest {
 
   function _mockAccountingEnginePushDebtToQueue(uint256 _debt) internal {
     vm.mockCall(
-      mockAccountingEngine, abi.encodeWithSelector(IAccountingEngine.pushDebtToQueue.selector, _debt), abi.encode(0)
+      address(mockAccountingEngine),
+      abi.encodeWithSelector(IAccountingEngine.pushDebtToQueue.selector, _debt),
+      abi.encode(0)
     );
   }
 
@@ -289,6 +291,10 @@ contract Unit_LiquidationEngine_Constructor is Base {
     assertEq(address(liquidationEngine.safeEngine()), address(mockSafeEngine));
   }
 
+  function test_Set_AccountingEngine() public {
+    assertEq(address(liquidationEngine.accountingEngine()), address(mockAccountingEngine));
+  }
+
   function test_Set_OnAuctionSystemCoinLimit() public {
     assertEq(liquidationEngine.params().onAuctionSystemCoinLimit, type(uint256).max);
   }
@@ -302,27 +308,34 @@ contract Unit_LiquidationEngine_Constructor is Base {
     emit AddAuthorization(deployer);
 
     vm.prank(deployer);
-    new LiquidationEngine(address(mockSafeEngine), liquidationEngineParams);
+    new LiquidationEngine(address(mockSafeEngine), address(mockAccountingEngine), liquidationEngineParams);
   }
 
   function test_Emit_ModifyParameters() public {
     vm.expectEmit(true, true, false, false);
     emit ModifyParameters('onAuctionSystemCoinLimit', bytes32(0), abi.encode(type(uint256).max));
 
-    new LiquidationEngine(address(mockSafeEngine), liquidationEngineParams);
+    new LiquidationEngine(address(mockSafeEngine), address(mockAccountingEngine), liquidationEngineParams);
   }
 
   function test_Set_LiquidationEngine_Param(ILiquidationEngine.LiquidationEngineParams memory _liquidationEngineParams)
     public
   {
-    liquidationEngine = new LiquidationEngine(address(mockSafeEngine), _liquidationEngineParams);
+    liquidationEngine =
+      new LiquidationEngine(address(mockSafeEngine), address(mockAccountingEngine), _liquidationEngineParams);
     assertEq(abi.encode(liquidationEngine.params()), abi.encode(_liquidationEngineParams));
   }
 
   function test_Revert_Null_SafeEngine() public {
     vm.expectRevert(Assertions.NullAddress.selector);
 
-    new LiquidationEngine(address(0), liquidationEngineParams);
+    new LiquidationEngine(address(0),  address(mockAccountingEngine), liquidationEngineParams);
+  }
+
+  function test_Revert_Null_AccountingEngine() public {
+    vm.expectRevert(Assertions.NullAddress.selector);
+
+    new LiquidationEngine(address(mockSafeEngine),  address(0), liquidationEngineParams);
   }
 }
 
@@ -360,6 +373,7 @@ contract Unit_LiquidationEngine_ModifyParameters is Base {
   }
 
   function test_ModifyParameters_AccoutingEngine(address _accountingEngine) public authorized {
+    vm.assume(_accountingEngine != address(0));
     liquidationEngine.modifyParameters('accountingEngine', abi.encode(_accountingEngine));
 
     assertEq(_accountingEngine, address(liquidationEngine.accountingEngine()));
@@ -373,9 +387,11 @@ contract Unit_LiquidationEngine_ModifyParameters is Base {
     vm.assume(_newCAH != address(0));
     LiquidationEngineForTest(address(liquidationEngine)).setCollateralAuctionHouse(_cType, _previousCAH);
 
-    vm.expectCall(
-      address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.denySAFEModification.selector, _previousCAH)
-    );
+    if (_previousCAH != address(0)) {
+      vm.expectCall(
+        address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.denySAFEModification.selector, _previousCAH)
+      );
+    }
     vm.expectCall(
       address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.approveSAFEModification.selector, _newCAH)
     );
@@ -732,7 +748,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
 
   function setUp() public virtual override {
     super.setUp();
-    LiquidationEngineForTest(address(liquidationEngine)).setAccountingEngine(address(accountingEngineForTest));
+    LiquidationEngineForTest(address(liquidationEngine)).setAccountingEngine(address(mockAccountingEngine));
     LiquidationEngineForTest(address(liquidationEngine)).setCollateralAuctionHouse(
       collateralType, address(collateralAuctionHouseForTest)
     );
@@ -1056,7 +1072,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
           collateralType,
           safe,
           address(liquidationEngine),
-          address(accountingEngineForTest),
+          address(mockAccountingEngine),
           -int256(_liquidation.safeCollateral),
           -int256(_liquidation.safeDebt)
         )
@@ -1081,7 +1097,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
           collateralType,
           safe,
           address(liquidationEngine),
-          address(accountingEngineForTest),
+          address(mockAccountingEngine),
           -int256(_collateralToSell),
           -int256(_limitAdjustedDebt)
         )
@@ -1106,7 +1122,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
           collateralType,
           safe,
           address(liquidationEngine),
-          address(accountingEngineForTest),
+          address(mockAccountingEngine),
           -int256(_collateralToSell),
           -int256(_limitAdjustedDebt)
         )
@@ -1124,7 +1140,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
       _liquidation.safeDebt * _liquidation.accumulatedRate * _liquidation.liquidationPenalty / WAD;
     _mockAccountingEnginePushDebtToQueue(_amountToRaise);
     uint256 _limitAdjustedDebtMulAccRate = _liquidation.safeDebt * _liquidation.accumulatedRate;
-    LiquidationEngineForTest(address(liquidationEngine)).setAccountingEngine(mockAccountingEngine);
+    LiquidationEngineForTest(address(liquidationEngine)).setAccountingEngine(address(mockAccountingEngine));
 
     vm.expectCall(
       address(mockAccountingEngine),
@@ -1143,11 +1159,10 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     uint256 _amountToRaise = _limitAdjustedDebt * _liquidation.accumulatedRate * _liquidation.liquidationPenalty / WAD;
     _mockAccountingEnginePushDebtToQueue(_amountToRaise);
     uint256 _limitAdjustedDebtMulAccRate = _limitAdjustedDebt * _liquidation.accumulatedRate;
-    LiquidationEngineForTest(address(liquidationEngine)).setAccountingEngine(mockAccountingEngine);
+    LiquidationEngineForTest(address(liquidationEngine)).setAccountingEngine(address(mockAccountingEngine));
 
     vm.expectCall(
-      address(mockAccountingEngine),
-      abi.encodeCall(IAccountingEngine(mockAccountingEngine).pushDebtToQueue, _limitAdjustedDebtMulAccRate)
+      address(mockAccountingEngine), abi.encodeCall(IAccountingEngine.pushDebtToQueue, _limitAdjustedDebtMulAccRate)
     );
 
     liquidationEngine.liquidateSAFE(collateralType, safe);
@@ -1162,7 +1177,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     uint256 _amountToRaise = _limitAdjustedDebt * _liquidation.accumulatedRate * _liquidation.liquidationPenalty / WAD;
     _mockAccountingEnginePushDebtToQueue(_amountToRaise);
     uint256 _limitAdjustedDebtMulAccRate = _limitAdjustedDebt * _liquidation.accumulatedRate;
-    LiquidationEngineForTest(address(liquidationEngine)).setAccountingEngine(mockAccountingEngine);
+    LiquidationEngineForTest(address(liquidationEngine)).setAccountingEngine(address(mockAccountingEngine));
 
     vm.expectCall(
       address(mockAccountingEngine),
@@ -1178,19 +1193,12 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
   {
     uint256 _amountToRaise =
       _liquidation.safeDebt * _liquidation.accumulatedRate * _liquidation.liquidationPenalty / WAD;
-    _mockCollateralAHStartAuction(
-      1, safe, address(accountingEngineForTest), _amountToRaise, _liquidation.safeCollateral, 0
-    );
-
-    LiquidationEngineForTest(address(liquidationEngine)).setCollateralAuctionHouse(
-      collateralType, mockCollateralAuctionHouse
-    );
 
     vm.expectCall(
-      address(mockCollateralAuctionHouse),
+      address(collateralAuctionHouseForTest),
       abi.encodeCall(
-        ICollateralAuctionHouse(mockCollateralAuctionHouse).startAuction,
-        (safe, address(accountingEngineForTest), _amountToRaise, _liquidation.safeCollateral, 0)
+        ICollateralAuctionHouse.startAuction,
+        (safe, address(mockAccountingEngine), _amountToRaise, _liquidation.safeCollateral, 0)
       )
     );
 
@@ -1205,17 +1213,11 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     uint256 _amountToRaise = _limitAdjustedDebt * _liquidation.accumulatedRate * _liquidation.liquidationPenalty / WAD;
     uint256 _collateralToSell = _liquidation.safeCollateral * _limitAdjustedDebt / _liquidation.safeDebt;
 
-    _mockCollateralAHStartAuction(1, safe, address(accountingEngineForTest), _amountToRaise, _collateralToSell, 0);
-
-    LiquidationEngineForTest(address(liquidationEngine)).setCollateralAuctionHouse(
-      collateralType, mockCollateralAuctionHouse
-    );
-
     vm.expectCall(
-      address(mockCollateralAuctionHouse),
+      address(collateralAuctionHouseForTest),
       abi.encodeCall(
-        ICollateralAuctionHouse(mockCollateralAuctionHouse).startAuction,
-        (safe, address(accountingEngineForTest), _amountToRaise, _collateralToSell, 0)
+        ICollateralAuctionHouse.startAuction,
+        (safe, address(mockAccountingEngine), _amountToRaise, _collateralToSell, 0)
       )
     );
 
@@ -1231,17 +1233,11 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     uint256 _amountToRaise = _limitAdjustedDebt * _liquidation.accumulatedRate * _liquidation.liquidationPenalty / WAD;
     uint256 _collateralToSell = _liquidation.safeCollateral * _limitAdjustedDebt / _liquidation.safeDebt;
 
-    _mockCollateralAHStartAuction(1, safe, address(accountingEngineForTest), _amountToRaise, _collateralToSell, 0);
-
-    LiquidationEngineForTest(address(liquidationEngine)).setCollateralAuctionHouse(
-      collateralType, mockCollateralAuctionHouse
-    );
-
     vm.expectCall(
-      address(mockCollateralAuctionHouse),
+      address(collateralAuctionHouseForTest),
       abi.encodeCall(
-        ICollateralAuctionHouse(mockCollateralAuctionHouse).startAuction,
-        (safe, address(accountingEngineForTest), _amountToRaise, _collateralToSell, 0)
+        ICollateralAuctionHouse.startAuction,
+        (safe, address(mockAccountingEngine), _amountToRaise, _collateralToSell, 0)
       )
     );
 

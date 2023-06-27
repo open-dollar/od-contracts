@@ -6,9 +6,12 @@ import {
 } from '@contracts/for-test/CollateralJoinFactoryForTest.sol';
 import {CollateralJoinChild} from '@contracts/factories/CollateralJoinChild.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
+import {ICollateralJoin} from '@interfaces/utils/ICollateralJoin.sol';
 import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
+import {IFactoryChild} from '@interfaces/factories/IFactoryChild.sol';
+import {Assertions} from '@libraries/Assertions.sol';
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 
 abstract contract Base is HaiTest {
@@ -17,6 +20,7 @@ abstract contract Base is HaiTest {
   address deployer = label('deployer');
   address authorizedAccount = label('authorizedAccount');
   address user = label('user');
+  bytes32 collateralType = bytes32('collateralType');
 
   ISAFEEngine mockSafeEngine = ISAFEEngine(mockContract('SafeEngine'));
   IERC20Metadata mockCollateral = IERC20Metadata(mockContract('Collateral'));
@@ -47,8 +51,8 @@ abstract contract Base is HaiTest {
     );
   }
 
-  function _mockCollateralJoin(address _collateralJoin) internal {
-    collateralJoinFactory.addCollateralJoin(_collateralJoin);
+  function _mockCollateralJoin(bytes32 _cType, address _collateralJoin) internal {
+    collateralJoinFactory.addCollateralJoin(_cType, _collateralJoin);
   }
 }
 
@@ -58,6 +62,12 @@ contract Unit_CollateralJoinFactory_Constructor is Base {
   modifier happyPath() {
     vm.startPrank(user);
     _;
+  }
+
+  function test_Revert_Null_SafeEngine() public happyPath {
+    vm.expectRevert(Assertions.NullAddress.selector);
+
+    new CollateralJoinFactoryForTest(address(0));
   }
 
   function test_Emit_AddAuthorization() public happyPath {
@@ -107,6 +117,14 @@ contract Unit_CollateralJoinFactory_DeployCollateralJoin is Base {
     collateralJoinFactory.deployCollateralJoin(_cType, address(mockCollateral));
   }
 
+  function test_Revert_RepeatedCType(bytes32 _cType, address _otherCollateral) public happyPath(18) {
+    collateralJoinFactory.deployCollateralJoin(_cType, address(mockCollateral));
+
+    vm.expectRevert(ICollateralJoinFactory.CollateralJoinFactory_CollateralJoinExistent.selector);
+
+    collateralJoinFactory.deployCollateralJoin(_cType, address(_otherCollateral));
+  }
+
   function test_Deploy_CollateralJoinChild(bytes32 _cType, uint8 _decimals) public happyPath(_decimals) {
     collateralJoinFactory.deployCollateralJoin(_cType, address(mockCollateral));
 
@@ -116,6 +134,12 @@ contract Unit_CollateralJoinFactory_DeployCollateralJoin is Base {
     assertEq(address(collateralJoinChild.safeEngine()), address(mockSafeEngine));
     assertEq(address(collateralJoinChild.collateral()), address(mockCollateral));
     assertEq(collateralJoinChild.collateralType(), _cType);
+  }
+
+  function test_Set_CollateralTypes(bytes32 _cType, uint8 _decimals) public happyPath(_decimals) {
+    collateralJoinFactory.deployCollateralJoin(_cType, address(mockCollateral));
+
+    assertEq(collateralJoinFactory.collateralTypesList()[0], _cType);
   }
 
   function test_Set_CollateralJoins(bytes32 _cType, uint8 _decimals) public happyPath(_decimals) {
@@ -134,6 +158,12 @@ contract Unit_CollateralJoinFactory_DeployCollateralJoin is Base {
   function test_Return_CollateralJoin(bytes32 _cType, uint8 _decimals) public happyPath(_decimals) {
     assertEq(collateralJoinFactory.deployCollateralJoin(_cType, address(mockCollateral)), address(collateralJoinChild));
   }
+
+  function test_Call_SafeEngineAuth(bytes32 _cType) public happyPath(18) {
+    vm.expectCall(address(mockSafeEngine), abi.encodeCall(IAuthorizable.addAuthorization, address(collateralJoinChild)));
+
+    collateralJoinFactory.deployCollateralJoin(_cType, address(mockCollateral));
+  }
 }
 
 contract Unit_CollateralJoinFactory_DisableCollateralJoin is Base {
@@ -143,30 +173,38 @@ contract Unit_CollateralJoinFactory_DisableCollateralJoin is Base {
     vm.startPrank(authorizedAccount);
     vm.etch(address(collateralJoinChild), new bytes(0x1));
 
-    _mockValues(address(collateralJoinChild));
+    _mockValues(collateralType, address(collateralJoinChild));
     _;
   }
 
-  function _mockValues(address _collateralJoin) internal {
-    _mockCollateralJoin(_collateralJoin);
+  function _mockValues(bytes32 _cType, address _collateralJoin) internal {
+    _mockCollateralJoin(_cType, _collateralJoin);
   }
 
-  function test_Revert_Unauthorized(address _collateralJoin) public {
+  function test_Revert_Unauthorized(bytes32 _cType) public {
     vm.expectRevert(IAuthorizable.Unauthorized.selector);
 
-    collateralJoinFactory.disableCollateralJoin(_collateralJoin);
+    collateralJoinFactory.disableCollateralJoin(_cType);
   }
 
-  function test_Revert_NotCollateralJoin(address _collateralJoin) public {
+  function test_Revert_NotCollateralJoin(bytes32 _cType) public {
     vm.startPrank(authorizedAccount);
 
-    vm.expectRevert(ICollateralJoinFactory.CollateralJoinFactory_NotCollateralJoin.selector);
+    vm.expectRevert(ICollateralJoinFactory.CollateralJoinFactory_CollateralJoinNonExistent.selector);
 
-    collateralJoinFactory.disableCollateralJoin(_collateralJoin);
+    collateralJoinFactory.disableCollateralJoin(_cType);
+  }
+
+  function test_Set_CollateralTypes() public happyPath {
+    collateralJoinFactory.disableCollateralJoin(collateralType);
+
+    bytes32[] memory _collateralTypesList = collateralJoinFactory.collateralTypesList();
+    // NOTE: assertEq(bytes32[],bytes32[]) is not supported
+    assertEq(_collateralTypesList.length, 0);
   }
 
   function test_Set_CollateralJoins() public happyPath {
-    collateralJoinFactory.disableCollateralJoin(address(collateralJoinChild));
+    collateralJoinFactory.disableCollateralJoin(collateralType);
 
     assertEq(collateralJoinFactory.collateralJoinsList(), new address[](0));
   }
@@ -174,13 +212,13 @@ contract Unit_CollateralJoinFactory_DisableCollateralJoin is Base {
   function test_Call_CollateralJoin_DisableContract() public happyPath {
     vm.expectCall(address(collateralJoinChild), abi.encodeCall(collateralJoinChild.disableContract, ()));
 
-    collateralJoinFactory.disableCollateralJoin(address(collateralJoinChild));
+    collateralJoinFactory.disableCollateralJoin(collateralType);
   }
 
   function test_Emit_DisableCollateralJoin() public happyPath {
     expectEmitNoIndex();
     emit DisableCollateralJoin(address(collateralJoinChild));
 
-    collateralJoinFactory.disableCollateralJoin(address(collateralJoinChild));
+    collateralJoinFactory.disableCollateralJoin(collateralType);
   }
 }

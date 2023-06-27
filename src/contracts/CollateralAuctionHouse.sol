@@ -81,7 +81,7 @@ contract IncreasingDiscountCollateralAuctionHouse is
   ) Authorizable(msg.sender) validParams validCParams(_collateralType) {
     safeEngine = ISAFEEngine(_safeEngine.assertNonNull());
     _oracleRelayer = IOracleRelayer(__oracleRelayer);
-    _liquidationEngine = ILiquidationEngine(__liquidationEngine);
+    _setLiquidationEngine(__liquidationEngine);
     collateralType = _collateralType;
 
     _params = _cahParams;
@@ -708,7 +708,7 @@ contract IncreasingDiscountCollateralAuctionHouse is
 
     // Registry
     if (_param == 'oracleRelayer') _oracleRelayer = IOracleRelayer(_address);
-    else if (_param == 'liquidationEngine') _liquidationEngine = ILiquidationEngine(_address);
+    else if (_param == 'liquidationEngine') _setLiquidationEngine(_address);
     // SystemCoin Params
     else if (_param == 'lowerSystemCoinDeviation') _params.lowerSystemCoinDeviation = _uint256;
     else if (_param == 'upperSystemCoinDeviation') _params.upperSystemCoinDeviation = _uint256;
@@ -716,7 +716,7 @@ contract IncreasingDiscountCollateralAuctionHouse is
     else revert UnrecognizedParam();
   }
 
-  function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override {
+  function _modifyParameters(bytes32, bytes32 _param, bytes memory _data) internal virtual override {
     uint256 _uint256 = _data.toUint256();
 
     // CAH Params
@@ -727,6 +727,12 @@ contract IncreasingDiscountCollateralAuctionHouse is
     else if (_param == 'upperCollateralDeviation') _cParams.upperCollateralDeviation = _uint256;
     else if (_param == 'minimumBid') _cParams.minimumBid = _uint256;
     else revert UnrecognizedParam();
+  }
+
+  function _setLiquidationEngine(address _newLiquidationEngine) internal virtual {
+    if (address(_liquidationEngine) != address(0)) _removeAuthorization(address(_liquidationEngine));
+    _liquidationEngine = ILiquidationEngine(_newLiquidationEngine);
+    _addAuthorization(_newLiquidationEngine);
   }
 
   function _validateParameters() internal view override {

@@ -22,4 +22,8 @@ contract CollateralJoinChild is CollateralJoin, DisableableChild, ICollateralJoi
   function _isEnabled() internal view override(DisableableChild, Disableable) returns (bool _enabled) {
     return super._isEnabled();
   }
+
+  function _onContractDisable() internal override(DisableableChild, Disableable) {
+    super._onContractDisable();
+  }
 }

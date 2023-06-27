@@ -64,18 +64,15 @@ abstract contract CommonDeploymentTest is HaiTest, Deploy {
   }
 
   function test_CollateralAuctionHouse_Params() public view {
+    ParamChecker._checkParams(
+      address(collateralAuctionHouseFactory), abi.encode(_collateralAuctionHouseSystemCoinParams)
+    );
     for (uint256 _i; _i < collateralTypes.length; _i++) {
       bytes32 _cType = collateralTypes[_i];
-      ParamChecker._checkParams(
-        address(collateralAuctionHouse[_cType]), abi.encode(_collateralAuctionHouseSystemCoinParams)
+      ParamChecker._checkCParams(
+        address(collateralAuctionHouseFactory), _cType, abi.encode(_collateralAuctionHouseCParams[_cType])
       );
-      // TODO: manually test CParams (bc is called without the cType)
-      // ParamChecker._checkCParams(address(collateralAuctionHouse[_cType]), abi.encode(_collateralAuctionHouseCParams[_cType]), _cType);
     }
-  }
-
-  function test_Revoke_Auth() public {
-    _test_Authorizations(deployer, false);
   }
 
   function test_Grant_Auth() public {
@@ -95,24 +92,18 @@ abstract contract CommonDeploymentTest is HaiTest, Deploy {
     assertEq(surplusAuctionHouse.authorizedAccounts(_target), _permission);
     assertEq(debtAuctionHouse.authorizedAccounts(_target), _permission);
 
-    if (address(collateralJoinFactory) != address(0)) {
-      // checks for collateral join factory
-      // TODO: rm when deploying factory to Goerli
-      assertEq(collateralJoinFactory.authorizedAccounts(_target), _permission);
-    }
+    assertEq(collateralJoinFactory.authorizedAccounts(_target), _permission);
+    assertEq(collateralAuctionHouseFactory.authorizedAccounts(_target), _permission);
 
     // tokens
     assertEq(systemCoin.authorizedAccounts(_target), _permission);
     assertEq(protocolToken.authorizedAccounts(_target), _permission);
 
-    // token adapters and collateral auction houses
+    // token adapters
     assertEq(coinJoin.authorizedAccounts(_target), _permission);
 
     for (uint256 _i; _i < collateralTypes.length; _i++) {
       bytes32 _cType = collateralTypes[_i];
-      if (address(collateralJoinFactory) == address(0)) {
-        assertEq(collateralJoin[_cType].authorizedAccounts(_target), _permission);
-      }
       assertEq(collateralAuctionHouse[_cType].authorizedAccounts(_target), _permission);
     }
   }

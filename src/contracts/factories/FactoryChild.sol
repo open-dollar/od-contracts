@@ -12,4 +12,9 @@ abstract contract FactoryChild is IFactoryChild {
     factory = msg.sender;
     if (factory.code.length == 0) revert NotFactoryDeployment();
   }
+
+  modifier onlyFactory() {
+    if (msg.sender != factory) revert CallerNotFactory();
+    _;
+  }
 }

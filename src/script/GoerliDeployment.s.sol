@@ -3,33 +3,39 @@ pragma solidity 0.8.19;
 
 import '@script/Contracts.s.sol';
 import {GoerliParams, WETH, OP, WBTC, STONES, TOTEM} from '@script/GoerliParams.s.sol';
+import {OP_WETH, OP_OPTIMISM} from '@script/Registry.s.sol';
 
 abstract contract GoerliDeployment is Contracts, GoerliParams {
-  uint256 constant GOERLI_DEPLOYMENT_BLOCK = 10_432_866;
+  uint256 constant GOERLI_DEPLOYMENT_BLOCK = 11_222_333;
 
-  // --- ERC20s ---
+  // --- Mintable ERC20s ---
   ERC20ForTestnet constant ERC20_WBTC = ERC20ForTestnet(0xf1FDB809f41c187cE6F2A4C8cC6562Ba7479B4EF);
   ERC20ForTestnet constant ERC20_STONES = ERC20ForTestnet(0x4FC4CB45A812AE5d85bE39b6D7fc9D169405a31F);
   ERC20ForTestnet constant ERC20_TOTEM = ERC20ForTestnet(0xE3Efbd4fafD521dAEa38aDC6D1A1bD66583D5da4);
-
-  // --- Factory utils ---
-  bool hasCollateralJoinFactory = false;
-  bool hasCollateralAuctionHouseFactory = false;
 
   /**
    * @notice All the addresses that were deployed in the Goerli deployment, in order of creation
    * @dev    This is used to import the deployed contracts to the test scripts
    */
   constructor() {
-    // Address to delegate permissions to
-    delegate = 0x58F84023DC3E0941Faa5904E974BAc5bfF3E047f;
+    // --- collateral types ---
+    collateralTypes.push(WETH);
+    collateralTypes.push(OP);
+    collateralTypes.push(WBTC);
+    collateralTypes.push(STONES);
+    collateralTypes.push(TOTEM);
 
-    haiOracleForTest = OracleForTestnet(0x0256791C87b519e45DEFbf2c94D8DE8ed7C7111a);
-    opEthOracleForTest = OracleForTestnet(0x792910b35954c9Ac2F1C4A5DD888f4d46e3472Ba);
-    delayedOracle[WETH] = DelayedOracle(0x74558a1470c714BB5E24a6ba998905Ee5F3F0A25);
-    delayedOracle[OP] = DelayedOracle(0x6171f9dB883E3bcC1804Ef17Eb1199133E27058D);
+    // --- ERC20s ---
+    collateral[WETH] = IERC20Metadata(OP_WETH);
+    collateral[OP] = IERC20Metadata(OP_OPTIMISM);
+    collateral[WBTC] = IERC20Metadata(ERC20_WBTC);
+    collateral[STONES] = IERC20Metadata(ERC20_STONES);
+    collateral[TOTEM] = IERC20Metadata(ERC20_TOTEM);
+
     systemCoin = SystemCoin(0xEaE90F3b07fBE00921173298FF04f416398f7101);
     protocolToken = ProtocolToken(0x64ff820bbD2947B2f2D4355D4852F17eb0156D9A);
+
+    // --- base contracts ---
     safeEngine = SAFEEngine(0xDfd2D62b3eC9BF6F52547c570B5AC2136D9756E4);
     oracleRelayer = OracleRelayer(0xca53F197A4A3C72F9954e34906DFC59148Ce653f);
     liquidationEngine = LiquidationEngine(0x389b9Eb0cDEAedf96d0dF8e4caA72b5cA5672870);
@@ -39,16 +45,42 @@ abstract contract GoerliDeployment is Contracts, GoerliParams {
     accountingEngine = AccountingEngine(0xc922644df8E6336c6DFc997e29602EF4aba51c8c);
     taxCollector = TaxCollector(0x1A88AB748C17E62CD99a2b7162EA0dD8AB7A059A);
     stabilityFeeTreasury = StabilityFeeTreasury(0xFAD4f858867D7aB4Bd7b80c611287abF4B139986);
+    pidController = PIDController(0xb1cFf62Dcf1761f49fc0056d85F8Bd25afdC1e14);
+    pidRateSetter = PIDRateSetter(0x4049Cc595c2F522BBAA9C3c3C34E0629258B9d47);
     globalSettlement = GlobalSettlement(0xFd4fB8e5f11A3FD403761a832bC35F31d5579B83);
+
+    // --- factories ---
+    collateralJoinFactory = CollateralJoinFactory(0x9dA5800299b00b2F353667F415dda4B24Bef1f36);
+    collateralAuctionHouseFactory = CollateralAuctionHouseFactory(0x442Cf1CEc8759c55d40bD4A7084Fb460d6E88bF9);
+
+    // --- token adapters ---
+    collateralJoin[WETH] = CollateralJoin(0x6d69bCa157FC589d6a162496aC4dbB4454C8feCf);
+    collateralJoin[OP] = CollateralJoin(0x2779322f43AA485987B6ef15cF27E9a7E1E602E7);
+    collateralJoin[WBTC] = CollateralJoin(0xC0e1bB570f45ec65f38D373207d3f1B1Da07FcB5);
+    collateralJoin[STONES] = CollateralJoin(0x2738f0Ee06BEF23B833913625A802dC13cf36201);
+    collateralJoin[TOTEM] = CollateralJoin(0x55Ca0AC7100e031F748e21a283D194C48914055c);
+
+    // --- collateral auction houses ---
+    collateralAuctionHouse[WETH] = CollateralAuctionHouse(0x46f7a52A5543cC5068dc7aF31aE49eBF0778eF8A);
+    collateralAuctionHouse[OP] = CollateralAuctionHouse(0x47C2c459c37FEF0c21dC8e945008E8A05346942d);
+    collateralAuctionHouse[WBTC] = CollateralAuctionHouse(0x36677aD304c296F9cb24943830E4540C702a63FF);
+    collateralAuctionHouse[STONES] = CollateralAuctionHouse(0xF2DFB982FaeDe09c2E1a0Fa5de026FaD25f75dC0);
+    collateralAuctionHouse[TOTEM] = CollateralAuctionHouse(0x76aBf3D8Ab0e405f68aE991904A3b8F8E19647Bc);
+
+    // --- proxies ---
     dsProxyFactory = HaiProxyFactory(0xC832Ea7C08c381b1F4726894684F7Bf1538E1dEa);
     proxyRegistry = HaiProxyRegistry(0x558Cd657b65b7DFb6B4c65d55F17247810b9C12a);
     safeManager = HaiSafeManager(0x5325A56148f67b26FaBDc7EbB30686120a98736c);
     proxyActions = BasicActions(0xf046D565170C41E87C29FB40b907fdCf26AC9ac6);
-    collateralJoin[WETH] = CollateralJoin(0x69DE387041C3056ec96aEFb432A546EAe4394da6);
-    collateralAuctionHouse[WETH] = CollateralAuctionHouse(0x80D7ED55d9f7623a21580adb6e4442C982Cb51aF);
-    collateralJoin[OP] = CollateralJoin(0xA59A8a069284e52B8c761d7e0AC2129733ACCBF6);
-    collateralAuctionHouse[OP] = CollateralAuctionHouse(0x8C2Be56f48802c2E4B98a5a02ffD1BAC0925e213);
-    pidController = PIDController(0xb1cFf62Dcf1761f49fc0056d85F8Bd25afdC1e14);
-    pidRateSetter = PIDRateSetter(0x4049Cc595c2F522BBAA9C3c3C34E0629258B9d47);
+
+    // --- oracles ---
+    delayedOracle[WETH] = IDelayedOracle(0x74558a1470c714BB5E24a6ba998905Ee5F3F0A25);
+    delayedOracle[OP] = IDelayedOracle(0x6171f9dB883E3bcC1804Ef17Eb1199133E27058D);
+    delayedOracle[WBTC] = IDelayedOracle(0xF6BADAAaC06D7714130aC95Ce8976905284955F9);
+    delayedOracle[STONES] = IDelayedOracle(0x4137C0B02EC0A2E9754f28eEbb57c20e9A6ebFae);
+    delayedOracle[TOTEM] = IDelayedOracle(0x8Ab563A34bc907f169f19B31018e438934FC3c29);
+
+    haiOracleForTest = OracleForTestnet(0x0256791C87b519e45DEFbf2c94D8DE8ed7C7111a);
+    opEthOracleForTest = OracleForTestnet(0x792910b35954c9Ac2F1C4A5DD888f4d46e3472Ba);
   }
 }

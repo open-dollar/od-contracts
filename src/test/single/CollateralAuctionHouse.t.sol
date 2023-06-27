@@ -106,9 +106,11 @@ contract DummyLiquidationEngine {
     currentOnAuctionSystemCoins = rad;
   }
 
-  function removeCoinsFromAuction(uint256 rad) public {
+  function removeCoinsFromAuction(uint256 rad) external {
     currentOnAuctionSystemCoins -= rad;
   }
+
+  function addAuthorization(address) external {}
 }
 
 abstract contract SingleIncreasingDiscountCollateralAuctionHouseTest is HaiTest {

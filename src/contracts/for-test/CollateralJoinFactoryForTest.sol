@@ -6,11 +6,12 @@ import {
 } from '@contracts/factories/CollateralJoinFactory.sol';
 
 contract CollateralJoinFactoryForTest is CollateralJoinFactory {
-  using EnumerableSet for EnumerableSet.AddressSet;
+  using EnumerableSet for EnumerableSet.Bytes32Set;
 
   constructor(address _safeEngine) CollateralJoinFactory(_safeEngine) {}
 
-  function addCollateralJoin(address _collateralJoin) external {
-    _collateralJoins.add(_collateralJoin);
+  function addCollateralJoin(bytes32 _cType, address _collateralJoin) external {
+    _collateralTypes.add(_cType);
+    collateralJoins[_cType] = _collateralJoin;
   }
 }

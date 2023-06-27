@@ -237,6 +237,8 @@ contract SingleModifySAFECollateralizationTest is DSTest {
     safeEngine.initializeCollateralType('gold', _collateralParams);
 
     collateralJoinFactory = new CollateralJoinFactory(address(safeEngine));
+    safeEngine.addAuthorization(address(collateralJoinFactory));
+
     collateralA = CollateralJoin(collateralJoinFactory.deployCollateralJoin('gold', address(gold)));
 
     safeEngine.updateCollateralPrice('gold', ray(1 ether), ray(1 ether));
@@ -252,8 +254,6 @@ contract SingleModifySAFECollateralizationTest is DSTest {
       ITaxCollector.TaxCollectorCollateralParams({stabilityFee: 0});
     taxCollector.initializeCollateralType('gold', _taxCollectorCollateralParams);
     safeEngine.addAuthorization(address(taxCollector));
-
-    safeEngine.addAuthorization(address(collateralA));
 
     gold.approve(address(collateralA), type(uint256).max);
     collateralA.join(address(this), 1000 ether);
@@ -508,6 +508,7 @@ contract SingleSAFEDebtLimitTest is DSTest {
     safeEngine.initializeCollateralType('gold', _collateralParams);
 
     collateralJoinFactory = new CollateralJoinFactory(address(safeEngine));
+    safeEngine.addAuthorization(address(collateralJoinFactory));
     collateralA = CollateralJoin(collateralJoinFactory.deployCollateralJoin('gold', address(gold)));
 
     safeEngine.updateCollateralPrice('gold', ray(1 ether), ray(1 ether));
@@ -528,7 +529,6 @@ contract SingleSAFEDebtLimitTest is DSTest {
     gold.approve(address(collateralA), type(uint256).max);
 
     safeEngine.addAuthorization(address(safeEngine));
-    safeEngine.addAuthorization(address(collateralA));
 
     collateralA.join(address(this), 1000 ether);
 
@@ -629,10 +629,10 @@ contract SingleJoinTest is DSTest {
       ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: 0, debtFloor: 0});
     safeEngine.initializeCollateralType('ETH', _safeEngineCollateralParams);
 
-    collateral = new CoinForTest('Gem', 'Gem');
+    collateral = new CoinForTest('Coin', 'Coin');
     collateralJoinFactory = new CollateralJoinFactory(address(safeEngine));
+    safeEngine.addAuthorization(address(collateralJoinFactory));
     collateralA = CollateralJoin(collateralJoinFactory.deployCollateralJoin('collateral', address(collateral)));
-    safeEngine.addAuthorization(address(collateralA));
 
     ethA = new ETHJoin(address(safeEngine), 'ETH');
     safeEngine.addAuthorization(address(ethA));
@@ -645,14 +645,14 @@ contract SingleJoinTest is DSTest {
     me = address(this);
   }
 
-  function try_disable_contract(address a) public payable returns (bool ok) {
+  function try_disable_contract(address a) public returns (bool ok) {
     string memory _sig = 'disableContract()';
     (ok,) = a.call(abi.encodeWithSignature(_sig));
   }
 
-  function try_disable_collateralJoin(address cJoin) public payable returns (bool ok) {
-    string memory _sig = 'disableCollateralJoin(address)';
-    (ok,) = address(collateralJoinFactory).call(abi.encodeWithSignature(_sig, cJoin));
+  function try_disable_collateralJoin(bytes32 _cType) public returns (bool ok) {
+    string memory _sig = 'disableCollateralJoin(bytes32)';
+    (ok,) = address(collateralJoinFactory).call(abi.encodeWithSignature(_sig, _cType));
   }
 
   function try_join_tokenCollateral(address usr, uint256 wad) public returns (bool ok) {
@@ -677,7 +677,7 @@ contract SingleJoinTest is DSTest {
     collateral.approve(address(collateralA), 20 ether);
     assertTrue(try_join_tokenCollateral(address(this), 10 ether));
     assertEq(safeEngine.tokenCollateral('collateral', me), 10 ether);
-    assertTrue(try_disable_collateralJoin(address(collateralA)));
+    assertTrue(try_disable_collateralJoin(bytes32('collateral')));
     assertTrue(!try_join_tokenCollateral(address(this), 10 ether));
     assertEq(safeEngine.tokenCollateral('collateral', me), 10 ether);
   }
@@ -737,7 +737,7 @@ contract SingleJoinTest is DSTest {
 
   function test_disable_contract_no_access() public {
     collateralJoinFactory.removeAuthorization(address(this));
-    assertTrue(!try_disable_collateralJoin(address(collateralA)));
+    assertTrue(!try_disable_collateralJoin(bytes32('collateral')));
     ethA.removeAuthorization(address(this));
     assertTrue(!try_disable_contract(address(ethA)));
     coinA.removeAuthorization(address(this));
@@ -881,8 +881,8 @@ contract SingleLiquidationTest is DSTest {
 
     ILiquidationEngine.LiquidationEngineParams memory _liquidationEngineParams =
       ILiquidationEngine.LiquidationEngineParams({onAuctionSystemCoinLimit: type(uint256).max});
-    liquidationEngine = new LiquidationEngine(address(safeEngine), _liquidationEngineParams);
-    liquidationEngine.modifyParameters('accountingEngine', abi.encode(accountingEngine));
+    liquidationEngine = new LiquidationEngine(address(safeEngine), address(accountingEngine), _liquidationEngineParams);
+
     safeEngine.addAuthorization(address(liquidationEngine));
     accountingEngine.addAuthorization(address(liquidationEngine));
 
@@ -893,8 +893,8 @@ contract SingleLiquidationTest is DSTest {
       ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: rad(1000 ether), debtFloor: 0});
     safeEngine.initializeCollateralType('gold', _safeEngineCollateralParams);
     collateralJoinFactory = new CollateralJoinFactory(address(safeEngine));
+    safeEngine.addAuthorization(address(collateralJoinFactory));
     collateralA = CollateralJoin(collateralJoinFactory.deployCollateralJoin('gold', address(gold)));
-    safeEngine.addAuthorization(address(collateralA));
 
     gold.approve(address(collateralA), type(uint256).max);
     collateralA.join(address(this), 1000 ether);
@@ -934,9 +934,7 @@ contract SingleLiquidationTest is DSTest {
     });
     collateralAuctionHouse =
     new IncreasingDiscountCollateralAuctionHouse(address(safeEngine), address(oracleRelayer), address(liquidationEngine), 'gold', _cahParams, _cahCParams);
-    collateralAuctionHouse.addAuthorization(address(liquidationEngine));
 
-    liquidationEngine.addAuthorization(address(collateralAuctionHouse));
     liquidationEngine.modifyParameters('gold', 'collateralAuctionHouse', abi.encode(collateralAuctionHouse));
     liquidationEngine.modifyParameters('gold', 'liquidationPenalty', abi.encode(1 ether));
 

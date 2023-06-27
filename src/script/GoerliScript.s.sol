@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import '@script/Contracts.s.sol';
-import {Script} from 'forge-std/Script.sol';
+import {Script, console} from 'forge-std/Script.sol';
 import {Params, ParamChecker, WETH, OP} from '@script/Params.s.sol';
 import {Common} from '@script/Common.s.sol';
 import {GoerliDeployment} from '@script/GoerliDeployment.s.sol';
