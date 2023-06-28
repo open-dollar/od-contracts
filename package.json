@@ -31,6 +31,7 @@
     "test": "FOUNDRY_FUZZ_RUNS=128 FOUNDRY_FUZZ_MAX_TEST_REJECTS=1000000 forge test -vvv",
     "test:e2e": "forge test --match-contract E2E -vvv",
     "test:local": "FOUNDRY_FUZZ_RUNS=32 FOUNDRY_FUZZ_MAX_TEST_REJECTS=1000000 forge test -vvv",
+    "test:simulation": "forge test --match-contract Simulation --ffi",
     "test:unit": "FOUNDRY_FUZZ_RUNS=128 FOUNDRY_FUZZ_MAX_TEST_REJECTS=1000000 forge test --match-contract Unit -vvv",
     "test:unit:deep": "FOUNDRY_FUZZ_RUNS=1024 FOUNDRY_FUZZ_MAX_TEST_REJECTS=10000000 forge test --match-contract Unit -vvvvv"
   },
