@@ -2,12 +2,15 @@
 pragma solidity 0.8.19;
 
 contract MerkleTreeGenerator {
+  error LengthMismatch();
+  error EmptyArray();
+
   function generateMerkleTree(
     address[] memory addresses,
     uint256[] memory amounts
   ) public pure returns (bytes32[] memory) {
-    require(addresses.length == amounts.length, 'Input arrays must have the same length');
-    require(addresses.length > 0, 'Input arrays must not be empty');
+    if (addresses.length != amounts.length) revert LengthMismatch();
+    if (addresses.length == 0) revert EmptyArray();
 
     uint256 n = addresses.length;
     uint256 treeSize = 2 * n - 1;

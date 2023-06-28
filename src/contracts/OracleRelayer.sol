@@ -112,7 +112,7 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
   }
 
   function updateRedemptionRate(uint256 _redemptionRate) external isAuthorized whenEnabled {
-    if (block.timestamp != redemptionPriceUpdateTime) revert RedemptionPriceNotUpdated();
+    if (block.timestamp != redemptionPriceUpdateTime) revert OracleRelayer_RedemptionPriceNotUpdated();
 
     if (_redemptionRate > _params.redemptionRateUpperBound) {
       _redemptionRate = _params.redemptionRateUpperBound;

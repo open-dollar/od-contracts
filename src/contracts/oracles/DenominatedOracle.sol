@@ -33,8 +33,8 @@ contract DenominatedOracle is IBaseOracle, IDenominatedOracle {
   bool public inverted;
 
   constructor(IBaseOracle _priceSource, IBaseOracle _denominationPriceSource, bool _inverted) {
-    require(address(_priceSource) != address(0), 'DelayedOracle/null-price-source');
-    require(address(_denominationPriceSource) != address(0), 'DelayedOracle/null-price-source');
+    if (address(_priceSource) == address(0)) revert DenominatedOracle_NullPriceSource();
+    if (address(_denominationPriceSource) == address(0)) revert DenominatedOracle_NullPriceSource();
 
     priceSource = _priceSource;
     denominationPriceSource = _denominationPriceSource;

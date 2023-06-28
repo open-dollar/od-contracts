@@ -3,6 +3,7 @@ pragma solidity 0.8.19;
 
 import {Common, RAD_DELTA} from './Common.t.sol';
 
+import {ILiquidationEngine} from '@script/Contracts.s.sol';
 import {SURPLUS_AUCTION_BID_RECEIVER} from '@script/Params.s.sol';
 import {
   INITIAL_DEBT_AUCTION_MINTED_TOKENS,
@@ -103,7 +104,7 @@ abstract contract E2ETest is BaseUser, Base_CType, Common {
     // NOTE: LVT for price = 1000 is 50%
     _setCollateralPrice(_cType(), 675e18); // LVT = 74,0% = 1/1.35
 
-    vm.expectRevert('LiquidationEngine/safe-not-unsafe');
+    vm.expectRevert(ILiquidationEngine.LiqEng_SAFENotUnsafe.selector);
     _liquidateSAFE(_cType(), address(this));
 
     _setCollateralPrice(_cType(), 674e18); // LVT = 74,1% > 1/1.35
@@ -115,7 +116,7 @@ abstract contract E2ETest is BaseUser, Base_CType, Common {
 
     _collectFees(_cType(), 8 * YEAR); // 1.05^8 = 148%
 
-    vm.expectRevert('LiquidationEngine/safe-not-unsafe');
+    vm.expectRevert(ILiquidationEngine.LiqEng_SAFENotUnsafe.selector);
     _liquidateSAFE(_cType(), address(this));
 
     _collectFees(_cType(), YEAR); // 1.05^9 = 153%

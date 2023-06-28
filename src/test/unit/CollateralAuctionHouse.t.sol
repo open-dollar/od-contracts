@@ -772,13 +772,13 @@ contract Unit_CollateralAuctionHouse_TerminateAuctionPrematurely is Base {
 
   function test_Revert_AmountToSell_IsZero(uint256 _amountToRaise) public authorized {
     _mockValues(0, _amountToRaise);
-    vm.expectRevert(bytes('IncreasingDiscountCollateralAuctionHouse/inexistent-auction'));
+    vm.expectRevert(IIncreasingDiscountCollateralAuctionHouse.IDCAH_InexistentAuction.selector);
     auctionHouse.terminateAuctionPrematurely(1);
   }
 
   function test_Revert_AmountToRaise_IsZero(uint256 _amountToSell) public authorized {
     _mockValues(_amountToSell, 0);
-    vm.expectRevert(bytes('IncreasingDiscountCollateralAuctionHouse/inexistent-auction'));
+    vm.expectRevert(IIncreasingDiscountCollateralAuctionHouse.IDCAH_InexistentAuction.selector);
     auctionHouse.terminateAuctionPrematurely(1);
   }
 }
@@ -1202,7 +1202,7 @@ contract Unit_CollateralAuctionHouse_GetCollateralFSMAndFinalSystemCoinPrices is
   }
 
   function test_Revert_SystemCoinRedemptionPriceIsZero() public {
-    vm.expectRevert(bytes('IncreasingDiscountCollateralAuctionHouse/invalid-redemption-price-provided'));
+    vm.expectRevert(IIncreasingDiscountCollateralAuctionHouse.IDCAH_InvalidRedemptionPriceProvided.selector);
 
     auctionHouse.getCollateralFSMAndFinalSystemCoinPrices(0);
   }
@@ -1923,7 +1923,7 @@ contract Unit_CollateralAuctionHouse_StartAuction is Base {
     _scenario.amountToSell = 0;
     _mockValues(_scenario);
 
-    vm.expectRevert(bytes('IncreasingDiscountCollateralAuctionHouse/no-collateral-for-sale'));
+    vm.expectRevert(IIncreasingDiscountCollateralAuctionHouse.IDCAH_NoCollateralForSale.selector);
 
     auctionHouse.startAuction(
       forgoneCollateralReceiver,
@@ -1939,7 +1939,7 @@ contract Unit_CollateralAuctionHouse_StartAuction is Base {
     _scenario.amountToRaise = 0;
     _mockValues(_scenario);
 
-    vm.expectRevert(bytes('IncreasingDiscountCollateralAuctionHouse/nothing-to-raise'));
+    vm.expectRevert(IIncreasingDiscountCollateralAuctionHouse.IDCAH_NothingToRaise.selector);
 
     auctionHouse.startAuction(
       forgoneCollateralReceiver,
@@ -1956,7 +1956,7 @@ contract Unit_CollateralAuctionHouse_StartAuction is Base {
     vm.assume(!_amountToRaiseGtEqRay(_scenario));
     _mockValues(_scenario);
 
-    vm.expectRevert(bytes('IncreasingDiscountCollateralAuctionHouse/dusty-auction'));
+    vm.expectRevert(IIncreasingDiscountCollateralAuctionHouse.IDCAH_DustyAuction.selector);
 
     auctionHouse.startAuction(
       forgoneCollateralReceiver,
@@ -2684,7 +2684,7 @@ contract Unit_CollateralAuctionHouse_BuyCollateral is Base {
 
     _mockValues(_scenario);
 
-    vm.expectRevert(bytes('IncreasingDiscountCollateralAuctionHouse/inexistent-auction'));
+    vm.expectRevert(IIncreasingDiscountCollateralAuctionHouse.IDCAH_InexistentAuction.selector);
 
     auctionHouse.buyCollateral(_scenario.id, _scenario.wad);
   }
@@ -2696,7 +2696,7 @@ contract Unit_CollateralAuctionHouse_BuyCollateral is Base {
 
     _mockValues(_scenario);
 
-    vm.expectRevert(bytes('IncreasingDiscountCollateralAuctionHouse/invalid-bid'));
+    vm.expectRevert(IIncreasingDiscountCollateralAuctionHouse.IDCAH_InvalidBid.selector);
 
     auctionHouse.buyCollateral(_scenario.id, _scenario.wad);
   }
@@ -2709,7 +2709,7 @@ contract Unit_CollateralAuctionHouse_BuyCollateral is Base {
     vm.assume(!_collateralFsmValidValue(_scenario));
     _mockValues(_scenario);
 
-    vm.expectRevert(bytes('IncreasingDiscountCollateralAuctionHouse/collateral-fsm-invalid-value'));
+    vm.expectRevert(IIncreasingDiscountCollateralAuctionHouse.IDCAH_CollateralFSMInvalidValue.selector);
 
     auctionHouse.buyCollateral(_scenario.id, _scenario.wad);
   }
@@ -2724,7 +2724,7 @@ contract Unit_CollateralAuctionHouse_BuyCollateral is Base {
     _scenario.boughtCollateral = 0;
     _mockValues(_scenario);
 
-    vm.expectRevert(bytes('IncreasingDiscountCollateralAuctionHouse/null-bought-amount'));
+    vm.expectRevert(IIncreasingDiscountCollateralAuctionHouse.IDCAH_NullBoughtAmount.selector);
 
     auctionHouse.buyCollateral(_scenario.id, _scenario.wad);
   }
@@ -2735,7 +2735,7 @@ contract Unit_CollateralAuctionHouse_BuyCollateral is Base {
     _scenario.amountToRaise = _scenario.wad * RAY + _remainingToRaise;
     _mockValues(_scenario);
 
-    vm.expectRevert(bytes('IncreasingDiscountCollateralAuctionHouse/invalid-left-to-raise'));
+    vm.expectRevert(IIncreasingDiscountCollateralAuctionHouse.IDCAH_InvalidLeftToRaise.selector);
 
     auctionHouse.buyCollateral(_scenario.id, _scenario.wad);
   }

@@ -361,7 +361,7 @@ contract Unit_GlobalSettlement_FreezeCollateralType is Base {
     _;
   }
 
-  function _assumeHappyPath(uint256 _redemptionPrice, uint256 _oracleReadValue) internal view {
+  function _assumeHappyPath(uint256 _redemptionPrice, uint256 _oracleReadValue) internal pure {
     vm.assume(notOverflowMul(_redemptionPrice, WAD));
     vm.assume(_oracleReadValue != 0);
   }
@@ -456,7 +456,7 @@ contract Unit_GlobalSettlement_FastTrackAuction is Base {
     _;
   }
 
-  function _assumeHappyPath(FastTrackAuctionStruct memory _auction) internal view returns (uint256 _debt) {
+  function _assumeHappyPath(FastTrackAuctionStruct memory _auction) internal pure returns (uint256 _debt) {
     vm.assume(_auction.finalCoinPerCollateralPrice != 0);
     vm.assume(notUnderflow(_auction.amountToRaise, _auction.raisedAmount));
     vm.assume(_auction.accumulatedRate != 0);
@@ -634,7 +634,7 @@ contract Unit_GlobalSettlement_ProcessSAFE is Base {
 
   function _assumeHappyPath(ProcessSAFEStruct memory _safeData)
     internal
-    view
+    pure
     returns (uint256 _amountOwed, uint256 _minCollateral)
   {
     vm.assume(_safeData.finalCoinPerCollateralPrice != 0);
@@ -749,7 +749,7 @@ contract Unit_GlobalSettlement_FreeCollateral is Base {
     _;
   }
 
-  function _assumeHappyPath(uint256 _lockedCollateral) internal view {
+  function _assumeHappyPath(uint256 _lockedCollateral) internal pure {
     vm.assume(notOverflowInt256(_lockedCollateral));
   }
 
@@ -916,7 +916,7 @@ contract Unit_GlobalSettlement_CalculateCashPrice is Base {
     uint256 _collateralShortfall,
     uint256 _collateralTotalDebt,
     uint256 _accumulatedRate
-  ) internal view returns (uint256 _redemptionAdjustedDebt) {
+  ) internal pure returns (uint256 _redemptionAdjustedDebt) {
     vm.assume(_outstandingCoinSupply != 0);
     vm.assume(notOverflowMul(_collateralTotalDebt, _accumulatedRate));
     vm.assume(notOverflowMul(_collateralTotalDebt.rmul(_accumulatedRate), _finalCoinPerCollateralPrice));
@@ -1036,7 +1036,7 @@ contract Unit_GlobalSettlement_PrepareCoinsForRedeeming is Base {
     _;
   }
 
-  function _assumeHappyPath(uint256 _coinAmount, uint256 _outstandingCoinSupply, uint256 _coinBag) internal view {
+  function _assumeHappyPath(uint256 _coinAmount, uint256 _outstandingCoinSupply, uint256 _coinBag) internal pure {
     vm.assume(_outstandingCoinSupply != 0);
     vm.assume(notOverflowMul(_coinAmount, RAY));
     vm.assume(notOverflowAdd(_coinBag, _coinAmount));
@@ -1114,7 +1114,7 @@ contract Unit_GlobalSettlement_RedeemCollateral is Base {
     _;
   }
 
-  function _assumeHappyPath(RedeemCollateralStruct memory _collateralData) internal view {
+  function _assumeHappyPath(RedeemCollateralStruct memory _collateralData) internal pure {
     vm.assume(_collateralData.collateralCashPrice != 0);
     vm.assume(notOverflowMul(_collateralData.coinsAmount, _collateralData.collateralCashPrice));
     vm.assume(notOverflowAdd(_collateralData.coinsUsedToRedeem, _collateralData.coinsAmount));

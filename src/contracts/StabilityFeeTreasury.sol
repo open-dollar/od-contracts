@@ -42,7 +42,7 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
   uint256 public latestSurplusTransferTime; // latest timestamp when transferSurplusFunds was called [seconds]
 
   modifier accountNotTreasury(address _account) {
-    require(_account != address(this), 'StabilityFeeTreasury/account-cannot-be-treasury');
+    if (_account == address(this)) revert SFTreasury_AccountCannotBeTreasury();
     _;
   }
 
@@ -111,7 +111,7 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
    * @param  _rad The total approved amount of SF to withdraw (number with 45 decimals)
    */
   function setTotalAllowance(address _account, uint256 _rad) external isAuthorized accountNotTreasury(_account) {
-    require(_account != address(0), 'StabilityFeeTreasury/null-account');
+    if (_account == address(0)) revert SFTreasury_NullAccount();
     allowance[_account].total = _rad;
     emit SetTotalAllowance(_account, _rad);
   }
@@ -122,7 +122,7 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
    * @param  _rad The per hour approved amount of SF to withdraw (number with 45 decimals)
    */
   function setPerHourAllowance(address _account, uint256 _rad) external isAuthorized accountNotTreasury(_account) {
-    require(_account != address(0), 'StabilityFeeTreasury/null-account');
+    if (_account == address(0)) revert SFTreasury_NullAccount();
     allowance[_account].perHour = _rad;
     emit SetPerHourAllowance(_account, _rad);
   }
@@ -134,14 +134,14 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
    * @param  _rad Amount of internal system coins to transfer (a number with 45 decimals)
    */
   function giveFunds(address _account, uint256 _rad) external isAuthorized accountNotTreasury(_account) {
-    require(_account != address(0), 'StabilityFeeTreasury/null-account');
+    if (_account == address(0)) revert SFTreasury_NullAccount();
 
     _joinAllCoins();
     (uint256 _coinBalance, uint256 _debtBalance) =
       _settleDebt(safeEngine.coinBalance(address(this)), safeEngine.debtBalance(address(this)));
 
-    require(_debtBalance == 0, 'StabilityFeeTreasury/outstanding-bad-debt');
-    require(_coinBalance >= _rad, 'StabilityFeeTreasury/not-enough-funds');
+    if (_debtBalance != 0) revert SFTreasury_OutstandingBadDebt();
+    if (_coinBalance < _rad) revert SFTreasury_NotEnoughFunds();
 
     if (_account != extraSurplusReceiver) {
       expensesAccumulator += _rad;
@@ -170,15 +170,14 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
    */
   function pullFunds(address _dstAccount, uint256 _wad) external {
     if (_dstAccount == address(this)) return;
-    require(allowance[msg.sender].total >= _wad * RAY, 'StabilityFeeTreasury/not-allowed');
-    require(_dstAccount != address(0), 'StabilityFeeTreasury/null-dst');
-    require(_dstAccount != extraSurplusReceiver, 'StabilityFeeTreasury/dst-cannot-be-accounting');
-    require(_wad > 0, 'StabilityFeeTreasury/null-transfer-amount');
+    if (allowance[msg.sender].total < _wad * RAY) revert SFTreasury_NotAllowed();
+    if (_dstAccount == address(0)) revert SFTreasury_NullDst();
+    if (_dstAccount == extraSurplusReceiver) revert SFTreasury_DstCannotBeAccounting();
+    if (_wad == 0) revert SFTreasury_NullTransferAmount();
     if (allowance[msg.sender].perHour > 0) {
-      require(
-        pulledPerHour[msg.sender][block.timestamp / HOUR] + (_wad * RAY) <= allowance[msg.sender].perHour,
-        'StabilityFeeTreasury/per-block-limit-exceeded'
-      );
+      if (pulledPerHour[msg.sender][block.timestamp / HOUR] + (_wad * RAY) > allowance[msg.sender].perHour) {
+        revert SFTreasury_PerHourLimitExceeded();
+      }
     }
 
     pulledPerHour[msg.sender][block.timestamp / HOUR] += (_wad * RAY);
@@ -187,9 +186,9 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
     (uint256 _coinBalance, uint256 _debtBalance) =
       _settleDebt(safeEngine.coinBalance(address(this)), safeEngine.debtBalance(address(this)));
 
-    require(_debtBalance == 0, 'StabilityFeeTreasury/outstanding-bad-debt');
-    require(_coinBalance >= _wad * RAY, 'StabilityFeeTreasury/not-enough-funds');
-    require(_coinBalance >= _params.pullFundsMinThreshold, 'StabilityFeeTreasury/below-pullFunds-min-threshold');
+    if (_debtBalance != 0) revert SFTreasury_OutstandingBadDebt();
+    if (_coinBalance < _wad * RAY) revert SFTreasury_NotEnoughFunds();
+    if (_coinBalance < _params.pullFundsMinThreshold) revert SFTreasury_BelowPullFundsMinThreshold();
 
     // Update allowance and accumulator
     allowance[msg.sender].total -= (_wad * RAY);
@@ -209,10 +208,9 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
    *              by an expense multiplier)
    */
   function transferSurplusFunds() external {
-    require(
-      block.timestamp >= latestSurplusTransferTime + _params.surplusTransferDelay,
-      'StabilityFeeTreasury/transfer-cooldown-not-passed'
-    );
+    if (block.timestamp < latestSurplusTransferTime + _params.surplusTransferDelay) {
+      revert SFTreasury_TransferCooldownNotPassed();
+    }
     // Compute latest expenses
     uint256 _latestExpenses = expensesAccumulator - accumulatorTag;
     // Check if we need to keep more funds than the total capacity
@@ -233,7 +231,7 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
       _settleDebt(safeEngine.coinBalance(address(this)), safeEngine.debtBalance(address(this)));
 
     // Check that there's no bad debt left
-    require(_debtBalance == 0, 'StabilityFeeTreasury/outstanding-bad-debt');
+    if (_debtBalance != 0) revert SFTreasury_OutstandingBadDebt();
     // Check if we have too much money
     if (_coinBalance > _remainingFunds) {
       // Make sure that we still keep min SF in treasury

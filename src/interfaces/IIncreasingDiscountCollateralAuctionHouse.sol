@@ -28,6 +28,17 @@ interface IIncreasingDiscountCollateralAuctionHouse is ICollateralAuctionHouse, 
   event SettleAuction(uint256 indexed _id, uint256 _leftoverCollateral);
   event TerminateAuctionPrematurely(uint256 indexed _id, address _sender, uint256 _collateralAmount);
 
+  // --- Errors ---
+  error IDCAH_InvalidRedemptionPriceProvided();
+  error IDCAH_NoCollateralForSale();
+  error IDCAH_NothingToRaise();
+  error IDCAH_DustyAuction();
+  error IDCAH_InexistentAuction();
+  error IDCAH_InvalidBid();
+  error IDCAH_CollateralFSMInvalidValue();
+  error IDCAH_NullBoughtAmount();
+  error IDCAH_InvalidLeftToRaise();
+
   // --- Data ---
   struct CollateralAuctionHouseParams {
     // Minimum acceptable bid

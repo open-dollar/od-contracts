@@ -27,8 +27,8 @@ contract DelayedOracle is IBaseOracle, IDelayedOracle {
   Feed internal _nextFeed;
 
   constructor(IBaseOracle _priceSource, uint256 _updateDelay) {
-    require(address(_priceSource) != address(0), 'DelayedOracle/null-price-source');
-    require(_updateDelay != 0, 'DelayedOracle/null-delay');
+    if (address(_priceSource) == address(0)) revert DelayedOracle_NullPriceSource();
+    if (_updateDelay == 0) revert DelayedOracle_NullDelay();
 
     priceSource = _priceSource;
     updateDelay = _updateDelay;
@@ -48,7 +48,7 @@ contract DelayedOracle is IBaseOracle, IDelayedOracle {
   /// @inheritdoc IDelayedOracle
   function updateResult() external returns (bool _success) {
     // Check if the delay passed
-    if (!_delayHasElapsed()) revert DelayHasNotElapsed();
+    if (!_delayHasElapsed()) revert DelayedOracle_DelayHasNotElapsed();
     // Read the price from the median
     (uint256 _priceFeedValue, bool _hasValidValue) = _getPriceSourceResult();
     // If the value is valid, update storage
@@ -72,7 +72,7 @@ contract DelayedOracle is IBaseOracle, IDelayedOracle {
 
   /// @inheritdoc IBaseOracle
   function read() external view returns (uint256 _result) {
-    require(_currentFeed.isValid, 'OSM/no-current-value');
+    if (!_currentFeed.isValid) revert DelayedOracle_NoCurrentValue();
     return _currentFeed.value;
   }
 

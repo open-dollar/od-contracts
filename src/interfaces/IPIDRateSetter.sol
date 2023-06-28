@@ -15,8 +15,8 @@ interface IPIDRateSetter is IAuthorizable, IModifiable {
   );
 
   // --- Errors ---
-  error InvalidPriceFeed();
-  error RateSetterCooldown();
+  error PIDRateSetter_InvalidPriceFeed();
+  error PIDRateSetter_RateSetterCooldown();
 
   // --- Structs ---
   struct PIDRateSetterParams {

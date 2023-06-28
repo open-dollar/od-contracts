@@ -81,7 +81,7 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
     bytes32 _cType,
     SAFEEngineCollateralParams memory _collateralParams
   ) external isAuthorized {
-    require(_cData[_cType].accumulatedRate == 0, 'SAFEEngine/collateral-type-already-exists');
+    if (_cData[_cType].accumulatedRate != 0) revert SAFEEng_CollateralTypeAlreadyExists();
     _cData[_cType].accumulatedRate = RAY;
     _cParams[_cType] = _collateralParams;
     emit InitializeCollateralType(_cType);
@@ -154,7 +154,7 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
   ) external whenEnabled {
     SAFEEngineCollateralData storage __cData = _cData[_cType];
     // collateral type has been initialised
-    require(__cData.accumulatedRate != 0, 'SAFEEngine/collateral-type-not-initialized');
+    if (__cData.accumulatedRate == 0) revert SAFEEng_CollateralTypeNotInitialized();
 
     _modifyCollateralBalance(_cType, _collateralSource, -_deltaCollateral);
     _emitTransferCollateral(_cType, address(0), _safe, _deltaCollateral);
@@ -172,26 +172,28 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
 
       // either debt is increased (generated) and debt ceilings are not exceeded, or debt destination consents
       if (_deltaDebt > 0) {
-        if (globalDebt > _params.globalDebtCeiling) revert GlobalDebtCeiling();
-        if (__cData.debtAmount * __cData.accumulatedRate > __cParams.debtCeiling) revert CollateralDebtCeiling();
-        if (_safeData.generatedDebt > _params.safeDebtCeiling) revert SafeDebtCeiling();
+        if (globalDebt > _params.globalDebtCeiling) revert SAFEEng_GlobalDebtCeilingHit();
+        if (__cData.debtAmount * __cData.accumulatedRate > __cParams.debtCeiling) {
+          revert SAFEEng_CollateralDebtCeilingHit();
+        }
+        if (_safeData.generatedDebt > _params.safeDebtCeiling) revert SAFEEng_SAFEDebtCeilingHit();
       } else {
-        if (!canModifySAFE(_debtDestination, msg.sender)) revert NotDebtDstAllowed();
+        if (!canModifySAFE(_debtDestination, msg.sender)) revert SAFEEng_NotDebtDstAllowed();
       }
 
       // either safe is less risky, or it is still safe and the owner consents
       if (_deltaDebt > 0 || _deltaCollateral < 0) {
-        if (_totalDebtIssued > _safeData.lockedCollateral * __cData.safetyPrice) revert SAFENotSafe();
-        if (!canModifySAFE(_safe, msg.sender)) revert NotSAFEAllowed();
+        if (_totalDebtIssued > _safeData.lockedCollateral * __cData.safetyPrice) revert SAFEEng_SAFENotSafe();
+        if (!canModifySAFE(_safe, msg.sender)) revert SAFEEng_NotSAFEAllowed();
       }
 
       // either collateral is decreased (returned), or collateral source consents
       if (_deltaCollateral > 0) {
-        if (!canModifySAFE(_collateralSource, msg.sender)) revert NotCollateralSrcAllowed();
+        if (!canModifySAFE(_collateralSource, msg.sender)) revert SAFEEng_NotCollateralSrcAllowed();
       }
 
       // either safe has no debt, or a non-dusty amount
-      if (_safeData.generatedDebt != 0 && _totalDebtIssued < __cParams.debtFloor) revert DustySAFE();
+      if (_safeData.generatedDebt != 0 && _totalDebtIssued < __cParams.debtFloor) revert SAFEEng_DustySAFE();
     }
 
     emit ModifySAFECollateralization(_cType, _safe, _collateralSource, _debtDestination, _deltaCollateral, _deltaDebt);
@@ -228,12 +230,12 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
       uint256 _dstTotalDebtIssued = _dstSAFE.generatedDebt * __cData.accumulatedRate;
 
       // both sides safe
-      require(_srcTotalDebtIssued <= _srcSAFE.lockedCollateral * __cData.safetyPrice, 'SAFEEngine/not-safe-src');
-      require(_dstTotalDebtIssued <= _dstSAFE.lockedCollateral * __cData.safetyPrice, 'SAFEEngine/not-safe-dst');
+      if (_srcTotalDebtIssued > _srcSAFE.lockedCollateral * __cData.safetyPrice) revert SAFEEng_NotSafeSrc();
+      if (_dstTotalDebtIssued > _dstSAFE.lockedCollateral * __cData.safetyPrice) revert SAFEEng_NotSafeDst();
 
       // both sides non-dusty
-      require(_srcTotalDebtIssued >= __cParams.debtFloor || _srcSAFE.generatedDebt == 0, 'SAFEEngine/dust-src');
-      require(_dstTotalDebtIssued >= __cParams.debtFloor || _dstSAFE.generatedDebt == 0, 'SAFEEngine/dust-dst');
+      if (_srcTotalDebtIssued < __cParams.debtFloor && _srcSAFE.generatedDebt != 0) revert SAFEEng_DustSrc();
+      if (_dstTotalDebtIssued < __cParams.debtFloor && _dstSAFE.generatedDebt != 0) revert SAFEEng_DustDst();
     }
 
     emit TransferSAFECollateralAndDebt(_cType, _src, _dst, _deltaCollateral, _deltaDebt);
@@ -435,7 +437,7 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
 
   // --- Modifiers ---
   modifier isSAFEAllowed(address _safe, address _account) {
-    if (!canModifySAFE(_safe, _account)) revert NotSAFEAllowed();
+    if (!canModifySAFE(_safe, _account)) revert SAFEEng_NotSAFEAllowed();
     _;
   }
 }

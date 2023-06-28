@@ -8,7 +8,10 @@ interface IDelayedOracle is IBaseOracle {
   event UpdateResult(uint256 _newMedian, uint256 _lastUpdateTime);
 
   // --- Errors ---
-  error DelayHasNotElapsed();
+  error DelayedOracle_NullPriceSource();
+  error DelayedOracle_NullDelay();
+  error DelayedOracle_DelayHasNotElapsed();
+  error DelayedOracle_NoCurrentValue();
 
   // --- Structs ---
   struct Feed {

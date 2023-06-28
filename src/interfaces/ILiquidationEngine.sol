@@ -25,6 +25,19 @@ interface ILiquidationEngine is IAuthorizable, IDisableable, IModifiable {
   event FailedSAFESave(bytes _failReason);
   event ProtectSAFE(bytes32 indexed _collateralType, address indexed _safe, address _saviour);
 
+  // --- Errors ---
+  error LiqEng_SaviourNotOk();
+  error LiqEng_InvalidAmounts();
+  error LiqEng_CannotModifySAFE();
+  error LiqEng_SaviourNotAuthorized();
+  error LiqEng_SAFENotUnsafe();
+  error LiqEng_LiquidationLimitHit();
+  error LiqEng_InvalidSAFESaviourOperation();
+  error LiqEng_NullAuction();
+  error LiqEng_DustySAFE();
+  error LiqEng_NullCollateralToSell();
+  error LiqEng_CollateralTypeAlreadyInitialized();
+
   // --- Structs ---
   struct LiquidationEngineParams {
     uint256 onAuctionSystemCoinLimit;

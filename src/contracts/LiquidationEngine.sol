@@ -68,11 +68,8 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
   function connectSAFESaviour(address _saviour) external isAuthorized {
     (bool _ok, uint256 _collateralAdded, uint256 _liquidatorReward) =
       ISAFESaviour(_saviour).saveSAFE(address(this), '', address(0));
-    require(_ok, 'LiquidationEngine/saviour-not-ok');
-    require(
-      (_collateralAdded == type(uint256).max) && (_liquidatorReward == type(uint256).max),
-      'LiquidationEngine/invalid-amounts'
-    );
+    if (!_ok) revert LiqEng_SaviourNotOk();
+    if (_collateralAdded != type(uint256).max || _liquidatorReward != type(uint256).max) revert LiqEng_InvalidAmounts();
     safeSaviours[_saviour] = 1;
     emit ConnectSAFESaviour(_saviour);
   }
@@ -94,8 +91,10 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
    * @param  _saviour The chosen saviour
    */
   function protectSAFE(bytes32 _cType, address _safe, address _saviour) external {
-    require(safeEngine.canModifySAFE(_safe, msg.sender), 'LiquidationEngine/cannot-modify-safe');
-    require(_saviour == address(0) || safeSaviours[_saviour] == 1, 'LiquidationEngine/saviour-not-authorized');
+    if (_saviour != address(0)) {
+      if (!safeEngine.canModifySAFE(_safe, msg.sender)) revert LiqEng_CannotModifySAFE();
+      if (safeSaviours[_saviour] == 0) revert LiqEng_SaviourNotAuthorized();
+    }
     chosenSAFESaviour[_cType][_safe] = _saviour;
     emit ProtectSAFE(_cType, _safe, _saviour);
   }
@@ -110,19 +109,15 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
     ISAFEEngine.SAFEEngineCollateralData memory _safeEngCData = safeEngine.cData(_cType);
     ISAFEEngine.SAFE memory _safeData = safeEngine.safes(_cType, _safe);
 
-    require(
-      (_safeEngCData.liquidationPrice > 0)
-        && (
-          _safeData.lockedCollateral * _safeEngCData.liquidationPrice
-            < _safeData.generatedDebt * _safeEngCData.accumulatedRate
-        ),
-      'LiquidationEngine/safe-not-unsafe'
-    );
-    require(
-      currentOnAuctionSystemCoins < _params.onAuctionSystemCoinLimit
-        && _params.onAuctionSystemCoinLimit - currentOnAuctionSystemCoins >= _debtFloor,
-      'LiquidationEngine/liquidation-limit-hit'
-    );
+    if (
+      _safeEngCData.liquidationPrice == 0
+        || _safeData.lockedCollateral * _safeEngCData.liquidationPrice
+          >= _safeData.generatedDebt * _safeEngCData.accumulatedRate
+    ) revert LiqEng_SAFENotUnsafe();
+    if (
+      currentOnAuctionSystemCoins >= _params.onAuctionSystemCoinLimit
+        || _params.onAuctionSystemCoinLimit - currentOnAuctionSystemCoins < _debtFloor
+    ) revert LiqEng_LiquidationLimitHit();
 
     if (chosenSAFESaviour[_cType][_safe] != address(0) && safeSaviours[chosenSAFESaviour[_cType][_safe]] == 1) {
       try ISAFESaviour(chosenSAFESaviour[_cType][_safe]).saveSAFE(msg.sender, _cType, _safe) returns (
@@ -131,11 +126,10 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
         if (_ok && _collateralAddedOrDebtRepaid > 0) {
           // Checks that the saviour didn't take collateral or add more debt to the SAFE
           ISAFEEngine.SAFE memory _newSafeData = safeEngine.safes(_cType, _safe);
-          require(
-            _newSafeData.lockedCollateral >= _safeData.lockedCollateral
-              && _newSafeData.generatedDebt <= _safeData.generatedDebt,
-            'LiquidationEngine/invalid-safe-saviour-operation'
-          );
+          if (
+            _newSafeData.lockedCollateral < _safeData.lockedCollateral
+              || _newSafeData.generatedDebt > _safeData.generatedDebt
+          ) revert LiqEng_InvalidSAFESaviourOperation();
           _safeEngCData = safeEngine.cData(_cType);
           _safeData = _newSafeData;
           emit SaveSAFE(_cType, _safe, _collateralAddedOrDebtRepaid);
@@ -160,17 +154,16 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
           / _safeEngCData.accumulatedRate / __cParams.liquidationPenalty
       );
 
-      require(_limitAdjustedDebt > 0, 'LiquidationEngine/null-auction');
-      require(
-        _limitAdjustedDebt == _safeData.generatedDebt
-          || (_safeData.generatedDebt - _limitAdjustedDebt) * _safeEngCData.accumulatedRate >= _debtFloor,
-        'LiquidationEngine/dusty-safe'
-      );
+      if (_limitAdjustedDebt == 0) revert LiqEng_NullAuction();
+      if (
+        _limitAdjustedDebt != _safeData.generatedDebt
+          && (_safeData.generatedDebt - _limitAdjustedDebt) * _safeEngCData.accumulatedRate < _debtFloor
+      ) revert LiqEng_DustySAFE();
 
       uint256 _collateralToSell =
         Math.min(_safeData.lockedCollateral, _safeData.lockedCollateral * _limitAdjustedDebt / _safeData.generatedDebt);
 
-      require(_collateralToSell > 0, 'LiquidationEngine/null-collateral-to-sell');
+      if (_collateralToSell == 0) revert LiqEng_NullCollateralToSell();
 
       safeEngine.confiscateSAFECollateralAndDebt({
         _cType: _cType,
@@ -218,7 +211,7 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
     bytes32 _cType,
     LiquidationEngineCollateralParams memory _collateralParams
   ) external isAuthorized validCParams(_cType) {
-    require(_cParams[_cType].collateralAuctionHouse == address(0), 'LiquidationEngine/cType-already-initialized');
+    if (_cParams[_cType].collateralAuctionHouse != address(0)) revert LiqEng_CollateralTypeAlreadyInitialized();
     _setCollateralAuctionHouse(_cType, _collateralParams.collateralAuctionHouse);
     _cParams[_cType] = _collateralParams;
   }

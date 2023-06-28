@@ -19,7 +19,7 @@ abstract contract Base is HaiTest {
   address authorizedAccount = label('authorizedAccount');
   address user = label('user');
 
-  ISAFEEngine mockSafeEngine = ISAFEEngine(mockContract('SafeEngine'));
+  ISAFEEngine mockSafeEngine = ISAFEEngine(mockContract('SAFEEngine'));
 
   TaxCollectorForTest taxCollector;
 
@@ -301,7 +301,7 @@ contract Unit_TaxCollector_InitializeCollateralType is Base {
     _mockCollateralList(_cType);
     _mockCollateralData(_cType, RAY, 0);
 
-    vm.expectRevert(ITaxCollector.TC_CollateralTypeAlreadyInitialized.selector);
+    vm.expectRevert(ITaxCollector.TaxCollector_CollateralTypeAlreadyInitialized.selector);
 
     taxCollector.initializeCollateralType(_cType, taxCollectorCollateralParams);
   }
@@ -341,7 +341,7 @@ contract Unit_TaxCollector_CollectedManyTax is Base {
   function test_Revert_InvalidIndexes_0(uint256 _start, uint256 _end) public {
     vm.assume(_start > _end);
 
-    vm.expectRevert('TaxCollector/invalid-indexes');
+    vm.expectRevert(ITaxCollector.TaxCollector_InvalidIndexes.selector);
 
     taxCollector.collectedManyTax(_start, _end);
   }
@@ -350,7 +350,7 @@ contract Unit_TaxCollector_CollectedManyTax is Base {
     vm.assume(_start <= _end);
     vm.assume(_end >= taxCollector.collateralListLength());
 
-    vm.expectRevert('TaxCollector/invalid-indexes');
+    vm.expectRevert(ITaxCollector.TaxCollector_InvalidIndexes.selector);
 
     taxCollector.collectedManyTax(_start, _end);
   }
@@ -389,7 +389,7 @@ contract Unit_TaxCollector_TaxManyOutcome is Base {
   function test_Revert_InvalidIndexes_0(uint256 _start, uint256 _end) public {
     vm.assume(_start > _end);
 
-    vm.expectRevert('TaxCollector/invalid-indexes');
+    vm.expectRevert(ITaxCollector.TaxCollector_InvalidIndexes.selector);
 
     taxCollector.taxManyOutcome(_start, _end);
   }
@@ -398,7 +398,7 @@ contract Unit_TaxCollector_TaxManyOutcome is Base {
     vm.assume(_start <= _end);
     vm.assume(_end >= taxCollector.collateralListLength());
 
-    vm.expectRevert('TaxCollector/invalid-indexes');
+    vm.expectRevert(ITaxCollector.TaxCollector_InvalidIndexes.selector);
 
     taxCollector.taxManyOutcome(_start, _end);
   }
@@ -502,7 +502,7 @@ contract Unit_TaxCollector_TaxMany is Base {
   function test_Revert_InvalidIndexes_0(uint256 _start, uint256 _end) public {
     vm.assume(_start > _end);
 
-    vm.expectRevert('TaxCollector/invalid-indexes');
+    vm.expectRevert(ITaxCollector.TaxCollector_InvalidIndexes.selector);
 
     taxCollector.taxMany(_start, _end);
   }
@@ -511,7 +511,7 @@ contract Unit_TaxCollector_TaxMany is Base {
     vm.assume(_start <= _end);
     vm.assume(_end >= taxCollector.collateralListLength());
 
-    vm.expectRevert('TaxCollector/invalid-indexes');
+    vm.expectRevert(ITaxCollector.TaxCollector_InvalidIndexes.selector);
 
     taxCollector.taxMany(_start, _end);
   }
@@ -753,10 +753,10 @@ contract Unit_TaxCollector_ModifyParameters is Base {
     taxCollector.modifyParameters('primaryTaxReceiver', abi.encode(_primaryTaxReceiver));
   }
 
-  function test_Revert_PrimaryTaxReceiver_NullData() public {
+  function test_Revert_PrimaryTaxReceiver_NullAddress() public {
     vm.startPrank(authorizedAccount);
 
-    vm.expectRevert('TaxCollector/null-data');
+    vm.expectRevert(Assertions.NullAddress.selector);
 
     taxCollector.modifyParameters('primaryTaxReceiver', abi.encode(0));
   }

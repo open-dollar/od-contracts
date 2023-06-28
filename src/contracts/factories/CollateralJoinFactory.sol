@@ -57,8 +57,8 @@ contract CollateralJoinFactory is Authorizable, Disableable, ICollateralJoinFact
   function collateralJoinsList() external view returns (address[] memory _collateralJoinsList) {
     bytes32[] memory _collateralTypesList = _collateralTypes.values();
     _collateralJoinsList = new address[](_collateralTypesList.length);
-    for (uint256 i; i < _collateralTypesList.length; i++) {
-      _collateralJoinsList[i] = collateralJoins[_collateralTypesList[i]];
+    for (uint256 _i; _i < _collateralTypesList.length; ++_i) {
+      _collateralJoinsList[_i] = collateralJoins[_collateralTypesList[_i]];
     }
   }
 }

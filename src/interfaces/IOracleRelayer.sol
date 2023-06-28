@@ -16,7 +16,7 @@ interface IOracleRelayer is IAuthorizable, IModifiable, IDisableable {
   );
 
   // --- Errors ---
-  error RedemptionPriceNotUpdated();
+  error OracleRelayer_RedemptionPriceNotUpdated();
   error OracleRelayer_CollateralTypeAlreadyInitialized();
 
   // --- Structs ---

@@ -244,9 +244,7 @@ contract IncreasingDiscountCollateralAuctionHouse is
     virtual
     returns (uint256 _cFsmPriceFeedValue, uint256 _sCoinAdjustedPrice)
   {
-    require(
-      _systemCoinRedemptionPrice > 0, 'IncreasingDiscountCollateralAuctionHouse/invalid-redemption-price-provided'
-    );
+    if (_systemCoinRedemptionPrice == 0) revert IDCAH_InvalidRedemptionPriceProvided();
 
     IDelayedOracle _delayedOracle = IDelayedOracle(address(oracleRelayer().cParams(collateralType).oracle));
     (uint256 _collateralFsmPriceFeedValue, bool _collateralFsmHasValidValue) = _delayedOracle.getResultWithValidity();
@@ -434,9 +432,9 @@ contract IncreasingDiscountCollateralAuctionHouse is
     uint256 _amountToSell,
     uint256 _initialBid // NOTE: ignored, only used in event
   ) internal virtual returns (uint256 _id) {
-    require(_amountToSell > 0, 'IncreasingDiscountCollateralAuctionHouse/no-collateral-for-sale');
-    require(_amountToRaise > 0, 'IncreasingDiscountCollateralAuctionHouse/nothing-to-raise');
-    require(_amountToRaise >= RAY, 'IncreasingDiscountCollateralAuctionHouse/dusty-auction');
+    if (_amountToSell == 0) revert IDCAH_NoCollateralForSale();
+    if (_amountToRaise == 0) revert IDCAH_NothingToRaise();
+    if (_amountToRaise < RAY) revert IDCAH_DustyAuction();
     _id = ++auctionsStarted;
 
     _auctions[_id].currentDiscount = _cParams.minDiscount;
@@ -553,11 +551,8 @@ contract IncreasingDiscountCollateralAuctionHouse is
    * @param _wad New bid submitted (as a WAD which has 18 decimals)
    */
   function buyCollateral(uint256 _id, uint256 _wad) external {
-    require(
-      _auctions[_id].amountToSell > 0 && _auctions[_id].amountToRaise > 0,
-      'IncreasingDiscountCollateralAuctionHouse/inexistent-auction'
-    );
-    require(_wad > 0 && _wad >= _cParams.minimumBid, 'IncreasingDiscountCollateralAuctionHouse/invalid-bid');
+    if (_auctions[_id].amountToSell == 0 || _auctions[_id].amountToRaise == 0) revert IDCAH_InexistentAuction();
+    if (_wad == 0 || _wad < _cParams.minimumBid) revert IDCAH_InvalidBid();
 
     // bound max amount offered in exchange for collateral (in case someone offers more than it's necessary)
     uint256 _adjustedBid = _wad;
@@ -571,7 +566,7 @@ contract IncreasingDiscountCollateralAuctionHouse is
     // check that the collateral FSM doesn't return an invalid value
     (uint256 _collateralFsmPriceFeedValue, uint256 _systemCoinPriceFeedValue) =
       _getCollateralFSMAndFinalSystemCoinPrices(lastReadRedemptionPrice);
-    require(_collateralFsmPriceFeedValue > 0, 'IncreasingDiscountCollateralAuctionHouse/collateral-fsm-invalid-value');
+    if (_collateralFsmPriceFeedValue == 0) revert IDCAH_CollateralFSMInvalidValue();
 
     // get the amount of collateral bought
     uint256 _boughtCollateral = _getBoughtCollateral(
@@ -583,7 +578,7 @@ contract IncreasingDiscountCollateralAuctionHouse is
       _updateCurrentDiscount(_id)
     );
     // check that the calculated amount is greater than zero
-    require(_boughtCollateral > 0, 'IncreasingDiscountCollateralAuctionHouse/null-bought-amount');
+    if (_boughtCollateral == 0) revert IDCAH_NullBoughtAmount();
     // update the amount of collateral to sell
     _auctions[_id].amountToSell = _auctions[_id].amountToSell - _boughtCollateral;
 
@@ -597,10 +592,7 @@ contract IncreasingDiscountCollateralAuctionHouse is
       _adjustedBid * RAY > _auctions[_id].amountToRaise ? 0 : _auctions[_id].amountToRaise - _adjustedBid * RAY;
 
     // check that the remaining amount to raise is either zero or higher than RAY
-    require(
-      _auctions[_id].amountToRaise == 0 || _auctions[_id].amountToRaise >= RAY,
-      'IncreasingDiscountCollateralAuctionHouse/invalid-left-to-raise'
-    );
+    if (_auctions[_id].amountToRaise != 0 && _auctions[_id].amountToRaise < RAY) revert IDCAH_InvalidLeftToRaise();
 
     // transfer the bid to the income recipient and the collateral to the bidder
     safeEngine.transferInternalCoins({
@@ -655,10 +647,7 @@ contract IncreasingDiscountCollateralAuctionHouse is
    * @param _id ID of the auction to settle
    */
   function terminateAuctionPrematurely(uint256 _id) external isAuthorized {
-    require(
-      _auctions[_id].amountToSell > 0 && _auctions[_id].amountToRaise > 0,
-      'IncreasingDiscountCollateralAuctionHouse/inexistent-auction'
-    );
+    if (_auctions[_id].amountToSell == 0 || _auctions[_id].amountToRaise == 0) revert IDCAH_InexistentAuction();
     liquidationEngine().removeCoinsFromAuction(_auctions[_id].amountToRaise);
 
     safeEngine.transferCollateral({

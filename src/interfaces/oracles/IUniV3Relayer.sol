@@ -5,7 +5,7 @@ import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 
 interface IUniV3Relayer is IBaseOracle {
   // --- Errors ---
-  error InvalidPool();
+  error UniV3Relayer_InvalidPool();
 
   /**
    * @notice Address of the UniswapV3Pool used to consult the TWAP

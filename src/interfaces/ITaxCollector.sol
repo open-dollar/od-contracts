@@ -18,7 +18,15 @@ interface ITaxCollector is IAuthorizable, IModifiable {
   event DistributeTax(bytes32 indexed _cType, address indexed _target, int256 _taxCut);
 
   // --- Errors ---
-  error TC_CollateralTypeAlreadyInitialized();
+  error TaxCollector_CollateralTypeAlreadyInitialized();
+  error TaxCollector_InvalidIndexes();
+  error TaxCollector_NullAccount();
+  error TaxCollector_PrimaryReceiverCannotBeSecondary();
+  error TaxCollector_CollateralTypeNotInitialized();
+  error TaxCollector_ExceedsMaxReceiverLimit();
+  error TaxCollector_NullSF();
+  error TaxCollector_TaxCutExceedsHundred();
+  error TaxCollector_TaxCutTooBig();
 
   // --- Data ---
   struct TaxCollectorParams {

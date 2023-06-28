@@ -65,7 +65,7 @@ contract Unit_Authorizable_AddAuthorization is Base {
     _;
   }
 
-  function _assumeHappyPath(address _account) internal {
+  function _assumeHappyPath(address _account) internal view {
     vm.assume(_account != authorizedAccount);
   }
 

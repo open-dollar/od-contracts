@@ -137,7 +137,7 @@ contract Unit_OracleJob_WorkUpdateCollateralPrice is Base {
   function test_Revert_NotWorkable(bytes32 _cType) public {
     _mockValues(_cType, false, false);
 
-    vm.expectRevert(IOracleJob.OracleJob_NotWorkable.selector);
+    vm.expectRevert(IJob.NotWorkable.selector);
 
     oracleJob.workUpdateCollateralPrice(_cType);
   }
@@ -181,7 +181,7 @@ contract Unit_OracleJob_WorkUpdateRate is Base {
   function test_Revert_NotWorkable() public {
     _mockValues(false);
 
-    vm.expectRevert(IOracleJob.OracleJob_NotWorkable.selector);
+    vm.expectRevert(IJob.NotWorkable.selector);
 
     oracleJob.workUpdateRate();
   }

@@ -37,14 +37,20 @@ interface ISAFEEngine is IAuthorizable, IModifiable, IDisableable {
   event UpdateCollateralPrice(bytes32 indexed _cType, uint256 _safetyPrice, uint256 _liquidationPrice);
 
   // --- Errors ---
-  error NotSAFEAllowed();
-  error SafeDebtCeiling();
-  error CollateralDebtCeiling();
-  error GlobalDebtCeiling();
-  error SAFENotSafe();
-  error NotCollateralSrcAllowed();
-  error NotDebtDstAllowed();
-  error DustySAFE();
+  error SAFEEng_CollateralTypeAlreadyExists();
+  error SAFEEng_CollateralTypeNotInitialized();
+  error SAFEEng_GlobalDebtCeilingHit();
+  error SAFEEng_CollateralDebtCeilingHit();
+  error SAFEEng_SAFEDebtCeilingHit();
+  error SAFEEng_NotDebtDstAllowed();
+  error SAFEEng_SAFENotSafe();
+  error SAFEEng_NotSAFEAllowed();
+  error SAFEEng_NotCollateralSrcAllowed();
+  error SAFEEng_DustySAFE();
+  error SAFEEng_NotSafeSrc();
+  error SAFEEng_NotSafeDst();
+  error SAFEEng_DustSrc();
+  error SAFEEng_DustDst();
 
   // --- Structs ---
   struct SAFE {

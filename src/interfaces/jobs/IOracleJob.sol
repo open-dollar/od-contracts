@@ -12,7 +12,6 @@ import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
 interface IOracleJob is IJob, IAuthorizable, IModifiable {
   // --- Errors ---
-  error OracleJob_NotWorkable();
   error OracleJob_InvalidPrice();
 
   // --- Data ---

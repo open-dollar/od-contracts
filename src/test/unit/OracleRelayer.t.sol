@@ -784,7 +784,7 @@ contract Unit_OracleRelayer_UpdateRedemptionRate is Base {
     vm.assume(_timeSinceLastRedemptionPriceUpdate > 0);
     vm.warp(block.timestamp + _timeSinceLastRedemptionPriceUpdate);
 
-    vm.expectRevert(IOracleRelayer.RedemptionPriceNotUpdated.selector);
+    vm.expectRevert(IOracleRelayer.OracleRelayer_RedemptionPriceNotUpdated.selector);
 
     oracleRelayer.updateRedemptionRate(_redemptionRate);
   }

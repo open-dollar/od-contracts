@@ -94,7 +94,7 @@ contract CollateralAuctionHouseFactory is Authorizable, Disableable, Modifiable,
   function collateralAuctionHousesList() external view returns (address[] memory _collateralAuctionHousesList) {
     bytes32[] memory _collateralTypesList = _collateralTypes.values();
     _collateralAuctionHousesList = new address[](_collateralTypesList.length);
-    for (uint256 _i = 0; _i < _collateralTypesList.length; _i++) {
+    for (uint256 _i; _i < _collateralTypesList.length; ++_i) {
       _collateralAuctionHousesList[_i] = collateralAuctionHouses[_collateralTypesList[_i]];
     }
   }

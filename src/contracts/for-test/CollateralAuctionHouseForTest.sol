@@ -17,7 +17,7 @@ contract CollateralAuctionHouseForTest {
     uint256 _amountToRaise,
     uint256 _collateralToSell,
     uint256 _initialBid
-  ) external returns (uint256 _id) {
+  ) external view returns (uint256 _id) {
     return auctionId;
   }
 }

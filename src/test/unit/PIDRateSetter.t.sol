@@ -210,7 +210,7 @@ contract Unit_PIDRateSetter_UpdateRate is Base {
     _mockLastUpdateTime(_lastUpdateTime);
     _mockUpdateRateDelay(_updateRateDelay);
 
-    vm.expectRevert(IPIDRateSetter.RateSetterCooldown.selector);
+    vm.expectRevert(IPIDRateSetter.PIDRateSetter_RateSetterCooldown.selector);
 
     pidRateSetter.updateRate();
   }
@@ -220,7 +220,7 @@ contract Unit_PIDRateSetter_UpdateRate is Base {
 
     _mockValues(_scenario);
 
-    vm.expectRevert(IPIDRateSetter.InvalidPriceFeed.selector);
+    vm.expectRevert(IPIDRateSetter.PIDRateSetter_InvalidPriceFeed.selector);
 
     pidRateSetter.updateRate();
   }

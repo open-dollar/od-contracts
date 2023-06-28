@@ -333,7 +333,7 @@ contract Unit_SAFEEngine_TransferCollateral is Base {
   }
 
   function test_Revert_CannotModifySAFE(bytes32 collateralType, uint256 _wad) public {
-    vm.expectRevert(ISAFEEngine.NotSAFEAllowed.selector);
+    vm.expectRevert(ISAFEEngine.SAFEEng_NotSAFEAllowed.selector);
 
     vm.prank(dst);
     safeEngine.transferCollateral(collateralType, src, dst, _wad);
@@ -385,7 +385,7 @@ contract Unit_SAFEEngine_TransferInternalCoins is Base {
   }
 
   function test_Revert_CannotModifySAFE(uint256 _rad) public {
-    vm.expectRevert(ISAFEEngine.NotSAFEAllowed.selector);
+    vm.expectRevert(ISAFEEngine.SAFEEng_NotSAFEAllowed.selector);
 
     vm.prank(dst);
     safeEngine.transferInternalCoins(src, dst, _rad);
@@ -941,7 +941,7 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
       _liquidationPrice: 0
     });
 
-    vm.expectRevert(bytes('SAFEEngine/collateral-type-not-initialized'));
+    vm.expectRevert(ISAFEEngine.SAFEEng_CollateralTypeNotInitialized.selector);
 
     safeEngine.modifySAFECollateralization(collateralType, safe, src, debtDestination, 0, 0);
   }
@@ -958,7 +958,7 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
     _globalDebtCeiling = _scenario.globalDebt.add(_deltaAdjustedDebt) - 1;
     _mockParams(type(uint256).max, _globalDebtCeiling);
 
-    vm.expectRevert(ISAFEEngine.GlobalDebtCeiling.selector);
+    vm.expectRevert(ISAFEEngine.SAFEEng_GlobalDebtCeilingHit.selector);
 
     vm.prank(safe);
     safeEngine.modifySAFECollateralization(
@@ -978,7 +978,7 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
       collateralType, ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: _debtCeiling, debtFloor: 0})
     );
 
-    vm.expectRevert(ISAFEEngine.CollateralDebtCeiling.selector);
+    vm.expectRevert(ISAFEEngine.SAFEEng_CollateralDebtCeilingHit.selector);
 
     vm.prank(safe);
     safeEngine.modifySAFECollateralization(
@@ -998,7 +998,7 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
     _scenario.cData.safetyPrice = _totalDebtIssued / _newSafeCollateral - 1;
     _mockValues(_scenario);
 
-    vm.expectRevert(ISAFEEngine.SAFENotSafe.selector);
+    vm.expectRevert(ISAFEEngine.SAFEEng_SAFENotSafe.selector);
 
     vm.prank(safe);
     safeEngine.modifySAFECollateralization(
@@ -1013,7 +1013,7 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
     _mockCanModifySafe(safe, address(this), 0);
     vm.assume(_scenario.deltaDebt > 0 || _scenario.deltaCollateral < 0);
 
-    vm.expectRevert(ISAFEEngine.NotSAFEAllowed.selector);
+    vm.expectRevert(ISAFEEngine.SAFEEng_NotSAFEAllowed.selector);
 
     safeEngine.modifySAFECollateralization(
       collateralType, safe, src, debtDestination, _scenario.deltaCollateral, _scenario.deltaDebt
@@ -1026,7 +1026,7 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
     _mockCanModifySafe(src, safe, 0);
     vm.assume(_scenario.deltaCollateral > 0);
 
-    vm.expectRevert(ISAFEEngine.NotCollateralSrcAllowed.selector);
+    vm.expectRevert(ISAFEEngine.SAFEEng_NotCollateralSrcAllowed.selector);
 
     vm.prank(safe);
     safeEngine.modifySAFECollateralization(
@@ -1040,7 +1040,7 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
     _mockCanModifySafe(debtDestination, safe, 0);
     vm.assume(_scenario.deltaDebt < 0);
 
-    vm.expectRevert(ISAFEEngine.NotDebtDstAllowed.selector);
+    vm.expectRevert(ISAFEEngine.SAFEEng_NotDebtDstAllowed.selector);
 
     vm.prank(safe);
     safeEngine.modifySAFECollateralization(
@@ -1060,7 +1060,7 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
       collateralType, ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: type(uint256).max, debtFloor: _debtFloor})
     );
 
-    vm.expectRevert(ISAFEEngine.DustySAFE.selector);
+    vm.expectRevert(ISAFEEngine.SAFEEng_DustySAFE.selector);
 
     vm.prank(safe);
     safeEngine.modifySAFECollateralization(
@@ -1080,7 +1080,7 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
     _mockValues(_scenario);
     _mockParams(_safeDebtCeiling, type(uint256).max);
 
-    vm.expectRevert(ISAFEEngine.SafeDebtCeiling.selector);
+    vm.expectRevert(ISAFEEngine.SAFEEng_SAFEDebtCeilingHit.selector);
 
     vm.prank(safe);
     safeEngine.modifySAFECollateralization(
@@ -1270,7 +1270,7 @@ contract Unit_SAFEEngine_TransferSafeCollateralAndDebt is Base {
     _mockCanModifySafe(src, account, _canModifySrcSafe);
     _mockCanModifySafe(dst, account, _canModifyDstSafe);
 
-    vm.expectRevert(ISAFEEngine.NotSAFEAllowed.selector);
+    vm.expectRevert(ISAFEEngine.SAFEEng_NotSAFEAllowed.selector);
     vm.prank(account);
     safeEngine.transferSAFECollateralAndDebt(collateralType, src, dst, 10, 10);
   }
@@ -1294,7 +1294,7 @@ contract Unit_SAFEEngine_TransferSafeCollateralAndDebt is Base {
       _accumulatedRate
     );
 
-    vm.expectRevert(bytes('SAFEEngine/not-safe-src'));
+    vm.expectRevert(ISAFEEngine.SAFEEng_NotSafeSrc.selector);
     vm.prank(account);
     safeEngine.transferSAFECollateralAndDebt(collateralType, src, dst, -10, -10);
   }
@@ -1318,7 +1318,7 @@ contract Unit_SAFEEngine_TransferSafeCollateralAndDebt is Base {
       _accumulatedRate
     );
 
-    vm.expectRevert(bytes('SAFEEngine/not-safe-dst'));
+    vm.expectRevert(ISAFEEngine.SAFEEng_NotSafeDst.selector);
     vm.prank(account);
     safeEngine.transferSAFECollateralAndDebt(collateralType, src, dst, 10, 10);
   }
@@ -1340,7 +1340,7 @@ contract Unit_SAFEEngine_TransferSafeCollateralAndDebt is Base {
     stdstore.target(address(safeEngine)).sig(ISAFEEngine.cParams.selector).with_key(collateralType).depth(1)
       .checked_write(_debtFloor);
 
-    vm.expectRevert(bytes('SAFEEngine/dust-src'));
+    vm.expectRevert(ISAFEEngine.SAFEEng_DustSrc.selector);
 
     vm.prank(account);
     safeEngine.transferSAFECollateralAndDebt(collateralType, src, dst, _deltaCollateral, _deltaDebt);
@@ -1363,7 +1363,7 @@ contract Unit_SAFEEngine_TransferSafeCollateralAndDebt is Base {
     stdstore.target(address(safeEngine)).sig(ISAFEEngine.cParams.selector).with_key(collateralType).depth(1)
       .checked_write(_debtFloor);
 
-    vm.expectRevert(bytes('SAFEEngine/dust-dst'));
+    vm.expectRevert(ISAFEEngine.SAFEEng_DustDst.selector);
 
     vm.prank(account);
     safeEngine.transferSAFECollateralAndDebt(collateralType, src, dst, _deltaCollateral, _deltaDebt);
@@ -1731,7 +1731,7 @@ contract Unit_SAFEEngine_InitializeCollateralType is Base {
       _liquidationPrice: 0
     });
 
-    vm.expectRevert(bytes('SAFEEngine/collateral-type-already-exists'));
+    vm.expectRevert(ISAFEEngine.SAFEEng_CollateralTypeAlreadyExists.selector);
 
     safeEngine.initializeCollateralType(_collateralType, safeEngineCollateralParams);
   }

@@ -439,13 +439,13 @@ contract Unit_StabilityFeeTreasury_SetTotalAllowance is Base {
   }
 
   function test_Revert_AccountIsTreasury() public authorized {
-    vm.expectRevert(bytes('StabilityFeeTreasury/account-cannot-be-treasury'));
+    vm.expectRevert(IStabilityFeeTreasury.SFTreasury_AccountCannotBeTreasury.selector);
 
     stabilityFeeTreasury.setTotalAllowance(address(stabilityFeeTreasury), type(uint256).max);
   }
 
   function test_Revert_NullAccount() public authorized {
-    vm.expectRevert(bytes('StabilityFeeTreasury/null-account'));
+    vm.expectRevert(IStabilityFeeTreasury.SFTreasury_NullAccount.selector);
 
     stabilityFeeTreasury.setTotalAllowance(address(0), type(uint256).max);
   }
@@ -478,13 +478,13 @@ contract Unit_StabilityFeeTreasury_SetPerHourAllowance is Base {
   }
 
   function test_Revert_AccountIsTreasury() public authorized {
-    vm.expectRevert(bytes('StabilityFeeTreasury/account-cannot-be-treasury'));
+    vm.expectRevert(IStabilityFeeTreasury.SFTreasury_AccountCannotBeTreasury.selector);
 
     stabilityFeeTreasury.setPerHourAllowance(address(stabilityFeeTreasury), type(uint256).max);
   }
 
   function test_Revert_NullAccount() public authorized {
-    vm.expectRevert(bytes('StabilityFeeTreasury/null-account'));
+    vm.expectRevert(IStabilityFeeTreasury.SFTreasury_NullAccount.selector);
 
     stabilityFeeTreasury.setPerHourAllowance(address(0), type(uint256).max);
   }
@@ -520,7 +520,7 @@ contract Unit_StabilityFeeTreasury_TakeFunds is Base {
   }
 
   function test_Revert_AccountIsTreasury() public authorized {
-    vm.expectRevert(bytes('StabilityFeeTreasury/account-cannot-be-treasury'));
+    vm.expectRevert(IStabilityFeeTreasury.SFTreasury_AccountCannotBeTreasury.selector);
 
     stabilityFeeTreasury.takeFunds(address(stabilityFeeTreasury), type(uint256).max);
   }
@@ -636,7 +636,7 @@ contract Unit_StabilityFeeTreasury_GiveFunds is Base {
   }
 
   function test_Revert_NullAccount() public authorized {
-    vm.expectRevert(bytes('StabilityFeeTreasury/null-account'));
+    vm.expectRevert(IStabilityFeeTreasury.SFTreasury_NullAccount.selector);
 
     stabilityFeeTreasury.giveFunds(address(0), 1);
   }
@@ -646,7 +646,7 @@ contract Unit_StabilityFeeTreasury_GiveFunds is Base {
     vm.assume(_debt > 0);
     _mockValues({_coinBalance: _rad, _debtBalance: _debt});
 
-    vm.expectRevert(bytes('StabilityFeeTreasury/outstanding-bad-debt'));
+    vm.expectRevert(IStabilityFeeTreasury.SFTreasury_OutstandingBadDebt.selector);
 
     stabilityFeeTreasury.giveFunds(_account, _rad);
   }
@@ -656,7 +656,7 @@ contract Unit_StabilityFeeTreasury_GiveFunds is Base {
     vm.assume(_initialBalance < _rad);
     _mockValues({_coinBalance: _initialBalance, _debtBalance: 0});
 
-    vm.expectRevert(bytes('StabilityFeeTreasury/not-enough-funds'));
+    vm.expectRevert(IStabilityFeeTreasury.SFTreasury_NotEnoughFunds.selector);
 
     stabilityFeeTreasury.giveFunds(_account, _rad);
   }
@@ -892,7 +892,7 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     vm.assume(!_allowed(_pullFundsScenario));
     _mockValues(_pullFundsScenario, 0);
 
-    vm.expectRevert(bytes('StabilityFeeTreasury/not-allowed'));
+    vm.expectRevert(IStabilityFeeTreasury.SFTreasury_NotAllowed.selector);
 
     vm.prank(user);
     stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, _pullFundsScenario._wad);
@@ -904,7 +904,7 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     _pullFundsScenario._dstAccount = address(0);
 
     _mockValues(_pullFundsScenario, 0);
-    vm.expectRevert(bytes('StabilityFeeTreasury/null-dst'));
+    vm.expectRevert(IStabilityFeeTreasury.SFTreasury_NullDst.selector);
 
     vm.prank(user);
     stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, _pullFundsScenario._wad);
@@ -918,7 +918,7 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     _pullFundsScenario._dstAccount = address(mockExtraSurplusReceiver);
 
     _mockValues(_pullFundsScenario, 0);
-    vm.expectRevert(bytes('StabilityFeeTreasury/dst-cannot-be-accounting'));
+    vm.expectRevert(IStabilityFeeTreasury.SFTreasury_DstCannotBeAccounting.selector);
 
     vm.prank(user);
     stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, _pullFundsScenario._wad);
@@ -933,7 +933,7 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     _pullFundsScenario._wad = 0;
 
     _mockValues(_pullFundsScenario, 0);
-    vm.expectRevert(bytes('StabilityFeeTreasury/null-transfer-amount'));
+    vm.expectRevert(IStabilityFeeTreasury.SFTreasury_NullTransferAmount.selector);
 
     vm.prank(user);
     stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, _pullFundsScenario._wad);
@@ -949,7 +949,7 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     vm.assume(!_notPerHourLimitExceeded(_pullFundsScenario));
 
     _mockValues(_pullFundsScenario, 0);
-    vm.expectRevert(bytes('StabilityFeeTreasury/per-block-limit-exceeded'));
+    vm.expectRevert(IStabilityFeeTreasury.SFTreasury_PerHourLimitExceeded.selector);
 
     vm.prank(user);
     stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, _pullFundsScenario._wad);
@@ -966,7 +966,7 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     vm.assume(_debt > 0);
 
     _mockValues(_pullFundsScenario, _debt);
-    vm.expectRevert(bytes('StabilityFeeTreasury/outstanding-bad-debt'));
+    vm.expectRevert(IStabilityFeeTreasury.SFTreasury_OutstandingBadDebt.selector);
 
     vm.prank(user);
     stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, _pullFundsScenario._wad);
@@ -983,7 +983,7 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     vm.assume(!_enoughFunds(_pullFundsScenario));
 
     _mockValues(_pullFundsScenario, 0);
-    vm.expectRevert(bytes('StabilityFeeTreasury/not-enough-funds'));
+    vm.expectRevert(IStabilityFeeTreasury.SFTreasury_NotEnoughFunds.selector);
 
     vm.prank(user);
     stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, _pullFundsScenario._wad);
@@ -1001,7 +1001,7 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     vm.assume(!_notBelowPullFundsMinThreshold(_pullFundsScenario));
 
     _mockValues(_pullFundsScenario, 0);
-    vm.expectRevert(bytes('StabilityFeeTreasury/below-pullFunds-min-threshold'));
+    vm.expectRevert(IStabilityFeeTreasury.SFTreasury_BelowPullFundsMinThreshold.selector);
 
     vm.prank(user);
     stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, _pullFundsScenario._wad);
@@ -1389,7 +1389,7 @@ contract Unit_StabilityFeeTreasury_TransferSurplusFunds is Base {
     _mockLatestSurplusTransferTime(block.timestamp + _timePassed);
 
     vm.warp(block.timestamp + _timePassed);
-    vm.expectRevert(bytes('StabilityFeeTreasury/transfer-cooldown-not-passed'));
+    vm.expectRevert(IStabilityFeeTreasury.SFTreasury_TransferCooldownNotPassed.selector);
 
     stabilityFeeTreasury.transferSurplusFunds();
   }
@@ -1420,7 +1420,8 @@ contract Unit_StabilityFeeTreasury_TransferSurplusFunds is Base {
   ) public happyPathEnoughTreasureCapacity(_transferSurplusFundsScenario) {
     vm.assume(_debtBalance > 0);
     _mockSafeEngineDebtBalance(_debtBalance);
-    vm.expectRevert(bytes('StabilityFeeTreasury/outstanding-bad-debt'));
+
+    vm.expectRevert(IStabilityFeeTreasury.SFTreasury_OutstandingBadDebt.selector);
 
     stabilityFeeTreasury.transferSurplusFunds();
   }

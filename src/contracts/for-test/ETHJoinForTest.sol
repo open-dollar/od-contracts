@@ -15,7 +15,7 @@ contract ETHJoinForTest is ETHJoin {
 
   // NOTE: method to avoid errors in calls to `join` and `exit` from the proxy
   // TODO: normalize tests and remove these methods
-  function collateral() external view returns (address _collateral) {
+  function collateral() external pure returns (address _collateral) {
     return _WETH;
   }
 

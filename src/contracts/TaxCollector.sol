@@ -79,7 +79,7 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
     bytes32 _cType,
     TaxCollectorCollateralParams memory _collateralParams
   ) external isAuthorized {
-    if (!_collateralList.add(_cType)) revert TC_CollateralTypeAlreadyInitialized();
+    if (!_collateralList.add(_cType)) revert TaxCollector_CollateralTypeAlreadyInitialized();
     _cData[_cType] =
       TaxCollectorCollateralData({nextStabilityFee: RAY, updateTime: block.timestamp, secondaryReceiverAllotedTax: 0});
     _cParams[_cType] = _collateralParams;
@@ -92,7 +92,7 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
    * @notice Check if multiple collateral types are up to date with taxation
    */
   function collectedManyTax(uint256 _start, uint256 _end) public view returns (bool _ok) {
-    require(_start <= _end && _end < _collateralList.length(), 'TaxCollector/invalid-indexes');
+    if (_start > _end || _end >= _collateralList.length()) revert TaxCollector_InvalidIndexes();
     for (uint256 _i = _start; _i <= _end; ++_i) {
       if (block.timestamp > _cData[_collateralList.at(_i)].updateTime) {
         _ok = false;
@@ -109,7 +109,7 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
    * @param _end Index in collateralList at which we stop looping and calculating the tax outcome
    */
   function taxManyOutcome(uint256 _start, uint256 _end) public view returns (bool _ok, int256 _rad) {
-    require(_start <= _end && _end < _collateralList.length(), 'TaxCollector/invalid-indexes');
+    if (_start > _end || _end >= _collateralList.length()) revert TaxCollector_InvalidIndexes();
     int256 _primaryReceiverBalance = -safeEngine.coinBalance(_params.primaryTaxReceiver).toInt();
     int256 _deltaRate;
     uint256 _debtAmount;
@@ -192,7 +192,7 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
    * @param _end Index in collateralList at which we stop looping and calculating the tax outcome
    */
   function taxMany(uint256 _start, uint256 _end) external {
-    require(_start <= _end && _end < _collateralList.length(), 'TaxCollector/invalid-indexes');
+    if (_start > _end || _end >= _collateralList.length()) revert TaxCollector_InvalidIndexes();
     for (uint256 _i = _start; _i <= _end; ++_i) {
       taxSingle(_collateralList.at(_i));
     }
@@ -305,7 +305,7 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
   }
 
   function _validateParameters() internal view override {
-    require(_params.primaryTaxReceiver != address(0), 'TaxCollector/null-data');
+    _params.primaryTaxReceiver.assertNonNull();
   }
 
   /**
@@ -323,19 +323,18 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
    * @param _data Encoded data containing the receiver, tax percentage, and whether it supports negative tax
    */
   function _setSecondaryTaxReceiver(bytes32 _cType, TaxReceiver memory _data) internal {
-    require(_data.receiver != address(0), 'TaxCollector/null-account');
-    require(_data.receiver != _params.primaryTaxReceiver, 'TaxCollector/primary-receiver-cannot-be-secondary');
-    require(_collateralList.contains(_cType), 'TaxCollector/collateral-type-not-initialized');
+    if (_data.receiver == address(0)) revert TaxCollector_NullAccount();
+    if (_data.receiver == _params.primaryTaxReceiver) revert TaxCollector_PrimaryReceiverCannotBeSecondary();
+    if (!_collateralList.contains(_cType)) revert TaxCollector_CollateralTypeNotInitialized();
 
     if (_secondaryReceivers.add(_data.receiver)) {
       // receiver is a new secondary receiver
 
-      require(_secondaryReceivers.length() <= _params.maxSecondaryReceivers, 'TaxCollector/exceeds-max-receiver-limit');
-      require(_data.taxPercentage > 0, 'TaxCollector/null-sf');
-      require(
-        _cData[_cType].secondaryReceiverAllotedTax + _data.taxPercentage < WHOLE_TAX_CUT,
-        'TaxCollector/tax-cut-exceeds-hundred'
-      );
+      if (_secondaryReceivers.length() > _params.maxSecondaryReceivers) revert TaxCollector_ExceedsMaxReceiverLimit();
+      if (_data.taxPercentage == 0) revert TaxCollector_NullSF();
+      if (_cData[_cType].secondaryReceiverAllotedTax + _data.taxPercentage > WHOLE_TAX_CUT) {
+        revert TaxCollector_TaxCutExceedsHundred();
+      }
 
       _cData[_cType].secondaryReceiverAllotedTax += _data.taxPercentage;
       _secondaryReceiverRevenueSources[_data.receiver].add(_cType);
@@ -360,7 +359,7 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
         uint256 _secondaryReceiverAllotedTax = (
           _cData[_cType].secondaryReceiverAllotedTax - _secondaryTaxReceivers[_cType][_data.receiver].taxPercentage
         ) + _data.taxPercentage;
-        require(_secondaryReceiverAllotedTax < WHOLE_TAX_CUT, 'TaxCollector/tax-cut-too-big');
+        if (_secondaryReceiverAllotedTax > WHOLE_TAX_CUT) revert TaxCollector_TaxCutTooBig();
 
         _cData[_cType].secondaryReceiverAllotedTax = _secondaryReceiverAllotedTax;
         _secondaryTaxReceivers[_cType][_data.receiver] = _data;

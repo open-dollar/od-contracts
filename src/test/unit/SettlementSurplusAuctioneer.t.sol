@@ -169,7 +169,7 @@ contract Unit_SettlementSurplusAuctioneer_AuctionSurplus is Base {
     _;
   }
 
-  function _assumeHappyPath(uint256 _lastSurplusTime, uint256 _surplusDelay) internal {
+  function _assumeHappyPath(uint256 _lastSurplusTime, uint256 _surplusDelay) internal view {
     vm.assume(notOverflowAdd(_lastSurplusTime, _surplusDelay));
     vm.assume(block.timestamp >= _lastSurplusTime + _surplusDelay);
   }

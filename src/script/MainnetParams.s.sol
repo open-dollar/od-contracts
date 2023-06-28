@@ -126,7 +126,7 @@ abstract contract MainnetParams is Contracts, Params {
         upperCollateralDeviation: 1e18 // 0%
       });
     }
-    
+
     // --- Collateral Specific Params ---
     _taxCollectorCParams[WSTETH].stabilityFee = RAY + 11.11926e18; // + 42%/yr
     _safeEngineCParams[WSTETH].debtFloor = 5000 * RAD; // 5_000 COINs

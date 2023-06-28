@@ -470,6 +470,7 @@ contract Unit_LiquidationEngine_ProtectSafe is Base {
   }
 
   function test_Call_SAFEEngine_CanModifySafe(bytes32 _cType, address _safe, address _saviour) public {
+    vm.assume(_saviour != address(0));
     _mockValues({_safe: _safe, _canModifySafe: true, _saviour: _saviour, _canSave: 1});
     vm.prank(account);
 
@@ -489,9 +490,10 @@ contract Unit_LiquidationEngine_ProtectSafe is Base {
   }
 
   function test_Revert_CannotModifySafe(bytes32 _cType, address _safe, address _saviour) public {
+    vm.assume(_saviour != address(0));
     _mockValues({_safe: _safe, _canModifySafe: false, _saviour: _saviour, _canSave: 1});
 
-    vm.expectRevert(bytes('LiquidationEngine/cannot-modify-safe'));
+    vm.expectRevert(ILiquidationEngine.LiqEng_CannotModifySAFE.selector);
     vm.prank(account);
 
     liquidationEngine.protectSAFE(_cType, _safe, _saviour);
@@ -501,7 +503,7 @@ contract Unit_LiquidationEngine_ProtectSafe is Base {
     vm.assume(_saviour != address(0));
     _mockValues({_safe: _safe, _canModifySafe: true, _saviour: _saviour, _canSave: 0});
 
-    vm.expectRevert(bytes('LiquidationEngine/saviour-not-authorized'));
+    vm.expectRevert(ILiquidationEngine.LiqEng_SaviourNotAuthorized.selector);
     vm.prank(account);
 
     liquidationEngine.protectSAFE(_cType, _safe, _saviour);
@@ -548,7 +550,7 @@ contract Unit_LiquidationEngine_ConnectSAFESaviour is Base {
   function test_Revert_NotOk() public authorized {
     _mockSaveSafe(false, type(uint256).max, type(uint256).max);
 
-    vm.expectRevert(bytes('LiquidationEngine/saviour-not-ok'));
+    vm.expectRevert(ILiquidationEngine.LiqEng_SaviourNotOk.selector);
 
     liquidationEngine.connectSAFESaviour(mockSaviour);
   }
@@ -557,7 +559,7 @@ contract Unit_LiquidationEngine_ConnectSAFESaviour is Base {
     vm.assume(_collateralAdded < type(uint256).max || _liquidatorReward < type(uint256).max);
     _mockSaveSafe(true, _collateralAdded, _liquidatorReward);
 
-    vm.expectRevert(bytes('LiquidationEngine/invalid-amounts'));
+    vm.expectRevert(ILiquidationEngine.LiqEng_InvalidAmounts.selector);
 
     liquidationEngine.connectSAFESaviour(mockSaviour);
   }
@@ -1412,7 +1414,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
       })
     );
 
-    vm.expectRevert(bytes('LiquidationEngine/safe-not-unsafe'));
+    vm.expectRevert(ILiquidationEngine.LiqEng_SAFENotUnsafe.selector);
 
     liquidationEngine.liquidateSAFE(collateralType, safe);
   }
@@ -1452,7 +1454,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
       })
     );
 
-    vm.expectRevert(bytes('LiquidationEngine/liquidation-limit-hit'));
+    vm.expectRevert(ILiquidationEngine.LiqEng_LiquidationLimitHit.selector);
 
     liquidationEngine.liquidateSAFE(collateralType, safe);
   }
@@ -1495,7 +1497,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
       })
     );
 
-    vm.expectRevert(bytes('LiquidationEngine/null-auction'));
+    vm.expectRevert(ILiquidationEngine.LiqEng_NullAuction.selector);
 
     liquidationEngine.liquidateSAFE(collateralType, safe);
   }
@@ -1529,7 +1531,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
       })
     );
 
-    vm.expectRevert(bytes('LiquidationEngine/dusty-safe'));
+    vm.expectRevert(ILiquidationEngine.LiqEng_DustySAFE.selector);
 
     liquidationEngine.liquidateSAFE(collateralType, safe);
   }
@@ -1573,7 +1575,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
       _liquidationQuantity: type(uint256).max
     });
 
-    vm.expectRevert(bytes('LiquidationEngine/dusty-safe'));
+    vm.expectRevert(ILiquidationEngine.LiqEng_DustySAFE.selector);
 
     liquidationEngine.liquidateSAFE(collateralType, safe);
   }
@@ -1636,7 +1638,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
       )
     );
 
-    vm.expectRevert(bytes('LiquidationEngine/null-collateral-to-sell'));
+    vm.expectRevert(ILiquidationEngine.LiqEng_NullCollateralToSell.selector);
 
     liquidationEngine.liquidateSAFE(collateralType, safe);
   }
@@ -1752,7 +1754,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     _mockSafeSaviours(address(_testSaveSaviour), 1);
     _mockSafeEngineSafes(collateralType, safe, _liquidation.safeCollateral, _liquidation.safeDebt);
 
-    vm.expectRevert(bytes('LiquidationEngine/invalid-safe-saviour-operation'));
+    vm.expectRevert(ILiquidationEngine.LiqEng_InvalidSAFESaviourOperation.selector);
 
     vm.prank(user);
     liquidationEngine.liquidateSAFE(collateralType, safe);
@@ -1767,7 +1769,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     _mockChosenSafeSaviour(collateralType, safe, address(_testSaveSaviour));
     _mockSafeSaviours(address(_testSaveSaviour), 1);
 
-    vm.expectRevert(bytes('LiquidationEngine/invalid-safe-saviour-operation'));
+    vm.expectRevert(ILiquidationEngine.LiqEng_InvalidSAFESaviourOperation.selector);
 
     vm.prank(user);
     liquidationEngine.liquidateSAFE(collateralType, safe);

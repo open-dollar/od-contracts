@@ -17,6 +17,19 @@ interface IStabilityFeeTreasury is IAuthorizable, IDisableable, IModifiable {
   event PullFunds(address indexed _sender, address indexed _dstAccount, uint256 _rad, uint256 _expensesAccumulator);
   event TransferSurplusFunds(address _extraSurplusReceiver, uint256 _fundsToTransfer);
 
+  // --- Errors ---
+  error SFTreasury_AccountCannotBeTreasury();
+  error SFTreasury_NullAccount();
+  error SFTreasury_OutstandingBadDebt();
+  error SFTreasury_NotEnoughFunds();
+  error SFTreasury_NotAllowed();
+  error SFTreasury_NullDst();
+  error SFTreasury_DstCannotBeAccounting();
+  error SFTreasury_NullTransferAmount();
+  error SFTreasury_PerHourLimitExceeded();
+  error SFTreasury_BelowPullFundsMinThreshold();
+  error SFTreasury_TransferCooldownNotPassed();
+
   // --- Structs ---
   struct StabilityFeeTreasuryParams {
     uint256 expensesMultiplier;

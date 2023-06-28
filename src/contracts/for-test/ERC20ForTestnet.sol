@@ -11,7 +11,7 @@ contract ERC20ForTestnet is IERC20Metadata, ERC20 {
     _decimals = __decimals;
   }
 
-  function decimals() public view virtual override(ERC20, IERC20Metadata) returns (uint8) {
+  function decimals() public view virtual override(ERC20, IERC20Metadata) returns (uint8 __decimals) {
     return _decimals;
   }
 
