@@ -73,6 +73,7 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
     // Update redemption price
     _updatedPrice = redemptionRate.rpow(block.timestamp - redemptionPriceUpdateTime).rmul(_redemptionPrice);
     if (_updatedPrice == 0) _updatedPrice = 1;
+    _redemptionPrice = _updatedPrice;
     redemptionPriceUpdateTime = block.timestamp;
     emit UpdateRedemptionPrice(_updatedPrice);
   }
