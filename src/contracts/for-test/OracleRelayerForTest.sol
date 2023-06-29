@@ -24,6 +24,10 @@ contract OracleRelayerForTest is OracleRelayer {
   function callUpdateRedemptionPrice() external returns (uint256 _redemptionPrice) {
     return _updateRedemptionPrice();
   }
+
+  function getRedemptionPrice() external returns (uint256 __redemptionPrice) {
+    return _redemptionPrice;
+  }
 }
 
 contract OracleRelayerForInternalCallsTest is OracleRelayerForTest {

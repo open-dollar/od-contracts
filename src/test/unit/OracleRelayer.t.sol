@@ -465,7 +465,8 @@ contract Unit_OracleRelayer_Internal_UpdateRedemptionPrice is Base {
       .rmul(_scenario.redemptionPrice);
     _updatedPrice = _updatedPrice == 0 ? 1 : _updatedPrice;
 
-    uint256 _redemptionPrice = OracleRelayerForTest(address(oracleRelayer)).callUpdateRedemptionPrice();
+    OracleRelayerForTest(address(oracleRelayer)).callUpdateRedemptionPrice();
+    uint256 _redemptionPrice = OracleRelayerForTest(address(oracleRelayer)).getRedemptionPrice();
 
     assertEq(_redemptionPrice, _updatedPrice);
   }
