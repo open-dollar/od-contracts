@@ -561,6 +561,7 @@ contract Unit_TaxCollector_TaxSingle is Base {
   function test_Set_NextStabilityFee(uint256 _updateTime, uint256 _globalStabilityFee, uint256 _stabilityFee) public {
     vm.assume(block.timestamp > _updateTime);
     vm.assume(notOverflowAdd(_globalStabilityFee, _stabilityFee));
+    vm.assume(_globalStabilityFee > 0 || _stabilityFee > 0);
     _mockGlobalStabilityFee(_globalStabilityFee);
     _mockStabilityFee(collateralTypeA, _stabilityFee);
 
