@@ -751,8 +751,8 @@ abstract contract EnglishCollateralAuctionHouseLike {
     uint256 bidAmount;
     uint256 amountToSell;
     address highBidder;
-    uint48 bidExpiry;
-    uint48 auctionDeadline;
+    uint256 bidExpiry;
+    uint256 auctionDeadline;
     address safeAuctioned;
     address auctionIncomeRecipient;
     uint256 amountToRaise;
@@ -766,8 +766,8 @@ abstract contract EnglishCollateralAuctionHouseLike {
       uint256 bidAmount,
       uint256 amountToSell,
       address highBidder,
-      uint48 bidExpiry,
-      uint48 auctionDeadline,
+      uint256 bidExpiry,
+      uint256 auctionDeadline,
       address safeAuctioned,
       address auctionIncomeRecipient,
       uint256 amountToRaise

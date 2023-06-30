@@ -124,7 +124,7 @@ abstract contract Base is HaiTest {
     stdstore.target(address(safeEngine)).sig(ISAFEEngine.globalDebt.selector).checked_write(_globalDebt);
   }
 
-  function _mockContractEnabled(uint256 _contractEnabled) internal {
+  function _mockContractEnabled(bool _contractEnabled) internal {
     stdstore.target(address(safeEngine)).sig(IDisableable.contractEnabled.selector).checked_write(_contractEnabled);
   }
 
@@ -139,7 +139,7 @@ contract Unit_SAFEEngine_Constructor is Base {
   event ModifyParameters(bytes32 indexed _parameter, bytes32 indexed _collateral, bytes _data);
 
   function test_Set_AuthorizedAccounts() public {
-    assertEq(IAuthorizable(address(safeEngine)).authorizedAccounts(deployer), 1);
+    assertEq(IAuthorizable(address(safeEngine)).authorizedAccounts(deployer), true);
   }
 
   function test_Set_SafeDebtCeiling() public {
@@ -148,7 +148,7 @@ contract Unit_SAFEEngine_Constructor is Base {
   }
 
   function test_Set_ContractEnabled() public {
-    assertEq(safeEngine.contractEnabled(), 1);
+    assertEq(safeEngine.contractEnabled(), true);
   }
 
   function test_Emit_AddAuthorization() public {
@@ -664,8 +664,7 @@ contract Unit_SAFEEngine_UpdateAccumulatedRate is Base {
   }
 
   function test_Revert_ContractNotEnabled(int256 _rateMultiplier) public authorized {
-    uint256 _enabled = 0;
-    _mockContractEnabled(_enabled);
+    _mockContractEnabled(false);
 
     vm.expectRevert(IDisableable.ContractIsDisabled.selector);
 
@@ -849,8 +848,7 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
   }
 
   function test_Revert_ContractNotEnabled() public {
-    uint256 _enabled = 0;
-    _mockContractEnabled(_enabled);
+    _mockContractEnabled(false);
 
     vm.expectRevert(IDisableable.ContractIsDisabled.selector);
     safeEngine.modifySAFECollateralization(collateralType, safe, src, debtDestination, 0, 0);

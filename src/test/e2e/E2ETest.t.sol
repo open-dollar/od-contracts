@@ -175,7 +175,7 @@ abstract contract E2ETest is BaseUser, Base_CType, Common {
     accountingEngine.popDebtFromQueue(block.timestamp);
     accountingEngine.auctionDebt();
 
-    (uint256 _bidAmount, uint256 _amountToSell, address _highBidder,, uint48 _auctionDeadline) =
+    (uint256 _bidAmount, uint256 _amountToSell, address _highBidder,, uint256 _auctionDeadline) =
       debtAuctionHouse.bids(1);
     assertEq(_bidAmount, ONE_HUNDRED_COINS);
     assertEq(_amountToSell, INITIAL_DEBT_AUCTION_MINTED_TOKENS);
@@ -217,7 +217,7 @@ abstract contract E2ETest is BaseUser, Base_CType, Common {
     accountingEngine.auctionSurplus();
 
     uint256 _delay = (surplusAuctionHouse.params()).totalAuctionLength;
-    (uint256 _bidAmount, uint256 _amountToSell, address _highBidder,, uint48 _auctionDeadline) =
+    (uint256 _bidAmount, uint256 _amountToSell, address _highBidder,, uint256 _auctionDeadline) =
       surplusAuctionHouse.bids(1);
     assertEq(_bidAmount, 0);
     assertEq(_amountToSell, ONE_HUNDRED_COINS);

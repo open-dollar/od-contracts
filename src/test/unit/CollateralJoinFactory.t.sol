@@ -45,10 +45,9 @@ abstract contract Base is HaiTest {
     vm.mockCall(address(mockCollateral), abi.encodeCall(mockCollateral.decimals, ()), abi.encode(_decimals));
   }
 
-  function _mockContractEnabled(uint256 _contractEnabled) internal {
-    stdstore.target(address(collateralJoinFactory)).sig(IDisableable.contractEnabled.selector).checked_write(
-      _contractEnabled
-    );
+  function _mockContractEnabled(bool _contractEnabled) internal {
+    // BUG: Accessing packed slots is not supported by Std Storage
+    collateralJoinFactory.setContractEnabled(_contractEnabled);
   }
 
   function _mockCollateralJoin(bytes32 _cType, address _collateralJoin) internal {
@@ -78,7 +77,7 @@ contract Unit_CollateralJoinFactory_Constructor is Base {
   }
 
   function test_Set_ContractEnabled() public happyPath {
-    assertEq(collateralJoinFactory.contractEnabled(), 1);
+    assertEq(collateralJoinFactory.contractEnabled(), true);
   }
 }
 
@@ -110,7 +109,7 @@ contract Unit_CollateralJoinFactory_DeployCollateralJoin is Base {
   function test_Revert_ContractIsDisabled(bytes32 _cType) public {
     vm.startPrank(authorizedAccount);
 
-    _mockContractEnabled(0);
+    _mockContractEnabled(false);
 
     vm.expectRevert(IDisableable.ContractIsDisabled.selector);
 

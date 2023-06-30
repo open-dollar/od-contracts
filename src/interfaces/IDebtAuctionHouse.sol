@@ -49,9 +49,9 @@ interface IDebtAuctionHouse is IAuthorizable, IDisableable, IModifiable {
     // Who the high bidder is
     address highBidder;
     // When the latest bid expires and the auction can be settled
-    uint48 bidExpiry; // [unix epoch time]
+    uint256 bidExpiry; // [unix epoch time]
     // Hard deadline for the auction after which no more bids can be placed
-    uint48 auctionDeadline; // [unix epoch time]
+    uint256 auctionDeadline; // [unix epoch time]
   }
 
   struct DebtAuctionHouseParams {
@@ -60,9 +60,9 @@ interface IDebtAuctionHouse is IAuthorizable, IDisableable, IModifiable {
     // Increase in protocol tokens sold in case an auction is restarted
     uint256 amountSoldIncrease; // [wad]
     // How long the auction lasts after a new bid is submitted
-    uint48 bidDuration; // [seconds]
+    uint256 bidDuration; // [seconds]
     // Total length of the auction
-    uint48 totalAuctionLength; // [seconds]
+    uint256 totalAuctionLength; // [seconds]
   }
 
   // solhint-disable-next-line func-name-mixedcase
@@ -71,7 +71,13 @@ interface IDebtAuctionHouse is IAuthorizable, IDisableable, IModifiable {
   function bids(uint256 _id)
     external
     view
-    returns (uint256 _bidAmount, uint256 _amountToSell, address _highBidder, uint48 _bidExpiry, uint48 _auctionDeadline);
+    returns (
+      uint256 _bidAmount,
+      uint256 _amountToSell,
+      address _highBidder,
+      uint256 _bidExpiry,
+      uint256 _auctionDeadline
+    );
   function auctionsStarted() external view returns (uint256 _auctionsStarted);
   function activeDebtAuctions() external view returns (uint256 _activeDebtAuctions);
 

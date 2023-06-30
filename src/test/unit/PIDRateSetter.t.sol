@@ -93,7 +93,7 @@ contract Unit_PIDRateSetter_Constructor is Base {
   }
 
   function test_Set_AuthorizedAccounts() public {
-    assertEq(pidRateSetter.authorizedAccounts(deployer), 1);
+    assertEq(pidRateSetter.authorizedAccounts(deployer), true);
   }
 
   function test_Revert_NullOracleRelayerAddress() public {

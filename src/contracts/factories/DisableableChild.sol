@@ -9,7 +9,7 @@ import {FactoryChild} from '@contracts/factories/FactoryChild.sol';
 
 abstract contract DisableableChild is Disableable, FactoryChild, IDisableableChild {
   function _isEnabled() internal view virtual override returns (bool _enabled) {
-    return super._isEnabled() && IDisableable(factory).contractEnabled() == 1;
+    return super._isEnabled() && IDisableable(factory).contractEnabled();
   }
 
   // NOTE: avoids a contract from being directly disabled

@@ -41,7 +41,7 @@ abstract contract Base is HaiTest {
     vm.stopPrank();
   }
 
-  function _mockContractEnabled(uint256 _contractEnabled) internal {
+  function _mockContractEnabled(bool _contractEnabled) internal {
     vm.mockCall(
       address(mockAccountingEngine),
       abi.encodeCall(mockAccountingEngine.contractEnabled, ()),
@@ -183,17 +183,15 @@ contract Unit_SettlementSurplusAuctioneer_AuctionSurplus is Base {
     uint256 _idB
   ) internal {
     _mockLastSurplusAuctionTime(_lastSurplusTime);
-    _mockContractEnabled(0);
+    _mockContractEnabled(false);
     _mockAccountingEngineParams(0, _surplusDelay, 0, 0, _surplusAmount, 0, 0, 0);
     _mockCoinBalance(address(settlementSurplusAuctioneer), _coinBalance);
     _mockStartAuction(_coinBalance, 0, _idA);
     _mockStartAuction(_surplusAmount, 0, _idB);
   }
 
-  function test_Revert_AccountingEngineStillEnabled(uint256 _contractEnabled) public {
-    vm.assume(_contractEnabled != 0);
-
-    _mockContractEnabled(_contractEnabled);
+  function test_Revert_AccountingEngineStillEnabled() public {
+    _mockContractEnabled(true);
 
     vm.expectRevert(ISettlementSurplusAuctioneer.SSA_AccountingEngineStillEnabled.selector);
 

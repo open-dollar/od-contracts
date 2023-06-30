@@ -141,7 +141,7 @@ contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettl
    */
   function shutdownSystem() external isAuthorized whenEnabled {
     shutdownTime = block.timestamp;
-    contractEnabled = 0;
+    contractEnabled = false;
 
     safeEngine.disableContract();
     liquidationEngine.disableContract();

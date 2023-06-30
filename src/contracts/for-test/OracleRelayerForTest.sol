@@ -21,6 +21,10 @@ contract OracleRelayerForTest is OracleRelayer {
     _redemptionPrice = _price;
   }
 
+  function setContractEnabled(bool _contractEnabled) external {
+    contractEnabled = _contractEnabled;
+  }
+
   function callUpdateRedemptionPrice() external returns (uint256 _redemptionPrice) {
     return _updateRedemptionPrice();
   }

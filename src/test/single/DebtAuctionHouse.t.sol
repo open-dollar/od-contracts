@@ -126,7 +126,7 @@ contract SingleDebtAuctionHouseTest is DSTest {
     assertEq(protocolToken.balanceOf(address(accountingEngine)), 0 ether);
     // auction created with appropriate values
     assertEq(debtAuctionHouse.auctionsStarted(), id);
-    (uint256 bid, uint256 amountToSell, address guy, uint48 bidExpiry, uint48 end) = debtAuctionHouse.bids(id);
+    (uint256 bid, uint256 amountToSell, address guy, uint256 bidExpiry, uint256 end) = debtAuctionHouse.bids(id);
     assertEq(bid, 5000 ether);
     assertEq(amountToSell, 200 ether);
     assertTrue(guy == address(accountingEngine));
@@ -260,7 +260,7 @@ contract SingleDebtAuctionHouseTest is DSTest {
     assertEq(safeEngine.coinBalance(bob), 200 ether); // bob's bid has been refunded
     assertEq(safeEngine.coinBalance(address(accountingEngine)), 10 ether);
     assertEq(safeEngine.debtBalance(address(accountingEngine)), 10 ether); // sin assigned to caller of disableContract()
-    (uint256 _bid, uint256 _amountToSell, address _guy, uint48 _bidExpiry, uint48 _end) = debtAuctionHouse.bids(id);
+    (uint256 _bid, uint256 _amountToSell, address _guy, uint256 _bidExpiry, uint256 _end) = debtAuctionHouse.bids(id);
     assertEq(_bid, 0);
     assertEq(_amountToSell, 0);
     assertEq(_guy, address(0));
@@ -290,7 +290,7 @@ contract SingleDebtAuctionHouseTest is DSTest {
     assertEq(safeEngine.coinBalance(bob), 200 ether);
     assertEq(safeEngine.coinBalance(address(accountingEngine)), 10 ether);
     assertEq(safeEngine.debtBalance(address(accountingEngine)), 10 ether); // sin assigned to caller of disableContract()
-    (uint256 _bid, uint256 _amountToSell, address _guy, uint48 _bidExpiry, uint48 _end) = debtAuctionHouse.bids(id);
+    (uint256 _bid, uint256 _amountToSell, address _guy, uint256 _bidExpiry, uint256 _end) = debtAuctionHouse.bids(id);
     assertEq(_bid, 0);
     assertEq(_amountToSell, 0);
     assertEq(_guy, address(0));

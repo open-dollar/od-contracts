@@ -13,7 +13,7 @@ interface IDisableable is IAuthorizable {
   error NonDisableable();
 
   // --- Data ---
-  function contractEnabled() external view returns (uint256 _contractEnabled);
+  function contractEnabled() external view returns (bool _contractEnabled);
 
   // --- Shutdown ---
   function disableContract() external;

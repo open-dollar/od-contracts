@@ -14,4 +14,8 @@ contract CollateralJoinFactoryForTest is CollateralJoinFactory {
     _collateralTypes.add(_cType);
     collateralJoins[_cType] = _collateralJoin;
   }
+
+  function setContractEnabled(bool _contractEnabled) external {
+    contractEnabled = _contractEnabled;
+  }
 }

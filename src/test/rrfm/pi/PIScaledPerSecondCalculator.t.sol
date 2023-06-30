@@ -125,7 +125,7 @@ contract PIScaledPerSecondCalculatorTest is DSTest {
   function test_correct_setup() public {
     // assertEq(calculator.readers(address(this)), 1);
     // assertEq(calculator.readers(address(rateSetter)), 1);
-    assertEq(calculator.authorizedAccounts(address(this)), 1);
+    assertTrue(calculator.authorizedAccounts(address(this)));
 
     assertEq(calculator.params().noiseBarrier, noiseBarrier);
     assertEq(calculator.params().feedbackOutputUpperBound, feedbackOutputUpperBound);
@@ -171,7 +171,7 @@ contract PIScaledPerSecondCalculatorTest is DSTest {
     // Verify that it did not change state
     // assertEq(calculator.readers(address(this)), 1);
     // assertEq(calculator.readers(address(rateSetter)), 1);
-    assertEq(calculator.authorizedAccounts(address(this)), 1);
+    assertTrue(calculator.authorizedAccounts(address(this)));
 
     assertEq(calculator.params().noiseBarrier, noiseBarrier);
     assertEq(calculator.params().feedbackOutputUpperBound, feedbackOutputUpperBound);

@@ -334,7 +334,7 @@ contract Unit_CollateralAuctionHouse_Constructor is Base {
   }
 
   function test_Set_AuthorizedAccounts() public {
-    assertEq(auctionHouse.authorizedAccounts(deployer), 1);
+    assertEq(auctionHouse.authorizedAccounts(deployer), true);
   }
 
   function test_Set_CAH_Params(

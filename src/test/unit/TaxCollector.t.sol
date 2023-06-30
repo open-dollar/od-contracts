@@ -40,7 +40,7 @@ abstract contract Base is HaiTest {
   address secondaryReceiverA = newAddress();
   address secondaryReceiverB = newAddress();
   address secondaryReceiverC = newAddress();
-  uint128 taxPercentage = uint128(WHOLE_TAX_CUT / 4);
+  uint256 taxPercentage = WHOLE_TAX_CUT / 4;
   bool canTakeBackTax = true;
   address primaryTaxReceiver = newAddress();
   uint256 globalStabilityFee = 1e15;
@@ -171,7 +171,7 @@ abstract contract Base is HaiTest {
     bytes32 _cType,
     address _receiver,
     bool _canTakeBackTax,
-    uint128 _taxPercentage
+    uint256 _taxPercentage
   ) internal {
     // BUG: Accessing packed slots is not supported by Std Storage
     taxCollector.addSecondaryTaxReceiver(_cType, _receiver, _canTakeBackTax, _taxPercentage);

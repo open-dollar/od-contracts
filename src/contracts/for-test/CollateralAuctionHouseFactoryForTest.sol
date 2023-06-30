@@ -22,4 +22,8 @@ contract CollateralAuctionHouseFactoryForTest is CollateralAuctionHouseFactory {
     _collateralTypes.add(_cType);
     collateralAuctionHouses[_cType] = _collateralAuctionHouse;
   }
+
+  function setContractEnabled(bool _contractEnabled) external {
+    contractEnabled = _contractEnabled;
+  }
 }

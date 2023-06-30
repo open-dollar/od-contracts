@@ -339,21 +339,21 @@ contract SingleGlobalSettlementTest is DSTest {
   }
 
   function test_shutdown_basic() public {
-    assertEq(globalSettlement.contractEnabled(), 1);
-    assertEq(safeEngine.contractEnabled(), 1);
-    assertEq(liquidationEngine.contractEnabled(), 1);
-    assertEq(oracleRelayer.contractEnabled(), 1);
-    assertEq(accountingEngine.contractEnabled(), 1);
-    assertEq(accountingEngine.debtAuctionHouse().contractEnabled(), 1);
-    assertEq(accountingEngine.surplusAuctionHouse().contractEnabled(), 1);
+    assertTrue(globalSettlement.contractEnabled());
+    assertTrue(safeEngine.contractEnabled());
+    assertTrue(liquidationEngine.contractEnabled());
+    assertTrue(oracleRelayer.contractEnabled());
+    assertTrue(accountingEngine.contractEnabled());
+    assertTrue(accountingEngine.debtAuctionHouse().contractEnabled());
+    assertTrue(accountingEngine.surplusAuctionHouse().contractEnabled());
     globalSettlement.shutdownSystem();
-    assertEq(globalSettlement.contractEnabled(), 0);
-    assertEq(safeEngine.contractEnabled(), 0);
-    assertEq(liquidationEngine.contractEnabled(), 0);
-    assertEq(accountingEngine.contractEnabled(), 0);
-    assertEq(oracleRelayer.contractEnabled(), 0);
-    assertEq(accountingEngine.debtAuctionHouse().contractEnabled(), 0);
-    assertEq(accountingEngine.surplusAuctionHouse().contractEnabled(), 0);
+    assertTrue(!globalSettlement.contractEnabled());
+    assertTrue(!safeEngine.contractEnabled());
+    assertTrue(!liquidationEngine.contractEnabled());
+    assertTrue(!accountingEngine.contractEnabled());
+    assertTrue(!oracleRelayer.contractEnabled());
+    assertTrue(!accountingEngine.debtAuctionHouse().contractEnabled());
+    assertTrue(!accountingEngine.surplusAuctionHouse().contractEnabled());
   }
 
   // -- Scenario where there is one over-collateralised SAFE

@@ -82,7 +82,7 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
     bids[_id].bidAmount = _initialBid;
     bids[_id].amountToSell = _amountToSell;
     bids[_id].highBidder = _incomeReceiver;
-    bids[_id].auctionDeadline = uint48(block.timestamp) + _params.totalAuctionLength;
+    bids[_id].auctionDeadline = block.timestamp + _params.totalAuctionLength;
 
     ++activeDebtAuctions;
 
@@ -100,7 +100,7 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
     if (bids[_id].auctionDeadline > block.timestamp) revert DAH_AuctionNotFinished();
     if (bids[_id].bidExpiry != 0) revert DAH_BidAlreadyPlaced();
     bids[_id].amountToSell = (_params.amountSoldIncrease * bids[_id].amountToSell) / WAD;
-    bids[_id].auctionDeadline = uint48(block.timestamp) + _params.totalAuctionLength;
+    bids[_id].auctionDeadline = block.timestamp + _params.totalAuctionLength;
     emit RestartAuction(_id, bids[_id].auctionDeadline);
   }
 
@@ -130,7 +130,7 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
 
     bids[_id].highBidder = msg.sender;
     bids[_id].amountToSell = _amountToBuy;
-    bids[_id].bidExpiry = uint48(block.timestamp) + _params.bidDuration;
+    bids[_id].bidExpiry = block.timestamp + _params.bidDuration;
 
     emit DecreaseSoldAmount(_id, msg.sender, _amountToBuy, _bid, bids[_id].bidExpiry);
   }
@@ -175,8 +175,8 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
     if (_param == 'protocolToken') protocolToken = IProtocolToken(_address);
     else if (_param == 'bidDecrease') _params.bidDecrease = _uint256;
     else if (_param == 'amountSoldIncrease') _params.amountSoldIncrease = _uint256;
-    else if (_param == 'bidDuration') _params.bidDuration = uint48(_uint256);
-    else if (_param == 'totalAuctionLength') _params.totalAuctionLength = uint48(_uint256);
+    else if (_param == 'bidDuration') _params.bidDuration = _uint256;
+    else if (_param == 'totalAuctionLength') _params.totalAuctionLength = _uint256;
     else revert UnrecognizedParam();
   }
 

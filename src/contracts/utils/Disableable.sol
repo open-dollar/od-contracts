@@ -7,11 +7,11 @@ import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
 abstract contract Disableable is IDisableable, Authorizable {
   // --- Data ---
-  uint256 public contractEnabled = 1;
+  bool public contractEnabled = true;
 
   // --- External methods ---
   function disableContract() external isAuthorized whenEnabled {
-    contractEnabled = 0;
+    contractEnabled = false;
     _onContractDisable();
     emit DisableContract();
   }
@@ -22,7 +22,7 @@ abstract contract Disableable is IDisableable, Authorizable {
   function _onContractDisable() internal virtual {}
 
   function _isEnabled() internal view virtual returns (bool _enabled) {
-    return contractEnabled == 1;
+    return contractEnabled;
   }
 
   // --- Modifiers ---

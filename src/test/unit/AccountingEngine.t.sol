@@ -15,6 +15,7 @@ import {Assertions} from '@libraries/Assertions.sol';
 
 import {Math} from '@libraries/Math.sol';
 
+import {AccountingEngineForTest} from '@contracts/for-test/AccountingEngineForTest.sol';
 import {SAFEEngineForTest} from '@contracts/for-test/SAFEEngineForTest.sol';
 
 abstract contract Base is HaiTest {
@@ -41,7 +42,7 @@ abstract contract Base is HaiTest {
     vm.startPrank(deployer);
 
     accountingEngine =
-    new AccountingEngine(address(mockSafeEngine), address(mockSurplusAuctionHouse), address(mockDebtAuctionHouse), accountingEngineParams);
+    new AccountingEngineForTest(address(mockSafeEngine), address(mockSurplusAuctionHouse), address(mockDebtAuctionHouse), accountingEngineParams);
     vm.stopPrank();
   }
 
@@ -59,9 +60,8 @@ abstract contract Base is HaiTest {
   }
 
   function _mockContractEnabled(bool _contractEnabled) internal {
-    stdstore.target(address(accountingEngine)).sig(IDisableable.contractEnabled.selector).checked_write(
-      _contractEnabled ? 1 : 0
-    );
+    // BUG: Accessing packed slots is not supported by Std Storage
+    AccountingEngineForTest(address(accountingEngine)).setContractEnabled(_contractEnabled);
   }
 
   function _mockTotalQueuedDebt(uint256 _totalQueuedDebt) internal {

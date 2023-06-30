@@ -104,7 +104,7 @@ contract Base is HaiTest {
     );
   }
 
-  function _mockContractEnabled(uint256 _enabled) internal {
+  function _mockContractEnabled(bool _enabled) internal {
     stdstore.target(address(stabilityFeeTreasury)).sig(IDisableable.contractEnabled.selector).checked_write(_enabled);
   }
 
@@ -218,7 +218,7 @@ contract Unit_StabilityFeeTreasury_Constructor is Base {
   }
 
   function test_Set_ContractEnabled() public {
-    assertEq(stabilityFeeTreasury.contractEnabled(), 1);
+    assertEq(stabilityFeeTreasury.contractEnabled(), true);
   }
 
   function test_Call_SystemCoin_Approve() public {

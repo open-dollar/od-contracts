@@ -60,7 +60,7 @@ contract RevertableSaviour {
     liquidationEngine = liquidationEngine_;
   }
 
-  function saveSAFE(address liquidator, bytes32, address) public returns (bool, uint256, uint256) {
+  function saveSAFE(address liquidator, bytes32, address) public view returns (bool, uint256, uint256) {
     if (liquidator == liquidationEngine) {
       return (true, uint256(int256(-1)), uint256(int256(-1)));
     } else {
@@ -70,13 +70,13 @@ contract RevertableSaviour {
 }
 
 contract MissingFunctionSaviour {
-  function random() public returns (bool, uint256, uint256) {
+  function random() public pure returns (bool, uint256, uint256) {
     return (true, 1, 1);
   }
 }
 
 contract FaultyReturnableSaviour {
-  function saveSAFE(address, bytes32, address) public returns (bool, uint256) {
+  function saveSAFE(address, bytes32, address) public pure returns (bool, uint256) {
     return (true, 1);
   }
 }

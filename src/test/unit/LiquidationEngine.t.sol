@@ -194,7 +194,7 @@ abstract contract Base is HaiTest {
     );
   }
 
-  function _mockContractEnabled(uint256 _enabled) internal {
+  function _mockContractEnabled(bool _enabled) internal {
     stdstore.target(address(liquidationEngine)).sig(IDisableable.contractEnabled.selector).checked_write(_enabled);
   }
 
@@ -284,7 +284,7 @@ contract Unit_LiquidationEngine_Constructor is Base {
   event ModifyParameters(bytes32 indexed _parameter, bytes32 indexed _cType, bytes _data);
 
   function test_Set_Authorization() public {
-    assertEq(liquidationEngine.authorizedAccounts(deployer), 1);
+    assertEq(liquidationEngine.authorizedAccounts(deployer), true);
   }
 
   function test_Set_SafeEngine() public {
@@ -300,7 +300,7 @@ contract Unit_LiquidationEngine_Constructor is Base {
   }
 
   function test_Set_ContractEnabled() public {
-    assertEq(liquidationEngine.contractEnabled(), 1);
+    assertEq(liquidationEngine.contractEnabled(), true);
   }
 
   function test_Emit_AddAuthorization() public {
@@ -1382,8 +1382,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
   function test_Revert_ContractNotEnabled() public {
     // We don't care about any of these values just mocking for call to work when calling safe engine
     _mockValues(Liquidation(0, 0, 0, 0, 0, 0, 0, 0, 0));
-    uint256 _enabled = 0;
-    _mockContractEnabled(_enabled);
+    _mockContractEnabled(false);
 
     vm.expectRevert(IDisableable.ContractIsDisabled.selector);
 

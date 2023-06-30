@@ -21,8 +21,8 @@ abstract contract Base is HaiTest {
     uint256 bidAmount;
     uint256 amountToSell;
     address highBidder;
-    uint48 bidExpiry;
-    uint48 auctionDeadline;
+    uint256 bidExpiry;
+    uint256 auctionDeadline;
   }
 
   address deployer = label('deployer');
@@ -72,7 +72,7 @@ abstract contract Base is HaiTest {
     );
   }
 
-  function _mockContractEnabled(uint256 _contractEnabled) internal {
+  function _mockContractEnabled(bool _contractEnabled) internal {
     stdstore.target(address(surplusAuctionHouse)).sig(IDisableable.contractEnabled.selector).checked_write(
       _contractEnabled
     );
@@ -108,14 +108,16 @@ abstract contract Base is HaiTest {
     );
   }
 
-  function _mockBidDuration(uint48 _bidDuration) internal {
-    // BUG: Accessing packed slots is not supported by Std Storage
-    surplusAuctionHouse.setBidDuration(_bidDuration);
+  function _mockBidDuration(uint256 _bidDuration) internal {
+    stdstore.target(address(surplusAuctionHouse)).sig(ISurplusAuctionHouse.params.selector).depth(1).checked_write(
+      _bidDuration
+    );
   }
 
-  function _mockTotalAuctionLength(uint48 _totalAuctionLength) internal {
-    // BUG: Accessing packed slots is not supported by Std Storage
-    surplusAuctionHouse.setTotalAuctionLength(_totalAuctionLength);
+  function _mockTotalAuctionLength(uint256 _totalAuctionLength) internal {
+    stdstore.target(address(surplusAuctionHouse)).sig(ISurplusAuctionHouse.params.selector).depth(2).checked_write(
+      _totalAuctionLength
+    );
   }
 
   function _mockRecyclingPercentage(uint256 _recyclingPercentage) internal {
@@ -151,7 +153,7 @@ contract Unit_SurplusAuctionHouse_Constructor is Base {
   }
 
   function test_Set_ContractEnabled() public happyPath {
-    assertEq(surplusAuctionHouse.contractEnabled(), 1);
+    assertEq(surplusAuctionHouse.contractEnabled(), true);
   }
 
   function test_Set_SafeEngine(address _safeEngine) public happyPath {
@@ -236,7 +238,7 @@ contract Unit_SurplusAuctionHouse_StartAuction is Base {
     uint256 indexed _id, uint256 _auctionsStarted, uint256 _amountToSell, uint256 _initialBid, uint256 _auctionDeadline
   );
 
-  modifier happyPath(uint256 _auctionsStarted, uint48 _totalAuctionLength) {
+  modifier happyPath(uint256 _auctionsStarted, uint256 _totalAuctionLength) {
     vm.startPrank(authorizedAccount);
 
     _assumeHappyPath(_auctionsStarted, _totalAuctionLength);
@@ -244,12 +246,12 @@ contract Unit_SurplusAuctionHouse_StartAuction is Base {
     _;
   }
 
-  function _assumeHappyPath(uint256 _auctionsStarted, uint48 _totalAuctionLength) internal view {
+  function _assumeHappyPath(uint256 _auctionsStarted, uint256 _totalAuctionLength) internal view {
     vm.assume(_auctionsStarted < type(uint256).max);
-    vm.assume(notOverflowAddUint48(uint48(block.timestamp), _totalAuctionLength));
+    vm.assume(notOverflowAdd(block.timestamp, _totalAuctionLength));
   }
 
-  function _mockValues(uint256 _auctionsStarted, uint48 _totalAuctionLength) internal {
+  function _mockValues(uint256 _auctionsStarted, uint256 _totalAuctionLength) internal {
     _mockAuctionsStarted(_auctionsStarted);
     _mockProtocolTokenBidReceiver(protocolTokenBidReceiver);
     _mockTotalAuctionLength(_totalAuctionLength);
@@ -264,7 +266,7 @@ contract Unit_SurplusAuctionHouse_StartAuction is Base {
   function test_Revert_ContractIsDisabled(uint256 _amountToSell, uint256 _initialBid) public {
     vm.startPrank(authorizedAccount);
 
-    _mockContractEnabled(0);
+    _mockContractEnabled(false);
 
     vm.expectRevert(IDisableable.ContractIsDisabled.selector);
 
@@ -306,7 +308,7 @@ contract Unit_SurplusAuctionHouse_StartAuction is Base {
     uint256 _amountToSell,
     uint256 _initialBid,
     uint256 _auctionsStarted,
-    uint48 _totalAuctionLength
+    uint256 _totalAuctionLength
   ) public happyPath(_auctionsStarted, _totalAuctionLength) {
     surplusAuctionHouse.startAuction(_amountToSell, _initialBid);
 
@@ -317,11 +319,11 @@ contract Unit_SurplusAuctionHouse_StartAuction is Base {
     uint256 _amountToSellFuzzed,
     uint256 _initialBid,
     uint256 _auctionsStarted,
-    uint48 _totalAuctionLength
+    uint256 _totalAuctionLength
   ) public happyPath(_auctionsStarted, _totalAuctionLength) {
     surplusAuctionHouse.startAuction(_amountToSellFuzzed, _initialBid);
 
-    (uint256 _bidAmount, uint256 _amountToSell, address _highBidder, uint48 _bidExpiry, uint48 _auctionDeadline) =
+    (uint256 _bidAmount, uint256 _amountToSell, address _highBidder, uint256 _bidExpiry, uint256 _auctionDeadline) =
       surplusAuctionHouse.bids(_auctionsStarted + 1);
 
     assertEq(_bidAmount, _initialBid);
@@ -335,7 +337,7 @@ contract Unit_SurplusAuctionHouse_StartAuction is Base {
     uint256 _amountToSell,
     uint256 _initialBid,
     uint256 _auctionsStarted,
-    uint48 _totalAuctionLength
+    uint256 _totalAuctionLength
   ) public happyPath(_auctionsStarted, _totalAuctionLength) {
     vm.expectCall(
       address(mockSafeEngine),
@@ -352,7 +354,7 @@ contract Unit_SurplusAuctionHouse_StartAuction is Base {
     uint256 _amountToSell,
     uint256 _initialBid,
     uint256 _auctionsStarted,
-    uint48 _totalAuctionLength
+    uint256 _totalAuctionLength
   ) public happyPath(_auctionsStarted, _totalAuctionLength) {
     expectEmitNoIndex();
     emit StartAuction(
@@ -366,7 +368,7 @@ contract Unit_SurplusAuctionHouse_StartAuction is Base {
     uint256 _amountToSell,
     uint256 _initialBid,
     uint256 _auctionsStarted,
-    uint48 _totalAuctionLength
+    uint256 _totalAuctionLength
   ) public happyPath(_auctionsStarted, _totalAuctionLength) {
     assertEq(surplusAuctionHouse.startAuction(_amountToSell, _initialBid), _auctionsStarted + 1);
   }
@@ -375,7 +377,7 @@ contract Unit_SurplusAuctionHouse_StartAuction is Base {
 contract Unit_SurplusAuctionHouse_RestartAuction is Base {
   event RestartAuction(uint256 indexed _id, uint256 _auctionDeadline);
 
-  modifier happyPath(SurplusAuction memory _auction, uint256 _auctionsStarted, uint48 _totalAuctionLength) {
+  modifier happyPath(SurplusAuction memory _auction, uint256 _auctionsStarted, uint256 _totalAuctionLength) {
     _assumeHappyPath(_auction, _auctionsStarted, _totalAuctionLength);
     _mockValues(_auction, _auctionsStarted, _totalAuctionLength);
     _;
@@ -384,15 +386,15 @@ contract Unit_SurplusAuctionHouse_RestartAuction is Base {
   function _assumeHappyPath(
     SurplusAuction memory _auction,
     uint256 _auctionsStarted,
-    uint48 _totalAuctionLength
+    uint256 _totalAuctionLength
   ) internal view {
     vm.assume(_auction.id > 0 && _auction.id <= _auctionsStarted);
     vm.assume(_auction.auctionDeadline < block.timestamp);
     vm.assume(_auction.bidExpiry == 0);
-    vm.assume(notOverflowAddUint48(uint48(block.timestamp), _totalAuctionLength));
+    vm.assume(notOverflowAdd(block.timestamp, _totalAuctionLength));
   }
 
-  function _mockValues(SurplusAuction memory _auction, uint256 _auctionsStarted, uint48 _totalAuctionLength) internal {
+  function _mockValues(SurplusAuction memory _auction, uint256 _auctionsStarted, uint256 _totalAuctionLength) internal {
     _mockAuction(_auction);
     _mockAuctionsStarted(_auctionsStarted);
     _mockTotalAuctionLength(_totalAuctionLength);
@@ -444,11 +446,11 @@ contract Unit_SurplusAuctionHouse_RestartAuction is Base {
   function test_Set_Bids_AuctionDeadline(
     SurplusAuction memory _auction,
     uint256 _auctionsStarted,
-    uint48 _totalAuctionLength
+    uint256 _totalAuctionLength
   ) public happyPath(_auction, _auctionsStarted, _totalAuctionLength) {
     surplusAuctionHouse.restartAuction(_auction.id);
 
-    (,,,, uint48 _auctionDeadline) = surplusAuctionHouse.bids(_auction.id);
+    (,,,, uint256 _auctionDeadline) = surplusAuctionHouse.bids(_auction.id);
 
     assertEq(_auctionDeadline, block.timestamp + _totalAuctionLength);
   }
@@ -456,7 +458,7 @@ contract Unit_SurplusAuctionHouse_RestartAuction is Base {
   function test_Emit_RestartAuction(
     SurplusAuction memory _auction,
     uint256 _auctionsStarted,
-    uint48 _totalAuctionLength
+    uint256 _totalAuctionLength
   ) public happyPath(_auction, _auctionsStarted, _totalAuctionLength) {
     expectEmitNoIndex();
     emit RestartAuction(_auction.id, block.timestamp + _totalAuctionLength);
@@ -470,7 +472,7 @@ contract Unit_SurplusAuctionHouse_IncreaseBidSize is Base {
     uint256 indexed _id, address _highBidder, uint256 _amountToBuy, uint256 _bid, uint256 _bidExpiry
   );
 
-  modifier happyPath(SurplusAuction memory _auction, uint256 _bid, uint256 _bidIncrease, uint48 _bidDuration) {
+  modifier happyPath(SurplusAuction memory _auction, uint256 _bid, uint256 _bidIncrease, uint256 _bidDuration) {
     vm.startPrank(user);
 
     _assumeHappyPath(_auction, _bid, _bidIncrease, _bidDuration);
@@ -482,7 +484,7 @@ contract Unit_SurplusAuctionHouse_IncreaseBidSize is Base {
     SurplusAuction memory _auction,
     uint256 _bid,
     uint256 _bidIncrease,
-    uint48 _bidDuration
+    uint256 _bidDuration
   ) internal view {
     vm.assume(_auction.highBidder != address(0) && _auction.highBidder != user);
     vm.assume(_auction.bidExpiry == 0 || _auction.bidExpiry > block.timestamp);
@@ -491,17 +493,17 @@ contract Unit_SurplusAuctionHouse_IncreaseBidSize is Base {
     vm.assume(notOverflowMul(_bid, WAD));
     vm.assume(notOverflowMul(_bidIncrease, _auction.bidAmount));
     vm.assume(_bid * WAD >= _bidIncrease * _auction.bidAmount);
-    vm.assume(notOverflowAddUint48(uint48(block.timestamp), _bidDuration));
+    vm.assume(notOverflowAdd(block.timestamp, _bidDuration));
   }
 
-  function _mockValues(SurplusAuction memory _auction, uint256 _bidIncrease, uint48 _bidDuration) internal {
+  function _mockValues(SurplusAuction memory _auction, uint256 _bidIncrease, uint256 _bidDuration) internal {
     _mockAuction(_auction);
     _mockBidIncrease(_bidIncrease);
     _mockBidDuration(_bidDuration);
   }
 
   function test_Revert_ContractIsDisabled(SurplusAuction memory _auction, uint256 _amountToBuy, uint256 _bid) public {
-    _mockContractEnabled(0);
+    _mockContractEnabled(false);
 
     vm.expectRevert(IDisableable.ContractIsDisabled.selector);
 
@@ -587,7 +589,7 @@ contract Unit_SurplusAuctionHouse_IncreaseBidSize is Base {
     SurplusAuction memory _auction,
     uint256 _bid,
     uint256 _bidIncrease,
-    uint48 _bidDuration
+    uint256 _bidDuration
   ) public happyPath(_auction, _bid, _bidIncrease, _bidDuration) {
     vm.expectCall(
       address(mockProtocolToken),
@@ -610,7 +612,7 @@ contract Unit_SurplusAuctionHouse_IncreaseBidSize is Base {
     SurplusAuction memory _auction,
     uint256 _bid,
     uint256 _bidIncrease,
-    uint48 _bidDuration
+    uint256 _bidDuration
   ) public happyPath(_auction, _bid, _bidIncrease, _bidDuration) {
     vm.expectCall(
       address(mockProtocolToken),
@@ -630,7 +632,7 @@ contract Unit_SurplusAuctionHouse_IncreaseBidSize is Base {
     SurplusAuction memory _auction,
     uint256 _bid,
     uint256 _bidIncrease,
-    uint48 _bidDuration
+    uint256 _bidDuration
   ) public happyPath(_auction, _bid, _bidIncrease, _bidDuration) {
     changePrank(_auction.highBidder);
     surplusAuctionHouse.increaseBidSize(_auction.id, _auction.amountToSell, _bid);
@@ -644,7 +646,7 @@ contract Unit_SurplusAuctionHouse_IncreaseBidSize is Base {
     SurplusAuction memory _auction,
     uint256 _bid,
     uint256 _bidIncrease,
-    uint48 _bidDuration
+    uint256 _bidDuration
   ) public happyPath(_auction, _bid, _bidIncrease, _bidDuration) {
     surplusAuctionHouse.increaseBidSize(_auction.id, _auction.amountToSell, _bid);
 
@@ -657,7 +659,7 @@ contract Unit_SurplusAuctionHouse_IncreaseBidSize is Base {
     SurplusAuction memory _auction,
     uint256 _bid,
     uint256 _bidIncrease,
-    uint48 _bidDuration
+    uint256 _bidDuration
   ) public happyPath(_auction, _bid, _bidIncrease, _bidDuration) {
     surplusAuctionHouse.increaseBidSize(_auction.id, _auction.amountToSell, _bid);
 
@@ -670,11 +672,11 @@ contract Unit_SurplusAuctionHouse_IncreaseBidSize is Base {
     SurplusAuction memory _auction,
     uint256 _bid,
     uint256 _bidIncrease,
-    uint48 _bidDuration
+    uint256 _bidDuration
   ) public happyPath(_auction, _bid, _bidIncrease, _bidDuration) {
     surplusAuctionHouse.increaseBidSize(_auction.id, _auction.amountToSell, _bid);
 
-    (,,, uint48 _bidExpiry,) = surplusAuctionHouse.bids(_auction.id);
+    (,,, uint256 _bidExpiry,) = surplusAuctionHouse.bids(_auction.id);
 
     assertEq(_bidExpiry, block.timestamp + _bidDuration);
   }
@@ -683,7 +685,7 @@ contract Unit_SurplusAuctionHouse_IncreaseBidSize is Base {
     SurplusAuction memory _auction,
     uint256 _bid,
     uint256 _bidIncrease,
-    uint48 _bidDuration
+    uint256 _bidDuration
   ) public happyPath(_auction, _bid, _bidIncrease, _bidDuration) {
     expectEmitNoIndex();
     emit IncreaseBidSize(_auction.id, user, _auction.amountToSell, _bid, block.timestamp + _bidDuration);
@@ -723,7 +725,7 @@ contract Unit_SurplusAuctionHouse_SettleAuction is Base {
   }
 
   function test_Revert_ContractIsDisabled(SurplusAuction memory _auction) public {
-    _mockContractEnabled(0);
+    _mockContractEnabled(false);
 
     vm.expectRevert(IDisableable.ContractIsDisabled.selector);
 
@@ -824,7 +826,7 @@ contract Unit_SurplusAuctionHouse_SettleAuction is Base {
   ) public happyPath(_auction, _recyclingPercentage) {
     surplusAuctionHouse.settleAuction(_auction.id);
 
-    (uint256 _bidAmount, uint256 _amountToSell, address _highBidder, uint48 _bidExpiry, uint48 _auctionDeadline) =
+    (uint256 _bidAmount, uint256 _amountToSell, address _highBidder, uint256 _bidExpiry, uint256 _auctionDeadline) =
       surplusAuctionHouse.bids(_auction.id);
 
     assertEq(_bidAmount, 0);
@@ -861,7 +863,7 @@ contract Unit_SurplusAuctionHouse_TerminateAuctionPrematurely is Base {
   }
 
   function _mockValues(SurplusAuction memory _auction) internal {
-    _mockContractEnabled(0);
+    _mockContractEnabled(false);
     _mockAuction(_auction);
   }
 
@@ -901,7 +903,7 @@ contract Unit_SurplusAuctionHouse_TerminateAuctionPrematurely is Base {
   function test_Set_Bids(SurplusAuction memory _auction) public happyPath(_auction) {
     surplusAuctionHouse.terminateAuctionPrematurely(_auction.id);
 
-    (uint256 _bidAmount, uint256 _amountToSell, address _highBidder, uint48 _bidExpiry, uint48 _auctionDeadline) =
+    (uint256 _bidAmount, uint256 _amountToSell, address _highBidder, uint256 _bidExpiry, uint256 _auctionDeadline) =
       surplusAuctionHouse.bids(_auction.id);
 
     assertEq(_bidAmount, 0);

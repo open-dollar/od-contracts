@@ -47,8 +47,9 @@ abstract contract Base is HaiTest {
     _;
   }
 
-  function _mockContractEnabled(uint256 _contractEnabled) internal {
-    stdstore.target(address(oracleRelayer)).sig(IDisableable.contractEnabled.selector).checked_write(_contractEnabled);
+  function _mockContractEnabled(bool _contractEnabled) internal {
+    // BUG: Accessing packed slots is not supported by Std Storage
+    OracleRelayerForTest(address(oracleRelayer)).setContractEnabled(_contractEnabled);
   }
 
   function _mockRedemptionRate(uint256 _redemptionRate) internal {
@@ -66,7 +67,7 @@ abstract contract Base is HaiTest {
   }
 
   function _mockRedemptionPrice(uint256 _redemptionPrice) internal {
-    (OracleRelayerForTest(address(oracleRelayer))).setRedemptionPrice(_redemptionPrice);
+    OracleRelayerForTest(address(oracleRelayer)).setRedemptionPrice(_redemptionPrice);
   }
 
   function _mockRedemptionPriceUpdateTime(uint256 _redemptionPriceUpdateTime) internal {
@@ -122,7 +123,7 @@ contract Unit_OracleRelayer_Constructor is Base {
   }
 
   function test_Set_Authorizable() public {
-    assertEq(IAuthorizable(address(oracleRelayer)).authorizedAccounts(deployer), 1);
+    assertEq(IAuthorizable(address(oracleRelayer)).authorizedAccounts(deployer), true);
   }
 
   function test_Set_OracleRelayer_Params(IOracleRelayer.OracleRelayerParams memory _oracleRelayerParams) public {
@@ -294,7 +295,7 @@ contract Unit_OracleRelayer_ModifyParameters is Base {
   }
 
   function test_Revert_ModifyParameters_ContractIsDisabled() public authorized {
-    _mockContractEnabled(0);
+    _mockContractEnabled(false);
 
     vm.expectRevert(IDisableable.ContractIsDisabled.selector);
 
@@ -302,7 +303,7 @@ contract Unit_OracleRelayer_ModifyParameters is Base {
   }
 
   function test_Revert_ModifyParameters_PerCollateral_ContractIsDisabled(bytes32 _cType) public authorized {
-    _mockContractEnabled(0);
+    _mockContractEnabled(false);
 
     vm.expectRevert(IDisableable.ContractIsDisabled.selector);
 
@@ -593,7 +594,7 @@ contract Unit_OracleRelayer_UpdateCollateralPrice is Base {
   }
 
   function test_Revert_ContractIsDisabled() public {
-    _mockContractEnabled(0);
+    _mockContractEnabled(false);
 
     vm.expectRevert(IDisableable.ContractIsDisabled.selector);
 
@@ -791,7 +792,7 @@ contract Unit_OracleRelayer_UpdateRedemptionRate is Base {
   }
 
   function test_Revert_ContractIsDisabled(uint256 _redemptionRate) public authorized {
-    _mockContractEnabled(0);
+    _mockContractEnabled(false);
 
     vm.expectRevert(IDisableable.ContractIsDisabled.selector);
 

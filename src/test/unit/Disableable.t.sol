@@ -25,7 +25,7 @@ abstract contract Base is HaiTest {
     vm.stopPrank();
   }
 
-  function _mockContractEnabled(uint256 _contractEnabled) internal {
+  function _mockContractEnabled(bool _contractEnabled) internal {
     stdstore.target(address(disableable)).sig(IDisableable.contractEnabled.selector).checked_write(_contractEnabled);
   }
 }
@@ -46,7 +46,7 @@ contract Unit_Disableable_Constructor is Base {
   }
 
   function test_Set_ContractEnabled() public happyPath {
-    assertEq(disableable.contractEnabled(), 1);
+    assertEq(disableable.contractEnabled(), true);
   }
 }
 
@@ -68,7 +68,7 @@ contract Unit_Disableable_DisableContract is Base {
   function test_Revert_ContractIsDisabled() public {
     vm.startPrank(authorizedAccount);
 
-    _mockContractEnabled(0);
+    _mockContractEnabled(false);
 
     vm.expectRevert(IDisableable.ContractIsDisabled.selector);
 
@@ -78,7 +78,7 @@ contract Unit_Disableable_DisableContract is Base {
   function test_Set_ContractEnabled() public happyPath {
     disableable.disableContract();
 
-    assertEq(disableable.contractEnabled(), 0);
+    assertEq(disableable.contractEnabled(), false);
   }
 
   function test_Emit_OnContractDisable() public happyPath {
@@ -98,7 +98,7 @@ contract Unit_Disableable_DisableContract is Base {
 
 contract Unit_Disableable_WhenEnabled is Base {
   function test_Revert_ContractIsDisabled() public {
-    _mockContractEnabled(0);
+    _mockContractEnabled(false);
 
     vm.expectRevert(IDisableable.ContractIsDisabled.selector);
 
@@ -114,7 +114,7 @@ contract Unit_Disableable_WhenEnabled is Base {
 
 contract Unit_Disableable_WhenDisabled is Base {
   modifier happyPath() {
-    _mockContractEnabled(0);
+    _mockContractEnabled(false);
     _;
   }
 

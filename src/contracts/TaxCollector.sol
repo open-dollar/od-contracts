@@ -265,7 +265,7 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
     // Compute the % out of SF that should be allocated to the receiver
     int256 _currentTaxCut = _receiver == _params.primaryTaxReceiver
       ? (WHOLE_TAX_CUT - _cData[_cType].secondaryReceiverAllotedTax).mul(_deltaRate) / int256(WHOLE_TAX_CUT)
-      : uint256(_taxReceiver.taxPercentage).mul(_deltaRate) / int256(WHOLE_TAX_CUT);
+      : _taxReceiver.taxPercentage.mul(_deltaRate) / int256(WHOLE_TAX_CUT);
 
     /**
      * If SF is negative and a tax receiver doesn't have enough coins to absorb the loss,

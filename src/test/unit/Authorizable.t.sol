@@ -35,9 +35,9 @@ contract Unit_Authorizable_AuthorizedAccounts is Base {
   function test_Return_IsAuthorized(address _account) public {
     vm.assume(_account != authorizedAccount);
 
-    assertEq(authorizable.authorizedAccounts(_account), 0);
+    assertEq(authorizable.authorizedAccounts(_account), false);
 
-    assertEq(authorizable.authorizedAccounts(authorizedAccount), 1);
+    assertEq(authorizable.authorizedAccounts(authorizedAccount), true);
   }
 
   function test_Return_Accounts() public {
@@ -86,7 +86,7 @@ contract Unit_Authorizable_AddAuthorization is Base {
   function test_Set_AuthorizedAccounts(address _account) public happyPath(_account) {
     authorizable.addAuthorization(_account);
 
-    assertEq(authorizable.authorizedAccounts(_account), 1);
+    assertEq(authorizable.authorizedAccounts(_account), true);
   }
 
   function test_Emit_AddAuthorization(address _account) public happyPath(_account) {
@@ -123,7 +123,7 @@ contract Unit_Authorizable_RemoveAuthorization is Base {
   function test_Set_AuthorizedAccounts() public happyPath {
     authorizable.removeAuthorization(authorizedAccount);
 
-    assertEq(authorizable.authorizedAccounts(authorizedAccount), 0);
+    assertEq(authorizable.authorizedAccounts(authorizedAccount), false);
   }
 
   function test_Emit_RemoveAuthorization() public happyPath {

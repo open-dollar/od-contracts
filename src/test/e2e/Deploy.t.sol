@@ -12,12 +12,12 @@ import {GoerliDeployment} from '@script/GoerliDeployment.s.sol';
 abstract contract CommonDeploymentTest is HaiTest, Deploy {
   // SAFEEngine
   function test_SAFEEngine_Auth() public {
-    assertEq(safeEngine.authorizedAccounts(address(oracleRelayer)), 1);
-    assertEq(safeEngine.authorizedAccounts(address(taxCollector)), 1);
-    assertEq(safeEngine.authorizedAccounts(address(debtAuctionHouse)), 1);
-    assertEq(safeEngine.authorizedAccounts(address(liquidationEngine)), 1);
+    assertEq(safeEngine.authorizedAccounts(address(oracleRelayer)), true);
+    assertEq(safeEngine.authorizedAccounts(address(taxCollector)), true);
+    assertEq(safeEngine.authorizedAccounts(address(debtAuctionHouse)), true);
+    assertEq(safeEngine.authorizedAccounts(address(liquidationEngine)), true);
 
-    assert(safeEngine.canModifySAFE(address(accountingEngine), address(surplusAuctionHouse)));
+    assertTrue(safeEngine.canModifySAFE(address(accountingEngine), address(surplusAuctionHouse)));
   }
 
   function test_SAFEEngine_Params() public view {
@@ -26,7 +26,7 @@ abstract contract CommonDeploymentTest is HaiTest, Deploy {
 
   // AccountingEngine
   function test_AccountingEntine_Auth() public {
-    assertEq(accountingEngine.authorizedAccounts(address(liquidationEngine)), 1);
+    assertEq(accountingEngine.authorizedAccounts(address(liquidationEngine)), true);
   }
 
   function test_AccountingEntine_Params() public view {
@@ -35,12 +35,12 @@ abstract contract CommonDeploymentTest is HaiTest, Deploy {
 
   // Coin (system)
   function test_Coin_Auth() public {
-    assertEq(systemCoin.authorizedAccounts(address(coinJoin)), 1);
+    assertEq(systemCoin.authorizedAccounts(address(coinJoin)), true);
   }
 
   // SurplusAuctionHouse
   function test_SurplusAuctionHouse_Auth() public {
-    assertEq(surplusAuctionHouse.authorizedAccounts(address(accountingEngine)), 1);
+    assertEq(surplusAuctionHouse.authorizedAccounts(address(accountingEngine)), true);
   }
 
   function test_SurplusAuctionHouse_Params() public view {
@@ -49,7 +49,7 @@ abstract contract CommonDeploymentTest is HaiTest, Deploy {
 
   // DebtAuctionHouse
   function test_DebtAuctionHouse_Auth() public {
-    assertEq(debtAuctionHouse.authorizedAccounts(address(accountingEngine)), 1);
+    assertEq(debtAuctionHouse.authorizedAccounts(address(accountingEngine)), true);
   }
 
   function test_DebtAuctionHouse_Params() public view {
@@ -59,7 +59,7 @@ abstract contract CommonDeploymentTest is HaiTest, Deploy {
   function test_CollateralAuctionHouse_Auth() public {
     for (uint256 _i; _i < collateralTypes.length; _i++) {
       bytes32 _cType = collateralTypes[_i];
-      assertEq(collateralAuctionHouse[_cType].authorizedAccounts(address(liquidationEngine)), 1);
+      assertEq(collateralAuctionHouse[_cType].authorizedAccounts(address(liquidationEngine)), true);
     }
   }
 
@@ -79,9 +79,7 @@ abstract contract CommonDeploymentTest is HaiTest, Deploy {
     _test_Authorizations(governor, true);
   }
 
-  function _test_Authorizations(address _target, bool _shouldHavePermissions) internal {
-    uint256 _permission = _shouldHavePermissions ? 1 : 0;
-
+  function _test_Authorizations(address _target, bool _permission) internal {
     // base contracts
     assertEq(safeEngine.authorizedAccounts(_target), _permission);
     assertEq(oracleRelayer.authorizedAccounts(_target), _permission);
@@ -146,10 +144,10 @@ contract GoerliDeploymentTest is GoerliDeployment, CommonDeploymentTest {
   }
 
   function test_Oracles_Auth() public {
-    assertEq(haiOracleForTest.authorizedAccounts(deployer), 0);
-    assertEq(haiOracleForTest.authorizedAccounts(governor), 1);
+    assertEq(haiOracleForTest.authorizedAccounts(deployer), false);
+    assertEq(haiOracleForTest.authorizedAccounts(governor), true);
 
-    assertEq(opEthOracleForTest.authorizedAccounts(deployer), 0);
-    assertEq(opEthOracleForTest.authorizedAccounts(governor), 1);
+    assertEq(opEthOracleForTest.authorizedAccounts(deployer), false);
+    assertEq(opEthOracleForTest.authorizedAccounts(governor), true);
   }
 }

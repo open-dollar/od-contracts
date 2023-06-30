@@ -115,7 +115,7 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
   function test_correct_setup() public {
     // assertEq(calculator.readers(address(this)), 1);
     // assertEq(calculator.readers(address(rateSetter)), 1);
-    assertEq(calculator.authorizedAccounts(address(this)), 1);
+    assertTrue(calculator.authorizedAccounts(address(this)));
 
     assertEq(calculator.params().integralPeriodSize, integralPeriodSize);
     assertEq(calculator.params().perSecondCumulativeLeak, perSecondCumulativeLeak);
@@ -150,7 +150,7 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
     assertEq(iTerm, 0);
 
     // Verify that it did not change state
-    assertEq(calculator.authorizedAccounts(address(this)), 1);
+    assertTrue(calculator.authorizedAccounts(address(this)));
 
     assertEq(calculator.deviation().timestamp, 0);
     assertEq(calculator.params().integralPeriodSize, integralPeriodSize);

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {ETHJoin, IETHJoin} from '@contracts/utils/ETHJoin.sol';
+import {ETHJoinForTest, IETHJoin} from '@contracts/for-test/ETHJoinForTest.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
@@ -20,7 +20,7 @@ abstract contract Base is HaiTest {
 
   ISAFEEngine mockSafeEngine = ISAFEEngine(mockContract('SafeEngine'));
 
-  ETHJoin ethJoin;
+  ETHJoinForTest ethJoin;
 
   // ETHJoin storage
   bytes32 collateralType = 'collateralType';
@@ -28,7 +28,7 @@ abstract contract Base is HaiTest {
   function setUp() public virtual {
     vm.startPrank(deployer);
 
-    ethJoin = new ETHJoin(address(mockSafeEngine), collateralType);
+    ethJoin = new ETHJoinForTest(address(mockSafeEngine), collateralType);
     label(address(ethJoin), 'ETHJoin');
 
     ethJoin.addAuthorization(authorizedAccount);
@@ -36,8 +36,9 @@ abstract contract Base is HaiTest {
     vm.stopPrank();
   }
 
-  function _mockContractEnabled(uint256 _contractEnabled) internal {
-    stdstore.target(address(ethJoin)).sig(IDisableable.contractEnabled.selector).checked_write(_contractEnabled);
+  function _mockContractEnabled(bool _contractEnabled) internal {
+    // BUG: Accessing packed slots is not supported by Std Storage
+    ethJoin.setContractEnabled(_contractEnabled);
   }
 }
 
@@ -53,22 +54,22 @@ contract Unit_ETHJoin_Constructor is Base {
     expectEmitNoIndex();
     emit AddAuthorization(user);
 
-    ethJoin = new ETHJoin(address(mockSafeEngine), collateralType);
+    ethJoin = new ETHJoinForTest(address(mockSafeEngine), collateralType);
   }
 
   function test_Set_ContractEnabled() public happyPath {
-    assertEq(ethJoin.contractEnabled(), 1);
+    assertEq(ethJoin.contractEnabled(), true);
   }
 
   function test_Set_SafeEngine(address _safeEngine) public happyPath {
     vm.assume(_safeEngine != address(0));
-    ethJoin = new ETHJoin(_safeEngine, collateralType);
+    ethJoin = new ETHJoinForTest(_safeEngine, collateralType);
 
     assertEq(address(ethJoin.safeEngine()), _safeEngine);
   }
 
   function test_Set_CollateralType(bytes32 _cType) public happyPath {
-    ethJoin = new ETHJoin(address(mockSafeEngine), _cType);
+    ethJoin = new ETHJoinForTest(address(mockSafeEngine), _cType);
 
     assertEq(ethJoin.collateralType(), _cType);
   }
@@ -80,7 +81,7 @@ contract Unit_ETHJoin_Constructor is Base {
   function test_Revert_Null_SafeEngine() public {
     vm.expectRevert(Assertions.NullAddress.selector);
 
-    ethJoin = new ETHJoin(address(0), collateralType);
+    ethJoin = new ETHJoinForTest(address(0), collateralType);
   }
 }
 
@@ -101,7 +102,7 @@ contract Unit_ETHJoin_Join is Base {
   function test_Revert_ContractIsDisabled(address _account, uint256 _wad) public {
     startHoax(user, type(uint256).max);
 
-    _mockContractEnabled(0);
+    _mockContractEnabled(false);
 
     vm.expectRevert(IDisableable.ContractIsDisabled.selector);
 

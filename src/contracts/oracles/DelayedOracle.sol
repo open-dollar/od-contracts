@@ -58,7 +58,7 @@ contract DelayedOracle is IBaseOracle, IDelayedOracle {
       _nextFeed = Feed(_priceFeedValue, true);
       lastUpdateTime = block.timestamp;
       // Emit event
-      emit UpdateResult(uint256(_currentFeed.value), lastUpdateTime);
+      emit UpdateResult(_currentFeed.value, lastUpdateTime);
     }
     return _hasValidValue;
   }

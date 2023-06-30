@@ -82,7 +82,7 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
     bids[_id].bidAmount = _initialBid;
     bids[_id].amountToSell = _amountToSell;
     bids[_id].highBidder = msg.sender;
-    bids[_id].auctionDeadline = uint48(block.timestamp) + _params.totalAuctionLength;
+    bids[_id].auctionDeadline = block.timestamp + _params.totalAuctionLength;
 
     safeEngine.transferInternalCoins(msg.sender, address(this), _amountToSell);
 
@@ -97,7 +97,7 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
     if (_id == 0 || _id > auctionsStarted) revert SAH_AuctionNeverStarted();
     if (bids[_id].auctionDeadline > block.timestamp) revert SAH_AuctionNotFinished();
     if (bids[_id].bidExpiry != 0) revert SAH_BidAlreadyPlaced();
-    bids[_id].auctionDeadline = uint48(block.timestamp) + _params.totalAuctionLength;
+    bids[_id].auctionDeadline = block.timestamp + _params.totalAuctionLength;
     emit RestartAuction(_id, bids[_id].auctionDeadline);
   }
 
@@ -123,7 +123,7 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
     protocolToken.safeTransferFrom(msg.sender, address(this), _bid - bids[_id].bidAmount);
 
     bids[_id].bidAmount = _bid;
-    bids[_id].bidExpiry = uint48(block.timestamp) + _params.bidDuration;
+    bids[_id].bidExpiry = block.timestamp + _params.bidDuration;
 
     emit IncreaseBidSize(_id, msg.sender, _amountToBuy, _bid, bids[_id].bidExpiry);
   }
@@ -171,8 +171,8 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
     // TODO: incorporate protocolTokenBidReceiver to _params
     if (_param == 'protocolTokenBidReceiver') protocolTokenBidReceiver = _data.toAddress().assertNonNull();
     else if (_param == 'bidIncrease') _params.bidIncrease = _uint256;
-    else if (_param == 'bidDuration') _params.bidDuration = uint48(_uint256);
-    else if (_param == 'totalAuctionLength') _params.totalAuctionLength = uint48(_uint256);
+    else if (_param == 'bidDuration') _params.bidDuration = _uint256;
+    else if (_param == 'totalAuctionLength') _params.totalAuctionLength = _uint256;
     else if (_param == 'recyclingPercentage') _params.recyclingPercentage = _uint256;
     else revert UnrecognizedParam();
   }

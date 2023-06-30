@@ -48,7 +48,7 @@ contract PIDRateSetterTest is DSTest {
   }
 
   function test_correct_setup() public {
-    assertEq(rateSetter.authorizedAccounts(address(this)), 1);
+    assertTrue(rateSetter.authorizedAccounts(address(this)));
     assertEq(rateSetter.params().updateRateDelay, periodSize);
   }
 

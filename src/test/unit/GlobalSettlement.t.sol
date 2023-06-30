@@ -152,7 +152,7 @@ abstract contract Base is HaiTest {
     vm.mockCall(address(mockOracle), abi.encodeCall(mockOracle.read, ()), abi.encode(_oracleReadValue));
   }
 
-  function _mockContractEnabled(uint256 _contractEnabled) internal {
+  function _mockContractEnabled(bool _contractEnabled) internal {
     stdstore.target(address(globalSettlement)).sig(IDisableable.contractEnabled.selector).checked_write(
       _contractEnabled
     );
@@ -250,7 +250,7 @@ contract Unit_GlobalSettlement_Constructor is Base {
   }
 
   function test_Set_ContractEnabled() public happyPath {
-    assertEq(globalSettlement.contractEnabled(), 1);
+    assertEq(globalSettlement.contractEnabled(), true);
   }
 }
 
@@ -291,7 +291,7 @@ contract Unit_GlobalSettlement_ShutdownSystem is Base {
   function test_Revert_ContractIsDisabled() public {
     vm.startPrank(authorizedAccount);
 
-    _mockContractEnabled(0);
+    _mockContractEnabled(false);
 
     vm.expectRevert(IDisableable.ContractIsDisabled.selector);
 
@@ -373,7 +373,7 @@ contract Unit_GlobalSettlement_FreezeCollateralType is Base {
     uint256 _redemptionPrice,
     uint256 _oracleReadValue
   ) internal {
-    _mockContractEnabled(0);
+    _mockContractEnabled(false);
     _mockFinalCoinPerCollateralPrice(_cType, _finalCoinPerCollateralPrice);
     _mockSafeEngine(address(mockSafeEngine));
     _mockOracleRelayer(address(mockOracleRelayer));
@@ -754,7 +754,7 @@ contract Unit_GlobalSettlement_FreeCollateral is Base {
   }
 
   function _mockValues(bytes32 _cType, uint256 _lockedCollateral, uint256 _generatedDebt) internal {
-    _mockContractEnabled(0);
+    _mockContractEnabled(false);
     _mockSafeEngine(address(mockSafeEngine));
     _mockAccountingEngine(address(mockAccountingEngine));
     _mockSafeEngineSafeData(_cType, user, _lockedCollateral, _generatedDebt);
@@ -836,7 +836,7 @@ contract Unit_GlobalSettlement_SetOutstandingCoinSupply is Base {
     uint256 _coinBalance,
     uint256 _globalDebt
   ) internal {
-    _mockContractEnabled(0);
+    _mockContractEnabled(false);
     _mockShutdownTime(_shutdownTime);
     _mockShutdownCooldown(_shutdownCooldown);
     _mockOutstandingCoinSupply(_outstandingCoinSupply);
@@ -1202,7 +1202,7 @@ contract Unit_GlobalSettlement_ModifyParameters is Base {
   function test_Revert_ContractIsDisabled(bytes32 _param, bytes memory _data) public {
     vm.startPrank(authorizedAccount);
 
-    _mockContractEnabled(0);
+    _mockContractEnabled(false);
 
     vm.expectRevert(IDisableable.ContractIsDisabled.selector);
 

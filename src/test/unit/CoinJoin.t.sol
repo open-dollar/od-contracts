@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
+import {CoinJoinForTest} from '@contracts/for-test/CoinJoinForTest.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ISystemCoin} from '@interfaces/tokens/ISystemCoin.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
@@ -21,12 +21,12 @@ abstract contract Base is HaiTest {
   ISAFEEngine mockSafeEngine = ISAFEEngine(mockContract('SafeEngine'));
   ISystemCoin mockSystemCoin = ISystemCoin(mockContract('SystemCoin'));
 
-  CoinJoin coinJoin;
+  CoinJoinForTest coinJoin;
 
   function setUp() public virtual {
     vm.startPrank(deployer);
 
-    coinJoin = new CoinJoin(address(mockSafeEngine), address(mockSystemCoin));
+    coinJoin = new CoinJoinForTest(address(mockSafeEngine), address(mockSystemCoin));
     label(address(coinJoin), 'CoinJoin');
 
     coinJoin.addAuthorization(authorizedAccount);
@@ -34,8 +34,9 @@ abstract contract Base is HaiTest {
     vm.stopPrank();
   }
 
-  function _mockContractEnabled(uint256 _contractEnabled) internal {
-    stdstore.target(address(coinJoin)).sig(IDisableable.contractEnabled.selector).checked_write(_contractEnabled);
+  function _mockContractEnabled(bool _contractEnabled) internal {
+    // BUG: Accessing packed slots is not supported by Std Storage
+    coinJoin.setContractEnabled(_contractEnabled);
   }
 }
 
@@ -51,23 +52,23 @@ contract Unit_CoinJoin_Constructor is Base {
     expectEmitNoIndex();
     emit AddAuthorization(user);
 
-    coinJoin = new CoinJoin(address(mockSafeEngine), address(mockSystemCoin));
+    coinJoin = new CoinJoinForTest(address(mockSafeEngine), address(mockSystemCoin));
   }
 
   function test_Set_ContractEnabled() public happyPath {
-    assertEq(coinJoin.contractEnabled(), 1);
+    assertEq(coinJoin.contractEnabled(), true);
   }
 
   function test_Set_SafeEngine(address _safeEngine) public happyPath {
     vm.assume(_safeEngine != address(0));
-    coinJoin = new CoinJoin(_safeEngine, address(mockSystemCoin));
+    coinJoin = new CoinJoinForTest(_safeEngine, address(mockSystemCoin));
 
     assertEq(address(coinJoin.safeEngine()), _safeEngine);
   }
 
   function test_Set_SystemCoin(address _systemCoin) public happyPath {
     vm.assume(_systemCoin != address(0));
-    coinJoin = new CoinJoin(address(mockSafeEngine), _systemCoin);
+    coinJoin = new CoinJoinForTest(address(mockSafeEngine), _systemCoin);
 
     assertEq(address(coinJoin.systemCoin()), _systemCoin);
   }
@@ -79,13 +80,13 @@ contract Unit_CoinJoin_Constructor is Base {
   function test_Revert_NullSafeEngine() public {
     vm.expectRevert(Assertions.NullAddress.selector);
 
-    coinJoin = new CoinJoin(address(0), address(mockSystemCoin));
+    coinJoin = new CoinJoinForTest(address(0), address(mockSystemCoin));
   }
 
   function test_Revert_NullSystemCoin() public {
     vm.expectRevert(Assertions.NullAddress.selector);
 
-    coinJoin = new CoinJoin(address(mockSafeEngine), address(0));
+    coinJoin = new CoinJoinForTest(address(mockSafeEngine), address(0));
   }
 }
 
@@ -150,7 +151,7 @@ contract Unit_CoinJoin_Exit is Base {
   }
 
   function test_Revert_ContractIsDisabled(address _account, uint256 _wad) public {
-    _mockContractEnabled(0);
+    _mockContractEnabled(false);
 
     vm.expectRevert(IDisableable.ContractIsDisabled.selector);
 

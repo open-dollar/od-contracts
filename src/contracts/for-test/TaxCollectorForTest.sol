@@ -25,7 +25,7 @@ contract TaxCollectorForTest is TaxCollector {
     bytes32 _cType,
     address _receiver,
     bool _canTakeBackTax,
-    uint128 _taxPercentage
+    uint256 _taxPercentage
   ) external {
     _secondaryTaxReceivers[_cType][_receiver] = ITaxCollector.TaxReceiver(_receiver, _canTakeBackTax, _taxPercentage);
     _secondaryReceiverRevenueSources[_receiver].add(_cType);

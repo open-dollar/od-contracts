@@ -19,11 +19,10 @@ abstract contract Authorizable is IAuthorizable {
   // --- Views ---
   /**
    * @notice Checks whether an account is authorized
-   * @return _authorized Whether the account is authorized (1) or not (0)
-   * @dev This method allows backward compatibility with the old `authorizedAccounts` mapping
+   * @return _authorized Whether the account is authorized or not
    */
-  function authorizedAccounts(address _account) external view returns (uint256 _authorized) {
-    if (_isAuthorized(_account)) return 1;
+  function authorizedAccounts(address _account) external view returns (bool _authorized) {
+    return _isAuthorized(_account);
   }
 
   /**

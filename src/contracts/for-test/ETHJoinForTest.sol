@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {ETHJoin} from '@contracts/utils/ETHJoin.sol';
+import {ETHJoin, IETHJoin} from '@contracts/utils/ETHJoin.sol';
 import {Math} from '@libraries/Math.sol';
 
 // TODO: deprecate this contract for ETH scope
@@ -23,5 +23,9 @@ contract ETHJoinForTest is ETHJoin {
     // NOTE: doesn't require value to be sent
     safeEngine.modifyCollateralBalance(collateralType, _account, _wad.toInt());
     emit Join(msg.sender, _account, _wad);
+  }
+
+  function setContractEnabled(bool _contractEnabled) external {
+    contractEnabled = _contractEnabled;
   }
 }

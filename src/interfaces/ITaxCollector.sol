@@ -12,7 +12,7 @@ interface ITaxCollector is IAuthorizable, IModifiable {
   event SetPrimaryReceiver(bytes32 indexed _cType, address indexed _receiver);
   // NOTE: (taxPercentage, canTakeBackTax) = (0, false) means that the receiver is removed
   event SetSecondaryReceiver(
-    bytes32 indexed _cType, address indexed _receiver, uint128 _taxPercentage, bool _canTakeBackTax
+    bytes32 indexed _cType, address indexed _receiver, uint256 _taxPercentage, bool _canTakeBackTax
   );
   event CollectTax(bytes32 indexed _cType, uint256 _latestAccumulatedRate, int256 _deltaRate);
   event DistributeTax(bytes32 indexed _cType, address indexed _target, int256 _taxCut);
@@ -54,7 +54,7 @@ interface ITaxCollector is IAuthorizable, IModifiable {
     // Whether this receiver can accept a negative rate (taking SF from it)
     bool canTakeBackTax; // [bool]
     // Percentage of SF allocated to this receiver
-    uint128 taxPercentage; // [ray%]
+    uint256 taxPercentage; // [ray%]
   }
 
   // solhint-disable-next-line func-name-mixedcase

@@ -41,7 +41,7 @@ contract SettlementSurplusAuctioneer is Authorizable, Modifiable, ISettlementSur
    *      start a new auction.
    */
   function auctionSurplus() external returns (uint256 _id) {
-    if (accountingEngine.contractEnabled() != 0) revert SSA_AccountingEngineStillEnabled();
+    if (accountingEngine.contractEnabled()) revert SSA_AccountingEngineStillEnabled();
     IAccountingEngine.AccountingEngineParams memory _accEngineParams = accountingEngine.params();
     if (block.timestamp < lastSurplusTime + _accEngineParams.surplusDelay) revert SSA_SurplusAuctionDelayNotPassed();
     lastSurplusTime = block.timestamp;
