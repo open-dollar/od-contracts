@@ -10,16 +10,13 @@ import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
 interface IAccountingEngine is IAuthorizable, IDisableable, IModifiable {
   // --- Events ---
-  event PushDebtToQueue(uint256 indexed _timestamp, uint256 _debtQueueBlock, uint256 _totalQueuedDebt);
-  event PopDebtFromQueue(uint256 indexed _timestamp, uint256 _debtQueueBlock, uint256 _totalQueuedDebt);
+  event PushDebtToQueue(uint256 _debtAmount);
+  event PopDebtFromQueue(uint256 indexed _timestamp, uint256 _debtAmount);
   event SettleDebt(uint256 _rad, uint256 _coinBalance, uint256 _debtBalance);
-  event CancelAuctionedDebtWithSurplus(
-    uint256 _rad, uint256 _totalOnAuctionDebt, uint256 _coinBalance, uint256 _debtBalance
-  );
-  event AuctionDebt(uint256 indexed _id, uint256 _totalOnAuctionDebt, uint256 _debtBalance);
-  event AuctionSurplus(uint256 indexed _id, uint256 _lastSurplusTime, uint256 _coinBalance);
-  event TransferPostSettlementSurplus(address _postSettlementSurplusDrain, uint256 _coinBalance, uint256 _debtBalance);
-  event TransferExtraSurplus(address indexed _extraSurplusReceiver, uint256 _lastSurplusTime, uint256 _coinBalance);
+  event CancelDebt(uint256 _rad, uint256 _coinBalance, uint256 _debtBalance);
+  event AuctionDebt(uint256 indexed _id, uint256 _initialBid, uint256 _debtAuctioned);
+  event AuctionSurplus(uint256 indexed _id, uint256 _initialBid, uint256 _surplusAuctioned);
+  event TransferSurplus(address indexed _extraSurplusReceiver, uint256 _surplusTransferred);
 
   // --- Errors ---
   error AccEng_DebtAuctionDisabled();

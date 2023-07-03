@@ -57,10 +57,8 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
     AccountingEngineParams memory _accEngineParams
   ) Authorizable(msg.sender) validParams {
     safeEngine = ISAFEEngine(_safeEngine.assertNonNull());
-    surplusAuctionHouse = ISurplusAuctionHouse(_surplusAuctionHouse); // Validated in _validateParameters()
-    debtAuctionHouse = IDebtAuctionHouse(_debtAuctionHouse); // Validated in _validateParameters()
-
-    safeEngine.approveSAFEModification(_surplusAuctionHouse);
+    _setSurplusAuctionHouse(_surplusAuctionHouse);
+    debtAuctionHouse = IDebtAuctionHouse(_debtAuctionHouse);
 
     lastSurplusTime = block.timestamp;
 
@@ -89,7 +87,8 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
   function pushDebtToQueue(uint256 _debtBlock) external isAuthorized {
     debtQueue[block.timestamp] = debtQueue[block.timestamp] + _debtBlock;
     totalQueuedDebt = totalQueuedDebt + _debtBlock;
-    emit PushDebtToQueue(block.timestamp, debtQueue[block.timestamp], totalQueuedDebt);
+
+    emit PushDebtToQueue(_debtBlock);
   }
 
   /**
@@ -100,11 +99,15 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
    */
   function popDebtFromQueue(uint256 _debtBlockTimestamp) external {
     if (block.timestamp < _debtBlockTimestamp + _params.popDebtDelay) revert AccEng_PopDebtCooldown();
+
     uint256 _debtBlock = debtQueue[_debtBlockTimestamp];
+
     if (_debtBlock == 0) revert AccEng_NullAmount();
+
     totalQueuedDebt = totalQueuedDebt - _debtBlock;
-    emit PopDebtFromQueue(block.timestamp, _debtBlock, totalQueuedDebt);
     debtQueue[_debtBlockTimestamp] = 0;
+
+    emit PopDebtFromQueue(_debtBlockTimestamp, _debtBlock);
   }
 
   // Debt settlement
@@ -124,9 +127,11 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
   ) internal returns (uint256 _newCoinBalance, uint256 _newDebtBalance) {
     if (_rad > _coinBalance) revert AccEng_InsufficientSurplus();
     if (_rad > _unqueuedUnauctionedDebt(_debtBalance)) revert AccEng_InsufficientDebt();
+
     safeEngine.settleDebt(_rad);
     _newCoinBalance = _coinBalance - _rad;
     _newDebtBalance = _debtBalance - _rad;
+
     emit SettleDebt(_rad, _newCoinBalance, _newDebtBalance);
   }
 
@@ -135,14 +140,16 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
    * @param _rad Amount of coins/debt to destroy (number with 45 decimals)
    */
   function cancelAuctionedDebtWithSurplus(uint256 _rad) external {
-    uint256 _coinBalance = safeEngine.coinBalance(address(this));
-    if (_rad > _coinBalance) revert AccEng_InsufficientSurplus();
     if (_rad > totalOnAuctionDebt) revert AccEng_InsufficientDebt();
-    totalOnAuctionDebt -= _rad;
+
+    uint256 _coinBalance = safeEngine.coinBalance(address(this));
+
+    if (_rad > _coinBalance) revert AccEng_InsufficientSurplus();
+
     safeEngine.settleDebt(_rad);
-    emit CancelAuctionedDebtWithSurplus(
-      _rad, totalOnAuctionDebt, _coinBalance - _rad, safeEngine.debtBalance(address(this))
-    );
+    totalOnAuctionDebt -= _rad;
+
+    emit CancelDebt(_rad, _coinBalance - _rad, safeEngine.debtBalance(address(this)));
   }
 
   // Debt auction
@@ -153,15 +160,23 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
    * @return _id Id of the debt auction that was started
    */
   function auctionDebt() external returns (uint256 _id) {
+    if (_params.debtAuctionBidSize == 0) revert AccEng_DebtAuctionDisabled();
+
     uint256 _coinBalance = safeEngine.coinBalance(address(this));
     uint256 _debtBalance = safeEngine.debtBalance(address(this));
-    if (_params.debtAuctionBidSize == 0) revert AccEng_DebtAuctionDisabled();
-    if (_params.debtAuctionBidSize > _unqueuedUnauctionedDebt(_debtBalance)) revert AccEng_InsufficientDebt();
-    (_coinBalance, _debtBalance) = _settleDebt(_coinBalance, _debtBalance, _coinBalance);
 
+    if (_params.debtAuctionBidSize > _unqueuedUnauctionedDebt(_debtBalance)) revert AccEng_InsufficientDebt();
+
+    (_coinBalance, _debtBalance) = _settleDebt(_coinBalance, _debtBalance, _coinBalance);
     totalOnAuctionDebt += _params.debtAuctionBidSize;
-    _id = debtAuctionHouse.startAuction(address(this), _params.debtAuctionMintedTokens, _params.debtAuctionBidSize);
-    emit AuctionDebt(_id, totalOnAuctionDebt, _debtBalance);
+
+    _id = debtAuctionHouse.startAuction({
+      _incomeReceiver: address(this),
+      _amountToSell: _params.debtAuctionMintedTokens,
+      _initialBid: _params.debtAuctionBidSize
+    });
+
+    emit AuctionDebt(_id, _params.debtAuctionMintedTokens, _params.debtAuctionBidSize);
   }
 
   // Surplus auction
@@ -172,19 +187,22 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
    * @return _id the Id of the surplus auction that was started
    */
   function auctionSurplus() external returns (uint256 _id) {
-    uint256 _coinBalance = safeEngine.coinBalance(address(this));
-    uint256 _debtBalance = safeEngine.debtBalance(address(this));
     if (_params.surplusIsTransferred == 1) revert AccEng_SurplusAuctionDisabled();
     if (_params.surplusAmount == 0) revert AccEng_NullAmount();
     if (block.timestamp < lastSurplusTime + _params.surplusDelay) revert AccEng_SurplusCooldown();
+
+    uint256 _coinBalance = safeEngine.coinBalance(address(this));
+    uint256 _debtBalance = safeEngine.debtBalance(address(this));
     (_coinBalance, _debtBalance) = _settleDebt(_coinBalance, _debtBalance, _unqueuedUnauctionedDebt(_debtBalance));
+
     if (_coinBalance < _debtBalance + _params.surplusAmount + _params.surplusBuffer) {
       revert AccEng_InsufficientSurplus();
     }
 
+    _id = surplusAuctionHouse.startAuction({_amountToSell: _params.surplusAmount, _initialBid: 0});
+
     lastSurplusTime = block.timestamp;
-    _id = surplusAuctionHouse.startAuction(_params.surplusAmount, 0);
-    emit AuctionSurplus(_id, lastSurplusTime, _coinBalance);
+    emit AuctionSurplus(_id, 0, _params.surplusAmount);
   }
 
   // Extra surplus transfers/surplus auction alternative
@@ -194,20 +212,27 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
    *           transfer, if we keep enough surplus in the buffer and if there is no bad debt left to settle
    */
   function transferExtraSurplus() external {
-    uint256 _coinBalance = safeEngine.coinBalance(address(this));
-    uint256 _debtBalance = safeEngine.debtBalance(address(this));
     if (_params.surplusIsTransferred != 1) revert AccEng_SurplusTransferDisabled();
     if (extraSurplusReceiver == address(0)) revert AccEng_NullSurplusReceiver();
     if (_params.surplusAmount == 0) revert AccEng_NullAmount();
-    (_coinBalance, _debtBalance) = _settleDebt(_coinBalance, _debtBalance, _unqueuedUnauctionedDebt(_debtBalance));
     if (block.timestamp < lastSurplusTime + _params.surplusDelay) revert AccEng_SurplusCooldown();
+
+    uint256 _coinBalance = safeEngine.coinBalance(address(this));
+    uint256 _debtBalance = safeEngine.debtBalance(address(this));
+    (_coinBalance, _debtBalance) = _settleDebt(_coinBalance, _debtBalance, _unqueuedUnauctionedDebt(_debtBalance));
+
     if (_coinBalance < _debtBalance + _params.surplusAmount + _params.surplusBuffer) {
       revert AccEng_InsufficientSurplus();
     }
-    lastSurplusTime = block.timestamp;
 
-    safeEngine.transferInternalCoins(address(this), extraSurplusReceiver, _params.surplusAmount);
-    emit TransferExtraSurplus(extraSurplusReceiver, lastSurplusTime, _coinBalance);
+    safeEngine.transferInternalCoins({
+      _source: address(this),
+      _destination: extraSurplusReceiver,
+      _rad: _params.surplusAmount
+    });
+
+    lastSurplusTime = block.timestamp;
+    emit TransferSurplus(extraSurplusReceiver, _params.surplusAmount);
   }
 
   // --- Shutdown ---
@@ -238,20 +263,25 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
    *
    */
   function transferPostSettlementSurplus() external whenDisabled {
+    if (address(postSettlementSurplusDrain) == address(0)) revert AccEng_NullSurplusReceiver();
     if (block.timestamp < disableTimestamp + _params.disableCooldown) revert AccEng_PostSettlementCooldown();
+
     uint256 _coinBalance = safeEngine.coinBalance(address(this));
     uint256 _debtBalance = safeEngine.debtBalance(address(this));
     uint256 _debtToSettle = Math.min(_coinBalance, _debtBalance);
+    // TODO: refactor and reuse _settleDebt() (with event)
     safeEngine.settleDebt(_debtToSettle);
     _coinBalance -= _debtToSettle;
-    _debtBalance -= _debtToSettle;
+
     if (_coinBalance > 0) {
-      safeEngine.transferInternalCoins(address(this), postSettlementSurplusDrain, _coinBalance);
-      _coinBalance = 0;
+      safeEngine.transferInternalCoins({
+        _source: address(this),
+        _destination: postSettlementSurplusDrain,
+        _rad: _coinBalance
+      });
+
+      emit TransferSurplus(postSettlementSurplusDrain, _coinBalance);
     }
-    // NOTE: coinBalance should be 0 here
-    // TODO: review events emission HAI-91
-    emit TransferPostSettlementSurplus(postSettlementSurplusDrain, _coinBalance, _debtBalance);
   }
 
   // --- Administration ---
@@ -278,7 +308,9 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
   }
 
   function _setSurplusAuctionHouse(address _surplusAuctionHouse) internal {
-    safeEngine.denySAFEModification(address(surplusAuctionHouse));
+    if (address(surplusAuctionHouse) != address(0)) {
+      safeEngine.denySAFEModification(address(surplusAuctionHouse));
+    }
     surplusAuctionHouse = ISurplusAuctionHouse(_surplusAuctionHouse);
     safeEngine.approveSAFEModification(_surplusAuctionHouse);
   }
