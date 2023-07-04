@@ -229,13 +229,22 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
       uint256 _srcTotalDebtIssued = _srcSAFE.generatedDebt * __cData.accumulatedRate;
       uint256 _dstTotalDebtIssued = _dstSAFE.generatedDebt * __cData.accumulatedRate;
 
+      // both sides below debt ceiling
+      if (_srcSAFE.generatedDebt > _params.safeDebtCeiling || _dstSAFE.generatedDebt > _params.safeDebtCeiling) {
+        revert SAFEEng_SAFEDebtCeilingHit();
+      }
+
       // both sides safe
-      if (_srcTotalDebtIssued > _srcSAFE.lockedCollateral * __cData.safetyPrice) revert SAFEEng_NotSafeSrc();
-      if (_dstTotalDebtIssued > _dstSAFE.lockedCollateral * __cData.safetyPrice) revert SAFEEng_NotSafeDst();
+      if (
+        _srcTotalDebtIssued > _srcSAFE.lockedCollateral * __cData.safetyPrice
+          || _dstTotalDebtIssued > _dstSAFE.lockedCollateral * __cData.safetyPrice
+      ) revert SAFEEng_SAFENotSafe();
 
       // both sides non-dusty
-      if (_srcTotalDebtIssued < __cParams.debtFloor && _srcSAFE.generatedDebt != 0) revert SAFEEng_DustSrc();
-      if (_dstTotalDebtIssued < __cParams.debtFloor && _dstSAFE.generatedDebt != 0) revert SAFEEng_DustDst();
+      if (
+        (_srcTotalDebtIssued < __cParams.debtFloor && _srcSAFE.generatedDebt != 0)
+          || (_dstTotalDebtIssued < __cParams.debtFloor && _dstSAFE.generatedDebt != 0)
+      ) revert SAFEEng_DustySAFE();
     }
 
     emit TransferSAFECollateralAndDebt(_cType, _src, _dst, _deltaCollateral, _deltaDebt);
@@ -410,6 +419,7 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
   }
 
   function _emitTransferCollateral(bytes32 _cType, address _src, address _dst, int256 _deltaCollateral) internal {
+    if(_deltaCollateral == 0) return;
     if (_deltaCollateral >= 0) {
       emit TransferCollateral(_cType, _src, _dst, uint256(_deltaCollateral));
     } else {
