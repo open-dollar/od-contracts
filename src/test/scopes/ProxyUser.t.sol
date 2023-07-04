@@ -13,6 +13,7 @@ import {
   ICollateralAuctionHouse,
   IDebtAuctionHouse,
   BasicActions,
+  SurplusBidActions,
   CommonActions,
   HaiProxy
 } from '@script/Contracts.s.sol';
@@ -256,7 +257,54 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     vm.stopPrank();
   }
 
-  function _buySystemCoin(address _user, uint256 _auctionId, uint256 _amountToBid) internal override {}
+  function _auctionSurplusAndBid(address _user, uint256 _bidAmount) internal override {
+    HaiProxy _proxy = _getProxy(_user);
+    vm.startPrank(_user);
+
+    protocolToken.approve(address(_proxy), _bidAmount);
+
+    bytes memory _callData =
+      abi.encodeWithSelector(SurplusBidActions.startAndIncreaseBidSize.selector, address(accountingEngine), _bidAmount);
+
+    _proxy.execute(address(surplusActions), _callData);
+    vm.stopPrank();
+  }
+
+  function _increaseBidSize(address _user, uint256 _auctionId, uint256 _bidAmount) internal override {
+    HaiProxy _proxy = _getProxy(_user);
+    vm.startPrank(_user);
+
+    protocolToken.approve(address(_proxy), _bidAmount);
+
+    bytes memory _callData = abi.encodeWithSelector(
+      SurplusBidActions.increaseBidSize.selector, address(surplusAuctionHouse), _auctionId, _bidAmount
+    );
+
+    _proxy.execute(address(surplusActions), _callData);
+    vm.stopPrank();
+  }
+
+  function _settleAuction(address _user, uint256 _auctionId) internal override {
+    HaiProxy _proxy = _getProxy(_user);
+    vm.startPrank(_user);
+
+    bytes memory _callData = abi.encodeWithSelector(
+      SurplusBidActions.settleAuction.selector, address(coinJoin), address(surplusAuctionHouse), _auctionId
+    );
+
+    _proxy.execute(address(surplusActions), _callData);
+    vm.stopPrank();
+  }
+
+  function _collectSystemCoins(address _user) internal override {
+    HaiProxy _proxy = _getProxy(_user);
+    vm.startPrank(_user);
+
+    bytes memory _callData = abi.encodeWithSelector(SurplusBidActions.collectSystemCoins.selector, address(coinJoin));
+
+    _proxy.execute(address(surplusActions), _callData);
+    vm.stopPrank();
+  }
 }
 
 /**

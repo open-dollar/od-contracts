@@ -29,7 +29,7 @@ contract OracleRelayerForTest is OracleRelayer {
     return _updateRedemptionPrice();
   }
 
-  function getRedemptionPrice() external returns (uint256 __redemptionPrice) {
+  function getRedemptionPrice() external view returns (uint256 __redemptionPrice) {
     return _redemptionPrice;
   }
 }

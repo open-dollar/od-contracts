@@ -162,7 +162,35 @@ abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
     debtAuctionHouse.settleAuction(_auctionId);
   }
 
-  function _buySystemCoin(address _user, uint256 _auctionId, uint256 _amountToBid) internal override {
-    // TODO: missing SurplusAuctionHouse E2E test
+  function _auctionSurplusAndBid(address _user, uint256 _bidAmount) internal override {
+    uint256 _auctionId = accountingEngine.auctionSurplus();
+    (, uint256 _amountToSell,,,) = surplusAuctionHouse.bids(_auctionId);
+    
+    vm.startPrank(_user);
+    protocolToken.approve(address(surplusAuctionHouse), _bidAmount);
+    surplusAuctionHouse.increaseBidSize(_auctionId, _amountToSell, _bidAmount);
+    vm.stopPrank();
+  }
+
+  function _increaseBidSize(address _user, uint256 _auctionId, uint256 _bidAmount) internal override {
+    (, uint256 _amountToSell,,,) = surplusAuctionHouse.bids(_auctionId);
+    
+    vm.startPrank(_user);
+    protocolToken.approve(address(surplusAuctionHouse), _bidAmount);
+    surplusAuctionHouse.increaseBidSize(_auctionId, _amountToSell, _bidAmount);
+    vm.stopPrank();
+  }
+
+  function _settleAuction(address _user, uint256 _auctionId) internal override {
+    surplusAuctionHouse.settleAuction(_auctionId);
+    _collectSystemCoins(_user);
+  }
+
+  function _collectSystemCoins(address _user) internal override {
+    uint256 _systemCoinInternalBalance = safeEngine.coinBalance(_user);
+    
+    vm.startPrank(_user);
+    coinJoin.exit(_user, _systemCoinInternalBalance / 1e27);
+    vm.stopPrank();
   }
 }

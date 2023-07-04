@@ -299,6 +299,7 @@ abstract contract Common is Contracts, Params {
     proxyRegistry = new HaiProxyRegistry(address(dsProxyFactory));
     safeManager = new HaiSafeManager(_safeEngine);
     proxyActions = new BasicActions();
+    surplusActions = new SurplusBidActions();
   }
 
   function _shouldRevoke() internal view returns (bool) {
