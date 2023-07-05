@@ -165,7 +165,7 @@ abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
   function _auctionSurplusAndBid(address _user, uint256 _bidAmount) internal override {
     uint256 _auctionId = accountingEngine.auctionSurplus();
     (, uint256 _amountToSell,,,) = surplusAuctionHouse.bids(_auctionId);
-    
+
     vm.startPrank(_user);
     protocolToken.approve(address(surplusAuctionHouse), _bidAmount);
     surplusAuctionHouse.increaseBidSize(_auctionId, _amountToSell, _bidAmount);
@@ -174,7 +174,7 @@ abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
 
   function _increaseBidSize(address _user, uint256 _auctionId, uint256 _bidAmount) internal override {
     (, uint256 _amountToSell,,,) = surplusAuctionHouse.bids(_auctionId);
-    
+
     vm.startPrank(_user);
     protocolToken.approve(address(surplusAuctionHouse), _bidAmount);
     surplusAuctionHouse.increaseBidSize(_auctionId, _amountToSell, _bidAmount);
@@ -188,7 +188,7 @@ abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
 
   function _collectSystemCoins(address _user) internal override {
     uint256 _systemCoinInternalBalance = safeEngine.coinBalance(_user);
-    
+
     vm.startPrank(_user);
     coinJoin.exit(_user, _systemCoinInternalBalance / 1e27);
     vm.stopPrank();

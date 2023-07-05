@@ -419,7 +419,7 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
   }
 
   function _emitTransferCollateral(bytes32 _cType, address _src, address _dst, int256 _deltaCollateral) internal {
-    if(_deltaCollateral == 0) return;
+    if (_deltaCollateral == 0) return;
     if (_deltaCollateral >= 0) {
       emit TransferCollateral(_cType, _src, _dst, uint256(_deltaCollateral));
     } else {
