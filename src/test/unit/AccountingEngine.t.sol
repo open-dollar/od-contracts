@@ -728,7 +728,6 @@ contract Unit_AccountingEngine_AuctionDebt is Base {
     assertEq(accountingEngine.totalOnAuctionDebt(), _scenario.totalOnAuctionDebt + _scenario.debtAuctionBidSize);
   }
 
-  // TODO: add _debtAuctionMintedTokens to scenario
   function test_Emit_AuctionDebt(AuctionDebtScenario memory _scenario, uint256 _debtAuctionMintedTokens) public {
     _mockDebtAuctionMintedTokens(_debtAuctionMintedTokens);
     _assumeHappyPath(_scenario);

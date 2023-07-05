@@ -77,9 +77,8 @@ contract DeployMainnet is MainnetParams, Deploy {
     delayedOracle[WETH] = new DelayedOracle(_ethUSDPriceFeed, 1 hours);
     delayedOracle[WSTETH] = new DelayedOracle(_wstethUSDPriceFeed, 1 hours);
 
-    // TODO: change ERC20ForTest for IERC20(WSTETH) (use whale for tests)
     collateral[WETH] = IERC20Metadata(OP_WETH);
-    collateral[WSTETH] = ERC20ForTest(OP_WSTETH);
+    collateral[WSTETH] = IERC20Metadata(OP_WSTETH);
 
     collateralTypes.push(WETH);
     collateralTypes.push(WSTETH);

@@ -40,7 +40,6 @@ abstract contract Common is Contracts, Params {
         collateralJoinFactory.deployCollateralJoin({_cType: _cType, _collateral: address(collateral[_cType])})
       );
     } else {
-      // TODO: deploy factory in Goerli (add CollateralJoinOrphan)
       collateralJoin[_cType] = new CollateralJoin({
         _safeEngine: address(safeEngine), 
         _cType: _cType,
@@ -82,7 +81,7 @@ abstract contract Common is Contracts, Params {
     _revoke(stabilityFeeTreasury, _governor);
 
     // tokens
-    _revoke(systemCoin, _governor); // TODO: rm in production env
+    _revoke(systemCoin, _governor);
     _revoke(protocolToken, _governor);
 
     // pid controller
@@ -146,7 +145,7 @@ abstract contract Common is Contracts, Params {
     _delegate(stabilityFeeTreasury, __delegate);
 
     // tokens
-    _delegate(systemCoin, __delegate); // TODO: rm in production env
+    _delegate(systemCoin, __delegate);
     _delegate(protocolToken, __delegate);
 
     // pid controller
@@ -155,7 +154,7 @@ abstract contract Common is Contracts, Params {
 
     // token adapters
     _delegate(coinJoin, __delegate);
-    // TODO: deploy and add collateralJoinFactory to GoerliDeployment
+
     if (address(collateralJoinFactory) != address(0)) {
       _delegate(collateralJoinFactory, __delegate);
     } else {
@@ -223,7 +222,6 @@ abstract contract Common is Contracts, Params {
     globalSettlement = new GlobalSettlement();
 
     // setup globalSettlement [auth: disableContract]
-    // TODO: add key contracts to constructor
     globalSettlement.modifyParameters('safeEngine', abi.encode(safeEngine));
     safeEngine.addAuthorization(address(globalSettlement));
     globalSettlement.modifyParameters('liquidationEngine', abi.encode(liquidationEngine));

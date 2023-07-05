@@ -74,7 +74,6 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
   // --- Init ---
   constructor(SAFEEngineParams memory _safeEngineParams) Authorizable(msg.sender) validParams {
     _params = _safeEngineParams;
-    // TODO: add ModifyParameters events here
   }
 
   function initializeCollateralType(
@@ -85,7 +84,6 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
     _cData[_cType].accumulatedRate = RAY;
     _cParams[_cType] = _collateralParams;
     emit InitializeCollateralType(_cType);
-    // TODO: add ModifyParameters events here
   }
 
   // --- Fungibility ---

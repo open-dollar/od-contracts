@@ -192,8 +192,6 @@ abstract contract E2ETest is BaseUser, Base_CType, Common {
     (_bidAmount, _amountToSell, _highBidder,,) = debtAuctionHouse.bids(1);
     assertEq(_bidAmount, ONE_HUNDRED_COINS);
     assertEq(_amountToSell, _tokenAmount);
-    // TODO: abstract to check correct highBidder (_proxy) in ProxyUser test
-    // assertEq(_highBidder, address(this));
 
     vm.warp(_auctionDeadline);
     _settleDebtAuction(address(this), 1);

@@ -4,7 +4,7 @@ pragma solidity 0.8.19;
 import {ETHJoin, IETHJoin} from '@contracts/utils/ETHJoin.sol';
 import {Math} from '@libraries/Math.sol';
 
-// TODO: deprecate this contract for ETH scope
+// TODO: deprecate this contract for ETH scope HAI-207
 contract ETHJoinForTest is ETHJoin {
   using Math for uint256;
 
@@ -14,7 +14,6 @@ contract ETHJoinForTest is ETHJoin {
   address internal constant _WETH = 0x4200000000000000000000000000000000000006;
 
   // NOTE: method to avoid errors in calls to `join` and `exit` from the proxy
-  // TODO: normalize tests and remove these methods
   function collateral() external pure returns (address _collateral) {
     return _WETH;
   }

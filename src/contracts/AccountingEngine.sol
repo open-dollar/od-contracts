@@ -269,7 +269,7 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
     uint256 _coinBalance = safeEngine.coinBalance(address(this));
     uint256 _debtBalance = safeEngine.debtBalance(address(this));
     uint256 _debtToSettle = Math.min(_coinBalance, _debtBalance);
-    // TODO: refactor and reuse _settleDebt() (with event)
+    // TODO: refactor and reuse _settleDebt() (with event) HAI-201
     safeEngine.settleDebt(_debtToSettle);
     _coinBalance -= _debtToSettle;
 

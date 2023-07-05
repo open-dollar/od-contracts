@@ -285,7 +285,6 @@ abstract contract E2EGlobalSettlementTest is BaseUser, Common {
     globalSettlement.shutdownSystem();
     globalSettlement.freezeCollateralType(ETH_A);
 
-    // TODO: test reverts before processSAFE
     globalSettlement.processSAFE(ETH_A, alice);
     globalSettlement.processSAFE(ETH_A, bob);
     globalSettlement.processSAFE(ETH_A, carol);
@@ -303,12 +302,10 @@ abstract contract E2EGlobalSettlementTest is BaseUser, Common {
     vm.prank(dave);
     globalSettlement.freeCollateral(ETH_A);
 
-    // TODO: add cooldowns in deploy
     accountingEngine.settleDebt(safeEngine.coinBalance(address(accountingEngine)));
     globalSettlement.setOutstandingCoinSupply();
     globalSettlement.calculateCashPrice(ETH_A);
 
-    // TODO: add expectations for each persona
     vm.startPrank(dave);
     safeEngine.approveSAFEModification(address(globalSettlement));
     globalSettlement.prepareCoinsForRedeeming(DEBT / 100);

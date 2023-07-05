@@ -168,7 +168,7 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     uint256 _uint256 = _data.toUint256();
 
-    // TODO: incorporate protocolTokenBidReceiver to _params
+    // TODO: incorporate protocolTokenBidReceiver to constructor HAI-198
     if (_param == 'protocolTokenBidReceiver') protocolTokenBidReceiver = _data.toAddress().assertNonNull();
     else if (_param == 'bidIncrease') _params.bidIncrease = _uint256;
     else if (_param == 'bidDuration') _params.bidDuration = _uint256;
