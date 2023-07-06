@@ -48,8 +48,8 @@ contract Base is HaiTest {
     });
 
     pidController = new PIDControllerForTest({
-      __controllerGains: _pidControllerGains,
-      __params: _pidControllerParams,
+      _cGains: _pidControllerGains,
+      _pidParams: _pidControllerParams,
       _importedState: _importedState,
       _mockPIDController: mockPIDController
   });
@@ -117,19 +117,21 @@ contract Base is HaiTest {
   }
 
   function _mockLastUpdateTime(uint256 _updateTime) internal {
-    stdstore.target(address(pidController)).sig(IPIDController.deviation.selector).depth(0).checked_write(_updateTime);
+    stdstore.target(address(pidController)).sig(IPIDController.deviationObservation.selector).depth(0).checked_write(
+      _updateTime
+    );
   }
 
   function _mockProportionalTerm(int256 _proportionalTerm) internal {
     // casts to uint256 because stdstore does not support int256
-    stdstore.target(address(pidController)).sig(IPIDController.deviation.selector).depth(1).checked_write(
+    stdstore.target(address(pidController)).sig(IPIDController.deviationObservation.selector).depth(1).checked_write(
       uint256(_proportionalTerm)
     );
   }
 
   function _mockIntegralTerm(int256 _proportionalTerm) internal {
     // casts to uint256 because stdstore does not support int256
-    stdstore.target(address(pidController)).sig(IPIDController.deviation.selector).depth(2).checked_write(
+    stdstore.target(address(pidController)).sig(IPIDController.deviationObservation.selector).depth(2).checked_write(
       uint256(_proportionalTerm)
     );
   }
@@ -252,7 +254,7 @@ contract Unit_PIDController_Constructor is Base {
       IPIDController.DeviationObservation({timestamp: _lastUpdateTime, proportional: 0, integral: 0})
     );
 
-    assertEq(pidController.deviation().timestamp, _lastUpdateTime);
+    assertEq(pidController.deviationObservation().timestamp, _lastUpdateTime);
   }
 
   function test_Set_Deviation_Observation(
@@ -269,7 +271,7 @@ contract Unit_PIDController_Constructor is Base {
       IPIDController.DeviationObservation({timestamp: _timestamp, proportional: _proportional, integral: _integral})
     );
 
-    (IPIDController.DeviationObservation memory _deviation) = pidController.deviation();
+    (IPIDController.DeviationObservation memory _deviation) = pidController.deviationObservation();
 
     assertEq(_deviation.timestamp, _timestamp);
     assertEq(_deviation.proportional, _proportional);
@@ -281,7 +283,7 @@ contract Unit_PIDController_Constructor is Base {
       IPIDController.DeviationObservation({timestamp: 0, proportional: _proportional, integral: _integral})
     );
 
-    (IPIDController.DeviationObservation memory _deviation) = pidController.deviation();
+    (IPIDController.DeviationObservation memory _deviation) = pidController.deviationObservation();
 
     assertEq(_deviation.timestamp, 0);
     assertEq(_deviation.proportional, 0);
@@ -959,7 +961,7 @@ contract Unit_PIDController_UpdateDeviation is Base {
       _scenario.proportionalTerm, _scenario.accumulatedLeak
     );
 
-    assertEq(pidController.deviation().integral, _scenario.virtualDeviationCumulative);
+    assertEq(pidController.deviationObservation().integral, _scenario.virtualDeviationCumulative);
   }
 
   function test_Set_DeviationObservation(UpdateDeviationScenario memory _scenario) public {
@@ -970,7 +972,7 @@ contract Unit_PIDController_UpdateDeviation is Base {
       _scenario.proportionalTerm, _scenario.accumulatedLeak
     );
 
-    IPIDController.DeviationObservation memory _deviation = pidController.deviation();
+    IPIDController.DeviationObservation memory _deviation = pidController.deviationObservation();
     bytes memory _expectedResult =
       abi.encode(_scenario.timestamp, _scenario.proportionalTerm, _scenario.virtualDeviationCumulative);
 
@@ -1208,9 +1210,9 @@ contract Unit_PIDController_ComputeRate is Base {
 
   function test_Set_Deviation(ComputeRateScenario memory _scenario) public notBreaksNoiseBarrier(_scenario) authorized {
     pidController.computeRate(_scenario.marketPrice, _scenario.redemptionPrice);
-    assertEq(pidController.deviation().timestamp, block.timestamp);
-    assertEq(pidController.deviation().proportional, _scenario.proportionalTerm);
-    assertEq(pidController.deviation().integral, _scenario.priceDeviationCumulative);
+    assertEq(pidController.deviationObservation().timestamp, block.timestamp);
+    assertEq(pidController.deviationObservation().proportional, _scenario.proportionalTerm);
+    assertEq(pidController.deviationObservation().integral, _scenario.priceDeviationCumulative);
   }
 
   function test_Revert_OnlySeedProposer(
@@ -1353,7 +1355,7 @@ contract Unit_PIDController_ModifyParameters is Base {
     _mockControllerGains(IPIDController.ControllerGains(_proportionalGain, 0));
     pidController.modifyParameters('priceDeviationCumulative', abi.encode(_priceDeviationCumulative));
 
-    assertEq(pidController.deviation().integral, int256(_priceDeviationCumulative));
+    assertEq(pidController.deviationObservation().integral, int256(_priceDeviationCumulative));
   }
 
   function test_Revert_NullSeedProposer() public authorized {

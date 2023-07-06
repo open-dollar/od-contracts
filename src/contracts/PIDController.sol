@@ -30,21 +30,24 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
   address public seedProposer;
 
   // --- Data ---
-  PIDControllerParams internal _params;
+  // solhint-disable-next-line private-vars-leading-underscore
+  PIDControllerParams public _params;
 
   function params() external view returns (PIDControllerParams memory _pidParams) {
     return _params;
   }
 
-  DeviationObservation internal _deviationObservation;
+  // solhint-disable-next-line private-vars-leading-underscore
+  DeviationObservation public _deviationObservation;
 
   /// @inheritdoc IPIDController
-  function deviation() external view returns (DeviationObservation memory _deviation) {
+  function deviationObservation() external view returns (DeviationObservation memory __deviationObservation) {
     return _deviationObservation;
   }
 
   // -- Static & Default Variables ---
-  ControllerGains internal _controllerGains;
+  // solhint-disable-next-line private-vars-leading-underscore
+  ControllerGains public _controllerGains;
 
   /// @inheritdoc IPIDController
   function controllerGains() external view returns (ControllerGains memory _cGains) {

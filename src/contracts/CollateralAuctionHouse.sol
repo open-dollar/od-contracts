@@ -53,18 +53,31 @@ contract IncreasingDiscountCollateralAuctionHouse is
   uint256 public lastReadRedemptionPrice;
 
   // Bid data for each separate auction
-  mapping(uint256 _auctionId => Auction) internal _auctions;
+  // solhint-disable-next-line private-vars-leading-underscore
+  mapping(uint256 _auctionId => Auction) public _auctions;
 
   function auctions(uint256 _auctionId) external view returns (Auction memory _auction) {
     return _auctions[_auctionId];
   }
 
-  CollateralAuctionHouseSystemCoinParams internal _params;
-  CollateralAuctionHouseParams internal _cParams;
+  CollateralAuctionHouseSystemCoinParams internal __params;
 
   function params() public view virtual returns (CollateralAuctionHouseSystemCoinParams memory _cahParams) {
-    return _params;
+    return __params;
   }
+
+  // solhint-disable-next-line private-vars-leading-underscore
+  function _params()
+    external
+    view
+    virtual
+    returns (uint256 _minSystemCoinDeviation, uint256 _lowerSystemCoinDeviation, uint256 _upperSystemCoinDeviation)
+  {
+    return (__params.minSystemCoinDeviation, __params.lowerSystemCoinDeviation, __params.upperSystemCoinDeviation);
+  }
+
+  // solhint-disable-next-line private-vars-leading-underscore
+  CollateralAuctionHouseParams public _cParams;
 
   function cParams() external view returns (CollateralAuctionHouseParams memory _cahCParams) {
     return _cParams;
@@ -75,16 +88,16 @@ contract IncreasingDiscountCollateralAuctionHouse is
     address _safeEngine,
     address __oracleRelayer,
     address __liquidationEngine,
-    bytes32 _collateralType,
+    bytes32 _cType,
     CollateralAuctionHouseSystemCoinParams memory _cahParams,
     CollateralAuctionHouseParams memory _cahCParams
-  ) Authorizable(msg.sender) validParams validCParams(_collateralType) {
+  ) Authorizable(msg.sender) validParams validCParams(_cType) {
     safeEngine = ISAFEEngine(_safeEngine.assertNonNull());
     _oracleRelayer = IOracleRelayer(__oracleRelayer);
     _setLiquidationEngine(__liquidationEngine);
-    collateralType = _collateralType;
+    collateralType = _cType;
 
-    _params = _cahParams;
+    __params = _cahParams;
     _cParams = _cahCParams;
   }
 
@@ -699,9 +712,9 @@ contract IncreasingDiscountCollateralAuctionHouse is
     if (_param == 'oracleRelayer') _oracleRelayer = IOracleRelayer(_address);
     else if (_param == 'liquidationEngine') _setLiquidationEngine(_address);
     // SystemCoin Params
-    else if (_param == 'lowerSystemCoinDeviation') _params.lowerSystemCoinDeviation = _uint256;
-    else if (_param == 'upperSystemCoinDeviation') _params.upperSystemCoinDeviation = _uint256;
-    else if (_param == 'minSystemCoinDeviation') _params.minSystemCoinDeviation = _uint256;
+    else if (_param == 'lowerSystemCoinDeviation') __params.lowerSystemCoinDeviation = _uint256;
+    else if (_param == 'upperSystemCoinDeviation') __params.upperSystemCoinDeviation = _uint256;
+    else if (_param == 'minSystemCoinDeviation') __params.minSystemCoinDeviation = _uint256;
     else revert UnrecognizedParam();
   }
 

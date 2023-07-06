@@ -419,8 +419,7 @@ contract Unit_StabilityFeeTreasury_SetTotalAllowance is Base {
     vm.assume(_account != address(stabilityFeeTreasury) && _account != address(0));
 
     stabilityFeeTreasury.setTotalAllowance(_account, _rad);
-    (uint256 _totalAllowance,) = stabilityFeeTreasury.allowance(_account);
-    assertEq(_totalAllowance, _rad);
+    assertEq(stabilityFeeTreasury.allowance(_account).total, _rad);
   }
 
   function test_Emit_SetTotalAllowance(address _account, uint256 _rad) public authorized {
@@ -458,8 +457,7 @@ contract Unit_StabilityFeeTreasury_SetPerHourAllowance is Base {
     vm.assume(_account != address(stabilityFeeTreasury) && _account != address(0));
 
     stabilityFeeTreasury.setPerHourAllowance(_account, _rad);
-    (, uint256 _perHour) = stabilityFeeTreasury.allowance(_account);
-    assertEq(_perHour, _rad);
+    assertEq(stabilityFeeTreasury.allowance(_account).perHour, _rad);
   }
 
   function test_Emit_SetPerHourAllowance(address _account, uint256 _rad) public authorized {
@@ -815,9 +813,9 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
   {
     stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, _pullFundsScenario._wad);
 
-    (uint256 _totalAllowance,) = stabilityFeeTreasury.allowance(user);
-
-    assertEq(_totalAllowance, _pullFundsScenario._totalAllowance - _pullFundsScenario._wad * RAY);
+    assertEq(
+      stabilityFeeTreasury.allowance(user).total, _pullFundsScenario._totalAllowance - _pullFundsScenario._wad * RAY
+    );
   }
 
   function test_Set_ExpensesAccumulator(PullFundsScenario memory _pullFundsScenario)

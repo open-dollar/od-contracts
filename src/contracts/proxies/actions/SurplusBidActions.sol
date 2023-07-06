@@ -19,7 +19,7 @@ contract SurplusBidActions is CommonActions {
   function startAndIncreaseBidSize(address _accountingEngine, uint256 _bidAmount) external delegateCall {
     uint256 _auctionId = IAccountingEngine(_accountingEngine).auctionSurplus();
     ISurplusAuctionHouse _surplusAuctionHouse = IAccountingEngine(_accountingEngine).surplusAuctionHouse();
-    (, uint256 _amountToSell,,,) = _surplusAuctionHouse.bids(_auctionId);
+    uint256 _amountToSell = ISurplusAuctionHouse(_surplusAuctionHouse).auctions(_auctionId).amountToSell;
 
     // prepare protocol token spending
     IERC20Metadata _protocolToken = _surplusAuctionHouse.protocolToken();
@@ -30,7 +30,7 @@ contract SurplusBidActions is CommonActions {
   }
 
   function increaseBidSize(address _surplusAuctionHouse, uint256 _auctionId, uint256 _bidAmount) external delegateCall {
-    (, uint256 _amountToSell,,,) = ISurplusAuctionHouse(_surplusAuctionHouse).bids(_auctionId);
+    uint256 _amountToSell = ISurplusAuctionHouse(_surplusAuctionHouse).auctions(_auctionId).amountToSell;
 
     // prepare protocol token spending
     IERC20Metadata _protocolToken = ISurplusAuctionHouse(_surplusAuctionHouse).protocolToken();
@@ -42,7 +42,7 @@ contract SurplusBidActions is CommonActions {
   }
 
   function settleAuction(address _coinJoin, address _surplusAuctionHouse, uint256 _auctionId) external delegateCall {
-    (, uint256 _amountToSell,,,) = ISurplusAuctionHouse(_surplusAuctionHouse).bids(_auctionId);
+    uint256 _amountToSell = ISurplusAuctionHouse(_surplusAuctionHouse).auctions(_auctionId).amountToSell;
     ISurplusAuctionHouse(_surplusAuctionHouse).settleAuction(_auctionId);
 
     ISAFEEngine _safeEngine = ISurplusAuctionHouse(_surplusAuctionHouse).safeEngine();

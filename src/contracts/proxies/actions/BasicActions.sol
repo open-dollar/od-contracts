@@ -38,18 +38,18 @@ contract BasicActions is CommonActions {
    * @param _safeEngine address
    * @param _taxCollector address
    * @param _safeHandler address
-   * @param _collateralType bytes32
+   * @param _cType bytes32
    * @param _wad uint
    */
   function _getGeneratedDeltaDebt(
     address _safeEngine,
     address _taxCollector,
     address _safeHandler,
-    bytes32 _collateralType,
+    bytes32 _cType,
     uint256 _wad
   ) internal returns (int256 _deltaDebt) {
     // Updates stability fee rate
-    uint256 _rate = TaxCollector(_taxCollector).taxSingle(_collateralType);
+    uint256 _rate = TaxCollector(_taxCollector).taxSingle(_cType);
     require(_rate > 0, 'invalid-collateral-type');
 
     // Gets COIN balance of the handler in the safeEngine
@@ -69,21 +69,21 @@ contract BasicActions is CommonActions {
    * @param _safeEngine address
    * @param _coin uint amount
    * @param _safeId uint - safeId
-   * @param _collateralType bytes32
+   * @param _cType bytes32
    * @return _deltaDebt uint - amount of debt to be repayed
    */
   function _getRepaidDeltaDebt(
     address _safeEngine,
     uint256 _coin,
     address _safeId,
-    bytes32 _collateralType
+    bytes32 _cType
   ) internal view returns (int256 _deltaDebt) {
     // Gets actual rate from the safeEngine
-    uint256 _rate = ISAFEEngine(_safeEngine).cData(_collateralType).accumulatedRate;
+    uint256 _rate = ISAFEEngine(_safeEngine).cData(_cType).accumulatedRate;
     require(_rate > 0, 'invalid-collateral-type');
 
     // Gets actual generatedDebt value of the safe
-    ISAFEEngine.SAFE memory _safeData = ISAFEEngine(_safeEngine).safes(_collateralType, _safeId);
+    ISAFEEngine.SAFE memory _safeData = ISAFEEngine(_safeEngine).safes(_cType, _safeId);
 
     // Uses the whole coin balance in the safeEngine to reduce the debt
     _deltaDebt = (_coin / _rate).toInt();
@@ -96,19 +96,19 @@ contract BasicActions is CommonActions {
    * @param _safeEngine address
    * @param _usr address
    * @param _safeId uint - safeId
-   * @param _collateralType  bytes32
+   * @param _cType  bytes32
    * @return _wad
    */
   function _getRepaidAlDebt(
     address _safeEngine,
     address _usr,
     address _safeId,
-    bytes32 _collateralType
+    bytes32 _cType
   ) internal view returns (uint256 _wad) {
     // Gets actual rate from the safeEngine
-    uint256 _rate = ISAFEEngine(_safeEngine).cData(_collateralType).accumulatedRate;
+    uint256 _rate = ISAFEEngine(_safeEngine).cData(_cType).accumulatedRate;
     // Gets actual generatedDebt value of the safe
-    ISAFEEngine.SAFE memory _safeData = ISAFEEngine(_safeEngine).safes(_collateralType, _safeId);
+    ISAFEEngine.SAFE memory _safeData = ISAFEEngine(_safeEngine).safes(_cType, _safeId);
     // Gets actual coin amount in the safe
     uint256 _coin = ISAFEEngine(_safeEngine).coinBalance(_usr);
 
@@ -240,15 +240,11 @@ contract BasicActions is CommonActions {
   /**
    * @notice Opens a brand new Safe
    * @param _manager address
-   * @param _collateralType bytes32
+   * @param _cType bytes32
    * @param _usr address
    */
-  function openSAFE(
-    address _manager,
-    bytes32 _collateralType,
-    address _usr
-  ) public delegateCall returns (uint256 _safeId) {
-    _safeId = HaiSafeManager(_manager).openSAFE(_collateralType, _usr);
+  function openSAFE(address _manager, bytes32 _cType, address _usr) public delegateCall returns (uint256 _safeId) {
+    _safeId = HaiSafeManager(_manager).openSAFE(_cType, _usr);
   }
 
   /**
@@ -553,12 +549,12 @@ contract BasicActions is CommonActions {
     address _taxCollector,
     address _collateralJoin,
     address _coinJoin,
-    bytes32 _collateralType,
+    bytes32 _cType,
     uint256 _collateralAmount,
     uint256 _deltaWad,
     bool _transferFrom
   ) public delegateCall returns (uint256 _safe) {
-    _safe = openSAFE(_manager, _collateralType, address(this));
+    _safe = openSAFE(_manager, _cType, address(this));
     lockTokenCollateralAndGenerateDebt(
       _manager, _taxCollector, _collateralJoin, _coinJoin, _safe, _collateralAmount, _deltaWad, _transferFrom
     );

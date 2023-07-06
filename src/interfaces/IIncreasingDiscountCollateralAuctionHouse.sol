@@ -85,8 +85,41 @@ interface IIncreasingDiscountCollateralAuctionHouse is ICollateralAuctionHouse, 
   }
 
   function auctions(uint256 _auctionId) external view returns (Auction memory _auction);
-  function cParams() external view returns (CollateralAuctionHouseParams memory _cParams);
-  function params() external view returns (CollateralAuctionHouseSystemCoinParams memory _params);
+  // solhint-disable-next-line private-vars-leading-underscore
+  function _auctions(uint256 _auctionId)
+    external
+    view
+    returns (
+      uint256 _amountToSell,
+      uint256 _amountToRaise,
+      uint256 _currentDiscount,
+      uint256 _maxDiscount,
+      uint256 _perSecondDiscountUpdateRate,
+      uint256 _latestDiscountUpdateTime,
+      address _forgoneCollateralReceiver,
+      address _auctionIncomeRecipient
+    );
+
+  function params() external view returns (CollateralAuctionHouseSystemCoinParams memory _cahParams);
+  // solhint-disable-next-line private-vars-leading-underscore
+  function _params()
+    external
+    view
+    returns (uint256 _minSystemCoinDeviation, uint256 _lowerSystemCoinDeviation, uint256 _upperSystemCoinDeviation);
+
+  function cParams() external view returns (CollateralAuctionHouseParams memory _cahCParams);
+  // solhint-disable-next-line private-vars-leading-underscore
+  function _cParams()
+    external
+    view
+    returns (
+      uint256 _minimumBid,
+      uint256 _minDiscount,
+      uint256 _maxDiscount,
+      uint256 _perSecondDiscountUpdateRate,
+      uint256 _lowerCollateralDeviation,
+      uint256 _upperCollateralDeviation
+    );
 
   function getApproximateCollateralBought(
     uint256 _id,
@@ -103,7 +136,7 @@ interface IIncreasingDiscountCollateralAuctionHouse is ICollateralAuctionHouse, 
 
   function liquidationEngine() external view returns (ILiquidationEngine _liquidationEngine);
 
-  function collateralType() external view returns (bytes32 _collateralType);
+  function collateralType() external view returns (bytes32 _cType);
 
   function getDiscountedCollateralPrice(
     uint256 _collateralFsmPriceFeedValue,

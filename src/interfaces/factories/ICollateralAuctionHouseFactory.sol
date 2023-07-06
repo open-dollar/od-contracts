@@ -16,11 +16,28 @@ interface ICollateralAuctionHouseFactory is IAuthorizable, IDisableable, IModifi
     external
     view
     returns (IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams);
+  // solhint-disable-next-line private-vars-leading-underscore
+  function _params()
+    external
+    view
+    returns (uint256 _minSystemCoinDeviation, uint256 _lowerSystemCoinDeviation, uint256 _upperSystemCoinDeviation);
 
   function cParams(bytes32 _cType)
     external
     view
     returns (IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams);
+  // solhint-disable-next-line private-vars-leading-underscore
+  function _cParams(bytes32 _cType)
+    external
+    view
+    returns (
+      uint256 _minimumBid,
+      uint256 _minDiscount,
+      uint256 _maxDiscount,
+      uint256 _perSecondDiscountUpdateRate,
+      uint256 _lowerCollateralDeviation,
+      uint256 _upperCollateralDeviation
+    );
 
   // --- Registry ---
   function safeEngine() external view returns (address _safeEngine);
@@ -29,7 +46,7 @@ interface ICollateralAuctionHouseFactory is IAuthorizable, IDisableable, IModifi
 
   // --- Data ---
   function collateralAuctionHouses(bytes32 _cType) external view returns (address _collateralAuctionHouse);
-  function collateralTypesList() external view returns (bytes32[] memory _collateralTypes);
+  function collateralTypesList() external view returns (bytes32[] memory _collateralTypesList);
   function collateralAuctionHousesList() external view returns (address[] memory _collateralAuctionHouses);
 
   // --- Methods ---

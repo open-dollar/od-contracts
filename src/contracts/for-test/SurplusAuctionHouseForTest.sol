@@ -10,7 +10,7 @@ contract SurplusAuctionHouseForTest is SurplusAuctionHouse {
     SurplusAuctionHouseParams memory _sahParams
   ) SurplusAuctionHouse(_safeEngine, _protocolToken, _sahParams) {}
 
-  function addBid(
+  function addAuction(
     uint256 _id,
     uint256 _bidAmount,
     uint256 _amountToSell,
@@ -18,10 +18,10 @@ contract SurplusAuctionHouseForTest is SurplusAuctionHouse {
     uint256 _bidExpiry,
     uint256 _auctionDeadline
   ) external {
-    bids[_id].bidAmount = _bidAmount;
-    bids[_id].amountToSell = _amountToSell;
-    bids[_id].highBidder = _highBidder;
-    bids[_id].bidExpiry = _bidExpiry;
-    bids[_id].auctionDeadline = _auctionDeadline;
+    _auctions[_id].bidAmount = _bidAmount;
+    _auctions[_id].amountToSell = _amountToSell;
+    _auctions[_id].highBidder = _highBidder;
+    _auctions[_id].bidExpiry = _bidExpiry;
+    _auctions[_id].auctionDeadline = _auctionDeadline;
   }
 }

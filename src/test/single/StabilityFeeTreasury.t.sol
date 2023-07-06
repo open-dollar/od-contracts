@@ -181,16 +181,14 @@ contract SingleStabilityFeeTreasuryTest is DSTest {
 
   function test_setTotalAllowance() public {
     stabilityFeeTreasury.setTotalAllowance(alice, 10 ether);
-    (uint256 total, uint256 perHour) = stabilityFeeTreasury.allowance(alice);
-    assertEq(total, 10 ether);
-    assertEq(perHour, 0);
+    assertEq(stabilityFeeTreasury.allowance(alice).total, 10 ether);
+    assertEq(stabilityFeeTreasury.allowance(alice).perHour, 0);
   }
 
   function test_setPerHourAllowance() public {
     stabilityFeeTreasury.setPerHourAllowance(alice, 1 ether);
-    (uint256 total, uint256 perHour) = stabilityFeeTreasury.allowance(alice);
-    assertEq(total, 0);
-    assertEq(perHour, 1 ether);
+    assertEq(stabilityFeeTreasury.allowance(alice).total, 0);
+    assertEq(stabilityFeeTreasury.allowance(alice).perHour, 1 ether);
   }
 
   function testFail_give_non_relied() public {
@@ -260,8 +258,7 @@ contract SingleStabilityFeeTreasuryTest is DSTest {
   function test_pull_funds_no_block_limit() public {
     stabilityFeeTreasury.setTotalAllowance(address(usr), rad(10 ether));
     usr.pullFunds(address(stabilityFeeTreasury), address(usr), 1 ether);
-    (uint256 total,) = stabilityFeeTreasury.allowance(address(usr));
-    assertEq(total, rad(9 ether));
+    assertEq(stabilityFeeTreasury.allowance(address(usr)).total, rad(9 ether));
     assertEq(systemCoin.balanceOf(address(usr)), 0);
     assertEq(systemCoin.balanceOf(address(stabilityFeeTreasury)), 0);
     assertEq(safeEngine.coinBalance(address(usr)), rad(1 ether));
@@ -280,8 +277,7 @@ contract SingleStabilityFeeTreasuryTest is DSTest {
     stabilityFeeTreasury.setPerHourAllowance(address(usr), rad(1 ether));
     stabilityFeeTreasury.setTotalAllowance(address(usr), rad(10 ether));
     usr.pullFunds(address(stabilityFeeTreasury), address(usr), 0.9 ether);
-    (uint256 total,) = stabilityFeeTreasury.allowance(address(usr));
-    assertEq(total, rad(9.1 ether));
+    assertEq(stabilityFeeTreasury.allowance(address(usr)).total, rad(9.1 ether));
     assertEq(stabilityFeeTreasury.pulledPerHour(address(usr), block.timestamp / HOUR), rad(0.9 ether));
     assertEq(systemCoin.balanceOf(address(usr)), 0);
     assertEq(systemCoin.balanceOf(address(stabilityFeeTreasury)), 0);
@@ -328,8 +324,7 @@ contract SingleStabilityFeeTreasuryTest is DSTest {
     );
     usr.pullFunds(address(stabilityFeeTreasury), address(usr), 0.9 ether);
 
-    (uint256 total,) = stabilityFeeTreasury.allowance(address(usr));
-    assertEq(total, rad(9.1 ether));
+    assertEq(stabilityFeeTreasury.allowance(address(usr)).total, rad(9.1 ether));
     assertEq(stabilityFeeTreasury.pulledPerHour(address(usr), block.timestamp / HOUR), rad(0.9 ether));
     assertEq(systemCoin.balanceOf(address(usr)), 0);
     assertEq(systemCoin.balanceOf(address(stabilityFeeTreasury)), 0);
@@ -346,8 +341,7 @@ contract SingleStabilityFeeTreasuryTest is DSTest {
     );
     usr.pullFunds(address(stabilityFeeTreasury), address(usr), 0.9 ether);
 
-    (uint256 total,) = stabilityFeeTreasury.allowance(address(usr));
-    assertEq(total, rad(9.1 ether));
+    assertEq(stabilityFeeTreasury.allowance(address(usr)).total, rad(9.1 ether));
     assertEq(stabilityFeeTreasury.pulledPerHour(address(usr), block.timestamp / HOUR), rad(0.9 ether));
     assertEq(systemCoin.balanceOf(address(usr)), 0);
     assertEq(systemCoin.balanceOf(address(stabilityFeeTreasury)), 0);

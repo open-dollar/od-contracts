@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import {Common, RAD_DELTA} from './Common.t.sol';
 
-import {ILiquidationEngine} from '@script/Contracts.s.sol';
+import {ILiquidationEngine, IDebtAuctionHouse, ISurplusAuctionHouse} from '@script/Contracts.s.sol';
 import {SURPLUS_AUCTION_BID_RECEIVER} from '@script/Params.s.sol';
 import {
   INITIAL_DEBT_AUCTION_MINTED_TOKENS,
@@ -175,25 +175,24 @@ abstract contract E2ETest is BaseUser, Base_CType, Common {
     accountingEngine.popDebtFromQueue(block.timestamp);
     accountingEngine.auctionDebt();
 
-    (uint256 _bidAmount, uint256 _amountToSell, address _highBidder,, uint256 _auctionDeadline) =
-      debtAuctionHouse.bids(1);
-    assertEq(_bidAmount, ONE_HUNDRED_COINS);
-    assertEq(_amountToSell, INITIAL_DEBT_AUCTION_MINTED_TOKENS);
-    assertEq(_highBidder, address(accountingEngine));
+    IDebtAuctionHouse.Auction memory _auction = debtAuctionHouse.auctions(1);
+    assertEq(_auction.bidAmount, ONE_HUNDRED_COINS);
+    assertEq(_auction.amountToSell, INITIAL_DEBT_AUCTION_MINTED_TOKENS);
+    assertEq(_auction.highBidder, address(accountingEngine));
 
-    _joinCoins(address(this), _bidAmount / RAY);
+    _joinCoins(address(this), _auction.bidAmount / RAY);
 
     uint256 _deltaCoinBalance = safeEngine.coinBalance(address(this));
     uint256 _bidDecrease = debtAuctionHouse.params().bidDecrease;
     uint256 _tokenAmount = Math.wdiv(INITIAL_DEBT_AUCTION_MINTED_TOKENS, _bidDecrease);
 
-    _buyProtocolToken(address(this), 1, _tokenAmount, _bidAmount);
+    _buyProtocolToken(address(this), 1, _tokenAmount, _auction.bidAmount);
 
-    (_bidAmount, _amountToSell, _highBidder,,) = debtAuctionHouse.bids(1);
-    assertEq(_bidAmount, ONE_HUNDRED_COINS);
-    assertEq(_amountToSell, _tokenAmount);
+    _auction = debtAuctionHouse.auctions(1);
+    assertEq(_auction.bidAmount, ONE_HUNDRED_COINS);
+    assertEq(_auction.amountToSell, _tokenAmount);
 
-    vm.warp(_auctionDeadline);
+    vm.warp(_auction.auctionDeadline);
     _settleDebtAuction(address(this), 1);
 
     _deltaCoinBalance -= safeEngine.coinBalance(address(this));
@@ -216,17 +215,17 @@ abstract contract E2ETest is BaseUser, Base_CType, Common {
     uint256 _auctionId = accountingEngine.auctionSurplus();
     _increaseBidSize(address(this), _auctionId, INITIAL_BID);
 
-    (uint256 _bidAmount, uint256 _soldAmount,,, uint256 _auctionDeadline) = surplusAuctionHouse.bids(_auctionId);
-    assertEq(_bidAmount, INITIAL_BID);
+    ISurplusAuctionHouse.Auction memory _auction = surplusAuctionHouse.auctions(_auctionId);
+    assertEq(_auction.bidAmount, INITIAL_BID);
 
-    vm.warp(_auctionDeadline);
+    vm.warp(_auction.auctionDeadline);
 
     assertEq(protocolToken.totalSupply(), INITIAL_BID);
     _settleAuction(address(this), _auctionId);
     assertEq(protocolToken.totalSupply(), INITIAL_BID / 2); // 50% of the bid is burned
     assertEq(protocolToken.balanceOf(SURPLUS_AUCTION_BID_RECEIVER), INITIAL_BID / 2); // 50% is sent to the receiver
     assertEq(protocolToken.balanceOf(address(this)), 0);
-    assertEq(systemCoin.balanceOf(address(this)) - _initialBalance, _soldAmount / RAY);
+    assertEq(systemCoin.balanceOf(address(this)) - _initialBalance, _auction.amountToSell / RAY);
   }
 
   function test_surplus_auction_and_bid() public {
@@ -244,10 +243,10 @@ abstract contract E2ETest is BaseUser, Base_CType, Common {
     uint256 _auctionId = surplusAuctionHouse.auctionsStarted() + 1;
     _auctionSurplusAndBid(address(this), INITIAL_BID);
 
-    (uint256 _bidAmount, uint256 _soldAmount,,, uint256 _auctionDeadline) = surplusAuctionHouse.bids(_auctionId);
-    assertEq(_bidAmount, INITIAL_BID);
+    ISurplusAuctionHouse.Auction memory _auction = surplusAuctionHouse.auctions(_auctionId);
+    assertEq(_auction.bidAmount, INITIAL_BID);
 
-    vm.warp(_auctionDeadline);
+    vm.warp(_auction.auctionDeadline);
 
     assertEq(protocolToken.totalSupply(), INITIAL_BID);
     surplusAuctionHouse.settleAuction(_auctionId);
@@ -255,7 +254,7 @@ abstract contract E2ETest is BaseUser, Base_CType, Common {
     assertEq(protocolToken.totalSupply(), INITIAL_BID / 2); // 50% of the bid is burned
     assertEq(protocolToken.balanceOf(SURPLUS_AUCTION_BID_RECEIVER), INITIAL_BID / 2); // 50% is sent to the receiver
     assertEq(protocolToken.balanceOf(address(this)), 0);
-    assertEq(systemCoin.balanceOf(address(this)) - _initialBalance, _soldAmount / RAY);
+    assertEq(systemCoin.balanceOf(address(this)) - _initialBalance, _auction.amountToSell / RAY);
   }
 }
 

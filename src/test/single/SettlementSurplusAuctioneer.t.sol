@@ -105,10 +105,10 @@ contract SingleSettlementSurplusAuctioneerTest is DSTest {
     safeEngine.createUnbackedDebt(address(0), address(surplusAuctioneer), rad(500 ether * 10 ** 9));
     uint256 id = surplusAuctioneer.auctionSurplus();
     assertEq(id, 1);
-    (uint256 bidAmount, uint256 amountToSell, address highBidder,,) = surplusAuctionHouse.bids(id);
-    assertEq(bidAmount, 0);
-    assertEq(amountToSell, 100 ether * 10 ** 9);
-    assertEq(highBidder, address(surplusAuctioneer));
+    IPostSettlementSurplusAuctionHouse.Auction memory _auction = surplusAuctionHouse.auctions(id);
+    assertEq(_auction.bidAmount, 0);
+    assertEq(_auction.amountToSell, 100 ether * 10 ** 9);
+    assertEq(_auction.highBidder, address(surplusAuctioneer));
   }
 
   function test_trigger_second_auction_after_delay() public {
@@ -126,9 +126,9 @@ contract SingleSettlementSurplusAuctioneerTest is DSTest {
     hevm.warp(block.timestamp + accountingEngine.params().surplusDelay);
     uint256 id = surplusAuctioneer.auctionSurplus();
     assertEq(id, 0);
-    (uint256 bidAmount, uint256 amountToSell, address highBidder,,) = surplusAuctionHouse.bids(2);
-    assertEq(bidAmount, 0);
-    assertEq(amountToSell, 0);
-    assertEq(highBidder, address(0));
+    IPostSettlementSurplusAuctionHouse.Auction memory _auction = surplusAuctionHouse.auctions(2);
+    assertEq(_auction.bidAmount, 0);
+    assertEq(_auction.amountToSell, 0);
+    assertEq(_auction.highBidder, address(0));
   }
 }

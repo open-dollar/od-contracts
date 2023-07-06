@@ -60,14 +60,34 @@ interface ITaxCollector is IAuthorizable, IModifiable {
   // solhint-disable-next-line func-name-mixedcase
   function WHOLE_TAX_CUT() external view returns (uint256 _wholeTaxCut);
 
-  function params() external view returns (TaxCollectorParams memory _params);
-  function cParams(bytes32 _cType) external view returns (TaxCollectorCollateralParams memory _cParams);
-  function cData(bytes32 _cType) external view returns (TaxCollectorCollateralData memory _cData);
+  function params() external view returns (TaxCollectorParams memory _taxCollectorParams);
+  // solhint-disable-next-line private-vars-leading-underscore
+  function _params()
+    external
+    view
+    returns (address _primaryTaxReceiver, uint256 _globalStabilityFee, uint256 _maxSecondaryReceivers);
 
-  function secondaryTaxReceiver(
+  function cParams(bytes32 _cType) external view returns (TaxCollectorCollateralParams memory _taxCollectorCParams);
+  // solhint-disable-next-line private-vars-leading-underscore
+  function _cParams(bytes32 _cType) external view returns (uint256 _stabilityFee);
+
+  function cData(bytes32 _cType) external view returns (TaxCollectorCollateralData memory _taxCollectorCData);
+  // solhint-disable-next-line private-vars-leading-underscore
+  function _cData(bytes32 _cType)
+    external
+    view
+    returns (uint256 _nextStabilityFee, uint256 _updateTime, uint256 _secondaryReceiverAllotedTax);
+
+  function secondaryTaxReceivers(
     bytes32 _cType,
     address _receiver
   ) external view returns (TaxReceiver memory _secondaryTaxReceiver);
+  // solhint-disable-next-line private-vars-leading-underscore
+  function _secondaryTaxReceivers(
+    bytes32 _cType,
+    address _receiver
+  ) external view returns (address _secondaryReceiver, bool _canTakeBackTax, uint256 _taxPercentage);
+
   function safeEngine() external view returns (ISAFEEngine _safeEngine);
 
   // --- Administration ---

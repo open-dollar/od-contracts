@@ -33,7 +33,7 @@ contract CollateralAuctionHouseChild is
     address _safeEngine,
     address _oracleRelayer,
     address _liquidationEngine,
-    bytes32 _collateralType,
+    bytes32 _cType,
     CollateralAuctionHouseSystemCoinParams memory _cahParams,
     CollateralAuctionHouseParams memory _cahCParams
   )
@@ -41,7 +41,7 @@ contract CollateralAuctionHouseChild is
       _safeEngine,
       _oracleRelayer, // empty
       _liquidationEngine, // empty
-      _collateralType,
+      _cType,
       _cahParams, // empty
       _cahCParams
     )
@@ -55,6 +55,16 @@ contract CollateralAuctionHouseChild is
     returns (CollateralAuctionHouseSystemCoinParams memory _cahParams)
   {
     return ICollateralAuctionHouseFactory(factory).params();
+  }
+
+  // solhint-disable-next-line private-vars-leading-underscore
+  function _params()
+    public
+    view
+    override(IncreasingDiscountCollateralAuctionHouse, IIncreasingDiscountCollateralAuctionHouse)
+    returns (uint256 _minSystemCoinDeviation, uint256 _lowerSystemCoinDeviation, uint256 _upperSystemCoinDeviation)
+  {
+    return ICollateralAuctionHouseFactory(factory)._params();
   }
 
   // NOTE: child implementation reads liquidationEngine from factory

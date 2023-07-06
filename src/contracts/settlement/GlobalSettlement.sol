@@ -119,7 +119,8 @@ contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettl
   IOracleRelayer public oracleRelayer;
   IStabilityFeeTreasury public stabilityFeeTreasury;
 
-  GlobalSettlementParams internal _params;
+  // solhint-disable-next-line private-vars-leading-underscore
+  GlobalSettlementParams public _params;
 
   function params() external view returns (GlobalSettlementParams memory _globalSettlementParams) {
     return _params;

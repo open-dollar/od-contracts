@@ -25,8 +25,10 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
   IBaseOracle public systemCoinOracle;
 
   // --- Params ---
-  OracleRelayerParams internal _params;
-  mapping(bytes32 => OracleRelayerCollateralParams) internal _cParams;
+  // solhint-disable-next-line private-vars-leading-underscore
+  OracleRelayerParams public _params;
+  // solhint-disable-next-line private-vars-leading-underscore
+  mapping(bytes32 => OracleRelayerCollateralParams) public _cParams;
 
   function params() external view override returns (OracleRelayerParams memory _oracleRelayerParams) {
     return _params;

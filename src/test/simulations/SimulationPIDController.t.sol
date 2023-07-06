@@ -147,9 +147,9 @@ contract SimulationPIDController is TestParams, Deploy, HaiTest {
   // --- csv utils ---
 
   function _logLine(uint256 _day) internal {
-    IPIDController.DeviationObservation memory _deviation = pidController.deviation();
-    _proportionalTerm = _deviation.proportional;
-    _integramTerm = _deviation.integral;
+    IPIDController.DeviationObservation memory _deviationObservation = pidController.deviationObservation();
+    _proportionalTerm = _deviationObservation.proportional;
+    _integramTerm = _deviationObservation.integral;
     _redemptionPrice = oracleRelayer.redemptionPrice();
     _marketPrice = oracleRelayer.marketPrice();
     vm.writeLine(

@@ -28,20 +28,23 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
   ISAFEEngine public safeEngine;
 
   // --- Data ---
-  TaxCollectorParams internal _params;
+  // solhint-disable-next-line private-vars-leading-underscore
+  TaxCollectorParams public _params;
 
   function params() external view returns (TaxCollectorParams memory _taxCollectorParams) {
     return _params;
   }
 
-  mapping(bytes32 => TaxCollectorCollateralParams) internal _cParams;
+  // solhint-disable-next-line private-vars-leading-underscore
+  mapping(bytes32 => TaxCollectorCollateralParams) public _cParams;
 
   function cParams(bytes32 _cType) external view returns (TaxCollectorCollateralParams memory _taxCollectorCParams) {
     return _cParams[_cType];
   }
 
   // Data about each collateral type
-  mapping(bytes32 => TaxCollectorCollateralData) internal _cData;
+  // solhint-disable-next-line private-vars-leading-underscore
+  mapping(bytes32 => TaxCollectorCollateralData) public _cData;
 
   function cData(bytes32 _cType) external view returns (TaxCollectorCollateralData memory _taxCollectorCData) {
     return _cData[_cType];
@@ -50,9 +53,10 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
   // Each collateral type that sends SF to a specific tax receiver
   mapping(address => EnumerableSet.Bytes32Set) internal _secondaryReceiverRevenueSources;
   // Tax receiver data
-  mapping(bytes32 => mapping(address => TaxReceiver)) internal _secondaryTaxReceivers;
+  // solhint-disable-next-line private-vars-leading-underscore
+  mapping(bytes32 => mapping(address => TaxReceiver)) public _secondaryTaxReceivers;
 
-  function secondaryTaxReceiver(
+  function secondaryTaxReceivers(
     bytes32 _cType,
     address _receiver
   ) external view returns (TaxReceiver memory _secondaryTaxReceiver) {

@@ -53,18 +53,33 @@ interface IPIDController is IAuthorizable, IModifiable {
   function seedProposer() external view returns (address _seedProposer);
 
   // --- Data ---
-  function params() external view returns (PIDControllerParams memory _params);
+  function params() external view returns (PIDControllerParams memory _pidParams);
+  // solhint-disable-next-line private-vars-leading-underscore
+  function _params()
+    external
+    view
+    returns (
+      uint256 _integralPeriodSize,
+      uint256 _perSecondCumulativeLeak,
+      uint256 _noiseBarrier,
+      uint256 _feedbackOutputUpperBound,
+      int256 _feedbackOutputLowerBound
+    );
 
   /**
    * @notice Returns the last deviation observation, containting latest timestamp, proportional and integral terms
    */
-  function deviation() external view returns (DeviationObservation memory _deviation);
+  function deviationObservation() external view returns (DeviationObservation memory __deviationObservation);
+  // solhint-disable-next-line private-vars-leading-underscore
+  function _deviationObservation() external view returns (uint256 _timestamp, int256 _proportional, int256 _integral);
 
   /**
    * @notice Returns the Kp and Ki values used in this calculator
    * @dev    The values are expressed in WAD, Kp stands for proportional and Ki for integral terms
    */
   function controllerGains() external view returns (ControllerGains memory _cGains);
+  // solhint-disable-next-line private-vars-leading-underscore
+  function _controllerGains() external view returns (int256 _kp, int256 _ki);
 
   /**
    * @notice Return a redemption rate bounded by feedbackOutputLowerBound and feedbackOutputUpperBound as well as the

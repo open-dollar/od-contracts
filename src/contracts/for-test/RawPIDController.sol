@@ -10,10 +10,10 @@ contract RawPIDController is PIDController {
   using Math for int256;
 
   constructor(
-    ControllerGains memory __controllerGains,
-    PIDControllerParams memory __params,
+    ControllerGains memory _cGains,
+    PIDControllerParams memory _pidParams,
     DeviationObservation memory _importedState
-  ) PIDController(__controllerGains, __params, _importedState) {}
+  ) PIDController(_cGains, _pidParams, _importedState) {}
 
   function _getProportionalTerm(
     uint256 marketPrice,

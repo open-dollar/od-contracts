@@ -32,7 +32,7 @@ contract IncreasingDiscountCollateralAuctionHouseForTest is
     address _safeEngine,
     address _oracleRelayer,
     address _liquidationEngine,
-    bytes32 _collateralType,
+    bytes32 _cType,
     MockCollateralAuctionHouse _mockCollateralAuctionHouse,
     CollateralAuctionHouseSystemCoinParams memory _cahParams,
     CollateralAuctionHouseParams memory _cahCParams
@@ -41,7 +41,7 @@ contract IncreasingDiscountCollateralAuctionHouseForTest is
       _safeEngine,
       _oracleRelayer,
       _liquidationEngine,
-      _collateralType,
+      _cType,
       _cahParams,
       _cahCParams
     )

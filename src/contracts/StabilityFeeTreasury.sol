@@ -26,7 +26,8 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
   address public extraSurplusReceiver;
 
   // --- Params ---
-  StabilityFeeTreasuryParams internal _params;
+  // solhint-disable-next-line private-vars-leading-underscore
+  StabilityFeeTreasuryParams public _params;
 
   function params() external view returns (StabilityFeeTreasuryParams memory _sfTreasuryParams) {
     return _params;
@@ -34,7 +35,13 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
 
   // --- Data ---
   // Mapping of total and per hour allowances
-  mapping(address => Allowance) public allowance;
+  // solhint-disable-next-line private-vars-leading-underscore
+  mapping(address => Allowance) public _allowance;
+
+  function allowance(address _account) external view returns (Allowance memory __allowance) {
+    return _allowance[_account];
+  }
+
   // Mapping that keeps track of how much surplus an authorized address has pulled each hour
   mapping(address => mapping(uint256 => uint256)) public pulledPerHour;
   uint256 public expensesAccumulator; // expenses accumulator [rad]
@@ -112,7 +119,7 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
    */
   function setTotalAllowance(address _account, uint256 _rad) external isAuthorized accountNotTreasury(_account) {
     if (_account == address(0)) revert SFTreasury_NullAccount();
-    allowance[_account].total = _rad;
+    _allowance[_account].total = _rad;
     emit SetTotalAllowance(_account, _rad);
   }
 
@@ -123,7 +130,7 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
    */
   function setPerHourAllowance(address _account, uint256 _rad) external isAuthorized accountNotTreasury(_account) {
     if (_account == address(0)) revert SFTreasury_NullAccount();
-    allowance[_account].perHour = _rad;
+    _allowance[_account].perHour = _rad;
     emit SetPerHourAllowance(_account, _rad);
   }
 
@@ -170,12 +177,12 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
    */
   function pullFunds(address _dstAccount, uint256 _wad) external {
     if (_dstAccount == address(this)) return;
-    if (allowance[msg.sender].total < _wad * RAY) revert SFTreasury_NotAllowed();
+    if (_allowance[msg.sender].total < _wad * RAY) revert SFTreasury_NotAllowed();
     if (_dstAccount == address(0)) revert SFTreasury_NullDst();
     if (_dstAccount == extraSurplusReceiver) revert SFTreasury_DstCannotBeAccounting();
     if (_wad == 0) revert SFTreasury_NullTransferAmount();
-    if (allowance[msg.sender].perHour > 0) {
-      if (pulledPerHour[msg.sender][block.timestamp / HOUR] + (_wad * RAY) > allowance[msg.sender].perHour) {
+    if (_allowance[msg.sender].perHour > 0) {
+      if (pulledPerHour[msg.sender][block.timestamp / HOUR] + (_wad * RAY) > _allowance[msg.sender].perHour) {
         revert SFTreasury_PerHourLimitExceeded();
       }
     }
@@ -191,7 +198,7 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
     if (_coinBalance < _params.pullFundsMinThreshold) revert SFTreasury_BelowPullFundsMinThreshold();
 
     // Update allowance and accumulator
-    allowance[msg.sender].total -= (_wad * RAY);
+    _allowance[msg.sender].total -= (_wad * RAY);
     expensesAccumulator += (_wad * RAY);
 
     // Transfer money

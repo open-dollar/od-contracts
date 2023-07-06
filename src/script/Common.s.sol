@@ -23,7 +23,7 @@ abstract contract Common is Contracts, Params {
           _safeEngine: address(safeEngine), 
           __oracleRelayer: address(oracleRelayer),
           __liquidationEngine: address(liquidationEngine), 
-          _collateralType: ETH_A,
+          _cType: ETH_A,
           _cahParams: _collateralAuctionHouseSystemCoinParams,
           _cahCParams: _collateralAuctionHouseCParams[ETH_A]
           });
@@ -56,7 +56,7 @@ abstract contract Common is Contracts, Params {
           _safeEngine: address(safeEngine), 
           __oracleRelayer: address(oracleRelayer),
           __liquidationEngine: address(liquidationEngine), 
-          _collateralType: _cType,
+          _cType: _cType,
           _cahParams: _collateralAuctionHouseSystemCoinParams,
           _cahCParams: _collateralAuctionHouseCParams[_cType]
           });

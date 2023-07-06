@@ -40,13 +40,14 @@ interface IGlobalSettlement is IAuthorizable, IDisableable, IModifiable {
   error GS_InsufficientBagBalance();
 
   // --- Structs ---
-
   struct GlobalSettlementParams {
     uint256 shutdownCooldown;
   }
 
   // --- Data ---
   function params() external view returns (GlobalSettlementParams memory _globalSettlementParams);
+  // solhint-disable-next-line private-vars-leading-underscore
+  function _params() external view returns (uint256 _shutdownCooldown);
 
   function shutdownTime() external view returns (uint256 _shutdownTime);
   function outstandingCoinSupply() external view returns (uint256 _outstandingCoinSupply);

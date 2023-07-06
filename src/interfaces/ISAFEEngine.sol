@@ -99,10 +99,27 @@ interface ISAFEEngine is IAuthorizable, IModifiable, IDisableable {
   function denySAFEModification(address _acount) external;
   function createUnbackedDebt(address _debtDestination, address _coinDestination, uint256 _rad) external;
 
-  function params() external view returns (SAFEEngineParams memory _params);
-  function cData(bytes32 _cType) external view returns (SAFEEngineCollateralData memory _collateralData);
-  function cParams(bytes32 _cType) external view returns (SAFEEngineCollateralParams memory _collateralParams);
+  function params() external view returns (SAFEEngineParams memory _safeEngineParams);
+  // solhint-disable-next-line private-vars-leading-underscore
+  function _params() external view returns (uint256 _safeDebtCeiling, uint256 _globalDebtCeiling);
+
+  function cParams(bytes32 _cType) external view returns (SAFEEngineCollateralParams memory _safeEngineCParams);
+  // solhint-disable-next-line private-vars-leading-underscore
+  function _cParams(bytes32 _cType) external view returns (uint256 _debtCeiling, uint256 _debtFloor);
+
+  function cData(bytes32 _cType) external view returns (SAFEEngineCollateralData memory _safeEngineCData);
+  // solhint-disable-next-line private-vars-leading-underscore
+  function _cData(bytes32 _cType)
+    external
+    view
+    returns (uint256 _debtAmount, uint256 _accumulatedRate, uint256 _safetyPrice, uint256 _liquidationPrice);
+
   function safes(bytes32 _cType, address _safeAddress) external view returns (SAFE memory _safeData);
+  // solhint-disable-next-line private-vars-leading-underscore
+  function _safes(
+    bytes32 _cType,
+    address _safeAddress
+  ) external view returns (uint256 _lockedCollateral, uint256 _generatedDebt);
 
   function globalDebt() external returns (uint256 _globalDebt);
   function confiscateSAFECollateralAndDebt(

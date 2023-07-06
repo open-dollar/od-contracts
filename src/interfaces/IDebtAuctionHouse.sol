@@ -41,7 +41,7 @@ interface IDebtAuctionHouse is IAuthorizable, IDisableable, IModifiable {
   error DAH_HighBidderNotSet();
 
   // --- Data ---
-  struct Bid {
+  struct Auction {
     // Bid size
     uint256 bidAmount; // [rad]
     // How many protocol tokens are sold in an auction
@@ -68,7 +68,9 @@ interface IDebtAuctionHouse is IAuthorizable, IDisableable, IModifiable {
   // solhint-disable-next-line func-name-mixedcase
   function AUCTION_HOUSE_TYPE() external view returns (bytes32 _auctionHouseType);
 
-  function bids(uint256 _id)
+  function auctions(uint256 _id) external view returns (Auction memory _auction);
+  // solhint-disable-next-line private-vars-leading-underscore
+  function _auctions(uint256 _id)
     external
     view
     returns (
@@ -78,6 +80,7 @@ interface IDebtAuctionHouse is IAuthorizable, IDisableable, IModifiable {
       uint256 _bidExpiry,
       uint256 _auctionDeadline
     );
+
   function auctionsStarted() external view returns (uint256 _auctionsStarted);
   function activeDebtAuctions() external view returns (uint256 _activeDebtAuctions);
 
@@ -87,7 +90,12 @@ interface IDebtAuctionHouse is IAuthorizable, IDisableable, IModifiable {
   function accountingEngine() external view returns (address _accountingEngine);
 
   // --- Params ---
-  function params() external view returns (DebtAuctionHouseParams memory _params);
+  function params() external view returns (DebtAuctionHouseParams memory _dahParams);
+  // solhint-disable-next-line private-vars-leading-underscore
+  function _params()
+    external
+    view
+    returns (uint256 _bidDecrease, uint256 _amountSoldIncrease, uint256 _bidDuration, uint256 _totalAuctionLength);
 
   // --- Auction ---
   function startAuction(

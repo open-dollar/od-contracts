@@ -9,11 +9,11 @@ contract PIDControllerForTest is PIDController, InternalCallsExtension {
   MockPIDController public mockPIDController;
 
   constructor(
-    ControllerGains memory __controllerGains,
-    PIDControllerParams memory __params,
+    ControllerGains memory _cGains,
+    PIDControllerParams memory _pidParams,
     DeviationObservation memory _importedState,
     MockPIDController _mockPIDController
-  ) PIDController(__controllerGains, __params, _importedState) {
+  ) PIDController(_cGains, _pidParams, _importedState) {
     mockPIDController = _mockPIDController;
   }
 

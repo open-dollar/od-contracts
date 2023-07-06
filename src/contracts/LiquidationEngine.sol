@@ -37,8 +37,10 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
   IAccountingEngine public accountingEngine;
 
   // --- Params ---
-  LiquidationEngineParams internal _params;
-  mapping(bytes32 _cType => LiquidationEngineCollateralParams) internal _cParams;
+  // solhint-disable-next-line private-vars-leading-underscore
+  LiquidationEngineParams public _params;
+  // solhint-disable-next-line private-vars-leading-underscore
+  mapping(bytes32 _cType => LiquidationEngineCollateralParams) public _cParams;
 
   function params() external view returns (LiquidationEngineParams memory _liqEngineParams) {
     return _params;

@@ -357,7 +357,7 @@ contract SingleTaxCollectorTest is DSTest {
     );
     assertEq(taxCollector.cData('i').secondaryReceiverAllotedTax, ray(1 ether));
     assertEq(taxCollector.secondaryReceiverRevenueSources(address(this)), 1);
-    ITaxCollector.TaxReceiver memory _taxReceiver = taxCollector.secondaryTaxReceiver('i', address(this));
+    ITaxCollector.TaxReceiver memory _taxReceiver = taxCollector.secondaryTaxReceivers('i', address(this));
     assertTrue(!_taxReceiver.canTakeBackTax);
     assertEq(_taxReceiver.taxPercentage, ray(1 ether));
   }
@@ -385,7 +385,7 @@ contract SingleTaxCollectorTest is DSTest {
 
     uint256 _cut = taxCollector.cData('i').secondaryReceiverAllotedTax;
     assertEq(_cut, ray(99.9 ether));
-    ITaxCollector.TaxReceiver memory _taxReceiver = taxCollector.secondaryTaxReceiver('i', address(this));
+    ITaxCollector.TaxReceiver memory _taxReceiver = taxCollector.secondaryTaxReceivers('i', address(this));
     assertEq(_taxReceiver.taxPercentage, ray(99.9 ether));
   }
 
@@ -412,7 +412,7 @@ contract SingleTaxCollectorTest is DSTest {
     assertEq(taxCollector.cData('i').secondaryReceiverAllotedTax, ray(99 ether));
     assertEq(taxCollector.secondaryReceiverRevenueSources(ali), 1);
     assertEq(taxCollector.secondaryReceiverRevenueSources(address(this)), 1);
-    ITaxCollector.TaxReceiver memory _taxReceiver = taxCollector.secondaryTaxReceiver('i', ali);
+    ITaxCollector.TaxReceiver memory _taxReceiver = taxCollector.secondaryTaxReceivers('i', ali);
     assertTrue(!_taxReceiver.canTakeBackTax);
     assertEq(_taxReceiver.taxPercentage, ray(98 ether));
     // Remove
@@ -423,7 +423,7 @@ contract SingleTaxCollectorTest is DSTest {
     );
     assertEq(taxCollector.cData('i').secondaryReceiverAllotedTax, ray(98 ether));
     assertEq(taxCollector.secondaryReceiverRevenueSources(address(this)), 0);
-    _taxReceiver = taxCollector.secondaryTaxReceiver('i', address(this));
+    _taxReceiver = taxCollector.secondaryTaxReceivers('i', address(this));
     assertTrue(!_taxReceiver.canTakeBackTax);
     assertEq(_taxReceiver.taxPercentage, 0);
     assertEq(taxCollector.secondaryReceiverRevenueSources(ali), 1);
@@ -465,7 +465,7 @@ contract SingleTaxCollectorTest is DSTest {
     assertEq(Cut, 0);
     assertEq(taxCollector.secondaryReceiverRevenueSources(ali), 0);
     assertEq(taxCollector.secondaryReceiverRevenueSources(address(this)), 0);
-    ITaxCollector.TaxReceiver memory _taxReceiver = taxCollector.secondaryTaxReceiver('i', address(this));
+    ITaxCollector.TaxReceiver memory _taxReceiver = taxCollector.secondaryTaxReceivers('i', address(this));
     assertTrue(!_taxReceiver.canTakeBackTax);
     assertEq(_taxReceiver.taxPercentage, 0);
   }
@@ -504,7 +504,7 @@ contract SingleTaxCollectorTest is DSTest {
     assertEq(taxCollector.secondaryReceiverRevenueSources(address(this)), 1);
     assertEq(taxCollector.secondaryReceiversAmount(), 1);
     assertTrue(taxCollector.isSecondaryReceiver(address(this)));
-    ITaxCollector.TaxReceiver memory _taxReceiver = taxCollector.secondaryTaxReceiver('i', address(this));
+    ITaxCollector.TaxReceiver memory _taxReceiver = taxCollector.secondaryTaxReceivers('i', address(this));
     assertTrue(!_taxReceiver.canTakeBackTax);
     assertEq(_taxReceiver.taxPercentage, ray(1 ether));
 
@@ -517,7 +517,7 @@ contract SingleTaxCollectorTest is DSTest {
     assertEq(taxCollector.cData('i').secondaryReceiverAllotedTax, 0);
     assertEq(taxCollector.secondaryReceiverRevenueSources(address(this)), 0);
     assertTrue(!taxCollector.isSecondaryReceiver(address(this)));
-    _taxReceiver = taxCollector.secondaryTaxReceiver('i', address(this));
+    _taxReceiver = taxCollector.secondaryTaxReceivers('i', address(this));
     assertTrue(!_taxReceiver.canTakeBackTax);
     assertEq(_taxReceiver.taxPercentage, 0);
   }
@@ -583,7 +583,7 @@ contract SingleTaxCollectorTest is DSTest {
     );
 
     // Toggle
-    ITaxCollector.TaxReceiver memory _taxReceiver = taxCollector.secondaryTaxReceiver('i', address(this));
+    ITaxCollector.TaxReceiver memory _taxReceiver = taxCollector.secondaryTaxReceivers('i', address(this));
     assertTrue(_taxReceiver.canTakeBackTax);
   }
 
@@ -707,19 +707,19 @@ contract SingleTaxCollectorTest is DSTest {
     assertTrue(taxCollector.isSecondaryReceiver(bob));
     assertTrue(taxCollector.isSecondaryReceiver(char));
 
-    ITaxCollector.TaxReceiver memory _bob = taxCollector.secondaryTaxReceiver('i', bob);
+    ITaxCollector.TaxReceiver memory _bob = taxCollector.secondaryTaxReceivers('i', bob);
     assertTrue(!_bob.canTakeBackTax);
     assertEq(_bob.taxPercentage, ray(40 ether));
 
-    ITaxCollector.TaxReceiver memory _char = taxCollector.secondaryTaxReceiver('i', char);
+    ITaxCollector.TaxReceiver memory _char = taxCollector.secondaryTaxReceivers('i', char);
     assertTrue(!_char.canTakeBackTax);
     assertEq(_char.taxPercentage, ray(45 ether));
 
-    _bob = taxCollector.secondaryTaxReceiver('j', bob);
+    _bob = taxCollector.secondaryTaxReceivers('j', bob);
     assertTrue(!_bob.canTakeBackTax);
     assertEq(_bob.taxPercentage, ray(25 ether));
 
-    _char = taxCollector.secondaryTaxReceiver('j', char);
+    _char = taxCollector.secondaryTaxReceivers('j', char);
     assertTrue(!_char.canTakeBackTax);
     assertEq(_char.taxPercentage, ray(33 ether));
   }

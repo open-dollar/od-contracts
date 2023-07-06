@@ -94,8 +94,7 @@ abstract contract E2EStabilityFeeTreasuryTest is BaseUser, Common {
     // Assertions
     assertEq(safeEngine.coinBalance(alice), _previousAliceBalance + _rad);
     assertEq(safeEngine.coinBalance(address(stabilityFeeTreasury)), _coinBalance - _rad);
-    (uint256 _totalAllowance,) = stabilityFeeTreasury.allowance(deployer);
-    assertEq(_totalAllowance, 0); // deployer used all allowance
+    assertEq(stabilityFeeTreasury.allowance(deployer).total, 0); // deployer used all allowance
     assertEq(stabilityFeeTreasury.expensesAccumulator(), _previousExpensesAccumulator + _rad);
     assertEq(stabilityFeeTreasury.pulledPerHour(deployer, block.timestamp / HOUR), _rad);
   }

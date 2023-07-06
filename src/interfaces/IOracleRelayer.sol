@@ -12,7 +12,7 @@ interface IOracleRelayer is IAuthorizable, IModifiable, IDisableable {
   // --- Events ---
   event UpdateRedemptionPrice(uint256 _redemptionPrice);
   event UpdateCollateralPrice(
-    bytes32 indexed _collateralType, uint256 _priceFeedValue, uint256 _safetyPrice, uint256 _liquidationPrice
+    bytes32 indexed _cType, uint256 _priceFeedValue, uint256 _safetyPrice, uint256 _liquidationPrice
   );
 
   // --- Errors ---
@@ -45,8 +45,16 @@ interface IOracleRelayer is IAuthorizable, IModifiable, IDisableable {
   function systemCoinOracle() external view returns (IBaseOracle _systemCoinOracle);
 
   // --- Params ---
-  function params() external view returns (OracleRelayerParams memory _params);
-  function cParams(bytes32) external view returns (OracleRelayerCollateralParams memory _cParams);
+  function params() external view returns (OracleRelayerParams memory _oracleRelayerParams);
+  // solhint-disable-next-line private-vars-leading-underscore
+  function _params() external view returns (uint256 _redemptionRateUpperBound, uint256 _redemptionRateLowerBound);
+
+  function cParams(bytes32) external view returns (OracleRelayerCollateralParams memory _oracleRelayerCParams);
+  // solhint-disable-next-line private-vars-leading-underscore
+  function _cParams(bytes32)
+    external
+    view
+    returns (IDelayedOracle _oracle, uint256 _safetyCRatio, uint256 _liquidationCRatio);
 
   // --- Data ---
   function marketPrice() external view returns (uint256 _marketPrice);
@@ -55,7 +63,7 @@ interface IOracleRelayer is IAuthorizable, IModifiable, IDisableable {
 
   // --- Methods ---
   function redemptionPrice() external returns (uint256 _redemptionPrice);
-  function updateCollateralPrice(bytes32 _collateralType) external;
+  function updateCollateralPrice(bytes32 _cType) external;
   function updateRedemptionRate(uint256 _redemptionRate) external;
   function initializeCollateralType(bytes32 _cType, OracleRelayerCollateralParams memory _collateralParams) external;
 }

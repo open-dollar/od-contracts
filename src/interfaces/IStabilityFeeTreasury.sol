@@ -44,6 +44,9 @@ interface IStabilityFeeTreasury is IAuthorizable, IDisableable, IModifiable {
     uint256 perHour;
   }
 
+  function allowance(address _account) external view returns (Allowance memory __allowance);
+  // solhint-disable-next-line private-vars-leading-underscore
+  function _allowance(address _account) external view returns (uint256 _total, uint256 _perHour);
   function setTotalAllowance(address _account, uint256 _rad) external;
   function setPerHourAllowance(address _account, uint256 _rad) external;
   function giveFunds(address _account, uint256 _rad) external;
@@ -56,10 +59,20 @@ interface IStabilityFeeTreasury is IAuthorizable, IDisableable, IModifiable {
   function systemCoin() external view returns (ISystemCoin _systemCoin);
   function latestSurplusTransferTime() external view returns (uint256 _latestSurplusTransferTime);
   function settleDebt() external;
-  function allowance(address _account) external view returns (uint256 _total, uint256 _perHour);
   function expensesAccumulator() external view returns (uint256 _expensesAccumulator);
   function pulledPerHour(address _account, uint256 _blockHour) external view returns (uint256 _pulledPerHour);
   function accumulatorTag() external view returns (uint256 _accumulatorTag);
 
-  function params() external view returns (StabilityFeeTreasuryParams memory _params);
+  function params() external view returns (StabilityFeeTreasuryParams memory _sfTreasuryParams);
+  // solhint-disable-next-line private-vars-leading-underscore
+  function _params()
+    external
+    view
+    returns (
+      uint256 _expensesMultiplier,
+      uint256 _treasuryCapacity,
+      uint256 _minFundsRequired,
+      uint256 _pullFundsMinThreshold,
+      uint256 _surplusTransferDelay
+    );
 }

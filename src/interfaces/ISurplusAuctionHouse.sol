@@ -33,7 +33,7 @@ interface ISurplusAuctionHouse is IAuthorizable, IDisableable, IModifiable {
   error SAH_NullProtTokenReceiver();
 
   // --- Data ---
-  struct Bid {
+  struct Auction {
     // Bid size (how many protocol tokens are offered per system coins sold)
     uint256 bidAmount; // [wad]
     // How many system coins are sold in an auction
@@ -61,7 +61,9 @@ interface ISurplusAuctionHouse is IAuthorizable, IDisableable, IModifiable {
   // solhint-disable-next-line func-name-mixedcase
   function SURPLUS_AUCTION_TYPE() external view returns (bytes32 _surplusAuctionHouseType);
 
-  function bids(uint256 _id)
+  function auctions(uint256 _id) external view returns (Auction memory _auction);
+  // solhint-disable-next-line private-vars-leading-underscore
+  function _auctions(uint256 _id)
     external
     view
     returns (
@@ -71,6 +73,7 @@ interface ISurplusAuctionHouse is IAuthorizable, IDisableable, IModifiable {
       uint256 _bidExpiry,
       uint256 _auctionDeadline
     );
+
   function auctionsStarted() external view returns (uint256 _auctionsStarted);
 
   // --- Registry ---
@@ -79,7 +82,12 @@ interface ISurplusAuctionHouse is IAuthorizable, IDisableable, IModifiable {
   function protocolTokenBidReceiver() external view returns (address _protocolTokenBidReceiver);
 
   // --- Params ---
-  function params() external view returns (SurplusAuctionHouseParams memory _params);
+  function params() external view returns (SurplusAuctionHouseParams memory _sahParams);
+  // solhint-disable-next-line private-vars-leading-underscore
+  function _params()
+    external
+    view
+    returns (uint256 _bidIncrease, uint256 _bidDuration, uint256 _totalAuctionLength, uint256 _recyclingPercentage);
 
   // --- Auction ---
   function startAuction(uint256 /* RAD */ _amountToSell, uint256 /* WAD */ _initialBid) external returns (uint256 _id);

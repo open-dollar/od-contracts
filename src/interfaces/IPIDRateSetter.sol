@@ -37,7 +37,9 @@ interface IPIDRateSetter is IAuthorizable, IModifiable {
   function pidCalculator() external view returns (IPIDController _pidCalculator);
 
   // --- Params ---
-  function params() external view returns (PIDRateSetterParams memory _params);
+  function params() external view returns (PIDRateSetterParams memory _pidRateSetterParams);
+  // solhint-disable-next-line private-vars-leading-underscore
+  function _params() external view returns (uint256 _updateRateDelay);
 
   // --- Data ---
   /**

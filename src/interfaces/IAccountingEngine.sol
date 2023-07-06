@@ -53,7 +53,21 @@ interface IAccountingEngine is IAuthorizable, IDisableable, IModifiable {
   }
 
   // --- Params ---
-  function params() external view returns (AccountingEngineParams memory _params);
+  function params() external view returns (AccountingEngineParams memory _accEngineParams);
+  // solhint-disable-next-line private-vars-leading-underscore
+  function _params()
+    external
+    view
+    returns (
+      uint256 _surplusIsTransferred,
+      uint256 _surplusDelay,
+      uint256 _popDebtDelay,
+      uint256 _disableCooldown,
+      uint256 _surplusAmount,
+      uint256 _surplusBuffer,
+      uint256 _debtAuctionMintedTokens,
+      uint256 _debtAuctionBidSize
+    );
 
   // --- Registry ---
   // SAFE database

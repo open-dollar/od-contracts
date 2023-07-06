@@ -25,7 +25,7 @@ contract HaiSafeManager {
 
   uint256 internal _safeId; // Auto incremental
   mapping(address _safeOwner => EnumerableSet.UintSet) private _usrSafes;
-  mapping(address _safeOwner => mapping(bytes32 _collateralType => EnumerableSet.UintSet)) private _usrSafesPerCollat;
+  mapping(address _safeOwner => mapping(bytes32 _cType => EnumerableSet.UintSet)) private _usrSafesPerCollat;
   mapping(uint256 _safeId => SAFEData) internal _safeData;
   mapping(address _owner => mapping(uint256 _safeId => mapping(address _caller => uint256 _ok))) public safeCan;
   mapping(address _safeHandler => mapping(address _caller => uint256 _ok)) public handlerCan;
@@ -44,7 +44,7 @@ contract HaiSafeManager {
   event OpenSAFE(address indexed _sender, address indexed _own, uint256 indexed _safe);
   event ModifySAFECollateralization(address _sender, uint256 _safe, int256 _deltaCollateral, int256 _deltaDebt);
   event TransferCollateral(address _sender, uint256 _safe, address _dst, uint256 _wad);
-  event TransferCollateral(address _sender, bytes32 _collateralType, uint256 _safe, address _dst, uint256 _wad);
+  event TransferCollateral(address _sender, bytes32 _cType, uint256 _safe, address _dst, uint256 _wad);
   event TransferInternalCoins(address _sender, uint256 _safe, address _dst, uint256 _rad);
   event QuitSystem(address _sender, uint256 _safe, address _dst);
   event EnterSystem(address _sender, address _src, uint256 _safe);
@@ -71,8 +71,8 @@ contract HaiSafeManager {
     _safes = _usrSafes[_usr].values();
   }
 
-  function getSafes(address _usr, bytes32 _collateralType) external view returns (uint256[] memory _safes) {
-    _safes = _usrSafesPerCollat[_usr][_collateralType].values();
+  function getSafes(address _usr, bytes32 _cType) external view returns (uint256[] memory _safes) {
+    _safes = _usrSafesPerCollat[_usr][_cType].values();
   }
 
   function safeData(uint256 _safe) external view returns (SAFEData memory _sData) {
@@ -149,15 +149,10 @@ contract HaiSafeManager {
 
   // Transfer wad amount of any type of collateral (collateralType) from the safe address to a dst address.
   // This function has the purpose to take away collateral from the system that doesn't correspond to the safe but was sent there wrongly.
-  function transferCollateral(
-    bytes32 _collateralType,
-    uint256 _safe,
-    address _dst,
-    uint256 _wad
-  ) external safeAllowed(_safe) {
+  function transferCollateral(bytes32 _cType, uint256 _safe, address _dst, uint256 _wad) external safeAllowed(_safe) {
     SAFEData memory _sData = _safeData[_safe];
-    SAFEEngine(safeEngine).transferCollateral(_collateralType, _sData.safeHandler, _dst, _wad);
-    emit TransferCollateral(msg.sender, _collateralType, _safe, _dst, _wad);
+    SAFEEngine(safeEngine).transferCollateral(_cType, _sData.safeHandler, _dst, _wad);
+    emit TransferCollateral(msg.sender, _cType, _safe, _dst, _wad);
   }
 
   // Transfer rad amount of COIN from the safe address to a dst address.

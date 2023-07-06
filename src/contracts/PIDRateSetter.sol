@@ -23,7 +23,8 @@ contract PIDRateSetter is Authorizable, Modifiable, IPIDRateSetter {
   IPIDController public pidCalculator;
 
   // --- Params ---
-  PIDRateSetterParams internal _params;
+  // solhint-disable-next-line private-vars-leading-underscore
+  PIDRateSetterParams public _params;
 
   /// @inheritdoc IPIDRateSetter
   function params() external view returns (PIDRateSetterParams memory _pidRateSetterParams) {

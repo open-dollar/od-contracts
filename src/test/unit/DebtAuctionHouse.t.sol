@@ -71,7 +71,7 @@ abstract contract Base is HaiTest {
 
   function _mockAuction(DebtAuction memory _auction) internal {
     // BUG: Accessing packed slots is not supported by Std Storage
-    debtAuctionHouse.addBid(
+    debtAuctionHouse.addAuction(
       _auction.id,
       _auction.bidAmount,
       _auction.amountToSell,
@@ -311,7 +311,7 @@ contract Unit_DebtAuctionHouse_StartAuction is Base {
     assertEq(debtAuctionHouse.auctionsStarted(), _auctionsStarted + 1);
   }
 
-  function test_Set_Bids(
+  function test_Set_Auctions(
     address _incomeReceiver,
     uint256 _amountToSellFuzzed,
     uint256 _initialBid,
@@ -321,14 +321,12 @@ contract Unit_DebtAuctionHouse_StartAuction is Base {
   ) public happyPath(_auctionsStarted, _activeDebtAuctions, _totalAuctionLength) {
     debtAuctionHouse.startAuction(_incomeReceiver, _amountToSellFuzzed, _initialBid);
 
-    (uint256 _bidAmount, uint256 _amountToSell, address _highBidder, uint256 _bidExpiry, uint256 _auctionDeadline) =
-      debtAuctionHouse.bids(_auctionsStarted + 1);
-
-    assertEq(_bidAmount, _initialBid);
-    assertEq(_amountToSell, _amountToSellFuzzed);
-    assertEq(_highBidder, _incomeReceiver);
-    assertEq(_bidExpiry, 0);
-    assertEq(_auctionDeadline, block.timestamp + _totalAuctionLength);
+    IDebtAuctionHouse.Auction memory _auction = debtAuctionHouse.auctions(_auctionsStarted + 1);
+    assertEq(_auction.bidAmount, _initialBid);
+    assertEq(_auction.amountToSell, _amountToSellFuzzed);
+    assertEq(_auction.highBidder, _incomeReceiver);
+    assertEq(_auction.bidExpiry, 0);
+    assertEq(_auction.auctionDeadline, block.timestamp + _totalAuctionLength);
   }
 
   function test_Set_ActiveDebtAuctions(
@@ -460,7 +458,7 @@ contract Unit_DebtAuctionHouse_RestartAuction is Base {
     debtAuctionHouse.restartAuction(_auction.id);
   }
 
-  function test_Set_Bids_AmountToSell(
+  function test_Set_Auctions_AmountToSell(
     DebtAuction memory _auction,
     uint256 _auctionsStarted,
     uint256 _amountSoldIncrease,
@@ -468,12 +466,10 @@ contract Unit_DebtAuctionHouse_RestartAuction is Base {
   ) public happyPath(_auction, _auctionsStarted, _amountSoldIncrease, _totalAuctionLength) {
     debtAuctionHouse.restartAuction(_auction.id);
 
-    (, uint256 _amountToSell,,,) = debtAuctionHouse.bids(_auction.id);
-
-    assertEq(_amountToSell, (_amountSoldIncrease * _auction.amountToSell) / WAD);
+    assertEq(debtAuctionHouse.auctions(_auction.id).amountToSell, (_amountSoldIncrease * _auction.amountToSell) / WAD);
   }
 
-  function test_Set_Bids_AuctionDeadline(
+  function test_Set_Auctions_AuctionDeadline(
     DebtAuction memory _auction,
     uint256 _auctionsStarted,
     uint256 _amountSoldIncrease,
@@ -481,9 +477,7 @@ contract Unit_DebtAuctionHouse_RestartAuction is Base {
   ) public happyPath(_auction, _auctionsStarted, _amountSoldIncrease, _totalAuctionLength) {
     debtAuctionHouse.restartAuction(_auction.id);
 
-    (,,,, uint256 _auctionDeadline) = debtAuctionHouse.bids(_auction.id);
-
-    assertEq(_auctionDeadline, block.timestamp + _totalAuctionLength);
+    assertEq(debtAuctionHouse.auctions(_auction.id).auctionDeadline, block.timestamp + _totalAuctionLength);
   }
 
   function test_Emit_RestartAuction(
@@ -695,7 +689,7 @@ contract Unit_DebtAuctionHouse_DecreaseSoldAmount is Base {
     debtAuctionHouse.decreaseSoldAmount(_auction.id, _amountToBuy, _auction.bidAmount);
   }
 
-  function test_Set_Bids_HighBidder(
+  function test_Set_Auctions_HighBidder(
     DebtAuction memory _auction,
     uint256 _amountToBuy,
     uint256 _bidDecrease,
@@ -704,12 +698,10 @@ contract Unit_DebtAuctionHouse_DecreaseSoldAmount is Base {
   ) public happyPath(_auction, _amountToBuy, _bidDecrease, _bidDuration, _totalOnAuctionDebt) {
     debtAuctionHouse.decreaseSoldAmount(_auction.id, _amountToBuy, _auction.bidAmount);
 
-    (,, address _highBidder,,) = debtAuctionHouse.bids(_auction.id);
-
-    assertEq(_highBidder, user);
+    assertEq(debtAuctionHouse.auctions(_auction.id).highBidder, user);
   }
 
-  function test_Set_Bids_AmountToSell(
+  function test_Set_Auctions_AmountToSell(
     DebtAuction memory _auction,
     uint256 _amountToBuy,
     uint256 _bidDecrease,
@@ -718,12 +710,10 @@ contract Unit_DebtAuctionHouse_DecreaseSoldAmount is Base {
   ) public happyPath(_auction, _amountToBuy, _bidDecrease, _bidDuration, _totalOnAuctionDebt) {
     debtAuctionHouse.decreaseSoldAmount(_auction.id, _amountToBuy, _auction.bidAmount);
 
-    (, uint256 _amountToSell,,,) = debtAuctionHouse.bids(_auction.id);
-
-    assertEq(_amountToSell, _amountToBuy);
+    assertEq(debtAuctionHouse.auctions(_auction.id).amountToSell, _amountToBuy);
   }
 
-  function test_Set_Bids_BidExpiry(
+  function test_Set_Auctions_BidExpiry(
     DebtAuction memory _auction,
     uint256 _amountToBuy,
     uint256 _bidDecrease,
@@ -732,9 +722,7 @@ contract Unit_DebtAuctionHouse_DecreaseSoldAmount is Base {
   ) public happyPath(_auction, _amountToBuy, _bidDecrease, _bidDuration, _totalOnAuctionDebt) {
     debtAuctionHouse.decreaseSoldAmount(_auction.id, _amountToBuy, _auction.bidAmount);
 
-    (,,, uint256 _bidExpiry,) = debtAuctionHouse.bids(_auction.id);
-
-    assertEq(_bidExpiry, block.timestamp + _bidDuration);
+    assertEq(debtAuctionHouse.auctions(_auction.id).bidExpiry, block.timestamp + _bidDuration);
   }
 
   function test_Emit_DecreaseSoldAmount(
@@ -823,20 +811,18 @@ contract Unit_DebtAuctionHouse_SettleAuction is Base {
     assertEq(debtAuctionHouse.activeDebtAuctions(), _activeDebtAuctions - 1);
   }
 
-  function test_Set_Bids(
+  function test_Set_Auctions(
     DebtAuction memory _auction,
     uint256 _activeDebtAuctions
   ) public happyPath(_auction, _activeDebtAuctions) {
     debtAuctionHouse.settleAuction(_auction.id);
 
-    (uint256 _bidAmount, uint256 _amountToSell, address _highBidder, uint256 _bidExpiry, uint256 _auctionDeadline) =
-      debtAuctionHouse.bids(_auction.id);
-
-    assertEq(_bidAmount, 0);
-    assertEq(_amountToSell, 0);
-    assertEq(_highBidder, address(0));
-    assertEq(_bidExpiry, 0);
-    assertEq(_auctionDeadline, 0);
+    IDebtAuctionHouse.Auction memory __auction = debtAuctionHouse.auctions(_auction.id);
+    assertEq(__auction.bidAmount, 0);
+    assertEq(__auction.amountToSell, 0);
+    assertEq(__auction.highBidder, address(0));
+    assertEq(__auction.bidExpiry, 0);
+    assertEq(__auction.auctionDeadline, 0);
   }
 
   function test_Emit_SettleAuction(
@@ -915,20 +901,18 @@ contract Unit_DebtAuctionHouse_TerminateAuctionPrematurely is Base {
     debtAuctionHouse.terminateAuctionPrematurely(_auction.id);
   }
 
-  function test_Set_Bids(
+  function test_Set_Auctions(
     DebtAuction memory _auction,
     uint256 _activeDebtAuctions
   ) public happyPath(_auction, _activeDebtAuctions) {
     debtAuctionHouse.terminateAuctionPrematurely(_auction.id);
 
-    (uint256 _bidAmount, uint256 _amountToSell, address _highBidder, uint256 _bidExpiry, uint256 _auctionDeadline) =
-      debtAuctionHouse.bids(_auction.id);
-
-    assertEq(_bidAmount, 0);
-    assertEq(_amountToSell, 0);
-    assertEq(_highBidder, address(0));
-    assertEq(_bidExpiry, 0);
-    assertEq(_auctionDeadline, 0);
+    IDebtAuctionHouse.Auction memory __auction = debtAuctionHouse.auctions(_auction.id);
+    assertEq(__auction.bidAmount, 0);
+    assertEq(__auction.amountToSell, 0);
+    assertEq(__auction.highBidder, address(0));
+    assertEq(__auction.bidExpiry, 0);
+    assertEq(__auction.auctionDeadline, 0);
   }
 }
 

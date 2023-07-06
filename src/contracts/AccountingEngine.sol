@@ -31,7 +31,8 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
   address public extraSurplusReceiver;
 
   // --- Params ---
-  AccountingEngineParams internal _params;
+  // solhint-disable-next-line private-vars-leading-underscore
+  AccountingEngineParams public _params;
 
   function params() external view returns (AccountingEngineParams memory _accEngineParams) {
     return _params;

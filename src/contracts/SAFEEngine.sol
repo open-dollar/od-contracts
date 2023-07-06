@@ -32,13 +32,17 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
   // --- Data ---
 
   // Data about system parameters
-  SAFEEngineParams internal _params;
+  // solhint-disable-next-line private-vars-leading-underscore
+  SAFEEngineParams public _params;
   // Data about each collateral type parameters
-  mapping(bytes32 _cType => SAFEEngineCollateralParams) internal _cParams;
+  // solhint-disable-next-line private-vars-leading-underscore
+  mapping(bytes32 _cType => SAFEEngineCollateralParams) public _cParams;
   // Data about each collateral type
-  mapping(bytes32 _cType => SAFEEngineCollateralData) internal _cData;
+  // solhint-disable-next-line private-vars-leading-underscore
+  mapping(bytes32 _cType => SAFEEngineCollateralData) public _cData;
   // Data about each SAFE
-  mapping(bytes32 _cType => mapping(address _safe => SAFE)) internal _safes;
+  // solhint-disable-next-line private-vars-leading-underscore
+  mapping(bytes32 _cType => mapping(address _safe => SAFE)) public _safes;
   // Who can transfer collateral & debt in/out of a SAFE
   mapping(address _cType => mapping(address _safe => uint256 _isAllowed)) public safeRights;
 
@@ -50,7 +54,7 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
     return _cParams[_cType];
   }
 
-  function cData(bytes32 _cType) external view returns (SAFEEngineCollateralData memory _collateralData) {
+  function cData(bytes32 _cType) external view returns (SAFEEngineCollateralData memory _safeEngineCData) {
     return _cData[_cType];
   }
 

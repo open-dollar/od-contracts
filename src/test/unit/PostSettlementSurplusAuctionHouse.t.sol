@@ -52,7 +52,7 @@ abstract contract Base is HaiTest {
 
   function _mockAuction(SurplusAuction memory _auction) internal {
     // BUG: Accessing packed slots is not supported by Std Storage
-    postSettlementSurplusAuctionHouse.addBid(
+    postSettlementSurplusAuctionHouse.addAuction(
       _auction.id,
       _auction.bidAmount,
       _auction.amountToSell,
@@ -208,7 +208,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_StartAuction is Base {
     assertEq(postSettlementSurplusAuctionHouse.auctionsStarted(), _auctionsStarted + 1);
   }
 
-  function test_Set_Bids(
+  function test_Set_Auctions(
     uint256 _amountToSellFuzzed,
     uint256 _initialBid,
     uint256 _auctionsStarted,
@@ -216,14 +216,13 @@ contract Unit_PostSettlementSurplusAuctionHouse_StartAuction is Base {
   ) public happyPath(_auctionsStarted, _totalAuctionLength) {
     postSettlementSurplusAuctionHouse.startAuction(_amountToSellFuzzed, _initialBid);
 
-    (uint256 _bidAmount, uint256 _amountToSell, address _highBidder, uint256 _bidExpiry, uint256 _auctionDeadline) =
-      postSettlementSurplusAuctionHouse.bids(_auctionsStarted + 1);
-
-    assertEq(_bidAmount, _initialBid);
-    assertEq(_amountToSell, _amountToSellFuzzed);
-    assertEq(_highBidder, authorizedAccount);
-    assertEq(_bidExpiry, 0);
-    assertEq(_auctionDeadline, block.timestamp + _totalAuctionLength);
+    IPostSettlementSurplusAuctionHouse.Auction memory _auction =
+      postSettlementSurplusAuctionHouse.auctions(_auctionsStarted + 1);
+    assertEq(_auction.bidAmount, _initialBid);
+    assertEq(_auction.amountToSell, _amountToSellFuzzed);
+    assertEq(_auction.highBidder, authorizedAccount);
+    assertEq(_auction.bidExpiry, 0);
+    assertEq(_auction.auctionDeadline, block.timestamp + _totalAuctionLength);
   }
 
   function test_Call_SafeEngine_TransferInternalCoins(
@@ -337,16 +336,16 @@ contract Unit_PostSettlementSurplusAuctionHouse_RestartAuction is Base {
     postSettlementSurplusAuctionHouse.restartAuction(_auction.id);
   }
 
-  function test_Set_Bids_AuctionDeadline(
+  function test_Set_Auctions_AuctionDeadline(
     SurplusAuction memory _auction,
     uint256 _auctionsStarted,
     uint256 _totalAuctionLength
   ) public happyPath(_auction, _auctionsStarted, _totalAuctionLength) {
     postSettlementSurplusAuctionHouse.restartAuction(_auction.id);
 
-    (,,,, uint256 _auctionDeadline) = postSettlementSurplusAuctionHouse.bids(_auction.id);
-
-    assertEq(_auctionDeadline, block.timestamp + _totalAuctionLength);
+    assertEq(
+      postSettlementSurplusAuctionHouse.auctions(_auction.id).auctionDeadline, block.timestamp + _totalAuctionLength
+    );
   }
 
   function test_Emit_RestartAuction(
@@ -517,7 +516,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_IncreaseBidSize is Base {
     postSettlementSurplusAuctionHouse.increaseBidSize(_auction.id, _auction.amountToSell, _bid);
   }
 
-  function test_Set_Bids_HighBidder_0(
+  function test_Set_Auctions_HighBidder_0(
     SurplusAuction memory _auction,
     uint256 _bid,
     uint256 _bidIncrease,
@@ -526,12 +525,10 @@ contract Unit_PostSettlementSurplusAuctionHouse_IncreaseBidSize is Base {
     changePrank(_auction.highBidder);
     postSettlementSurplusAuctionHouse.increaseBidSize(_auction.id, _auction.amountToSell, _bid);
 
-    (,, address _highBidder,,) = postSettlementSurplusAuctionHouse.bids(_auction.id);
-
-    assertEq(_highBidder, _auction.highBidder);
+    assertEq(postSettlementSurplusAuctionHouse.auctions(_auction.id).highBidder, _auction.highBidder);
   }
 
-  function test_Set_Bids_HighBidder_1(
+  function test_Set_Auctions_HighBidder_1(
     SurplusAuction memory _auction,
     uint256 _bid,
     uint256 _bidIncrease,
@@ -539,12 +536,10 @@ contract Unit_PostSettlementSurplusAuctionHouse_IncreaseBidSize is Base {
   ) public happyPath(_auction, _bid, _bidIncrease, _bidDuration) {
     postSettlementSurplusAuctionHouse.increaseBidSize(_auction.id, _auction.amountToSell, _bid);
 
-    (,, address _highBidder,,) = postSettlementSurplusAuctionHouse.bids(_auction.id);
-
-    assertEq(_highBidder, user);
+    assertEq(postSettlementSurplusAuctionHouse.auctions(_auction.id).highBidder, user);
   }
 
-  function test_Set_Bids_BidAmount(
+  function test_Set_Auctions_BidAmount(
     SurplusAuction memory _auction,
     uint256 _bid,
     uint256 _bidIncrease,
@@ -552,12 +547,10 @@ contract Unit_PostSettlementSurplusAuctionHouse_IncreaseBidSize is Base {
   ) public happyPath(_auction, _bid, _bidIncrease, _bidDuration) {
     postSettlementSurplusAuctionHouse.increaseBidSize(_auction.id, _auction.amountToSell, _bid);
 
-    (uint256 _bidAmount,,,,) = postSettlementSurplusAuctionHouse.bids(_auction.id);
-
-    assertEq(_bidAmount, _bid);
+    assertEq(postSettlementSurplusAuctionHouse.auctions(_auction.id).bidAmount, _bid);
   }
 
-  function test_Set_Bids_BidExpiry(
+  function test_Set_Auctions_BidExpiry(
     SurplusAuction memory _auction,
     uint256 _bid,
     uint256 _bidIncrease,
@@ -565,9 +558,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_IncreaseBidSize is Base {
   ) public happyPath(_auction, _bid, _bidIncrease, _bidDuration) {
     postSettlementSurplusAuctionHouse.increaseBidSize(_auction.id, _auction.amountToSell, _bid);
 
-    (,,, uint256 _bidExpiry,) = postSettlementSurplusAuctionHouse.bids(_auction.id);
-
-    assertEq(_bidExpiry, block.timestamp + _bidDuration);
+    assertEq(postSettlementSurplusAuctionHouse.auctions(_auction.id).bidExpiry, block.timestamp + _bidDuration);
   }
 
   function test_Emit_IncreaseBidSize(
@@ -642,17 +633,16 @@ contract Unit_PostSettlementSurplusAuctionHouse_SettleAuction is Base {
     postSettlementSurplusAuctionHouse.settleAuction(_auction.id);
   }
 
-  function test_Set_Bids(SurplusAuction memory _auction) public happyPath(_auction) {
+  function test_Set_Auctions(SurplusAuction memory _auction) public happyPath(_auction) {
     postSettlementSurplusAuctionHouse.settleAuction(_auction.id);
 
-    (uint256 _bidAmount, uint256 _amountToSell, address _highBidder, uint256 _bidExpiry, uint256 _auctionDeadline) =
-      postSettlementSurplusAuctionHouse.bids(_auction.id);
-
-    assertEq(_bidAmount, 0);
-    assertEq(_amountToSell, 0);
-    assertEq(_highBidder, address(0));
-    assertEq(_bidExpiry, 0);
-    assertEq(_auctionDeadline, 0);
+    IPostSettlementSurplusAuctionHouse.Auction memory __auction =
+      postSettlementSurplusAuctionHouse.auctions(_auction.id);
+    assertEq(__auction.bidAmount, 0);
+    assertEq(__auction.amountToSell, 0);
+    assertEq(__auction.highBidder, address(0));
+    assertEq(__auction.bidExpiry, 0);
+    assertEq(__auction.auctionDeadline, 0);
   }
 
   function test_Emit_SettleAuction(SurplusAuction memory _auction) public happyPath(_auction) {
