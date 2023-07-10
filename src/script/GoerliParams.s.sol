@@ -18,8 +18,8 @@ abstract contract GoerliParams is Contracts, Params {
 
     _accountingEngineParams = IAccountingEngine.AccountingEngineParams({
       surplusIsTransferred: 0, // surplus is auctioned
-      surplusDelay: 3600,
-      popDebtDelay: 1 days,
+      surplusDelay: 1800,
+      popDebtDelay: 1800,
       disableCooldown: 3 days,
       surplusAmount: 100 * RAD, // 100 COINs
       surplusBuffer: 1000 * RAD, // 1000 COINs
@@ -30,14 +30,14 @@ abstract contract GoerliParams is Contracts, Params {
     _debtAuctionHouseParams = IDebtAuctionHouse.DebtAuctionHouseParams({
       bidDecrease: 1.05e18, // - 5%
       amountSoldIncrease: 1.05e18, // + 5%
-      bidDuration: 3 hours,
-      totalAuctionLength: 2 days
+      bidDuration: 900,
+      totalAuctionLength: 1800
     });
 
     _surplusAuctionHouseParams = ISurplusAuctionHouse.SurplusAuctionHouseParams({
       bidIncrease: 1.01e18, // +1 %
-      bidDuration: 1 hours,
-      totalAuctionLength: 1 days,
+      bidDuration: 900,
+      totalAuctionLength: 1800,
       recyclingPercentage: 0 // 100% is burned
     });
 

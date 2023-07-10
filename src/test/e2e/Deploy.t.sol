@@ -4,7 +4,9 @@ pragma solidity 0.8.19;
 import {HaiTest} from '@test/utils/HaiTest.t.sol';
 import {Deploy, DeployMainnet, DeployGoerli} from '@script/Deploy.s.sol';
 
-import {ParamChecker, WETH, WSTETH} from '@script/Params.s.sol';
+import {ParamChecker, WETH, WSTETH, OP} from '@script/Params.s.sol';
+import {OP_OPTIMISM} from '@script/Registry.s.sol';
+import {ERC20Votes} from '@openzeppelin/token/ERC20/extensions/ERC20Votes.sol';
 
 import {Contracts} from '@script/Contracts.s.sol';
 import {GoerliDeployment} from '@script/GoerliDeployment.s.sol';
@@ -149,5 +151,9 @@ contract GoerliDeploymentTest is GoerliDeployment, CommonDeploymentTest {
 
     assertEq(opEthOracleForTest.authorizedAccounts(deployer), false);
     assertEq(opEthOracleForTest.authorizedAccounts(governor), true);
+  }
+
+  function test_Delegated_OP() public {
+    assertEq(ERC20Votes(OP_OPTIMISM).delegates(address(collateralJoin[OP])), governor);
   }
 }

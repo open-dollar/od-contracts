@@ -72,6 +72,7 @@ abstract contract Contracts {
   address public governor;
   address public delegate;
   bytes32[] public collateralTypes;
+  mapping(bytes32 => address) public delegatee;
 
   // --- Base contracts ---
   ISAFEEngine public safeEngine;

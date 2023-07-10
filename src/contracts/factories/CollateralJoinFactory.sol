@@ -4,6 +4,7 @@ pragma solidity 0.8.19;
 import {ICollateralJoinFactory} from '@interfaces/factories/ICollateralJoinFactory.sol';
 
 import {CollateralJoinChild} from '@contracts/factories/CollateralJoinChild.sol';
+import {CollateralJoinDelegatableChild} from '@contracts/factories/CollateralJoinDelegatableChild.sol';
 
 import {Authorizable, IAuthorizable} from '@contracts/utils/Authorizable.sol';
 import {Disableable, IDisableable} from '@contracts/utils/Disableable.sol';
@@ -35,6 +36,20 @@ contract CollateralJoinFactory is Authorizable, Disableable, ICollateralJoinFact
     if (!_collateralTypes.add(_cType)) revert CollateralJoinFactory_CollateralJoinExistent();
 
     _collateralJoin = address(new CollateralJoinChild(safeEngine, _cType, _collateral));
+    collateralJoins[_cType] = _collateralJoin;
+    IAuthorizable(safeEngine).addAuthorization(_collateralJoin);
+    emit DeployCollateralJoin(_cType, _collateral, _collateralJoin);
+  }
+
+  // --- Methods ---
+  function deployDelegatableCollateralJoin(
+    bytes32 _cType,
+    address _collateral,
+    address _delegatee
+  ) external isAuthorized whenEnabled returns (address _collateralJoin) {
+    if (!_collateralTypes.add(_cType)) revert CollateralJoinFactory_CollateralJoinExistent();
+
+    _collateralJoin = address(new CollateralJoinDelegatableChild(safeEngine, _cType, _collateral, _delegatee));
     collateralJoins[_cType] = _collateralJoin;
     IAuthorizable(safeEngine).addAuthorization(_collateralJoin);
     emit DeployCollateralJoin(_cType, _collateral, _collateralJoin);

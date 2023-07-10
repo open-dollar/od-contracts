@@ -114,13 +114,16 @@ contract DeployGoerli is GoerliParams, Deploy {
     delayedOracle[OP] = new DelayedOracle(_opUSDPriceFeed, 1 hours);
 
     collateral[WETH] = IERC20Metadata(OP_WETH);
-    collateral[OP] = ERC20ForTest(OP_OPTIMISM);
+    collateral[OP] = IERC20Metadata(OP_OPTIMISM);
 
     // Setup collateral params
     collateralTypes.push(WETH);
     collateralTypes.push(OP);
 
     _getEnvironmentParams();
+
+    // Setup delegated collateral joins
+    delegatee[OP] = governor;
 
     // Revoke oracles authorizations
 

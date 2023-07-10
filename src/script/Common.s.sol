@@ -36,9 +36,20 @@ abstract contract Common is Contracts, Params {
   function deployCollateralContracts(bytes32 _cType) public {
     // deploy CollateralJoin and CollateralAuctionHouse
     if (address(collateralJoinFactory) != address(0)) {
-      collateralJoin[_cType] = CollateralJoin(
-        collateralJoinFactory.deployCollateralJoin({_cType: _cType, _collateral: address(collateral[_cType])})
-      );
+      address _delegatee = delegatee[_cType];
+      if (_delegatee == address(0)) {
+        collateralJoin[_cType] = CollateralJoin(
+          collateralJoinFactory.deployCollateralJoin({_cType: _cType, _collateral: address(collateral[_cType])})
+        );
+      } else {
+        collateralJoin[_cType] = CollateralJoin(
+          collateralJoinFactory.deployDelegatableCollateralJoin({
+            _cType: _cType,
+            _collateral: address(collateral[_cType]),
+            _delegatee: _delegatee
+          })
+        );
+      }
     } else {
       collateralJoin[_cType] = new CollateralJoin({
         _safeEngine: address(safeEngine), 

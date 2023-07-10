@@ -6,7 +6,7 @@ import {GoerliParams, WETH, OP, WBTC, STONES, TOTEM} from '@script/GoerliParams.
 import {OP_WETH, OP_OPTIMISM} from '@script/Registry.s.sol';
 
 abstract contract GoerliDeployment is Contracts, GoerliParams {
-  uint256 constant GOERLI_DEPLOYMENT_BLOCK = 11_222_333;
+  uint256 constant GOERLI_DEPLOYMENT_BLOCK = 11_653_534;
 
   // --- Mintable ERC20s ---
   ERC20ForTestnet constant ERC20_WBTC = ERC20ForTestnet(0xf1FDB809f41c187cE6F2A4C8cC6562Ba7479B4EF);
@@ -24,6 +24,9 @@ abstract contract GoerliDeployment is Contracts, GoerliParams {
     collateralTypes.push(WBTC);
     collateralTypes.push(STONES);
     collateralTypes.push(TOTEM);
+
+    // --- utils ---
+    delegatee[OP] = governor;
 
     // --- ERC20s ---
     collateral[WETH] = IERC20Metadata(OP_WETH);
@@ -50,15 +53,15 @@ abstract contract GoerliDeployment is Contracts, GoerliParams {
     globalSettlement = GlobalSettlement(0xFd4fB8e5f11A3FD403761a832bC35F31d5579B83);
 
     // --- factories ---
-    collateralJoinFactory = CollateralJoinFactory(0x9dA5800299b00b2F353667F415dda4B24Bef1f36);
+    collateralJoinFactory = CollateralJoinFactory(0x484A885Da8D582753C47993B874eFc7EcB2A1a5a);
     collateralAuctionHouseFactory = CollateralAuctionHouseFactory(0x442Cf1CEc8759c55d40bD4A7084Fb460d6E88bF9);
 
     // --- token adapters ---
-    collateralJoin[WETH] = CollateralJoin(0x6d69bCa157FC589d6a162496aC4dbB4454C8feCf);
-    collateralJoin[OP] = CollateralJoin(0x2779322f43AA485987B6ef15cF27E9a7E1E602E7);
-    collateralJoin[WBTC] = CollateralJoin(0xC0e1bB570f45ec65f38D373207d3f1B1Da07FcB5);
-    collateralJoin[STONES] = CollateralJoin(0x2738f0Ee06BEF23B833913625A802dC13cf36201);
-    collateralJoin[TOTEM] = CollateralJoin(0x55Ca0AC7100e031F748e21a283D194C48914055c);
+    collateralJoin[WETH] = CollateralJoin(0x0caF67d5d2eC5847A375c30dC8e00ecebBE42D31);
+    collateralJoin[OP] = CollateralJoin(0x8d33be9374DCAA9A3E2593c80E3ab40615B11Cac);
+    collateralJoin[WBTC] = CollateralJoin(0xF5b19dEDf523f6cF8ABE2bED172d15C1784AD797);
+    collateralJoin[STONES] = CollateralJoin(0xD282383A65EfA60517dA7Ca2673dF54e70AD7b6a);
+    collateralJoin[TOTEM] = CollateralJoin(0x1867F40224c053e0893581Faf527AC5238cEfcBA);
 
     // --- collateral auction houses ---
     collateralAuctionHouse[WETH] = CollateralAuctionHouse(0x46f7a52A5543cC5068dc7aF31aE49eBF0778eF8A);

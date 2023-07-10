@@ -98,7 +98,7 @@ library ParamChecker {
     bytes memory _empty = new bytes(_params.length);
 
     require(keccak256(_params) != keccak256(_empty), 'Empty params');
-    require(keccak256(_params) == keccak256(_returnData), 'Incomplete params');
+    require(keccak256(_params) == keccak256(_returnData), 'Incorrect params');
   }
 
   function _checkCParams(address _modifiable, bytes32 _cType, bytes memory _cParams) internal view {
@@ -108,6 +108,6 @@ library ParamChecker {
     bytes memory _empty = new bytes(_cParams.length);
 
     require(keccak256(_cParams) != keccak256(_empty), 'Empty params');
-    require(keccak256(_cParams) == keccak256(_returnData), 'Incomplete params');
+    require(keccak256(_cParams) == keccak256(_returnData), 'Incorrect params');
   }
 }
