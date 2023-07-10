@@ -1,43 +1,80 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
+/**
+ * Test helper contract to generate Merkle trees and proofs.
+ */
 contract MerkleTreeGenerator {
-  error LengthMismatch();
-  error EmptyArray();
+  function generateMerkleTree(bytes32[] memory leaves) public pure returns (bytes32[] memory) {
+    require(leaves.length > 0, 'Expected non-zero number of leaves');
 
-  function generateMerkleTree(
-    address[] memory addresses,
-    uint256[] memory amounts
-  ) public pure returns (bytes32[] memory) {
-    if (addresses.length != amounts.length) revert LengthMismatch();
-    if (addresses.length == 0) revert EmptyArray();
+    bytes32[] memory tree = new bytes32[](2 * leaves.length - 1);
 
-    uint256 n = addresses.length;
-    uint256 treeSize = 2 * n - 1;
-    bytes32[] memory tree = new bytes32[](treeSize);
-
-    // Generate leaf nodes
-    for (uint256 i = 0; i < n; i++) {
-      tree[n - 1 + i] = keccak256(abi.encodePacked(addresses[i], amounts[i]));
+    for (uint256 i = 0; i < leaves.length; i++) {
+      tree[tree.length - 1 - i] = leaves[i];
     }
 
-    // Generate intermediate nodes
-    for (int256 i = int256(n) - 2; i >= 0; i--) {
-      tree[uint256(i)] = hashPair(tree[2 * uint256(i) + 1], tree[2 * uint256(i) + 2]);
+    for (int256 i = int256(tree.length - 1 - leaves.length); i >= 0; i--) {
+      tree[uint256(i)] = hashPair(tree[leftChildIndex(uint256(i))], tree[rightChildIndex(uint256(i))]);
     }
 
     return tree;
   }
 
-  function hashPair(bytes32 a, bytes32 b) public pure returns (bytes32) {
-    return a < b ? _efficientHash(a, b) : _efficientHash(b, a);
+  function hashPair(bytes32 left, bytes32 right) internal pure returns (bytes32) {
+    return left < right ? keccak256(bytes.concat(left, right)) : keccak256(bytes.concat(right, left));
   }
 
-  function _efficientHash(bytes32 a, bytes32 b) internal pure returns (bytes32 value) {
-    assembly {
-      mstore(0x00, a)
-      mstore(0x20, b)
-      value := keccak256(0x00, 0x40)
+  function leftChildIndex(uint256 i) internal pure returns (uint256) {
+    return 2 * i + 1;
+  }
+
+  function rightChildIndex(uint256 i) internal pure returns (uint256) {
+    return 2 * i + 2;
+  }
+
+  function getProof(bytes32[] memory tree, uint256 index) public pure returns (bytes32[] memory) {
+    checkLeafNode(tree, index);
+
+    bytes32[] memory proof;
+    while (index > 0) {
+      proof = concatenate(proof, tree[siblingIndex(index)]);
+      index = parentIndex(index);
     }
+    return proof;
+  }
+
+  function checkLeafNode(bytes32[] memory tree, uint256 index) internal pure {
+    require(index < tree.length, 'Invalid leaf index');
+  }
+
+  function siblingIndex(uint256 index) internal pure returns (uint256) {
+    if (index % 2 == 0) {
+      return index - 1;
+    } else {
+      return index + 1;
+    }
+  }
+
+  function parentIndex(uint256 index) internal pure returns (uint256) {
+    return (index - 1) / 2;
+  }
+
+  function concatenate(bytes32[] memory a, bytes32 b) internal pure returns (bytes32[] memory) {
+    bytes32[] memory concatenated = new bytes32[](a.length + 1);
+    for (uint256 i = 0; i < a.length; i++) {
+      concatenated[i] = a[i];
+    }
+    concatenated[a.length] = b;
+    return concatenated;
+  }
+
+  function getIndex(bytes32[] memory tree, bytes32 leaf) public pure returns (uint256) {
+    for (uint256 i = 0; i < tree.length; i++) {
+      if (tree[i] == leaf) {
+        return i;
+      }
+    }
+    revert('Leaf not found');
   }
 }

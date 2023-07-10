@@ -16,7 +16,7 @@ abstract contract Base is HaiTest {
 
   bytes32[] merkleTree;
   bytes32[] leaves;
-  bytes32[] validEveProofs = new bytes32[](3);
+  bytes32[] validEveProofs;
 
   bytes32 merkleRoot;
 
@@ -51,17 +51,13 @@ abstract contract Base is HaiTest {
     airdropAmounts[3] = airdropAmount;
     airdropAmounts[4] = airdropAmount;
 
-    validEveProofs[0] = bytes32(0xcf9633789ba0907ad3a73ab3be992a886fa3502e11375044250fc340ae0a0613);
-    validEveProofs[1] = bytes32(0xa0246557dc9e869dd36d0dcede531af0ab5a4bddda571c276a4519029b69affa);
-    validEveProofs[2] = bytes32(0x5372fc2bc58ba885b7863917a0ff8130edf9cca8a1db00c8958f37d59f99af33);
-
     for (uint256 i = 0; i < airdropRecipients.length; i++) {
-      leaves.push(keccak256(abi.encodePacked(airdropRecipients[i], airdropAmounts[i])));
+      leaves.push(keccak256(bytes.concat(keccak256(abi.encode(airdropRecipients[i], airdropAmounts[i])))));
     }
 
     vm.prank(deployer);
     merkleTreeGenerator = new MerkleTreeGenerator();
-    merkleTree = merkleTreeGenerator.generateMerkleTree(airdropRecipients, airdropAmounts);
+    merkleTree = merkleTreeGenerator.generateMerkleTree(leaves);
     merkleRoot = merkleTree[0];
 
     delegatee = label('delegatee');
@@ -70,6 +66,9 @@ abstract contract Base is HaiTest {
     vm.prank(deployer);
     tokenDistributor =
       new TokenDistributor(merkleRoot, token, totalClaimable, claimPeriodStart, claimPeriodEnd, deployer);
+
+    uint256 _index = merkleTreeGenerator.getIndex(merkleTree, leaves[4]);
+    validEveProofs = merkleTreeGenerator.getProof(merkleTree, _index);
   }
 
   function _mockERC20VotesDelegate(address _delegatee) internal {
@@ -183,11 +182,26 @@ contract Unit_TokenDistributor_CanClaim is Base {
   }
 
   function test_CanClaim2() public {
-    bytes32[] memory _proofs = new bytes32[](2);
-    _proofs[0] = bytes32(0xbb212d55aa35db46dcf841a5b449aa2a3f90bf752ff0c523967805dfe44f14be);
-    _proofs[1] = bytes32(0xd27f827b191db255598965e23fac05aac5731018191e49e7dfa89e1b007aa77e);
+    uint256 _index0 = merkleTreeGenerator.getIndex(merkleTree, leaves[0]);
+    bytes32[] memory _proof0 = merkleTreeGenerator.getProof(merkleTree, _index0);
 
-    assertTrue(tokenDistributor.canClaim(_proofs, airdropRecipients[1], airdropAmounts[1]));
+    uint256 _index1 = merkleTreeGenerator.getIndex(merkleTree, leaves[1]);
+    bytes32[] memory _proof1 = merkleTreeGenerator.getProof(merkleTree, _index1);
+
+    uint256 _index2 = merkleTreeGenerator.getIndex(merkleTree, leaves[2]);
+    bytes32[] memory _proof2 = merkleTreeGenerator.getProof(merkleTree, _index2);
+
+    uint256 _index3 = merkleTreeGenerator.getIndex(merkleTree, leaves[3]);
+    bytes32[] memory _proof3 = merkleTreeGenerator.getProof(merkleTree, _index3);
+
+    uint256 _index4 = merkleTreeGenerator.getIndex(merkleTree, leaves[4]);
+    bytes32[] memory _proof4 = merkleTreeGenerator.getProof(merkleTree, _index4);
+
+    assertTrue(tokenDistributor.canClaim(_proof0, airdropRecipients[0], airdropAmounts[0]));
+    assertTrue(tokenDistributor.canClaim(_proof1, airdropRecipients[1], airdropAmounts[1]));
+    assertTrue(tokenDistributor.canClaim(_proof2, airdropRecipients[2], airdropAmounts[2]));
+    assertTrue(tokenDistributor.canClaim(_proof3, airdropRecipients[3], airdropAmounts[3]));
+    assertTrue(tokenDistributor.canClaim(_proof4, airdropRecipients[4], airdropAmounts[4]));
   }
 
   function test_CannotClaim_WrongProof() public {
@@ -233,6 +247,37 @@ contract Unit_TokenDistributor_CanClaim is Base {
 
   function test_CannotClaimZeroAmount() public {
     assertFalse(tokenDistributor.canClaim(validEveProofs, airdropRecipients[4], 0));
+  }
+}
+
+contract Unit_CanClaim_ExternalScript is Base {
+  function setUp() public override {
+    super.setUp();
+    bytes32 _root = 0x30e48fd8bee18a1728bfd9f536125c5a352b778d5b07a92de684b14cb7bb92ad; // Root generated with OZ js library
+    tokenDistributor = new TokenDistributor(_root, token, totalClaimable, claimPeriodStart, claimPeriodEnd, deployer);
+    vm.warp(claimPeriodStart); // going ahead in time for claim period start
+  }
+
+  function test_CanClaim_ExternalScriptTree() public {
+    bytes32[] memory _proof = new bytes32[](2);
+    _proof[0] = 0x8d2ba45bdde7d748373d27ad49f041388b49f15b1732a45081981e4f66cf621a;
+    _proof[1] = 0x418e3bfe8d301afb4acee0a38a37f071396fdd1827548d5b459bb0c52e0bcf9a;
+
+    uint256 _amount = 100_000;
+    address _recipient = address(0x1C8E4bF2Ccae6dC8246AEF5b791014A6D3Df1DDF);
+
+    assertTrue(tokenDistributor.canClaim(_proof, _recipient, _amount));
+  }
+
+  function test_CanClaim_ExternalScriptTree2() public {
+    bytes32[] memory _proof = new bytes32[](2);
+    _proof[0] = 0xc26a9779f3008fa2fc84c2e7b69fb2c6e66219a2784e6dd46827e4083ffb277e;
+    _proof[1] = 0x320622079a0c4c751ac8d3b4b0b4d0177583cc07cf25f493f963f677e62a4c26;
+
+    uint256 _amount = 100_000;
+    address _recipient = address(0x5cE727541259Ccc6B15FF5b87Ba50C84Be31A607);
+
+    assertTrue(tokenDistributor.canClaim(_proof, _recipient, _amount));
   }
 }
 
