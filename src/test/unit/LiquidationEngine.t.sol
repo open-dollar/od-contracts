@@ -385,6 +385,7 @@ contract Unit_LiquidationEngine_ModifyParameters is Base {
     address _newCAH
   ) public authorized {
     vm.assume(_newCAH != address(0));
+    vm.assume(_newCAH != _previousCAH);
     LiquidationEngineForTest(address(liquidationEngine)).setCollateralAuctionHouse(_cType, _previousCAH);
 
     if (_previousCAH != address(0)) {
