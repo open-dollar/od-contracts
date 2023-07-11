@@ -8,7 +8,7 @@ import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 
-import {Math, RAY} from '@libraries/Math.sol';
+import {Math, RAY, WAD} from '@libraries/Math.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 
 abstract contract Base is HaiTest {
@@ -23,12 +23,10 @@ abstract contract Base is HaiTest {
 
   TaxCollectorForTest taxCollector;
 
-  uint256 constant WHOLE_TAX_CUT = 100e27; // RAY
-
   // SafeEngine storage
   uint256 coinBalance = RAY;
   uint256 debtAmount = 1e25;
-  uint256 lastAccumulatedRate = 1e20;
+  uint256 lastAccumulatedRate = 1e15;
 
   // TaxCollector storage
   bytes32 collateralTypeA = 'collateralTypeA';
@@ -36,14 +34,14 @@ abstract contract Base is HaiTest {
   bytes32 collateralTypeC = 'collateralTypeC';
   uint256 stabilityFee = 1e10;
   uint256 updateTime = block.timestamp - 100;
-  uint256 secondaryReceiverAllotedTax = WHOLE_TAX_CUT / 2;
+  uint256 secondaryReceiverAllotedTax = WAD / 2;
   address secondaryReceiverA = newAddress();
   address secondaryReceiverB = newAddress();
   address secondaryReceiverC = newAddress();
-  uint256 taxPercentage = WHOLE_TAX_CUT / 4;
+  uint256 taxPercentage = WAD / 4;
   bool canTakeBackTax = true;
   address primaryTaxReceiver = newAddress();
-  uint256 globalStabilityFee = 1e15;
+  uint256 globalStabilityFee = 1e5;
 
   // Input parameters
   address receiver;
@@ -211,36 +209,34 @@ abstract contract Base is HaiTest {
     if (_isPrimaryTaxReceiver) {
       receiver = primaryTaxReceiver;
       if (!_isAbsorbable) {
-        vm.assume(
-          _deltaRate <= -int256(WHOLE_TAX_CUT / secondaryReceiverAllotedTax) && _deltaRate >= -int256(WHOLE_TAX_CUT)
-        );
-        _currentTaxCut = (WHOLE_TAX_CUT - secondaryReceiverAllotedTax).mul(_deltaRate) / int256(WHOLE_TAX_CUT);
+        vm.assume(_deltaRate <= -int256(WAD / secondaryReceiverAllotedTax) && _deltaRate >= -int256(WAD));
+        _currentTaxCut = (WAD - secondaryReceiverAllotedTax).wmul(_deltaRate);
         vm.assume(_debtAmount <= coinBalance);
         vm.assume(-int256(coinBalance) > _debtAmount.mul(_currentTaxCut));
         _currentTaxCut = -int256(coinBalance) / int256(_debtAmount);
       } else {
         vm.assume(
-          _deltaRate <= -int256(WHOLE_TAX_CUT / secondaryReceiverAllotedTax) && _deltaRate >= -int256(WHOLE_TAX_CUT)
-            || _deltaRate >= int256(WHOLE_TAX_CUT / secondaryReceiverAllotedTax) && _deltaRate <= int256(WHOLE_TAX_CUT)
+          _deltaRate <= -int256(WAD / secondaryReceiverAllotedTax) && _deltaRate >= -int256(WAD)
+            || _deltaRate >= int256(WAD / secondaryReceiverAllotedTax) && _deltaRate <= int256(WAD)
         );
-        _currentTaxCut = (WHOLE_TAX_CUT - secondaryReceiverAllotedTax).mul(_deltaRate) / int256(WHOLE_TAX_CUT);
+        _currentTaxCut = (WAD - secondaryReceiverAllotedTax).wmul(_deltaRate);
         vm.assume(_debtAmount == 0);
       }
     } else {
       receiver = secondaryReceiverA;
       if (!_isAbsorbable) {
-        vm.assume(_deltaRate <= -int256(WHOLE_TAX_CUT / taxPercentage) && _deltaRate >= -int256(WHOLE_TAX_CUT));
-        _currentTaxCut = int256(uint256(taxPercentage)) * _deltaRate / int256(WHOLE_TAX_CUT);
+        vm.assume(_deltaRate <= -int256(WAD / taxPercentage) && _deltaRate >= -int256(WAD));
+        _currentTaxCut = taxPercentage.wmul(_deltaRate);
         vm.assume(_debtAmount <= coinBalance);
         vm.assume(-int256(coinBalance) > _debtAmount.mul(_currentTaxCut));
         _currentTaxCut = -int256(coinBalance) / int256(_debtAmount);
       } else {
         vm.assume(
-          _deltaRate <= -int256(WHOLE_TAX_CUT / taxPercentage) && _deltaRate >= -int256(WHOLE_TAX_CUT)
-            || _deltaRate >= int256(WHOLE_TAX_CUT / taxPercentage) && _deltaRate <= int256(WHOLE_TAX_CUT)
+          _deltaRate <= -int256(WAD / taxPercentage) && _deltaRate >= -int256(WAD)
+            || _deltaRate >= int256(WAD / taxPercentage) && _deltaRate <= int256(WAD)
         );
-        _currentTaxCut = int256(uint256(taxPercentage)) * _deltaRate / int256(WHOLE_TAX_CUT);
-        vm.assume(_debtAmount <= WHOLE_TAX_CUT && -int256(coinBalance) <= _debtAmount.mul(_currentTaxCut));
+        _currentTaxCut = taxPercentage.wmul(_deltaRate);
+        vm.assume(_debtAmount <= WAD && -int256(coinBalance) <= _debtAmount.mul(_currentTaxCut));
       }
     }
   }

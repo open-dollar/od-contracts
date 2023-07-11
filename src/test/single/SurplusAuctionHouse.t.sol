@@ -267,7 +267,7 @@ contract SingleRecyclingSurplusAuctionHouseTest is DSTest {
       bidIncrease: 1.05e18,
       bidDuration: 3 hours,
       totalAuctionLength: 2 days,
-      recyclingPercentage: 100
+      recyclingPercentage: 1e18
     });
 
     surplusAuctionHouse = new SurplusAuctionHouse(address(safeEngine), address(protocolToken), _sahParams);
@@ -409,7 +409,7 @@ contract SingleMixedStratSurplusAuctionHouseTest is DSTest {
       bidIncrease: 1.05e18,
       bidDuration: 3 hours,
       totalAuctionLength: 2 days,
-      recyclingPercentage: 50
+      recyclingPercentage: 0.5e18
     });
     surplusAuctionHouse = new SurplusAuctionHouse(address(safeEngine), address(protocolToken), _sahParams);
 

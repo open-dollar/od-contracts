@@ -10,7 +10,7 @@ import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {SurplusAuctionHouseForTest, ISurplusAuctionHouse} from '@contracts/for-test/SurplusAuctionHouseForTest.sol';
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 
-import {Math, WAD, HUNDRED} from '@libraries/Math.sol';
+import {Math, WAD} from '@libraries/Math.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 
 abstract contract Base is HaiTest {
@@ -683,6 +683,8 @@ contract Unit_SurplusAuctionHouse_IncreaseBidSize is Base {
 }
 
 contract Unit_SurplusAuctionHouse_SettleAuction is Base {
+  using Math for uint256;
+
   event SettleAuction(uint256 indexed _id);
 
   modifier happyPath(SurplusAuction memory _auction, uint256 _recyclingPercentage) {
@@ -700,7 +702,7 @@ contract Unit_SurplusAuctionHouse_SettleAuction is Base {
     );
 
     vm.assume(notOverflowMul(_auction.bidAmount, _recyclingPercentage));
-    _amountToSend = _auction.bidAmount * _recyclingPercentage / HUNDRED;
+    _amountToSend = _auction.bidAmount.wmul(_recyclingPercentage);
 
     vm.assume(notUnderflow(_auction.bidAmount, _amountToSend));
     _amountToBurn = _auction.bidAmount - _amountToSend;
@@ -787,7 +789,7 @@ contract Unit_SurplusAuctionHouse_SettleAuction is Base {
   }
 
   function test_NotCall_ProtocolToken_Burn(SurplusAuction memory _auction) public {
-    uint256 _recyclingPercentage = 100;
+    uint256 _recyclingPercentage = WAD;
 
     (, uint256 _amountToBurn) = _assumeHappyPath(_auction, _recyclingPercentage);
     _mockValues(_auction, _recyclingPercentage);

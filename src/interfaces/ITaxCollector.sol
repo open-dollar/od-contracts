@@ -45,7 +45,7 @@ interface ITaxCollector is IAuthorizable, IModifiable {
     // When Stability Fee was last collected for this collateral type
     uint256 updateTime;
     // Percentage of each collateral's SF that goes to other addresses apart from the primary receiver
-    uint256 secondaryReceiverAllotedTax; // [%ray]
+    uint256 secondaryReceiverAllotedTax; // [wad%]
   }
 
   // SF receiver
@@ -54,11 +54,8 @@ interface ITaxCollector is IAuthorizable, IModifiable {
     // Whether this receiver can accept a negative rate (taking SF from it)
     bool canTakeBackTax; // [bool]
     // Percentage of SF allocated to this receiver
-    uint256 taxPercentage; // [ray%]
+    uint256 taxPercentage; // [wad%]
   }
-
-  // solhint-disable-next-line func-name-mixedcase
-  function WHOLE_TAX_CUT() external view returns (uint256 _wholeTaxCut);
 
   function params() external view returns (TaxCollectorParams memory _taxCollectorParams);
   // solhint-disable-next-line private-vars-leading-underscore

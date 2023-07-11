@@ -80,7 +80,7 @@ contract OverflowChecker {
   }
 
   function notOverflowMul(uint256 _a, uint256 _b) public pure returns (bool _valid) {
-    if (_b == 0) {
+    if (_a == 0 || _b == 0) {
       _valid = true;
     } else {
       _valid = _a <= type(uint256).max / _b;

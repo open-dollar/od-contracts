@@ -42,7 +42,7 @@ abstract contract TestParams is Contracts, Params {
       bidIncrease: 1.01e18, // +1 %
       bidDuration: 1 hours,
       totalAuctionLength: 1 days,
-      recyclingPercentage: 50 // 50% is burned
+      recyclingPercentage: 0.5e18 // 50% is burned
     });
 
     _collateralAuctionHouseSystemCoinParams = ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams({
@@ -72,7 +72,7 @@ abstract contract TestParams is Contracts, Params {
     _taxCollectorSecondaryTaxReceiver = ITaxCollector.TaxReceiver({
       receiver: address(stabilityFeeTreasury),
       canTakeBackTax: true, // [bool]
-      taxPercentage: 50e27 // [ray%]
+      taxPercentage: 0.5e18 // [wad%]
     });
 
     // --- PID Params ---

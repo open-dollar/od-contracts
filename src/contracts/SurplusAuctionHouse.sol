@@ -12,10 +12,11 @@ import {Disableable} from '@contracts/utils/Disableable.sol';
 import {SafeERC20} from '@openzeppelin/token/ERC20/utils/SafeERC20.sol';
 import {Encoding} from '@libraries/Encoding.sol';
 import {Assertions} from '@libraries/Assertions.sol';
-import {WAD, HUNDRED} from '@libraries/Math.sol';
+import {Math, WAD} from '@libraries/Math.sol';
 
 // This thing lets you auction surplus for protocol tokens. 50% of the protocol tokens are sent to another address and the rest are burned
 contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusAuctionHouse {
+  using Math for uint256;
   using Encoding for bytes;
   using Assertions for address;
   using SafeERC20 for IProtocolToken;
@@ -146,7 +147,7 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
     ) revert SAH_AuctionNotFinished();
     safeEngine.transferInternalCoins(address(this), _auctions[_id].highBidder, _auctions[_id].amountToSell);
 
-    uint256 _amountToSend = _auctions[_id].bidAmount * _params.recyclingPercentage / HUNDRED;
+    uint256 _amountToSend = _auctions[_id].bidAmount.wmul(_params.recyclingPercentage);
     if (_amountToSend > 0) {
       protocolToken.safeTransfer(protocolTokenBidReceiver, _amountToSend);
     }

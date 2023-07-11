@@ -8,7 +8,7 @@ import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {Modifiable} from '@contracts/utils/Modifiable.sol';
 
 import {Encoding} from '@libraries/Encoding.sol';
-import {Math, RAY} from '@libraries/Math.sol';
+import {Math, RAY, WAD} from '@libraries/Math.sol';
 import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
 
 import {Assertions} from '@libraries/Assertions.sol';
@@ -20,9 +20,6 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
   using Assertions for address;
   using EnumerableSet for EnumerableSet.AddressSet;
   using EnumerableSet for EnumerableSet.Bytes32Set;
-
-  // --- Constants ---
-  uint256 public constant WHOLE_TAX_CUT = 10 ** 29;
 
   // --- Registry ---
   ISAFEEngine public safeEngine;
@@ -268,8 +265,8 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
     TaxReceiver memory _taxReceiver = _secondaryTaxReceivers[_cType][_receiver];
     // Compute the % out of SF that should be allocated to the receiver
     int256 _currentTaxCut = _receiver == _params.primaryTaxReceiver
-      ? (WHOLE_TAX_CUT - _cData[_cType].secondaryReceiverAllotedTax).mul(_deltaRate) / int256(WHOLE_TAX_CUT)
-      : _taxReceiver.taxPercentage.mul(_deltaRate) / int256(WHOLE_TAX_CUT);
+      ? (WAD - _cData[_cType].secondaryReceiverAllotedTax).wmul(_deltaRate)
+      : _taxReceiver.taxPercentage.wmul(_deltaRate);
 
     /**
      * If SF is negative and a tax receiver doesn't have enough coins to absorb the loss,
@@ -336,7 +333,7 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
 
       if (_secondaryReceivers.length() > _params.maxSecondaryReceivers) revert TaxCollector_ExceedsMaxReceiverLimit();
       if (_data.taxPercentage == 0) revert TaxCollector_NullSF();
-      if (_cData[_cType].secondaryReceiverAllotedTax + _data.taxPercentage > WHOLE_TAX_CUT) {
+      if (_cData[_cType].secondaryReceiverAllotedTax + _data.taxPercentage > WAD) {
         revert TaxCollector_TaxCutExceedsHundred();
       }
 
@@ -363,7 +360,7 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
         uint256 _secondaryReceiverAllotedTax = (
           _cData[_cType].secondaryReceiverAllotedTax - _secondaryTaxReceivers[_cType][_data.receiver].taxPercentage
         ) + _data.taxPercentage;
-        if (_secondaryReceiverAllotedTax > WHOLE_TAX_CUT) revert TaxCollector_TaxCutTooBig();
+        if (_secondaryReceiverAllotedTax > WAD) revert TaxCollector_TaxCutTooBig();
 
         _cData[_cType].secondaryReceiverAllotedTax = _secondaryReceiverAllotedTax;
         _secondaryTaxReceivers[_cType][_data.receiver] = _data;

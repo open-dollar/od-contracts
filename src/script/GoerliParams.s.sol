@@ -68,7 +68,7 @@ abstract contract GoerliParams is Contracts, Params {
     _taxCollectorSecondaryTaxReceiver = ITaxCollector.TaxReceiver({
       receiver: address(stabilityFeeTreasury),
       canTakeBackTax: true, // can take back tax
-      taxPercentage: 50e27 // 50%
+      taxPercentage: 0.5e18 // 50%
     });
 
     // --- PID Params ---

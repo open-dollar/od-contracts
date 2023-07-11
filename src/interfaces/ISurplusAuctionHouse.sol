@@ -53,7 +53,7 @@ interface ISurplusAuctionHouse is IAuthorizable, IDisableable, IModifiable {
     uint256 bidDuration; // [seconds]
     // Total length of the auction
     uint256 totalAuctionLength; // [seconds]
-    uint256 recyclingPercentage;
+    uint256 recyclingPercentage; // [wad%]
   }
 
   // solhint-disable-next-line func-name-mixedcase
