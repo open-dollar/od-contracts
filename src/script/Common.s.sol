@@ -226,6 +226,7 @@ abstract contract Common is Contracts, Params {
 
     _deployGlobalSettlement();
     _deployProxyContracts(address(safeEngine));
+    _deployProxyActions();
   }
 
   // TODO: deploy PostSettlementSurplusAuctionHouse & SettlementSurplusAuctioneer
@@ -307,8 +308,13 @@ abstract contract Common is Contracts, Params {
     dsProxyFactory = new HaiProxyFactory();
     proxyRegistry = new HaiProxyRegistry(address(dsProxyFactory));
     safeManager = new HaiSafeManager(_safeEngine);
+  }
+
+  function _deployProxyActions() internal {
     proxyActions = new BasicActions();
+    debtBidActions = new DebtBidActions();
     surplusActions = new SurplusBidActions();
+    collateralActions = new CollateralBidActions();
   }
 
   function _shouldRevoke() internal view returns (bool) {

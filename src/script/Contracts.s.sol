@@ -51,7 +51,9 @@ import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 
 // --- Proxy Contracts ---
 import {BasicActions, CommonActions} from '@contracts/proxies/actions/BasicActions.sol';
+import {DebtBidActions} from '@contracts/proxies/actions/DebtBidActions.sol';
 import {SurplusBidActions} from '@contracts/proxies/actions/SurplusBidActions.sol';
+import {CollateralBidActions} from '@contracts/proxies/actions/CollateralBidActions.sol';
 import {HaiProxy} from '@contracts/proxies/HaiProxy.sol';
 import {HaiProxyRegistry} from '@contracts/proxies/HaiProxyRegistry.sol';
 import {HaiProxyFactory} from '@contracts/proxies/HaiProxyFactory.sol';
@@ -107,7 +109,9 @@ abstract contract Contracts {
 
   // --- Proxy contracts ---
   BasicActions public proxyActions;
+  DebtBidActions public debtBidActions;
   SurplusBidActions public surplusActions;
+  CollateralBidActions public collateralActions;
   HaiProxyRegistry public proxyRegistry;
   HaiProxyFactory public dsProxyFactory;
   HaiSafeManager public safeManager;

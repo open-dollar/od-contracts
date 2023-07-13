@@ -13,7 +13,9 @@ import {
   ICollateralAuctionHouse,
   IDebtAuctionHouse,
   BasicActions,
+  DebtBidActions,
   SurplusBidActions,
+  CollateralBidActions,
   CommonActions,
   HaiProxy
 } from '@script/Contracts.s.sol';
@@ -92,7 +94,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     systemCoin.approve(address(_proxy), _amount);
 
     bytes memory _callData =
-      abi.encodeWithSelector(CommonActions.coinJoin_join.selector, address(coinJoin), _user, _amount);
+      abi.encodeWithSelector(CommonActions.joinSystemCoins.selector, address(coinJoin), _user, _amount);
     _proxy.execute(address(proxyActions), _callData);
 
     vm.stopPrank();
@@ -192,9 +194,9 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
 
   function _buyCollateral(
     address _user,
-    address _collateral,
     address _collateralAuctionHouse,
     uint256 _auctionId,
+    uint256 _soldAmount,
     uint256 _amountToBid
   ) internal override {
     _joinCoins(_user, _amountToBid);
@@ -203,19 +205,17 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     vm.startPrank(_user);
     safeEngine.transferInternalCoins(address(_user), address(_proxy), _amountToBid * 1e27);
 
-    // TODO: abstract in proxies/ directory
-    BuyCollateral _proxyAction = new BuyCollateral();
     bytes memory _callData = abi.encodeWithSelector(
-      BuyCollateral.buyCollateral.selector,
-      safeEngine,
-      systemCoin,
-      _collateral,
+      CollateralBidActions.buyCollateral.selector,
+      coinJoin,
+      collateralJoin[ICollateralAuctionHouse(_collateralAuctionHouse).collateralType()],
       _collateralAuctionHouse,
       _auctionId,
+      _soldAmount,
       _amountToBid
     );
 
-    _proxy.execute(address(_proxyAction), _callData);
+    _proxy.execute(address(collateralActions), _callData);
     vm.stopPrank();
   }
 
@@ -229,31 +229,22 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     HaiProxy _proxy = _getProxy(_user);
 
     vm.startPrank(_user);
-    safeEngine.transferInternalCoins(address(_user), address(_proxy), _amountToBid); // TODO: why not 1e27?
-
-    BuyProtocolToken _proxyAction = new BuyProtocolToken();
+    systemCoin.approve(address(_proxy), _amountToBid / 1e27);
     bytes memory _callData = abi.encodeWithSelector(
-      BuyProtocolToken.buyProtocolToken.selector,
-      safeEngine,
-      protocolToken,
-      debtAuctionHouse,
-      _auctionId,
-      _amountToBuy,
-      _amountToBid
+      DebtBidActions.decreaseSoldAmount.selector, coinJoin, debtAuctionHouse, _auctionId, _amountToBuy
     );
 
-    _proxy.execute(address(_proxyAction), _callData);
+    _proxy.execute(address(debtBidActions), _callData);
     vm.stopPrank();
   }
 
   function _settleDebtAuction(address _user, uint256 _auctionId) internal override {
     HaiProxy _proxy = _getProxy(_user);
     vm.startPrank(_user);
-    BuyProtocolToken _proxyAction = new BuyProtocolToken();
     bytes memory _callData =
-      abi.encodeWithSelector(BuyProtocolToken.settleAuction.selector, protocolToken, debtAuctionHouse, _auctionId);
+      abi.encodeWithSelector(DebtBidActions.settleAuction.selector, coinJoin, debtAuctionHouse, _auctionId);
 
-    _proxy.execute(address(_proxyAction), _callData);
+    _proxy.execute(address(debtBidActions), _callData);
     vm.stopPrank();
   }
 
@@ -300,49 +291,9 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     HaiProxy _proxy = _getProxy(_user);
     vm.startPrank(_user);
 
-    bytes memory _callData = abi.encodeWithSelector(SurplusBidActions.collectSystemCoins.selector, address(coinJoin));
+    bytes memory _callData = abi.encodeWithSelector(CommonActions.exitAllSystemCoins.selector, address(coinJoin));
 
     _proxy.execute(address(surplusActions), _callData);
     vm.stopPrank();
-  }
-}
-
-/**
- * @notice This is what the proxy contract executes in batch
- * @dev    To be abstracted and improved in `proxies/` directory
- */
-contract BuyCollateral {
-  function buyCollateral(
-    address _safeEngine,
-    address _systemCoin,
-    address _collateral,
-    address _collateralAuctionHouse,
-    uint256 _auctionId,
-    uint256 _amountToBid
-  ) external {
-    ISAFEEngine(_safeEngine).approveSAFEModification(_collateralAuctionHouse);
-    IERC20Metadata(_systemCoin).approve(_collateralAuctionHouse, _amountToBid);
-    ICollateralAuctionHouse(_collateralAuctionHouse).buyCollateral(_auctionId, _amountToBid);
-    // TODO: handle better
-    IERC20Metadata(_collateral).transfer(msg.sender, IERC20Metadata(_collateral).balanceOf(address(this)));
-  }
-}
-
-contract BuyProtocolToken {
-  function buyProtocolToken(
-    address _safeEngine,
-    address _protocolToken,
-    address _debtAuctionHouse,
-    uint256 _auctionId,
-    uint256 _amountToBuy,
-    uint256 _amountToBid
-  ) external {
-    ISAFEEngine(_safeEngine).approveSAFEModification(_debtAuctionHouse);
-    IDebtAuctionHouse(_debtAuctionHouse).decreaseSoldAmount(_auctionId, _amountToBuy, _amountToBid);
-  }
-
-  function settleAuction(address _protocolToken, address _debtAuctionHouse, uint256 _auctionId) external {
-    IDebtAuctionHouse(_debtAuctionHouse).settleAuction(_auctionId);
-    IERC20Metadata(_protocolToken).transfer(msg.sender, IERC20Metadata(_protocolToken).balanceOf(address(this)));
   }
 }

@@ -104,6 +104,7 @@ abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
 
     vm.stopPrank();
 
+    // already pranked call
     _exitCoin(_user, uint256(_deltaDebt));
   }
 
@@ -135,14 +136,21 @@ abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
 
   function _buyCollateral(
     address _user,
-    address,
     address _collateralAuctionHouse,
     uint256 _auctionId,
+    uint256 _soldAmount,
     uint256 _amountToBid
   ) internal override {
     vm.startPrank(_user);
     safeEngine.approveSAFEModification(_collateralAuctionHouse);
     ICollateralAuctionHouse(_collateralAuctionHouse).buyCollateral(_auctionId, _amountToBid);
+
+    // exit collateral
+    bytes32 _cType = ICollateralAuctionHouse(_collateralAuctionHouse).collateralType();
+    uint256 _decimals = ICollateralJoin(collateralJoin[_cType]).decimals();
+    uint256 _collateralWei = _soldAmount / 10 ** (18 - _decimals);
+    ICollateralJoin(collateralJoin[_cType]).exit(_user, _collateralWei);
+
     vm.stopPrank();
   }
 
@@ -153,12 +161,14 @@ abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
     uint256 _amountToBid
   ) internal override {
     vm.startPrank(_user);
+    systemCoin.approve(address(coinJoin), _amountToBid / 1e27);
+    coinJoin.join(_user, _amountToBid / 1e27);
     safeEngine.approveSAFEModification(address(debtAuctionHouse));
     debtAuctionHouse.decreaseSoldAmount(_auctionId, _amountToBuy, _amountToBid);
     vm.stopPrank();
   }
 
-  function _settleDebtAuction(address, uint256 _auctionId) internal override {
+  function _settleDebtAuction(address _user, uint256 _auctionId) internal override {
     debtAuctionHouse.settleAuction(_auctionId);
   }
 

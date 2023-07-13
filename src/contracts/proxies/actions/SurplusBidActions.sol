@@ -53,18 +53,4 @@ contract SurplusBidActions is CommonActions {
     // get the amount of system coins that were sold
     ICoinJoin(_coinJoin).exit(msg.sender, _amountToSell / RAY);
   }
-
-  function collectSystemCoins(address _coinJoin) external delegateCall {
-    ISAFEEngine _safeEngine = ICoinJoin(_coinJoin).safeEngine();
-
-    // get the amount of system coins that the proxy has
-    uint256 _coinsToCollect = _safeEngine.coinBalance(address(this));
-
-    if (!_safeEngine.canModifySAFE(address(this), _coinJoin)) {
-      _safeEngine.approveSAFEModification(_coinJoin);
-    }
-
-    // transfer all coins to msg.sender (proxy shouldn't hold any system coins)
-    ICoinJoin(_coinJoin).exit(msg.sender, _coinsToCollect / RAY);
-  }
 }

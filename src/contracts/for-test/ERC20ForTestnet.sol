@@ -5,7 +5,7 @@ import {ERC20} from '@openzeppelin/token/ERC20/ERC20.sol';
 import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
 
 contract ERC20ForTestnet is IERC20Metadata, ERC20 {
-  uint8 internal immutable _decimals;
+  uint8 internal _decimals;
 
   constructor(string memory _name, string memory _symbol, uint8 __decimals) ERC20(_name, _symbol) {
     _decimals = __decimals;

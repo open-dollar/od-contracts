@@ -43,9 +43,9 @@ abstract contract BaseUser {
 
   function _buyCollateral(
     address _user,
-    address _collateral,
     address _collateralAuctionHouse,
     uint256 _auctionId,
+    uint256 _soldAmount,
     uint256 _amountToBid
   ) internal virtual;
 
