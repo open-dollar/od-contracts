@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import {ICollateralAuctionHouseFactory} from '@interfaces/factories/ICollateralAuctionHouseFactory.sol';
-import {IIncreasingDiscountCollateralAuctionHouse} from '@interfaces/IIncreasingDiscountCollateralAuctionHouse.sol';
+import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
 
 import {CollateralAuctionHouseChild} from '@contracts/factories/CollateralAuctionHouseChild.sol';
 
@@ -28,12 +28,12 @@ contract CollateralAuctionHouseFactory is Authorizable, Disableable, Modifiable,
 
   // --- Data ---
   // solhint-disable-next-line private-vars-leading-underscore
-  IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams public _params;
+  ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams public _params;
 
   function params()
     external
     view
-    returns (IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams)
+    returns (ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams)
   {
     return _params;
   }
@@ -41,9 +41,9 @@ contract CollateralAuctionHouseFactory is Authorizable, Disableable, Modifiable,
   function cParams(bytes32 _cType)
     external
     view
-    returns (IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams)
+    returns (ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams)
   {
-    return IIncreasingDiscountCollateralAuctionHouse(collateralAuctionHouses[_cType]).cParams();
+    return ICollateralAuctionHouse(collateralAuctionHouses[_cType]).cParams();
   }
 
   // solhint-disable-next-line private-vars-leading-underscore
@@ -59,7 +59,7 @@ contract CollateralAuctionHouseFactory is Authorizable, Disableable, Modifiable,
       uint256 _upperCollateralDeviation
     )
   {
-    return IIncreasingDiscountCollateralAuctionHouse(collateralAuctionHouses[_cType])._cParams();
+    return ICollateralAuctionHouse(collateralAuctionHouses[_cType])._cParams();
   }
 
   EnumerableSet.Bytes32Set internal _collateralTypes;
@@ -70,7 +70,7 @@ contract CollateralAuctionHouseFactory is Authorizable, Disableable, Modifiable,
     address _safeEngine,
     address _oracleRelayer,
     address _liquidationEngine,
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams
+    ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams
   ) Authorizable(msg.sender) validParams {
     safeEngine = _safeEngine.assertNonNull();
     oracleRelayer = _oracleRelayer;
@@ -82,11 +82,11 @@ contract CollateralAuctionHouseFactory is Authorizable, Disableable, Modifiable,
   // --- Methods ---
   function deployCollateralAuctionHouse(
     bytes32 _cType,
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams
+    ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams
   ) external isAuthorized whenEnabled returns (address _collateralAuctionHouse) {
     if (!_collateralTypes.add(_cType)) revert CAHFactory_CAHExists();
 
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _emptyCahParams;
+    ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _emptyCahParams;
 
     _collateralAuctionHouse = address(
       new CollateralAuctionHouseChild({

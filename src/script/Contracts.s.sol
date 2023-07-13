@@ -10,10 +10,7 @@ import {AccountingEngine, IAccountingEngine} from '@contracts/AccountingEngine.s
 import {LiquidationEngine, ILiquidationEngine} from '@contracts/LiquidationEngine.sol';
 import {SurplusAuctionHouse, ISurplusAuctionHouse} from '@contracts/SurplusAuctionHouse.sol';
 import {DebtAuctionHouse, IDebtAuctionHouse} from '@contracts/DebtAuctionHouse.sol';
-import {
-  IncreasingDiscountCollateralAuctionHouse as CollateralAuctionHouse,
-  IIncreasingDiscountCollateralAuctionHouse as ICollateralAuctionHouse
-} from '@contracts/CollateralAuctionHouse.sol';
+import {CollateralAuctionHouse, ICollateralAuctionHouse} from '@contracts/CollateralAuctionHouse.sol';
 import {GlobalSettlement, IGlobalSettlement} from '@contracts/settlement/GlobalSettlement.sol';
 import {StabilityFeeTreasury, IStabilityFeeTreasury} from '@contracts/StabilityFeeTreasury.sol';
 import {PIDController, IPIDController} from '@contracts/PIDController.sol';

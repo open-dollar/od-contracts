@@ -6,10 +6,8 @@ import {
   ICollateralAuctionHouseFactory
 } from '@contracts/for-test/CollateralAuctionHouseFactoryForTest.sol';
 import {
-  CollateralAuctionHouseChild,
-  IIncreasingDiscountCollateralAuctionHouse
+  CollateralAuctionHouseChild, ICollateralAuctionHouse
 } from '@contracts/factories/CollateralAuctionHouseChild.sol';
-import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IFactoryChild} from '@interfaces/factories/IFactoryChild.sol';
@@ -34,19 +32,19 @@ abstract contract Base is HaiTest {
     label(address(0x0000000000000000000000007f85e9e000597158aed9320b5a5e11ab8cc7329a), 'CollateralAuctionHouseChild')
   );
 
-  IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams _cahParams;
-  IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams _cahCParams;
+  ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams _cahParams;
+  ICollateralAuctionHouse.CollateralAuctionHouseParams _cahCParams;
 
   function setUp() public virtual {
     vm.startPrank(deployer);
 
     // NOTE: needs valid cParams to deploy a CollateralAuctionHouseChild
-    _cahParams = IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams({
+    _cahParams = ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams({
       minSystemCoinDeviation: 1,
       lowerSystemCoinDeviation: 1,
       upperSystemCoinDeviation: 1
     });
-    _cahCParams = IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams({
+    _cahCParams = ICollateralAuctionHouse.CollateralAuctionHouseParams({
       minimumBid: 1,
       minDiscount: 1,
       maxDiscount: 1,
@@ -112,9 +110,10 @@ contract Unit_CollateralAuctionHouseFactory_Constructor is Base {
     assertEq(collateralAuctionHouseFactory.contractEnabled(), true);
   }
 
-  function test_Set_GlobalParams(
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams
-  ) public happyPath {
+  function test_Set_GlobalParams(ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams)
+    public
+    happyPath
+  {
     vm.assume(_cahParams.lowerSystemCoinDeviation <= WAD);
     vm.assume(_cahParams.upperSystemCoinDeviation <= WAD);
     collateralAuctionHouseFactory =

@@ -4,10 +4,7 @@ pragma solidity 0.8.19;
 import {HaiTest} from '@test/utils/HaiTest.t.sol';
 
 import {ISAFEEngine, SAFEEngine} from '@contracts/SAFEEngine.sol';
-import {
-  IIncreasingDiscountCollateralAuctionHouse,
-  IncreasingDiscountCollateralAuctionHouse
-} from '@contracts/CollateralAuctionHouse.sol';
+import {CollateralAuctionHouse, ICollateralAuctionHouse} from '@contracts/CollateralAuctionHouse.sol';
 import {CollateralAuctionHouseFactory} from '@contracts/factories/CollateralAuctionHouseFactory.sol';
 import {IOracleRelayer, OracleRelayerForTest} from '@contracts/for-test/OracleRelayerForTest.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
@@ -16,29 +13,29 @@ import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
 import {Math, WAD, RAY, RAD} from '@libraries/Math.sol';
 
 contract Guy {
-  IncreasingDiscountCollateralAuctionHouse increasingDiscountCollateralAuctionHouse;
+  CollateralAuctionHouse collateralAuctionHouse;
 
-  constructor(IncreasingDiscountCollateralAuctionHouse increasingDiscountCollateralAuctionHouse_) {
-    increasingDiscountCollateralAuctionHouse = increasingDiscountCollateralAuctionHouse_;
+  constructor(CollateralAuctionHouse collateralAuctionHouse_) {
+    collateralAuctionHouse = collateralAuctionHouse_;
   }
 
   function approveSAFEModification(address safe) public {
-    address safeEngine = address(increasingDiscountCollateralAuctionHouse.safeEngine());
+    address safeEngine = address(collateralAuctionHouse.safeEngine());
     SAFEEngine(safeEngine).approveSAFEModification(safe);
   }
 
-  function buyCollateral_increasingDiscount(uint256 id, uint256 wad) public {
-    increasingDiscountCollateralAuctionHouse.buyCollateral(id, wad);
+  function buyCollateral(uint256 id, uint256 wad) public {
+    collateralAuctionHouse.buyCollateral(id, wad);
   }
 
-  function try_buyCollateral_increasingDiscount(uint256 id, uint256 wad) public returns (bool ok) {
+  function try_buyCollateral(uint256 id, uint256 wad) public returns (bool ok) {
     string memory sig = 'buyCollateral(uint256,uint256)';
-    (ok,) = address(increasingDiscountCollateralAuctionHouse).call(abi.encodeWithSignature(sig, id, wad));
+    (ok,) = address(collateralAuctionHouse).call(abi.encodeWithSignature(sig, id, wad));
   }
 
-  function try_increasingDiscount_terminateAuctionPrematurely(uint256 id) public returns (bool ok) {
+  function try_terminateAuctionPrematurely(uint256 id) public returns (bool ok) {
     string memory sig = 'terminateAuctionPrematurely(uint256)';
-    (ok,) = address(increasingDiscountCollateralAuctionHouse).call(abi.encodeWithSignature(sig, id));
+    (ok,) = address(collateralAuctionHouse).call(abi.encodeWithSignature(sig, id));
   }
 }
 
@@ -113,12 +110,12 @@ contract DummyLiquidationEngine {
   function addAuthorization(address) external {}
 }
 
-abstract contract SingleIncreasingDiscountCollateralAuctionHouseTest is HaiTest {
+abstract contract SingleCollateralAuctionHouseTest is HaiTest {
   using Math for uint256;
 
   DummyLiquidationEngine liquidationEngine;
   SAFEEngine safeEngine;
-  IncreasingDiscountCollateralAuctionHouse collateralAuctionHouse;
+  CollateralAuctionHouse collateralAuctionHouse;
   OracleRelayerForTest oracleRelayer;
   Feed collateralFSM;
   Feed collateralMedian;
@@ -132,9 +129,9 @@ abstract contract SingleIncreasingDiscountCollateralAuctionHouseTest is HaiTest 
   // --- Virtual methods ---
 
   function _deployCollateralAuctionHouse(
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams,
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams
-  ) internal virtual returns (IncreasingDiscountCollateralAuctionHouse _collateralAuctionHouse);
+    ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams,
+    ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams
+  ) internal virtual returns (CollateralAuctionHouse _collateralAuctionHouse);
 
   function _modifyParameters(bytes32 _param, bytes memory _data) internal virtual;
   function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal virtual;
@@ -152,15 +149,15 @@ abstract contract SingleIncreasingDiscountCollateralAuctionHouseTest is HaiTest 
 
     liquidationEngine = new DummyLiquidationEngine(rad(1000 ether));
 
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams =
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams({
+    ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams = ICollateralAuctionHouse
+      .CollateralAuctionHouseSystemCoinParams({
       lowerSystemCoinDeviation: WAD, // 0% deviation
       upperSystemCoinDeviation: WAD, // 0% deviation
       minSystemCoinDeviation: 0.999e18 // 0.1% deviation
     });
 
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams =
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams({
+    ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams = ICollateralAuctionHouse
+      .CollateralAuctionHouseParams({
       minDiscount: 0.95e18, // 5% discount
       maxDiscount: 0.95e18, // 5% discount
       perSecondDiscountUpdateRate: RAY, // [ray]
@@ -226,10 +223,8 @@ abstract contract SingleIncreasingDiscountCollateralAuctionHouseTest is HaiTest 
     _modifyParameters('upperSystemCoinDeviation', abi.encode(0.9e18));
     _modifyParameters('minSystemCoinDeviation', abi.encode(0.99e18));
 
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams memory _cParams =
-      collateralAuctionHouse.cParams();
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _params =
-      collateralAuctionHouse.params();
+    ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cParams = collateralAuctionHouse.cParams();
+    ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _params = collateralAuctionHouse.params();
 
     assertEq(_cParams.minDiscount, 0.91e18);
     assertEq(_cParams.maxDiscount, 0.9e18);
@@ -357,10 +352,10 @@ abstract contract SingleIncreasingDiscountCollateralAuctionHouseTest is HaiTest 
     });
 
     (bool canBidThisAmount, uint256 adjustedBid) = collateralAuctionHouse.getAdjustedBid(id, 25 * WAD);
-    Guy(ali).buyCollateral_increasingDiscount(id, 25 * WAD);
+    Guy(ali).buyCollateral(id, 25 * WAD);
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), rad(975 ether));
 
-    IncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
 
     assertEq(_auction.amountToRaise, 25 * RAD);
     assertEq(_auction.amountToSell, 1 ether - 131_578_947_368_421_052);
@@ -409,10 +404,10 @@ abstract contract SingleIncreasingDiscountCollateralAuctionHouseTest is HaiTest 
     assertEq(collateralBoughtAdjustedBid, 50 * WAD);
 
     (bool canBidThisAmount, uint256 adjustedBid) = collateralAuctionHouse.getAdjustedBid(id, 50 * WAD);
-    Guy(ali).buyCollateral_increasingDiscount(id, 50 * WAD);
+    Guy(ali).buyCollateral(id, 50 * WAD);
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), rad(950 ether));
 
-    IncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 0);
     assertEq(_auction.amountToRaise, 0);
 
@@ -460,10 +455,10 @@ abstract contract SingleIncreasingDiscountCollateralAuctionHouseTest is HaiTest 
     });
 
     (bool canBidThisAmount, uint256 adjustedBid) = collateralAuctionHouse.getAdjustedBid(id, 5 * WAD);
-    Guy(ali).buyCollateral_increasingDiscount(id, 5 * WAD);
+    Guy(ali).buyCollateral(id, 5 * WAD);
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), rad(950 ether));
 
-    IncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 0);
     assertEq(_auction.amountToRaise, 0);
 
@@ -491,9 +486,9 @@ abstract contract SingleIncreasingDiscountCollateralAuctionHouseTest is HaiTest 
       _auctionIncomeRecipient: auctionIncomeRecipient,
       _initialBid: 0
     });
-    Guy(ali).buyCollateral_increasingDiscount(id, 50 * WAD);
+    Guy(ali).buyCollateral(id, 50 * WAD);
 
-    IncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 0);
     assertEq(_auction.amountToRaise, 0);
 
@@ -521,9 +516,9 @@ abstract contract SingleIncreasingDiscountCollateralAuctionHouseTest is HaiTest 
       _auctionIncomeRecipient: auctionIncomeRecipient,
       _initialBid: 0
     });
-    Guy(ali).buyCollateral_increasingDiscount(id, 50 * WAD);
+    Guy(ali).buyCollateral(id, 50 * WAD);
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 0);
     assertEq(_auction.amountToRaise, 0);
 
@@ -551,9 +546,9 @@ abstract contract SingleIncreasingDiscountCollateralAuctionHouseTest is HaiTest 
       _initialBid: 0
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 25 * WAD);
+    Guy(ali).buyCollateral(id, 25 * WAD);
 
-    IncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 1 ether - 131_578_947_368_421_052);
     assertEq(_auction.amountToRaise, 25 * RAD);
 
@@ -582,9 +577,9 @@ abstract contract SingleIncreasingDiscountCollateralAuctionHouseTest is HaiTest 
       _initialBid: 0
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 25 * WAD);
+    Guy(ali).buyCollateral(id, 25 * WAD);
 
-    IncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 1 ether - 145_391_102_064_553_649);
     assertEq(_auction.amountToRaise, 25 * RAD);
 
@@ -613,9 +608,9 @@ abstract contract SingleIncreasingDiscountCollateralAuctionHouseTest is HaiTest 
       _initialBid: 0
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 25 * WAD);
+    Guy(ali).buyCollateral(id, 25 * WAD);
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 1 ether - 125_912_868_295_139_763);
     assertEq(_auction.amountToRaise, 25 * RAD);
 
@@ -644,9 +639,9 @@ abstract contract SingleIncreasingDiscountCollateralAuctionHouseTest is HaiTest 
       _initialBid: 0
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 25 * WAD);
+    Guy(ali).buyCollateral(id, 25 * WAD);
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 1 ether - 125_313_283_208_020_050);
     assertEq(_auction.amountToRaise, 25 * RAD);
 
@@ -675,9 +670,9 @@ abstract contract SingleIncreasingDiscountCollateralAuctionHouseTest is HaiTest 
       _initialBid: 0
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 25 * WAD);
+    Guy(ali).buyCollateral(id, 25 * WAD);
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 1 ether - 146_198_830_409_356_725);
     assertEq(_auction.amountToRaise, 25 * RAD);
 
@@ -706,9 +701,9 @@ abstract contract SingleIncreasingDiscountCollateralAuctionHouseTest is HaiTest 
       _initialBid: 0
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 50 * WAD);
+    Guy(ali).buyCollateral(id, 50 * WAD);
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 0);
     assertEq(_auction.amountToRaise, 0);
 
@@ -736,9 +731,9 @@ abstract contract SingleIncreasingDiscountCollateralAuctionHouseTest is HaiTest 
       _initialBid: 0
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 25 * WAD);
+    Guy(ali).buyCollateral(id, 25 * WAD);
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 1 ether - 131_578_947_368_421_052);
     assertEq(_auction.amountToRaise, 25 * RAD);
 
@@ -771,9 +766,9 @@ abstract contract SingleIncreasingDiscountCollateralAuctionHouseTest is HaiTest 
       _initialBid: 0
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 25 * WAD);
+    Guy(ali).buyCollateral(id, 25 * WAD);
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 1 ether - 131_578_947_368_421_052);
     assertEq(_auction.amountToRaise, 25 * RAD);
 
@@ -806,9 +801,9 @@ abstract contract SingleIncreasingDiscountCollateralAuctionHouseTest is HaiTest 
       _initialBid: 0
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 25 * WAD);
+    Guy(ali).buyCollateral(id, 25 * WAD);
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 1 ether - 128_289_473_684_210_526);
     assertEq(_auction.amountToRaise, 25 * RAD);
 
@@ -841,9 +836,9 @@ abstract contract SingleIncreasingDiscountCollateralAuctionHouseTest is HaiTest 
       _initialBid: 0
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 25 * WAD);
+    Guy(ali).buyCollateral(id, 25 * WAD);
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 1 ether - 138_157_894_736_842_105);
     assertEq(_auction.amountToRaise, 25 * RAD);
 
@@ -876,9 +871,9 @@ abstract contract SingleIncreasingDiscountCollateralAuctionHouseTest is HaiTest 
       _initialBid: 0
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 25 * WAD);
+    Guy(ali).buyCollateral(id, 25 * WAD);
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 1 ether - 144_736_842_105_263_157);
     assertEq(_auction.amountToRaise, 25 * RAD);
 
@@ -911,9 +906,9 @@ abstract contract SingleIncreasingDiscountCollateralAuctionHouseTest is HaiTest 
       _initialBid: 0
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 25 * WAD);
+    Guy(ali).buyCollateral(id, 25 * WAD);
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 1 ether - 125_000_000_000_000_000);
     assertEq(_auction.amountToRaise, 25 * RAD);
 
@@ -946,9 +941,9 @@ abstract contract SingleIncreasingDiscountCollateralAuctionHouseTest is HaiTest 
       _initialBid: 0
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 50 * WAD);
+    Guy(ali).buyCollateral(id, 50 * WAD);
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 0);
     assertEq(_auction.amountToRaise, 0);
 
@@ -980,9 +975,9 @@ abstract contract SingleIncreasingDiscountCollateralAuctionHouseTest is HaiTest 
       _initialBid: 0
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 25 * WAD);
+    Guy(ali).buyCollateral(id, 25 * WAD);
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 1 ether - 131_578_947_368_421_052);
     assertEq(_auction.amountToRaise, 25 * RAD);
 
@@ -1017,9 +1012,9 @@ abstract contract SingleIncreasingDiscountCollateralAuctionHouseTest is HaiTest 
       _initialBid: 0
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 25 * WAD);
+    Guy(ali).buyCollateral(id, 25 * WAD);
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 1 ether - 119_047_619_047_619_047);
     assertEq(_auction.amountToRaise, 25 * RAD);
 
@@ -1054,9 +1049,9 @@ abstract contract SingleIncreasingDiscountCollateralAuctionHouseTest is HaiTest 
       _initialBid: 0
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 25 * WAD);
+    Guy(ali).buyCollateral(id, 25 * WAD);
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 1 ether - 160_818_713_450_292_397);
     assertEq(_auction.amountToRaise, 25 * RAD);
 
@@ -1091,9 +1086,9 @@ abstract contract SingleIncreasingDiscountCollateralAuctionHouseTest is HaiTest 
       _initialBid: 0
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 25 * WAD);
+    Guy(ali).buyCollateral(id, 25 * WAD);
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 1 ether - 138_888_888_888_888_888);
     assertEq(_auction.amountToRaise, 25 * RAD);
 
@@ -1128,9 +1123,9 @@ abstract contract SingleIncreasingDiscountCollateralAuctionHouseTest is HaiTest 
       _initialBid: 0
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 25 * WAD);
+    Guy(ali).buyCollateral(id, 25 * WAD);
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 1 ether - 137_844_611_528_822_055);
     assertEq(_auction.amountToRaise, 25 * RAD);
 
@@ -1164,9 +1159,9 @@ abstract contract SingleIncreasingDiscountCollateralAuctionHouseTest is HaiTest 
       _initialBid: 0
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 25 * WAD);
+    Guy(ali).buyCollateral(id, 25 * WAD);
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 1 ether - 131_578_947_368_421_052);
     assertEq(_auction.amountToRaise, 25 * RAD);
 
@@ -1200,9 +1195,9 @@ abstract contract SingleIncreasingDiscountCollateralAuctionHouseTest is HaiTest 
       _initialBid: 0
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 25 * WAD);
+    Guy(ali).buyCollateral(id, 25 * WAD);
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 1 ether - 131_578_947_368_421_052);
     assertEq(_auction.amountToRaise, 25 * RAD);
 
@@ -1231,12 +1226,12 @@ abstract contract SingleIncreasingDiscountCollateralAuctionHouseTest is HaiTest 
     });
 
     for (uint256 i = 0; i < 10; i++) {
-      Guy(ali).buyCollateral_increasingDiscount(id, 5 * WAD);
+      Guy(ali).buyCollateral(id, 5 * WAD);
     }
 
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), rad(950 ether));
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 0);
     assertEq(_auction.amountToRaise, 0);
 
@@ -1268,7 +1263,7 @@ abstract contract SingleIncreasingDiscountCollateralAuctionHouseTest is HaiTest 
     collateralAuctionHouse.settleAuction(id);
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), rad(1000 ether));
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 1 ether);
     assertEq(_auction.amountToRaise, 50 * RAD);
 
@@ -1297,12 +1292,12 @@ abstract contract SingleIncreasingDiscountCollateralAuctionHouseTest is HaiTest 
       _initialBid: 0
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 25 * WAD);
+    Guy(ali).buyCollateral(id, 25 * WAD);
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), rad(975 ether));
     collateralAuctionHouse.terminateAuctionPrematurely(1);
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), rad(950 ether));
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 0);
     assertEq(_auction.amountToRaise, 0);
 
@@ -1335,10 +1330,10 @@ abstract contract SingleIncreasingDiscountCollateralAuctionHouseTest is HaiTest 
       _initialBid: 0
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 49 * WAD);
+    Guy(ali).buyCollateral(id, 49 * WAD);
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), rad(951 ether));
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 742_105_263_157_894_737);
     assertEq(_auction.amountToRaise, RAY * WAD);
     assertEq(_auction.currentDiscount, collateralAuctionHouse.cParams().minDiscount);
@@ -1373,10 +1368,10 @@ abstract contract SingleIncreasingDiscountCollateralAuctionHouseTest is HaiTest 
     });
 
     vm.warp(block.timestamp + 30 minutes);
-    Guy(ali).buyCollateral_increasingDiscount(id, 49 * WAD);
+    Guy(ali).buyCollateral(id, 49 * WAD);
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), rad(951 ether));
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 741_458_098_434_345_369);
     assertEq(_auction.amountToRaise, RAY * WAD);
     assertEq(_auction.currentDiscount, 947_622_023_804_850_158);
@@ -1415,10 +1410,10 @@ abstract contract SingleIncreasingDiscountCollateralAuctionHouseTest is HaiTest 
     });
 
     vm.warp(block.timestamp + 1 hours);
-    Guy(ali).buyCollateral_increasingDiscount(id, 49 * WAD);
+    Guy(ali).buyCollateral(id, 49 * WAD);
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), rad(951 ether));
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 736_559_139_784_946_237);
     assertEq(_auction.amountToRaise, RAY * WAD);
     assertEq(_auction.currentDiscount, 930_000_000_000_000_000);
@@ -1453,10 +1448,10 @@ abstract contract SingleIncreasingDiscountCollateralAuctionHouseTest is HaiTest 
     });
 
     vm.warp(block.timestamp + 3650 days);
-    Guy(ali).buyCollateral_increasingDiscount(id, 49 * WAD);
+    Guy(ali).buyCollateral(id, 49 * WAD);
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), rad(951 ether));
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 736_559_139_784_946_237);
     assertEq(_auction.amountToRaise, RAY * WAD);
     assertEq(_auction.currentDiscount, 930_000_000_000_000_000);
@@ -1492,12 +1487,12 @@ abstract contract SingleIncreasingDiscountCollateralAuctionHouseTest is HaiTest 
 
     for (uint256 i = 0; i < 10; i++) {
       vm.warp(block.timestamp + 1 minutes);
-      Guy(ali).buyCollateral_increasingDiscount(id, 5 * WAD);
+      Guy(ali).buyCollateral(id, 5 * WAD);
     }
 
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), rad(950 ether));
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
 
     assertEq(_auction.amountToSell, 0);
     assertEq(_auction.amountToRaise, 0);
@@ -1515,19 +1510,17 @@ abstract contract SingleIncreasingDiscountCollateralAuctionHouseTest is HaiTest 
   }
 }
 
-contract FactorySingleIncreasingDiscountCollateralAuctionHouseTest is
-  SingleIncreasingDiscountCollateralAuctionHouseTest
-{
+contract FactorySingleCollateralAuctionHouseTest is SingleCollateralAuctionHouseTest {
   CollateralAuctionHouseFactory factory;
 
   function _deployCollateralAuctionHouse(
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams,
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams
-  ) internal override returns (IncreasingDiscountCollateralAuctionHouse _collateralAuctionHouse) {
+    ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams,
+    ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams
+  ) internal override returns (CollateralAuctionHouse _collateralAuctionHouse) {
     factory =
     new CollateralAuctionHouseFactory(address(safeEngine), address(oracleRelayer), address(liquidationEngine), _cahParams);
 
-    return IncreasingDiscountCollateralAuctionHouse(factory.deployCollateralAuctionHouse('collateralType', _cahCParams));
+    return CollateralAuctionHouse(factory.deployCollateralAuctionHouse('collateralType', _cahCParams));
   }
 
   function _modifyParameters(bytes32 _parameter, bytes memory _data) internal override {
@@ -1539,15 +1532,13 @@ contract FactorySingleIncreasingDiscountCollateralAuctionHouseTest is
   }
 }
 
-contract OrphanSingleIncreasingDiscountCollateralAuctionHouseTest is
-  SingleIncreasingDiscountCollateralAuctionHouseTest
-{
+contract OrphanSingleCollateralAuctionHouseTest is SingleCollateralAuctionHouseTest {
   function _deployCollateralAuctionHouse(
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams,
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams
-  ) internal override returns (IncreasingDiscountCollateralAuctionHouse _collateralAuctionHouse) {
+    ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams,
+    ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams
+  ) internal override returns (CollateralAuctionHouse _collateralAuctionHouse) {
     return
-    new IncreasingDiscountCollateralAuctionHouse(address(safeEngine), address(oracleRelayer), address(liquidationEngine), 'collateralType',
+    new CollateralAuctionHouse(address(safeEngine), address(oracleRelayer), address(liquidationEngine), 'collateralType',
          _cahParams,
          _cahCParams);
   }

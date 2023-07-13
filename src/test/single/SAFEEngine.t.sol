@@ -20,10 +20,7 @@ import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 
 import {RAY, WAD} from '@libraries/Math.sol';
 
-import {
-  IIncreasingDiscountCollateralAuctionHouse,
-  IncreasingDiscountCollateralAuctionHouse
-} from '@contracts/CollateralAuctionHouse.sol';
+import {ICollateralAuctionHouse, CollateralAuctionHouse} from '@contracts/CollateralAuctionHouse.sol';
 import {IDebtAuctionHouse, DebtAuctionHouse} from '@contracts/DebtAuctionHouse.sol';
 import {
   IPostSettlementSurplusAuctionHouse,
@@ -788,7 +785,7 @@ contract SingleLiquidationTest is DSTest {
   CollateralJoinFactory collateralJoinFactory;
   CollateralJoin collateralA;
 
-  IncreasingDiscountCollateralAuctionHouse collateralAuctionHouse;
+  CollateralAuctionHouse collateralAuctionHouse;
   DebtAuctionHouse debtAuctionHouse;
   PostSettlementSurplusAuctionHouse surplusAuctionHouse;
 
@@ -923,15 +920,15 @@ contract SingleLiquidationTest is DSTest {
       })
     );
 
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams =
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams({
+    ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams = ICollateralAuctionHouse
+      .CollateralAuctionHouseSystemCoinParams({
       lowerSystemCoinDeviation: WAD, // 0% deviation
       upperSystemCoinDeviation: WAD, // 0% deviation
       minSystemCoinDeviation: 0.999e18 // 0.1% deviation
     });
 
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams =
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams({
+    ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams = ICollateralAuctionHouse
+      .CollateralAuctionHouseParams({
       minDiscount: 0.95e18, // 5% discount
       maxDiscount: 0.95e18, // 5% discount
       perSecondDiscountUpdateRate: RAY, // [ray]
@@ -940,7 +937,7 @@ contract SingleLiquidationTest is DSTest {
       minimumBid: 1e18 // 1 system coin
     });
     collateralAuctionHouse =
-    new IncreasingDiscountCollateralAuctionHouse(address(safeEngine), address(oracleRelayer), address(liquidationEngine), 'gold', _cahParams, _cahCParams);
+    new CollateralAuctionHouse(address(safeEngine), address(oracleRelayer), address(liquidationEngine), 'gold', _cahParams, _cahCParams);
 
     liquidationEngine.modifyParameters('gold', 'collateralAuctionHouse', abi.encode(collateralAuctionHouse));
     liquidationEngine.modifyParameters('gold', 'liquidationPenalty', abi.encode(1 ether));
@@ -984,7 +981,7 @@ contract SingleLiquidationTest is DSTest {
     safeEngine.updateCollateralPrice('gold', ray(2 ether), ray(2 ether)); // now unsafe
 
     uint256 auction = liquidationEngine.liquidateSAFE('gold', address(this));
-    IncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(auction);
+    CollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(auction);
     assertEq(_auction.amountToRaise, MAX_LIQUIDATION_QUANTITY / 10 ** 27 * 10 ** 27);
   }
 
@@ -1027,7 +1024,7 @@ contract SingleLiquidationTest is DSTest {
     // all debt goes to the accounting engine
     assertEq(accountingEngine.totalQueuedDebt(), rad(100 ether));
     // auction is for all collateral
-    IncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(auction);
+    CollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(auction);
     assertEq(_auction.amountToSell, 40 ether);
     assertEq(_auction.amountToRaise, rad(110 ether));
   }
@@ -1051,7 +1048,7 @@ contract SingleLiquidationTest is DSTest {
     // all debt goes to the accounting engine
     assertEq(accountingEngine.totalQueuedDebt(), rad(75 ether));
     // auction is for all collateral
-    IncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(auction);
+    CollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(auction);
     assertEq(_auction.amountToSell, 30 ether);
     assertEq(_auction.amountToRaise, rad(82.5 ether));
   }

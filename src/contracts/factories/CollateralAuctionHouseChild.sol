@@ -6,10 +6,7 @@ import {ICollateralAuctionHouseFactory} from '@interfaces/factories/ICollateralA
 import {ILiquidationEngine} from '@interfaces/ILiquidationEngine.sol';
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
 
-import {
-  IncreasingDiscountCollateralAuctionHouse,
-  IIncreasingDiscountCollateralAuctionHouse
-} from '@contracts/CollateralAuctionHouse.sol';
+import {CollateralAuctionHouse, ICollateralAuctionHouse} from '@contracts/CollateralAuctionHouse.sol';
 
 import {AuthorizableChild, Authorizable} from '@contracts/factories/AuthorizableChild.sol';
 
@@ -20,11 +17,7 @@ import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
  * @title  CollateralAuctionHouseChild
  * @notice This contract inherits all the functionality of `CollateralAuctionHouse.sol` to be factory deployed
  */
-contract CollateralAuctionHouseChild is
-  AuthorizableChild,
-  IncreasingDiscountCollateralAuctionHouse,
-  ICollateralAuctionHouseChild
-{
+contract CollateralAuctionHouseChild is AuthorizableChild, CollateralAuctionHouse, ICollateralAuctionHouseChild {
   using EnumerableSet for EnumerableSet.AddressSet;
   using Math for uint256;
 
@@ -37,7 +30,7 @@ contract CollateralAuctionHouseChild is
     CollateralAuctionHouseSystemCoinParams memory _cahParams,
     CollateralAuctionHouseParams memory _cahCParams
   )
-    IncreasingDiscountCollateralAuctionHouse(
+    CollateralAuctionHouse(
       _safeEngine,
       _oracleRelayer, // empty
       _liquidationEngine, // empty
@@ -51,7 +44,7 @@ contract CollateralAuctionHouseChild is
   function params()
     public
     view
-    override(IncreasingDiscountCollateralAuctionHouse, IIncreasingDiscountCollateralAuctionHouse)
+    override(CollateralAuctionHouse, ICollateralAuctionHouse)
     returns (CollateralAuctionHouseSystemCoinParams memory _cahParams)
   {
     return ICollateralAuctionHouseFactory(factory).params();
@@ -61,7 +54,7 @@ contract CollateralAuctionHouseChild is
   function _params()
     public
     view
-    override(IncreasingDiscountCollateralAuctionHouse, IIncreasingDiscountCollateralAuctionHouse)
+    override(CollateralAuctionHouse, ICollateralAuctionHouse)
     returns (uint256 _minSystemCoinDeviation, uint256 _lowerSystemCoinDeviation, uint256 _upperSystemCoinDeviation)
   {
     return ICollateralAuctionHouseFactory(factory)._params();
@@ -71,7 +64,7 @@ contract CollateralAuctionHouseChild is
   function liquidationEngine()
     public
     view
-    override(IncreasingDiscountCollateralAuctionHouse, IIncreasingDiscountCollateralAuctionHouse)
+    override(CollateralAuctionHouse, ICollateralAuctionHouse)
     returns (ILiquidationEngine _liquidationEngine)
   {
     return ILiquidationEngine(ICollateralAuctionHouseFactory(factory).liquidationEngine());
@@ -84,7 +77,7 @@ contract CollateralAuctionHouseChild is
   function oracleRelayer()
     public
     view
-    override(IncreasingDiscountCollateralAuctionHouse, IIncreasingDiscountCollateralAuctionHouse)
+    override(CollateralAuctionHouse, ICollateralAuctionHouse)
     returns (IOracleRelayer _oracleRelayer)
   {
     return IOracleRelayer(ICollateralAuctionHouseFactory(factory).oracleRelayer());

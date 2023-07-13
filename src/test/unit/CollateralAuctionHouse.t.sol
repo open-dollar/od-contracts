@@ -7,16 +7,13 @@ import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 import {InternalCallsWatcher, InternalCallsExtension} from '@test/utils/InternalCallsWatcher.sol';
 import {ILiquidationEngine} from '@interfaces/ILiquidationEngine.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
-import {
-  IIncreasingDiscountCollateralAuctionHouse,
-  IncreasingDiscountCollateralAuctionHouse
-} from '@contracts/CollateralAuctionHouse.sol';
+import {ICollateralAuctionHouse, CollateralAuctionHouse} from '@contracts/CollateralAuctionHouse.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {OracleForTest} from '@contracts/for-test/OracleForTest.sol';
 import {
-  IncreasingDiscountCollateralAuctionHouseForTest,
+  CollateralAuctionHouseForTest,
   MockCollateralAuctionHouse
 } from '@contracts/for-test/CollateralAuctionHouseForTest.sol';
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
@@ -40,17 +37,16 @@ contract Base is HaiTest {
   OracleForTest mockMarketOracle = new OracleForTest(1 ether);
   OracleForTest mockSystemCoinOracle = new OracleForTest(1 ether);
 
-  IIncreasingDiscountCollateralAuctionHouse auctionHouse;
+  ICollateralAuctionHouse auctionHouse;
 
-  IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams cahParams =
-  IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams({
+  ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams cahParams = ICollateralAuctionHouse
+    .CollateralAuctionHouseSystemCoinParams({
     lowerSystemCoinDeviation: WAD, // 0% deviation
     upperSystemCoinDeviation: WAD, // 0% deviation
     minSystemCoinDeviation: 0.999e18 // 0.1% deviation
   });
 
-  IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams cahCParams =
-  IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams({
+  ICollateralAuctionHouse.CollateralAuctionHouseParams cahCParams = ICollateralAuctionHouse.CollateralAuctionHouseParams({
     minDiscount: 0.95e18, // 5% discount
     maxDiscount: 0.95e18, // 5% discount
     perSecondDiscountUpdateRate: RAY, // [ray]
@@ -63,8 +59,8 @@ contract Base is HaiTest {
     vm.prank(deployer);
 
     auctionHouse =
-    new IncreasingDiscountCollateralAuctionHouseForTest(mockSafeEngine, mockOracleRelayer, mockLiquidationEngine, mockCollateralType, mockCollateralAuctionHouse, cahParams, cahCParams);
-    watcher = address(IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse)).watcher());
+    new CollateralAuctionHouseForTest(mockSafeEngine, mockOracleRelayer, mockLiquidationEngine, mockCollateralType, mockCollateralAuctionHouse, cahParams, cahCParams);
+    watcher = address(CollateralAuctionHouseForTest(address(auctionHouse)).watcher());
     vm.mockCall(
       address(mockOracleRelayer),
       abi.encodeWithSelector(IOracleRelayer.cParams.selector, mockCollateralType),
@@ -79,69 +75,79 @@ contract Base is HaiTest {
 
   function _setCallSuper(bool _callSuper) internal {
     vm.prank(deployer);
-    IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse)).setCallSuper(_callSuper);
+    CollateralAuctionHouseForTest(address(auctionHouse)).setCallSuper(_callSuper);
   }
 
   // --- SystemCoin Params ---
 
   function _mockMinSystemCoinMarketDeviation(uint256 _minSystemCoinDeviation) internal {
-    stdstore.target(address(auctionHouse)).sig(IIncreasingDiscountCollateralAuctionHouse.params.selector).depth(0)
-      .checked_write(_minSystemCoinDeviation);
+    stdstore.target(address(auctionHouse)).sig(ICollateralAuctionHouse.params.selector).depth(0).checked_write(
+      _minSystemCoinDeviation
+    );
   }
 
   function _mockLowerSystemCoinMarketDeviation(uint256 _lowerSystemCoinDeviation) internal {
-    stdstore.target(address(auctionHouse)).sig(IIncreasingDiscountCollateralAuctionHouse.params.selector).depth(1)
-      .checked_write(_lowerSystemCoinDeviation);
+    stdstore.target(address(auctionHouse)).sig(ICollateralAuctionHouse.params.selector).depth(1).checked_write(
+      _lowerSystemCoinDeviation
+    );
   }
 
   function _mockUpperSystemCoinMarketDeviation(uint256 _upperSystemCoinDeviation) internal {
-    stdstore.target(address(auctionHouse)).sig(IIncreasingDiscountCollateralAuctionHouse.params.selector).depth(2)
-      .checked_write(_upperSystemCoinDeviation);
+    stdstore.target(address(auctionHouse)).sig(ICollateralAuctionHouse.params.selector).depth(2).checked_write(
+      _upperSystemCoinDeviation
+    );
   }
 
   // --- Collateral Params ---
 
   function _mockMinimumBid(uint256 _minumumBid) internal {
-    stdstore.target(address(auctionHouse)).sig(IIncreasingDiscountCollateralAuctionHouse.cParams.selector).depth(0)
-      .checked_write(_minumumBid);
+    stdstore.target(address(auctionHouse)).sig(ICollateralAuctionHouse.cParams.selector).depth(0).checked_write(
+      _minumumBid
+    );
   }
 
   function _mockMinDiscount(uint256 _minDiscount) internal {
-    stdstore.target(address(auctionHouse)).sig(IIncreasingDiscountCollateralAuctionHouse.cParams.selector).depth(1)
-      .checked_write(_minDiscount);
+    stdstore.target(address(auctionHouse)).sig(ICollateralAuctionHouse.cParams.selector).depth(1).checked_write(
+      _minDiscount
+    );
   }
 
   function _mockMaxDiscount(uint256 _maxDiscount) internal {
-    stdstore.target(address(auctionHouse)).sig(IIncreasingDiscountCollateralAuctionHouse.cParams.selector).depth(2)
-      .checked_write(_maxDiscount);
+    stdstore.target(address(auctionHouse)).sig(ICollateralAuctionHouse.cParams.selector).depth(2).checked_write(
+      _maxDiscount
+    );
   }
 
   function _mockPerSecondDiscountUpdateRate(uint256 _perSecondDiscountUpdateRate) internal {
-    stdstore.target(address(auctionHouse)).sig(IIncreasingDiscountCollateralAuctionHouse.cParams.selector).depth(3)
-      .checked_write(_perSecondDiscountUpdateRate);
+    stdstore.target(address(auctionHouse)).sig(ICollateralAuctionHouse.cParams.selector).depth(3).checked_write(
+      _perSecondDiscountUpdateRate
+    );
   }
 
   function _mockLowerCollateralMarketDeviation(uint256 _lowerCollateralDeviation) internal {
-    stdstore.target(address(auctionHouse)).sig(IIncreasingDiscountCollateralAuctionHouse.cParams.selector).depth(4)
-      .checked_write(_lowerCollateralDeviation);
+    stdstore.target(address(auctionHouse)).sig(ICollateralAuctionHouse.cParams.selector).depth(4).checked_write(
+      _lowerCollateralDeviation
+    );
   }
 
   function _mockUpperCollateralMarketDeviation(uint256 _upperCollateralDeviation) internal {
-    stdstore.target(address(auctionHouse)).sig(IIncreasingDiscountCollateralAuctionHouse.cParams.selector).depth(5)
-      .checked_write(_upperCollateralDeviation);
+    stdstore.target(address(auctionHouse)).sig(ICollateralAuctionHouse.cParams.selector).depth(5).checked_write(
+      _upperCollateralDeviation
+    );
   }
 
   // --- Data ---
 
   function _mockAuctionsStarted(uint256 _auctionsStarted) internal {
-    stdstore.target(address(auctionHouse)).sig(IIncreasingDiscountCollateralAuctionHouse.auctionsStarted.selector)
-      .checked_write(_auctionsStarted);
+    stdstore.target(address(auctionHouse)).sig(ICollateralAuctionHouse.auctionsStarted.selector).checked_write(
+      _auctionsStarted
+    );
   }
 
   function _mockLastReadRedemptionPrice(uint256 _lastReadRedemptionPrice) internal {
-    stdstore.target(address(auctionHouse)).sig(
-      IIncreasingDiscountCollateralAuctionHouse.lastReadRedemptionPrice.selector
-    ).checked_write(_lastReadRedemptionPrice);
+    stdstore.target(address(auctionHouse)).sig(ICollateralAuctionHouse.lastReadRedemptionPrice.selector).checked_write(
+      _lastReadRedemptionPrice
+    );
   }
 
   // --- Mocked calls ---
@@ -337,20 +343,18 @@ contract Unit_CollateralAuctionHouse_Constructor is Base {
     assertEq(auctionHouse.authorizedAccounts(deployer), true);
   }
 
-  function test_Set_CAH_Params(
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams
-  ) public {
+  function test_Set_CAH_Params(ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams) public {
     vm.assume(_cahParams.lowerSystemCoinDeviation <= WAD);
     vm.assume(_cahParams.upperSystemCoinDeviation <= WAD);
     auctionHouse =
-    new IncreasingDiscountCollateralAuctionHouse(mockSafeEngine, mockOracleRelayer, mockLiquidationEngine, mockCollateralType, _cahParams, cahCParams);
+    new CollateralAuctionHouse(mockSafeEngine, mockOracleRelayer, mockLiquidationEngine, mockCollateralType, _cahParams, cahCParams);
 
     assertEq(abi.encode(auctionHouse.params()), abi.encode(_cahParams));
   }
 
-  function test_Set_CAH_SystemCoin_Params(
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams
-  ) public {
+  function test_Set_CAH_SystemCoin_Params(ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams)
+    public
+  {
     vm.assume(_cahCParams.minDiscount >= _cahCParams.maxDiscount && _cahCParams.minDiscount <= WAD);
     vm.assume(_cahCParams.maxDiscount > 0 && _cahCParams.maxDiscount <= _cahCParams.minDiscount);
     vm.assume(_cahCParams.perSecondDiscountUpdateRate <= RAY);
@@ -358,23 +362,23 @@ contract Unit_CollateralAuctionHouse_Constructor is Base {
     vm.assume(_cahCParams.upperCollateralDeviation <= WAD);
 
     auctionHouse =
-    new IncreasingDiscountCollateralAuctionHouse(mockSafeEngine, mockOracleRelayer, mockLiquidationEngine, mockCollateralType, cahParams, _cahCParams);
+    new CollateralAuctionHouse(mockSafeEngine, mockOracleRelayer, mockLiquidationEngine, mockCollateralType, cahParams, _cahCParams);
     assertEq(abi.encode(auctionHouse.cParams()), abi.encode(_cahCParams));
   }
 
   function test_Revert_Null_SafeEngine() public {
     vm.expectRevert(Assertions.NullAddress.selector);
-    new IncreasingDiscountCollateralAuctionHouseForTest(address(0), mockOracleRelayer, mockLiquidationEngine, mockCollateralType, mockCollateralAuctionHouse, cahParams, cahCParams);
+    new CollateralAuctionHouseForTest(address(0), mockOracleRelayer, mockLiquidationEngine, mockCollateralType, mockCollateralAuctionHouse, cahParams, cahCParams);
   }
 
   function test_Revert_Null_OracleRelayer() public {
     vm.expectRevert(Assertions.NullAddress.selector);
-    new IncreasingDiscountCollateralAuctionHouseForTest(mockSafeEngine, address(0), mockLiquidationEngine, mockCollateralType, mockCollateralAuctionHouse, cahParams, cahCParams);
+    new CollateralAuctionHouseForTest(mockSafeEngine, address(0), mockLiquidationEngine, mockCollateralType, mockCollateralAuctionHouse, cahParams, cahCParams);
   }
 
   function test_Revert_Null_LiquidationEngine() public {
     vm.expectRevert(Assertions.NullAddress.selector);
-    new IncreasingDiscountCollateralAuctionHouseForTest(mockSafeEngine, mockOracleRelayer, address(0), mockCollateralType, mockCollateralAuctionHouse, cahParams, cahCParams);
+    new CollateralAuctionHouseForTest(mockSafeEngine, mockOracleRelayer, address(0), mockCollateralType, mockCollateralAuctionHouse, cahParams, cahCParams);
   }
 }
 
@@ -383,8 +387,8 @@ contract Unit_CollateralAuctionHouse_AmountToRaise is Base {
     vm.assume(_auctionsAmount > 0 && _auctionsAmount <= 100);
 
     for (uint8 i = 1; i < _auctionsAmount; i++) {
-      IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse)).mock_pushBid(
-        IIncreasingDiscountCollateralAuctionHouse.Auction({
+      CollateralAuctionHouseForTest(address(auctionHouse)).mock_pushBid(
+        ICollateralAuctionHouse.Auction({
           amountToSell: 0,
           amountToRaise: 0,
           currentDiscount: 0,
@@ -396,8 +400,8 @@ contract Unit_CollateralAuctionHouse_AmountToRaise is Base {
         })
       );
     }
-    IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse)).mock_pushBid(
-      IIncreasingDiscountCollateralAuctionHouse.Auction({
+    CollateralAuctionHouseForTest(address(auctionHouse)).mock_pushBid(
+      ICollateralAuctionHouse.Auction({
         amountToSell: 0,
         amountToRaise: _amountToRaise,
         currentDiscount: 0,
@@ -418,8 +422,8 @@ contract Unit_CollateralAuctionHouse_ForgoneCollateralReceiver is Base {
     vm.assume(_auctionsAmount > 0 && _auctionsAmount <= 100);
 
     for (uint8 i = 1; i < _auctionsAmount; i++) {
-      IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse)).mock_pushBid(
-        IIncreasingDiscountCollateralAuctionHouse.Auction({
+      CollateralAuctionHouseForTest(address(auctionHouse)).mock_pushBid(
+        ICollateralAuctionHouse.Auction({
           amountToSell: 0,
           amountToRaise: 0,
           currentDiscount: 0,
@@ -431,8 +435,8 @@ contract Unit_CollateralAuctionHouse_ForgoneCollateralReceiver is Base {
         })
       );
     }
-    IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse)).mock_pushBid(
-      IIncreasingDiscountCollateralAuctionHouse.Auction({
+    CollateralAuctionHouseForTest(address(auctionHouse)).mock_pushBid(
+      ICollateralAuctionHouse.Auction({
         amountToSell: 0,
         amountToRaise: 0,
         currentDiscount: 0,
@@ -478,15 +482,18 @@ contract Unit_CollateralAuctionHouse_ModifyParameters is Base {
     auctionHouse.modifyParameters('liquidationEngine', abi.encode(address(0)));
   }
 
-  function _validParameters(
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _fuzz
-  ) internal pure returns (bool) {
+  function _validParameters(ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _fuzz)
+    internal
+    pure
+    returns (bool)
+  {
     return _fuzz.lowerSystemCoinDeviation <= WAD && _fuzz.upperSystemCoinDeviation <= WAD;
   }
 
-  function test_ModifyParameters(
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _fuzz
-  ) public authorized {
+  function test_ModifyParameters(ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _fuzz)
+    public
+    authorized
+  {
     vm.assume(_validParameters(_fuzz));
 
     auctionHouse.modifyParameters('lowerSystemCoinDeviation', abi.encode(_fuzz.lowerSystemCoinDeviation));
@@ -497,7 +504,7 @@ contract Unit_CollateralAuctionHouse_ModifyParameters is Base {
   }
 
   function test_Revert_InvalidParams_LowerSystemCoinDeviation(
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _fuzz
+    ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _fuzz
   ) public authorized {
     vm.assume(_fuzz.upperSystemCoinDeviation <= WAD);
     vm.assume(_fuzz.lowerSystemCoinDeviation > WAD);
@@ -508,7 +515,7 @@ contract Unit_CollateralAuctionHouse_ModifyParameters is Base {
   }
 
   function test_Revert_InvalidParams_UpperSystemCoinDeviation(
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _fuzz
+    ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _fuzz
   ) public authorized {
     vm.assume(_fuzz.upperSystemCoinDeviation > WAD);
     vm.assume(_fuzz.lowerSystemCoinDeviation <= WAD);
@@ -518,7 +525,7 @@ contract Unit_CollateralAuctionHouse_ModifyParameters is Base {
     auctionHouse.modifyParameters('upperSystemCoinDeviation', abi.encode(_fuzz.upperSystemCoinDeviation));
   }
 
-  function _validCParams(IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams memory _fuzz)
+  function _validCParams(ICollateralAuctionHouse.CollateralAuctionHouseParams memory _fuzz)
     internal
     pure
     returns (bool)
@@ -534,9 +541,11 @@ contract Unit_CollateralAuctionHouse_ModifyParameters is Base {
     _;
   }
 
-  function test_Modify_CollateralAuctionHouseParams(
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams memory _fuzz
-  ) public authorized validPreviousCParams {
+  function test_Modify_CollateralAuctionHouseParams(ICollateralAuctionHouse.CollateralAuctionHouseParams memory _fuzz)
+    public
+    authorized
+    validPreviousCParams
+  {
     vm.assume(_validCParams(_fuzz));
 
     auctionHouse.modifyParameters(mockCollateralType, 'minDiscount', abi.encode(_fuzz.minDiscount));
@@ -555,9 +564,11 @@ contract Unit_CollateralAuctionHouse_ModifyParameters is Base {
     assertEq(abi.encode(auctionHouse.cParams()), abi.encode(_fuzz));
   }
 
-  function test_Revert_Invalid_CollateralType(
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams memory _fuzz
-  ) public authorized validPreviousCParams {
+  function test_Revert_Invalid_CollateralType(ICollateralAuctionHouse.CollateralAuctionHouseParams memory _fuzz)
+    public
+    authorized
+    validPreviousCParams
+  {
     vm.assume(_validCParams(_fuzz));
 
     vm.expectRevert(IModifiable.UnrecognizedCollateralType.selector);
@@ -565,7 +576,7 @@ contract Unit_CollateralAuctionHouse_ModifyParameters is Base {
   }
 
   function test_Revert_Invalid_CollateralAuctionHouseParams_MinDiscount(
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams memory _fuzz
+    ICollateralAuctionHouse.CollateralAuctionHouseParams memory _fuzz
   ) public authorized validPreviousCParams {
     vm.assume(_fuzz.minDiscount < _fuzz.maxDiscount || _fuzz.minDiscount > WAD || _fuzz.maxDiscount > _fuzz.minDiscount); //invalid params
     vm.assume(
@@ -582,7 +593,7 @@ contract Unit_CollateralAuctionHouse_ModifyParameters is Base {
   }
 
   function test_Revert_Invalid_CollateralAuctionHouseParams_MaxDiscount(
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams memory _fuzz
+    ICollateralAuctionHouse.CollateralAuctionHouseParams memory _fuzz
   ) public authorized validPreviousCParams {
     vm.assume(
       _fuzz.minDiscount < _fuzz.maxDiscount || _fuzz.minDiscount > WAD || _fuzz.maxDiscount == 0
@@ -602,7 +613,7 @@ contract Unit_CollateralAuctionHouse_ModifyParameters is Base {
   }
 
   function test_Revert_Invalid_CollateralAuctionHouseParams_PerSecondDiscountUpdateRate(
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams memory _fuzz
+    ICollateralAuctionHouse.CollateralAuctionHouseParams memory _fuzz
   ) public authorized validPreviousCParams {
     vm.assume(
       _fuzz.minDiscount >= _fuzz.maxDiscount && _fuzz.minDiscount <= WAD && _fuzz.maxDiscount > 0
@@ -622,7 +633,7 @@ contract Unit_CollateralAuctionHouse_ModifyParameters is Base {
   }
 
   function test_Revert_Invalid_CollateralAuctionHouseParams_LowerCollateralDeviation(
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams memory _fuzz
+    ICollateralAuctionHouse.CollateralAuctionHouseParams memory _fuzz
   ) public authorized validPreviousCParams {
     vm.assume(
       _fuzz.minDiscount >= _fuzz.maxDiscount && _fuzz.minDiscount <= WAD && _fuzz.maxDiscount > 0
@@ -642,7 +653,7 @@ contract Unit_CollateralAuctionHouse_ModifyParameters is Base {
   }
 
   function test_Revert_Invalid_CollateralAuctionHouseParams_UpperCollateralDeviation(
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams memory _fuzz
+    ICollateralAuctionHouse.CollateralAuctionHouseParams memory _fuzz
   ) public authorized validPreviousCParams {
     vm.assume(
       _fuzz.minDiscount >= _fuzz.maxDiscount && _fuzz.minDiscount <= WAD && _fuzz.maxDiscount > 0
@@ -667,8 +678,8 @@ contract Unit_CollateralAuctionHouse_RemainingAmountToSell is Base {
     vm.assume(_auctionsAmount > 0 && _auctionsAmount <= 100);
 
     for (uint8 i = 1; i < _auctionsAmount; i++) {
-      IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse)).mock_pushBid(
-        IIncreasingDiscountCollateralAuctionHouse.Auction({
+      CollateralAuctionHouseForTest(address(auctionHouse)).mock_pushBid(
+        ICollateralAuctionHouse.Auction({
           amountToSell: 0,
           amountToRaise: 0,
           currentDiscount: 0,
@@ -680,8 +691,8 @@ contract Unit_CollateralAuctionHouse_RemainingAmountToSell is Base {
         })
       );
     }
-    IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse)).mock_pushBid(
-      IIncreasingDiscountCollateralAuctionHouse.Auction({
+    CollateralAuctionHouseForTest(address(auctionHouse)).mock_pushBid(
+      ICollateralAuctionHouse.Auction({
         amountToSell: _remainingAmountToSell,
         amountToRaise: 0,
         currentDiscount: 0,
@@ -699,8 +710,8 @@ contract Unit_CollateralAuctionHouse_RemainingAmountToSell is Base {
 
 contract Unit_CollateralAuctionHouse_TerminateAuctionPrematurely is Base {
   function _mockValues(uint256 _amountToSell, uint256 _amountToRaise) internal {
-    IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse)).mock_pushBid(
-      IIncreasingDiscountCollateralAuctionHouse.Auction({
+    CollateralAuctionHouseForTest(address(auctionHouse)).mock_pushBid(
+      ICollateralAuctionHouse.Auction({
         amountToSell: _amountToSell,
         amountToRaise: _amountToRaise,
         currentDiscount: 1,
@@ -758,7 +769,7 @@ contract Unit_CollateralAuctionHouse_TerminateAuctionPrematurely is Base {
     auctionHouse.terminateAuctionPrematurely(1);
 
     bytes memory _result = abi.encode(auctionHouse.auctions(1));
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _emptyAuction;
+    ICollateralAuctionHouse.Auction memory _emptyAuction;
     bytes memory _emptyAuctionBytes = abi.encode(_emptyAuction);
 
     assertEq(_result, _emptyAuctionBytes);
@@ -772,13 +783,13 @@ contract Unit_CollateralAuctionHouse_TerminateAuctionPrematurely is Base {
 
   function test_Revert_AmountToSell_IsZero(uint256 _amountToRaise) public authorized {
     _mockValues(0, _amountToRaise);
-    vm.expectRevert(IIncreasingDiscountCollateralAuctionHouse.IDCAH_InexistentAuction.selector);
+    vm.expectRevert(ICollateralAuctionHouse.CAH_InexistentAuction.selector);
     auctionHouse.terminateAuctionPrematurely(1);
   }
 
   function test_Revert_AmountToRaise_IsZero(uint256 _amountToSell) public authorized {
     _mockValues(_amountToSell, 0);
-    vm.expectRevert(IIncreasingDiscountCollateralAuctionHouse.IDCAH_InexistentAuction.selector);
+    vm.expectRevert(ICollateralAuctionHouse.CAH_InexistentAuction.selector);
     auctionHouse.terminateAuctionPrematurely(1);
   }
 }
@@ -789,9 +800,7 @@ contract Unit_CollateralAuctionHouse_GetBoughtCollateral is Base {
   function setUp() public virtual override {
     super.setUp();
     _setCallSuper(false);
-    IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse)).setCallSupper_getDiscountedCollateralPrice(
-      false
-    );
+    CollateralAuctionHouseForTest(address(auctionHouse)).setCallSupper_getDiscountedCollateralPrice(false);
   }
 
   struct GetBoughtCollateralScenario {
@@ -834,8 +843,8 @@ contract Unit_CollateralAuctionHouse_GetBoughtCollateral is Base {
 
   function test_Call_Internal_GetDiscountedCollateralPrice(GetBoughtCollateralScenario memory _scenario) public {
     _happyPath(_scenario);
-    IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse)).mock_pushBid(
-      IIncreasingDiscountCollateralAuctionHouse.Auction({
+    CollateralAuctionHouseForTest(address(auctionHouse)).mock_pushBid(
+      ICollateralAuctionHouse.Auction({
         amountToSell: _scenario.amountToSell,
         amountToRaise: 0,
         currentDiscount: 0,
@@ -862,7 +871,7 @@ contract Unit_CollateralAuctionHouse_GetBoughtCollateral is Base {
       )
     );
 
-    IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse)).call_getBoughtCollateral(
+    CollateralAuctionHouseForTest(address(auctionHouse)).call_getBoughtCollateral(
       1,
       _scenario.collateralFsmPriceFeedValue,
       _scenario.collateralMarketPriceFeedValue,
@@ -876,8 +885,8 @@ contract Unit_CollateralAuctionHouse_GetBoughtCollateral is Base {
     public
     amountToSellGreaterThanBoughtCollateral(_scenario)
   {
-    IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse)).mock_pushBid(
-      IIncreasingDiscountCollateralAuctionHouse.Auction({
+    CollateralAuctionHouseForTest(address(auctionHouse)).mock_pushBid(
+      ICollateralAuctionHouse.Auction({
         amountToSell: _scenario.amountToSell,
         amountToRaise: 0,
         currentDiscount: 0,
@@ -890,7 +899,7 @@ contract Unit_CollateralAuctionHouse_GetBoughtCollateral is Base {
     );
     _mockGetDiscountedCollateralPrice(_scenario.discountedCollateralPrice);
     uint256 _boughtCollateral = _scenario.adjustedBid.wdiv(_scenario.discountedCollateralPrice);
-    uint256 _result = IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse)).call_getBoughtCollateral(
+    uint256 _result = CollateralAuctionHouseForTest(address(auctionHouse)).call_getBoughtCollateral(
       1,
       _scenario.collateralFsmPriceFeedValue,
       _scenario.collateralMarketPriceFeedValue,
@@ -905,8 +914,8 @@ contract Unit_CollateralAuctionHouse_GetBoughtCollateral is Base {
     public
     amountToSellLessThanBoughtCollateral(_scenario)
   {
-    IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse)).mock_pushBid(
-      IIncreasingDiscountCollateralAuctionHouse.Auction({
+    CollateralAuctionHouseForTest(address(auctionHouse)).mock_pushBid(
+      ICollateralAuctionHouse.Auction({
         amountToSell: _scenario.amountToSell,
         amountToRaise: 0,
         currentDiscount: 0,
@@ -918,7 +927,7 @@ contract Unit_CollateralAuctionHouse_GetBoughtCollateral is Base {
       })
     );
     _mockGetDiscountedCollateralPrice(_scenario.discountedCollateralPrice);
-    uint256 _result = IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse)).call_getBoughtCollateral(
+    uint256 _result = CollateralAuctionHouseForTest(address(auctionHouse)).call_getBoughtCollateral(
       1,
       _scenario.collateralFsmPriceFeedValue,
       _scenario.collateralMarketPriceFeedValue,
@@ -940,11 +949,11 @@ contract Unit_CollateralAuctionHouse_UpdateCurrentDisconunt is Base {
       1
     );
 
-    IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse)).call_updateCurrentDiscount(_id);
+    CollateralAuctionHouseForTest(address(auctionHouse)).call_updateCurrentDiscount(_id);
   }
 
   function test_Set_Bid_LatestDiscountUpdateTime(uint256 _id) public {
-    IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse)).call_updateCurrentDiscount(_id);
+    CollateralAuctionHouseForTest(address(auctionHouse)).call_updateCurrentDiscount(_id);
     assertEq(auctionHouse.auctions(_id).latestDiscountUpdateTime, block.timestamp);
   }
 
@@ -952,7 +961,7 @@ contract Unit_CollateralAuctionHouse_UpdateCurrentDisconunt is Base {
     _setCallSuper(false);
     _mockGetNextCurrentDiscount(_nextCurrentDiscount);
 
-    IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse)).call_updateCurrentDiscount(_id);
+    CollateralAuctionHouseForTest(address(auctionHouse)).call_updateCurrentDiscount(_id);
     assertEq(auctionHouse.auctions(_id).currentDiscount, _nextCurrentDiscount);
   }
 
@@ -960,10 +969,7 @@ contract Unit_CollateralAuctionHouse_UpdateCurrentDisconunt is Base {
     _setCallSuper(false);
     _mockGetNextCurrentDiscount(_nextCurrentDiscount);
 
-    assertEq(
-      IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse)).call_updateCurrentDiscount(_id),
-      _nextCurrentDiscount
-    );
+    assertEq(CollateralAuctionHouseForTest(address(auctionHouse)).call_updateCurrentDiscount(_id), _nextCurrentDiscount);
   }
 }
 
@@ -972,28 +978,26 @@ contract Unit_CollateralAuctionHouse_GetCollateralMarketPrice is Base {
     vm.expectCall(address(mockCollateralFSM), abi.encodeWithSelector(IDelayedOracle.priceSource.selector));
     _mockCollateralFSMPriceSource(address(mockMarketOracle));
 
-    IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse)).getCollateralMarketPrice();
+    CollateralAuctionHouseForTest(address(auctionHouse)).getCollateralMarketPrice();
   }
 
   function test_Call_MarketOracle_GetResultWithValidity() public {
     vm.expectCall(address(mockMarketOracle), abi.encodeWithSelector(IBaseOracle.getResultWithValidity.selector));
     _mockCollateralFSMPriceSource(address(mockMarketOracle));
 
-    IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse)).getCollateralMarketPrice();
+    CollateralAuctionHouseForTest(address(auctionHouse)).getCollateralMarketPrice();
   }
 
   function test_Return_Zero_MarketOracleIsZeroAddress() public {
     _mockCollateralFSMPriceSource(address(0));
-    uint256 _collateralMarketPrice =
-      IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse)).getCollateralMarketPrice();
+    uint256 _collateralMarketPrice = CollateralAuctionHouseForTest(address(auctionHouse)).getCollateralMarketPrice();
     assertEq(_collateralMarketPrice, 0);
   }
 
   function test_Return_Zero_PriceSource_ThrowsError() public {
     mockCollateralFSM.setThrowsError(true);
 
-    uint256 _collateralMarketPrice =
-      IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse)).getCollateralMarketPrice();
+    uint256 _collateralMarketPrice = CollateralAuctionHouseForTest(address(auctionHouse)).getCollateralMarketPrice();
     assertEq(_collateralMarketPrice, 0);
   }
 
@@ -1001,8 +1005,7 @@ contract Unit_CollateralAuctionHouse_GetCollateralMarketPrice is Base {
     _mockCollateralFSMPriceSource(address(mockMarketOracle));
     mockMarketOracle.setThrowsError(true);
 
-    uint256 _collateralMarketPrice =
-      IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse)).getCollateralMarketPrice();
+    uint256 _collateralMarketPrice = CollateralAuctionHouseForTest(address(auctionHouse)).getCollateralMarketPrice();
     assertEq(_collateralMarketPrice, 0);
   }
 
@@ -1010,8 +1013,7 @@ contract Unit_CollateralAuctionHouse_GetCollateralMarketPrice is Base {
     _mockCollateralFSMPriceSource(address(mockMarketOracle));
     mockMarketOracle.setPriceAndValidity(1 ether, false);
 
-    uint256 _collateralMarketPrice =
-      IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse)).getCollateralMarketPrice();
+    uint256 _collateralMarketPrice = CollateralAuctionHouseForTest(address(auctionHouse)).getCollateralMarketPrice();
     assertEq(_collateralMarketPrice, 0);
   }
 
@@ -1019,7 +1021,7 @@ contract Unit_CollateralAuctionHouse_GetCollateralMarketPrice is Base {
     _mockCollateralFSMPriceSource(address(mockMarketOracle));
     mockMarketOracle.setPriceAndValidity(_price, true);
 
-    assertEq(IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse)).getCollateralMarketPrice(), _price);
+    assertEq(CollateralAuctionHouseForTest(address(auctionHouse)).getCollateralMarketPrice(), _price);
   }
 }
 
@@ -1202,7 +1204,7 @@ contract Unit_CollateralAuctionHouse_GetCollateralFSMAndFinalSystemCoinPrices is
   }
 
   function test_Revert_SystemCoinRedemptionPriceIsZero() public {
-    vm.expectRevert(IIncreasingDiscountCollateralAuctionHouse.IDCAH_InvalidRedemptionPriceProvided.selector);
+    vm.expectRevert(ICollateralAuctionHouse.CAH_InvalidRedemptionPriceProvided.selector);
 
     auctionHouse.getCollateralFSMAndFinalSystemCoinPrices(0);
   }
@@ -1236,7 +1238,7 @@ contract Unit_CollateralAuctionHouse_GetCollateralFSMAndFinalSystemCoinPrices is
   function test_Return_FinalSystemCoinPrice_SystemCoinPriceFeedValue(
     GetCollateralFSMAndFinalSystemCoinPricesScenario memory _scenario
   ) public {
-    IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse)).setCallSupper_getFinalSystemCoinPrice(false);
+    CollateralAuctionHouseForTest(address(auctionHouse)).setCallSupper_getFinalSystemCoinPrice(false);
 
     vm.assume(_scenario.systemCoinRedemptionPrice > 0);
     vm.assume(_scenario.systemCoinMarketPrice > 0);
@@ -1548,8 +1550,8 @@ contract Unit_CollateralAuctionHouse_GetNextCurrentDiscount is Base {
   function _mockValues(GetNextCurrentDiscountScenario memory _scenario, address _forgoneCollateralReceiver) internal {
     vm.warp(_scenario.timestamp);
 
-    IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse)).mock_pushBid(
-      IIncreasingDiscountCollateralAuctionHouse.Auction({
+    CollateralAuctionHouseForTest(address(auctionHouse)).mock_pushBid(
+      ICollateralAuctionHouse.Auction({
         amountToSell: 0,
         amountToRaise: 0,
         currentDiscount: _scenario.currentDiscount,
@@ -1634,8 +1636,8 @@ contract Unit_CollateralAuctionHouse_GetAdjustedBid is Base {
   function _mockValues(GetAdjustedBidScenario memory _scenario) internal {
     _mockMinimumBid(_scenario.minimumBid);
 
-    IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse)).mock_pushBid(
-      IIncreasingDiscountCollateralAuctionHouse.Auction({
+    CollateralAuctionHouseForTest(address(auctionHouse)).mock_pushBid(
+      ICollateralAuctionHouse.Auction({
         amountToSell: _scenario.amountToSell,
         amountToRaise: _scenario.amountToRaise,
         currentDiscount: 0,
@@ -1854,8 +1856,7 @@ contract Unit_CollateralAuctionHouse_StartAuction is Base {
       _scenario.initialBid
     );
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction =
-      auctionHouse.auctions(_scenario.auctionsStarted + 1);
+    ICollateralAuctionHouse.Auction memory _auction = auctionHouse.auctions(_scenario.auctionsStarted + 1);
 
     bytes memory _expectedBid = abi.encode(
       _scenario.amountToRaise,
@@ -1923,7 +1924,7 @@ contract Unit_CollateralAuctionHouse_StartAuction is Base {
     _scenario.amountToSell = 0;
     _mockValues(_scenario);
 
-    vm.expectRevert(IIncreasingDiscountCollateralAuctionHouse.IDCAH_NoCollateralForSale.selector);
+    vm.expectRevert(ICollateralAuctionHouse.CAH_NoCollateralForSale.selector);
 
     auctionHouse.startAuction(
       forgoneCollateralReceiver,
@@ -1939,7 +1940,7 @@ contract Unit_CollateralAuctionHouse_StartAuction is Base {
     _scenario.amountToRaise = 0;
     _mockValues(_scenario);
 
-    vm.expectRevert(IIncreasingDiscountCollateralAuctionHouse.IDCAH_NothingToRaise.selector);
+    vm.expectRevert(ICollateralAuctionHouse.CAH_NothingToRaise.selector);
 
     auctionHouse.startAuction(
       forgoneCollateralReceiver,
@@ -1956,7 +1957,7 @@ contract Unit_CollateralAuctionHouse_StartAuction is Base {
     vm.assume(!_amountToRaiseGtEqRay(_scenario));
     _mockValues(_scenario);
 
-    vm.expectRevert(IIncreasingDiscountCollateralAuctionHouse.IDCAH_DustyAuction.selector);
+    vm.expectRevert(ICollateralAuctionHouse.CAH_DustyAuction.selector);
 
     auctionHouse.startAuction(
       forgoneCollateralReceiver,
@@ -1987,8 +1988,7 @@ contract Unit_CollateralAuctionHouse_GetApproximateCollateralBought is Base {
   function setUp() public override {
     super.setUp();
     _setCallSuper(false);
-    IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse))
-      .setCallSupper_getCollateralFSMAndFinalSystemCoinPrices(false);
+    CollateralAuctionHouseForTest(address(auctionHouse)).setCallSupper_getCollateralFSMAndFinalSystemCoinPrices(false);
   }
 
   function _mockValues(GetApproximateCollateralBoughtScenario memory _scenario, bool _validAuctionAndBid) internal {
@@ -2002,8 +2002,8 @@ contract Unit_CollateralAuctionHouse_GetApproximateCollateralBought is Base {
       _mockAuctionsStarted(_scenario.id - 1);
     }
 
-    IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse)).mock_pushBid(
-      IIncreasingDiscountCollateralAuctionHouse.Auction({
+    CollateralAuctionHouseForTest(address(auctionHouse)).mock_pushBid(
+      ICollateralAuctionHouse.Auction({
         amountToSell: 0,
         amountToRaise: 0,
         currentDiscount: _scenario.currentDiscount,
@@ -2141,8 +2141,7 @@ contract Unit_CollateralAuction_GetCollateralBought is Base {
   function setUp() public override {
     super.setUp();
     _setCallSuper(false);
-    IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse))
-      .setCallSupper_getCollateralFSMAndFinalSystemCoinPrices(false);
+    CollateralAuctionHouseForTest(address(auctionHouse)).setCallSupper_getCollateralFSMAndFinalSystemCoinPrices(false);
   }
 
   struct GetCollateralBoughtScenario {
@@ -2289,8 +2288,7 @@ contract Unit_CollateralAuctionHouse_BuyCollateral is Base {
   function setUp() public override {
     super.setUp();
     _setCallSuper(false);
-    IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse))
-      .setCallSupper_getCollateralFSMAndFinalSystemCoinPrices(false);
+    CollateralAuctionHouseForTest(address(auctionHouse)).setCallSupper_getCollateralFSMAndFinalSystemCoinPrices(false);
     vm.startPrank(deployer);
   }
 
@@ -2317,8 +2315,8 @@ contract Unit_CollateralAuctionHouse_BuyCollateral is Base {
       _mockAuctionsStarted(_scenario.id - 1);
     }
 
-    IncreasingDiscountCollateralAuctionHouseForTest(address(auctionHouse)).mock_pushBid(
-      IIncreasingDiscountCollateralAuctionHouse.Auction({
+    CollateralAuctionHouseForTest(address(auctionHouse)).mock_pushBid(
+      ICollateralAuctionHouse.Auction({
         amountToSell: _scenario.amountToSell,
         amountToRaise: _scenario.amountToRaise,
         currentDiscount: 1,
@@ -2639,7 +2637,7 @@ contract Unit_CollateralAuctionHouse_BuyCollateral is Base {
     auctionHouse.buyCollateral(_scenario.id, _scenario.wad);
 
     bytes memory _result = abi.encode(auctionHouse.auctions(_scenario.id));
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _emptyAuction;
+    ICollateralAuctionHouse.Auction memory _emptyAuction;
     bytes memory _emptyAuctionBytes = abi.encode(_emptyAuction);
 
     assertEq(_result, _emptyAuctionBytes);
@@ -2684,7 +2682,7 @@ contract Unit_CollateralAuctionHouse_BuyCollateral is Base {
 
     _mockValues(_scenario);
 
-    vm.expectRevert(IIncreasingDiscountCollateralAuctionHouse.IDCAH_InexistentAuction.selector);
+    vm.expectRevert(ICollateralAuctionHouse.CAH_InexistentAuction.selector);
 
     auctionHouse.buyCollateral(_scenario.id, _scenario.wad);
   }
@@ -2696,7 +2694,7 @@ contract Unit_CollateralAuctionHouse_BuyCollateral is Base {
 
     _mockValues(_scenario);
 
-    vm.expectRevert(IIncreasingDiscountCollateralAuctionHouse.IDCAH_InvalidBid.selector);
+    vm.expectRevert(ICollateralAuctionHouse.CAH_InvalidBid.selector);
 
     auctionHouse.buyCollateral(_scenario.id, _scenario.wad);
   }
@@ -2709,7 +2707,7 @@ contract Unit_CollateralAuctionHouse_BuyCollateral is Base {
     vm.assume(!_collateralFsmValidValue(_scenario));
     _mockValues(_scenario);
 
-    vm.expectRevert(IIncreasingDiscountCollateralAuctionHouse.IDCAH_CollateralFSMInvalidValue.selector);
+    vm.expectRevert(ICollateralAuctionHouse.CAH_CollateralFSMInvalidValue.selector);
 
     auctionHouse.buyCollateral(_scenario.id, _scenario.wad);
   }
@@ -2724,7 +2722,7 @@ contract Unit_CollateralAuctionHouse_BuyCollateral is Base {
     _scenario.boughtCollateral = 0;
     _mockValues(_scenario);
 
-    vm.expectRevert(IIncreasingDiscountCollateralAuctionHouse.IDCAH_NullBoughtAmount.selector);
+    vm.expectRevert(ICollateralAuctionHouse.CAH_NullBoughtAmount.selector);
 
     auctionHouse.buyCollateral(_scenario.id, _scenario.wad);
   }
@@ -2735,7 +2733,7 @@ contract Unit_CollateralAuctionHouse_BuyCollateral is Base {
     _scenario.amountToRaise = _scenario.wad * RAY + _remainingToRaise;
     _mockValues(_scenario);
 
-    vm.expectRevert(IIncreasingDiscountCollateralAuctionHouse.IDCAH_InvalidLeftToRaise.selector);
+    vm.expectRevert(ICollateralAuctionHouse.CAH_InvalidLeftToRaise.selector);
 
     auctionHouse.buyCollateral(_scenario.id, _scenario.wad);
   }

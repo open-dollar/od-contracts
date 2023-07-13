@@ -8,10 +8,7 @@ import {ISAFEEngine, SAFEEngine} from '@contracts/SAFEEngine.sol';
 import {ILiquidationEngine, LiquidationEngine} from '@contracts/LiquidationEngine.sol';
 import {IAccountingEngine, AccountingEngine} from '@contracts/AccountingEngine.sol';
 import {IStabilityFeeTreasury, StabilityFeeTreasury} from '@contracts/StabilityFeeTreasury.sol';
-import {
-  IIncreasingDiscountCollateralAuctionHouse,
-  IncreasingDiscountCollateralAuctionHouse
-} from '@contracts/CollateralAuctionHouse.sol';
+import {ICollateralAuctionHouse, CollateralAuctionHouse} from '@contracts/CollateralAuctionHouse.sol';
 import {ISurplusAuctionHouse, SurplusAuctionHouse} from '@contracts/SurplusAuctionHouse.sol';
 import {IDebtAuctionHouse, DebtAuctionHouse} from '@contracts/DebtAuctionHouse.sol';
 import {CollateralJoin} from '@contracts/utils/CollateralJoin.sol';
@@ -150,7 +147,7 @@ contract SingleGlobalSettlementTest is DSTest {
     DummyFSM oracleSecurityModule;
     CoinForTest collateral;
     CollateralJoin collateralJoin;
-    IncreasingDiscountCollateralAuctionHouse collateralAuctionHouse;
+    CollateralAuctionHouse collateralAuctionHouse;
   }
 
   mapping(bytes32 => CollateralType) collateralTypes;
@@ -195,15 +192,15 @@ contract SingleGlobalSettlementTest is DSTest {
 
     safeEngine.updateCollateralPrice(_encodedName, ray(3 ether), ray(3 ether));
 
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams =
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams({
+    ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams = ICollateralAuctionHouse
+      .CollateralAuctionHouseSystemCoinParams({
       lowerSystemCoinDeviation: WAD, // 0% deviation
       upperSystemCoinDeviation: WAD, // 0% deviation
       minSystemCoinDeviation: 0.999e18 // 0.1% deviation
     });
 
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams =
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams({
+    ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams = ICollateralAuctionHouse
+      .CollateralAuctionHouseParams({
       minDiscount: 0.95e18, // 5% discount
       maxDiscount: 0.95e18, // 5% discount
       perSecondDiscountUpdateRate: RAY, // [ray]
@@ -211,8 +208,8 @@ contract SingleGlobalSettlementTest is DSTest {
       upperCollateralDeviation: 0.95e18, // 5% deviation
       minimumBid: 1e18 // 1 system coin
     });
-    IncreasingDiscountCollateralAuctionHouse _collateralAuctionHouse =
-    new IncreasingDiscountCollateralAuctionHouse(address(safeEngine), address(oracleRelayer), address(liquidationEngine), _encodedName, _cahParams, _cahCParams);
+    CollateralAuctionHouse _collateralAuctionHouse =
+    new CollateralAuctionHouse(address(safeEngine), address(oracleRelayer), address(liquidationEngine), _encodedName, _cahParams, _cahCParams);
 
     safeEngine.approveSAFEModification(address(_collateralAuctionHouse));
     _collateralAuctionHouse.addAuthorization(address(globalSettlement));

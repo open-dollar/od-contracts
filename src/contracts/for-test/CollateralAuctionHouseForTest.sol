@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {IncreasingDiscountCollateralAuctionHouse} from '@contracts/CollateralAuctionHouse.sol';
+import {CollateralAuctionHouse} from '@contracts/CollateralAuctionHouse.sol';
 import {InternalCallsExtension} from '@test/utils/InternalCallsWatcher.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
 import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
 
 // solhint-disable
-contract CollateralAuctionHouseForTest {
+contract DummyCollateralAuctionHouse {
   uint256 auctionId = 123_456;
 
   function startAuction(
@@ -22,10 +22,7 @@ contract CollateralAuctionHouseForTest {
   }
 }
 
-contract IncreasingDiscountCollateralAuctionHouseForTest is
-  IncreasingDiscountCollateralAuctionHouse,
-  InternalCallsExtension
-{
+contract CollateralAuctionHouseForTest is CollateralAuctionHouse, InternalCallsExtension {
   MockCollateralAuctionHouse mockCollateralAuctionHouse;
 
   constructor(
@@ -36,16 +33,7 @@ contract IncreasingDiscountCollateralAuctionHouseForTest is
     MockCollateralAuctionHouse _mockCollateralAuctionHouse,
     CollateralAuctionHouseSystemCoinParams memory _cahParams,
     CollateralAuctionHouseParams memory _cahCParams
-  )
-    IncreasingDiscountCollateralAuctionHouse(
-      _safeEngine,
-      _oracleRelayer,
-      _liquidationEngine,
-      _cType,
-      _cahParams,
-      _cahCParams
-    )
-  {
+  ) CollateralAuctionHouse(_safeEngine, _oracleRelayer, _liquidationEngine, _cType, _cahParams, _cahCParams) {
     mockCollateralAuctionHouse = _mockCollateralAuctionHouse;
   }
 

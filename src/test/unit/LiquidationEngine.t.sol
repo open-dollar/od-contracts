@@ -12,7 +12,7 @@ import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
 import {LiquidationEngine} from '@contracts/LiquidationEngine.sol';
 import {LiquidationEngineForTest} from '@contracts/for-test/LiquidationEngineForTest.sol';
-import {CollateralAuctionHouseForTest} from '@contracts/for-test/CollateralAuctionHouseForTest.sol';
+import {DummyCollateralAuctionHouse} from '@contracts/for-test/CollateralAuctionHouseForTest.sol';
 import {HaiTest} from '@test/utils/HaiTest.t.sol';
 import {StdStorage, stdStorage} from 'forge-std/StdStorage.sol';
 
@@ -40,7 +40,7 @@ abstract contract Base is HaiTest {
 
   // NOTE: calculating _limitAdjustedDebt to mock call is complex, so we use a contract for test
   ICollateralAuctionHouse collateralAuctionHouseForTest =
-    ICollateralAuctionHouse(address(new CollateralAuctionHouseForTest()));
+    ICollateralAuctionHouse(address(new DummyCollateralAuctionHouse()));
 
   ILiquidationEngine.LiquidationEngineParams liquidationEngineParams =
     ILiquidationEngine.LiquidationEngineParams({onAuctionSystemCoinLimit: type(uint256).max});

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {IIncreasingDiscountCollateralAuctionHouse} from '@interfaces/IIncreasingDiscountCollateralAuctionHouse.sol';
+import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
 
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
@@ -15,7 +15,7 @@ interface ICollateralAuctionHouseFactory is IAuthorizable, IDisableable, IModifi
   function params()
     external
     view
-    returns (IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams);
+    returns (ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams);
   // solhint-disable-next-line private-vars-leading-underscore
   function _params()
     external
@@ -25,7 +25,7 @@ interface ICollateralAuctionHouseFactory is IAuthorizable, IDisableable, IModifi
   function cParams(bytes32 _cType)
     external
     view
-    returns (IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams);
+    returns (ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams);
   // solhint-disable-next-line private-vars-leading-underscore
   function _cParams(bytes32 _cType)
     external
@@ -52,6 +52,6 @@ interface ICollateralAuctionHouseFactory is IAuthorizable, IDisableable, IModifi
   // --- Methods ---
   function deployCollateralAuctionHouse(
     bytes32 _cType,
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams calldata _cahCParams
+    ICollateralAuctionHouse.CollateralAuctionHouseParams calldata _cahCParams
   ) external returns (address _collateralAuctionHouse);
 }
