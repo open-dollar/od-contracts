@@ -90,7 +90,7 @@ contract DeployMainnet is MainnetParams, Deploy {
 contract DeployGoerli is GoerliParams, Deploy {
   function setUp() public virtual {
     _deployerPk = uint256(vm.envBytes32('OP_GOERLI_DEPLOYER_PK'));
-    chainId = 420;
+    chainId = 421_613;
   }
 
   function _setupEnvironment() internal virtual override {
@@ -99,7 +99,7 @@ contract DeployGoerli is GoerliParams, Deploy {
     systemCoinOracle = new OracleForTestnet(HAI_INITIAL_PRICE); // 1 HAI = 1 USD
     haiOracleForTest = OracleForTestnet(address(systemCoinOracle));
 
-    IBaseOracle _ethUSDPriceFeed = new ChainlinkRelayer(OP_GOERLI_CHAINLINK_ETH_USD_FEED, 1 hours);
+    IBaseOracle _ethUSDPriceFeed = new ChainlinkRelayer(ARB_GOERLI_CHAINLINK_ETH_USD_FEED, 1 hours);
 
     OracleForTestnet _opETHPriceFeed = new OracleForTestnet(OP_GOERLI_OP_ETH_PRICE_FEED);
     opEthOracleForTest = OracleForTestnet(address(_opETHPriceFeed));
@@ -113,8 +113,8 @@ contract DeployGoerli is GoerliParams, Deploy {
     delayedOracle[WETH] = new DelayedOracle(_ethUSDPriceFeed, 1 hours);
     delayedOracle[OP] = new DelayedOracle(_opUSDPriceFeed, 1 hours);
 
-    collateral[WETH] = IERC20Metadata(OP_WETH);
-    collateral[OP] = IERC20Metadata(OP_OPTIMISM);
+    collateral[WETH] = IERC20Metadata(ARB_WETH);
+    collateral[OP] = IERC20Metadata(ARB_GOV);
 
     // Setup collateral params
     collateralTypes.push(WETH);

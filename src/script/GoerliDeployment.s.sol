@@ -3,7 +3,8 @@ pragma solidity 0.8.19;
 
 import '@script/Contracts.s.sol';
 import {GoerliParams, WETH, OP, WBTC, STONES, TOTEM} from '@script/GoerliParams.s.sol';
-import {OP_WETH, OP_OPTIMISM} from '@script/Registry.s.sol';
+// import {OP_WETH, OP_OPTIMISM} from '@script/Registry.s.sol';
+import {ARB_WETH, ARB_GOV} from '@script/Registry.s.sol';
 
 abstract contract GoerliDeployment is Contracts, GoerliParams {
   uint256 constant GOERLI_DEPLOYMENT_BLOCK = 11_653_534;
@@ -29,8 +30,8 @@ abstract contract GoerliDeployment is Contracts, GoerliParams {
     delegatee[OP] = governor;
 
     // --- ERC20s ---
-    collateral[WETH] = IERC20Metadata(OP_WETH);
-    collateral[OP] = IERC20Metadata(OP_OPTIMISM);
+    collateral[WETH] = IERC20Metadata(ARB_WETH);
+    collateral[OP] = IERC20Metadata(ARB_GOV);
     collateral[WBTC] = IERC20Metadata(ERC20_WBTC);
     collateral[STONES] = IERC20Metadata(ERC20_STONES);
     collateral[TOTEM] = IERC20Metadata(ERC20_TOTEM);
