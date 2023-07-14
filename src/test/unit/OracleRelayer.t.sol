@@ -66,6 +66,10 @@ abstract contract Base is HaiTest {
       .checked_write(_liquidationCRatio);
   }
 
+  function _mockCollateralList(bytes32 _cType) internal {
+    OracleRelayerForTest(address(oracleRelayer)).addToCollateralList(_cType);
+  }
+
   function _mockRedemptionPrice(uint256 _redemptionPrice) internal {
     OracleRelayerForTest(address(oracleRelayer)).setRedemptionPrice(_redemptionPrice);
   }
@@ -158,6 +162,7 @@ contract Unit_OracleRelayer_ModifyParameters is Base {
     OracleRelayerForTest(address(oracleRelayer)).setCTypeOracle(_cType, newAddress());
     _mockCTypeSafetyCRatio(_cType, type(uint256).max);
     _mockCTypeLiquidationCRatio(_cType, 0);
+    _mockCollateralList(_cType);
     _;
   }
 
@@ -207,6 +212,8 @@ contract Unit_OracleRelayer_ModifyParameters is Base {
     bytes32 _cType,
     address _nonDelayedOracle
   ) public authorized {
+    _mockCollateralList(_cType);
+
     vm.expectRevert();
     // NOTE: doesn't mockCall for `priceSource`
     oracleRelayer.modifyParameters(_cType, 'oracle', abi.encode(_nonDelayedOracle));
@@ -216,10 +223,11 @@ contract Unit_OracleRelayer_ModifyParameters is Base {
     bytes32 _cType,
     uint256 _liquidationCRatio
   ) public authorized {
-    _mockCTypeSafetyCRatio(_cType, 1e27);
     vm.assume(_liquidationCRatio < 1e27);
+    _mockCTypeSafetyCRatio(_cType, 1e27);
+    _mockCollateralList(_cType);
 
-    vm.expectRevert(abi.encodeWithSelector(Assertions.NotGreaterOrEqualThan.selector, _liquidationCRatio, 1e27));
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NotGreaterOrEqualThan.selector, _liquidationCRatio, RAY));
 
     oracleRelayer.modifyParameters(_cType, 'liquidationCRatio', abi.encode(_liquidationCRatio));
   }
@@ -261,6 +269,7 @@ contract Unit_OracleRelayer_ModifyParameters is Base {
 
     OracleRelayerForTest(address(oracleRelayer)).setCTypeOracle(_cType, newAddress());
     _mockCTypeLiquidationCRatio(_cType, _fuzz.liquidationCRatio);
+    _mockCollateralList(_cType);
 
     vm.expectRevert();
     oracleRelayer.modifyParameters(_cType, 'safetyCRatio', abi.encode(_fuzz.safetyCRatio));
@@ -274,6 +283,7 @@ contract Unit_OracleRelayer_ModifyParameters is Base {
 
     OracleRelayerForTest(address(oracleRelayer)).setCTypeOracle(_cType, newAddress());
     _mockCTypeSafetyCRatio(_cType, _fuzz.safetyCRatio);
+    _mockCollateralList(_cType);
 
     vm.expectRevert();
     oracleRelayer.modifyParameters(_cType, 'liquidationCRatio', abi.encode(_fuzz.liquidationCRatio));
@@ -290,8 +300,15 @@ contract Unit_OracleRelayer_ModifyParameters is Base {
   }
 
   function test_Revert_ModifyParameters_PerCollateral_UnrecognizedParam(bytes32 _cType) public authorized {
+    _mockCollateralList(_cType);
+
     vm.expectRevert(IModifiable.UnrecognizedParam.selector);
     oracleRelayer.modifyParameters(_cType, 'unrecognizedParam', abi.encode(0));
+  }
+
+  function test_Revert_ModifyParameters_PerCollateral_UnrecognizedCType(bytes32 _cType) public authorized {
+    vm.expectRevert(IModifiable.UnrecognizedCType.selector);
+    oracleRelayer.modifyParameters(_cType, '', abi.encode(0));
   }
 
   function test_Revert_ModifyParameters_ContractIsDisabled() public authorized {
@@ -803,5 +820,115 @@ contract Unit_OracleRelayer_UpdateRedemptionRate is Base {
     vm.expectRevert(IAuthorizable.Unauthorized.selector);
 
     oracleRelayer.updateRedemptionRate(_redemptionRate);
+  }
+}
+
+contract Unit_OracleRelayer_InitializeCollateralType is Base {
+  modifier happyPath(IOracleRelayer.OracleRelayerCollateralParams memory _oracleRelayerCParams) {
+    _assumeHappyPath(_oracleRelayerCParams);
+    _mockValues(_oracleRelayerCParams);
+    _;
+  }
+
+  function _assumeHappyPath(IOracleRelayer.OracleRelayerCollateralParams memory _oracleRelayerCParams) internal pure {
+    vm.assume(_oracleRelayerCParams.oracle != IDelayedOracle(address(0)));
+    vm.assume(_oracleRelayerCParams.safetyCRatio >= _oracleRelayerCParams.liquidationCRatio);
+    vm.assume(_oracleRelayerCParams.liquidationCRatio >= RAY);
+  }
+
+  function _mockValues(IOracleRelayer.OracleRelayerCollateralParams memory _oracleRelayerCParams) internal {
+    vm.mockCall(
+      address(_oracleRelayerCParams.oracle),
+      abi.encodeCall(IDelayedOracle.priceSource, ()),
+      abi.encode(_oracleRelayerCParams.oracle)
+    );
+  }
+
+  function test_Set_CParams(
+    bytes32 _cType,
+    IOracleRelayer.OracleRelayerCollateralParams memory _oracleRelayerCParams
+  ) public authorized happyPath(_oracleRelayerCParams) {
+    oracleRelayer.initializeCollateralType(_cType, _oracleRelayerCParams);
+
+    assertEq(abi.encode(oracleRelayer.cParams(_cType)), abi.encode(_oracleRelayerCParams));
+  }
+
+  function test_Revert_Oracle_NullAddress(
+    bytes32 _cType,
+    IOracleRelayer.OracleRelayerCollateralParams memory _oracleRelayerCParams
+  ) public authorized {
+    _oracleRelayerCParams.oracle = IDelayedOracle(address(0));
+
+    vm.expectRevert(Assertions.NullAddress.selector);
+
+    oracleRelayer.initializeCollateralType(_cType, _oracleRelayerCParams);
+  }
+
+  function test_Revert_Oracle_NonDelayedOracle(
+    bytes32 _cType,
+    IOracleRelayer.OracleRelayerCollateralParams memory _oracleRelayerCParams
+  ) public authorized {
+    vm.assume(_oracleRelayerCParams.oracle != IDelayedOracle(address(0)));
+
+    vm.expectRevert();
+    // NOTE: doesn't mockCall for `priceSource`
+    oracleRelayer.initializeCollateralType(_cType, _oracleRelayerCParams);
+  }
+
+  function test_Revert_SafetyCRatio_NotGreaterOrEqualThan(
+    bytes32 _cType,
+    IOracleRelayer.OracleRelayerCollateralParams memory _oracleRelayerCParams
+  ) public authorized {
+    vm.assume(_oracleRelayerCParams.oracle != IDelayedOracle(address(0)));
+    vm.assume(_oracleRelayerCParams.safetyCRatio < _oracleRelayerCParams.liquidationCRatio);
+
+    _mockValues(_oracleRelayerCParams);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        Assertions.NotGreaterOrEqualThan.selector,
+        _oracleRelayerCParams.safetyCRatio,
+        _oracleRelayerCParams.liquidationCRatio
+      )
+    );
+
+    oracleRelayer.initializeCollateralType(_cType, _oracleRelayerCParams);
+  }
+
+  function test_Revert_LiquidationCRatio_NotGreaterOrEqualThan(
+    bytes32 _cType,
+    IOracleRelayer.OracleRelayerCollateralParams memory _oracleRelayerCParams
+  ) public authorized {
+    vm.assume(_oracleRelayerCParams.oracle != IDelayedOracle(address(0)));
+    vm.assume(_oracleRelayerCParams.safetyCRatio >= _oracleRelayerCParams.liquidationCRatio);
+    vm.assume(_oracleRelayerCParams.liquidationCRatio < RAY);
+
+    _mockValues(_oracleRelayerCParams);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(Assertions.NotGreaterOrEqualThan.selector, _oracleRelayerCParams.liquidationCRatio, RAY)
+    );
+
+    oracleRelayer.initializeCollateralType(_cType, _oracleRelayerCParams);
+  }
+
+  function test_Revert_NotAuthorized(
+    bytes32 _cType,
+    IOracleRelayer.OracleRelayerCollateralParams memory _oracleRelayerCParams
+  ) public {
+    vm.expectRevert(IAuthorizable.Unauthorized.selector);
+
+    oracleRelayer.initializeCollateralType(_cType, _oracleRelayerCParams);
+  }
+
+  function test_Revert_CollateralTypeAlreadyInitialized(
+    bytes32 _cType,
+    IOracleRelayer.OracleRelayerCollateralParams memory _oracleRelayerCParams
+  ) public authorized {
+    _mockCollateralList(_cType);
+
+    vm.expectRevert(IOracleRelayer.OracleRelayer_CollateralTypeAlreadyInitialized.selector);
+
+    oracleRelayer.initializeCollateralType(_cType, _oracleRelayerCParams);
   }
 }

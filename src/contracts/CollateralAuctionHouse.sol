@@ -671,7 +671,6 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, ICollateralAuctionH
   }
 
   // --- Getters ---
-
   /**
    * @dev Deprecated
    */
@@ -699,7 +698,6 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, ICollateralAuctionH
   }
 
   // --- Administration ---
-
   function _modifyParameters(bytes32 _param, bytes memory _data) internal virtual override {
     uint256 _uint256 = _data.toUint256();
     address _address = _data.toAddress();
@@ -714,9 +712,11 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, ICollateralAuctionH
     else revert UnrecognizedParam();
   }
 
-  function _modifyParameters(bytes32, bytes32 _param, bytes memory _data) internal virtual override {
+  function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal virtual override {
     uint256 _uint256 = _data.toUint256();
 
+    // Checks that the inputted collateral type is the contract's one
+    if (_cType != collateralType) revert UnrecognizedCType();
     // CAH Params
     if (_param == 'minDiscount') _cParams.minDiscount = _uint256;
     else if (_param == 'maxDiscount') _cParams.maxDiscount = _uint256;
@@ -744,10 +744,7 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, ICollateralAuctionH
     address(liquidationEngine()).assertNonNull();
   }
 
-  function _validateCParameters(bytes32 _cType) internal view override {
-    // Checks that the inputted collateral type is the contract's one
-    if (_cType != collateralType) revert UnrecognizedCollateralType();
-
+  function _validateCParameters(bytes32) internal view override {
     // Collateral Parameters
     _cParams.minDiscount.assertGtEq(_cParams.maxDiscount).assertLtEq(WAD);
     _cParams.maxDiscount.assertGt(0).assertLtEq(_cParams.minDiscount);

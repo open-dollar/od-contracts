@@ -571,7 +571,7 @@ contract Unit_CollateralAuctionHouse_ModifyParameters is Base {
   {
     vm.assume(_validCParams(_fuzz));
 
-    vm.expectRevert(IModifiable.UnrecognizedCollateralType.selector);
+    vm.expectRevert(IModifiable.UnrecognizedCType.selector);
     auctionHouse.modifyParameters('invalidCollateralType', 'minDiscount', abi.encode(_fuzz.minDiscount));
   }
 

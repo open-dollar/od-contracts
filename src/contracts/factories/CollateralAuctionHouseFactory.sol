@@ -16,10 +16,10 @@ import {WAD} from '@libraries/Math.sol';
 import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
 
 contract CollateralAuctionHouseFactory is Authorizable, Disableable, Modifiable, ICollateralAuctionHouseFactory {
-  using EnumerableSet for EnumerableSet.Bytes32Set;
   using Assertions for uint256;
   using Assertions for address;
   using Encoding for bytes;
+  using EnumerableSet for EnumerableSet.Bytes32Set;
 
   // --- Registry ---
   address public safeEngine;
@@ -62,8 +62,9 @@ contract CollateralAuctionHouseFactory is Authorizable, Disableable, Modifiable,
     return ICollateralAuctionHouse(collateralAuctionHouses[_cType])._cParams();
   }
 
-  EnumerableSet.Bytes32Set internal _collateralTypes;
   mapping(bytes32 => address) public collateralAuctionHouses;
+
+  EnumerableSet.Bytes32Set internal _collateralList;
 
   // --- Init ---
   constructor(
@@ -84,7 +85,7 @@ contract CollateralAuctionHouseFactory is Authorizable, Disableable, Modifiable,
     bytes32 _cType,
     ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams
   ) external isAuthorized whenEnabled returns (address _collateralAuctionHouse) {
-    if (!_collateralTypes.add(_cType)) revert CAHFactory_CAHExists();
+    if (!_collateralList.add(_cType)) revert CAHFactory_CAHExists();
 
     ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _emptyCahParams;
 
@@ -104,15 +105,15 @@ contract CollateralAuctionHouseFactory is Authorizable, Disableable, Modifiable,
   }
 
   // --- Views ---
-  function collateralTypesList() external view returns (bytes32[] memory _collateralTypesList) {
-    return _collateralTypes.values();
+  function collateralList() external view returns (bytes32[] memory __collateralList) {
+    return _collateralList.values();
   }
 
   function collateralAuctionHousesList() external view returns (address[] memory _collateralAuctionHousesList) {
-    bytes32[] memory _collateralTypesList = _collateralTypes.values();
-    _collateralAuctionHousesList = new address[](_collateralTypesList.length);
-    for (uint256 _i; _i < _collateralTypesList.length; ++_i) {
-      _collateralAuctionHousesList[_i] = collateralAuctionHouses[_collateralTypesList[_i]];
+    bytes32[] memory __collateralList = _collateralList.values();
+    _collateralAuctionHousesList = new address[](__collateralList.length);
+    for (uint256 _i; _i < __collateralList.length; ++_i) {
+      _collateralAuctionHousesList[_i] = collateralAuctionHouses[__collateralList[_i]];
     }
   }
 
@@ -128,14 +129,16 @@ contract CollateralAuctionHouseFactory is Authorizable, Disableable, Modifiable,
     else if (_param == 'lowerSystemCoinDeviation') _params.lowerSystemCoinDeviation = _uint256;
     else if (_param == 'upperSystemCoinDeviation') _params.upperSystemCoinDeviation = _uint256;
     else if (_param == 'minSystemCoinDeviation') _params.minSystemCoinDeviation = _uint256;
+    else revert UnrecognizedParam();
   }
 
   function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override {
+    if (!_collateralList.contains(_cType)) revert UnrecognizedCType();
     IModifiable(collateralAuctionHouses[_cType]).modifyParameters(_cType, _param, _data);
   }
 
   function _setLiquidationEngine(address _newLiquidationEngine) internal {
-    if (address(liquidationEngine) != address(0)) _removeAuthorization(address(liquidationEngine));
+    if (liquidationEngine != address(0)) _removeAuthorization(liquidationEngine);
     liquidationEngine = _newLiquidationEngine;
     _addAuthorization(_newLiquidationEngine);
   }

@@ -216,11 +216,13 @@ contract SingleGlobalSettlementTest is DSTest {
     oracleFSM.updateCollateralPrice(bytes32(200 * WAD));
 
     // Start with English auction house
-    liquidationEngine.modifyParameters(_encodedName, 'collateralAuctionHouse', abi.encode(_collateralAuctionHouse));
-    liquidationEngine.modifyParameters(_encodedName, 'liquidationPenalty', abi.encode(1 ether));
-    liquidationEngine.modifyParameters(
-      _encodedName, 'liquidationQuantity', abi.encode(uint256(int256(-1)) / ray(1 ether))
-    );
+    ILiquidationEngine.LiquidationEngineCollateralParams memory _liquidationEngineCollateralParams = ILiquidationEngine
+      .LiquidationEngineCollateralParams({
+      collateralAuctionHouse: address(_collateralAuctionHouse),
+      liquidationPenalty: 1 ether,
+      liquidationQuantity: uint256(int256(-1)) / ray(1 ether)
+    });
+    liquidationEngine.initializeCollateralType(_encodedName, _liquidationEngineCollateralParams);
 
     collateralTypes[_encodedName].oracleSecurityModule = oracleFSM;
     collateralTypes[_encodedName].collateral = newCollateral;

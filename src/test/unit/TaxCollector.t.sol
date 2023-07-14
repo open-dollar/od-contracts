@@ -725,12 +725,19 @@ contract Unit_TaxCollector_DistributeTax is Base {
 }
 
 contract Unit_TaxCollector_ModifyParameters is Base {
-  event ModifyParameters(bytes32 indexed _param, bytes32 indexed _cType, bytes _data);
   event SetPrimaryReceiver(bytes32 indexed _cType, address indexed _receiver);
 
   modifier happyPath() {
     vm.startPrank(authorizedAccount);
     _;
+  }
+
+  function test_Revert_UnrecognizedParam(bytes memory _data) public {
+    vm.startPrank(authorizedAccount);
+
+    vm.expectRevert(IModifiable.UnrecognizedParam.selector);
+
+    taxCollector.modifyParameters('unrecognizedParam', _data);
   }
 
   function test_Set_PrimaryTaxReceiver(address _primaryTaxReceiver) public happyPath {
@@ -769,38 +776,43 @@ contract Unit_TaxCollector_ModifyParameters is Base {
 
     assertEq(taxCollector.params().maxSecondaryReceivers, _maxSecondaryReceivers);
   }
-
-  function test_Revert_UnrecognizedParam(bytes memory _data) public {
-    vm.startPrank(authorizedAccount);
-
-    vm.expectRevert(IModifiable.UnrecognizedParam.selector);
-
-    taxCollector.modifyParameters('unrecognizedParam', _data);
-  }
 }
 
 contract Unit_TaxCollector_ModifyParametersPerCollateral is Base {
-  event ModifyParameters(bytes32 indexed _param, bytes32 indexed _cType, bytes _data);
-
-  modifier happyPath() {
+  modifier happyPath(bytes32 _cType) {
     vm.startPrank(authorizedAccount);
+
+    _mockValues(_cType);
     _;
   }
 
-  function test_Set_StabilityFee(bytes32 _cType, uint256 _stabilityFeeFuzzed) public happyPath {
+  function _mockValues(bytes32 _cType) internal {
     _mockCollateralList(_cType);
-    _mockCollateralData(_cType, 0, block.timestamp);
+  }
 
-    taxCollector.modifyParameters(_cType, 'stabilityFee', abi.encode(_stabilityFeeFuzzed));
+  function test_Revert_UnrecognizedCType(bytes32 _cType, bytes32 _param, bytes memory _data) public {
+    vm.startPrank(authorizedAccount);
 
-    assertEq(taxCollector.cParams(_cType).stabilityFee, _stabilityFeeFuzzed);
+    vm.expectRevert(IModifiable.UnrecognizedCType.selector);
+
+    taxCollector.modifyParameters(_cType, _param, _data);
   }
 
   function test_Revert_UnrecognizedParam(bytes32 _cType, bytes memory _data) public {
     vm.startPrank(authorizedAccount);
 
+    _mockCollateralList(_cType);
+
     vm.expectRevert(IModifiable.UnrecognizedParam.selector);
 
     taxCollector.modifyParameters(_cType, 'unrecognizedParam', _data);
+  }
+
+  function test_Set_StabilityFee(bytes32 _cType, uint256 _stabilityFeeFuzzed) public happyPath(_cType) {
+    _mockCollateralData(_cType, 0, block.timestamp);
+
+    taxCollector.modifyParameters(_cType, 'stabilityFee', abi.encode(_stabilityFeeFuzzed));
+
+    assertEq(taxCollector.cParams(_cType).stabilityFee, _stabilityFeeFuzzed);
   }
 }

@@ -24,13 +24,14 @@ import {Disableable} from '@contracts/utils/Disableable.sol';
 
 import {Encoding} from '@libraries/Encoding.sol';
 import {Math, RAY} from '@libraries/Math.sol';
+import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
 
 contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
   using Math for uint256;
   using Encoding for bytes;
+  using EnumerableSet for EnumerableSet.Bytes32Set;
 
   // --- Data ---
-
   // Data about system parameters
   // solhint-disable-next-line private-vars-leading-underscore
   SAFEEngineParams public _params;
@@ -62,8 +63,9 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
     return _safes[_cType][_safe];
   }
 
-  // --- Balances ---
+  EnumerableSet.Bytes32Set internal _collateralList;
 
+  // --- Balances ---
   // Balance of each collateral type
   mapping(bytes32 _cType => mapping(address _safe => uint256)) public tokenCollateral; // [wad]
   // Internal balance of system coins
@@ -82,16 +84,15 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
 
   function initializeCollateralType(
     bytes32 _cType,
-    SAFEEngineCollateralParams memory _collateralParams
+    SAFEEngineCollateralParams memory _safeEngineCParams
   ) external isAuthorized {
-    if (_cData[_cType].accumulatedRate != 0) revert SAFEEng_CollateralTypeAlreadyExists();
+    if (!_collateralList.add(_cType)) revert SAFEEng_CollateralTypeAlreadyExists();
     _cData[_cType].accumulatedRate = RAY;
-    _cParams[_cType] = _collateralParams;
+    _cParams[_cType] = _safeEngineCParams;
     emit InitializeCollateralType(_cType);
   }
 
   // --- Fungibility ---
-
   /**
    * @notice Transfer collateral between accounts
    * @param _cType Collateral type transferred
@@ -393,8 +394,12 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
     return _safe == _account || safeRights[_safe][_account] == 1;
   }
 
-  // --- Internals ---
+  // --- Views ---
+  function collateralList() external view returns (bytes32[] memory __collateralList) {
+    return _collateralList.values();
+  }
 
+  // --- Internals ---
   function _modifyCollateralBalance(bytes32 _cType, address _account, int256 _wad) internal {
     tokenCollateral[_cType][_account] = tokenCollateral[_cType][_account].add(_wad);
     _emitTransferCollateral(_cType, address(0), _account, _wad);
@@ -430,7 +435,6 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
   }
 
   // --- Administration ---
-
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled {
     uint256 _uint256 = _data.toUint256();
 
@@ -442,6 +446,7 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
   function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override whenEnabled {
     uint256 _uint256 = _data.toUint256();
 
+    if (!_collateralList.contains(_cType)) revert UnrecognizedCType();
     if (_param == 'debtCeiling') _cParams[_cType].debtCeiling = _uint256;
     else if (_param == 'debtFloor') _cParams[_cType].debtFloor = _uint256;
     else revert UnrecognizedParam();

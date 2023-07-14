@@ -1,28 +1,26 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {IAccountingEngine, IAuthorizable, IDisableable} from '@interfaces/IAccountingEngine.sol';
-import {AccountingEngine} from '@contracts/AccountingEngine.sol';
-import {SettlementSurplusAuctioneer} from '@contracts/settlement/SettlementSurplusAuctioneer.sol';
-import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
+import {AccountingEngineForTest, IAccountingEngine} from '@contracts/for-test/AccountingEngineForTest.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ISurplusAuctionHouse} from '@interfaces/ISurplusAuctionHouse.sol';
 import {IDebtAuctionHouse} from '@interfaces/IDebtAuctionHouse.sol';
 import {ISurplusAuctionHouse} from '@interfaces/ISurplusAuctionHouse.sol';
-import {AccountingEngine} from '@contracts/AccountingEngine.sol';
+import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
+import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
-import {Assertions} from '@libraries/Assertions.sol';
+import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 
+import {Assertions} from '@libraries/Assertions.sol';
 import {Math} from '@libraries/Math.sol';
 
-import {AccountingEngineForTest} from '@contracts/for-test/AccountingEngineForTest.sol';
-import {SAFEEngineForTest} from '@contracts/for-test/SAFEEngineForTest.sol';
+import {DummySAFEEngine} from '@contracts/for-test/SAFEEngineForTest.sol';
 
 abstract contract Base is HaiTest {
   using stdStorage for StdStorage;
 
   address deployer = newAddress();
-  ISAFEEngine mockSafeEngine = ISAFEEngine(address(new SAFEEngineForTest()));
+  ISAFEEngine mockSafeEngine = ISAFEEngine(address(new DummySAFEEngine()));
   IDebtAuctionHouse mockDebtAuctionHouse = IDebtAuctionHouse(mockContract('mockDebtAuctionHouse'));
   IDebtAuctionHouse mockSurplusAuctionHouse = IDebtAuctionHouse(mockContract('mockSurplusAuctionHouse'));
   IAccountingEngine accountingEngine;
@@ -47,11 +45,11 @@ abstract contract Base is HaiTest {
   }
 
   function _mockCoinBalance(uint256 _coinBalance) internal {
-    SAFEEngineForTest(address(mockSafeEngine)).mockCoinBalance(address(accountingEngine), _coinBalance);
+    DummySAFEEngine(address(mockSafeEngine)).mockCoinBalance(address(accountingEngine), _coinBalance);
   }
 
   function _mockDebtBalance(uint256 _debtBalance) internal {
-    SAFEEngineForTest(address(mockSafeEngine)).mockDebtBalance(address(accountingEngine), _debtBalance);
+    DummySAFEEngine(address(mockSafeEngine)).mockDebtBalance(address(accountingEngine), _debtBalance);
   }
 
   function _mockCoinAndDebtBalance(uint256 _coinBalance, uint256 _debtBalance) internal {
@@ -77,7 +75,7 @@ abstract contract Base is HaiTest {
   }
 
   function _mockDebtStartAuction(uint256 _id) internal {
-    AccountingEngine.AccountingEngineParams memory _params = accountingEngine.params();
+    IAccountingEngine.AccountingEngineParams memory _params = accountingEngine.params();
     _mockDebtStartAuction(_id, _params.debtAuctionMintedTokens, _params.debtAuctionBidSize);
   }
 
@@ -95,7 +93,7 @@ abstract contract Base is HaiTest {
   }
 
   function _mockSurplusStartAuction(uint256 _id) internal {
-    AccountingEngine.AccountingEngineParams memory _params = accountingEngine.params();
+    IAccountingEngine.AccountingEngineParams memory _params = accountingEngine.params();
     _mockSurplusStartAuction(_id, _params.surplusAmount);
   }
 
@@ -209,23 +207,23 @@ contract Unit_AccountingEngine_Constructor is Base {
     public
   {
     accountingEngine =
-    new AccountingEngine(address(mockSafeEngine), address(mockSurplusAuctionHouse), address(mockDebtAuctionHouse), _accountingEngineParams);
+    new AccountingEngineForTest(address(mockSafeEngine), address(mockSurplusAuctionHouse), address(mockDebtAuctionHouse), _accountingEngineParams);
     assertEq(abi.encode(accountingEngine.params()), abi.encode(_accountingEngineParams));
   }
 
   function test_Revert_NullSafeEngine() public {
     vm.expectRevert(Assertions.NullAddress.selector);
-    new AccountingEngine(address(0), address(mockSurplusAuctionHouse), address(mockDebtAuctionHouse), accountingEngineParams);
+    new AccountingEngineForTest(address(0), address(mockSurplusAuctionHouse), address(mockDebtAuctionHouse), accountingEngineParams);
   }
 
   function test_Revert_NullSurplusAuctionHouse() public {
     vm.expectRevert(Assertions.NullAddress.selector);
-    new AccountingEngine(address(mockSafeEngine), address(0), address(mockDebtAuctionHouse), accountingEngineParams);
+    new AccountingEngineForTest(address(mockSafeEngine), address(0), address(mockDebtAuctionHouse), accountingEngineParams);
   }
 
   function test_Revert_NullDebtAuctionHouse() public {
     vm.expectRevert(Assertions.NullAddress.selector);
-    new AccountingEngine(address(mockSafeEngine), address(mockSurplusAuctionHouse), address(0), accountingEngineParams);
+    new AccountingEngineForTest(address(mockSafeEngine), address(mockSurplusAuctionHouse), address(0), accountingEngineParams);
   }
 }
 

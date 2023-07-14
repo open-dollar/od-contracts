@@ -16,7 +16,7 @@ import {DummyCollateralAuctionHouse} from '@contracts/for-test/CollateralAuction
 import {HaiTest} from '@test/utils/HaiTest.t.sol';
 import {StdStorage, stdStorage} from 'forge-std/StdStorage.sol';
 
-import {Math, RAY, WAD} from '@libraries/Math.sol';
+import {Math, MAX_RAD, RAY, WAD} from '@libraries/Math.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 
 abstract contract Base is HaiTest {
@@ -86,6 +86,10 @@ abstract contract Base is HaiTest {
       abi.encodeCall(ISAFESaviour(mockSaviour).saveSAFE, (address(liquidationEngine), '', address(0))),
       abi.encode(_ok, _collateralAdded, _liquidatorReward)
     );
+  }
+
+  function _mockCollateralList(bytes32 _cType) internal {
+    LiquidationEngineForTest(address(liquidationEngine)).addToCollateralList(_cType);
   }
 
   function _mockLiquidationEngineCollateralType(
@@ -352,6 +356,8 @@ contract Unit_LiquidationEngine_ModifyParameters is Base {
     bytes32 _cType,
     ILiquidationEngine.LiquidationEngineCollateralParams memory _fuzz
   ) public authorized {
+    _mockCollateralList(_cType);
+
     vm.assume(_fuzz.collateralAuctionHouse != address(0));
     liquidationEngine.modifyParameters(_cType, 'collateralAuctionHouse', abi.encode(_fuzz.collateralAuctionHouse));
     liquidationEngine.modifyParameters(_cType, 'liquidationPenalty', abi.encode(_fuzz.liquidationPenalty));
@@ -367,12 +373,14 @@ contract Unit_LiquidationEngine_ModifyParameters is Base {
     bytes32 _cType,
     uint256 _liquidationQuantity
   ) public authorized {
+    _mockCollateralList(_cType);
+
     vm.assume(_liquidationQuantity > type(uint256).max / RAY);
     vm.expectRevert();
     liquidationEngine.modifyParameters(_cType, 'liquidationQuantity', abi.encode(_liquidationQuantity));
   }
 
-  function test_ModifyParameters_AccoutingEngine(address _accountingEngine) public authorized {
+  function test_ModifyParameters_AccountingEngine(address _accountingEngine) public authorized {
     vm.assume(_accountingEngine != address(0));
     liquidationEngine.modifyParameters('accountingEngine', abi.encode(_accountingEngine));
 
@@ -384,6 +392,8 @@ contract Unit_LiquidationEngine_ModifyParameters is Base {
     address _previousCAH,
     address _newCAH
   ) public authorized {
+    _mockCollateralList(_cType);
+
     vm.assume(_newCAH != address(0));
     vm.assume(_newCAH != _previousCAH);
     LiquidationEngineForTest(address(liquidationEngine)).setCollateralAuctionHouse(_cType, _previousCAH);
@@ -406,6 +416,8 @@ contract Unit_LiquidationEngine_ModifyParameters is Base {
   }
 
   function test_Revert_ModifyParameters_PerCollateral_UnrecognizedParam(bytes32 _cType) public authorized {
+    _mockCollateralList(_cType);
+
     vm.expectRevert(IModifiable.UnrecognizedParam.selector);
     liquidationEngine.modifyParameters(_cType, 'unrecognizedParam', abi.encode(0));
   }
@@ -1809,5 +1821,101 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
 
     vm.prank(user);
     liquidationEngine.liquidateSAFE(collateralType, safe);
+  }
+}
+
+contract Unit_LiquidationEngine_InitializeCollateralType is Base {
+  event AddAuthorization(address _account);
+
+  modifier happyPath(ILiquidationEngine.LiquidationEngineCollateralParams memory _liqEngineCParams) {
+    _assumeHappyPath(_liqEngineCParams);
+    _mockValues(_liqEngineCParams);
+    _;
+  }
+
+  function _assumeHappyPath(ILiquidationEngine.LiquidationEngineCollateralParams memory _liqEngineCParams)
+    internal
+    pure
+  {
+    vm.assume(_liqEngineCParams.collateralAuctionHouse != address(0));
+    vm.assume(_liqEngineCParams.liquidationQuantity <= MAX_RAD);
+  }
+
+  function _mockValues(ILiquidationEngine.LiquidationEngineCollateralParams memory _liqEngineCParams) internal {}
+
+  function test_Set_CParams(
+    bytes32 _cType,
+    ILiquidationEngine.LiquidationEngineCollateralParams memory _liqEngineCParams
+  ) public authorized happyPath(_liqEngineCParams) {
+    liquidationEngine.initializeCollateralType(_cType, _liqEngineCParams);
+
+    assertEq(abi.encode(liquidationEngine.cParams(_cType)), abi.encode(_liqEngineCParams));
+  }
+
+  function test_Call_SAFEEngine_ApproveSAFEModification(
+    bytes32 _cType,
+    ILiquidationEngine.LiquidationEngineCollateralParams memory _liqEngineCParams
+  ) public authorized happyPath(_liqEngineCParams) {
+    vm.expectCall(
+      address(mockSafeEngine),
+      abi.encodeCall(mockSafeEngine.approveSAFEModification, (_liqEngineCParams.collateralAuctionHouse))
+    );
+
+    liquidationEngine.initializeCollateralType(_cType, _liqEngineCParams);
+  }
+
+  function test_Emit_AddAuthorization(
+    bytes32 _cType,
+    ILiquidationEngine.LiquidationEngineCollateralParams memory _liqEngineCParams
+  ) public authorized happyPath(_liqEngineCParams) {
+    expectEmitNoIndex();
+    emit AddAuthorization(_liqEngineCParams.collateralAuctionHouse);
+
+    liquidationEngine.initializeCollateralType(_cType, _liqEngineCParams);
+  }
+
+  function test_Revert_CollateralAuctionHouse_NullAddress(
+    bytes32 _cType,
+    ILiquidationEngine.LiquidationEngineCollateralParams memory _liqEngineCParams
+  ) public authorized {
+    _liqEngineCParams.collateralAuctionHouse = address(0);
+
+    vm.expectRevert(Assertions.NullAddress.selector);
+
+    liquidationEngine.initializeCollateralType(_cType, _liqEngineCParams);
+  }
+
+  function test_Revert_LiquidationQuantity_NotLesserOrEqualThan(
+    bytes32 _cType,
+    ILiquidationEngine.LiquidationEngineCollateralParams memory _liqEngineCParams
+  ) public authorized {
+    vm.assume(_liqEngineCParams.collateralAuctionHouse != address(0));
+    vm.assume(_liqEngineCParams.liquidationQuantity > MAX_RAD);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(Assertions.NotLesserOrEqualThan.selector, _liqEngineCParams.liquidationQuantity, MAX_RAD)
+    );
+
+    liquidationEngine.initializeCollateralType(_cType, _liqEngineCParams);
+  }
+
+  function test_Revert_NotAuthorized(
+    bytes32 _cType,
+    ILiquidationEngine.LiquidationEngineCollateralParams memory _liqEngineCParams
+  ) public {
+    vm.expectRevert(IAuthorizable.Unauthorized.selector);
+
+    liquidationEngine.initializeCollateralType(_cType, _liqEngineCParams);
+  }
+
+  function test_Revert_CollateralTypeAlreadyInitialized(
+    bytes32 _cType,
+    ILiquidationEngine.LiquidationEngineCollateralParams memory _liqEngineCParams
+  ) public authorized {
+    _mockCollateralList(_cType);
+
+    vm.expectRevert(ILiquidationEngine.LiqEng_CollateralTypeAlreadyInitialized.selector);
+
+    liquidationEngine.initializeCollateralType(_cType, _liqEngineCParams);
   }
 }

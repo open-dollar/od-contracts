@@ -13,12 +13,14 @@ import {Disableable} from '@contracts/utils/Disableable.sol';
 import {Encoding} from '@libraries/Encoding.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 import {Math, RAY, WAD} from '@libraries/Math.sol';
+import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
 
 contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer {
   using Encoding for bytes;
   using Math for uint256;
   using Assertions for uint256;
   using Assertions for address;
+  using EnumerableSet for EnumerableSet.Bytes32Set;
 
   // --- Registry ---
   ISAFEEngine public safeEngine;
@@ -37,6 +39,8 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
   function cParams(bytes32 _cType) external view returns (OracleRelayerCollateralParams memory _oracleRelayerCParams) {
     return _cParams[_cType];
   }
+
+  EnumerableSet.Bytes32Set internal _collateralList;
 
   // Virtual redemption price (not the most updated value)
   uint256 internal _redemptionPrice; // [ray]
@@ -127,15 +131,14 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
 
   function initializeCollateralType(
     bytes32 _cType,
-    OracleRelayerCollateralParams memory _collateralParams
+    OracleRelayerCollateralParams memory _oracleRelayerCParams
   ) external isAuthorized validCParams(_cType) {
-    if (address(_cParams[_cType].oracle) != address(0)) revert OracleRelayer_CollateralTypeAlreadyInitialized();
-    _validateDelayedOracle(address(_collateralParams.oracle));
-    _cParams[_cType] = _collateralParams;
+    if (!_collateralList.add(_cType)) revert OracleRelayer_CollateralTypeAlreadyInitialized();
+    _validateDelayedOracle(address(_oracleRelayerCParams.oracle));
+    _cParams[_cType] = _oracleRelayerCParams;
   }
 
   // --- Shutdown ---
-
   /**
    * @notice Disable this contract (normally called by GlobalSettlement)
    */
@@ -143,8 +146,12 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
     redemptionRate = RAY;
   }
 
-  // --- Administration ---
+  // --- Views ---
+  function collateralList() external view returns (bytes32[] memory __collateralList) {
+    return _collateralList.values();
+  }
 
+  // --- Administration ---
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled {
     uint256 _uint256 = _data.toUint256();
 
@@ -158,6 +165,7 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
     uint256 _uint256 = _data.toUint256();
     OracleRelayerCollateralParams storage __cParams = _cParams[_cType];
 
+    if (!_collateralList.contains(_cType)) revert UnrecognizedCType();
     if (_param == 'safetyCRatio') __cParams.safetyCRatio = _uint256;
     else if (_param == 'liquidationCRatio') __cParams.liquidationCRatio = _uint256;
     else if (_param == 'oracle') __cParams.oracle = _validateDelayedOracle(_data.toAddress());
@@ -177,9 +185,9 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
   }
 
   function _validateCParameters(bytes32 _cType) internal view override {
-    OracleRelayerCollateralParams memory _collateralParams = _cParams[_cType];
-    _collateralParams.safetyCRatio.assertGtEq(_collateralParams.liquidationCRatio);
-    _collateralParams.liquidationCRatio.assertGtEq(RAY);
-    address(_collateralParams.oracle).assertNonNull();
+    OracleRelayerCollateralParams memory __cParams = _cParams[_cType];
+    __cParams.safetyCRatio.assertGtEq(__cParams.liquidationCRatio);
+    __cParams.liquidationCRatio.assertGtEq(RAY);
+    address(__cParams.oracle).assertNonNull();
   }
 }

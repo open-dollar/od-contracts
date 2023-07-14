@@ -81,4 +81,7 @@ interface ILiquidationEngine is IAuthorizable, IDisableable, IModifiable {
     bytes32 _cType,
     LiquidationEngineCollateralParams memory _collateralParams
   ) external;
+
+  // --- Views ---
+  function collateralList() external view returns (bytes32[] memory __collateralList);
 }

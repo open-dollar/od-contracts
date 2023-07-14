@@ -121,6 +121,8 @@ interface ISAFEEngine is IAuthorizable, IModifiable, IDisableable {
     address _safeAddress
   ) external view returns (uint256 _lockedCollateral, uint256 _generatedDebt);
 
+  function collateralList() external view returns (bytes32[] memory __collateralList);
+
   function globalDebt() external returns (uint256 _globalDebt);
   function confiscateSAFECollateralAndDebt(
     bytes32 _cType,
