@@ -16,7 +16,7 @@ import '@script/Registry.s.sol';
  */
 contract GoerliScript is GoerliDeployment, Common, Script {
   function setUp() public virtual {
-    _governorPK = uint256(vm.envBytes32('OP_GOERLI_GOVERNOR_PK'));
+    _governorPK = uint256(vm.envBytes32('ARB_GOERLI_GOVERNOR_PK'));
     chainId = 421_613;
   }
 
@@ -41,7 +41,7 @@ contract GoerliScript is GoerliDeployment, Common, Script {
 
 contract GoerliDelegate is GoerliDeployment, Common, Script {
   function setUp() public virtual {
-    _governorPK = uint256(vm.envBytes32('OP_GOERLI_GOVERNOR_PK'));
+    _governorPK = uint256(vm.envBytes32('ARB_GOERLI_GOVERNOR_PK'));
     chainId = 421_613;
   }
 

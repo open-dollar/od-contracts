@@ -10,8 +10,7 @@ import {UniV3Relayer} from '@contracts/oracles/UniV3Relayer.sol';
 import {DenominatedOracle, IDenominatedOracle} from '@contracts/oracles/DenominatedOracle.sol';
 import {DelayedOracle, IDelayedOracle} from '@contracts/oracles/DelayedOracle.sol';
 
-// import {OP_CHAINLINK_ETH_USD_FEED, OP_CHAINLINK_WSTETH_ETH_FEED, OP_WETH, OP_WBTC} from '@script/Registry.s.sol';
-import {OP_CHAINLINK_ETH_USD_FEED, OP_CHAINLINK_WSTETH_ETH_FEED, ARB_WETH, OP_WBTC} from '@script/Registry.s.sol';
+import {ARB_CHAINLINK_ETH_USD_FEED, ARB_CHAINLINK_WSTETH_ETH_FEED, ARB_WBTC, ARB_WETH} from '@script/Registry.s.sol';
 
 import {Math, WAD} from '@libraries/Math.sol';
 
@@ -47,11 +46,11 @@ contract OracleSetup is HaiTest {
     vm.createSelectFork(vm.rpcUrl('mainnet'), FORK_BLOCK);
 
     // --- Chainlink ---
-    wethUsdPriceSource = new ChainlinkRelayer(OP_CHAINLINK_ETH_USD_FEED, 1 days);
-    wstethEthPriceSource = new ChainlinkRelayer(OP_CHAINLINK_WSTETH_ETH_FEED, 1 days);
+    wethUsdPriceSource = new ChainlinkRelayer(ARB_CHAINLINK_ETH_USD_FEED, 1 days);
+    wstethEthPriceSource = new ChainlinkRelayer(ARB_CHAINLINK_WSTETH_ETH_FEED, 1 days);
 
     // --- UniV3 ---
-    wbtcWethPriceSource = new UniV3Relayer(OP_WBTC, ARB_WETH, FEE_TIER, 1 days);
+    wbtcWethPriceSource = new UniV3Relayer(ARB_WBTC, ARB_WETH, FEE_TIER, 1 days);
 
     // --- Denominated ---
     wstethUsdPriceSource = new DenominatedOracle(wstethEthPriceSource, wethUsdPriceSource, false);
@@ -61,14 +60,14 @@ contract OracleSetup is HaiTest {
     wethUsdDelayedOracle = new DelayedOracle(wethUsdPriceSource, 1 hours);
   }
 
-  function test_OptimismFork() public {
+  function test_ArbitrumFork() public {
     assertEq(block.number, FORK_BLOCK);
   }
 
   // --- Chainlink ---
 
   function test_ChainlinkOracle() public {
-    assertEq(IChainlinkOracle(OP_CHAINLINK_ETH_USD_FEED).latestAnswer(), int256(CHAINLINK_ETH_USD_PRICE));
+    assertEq(IChainlinkOracle(ARB_CHAINLINK_ETH_USD_FEED).latestAnswer(), int256(CHAINLINK_ETH_USD_PRICE));
   }
 
   function test_ChainlinkRelayer() public {
@@ -149,7 +148,7 @@ contract OracleSetup is HaiTest {
 
   function test_DelayedOracleUpdateResult() public {
     vm.mockCall(
-      OP_CHAINLINK_ETH_USD_FEED,
+      ARB_CHAINLINK_ETH_USD_FEED,
       abi.encodeWithSelector(IChainlinkOracle.latestRoundData.selector),
       abi.encode(uint80(0), int256(NEW_ETH_USD_PRICE), uint256(0), block.timestamp, uint80(0))
     );

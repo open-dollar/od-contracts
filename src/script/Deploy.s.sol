@@ -58,14 +58,14 @@ abstract contract Deploy is Common, Script {
 
 contract DeployMainnet is MainnetParams, Deploy {
   function setUp() public virtual {
-    _deployerPk = uint256(vm.envBytes32('OP_MAINNET_DEPLOYER_PK'));
+    _deployerPk = uint256(vm.envBytes32('ARB_MAINNET_DEPLOYER_PK'));
     chainId = 10;
   }
 
   function _setupEnvironment() internal virtual override {
     // Setup oracle feeds
-    IBaseOracle _ethUSDPriceFeed = new ChainlinkRelayer(OP_CHAINLINK_ETH_USD_FEED, 1 hours);
-    IBaseOracle _wstethETHPriceFeed = new ChainlinkRelayer(OP_CHAINLINK_WSTETH_ETH_FEED, 1 hours);
+    IBaseOracle _ethUSDPriceFeed = new ChainlinkRelayer(ARB_CHAINLINK_ETH_USD_FEED, 1 hours);
+    IBaseOracle _wstethETHPriceFeed = new ChainlinkRelayer(ARB_CHAINLINK_WSTETH_ETH_FEED, 1 hours);
 
     IBaseOracle _wstethUSDPriceFeed = new DenominatedOracle({
       _priceSource: _wstethETHPriceFeed,
@@ -77,8 +77,8 @@ contract DeployMainnet is MainnetParams, Deploy {
     delayedOracle[WETH] = new DelayedOracle(_ethUSDPriceFeed, 1 hours);
     delayedOracle[WSTETH] = new DelayedOracle(_wstethUSDPriceFeed, 1 hours);
 
-    collateral[WETH] = IERC20Metadata(OP_WETH);
-    collateral[WSTETH] = IERC20Metadata(OP_WSTETH);
+    collateral[WETH] = IERC20Metadata(ARB_WETH);
+    collateral[WSTETH] = IERC20Metadata(ARB_WSTETH);
 
     collateralTypes.push(WETH);
     collateralTypes.push(WSTETH);
@@ -89,7 +89,7 @@ contract DeployMainnet is MainnetParams, Deploy {
 
 contract DeployGoerli is GoerliParams, Deploy {
   function setUp() public virtual {
-    _deployerPk = uint256(vm.envBytes32('OP_GOERLI_DEPLOYER_PK'));
+    _deployerPk = uint256(vm.envBytes32('ARB_GOERLI_DEPLOYER_PK'));
     chainId = 421_613;
   }
 
@@ -101,7 +101,7 @@ contract DeployGoerli is GoerliParams, Deploy {
 
     IBaseOracle _ethUSDPriceFeed = new ChainlinkRelayer(ARB_GOERLI_CHAINLINK_ETH_USD_FEED, 1 hours);
 
-    OracleForTestnet _opETHPriceFeed = new OracleForTestnet(OP_GOERLI_OP_ETH_PRICE_FEED);
+    OracleForTestnet _opETHPriceFeed = new OracleForTestnet(ARB_GOERLI_ARB_ETH_PRICE_FEED);
     opEthOracleForTest = OracleForTestnet(address(_opETHPriceFeed));
 
     DenominatedOracle _opUSDPriceFeed = new DenominatedOracle({
@@ -113,8 +113,8 @@ contract DeployGoerli is GoerliParams, Deploy {
     delayedOracle[WETH] = new DelayedOracle(_ethUSDPriceFeed, 1 hours);
     delayedOracle[OP] = new DelayedOracle(_opUSDPriceFeed, 1 hours);
 
-    collateral[WETH] = IERC20Metadata(ARB_WETH);
-    collateral[OP] = IERC20Metadata(ARB_GOV);
+    collateral[WETH] = IERC20Metadata(ARB_GOERLI_WETH);
+    collateral[OP] = IERC20Metadata(ARB_GOERLI_GOV);
 
     // Setup collateral params
     collateralTypes.push(WETH);
