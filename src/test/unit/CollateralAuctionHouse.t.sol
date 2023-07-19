@@ -709,6 +709,12 @@ contract Unit_CollateralAuctionHouse_RemainingAmountToSell is Base {
 }
 
 contract Unit_CollateralAuctionHouse_TerminateAuctionPrematurely is Base {
+  address forgoneCollateralReceiver = label('forgoneCollateralReceiver');
+
+  event TerminateAuctionPrematurely(
+    uint256 indexed _id, uint256 _blockTimestamp, address _leftoverReceiver, uint256 _leftoverCollateral
+  );
+
   function _mockValues(uint256 _amountToSell, uint256 _amountToRaise) internal {
     CollateralAuctionHouseForTest(address(auctionHouse)).mock_pushBid(
       ICollateralAuctionHouse.Auction({
@@ -718,7 +724,7 @@ contract Unit_CollateralAuctionHouse_TerminateAuctionPrematurely is Base {
         maxDiscount: 1,
         perSecondDiscountUpdateRate: 1,
         latestDiscountUpdateTime: 1,
-        forgoneCollateralReceiver: newAddress(),
+        forgoneCollateralReceiver: forgoneCollateralReceiver,
         auctionIncomeRecipient: newAddress()
       })
     );
@@ -752,13 +758,11 @@ contract Unit_CollateralAuctionHouse_TerminateAuctionPrematurely is Base {
     auctionHouse.terminateAuctionPrematurely(1);
   }
 
-  event TerminateAuctionPrematurely(uint256 indexed _id, address _sender, uint256 _collateralAmount);
-
   function test_Emit_TerminateAuctionPrematurely(uint256 _amountToSell, uint256 _amountToRaise) public authorized {
     vm.assume(_amountToSell > 0 && _amountToRaise > 0);
     _mockValues(_amountToSell, _amountToRaise);
-    vm.expectEmit(true, false, false, true);
-    emit TerminateAuctionPrematurely(1, deployer, 0);
+    expectEmitNoIndex();
+    emit TerminateAuctionPrematurely(1, block.timestamp, forgoneCollateralReceiver, _amountToSell);
     auctionHouse.terminateAuctionPrematurely(1);
   }
 
@@ -1755,16 +1759,13 @@ contract Unit_CollateralAuctionHouse_StartAuction is Base {
   address auctionIncomeRecipient = label('auctionIncomeRecipient');
 
   event StartAuction(
-    uint256 _id,
-    uint256 _auctionsStarted,
+    uint256 indexed _id,
+    uint256 _blockTimestamp,
     uint256 _amountToSell,
-    uint256 _initialBid,
-    uint256 indexed _amountToRaise,
-    uint256 _startingDiscount,
+    uint256 _amountToRaise,
+    uint256 _initialDiscount,
     uint256 _maxDiscount,
-    uint256 _perSecondDiscountUpdateRate,
-    address indexed _forgoneCollateralReceiver,
-    address indexed _auctionIncomeRecipient
+    uint256 _perSecondDiscountUpdateRate
   );
 
   struct StartAuctionScenario {
@@ -1884,19 +1885,16 @@ contract Unit_CollateralAuctionHouse_StartAuction is Base {
   }
 
   function test_Emit_StartAuction(StartAuctionScenario memory _scenario) public happyPath(_scenario) authorized {
-    vm.expectEmit(true, false, false, true);
+    expectEmitNoIndex();
 
     emit StartAuction({
       _id: _scenario.auctionsStarted + 1,
-      _auctionsStarted: _scenario.auctionsStarted + 1,
+      _blockTimestamp: block.timestamp,
       _amountToSell: _scenario.amountToSell,
-      _initialBid: _scenario.initialBid,
       _amountToRaise: _scenario.amountToRaise,
-      _startingDiscount: _scenario.minDiscount,
+      _initialDiscount: _scenario.minDiscount,
       _maxDiscount: _scenario.maxDiscount,
-      _perSecondDiscountUpdateRate: _scenario.perSecondDiscountUpdateRate,
-      _forgoneCollateralReceiver: forgoneCollateralReceiver,
-      _auctionIncomeRecipient: auctionIncomeRecipient
+      _perSecondDiscountUpdateRate: _scenario.perSecondDiscountUpdateRate
     });
 
     auctionHouse.startAuction(
@@ -2282,8 +2280,17 @@ contract Unit_CollateralAuction_GetCollateralBought is Base {
 }
 
 contract Unit_CollateralAuctionHouse_BuyCollateral is Base {
+  address bidder = label('bidder');
   address auctionIncomeRecipient = label('auctionIncomeRecipient');
   address forgoneCollateralReceiver = label('forgoneCollateralReceiver');
+
+  event BuyCollateral(
+    uint256 indexed _id, address _bidder, uint256 _blockTimestamp, uint256 _raisedAmount, uint256 _soldAmount
+  );
+
+  event SettleAuction(
+    uint256 indexed _id, uint256 _blockTimestamp, address _leftoverReceiver, uint256 _leftoverCollateral
+  );
 
   function setUp() public override {
     super.setUp();
@@ -2393,6 +2400,7 @@ contract Unit_CollateralAuctionHouse_BuyCollateral is Base {
     vm.assume(_updateLeftOver(_scenario, _adjustedBid));
 
     _mockValues(_scenario);
+    vm.startPrank(bidder);
     _;
   }
 
@@ -2406,6 +2414,7 @@ contract Unit_CollateralAuctionHouse_BuyCollateral is Base {
     vm.assume(!_updateLeftOver(_scenario, _scenario.wad));
 
     _mockValues(_scenario);
+    vm.startPrank(bidder);
     _;
   }
 
@@ -2421,6 +2430,7 @@ contract Unit_CollateralAuctionHouse_BuyCollateral is Base {
     vm.assume(_amountToRaise == 0 || _amountToRaise >= RAY);
 
     _mockValues(_scenario);
+    vm.startPrank(bidder);
     _;
   }
 
@@ -2520,7 +2530,7 @@ contract Unit_CollateralAuctionHouse_BuyCollateral is Base {
     vm.expectCall(
       address(mockSafeEngine),
       abi.encodeWithSelector(
-        ISAFEEngine.transferInternalCoins.selector, deployer, auctionIncomeRecipient, _adjustedBid * RAY
+        ISAFEEngine.transferInternalCoins.selector, bidder, auctionIncomeRecipient, _adjustedBid * RAY
       )
     );
 
@@ -2534,7 +2544,7 @@ contract Unit_CollateralAuctionHouse_BuyCollateral is Base {
     vm.expectCall(
       address(mockSafeEngine),
       abi.encodeWithSelector(
-        ISAFEEngine.transferInternalCoins.selector, deployer, auctionIncomeRecipient, _scenario.wad * RAY
+        ISAFEEngine.transferInternalCoins.selector, bidder, auctionIncomeRecipient, _scenario.wad * RAY
       )
     );
 
@@ -2548,7 +2558,7 @@ contract Unit_CollateralAuctionHouse_BuyCollateral is Base {
         ISAFEEngine.transferCollateral.selector,
         mockCollateralType,
         address(auctionHouse),
-        deployer,
+        bidder,
         _scenario.boughtCollateral
       )
     );
@@ -2643,35 +2653,33 @@ contract Unit_CollateralAuctionHouse_BuyCollateral is Base {
     assertEq(_result, _emptyAuctionBytes);
   }
 
-  event BuyCollateral(uint256 indexed _id, uint256 _wad, uint256 _boughtCollateral);
-
   function test_Emit_BuyCollateral(BuyCollateralScenario memory _scenario) public soldAll(_scenario) {
     uint256 _adjustedBid = _scenario.amountToRaise / RAY + 1;
-    vm.expectEmit(true, false, false, true);
-    emit BuyCollateral(_scenario.id, _adjustedBid, _scenario.boughtCollateral);
+    expectEmitNoIndex();
+    emit BuyCollateral(_scenario.id, bidder, block.timestamp, _adjustedBid, _scenario.boughtCollateral);
 
     auctionHouse.buyCollateral(_scenario.id, _scenario.wad);
   }
 
   function test_Emit_BuyCollateral_NotSoldAll(BuyCollateralScenario memory _scenario) public notSoldAll(_scenario) {
-    vm.expectEmit(true, false, false, true);
-    emit BuyCollateral(_scenario.id, _scenario.wad, _scenario.boughtCollateral);
+    expectEmitNoIndex();
+    emit BuyCollateral(_scenario.id, bidder, block.timestamp, _scenario.wad, _scenario.boughtCollateral);
 
     auctionHouse.buyCollateral(_scenario.id, _scenario.wad);
   }
 
-  event SettleAuction(uint256 indexed _id, uint256 _leftoverCollateral);
-
   function test_Emit_SettleAuction(BuyCollateralScenario memory _scenario) public soldAll(_scenario) {
-    vm.expectEmit(true, false, false, true);
-    emit SettleAuction(_scenario.id, 0);
+    expectEmitNoIndex();
+    emit SettleAuction(
+      _scenario.id, block.timestamp, forgoneCollateralReceiver, _scenario.amountToSell - _scenario.boughtCollateral
+    );
 
     auctionHouse.buyCollateral(_scenario.id, _scenario.wad);
   }
 
   function testFail_Emit_SettleAuction_NotSoldAll(BuyCollateralScenario memory _scenario) public notSoldAll(_scenario) {
-    vm.expectEmit(true, false, false, true);
-    emit SettleAuction(_scenario.id, 0);
+    vm.expectEmit(false, false, false, false);
+    emit SettleAuction(_scenario.id, block.timestamp, forgoneCollateralReceiver, 0);
 
     auctionHouse.buyCollateral(_scenario.id, _scenario.wad);
   }

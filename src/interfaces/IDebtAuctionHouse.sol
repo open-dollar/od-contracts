@@ -13,20 +13,27 @@ interface IDebtAuctionHouse is IAuthorizable, IDisableable, IModifiable {
   // --- Events ---
   event StartAuction(
     uint256 indexed _id,
-    uint256 _auctionsStarted,
+    uint256 _blockTimestamp,
     uint256 _amountToSell,
-    uint256 _initialBid,
-    address indexed _incomeReceiver,
-    uint256 indexed _auctionDeadline,
-    uint256 _activeDebtAuctions
+    uint256 _amountToRaise,
+    uint256 _auctionDeadline
   );
-  event RestartAuction(uint256 indexed _id, uint256 _auctionDeadline);
+
+  event RestartAuction(uint256 indexed _id, uint256 _blockTimestamp, uint256 _auctionDeadline);
+
   event DecreaseSoldAmount(
-    uint256 indexed _id, address _highBidder, uint256 _amountToBuy, uint256 _bid, uint256 _bidExpiry
+    uint256 indexed _id,
+    address _bidder,
+    uint256 _blockTimestamp,
+    uint256 _raisedAmount,
+    uint256 _soldAmount,
+    uint256 _bidExpiry
   );
-  event SettleAuction(uint256 indexed _id, uint256 _activeDebtAuctions);
+
+  event SettleAuction(uint256 indexed _id, uint256 _blockTimestamp, address _highBidder, uint256 _raisedAmount);
+
   event TerminateAuctionPrematurely(
-    uint256 indexed _id, address _sender, address _highBidder, uint256 _bidAmount, uint256 _activeDebtAuctions
+    uint256 indexed _id, uint256 _blockTimestamp, address _highBidder, uint256 _raisedAmount
   );
 
   // --- Errors ---

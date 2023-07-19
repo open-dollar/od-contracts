@@ -86,22 +86,22 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
   ) external isAuthorized whenEnabled returns (uint256 _id) {
     _id = ++auctionsStarted;
 
-    _auctions[_id].bidAmount = _initialBid;
-    _auctions[_id].amountToSell = _amountToSell;
-    _auctions[_id].highBidder = _incomeReceiver;
-    _auctions[_id].auctionDeadline = block.timestamp + _params.totalAuctionLength;
-
+    _auctions[_id] = Auction({
+      bidAmount: _initialBid,
+      amountToSell: _amountToSell,
+      highBidder: _incomeReceiver,
+      bidExpiry: 0, // no bid yet
+      auctionDeadline: block.timestamp + _params.totalAuctionLength
+    });
     ++activeDebtAuctions;
 
-    emit StartAuction(
-      _id,
-      auctionsStarted,
-      _amountToSell,
-      _initialBid,
-      _incomeReceiver,
-      _auctions[_id].auctionDeadline,
-      activeDebtAuctions
-    );
+    emit StartAuction({
+      _id: _id,
+      _blockTimestamp: block.timestamp,
+      _amountToSell: _amountToSell,
+      _amountToRaise: _initialBid,
+      _auctionDeadline: _auctions[_id].auctionDeadline
+    });
   }
 
   /**
@@ -109,12 +109,14 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
    * @param _id ID of the auction to restart
    */
   function restartAuction(uint256 _id) external {
+    Auction storage _auction = _auctions[_id];
     if (_id == 0 || _id > auctionsStarted) revert DAH_AuctionNeverStarted();
-    if (_auctions[_id].auctionDeadline > block.timestamp) revert DAH_AuctionNotFinished();
-    if (_auctions[_id].bidExpiry != 0) revert DAH_BidAlreadyPlaced();
-    _auctions[_id].amountToSell = (_params.amountSoldIncrease * _auctions[_id].amountToSell) / WAD;
-    _auctions[_id].auctionDeadline = block.timestamp + _params.totalAuctionLength;
-    emit RestartAuction(_id, _auctions[_id].auctionDeadline);
+    if (_auction.auctionDeadline > block.timestamp) revert DAH_AuctionNotFinished();
+    if (_auction.bidExpiry != 0) revert DAH_BidAlreadyPlaced();
+    _auction.amountToSell = (_params.amountSoldIncrease * _auction.amountToSell) / WAD;
+    _auction.auctionDeadline = block.timestamp + _params.totalAuctionLength;
+
+    emit RestartAuction({_id: _id, _blockTimestamp: block.timestamp, _auctionDeadline: _auction.auctionDeadline});
   }
 
   /**
@@ -125,27 +127,35 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
    * @param _bid New system coin bid (must always equal the total amount raised by the auction) (rad)
    */
   function decreaseSoldAmount(uint256 _id, uint256 _amountToBuy, uint256 _bid) external whenEnabled {
-    if (_auctions[_id].highBidder == address(0)) revert DAH_HighBidderNotSet();
-    if (_auctions[_id].bidExpiry <= block.timestamp && _auctions[_id].bidExpiry != 0) revert DAH_BidAlreadyExpired();
-    if (_auctions[_id].auctionDeadline <= block.timestamp) revert DAH_AuctionAlreadyExpired();
+    Auction storage _auction = _auctions[_id];
+    if (_auction.highBidder == address(0)) revert DAH_HighBidderNotSet();
+    if (_auction.bidExpiry <= block.timestamp && _auction.bidExpiry != 0) revert DAH_BidAlreadyExpired();
+    if (_auction.auctionDeadline <= block.timestamp) revert DAH_AuctionAlreadyExpired();
 
-    if (_bid != _auctions[_id].bidAmount) revert DAH_NotMatchingBid();
-    if (_amountToBuy >= _auctions[_id].amountToSell) revert DAH_AmountBoughtNotLower();
-    if (_params.bidDecrease * _amountToBuy > _auctions[_id].amountToSell * WAD) revert DAH_InsufficientDecrease();
+    if (_bid != _auction.bidAmount) revert DAH_NotMatchingBid();
+    if (_amountToBuy >= _auction.amountToSell) revert DAH_AmountBoughtNotLower();
+    if (_params.bidDecrease * _amountToBuy > _auction.amountToSell * WAD) revert DAH_InsufficientDecrease();
 
-    safeEngine.transferInternalCoins(msg.sender, _auctions[_id].highBidder, _bid);
+    safeEngine.transferInternalCoins(msg.sender, _auction.highBidder, _bid);
 
     // on first bid submitted, clear as much totalOnAuctionDebt as possible
-    if (_auctions[_id].bidExpiry == 0) {
-      uint256 _totalOnAuctionDebt = IAccountingEngine(_auctions[_id].highBidder).totalOnAuctionDebt();
-      IAccountingEngine(_auctions[_id].highBidder).cancelAuctionedDebtWithSurplus(Math.min(_bid, _totalOnAuctionDebt));
+    if (_auction.bidExpiry == 0) {
+      uint256 _totalOnAuctionDebt = IAccountingEngine(_auction.highBidder).totalOnAuctionDebt();
+      IAccountingEngine(_auction.highBidder).cancelAuctionedDebtWithSurplus(Math.min(_bid, _totalOnAuctionDebt));
     }
 
-    _auctions[_id].highBidder = msg.sender;
-    _auctions[_id].amountToSell = _amountToBuy;
-    _auctions[_id].bidExpiry = block.timestamp + _params.bidDuration;
+    _auction.highBidder = msg.sender;
+    _auction.amountToSell = _amountToBuy;
+    _auction.bidExpiry = block.timestamp + _params.bidDuration;
 
-    emit DecreaseSoldAmount(_id, msg.sender, _amountToBuy, _bid, _auctions[_id].bidExpiry);
+    emit DecreaseSoldAmount({
+      _id: _id,
+      _bidder: msg.sender,
+      _blockTimestamp: block.timestamp,
+      _raisedAmount: _bid,
+      _soldAmount: _amountToBuy,
+      _bidExpiry: _auction.bidExpiry
+    });
   }
 
   /**
@@ -153,14 +163,23 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
    * @param _id ID of the auction to settle
    */
   function settleAuction(uint256 _id) external whenEnabled {
-    if (
-      _auctions[_id].bidExpiry == 0
-        || (_auctions[_id].bidExpiry > block.timestamp && _auctions[_id].auctionDeadline > block.timestamp)
-    ) revert DAH_AuctionNotFinished();
-    protocolToken.mint(_auctions[_id].highBidder, _auctions[_id].amountToSell);
+    Auction memory _auction = _auctions[_id];
+    if (_auction.bidExpiry == 0 || (_auction.bidExpiry > block.timestamp && _auction.auctionDeadline > block.timestamp))
+    {
+      revert DAH_AuctionNotFinished();
+    }
+
+    protocolToken.mint(_auction.highBidder, _auction.amountToSell);
     --activeDebtAuctions;
+
+    emit SettleAuction({
+      _id: _id,
+      _blockTimestamp: block.timestamp,
+      _highBidder: _auction.highBidder,
+      _raisedAmount: _auction.bidAmount
+    });
+
     delete _auctions[_id];
-    emit SettleAuction(_id, activeDebtAuctions);
   }
 
   /**
@@ -168,17 +187,22 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
    * @param _id ID of the auction to terminate
    */
   function terminateAuctionPrematurely(uint256 _id) external whenDisabled {
-    if (_auctions[_id].highBidder == address(0)) revert DAH_HighBidderNotSet();
+    Auction memory _auction = _auctions[_id];
+    if (_auction.highBidder == address(0)) revert DAH_HighBidderNotSet();
 
     safeEngine.createUnbackedDebt({
       _debtDestination: accountingEngine,
-      _coinDestination: _auctions[_id].highBidder,
-      _rad: _auctions[_id].bidAmount
+      _coinDestination: _auction.highBidder,
+      _rad: _auction.bidAmount
     });
 
-    emit TerminateAuctionPrematurely(
-      _id, msg.sender, _auctions[_id].highBidder, _auctions[_id].bidAmount, activeDebtAuctions
-    );
+    emit TerminateAuctionPrematurely({
+      _id: _id,
+      _blockTimestamp: block.timestamp,
+      _highBidder: _auction.highBidder,
+      _raisedAmount: _auction.bidAmount
+    });
+
     delete _auctions[_id];
   }
 

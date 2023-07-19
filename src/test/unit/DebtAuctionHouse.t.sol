@@ -222,12 +222,10 @@ contract Unit_DebtAuctionHouse_DisableContract is Base {
 contract Unit_DebtAuctionHouse_StartAuction is Base {
   event StartAuction(
     uint256 indexed _id,
-    uint256 _auctionsStarted,
+    uint256 _blockTimestamp,
     uint256 _amountToSell,
-    uint256 _initialBid,
-    address indexed _incomeReceiver,
-    uint256 indexed _auctionDeadline,
-    uint256 _activeDebtAuctions
+    uint256 _amountToRaise,
+    uint256 _auctionDeadline
   );
 
   modifier happyPath(uint256 _auctionsStarted, uint256 _activeDebtAuctions, uint256 _totalAuctionLength) {
@@ -352,13 +350,7 @@ contract Unit_DebtAuctionHouse_StartAuction is Base {
   ) public happyPath(_auctionsStarted, _activeDebtAuctions, _totalAuctionLength) {
     expectEmitNoIndex();
     emit StartAuction(
-      _auctionsStarted + 1,
-      _auctionsStarted + 1,
-      _amountToSell,
-      _initialBid,
-      _incomeReceiver,
-      block.timestamp + _totalAuctionLength,
-      _activeDebtAuctions + 1
+      _auctionsStarted + 1, block.timestamp, _amountToSell, _initialBid, block.timestamp + _totalAuctionLength
     );
 
     debtAuctionHouse.startAuction(_incomeReceiver, _amountToSell, _initialBid);
@@ -377,7 +369,7 @@ contract Unit_DebtAuctionHouse_StartAuction is Base {
 }
 
 contract Unit_DebtAuctionHouse_RestartAuction is Base {
-  event RestartAuction(uint256 indexed _id, uint256 _auctionDeadline);
+  event RestartAuction(uint256 indexed _id, uint256 _blockTimestamp, uint256 _auctionDeadline);
 
   modifier happyPath(
     DebtAuction memory _auction,
@@ -487,7 +479,7 @@ contract Unit_DebtAuctionHouse_RestartAuction is Base {
     uint256 _totalAuctionLength
   ) public happyPath(_auction, _auctionsStarted, _amountSoldIncrease, _totalAuctionLength) {
     expectEmitNoIndex();
-    emit RestartAuction(_auction.id, block.timestamp + _totalAuctionLength);
+    emit RestartAuction(_auction.id, block.timestamp, block.timestamp + _totalAuctionLength);
 
     debtAuctionHouse.restartAuction(_auction.id);
   }
@@ -495,7 +487,12 @@ contract Unit_DebtAuctionHouse_RestartAuction is Base {
 
 contract Unit_DebtAuctionHouse_DecreaseSoldAmount is Base {
   event DecreaseSoldAmount(
-    uint256 indexed _id, address _highBidder, uint256 _amountToBuy, uint256 _bid, uint256 _bidExpiry
+    uint256 indexed _id,
+    address _bidder,
+    uint256 _blockTimestamp,
+    uint256 _raisedAmount,
+    uint256 _soldAmount,
+    uint256 _bidExpiry
   );
 
   modifier happyPath(
@@ -733,14 +730,16 @@ contract Unit_DebtAuctionHouse_DecreaseSoldAmount is Base {
     uint256 _totalOnAuctionDebt
   ) public happyPath(_auction, _amountToBuy, _bidDecrease, _bidDuration, _totalOnAuctionDebt) {
     expectEmitNoIndex();
-    emit DecreaseSoldAmount(_auction.id, user, _amountToBuy, _auction.bidAmount, block.timestamp + _bidDuration);
+    emit DecreaseSoldAmount(
+      _auction.id, user, block.timestamp, _auction.bidAmount, _amountToBuy, block.timestamp + _bidDuration
+    );
 
     debtAuctionHouse.decreaseSoldAmount(_auction.id, _amountToBuy, _auction.bidAmount);
   }
 }
 
 contract Unit_DebtAuctionHouse_SettleAuction is Base {
-  event SettleAuction(uint256 indexed _id, uint256 _activeDebtAuctions);
+  event SettleAuction(uint256 indexed _id, uint256 _blockTimestamp, address _highBidder, uint256 _raisedAmount);
 
   modifier happyPath(DebtAuction memory _auction, uint256 _activeDebtAuctions) {
     _assumeHappyPath(_auction, _activeDebtAuctions);
@@ -830,7 +829,7 @@ contract Unit_DebtAuctionHouse_SettleAuction is Base {
     uint256 _activeDebtAuctions
   ) public happyPath(_auction, _activeDebtAuctions) {
     expectEmitNoIndex();
-    emit SettleAuction(_auction.id, _activeDebtAuctions - 1);
+    emit SettleAuction(_auction.id, block.timestamp, _auction.highBidder, _auction.bidAmount);
 
     debtAuctionHouse.settleAuction(_auction.id);
   }
@@ -838,7 +837,7 @@ contract Unit_DebtAuctionHouse_SettleAuction is Base {
 
 contract Unit_DebtAuctionHouse_TerminateAuctionPrematurely is Base {
   event TerminateAuctionPrematurely(
-    uint256 indexed _id, address _sender, address _highBidder, uint256 _bidAmount, uint256 _activeDebtAuctions
+    uint256 indexed _id, uint256 _blockTimestamp, address _highBidder, uint256 _raisedAmount
   );
 
   modifier happyPath(DebtAuction memory _auction, uint256 _activeDebtAuctions) {
@@ -896,7 +895,7 @@ contract Unit_DebtAuctionHouse_TerminateAuctionPrematurely is Base {
     uint256 _activeDebtAuctions
   ) public happyPath(_auction, _activeDebtAuctions) {
     expectEmitNoIndex();
-    emit TerminateAuctionPrematurely(_auction.id, user, _auction.highBidder, _auction.bidAmount, _activeDebtAuctions);
+    emit TerminateAuctionPrematurely(_auction.id, block.timestamp, _auction.highBidder, _auction.bidAmount);
 
     debtAuctionHouse.terminateAuctionPrematurely(_auction.id);
   }

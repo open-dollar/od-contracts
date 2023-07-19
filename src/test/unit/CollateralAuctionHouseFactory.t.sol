@@ -296,6 +296,8 @@ contract Unit_CollateralAuctionHouseFactory_ModifyParameters is Base {
     address _newLiquidationEngine
   ) public happyPath {
     vm.assume(_newLiquidationEngine != address(0));
+    vm.assume(_newLiquidationEngine != _oldLiquidationEngine);
+    vm.assume(_newLiquidationEngine != deployer);
 
     _mockLiquidationEngine(_oldLiquidationEngine);
     collateralAuctionHouseFactory.addAuthorization(_oldLiquidationEngine);

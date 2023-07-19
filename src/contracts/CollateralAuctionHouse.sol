@@ -124,8 +124,8 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, ICollateralAuctionH
     // calculate the amount of collateral bought
     _boughtCollateral = _adjustedBid.wdiv(_discountedCollateralPrice);
     // if the calculated collateral amount exceeds the amount still up for sale, adjust it to the remaining amount
-    _boughtCollateral =
-      _boughtCollateral > _auctions[_id].amountToSell ? _auctions[_id].amountToSell : _boughtCollateral;
+    Auction memory _auction = _auctions[_id];
+    _boughtCollateral = _boughtCollateral > _auction.amountToSell ? _auction.amountToSell : _boughtCollateral;
   }
 
   /**
@@ -135,10 +135,10 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, ICollateralAuctionH
    */
   function _updateCurrentDiscount(uint256 _id) internal virtual returns (uint256 _updatedDiscount) {
     // Work directly with storage
-    Auction storage _auctionBidData = _auctions[_id];
-    _auctionBidData.currentDiscount = _getNextCurrentDiscount(_id);
-    _auctionBidData.latestDiscountUpdateTime = block.timestamp;
-    _updatedDiscount = _auctionBidData.currentDiscount;
+    Auction storage _auction = _auctions[_id];
+    _auction.currentDiscount = _getNextCurrentDiscount(_id);
+    _auction.latestDiscountUpdateTime = block.timestamp;
+    _updatedDiscount = _auction.currentDiscount;
   }
 
   // --- Public Auction Utils ---
@@ -364,23 +364,23 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, ICollateralAuctionH
   }
 
   function _getNextCurrentDiscount(uint256 _id) internal view virtual returns (uint256 _nextDiscount) {
-    if (_auctions[_id].forgoneCollateralReceiver == address(0)) return RAY;
-    _nextDiscount = _auctions[_id].currentDiscount;
+    Auction memory _auction = _auctions[_id];
+    if (_auction.forgoneCollateralReceiver == address(0)) return RAY;
+    _nextDiscount = _auction.currentDiscount;
 
     // If the current discount is not greater than max
-    if (_auctions[_id].currentDiscount > _auctions[_id].maxDiscount) {
+    if (_auction.currentDiscount > _auction.maxDiscount) {
       // Calculate the new current discount
-      _nextDiscount = _auctions[_id].perSecondDiscountUpdateRate.rpow(
-        block.timestamp - _auctions[_id].latestDiscountUpdateTime
-      ).rmul(_auctions[_id].currentDiscount);
+      _nextDiscount = _auction.perSecondDiscountUpdateRate.rpow(block.timestamp - _auction.latestDiscountUpdateTime)
+        .rmul(_auction.currentDiscount);
 
       // If the new discount is greater than the max
-      if (_nextDiscount <= _auctions[_id].maxDiscount) {
+      if (_nextDiscount <= _auction.maxDiscount) {
         // Top the next discount to max
-        _nextDiscount = _auctions[_id].maxDiscount;
+        _nextDiscount = _auction.maxDiscount;
       }
     } else {
-      _nextDiscount = _auctions[_id].maxDiscount;
+      _nextDiscount = _auction.maxDiscount;
     }
   }
 
@@ -396,13 +396,12 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, ICollateralAuctionH
   }
 
   function _getAdjustedBid(uint256 _id, uint256 _wad) internal view virtual returns (bool _valid, uint256 _adjustedBid) {
-    if (
-      _auctions[_id].amountToSell == 0 || _auctions[_id].amountToRaise == 0 || _wad == 0 || _wad < _cParams.minimumBid
-    ) {
+    Auction memory _auction = _auctions[_id];
+    if (_auction.amountToSell == 0 || _auction.amountToRaise == 0 || _wad == 0 || _wad < _cParams.minimumBid) {
       return (false, _wad);
     }
 
-    uint256 _remainingToRaise = _auctions[_id].amountToRaise;
+    uint256 _remainingToRaise = _auction.amountToRaise;
 
     // bound max amount offered in exchange for collateral
     _adjustedBid = _wad;
@@ -410,7 +409,7 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, ICollateralAuctionH
       _adjustedBid = (_remainingToRaise / RAY) + 1;
     }
 
-    _remainingToRaise = _adjustedBid * RAY > _remainingToRaise ? 0 : _auctions[_id].amountToRaise - _adjustedBid * RAY;
+    _remainingToRaise = _adjustedBid * RAY > _remainingToRaise ? 0 : _auction.amountToRaise - _adjustedBid * RAY;
     _valid = _remainingToRaise == 0 || _remainingToRaise >= RAY;
   }
 
@@ -428,32 +427,35 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, ICollateralAuctionH
     address _auctionIncomeRecipient,
     uint256 _amountToRaise,
     uint256 _amountToSell,
-    uint256 _initialBid // NOTE: ignored, only used in event
+    uint256 _initialBid // TODO: deprecate and rm from LiqEngine
   ) external isAuthorized returns (uint256 _id) {
     return
       _startAuction(_forgoneCollateralReceiver, _auctionIncomeRecipient, _amountToRaise, _amountToSell, _initialBid);
   }
 
+  // TODO: rm this internal method
   function _startAuction(
     address _forgoneCollateralReceiver,
     address _auctionIncomeRecipient,
     uint256 _amountToRaise,
     uint256 _amountToSell,
-    uint256 _initialBid // NOTE: ignored, only used in event
+    uint256 _initialBid // TODO: deprecate and rm from LiqEngine
   ) internal virtual returns (uint256 _id) {
     if (_amountToSell == 0) revert CAH_NoCollateralForSale();
     if (_amountToRaise == 0) revert CAH_NothingToRaise();
     if (_amountToRaise < RAY) revert CAH_DustyAuction();
     _id = ++auctionsStarted;
 
-    _auctions[_id].currentDiscount = _cParams.minDiscount;
-    _auctions[_id].maxDiscount = _cParams.maxDiscount;
-    _auctions[_id].perSecondDiscountUpdateRate = _cParams.perSecondDiscountUpdateRate;
-    _auctions[_id].latestDiscountUpdateTime = block.timestamp;
-    _auctions[_id].amountToSell = _amountToSell;
-    _auctions[_id].forgoneCollateralReceiver = _forgoneCollateralReceiver;
-    _auctions[_id].auctionIncomeRecipient = _auctionIncomeRecipient;
-    _auctions[_id].amountToRaise = _amountToRaise;
+    _auctions[_id] = Auction({
+      currentDiscount: _cParams.minDiscount,
+      maxDiscount: _cParams.maxDiscount,
+      perSecondDiscountUpdateRate: _cParams.perSecondDiscountUpdateRate,
+      latestDiscountUpdateTime: block.timestamp,
+      amountToSell: _amountToSell,
+      forgoneCollateralReceiver: _forgoneCollateralReceiver,
+      auctionIncomeRecipient: _auctionIncomeRecipient,
+      amountToRaise: _amountToRaise
+    });
 
     safeEngine.transferCollateral({
       _cType: collateralType,
@@ -462,18 +464,15 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, ICollateralAuctionH
       _wad: _amountToSell
     });
 
-    emit StartAuction(
-      _id,
-      auctionsStarted, // NOTE: redundant
-      _amountToSell,
-      _initialBid,
-      _amountToRaise,
-      _cParams.minDiscount,
-      _cParams.maxDiscount,
-      _cParams.perSecondDiscountUpdateRate,
-      _forgoneCollateralReceiver,
-      _auctionIncomeRecipient
-    );
+    emit StartAuction({
+      _id: _id,
+      _blockTimestamp: block.timestamp,
+      _amountToSell: _amountToSell,
+      _amountToRaise: _amountToRaise,
+      _initialDiscount: _cParams.minDiscount,
+      _maxDiscount: _cParams.maxDiscount,
+      _perSecondDiscountUpdateRate: _cParams.perSecondDiscountUpdateRate
+    });
   }
 
   /**
@@ -560,13 +559,14 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, ICollateralAuctionH
    * @param _wad New bid submitted (as a WAD which has 18 decimals)
    */
   function buyCollateral(uint256 _id, uint256 _wad) external {
-    if (_auctions[_id].amountToSell == 0 || _auctions[_id].amountToRaise == 0) revert CAH_InexistentAuction();
+    Auction storage _auction = _auctions[_id];
+    if (_auction.amountToSell == 0 || _auction.amountToRaise == 0) revert CAH_InexistentAuction();
     if (_wad == 0 || _wad < _cParams.minimumBid) revert CAH_InvalidBid();
 
     // bound max amount offered in exchange for collateral (in case someone offers more than it's necessary)
     uint256 _adjustedBid = _wad;
-    if (_adjustedBid * RAY > _auctions[_id].amountToRaise) {
-      _adjustedBid = _auctions[_id].amountToRaise / RAY + 1;
+    if (_adjustedBid * RAY > _auction.amountToRaise) {
+      _adjustedBid = _auction.amountToRaise / RAY + 1;
     }
 
     // Read the redemption price
@@ -589,24 +589,24 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, ICollateralAuctionH
     // check that the calculated amount is greater than zero
     if (_boughtCollateral == 0) revert CAH_NullBoughtAmount();
     // update the amount of collateral to sell
-    _auctions[_id].amountToSell = _auctions[_id].amountToSell - _boughtCollateral;
+    _auction.amountToSell = _auction.amountToSell - _boughtCollateral;
 
     // update remainingToRaise in case amountToSell is zero (everything has been sold)
-    uint256 _remainingToRaise = _wad * RAY >= _auctions[_id].amountToRaise || _auctions[_id].amountToSell == 0
-      ? _auctions[_id].amountToRaise
-      : _auctions[_id].amountToRaise - (_wad * RAY);
+    uint256 _remainingToRaise = _wad * RAY >= _auction.amountToRaise || _auction.amountToSell == 0
+      ? _auction.amountToRaise
+      : _auction.amountToRaise - (_wad * RAY);
 
     // update leftover amount to raise in the bid struct
-    _auctions[_id].amountToRaise =
-      _adjustedBid * RAY > _auctions[_id].amountToRaise ? 0 : _auctions[_id].amountToRaise - _adjustedBid * RAY;
+    _auction.amountToRaise =
+      _adjustedBid * RAY > _auction.amountToRaise ? 0 : _auction.amountToRaise - _adjustedBid * RAY;
 
     // check that the remaining amount to raise is either zero or higher than RAY
-    if (_auctions[_id].amountToRaise != 0 && _auctions[_id].amountToRaise < RAY) revert CAH_InvalidLeftToRaise();
+    if (_auction.amountToRaise != 0 && _auction.amountToRaise < RAY) revert CAH_InvalidLeftToRaise();
 
     // transfer the bid to the income recipient and the collateral to the bidder
     safeEngine.transferInternalCoins({
       _source: msg.sender,
-      _destination: _auctions[_id].auctionIncomeRecipient,
+      _destination: _auction.auctionIncomeRecipient,
       _rad: _adjustedBid * RAY
     });
 
@@ -618,10 +618,16 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, ICollateralAuctionH
     });
 
     // Emit the buy event
-    emit BuyCollateral(_id, _adjustedBid, _boughtCollateral);
+    emit BuyCollateral({
+      _id: _id,
+      _bidder: msg.sender,
+      _blockTimestamp: block.timestamp,
+      _raisedAmount: _adjustedBid,
+      _soldAmount: _boughtCollateral
+    });
 
     // Remove coins from the liquidation buffer
-    bool _soldAll = _auctions[_id].amountToRaise == 0 || _auctions[_id].amountToSell == 0;
+    bool _soldAll = _auction.amountToRaise == 0 || _auction.amountToSell == 0;
     if (_soldAll) {
       liquidationEngine().removeCoinsFromAuction(_remainingToRaise);
     } else {
@@ -634,12 +640,18 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, ICollateralAuctionH
       safeEngine.transferCollateral({
         _cType: collateralType,
         _source: address(this),
-        _destination: _auctions[_id].forgoneCollateralReceiver,
-        _wad: _auctions[_id].amountToSell
+        _destination: _auction.forgoneCollateralReceiver,
+        _wad: _auction.amountToSell
+      });
+
+      emit SettleAuction({
+        _id: _id,
+        _blockTimestamp: block.timestamp,
+        _leftoverReceiver: _auction.forgoneCollateralReceiver,
+        _leftoverCollateral: _auction.amountToSell
       });
 
       delete _auctions[_id];
-      emit SettleAuction(_id, _auctions[_id].amountToSell);
     }
   }
 
@@ -655,19 +667,28 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, ICollateralAuctionH
    * @notice Terminate an auction prematurely. Usually called by Global Settlement.
    * @param _id ID of the auction to settle
    */
+  // TODO: why this method is not whenDisabled?
   function terminateAuctionPrematurely(uint256 _id) external isAuthorized {
-    if (_auctions[_id].amountToSell == 0 || _auctions[_id].amountToRaise == 0) revert CAH_InexistentAuction();
-    liquidationEngine().removeCoinsFromAuction(_auctions[_id].amountToRaise);
+    Auction memory _auction = _auctions[_id];
+
+    if (_auction.amountToSell == 0 || _auction.amountToRaise == 0) revert CAH_InexistentAuction();
+    liquidationEngine().removeCoinsFromAuction(_auction.amountToRaise);
 
     safeEngine.transferCollateral({
       _cType: collateralType,
       _source: address(this),
       _destination: msg.sender,
-      _wad: _auctions[_id].amountToSell
+      _wad: _auction.amountToSell
+    });
+
+    emit TerminateAuctionPrematurely({
+      _id: _id,
+      _blockTimestamp: block.timestamp,
+      _leftoverReceiver: _auction.forgoneCollateralReceiver,
+      _leftoverCollateral: _auction.amountToSell
     });
 
     delete _auctions[_id];
-    emit TerminateAuctionPrematurely(_id, msg.sender, _auctions[_id].amountToSell);
   }
 
   // --- Getters ---

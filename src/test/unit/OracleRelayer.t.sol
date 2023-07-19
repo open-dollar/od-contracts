@@ -899,6 +899,7 @@ contract Unit_OracleRelayer_InitializeCollateralType is Base {
     bytes32 _cType,
     IOracleRelayer.OracleRelayerCollateralParams memory _oracleRelayerCParams
   ) public authorized {
+    vm.assume(_oracleRelayerCParams.oracle != IDelayedOracle(address(vm)));
     vm.assume(_oracleRelayerCParams.oracle != IDelayedOracle(address(0)));
     vm.assume(_oracleRelayerCParams.safetyCRatio >= _oracleRelayerCParams.liquidationCRatio);
     vm.assume(_oracleRelayerCParams.liquidationCRatio < RAY);

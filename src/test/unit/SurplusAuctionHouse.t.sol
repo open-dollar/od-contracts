@@ -235,7 +235,11 @@ contract Unit_SurplusAuctionHouse_DisableContract is Base {
 
 contract Unit_SurplusAuctionHouse_StartAuction is Base {
   event StartAuction(
-    uint256 indexed _id, uint256 _auctionsStarted, uint256 _amountToSell, uint256 _initialBid, uint256 _auctionDeadline
+    uint256 indexed _id,
+    uint256 _blockTimestamp,
+    uint256 _amountToSell,
+    uint256 _amountToRaise,
+    uint256 _auctionDeadline
   );
 
   modifier happyPath(uint256 _auctionsStarted, uint256 _totalAuctionLength) {
@@ -356,7 +360,7 @@ contract Unit_SurplusAuctionHouse_StartAuction is Base {
   ) public happyPath(_auctionsStarted, _totalAuctionLength) {
     expectEmitNoIndex();
     emit StartAuction(
-      _auctionsStarted + 1, _auctionsStarted + 1, _amountToSell, _initialBid, block.timestamp + _totalAuctionLength
+      _auctionsStarted + 1, block.timestamp, _amountToSell, _initialBid, block.timestamp + _totalAuctionLength
     );
 
     surplusAuctionHouse.startAuction(_amountToSell, _initialBid);
@@ -373,7 +377,7 @@ contract Unit_SurplusAuctionHouse_StartAuction is Base {
 }
 
 contract Unit_SurplusAuctionHouse_RestartAuction is Base {
-  event RestartAuction(uint256 indexed _id, uint256 _auctionDeadline);
+  event RestartAuction(uint256 indexed _id, uint256 _blockTimestamp, uint256 _auctionDeadline);
 
   modifier happyPath(SurplusAuction memory _auction, uint256 _auctionsStarted, uint256 _totalAuctionLength) {
     _assumeHappyPath(_auction, _auctionsStarted, _totalAuctionLength);
@@ -457,7 +461,7 @@ contract Unit_SurplusAuctionHouse_RestartAuction is Base {
     uint256 _totalAuctionLength
   ) public happyPath(_auction, _auctionsStarted, _totalAuctionLength) {
     expectEmitNoIndex();
-    emit RestartAuction(_auction.id, block.timestamp + _totalAuctionLength);
+    emit RestartAuction(_auction.id, block.timestamp, block.timestamp + _totalAuctionLength);
 
     surplusAuctionHouse.restartAuction(_auction.id);
   }
@@ -465,7 +469,12 @@ contract Unit_SurplusAuctionHouse_RestartAuction is Base {
 
 contract Unit_SurplusAuctionHouse_IncreaseBidSize is Base {
   event IncreaseBidSize(
-    uint256 indexed _id, address _highBidder, uint256 _amountToBuy, uint256 _bid, uint256 _bidExpiry
+    uint256 indexed _id,
+    address _bidder,
+    uint256 _blockTimestamp,
+    uint256 _raisedAmount,
+    uint256 _soldAmount,
+    uint256 _bidExpiry
   );
 
   modifier happyPath(SurplusAuction memory _auction, uint256 _bid, uint256 _bidIncrease, uint256 _bidDuration) {
@@ -676,7 +685,9 @@ contract Unit_SurplusAuctionHouse_IncreaseBidSize is Base {
     uint256 _bidDuration
   ) public happyPath(_auction, _bid, _bidIncrease, _bidDuration) {
     expectEmitNoIndex();
-    emit IncreaseBidSize(_auction.id, user, _auction.amountToSell, _bid, block.timestamp + _bidDuration);
+    emit IncreaseBidSize(
+      _auction.id, user, block.timestamp, _bid, _auction.amountToSell, block.timestamp + _bidDuration
+    );
 
     surplusAuctionHouse.increaseBidSize(_auction.id, _auction.amountToSell, _bid);
   }
@@ -685,7 +696,7 @@ contract Unit_SurplusAuctionHouse_IncreaseBidSize is Base {
 contract Unit_SurplusAuctionHouse_SettleAuction is Base {
   using Math for uint256;
 
-  event SettleAuction(uint256 indexed _id);
+  event SettleAuction(uint256 indexed _id, uint256 _blockTimestamp, address _highBidder, uint256 _raisedAmount);
 
   modifier happyPath(SurplusAuction memory _auction, uint256 _recyclingPercentage) {
     _assumeHappyPath(_auction, _recyclingPercentage);
@@ -829,14 +840,16 @@ contract Unit_SurplusAuctionHouse_SettleAuction is Base {
     uint256 _recyclingPercentage
   ) public happyPath(_auction, _recyclingPercentage) {
     expectEmitNoIndex();
-    emit SettleAuction(_auction.id);
+    emit SettleAuction(_auction.id, block.timestamp, _auction.highBidder, _auction.bidAmount);
 
     surplusAuctionHouse.settleAuction(_auction.id);
   }
 }
 
 contract Unit_SurplusAuctionHouse_TerminateAuctionPrematurely is Base {
-  event TerminateAuctionPrematurely(uint256 indexed _id, address _sender, address _highBidder, uint256 _bidAmount);
+  event TerminateAuctionPrematurely(
+    uint256 indexed _id, uint256 _blockTimestamp, address _highBidder, uint256 _raisedAmount
+  );
 
   modifier happyPath(SurplusAuction memory _auction) {
     vm.startPrank(user);
@@ -883,7 +896,7 @@ contract Unit_SurplusAuctionHouse_TerminateAuctionPrematurely is Base {
 
   function test_Emit_TerminateAuctionPrematurely(SurplusAuction memory _auction) public happyPath(_auction) {
     expectEmitNoIndex();
-    emit TerminateAuctionPrematurely(_auction.id, user, _auction.highBidder, _auction.bidAmount);
+    emit TerminateAuctionPrematurely(_auction.id, block.timestamp, _auction.highBidder, _auction.bidAmount);
 
     surplusAuctionHouse.terminateAuctionPrematurely(_auction.id);
   }
