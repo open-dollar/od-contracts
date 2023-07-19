@@ -139,7 +139,7 @@ abstract contract GoerliParams is Contracts, Params {
     _taxCollectorCParams[WETH].stabilityFee = RAY + 1.54713e18; // + 5%/yr
     _safeEngineCParams[WETH].debtCeiling = 100_000_000 * RAD; // 100M COINs
 
-    _liquidationEngineCParams[OP].liquidationPenalty = 1.2e18; // 20%
-    _collateralAuctionHouseCParams[OP].maxDiscount = 0.5e18; // -50%
+    _liquidationEngineCParams[AGOR].liquidationPenalty = 1.2e18; // 20%
+    _collateralAuctionHouseCParams[AGOR].maxDiscount = 0.5e18; // -50%
   }
 }

@@ -10,7 +10,7 @@ import {
   WETH,
   ETH_A,
   WSTETH,
-  OP,
+  AGOR,
   SURPLUS_AUCTION_BID_RECEIVER,
   HAI_INITIAL_PRICE
 } from '@script/Params.s.sol';
@@ -59,7 +59,7 @@ abstract contract Deploy is Common, Script {
 contract DeployMainnet is MainnetParams, Deploy {
   function setUp() public virtual {
     _deployerPk = uint256(vm.envBytes32('ARB_MAINNET_DEPLOYER_PK'));
-    chainId = 10;
+    chainId = 42_161;
   }
 
   function _setupEnvironment() internal virtual override {
@@ -111,19 +111,19 @@ contract DeployGoerli is GoerliParams, Deploy {
     });
 
     delayedOracle[WETH] = new DelayedOracle(_ethUSDPriceFeed, 1 hours);
-    delayedOracle[OP] = new DelayedOracle(_opUSDPriceFeed, 1 hours);
+    delayedOracle[AGOR] = new DelayedOracle(_opUSDPriceFeed, 1 hours);
 
     collateral[WETH] = IERC20Metadata(ARB_GOERLI_WETH);
-    collateral[OP] = IERC20Metadata(ARB_GOERLI_GOV);
+    collateral[AGOR] = IERC20Metadata(ARB_GOERLI_GOV);
 
     // Setup collateral params
     collateralTypes.push(WETH);
-    collateralTypes.push(OP);
+    collateralTypes.push(AGOR);
 
     _getEnvironmentParams();
 
     // Setup delegated collateral joins
-    delegatee[OP] = governor;
+    delegatee[AGOR] = governor;
 
     // Revoke oracles authorizations
 

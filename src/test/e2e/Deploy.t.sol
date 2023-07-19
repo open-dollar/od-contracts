@@ -4,7 +4,7 @@ pragma solidity 0.8.19;
 import {HaiTest} from '@test/utils/HaiTest.t.sol';
 import {Deploy, DeployMainnet, DeployGoerli} from '@script/Deploy.s.sol';
 
-import {ParamChecker, WETH, WSTETH, OP} from '@script/Params.s.sol';
+import {ParamChecker, WETH, WSTETH, AGOR} from '@script/Params.s.sol';
 import {ARB_GOV} from '@script/Registry.s.sol';
 import {ERC20Votes} from '@openzeppelin/token/ERC20/extensions/ERC20Votes.sol';
 
@@ -114,6 +114,8 @@ contract E2EDeploymentMainnetTest is DeployMainnet, CommonDeploymentTest {
 
   function setUp() public override {
     vm.createSelectFork(vm.rpcUrl('mainnet'), FORK_BLOCK);
+    emit log_named_uint('Block Number Mainnet E2EDeploy Setup', block.number);
+
     governor = address(69);
     super.setUp();
     run();
@@ -125,10 +127,12 @@ contract E2EDeploymentMainnetTest is DeployMainnet, CommonDeploymentTest {
 }
 
 contract E2EDeploymentGoerliTest is DeployGoerli, CommonDeploymentTest {
-  uint256 FORK_BLOCK = 10_000_000;
+  uint256 FORK_BLOCK = 8_000_000;
 
   function setUp() public override {
     vm.createSelectFork(vm.rpcUrl('goerli'), FORK_BLOCK);
+    emit log_named_uint('Block Number Goerli E2EDeploy Setup', block.number);
+
     governor = address(69);
     super.setUp();
     run();
@@ -154,6 +158,6 @@ contract GoerliDeploymentTest is GoerliDeployment, CommonDeploymentTest {
   }
 
   function test_Delegated_OP() public {
-    assertEq(ERC20Votes(ARB_GOV).delegates(address(collateralJoin[OP])), governor);
+    assertEq(ERC20Votes(ARB_GOV).delegates(address(collateralJoin[AGOR])), governor);
   }
 }

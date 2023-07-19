@@ -44,6 +44,7 @@ contract OracleSetup is HaiTest {
 
   function setUp() public {
     vm.createSelectFork(vm.rpcUrl('mainnet'), FORK_BLOCK);
+    emit log_named_uint('Block Number Oracle Setup', block.number);
 
     // --- Chainlink ---
     wethUsdPriceSource = new ChainlinkRelayer(ARB_CHAINLINK_ETH_USD_FEED, 1 days);
@@ -61,6 +62,7 @@ contract OracleSetup is HaiTest {
   }
 
   function test_ArbitrumFork() public {
+    emit log_named_uint('Block Number Oracle Fork', block.number);
     assertEq(block.number, FORK_BLOCK);
   }
 
