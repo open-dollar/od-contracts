@@ -36,12 +36,13 @@ abstract contract GoerliDeployment is Contracts, GoerliParams {
     collateral[TOTEM] = IERC20Metadata(ERC20_TOTEM);
 
     // change these
-    systemCoin = SystemCoin(0x0Ed89D4655b2fE9f99EaDC3116b223527165452D);
-    protocolToken = ProtocolToken(0x0Ed89D4655b2fE9f99EaDC3116b223527165452D);
+    systemCoin = SystemCoin(0x4fdAb70D291799cA63314F3b7a780732e27979e9);
+    protocolToken = ProtocolToken(0xE89B7d239764a3D1266aD5c6DCADB5ccfdfFC2cD);
 
     // --- base contracts ---
     safeEngine = SAFEEngine(0x78EF63cb208954B1E25023c546bd260dF6640B9C);
-    oracleRelayer = OracleRelayer(0x621da9683c75b19a76F44A9d19744B8D1deC5aD7);
+    // oracleRelayer = OracleRelayer(0x621da9683c75b19a76F44A9d19744B8D1deC5aD7);
+    oracleRelayer = OracleRelayer(0x1C95FfaC36A97140e2Aa2681197BE365B9Ceda7a);
     liquidationEngine = LiquidationEngine(0xf9c7608CA99BE28d5D7Af58b9745b61f67b7a71D);
     coinJoin = CoinJoin(0x0d3C9e9CcDcC9513c8c999ABd337CefC38955d41);
     surplusAuctionHouse = SurplusAuctionHouse(0x81062ac9B64FE2b7c2a1797303ad7038A16453c8);
@@ -58,18 +59,18 @@ abstract contract GoerliDeployment is Contracts, GoerliParams {
     collateralAuctionHouseFactory = CollateralAuctionHouseFactory(0x2aE625b6865C90e8194b32411a1Da3B683e7FaF6);
 
     // --- token adapters ---
-    collateralJoin[WETH] = CollateralJoin(0x0caF67d5d2eC5847A375c30dC8e00ecebBE42D31);
-    collateralJoin[AGOR] = CollateralJoin(0x8d33be9374DCAA9A3E2593c80E3ab40615B11Cac);
-    collateralJoin[WBTC] = CollateralJoin(0xF5b19dEDf523f6cF8ABE2bED172d15C1784AD797);
-    collateralJoin[STONES] = CollateralJoin(0xD282383A65EfA60517dA7Ca2673dF54e70AD7b6a);
-    collateralJoin[TOTEM] = CollateralJoin(0x1867F40224c053e0893581Faf527AC5238cEfcBA);
+    collateralJoin[WETH] = CollateralJoin(0x64341EE950700d1c919A5D0B6eFbc41315891592);
+    collateralJoin[AGOR] = CollateralJoin(0x8461879DCf2557F8628b9656892aD71d0311c626);
+    // collateralJoin[WBTC] = CollateralJoin(0xF5b19dEDf523f6cF8ABE2bED172d15C1784AD797);
+    // collateralJoin[STONES] = CollateralJoin(0xD282383A65EfA60517dA7Ca2673dF54e70AD7b6a);
+    // collateralJoin[TOTEM] = CollateralJoin(0x1867F40224c053e0893581Faf527AC5238cEfcBA);
 
     // --- collateral auction houses ---
-    collateralAuctionHouse[WETH] = CollateralAuctionHouse(0x46f7a52A5543cC5068dc7aF31aE49eBF0778eF8A);
-    collateralAuctionHouse[AGOR] = CollateralAuctionHouse(0x47C2c459c37FEF0c21dC8e945008E8A05346942d);
-    collateralAuctionHouse[WBTC] = CollateralAuctionHouse(0x36677aD304c296F9cb24943830E4540C702a63FF);
-    collateralAuctionHouse[STONES] = CollateralAuctionHouse(0xF2DFB982FaeDe09c2E1a0Fa5de026FaD25f75dC0);
-    collateralAuctionHouse[TOTEM] = CollateralAuctionHouse(0x76aBf3D8Ab0e405f68aE991904A3b8F8E19647Bc);
+    collateralAuctionHouse[WETH] = CollateralAuctionHouse(0x2AC9033Ddf191a836d7369914118631F5Fb242a8);
+    collateralAuctionHouse[AGOR] = CollateralAuctionHouse(0x05E09fad8E3C0F2d5bff9Bdf06a5eE3EBEFF5674);
+    // collateralAuctionHouse[WBTC] = CollateralAuctionHouse(0x36677aD304c296F9cb24943830E4540C702a63FF);
+    // collateralAuctionHouse[STONES] = CollateralAuctionHouse(0xF2DFB982FaeDe09c2E1a0Fa5de026FaD25f75dC0);
+    // collateralAuctionHouse[TOTEM] = CollateralAuctionHouse(0x76aBf3D8Ab0e405f68aE991904A3b8F8E19647Bc);
 
     // --- proxies ---
     dsProxyFactory = HaiProxyFactory(0x3ffcbAd81834BD791Aa64a23b4eA361Ed0576f96);
@@ -78,11 +79,11 @@ abstract contract GoerliDeployment is Contracts, GoerliParams {
     proxyActions = BasicActions(0xa0fA52A075E7a4AbfB7336F9677f287EAB5aDE37);
 
     // --- oracles ---
-    delayedOracle[WETH] = IDelayedOracle(0x74558a1470c714BB5E24a6ba998905Ee5F3F0A25);
-    delayedOracle[AGOR] = IDelayedOracle(0x6171f9dB883E3bcC1804Ef17Eb1199133E27058D);
-    delayedOracle[WBTC] = IDelayedOracle(0xF6BADAAaC06D7714130aC95Ce8976905284955F9);
-    delayedOracle[STONES] = IDelayedOracle(0x4137C0B02EC0A2E9754f28eEbb57c20e9A6ebFae);
-    delayedOracle[TOTEM] = IDelayedOracle(0x8Ab563A34bc907f169f19B31018e438934FC3c29);
+    delayedOracle[WETH] = IDelayedOracle(0xCd5261356706Fd4D8f417F9BffB9dBE575CaE996);
+    delayedOracle[AGOR] = IDelayedOracle(0x38213F94F27C383E6eAFB67327B6a54be3d2DEF9);
+    // delayedOracle[WBTC] = IDelayedOracle(0xF6BADAAaC06D7714130aC95Ce8976905284955F9);
+    // delayedOracle[STONES] = IDelayedOracle(0x4137C0B02EC0A2E9754f28eEbb57c20e9A6ebFae);
+    // delayedOracle[TOTEM] = IDelayedOracle(0x8Ab563A34bc907f169f19B31018e438934FC3c29);
 
     haiOracleForTest = OracleForTestnet(0x0F12d95BA60dE2e723F27EDfa0f234A2E4D64005);
     opEthOracleForTest = OracleForTestnet(0x79f48088420028BCeeBC9D465eC52798221024db);
