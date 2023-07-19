@@ -252,6 +252,7 @@ contract SingleGlobalSettlementTest is DSTest {
       bidIncrease: 1.05e18,
       bidDuration: 3 hours,
       totalAuctionLength: 2 days,
+      bidReceiver: address(0x123),
       recyclingPercentage: 0
     });
     surplusAuctionHouseOne = new SurplusAuctionHouse(address(safeEngine), address(protocolToken), _sahParams);

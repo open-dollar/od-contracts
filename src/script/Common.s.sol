@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import '@script/Contracts.s.sol';
-import {Params, ParamChecker, HAI, ETH_A, SURPLUS_AUCTION_BID_RECEIVER} from '@script/Params.s.sol';
+import {Params, ParamChecker, HAI, ETH_A} from '@script/Params.s.sol';
 import '@script/Registry.s.sol';
 
 abstract contract Common is Contracts, Params {
@@ -249,9 +249,6 @@ abstract contract Common is Contracts, Params {
   }
 
   function _setupContracts() internal {
-    // TODO: change for protocolTokenBidReceiver
-    surplusAuctionHouse.modifyParameters('protocolTokenBidReceiver', abi.encode(SURPLUS_AUCTION_BID_RECEIVER));
-
     // auth
     safeEngine.addAuthorization(address(oracleRelayer)); // modifyParameters
     safeEngine.addAuthorization(address(coinJoin)); // transferInternalCoins

@@ -3,17 +3,7 @@ pragma solidity 0.8.19;
 
 import '@script/Contracts.s.sol';
 import {Script} from 'forge-std/Script.sol';
-import {
-  Params,
-  ParamChecker,
-  HAI,
-  WETH,
-  ETH_A,
-  WSTETH,
-  OP,
-  SURPLUS_AUCTION_BID_RECEIVER,
-  HAI_INITIAL_PRICE
-} from '@script/Params.s.sol';
+import {Params, ParamChecker, HAI, WETH, ETH_A, WSTETH, OP, HAI_INITIAL_PRICE} from '@script/Params.s.sol';
 import {Common} from '@script/Common.s.sol';
 import {GoerliParams} from '@script/GoerliParams.s.sol';
 import {MainnetParams} from '@script/MainnetParams.s.sol';

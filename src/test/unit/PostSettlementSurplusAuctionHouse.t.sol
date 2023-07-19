@@ -107,8 +107,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_Constructor is Base {
     expectEmitNoIndex();
     emit AddAuthorization(user);
 
-    postSettlementSurplusAuctionHouse =
-      new PostSettlementSurplusAuctionHouseForTest(address(mockSafeEngine), address(mockProtocolToken), pssahParams);
+    new PostSettlementSurplusAuctionHouseForTest(address(mockSafeEngine), address(mockProtocolToken), pssahParams);
   }
 
   function test_Set_SafeEngine(address _safeEngine) public happyPath {
@@ -127,21 +126,13 @@ contract Unit_PostSettlementSurplusAuctionHouse_Constructor is Base {
     assertEq(address(postSettlementSurplusAuctionHouse.protocolToken()), _protocolToken);
   }
 
-  function test_Set_BidIncrease() public happyPath {
-    assertEq(postSettlementSurplusAuctionHouse.params().bidIncrease, 1.05e18);
-  }
-
-  function test_Set_BidDuration() public happyPath {
-    assertEq(postSettlementSurplusAuctionHouse.params().bidDuration, 3 hours);
-  }
-
-  function test_Set_TotalAuctionLength() public happyPath {
-    assertEq(postSettlementSurplusAuctionHouse.params().totalAuctionLength, 2 days);
-  }
-
-  function test_Set_PSSAH_Params(IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams memory _pssahParams) public {
+  function test_Set_PSSAH_Params(IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams memory _pssahParams)
+    public
+    happyPath
+  {
     postSettlementSurplusAuctionHouse =
       new PostSettlementSurplusAuctionHouseForTest(address(mockSafeEngine), address(mockProtocolToken), _pssahParams);
+
     assertEq(abi.encode(postSettlementSurplusAuctionHouse.params()), abi.encode(_pssahParams));
   }
 
@@ -686,9 +677,22 @@ contract Unit_PostSettlementSurplusAuctionHouse_ModifyParameters is Base {
     assertEq(abi.encode(_params), abi.encode(_fuzz));
   }
 
+  function test_Set_ProtocolToken(address _protocolToken) public happyPath {
+    vm.assume(_protocolToken != address(0));
+    postSettlementSurplusAuctionHouse.modifyParameters('protocolToken', abi.encode(_protocolToken));
+
+    assertEq(address(postSettlementSurplusAuctionHouse.protocolToken()), _protocolToken);
+  }
+
+  function test_Revert_ProtocolToken_NullAddress() public {
+    vm.startPrank(authorizedAccount);
+    vm.expectRevert(Assertions.NullAddress.selector);
+
+    postSettlementSurplusAuctionHouse.modifyParameters('protocolToken', abi.encode(0));
+  }
+
   function test_Revert_UnrecognizedParam(bytes memory _data) public {
     vm.startPrank(authorizedAccount);
-
     vm.expectRevert(IModifiable.UnrecognizedParam.selector);
 
     postSettlementSurplusAuctionHouse.modifyParameters('unrecognizedParam', _data);

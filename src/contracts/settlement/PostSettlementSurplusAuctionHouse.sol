@@ -54,7 +54,7 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, Modifiable, IPostSet
     PostSettlementSAHParams memory _pssahParams
   ) Authorizable(msg.sender) validParams {
     safeEngine = ISAFEEngine(_safeEngine.assertNonNull());
-    protocolToken = IProtocolToken(_protocolToken.assertNonNull());
+    protocolToken = IProtocolToken(_protocolToken);
 
     _params = _pssahParams;
   }
@@ -142,11 +142,17 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, Modifiable, IPostSet
   // --- Administration ---
 
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
+    address _address = _data.toAddress();
     uint256 _uint256 = _data.toUint256();
 
-    if (_param == 'bidIncrease') _params.bidIncrease = _uint256;
+    if (_param == 'protocolToken') protocolToken = IProtocolToken(_address);
+    else if (_param == 'bidIncrease') _params.bidIncrease = _uint256;
     else if (_param == 'bidDuration') _params.bidDuration = _uint256;
     else if (_param == 'totalAuctionLength') _params.totalAuctionLength = _uint256;
     else revert UnrecognizedParam();
+  }
+
+  function _validateParameters() internal view override {
+    address(protocolToken).assertNonNull();
   }
 }

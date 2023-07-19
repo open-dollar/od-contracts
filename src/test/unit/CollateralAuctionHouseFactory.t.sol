@@ -285,6 +285,8 @@ contract Unit_CollateralAuctionHouseFactory_ModifyParameters is Base {
 
   function test_Set_LiquidationEngine(address _liquidationEngine) public happyPath {
     vm.assume(_liquidationEngine != address(0));
+    vm.assume(_liquidationEngine != deployer);
+    vm.assume(_liquidationEngine != authorizedAccount);
 
     collateralAuctionHouseFactory.modifyParameters('liquidationEngine', abi.encode(_liquidationEngine));
 
@@ -298,6 +300,7 @@ contract Unit_CollateralAuctionHouseFactory_ModifyParameters is Base {
     vm.assume(_newLiquidationEngine != address(0));
     vm.assume(_newLiquidationEngine != _oldLiquidationEngine);
     vm.assume(_newLiquidationEngine != deployer);
+    vm.assume(_newLiquidationEngine != authorizedAccount);
 
     _mockLiquidationEngine(_oldLiquidationEngine);
     collateralAuctionHouseFactory.addAuthorization(_oldLiquidationEngine);

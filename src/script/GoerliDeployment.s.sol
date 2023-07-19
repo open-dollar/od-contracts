@@ -6,7 +6,7 @@ import {GoerliParams, WETH, OP, WBTC, STONES, TOTEM} from '@script/GoerliParams.
 import {OP_WETH, OP_OPTIMISM} from '@script/Registry.s.sol';
 
 abstract contract GoerliDeployment is Contracts, GoerliParams {
-  uint256 constant GOERLI_DEPLOYMENT_BLOCK = 12_165_491;
+  uint256 constant GOERLI_DEPLOYMENT_BLOCK = 12_166_340;
 
   // --- Mintable ERC20s ---
   ERC20ForTestnet constant ERC20_WBTC = ERC20ForTestnet(0xf1FDB809f41c187cE6F2A4C8cC6562Ba7479B4EF);
@@ -43,7 +43,7 @@ abstract contract GoerliDeployment is Contracts, GoerliParams {
     oracleRelayer = OracleRelayer(0x39eF5478F9186Da7c5C0a79B379B20648462626F);
     liquidationEngine = LiquidationEngine(0xC9E07e417e952c79FA65428076C9575C4026b43e);
     coinJoin = CoinJoin(0x3217B0aBcaAC50898F4826f0C502dEd9AB8eae53);
-    surplusAuctionHouse = SurplusAuctionHouse(0x72DfB98ffdE560E895a82f1f525c66C959F7eF86);
+    surplusAuctionHouse = SurplusAuctionHouse(0x97D2165Ee4f0B7d46214bbE39616b9Ffa0f5E1b2);
     debtAuctionHouse = DebtAuctionHouse(0x0c9cea9FE68A8612A627ab150De8f4B05bf4c784);
     accountingEngine = AccountingEngine(0xc922644df8E6336c6DFc997e29602EF4aba51c8c);
     taxCollector = TaxCollector(0xf281FF699e3b6CB3B2643d1Eb320b27Cc3e53900);

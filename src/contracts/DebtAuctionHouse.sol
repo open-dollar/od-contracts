@@ -58,7 +58,8 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
     DebtAuctionHouseParams memory _dahParams
   ) Authorizable(msg.sender) validParams {
     safeEngine = ISAFEEngine(_safeEngine.assertNonNull());
-    protocolToken = IProtocolToken(_protocolToken); // Validated in _validateParameters()
+    protocolToken = IProtocolToken(_protocolToken);
+
     _params = _dahParams;
   }
 

@@ -45,8 +45,6 @@ uint256 constant HALF_LIFE_30_DAYS = 999_999_711_200_000_000_000_000_000;
 uint256 constant PROPORTIONAL_GAIN = 222_002_205_862;
 uint256 constant INTEGRAL_GAIN = 16_442;
 
-address constant SURPLUS_AUCTION_BID_RECEIVER = address(420); // address that receives protocol tokens
-
 /**
  * @title Params
  * @notice This contract initializes all the contract parameters structs, so that they're inherited and available throughout scripts scopes.

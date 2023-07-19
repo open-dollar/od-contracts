@@ -143,7 +143,7 @@ contract Unit_DebtAuctionHouse_Constructor is Base {
     expectEmitNoIndex();
     emit AddAuthorization(user);
 
-    debtAuctionHouse = new DebtAuctionHouseForTest(address(mockSafeEngine), address(mockProtocolToken), dahParams);
+    new DebtAuctionHouseForTest(address(mockSafeEngine), address(mockProtocolToken), dahParams);
   }
 
   function test_Set_ContractEnabled() public happyPath {
@@ -164,33 +164,22 @@ contract Unit_DebtAuctionHouse_Constructor is Base {
     assertEq(address(debtAuctionHouse.protocolToken()), _protocolToken);
   }
 
-  function test_Set_BidDecrease() public happyPath {
-    assertEq(debtAuctionHouse.params().bidDecrease, 1.05e18);
-  }
+  function test_Set_DAH_Params(IDebtAuctionHouse.DebtAuctionHouseParams memory _dahParams) public happyPath {
+    debtAuctionHouse = new DebtAuctionHouseForTest(address(mockSafeEngine), address(mockProtocolToken), _dahParams);
 
-  function test_Set_AmountSoldIncrease() public happyPath {
-    assertEq(debtAuctionHouse.params().amountSoldIncrease, 1.5e18);
-  }
-
-  function test_Set_BidDuration() public happyPath {
-    assertEq(debtAuctionHouse.params().bidDuration, 3 hours);
-  }
-
-  function test_Set_TotalAuctionLength() public happyPath {
-    assertEq(debtAuctionHouse.params().totalAuctionLength, 2 days);
-  }
-
-  function test_Set_DAH_Params(IDebtAuctionHouse.DebtAuctionHouseParams memory _dahParams) public {
-    DebtAuctionHouse _debtAuctionHouse =
-      new DebtAuctionHouse(address(mockSafeEngine), address(mockProtocolToken), _dahParams);
-
-    assertEq(abi.encode(_debtAuctionHouse.params()), abi.encode(_dahParams));
+    assertEq(abi.encode(debtAuctionHouse.params()), abi.encode(_dahParams));
   }
 
   function test_Revert_Null_SafeEngine() public {
     vm.expectRevert(Assertions.NullAddress.selector);
 
-    new DebtAuctionHouse(address(0), address(mockProtocolToken), dahParams);
+    new DebtAuctionHouseForTest(address(0), address(mockProtocolToken), dahParams);
+  }
+
+  function test_Revert_Null_ProtocolToken() public {
+    vm.expectRevert(Assertions.NullAddress.selector);
+
+    new DebtAuctionHouseForTest(address(mockSafeEngine), address(0), dahParams);
   }
 }
 
@@ -951,9 +940,15 @@ contract Unit_DebtAuctionHouse_ModifyParameters is Base {
     assertEq(address(debtAuctionHouse.protocolToken()), _protocolToken);
   }
 
+  function test_Revert_ProtocolToken_NullAddress() public {
+    vm.startPrank(authorizedAccount);
+    vm.expectRevert(Assertions.NullAddress.selector);
+
+    debtAuctionHouse.modifyParameters('protocolToken', abi.encode(0));
+  }
+
   function test_Revert_UnrecognizedParam(bytes memory _data) public {
     vm.startPrank(authorizedAccount);
-
     vm.expectRevert(IModifiable.UnrecognizedParam.selector);
 
     debtAuctionHouse.modifyParameters('unrecognizedParam', _data);

@@ -68,6 +68,8 @@ interface ISurplusAuctionHouse is IAuthorizable, IDisableable, IModifiable {
     uint256 bidDuration; // [seconds]
     // Total length of the auction
     uint256 totalAuctionLength; // [seconds]
+    // Receiver of protocol tokens
+    address bidReceiver;
     uint256 recyclingPercentage; // [wad%]
   }
 
@@ -94,7 +96,6 @@ interface ISurplusAuctionHouse is IAuthorizable, IDisableable, IModifiable {
   // --- Registry ---
   function safeEngine() external view returns (ISAFEEngine _safeEngine);
   function protocolToken() external view returns (IProtocolToken _protocolToken);
-  function protocolTokenBidReceiver() external view returns (address _protocolTokenBidReceiver);
 
   // --- Params ---
   function params() external view returns (SurplusAuctionHouseParams memory _sahParams);
@@ -102,7 +103,13 @@ interface ISurplusAuctionHouse is IAuthorizable, IDisableable, IModifiable {
   function _params()
     external
     view
-    returns (uint256 _bidIncrease, uint256 _bidDuration, uint256 _totalAuctionLength, uint256 _recyclingPercentage);
+    returns (
+      uint256 _bidIncrease,
+      uint256 _bidDuration,
+      uint256 _totalAuctionLength,
+      address _bidReceiver,
+      uint256 _recyclingPercentage
+    );
 
   // --- Auction ---
   function startAuction(uint256 /* RAD */ _amountToSell, uint256 /* WAD */ _initialBid) external returns (uint256 _id);

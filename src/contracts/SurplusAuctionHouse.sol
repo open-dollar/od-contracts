@@ -41,8 +41,6 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
   ISAFEEngine public safeEngine;
   // Protocol token address
   IProtocolToken public protocolToken;
-  // Receiver of protocol tokens
-  address public protocolTokenBidReceiver;
 
   // --- Params ---
   // solhint-disable-next-line private-vars-leading-underscore
@@ -59,7 +57,7 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
     SurplusAuctionHouseParams memory _sahParams
   ) Authorizable(msg.sender) validParams {
     safeEngine = ISAFEEngine(_safeEngine.assertNonNull());
-    protocolToken = IProtocolToken(_protocolToken.assertNonNull());
+    protocolToken = IProtocolToken(_protocolToken);
 
     _params = _sahParams;
   }
@@ -84,7 +82,7 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
     uint256 _amountToSell,
     uint256 _initialBid
   ) external isAuthorized whenEnabled returns (uint256 _id) {
-    if (protocolTokenBidReceiver == address(0) && _params.recyclingPercentage != 0) revert SAH_NullProtTokenReceiver();
+    if (_params.bidReceiver == address(0) && _params.recyclingPercentage != 0) revert SAH_NullProtTokenReceiver();
     _id = ++auctionsStarted;
 
     _auctions[_id] = Auction({
@@ -169,7 +167,7 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
 
     uint256 _amountToSend = _auction.bidAmount.wmul(_params.recyclingPercentage);
     if (_amountToSend > 0) {
-      protocolToken.safeTransfer(protocolTokenBidReceiver, _amountToSend);
+      protocolToken.safeTransfer(_params.bidReceiver, _amountToSend);
     }
 
     uint256 _amountToBurn = _auction.bidAmount - _amountToSend;
@@ -210,14 +208,20 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
   // --- Administration ---
 
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
+    address _address = _data.toAddress();
     uint256 _uint256 = _data.toUint256();
 
-    // TODO: incorporate protocolTokenBidReceiver to constructor HAI-198
-    if (_param == 'protocolTokenBidReceiver') protocolTokenBidReceiver = _data.toAddress().assertNonNull();
+    if (_param == 'protocolToken') protocolToken = IProtocolToken(_address);
     else if (_param == 'bidIncrease') _params.bidIncrease = _uint256;
     else if (_param == 'bidDuration') _params.bidDuration = _uint256;
     else if (_param == 'totalAuctionLength') _params.totalAuctionLength = _uint256;
+    else if (_param == 'bidReceiver') _params.bidReceiver = _address;
     else if (_param == 'recyclingPercentage') _params.recyclingPercentage = _uint256;
     else revert UnrecognizedParam();
+  }
+
+  function _validateParameters() internal view override {
+    address(protocolToken).assertNonNull();
+    _params.bidReceiver.assertNonNull();
   }
 }
