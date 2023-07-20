@@ -99,7 +99,8 @@ contract DeployGoerli is GoerliParams, Deploy {
     systemCoinOracle = new OracleForTestnet(HAI_INITIAL_PRICE); // 1 HAI = 1 USD
     haiOracleForTest = OracleForTestnet(address(systemCoinOracle));
 
-    IBaseOracle _ethUSDPriceFeed = new ChainlinkRelayer(ARB_GOERLI_CHAINLINK_ETH_USD_FEED, 1 hours);
+    // IBaseOracle _ethUSDPriceFeed = new ChainlinkRelayer(ARB_GOERLI_CHAINLINK_ETH_USD_FEED, 1 hours);
+    IBaseOracle _ethUSDPriceFeed = new ChainlinkRelayer(0x62CAe0FA2da220f43a51F86Db2EDb36DcA9A5A08, 1 hours);
 
     OracleForTestnet _opETHPriceFeed = new OracleForTestnet(ARB_GOERLI_ARB_ETH_PRICE_FEED);
     opEthOracleForTest = OracleForTestnet(address(_opETHPriceFeed));
