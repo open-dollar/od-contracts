@@ -180,24 +180,6 @@ abstract contract Base is HaiTest {
     );
   }
 
-  function _mockCollateralAHStartAuction(
-    uint256 _auctionId,
-    address _safe,
-    address _accountingEngine,
-    uint256 _amountToRaise,
-    uint256 _collateralToSell,
-    uint256 _initialBid
-  ) internal {
-    vm.mockCall(
-      mockCollateralAuctionHouse,
-      abi.encodeCall(
-        ICollateralAuctionHouse(mockCollateralAuctionHouse).startAuction,
-        (_safe, _accountingEngine, _amountToRaise, _collateralToSell, _initialBid)
-      ),
-      abi.encode(_auctionId)
-    );
-  }
-
   function _mockContractEnabled(bool _enabled) internal {
     stdstore.target(address(liquidationEngine)).sig(IDisableable.contractEnabled.selector).checked_write(_enabled);
   }
@@ -1213,7 +1195,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
       address(collateralAuctionHouseForTest),
       abi.encodeCall(
         ICollateralAuctionHouse.startAuction,
-        (safe, address(mockAccountingEngine), _amountToRaise, _liquidation.safeCollateral, 0)
+        (safe, address(mockAccountingEngine), _amountToRaise, _liquidation.safeCollateral)
       )
     );
 
@@ -1231,8 +1213,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     vm.expectCall(
       address(collateralAuctionHouseForTest),
       abi.encodeCall(
-        ICollateralAuctionHouse.startAuction,
-        (safe, address(mockAccountingEngine), _amountToRaise, _collateralToSell, 0)
+        ICollateralAuctionHouse.startAuction, (safe, address(mockAccountingEngine), _amountToRaise, _collateralToSell)
       )
     );
 
@@ -1251,8 +1232,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     vm.expectCall(
       address(collateralAuctionHouseForTest),
       abi.encodeCall(
-        ICollateralAuctionHouse.startAuction,
-        (safe, address(mockAccountingEngine), _amountToRaise, _collateralToSell, 0)
+        ICollateralAuctionHouse.startAuction, (safe, address(mockAccountingEngine), _amountToRaise, _collateralToSell)
       )
     );
 

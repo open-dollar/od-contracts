@@ -1777,7 +1777,6 @@ contract Unit_CollateralAuctionHouse_StartAuction is Base {
     // Function parameters
     uint256 amountToRaise;
     uint256 amountToSell;
-    uint256 initialBid; // NOTE: ignored, only used in event
   }
 
   function _mockValues(StartAuctionScenario memory _scenario) internal {
@@ -1813,11 +1812,7 @@ contract Unit_CollateralAuctionHouse_StartAuction is Base {
 
   function test_Set_AuctionStarted(StartAuctionScenario memory _scenario) public happyPath(_scenario) authorized {
     auctionHouse.startAuction(
-      forgoneCollateralReceiver,
-      auctionIncomeRecipient,
-      _scenario.amountToRaise,
-      _scenario.amountToSell,
-      _scenario.initialBid
+      forgoneCollateralReceiver, auctionIncomeRecipient, _scenario.amountToRaise, _scenario.amountToSell
     );
 
     assertEq(auctionHouse.auctionsStarted(), _scenario.auctionsStarted + 1);
@@ -1840,21 +1835,13 @@ contract Unit_CollateralAuctionHouse_StartAuction is Base {
     );
 
     auctionHouse.startAuction(
-      forgoneCollateralReceiver,
-      auctionIncomeRecipient,
-      _scenario.amountToRaise,
-      _scenario.amountToSell,
-      _scenario.initialBid
+      forgoneCollateralReceiver, auctionIncomeRecipient, _scenario.amountToRaise, _scenario.amountToSell
     );
   }
 
   function test_Create_Bid(StartAuctionScenario memory _scenario) public happyPath(_scenario) authorized {
     auctionHouse.startAuction(
-      forgoneCollateralReceiver,
-      auctionIncomeRecipient,
-      _scenario.amountToRaise,
-      _scenario.amountToSell,
-      _scenario.initialBid
+      forgoneCollateralReceiver, auctionIncomeRecipient, _scenario.amountToRaise, _scenario.amountToSell
     );
 
     ICollateralAuctionHouse.Auction memory _auction = auctionHouse.auctions(_scenario.auctionsStarted + 1);
@@ -1898,11 +1885,7 @@ contract Unit_CollateralAuctionHouse_StartAuction is Base {
     });
 
     auctionHouse.startAuction(
-      forgoneCollateralReceiver,
-      auctionIncomeRecipient,
-      _scenario.amountToRaise,
-      _scenario.amountToSell,
-      _scenario.initialBid
+      forgoneCollateralReceiver, auctionIncomeRecipient, _scenario.amountToRaise, _scenario.amountToSell
     );
   }
 
@@ -1910,11 +1893,7 @@ contract Unit_CollateralAuctionHouse_StartAuction is Base {
     vm.expectRevert(IAuthorizable.Unauthorized.selector);
 
     auctionHouse.startAuction(
-      forgoneCollateralReceiver,
-      auctionIncomeRecipient,
-      _scenario.amountToRaise,
-      _scenario.amountToSell,
-      _scenario.initialBid
+      forgoneCollateralReceiver, auctionIncomeRecipient, _scenario.amountToRaise, _scenario.amountToSell
     );
   }
 
@@ -1925,11 +1904,7 @@ contract Unit_CollateralAuctionHouse_StartAuction is Base {
     vm.expectRevert(ICollateralAuctionHouse.CAH_NoCollateralForSale.selector);
 
     auctionHouse.startAuction(
-      forgoneCollateralReceiver,
-      auctionIncomeRecipient,
-      _scenario.amountToRaise,
-      _scenario.amountToSell,
-      _scenario.initialBid
+      forgoneCollateralReceiver, auctionIncomeRecipient, _scenario.amountToRaise, _scenario.amountToSell
     );
   }
 
@@ -1941,11 +1916,7 @@ contract Unit_CollateralAuctionHouse_StartAuction is Base {
     vm.expectRevert(ICollateralAuctionHouse.CAH_NothingToRaise.selector);
 
     auctionHouse.startAuction(
-      forgoneCollateralReceiver,
-      auctionIncomeRecipient,
-      _scenario.amountToRaise,
-      _scenario.amountToSell,
-      _scenario.initialBid
+      forgoneCollateralReceiver, auctionIncomeRecipient, _scenario.amountToRaise, _scenario.amountToSell
     );
   }
 
@@ -1958,11 +1929,7 @@ contract Unit_CollateralAuctionHouse_StartAuction is Base {
     vm.expectRevert(ICollateralAuctionHouse.CAH_DustyAuction.selector);
 
     auctionHouse.startAuction(
-      forgoneCollateralReceiver,
-      auctionIncomeRecipient,
-      _scenario.amountToRaise,
-      _scenario.amountToSell,
-      _scenario.initialBid
+      forgoneCollateralReceiver, auctionIncomeRecipient, _scenario.amountToRaise, _scenario.amountToSell
     );
   }
 }

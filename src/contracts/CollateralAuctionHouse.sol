@@ -420,17 +420,14 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, ICollateralAuctionH
    * @param _auctionIncomeRecipient Who receives the amount raised in the auction
    * @param _amountToRaise Total amount of coins to raise (rad)
    * @param _amountToSell Total amount of collateral available to sell (wad)
-   * @param _initialBid Unused
    */
   function startAuction(
     address _forgoneCollateralReceiver,
     address _auctionIncomeRecipient,
     uint256 _amountToRaise,
-    uint256 _amountToSell,
-    uint256 _initialBid // TODO: deprecate and rm from LiqEngine
+    uint256 _amountToSell
   ) external isAuthorized returns (uint256 _id) {
-    return
-      _startAuction(_forgoneCollateralReceiver, _auctionIncomeRecipient, _amountToRaise, _amountToSell, _initialBid);
+    return _startAuction(_forgoneCollateralReceiver, _auctionIncomeRecipient, _amountToRaise, _amountToSell);
   }
 
   // TODO: rm this internal method
@@ -438,8 +435,7 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, ICollateralAuctionH
     address _forgoneCollateralReceiver,
     address _auctionIncomeRecipient,
     uint256 _amountToRaise,
-    uint256 _amountToSell,
-    uint256 _initialBid // TODO: deprecate and rm from LiqEngine
+    uint256 _amountToSell
   ) internal virtual returns (uint256 _id) {
     if (_amountToSell == 0) revert CAH_NoCollateralForSale();
     if (_amountToRaise == 0) revert CAH_NothingToRaise();

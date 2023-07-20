@@ -191,8 +191,7 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
         _forgoneCollateralReceiver: _safe,
         _initialBidder: address(accountingEngine),
         _amountToRaise: _amountToRaise,
-        _collateralToSell: _collateralToSell,
-        _initialBid: 0
+        _collateralToSell: _collateralToSell
       });
 
       emit UpdateCurrentOnAuctionSystemCoins(currentOnAuctionSystemCoins);
