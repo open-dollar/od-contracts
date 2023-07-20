@@ -10,7 +10,6 @@ abstract contract GoerliParams is Contracts, Params {
   function _getEnvironmentParams() internal override {
     governor = 0x23aD35FAab005a5E69615d275176e5C22b2ceb9E;
     delegate = 0x37c5B029f9c3691B3d47cb024f84E5E257aEb0BB;
-    // delegate = 0x23aD35FAab005a5E69615d275176e5C22b2ceb9E;
 
     _safeEngineParams = ISAFEEngine.SAFEEngineParams({
       safeDebtCeiling: 10_000_000 * WAD, // 10M COINs
