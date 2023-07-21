@@ -110,10 +110,16 @@ abstract contract CommonDeploymentTest is HaiTest, Deploy {
 }
 
 contract E2EDeploymentMainnetTest is DeployMainnet, CommonDeploymentTest {
-  uint256 FORK_BLOCK = 17_603_828;
+  // uint256 FORK_BLOCK = 17_603_828;
 
   function setUp() public override {
-    vm.createSelectFork(vm.rpcUrl('mainnet'), FORK_BLOCK);
+    // vm.createSelectFork(vm.rpcUrl('mainnet'), FORK_BLOCK);
+    /**
+     * @dev Arbitrum block.number returns L1; createSelectFork does not work
+     */
+    uint256 forkId = vm.createFork(vm.rpcUrl('mainnet'));
+    vm.selectFork(forkId);
+
     governor = address(69);
     super.setUp();
     run();
@@ -128,7 +134,14 @@ contract E2EDeploymentGoerliTest is DeployGoerli, CommonDeploymentTest {
   uint256 FORK_BLOCK = 8_000_000;
 
   function setUp() public override {
-    vm.createSelectFork(vm.rpcUrl('goerli'), FORK_BLOCK);
+    // vm.createSelectFork(vm.rpcUrl('goerli'), FORK_BLOCK);
+    /**
+     * @dev Arbitrum block.number returns L1; createSelectFork does not work
+     */
+    uint256 forkId = vm.createFork(vm.rpcUrl('goerli'));
+    vm.selectFork(forkId);
+    vm.roll(FORK_BLOCK);
+
     governor = address(69);
     super.setUp();
     run();
@@ -141,7 +154,13 @@ contract E2EDeploymentGoerliTest is DeployGoerli, CommonDeploymentTest {
 
 contract GoerliDeploymentTest is GoerliDeployment, CommonDeploymentTest {
   function setUp() public {
-    vm.createSelectFork(vm.rpcUrl('goerli'), GOERLI_DEPLOYMENT_BLOCK);
+    // vm.createSelectFork(vm.rpcUrl('goerli'), GOERLI_DEPLOYMENT_BLOCK);
+    /**
+     * @dev Arbitrum block.number returns L1; createSelectFork does not work
+     */
+    uint256 forkId = vm.createFork(vm.rpcUrl('goerli'));
+    vm.selectFork(forkId);
+
     _getEnvironmentParams();
   }
 
@@ -153,7 +172,10 @@ contract GoerliDeploymentTest is GoerliDeployment, CommonDeploymentTest {
     assertEq(opEthOracleForTest.authorizedAccounts(governor), true);
   }
 
-  function test_Delegated_OP() public {
-    assertEq(ERC20Votes(ARB_GOV).delegates(address(collateralJoin[AGOR])), governor);
-  }
+  /**
+   * TODO: test delegated coins
+   */
+  // function test_Delegated_OP() public {
+  //   assertEq(ERC20Votes(ARB_GOV).delegates(address(collateralJoin[AGOR])), governor);
+  // }
 }

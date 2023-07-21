@@ -10,7 +10,7 @@ abstract contract GoerliDeployment is Contracts, GoerliParams {
   uint256 constant GOERLI_DEPLOYMENT_BLOCK = 10_000_000;
 
   // --- Mintable ERC20s ---
-  ERC20ForTestnet constant ERC20_WBTC = ERC20ForTestnet(0x71544c0d4A343AA6136775cCB093e277E75A700f);
+  // ERC20ForTestnet constant ERC20_WBTC = ERC20ForTestnet(0x71544c0d4A343AA6136775cCB093e277E75A700f);
 
   /**
    * @notice All the addresses that were deployed in the Goerli deployment, in order of creation
@@ -20,7 +20,7 @@ abstract contract GoerliDeployment is Contracts, GoerliParams {
     // --- collateral types ---
     collateralTypes.push(WETH);
     collateralTypes.push(AGOR);
-    collateralTypes.push(WBTC);
+    // collateralTypes.push(WBTC);
 
     // --- utils ---
     delegatee[AGOR] = governor;
@@ -28,7 +28,7 @@ abstract contract GoerliDeployment is Contracts, GoerliParams {
     // --- ERC20s ---
     collateral[WETH] = IERC20Metadata(ARB_GOERLI_WETH);
     collateral[AGOR] = IERC20Metadata(ARB_GOERLI_GOV);
-    collateral[WBTC] = IERC20Metadata(ERC20_WBTC);
+    // collateral[WBTC] = IERC20Metadata(ERC20_WBTC);
 
     // change these
     systemCoin = SystemCoin(0xDE477f42368128CB3B0b29E214bd859f1A3719Ef);
