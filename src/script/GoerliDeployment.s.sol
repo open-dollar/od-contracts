@@ -6,7 +6,8 @@ import {GoerliParams, WETH, AGOR, WBTC} from '@script/GoerliParams.s.sol';
 import {ARB_GOERLI_WETH, ARB_GOERLI_GOV} from '@script/Registry.s.sol';
 
 abstract contract GoerliDeployment is Contracts, GoerliParams {
-  uint256 constant GOERLI_DEPLOYMENT_BLOCK = 8_503_536;
+  // uint256 constant GOERLI_DEPLOYMENT_BLOCK = 8_503_536;
+  uint256 constant GOERLI_DEPLOYMENT_BLOCK = 10_000_000;
 
   // --- Mintable ERC20s ---
   ERC20ForTestnet constant ERC20_WBTC = ERC20ForTestnet(0x71544c0d4A343AA6136775cCB093e277E75A700f);

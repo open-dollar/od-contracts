@@ -41,16 +41,18 @@ abstract contract Common is Contracts, Params {
         collateralJoin[_cType] = CollateralJoin(
           collateralJoinFactory.deployCollateralJoin({_cType: _cType, _collateral: address(collateral[_cType])})
         );
-      } else {
-        collateralJoin[_cType] = CollateralJoin(
-          collateralJoinFactory.deployDelegatableCollateralJoin({
-            _cType: _cType,
-            _collateral: address(collateral[_cType]),
-            _delegatee: _delegatee
-          })
-        );
       }
-    } else {
+      // else {
+      // collateralJoin[_cType] = CollateralJoin(
+      //   collateralJoinFactory.deployDelegatableCollateralJoin({
+      //     _cType: _cType,
+      //     _collateral: address(collateral[_cType]),
+      //     _delegatee: _delegatee
+      //   })
+      // );
+    }
+    // }
+    else {
       collateralJoin[_cType] = new CollateralJoin({
                 _safeEngine: address(safeEngine),
                 _cType: _cType,
@@ -189,8 +191,8 @@ abstract contract Common is Contracts, Params {
 
   function deployContracts() public {
     // deploy Tokens
-    systemCoin = new SystemCoin("HAI Index Token", "HAI");
-    protocolToken = new ProtocolToken("Protocol Token", "OPEN");
+    systemCoin = new SystemCoin('HAI Index Token', 'HAI');
+    protocolToken = new ProtocolToken('Protocol Token', 'OPEN');
 
     // deploy Base contracts
     safeEngine = new SAFEEngine(_safeEngineParams);

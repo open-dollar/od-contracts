@@ -110,7 +110,7 @@ abstract contract CommonDeploymentTest is HaiTest, Deploy {
 }
 
 contract E2EDeploymentMainnetTest is DeployMainnet, CommonDeploymentTest {
-  uint256 FORK_BLOCK = 99_000_000;
+  uint256 FORK_BLOCK = 17_603_828;
 
   function setUp() public override {
     vm.createSelectFork(vm.rpcUrl('mainnet'), FORK_BLOCK);
