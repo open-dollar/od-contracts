@@ -110,10 +110,7 @@ abstract contract CommonDeploymentTest is HaiTest, Deploy {
 }
 
 contract E2EDeploymentMainnetTest is DeployMainnet, CommonDeploymentTest {
-  // uint256 FORK_BLOCK = 17_603_828;
-
   function setUp() public override {
-    // vm.createSelectFork(vm.rpcUrl('mainnet'), FORK_BLOCK);
     /**
      * @dev Arbitrum block.number returns L1; createSelectFork does not work
      */
@@ -134,7 +131,6 @@ contract E2EDeploymentGoerliTest is DeployGoerli, CommonDeploymentTest {
   uint256 FORK_BLOCK = 8_000_000;
 
   function setUp() public override {
-    // vm.createSelectFork(vm.rpcUrl('goerli'), FORK_BLOCK);
     /**
      * @dev Arbitrum block.number returns L1; createSelectFork does not work
      */
@@ -154,7 +150,6 @@ contract E2EDeploymentGoerliTest is DeployGoerli, CommonDeploymentTest {
 
 contract GoerliDeploymentTest is GoerliDeployment, CommonDeploymentTest {
   function setUp() public {
-    // vm.createSelectFork(vm.rpcUrl('goerli'), GOERLI_DEPLOYMENT_BLOCK);
     /**
      * @dev Arbitrum block.number returns L1; createSelectFork does not work
      */

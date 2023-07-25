@@ -42,6 +42,9 @@ abstract contract Common is Contracts, Params {
           collateralJoinFactory.deployCollateralJoin({_cType: _cType, _collateral: address(collateral[_cType])})
         );
       }
+      /**
+       * TODO: add governance tokens to collateral
+       */
       // else {
       // collateralJoin[_cType] = CollateralJoin(
       //   collateralJoinFactory.deployDelegatableCollateralJoin({
