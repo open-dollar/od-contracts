@@ -1,12 +1,12 @@
 {
-  "name": "hai",
+  "name": "opendollar",
   "version": "0.0.1",
   "private": true,
   "description": "Multicollateral ETH backed stablecoin",
-  "homepage": "https://github.com/hai-on-op/hai#readme",
+  "homepage": "https://www.usekeyp.com/",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/hai-on-op/hai.git"
+    "url": "https://github.com/UseKeyp/open-dollar-contracts.git"
   },
   "license": "MIT",
   "author": "Wonderland",
@@ -14,7 +14,8 @@
     "wei3erHase (https://github.com/wei3erHase)",
     "0xGorilla (https://github.com/0xGorilla)",
     "0xJabberwock (https://github.com/0xJabberwock)",
-    "0xRaccoon (https://github.com/0xRaccoon)"
+    "0xRaccoon (https://github.com/0xRaccoon)",
+    "useKeyp (https://github.com/UseKeyp)"
   ],
   "scripts": {
     "build": "forge build",
