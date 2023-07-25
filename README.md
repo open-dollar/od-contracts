@@ -32,9 +32,9 @@ Create a `.env` file and add the variables found in `.env.example`
 
 **Deployment**
 
-This repo is setup to run on Optimism Mainnet and Testnet. Additional modifications will be needed to deploy on other networks, specifically regarding the token addresses found in the `src/scripts/Registry.s.sol` file, the `OracleRelayer` address, and the `chainId` variables throughout the repo.
+This repo is setup to run on Arbtirum Mainnet and Testnet. Additional modifications will be needed to deploy on other networks, specifically regarding the token addresses found in the `src/scripts/Registry.s.sol` file, the `OracleRelayer` address, and the `chainId` variables throughout the repo.
 
-To deploy on Optimism, run the following commands:
+To deploy on Arbtirum, run the following commands:
 
 `yarn deploy:mainnet`
 
