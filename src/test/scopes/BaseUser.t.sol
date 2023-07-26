@@ -65,4 +65,18 @@ abstract contract BaseUser {
   function _settleAuction(address _user, uint256 _auctionId) internal virtual;
 
   function _collectSystemCoins(address _user) internal virtual;
+
+  function _workPopDebtFromQueue(address _user, uint256 _debtBlockTimestamp) internal virtual;
+
+  function _workAuctionDebt(address _user) internal virtual;
+
+  function _workAuctionSurplus(address _user) internal virtual;
+
+  function _workTransferExtraSurplus(address _user) internal virtual;
+
+  function _workLiquidation(address _user, bytes32 _cType, address _safe) internal virtual;
+
+  function _workUpdateCollateralPrice(address _user, bytes32 _cType) internal virtual;
+
+  function _workUpdateRate(address _user) internal virtual;
 }

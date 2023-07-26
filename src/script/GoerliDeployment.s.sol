@@ -6,7 +6,7 @@ import {GoerliParams, WETH, OP, WBTC, STONES, TOTEM} from '@script/GoerliParams.
 import {OP_WETH, OP_OPTIMISM} from '@script/Registry.s.sol';
 
 abstract contract GoerliDeployment is Contracts, GoerliParams {
-  uint256 constant GOERLI_DEPLOYMENT_BLOCK = 12_166_340;
+  uint256 constant GOERLI_DEPLOYMENT_BLOCK = 12_465_369;
 
   // --- Mintable ERC20s ---
   ERC20ForTestnet constant ERC20_WBTC = ERC20ForTestnet(0xf1FDB809f41c187cE6F2A4C8cC6562Ba7479B4EF);
@@ -69,6 +69,11 @@ abstract contract GoerliDeployment is Contracts, GoerliParams {
     collateralAuctionHouse[WBTC] = CollateralAuctionHouse(0x724A7b53c0B81DDB0654e012c94667730CBa1837);
     collateralAuctionHouse[STONES] = CollateralAuctionHouse(0x22a804F6685f96dE8CD81aba0C85fe49884274f8);
     collateralAuctionHouse[TOTEM] = CollateralAuctionHouse(0x24CF3ddF28d7a2e046Ea9bD1B6908D8B33AAB873);
+
+    // --- jobs ---
+    accountingJob = AccountingJob(0x9c6fc600d9673b322C6Bb0835008a0f8229d11b2);
+    liquidationJob = LiquidationJob(0xAF729A93526026c63Ada37015d2A0aa3B149913e);
+    oracleJob = OracleJob(0xCC81b8E22Bc48133125BDa642C452EC6A52853C8);
 
     // --- proxies ---
     dsProxyFactory = HaiProxyFactory(0xC832Ea7C08c381b1F4726894684F7Bf1538E1dEa);

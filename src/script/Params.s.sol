@@ -45,6 +45,9 @@ uint256 constant HALF_LIFE_30_DAYS = 999_999_711_200_000_000_000_000_000;
 uint256 constant PROPORTIONAL_GAIN = 222_002_205_862;
 uint256 constant INTEGRAL_GAIN = 16_442;
 
+// Job Params
+uint256 constant JOB_REWARD = 5e18; // 5 HAI
+
 /**
  * @title Params
  * @notice This contract initializes all the contract parameters structs, so that they're inherited and available throughout scripts scopes.

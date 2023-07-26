@@ -44,6 +44,11 @@ import {
   ICollateralAuctionHouseFactory
 } from '@contracts/factories/CollateralAuctionHouseFactory.sol';
 
+// --- Jobs ---
+import {AccountingJob, IAccountingJob} from '@contracts/jobs/AccountingJob.sol';
+import {LiquidationJob, ILiquidationJob} from '@contracts/jobs/LiquidationJob.sol';
+import {OracleJob, IOracleJob} from '@contracts/jobs/OracleJob.sol';
+
 // --- Interfaces ---
 import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
@@ -101,11 +106,16 @@ abstract contract Contracts {
   IPIDRateSetter public pidRateSetter;
 
   // --- Factory contracts ---
-  CollateralJoinFactory public collateralJoinFactory;
-  CollateralAuctionHouseFactory public collateralAuctionHouseFactory;
+  ICollateralJoinFactory public collateralJoinFactory;
+  ICollateralAuctionHouseFactory public collateralAuctionHouseFactory;
 
   // --- Settlement contracts ---
   IGlobalSettlement public globalSettlement;
+
+  // --- Job contracts ---
+  IAccountingJob public accountingJob;
+  ILiquidationJob public liquidationJob;
+  IOracleJob public oracleJob;
 
   // --- Proxy contracts ---
   BasicActions public proxyActions;

@@ -13,9 +13,6 @@ abstract contract E2EStabilityFeeTreasuryTest is BaseUser, Common {
   uint256 constant INITIAL_DEBT = 1000e18;
 
   function _gatherFees(uint256 _wad, uint256 _timeElapsed) internal {
-    // Funding alice
-    _lockETH(alice, _wad);
-
     // opening alice safe
     _generateDebt({
       _user: alice,

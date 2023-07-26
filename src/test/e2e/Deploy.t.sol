@@ -106,6 +106,11 @@ abstract contract CommonDeploymentTest is HaiTest, Deploy {
       bytes32 _cType = collateralTypes[_i];
       assertEq(collateralAuctionHouse[_cType].authorizedAccounts(_target), _permission);
     }
+
+    // jobs
+    assertEq(accountingJob.authorizedAccounts(_target), _permission);
+    assertEq(liquidationJob.authorizedAccounts(_target), _permission);
+    assertEq(oracleJob.authorizedAccounts(_target), _permission);
   }
 }
 

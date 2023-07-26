@@ -41,6 +41,9 @@ abstract contract Deploy is Common, Script {
       _setupCollateral(_cType);
     }
 
+    deployJobContracts();
+    _setupJobContracts();
+
     revokeAllTo(governor);
     vm.stopBroadcast();
   }
