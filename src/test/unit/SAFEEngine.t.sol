@@ -69,12 +69,15 @@ abstract contract Base is HaiTest {
       _cData.debtAmount
     );
     stdstore.target(address(safeEngine)).sig(ISAFEEngine.cData.selector).with_key(_cType).depth(1).checked_write(
-      _cData.accumulatedRate
+      _cData.lockedAmount
     );
     stdstore.target(address(safeEngine)).sig(ISAFEEngine.cData.selector).with_key(_cType).depth(2).checked_write(
-      _cData.safetyPrice
+      _cData.accumulatedRate
     );
     stdstore.target(address(safeEngine)).sig(ISAFEEngine.cData.selector).with_key(_cType).depth(3).checked_write(
+      _cData.safetyPrice
+    );
+    stdstore.target(address(safeEngine)).sig(ISAFEEngine.cData.selector).with_key(_cType).depth(4).checked_write(
       _cData.liquidationPrice
     );
   }
@@ -620,6 +623,7 @@ contract Unit_SAFEEngine_UpdateAccumulatedRate is Base {
       collateralType,
       ISAFEEngine.SAFEEngineCollateralData({
         debtAmount: _scenario.collateralTypeDebtAmount,
+        lockedAmount: 0,
         accumulatedRate: _scenario.collateralTypeAccumulatedRate,
         safetyPrice: 0,
         liquidationPrice: 0
@@ -724,6 +728,7 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
 
     // modify collateral debt
     vm.assume(notUnderOrOverflowAdd(_scenario.cData.debtAmount, _scenario.deltaDebt));
+    vm.assume(notUnderOrOverflowAdd(_scenario.cData.lockedAmount, _scenario.deltaCollateral));
     uint256 _newCollateralDebt = _scenario.cData.debtAmount.add(_scenario.deltaDebt);
 
     // modify internal coins (calculates rate adjusted debt)
@@ -813,6 +818,20 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
     assertEq(_newDebtAmount, _scenario.cData.debtAmount.add(_scenario.deltaDebt));
   }
 
+  function test_Set_CollateralTypeDataLockedAmount(ModifySAFECollateralizationScenario memory _scenario)
+    public
+    happyPath(_scenario)
+  {
+    vm.prank(safe);
+    safeEngine.modifySAFECollateralization(
+      collateralType, safe, src, debtDestination, _scenario.deltaCollateral, _scenario.deltaDebt
+    );
+
+    uint256 _newLockedAmount = safeEngine.cData(collateralType).lockedAmount;
+
+    assertEq(_newLockedAmount, _scenario.cData.lockedAmount.add(_scenario.deltaCollateral));
+  }
+
   function test_Set_GlobalDebt(ModifySAFECollateralizationScenario memory _scenario) public happyPath(_scenario) {
     vm.prank(safe);
     safeEngine.modifySAFECollateralization(
@@ -872,7 +891,13 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
   function test_Revert_CollateralNotInitialized() public {
     _mockCollateralType(
       collateralType,
-      ISAFEEngine.SAFEEngineCollateralData({debtAmount: 0, accumulatedRate: 0, safetyPrice: 0, liquidationPrice: 0})
+      ISAFEEngine.SAFEEngineCollateralData({
+        debtAmount: 0,
+        lockedAmount: 0,
+        accumulatedRate: 0,
+        safetyPrice: 0,
+        liquidationPrice: 0
+      })
     );
 
     vm.expectRevert(ISAFEEngine.SAFEEng_CollateralTypeNotInitialized.selector);
@@ -1070,6 +1095,7 @@ contract Unit_SAFEEngine_TransferSafeCollateralAndDebt is Base {
       collateralType,
       ISAFEEngine.SAFEEngineCollateralData({
         debtAmount: 0,
+        lockedAmount: 0,
         accumulatedRate: 0,
         safetyPrice: _maxSafetyPrice,
         liquidationPrice: 0
@@ -1189,6 +1215,7 @@ contract Unit_SAFEEngine_TransferSafeCollateralAndDebt is Base {
       collateralType,
       ISAFEEngine.SAFEEngineCollateralData({
         debtAmount: 0,
+        lockedAmount: 0,
         accumulatedRate: _accumulatedRate,
         safetyPrice: _safetyPrice,
         liquidationPrice: 0
@@ -1228,6 +1255,7 @@ contract Unit_SAFEEngine_TransferSafeCollateralAndDebt is Base {
       collateralType,
       ISAFEEngine.SAFEEngineCollateralData({
         debtAmount: 0,
+        lockedAmount: 0,
         accumulatedRate: _accumulatedRate,
         safetyPrice: _safetyPrice,
         liquidationPrice: 0
@@ -1290,6 +1318,7 @@ contract Unit_SAFEEngine_TransferSafeCollateralAndDebt is Base {
       collateralType,
       ISAFEEngine.SAFEEngineCollateralData({
         debtAmount: 0,
+        lockedAmount: 0,
         accumulatedRate: _accumulatedRate,
         safetyPrice: _safetyPrice,
         liquidationPrice: 0
@@ -1337,6 +1366,7 @@ contract Unit_SAFEEngine_TransferSafeCollateralAndDebt is Base {
       collateralType,
       ISAFEEngine.SAFEEngineCollateralData({
         debtAmount: 0,
+        lockedAmount: 0,
         accumulatedRate: _accumulatedRate,
         safetyPrice: _safetyPrice,
         liquidationPrice: 0
@@ -1366,6 +1396,7 @@ contract Unit_SAFEEngine_ConfiscateSAFECollateralAndDebt is Base {
     ISAFEEngine.SAFE safeData;
     // cData
     uint256 debtAmount;
+    uint256 lockedAmount;
     uint256 accumulatedRate;
     // state vars
     uint256 collateralSourceBalance;
@@ -1383,6 +1414,7 @@ contract Unit_SAFEEngine_ConfiscateSAFECollateralAndDebt is Base {
     vm.assume(notUnderOrOverflowAdd(_scenario.safeData.lockedCollateral, _scenario.deltaCollateral));
     vm.assume(notUnderOrOverflowAdd(_scenario.safeData.generatedDebt, _scenario.deltaDebt));
     vm.assume(notUnderOrOverflowAdd(_scenario.debtAmount, _scenario.deltaDebt));
+    vm.assume(notUnderOrOverflowAdd(_scenario.lockedAmount, _scenario.deltaCollateral));
 
     int256 _deltaTotalIssuedDebt = _scenario.accumulatedRate.mul(_scenario.deltaDebt);
     vm.assume(notUnderOrOverflowSub(_scenario.debtDestinationDebt, _deltaTotalIssuedDebt));
@@ -1396,6 +1428,7 @@ contract Unit_SAFEEngine_ConfiscateSAFECollateralAndDebt is Base {
       collateralType,
       ISAFEEngine.SAFEEngineCollateralData({
         debtAmount: _scenario.debtAmount,
+        lockedAmount: _scenario.lockedAmount,
         accumulatedRate: _scenario.accumulatedRate,
         safetyPrice: 1,
         liquidationPrice: 0
@@ -1439,6 +1472,15 @@ contract Unit_SAFEEngine_ConfiscateSAFECollateralAndDebt is Base {
 
     uint256 _debtAmount = safeEngine.cData(collateralType).debtAmount;
     assertEq(_debtAmount, _scenario.debtAmount.add(_scenario.deltaDebt));
+  }
+
+  function test_Set_LockedAmount(ConfiscateSAFEScenario memory _scenario) public happyPath(_scenario) {
+    safeEngine.confiscateSAFECollateralAndDebt(
+      collateralType, safe, collateralSource, debtDestination, _scenario.deltaCollateral, _scenario.deltaDebt
+    );
+
+    uint256 _lockedAmount = safeEngine.cData(collateralType).lockedAmount;
+    assertEq(_lockedAmount, _scenario.lockedAmount.add(_scenario.deltaCollateral));
   }
 
   function test_Set_TokenCollateral(ConfiscateSAFEScenario memory _scenario) public happyPath(_scenario) {

@@ -57,6 +57,7 @@ abstract contract Base is HaiTest {
   function _mockSafeEngineCollateralData(
     bytes32 _cType,
     uint256 _debtAmount,
+    uint256 _lockedAmount,
     uint256 _accumulatedRate,
     uint256 _safetyPrice,
     uint256 _liquidationPrice
@@ -64,7 +65,7 @@ abstract contract Base is HaiTest {
     vm.mockCall(
       address(mockSafeEngine),
       abi.encodeCall(mockSafeEngine.cData, (_cType)),
-      abi.encode(_debtAmount, _accumulatedRate, _safetyPrice, _liquidationPrice)
+      abi.encode(_debtAmount, _lockedAmount, _accumulatedRate, _safetyPrice, _liquidationPrice)
     );
   }
 
@@ -377,7 +378,7 @@ contract Unit_GlobalSettlement_FreezeCollateralType is Base {
     _mockFinalCoinPerCollateralPrice(_cType, _finalCoinPerCollateralPrice);
     _mockSafeEngine(address(mockSafeEngine));
     _mockOracleRelayer(address(mockOracleRelayer));
-    _mockSafeEngineCollateralData(_cType, _debtAmount, 0, 0, 0);
+    _mockSafeEngineCollateralData(_cType, _debtAmount, 0, 0, 0, 0);
     _mockOracleRelayerCollateralParams(_cType, address(mockOracle), 0, 0);
     _mockRedemptionPrice(_redemptionPrice);
     _mockOracleRead(_oracleReadValue);
@@ -474,7 +475,7 @@ contract Unit_GlobalSettlement_FastTrackAuction is Base {
     _mockSafeEngine(address(mockSafeEngine));
     _mockLiquidationEngine(address(mockLiquidationEngine));
     _mockAccountingEngine(address(mockAccountingEngine));
-    _mockSafeEngineCollateralData(_auction.collateralType, 0, _auction.accumulatedRate, 0, 0);
+    _mockSafeEngineCollateralData(_auction.collateralType, 0, 0, _auction.accumulatedRate, 0, 0);
     _mockLiquidationEngineCollateralParams(_auction.collateralType, address(mockCollateralAuctionHouse), 0, 0);
     _mockAuction(
       _auction.id,
@@ -656,7 +657,7 @@ contract Unit_GlobalSettlement_ProcessSAFE is Base {
     _mockCollateralShortfall(_safeData.collateralType, _safeData.collateralShortfall);
     _mockSafeEngine(address(mockSafeEngine));
     _mockAccountingEngine(address(mockAccountingEngine));
-    _mockSafeEngineCollateralData(_safeData.collateralType, 0, _safeData.accumulatedRate, 0, 0);
+    _mockSafeEngineCollateralData(_safeData.collateralType, 0, 0, _safeData.accumulatedRate, 0, 0);
     _mockSafeEngineSafeData(
       _safeData.collateralType, _safeData.safe, _safeData.lockedCollateral, _safeData.generatedDebt
     );
@@ -739,7 +740,7 @@ contract Unit_GlobalSettlement_ProcessSAFE is Base {
 }
 
 contract Unit_GlobalSettlement_FreeCollateral is Base {
-  event FreeCollateral(bytes32 indexed _cType, address indexed _sender, int256 _collateralAmount);
+  event FreeCollateral(bytes32 indexed _cType, address indexed _sender, uint256 _collateralAmount);
 
   modifier happyPath(bytes32 _cType, uint256 _lockedCollateral) {
     vm.startPrank(user);
@@ -809,7 +810,7 @@ contract Unit_GlobalSettlement_FreeCollateral is Base {
     uint256 _lockedCollateral
   ) public happyPath(_cType, _lockedCollateral) {
     expectEmitNoIndex();
-    emit FreeCollateral(_cType, user, -int256(_lockedCollateral));
+    emit FreeCollateral(_cType, user, _lockedCollateral);
 
     globalSettlement.freeCollateral(_cType);
   }
@@ -942,7 +943,7 @@ contract Unit_GlobalSettlement_CalculateCashPrice is Base {
     _mockCollateralTotalDebt(_cType, _collateralTotalDebt);
     _mockCollateralCashPrice(_cType, _collateralCashPrice);
     _mockSafeEngine(address(mockSafeEngine));
-    _mockSafeEngineCollateralData(_cType, 0, _accumulatedRate, 0, 0);
+    _mockSafeEngineCollateralData(_cType, 0, 0, _accumulatedRate, 0, 0);
   }
 
   function test_Revert_OutstandingCoinSupplyZero(bytes32 _cType) public {

@@ -163,6 +163,7 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
     _emitTransferCollateral(_cType, address(0), _safe, _deltaCollateral);
     _modifySAFECollateralization(_cType, _safe, _deltaCollateral, _deltaDebt);
     __cData.debtAmount = __cData.debtAmount.add(_deltaDebt);
+    __cData.lockedAmount = __cData.lockedAmount.add(_deltaCollateral);
 
     int256 _deltaAdjustedDebt = __cData.accumulatedRate.mul(_deltaDebt);
     _modifyInternalCoins(_debtDestination, _deltaAdjustedDebt);
@@ -278,6 +279,7 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
     _emitTransferCollateral(_cType, address(0), _safe, _deltaCollateral);
     _modifySAFECollateralization(_cType, _safe, _deltaCollateral, _deltaDebt);
     __cData.debtAmount = __cData.debtAmount.add(_deltaDebt);
+    __cData.lockedAmount = __cData.lockedAmount.add(_deltaCollateral);
 
     int256 _deltaTotalIssuedDebt = __cData.accumulatedRate.mul(_deltaDebt);
 

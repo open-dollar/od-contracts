@@ -122,6 +122,7 @@ abstract contract Base is HaiTest {
   function _mockSafeEngineCData(
     bytes32 _cType,
     uint256 _debtAmount,
+    uint256 _lockedAmount,
     uint256 _accumulatedRate,
     uint256 _safetyPrice,
     uint256 _liquidationPrice
@@ -129,7 +130,7 @@ abstract contract Base is HaiTest {
     vm.mockCall(
       address(mockSafeEngine),
       abi.encodeCall(ISAFEEngine(mockSafeEngine).cData, (_cType)),
-      abi.encode(_debtAmount, _accumulatedRate, _safetyPrice, _liquidationPrice)
+      abi.encode(_debtAmount, _lockedAmount, _accumulatedRate, _safetyPrice, _liquidationPrice)
     );
   }
 
@@ -144,13 +145,14 @@ abstract contract Base is HaiTest {
   function _mockSafeEngineCollateralTypes(
     bytes32 _cType,
     uint256 _debtAmount,
+    uint256 _lockedAmount,
     uint256 _accumulatedRate,
     uint256 _safetyPrice,
     uint256 _debtCeiling,
     uint256 _debtFloor,
     uint256 _liquidationPrice
   ) internal {
-    _mockSafeEngineCData(_cType, _debtAmount, _accumulatedRate, _safetyPrice, _liquidationPrice);
+    _mockSafeEngineCData(_cType, _debtAmount, _lockedAmount, _accumulatedRate, _safetyPrice, _liquidationPrice);
     _mockSafeEngineCParams(_cType, _debtCeiling, _debtFloor);
   }
 
@@ -254,6 +256,7 @@ contract SAFESaviourCollateralTypeModifier is ISAFESaviour, Base {
     _mockSafeEngineCollateralTypes({
       _cType: _cType,
       _debtAmount: 0,
+      _lockedAmount: 0,
       _accumulatedRate: accumulatedRate,
       _safetyPrice: 0,
       _debtCeiling: 0,
@@ -341,6 +344,7 @@ contract Unit_LiquidationEngine_ModifyParameters is Base {
     _mockCollateralList(_cType);
 
     vm.assume(_fuzz.collateralAuctionHouse != address(0));
+    vm.assume(_fuzz.collateralAuctionHouse != deployer);
     liquidationEngine.modifyParameters(_cType, 'collateralAuctionHouse', abi.encode(_fuzz.collateralAuctionHouse));
     liquidationEngine.modifyParameters(_cType, 'liquidationPenalty', abi.encode(_fuzz.liquidationPenalty));
     vm.assume(_fuzz.liquidationQuantity <= type(uint256).max / RAY);
@@ -613,6 +617,7 @@ contract Unit_LiquidationEngine_GetLimitAdjustedDebtToCover is Base {
     _mockSafeEngineCData({
       _cType: collateralType,
       _debtAmount: 0,
+      _lockedAmount: 0,
       _accumulatedRate: _accumulatedRate,
       _safetyPrice: 0,
       _liquidationPrice: 0
@@ -1003,6 +1008,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     _mockSafeEngineCollateralTypes({
       _cType: collateralType,
       _debtAmount: 0,
+      _lockedAmount: 0,
       _accumulatedRate: _liquidation.accumulatedRate,
       _safetyPrice: 0,
       _debtCeiling: 0,
@@ -1815,9 +1821,10 @@ contract Unit_LiquidationEngine_InitializeCollateralType is Base {
 
   function _assumeHappyPath(ILiquidationEngine.LiquidationEngineCollateralParams memory _liqEngineCParams)
     internal
-    pure
+    view
   {
     vm.assume(_liqEngineCParams.collateralAuctionHouse != address(0));
+    vm.assume(_liqEngineCParams.collateralAuctionHouse != deployer);
     vm.assume(_liqEngineCParams.liquidationQuantity <= MAX_RAD);
   }
 
@@ -1870,6 +1877,7 @@ contract Unit_LiquidationEngine_InitializeCollateralType is Base {
     ILiquidationEngine.LiquidationEngineCollateralParams memory _liqEngineCParams
   ) public authorized {
     vm.assume(_liqEngineCParams.collateralAuctionHouse != address(0));
+    vm.assume(_liqEngineCParams.collateralAuctionHouse != deployer);
     vm.assume(_liqEngineCParams.liquidationQuantity > MAX_RAD);
 
     vm.expectRevert(

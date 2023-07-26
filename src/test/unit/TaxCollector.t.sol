@@ -83,7 +83,7 @@ abstract contract Base is HaiTest {
 
   function setUpTaxSingleOutcome(bytes32 _cType) public {
     // SafeEngine storage
-    _mockSafeEngineCData(_cType, debtAmount, lastAccumulatedRate, 0, 0);
+    _mockSafeEngineCData(_cType, debtAmount, 0, lastAccumulatedRate, 0, 0);
 
     // TaxCollector storage
     _mockCollateralData(_cType, stabilityFee, updateTime);
@@ -139,6 +139,7 @@ abstract contract Base is HaiTest {
   function _mockSafeEngineCData(
     bytes32 _cType,
     uint256 _debtAmount,
+    uint256 _lockedAmount,
     uint256 _accumulatedRate,
     uint256 _safetyPrice,
     uint256 _liquidationPrice
@@ -146,7 +147,7 @@ abstract contract Base is HaiTest {
     vm.mockCall(
       address(mockSafeEngine),
       abi.encodeCall(mockSafeEngine.cData, (_cType)),
-      abi.encode(_debtAmount, _accumulatedRate, _safetyPrice, _liquidationPrice)
+      abi.encode(_debtAmount, _lockedAmount, _accumulatedRate, _safetyPrice, _liquidationPrice)
     );
   }
 
@@ -433,9 +434,9 @@ contract Unit_TaxCollector_TaxManyOutcome is Base {
 
     vm.assume(_lastAccumulatedRate <= _newlyAccumulatedRate);
 
-    _mockSafeEngineCData(collateralTypeA, debtAmount, _lastAccumulatedRate, 0, 0);
-    _mockSafeEngineCData(collateralTypeB, debtAmount, _lastAccumulatedRate, 0, 0);
-    _mockSafeEngineCData(collateralTypeC, debtAmount, _lastAccumulatedRate, 0, 0);
+    _mockSafeEngineCData(collateralTypeA, debtAmount, 0, _lastAccumulatedRate, 0, 0);
+    _mockSafeEngineCData(collateralTypeB, debtAmount, 0, _lastAccumulatedRate, 0, 0);
+    _mockSafeEngineCData(collateralTypeC, debtAmount, 0, _lastAccumulatedRate, 0, 0);
 
     (bool _ok,) = taxCollector.taxManyOutcome(0, 2);
 

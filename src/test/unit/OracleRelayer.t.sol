@@ -173,7 +173,7 @@ contract Unit_OracleRelayer_ModifyParameters is Base {
   {
     return (
       _fuzz.liquidationCRatio >= 1e27 && _fuzz.safetyCRatio >= _fuzz.liquidationCRatio
-        && address(_fuzz.oracle) != address(0)
+        && address(_fuzz.oracle) != address(vm) && address(_fuzz.oracle) != address(0)
     );
   }
 
@@ -831,6 +831,7 @@ contract Unit_OracleRelayer_InitializeCollateralType is Base {
   }
 
   function _assumeHappyPath(IOracleRelayer.OracleRelayerCollateralParams memory _oracleRelayerCParams) internal pure {
+    vm.assume(_oracleRelayerCParams.oracle != IDelayedOracle(address(vm)));
     vm.assume(_oracleRelayerCParams.oracle != IDelayedOracle(address(0)));
     vm.assume(_oracleRelayerCParams.safetyCRatio >= _oracleRelayerCParams.liquidationCRatio);
     vm.assume(_oracleRelayerCParams.liquidationCRatio >= RAY);
@@ -879,6 +880,7 @@ contract Unit_OracleRelayer_InitializeCollateralType is Base {
     bytes32 _cType,
     IOracleRelayer.OracleRelayerCollateralParams memory _oracleRelayerCParams
   ) public authorized {
+    vm.assume(_oracleRelayerCParams.oracle != IDelayedOracle(address(vm)));
     vm.assume(_oracleRelayerCParams.oracle != IDelayedOracle(address(0)));
     vm.assume(_oracleRelayerCParams.safetyCRatio < _oracleRelayerCParams.liquidationCRatio);
 
