@@ -9,13 +9,14 @@
     "url": "https://github.com/UseKeyp/open-dollar-contracts.git"
   },
   "license": "MIT",
-  "author": "Wonderland",
+  "author": "Keyp",
   "contributors": [
+    "cupOJoseph (https://github.com/cupOJoseph)",
+    "daopunk (https://github.com/daopunk)",
     "wei3erHase (https://github.com/wei3erHase)",
     "0xGorilla (https://github.com/0xGorilla)",
     "0xJabberwock (https://github.com/0xJabberwock)",
-    "0xRaccoon (https://github.com/0xRaccoon)",
-    "useKeyp (https://github.com/UseKeyp)"
+    "0xRaccoon (https://github.com/0xRaccoon)"
   ],
   "scripts": {
     "build": "forge build",
