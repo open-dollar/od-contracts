@@ -153,7 +153,7 @@ contract Unit_SAFEEngine_Constructor is Base {
   }
 
   function test_Emit_AddAuthorization() public {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit AddAuthorization(deployer);
     vm.prank(deployer);
     safeEngine = new SAFEEngineForTest(safeEngineParams);
@@ -230,7 +230,7 @@ contract Unit_SAFEEngine_ModifyCollateralBalance is Base {
     _assumeHappyPath(_initialCollateral, 0);
     _mockTokenCollateral(collateralType, account, _initialCollateral);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit TransferCollateral(collateralType, address(0), account, 0);
 
     safeEngine.modifyCollateralBalance(collateralType, account, 0);
@@ -241,7 +241,7 @@ contract Unit_SAFEEngine_ModifyCollateralBalance is Base {
     _assumeHappyPath(_intialCollateral, _wad);
     _mockTokenCollateral(collateralType, account, _intialCollateral);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit TransferCollateral(collateralType, address(0), account, uint256(_wad));
 
     safeEngine.modifyCollateralBalance(collateralType, account, _wad);
@@ -252,7 +252,7 @@ contract Unit_SAFEEngine_ModifyCollateralBalance is Base {
     _assumeHappyPath(_intialCollateral, _wad);
     _mockTokenCollateral(collateralType, account, _intialCollateral);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit TransferCollateral(collateralType, account, address(0), uint256(-_wad));
 
     safeEngine.modifyCollateralBalance(collateralType, account, _wad);
@@ -313,7 +313,7 @@ contract Unit_SAFEEngine_TransferCollateral is Base {
     _assumeHappyPath(_initialCollateralSrc, _initialCollateralDst, _wad);
     _mockValues(_initialCollateralSrc, _initialCollateralDst);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit TransferCollateral(collateralType, src, dst, _wad);
 
     vm.prank(src);
@@ -365,7 +365,7 @@ contract Unit_SAFEEngine_TransferInternalCoins is Base {
     _assumeHappyPath(_initialBalanceSrc, _initialBalanceDst, _rad);
     _mockValues(_initialBalanceSrc, _initialBalanceDst);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit TransferInternalCoins(src, dst, _rad);
 
     vm.prank(src);
@@ -483,7 +483,7 @@ contract Unit_SAFEEngine_SettleDebt is Base {
     _assumeHappyPath(_initialDebtBalance, _initialCoinBalance, _initialGlobalUnbackedDebt, _globalDebt, _rad);
     _mockValues(_initialDebtBalance, _initialCoinBalance, _initialGlobalUnbackedDebt, _globalDebt);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit SettleDebt(account, _rad);
 
     vm.prank(account);
@@ -590,7 +590,7 @@ contract Unit_SAFEEngine_CreateUnbackedDebt is Base {
     _assumeHappyPath(_initialDebtBalance, _initialCoinBalance, _initialGlobalUnbackedDebt, _globalDebt, _rad);
     _mockValues(_initialDebtBalance, _initialCoinBalance, _initialGlobalUnbackedDebt, _globalDebt);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit CreateUnbackedDebt(debtDestination, coinDestination, _rad);
 
     safeEngine.createUnbackedDebt(debtDestination, coinDestination, _rad);
@@ -671,7 +671,7 @@ contract Unit_SAFEEngine_UpdateAccumulatedRate is Base {
     _assumeHappyPath(_scenario);
     _mockValues(_scenario);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit UpdateAccumulatedRate(collateralType, surplusDst, _scenario.rateMultiplier);
 
     safeEngine.updateAccumulatedRate(collateralType, surplusDst, _scenario.rateMultiplier);
@@ -870,7 +870,7 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
     public
     happyPath(_scenario)
   {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit ModifySAFECollateralization(
       collateralType, safe, src, debtDestination, _scenario.deltaCollateral, _scenario.deltaDebt
     );
@@ -1165,7 +1165,7 @@ contract Unit_SAFEEngine_TransferSafeCollateralAndDebt is Base {
     public
     happyPath(_scenario)
   {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit TransferSAFECollateralAndDebt(collateralType, src, dst, _scenario.deltaCollateral, _scenario.deltaDebt);
 
     vm.prank(account);
@@ -1516,7 +1516,7 @@ contract Unit_SAFEEngine_ConfiscateSAFECollateralAndDebt is Base {
     public
     happyPath(_scenario)
   {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit ConfiscateSAFECollateralAndDebt(
       collateralType, safe, collateralSource, debtDestination, _scenario.deltaCollateral, _scenario.deltaDebt
     );
@@ -1541,7 +1541,7 @@ contract Unit_SAFEEngine_ApproveSAFEModification is Base {
   function test_Emit_ApproveSAFEModification(address _sender, address _account) public {
     vm.prank(_sender);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit ApproveSAFEModification(_sender, _account);
 
     safeEngine.approveSAFEModification(_account);
@@ -1563,7 +1563,7 @@ contract Unit_SAFEEngine_DenySAFEModification is Base {
   function test_Emit_DenySAFEModification(address _sender, address _account) public {
     _mockCanModifySafe(_sender, _account, 1);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit DenySAFEModification(_sender, _account);
 
     vm.prank(_sender);
@@ -1619,7 +1619,7 @@ contract Unit_SAFEEngine_InitializeCollateralType is Base {
     bytes32 _cType,
     ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCParams
   ) public authorized {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit InitializeCollateralType(_cType);
 
     safeEngine.initializeCollateralType(_cType, _safeEngineCParams);

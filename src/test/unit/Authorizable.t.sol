@@ -24,7 +24,7 @@ contract Unit_Authorizable_Constructor is Base {
   event AddAuthorization(address _account);
 
   function test_Emit_AddAuthorization(address _account) public {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit AddAuthorization(_account);
 
     authorizable = new AuthorizableForTest(_account);
@@ -90,7 +90,7 @@ contract Unit_Authorizable_AddAuthorization is Base {
   }
 
   function test_Emit_AddAuthorization(address _account) public happyPath(_account) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit AddAuthorization(_account);
 
     authorizable.addAuthorization(_account);
@@ -127,7 +127,7 @@ contract Unit_Authorizable_RemoveAuthorization is Base {
   }
 
   function test_Emit_RemoveAuthorization() public happyPath {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit RemoveAuthorization(authorizedAccount);
 
     authorizable.removeAuthorization(authorizedAccount);

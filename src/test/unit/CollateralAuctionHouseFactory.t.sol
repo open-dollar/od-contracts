@@ -113,7 +113,7 @@ contract Unit_CollateralAuctionHouseFactory_Constructor is Base {
   }
 
   function test_Emit_AddAuthorization() public happyPath {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit AddAuthorization(user);
 
     collateralAuctionHouseFactory =
@@ -197,7 +197,7 @@ contract Unit_CollateralAuctionHouseFactory_DeployCollateralAuctionHouse is Base
   }
 
   function test_Emit_DeployCollateralAuctionHouse(bytes32 _cType) public happyPath {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit DeployCollateralAuctionHouse(_cType, address(collateralAuctionHouseChild));
 
     collateralAuctionHouseFactory.deployCollateralAuctionHouse(_cType, _cahCParams);
@@ -307,10 +307,10 @@ contract Unit_CollateralAuctionHouseFactory_ModifyParameters is Base {
     collateralAuctionHouseFactory.addAuthorization(_oldLiquidationEngine);
 
     if (_oldLiquidationEngine != address(0)) {
-      expectEmitNoIndex();
+      vm.expectEmit();
       emit RemoveAuthorization(_oldLiquidationEngine);
     }
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit AddAuthorization(_newLiquidationEngine);
 
     collateralAuctionHouseFactory.modifyParameters('liquidationEngine', abi.encode(_newLiquidationEngine));

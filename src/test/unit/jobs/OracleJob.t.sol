@@ -88,7 +88,7 @@ contract Unit_OracleJob_Constructor is Base {
   }
 
   function test_Emit_AddAuthorization() public happyPath {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit AddAuthorization(user);
 
     oracleJob =
@@ -157,7 +157,7 @@ contract Unit_OracleJob_WorkUpdateCollateralPrice is Base {
   }
 
   function test_Emit_Rewarded(bytes32 _cType) public happyPath(_cType) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit Rewarded(user, REWARD_AMOUNT);
 
     oracleJob.workUpdateCollateralPrice(_cType);
@@ -193,7 +193,7 @@ contract Unit_OracleJob_WorkUpdateRate is Base {
   }
 
   function test_Emit_Rewarded() public happyPath {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit Rewarded(user, REWARD_AMOUNT);
 
     oracleJob.workUpdateRate();

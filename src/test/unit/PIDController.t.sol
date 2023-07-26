@@ -985,7 +985,7 @@ contract Unit_PIDController_UpdateDeviation is Base {
     _mockGetNextDeviationCumulative(_scenario.virtualDeviationCumulative, _scenario.appliedDeviation);
     vm.warp(_scenario.timestamp);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit UpdateDeviation({
       _proportionalDeviation: _scenario.proportionalTerm,
       _cumulativeDeviation: _scenario.virtualDeviationCumulative,

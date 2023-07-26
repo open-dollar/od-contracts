@@ -244,7 +244,7 @@ contract Unit_GlobalSettlement_Constructor is Base {
   }
 
   function test_Emit_AddAuthorization() public happyPath {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit AddAuthorization(user);
 
     globalSettlement = new GlobalSettlement();
@@ -344,7 +344,7 @@ contract Unit_GlobalSettlement_ShutdownSystem is Base {
   }
 
   function test_Emit_ShutdownSystem() public happyPath {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit ShutdownSystem();
 
     globalSettlement.shutdownSystem();
@@ -428,7 +428,7 @@ contract Unit_GlobalSettlement_FreezeCollateralType is Base {
     uint256 _redemptionPrice,
     uint256 _oracleReadValue
   ) public happyPath(_cType, _debtAmount, _redemptionPrice, _oracleReadValue) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit FreezeCollateralType(_cType, _redemptionPrice.wdiv(_oracleReadValue));
 
     globalSettlement.freezeCollateralType(_cType);
@@ -611,7 +611,7 @@ contract Unit_GlobalSettlement_FastTrackAuction is Base {
     uint256 _debt = _assumeHappyPath(_auction);
     _mockValues(_auction);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit FastTrackAuction(_auction.collateralType, _auction.id, _auction.collateralTotalDebt + _debt);
 
     globalSettlement.fastTrackAuction(_auction.collateralType, _auction.id);
@@ -730,7 +730,7 @@ contract Unit_GlobalSettlement_ProcessSAFE is Base {
     (uint256 _amountOwed, uint256 _minCollateral) = _assumeHappyPath(_safeData);
     _mockValues(_safeData);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit ProcessSAFE(
       _safeData.collateralType, _safeData.safe, _safeData.collateralShortfall + (_amountOwed - _minCollateral)
     );
@@ -809,7 +809,7 @@ contract Unit_GlobalSettlement_FreeCollateral is Base {
     bytes32 _cType,
     uint256 _lockedCollateral
   ) public happyPath(_cType, _lockedCollateral) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit FreeCollateral(_cType, user, _lockedCollateral);
 
     globalSettlement.freeCollateral(_cType);
@@ -899,7 +899,7 @@ contract Unit_GlobalSettlement_SetOutstandingCoinSupply is Base {
     uint256 _shutdownCooldown,
     uint256 _globalDebt
   ) public happyPath(_shutdownTime, _shutdownCooldown, _globalDebt) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit SetOutstandingCoinSupply(_globalDebt);
 
     globalSettlement.setOutstandingCoinSupply();
@@ -1017,7 +1017,7 @@ contract Unit_GlobalSettlement_CalculateCashPrice is Base {
       _accumulatedRate
     );
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit CalculateCashPrice(
       _cType, (_redemptionAdjustedDebt - _collateralShortfall) * RAY / (_outstandingCoinSupply / RAY)
     );
@@ -1085,7 +1085,7 @@ contract Unit_GlobalSettlement_PrepareCoinsForRedeeming is Base {
     uint256 _outstandingCoinSupply,
     uint256 _coinBag
   ) public happyPath(_coinAmount, _outstandingCoinSupply, _coinBag) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit PrepareCoinsForRedeeming(user, _coinBag + _coinAmount);
 
     globalSettlement.prepareCoinsForRedeeming(_coinAmount);
@@ -1180,7 +1180,7 @@ contract Unit_GlobalSettlement_RedeemCollateral is Base {
   }
 
   function test_Emit_RedeemCollateral(RedeemCollateralStruct memory _collateralData) public happyPath(_collateralData) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit RedeemCollateral(
       _collateralData.collateralType,
       user,

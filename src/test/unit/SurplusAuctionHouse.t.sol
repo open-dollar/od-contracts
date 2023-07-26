@@ -133,7 +133,7 @@ contract Unit_SurplusAuctionHouse_Constructor is Base {
   }
 
   function test_Emit_AddAuthorization() public happyPath {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit AddAuthorization(user);
 
     new SurplusAuctionHouseForTest(address(mockSafeEngine), address(mockProtocolToken), sahParams);
@@ -336,7 +336,7 @@ contract Unit_SurplusAuctionHouse_StartAuction is Base {
     uint256 _auctionsStarted,
     uint256 _totalAuctionLength
   ) public happyPath(_auctionsStarted, _totalAuctionLength) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit StartAuction(
       _auctionsStarted + 1, block.timestamp, _amountToSell, _initialBid, block.timestamp + _totalAuctionLength
     );
@@ -438,7 +438,7 @@ contract Unit_SurplusAuctionHouse_RestartAuction is Base {
     uint256 _auctionsStarted,
     uint256 _totalAuctionLength
   ) public happyPath(_auction, _auctionsStarted, _totalAuctionLength) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit RestartAuction(_auction.id, block.timestamp, block.timestamp + _totalAuctionLength);
 
     surplusAuctionHouse.restartAuction(_auction.id);
@@ -662,7 +662,7 @@ contract Unit_SurplusAuctionHouse_IncreaseBidSize is Base {
     uint256 _bidIncrease,
     uint256 _bidDuration
   ) public happyPath(_auction, _bid, _bidIncrease, _bidDuration) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit IncreaseBidSize(
       _auction.id, user, block.timestamp, _bid, _auction.amountToSell, block.timestamp + _bidDuration
     );
@@ -816,7 +816,7 @@ contract Unit_SurplusAuctionHouse_SettleAuction is Base {
     SurplusAuction memory _auction,
     uint256 _recyclingPercentage
   ) public happyPath(_auction, _recyclingPercentage) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit SettleAuction(_auction.id, block.timestamp, _auction.highBidder, _auction.bidAmount);
 
     surplusAuctionHouse.settleAuction(_auction.id);
@@ -872,7 +872,7 @@ contract Unit_SurplusAuctionHouse_TerminateAuctionPrematurely is Base {
   }
 
   function test_Emit_TerminateAuctionPrematurely(SurplusAuction memory _auction) public happyPath(_auction) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit TerminateAuctionPrematurely(_auction.id, block.timestamp, _auction.highBidder, _auction.bidAmount);
 
     surplusAuctionHouse.terminateAuctionPrematurely(_auction.id);

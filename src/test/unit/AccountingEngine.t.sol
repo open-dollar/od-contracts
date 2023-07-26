@@ -341,7 +341,7 @@ contract Unit_AccountingEngine_PushDebtToQueue is Base {
     _assumeHappyPath(_debtBlock, _totalQueuedDebt);
     _mockTotalQueuedDebt(_totalQueuedDebt);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit PushDebtToQueue(_debtBlock);
 
     accountingEngine.pushDebtToQueue(_debtBlock);
@@ -426,7 +426,7 @@ contract Unit_AccountingEngine_PopDebtFromQueue is Base {
 
     _mockQueuedDebt(_debtBlock, block.timestamp);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit PopDebtFromQueue(block.timestamp, _debtBlock);
 
     accountingEngine.popDebtFromQueue(block.timestamp);
@@ -517,7 +517,7 @@ contract Unit_AccountingEngine_SettleDebt is Base {
     _assumeHappyPath(_scenario);
     _mockCoinAndDebtBalance(_scenario.coinBalance, _scenario.debtBalance);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit SettleDebt({
       _rad: _scenario.rad,
       _coinBalance: _scenario.coinBalance - _scenario.rad,
@@ -601,7 +601,7 @@ contract Unit_AccountingEngine_CancelAuctionedDebtWithSurplus is Base {
     _assumeHappyPath(_scenario);
     _mockValues(_scenario);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit CancelDebt({
       _rad: _scenario.rad,
       _coinBalance: _scenario.coinBalance - _scenario.rad,
@@ -731,7 +731,7 @@ contract Unit_AccountingEngine_AuctionDebt is Base {
     _assumeHappyPath(_scenario);
     _mockValues(_scenario, 1);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit AuctionDebt(1, _debtAuctionMintedTokens, _scenario.debtAuctionBidSize);
 
     accountingEngine.auctionDebt();
@@ -852,7 +852,7 @@ contract Unit_AccountingEngine_AuctionSurplus is Base {
     _assumeHappyPath(_scenario);
     _mockValues(0, 0, _scenario);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit AuctionSurplus(1, 0, _scenario.surplusAmount);
 
     accountingEngine.auctionSurplus();
@@ -984,7 +984,7 @@ contract Unit_AccountingEngine_TransferExtraSurplus is Base {
     _assumeHappyPath(_scenario);
     _mockValues(_scenario);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit TransferSurplus(extraSurplusReceiver, _scenario.surplusAmount);
 
     accountingEngine.transferExtraSurplus();
@@ -1151,7 +1151,7 @@ contract Unit_AccountingEngine_TransferPostSettlementSurplus is Base {
     uint256 _coinBalance = _scenario.coinBalance - _debtToSettle;
 
     if (_coinBalance > 0) {
-      expectEmitNoIndex();
+      vm.expectEmit();
       emit TransferSurplus(postSettlementSurplusDrain, _coinBalance);
     }
 

@@ -50,7 +50,7 @@ contract Unit_DenominatedOracleFactory_Constructor is Base {
   }
 
   function test_Emit_AddAuthorization() public happyPath {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit AddAuthorization(user);
 
     denominatedOracleFactory = new DenominatedOracleFactory();
@@ -97,7 +97,7 @@ contract Unit_DenominatedOracleFactory_DeployDenominatedOracle is Base {
   }
 
   function test_Emit_NewDenominatedOracle(bool _inverted, string memory _symbol) public happyPath(_symbol) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit NewDenominatedOracle(
       address(denominatedOracleChild), address(mockPriceSource), address(mockDenominationPriceSource), _inverted
     );

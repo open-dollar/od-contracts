@@ -396,7 +396,7 @@ contract Unit_OracleRelayer_RedemptionPrice is Base {
     _mockRedemptionPriceUpdateTime(_redemptionPriceUpdateTime);
     vm.warp(_timestamp);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit UpdateRedemptionPriceCalled();
 
     oracleRelayer.redemptionPrice();
@@ -410,7 +410,7 @@ contract Unit_OracleRelayer_RedemptionPrice is Base {
     _mockRedemptionPriceUpdateTime(_redemptionPriceUpdateTime);
     vm.warp(_timestamp);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit UpdateRedemptionPriceCalled();
 
     oracleRelayer.redemptionPrice();
@@ -494,8 +494,7 @@ contract Unit_OracleRelayer_Internal_UpdateRedemptionPrice is Base {
       .rmul(_scenario.redemptionPrice);
     _updatedPrice = _updatedPrice == 0 ? 1 : _updatedPrice;
 
-    expectEmitNoIndex();
-
+    vm.expectEmit();
     emit UpdateRedemptionPrice(_updatedPrice);
 
     OracleRelayerForTest(address(oracleRelayer)).callUpdateRedemptionPrice();
@@ -647,7 +646,7 @@ contract Unit_OracleRelayer_UpdateCollateralPrice is Base {
     _assumeHappyPathValidatyWithoutUpdateRedemptionPrice(_scenario);
     _mockValues(_scenario, true);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit GetRedemptionPriceCalled();
 
     oracleRelayer.updateCollateralPrice(collateralType);
@@ -663,7 +662,7 @@ contract Unit_OracleRelayer_UpdateCollateralPrice is Base {
     _assumeHappyPathValidatyWithUpdateRedemptionPrice(_scenario);
     _mockValues(_scenario, true);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit GetRedemptionPriceCalled();
 
     oracleRelayer.updateCollateralPrice(collateralType);

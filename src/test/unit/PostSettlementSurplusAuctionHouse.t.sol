@@ -104,7 +104,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_Constructor is Base {
   }
 
   function test_Emit_AddAuthorization() public happyPath {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit AddAuthorization(user);
 
     new PostSettlementSurplusAuctionHouseForTest(address(mockSafeEngine), address(mockProtocolToken), pssahParams);
@@ -244,7 +244,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_StartAuction is Base {
     uint256 _auctionsStarted,
     uint256 _totalAuctionLength
   ) public happyPath(_auctionsStarted, _totalAuctionLength) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit StartAuction(
       _auctionsStarted + 1, block.timestamp, _amountToSell, _initialBid, block.timestamp + _totalAuctionLength
     );
@@ -348,7 +348,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_RestartAuction is Base {
     uint256 _auctionsStarted,
     uint256 _totalAuctionLength
   ) public happyPath(_auction, _auctionsStarted, _totalAuctionLength) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit RestartAuction(_auction.id, block.timestamp, block.timestamp + _totalAuctionLength);
 
     postSettlementSurplusAuctionHouse.restartAuction(_auction.id);
@@ -567,7 +567,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_IncreaseBidSize is Base {
     uint256 _bidIncrease,
     uint256 _bidDuration
   ) public happyPath(_auction, _bid, _bidIncrease, _bidDuration) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit IncreaseBidSize(
       _auction.id, user, block.timestamp, _bid, _auction.amountToSell, block.timestamp + _bidDuration
     );
@@ -648,7 +648,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_SettleAuction is Base {
   }
 
   function test_Emit_SettleAuction(SurplusAuction memory _auction) public happyPath(_auction) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit SettleAuction(_auction.id, block.timestamp, _auction.highBidder, _auction.bidAmount);
 
     postSettlementSurplusAuctionHouse.settleAuction(_auction.id);

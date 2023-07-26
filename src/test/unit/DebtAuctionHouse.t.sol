@@ -140,7 +140,7 @@ contract Unit_DebtAuctionHouse_Constructor is Base {
   }
 
   function test_Emit_AddAuthorization() public happyPath {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit AddAuthorization(user);
 
     new DebtAuctionHouseForTest(address(mockSafeEngine), address(mockProtocolToken), dahParams);
@@ -337,7 +337,7 @@ contract Unit_DebtAuctionHouse_StartAuction is Base {
     uint256 _activeDebtAuctions,
     uint256 _totalAuctionLength
   ) public happyPath(_auctionsStarted, _activeDebtAuctions, _totalAuctionLength) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit StartAuction(
       _auctionsStarted + 1, block.timestamp, _amountToSell, _initialBid, block.timestamp + _totalAuctionLength
     );
@@ -467,7 +467,7 @@ contract Unit_DebtAuctionHouse_RestartAuction is Base {
     uint256 _amountSoldIncrease,
     uint256 _totalAuctionLength
   ) public happyPath(_auction, _auctionsStarted, _amountSoldIncrease, _totalAuctionLength) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit RestartAuction(_auction.id, block.timestamp, block.timestamp + _totalAuctionLength);
 
     debtAuctionHouse.restartAuction(_auction.id);
@@ -718,7 +718,7 @@ contract Unit_DebtAuctionHouse_DecreaseSoldAmount is Base {
     uint256 _bidDuration,
     uint256 _totalOnAuctionDebt
   ) public happyPath(_auction, _amountToBuy, _bidDecrease, _bidDuration, _totalOnAuctionDebt) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit DecreaseSoldAmount(
       _auction.id, user, block.timestamp, _auction.bidAmount, _amountToBuy, block.timestamp + _bidDuration
     );
@@ -817,7 +817,7 @@ contract Unit_DebtAuctionHouse_SettleAuction is Base {
     DebtAuction memory _auction,
     uint256 _activeDebtAuctions
   ) public happyPath(_auction, _activeDebtAuctions) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit SettleAuction(_auction.id, block.timestamp, _auction.highBidder, _auction.bidAmount);
 
     debtAuctionHouse.settleAuction(_auction.id);
@@ -883,7 +883,7 @@ contract Unit_DebtAuctionHouse_TerminateAuctionPrematurely is Base {
     DebtAuction memory _auction,
     uint256 _activeDebtAuctions
   ) public happyPath(_auction, _activeDebtAuctions) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit TerminateAuctionPrematurely(_auction.id, block.timestamp, _auction.highBidder, _auction.bidAmount);
 
     debtAuctionHouse.terminateAuctionPrematurely(_auction.id);

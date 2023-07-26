@@ -293,7 +293,7 @@ contract Unit_LiquidationEngine_Constructor is Base {
   }
 
   function test_Emit_AddAuthorization() public {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit AddAuthorization(deployer);
 
     vm.prank(deployer);
@@ -430,7 +430,7 @@ contract Unit_LiquidationEngine_RemoveCoinsFromAuction is Base {
     vm.assume(notUnderflow(_initialCurrentOnAuctionSystemCoins, _rad));
     _mockCurrentOnAuctionSystemCoins(_initialCurrentOnAuctionSystemCoins);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit UpdateCurrentOnAuctionSystemCoins(_initialCurrentOnAuctionSystemCoins - _rad);
 
     liquidationEngine.removeCoinsFromAuction(_rad);
@@ -523,7 +523,7 @@ contract Unit_LiquidationEngine_ConnectSAFESaviour is Base {
   function test_Emit_ConnectSAFESaviour() public authorized {
     _mockSaveSafe(true, type(uint256).max, type(uint256).max);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit ConnectSAFESaviour(mockSaviour);
 
     liquidationEngine.connectSAFESaviour(mockSaviour);
@@ -579,7 +579,7 @@ contract Unit_LiquidationEngine_DisconnectSAFESaviour is Base {
   }
 
   function test_Emit_DisconnectSAFESaviour() public authorized {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit DisconnectSAFESaviour(mockSaviour);
 
     liquidationEngine.disconnectSAFESaviour(mockSaviour);
@@ -1286,7 +1286,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
   {
     uint256 _amountToRaise =
       _liquidation.safeDebt * _liquidation.accumulatedRate * _liquidation.liquidationPenalty / WAD;
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit UpdateCurrentOnAuctionSystemCoins(_liquidation.currentOnAuctionSystemCoins + _amountToRaise);
 
     liquidationEngine.liquidateSAFE(collateralType, safe);
@@ -1298,7 +1298,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     uint256 _limitAdjustedDebt =
       _liquidation.liquidationQuantity * WAD / _liquidation.liquidationPenalty / _liquidation.accumulatedRate;
     uint256 _amountToRaise = _limitAdjustedDebt * _liquidation.accumulatedRate * _liquidation.liquidationPenalty / WAD;
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit UpdateCurrentOnAuctionSystemCoins(_liquidation.currentOnAuctionSystemCoins + _amountToRaise);
 
     liquidationEngine.liquidateSAFE(collateralType, safe);
@@ -1311,7 +1311,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     uint256 _limitAdjustedDebt = (_liquidation.onAuctionSystemCoinLimit - _liquidation.currentOnAuctionSystemCoins)
       * WAD / _liquidation.liquidationPenalty / _liquidation.accumulatedRate;
     uint256 _amountToRaise = _limitAdjustedDebt * _liquidation.accumulatedRate * _liquidation.liquidationPenalty / WAD;
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit UpdateCurrentOnAuctionSystemCoins(_liquidation.currentOnAuctionSystemCoins + _amountToRaise);
 
     liquidationEngine.liquidateSAFE(collateralType, safe);
@@ -1319,7 +1319,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
 
   function test_Emit_Liquidate(Liquidation memory _liquidation) public happyPathFullLiquidation(_liquidation) {
     uint256 acRateMulLimitAdDebt = _liquidation.safeDebt * _liquidation.accumulatedRate;
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit Liquidate(
       collateralType,
       safe,
@@ -1341,7 +1341,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
       _liquidation.liquidationQuantity * WAD / _liquidation.liquidationPenalty / _liquidation.accumulatedRate;
     uint256 acRateMulLimitAdDebt = _limitAdjustedDebt * _liquidation.accumulatedRate;
     uint256 _collateralToSell = _liquidation.safeCollateral * _limitAdjustedDebt / _liquidation.safeDebt;
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit Liquidate(
       collateralType,
       safe,
@@ -1364,7 +1364,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     uint256 acRateMulLimitAdDebt = _limitAdjustedDebt * _liquidation.accumulatedRate;
     uint256 _collateralToSell = _liquidation.safeCollateral * _limitAdjustedDebt / _liquidation.safeDebt;
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit Liquidate(
       collateralType,
       safe,
@@ -1733,7 +1733,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     _mockSafeSaviours(address(_testSaveSaviour), 1);
 
     bytes memory _reason = abi.encodeWithSignature('Error(string)', 'Failed to save safe');
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit FailedSAFESave(_reason);
 
     vm.prank(user);
@@ -1855,7 +1855,7 @@ contract Unit_LiquidationEngine_InitializeCollateralType is Base {
     bytes32 _cType,
     ILiquidationEngine.LiquidationEngineCollateralParams memory _liqEngineCParams
   ) public authorized happyPath(_liqEngineCParams) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit AddAuthorization(_liqEngineCParams.collateralAuctionHouse);
 
     liquidationEngine.initializeCollateralType(_cType, _liqEngineCParams);

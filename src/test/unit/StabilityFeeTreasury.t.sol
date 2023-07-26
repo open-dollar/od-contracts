@@ -312,7 +312,7 @@ contract Unit_StabilityFeeTreasury_DisableContract is Base {
   }
 
   function test_Call_Internal_JoinAllCoins() public authorized {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit CalledJoinAllCoins();
 
     stabilityFeeTreasury.disableContract();
@@ -550,7 +550,7 @@ contract Unit_StabilityFeeTreasury_GiveFunds is Base {
     _assumeHappyPath(_account);
     _mockValues({_coinBalance: _rad, _debtBalance: 0});
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit CalledJoinAllCoins();
 
     stabilityFeeTreasury.giveFunds(_account, _rad);
@@ -560,7 +560,7 @@ contract Unit_StabilityFeeTreasury_GiveFunds is Base {
     _assumeHappyPath(_account);
     _mockValues({_coinBalance: _rad, _debtBalance: 0});
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit CalledSettleDebt();
 
     stabilityFeeTreasury.giveFunds(_account, _rad);
@@ -791,7 +791,7 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     public
     happyPathAllowancePerHourNotZero(_pullFundsScenario)
   {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit CalledJoinAllCoins();
 
     stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, _pullFundsScenario._wad);
@@ -801,7 +801,7 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     public
     happyPathAllowancePerHourNotZero(_pullFundsScenario)
   {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit CalledSettleDebt();
 
     stabilityFeeTreasury.pullFunds(_pullFundsScenario._dstAccount, _pullFundsScenario._wad);
@@ -1229,7 +1229,7 @@ contract Unit_StabilityFeeTreasury_TransferSurplusFunds is Base {
     public
     happyPathEnoughTreasureCapacity(_transferSurplusFundsScenario)
   {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit CalledJoinAllCoins();
 
     stabilityFeeTreasury.transferSurplusFunds();
@@ -1238,7 +1238,7 @@ contract Unit_StabilityFeeTreasury_TransferSurplusFunds is Base {
   function test_Call_Internal_JoinAllCoins_NotEnoughTreasureCapacity(
     TransferSurplusFundsScenario memory _transferSurplusFundsScenario
   ) public happyPathNotEnoughTreasureCapacity(_transferSurplusFundsScenario) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit CalledJoinAllCoins();
 
     stabilityFeeTreasury.transferSurplusFunds();
@@ -1248,7 +1248,7 @@ contract Unit_StabilityFeeTreasury_TransferSurplusFunds is Base {
     public
     happyPathEnoughTreasureCapacity(_transferSurplusFundsScenario)
   {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit CalledSettleDebt();
 
     stabilityFeeTreasury.transferSurplusFunds();
@@ -1257,7 +1257,7 @@ contract Unit_StabilityFeeTreasury_TransferSurplusFunds is Base {
   function test_Call_Internal_SettleDebt_NotEnoughTreasureCapacity(
     TransferSurplusFundsScenario memory _transferSurplusFundsScenario
   ) public happyPathNotEnoughTreasureCapacity(_transferSurplusFundsScenario) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit CalledSettleDebt();
 
     stabilityFeeTreasury.transferSurplusFunds();
@@ -1300,7 +1300,7 @@ contract Unit_StabilityFeeTreasury_TransferSurplusFunds is Base {
     public
     happyPathEnoughTreasureCapacity(_transferSurplusFundsScenario)
   {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit TransferSurplusFunds(
       mockExtraSurplusReceiver,
       _transferSurplusFundsScenario._coinBalance - _transferSurplusFundsScenario._treasuryCapacity
@@ -1312,7 +1312,7 @@ contract Unit_StabilityFeeTreasury_TransferSurplusFunds is Base {
   function test_Emit_TransferSurplusFunds_NotEnoughTreasureCapacity(
     TransferSurplusFundsScenario memory _transferSurplusFundsScenario
   ) public happyPathNotEnoughTreasureCapacity(_transferSurplusFundsScenario) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit TransferSurplusFunds(
       mockExtraSurplusReceiver,
       _transferSurplusFundsScenario._coinBalance - _transferSurplusFundsScenario._minimumFundsRequired
@@ -1341,7 +1341,7 @@ contract Unit_StabilityFeeTreasury_TransferSurplusFunds is Base {
     public
     happyPathEnoughTreasureCapacityNotEnoughCoinBalance(_transferSurplusFundsScenario)
   {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit TransferSurplusFunds(
       mockExtraSurplusReceiver,
       _transferSurplusFundsScenario._coinBalance - _transferSurplusFundsScenario._treasuryCapacity
@@ -1369,7 +1369,7 @@ contract Unit_StabilityFeeTreasury_TransferSurplusFunds is Base {
   function testFail_Emit_TransferSurplusFunds_NotEnoughTreasureCapacity_NotEnoughBalance(
     TransferSurplusFundsScenario memory _transferSurplusFundsScenario
   ) public happyPathNotEnoughTreasureCapacityNotEnoughCoinBalance(_transferSurplusFundsScenario) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit TransferSurplusFunds(
       mockExtraSurplusReceiver,
       _transferSurplusFundsScenario._coinBalance - _transferSurplusFundsScenario._treasuryCapacity
@@ -1403,7 +1403,7 @@ contract Unit_StabilityFeeTreasury_TransferSurplusFunds is Base {
     _mockSurplusTransferDelay(_surplusDelay);
     _mockLatestSurplusTransferTime(block.timestamp + _timePassed);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit TransferSurplusFunds(
       mockExtraSurplusReceiver,
       _transferSurplusFundsScenario._coinBalance - _transferSurplusFundsScenario._treasuryCapacity

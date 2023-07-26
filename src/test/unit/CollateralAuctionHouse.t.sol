@@ -761,7 +761,7 @@ contract Unit_CollateralAuctionHouse_TerminateAuctionPrematurely is Base {
   function test_Emit_TerminateAuctionPrematurely(uint256 _amountToSell, uint256 _amountToRaise) public authorized {
     vm.assume(_amountToSell > 0 && _amountToRaise > 0);
     _mockValues(_amountToSell, _amountToRaise);
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit TerminateAuctionPrematurely(1, block.timestamp, forgoneCollateralReceiver, _amountToSell);
     auctionHouse.terminateAuctionPrematurely(1);
   }
@@ -1872,8 +1872,7 @@ contract Unit_CollateralAuctionHouse_StartAuction is Base {
   }
 
   function test_Emit_StartAuction(StartAuctionScenario memory _scenario) public happyPath(_scenario) authorized {
-    expectEmitNoIndex();
-
+    vm.expectEmit();
     emit StartAuction({
       _id: _scenario.auctionsStarted + 1,
       _blockTimestamp: block.timestamp,
@@ -2622,21 +2621,21 @@ contract Unit_CollateralAuctionHouse_BuyCollateral is Base {
 
   function test_Emit_BuyCollateral(BuyCollateralScenario memory _scenario) public soldAll(_scenario) {
     uint256 _adjustedBid = _scenario.amountToRaise / RAY + 1;
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit BuyCollateral(_scenario.id, bidder, block.timestamp, _adjustedBid, _scenario.boughtCollateral);
 
     auctionHouse.buyCollateral(_scenario.id, _scenario.wad);
   }
 
   function test_Emit_BuyCollateral_NotSoldAll(BuyCollateralScenario memory _scenario) public notSoldAll(_scenario) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit BuyCollateral(_scenario.id, bidder, block.timestamp, _scenario.wad, _scenario.boughtCollateral);
 
     auctionHouse.buyCollateral(_scenario.id, _scenario.wad);
   }
 
   function test_Emit_SettleAuction(BuyCollateralScenario memory _scenario) public soldAll(_scenario) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit SettleAuction(
       _scenario.id, block.timestamp, forgoneCollateralReceiver, _scenario.amountToSell - _scenario.boughtCollateral
     );

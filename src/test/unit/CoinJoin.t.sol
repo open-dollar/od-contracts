@@ -49,7 +49,7 @@ contract Unit_CoinJoin_Constructor is Base {
   }
 
   function test_Emit_AddAuthorization() public happyPath {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit AddAuthorization(user);
 
     coinJoin = new CoinJoinForTest(address(mockSafeEngine), address(mockSystemCoin));
@@ -129,7 +129,7 @@ contract Unit_CoinJoin_Join is Base {
   }
 
   function test_Emit_Join(address _account, uint256 _wad) public happyPath(_wad) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit Join(user, _account, _wad);
 
     coinJoin.join(_account, _wad);
@@ -183,7 +183,7 @@ contract Unit_CoinJoin_Exit is Base {
   }
 
   function test_Emit_Exit(address _account, uint256 _wad) public happyPath(_wad) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit Exit(user, _account, _wad);
 
     coinJoin.exit(_account, _wad);
