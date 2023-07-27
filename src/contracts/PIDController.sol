@@ -157,7 +157,7 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
   function _getGainAdjustedPIOutput(
     int256 _proportionalTerm,
     int256 _integralTerm
-  ) internal view virtual returns (int256 _adjsutedPIOutput) {
+  ) internal view virtual returns (int256 _adjustedPIOutput) {
     (int256 _adjustedProportional, int256 _adjustedIntegral) = _getGainAdjustedTerms(_proportionalTerm, _integralTerm);
     return (_adjustedProportional + _adjustedIntegral);
   }

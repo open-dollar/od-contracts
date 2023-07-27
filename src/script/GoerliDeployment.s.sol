@@ -6,7 +6,7 @@ import {GoerliParams, WETH, OP, WBTC, STONES, TOTEM} from '@script/GoerliParams.
 import {OP_WETH, OP_OPTIMISM} from '@script/Registry.s.sol';
 
 abstract contract GoerliDeployment is Contracts, GoerliParams {
-  uint256 constant GOERLI_DEPLOYMENT_BLOCK = 12_465_369;
+  uint256 constant GOERLI_DEPLOYMENT_BLOCK = 12_467_833;
 
   // --- Mintable ERC20s ---
   ERC20ForTestnet constant ERC20_WBTC = ERC20ForTestnet(0xf1FDB809f41c187cE6F2A4C8cC6562Ba7479B4EF);
@@ -48,8 +48,8 @@ abstract contract GoerliDeployment is Contracts, GoerliParams {
     accountingEngine = AccountingEngine(0xc922644df8E6336c6DFc997e29602EF4aba51c8c);
     taxCollector = TaxCollector(0xf281FF699e3b6CB3B2643d1Eb320b27Cc3e53900);
     stabilityFeeTreasury = StabilityFeeTreasury(0xFAD4f858867D7aB4Bd7b80c611287abF4B139986);
-    pidController = PIDController(0xb1cFf62Dcf1761f49fc0056d85F8Bd25afdC1e14);
-    pidRateSetter = PIDRateSetter(0x4049Cc595c2F522BBAA9C3c3C34E0629258B9d47);
+    pidController = PIDController(0xae63F27D618E1C494412775812F07C6052A88426);
+    pidRateSetter = PIDRateSetter(0x25f8Aa7dF98406180ED5354EDA7Ce754583F7630);
     globalSettlement = GlobalSettlement(0xFd4fB8e5f11A3FD403761a832bC35F31d5579B83);
 
     // --- factories ---
