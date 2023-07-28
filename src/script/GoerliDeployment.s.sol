@@ -6,7 +6,7 @@ import {GoerliParams, WETH, OP, WBTC, STONES, TOTEM} from '@script/GoerliParams.
 import {OP_WETH, OP_OPTIMISM} from '@script/Registry.s.sol';
 
 abstract contract GoerliDeployment is Contracts, GoerliParams {
-  uint256 constant GOERLI_DEPLOYMENT_BLOCK = 12_467_833;
+  uint256 constant GOERLI_DEPLOYMENT_BLOCK = 12_509_149;
 
   // --- Mintable ERC20s ---
   ERC20ForTestnet constant ERC20_WBTC = ERC20ForTestnet(0xf1FDB809f41c187cE6F2A4C8cC6562Ba7479B4EF);
@@ -40,7 +40,7 @@ abstract contract GoerliDeployment is Contracts, GoerliParams {
 
     // --- base contracts ---
     safeEngine = SAFEEngine(0xDfd2D62b3eC9BF6F52547c570B5AC2136D9756E4);
-    oracleRelayer = OracleRelayer(0x39eF5478F9186Da7c5C0a79B379B20648462626F);
+    oracleRelayer = OracleRelayer(0x18547c3399C3c3895B57e22892a3443AfAd26d3A);
     liquidationEngine = LiquidationEngine(0xC9E07e417e952c79FA65428076C9575C4026b43e);
     coinJoin = CoinJoin(0x3217B0aBcaAC50898F4826f0C502dEd9AB8eae53);
     surplusAuctionHouse = SurplusAuctionHouse(0x97D2165Ee4f0B7d46214bbE39616b9Ffa0f5E1b2);
@@ -82,14 +82,11 @@ abstract contract GoerliDeployment is Contracts, GoerliParams {
     proxyActions = BasicActions(0xf046D565170C41E87C29FB40b907fdCf26AC9ac6);
 
     // --- oracles ---
-    systemCoinOracle = IBaseOracle(0xD44a31f465C9405728dEEA394de1E61bC95F9aBc);
+    systemCoinOracle = IBaseOracle(0xDffE4278A75aC7E3449edc049025882b61e96238); // DeviatedOracle
     delayedOracle[WETH] = IDelayedOracle(0x74558a1470c714BB5E24a6ba998905Ee5F3F0A25);
     delayedOracle[OP] = IDelayedOracle(0x6171f9dB883E3bcC1804Ef17Eb1199133E27058D);
     delayedOracle[WBTC] = IDelayedOracle(0xF6BADAAaC06D7714130aC95Ce8976905284955F9);
     delayedOracle[STONES] = IDelayedOracle(0x4137C0B02EC0A2E9754f28eEbb57c20e9A6ebFae);
     delayedOracle[TOTEM] = IDelayedOracle(0x8Ab563A34bc907f169f19B31018e438934FC3c29);
-
-    haiOracleForTest = OracleForTestnet(0x0256791C87b519e45DEFbf2c94D8DE8ed7C7111a);
-    opEthOracleForTest = OracleForTestnet(0x792910b35954c9Ac2F1C4A5DD888f4d46e3472Ba);
   }
 }

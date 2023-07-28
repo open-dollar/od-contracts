@@ -125,9 +125,4 @@ abstract contract Contracts {
   HaiProxyRegistry public proxyRegistry;
   HaiProxyFactory public dsProxyFactory;
   HaiSafeManager public safeManager;
-
-  // --- For test contracts ---
-  OracleForTestnet public haiOracleForTest;
-  OracleForTestnet public ethUsdOracleForTest;
-  OracleForTestnet public opEthOracleForTest;
 }

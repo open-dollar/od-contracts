@@ -71,6 +71,14 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
     if (_hasValidValue) return _priceFeedValue;
   }
 
+  /**
+   * @notice Fetch the last recorded redemptionPrice
+   * @dev To be used when having the absolute latest redemptionPrice is irrelevant
+   */
+  function lastRedemptionPrice() external view returns (uint256 _lastRedemptionPrice) {
+    return _redemptionPrice;
+  }
+
   // --- Redemption Price Update ---
   /**
    * @notice Update the redemption price using the current redemption rate

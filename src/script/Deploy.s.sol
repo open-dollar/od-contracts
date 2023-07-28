@@ -90,12 +90,9 @@ contract DeployGoerli is GoerliParams, Deploy {
     // Setup oracle feeds
 
     systemCoinOracle = new OracleForTestnet(HAI_INITIAL_PRICE); // 1 HAI = 1 USD
-    haiOracleForTest = OracleForTestnet(address(systemCoinOracle));
 
     IBaseOracle _ethUSDPriceFeed = new ChainlinkRelayer(OP_GOERLI_CHAINLINK_ETH_USD_FEED, 1 hours);
-
     OracleForTestnet _opETHPriceFeed = new OracleForTestnet(OP_GOERLI_OP_ETH_PRICE_FEED);
-    opEthOracleForTest = OracleForTestnet(address(_opETHPriceFeed));
 
     DenominatedOracle _opUSDPriceFeed = new DenominatedOracle({
       _priceSource: _opETHPriceFeed,
@@ -117,15 +114,5 @@ contract DeployGoerli is GoerliParams, Deploy {
 
     // Setup delegated collateral joins
     delegatee[OP] = governor;
-
-    // Revoke oracles authorizations
-
-    if (_shouldRevoke()) {
-      haiOracleForTest.addAuthorization(governor);
-      opEthOracleForTest.addAuthorization(governor);
-
-      haiOracleForTest.removeAuthorization(deployer);
-      opEthOracleForTest.removeAuthorization(deployer);
-    }
   }
 }
