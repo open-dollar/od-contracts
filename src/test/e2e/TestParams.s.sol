@@ -59,9 +59,7 @@ abstract contract TestParams is Contracts, Params {
     });
 
     _stabilityFeeTreasuryParams = IStabilityFeeTreasury.StabilityFeeTreasuryParams({
-      expensesMultiplier: 100, // no multiplier
       treasuryCapacity: 1_000_000e45, // 1M COINs
-      minFundsRequired: 0, // no min
       pullFundsMinThreshold: 0, // no threshold
       surplusTransferDelay: 1 days
     });

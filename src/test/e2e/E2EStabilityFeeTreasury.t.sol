@@ -10,7 +10,7 @@ import {ProxyUser} from '@test/scopes/ProxyUser.t.sol';
 import {HOUR, YEAR} from '@libraries/Math.sol';
 
 abstract contract E2EStabilityFeeTreasuryTest is BaseUser, Common {
-  uint256 constant INITIAL_DEBT = 1000e18;
+  uint256 constant INITIAL_DEBT = 100_000_000e18;
 
   function _gatherFees(uint256 _wad, uint256 _timeElapsed) internal {
     // opening alice safe
@@ -30,7 +30,6 @@ abstract contract E2EStabilityFeeTreasuryTest is BaseUser, Common {
     _gatherFees(INITIAL_DEBT, YEAR);
 
     uint256 _coinBalance = safeEngine.coinBalance(address(stabilityFeeTreasury));
-    uint256 _previousExpensesAccumulator = stabilityFeeTreasury.expensesAccumulator();
 
     // giving 25% of the balance to bob
     uint256 _rad = _coinBalance / 4;
@@ -42,7 +41,6 @@ abstract contract E2EStabilityFeeTreasuryTest is BaseUser, Common {
     // Assertions
     assertEq(safeEngine.coinBalance(bob), _rad);
     assertEq(safeEngine.coinBalance(address(stabilityFeeTreasury)), _coinBalance - _rad);
-    assertEq(stabilityFeeTreasury.expensesAccumulator(), _previousExpensesAccumulator + _rad);
   }
 
   function test_take_funds() public {
@@ -74,7 +72,6 @@ abstract contract E2EStabilityFeeTreasuryTest is BaseUser, Common {
     _gatherFees(INITIAL_DEBT, YEAR);
 
     uint256 _coinBalance = safeEngine.coinBalance(address(stabilityFeeTreasury));
-    uint256 _previousExpensesAccumulator = stabilityFeeTreasury.expensesAccumulator();
     uint256 _previousAliceBalance = safeEngine.coinBalance(alice);
 
     vm.startPrank(deployer);
@@ -92,7 +89,6 @@ abstract contract E2EStabilityFeeTreasuryTest is BaseUser, Common {
     assertEq(safeEngine.coinBalance(alice), _previousAliceBalance + _rad);
     assertEq(safeEngine.coinBalance(address(stabilityFeeTreasury)), _coinBalance - _rad);
     assertEq(stabilityFeeTreasury.allowance(deployer).total, 0); // deployer used all allowance
-    assertEq(stabilityFeeTreasury.expensesAccumulator(), _previousExpensesAccumulator + _rad);
     assertEq(stabilityFeeTreasury.pulledPerHour(deployer, block.timestamp / HOUR), _rad);
   }
 
@@ -101,11 +97,12 @@ abstract contract E2EStabilityFeeTreasuryTest is BaseUser, Common {
     _gatherFees(INITIAL_DEBT, YEAR);
     address _extraSurplusReceiver = stabilityFeeTreasury.extraSurplusReceiver();
     uint256 _coinBalance = safeEngine.coinBalance(address(stabilityFeeTreasury));
+    uint256 _fundsToTransfer = _coinBalance - stabilityFeeTreasury.params().treasuryCapacity;
     uint256 _preexistentBalance = safeEngine.coinBalance(_extraSurplusReceiver);
 
     // Transfering extra surplus to the receiver, in this case to the accounting engine
     stabilityFeeTreasury.transferSurplusFunds();
-    assertEq(safeEngine.coinBalance(_extraSurplusReceiver), _coinBalance + _preexistentBalance);
+    assertEq(safeEngine.coinBalance(_extraSurplusReceiver), _fundsToTransfer + _preexistentBalance);
     assertEq(stabilityFeeTreasury.latestSurplusTransferTime(), block.timestamp);
   }
 

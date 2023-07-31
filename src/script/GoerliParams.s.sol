@@ -53,9 +53,7 @@ abstract contract GoerliParams is Contracts, Params {
     });
 
     _stabilityFeeTreasuryParams = IStabilityFeeTreasury.StabilityFeeTreasuryParams({
-      expensesMultiplier: 100, // no multiplier
       treasuryCapacity: 1_000_000e45, // 1M COINs
-      minFundsRequired: 10_000e45, // 10_000 COINs
       pullFundsMinThreshold: 0, // no threshold
       surplusTransferDelay: 1 days
     });

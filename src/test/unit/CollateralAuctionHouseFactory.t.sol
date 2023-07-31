@@ -303,6 +303,7 @@ contract Unit_CollateralAuctionHouseFactory_ModifyParameters is Base {
     vm.assume(_oldLiquidationEngine != deployer);
     vm.assume(_oldLiquidationEngine != authorizedAccount);
 
+    collateralAuctionHouseFactory.removeAuthorization(address(mockLiquidationEngine));
     _mockLiquidationEngine(_oldLiquidationEngine);
     collateralAuctionHouseFactory.addAuthorization(_oldLiquidationEngine);
 

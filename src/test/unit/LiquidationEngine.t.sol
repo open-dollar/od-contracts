@@ -381,7 +381,9 @@ contract Unit_LiquidationEngine_ModifyParameters is Base {
     _mockCollateralList(_cType);
 
     vm.assume(_newCAH != address(0));
-    vm.assume(_newCAH != _previousCAH);
+    vm.assume(_newCAH != deployer);
+    vm.assume(_previousCAH != deployer);
+
     LiquidationEngineForTest(address(liquidationEngine)).setCollateralAuctionHouse(_cType, _previousCAH);
 
     if (_previousCAH != address(0)) {
