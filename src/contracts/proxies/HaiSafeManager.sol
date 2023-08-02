@@ -4,6 +4,7 @@ pragma solidity 0.8.19;
 import {SAFEHandler} from '@contracts/proxies/SAFEHandler.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ILiquidationEngine} from '@interfaces/ILiquidationEngine.sol';
+import {IVault721} from '@interfaces/proxies/IVault721.sol';
 
 import {Math} from '@libraries/Math.sol';
 import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
@@ -22,6 +23,9 @@ contract HaiSafeManager {
 
   // --- Registry ---
   address public safeEngine;
+
+  // --- ERC721 ---
+  address public vault721;
 
   uint256 internal _safeId; // Auto incremental
   mapping(address _safeOwner => EnumerableSet.UintSet) private _usrSafes;
@@ -62,8 +66,9 @@ contract HaiSafeManager {
     _;
   }
 
-  constructor(address _safeEngine) {
+  constructor(address _safeEngine, address _vault721) {
     safeEngine = _safeEngine.assertNonNull();
+    vault721 = _vault721;
   }
 
   // --- Getters ---
@@ -120,12 +125,16 @@ contract HaiSafeManager {
     _usrSafes[_usr].add(_safeId);
     _usrSafesPerCollat[_usr][_cType].add(_safeId);
 
+    IVault721(vault721).mint(_usr, _safeId);
+
     emit OpenSAFE(msg.sender, _usr, _safeId);
     return _safeId;
   }
 
   // Give the safe ownership to a dst address.
-  function transferSAFEOwnership(uint256 _safe, address _dst) external safeAllowed(_safe) {
+  function transferSAFEOwnership(uint256 _safe, address _dst) external {
+    require(msg.sender == vault721, 'SafeManager: Only Vault721.');
+
     if (_dst == address(0)) revert ZeroAddress();
     SAFEData memory _sData = _safeData[_safe];
     if (_dst == _sData.owner) revert AlreadySafeOwner();
