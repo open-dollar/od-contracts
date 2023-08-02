@@ -199,8 +199,55 @@ abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
   function _collectSystemCoins(address _user) internal override {
     uint256 _systemCoinInternalBalance = safeEngine.coinBalance(_user);
 
-    vm.startPrank(_user);
-    coinJoin.exit(_user, _systemCoinInternalBalance / 1e27);
-    vm.stopPrank();
+    _exitCoin(_user, _systemCoinInternalBalance / 1e27);
+  }
+
+  function _workPopDebtFromQueue(address _user, uint256 _debtBlockTimestamp) internal override {
+    vm.prank(_user);
+    accountingJob.workPopDebtFromQueue(_debtBlockTimestamp);
+
+    _collectSystemCoins(_user);
+  }
+
+  function _workAuctionDebt(address _user) internal override {
+    vm.prank(_user);
+    accountingJob.workAuctionDebt();
+
+    _collectSystemCoins(_user);
+  }
+
+  function _workAuctionSurplus(address _user) internal override {
+    vm.prank(_user);
+    accountingJob.workAuctionSurplus();
+
+    _collectSystemCoins(_user);
+  }
+
+  function _workTransferExtraSurplus(address _user) internal override {
+    vm.prank(_user);
+    accountingJob.workTransferExtraSurplus();
+
+    _collectSystemCoins(_user);
+  }
+
+  function _workLiquidation(address _user, bytes32 _cType, address _safe) internal override {
+    vm.prank(_user);
+    liquidationJob.workLiquidation(_cType, _safe);
+
+    _collectSystemCoins(_user);
+  }
+
+  function _workUpdateCollateralPrice(address _user, bytes32 _cType) internal override {
+    vm.prank(_user);
+    oracleJob.workUpdateCollateralPrice(_cType);
+
+    _collectSystemCoins(_user);
+  }
+
+  function _workUpdateRate(address _user) internal override {
+    vm.prank(_user);
+    oracleJob.workUpdateRate();
+
+    _collectSystemCoins(_user);
   }
 }

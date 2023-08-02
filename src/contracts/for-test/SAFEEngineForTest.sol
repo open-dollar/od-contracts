@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-contract SAFEEngineForTest {
+import {SAFEEngine, ISAFEEngine, EnumerableSet} from '@contracts/SAFEEngine.sol';
+
+contract DummySAFEEngine {
   mapping(address => uint256) public coinBalance;
   mapping(address => uint256) public debtBalance;
 
@@ -21,4 +23,14 @@ contract SAFEEngineForTest {
   /// @dev Adds fallback to be able to mock any call without implementing it
   // solhint-disable-next-line payable-fallback
   fallback() external {}
+}
+
+contract SAFEEngineForTest is SAFEEngine {
+  using EnumerableSet for EnumerableSet.Bytes32Set;
+
+  constructor(SAFEEngineParams memory _safeEngineParams) SAFEEngine(_safeEngineParams) {}
+
+  function addToCollateralList(bytes32 _cType) external {
+    _collateralList.add(_cType);
+  }
 }

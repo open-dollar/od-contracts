@@ -26,8 +26,13 @@ abstract contract CommonDeploymentTest is HaiTest, Deploy {
     ParamChecker._checkParams(address(safeEngine), abi.encode(_safeEngineParams));
   }
 
+  // OracleRelayer
+  function test_OracleRelayer_Auth() public {
+    assertEq(oracleRelayer.authorizedAccounts(address(pidRateSetter)), true);
+  }
+
   // AccountingEngine
-  function test_AccountingEntine_Auth() public {
+  function test_AccountingEngine_Auth() public {
     assertEq(accountingEngine.authorizedAccounts(address(liquidationEngine)), true);
   }
 
@@ -106,6 +111,11 @@ abstract contract CommonDeploymentTest is HaiTest, Deploy {
       bytes32 _cType = collateralTypes[_i];
       assertEq(collateralAuctionHouse[_cType].authorizedAccounts(_target), _permission);
     }
+
+    // jobs
+    assertEq(accountingJob.authorizedAccounts(_target), _permission);
+    assertEq(liquidationJob.authorizedAccounts(_target), _permission);
+    assertEq(oracleJob.authorizedAccounts(_target), _permission);
   }
 }
 
@@ -143,14 +153,6 @@ contract GoerliDeploymentTest is GoerliDeployment, CommonDeploymentTest {
   function setUp() public {
     vm.createSelectFork(vm.rpcUrl('goerli'), GOERLI_DEPLOYMENT_BLOCK);
     _getEnvironmentParams();
-  }
-
-  function test_Oracles_Auth() public {
-    assertEq(haiOracleForTest.authorizedAccounts(deployer), false);
-    assertEq(haiOracleForTest.authorizedAccounts(governor), true);
-
-    assertEq(opEthOracleForTest.authorizedAccounts(deployer), false);
-    assertEq(opEthOracleForTest.authorizedAccounts(governor), true);
   }
 
   function test_Delegated_OP() public {

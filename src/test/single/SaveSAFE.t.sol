@@ -261,8 +261,13 @@ contract SingleSaveSAFETest is DSTest {
     collateralAuctionHouse =
     new CollateralAuctionHouse(address(safeEngine), address(oracleRelayer), address(liquidationEngine), 'gold', _cahParams, _cahCParams);
 
-    liquidationEngine.modifyParameters('gold', 'collateralAuctionHouse', abi.encode(collateralAuctionHouse));
-    liquidationEngine.modifyParameters('gold', 'liquidationPenalty', abi.encode(1 ether));
+    ILiquidationEngine.LiquidationEngineCollateralParams memory _liquidationEngineCollateralParams = ILiquidationEngine
+      .LiquidationEngineCollateralParams({
+      collateralAuctionHouse: address(collateralAuctionHouse),
+      liquidationPenalty: 1 ether,
+      liquidationQuantity: 0
+    });
+    liquidationEngine.initializeCollateralType('gold', _liquidationEngineCollateralParams);
 
     safeEngine.addAuthorization(address(collateralAuctionHouse));
     safeEngine.addAuthorization(address(surplusAuctionHouse));

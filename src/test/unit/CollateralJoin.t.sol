@@ -94,7 +94,7 @@ contract Unit_CollateralJoin_Constructor is Base {
   }
 
   function test_Emit_AddAuthorization(uint8 _decimals) public happyPath(_decimals) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit AddAuthorization(user);
 
     collateralJoin = new CollateralJoinForTest(address(mockSafeEngine), collateralType, address(mockCollateral));
@@ -221,7 +221,7 @@ contract Unit_CollateralJoin_Join is Base {
   function test_Emit_Join(address _account, uint256 _wei, uint8 _decimals) public happyPath(_wei, _decimals) {
     uint256 _wad = _wei * 10 ** (18 - _decimals);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit Join(user, _account, _wad);
 
     collateralJoin.join(_account, _wei);
@@ -299,7 +299,7 @@ contract Unit_CollateralJoin_Exit is Base {
   function test_Emit_Exit(address _account, uint256 _wei, uint8 _decimals) public happyPath(_account, _wei, _decimals) {
     uint256 _wad = _wei * 10 ** (18 - _decimals);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit Exit(user, _account, _wad);
 
     collateralJoin.exit(_account, _wei);

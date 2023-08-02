@@ -74,7 +74,7 @@ contract Unit_UniV3RelayerFactory_Constructor is Base {
   }
 
   function test_Emit_AddAuthorization() public happyPath {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit AddAuthorization(user);
 
     uniV3RelayerFactory = new UniV3RelayerFactory();
@@ -145,7 +145,7 @@ contract Unit_UniV3RelayerFactory_DeployUniV3Relayer is Base {
     string memory _symbol,
     uint8 _decimals
   ) public happyPath(_feeTier, _symbol, _decimals) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit NewUniV3Relayer(
       address(uniV3RelayerChild), address(mockBaseToken), address(mockQuoteToken), _feeTier, _quotePeriod
     );

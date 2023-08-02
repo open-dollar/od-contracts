@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
+import {OracleRelayer, IOracleRelayer, EnumerableSet} from '@contracts/OracleRelayer.sol';
 import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
-import {IOracleRelayer, OracleRelayer} from '@contracts/OracleRelayer.sol';
+import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 
 contract OracleRelayerForTest is OracleRelayer {
+  using EnumerableSet for EnumerableSet.Bytes32Set;
+
   constructor(
     address _safeEngine,
     IBaseOracle _systemCoinOracle,
@@ -15,6 +17,10 @@ contract OracleRelayerForTest is OracleRelayer {
   // function to mock oracle since we can get a slot with sdstorage
   function setCTypeOracle(bytes32 _cType, address _oracle) external {
     _cParams[_cType].oracle = IDelayedOracle(_oracle);
+  }
+
+  function addToCollateralList(bytes32 _cType) external {
+    _collateralList.add(_cType);
   }
 
   function setRedemptionPrice(uint256 _price) external {

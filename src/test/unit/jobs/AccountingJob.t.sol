@@ -85,7 +85,7 @@ contract Unit_AccountingJob_Constructor is Base {
   }
 
   function test_Emit_AddAuthorization() public happyPath {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit AddAuthorization(user);
 
     accountingJob =
@@ -146,7 +146,7 @@ contract Unit_AccountingJob_WorkPopDebtFromQueue is Base {
   }
 
   function test_Emit_Rewarded(uint256 _debtBlockTimestamp) public happyPath {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit Rewarded(user, REWARD_AMOUNT);
 
     accountingJob.workPopDebtFromQueue(_debtBlockTimestamp);
@@ -183,7 +183,7 @@ contract Unit_AccountingJob_WorkAuctionDebt is Base {
   }
 
   function test_Emit_Rewarded(uint256 _id) public happyPath(_id) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit Rewarded(user, REWARD_AMOUNT);
 
     accountingJob.workAuctionDebt();
@@ -220,7 +220,7 @@ contract Unit_AccountingJob_WorkAuctionSurplus is Base {
   }
 
   function test_Emit_Rewarded(uint256 _id) public happyPath(_id) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit Rewarded(user, REWARD_AMOUNT);
 
     accountingJob.workAuctionSurplus();
@@ -256,7 +256,7 @@ contract Unit_AccountingJob_WorkTransferExtraSurplus is Base {
   }
 
   function test_Emit_Rewarded() public happyPath {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit Rewarded(user, REWARD_AMOUNT);
 
     accountingJob.workTransferExtraSurplus();

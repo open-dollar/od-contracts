@@ -296,4 +296,18 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     _proxy.execute(address(surplusActions), _callData);
     vm.stopPrank();
   }
+
+  function _workPopDebtFromQueue(address _user, uint256 _debtBlockTimestamp) internal override {}
+
+  function _workAuctionDebt(address _user) internal override {}
+
+  function _workAuctionSurplus(address _user) internal override {}
+
+  function _workTransferExtraSurplus(address _user) internal override {}
+
+  function _workLiquidation(address _user, bytes32 _cType, address _safe) internal override {}
+
+  function _workUpdateCollateralPrice(address _user, bytes32 _cType) internal override {}
+
+  function _workUpdateRate(address _user) internal override {}
 }

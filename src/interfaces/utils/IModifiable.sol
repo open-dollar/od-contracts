@@ -10,7 +10,7 @@ interface IModifiable is IAuthorizable {
 
   // --- Errors ---
   error UnrecognizedParam();
-  error UnrecognizedCollateralType();
+  error UnrecognizedCType();
 
   // --- Administration ---
   /**

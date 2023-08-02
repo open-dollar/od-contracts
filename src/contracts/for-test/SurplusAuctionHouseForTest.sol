@@ -24,4 +24,8 @@ contract SurplusAuctionHouseForTest is SurplusAuctionHouse {
     _auctions[_id].bidExpiry = _bidExpiry;
     _auctions[_id].auctionDeadline = _auctionDeadline;
   }
+
+  function setBidReceiver(address _bidReceiver) external {
+    _params.bidReceiver = _bidReceiver;
+  }
 }

@@ -104,11 +104,10 @@ contract Unit_PostSettlementSurplusAuctionHouse_Constructor is Base {
   }
 
   function test_Emit_AddAuthorization() public happyPath {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit AddAuthorization(user);
 
-    postSettlementSurplusAuctionHouse =
-      new PostSettlementSurplusAuctionHouseForTest(address(mockSafeEngine), address(mockProtocolToken), pssahParams);
+    new PostSettlementSurplusAuctionHouseForTest(address(mockSafeEngine), address(mockProtocolToken), pssahParams);
   }
 
   function test_Set_SafeEngine(address _safeEngine) public happyPath {
@@ -127,21 +126,13 @@ contract Unit_PostSettlementSurplusAuctionHouse_Constructor is Base {
     assertEq(address(postSettlementSurplusAuctionHouse.protocolToken()), _protocolToken);
   }
 
-  function test_Set_BidIncrease() public happyPath {
-    assertEq(postSettlementSurplusAuctionHouse.params().bidIncrease, 1.05e18);
-  }
-
-  function test_Set_BidDuration() public happyPath {
-    assertEq(postSettlementSurplusAuctionHouse.params().bidDuration, 3 hours);
-  }
-
-  function test_Set_TotalAuctionLength() public happyPath {
-    assertEq(postSettlementSurplusAuctionHouse.params().totalAuctionLength, 2 days);
-  }
-
-  function test_Set_PSSAH_Params(IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams memory _pssahParams) public {
+  function test_Set_PSSAH_Params(IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams memory _pssahParams)
+    public
+    happyPath
+  {
     postSettlementSurplusAuctionHouse =
       new PostSettlementSurplusAuctionHouseForTest(address(mockSafeEngine), address(mockProtocolToken), _pssahParams);
+
     assertEq(abi.encode(postSettlementSurplusAuctionHouse.params()), abi.encode(_pssahParams));
   }
 
@@ -160,7 +151,11 @@ contract Unit_PostSettlementSurplusAuctionHouse_Constructor is Base {
 
 contract Unit_PostSettlementSurplusAuctionHouse_StartAuction is Base {
   event StartAuction(
-    uint256 indexed _id, uint256 _auctionsStarted, uint256 _amountToSell, uint256 _initialBid, uint256 _auctionDeadline
+    uint256 indexed _id,
+    uint256 _blockTimestamp,
+    uint256 _amountToSell,
+    uint256 _amountToRaise,
+    uint256 _auctionDeadline
   );
 
   modifier happyPath(uint256 _auctionsStarted, uint256 _totalAuctionLength) {
@@ -249,9 +244,9 @@ contract Unit_PostSettlementSurplusAuctionHouse_StartAuction is Base {
     uint256 _auctionsStarted,
     uint256 _totalAuctionLength
   ) public happyPath(_auctionsStarted, _totalAuctionLength) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit StartAuction(
-      _auctionsStarted + 1, _auctionsStarted + 1, _amountToSell, _initialBid, block.timestamp + _totalAuctionLength
+      _auctionsStarted + 1, block.timestamp, _amountToSell, _initialBid, block.timestamp + _totalAuctionLength
     );
 
     postSettlementSurplusAuctionHouse.startAuction(_amountToSell, _initialBid);
@@ -268,7 +263,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_StartAuction is Base {
 }
 
 contract Unit_PostSettlementSurplusAuctionHouse_RestartAuction is Base {
-  event RestartAuction(uint256 indexed _id, uint256 _auctionDeadline);
+  event RestartAuction(uint256 indexed _id, uint256 _blockTimestamp, uint256 _auctionDeadline);
 
   modifier happyPath(SurplusAuction memory _auction, uint256 _auctionsStarted, uint256 _totalAuctionLength) {
     _assumeHappyPath(_auction, _auctionsStarted, _totalAuctionLength);
@@ -353,8 +348,8 @@ contract Unit_PostSettlementSurplusAuctionHouse_RestartAuction is Base {
     uint256 _auctionsStarted,
     uint256 _totalAuctionLength
   ) public happyPath(_auction, _auctionsStarted, _totalAuctionLength) {
-    expectEmitNoIndex();
-    emit RestartAuction(_auction.id, block.timestamp + _totalAuctionLength);
+    vm.expectEmit();
+    emit RestartAuction(_auction.id, block.timestamp, block.timestamp + _totalAuctionLength);
 
     postSettlementSurplusAuctionHouse.restartAuction(_auction.id);
   }
@@ -362,7 +357,12 @@ contract Unit_PostSettlementSurplusAuctionHouse_RestartAuction is Base {
 
 contract Unit_PostSettlementSurplusAuctionHouse_IncreaseBidSize is Base {
   event IncreaseBidSize(
-    uint256 indexed _id, address _highBidder, uint256 _amountToBuy, uint256 _bid, uint256 _bidExpiry
+    uint256 indexed _id,
+    address _bidder,
+    uint256 _blockTimestamp,
+    uint256 _raisedAmount,
+    uint256 _soldAmount,
+    uint256 _bidExpiry
   );
 
   modifier happyPath(SurplusAuction memory _auction, uint256 _bid, uint256 _bidIncrease, uint256 _bidDuration) {
@@ -567,15 +567,17 @@ contract Unit_PostSettlementSurplusAuctionHouse_IncreaseBidSize is Base {
     uint256 _bidIncrease,
     uint256 _bidDuration
   ) public happyPath(_auction, _bid, _bidIncrease, _bidDuration) {
-    expectEmitNoIndex();
-    emit IncreaseBidSize(_auction.id, user, _auction.amountToSell, _bid, block.timestamp + _bidDuration);
+    vm.expectEmit();
+    emit IncreaseBidSize(
+      _auction.id, user, block.timestamp, _bid, _auction.amountToSell, block.timestamp + _bidDuration
+    );
 
     postSettlementSurplusAuctionHouse.increaseBidSize(_auction.id, _auction.amountToSell, _bid);
   }
 }
 
 contract Unit_PostSettlementSurplusAuctionHouse_SettleAuction is Base {
-  event SettleAuction(uint256 indexed _id);
+  event SettleAuction(uint256 indexed _id, uint256 _blockTimestamp, address _highBidder, uint256 _raisedAmount);
 
   modifier happyPath(SurplusAuction memory _auction) {
     _assumeHappyPath(_auction);
@@ -646,8 +648,8 @@ contract Unit_PostSettlementSurplusAuctionHouse_SettleAuction is Base {
   }
 
   function test_Emit_SettleAuction(SurplusAuction memory _auction) public happyPath(_auction) {
-    expectEmitNoIndex();
-    emit SettleAuction(_auction.id);
+    vm.expectEmit();
+    emit SettleAuction(_auction.id, block.timestamp, _auction.highBidder, _auction.bidAmount);
 
     postSettlementSurplusAuctionHouse.settleAuction(_auction.id);
   }
@@ -675,9 +677,22 @@ contract Unit_PostSettlementSurplusAuctionHouse_ModifyParameters is Base {
     assertEq(abi.encode(_params), abi.encode(_fuzz));
   }
 
+  function test_Set_ProtocolToken(address _protocolToken) public happyPath {
+    vm.assume(_protocolToken != address(0));
+    postSettlementSurplusAuctionHouse.modifyParameters('protocolToken', abi.encode(_protocolToken));
+
+    assertEq(address(postSettlementSurplusAuctionHouse.protocolToken()), _protocolToken);
+  }
+
+  function test_Revert_ProtocolToken_NullAddress() public {
+    vm.startPrank(authorizedAccount);
+    vm.expectRevert(Assertions.NullAddress.selector);
+
+    postSettlementSurplusAuctionHouse.modifyParameters('protocolToken', abi.encode(0));
+  }
+
   function test_Revert_UnrecognizedParam(bytes memory _data) public {
     vm.startPrank(authorizedAccount);
-
     vm.expectRevert(IModifiable.UnrecognizedParam.selector);
 
     postSettlementSurplusAuctionHouse.modifyParameters('unrecognizedParam', _data);

@@ -3,17 +3,7 @@ pragma solidity 0.8.19;
 
 import '@script/Contracts.s.sol';
 import {Script} from 'forge-std/Script.sol';
-import {
-  Params,
-  ParamChecker,
-  HAI,
-  WETH,
-  ETH_A,
-  WSTETH,
-  OP,
-  SURPLUS_AUCTION_BID_RECEIVER,
-  HAI_INITIAL_PRICE
-} from '@script/Params.s.sol';
+import {Params, ParamChecker, HAI, WETH, ETH_A, WSTETH, OP, HAI_INITIAL_PRICE} from '@script/Params.s.sol';
 import {Common} from '@script/Common.s.sol';
 import {GoerliParams} from '@script/GoerliParams.s.sol';
 import {MainnetParams} from '@script/MainnetParams.s.sol';
@@ -50,6 +40,9 @@ abstract contract Deploy is Common, Script {
       bytes32 _cType = collateralTypes[_i];
       _setupCollateral(_cType);
     }
+
+    deployJobContracts();
+    _setupJobContracts();
 
     revokeAllTo(governor);
     vm.stopBroadcast();
@@ -97,12 +90,9 @@ contract DeployGoerli is GoerliParams, Deploy {
     // Setup oracle feeds
 
     systemCoinOracle = new OracleForTestnet(HAI_INITIAL_PRICE); // 1 HAI = 1 USD
-    haiOracleForTest = OracleForTestnet(address(systemCoinOracle));
 
     IBaseOracle _ethUSDPriceFeed = new ChainlinkRelayer(OP_GOERLI_CHAINLINK_ETH_USD_FEED, 1 hours);
-
     OracleForTestnet _opETHPriceFeed = new OracleForTestnet(OP_GOERLI_OP_ETH_PRICE_FEED);
-    opEthOracleForTest = OracleForTestnet(address(_opETHPriceFeed));
 
     DenominatedOracle _opUSDPriceFeed = new DenominatedOracle({
       _priceSource: _opETHPriceFeed,
@@ -124,15 +114,5 @@ contract DeployGoerli is GoerliParams, Deploy {
 
     // Setup delegated collateral joins
     delegatee[OP] = governor;
-
-    // Revoke oracles authorizations
-
-    if (_shouldRevoke()) {
-      haiOracleForTest.addAuthorization(governor);
-      opEthOracleForTest.addAuthorization(governor);
-
-      haiOracleForTest.removeAuthorization(deployer);
-      opEthOracleForTest.removeAuthorization(deployer);
-    }
   }
 }

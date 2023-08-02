@@ -52,6 +52,7 @@ contract SingleAccountingEngineTest is DSTest {
       bidIncrease: 1.05e18,
       bidDuration: 3 hours,
       totalAuctionLength: 2 days,
+      bidReceiver: address(0x123),
       recyclingPercentage: 0
     });
 
@@ -152,6 +153,7 @@ contract SingleAccountingEngineTest is DSTest {
       bidIncrease: 1.05e18,
       bidDuration: 3 hours,
       totalAuctionLength: 2 days,
+      bidReceiver: address(0x123),
       recyclingPercentage: 0
     });
 

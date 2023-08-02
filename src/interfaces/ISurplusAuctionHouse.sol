@@ -11,14 +11,29 @@ import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 interface ISurplusAuctionHouse is IAuthorizable, IDisableable, IModifiable {
   // --- Events ---
   event StartAuction(
-    uint256 indexed _id, uint256 _auctionsStarted, uint256 _amountToSell, uint256 _initialBid, uint256 _auctionDeadline
+    uint256 indexed _id,
+    uint256 _blockTimestamp,
+    uint256 _amountToSell,
+    uint256 _amountToRaise,
+    uint256 _auctionDeadline
   );
-  event RestartAuction(uint256 indexed _id, uint256 _auctionDeadline);
+
+  event RestartAuction(uint256 indexed _id, uint256 _blockTimestamp, uint256 _auctionDeadline);
+
   event IncreaseBidSize(
-    uint256 indexed _id, address _highBidder, uint256 _amountToBuy, uint256 _bid, uint256 _bidExpiry
+    uint256 indexed _id,
+    address _bidder,
+    uint256 _blockTimestamp,
+    uint256 _raisedAmount,
+    uint256 _soldAmount,
+    uint256 _bidExpiry
   );
-  event SettleAuction(uint256 indexed _id);
-  event TerminateAuctionPrematurely(uint256 indexed _id, address _sender, address _highBidder, uint256 _bidAmount);
+
+  event SettleAuction(uint256 indexed _id, uint256 _blockTimestamp, address _highBidder, uint256 _raisedAmount);
+
+  event TerminateAuctionPrematurely(
+    uint256 indexed _id, uint256 _blockTimestamp, address _highBidder, uint256 _raisedAmount
+  );
 
   // --- Errors ---
   error SAH_AuctionNeverStarted();
@@ -53,6 +68,8 @@ interface ISurplusAuctionHouse is IAuthorizable, IDisableable, IModifiable {
     uint256 bidDuration; // [seconds]
     // Total length of the auction
     uint256 totalAuctionLength; // [seconds]
+    // Receiver of protocol tokens
+    address bidReceiver;
     uint256 recyclingPercentage; // [wad%]
   }
 
@@ -79,7 +96,6 @@ interface ISurplusAuctionHouse is IAuthorizable, IDisableable, IModifiable {
   // --- Registry ---
   function safeEngine() external view returns (ISAFEEngine _safeEngine);
   function protocolToken() external view returns (IProtocolToken _protocolToken);
-  function protocolTokenBidReceiver() external view returns (address _protocolTokenBidReceiver);
 
   // --- Params ---
   function params() external view returns (SurplusAuctionHouseParams memory _sahParams);
@@ -87,7 +103,13 @@ interface ISurplusAuctionHouse is IAuthorizable, IDisableable, IModifiable {
   function _params()
     external
     view
-    returns (uint256 _bidIncrease, uint256 _bidDuration, uint256 _totalAuctionLength, uint256 _recyclingPercentage);
+    returns (
+      uint256 _bidIncrease,
+      uint256 _bidDuration,
+      uint256 _totalAuctionLength,
+      address _bidReceiver,
+      uint256 _recyclingPercentage
+    );
 
   // --- Auction ---
   function startAuction(uint256 /* RAD */ _amountToSell, uint256 /* WAD */ _initialBid) external returns (uint256 _id);

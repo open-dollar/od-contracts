@@ -308,7 +308,7 @@ contract Unit_TokenDistributor_Claim is Base {
   }
 
   function test_Emit_Claimed() public {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit Claimed(airdropRecipients[4], airdropAmounts[4]);
 
     tokenDistributor.claim(validEveProofs, airdropAmounts[4]);
@@ -410,7 +410,7 @@ contract Unit_TokenDistributor_ClaimAndDelegate is Base {
   function test_Emit_Claimed(uint256 _expiry, uint8 _v, bytes32 _r, bytes32 _s) public {
     _mockERC20VotesDelegateBySig(delegatee, 0, _expiry, _v, _r, _s);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit Claimed(airdropRecipients[4], airdropAmounts[4]);
 
     tokenDistributor.claimAndDelegate(validEveProofs, airdropAmounts[4], delegatee, _expiry, _v, _r, _s);
@@ -509,7 +509,7 @@ contract Unit_TokenDistributor_Sweep is Base {
     _mockERC20VotesBalanceOf(address(tokenDistributor), _balance);
     _mockERC20VotesTransfer(sweepReceiver, _balance);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit Swept(sweepReceiver, _balance);
 
     tokenDistributor.sweep(sweepReceiver);
@@ -554,7 +554,7 @@ contract Unit_TokenDistributor_Withdraw is Base {
     vm.assume(_amount > 0);
     _mockERC20VotesTransfer(recipient, _amount);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit Withdrawn(recipient, _amount);
 
     tokenDistributor.withdraw(recipient, _amount);

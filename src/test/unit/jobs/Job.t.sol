@@ -65,7 +65,7 @@ contract Unit_Job_Reward is Base {
   }
 
   function test_Emit_Rewarded(uint256 _rewardAmount) public happyPath(_rewardAmount) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit Rewarded(user, _rewardAmount);
 
     job.rewardModifier();

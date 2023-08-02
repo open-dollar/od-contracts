@@ -140,10 +140,10 @@ contract Unit_DebtAuctionHouse_Constructor is Base {
   }
 
   function test_Emit_AddAuthorization() public happyPath {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit AddAuthorization(user);
 
-    debtAuctionHouse = new DebtAuctionHouseForTest(address(mockSafeEngine), address(mockProtocolToken), dahParams);
+    new DebtAuctionHouseForTest(address(mockSafeEngine), address(mockProtocolToken), dahParams);
   }
 
   function test_Set_ContractEnabled() public happyPath {
@@ -164,33 +164,22 @@ contract Unit_DebtAuctionHouse_Constructor is Base {
     assertEq(address(debtAuctionHouse.protocolToken()), _protocolToken);
   }
 
-  function test_Set_BidDecrease() public happyPath {
-    assertEq(debtAuctionHouse.params().bidDecrease, 1.05e18);
-  }
+  function test_Set_DAH_Params(IDebtAuctionHouse.DebtAuctionHouseParams memory _dahParams) public happyPath {
+    debtAuctionHouse = new DebtAuctionHouseForTest(address(mockSafeEngine), address(mockProtocolToken), _dahParams);
 
-  function test_Set_AmountSoldIncrease() public happyPath {
-    assertEq(debtAuctionHouse.params().amountSoldIncrease, 1.5e18);
-  }
-
-  function test_Set_BidDuration() public happyPath {
-    assertEq(debtAuctionHouse.params().bidDuration, 3 hours);
-  }
-
-  function test_Set_TotalAuctionLength() public happyPath {
-    assertEq(debtAuctionHouse.params().totalAuctionLength, 2 days);
-  }
-
-  function test_Set_DAH_Params(IDebtAuctionHouse.DebtAuctionHouseParams memory _dahParams) public {
-    DebtAuctionHouse _debtAuctionHouse =
-      new DebtAuctionHouse(address(mockSafeEngine), address(mockProtocolToken), _dahParams);
-
-    assertEq(abi.encode(_debtAuctionHouse.params()), abi.encode(_dahParams));
+    assertEq(abi.encode(debtAuctionHouse.params()), abi.encode(_dahParams));
   }
 
   function test_Revert_Null_SafeEngine() public {
     vm.expectRevert(Assertions.NullAddress.selector);
 
-    new DebtAuctionHouse(address(0), address(mockProtocolToken), dahParams);
+    new DebtAuctionHouseForTest(address(0), address(mockProtocolToken), dahParams);
+  }
+
+  function test_Revert_Null_ProtocolToken() public {
+    vm.expectRevert(Assertions.NullAddress.selector);
+
+    new DebtAuctionHouseForTest(address(mockSafeEngine), address(0), dahParams);
   }
 }
 
@@ -222,12 +211,10 @@ contract Unit_DebtAuctionHouse_DisableContract is Base {
 contract Unit_DebtAuctionHouse_StartAuction is Base {
   event StartAuction(
     uint256 indexed _id,
-    uint256 _auctionsStarted,
+    uint256 _blockTimestamp,
     uint256 _amountToSell,
-    uint256 _initialBid,
-    address indexed _incomeReceiver,
-    uint256 indexed _auctionDeadline,
-    uint256 _activeDebtAuctions
+    uint256 _amountToRaise,
+    uint256 _auctionDeadline
   );
 
   modifier happyPath(uint256 _auctionsStarted, uint256 _activeDebtAuctions, uint256 _totalAuctionLength) {
@@ -350,15 +337,9 @@ contract Unit_DebtAuctionHouse_StartAuction is Base {
     uint256 _activeDebtAuctions,
     uint256 _totalAuctionLength
   ) public happyPath(_auctionsStarted, _activeDebtAuctions, _totalAuctionLength) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit StartAuction(
-      _auctionsStarted + 1,
-      _auctionsStarted + 1,
-      _amountToSell,
-      _initialBid,
-      _incomeReceiver,
-      block.timestamp + _totalAuctionLength,
-      _activeDebtAuctions + 1
+      _auctionsStarted + 1, block.timestamp, _amountToSell, _initialBid, block.timestamp + _totalAuctionLength
     );
 
     debtAuctionHouse.startAuction(_incomeReceiver, _amountToSell, _initialBid);
@@ -377,7 +358,7 @@ contract Unit_DebtAuctionHouse_StartAuction is Base {
 }
 
 contract Unit_DebtAuctionHouse_RestartAuction is Base {
-  event RestartAuction(uint256 indexed _id, uint256 _auctionDeadline);
+  event RestartAuction(uint256 indexed _id, uint256 _blockTimestamp, uint256 _auctionDeadline);
 
   modifier happyPath(
     DebtAuction memory _auction,
@@ -486,8 +467,8 @@ contract Unit_DebtAuctionHouse_RestartAuction is Base {
     uint256 _amountSoldIncrease,
     uint256 _totalAuctionLength
   ) public happyPath(_auction, _auctionsStarted, _amountSoldIncrease, _totalAuctionLength) {
-    expectEmitNoIndex();
-    emit RestartAuction(_auction.id, block.timestamp + _totalAuctionLength);
+    vm.expectEmit();
+    emit RestartAuction(_auction.id, block.timestamp, block.timestamp + _totalAuctionLength);
 
     debtAuctionHouse.restartAuction(_auction.id);
   }
@@ -495,7 +476,12 @@ contract Unit_DebtAuctionHouse_RestartAuction is Base {
 
 contract Unit_DebtAuctionHouse_DecreaseSoldAmount is Base {
   event DecreaseSoldAmount(
-    uint256 indexed _id, address _highBidder, uint256 _amountToBuy, uint256 _bid, uint256 _bidExpiry
+    uint256 indexed _id,
+    address _bidder,
+    uint256 _blockTimestamp,
+    uint256 _raisedAmount,
+    uint256 _soldAmount,
+    uint256 _bidExpiry
   );
 
   modifier happyPath(
@@ -732,15 +718,17 @@ contract Unit_DebtAuctionHouse_DecreaseSoldAmount is Base {
     uint256 _bidDuration,
     uint256 _totalOnAuctionDebt
   ) public happyPath(_auction, _amountToBuy, _bidDecrease, _bidDuration, _totalOnAuctionDebt) {
-    expectEmitNoIndex();
-    emit DecreaseSoldAmount(_auction.id, user, _amountToBuy, _auction.bidAmount, block.timestamp + _bidDuration);
+    vm.expectEmit();
+    emit DecreaseSoldAmount(
+      _auction.id, user, block.timestamp, _auction.bidAmount, _amountToBuy, block.timestamp + _bidDuration
+    );
 
     debtAuctionHouse.decreaseSoldAmount(_auction.id, _amountToBuy, _auction.bidAmount);
   }
 }
 
 contract Unit_DebtAuctionHouse_SettleAuction is Base {
-  event SettleAuction(uint256 indexed _id, uint256 _activeDebtAuctions);
+  event SettleAuction(uint256 indexed _id, uint256 _blockTimestamp, address _highBidder, uint256 _raisedAmount);
 
   modifier happyPath(DebtAuction memory _auction, uint256 _activeDebtAuctions) {
     _assumeHappyPath(_auction, _activeDebtAuctions);
@@ -829,8 +817,8 @@ contract Unit_DebtAuctionHouse_SettleAuction is Base {
     DebtAuction memory _auction,
     uint256 _activeDebtAuctions
   ) public happyPath(_auction, _activeDebtAuctions) {
-    expectEmitNoIndex();
-    emit SettleAuction(_auction.id, _activeDebtAuctions - 1);
+    vm.expectEmit();
+    emit SettleAuction(_auction.id, block.timestamp, _auction.highBidder, _auction.bidAmount);
 
     debtAuctionHouse.settleAuction(_auction.id);
   }
@@ -838,7 +826,7 @@ contract Unit_DebtAuctionHouse_SettleAuction is Base {
 
 contract Unit_DebtAuctionHouse_TerminateAuctionPrematurely is Base {
   event TerminateAuctionPrematurely(
-    uint256 indexed _id, address _sender, address _highBidder, uint256 _bidAmount, uint256 _activeDebtAuctions
+    uint256 indexed _id, uint256 _blockTimestamp, address _highBidder, uint256 _raisedAmount
   );
 
   modifier happyPath(DebtAuction memory _auction, uint256 _activeDebtAuctions) {
@@ -895,8 +883,8 @@ contract Unit_DebtAuctionHouse_TerminateAuctionPrematurely is Base {
     DebtAuction memory _auction,
     uint256 _activeDebtAuctions
   ) public happyPath(_auction, _activeDebtAuctions) {
-    expectEmitNoIndex();
-    emit TerminateAuctionPrematurely(_auction.id, user, _auction.highBidder, _auction.bidAmount, _activeDebtAuctions);
+    vm.expectEmit();
+    emit TerminateAuctionPrematurely(_auction.id, block.timestamp, _auction.highBidder, _auction.bidAmount);
 
     debtAuctionHouse.terminateAuctionPrematurely(_auction.id);
   }
@@ -952,9 +940,15 @@ contract Unit_DebtAuctionHouse_ModifyParameters is Base {
     assertEq(address(debtAuctionHouse.protocolToken()), _protocolToken);
   }
 
+  function test_Revert_ProtocolToken_NullAddress() public {
+    vm.startPrank(authorizedAccount);
+    vm.expectRevert(Assertions.NullAddress.selector);
+
+    debtAuctionHouse.modifyParameters('protocolToken', abi.encode(0));
+  }
+
   function test_Revert_UnrecognizedParam(bytes memory _data) public {
     vm.startPrank(authorizedAccount);
-
     vm.expectRevert(IModifiable.UnrecognizedParam.selector);
 
     debtAuctionHouse.modifyParameters('unrecognizedParam', _data);

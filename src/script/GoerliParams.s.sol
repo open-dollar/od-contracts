@@ -38,6 +38,7 @@ abstract contract GoerliParams is Contracts, Params {
       bidIncrease: 1.01e18, // +1 %
       bidDuration: 900,
       totalAuctionLength: 1800,
+      bidReceiver: governor,
       recyclingPercentage: 0 // 100% is burned
     });
 
@@ -52,9 +53,7 @@ abstract contract GoerliParams is Contracts, Params {
     });
 
     _stabilityFeeTreasuryParams = IStabilityFeeTreasury.StabilityFeeTreasuryParams({
-      expensesMultiplier: 100, // no multiplier
       treasuryCapacity: 1_000_000e45, // 1M COINs
-      minFundsRequired: 10_000e45, // 10_000 COINs
       pullFundsMinThreshold: 0, // no threshold
       surplusTransferDelay: 1 days
     });

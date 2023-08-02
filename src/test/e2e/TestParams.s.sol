@@ -11,6 +11,8 @@ uint256 constant INITIAL_DEBT_AUCTION_MINTED_TOKENS = 1e18;
 uint256 constant ONE_HUNDRED_COINS = 100e45;
 uint256 constant PERCENTAGE_OF_STABILITY_FEE_TO_TREASURY = 50e27;
 
+address constant SURPLUS_AUCTION_BID_RECEIVER = address(420);
+
 abstract contract TestParams is Contracts, Params {
   // --- ForTest Params ---
 
@@ -42,6 +44,7 @@ abstract contract TestParams is Contracts, Params {
       bidIncrease: 1.01e18, // +1 %
       bidDuration: 1 hours,
       totalAuctionLength: 1 days,
+      bidReceiver: SURPLUS_AUCTION_BID_RECEIVER,
       recyclingPercentage: 0.5e18 // 50% is burned
     });
 
@@ -56,9 +59,7 @@ abstract contract TestParams is Contracts, Params {
     });
 
     _stabilityFeeTreasuryParams = IStabilityFeeTreasury.StabilityFeeTreasuryParams({
-      expensesMultiplier: 100, // no multiplier
       treasuryCapacity: 1_000_000e45, // 1M COINs
-      minFundsRequired: 0, // no min
       pullFundsMinThreshold: 0, // no threshold
       surplusTransferDelay: 1 days
     });

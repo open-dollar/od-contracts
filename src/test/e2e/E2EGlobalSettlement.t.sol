@@ -278,7 +278,6 @@ abstract contract E2EGlobalSettlementTest is BaseUser, Common {
     accountingEngine.auctionSurplus(); // active surplus auction
 
     // NOTE: why DEBT/10 not-safe? (price dropped to 1/10)
-    _lockETH(dave, COLLAT);
     _generateDebt(dave, address(collateralJoin[ETH_A]), int256(COLLAT), int256(DEBT / 100)); // active healthy safe
 
     vm.prank(deployer);

@@ -50,7 +50,7 @@ contract Unit_ChainlinkRelayerFactory_Constructor is Base {
   }
 
   function test_Emit_AddAuthorization() public happyPath {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit AddAuthorization(user);
 
     chainlinkRelayerFactory = new ChainlinkRelayerFactory();
@@ -113,7 +113,7 @@ contract Unit_ChainlinkRelayerFactory_DeployChainlinkRelayer is Base {
     uint8 _decimals,
     string memory _description
   ) public happyPath(_staleThreshold, _decimals, _description) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit NewChainlinkRelayer(address(chainlinkRelayerChild), address(mockChainlinkFeed), _staleThreshold);
 
     chainlinkRelayerFactory.deployChainlinkRelayer(address(mockChainlinkFeed), _staleThreshold);

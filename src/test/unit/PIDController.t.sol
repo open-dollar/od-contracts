@@ -190,11 +190,11 @@ contract Base is HaiTest {
     );
   }
 
-  function _mockGetGainAdjustedTerms(int256 _adjsutedProportionalTerm, int256 _adjustedIntegralTerm) internal {
+  function _mockGetGainAdjustedTerms(int256 _adjustedProportionalTerm, int256 _adjustedIntegralTerm) internal {
     vm.mockCall(
       address(mockPIDController),
       abi.encodeWithSelector(MockPIDController.mock_getGainAdjustedTerms.selector),
-      abi.encode(_adjsutedProportionalTerm, _adjustedIntegralTerm)
+      abi.encode(_adjustedProportionalTerm, _adjustedIntegralTerm)
     );
   }
 
@@ -985,7 +985,7 @@ contract Unit_PIDController_UpdateDeviation is Base {
     _mockGetNextDeviationCumulative(_scenario.virtualDeviationCumulative, _scenario.appliedDeviation);
     vm.warp(_scenario.timestamp);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit UpdateDeviation({
       _proportionalDeviation: _scenario.proportionalTerm,
       _cumulativeDeviation: _scenario.virtualDeviationCumulative,

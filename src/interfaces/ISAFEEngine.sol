@@ -75,6 +75,7 @@ interface ISAFEEngine is IAuthorizable, IModifiable, IDisableable {
    */
   struct SAFEEngineCollateralData {
     uint256 /* WAD */ debtAmount;
+    uint256 /* WAD */ lockedAmount;
     uint256 /* RAY */ accumulatedRate;
     uint256 /* RAY */ safetyPrice;
     uint256 /* RAY */ liquidationPrice;
@@ -112,7 +113,13 @@ interface ISAFEEngine is IAuthorizable, IModifiable, IDisableable {
   function _cData(bytes32 _cType)
     external
     view
-    returns (uint256 _debtAmount, uint256 _accumulatedRate, uint256 _safetyPrice, uint256 _liquidationPrice);
+    returns (
+      uint256 _debtAmount,
+      uint256 _lockedAmount,
+      uint256 _accumulatedRate,
+      uint256 _safetyPrice,
+      uint256 _liquidationPrice
+    );
 
   function safes(bytes32 _cType, address _safeAddress) external view returns (SAFE memory _safeData);
   // solhint-disable-next-line private-vars-leading-underscore
@@ -120,6 +127,8 @@ interface ISAFEEngine is IAuthorizable, IModifiable, IDisableable {
     bytes32 _cType,
     address _safeAddress
   ) external view returns (uint256 _lockedCollateral, uint256 _generatedDebt);
+
+  function collateralList() external view returns (bytes32[] memory __collateralList);
 
   function globalDebt() external returns (uint256 _globalDebt);
   function confiscateSAFECollateralAndDebt(

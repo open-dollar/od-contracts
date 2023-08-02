@@ -54,7 +54,7 @@ contract Unit_DelayedOracleFactory_Constructor is Base {
   }
 
   function test_Emit_AddAuthorization() public happyPath {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit AddAuthorization(user);
 
     delayedOracleFactory = new DelayedOracleFactory();
@@ -119,7 +119,7 @@ contract Unit_DelayedOracleFactory_DeployDelayedOracle is Base {
     uint256 _result,
     bool _validity
   ) public happyPath(_updateDelay, _symbol, _result, _validity) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit NewDelayedOracle(address(delayedOracleChild), address(mockPriceSource), _updateDelay);
 
     delayedOracleFactory.deployDelayedOracle(mockPriceSource, _updateDelay);
