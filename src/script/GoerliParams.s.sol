@@ -5,11 +5,11 @@ import '@script/Params.s.sol';
 
 abstract contract GoerliParams is Contracts, Params {
   // --- Testnet Params ---
-  uint256 constant OP_GOERLI_OP_ETH_PRICE_FEED = 0.001e18;
+  uint256 constant ARB_GOERLI_ARB_ETH_PRICE_FEED = 0.001e18;
 
   function _getEnvironmentParams() internal override {
-    governor = 0x8125aAa8F7912aEb500553a5b1710BB16f7A6C65;
-    delegate = 0x58F84023DC3E0941Faa5904E974BAc5bfF3E047f;
+    governor = 0x23aD35FAab005a5E69615d275176e5C22b2ceb9E;
+    delegate = 0x37c5B029f9c3691B3d47cb024f84E5E257aEb0BB;
 
     _safeEngineParams = ISAFEEngine.SAFEEngineParams({
       safeDebtCeiling: 10_000_000 * WAD, // 10M COINs
@@ -137,7 +137,7 @@ abstract contract GoerliParams is Contracts, Params {
     _taxCollectorCParams[WETH].stabilityFee = RAY + 1.54713e18; // + 5%/yr
     _safeEngineCParams[WETH].debtCeiling = 100_000_000 * RAD; // 100M COINs
 
-    _liquidationEngineCParams[OP].liquidationPenalty = 1.2e18; // 20%
-    _collateralAuctionHouseCParams[OP].maxDiscount = 0.5e18; // -50%
+    _liquidationEngineCParams[AGOR].liquidationPenalty = 1.2e18; // 20%
+    _collateralAuctionHouseCParams[AGOR].maxDiscount = 0.5e18; // -50%
   }
 }

@@ -3,7 +3,17 @@ pragma solidity 0.8.19;
 
 import '@script/Contracts.s.sol';
 import {Script} from 'forge-std/Script.sol';
-import {Params, ParamChecker, HAI, WETH, ETH_A, WSTETH, OP, HAI_INITIAL_PRICE} from '@script/Params.s.sol';
+import {
+  Params,
+  ParamChecker,
+  HAI,
+  WETH,
+  ETH_A,
+  WSTETH,
+  AGOR,
+  SURPLUS_AUCTION_BID_RECEIVER,
+  HAI_INITIAL_PRICE
+} from '@script/Params.s.sol';
 import {Common} from '@script/Common.s.sol';
 import {GoerliParams} from '@script/GoerliParams.s.sol';
 import {MainnetParams} from '@script/MainnetParams.s.sol';
@@ -51,14 +61,14 @@ abstract contract Deploy is Common, Script {
 
 contract DeployMainnet is MainnetParams, Deploy {
   function setUp() public virtual {
-    _deployerPk = uint256(vm.envBytes32('OP_MAINNET_DEPLOYER_PK'));
-    chainId = 10;
+    _deployerPk = uint256(vm.envBytes32('ARB_MAINNET_DEPLOYER_PK'));
+    chainId = 42_161;
   }
 
   function _setupEnvironment() internal virtual override {
     // Setup oracle feeds
-    IBaseOracle _ethUSDPriceFeed = new ChainlinkRelayer(OP_CHAINLINK_ETH_USD_FEED, 1 hours);
-    IBaseOracle _wstethETHPriceFeed = new ChainlinkRelayer(OP_CHAINLINK_WSTETH_ETH_FEED, 1 hours);
+    IBaseOracle _ethUSDPriceFeed = new ChainlinkRelayer(ARB_CHAINLINK_ETH_USD_FEED, 1 hours);
+    IBaseOracle _wstethETHPriceFeed = new ChainlinkRelayer(ARB_CHAINLINK_WSTETH_ETH_FEED, 1 hours);
 
     IBaseOracle _wstethUSDPriceFeed = new DenominatedOracle({
       _priceSource: _wstethETHPriceFeed,
@@ -70,8 +80,8 @@ contract DeployMainnet is MainnetParams, Deploy {
     delayedOracle[WETH] = new DelayedOracle(_ethUSDPriceFeed, 1 hours);
     delayedOracle[WSTETH] = new DelayedOracle(_wstethUSDPriceFeed, 1 hours);
 
-    collateral[WETH] = IERC20Metadata(OP_WETH);
-    collateral[WSTETH] = IERC20Metadata(OP_WSTETH);
+    collateral[WETH] = IERC20Metadata(ARB_WETH);
+    collateral[WSTETH] = IERC20Metadata(ARB_WSTETH);
 
     collateralTypes.push(WETH);
     collateralTypes.push(WSTETH);
@@ -82,8 +92,8 @@ contract DeployMainnet is MainnetParams, Deploy {
 
 contract DeployGoerli is GoerliParams, Deploy {
   function setUp() public virtual {
-    _deployerPk = uint256(vm.envBytes32('OP_GOERLI_DEPLOYER_PK'));
-    chainId = 420;
+    _deployerPk = uint256(vm.envBytes32('ARB_GOERLI_DEPLOYER_PK'));
+    chainId = 421_613;
   }
 
   function _setupEnvironment() internal virtual override {
@@ -91,8 +101,10 @@ contract DeployGoerli is GoerliParams, Deploy {
 
     systemCoinOracle = new OracleForTestnet(HAI_INITIAL_PRICE); // 1 HAI = 1 USD
 
-    IBaseOracle _ethUSDPriceFeed = new ChainlinkRelayer(OP_GOERLI_CHAINLINK_ETH_USD_FEED, 1 hours);
-    OracleForTestnet _opETHPriceFeed = new OracleForTestnet(OP_GOERLI_OP_ETH_PRICE_FEED);
+    IBaseOracle _ethUSDPriceFeed = new ChainlinkRelayer(ARB_GOERLI_CHAINLINK_ETH_USD_FEED, 1 hours);
+
+    OracleForTestnet _opETHPriceFeed = new OracleForTestnet(ARB_GOERLI_ARB_ETH_PRICE_FEED);
+    opEthOracleForTest = OracleForTestnet(address(_opETHPriceFeed));
 
     DenominatedOracle _opUSDPriceFeed = new DenominatedOracle({
       _priceSource: _opETHPriceFeed,
@@ -101,18 +113,27 @@ contract DeployGoerli is GoerliParams, Deploy {
     });
 
     delayedOracle[WETH] = new DelayedOracle(_ethUSDPriceFeed, 1 hours);
-    delayedOracle[OP] = new DelayedOracle(_opUSDPriceFeed, 1 hours);
+    delayedOracle[AGOR] = new DelayedOracle(_opUSDPriceFeed, 1 hours);
 
-    collateral[WETH] = IERC20Metadata(OP_WETH);
-    collateral[OP] = IERC20Metadata(OP_OPTIMISM);
+    collateral[WETH] = IERC20Metadata(ARB_GOERLI_WETH);
+    collateral[AGOR] = IERC20Metadata(ARB_GOERLI_GOV);
 
     // Setup collateral params
     collateralTypes.push(WETH);
-    collateralTypes.push(OP);
+    collateralTypes.push(AGOR);
 
     _getEnvironmentParams();
 
     // Setup delegated collateral joins
-    delegatee[OP] = governor;
+    delegatee[AGOR] = governor;
+
+    // Revoke oracles authorizations
+    if (_shouldRevoke()) {
+      haiOracleForTest.addAuthorization(governor);
+      opEthOracleForTest.addAuthorization(governor);
+
+      haiOracleForTest.removeAuthorization(deployer);
+      opEthOracleForTest.removeAuthorization(deployer);
+    }
   }
 }

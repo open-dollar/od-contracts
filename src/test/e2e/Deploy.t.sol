@@ -4,8 +4,8 @@ pragma solidity 0.8.19;
 import {HaiTest} from '@test/utils/HaiTest.t.sol';
 import {Deploy, DeployMainnet, DeployGoerli} from '@script/Deploy.s.sol';
 
-import {ParamChecker, WETH, WSTETH, OP} from '@script/Params.s.sol';
-import {OP_OPTIMISM} from '@script/Registry.s.sol';
+import {ParamChecker, WETH, WSTETH, AGOR} from '@script/Params.s.sol';
+import {ARB_GOV} from '@script/Registry.s.sol';
 import {ERC20Votes} from '@openzeppelin/token/ERC20/extensions/ERC20Votes.sol';
 
 import {Contracts} from '@script/Contracts.s.sol';
@@ -120,10 +120,13 @@ abstract contract CommonDeploymentTest is HaiTest, Deploy {
 }
 
 contract E2EDeploymentMainnetTest is DeployMainnet, CommonDeploymentTest {
-  uint256 FORK_BLOCK = 99_000_000;
-
   function setUp() public override {
-    vm.createSelectFork(vm.rpcUrl('mainnet'), FORK_BLOCK);
+    /**
+     * @dev Arbitrum block.number returns L1; createSelectFork does not work
+     */
+    uint256 forkId = vm.createFork(vm.rpcUrl('mainnet'));
+    vm.selectFork(forkId);
+
     governor = address(69);
     super.setUp();
     run();
@@ -135,10 +138,16 @@ contract E2EDeploymentMainnetTest is DeployMainnet, CommonDeploymentTest {
 }
 
 contract E2EDeploymentGoerliTest is DeployGoerli, CommonDeploymentTest {
-  uint256 FORK_BLOCK = 10_000_000;
+  uint256 FORK_BLOCK = 8_000_000;
 
   function setUp() public override {
-    vm.createSelectFork(vm.rpcUrl('goerli'), FORK_BLOCK);
+    /**
+     * @dev Arbitrum block.number returns L1; createSelectFork does not work
+     */
+    uint256 forkId = vm.createFork(vm.rpcUrl('goerli'));
+    vm.selectFork(forkId);
+    vm.roll(FORK_BLOCK);
+
     governor = address(69);
     super.setUp();
     run();
@@ -151,11 +160,27 @@ contract E2EDeploymentGoerliTest is DeployGoerli, CommonDeploymentTest {
 
 contract GoerliDeploymentTest is GoerliDeployment, CommonDeploymentTest {
   function setUp() public {
-    vm.createSelectFork(vm.rpcUrl('goerli'), GOERLI_DEPLOYMENT_BLOCK);
+    /**
+     * @dev Arbitrum block.number returns L1; createSelectFork does not work
+     */
+    uint256 forkId = vm.createFork(vm.rpcUrl('goerli'));
+    vm.selectFork(forkId);
+
     _getEnvironmentParams();
   }
 
-  function test_Delegated_OP() public {
-    assertEq(ERC20Votes(OP_OPTIMISM).delegates(address(collateralJoin[OP])), governor);
+  function test_Oracles_Auth() public {
+    assertEq(haiOracleForTest.authorizedAccounts(deployer), false);
+    assertEq(haiOracleForTest.authorizedAccounts(governor), true);
+
+    assertEq(opEthOracleForTest.authorizedAccounts(deployer), false);
+    assertEq(opEthOracleForTest.authorizedAccounts(governor), true);
   }
+
+  /**
+   * TODO: test delegated coins
+   */
+  // function test_Delegated_OP() public {
+  //   assertEq(ERC20Votes(ARB_GOV).delegates(address(collateralJoin[AGOR])), governor);
+  // }
 }
