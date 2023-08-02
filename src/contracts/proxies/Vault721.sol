@@ -6,10 +6,10 @@ import {Ownable} from '@contracts/utils/Ownable.sol';
 
 // TODO move to interfaces
 interface ISafeManager {
-  function openSAFE(bytes32 _cType, address _usr) external returns (uint256 _id);
   function transferSAFEOwnership(uint256 _safe, address _dst) external;
 }
 
+// TODO move to own file
 contract ODProxy is Ownable {
   error TargetAddressRequired();
   error TargetCallFailed(bytes _response);
@@ -36,15 +36,21 @@ contract Vault721 is ERC721('OpenDollarVault', 'ODV') {
   mapping(address user => address proxy) private _userRegistry;
 
   event Mint(address proxy, uint256 safeId);
-  event CreateProxy(address indexed owner, address proxy);
+  event CreateProxy(address indexed user, address proxy);
 
+  /**
+   * @dev initializes contract by setting SafeManager contract and DAO governor
+   */
   constructor(address _safeManager, address _governor) {
     safeManager = _safeManager;
     governor = _governor;
   }
 
+  /**
+   * @dev allows user without an ODProxy to deploy a new ODProxy
+   */
   function build() external returns (address payable _proxy) {
-    require(!_checkUserProxy(msg.sender), 'Vault721: User proxy already exists.');
+    require(_isNotProxy(msg.sender), 'Vault721: User proxy already exists.');
     _proxy = _build(msg.sender);
   }
 
@@ -59,29 +65,40 @@ contract Vault721 is ERC721('OpenDollarVault', 'ODV') {
     _safeMint(user, safeId);
   }
 
+  /**
+   * @dev allows DAO to update protocol implementation
+   */
   function updateImplementation(address _safeManager) external {
     require(msg.sender == governor, 'Vault721: Only governor.');
     safeManager = _safeManager;
   }
 
-  function _checkUserProxy(address user) internal view returns (bool) {
-    return _userRegistry[user] == address(0) || ODProxy(_userRegistry[user]).owner() != user;
-  }
-
-  function _build(address _owner) internal returns (address payable _proxy) {
-    _proxy = payable(address(new ODProxy(address(this))));
-    _userRegistry[_owner] = _proxy;
-    emit CreateProxy(_owner, address(_proxy));
+  /**
+   * @dev check that proxy does not exist OR that the user does not own proxy
+   */
+  function _isNotProxy(address _user) internal view returns (bool) {
+    return _userRegistry[_user] == address(0) || ODProxy(_userRegistry[_user]).owner() != _user;
   }
 
   /**
-   * @dev transfer calls `transferSAFEOwnership` on SafeManager
+   * @dev deploys ODProxy for user to interact with protocol
+   * updates _proxyRegistry and _userRegistry mappings for new ODProxy
+   */
+  function _build(address _user) internal returns (address payable _proxy) {
+    _proxy = payable(address(new ODProxy(address(this))));
+    _proxyRegistry[_proxy] = _user;
+    _userRegistry[_user] = _proxy;
+    emit CreateProxy(_user, address(_proxy));
+  }
+
+  /**
+   * @dev _transfer calls `transferSAFEOwnership` on SafeManager
    * enforces that ODProxy exists for transfer or it deploys a new ODProxy for receiver of vault/nft
    */
   function _afterTokenTransfer(address from, address to, uint256 firstTokenId, uint256 batchSize) internal override {
     address payable proxy;
 
-    if (_checkUserProxy(to)) {
+    if (_isNotProxy(to)) {
       proxy = _build(to);
     } else {
       proxy = payable(_userRegistry[to]);
@@ -90,7 +107,7 @@ contract Vault721 is ERC721('OpenDollarVault', 'ODV') {
   }
 }
 
-// Vars to inlcude in NFT
+// TODO Vars to inlcude and where to find them:
 
 // Collateral Type
 //   contract: HaiSafeManager
