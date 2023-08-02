@@ -2,31 +2,7 @@
 pragma solidity 0.8.19;
 
 import {ERC721} from '@openzeppelin/token/ERC721/ERC721.sol';
-import {Ownable} from '@contracts/utils/Ownable.sol';
-
-// TODO move to interfaces
-interface ISafeManager {
-  function transferSAFEOwnership(uint256 _safe, address _dst) external;
-}
-
-// TODO move to own file
-contract ODProxy is Ownable {
-  error TargetAddressRequired();
-  error TargetCallFailed(bytes _response);
-
-  constructor(address _owner) Ownable(_owner) {}
-
-  function execute(address _target, bytes memory _data) external payable onlyOwner returns (bytes memory _response) {
-    if (_target == address(0)) revert TargetAddressRequired();
-
-    bool _succeeded;
-    (_succeeded, _response) = _target.delegatecall(_data);
-
-    if (!_succeeded) {
-      revert TargetCallFailed(_response);
-    }
-  }
-}
+import {ISafeManager} from '@interfaces/proxies/ISafeManager.sol';
 
 contract Vault721 is ERC721('OpenDollarVault', 'ODV') {
   address public safeManager;
@@ -85,7 +61,7 @@ contract Vault721 is ERC721('OpenDollarVault', 'ODV') {
    * updates _proxyRegistry and _userRegistry mappings for new ODProxy
    */
   function _build(address _user) internal returns (address payable _proxy) {
-    _proxy = payable(address(new ODProxy(address(this))));
+    _proxy = payable(address(new ODProxy(_user)));
     _proxyRegistry[_proxy] = _user;
     _userRegistry[_user] = _proxy;
     emit CreateProxy(_user, address(_proxy));
