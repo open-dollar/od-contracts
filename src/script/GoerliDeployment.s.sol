@@ -2,10 +2,10 @@
 pragma solidity 0.8.19;
 
 import '@script/Contracts.s.sol';
-import {GoerliParams, WETH, OP, WBTC, STONES, TOTEM} from '@script/GoerliParams.s.sol';
+import {GoerliParams, GoerliOpContracts, WETH, OP, WBTC, STONES, TOTEM} from '@script/GoerliParams.s.sol';
 import {OP_WETH, OP_OPTIMISM} from '@script/Registry.s.sol';
 
-abstract contract GoerliDeployment is Contracts, GoerliParams {
+abstract contract GoerliDeployment is Contracts, GoerliParams, GoerliOpContracts {
   uint256 constant GOERLI_DEPLOYMENT_BLOCK = 12_509_149;
 
   // --- Mintable ERC20s ---
