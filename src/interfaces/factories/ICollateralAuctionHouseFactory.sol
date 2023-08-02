@@ -46,7 +46,7 @@ interface ICollateralAuctionHouseFactory is IAuthorizable, IDisableable, IModifi
 
   // --- Data ---
   function collateralAuctionHouses(bytes32 _cType) external view returns (address _collateralAuctionHouse);
-  function collateralTypesList() external view returns (bytes32[] memory _collateralTypesList);
+  function collateralList() external view returns (bytes32[] memory __collateralList);
   function collateralAuctionHousesList() external view returns (address[] memory _collateralAuctionHouses);
 
   // --- Methods ---

@@ -41,7 +41,6 @@ contract CollateralJoinFactory is Authorizable, Disableable, ICollateralJoinFact
     emit DeployCollateralJoin(_cType, _collateral, _collateralJoin);
   }
 
-  // --- Methods ---
   function deployDelegatableCollateralJoin(
     bytes32 _cType,
     address _collateral,

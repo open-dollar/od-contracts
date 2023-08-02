@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import '@script/Contracts.s.sol';
-import {Params, ParamChecker, HAI, ETH_A, SURPLUS_AUCTION_BID_RECEIVER} from '@script/Params.s.sol';
+import {Params, ParamChecker, HAI, ETH_A, JOB_REWARD} from '@script/Params.s.sol';
 import '@script/Registry.s.sol';
 
 abstract contract Common is Contracts, Params {
@@ -132,6 +132,11 @@ abstract contract Common is Contracts, Params {
 
     // global settlement
     _revoke(globalSettlement, _governor);
+
+    // jobs
+    _revoke(accountingJob, _governor);
+    _revoke(liquidationJob, _governor);
+    _revoke(oracleJob, _governor);
   }
 
   function revokeTo(IAuthorizable _contract, address _target) public {
@@ -186,6 +191,11 @@ abstract contract Common is Contracts, Params {
 
     // global settlement
     _delegate(globalSettlement, __delegate);
+
+    // jobs
+    _delegate(accountingJob, __delegate);
+    _delegate(liquidationJob, __delegate);
+    _delegate(oracleJob, __delegate);
   }
 
   function _delegate(IAuthorizable _contract, address _target) internal {
@@ -280,9 +290,6 @@ abstract contract Common is Contracts, Params {
   }
 
   function _setupContracts() internal {
-    // TODO: change for protocolTokenBidReceiver
-    surplusAuctionHouse.modifyParameters('protocolTokenBidReceiver', abi.encode(SURPLUS_AUCTION_BID_RECEIVER));
-
     // auth
     safeEngine.addAuthorization(address(oracleRelayer)); // modifyParameters
     safeEngine.addAuthorization(address(coinJoin)); // transferInternalCoins
@@ -333,6 +340,18 @@ abstract contract Common is Contracts, Params {
 
     // initialize
     pidRateSetter.updateRate();
+  }
+
+  function deployJobContracts() public {
+    accountingJob = new AccountingJob(address(accountingEngine), address(stabilityFeeTreasury), JOB_REWARD);
+    liquidationJob = new LiquidationJob(address(liquidationEngine), address(stabilityFeeTreasury), JOB_REWARD);
+    oracleJob = new OracleJob(address(oracleRelayer), address(pidRateSetter), address(stabilityFeeTreasury), JOB_REWARD);
+  }
+
+  function _setupJobContracts() internal {
+    stabilityFeeTreasury.setTotalAllowance(address(accountingJob), type(uint256).max);
+    stabilityFeeTreasury.setTotalAllowance(address(liquidationJob), type(uint256).max);
+    stabilityFeeTreasury.setTotalAllowance(address(oracleJob), type(uint256).max);
   }
 
   function _deployProxyContracts(address _safeEngine) internal {

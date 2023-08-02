@@ -110,7 +110,7 @@ contract Unit_SettlementSurplusAuctioneer_Constructor is Base {
   }
 
   function test_Emit_AddAuthorization() public happyPath {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit AddAuthorization(user);
 
     settlementSurplusAuctioneer =
@@ -276,7 +276,7 @@ contract Unit_SettlementSurplusAuctioneer_AuctionSurplus is Base {
     vm.assume(_coinBalance < _surplusAmount);
     vm.assume(_coinBalance > 0);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit AuctionSurplus(_idA, block.timestamp, 0);
 
     settlementSurplusAuctioneer.auctionSurplus();
@@ -293,7 +293,7 @@ contract Unit_SettlementSurplusAuctioneer_AuctionSurplus is Base {
     vm.assume(_coinBalance < _surplusAmount);
     vm.assume(_coinBalance == 0);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit AuctionSurplus(_idA, block.timestamp, 0);
 
     settlementSurplusAuctioneer.auctionSurplus();
@@ -310,7 +310,7 @@ contract Unit_SettlementSurplusAuctioneer_AuctionSurplus is Base {
     vm.assume(_coinBalance >= _surplusAmount);
     vm.assume(_surplusAmount > 0);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit AuctionSurplus(_idB, block.timestamp, _coinBalance - _surplusAmount);
 
     settlementSurplusAuctioneer.auctionSurplus();
@@ -327,7 +327,7 @@ contract Unit_SettlementSurplusAuctioneer_AuctionSurplus is Base {
     vm.assume(_coinBalance >= _surplusAmount);
     vm.assume(_surplusAmount == 0);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit AuctionSurplus(_idB, block.timestamp, _coinBalance - _surplusAmount);
 
     settlementSurplusAuctioneer.auctionSurplus();

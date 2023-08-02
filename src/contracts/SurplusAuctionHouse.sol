@@ -41,8 +41,6 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
   ISAFEEngine public safeEngine;
   // Protocol token address
   IProtocolToken public protocolToken;
-  // Receiver of protocol tokens
-  address public protocolTokenBidReceiver;
 
   // --- Params ---
   // solhint-disable-next-line private-vars-leading-underscore
@@ -59,7 +57,7 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
     SurplusAuctionHouseParams memory _sahParams
   ) Authorizable(msg.sender) validParams {
     safeEngine = ISAFEEngine(_safeEngine.assertNonNull());
-    protocolToken = IProtocolToken(_protocolToken.assertNonNull());
+    protocolToken = IProtocolToken(_protocolToken);
 
     _params = _sahParams;
   }
@@ -84,17 +82,26 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
     uint256 _amountToSell,
     uint256 _initialBid
   ) external isAuthorized whenEnabled returns (uint256 _id) {
-    if (protocolTokenBidReceiver == address(0) && _params.recyclingPercentage != 0) revert SAH_NullProtTokenReceiver();
+    if (_params.bidReceiver == address(0) && _params.recyclingPercentage != 0) revert SAH_NullProtTokenReceiver();
     _id = ++auctionsStarted;
 
-    _auctions[_id].bidAmount = _initialBid;
-    _auctions[_id].amountToSell = _amountToSell;
-    _auctions[_id].highBidder = msg.sender;
-    _auctions[_id].auctionDeadline = block.timestamp + _params.totalAuctionLength;
+    _auctions[_id] = Auction({
+      bidAmount: _initialBid,
+      amountToSell: _amountToSell,
+      highBidder: msg.sender,
+      bidExpiry: 0,
+      auctionDeadline: block.timestamp + _params.totalAuctionLength
+    });
 
     safeEngine.transferInternalCoins(msg.sender, address(this), _amountToSell);
 
-    emit StartAuction(_id, auctionsStarted, _amountToSell, _initialBid, _auctions[_id].auctionDeadline);
+    emit StartAuction({
+      _id: _id,
+      _blockTimestamp: block.timestamp,
+      _amountToSell: _amountToSell,
+      _amountToRaise: _initialBid,
+      _auctionDeadline: _auctions[_id].auctionDeadline
+    });
   }
 
   /**
@@ -103,10 +110,12 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
    */
   function restartAuction(uint256 _id) external {
     if (_id == 0 || _id > auctionsStarted) revert SAH_AuctionNeverStarted();
-    if (_auctions[_id].auctionDeadline > block.timestamp) revert SAH_AuctionNotFinished();
-    if (_auctions[_id].bidExpiry != 0) revert SAH_BidAlreadyPlaced();
-    _auctions[_id].auctionDeadline = block.timestamp + _params.totalAuctionLength;
-    emit RestartAuction(_id, _auctions[_id].auctionDeadline);
+    Auction storage _auction = _auctions[_id];
+    if (_auction.auctionDeadline > block.timestamp) revert SAH_AuctionNotFinished();
+    if (_auction.bidExpiry != 0) revert SAH_BidAlreadyPlaced();
+    _auction.auctionDeadline = block.timestamp + _params.totalAuctionLength;
+
+    emit RestartAuction({_id: _id, _blockTimestamp: block.timestamp, _auctionDeadline: _auction.auctionDeadline});
   }
 
   /**
@@ -116,24 +125,31 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
    * @param _bid New bid submitted (wad)
    */
   function increaseBidSize(uint256 _id, uint256 _amountToBuy, uint256 _bid) external whenEnabled {
-    if (_auctions[_id].highBidder == address(0)) revert SAH_HighBidderNotSet();
-    if (_auctions[_id].bidExpiry <= block.timestamp && _auctions[_id].bidExpiry != 0) revert SAH_BidAlreadyExpired();
-    if (_auctions[_id].auctionDeadline <= block.timestamp) revert SAH_AuctionAlreadyExpired();
+    Auction storage _auction = _auctions[_id];
+    if (_auction.highBidder == address(0)) revert SAH_HighBidderNotSet();
+    if (_auction.bidExpiry <= block.timestamp && _auction.bidExpiry != 0) revert SAH_BidAlreadyExpired();
+    if (_auction.auctionDeadline <= block.timestamp) revert SAH_AuctionAlreadyExpired();
+    if (_amountToBuy != _auction.amountToSell) revert SAH_AmountsNotMatching();
+    if (_bid <= _auction.bidAmount) revert SAH_BidNotHigher();
+    if (_bid * WAD < _params.bidIncrease * _auction.bidAmount) revert SAH_InsufficientIncrease();
 
-    if (_amountToBuy != _auctions[_id].amountToSell) revert SAH_AmountsNotMatching();
-    if (_bid <= _auctions[_id].bidAmount) revert SAH_BidNotHigher();
-    if (_bid * WAD < _params.bidIncrease * _auctions[_id].bidAmount) revert SAH_InsufficientIncrease();
-
-    if (msg.sender != _auctions[_id].highBidder) {
-      protocolToken.safeTransferFrom(msg.sender, _auctions[_id].highBidder, _auctions[_id].bidAmount);
-      _auctions[_id].highBidder = msg.sender;
+    if (msg.sender != _auction.highBidder) {
+      protocolToken.safeTransferFrom(msg.sender, _auction.highBidder, _auction.bidAmount);
+      _auction.highBidder = msg.sender;
     }
-    protocolToken.safeTransferFrom(msg.sender, address(this), _bid - _auctions[_id].bidAmount);
+    protocolToken.safeTransferFrom(msg.sender, address(this), _bid - _auction.bidAmount);
 
-    _auctions[_id].bidAmount = _bid;
-    _auctions[_id].bidExpiry = block.timestamp + _params.bidDuration;
+    _auction.bidAmount = _bid;
+    _auction.bidExpiry = block.timestamp + _params.bidDuration;
 
-    emit IncreaseBidSize(_id, msg.sender, _amountToBuy, _bid, _auctions[_id].bidExpiry);
+    emit IncreaseBidSize({
+      _id: _id,
+      _bidder: msg.sender,
+      _blockTimestamp: block.timestamp,
+      _raisedAmount: _bid,
+      _soldAmount: _amountToBuy,
+      _bidExpiry: _auction.bidExpiry
+    });
   }
 
   /**
@@ -141,24 +157,32 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
    * @param _id ID of the auction to settle
    */
   function settleAuction(uint256 _id) external whenEnabled {
-    if (
-      _auctions[_id].bidExpiry == 0
-        || (_auctions[_id].bidExpiry > block.timestamp && _auctions[_id].auctionDeadline > block.timestamp)
-    ) revert SAH_AuctionNotFinished();
-    safeEngine.transferInternalCoins(address(this), _auctions[_id].highBidder, _auctions[_id].amountToSell);
-
-    uint256 _amountToSend = _auctions[_id].bidAmount.wmul(_params.recyclingPercentage);
-    if (_amountToSend > 0) {
-      protocolToken.safeTransfer(protocolTokenBidReceiver, _amountToSend);
+    Auction memory _auction = _auctions[_id];
+    if (_auction.bidExpiry == 0 || (_auction.bidExpiry > block.timestamp && _auction.auctionDeadline > block.timestamp))
+    {
+      revert SAH_AuctionNotFinished();
     }
 
-    uint256 _amountToBurn = _auctions[_id].bidAmount - _amountToSend;
+    safeEngine.transferInternalCoins(address(this), _auction.highBidder, _auction.amountToSell);
+
+    uint256 _amountToSend = _auction.bidAmount.wmul(_params.recyclingPercentage);
+    if (_amountToSend > 0) {
+      protocolToken.safeTransfer(_params.bidReceiver, _amountToSend);
+    }
+
+    uint256 _amountToBurn = _auction.bidAmount - _amountToSend;
     if (_amountToBurn > 0) {
       protocolToken.burn(_amountToBurn);
     }
 
+    emit SettleAuction({
+      _id: _id,
+      _blockTimestamp: block.timestamp,
+      _highBidder: _auction.highBidder,
+      _raisedAmount: _auction.bidAmount
+    });
+
     delete _auctions[_id];
-    emit SettleAuction(_id);
   }
 
   /**
@@ -166,23 +190,38 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
    * @param _id ID of the auction to settle/terminate
    */
   function terminateAuctionPrematurely(uint256 _id) external whenDisabled {
-    if (_auctions[_id].highBidder == address(0)) revert SAH_HighBidderNotSet();
-    protocolToken.safeTransfer(_auctions[_id].highBidder, _auctions[_id].bidAmount);
-    emit TerminateAuctionPrematurely(_id, msg.sender, _auctions[_id].highBidder, _auctions[_id].bidAmount);
+    Auction memory _auction = _auctions[_id];
+    if (_auction.highBidder == address(0)) revert SAH_HighBidderNotSet();
+
+    protocolToken.safeTransfer(_auction.highBidder, _auction.bidAmount);
+
+    emit TerminateAuctionPrematurely({
+      _id: _id,
+      _blockTimestamp: block.timestamp,
+      _highBidder: _auction.highBidder,
+      _raisedAmount: _auction.bidAmount
+    });
+
     delete _auctions[_id];
   }
 
   // --- Administration ---
 
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
+    address _address = _data.toAddress();
     uint256 _uint256 = _data.toUint256();
 
-    // TODO: incorporate protocolTokenBidReceiver to constructor HAI-198
-    if (_param == 'protocolTokenBidReceiver') protocolTokenBidReceiver = _data.toAddress().assertNonNull();
+    if (_param == 'protocolToken') protocolToken = IProtocolToken(_address);
     else if (_param == 'bidIncrease') _params.bidIncrease = _uint256;
     else if (_param == 'bidDuration') _params.bidDuration = _uint256;
     else if (_param == 'totalAuctionLength') _params.totalAuctionLength = _uint256;
+    else if (_param == 'bidReceiver') _params.bidReceiver = _address;
     else if (_param == 'recyclingPercentage') _params.recyclingPercentage = _uint256;
     else revert UnrecognizedParam();
+  }
+
+  function _validateParameters() internal view override {
+    address(protocolToken).assertNonNull();
+    _params.bidReceiver.assertNonNull();
   }
 }

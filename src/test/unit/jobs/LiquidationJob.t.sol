@@ -70,7 +70,7 @@ contract Unit_LiquidationJob_Constructor is Base {
   }
 
   function test_Emit_AddAuthorization() public happyPath {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit AddAuthorization(user);
 
     liquidationJob =
@@ -114,7 +114,8 @@ contract Unit_LiquidationJob_WorkLiquidation is Base {
 
   function test_Emit_Rewarded(bytes32 _cType, address _safe) public {
     _mockValues(true, _cType, _safe);
-    expectEmitNoIndex();
+
+    vm.expectEmit();
     emit Rewarded(user, REWARD_AMOUNT);
 
     vm.prank(user);

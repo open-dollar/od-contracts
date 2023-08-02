@@ -19,7 +19,7 @@ interface IGlobalSettlement is IAuthorizable, IDisableable, IModifiable {
   event FreezeCollateralType(bytes32 indexed _cType, uint256 _finalCoinPerCollateralPrice);
   event FastTrackAuction(bytes32 indexed _cType, uint256 indexed _auctionId, uint256 _collateralTotalDebt);
   event ProcessSAFE(bytes32 indexed _cType, address indexed _safe, uint256 _collateralShortfall);
-  event FreeCollateral(bytes32 indexed _cType, address indexed _sender, int256 _collateralAmount);
+  event FreeCollateral(bytes32 indexed _cType, address indexed _sender, uint256 _collateralAmount);
   event SetOutstandingCoinSupply(uint256 _outstandingCoinSupply);
   event CalculateCashPrice(bytes32 indexed _cType, uint256 _collateralCashPrice);
   event PrepareCoinsForRedeeming(address indexed _sender, uint256 _coinBag);

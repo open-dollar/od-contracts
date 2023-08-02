@@ -10,13 +10,25 @@ import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 interface IPostSettlementSurplusAuctionHouse is IAuthorizable, IModifiable {
   // --- Events ---
   event StartAuction(
-    uint256 indexed _id, uint256 _auctionsStarted, uint256 _amountToSell, uint256 _initialBid, uint256 _auctionDeadline
+    uint256 indexed _id,
+    uint256 _blockTimestamp,
+    uint256 _amountToSell,
+    uint256 _amountToRaise,
+    uint256 _auctionDeadline
   );
-  event RestartAuction(uint256 indexed _id, uint256 _auctionDeadline);
+
+  event RestartAuction(uint256 indexed _id, uint256 _blockTimestamp, uint256 _auctionDeadline);
+
   event IncreaseBidSize(
-    uint256 indexed _id, address _highBidder, uint256 _amountToBuy, uint256 _bid, uint256 _bidExpiry
+    uint256 indexed _id,
+    address _bidder,
+    uint256 _blockTimestamp,
+    uint256 _raisedAmount,
+    uint256 _soldAmount,
+    uint256 _bidExpiry
   );
-  event SettleAuction(uint256 indexed _id);
+
+  event SettleAuction(uint256 indexed _id, uint256 _blockTimestamp, address _highBidder, uint256 _raisedAmount);
 
   // --- Errors ---
   error PSSAH_AuctionNeverStarted();

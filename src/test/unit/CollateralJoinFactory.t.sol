@@ -72,7 +72,7 @@ contract Unit_CollateralJoinFactory_Constructor is Base {
   }
 
   function test_Emit_AddAuthorization() public happyPath {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit AddAuthorization(user);
 
     collateralJoinFactory = new CollateralJoinFactoryForTest(address(mockSafeEngine));
@@ -150,7 +150,7 @@ contract Unit_CollateralJoinFactory_DeployCollateralJoin is Base {
   }
 
   function test_Emit_DeployCollateralJoin(bytes32 _cType, uint8 _decimals) public happyPath(_decimals) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit DeployCollateralJoin(_cType, address(mockCollateral), address(collateralJoinChild));
 
     collateralJoinFactory.deployCollateralJoin(_cType, address(mockCollateral));
@@ -242,7 +242,7 @@ contract Unit_CollateralJoinFactory_DeployDelegatableCollateralJoin is Base {
   }
 
   function test_Emit_DeployCollateralJoin(bytes32 _cType, uint8 _decimals) public happyPath(_decimals) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit DeployCollateralJoin(_cType, address(mockCollateral), address(collateralJoinChild));
 
     collateralJoinFactory.deployDelegatableCollateralJoin(_cType, address(mockCollateral), delegatee);
@@ -318,7 +318,7 @@ contract Unit_CollateralJoinFactory_DisableCollateralJoin is Base {
   }
 
   function test_Emit_DisableCollateralJoin() public happyPath {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit DisableCollateralJoin(address(collateralJoinChild));
 
     collateralJoinFactory.disableCollateralJoin(collateralType);

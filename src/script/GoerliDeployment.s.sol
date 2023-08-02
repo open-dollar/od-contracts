@@ -57,8 +57,21 @@ abstract contract GoerliDeployment is Contracts, GoerliParams {
     collateralJoin[AGOR] = CollateralJoin(0x4D5EE29C69B26970021f945Ee9e7Ea5884E92c99);
 
     // --- collateral auction houses ---
+
     collateralAuctionHouse[WETH] = CollateralAuctionHouse(0xB0CfCB2112747ceC1fD0372D3217962530a13048);
     collateralAuctionHouse[AGOR] = CollateralAuctionHouse(0x5a40684690d3C79CAdc08206d3D352Af1AC208b6);
+    
+    //OP auction houses
+    //collateralAuctionHouse[WETH] = CollateralAuctionHouse(0x166425Cc84996DC0d8fEaDa66F86055AAE8f8209);
+    //collateralAuctionHouse[OP] = CollateralAuctionHouse(0xeAfB6be474e84fC5f3aF7bbaD39D89A5764D4D36);
+    //collateralAuctionHouse[WBTC] = CollateralAuctionHouse(0x724A7b53c0B81DDB0654e012c94667730CBa1837);
+    //collateralAuctionHouse[STONES] = CollateralAuctionHouse(0x22a804F6685f96dE8CD81aba0C85fe49884274f8);
+    //collateralAuctionHouse[TOTEM] = CollateralAuctionHouse(0x24CF3ddF28d7a2e046Ea9bD1B6908D8B33AAB873);
+
+    // --- jobs ---
+    accountingJob = AccountingJob(0x9c6fc600d9673b322C6Bb0835008a0f8229d11b2);
+    liquidationJob = LiquidationJob(0xAF729A93526026c63Ada37015d2A0aa3B149913e);
+    oracleJob = OracleJob(0xCC81b8E22Bc48133125BDa642C452EC6A52853C8);
 
     // --- proxies ---
     dsProxyFactory = HaiProxyFactory(0x1A020C90e6F43851e7D65e6824400366aA35eAD3);

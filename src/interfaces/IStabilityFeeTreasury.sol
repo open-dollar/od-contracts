@@ -12,29 +12,28 @@ interface IStabilityFeeTreasury is IAuthorizable, IDisableable, IModifiable {
   // --- Events ---
   event SetTotalAllowance(address indexed _account, uint256 _rad);
   event SetPerHourAllowance(address indexed _account, uint256 _rad);
-  event GiveFunds(address indexed _account, uint256 _rad, uint256 _expensesAccumulator);
+  event GiveFunds(address indexed _account, uint256 _rad);
   event TakeFunds(address indexed _account, uint256 _rad);
-  event PullFunds(address indexed _sender, address indexed _dstAccount, uint256 _rad, uint256 _expensesAccumulator);
+  event PullFunds(address indexed _sender, address indexed _dstAccount, uint256 _rad);
   event TransferSurplusFunds(address _extraSurplusReceiver, uint256 _fundsToTransfer);
+  event JoinCoins(uint256 _wad);
+  event SettleDebt(uint256 _rad);
 
   // --- Errors ---
   error SFTreasury_AccountCannotBeTreasury();
-  error SFTreasury_NullAccount();
   error SFTreasury_OutstandingBadDebt();
   error SFTreasury_NotEnoughFunds();
   error SFTreasury_NotAllowed();
-  error SFTreasury_NullDst();
   error SFTreasury_DstCannotBeAccounting();
   error SFTreasury_NullTransferAmount();
   error SFTreasury_PerHourLimitExceeded();
   error SFTreasury_BelowPullFundsMinThreshold();
   error SFTreasury_TransferCooldownNotPassed();
+  error SFTreasury_NotEnoughSurplus();
 
   // --- Structs ---
   struct StabilityFeeTreasuryParams {
-    uint256 expensesMultiplier;
     uint256 treasuryCapacity;
-    uint256 minFundsRequired;
     uint256 pullFundsMinThreshold;
     uint256 surplusTransferDelay;
   }
@@ -58,21 +57,13 @@ interface IStabilityFeeTreasury is IAuthorizable, IDisableable, IModifiable {
   function extraSurplusReceiver() external view returns (address _extraSurplusReceiver);
   function systemCoin() external view returns (ISystemCoin _systemCoin);
   function latestSurplusTransferTime() external view returns (uint256 _latestSurplusTransferTime);
-  function settleDebt() external;
-  function expensesAccumulator() external view returns (uint256 _expensesAccumulator);
+  function settleDebt() external returns (uint256 _coinBalance, uint256 _debtBalance);
   function pulledPerHour(address _account, uint256 _blockHour) external view returns (uint256 _pulledPerHour);
-  function accumulatorTag() external view returns (uint256 _accumulatorTag);
 
   function params() external view returns (StabilityFeeTreasuryParams memory _sfTreasuryParams);
   // solhint-disable-next-line private-vars-leading-underscore
   function _params()
     external
     view
-    returns (
-      uint256 _expensesMultiplier,
-      uint256 _treasuryCapacity,
-      uint256 _minFundsRequired,
-      uint256 _pullFundsMinThreshold,
-      uint256 _surplusTransferDelay
-    );
+    returns (uint256 _treasuryCapacity, uint256 _pullFundsMinThreshold, uint256 _surplusTransferDelay);
 }

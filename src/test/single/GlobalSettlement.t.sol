@@ -20,7 +20,7 @@ import {IOracleRelayer, OracleRelayerForTest} from '@contracts/for-test/OracleRe
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
 
-import {Math, RAY, WAD, HUNDRED} from '@libraries/Math.sol';
+import {Math, RAY, WAD} from '@libraries/Math.sol';
 
 abstract contract Hevm {
   function warp(uint256) public virtual;
@@ -216,11 +216,13 @@ contract SingleGlobalSettlementTest is DSTest {
     oracleFSM.updateCollateralPrice(bytes32(200 * WAD));
 
     // Start with English auction house
-    liquidationEngine.modifyParameters(_encodedName, 'collateralAuctionHouse', abi.encode(_collateralAuctionHouse));
-    liquidationEngine.modifyParameters(_encodedName, 'liquidationPenalty', abi.encode(1 ether));
-    liquidationEngine.modifyParameters(
-      _encodedName, 'liquidationQuantity', abi.encode(uint256(int256(-1)) / ray(1 ether))
-    );
+    ILiquidationEngine.LiquidationEngineCollateralParams memory _liquidationEngineCollateralParams = ILiquidationEngine
+      .LiquidationEngineCollateralParams({
+      collateralAuctionHouse: address(_collateralAuctionHouse),
+      liquidationPenalty: 1 ether,
+      liquidationQuantity: uint256(int256(-1)) / ray(1 ether)
+    });
+    liquidationEngine.initializeCollateralType(_encodedName, _liquidationEngineCollateralParams);
 
     collateralTypes[_encodedName].oracleSecurityModule = oracleFSM;
     collateralTypes[_encodedName].collateral = newCollateral;
@@ -250,6 +252,7 @@ contract SingleGlobalSettlementTest is DSTest {
       bidIncrease: 1.05e18,
       bidDuration: 3 hours,
       totalAuctionLength: 2 days,
+      bidReceiver: address(0x123),
       recyclingPercentage: 0
     });
     surplusAuctionHouseOne = new SurplusAuctionHouse(address(safeEngine), address(protocolToken), _sahParams);
@@ -308,13 +311,7 @@ contract SingleGlobalSettlementTest is DSTest {
     safeEngine.addAuthorization(address(oracleRelayer));
 
     IStabilityFeeTreasury.StabilityFeeTreasuryParams memory _stabilityFeeTreasuryParams = IStabilityFeeTreasury
-      .StabilityFeeTreasuryParams({
-      expensesMultiplier: HUNDRED,
-      treasuryCapacity: 0,
-      minFundsRequired: 0,
-      pullFundsMinThreshold: 0,
-      surplusTransferDelay: 0
-    });
+      .StabilityFeeTreasuryParams({treasuryCapacity: 0, pullFundsMinThreshold: 0, surplusTransferDelay: 0});
     stabilityFeeTreasury =
     new StabilityFeeTreasury(address(safeEngine), address(accountingEngine), address(coinJoin), _stabilityFeeTreasuryParams);
 

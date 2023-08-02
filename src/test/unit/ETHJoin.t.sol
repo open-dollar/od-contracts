@@ -51,7 +51,7 @@ contract Unit_ETHJoin_Constructor is Base {
   }
 
   function test_Emit_AddAuthorization() public happyPath {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit AddAuthorization(user);
 
     ethJoin = new ETHJoinForTest(address(mockSafeEngine), collateralType);
@@ -130,7 +130,7 @@ contract Unit_ETHJoin_Join is Base {
   }
 
   function test_Emit_Join(address _account, uint256 _wad) public happyPath(_wad) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit Join(user, _account, _wad);
 
     ethJoin.join{value: _wad}(_account);
@@ -179,7 +179,7 @@ contract Unit_ETHJoin_Exit is Base {
   }
 
   function test_Emit_Exit(uint256 _wad) public happyPath(_wad) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit Exit(user, randomAccount, _wad);
 
     ethJoin.exit(randomAccount, _wad);

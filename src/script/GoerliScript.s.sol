@@ -32,8 +32,6 @@ contract GoerliScript is GoerliDeployment, Common, Script {
     vm.startBroadcast(_governor);
 
     // Script goes here
-    // TODO: rm before merging
-    _deployProxyActions();
 
     vm.stopBroadcast();
   }

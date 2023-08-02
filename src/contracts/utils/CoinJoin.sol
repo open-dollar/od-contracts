@@ -18,9 +18,9 @@ import {Assertions} from '@libraries/Assertions.sol';
  */
 contract CoinJoin is Authorizable, Disableable, ICoinJoin {
   using Assertions for address;
+
   // --- Data ---
   // SAFE database
-
   ISAFEEngine public safeEngine;
   // Coin created by the system; this is the external, ERC-20 representation, not the internal 'coinBalance'
   ISystemCoin public systemCoin;

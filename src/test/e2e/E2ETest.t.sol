@@ -4,11 +4,11 @@ pragma solidity 0.8.19;
 import {Common, RAD_DELTA} from './Common.t.sol';
 
 import {ILiquidationEngine, IDebtAuctionHouse, ISurplusAuctionHouse} from '@script/Contracts.s.sol';
-import {SURPLUS_AUCTION_BID_RECEIVER} from '@script/Params.s.sol';
 import {
   INITIAL_DEBT_AUCTION_MINTED_TOKENS,
   ONE_HUNDRED_COINS,
-  PERCENTAGE_OF_STABILITY_FEE_TO_TREASURY
+  PERCENTAGE_OF_STABILITY_FEE_TO_TREASURY,
+  SURPLUS_AUCTION_BID_RECEIVER
 } from '@test/e2e/TestParams.s.sol';
 
 import {Math, RAY, YEAR} from '@libraries/Math.sol';

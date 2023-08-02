@@ -15,8 +15,7 @@ contract DummyCollateralAuctionHouse {
     address _forgoneCollateralReceiver,
     address _initialBidder,
     uint256 _amountToRaise,
-    uint256 _collateralToSell,
-    uint256 _initialBid
+    uint256 _collateralToSell
   ) external view returns (uint256 _id) {
     return auctionId;
   }

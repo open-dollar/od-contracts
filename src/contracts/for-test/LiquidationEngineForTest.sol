@@ -8,6 +8,7 @@ import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
 
 contract LiquidationEngineForTest is LiquidationEngine {
   using EnumerableSet for EnumerableSet.AddressSet;
+  using EnumerableSet for EnumerableSet.Bytes32Set;
 
   constructor(
     address _safeEngine,
@@ -22,5 +23,9 @@ contract LiquidationEngineForTest is LiquidationEngine {
 
   function setAccountingEngine(address _accountingEngine) external {
     accountingEngine = IAccountingEngine(_accountingEngine);
+  }
+
+  function addToCollateralList(bytes32 _cType) external {
+    _collateralList.add(_cType);
   }
 }

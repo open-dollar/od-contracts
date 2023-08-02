@@ -12,6 +12,7 @@ import {Modifiable} from '@contracts/utils/Modifiable.sol';
 import {Disableable} from '@contracts/utils/Disableable.sol';
 
 import {ReentrancyGuard} from '@openzeppelin/security/ReentrancyGuard.sol';
+import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
 import {Encoding} from '@libraries/Encoding.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 import {Math, RAY, WAD, MAX_RAD} from '@libraries/Math.sol';
@@ -21,6 +22,7 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
   using Encoding for bytes;
   using Assertions for uint256;
   using Assertions for address;
+  using EnumerableSet for EnumerableSet.Bytes32Set;
 
   // --- SAFE Saviours ---
   // Contracts that can save SAFEs from liquidation
@@ -49,6 +51,8 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
   function cParams(bytes32 _cType) external view returns (LiquidationEngineCollateralParams memory _liqEngineCParams) {
     return _cParams[_cType];
   }
+
+  EnumerableSet.Bytes32Set internal _collateralList;
 
   // --- Init ---
   constructor(
@@ -187,8 +191,7 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
         _forgoneCollateralReceiver: _safe,
         _initialBidder: address(accountingEngine),
         _amountToRaise: _amountToRaise,
-        _collateralToSell: _collateralToSell,
-        _initialBid: 0
+        _collateralToSell: _collateralToSell
       });
 
       emit UpdateCurrentOnAuctionSystemCoins(currentOnAuctionSystemCoins);
@@ -211,11 +214,11 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
    */
   function initializeCollateralType(
     bytes32 _cType,
-    LiquidationEngineCollateralParams memory _collateralParams
+    LiquidationEngineCollateralParams memory _liqEngineCParams
   ) external isAuthorized validCParams(_cType) {
-    if (_cParams[_cType].collateralAuctionHouse != address(0)) revert LiqEng_CollateralTypeAlreadyInitialized();
-    _setCollateralAuctionHouse(_cType, _collateralParams.collateralAuctionHouse);
-    _cParams[_cType] = _collateralParams;
+    if (!_collateralList.add(_cType)) revert LiqEng_CollateralTypeAlreadyInitialized();
+    _setCollateralAuctionHouse(_cType, _liqEngineCParams.collateralAuctionHouse);
+    _cParams[_cType] = _liqEngineCParams;
   }
 
   /**
@@ -248,8 +251,12 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
     );
   }
 
-  // --- Administration ---
+  // --- Views ---
+  function collateralList() external view returns (bytes32[] memory __collateralList) {
+    return _collateralList.values();
+  }
 
+  // --- Administration ---
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     if (_param == 'onAuctionSystemCoinLimit') _params.onAuctionSystemCoinLimit = _data.toUint256();
     else if (_param == 'accountingEngine') accountingEngine = IAccountingEngine(_data.toAddress());
@@ -259,6 +266,7 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
   function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override {
     uint256 _uint256 = _data.toUint256();
 
+    if (!_collateralList.contains(_cType)) revert UnrecognizedCType();
     if (_param == 'liquidationPenalty') _cParams[_cType].liquidationPenalty = _uint256;
     else if (_param == 'liquidationQuantity') _cParams[_cType].liquidationQuantity = _uint256;
     else if (_param == 'collateralAuctionHouse') _setCollateralAuctionHouse(_cType, _data.toAddress());
@@ -270,9 +278,9 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
   }
 
   function _validateCParameters(bytes32 _cType) internal view override {
-    LiquidationEngineCollateralParams memory _collateralParams = _cParams[_cType];
-    address(_collateralParams.collateralAuctionHouse).assertNonNull();
-    _collateralParams.liquidationQuantity.assertLtEq(MAX_RAD);
+    LiquidationEngineCollateralParams memory __cParams = _cParams[_cType];
+    address(__cParams.collateralAuctionHouse).assertNonNull();
+    __cParams.liquidationQuantity.assertLtEq(MAX_RAD);
   }
 
   function _setCollateralAuctionHouse(bytes32 _cType, address _newCollateralAuctionHouse) internal {

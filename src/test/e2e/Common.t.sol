@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import {HaiTest} from '@test/utils/HaiTest.t.sol';
-import {HAI, ETH_A, HAI_INITIAL_PRICE} from '@script/Params.s.sol';
+import {HAI, HAI_INITIAL_PRICE, ETH_A} from '@script/Params.s.sol';
 import {Deploy} from '@script/Deploy.s.sol';
 import {TestParams, TKN, TEST_ETH_PRICE, TEST_TKN_PRICE} from '@test/e2e/TestParams.s.sol';
 import {

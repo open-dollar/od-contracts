@@ -51,6 +51,9 @@ abstract contract Deploy is Common, Script {
       _setupCollateral(_cType);
     }
 
+    deployJobContracts();
+    _setupJobContracts();
+
     revokeAllTo(governor);
     vm.stopBroadcast();
   }
@@ -97,7 +100,6 @@ contract DeployGoerli is GoerliParams, Deploy {
     // Setup oracle feeds
 
     systemCoinOracle = new OracleForTestnet(HAI_INITIAL_PRICE); // 1 HAI = 1 USD
-    haiOracleForTest = OracleForTestnet(address(systemCoinOracle));
 
     IBaseOracle _ethUSDPriceFeed = new ChainlinkRelayer(ARB_GOERLI_CHAINLINK_ETH_USD_FEED, 1 hours);
 

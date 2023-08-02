@@ -39,7 +39,7 @@ contract Unit_Disableable_Constructor is Base {
   }
 
   function test_Emit_AddAuthorization() public happyPath {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit AddAuthorization(user);
 
     disableable = new DisableableForTest();
@@ -82,14 +82,14 @@ contract Unit_Disableable_DisableContract is Base {
   }
 
   function test_Emit_OnContractDisable() public happyPath {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit OnContractDisable();
 
     disableable.disableContract();
   }
 
   function test_Emit_DisableContract() public happyPath {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit DisableContract();
 
     disableable.disableContract();

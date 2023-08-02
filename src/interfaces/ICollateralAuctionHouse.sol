@@ -13,20 +13,28 @@ import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
 interface ICollateralAuctionHouse is IAuthorizable, IModifiable {
   // --- Events ---
   event StartAuction(
-    uint256 _id,
-    uint256 _auctionsStarted,
+    uint256 indexed _id,
+    uint256 _blockTimestamp,
     uint256 _amountToSell,
-    uint256 _initialBid,
-    uint256 indexed _amountToRaise,
-    uint256 _startingDiscount,
+    uint256 _amountToRaise,
+    uint256 _initialDiscount,
     uint256 _maxDiscount,
-    uint256 _perSecondDiscountUpdateRate,
-    address indexed _forgoneCollateralReceiver,
-    address indexed _auctionIncomeRecipient
+    uint256 _perSecondDiscountUpdateRate
   );
-  event BuyCollateral(uint256 indexed _id, uint256 _wad, uint256 _boughtCollateral);
-  event SettleAuction(uint256 indexed _id, uint256 _leftoverCollateral);
-  event TerminateAuctionPrematurely(uint256 indexed _id, address _sender, uint256 _collateralAmount);
+
+  // NOTE: Doesn't have RestartAuction event
+
+  event BuyCollateral(
+    uint256 indexed _id, address _bidder, uint256 _blockTimestamp, uint256 _raisedAmount, uint256 _soldAmount
+  );
+
+  event SettleAuction(
+    uint256 indexed _id, uint256 _blockTimestamp, address _leftoverReceiver, uint256 _leftoverCollateral
+  );
+
+  event TerminateAuctionPrematurely(
+    uint256 indexed _id, uint256 _blockTimestamp, address _leftoverReceiver, uint256 _leftoverCollateral
+  );
 
   // --- Errors ---
   error CAH_InvalidRedemptionPriceProvided();
@@ -171,8 +179,7 @@ interface ICollateralAuctionHouse is IAuthorizable, IModifiable {
     address _forgoneCollateralReceiver,
     address _initialBidder,
     uint256 /* RAD */ _amountToRaise,
-    uint256 /* WAD */ _collateralToSell,
-    uint256 /* RAD */ _initialBid
+    uint256 /* WAD */ _collateralToSell
   ) external returns (uint256 _id);
   function settleAuction(uint256 _id) external;
 

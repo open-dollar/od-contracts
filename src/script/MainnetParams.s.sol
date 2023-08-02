@@ -33,6 +33,7 @@ abstract contract MainnetParams is Contracts, Params {
       bidIncrease: 1.01e18, // +1 %
       bidDuration: 1 hours,
       totalAuctionLength: 1 days,
+      bidReceiver: governor,
       recyclingPercentage: 0.5e18 // 50% is burned
     });
 
@@ -47,9 +48,7 @@ abstract contract MainnetParams is Contracts, Params {
     });
 
     _stabilityFeeTreasuryParams = IStabilityFeeTreasury.StabilityFeeTreasuryParams({
-      expensesMultiplier: 100, // no multiplier
       treasuryCapacity: 1_000_000e45, // 1M COINs
-      minFundsRequired: 10_000e45, // 10_000 COINs
       pullFundsMinThreshold: 0, // no threshold
       surplusTransferDelay: 1 days
     });

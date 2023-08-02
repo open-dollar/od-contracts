@@ -54,7 +54,7 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, Modifiable, IPostSet
     PostSettlementSAHParams memory _pssahParams
   ) Authorizable(msg.sender) validParams {
     safeEngine = ISAFEEngine(_safeEngine.assertNonNull());
-    protocolToken = IProtocolToken(_protocolToken.assertNonNull());
+    protocolToken = IProtocolToken(_protocolToken);
 
     _params = _pssahParams;
   }
@@ -68,14 +68,17 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, Modifiable, IPostSet
   function startAuction(uint256 _amountToSell, uint256 _initialBid) external isAuthorized returns (uint256 _id) {
     _id = ++auctionsStarted;
 
-    _auctions[_id].bidAmount = _initialBid;
-    _auctions[_id].amountToSell = _amountToSell;
-    _auctions[_id].highBidder = msg.sender;
-    _auctions[_id].auctionDeadline = block.timestamp + _params.totalAuctionLength;
+    _auctions[_id] = Auction({
+      bidAmount: _initialBid,
+      amountToSell: _amountToSell,
+      highBidder: msg.sender,
+      bidExpiry: 0,
+      auctionDeadline: block.timestamp + _params.totalAuctionLength
+    });
 
     safeEngine.transferInternalCoins(msg.sender, address(this), _amountToSell);
 
-    emit StartAuction(_id, auctionsStarted, _amountToSell, _initialBid, _auctions[_id].auctionDeadline);
+    emit StartAuction(_id, block.timestamp, _amountToSell, _initialBid, _auctions[_id].auctionDeadline);
   }
 
   /**
@@ -84,10 +87,11 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, Modifiable, IPostSet
    */
   function restartAuction(uint256 _id) external {
     if (_id == 0 || _id > auctionsStarted) revert PSSAH_AuctionNeverStarted();
-    if (_auctions[_id].auctionDeadline > block.timestamp) revert PSSAH_AuctionNotFinished();
-    if (_auctions[_id].bidExpiry != 0) revert PSSAH_BidAlreadyPlaced();
-    _auctions[_id].auctionDeadline = block.timestamp + _params.totalAuctionLength;
-    emit RestartAuction(_id, _auctions[_id].auctionDeadline);
+    Auction storage _auction = _auctions[_id];
+    if (_auction.auctionDeadline > block.timestamp) revert PSSAH_AuctionNotFinished();
+    if (_auction.bidExpiry != 0) revert PSSAH_BidAlreadyPlaced();
+    _auction.auctionDeadline = block.timestamp + _params.totalAuctionLength;
+    emit RestartAuction(_id, block.timestamp, _auction.auctionDeadline);
   }
 
   /**
@@ -97,24 +101,24 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, Modifiable, IPostSet
    * @param _bid New bid submitted (rad)
    */
   function increaseBidSize(uint256 _id, uint256 _amountToBuy, uint256 _bid) external {
-    if (_auctions[_id].highBidder == address(0)) revert PSSAH_HighBidderNotSet();
-    if (_auctions[_id].bidExpiry <= block.timestamp && _auctions[_id].bidExpiry != 0) revert PSSAH_BidAlreadyExpired();
-    if (_auctions[_id].auctionDeadline <= block.timestamp) revert PSSAH_AuctionAlreadyExpired();
+    Auction storage _auction = _auctions[_id];
+    if (_auction.highBidder == address(0)) revert PSSAH_HighBidderNotSet();
+    if (_auction.bidExpiry <= block.timestamp && _auction.bidExpiry != 0) revert PSSAH_BidAlreadyExpired();
+    if (_auction.auctionDeadline <= block.timestamp) revert PSSAH_AuctionAlreadyExpired();
+    if (_amountToBuy != _auction.amountToSell) revert PSSAH_AmountsNotMatching();
+    if (_bid <= _auction.bidAmount) revert PSSAH_BidNotHigher();
+    if (_bid * WAD < _params.bidIncrease * _auction.bidAmount) revert PSSAH_InsufficientIncrease();
 
-    if (_amountToBuy != _auctions[_id].amountToSell) revert PSSAH_AmountsNotMatching();
-    if (_bid <= _auctions[_id].bidAmount) revert PSSAH_BidNotHigher();
-    if (_bid * WAD < _params.bidIncrease * _auctions[_id].bidAmount) revert PSSAH_InsufficientIncrease();
-
-    if (msg.sender != _auctions[_id].highBidder) {
-      protocolToken.safeTransferFrom(msg.sender, _auctions[_id].highBidder, _auctions[_id].bidAmount);
-      _auctions[_id].highBidder = msg.sender;
+    if (msg.sender != _auction.highBidder) {
+      protocolToken.safeTransferFrom(msg.sender, _auction.highBidder, _auction.bidAmount);
+      _auction.highBidder = msg.sender;
     }
-    protocolToken.safeTransferFrom(msg.sender, address(this), _bid - _auctions[_id].bidAmount);
+    protocolToken.safeTransferFrom(msg.sender, address(this), _bid - _auction.bidAmount);
 
-    _auctions[_id].bidAmount = _bid;
-    _auctions[_id].bidExpiry = block.timestamp + _params.bidDuration;
+    _auction.bidAmount = _bid;
+    _auction.bidExpiry = block.timestamp + _params.bidDuration;
 
-    emit IncreaseBidSize(_id, msg.sender, _amountToBuy, _bid, _auctions[_id].bidExpiry);
+    emit IncreaseBidSize(_id, msg.sender, block.timestamp, _bid, _amountToBuy, _auction.bidExpiry);
   }
 
   /**
@@ -122,24 +126,33 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, Modifiable, IPostSet
    * @param _id ID of the auction to settle
    */
   function settleAuction(uint256 _id) external {
-    if (
-      _auctions[_id].bidExpiry == 0
-        || (_auctions[_id].bidExpiry > block.timestamp && _auctions[_id].auctionDeadline > block.timestamp)
-    ) revert PSSAH_AuctionNotFinished();
-    safeEngine.transferInternalCoins(address(this), _auctions[_id].highBidder, _auctions[_id].amountToSell);
-    protocolToken.burn(_auctions[_id].bidAmount);
+    Auction memory _auction = _auctions[_id];
+    if (_auction.bidExpiry == 0 || (_auction.bidExpiry > block.timestamp && _auction.auctionDeadline > block.timestamp))
+    {
+      revert PSSAH_AuctionNotFinished();
+    }
+
+    safeEngine.transferInternalCoins(address(this), _auction.highBidder, _auction.amountToSell);
+    protocolToken.burn(_auction.bidAmount);
+
+    emit SettleAuction(_id, block.timestamp, _auction.highBidder, _auction.bidAmount);
     delete _auctions[_id];
-    emit SettleAuction(_id);
   }
 
   // --- Administration ---
 
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
+    address _address = _data.toAddress();
     uint256 _uint256 = _data.toUint256();
 
-    if (_param == 'bidIncrease') _params.bidIncrease = _uint256;
+    if (_param == 'protocolToken') protocolToken = IProtocolToken(_address);
+    else if (_param == 'bidIncrease') _params.bidIncrease = _uint256;
     else if (_param == 'bidDuration') _params.bidDuration = _uint256;
     else if (_param == 'totalAuctionLength') _params.totalAuctionLength = _uint256;
     else revert UnrecognizedParam();
+  }
+
+  function _validateParameters() internal view override {
+    address(protocolToken).assertNonNull();
   }
 }

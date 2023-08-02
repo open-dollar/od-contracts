@@ -5,9 +5,8 @@ uint256 constant MAX_RAD = type(uint256).max / RAY;
 uint256 constant RAD = 10 ** 45;
 uint256 constant RAY = 10 ** 27;
 uint256 constant WAD = 10 ** 18;
-uint256 constant HOUR = 3600;
 uint256 constant YEAR = 365 days;
-uint256 constant HUNDRED = 100;
+uint256 constant HOUR = 3600;
 
 library Math {
   error IntOverflow();

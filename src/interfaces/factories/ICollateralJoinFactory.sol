@@ -22,5 +22,10 @@ interface ICollateralJoinFactory is IAuthorizable, IDisableable {
 
   // --- Methods ---
   function deployCollateralJoin(bytes32 _cType, address _collateral) external returns (address _collateralJoin);
+  function deployDelegatableCollateralJoin(
+    bytes32 _cType,
+    address _collateral,
+    address _delegatee
+  ) external returns (address _collateralJoin);
   function disableCollateralJoin(bytes32 _cType) external;
 }
