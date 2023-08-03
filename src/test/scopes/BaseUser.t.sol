@@ -58,8 +58,6 @@ abstract contract BaseUser {
 
   function _settleDebtAuction(address _user, uint256 _auctionId) internal virtual;
 
-  function _auctionSurplusAndBid(address _user, uint256 _bidAmount) internal virtual;
-
   function _increaseBidSize(address _user, uint256 _auctionId, uint256 _bidAmount) internal virtual;
 
   function _settleAuction(address _user, uint256 _auctionId) internal virtual;

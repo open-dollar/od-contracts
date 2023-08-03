@@ -172,16 +172,6 @@ abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
     debtAuctionHouse.settleAuction(_auctionId);
   }
 
-  function _auctionSurplusAndBid(address _user, uint256 _bidAmount) internal override {
-    uint256 _auctionId = accountingEngine.auctionSurplus();
-    uint256 _amountToSell = surplusAuctionHouse.auctions(_auctionId).amountToSell;
-
-    vm.startPrank(_user);
-    protocolToken.approve(address(surplusAuctionHouse), _bidAmount);
-    surplusAuctionHouse.increaseBidSize(_auctionId, _amountToSell, _bidAmount);
-    vm.stopPrank();
-  }
-
   function _increaseBidSize(address _user, uint256 _auctionId, uint256 _bidAmount) internal override {
     uint256 _amountToSell = surplusAuctionHouse.auctions(_auctionId).amountToSell;
 

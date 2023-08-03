@@ -156,9 +156,9 @@ contract Unit_CollateralJoin_Join is Base {
     vm.assume(notOverflowInt256(_wei * 10 ** (18 - _decimals)));
   }
 
-  function _mockValues(uint256 _wei, uint8 _decimals, bool _transferFrom) internal {
+  function _mockValues(uint256 _wei, uint8 _decimals, bool _transferFromReturn) internal {
     _mockDecimals(_decimals);
-    _mockTransferFrom(user, address(collateralJoin), _wei, _transferFrom);
+    _mockTransferFrom(user, address(collateralJoin), _wei, _transferFromReturn);
   }
 
   function test_Revert_ContractIsDisabled(address _account, uint256 _wei) public {

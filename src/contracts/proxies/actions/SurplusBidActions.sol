@@ -16,19 +16,6 @@ import {RAY} from '@libraries/Math.sol';
  * @notice All methods here are executed as delegatecalls from the user's proxy
  */
 contract SurplusBidActions is CommonActions {
-  function startAndIncreaseBidSize(address _accountingEngine, uint256 _bidAmount) external delegateCall {
-    uint256 _auctionId = IAccountingEngine(_accountingEngine).auctionSurplus();
-    ISurplusAuctionHouse _surplusAuctionHouse = IAccountingEngine(_accountingEngine).surplusAuctionHouse();
-    uint256 _amountToSell = ISurplusAuctionHouse(_surplusAuctionHouse).auctions(_auctionId).amountToSell;
-
-    // prepare protocol token spending
-    IERC20Metadata _protocolToken = _surplusAuctionHouse.protocolToken();
-    _protocolToken.transferFrom(msg.sender, address(this), _bidAmount);
-    _protocolToken.approve(address(_surplusAuctionHouse), _bidAmount);
-
-    ISurplusAuctionHouse(_surplusAuctionHouse).increaseBidSize(_auctionId, _amountToSell, _bidAmount);
-  }
-
   function increaseBidSize(address _surplusAuctionHouse, uint256 _auctionId, uint256 _bidAmount) external delegateCall {
     uint256 _amountToSell = ISurplusAuctionHouse(_surplusAuctionHouse).auctions(_auctionId).amountToSell;
 

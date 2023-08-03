@@ -16,30 +16,6 @@ import {RAY} from '@libraries/Math.sol';
  * @notice All methods here are executed as delegatecalls from the user's proxy
  */
 contract DebtBidActions is CommonActions {
-  function startAndDecreaseSoldAmount(
-    address _coinJoin,
-    address _accountingEngine,
-    uint256 _soldAmount
-  ) external delegateCall {
-    uint256 _auctionId = IAccountingEngine(_accountingEngine).auctionDebt();
-    IDebtAuctionHouse _debtAuctionHouse = IAccountingEngine(_accountingEngine).debtAuctionHouse();
-    uint256 _bidAmount = _debtAuctionHouse.auctions(_auctionId).bidAmount;
-
-    ISAFEEngine _safeEngine = ICoinJoin(_coinJoin).safeEngine();
-    // checks coin balance and joins more if needed
-    uint256 _coinBalance = _safeEngine.coinBalance(address(this));
-    if (_coinBalance < _bidAmount) {
-      _joinSystemCoins(_coinJoin, address(this), (_bidAmount - _coinBalance) / RAY);
-    }
-
-    // debtAuctionHouse needs to be approved for system coin spending
-    if (!_safeEngine.canModifySAFE(address(this), address(_debtAuctionHouse))) {
-      _safeEngine.approveSAFEModification(address(_debtAuctionHouse));
-    }
-
-    _debtAuctionHouse.decreaseSoldAmount(_auctionId, _soldAmount, _bidAmount);
-  }
-
   function decreaseSoldAmount(
     address _coinJoin,
     address _debtAuctionHouse,
@@ -77,7 +53,7 @@ contract DebtBidActions is CommonActions {
     ISAFEEngine _safeEngine = ICoinJoin(_coinJoin).safeEngine();
     uint256 _coinsToExit = _safeEngine.coinBalance(address(this));
     if (_coinsToExit > 0) {
-      _exitSystemCoins(address(_safeEngine), _coinJoin, _coinsToExit);
+      _exitSystemCoins(_coinJoin, _coinsToExit);
     }
   }
 

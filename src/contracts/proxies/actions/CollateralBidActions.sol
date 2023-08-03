@@ -44,6 +44,6 @@ contract CollateralBidActions is CommonActions {
     require(_boughtAmount >= _minCollateralAmount, 'Invalid bought amount');
 
     // exit collateral
-    _collectCollateral(_collateralJoin, _boughtAmount);
+    _exitCollateral(_collateralJoin, _boughtAmount);
   }
 }

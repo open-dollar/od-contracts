@@ -54,6 +54,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     IWeth(address(collateral[ETH_A])).deposit{value: _collatAmount}();
     collateral[ETH_A].approve(address(_proxy), _collatAmount);
 
+    // NOTE: missing for ETH implementation
     // bytes memory _callData = abi.encodeWithSelector(
     //   BasicActions.lockTokenCollateral.selector,
     //   address(safeManager),
@@ -62,13 +63,14 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     //   _collatAmount,
     //   true
     // );
-
+    // TODO: add value to msg
     // _proxy.execute(address(proxyActions), _callData);
 
     vm.stopPrank();
   }
 
   function _joinTKN(address _user, address _collateralJoin, uint256 _amount) internal override {
+    // NOTE: proxy implementation only needs approval for operating with the collateral
     HaiProxy _proxy = _getProxy(_user);
 
     vm.startPrank(_user);
@@ -79,7 +81,6 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     ERC20ForTest(address(_collateral)).mint(_user, _wei);
 
     _collateral.approve(address(_proxy), _wei);
-    // ICollateralJoin(_collateralJoin).join(_user, _amount);
     vm.stopPrank();
   }
 
@@ -132,8 +133,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
       address(coinJoin),
       _safeId,
       _collatAmount,
-      _deltaDebt, // wad
-      true
+      _deltaDebt // wad
     );
 
     _proxy.execute(address(proxyActions), _callData);
@@ -153,6 +153,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     bytes memory _callData = abi.encodeWithSelector(
       BasicActions.repayDebtAndFreeTokenCollateral.selector,
       address(safeManager),
+      address(taxCollector),
       _collateralJoin,
       address(coinJoin),
       _safeId,
@@ -248,19 +249,6 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     vm.stopPrank();
   }
 
-  function _auctionSurplusAndBid(address _user, uint256 _bidAmount) internal override {
-    HaiProxy _proxy = _getProxy(_user);
-    vm.startPrank(_user);
-
-    protocolToken.approve(address(_proxy), _bidAmount);
-
-    bytes memory _callData =
-      abi.encodeWithSelector(SurplusBidActions.startAndIncreaseBidSize.selector, address(accountingEngine), _bidAmount);
-
-    _proxy.execute(address(surplusActions), _callData);
-    vm.stopPrank();
-  }
-
   function _increaseBidSize(address _user, uint256 _auctionId, uint256 _bidAmount) internal override {
     HaiProxy _proxy = _getProxy(_user);
     vm.startPrank(_user);
@@ -291,7 +279,9 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     HaiProxy _proxy = _getProxy(_user);
     vm.startPrank(_user);
 
-    bytes memory _callData = abi.encodeWithSelector(CommonActions.exitAllSystemCoins.selector, address(coinJoin));
+    uint256 _coinsToExit = safeEngine.coinBalance(address(_proxy));
+    bytes memory _callData =
+      abi.encodeWithSelector(CommonActions.exitSystemCoins.selector, address(coinJoin), _coinsToExit);
 
     _proxy.execute(address(surplusActions), _callData);
     vm.stopPrank();

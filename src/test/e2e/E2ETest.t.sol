@@ -243,8 +243,8 @@ abstract contract E2ETest is BaseUser, Base_CType, Common {
     // generate surplus
     _collectFees(_cType(), 10 * YEAR);
 
-    uint256 _auctionId = surplusAuctionHouse.auctionsStarted() + 1;
-    _auctionSurplusAndBid(address(this), INITIAL_BID);
+    uint256 _auctionId = accountingEngine.auctionSurplus();
+    _increaseBidSize(address(this), _auctionId, INITIAL_BID);
 
     ISurplusAuctionHouse.Auction memory _auction = surplusAuctionHouse.auctions(_auctionId);
     assertEq(_auction.bidAmount, INITIAL_BID);
