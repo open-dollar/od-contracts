@@ -10,7 +10,7 @@ import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
 interface IAccountingEngine is IAuthorizable, IDisableable, IModifiable {
   // --- Events ---
-  event PushDebtToQueue(uint256 _debtAmount);
+  event PushDebtToQueue(uint256 indexed _timestamp, uint256 _debtAmount);
   event PopDebtFromQueue(uint256 indexed _timestamp, uint256 _debtAmount);
   event SettleDebt(uint256 _rad, uint256 _coinBalance, uint256 _debtBalance);
   event CancelDebt(uint256 _rad, uint256 _coinBalance, uint256 _debtBalance);

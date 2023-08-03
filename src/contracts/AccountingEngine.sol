@@ -89,7 +89,7 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
     debtQueue[block.timestamp] = debtQueue[block.timestamp] + _debtBlock;
     totalQueuedDebt = totalQueuedDebt + _debtBlock;
 
-    emit PushDebtToQueue(_debtBlock);
+    emit PushDebtToQueue(block.timestamp, _debtBlock);
   }
 
   /**

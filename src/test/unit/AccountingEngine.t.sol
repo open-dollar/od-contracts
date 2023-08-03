@@ -309,7 +309,7 @@ contract Unit_AccountingEngine_UnqueuedUnauctionedDebt is Base {
 }
 
 contract Unit_AccountingEngine_PushDebtToQueue is Base {
-  event PushDebtToQueue(uint256 _debtAmount);
+  event PushDebtToQueue(uint256 indexed _blockTimestamp, uint256 _debtAmount);
 
   function _assumeHappyPath(uint256 _a, uint256 _b) internal pure {
     vm.assume(notOverflowAdd(_a, _b));
@@ -342,7 +342,7 @@ contract Unit_AccountingEngine_PushDebtToQueue is Base {
     _mockTotalQueuedDebt(_totalQueuedDebt);
 
     vm.expectEmit();
-    emit PushDebtToQueue(_debtBlock);
+    emit PushDebtToQueue(block.timestamp, _debtBlock);
 
     accountingEngine.pushDebtToQueue(_debtBlock);
   }
