@@ -1536,51 +1536,6 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     liquidationEngine.liquidateSAFE(collateralType, safe);
   }
 
-  // It seems that there is not a math possible path for this test, commenting it
-  /*
-  function test_Revert_DustySafe_Coins(
-    uint256 _safeDebt,
-    uint256 _onAuctionSystemCoinLimit,
-    uint256 _currentOnAuctionSystemCoins,
-    uint256 _accumulatedRate,
-    uint256 _liquidationPenalty,
-    uint256 _debtFloor,
-    uint256 _liquidationPrice,
-    uint256 _safeCollateral
-  ) public {
-     vm.assume(_notZeroDivision(_accumulatedRate, _liquidationPenalty));
-    vm.assume(_notSafe(_liquidationPrice, _safeCollateral, _safeDebt, _accumulatedRate));
-    vm.assume(_notHitLimit(_onAuctionSystemCoinLimit, _currentOnAuctionSystemCoins, _debtFloor));
-      vm.assume(_notNullAuction(_onAuctionSystemCoinLimit - _currentOnAuctionSystemCoins, _liquidationPenalty, _accumulatedRate));
-     _limitByCoins(
-      _safeDebt,
-      type(uint256).max,
-      _onAuctionSystemCoinLimit,
-      _currentOnAuctionSystemCoins,
-      _accumulatedRate,
-      _liquidationPenalty
-    );
-    // Making it dusty
-    vm.assume(!_notDusty(_safeDebt, _onAuctionSystemCoinLimit - _currentOnAuctionSystemCoins, _liquidationPenalty, _debtFloor, _accumulatedRate));
-
-    _mockValues({
-      _accumulatedRate: _accumulatedRate,
-      _debtFloor: _debtFloor,
-      _liquidationPrice: _liquidationPrice,
-      _safeCollateral: _safeCollateral,
-      _safeDebt: _safeDebt,
-      _onAuctionSystemCoinLimit: _onAuctionSystemCoinLimit,
-      _currentOnAuctionSystemCoins: _currentOnAuctionSystemCoins,
-      _liquidationPenalty: _liquidationPenalty,
-      _liquidationQuantity: type(uint256).max
-    });
-
-    vm.expectRevert(ILiquidationEngine.LiqEng_DustySAFE.selector);
-
-    liquidationEngine.liquidateSAFE(collateralType, safe);
-  }
-  */
-
   function test_Revert_NullCollateralToSell(Liquidation memory _liquidation) public {
     vm.assume(_notZeroDivision(_liquidation.accumulatedRate, _liquidation.liquidationPenalty));
     vm.assume(

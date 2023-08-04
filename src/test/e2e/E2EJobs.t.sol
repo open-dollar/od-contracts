@@ -18,21 +18,24 @@ abstract contract E2EJobsTest is BaseUser, Common {
   function setUp() public override {
     super.setUp();
 
-    // Collecting fees for stabilityFeeTreasury
-    _gatherFees(COLLAT, DEBT, YEAR * 10);
-  }
-
-  function _gatherFees(uint256 _deltaCollat, uint256 _deltaDebt, uint256 _timeElapsed) internal {
-    // opening safe
-    _generateDebt({
-      _user: address(this),
-      _collateralJoin: address(collateralJoin[ETH_A]),
-      _deltaCollat: int256(_deltaCollat),
-      _deltaDebt: int256(_deltaDebt)
+    // Opening a SAFE to generate stability fees
+    address alice = address(0x420);
+    vm.deal(alice, COLLAT);
+    vm.startPrank(alice);
+    safeEngine.approveSAFEModification(address(collateralJoin[ETH_A]));
+    ethJoin.join{value: COLLAT}(alice);
+    safeEngine.modifySAFECollateralization({
+      _cType: ETH_A,
+      _safe: alice,
+      _collateralSource: alice,
+      _debtDestination: alice,
+      _deltaCollateral: int256(COLLAT),
+      _deltaDebt: int256(DEBT)
     });
+    vm.stopPrank();
 
-    // Collecting fees
-    _collectFees(ETH_A, _timeElapsed);
+    // Collecting fees for stabilityFeeTreasury
+    _collectFees(ETH_A, YEAR * 10);
   }
 
   function test_work_pop_debt_from_queue(uint256 _debtBlock) public {
@@ -49,7 +52,7 @@ abstract contract E2EJobsTest is BaseUser, Common {
   }
 
   function test_work_auction_debt() public {
-    _liquidateSAFE(ETH_A, address(this));
+    liquidationEngine.liquidateSAFE(ETH_A, alice);
     accountingEngine.popDebtFromQueue(block.timestamp);
 
     uint256 _initialBalance = systemCoin.balanceOf(address(this));
@@ -79,7 +82,7 @@ abstract contract E2EJobsTest is BaseUser, Common {
 
   function test_work_liquidation() public {
     uint256 _initialBalance = systemCoin.balanceOf(address(this));
-    _workLiquidation(address(this), ETH_A, address(this));
+    _workLiquidation(address(this), ETH_A, alice);
 
     assertEq(systemCoin.balanceOf(address(this)) - _initialBalance, JOB_REWARD);
   }

@@ -30,7 +30,6 @@ import {ERC20ForTestnet} from '@contracts/for-test/ERC20ForTestnet.sol';
 import {CoinForTest} from '@contracts/for-test/CoinForTest.sol';
 import {OracleForTest} from '@contracts/for-test/OracleForTest.sol';
 import {OracleForTestnet} from '@contracts/for-test/OracleForTestnet.sol';
-import {ETHJoinForTest} from '@contracts/for-test/ETHJoinForTest.sol';
 
 // --- Token adapters ---
 import {CoinJoin, ICoinJoin} from '@contracts/utils/CoinJoin.sol';

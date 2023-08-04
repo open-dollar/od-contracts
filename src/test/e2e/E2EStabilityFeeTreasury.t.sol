@@ -169,6 +169,3 @@ abstract contract E2EStabilityFeeTreasuryTest is BaseUser, Common {
 // --- Scoped test contracts ---
 
 contract E2EStabilityFeeTreasuryTestDirectUser is DirectUser, E2EStabilityFeeTreasuryTest {}
-
-// TODO: uncomment after implementing Proxy actions for StabilityFeeTreasury
-// contract E2EStabilityFeeTreasuryTestProxyUser is ProxyUser, E2EStabilityFeeTreasuryTest {}

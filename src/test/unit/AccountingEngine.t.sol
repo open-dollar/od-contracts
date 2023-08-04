@@ -1062,6 +1062,7 @@ contract Unit_AccountingEngine_TransferPostSettlementSurplus is Base {
   }
 
   event TransferSurplus(address indexed _extraSurplusReceiver, uint256 _surplusTransferred);
+  event SettleDebt(uint256 _rad, uint256 _coinBalance, uint256 _debtBalance);
 
   function _assumeHappyPath(TransferPostSettlementSurplusScenario memory _scenario)
     internal
@@ -1141,6 +1142,19 @@ contract Unit_AccountingEngine_TransferPostSettlementSurplus is Base {
       ),
       0
     );
+
+    accountingEngine.transferPostSettlementSurplus();
+  }
+
+  function test_Emit_SettleDebt(TransferPostSettlementSurplusScenario memory _scenario) public {
+    uint256 _debtToSettle = _assumeHappyPath(_scenario);
+    _mockValues(_scenario);
+    uint256 _coinBalance = _scenario.coinBalance - _debtToSettle;
+
+    if (_coinBalance > 0) {
+      vm.expectEmit();
+      emit SettleDebt({_rad: _debtToSettle, _coinBalance: _coinBalance, _debtBalance: 0});
+    }
 
     accountingEngine.transferPostSettlementSurplus();
   }

@@ -55,7 +55,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     IWeth(address(collateral[ETH_A])).deposit{value: _collatAmount}();
     collateral[ETH_A].approve(address(_proxy), _collatAmount);
 
-    // NOTE: missing for ETH implementation
+    // NOTE: missing for ETH implementation (should add value to msg)
     // bytes memory _callData = abi.encodeWithSelector(
     //   BasicActions.lockTokenCollateral.selector,
     //   address(safeManager),
@@ -64,8 +64,6 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     //   _collatAmount,
     //   true
     // );
-
-    // TODO: add value to msg
     // _proxy.execute(address(proxyActions), _callData);
     vm.stopPrank();
   }
@@ -203,8 +201,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     _joinCoins(_user, _amountToBid);
 
     vm.startPrank(_user);
-    safeEngine.transferInternalCoins(address(_user), address(_proxy), _amountToBid * 1e27);
-
+    systemCoin.approve(address(_proxy), _amountToBid);
     bytes memory _callData = abi.encodeWithSelector(
       CollateralBidActions.buyCollateral.selector,
       coinJoin,
@@ -225,12 +222,10 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     uint256 _amountToBuy,
     uint256 _amountToBid
   ) internal override {
-    // TODO: standarize with _buyCollateral (either join in test or in action)
     HaiProxy _proxy = _getProxy(_user);
 
     vm.startPrank(_user);
-    systemCoin.approve(address(_proxy), _amountToBid / 1e27);
-
+    systemCoin.approve(address(_proxy), _amountToBid);
     bytes memory _callData = abi.encodeWithSelector(
       DebtBidActions.decreaseSoldAmount.selector, coinJoin, debtAuctionHouse, _auctionId, _amountToBuy
     );
@@ -337,10 +332,9 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
 
   function _workLiquidation(address _user, bytes32 _cType, address _safe) internal override {
     HaiProxy _proxy = _getProxy(_user);
-    (, address _safeHandler) = _getSafe(_safe, _cType);
 
     bytes memory _callData = abi.encodeWithSelector(
-      RewardedActions.liquidateSAFE.selector, address(liquidationJob), address(coinJoin), _cType, _safeHandler
+      RewardedActions.liquidateSAFE.selector, address(liquidationJob), address(coinJoin), _cType, _safe
     );
 
     vm.prank(_user);

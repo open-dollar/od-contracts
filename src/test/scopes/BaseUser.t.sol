@@ -7,7 +7,6 @@ pragma solidity 0.8.19;
  * @dev    Used to override it with different implementations (e.g. ProxyUser, DirectUser)
  */
 abstract contract BaseUser {
-  // TODO: make method view (needs to re-route `_getSafe` in ProxyUser.t.sol)
   function _getSafeStatus(
     bytes32 _cType,
     address _user

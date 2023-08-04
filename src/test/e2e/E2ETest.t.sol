@@ -263,7 +263,7 @@ abstract contract E2ETest is BaseUser, Base_CType, Common {
 
 // --- Scoped test contracts ---
 
-// NOTE: fails on exit bc of ETHJoinForTest
+// NOTE: ETH tests not implemented (fails on exit bc of fallback)
 // contract E2ETestDirectUserETH is DirectUser, ETH_CType, E2ETest {}
 
 // contract E2ETestProxyUserETH is ProxyUser, ETH_CType, E2ETest {}

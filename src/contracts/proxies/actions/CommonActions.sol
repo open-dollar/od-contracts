@@ -11,6 +11,7 @@ import {RAY} from '@libraries/Math.sol';
 contract CommonActions {
   error OnlyDelegateCalls();
 
+  // solhint-disable-next-line var-name-mixedcase
   address internal immutable _THIS = address(this);
 
   // Public functions

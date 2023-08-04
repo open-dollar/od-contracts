@@ -11,8 +11,7 @@ abstract contract Common is Contracts, Params {
 
   function deployEthCollateralContracts() public {
     // deploy ETHJoin and CollateralAuctionHouse
-    // NOTE: deploying ETHJoinForTest to make it work with current tests
-    ethJoin = new ETHJoinForTest(address(safeEngine), ETH_A);
+    ethJoin = new ETHJoin(address(safeEngine), ETH_A);
 
     if (address(collateralAuctionHouseFactory) != address(0)) {
       collateralAuctionHouse[ETH_A] = ICollateralAuctionHouse(
