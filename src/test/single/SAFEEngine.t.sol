@@ -243,13 +243,14 @@ contract SingleModifySAFECollateralizationTest is DSTest {
 
     ITaxCollector.TaxCollectorParams memory _taxCollectorParams = ITaxCollector.TaxCollectorParams({
       primaryTaxReceiver: address(0x744),
-      globalStabilityFee: 0,
+      globalStabilityFee: RAY,
+      maxStabilityFeeRange: RAY - 1,
       maxSecondaryReceivers: 0
     });
 
     taxCollector = new TaxCollector(address(safeEngine), _taxCollectorParams);
     ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
-      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: 0});
+      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: RAY});
     taxCollector.initializeCollateralType('gold', _taxCollectorCollateralParams);
     safeEngine.addAuthorization(address(taxCollector));
 
@@ -513,13 +514,14 @@ contract SingleSAFEDebtLimitTest is DSTest {
 
     ITaxCollector.TaxCollectorParams memory _taxCollectorParams = ITaxCollector.TaxCollectorParams({
       primaryTaxReceiver: address(0x1234),
-      globalStabilityFee: 0,
+      globalStabilityFee: RAY,
+      maxStabilityFeeRange: RAY - 1,
       maxSecondaryReceivers: 0
     });
 
     taxCollector = new TaxCollector(address(safeEngine), _taxCollectorParams);
     ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
-      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: 0});
+      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: RAY});
     taxCollector.initializeCollateralType('gold', _taxCollectorCollateralParams);
     taxCollector.modifyParameters('gold', 'stabilityFee', abi.encode(1_000_000_564_701_133_626_865_910_626)); // 5% / day
     safeEngine.addAuthorization(address(taxCollector));
@@ -868,12 +870,13 @@ contract SingleLiquidationTest is DSTest {
 
     ITaxCollector.TaxCollectorParams memory _taxCollectorParams = ITaxCollector.TaxCollectorParams({
       primaryTaxReceiver: address(accountingEngine),
-      globalStabilityFee: 0,
+      globalStabilityFee: RAY,
+      maxStabilityFeeRange: RAY - 1,
       maxSecondaryReceivers: 0
     });
     taxCollector = new TaxCollector(address(safeEngine), _taxCollectorParams);
     ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
-      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: 0});
+      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: RAY});
     taxCollector.initializeCollateralType('gold', _taxCollectorCollateralParams);
     safeEngine.addAuthorization(address(taxCollector));
 

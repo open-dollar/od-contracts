@@ -60,7 +60,8 @@ abstract contract GoerliParams is Contracts, Params {
 
     _taxCollectorParams = ITaxCollector.TaxCollectorParams({
       primaryTaxReceiver: address(accountingEngine),
-      globalStabilityFee: 0, // no global SF
+      globalStabilityFee: RAY, // no global SF
+      maxStabilityFeeRange: RAY - MINUS_0_5_PERCENT_PER_HOUR, // +- 0.5% per hour
       maxSecondaryReceivers: 1
     });
 

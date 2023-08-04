@@ -212,13 +212,14 @@ contract SingleSaveSAFETest is DSTest {
 
     ITaxCollector.TaxCollectorParams memory _taxCollectorParams = ITaxCollector.TaxCollectorParams({
       primaryTaxReceiver: address(accountingEngine),
-      globalStabilityFee: 0,
+      globalStabilityFee: RAY,
+      maxStabilityFeeRange: RAY - 1,
       maxSecondaryReceivers: 0
     });
 
     taxCollector = new TaxCollector(address(safeEngine), _taxCollectorParams);
     ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
-      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: 0});
+      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: RAY});
     taxCollector.initializeCollateralType('gold', _taxCollectorCollateralParams);
     safeEngine.addAuthorization(address(taxCollector));
 

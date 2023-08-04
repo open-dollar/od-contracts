@@ -38,7 +38,7 @@ abstract contract E2ETest is BaseUser, Base_CType, Common {
 
     vm.startPrank(deployer); // no governor on test deployment
     taxCollector.modifyParameters('globalStabilityFee', abi.encode(STABILITY_FEE));
-    taxCollector.modifyParameters(_cType(), 'stabilityFee', abi.encode(0));
+    taxCollector.modifyParameters(_cType(), 'stabilityFee', abi.encode(RAY));
     oracleRelayer.modifyParameters(_cType(), 'liquidationCRatio', abi.encode(LIQUIDATION_C_RATIO));
     vm.stopPrank();
 

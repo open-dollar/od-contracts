@@ -68,21 +68,22 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
   constructor(address _safeEngine, TaxCollectorParams memory _taxCollectorParams) Authorizable(msg.sender) validParams {
     safeEngine = ISAFEEngine(_safeEngine.assertNonNull());
     _params = _taxCollectorParams;
+    _setPrimaryTaxReceiver(_taxCollectorParams.primaryTaxReceiver);
   }
 
   /**
    * @notice Initialize a brand new collateral type
    * @param _cType Collateral type name (e.g ETH-A, TBTC-B)
-   * @param _collateralParams Collateral type parameters
+   * @param _taxCollectorCParams Collateral type parameters
    */
   function initializeCollateralType(
     bytes32 _cType,
-    TaxCollectorCollateralParams memory _collateralParams
-  ) external isAuthorized {
+    TaxCollectorCollateralParams memory _taxCollectorCParams
+  ) external isAuthorized validCParams(_cType) {
     if (!_collateralList.add(_cType)) revert TaxCollector_CollateralTypeAlreadyInitialized();
     _cData[_cType] =
       TaxCollectorCollateralData({nextStabilityFee: RAY, updateTime: block.timestamp, secondaryReceiverAllotedTax: 0});
-    _cParams[_cType] = _collateralParams;
+    _cParams[_cType] = _taxCollectorCParams;
 
     emit InitializeCollateralType(_cType);
   }
@@ -224,8 +225,9 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
   }
 
   function _getNextStabilityFee(bytes32 _cType) internal view returns (uint256 _nextStabilityFee) {
-    // NOTE: either a globalSF or perCollateralSF needs to be set
-    return (_params.globalStabilityFee + _cParams[_cType].stabilityFee).assertNonNull();
+    _nextStabilityFee = _params.globalStabilityFee.rmul(_cParams[_cType].stabilityFee);
+    if (_nextStabilityFee < RAY - _params.maxStabilityFeeRange) return RAY - _params.maxStabilityFeeRange;
+    if (_nextStabilityFee > RAY + _params.maxStabilityFeeRange) return RAY + _params.maxStabilityFeeRange;
   }
 
   /**
@@ -293,6 +295,7 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
 
     if (_param == 'primaryTaxReceiver') _setPrimaryTaxReceiver(_data.toAddress());
     else if (_param == 'globalStabilityFee') _params.globalStabilityFee = _uint256;
+    else if (_param == 'maxStabilityFeeRange') _params.maxStabilityFeeRange = _uint256;
     else if (_param == 'maxSecondaryReceivers') _params.maxSecondaryReceivers = _uint256;
     else revert UnrecognizedParam();
   }
@@ -306,6 +309,16 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
 
   function _validateParameters() internal view override {
     _params.primaryTaxReceiver.assertNonNull();
+    _params.maxStabilityFeeRange.assertGt(0).assertLt(RAY);
+    _params.globalStabilityFee.assertGtEq(RAY - _params.maxStabilityFeeRange).assertLtEq(
+      RAY + _params.maxStabilityFeeRange
+    );
+  }
+
+  function _validateCParameters(bytes32 _cType) internal view override {
+    _cParams[_cType].stabilityFee.assertGtEq(RAY - _params.maxStabilityFeeRange).assertLtEq(
+      RAY + _params.maxStabilityFeeRange
+    );
   }
 
   /**

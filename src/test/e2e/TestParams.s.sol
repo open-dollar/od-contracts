@@ -66,7 +66,8 @@ abstract contract TestParams is Contracts, Params {
 
     _taxCollectorParams = ITaxCollector.TaxCollectorParams({
       primaryTaxReceiver: address(accountingEngine),
-      globalStabilityFee: 0, // no global SF
+      globalStabilityFee: RAY, // no global SF
+      maxStabilityFeeRange: RAY - 1, // no range restriction
       maxSecondaryReceivers: 1 // stabilityFeeTreasury
     });
 

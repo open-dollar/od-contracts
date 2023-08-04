@@ -31,7 +31,8 @@ interface ITaxCollector is IAuthorizable, IModifiable {
   // --- Data ---
   struct TaxCollectorParams {
     address primaryTaxReceiver;
-    uint256 globalStabilityFee;
+    uint256 /* RAY */ globalStabilityFee;
+    uint256 /* RAY */ maxStabilityFeeRange;
     uint256 maxSecondaryReceivers;
   }
 
@@ -62,7 +63,12 @@ interface ITaxCollector is IAuthorizable, IModifiable {
   function _params()
     external
     view
-    returns (address _primaryTaxReceiver, uint256 _globalStabilityFee, uint256 _maxSecondaryReceivers);
+    returns (
+      address _primaryTaxReceiver,
+      uint256 _globalStabilityFee,
+      uint256 _maxStabilityFeeRange,
+      uint256 _maxSecondaryReceivers
+    );
 
   function cParams(bytes32 _cType) external view returns (TaxCollectorCollateralParams memory _taxCollectorCParams);
   // solhint-disable-next-line private-vars-leading-underscore
