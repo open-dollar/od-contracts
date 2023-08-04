@@ -31,33 +31,29 @@ abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
   }
 
   function _lockETH(address _user, uint256 _amount) internal override {
-    vm.startPrank(_user);
-
+    vm.prank(_user);
     vm.deal(_user, _amount);
     ethJoin.join{value: _amount}(_user);
-
-    vm.stopPrank();
   }
 
   function _joinTKN(address _user, address _collateralJoin, uint256 _amount) internal override {
-    vm.startPrank(_user);
     IERC20Metadata _collateral = ICollateralJoin(_collateralJoin).collateral();
     uint256 _decimals = _collateral.decimals();
     uint256 _wei = _amount / 10 ** (18 - _decimals);
 
+    vm.startPrank(_user);
     ERC20ForTest(address(_collateral)).mint(_user, _wei);
-
     _collateral.approve(address(_collateralJoin), _wei);
     ICollateralJoin(_collateralJoin).join(_user, _wei);
     vm.stopPrank();
   }
 
   function _exitCollateral(address _user, address _collateralJoin, uint256 _amount) internal override {
-    vm.startPrank(_user);
     uint256 _decimals = ICollateralJoin(_collateralJoin).decimals();
     uint256 _wei = _amount / 10 ** (18 - _decimals);
+
+    vm.prank(_user);
     ICollateralJoin(_collateralJoin).exit(_user, _wei);
-    vm.stopPrank();
   }
 
   function _joinCoins(address _user, uint256 _amount) internal override {
@@ -86,13 +82,12 @@ abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
   ) internal override {
     ICollateralJoin __collateralJoin = ICollateralJoin(_collateralJoin);
     bytes32 _cType = __collateralJoin.collateralType();
+
     if (_cType == ETH_A) _lockETH(_user, uint256(_deltaCollat));
     else _joinTKN(_user, _collateralJoin, uint256(_deltaCollat));
 
     vm.startPrank(_user);
-
     safeEngine.approveSAFEModification(_collateralJoin);
-
     safeEngine.modifySAFECollateralization({
       _cType: ICollateralJoin(_collateralJoin).collateralType(),
       _safe: _user,
@@ -101,7 +96,6 @@ abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
       _deltaCollateral: _deltaCollat,
       _deltaDebt: _deltaDebt
     });
-
     vm.stopPrank();
 
     // already pranked call
@@ -150,7 +144,6 @@ abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
     uint256 _decimals = ICollateralJoin(collateralJoin[_cType]).decimals();
     uint256 _collateralWei = _soldAmount / 10 ** (18 - _decimals);
     ICollateralJoin(collateralJoin[_cType]).exit(_user, _collateralWei);
-
     vm.stopPrank();
   }
 
@@ -183,6 +176,7 @@ abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
 
   function _settleAuction(address _user, uint256 _auctionId) internal override {
     surplusAuctionHouse.settleAuction(_auctionId);
+
     _collectSystemCoins(_user);
   }
 

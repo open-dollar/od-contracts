@@ -127,7 +127,7 @@ contract BasicActions is CommonActions {
       _getGeneratedDeltaDebt(_safeEngine, _safeInfo.collateralType, _safeInfo.safeHandler, _deltaWad)
     );
 
-    // Moves the COIN amount to proxy's address
+    // Moves the COIN amount to user's address
     _collectAndExitCoins(_manager, _coinJoin, _safeId, _deltaWad);
   }
 

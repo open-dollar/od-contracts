@@ -334,6 +334,7 @@ abstract contract Common is Contracts, Params {
     debtBidActions = new DebtBidActions();
     surplusActions = new SurplusBidActions();
     collateralActions = new CollateralBidActions();
+    rewardedActions = new RewardedActions();
   }
 
   function _shouldRevoke() internal view returns (bool) {

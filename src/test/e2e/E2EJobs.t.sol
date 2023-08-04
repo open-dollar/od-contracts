@@ -23,9 +23,9 @@ abstract contract E2EJobsTest is BaseUser, Common {
   }
 
   function _gatherFees(uint256 _deltaCollat, uint256 _deltaDebt, uint256 _timeElapsed) internal {
-    // opening alice safe
+    // opening safe
     _generateDebt({
-      _user: alice,
+      _user: address(this),
       _collateralJoin: address(collateralJoin[ETH_A]),
       _deltaCollat: int256(_deltaCollat),
       _deltaDebt: int256(_deltaDebt)
@@ -42,59 +42,65 @@ abstract contract E2EJobsTest is BaseUser, Common {
     uint256 _debtTimestamp = block.timestamp;
     vm.warp(_debtTimestamp + accountingEngine.params().popDebtDelay);
 
+    uint256 _initialBalance = systemCoin.balanceOf(address(this));
     _workPopDebtFromQueue(address(this), _debtTimestamp);
 
-    assertEq(systemCoin.balanceOf(address(this)), JOB_REWARD);
+    assertEq(systemCoin.balanceOf(address(this)) - _initialBalance, JOB_REWARD);
   }
 
   function test_work_auction_debt() public {
-    _liquidateSAFE(ETH_A, alice);
+    _liquidateSAFE(ETH_A, address(this));
     accountingEngine.popDebtFromQueue(block.timestamp);
 
+    uint256 _initialBalance = systemCoin.balanceOf(address(this));
     _workAuctionDebt(address(this));
 
-    assertEq(systemCoin.balanceOf(address(this)), JOB_REWARD);
+    assertEq(systemCoin.balanceOf(address(this)) - _initialBalance, JOB_REWARD);
   }
 
   function test_work_auction_surplus() public {
+    uint256 _initialBalance = systemCoin.balanceOf(address(this));
     _workAuctionSurplus(address(this));
 
-    assertEq(systemCoin.balanceOf(address(this)), JOB_REWARD);
+    assertEq(systemCoin.balanceOf(address(this)) - _initialBalance, JOB_REWARD);
   }
 
   function test_work_transfer_extra_surplus() public {
     vm.startPrank(deployer);
     accountingEngine.modifyParameters('surplusIsTransferred', abi.encode(1));
-    accountingEngine.modifyParameters('extraSurplusReceiver', abi.encode(alice));
+    accountingEngine.modifyParameters('extraSurplusReceiver', abi.encode(address(0x420)));
     vm.stopPrank();
 
+    uint256 _initialBalance = systemCoin.balanceOf(address(this));
     _workTransferExtraSurplus(address(this));
 
-    assertEq(systemCoin.balanceOf(address(this)), JOB_REWARD);
+    assertEq(systemCoin.balanceOf(address(this)) - _initialBalance, JOB_REWARD);
   }
 
   function test_work_liquidation() public {
-    _workLiquidation(address(this), ETH_A, alice);
+    uint256 _initialBalance = systemCoin.balanceOf(address(this));
+    _workLiquidation(address(this), ETH_A, address(this));
 
-    assertEq(systemCoin.balanceOf(address(this)), JOB_REWARD);
+    assertEq(systemCoin.balanceOf(address(this)) - _initialBalance, JOB_REWARD);
   }
 
   function test_work_update_collateral_price() public {
+    uint256 _initialBalance = systemCoin.balanceOf(address(this));
     _workUpdateCollateralPrice(address(this), ETH_A);
 
-    assertEq(systemCoin.balanceOf(address(this)), JOB_REWARD);
+    assertEq(systemCoin.balanceOf(address(this)) - _initialBalance, JOB_REWARD);
   }
 
   function test_work_update_rate() public {
+    uint256 _initialBalance = systemCoin.balanceOf(address(this));
     _workUpdateRate(address(this));
 
-    assertEq(systemCoin.balanceOf(address(this)), JOB_REWARD);
+    assertEq(systemCoin.balanceOf(address(this)) - _initialBalance, JOB_REWARD);
   }
 }
 
 // --- Scoped test contracts ---
 
-contract E2EDirectUserJobsTest is DirectUser, E2EJobsTest {}
+contract E2EJobsTestDirectUser is DirectUser, E2EJobsTest {}
 
-// TODO: uncomment after implementing Proxy actions for StabilityFeeTreasury and jobs
-// contract E2EProxyUserJobsTest is ProxyUser, E2EJobsTest {}
+contract E2EJobsTestProxyUser is ProxyUser, E2EJobsTest {}
