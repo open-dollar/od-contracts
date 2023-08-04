@@ -10,7 +10,7 @@ contract OpenSafe is TestHelperScript {
   function run() public {
     vm.startBroadcast(vm.envUint('OP_GOERLI_PK'));
     address proxy = address(findOrDeploy(USER));
-    openSafe(OP, proxy);
+    openSafe(WETH, proxy);
     vm.stopBroadcast();
   }
 
@@ -18,7 +18,7 @@ contract OpenSafe is TestHelperScript {
     (bool success, bytes memory data) = address(basicActions).delegatecall(
       abi.encodeWithSignature('openSAFE(address,bytes32,address)', address(safeManager), cType, dsProxy)
     );
-    require(success, 'Delegate call to BasicActions.openSAFE error');
+    require(success, 'Delegatecall to BasicActions.openSAFE error');
     return data;
   }
 }

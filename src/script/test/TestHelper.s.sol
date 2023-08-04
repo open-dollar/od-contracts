@@ -3,6 +3,8 @@ pragma solidity ^0.8.13;
 
 import 'forge-std/Script.sol';
 
+import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
+
 // Proxies
 import {HaiProxy} from '@contracts/proxies/HaiProxy.sol';
 import {HaiProxyFactory} from '@contracts/proxies/HaiProxyFactory.sol';
@@ -25,12 +27,14 @@ import {SystemCoin} from '@contracts/tokens/SystemCoin.sol';
  */
 contract TestHelperScript is Script {
   // Wad
-  uint256 public constant WAD = 1e18;
+  uint256 public constant WAD = 1e16;
 
   // Collateral
   bytes32 public constant ETH_A = bytes32('ETH-A'); // 0x4554482d41000000000000000000000000000000000000000000000000000000
   bytes32 public constant WETH = bytes32('WETH'); // 0x5745544800000000000000000000000000000000000000000000000000000000
   bytes32 public constant OP = bytes32('OP'); // 0x4f50000000000000000000000000000000000000000000000000000000000000
+
+  IERC20 public constant wEthToken = IERC20(0x4200000000000000000000000000000000000006);
 
   // User wallet address
   address public constant USER = 0x23aD35FAab005a5E69615d275176e5C22b2ceb9E;
@@ -50,10 +54,12 @@ contract TestHelperScript is Script {
   // Hai Protocol addresses
   address public constant taxCollector = 0x979175221543b23ef11577898dA53C87779A54cE;
   address public constant coinJoin = 0x1ceABCDB63dFF8734bB9D969C398936C0d6B4ad5;
+  address public constant collatJoinWETH = 0xa460cE97C6CD53dccBA7d1adc0dCaa51206eae8b;
 
   /**
    * @dev this function calls the proxyFactory via ProxyRegistry,
-   * and it will only allow 1 proxy per wallet/EOA
+   * and it will only allow 1 proxy per wallet/EOA.
+   * use the `deployProxy` script to bypass the ProxyRegistry
    */
   function findOrDeploy(address owner) public returns (address payable) {
     HaiProxy proxy = proxyRegistry.proxies(owner);
