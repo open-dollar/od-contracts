@@ -16,7 +16,6 @@ abstract contract Ownable is IOwnable {
   }
 
   // --- Internal ---
-  // TODO: make 2-step ownership transfer
   function _setOwner(address _newOwner) internal {
     owner = _newOwner;
     emit SetOwner(_newOwner);

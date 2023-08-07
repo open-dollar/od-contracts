@@ -43,14 +43,14 @@ interface ICollateralJoin is IAuthorizable, IDisableable {
   /**
    * @notice Join collateral in the system
    * @param _account Account to which we add collateral into the system
-   * @param _wad Amount of collateral to transfer in the system (represented as a number with 18 decimals)
+   * @param _wei Amount of collateral to transfer in the system (represented as a number with token decimals)
    */
-  function join(address _account, uint256 _wad) external;
+  function join(address _account, uint256 _wei) external;
 
   /**
    * @notice Exit collateral from the system
    * @param _account Account to which we transfer the collateral out of the system
-   * @param _wad Amount of collateral to transfer to account (represented as a number with 18 decimals)
+   * @param _wei Amount of collateral to transfer to account (represented as a number with token decimals)
    */
-  function exit(address _account, uint256 _wad) external;
+  function exit(address _account, uint256 _wei) external;
 }

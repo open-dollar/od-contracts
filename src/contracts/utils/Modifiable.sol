@@ -19,13 +19,17 @@ abstract contract Modifiable is IModifiable, Authorizable {
   // --- External methods ---
 
   /// @inheritdoc IModifiable
-  function modifyParameters(bytes32 _param, bytes memory _data) external isAuthorized {
+  function modifyParameters(bytes32 _param, bytes memory _data) external isAuthorized validParams {
     _modifyParameters(_param, _data);
     emit ModifyParameters(_param, _GLOBAL_PARAM, _data);
   }
 
   /// @inheritdoc IModifiable
-  function modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) external isAuthorized {
+  function modifyParameters(
+    bytes32 _cType,
+    bytes32 _param,
+    bytes memory _data
+  ) external isAuthorized validCParams(_cType) {
     _modifyParameters(_cType, _param, _data);
     emit ModifyParameters(_param, _cType, _data);
   }
@@ -53,10 +57,21 @@ abstract contract Modifiable is IModifiable, Authorizable {
   /**
    * @notice Internal function to be overriden with custom logic to validate parameters
    */
-  function _validateParameters() internal virtual {}
+  function _validateParameters() internal view virtual {}
 
+  /**
+   * @notice Internal function to be overriden with custom logic to validate collateral parameters
+   */
+  function _validateCParameters(bytes32 _cType) internal view virtual {}
+
+  // --- Modifiers ---
   modifier validParams() {
     _;
     _validateParameters();
+  }
+
+  modifier validCParams(bytes32 _cType) {
+    _;
+    _validateCParameters(_cType);
   }
 }

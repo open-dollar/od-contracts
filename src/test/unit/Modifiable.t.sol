@@ -35,7 +35,7 @@ contract Unit_Modifiable_Constructor is Base {
   }
 
   function test_Emit_AddAuthorization() public happyPath {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit AddAuthorization(user);
 
     modifiable = new ModifiableForTestA();
@@ -73,7 +73,7 @@ contract Unit_Modifiable_ModifyParameters is Base {
   }
 
   function test_Emit_ModifyParameters(bytes32 _param, bytes memory _data) public happyPath {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit ModifyParameters(_param, bytes32(0), _data);
 
     modifiable.modifyParameters(_param, _data);
@@ -111,7 +111,7 @@ contract Unit_Modifiable_ModifyParametersPerCollateral is Base {
   }
 
   function test_Emit_ModifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) public happyPath {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit ModifyParameters(_param, _cType, _data);
 
     modifiable.modifyParameters(_cType, _param, _data);

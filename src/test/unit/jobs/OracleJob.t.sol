@@ -88,7 +88,7 @@ contract Unit_OracleJob_Constructor is Base {
   }
 
   function test_Emit_AddAuthorization() public happyPath {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit AddAuthorization(user);
 
     oracleJob =
@@ -137,7 +137,7 @@ contract Unit_OracleJob_WorkUpdateCollateralPrice is Base {
   function test_Revert_NotWorkable(bytes32 _cType) public {
     _mockValues(_cType, false, false);
 
-    vm.expectRevert(IOracleJob.NotWorkable.selector);
+    vm.expectRevert(IJob.NotWorkable.selector);
 
     oracleJob.workUpdateCollateralPrice(_cType);
   }
@@ -145,19 +145,19 @@ contract Unit_OracleJob_WorkUpdateCollateralPrice is Base {
   function test_Revert_InvalidPrice(bytes32 _cType) public {
     _mockValues(_cType, true, false);
 
-    vm.expectRevert(IOracleJob.InvalidPrice.selector);
+    vm.expectRevert(IOracleJob.OracleJob_InvalidPrice.selector);
 
     oracleJob.workUpdateCollateralPrice(_cType);
   }
 
   function test_Call_OracleRelayer_UpdateCollateralPrice(bytes32 _cType) public happyPath(_cType) {
-    vm.expectCall(address(mockOracleRelayer), abi.encodeCall(mockOracleRelayer.updateCollateralPrice, (_cType)));
+    vm.expectCall(address(mockOracleRelayer), abi.encodeCall(mockOracleRelayer.updateCollateralPrice, (_cType)), 1);
 
     oracleJob.workUpdateCollateralPrice(_cType);
   }
 
   function test_Emit_Rewarded(bytes32 _cType) public happyPath(_cType) {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit Rewarded(user, REWARD_AMOUNT);
 
     oracleJob.workUpdateCollateralPrice(_cType);
@@ -181,19 +181,19 @@ contract Unit_OracleJob_WorkUpdateRate is Base {
   function test_Revert_NotWorkable() public {
     _mockValues(false);
 
-    vm.expectRevert(IOracleJob.NotWorkable.selector);
+    vm.expectRevert(IJob.NotWorkable.selector);
 
     oracleJob.workUpdateRate();
   }
 
   function test_Call_PIDRateSetter_UpdateRate() public happyPath {
-    vm.expectCall(address(mockPIDRateSetter), abi.encodeCall(mockPIDRateSetter.updateRate, ()));
+    vm.expectCall(address(mockPIDRateSetter), abi.encodeCall(mockPIDRateSetter.updateRate, ()), 1);
 
     oracleJob.workUpdateRate();
   }
 
   function test_Emit_Rewarded() public happyPath {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit Rewarded(user, REWARD_AMOUNT);
 
     oracleJob.workUpdateRate();

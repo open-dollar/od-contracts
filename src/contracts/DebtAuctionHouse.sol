@@ -12,16 +12,24 @@ import {Disableable} from '@contracts/utils/Disableable.sol';
 
 import {Math, WAD} from '@libraries/Math.sol';
 import {Encoding} from '@libraries/Encoding.sol';
+import {Assertions} from '@libraries/Assertions.sol';
 
 // This thing creates protocol tokens on demand in return for system coins
 contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuctionHouse {
   using Encoding for bytes;
+  using Assertions for address;
 
   bytes32 public constant AUCTION_HOUSE_TYPE = bytes32('DEBT');
 
   // --- Data ---
-  // Bid data for each separate auction
-  mapping(uint256 => Bid) public bids;
+  // Data for each separate auction
+  // solhint-disable-next-line private-vars-leading-underscore
+  mapping(uint256 => Auction) public _auctions;
+
+  function auctions(uint256 _id) external view returns (Auction memory _auction) {
+    return _auctions[_id];
+  }
+
   // Number of auctions started up until now
   uint256 public auctionsStarted;
   // Accumulator for all debt auctions currently not settled
@@ -36,7 +44,8 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
   address public accountingEngine;
 
   // --- Params ---
-  DebtAuctionHouseParams internal _params;
+  // solhint-disable-next-line private-vars-leading-underscore
+  DebtAuctionHouseParams public _params;
 
   function params() external view returns (DebtAuctionHouseParams memory _dahParams) {
     return _params;
@@ -48,8 +57,9 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
     address _protocolToken,
     DebtAuctionHouseParams memory _dahParams
   ) Authorizable(msg.sender) validParams {
-    safeEngine = ISAFEEngine(_safeEngine);
+    safeEngine = ISAFEEngine(_safeEngine.assertNonNull());
     protocolToken = IProtocolToken(_protocolToken);
+
     _params = _dahParams;
   }
 
@@ -77,16 +87,22 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
   ) external isAuthorized whenEnabled returns (uint256 _id) {
     _id = ++auctionsStarted;
 
-    bids[_id].bidAmount = _initialBid;
-    bids[_id].amountToSell = _amountToSell;
-    bids[_id].highBidder = _incomeReceiver;
-    bids[_id].auctionDeadline = uint48(block.timestamp) + _params.totalAuctionLength;
-
+    _auctions[_id] = Auction({
+      bidAmount: _initialBid,
+      amountToSell: _amountToSell,
+      highBidder: _incomeReceiver,
+      bidExpiry: 0, // no bid yet
+      auctionDeadline: block.timestamp + _params.totalAuctionLength
+    });
     ++activeDebtAuctions;
 
-    emit StartAuction(
-      _id, auctionsStarted, _amountToSell, _initialBid, _incomeReceiver, bids[_id].auctionDeadline, activeDebtAuctions
-    );
+    emit StartAuction({
+      _id: _id,
+      _blockTimestamp: block.timestamp,
+      _amountToSell: _amountToSell,
+      _amountToRaise: _initialBid,
+      _auctionDeadline: _auctions[_id].auctionDeadline
+    });
   }
 
   /**
@@ -94,12 +110,14 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
    * @param _id ID of the auction to restart
    */
   function restartAuction(uint256 _id) external {
+    Auction storage _auction = _auctions[_id];
     if (_id == 0 || _id > auctionsStarted) revert DAH_AuctionNeverStarted();
-    if (bids[_id].auctionDeadline > block.timestamp) revert DAH_AuctionNotFinished();
-    if (bids[_id].bidExpiry != 0) revert DAH_BidAlreadyPlaced();
-    bids[_id].amountToSell = (_params.amountSoldIncrease * bids[_id].amountToSell) / WAD;
-    bids[_id].auctionDeadline = uint48(block.timestamp) + _params.totalAuctionLength;
-    emit RestartAuction(_id, bids[_id].auctionDeadline);
+    if (_auction.auctionDeadline > block.timestamp) revert DAH_AuctionNotFinished();
+    if (_auction.bidExpiry != 0) revert DAH_BidAlreadyPlaced();
+    _auction.amountToSell = (_params.amountSoldIncrease * _auction.amountToSell) / WAD;
+    _auction.auctionDeadline = block.timestamp + _params.totalAuctionLength;
+
+    emit RestartAuction({_id: _id, _blockTimestamp: block.timestamp, _auctionDeadline: _auction.auctionDeadline});
   }
 
   /**
@@ -110,27 +128,35 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
    * @param _bid New system coin bid (must always equal the total amount raised by the auction) (rad)
    */
   function decreaseSoldAmount(uint256 _id, uint256 _amountToBuy, uint256 _bid) external whenEnabled {
-    if (bids[_id].highBidder == address(0)) revert DAH_HighBidderNotSet();
-    if (bids[_id].bidExpiry <= block.timestamp && bids[_id].bidExpiry != 0) revert DAH_BidAlreadyExpired();
-    if (bids[_id].auctionDeadline <= block.timestamp) revert DAH_AuctionAlreadyExpired();
+    Auction storage _auction = _auctions[_id];
+    if (_auction.highBidder == address(0)) revert DAH_HighBidderNotSet();
+    if (_auction.bidExpiry <= block.timestamp && _auction.bidExpiry != 0) revert DAH_BidAlreadyExpired();
+    if (_auction.auctionDeadline <= block.timestamp) revert DAH_AuctionAlreadyExpired();
 
-    if (_bid != bids[_id].bidAmount) revert DAH_NotMatchingBid();
-    if (_amountToBuy >= bids[_id].amountToSell) revert DAH_AmountBoughtNotLower();
-    if (_params.bidDecrease * _amountToBuy > bids[_id].amountToSell * WAD) revert DAH_InsufficientDecrease();
+    if (_bid != _auction.bidAmount) revert DAH_NotMatchingBid();
+    if (_amountToBuy >= _auction.amountToSell) revert DAH_AmountBoughtNotLower();
+    if (_params.bidDecrease * _amountToBuy > _auction.amountToSell * WAD) revert DAH_InsufficientDecrease();
 
-    safeEngine.transferInternalCoins(msg.sender, bids[_id].highBidder, _bid);
+    safeEngine.transferInternalCoins(msg.sender, _auction.highBidder, _bid);
 
     // on first bid submitted, clear as much totalOnAuctionDebt as possible
-    if (bids[_id].bidExpiry == 0) {
-      uint256 _totalOnAuctionDebt = IAccountingEngine(bids[_id].highBidder).totalOnAuctionDebt();
-      IAccountingEngine(bids[_id].highBidder).cancelAuctionedDebtWithSurplus(Math.min(_bid, _totalOnAuctionDebt));
+    if (_auction.bidExpiry == 0) {
+      uint256 _totalOnAuctionDebt = IAccountingEngine(_auction.highBidder).totalOnAuctionDebt();
+      IAccountingEngine(_auction.highBidder).cancelAuctionedDebtWithSurplus(Math.min(_bid, _totalOnAuctionDebt));
     }
 
-    bids[_id].highBidder = msg.sender;
-    bids[_id].amountToSell = _amountToBuy;
-    bids[_id].bidExpiry = uint48(block.timestamp) + _params.bidDuration;
+    _auction.highBidder = msg.sender;
+    _auction.amountToSell = _amountToBuy;
+    _auction.bidExpiry = block.timestamp + _params.bidDuration;
 
-    emit DecreaseSoldAmount(_id, msg.sender, _amountToBuy, _bid, bids[_id].bidExpiry);
+    emit DecreaseSoldAmount({
+      _id: _id,
+      _bidder: msg.sender,
+      _blockTimestamp: block.timestamp,
+      _raisedAmount: _bid,
+      _soldAmount: _amountToBuy,
+      _bidExpiry: _auction.bidExpiry
+    });
   }
 
   /**
@@ -138,13 +164,23 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
    * @param _id ID of the auction to settle
    */
   function settleAuction(uint256 _id) external whenEnabled {
-    if (
-      bids[_id].bidExpiry == 0 || (bids[_id].bidExpiry > block.timestamp && bids[_id].auctionDeadline > block.timestamp)
-    ) revert DAH_AuctionNotFinished();
-    protocolToken.mint(bids[_id].highBidder, bids[_id].amountToSell);
+    Auction memory _auction = _auctions[_id];
+    if (_auction.bidExpiry == 0 || (_auction.bidExpiry > block.timestamp && _auction.auctionDeadline > block.timestamp))
+    {
+      revert DAH_AuctionNotFinished();
+    }
+
+    protocolToken.mint(_auction.highBidder, _auction.amountToSell);
     --activeDebtAuctions;
-    delete bids[_id];
-    emit SettleAuction(_id, activeDebtAuctions);
+
+    emit SettleAuction({
+      _id: _id,
+      _blockTimestamp: block.timestamp,
+      _highBidder: _auction.highBidder,
+      _raisedAmount: _auction.bidAmount
+    });
+
+    delete _auctions[_id];
   }
 
   /**
@@ -152,24 +188,40 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
    * @param _id ID of the auction to terminate
    */
   function terminateAuctionPrematurely(uint256 _id) external whenDisabled {
-    if (bids[_id].highBidder == address(0)) revert DAH_HighBidderNotSet();
-    safeEngine.createUnbackedDebt(accountingEngine, bids[_id].highBidder, bids[_id].bidAmount);
-    emit TerminateAuctionPrematurely(_id, msg.sender, bids[_id].highBidder, bids[_id].bidAmount, activeDebtAuctions);
-    delete bids[_id];
+    Auction memory _auction = _auctions[_id];
+    if (_auction.highBidder == address(0)) revert DAH_HighBidderNotSet();
+
+    safeEngine.createUnbackedDebt({
+      _debtDestination: accountingEngine,
+      _coinDestination: _auction.highBidder,
+      _rad: _auction.bidAmount
+    });
+
+    emit TerminateAuctionPrematurely({
+      _id: _id,
+      _blockTimestamp: block.timestamp,
+      _highBidder: _auction.highBidder,
+      _raisedAmount: _auction.bidAmount
+    });
+
+    delete _auctions[_id];
   }
 
   // --- Administration ---
 
-  function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled validParams {
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled {
     address _address = _data.toAddress();
     uint256 _uint256 = _data.toUint256();
 
     if (_param == 'protocolToken') protocolToken = IProtocolToken(_address);
-    else if (_param == 'accountingEngine') accountingEngine = _address;
     else if (_param == 'bidDecrease') _params.bidDecrease = _uint256;
     else if (_param == 'amountSoldIncrease') _params.amountSoldIncrease = _uint256;
-    else if (_param == 'bidDuration') _params.bidDuration = uint48(_uint256);
-    else if (_param == 'totalAuctionLength') _params.totalAuctionLength = uint48(_uint256);
+    else if (_param == 'bidDuration') _params.bidDuration = _uint256;
+    else if (_param == 'totalAuctionLength') _params.totalAuctionLength = _uint256;
     else revert UnrecognizedParam();
+  }
+
+  function _validateParameters() internal view override {
+    address(protocolToken).assertNonNull();
   }
 }

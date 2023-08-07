@@ -8,7 +8,11 @@ import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ETH_A, HAI_INITIAL_PRICE} from '@script/Params.s.sol';
 import {RAY, YEAR} from '@libraries/Math.sol';
 
-contract E2EGlobalSettlementTest is Common {
+import {BaseUser} from '@test/scopes/BaseUser.t.sol';
+import {DirectUser} from '@test/scopes/DirectUser.t.sol';
+import {ProxyUser} from '@test/scopes/ProxyUser.t.sol';
+
+abstract contract E2EGlobalSettlementTest is BaseUser, Common {
   using Math for uint256;
 
   uint256 LIQUIDATION_QUANTITY = 1000e45;
@@ -186,7 +190,8 @@ contract E2EGlobalSettlementTest is Common {
 
       // NOTE: contract may have some dust left
       assertApproxEqAbs(
-        collateral['TKN-A'].balanceOf(alice) + collateral['TKN-A'].balanceOf(bob) + collateral['TKN-A'].balanceOf(carol),
+        _getCollateralBalance(alice, 'TKN-A') + _getCollateralBalance(bob, 'TKN-A')
+          + _getCollateralBalance(carol, 'TKN-A'),
         3 * COLLAT,
         0.001e18
       );
@@ -214,7 +219,8 @@ contract E2EGlobalSettlementTest is Common {
 
       // NOTE: contract may have some dust left
       assertApproxEqAbs(
-        collateral['TKN-B'].balanceOf(alice) + collateral['TKN-B'].balanceOf(bob) + collateral['TKN-B'].balanceOf(carol),
+        _getCollateralBalance(alice, 'TKN-B') + _getCollateralBalance(bob, 'TKN-B')
+          + _getCollateralBalance(carol, 'TKN-B'),
         3 * COLLAT,
         0.001e18
       );
@@ -243,7 +249,8 @@ contract E2EGlobalSettlementTest is Common {
 
       // NOTE: contract may have some dust left
       assertApproxEqAbs(
-        collateral['TKN-C'].balanceOf(alice) + collateral['TKN-C'].balanceOf(bob) + collateral['TKN-C'].balanceOf(carol),
+        _getCollateralBalance(alice, 'TKN-C') + _getCollateralBalance(bob, 'TKN-C')
+          + _getCollateralBalance(carol, 'TKN-C'),
         3 * COLLAT,
         0.001e18
       );
@@ -267,18 +274,16 @@ contract E2EGlobalSettlementTest is Common {
 
     uint256 collateralAuction = liquidationEngine.liquidateSAFE(ETH_A, bob); // active collateral auction
 
-    _collectFees(50 * YEAR);
+    _collectFees(ETH_A, 50 * YEAR);
     accountingEngine.auctionSurplus(); // active surplus auction
 
     // NOTE: why DEBT/10 not-safe? (price dropped to 1/10)
-    _lockETH(dave, COLLAT);
     _generateDebt(dave, address(collateralJoin[ETH_A]), int256(COLLAT), int256(DEBT / 100)); // active healthy safe
 
     vm.prank(deployer);
     globalSettlement.shutdownSystem();
     globalSettlement.freezeCollateralType(ETH_A);
 
-    // TODO: test reverts before processSAFE
     globalSettlement.processSAFE(ETH_A, alice);
     globalSettlement.processSAFE(ETH_A, bob);
     globalSettlement.processSAFE(ETH_A, carol);
@@ -296,12 +301,10 @@ contract E2EGlobalSettlementTest is Common {
     vm.prank(dave);
     globalSettlement.freeCollateral(ETH_A);
 
-    // TODO: add cooldowns in deploy
     accountingEngine.settleDebt(safeEngine.coinBalance(address(accountingEngine)));
     globalSettlement.setOutstandingCoinSupply();
     globalSettlement.calculateCashPrice(ETH_A);
 
-    // TODO: add expectations for each persona
     vm.startPrank(dave);
     safeEngine.approveSAFEModification(address(globalSettlement));
     globalSettlement.prepareCoinsForRedeeming(DEBT / 100);
@@ -331,9 +334,9 @@ contract E2EGlobalSettlementTest is Common {
     if (_remainderCollateral > 0) {
       vm.startPrank(_account);
       globalSettlement.freeCollateral(_cType);
-      collateralJoin[_cType].exit(_account, _remainderCollateral);
-      assertEq(collateral[_cType].balanceOf(_account), _remainderCollateral);
       vm.stopPrank();
+      _exitCollateral(_account, address(collateralJoin[_cType]), _remainderCollateral);
+      assertEq(_getCollateralBalance(_account, _cType), _remainderCollateral);
     }
   }
 
@@ -353,7 +356,15 @@ contract E2EGlobalSettlementTest is Common {
     vm.startPrank(_account);
     globalSettlement.redeemCollateral(_cType, _coinsAmount);
     _collateralAmount = safeEngine.tokenCollateral(_cType, _account);
-    collateralJoin[_cType].exit(_account, _collateralAmount);
     vm.stopPrank();
+    _exitCollateral(_account, address(collateralJoin[_cType]), _collateralAmount);
   }
 }
+
+// --- Scoped test contracts ---
+
+// NOTE: missing expectations for lesser decimals ERC20s (for 0 decimals, delta should be 1)
+contract E2EGlobalSettlementTestDirectUser is DirectUser, E2EGlobalSettlementTest {}
+
+// NOTE: unimplemented
+// contract E2EGlobalSettlementTestProxyUser is ProxyUser, E2EGlobalSettlementTest {}

@@ -4,6 +4,9 @@ pragma solidity 0.8.19;
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 
 interface IDenominatedOracle is IBaseOracle {
+  // --- Errors ---
+  error DenominatedOracle_NullPriceSource();
+
   /**
    * @notice Address of the base price source that is used to calculate the price
    * @dev    Assumes that the price source is a valid IBaseOracle

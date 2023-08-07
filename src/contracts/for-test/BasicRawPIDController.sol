@@ -17,7 +17,7 @@ contract BasicRawPIDController is RawPIDController {
         integralPeriodSize: _integralPeriodSize,
         perSecondCumulativeLeak: _perSecondCumulativeLeak,
         noiseBarrier: 1,
-        feedbackOutputUpperBound: type(uint256).max - RAY - 2,
+        feedbackOutputUpperBound: uint256(type(int256).max),
         feedbackOutputLowerBound: -int256(RAY - 1)
       }),
       _importedState

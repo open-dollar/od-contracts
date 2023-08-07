@@ -10,13 +10,25 @@ import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 interface IPostSettlementSurplusAuctionHouse is IAuthorizable, IModifiable {
   // --- Events ---
   event StartAuction(
-    uint256 indexed _id, uint256 _auctionsStarted, uint256 _amountToSell, uint256 _initialBid, uint256 _auctionDeadline
+    uint256 indexed _id,
+    uint256 _blockTimestamp,
+    uint256 _amountToSell,
+    uint256 _amountToRaise,
+    uint256 _auctionDeadline
   );
-  event RestartAuction(uint256 indexed _id, uint256 _auctionDeadline);
+
+  event RestartAuction(uint256 indexed _id, uint256 _blockTimestamp, uint256 _auctionDeadline);
+
   event IncreaseBidSize(
-    uint256 indexed _id, address _highBidder, uint256 _amountToBuy, uint256 _bid, uint256 _bidExpiry
+    uint256 indexed _id,
+    address _bidder,
+    uint256 _blockTimestamp,
+    uint256 _raisedAmount,
+    uint256 _soldAmount,
+    uint256 _bidExpiry
   );
-  event SettleAuction(uint256 indexed _id);
+
+  event SettleAuction(uint256 indexed _id, uint256 _blockTimestamp, address _highBidder, uint256 _raisedAmount);
 
   // --- Errors ---
   error PSSAH_AuctionNeverStarted();
@@ -30,7 +42,7 @@ interface IPostSettlementSurplusAuctionHouse is IAuthorizable, IModifiable {
   error PSSAH_HighBidderNotSet();
 
   // --- Data ---
-  struct Bid {
+  struct Auction {
     // Bid size (how many protocol tokens are offered per system coins sold)
     uint256 bidAmount; // [wad]
     // How many system coins are sold in an auction
@@ -38,18 +50,18 @@ interface IPostSettlementSurplusAuctionHouse is IAuthorizable, IModifiable {
     // Who the high bidder is
     address highBidder;
     // When the latest bid expires and the auction can be settled
-    uint48 bidExpiry; // [unix epoch time]
+    uint256 bidExpiry; // [unix epoch time]
     // Hard deadline for the auction after which no more bids can be placed
-    uint48 auctionDeadline; // [unix epoch time]
+    uint256 auctionDeadline; // [unix epoch time]
   }
 
   struct PostSettlementSAHParams {
     // Minimum bid increase compared to the last bid in order to take the new one in consideration
     uint256 bidIncrease; // [wad]
     // How long the auction lasts after a new bid is submitted
-    uint48 bidDuration; // [seconds]
+    uint256 bidDuration; // [seconds]
     // Total length of the auction
-    uint48 totalAuctionLength; // [seconds]
+    uint256 totalAuctionLength; // [seconds]
   }
 
   // solhint-disable-next-line func-name-mixedcase
@@ -57,10 +69,19 @@ interface IPostSettlementSurplusAuctionHouse is IAuthorizable, IModifiable {
   // solhint-disable-next-line func-name-mixedcase
   function SURPLUS_AUCTION_TYPE() external view returns (bytes32 _surplusAuctionHouseType);
 
-  function bids(uint256 _id)
+  function auctions(uint256 _id) external view returns (Auction memory _auction);
+  // solhint-disable-next-line private-vars-leading-underscore
+  function _auctions(uint256 _id)
     external
     view
-    returns (uint256 _bidAmount, uint256 _amountToSell, address _highBidder, uint48 _bidExpiry, uint48 _auctionDeadline);
+    returns (
+      uint256 _bidAmount,
+      uint256 _amountToSell,
+      address _highBidder,
+      uint256 _bidExpiry,
+      uint256 _auctionDeadline
+    );
+
   function auctionsStarted() external view returns (uint256 _auctionsStarted);
 
   // --- Registry ---
@@ -68,7 +89,9 @@ interface IPostSettlementSurplusAuctionHouse is IAuthorizable, IModifiable {
   function protocolToken() external view returns (IProtocolToken _protocolToken);
 
   // --- Params ---
-  function params() external view returns (PostSettlementSAHParams memory _params);
+  function params() external view returns (PostSettlementSAHParams memory _pssahParams);
+  // solhint-disable-next-line private-vars-leading-underscore
+  function _params() external view returns (uint256 _bidIncrease, uint256 _bidDuration, uint256 _totalAuctionLength);
 
   // --- Auction ---
   function startAuction(uint256 /* RAD */ _amountToSell, uint256 /* WAD */ _initialBid) external returns (uint256 _id);

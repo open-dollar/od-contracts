@@ -1,45 +1,44 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import 'ds-test/test.sol';
+import {HaiTest} from '@test/utils/HaiTest.t.sol';
 
 import {ISAFEEngine, SAFEEngine} from '@contracts/SAFEEngine.sol';
+import {CollateralAuctionHouse, ICollateralAuctionHouse} from '@contracts/CollateralAuctionHouse.sol';
 import {
-  IIncreasingDiscountCollateralAuctionHouse,
-  IncreasingDiscountCollateralAuctionHouse
-} from '@contracts/CollateralAuctionHouse.sol';
+  ICollateralAuctionHouseFactory,
+  CollateralAuctionHouseFactory
+} from '@contracts/factories/CollateralAuctionHouseFactory.sol';
 import {IOracleRelayer, OracleRelayerForTest} from '@contracts/for-test/OracleRelayerForTest.sol';
+import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
+import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
 
 import {Math, WAD, RAY, RAD} from '@libraries/Math.sol';
 
-abstract contract Hevm {
-  function warp(uint256) public virtual;
-}
-
 contract Guy {
-  IncreasingDiscountCollateralAuctionHouse increasingDiscountCollateralAuctionHouse;
+  ICollateralAuctionHouse collateralAuctionHouse;
 
-  constructor(IncreasingDiscountCollateralAuctionHouse increasingDiscountCollateralAuctionHouse_) {
-    increasingDiscountCollateralAuctionHouse = increasingDiscountCollateralAuctionHouse_;
+  constructor(ICollateralAuctionHouse collateralAuctionHouse_) {
+    collateralAuctionHouse = collateralAuctionHouse_;
   }
 
   function approveSAFEModification(address safe) public {
-    address safeEngine = address(increasingDiscountCollateralAuctionHouse.safeEngine());
+    address safeEngine = address(collateralAuctionHouse.safeEngine());
     SAFEEngine(safeEngine).approveSAFEModification(safe);
   }
 
-  function buyCollateral_increasingDiscount(uint256 id, uint256 wad) public {
-    increasingDiscountCollateralAuctionHouse.buyCollateral(id, wad);
+  function buyCollateral(uint256 id, uint256 wad) public {
+    collateralAuctionHouse.buyCollateral(id, wad);
   }
 
-  function try_buyCollateral_increasingDiscount(uint256 id, uint256 wad) public returns (bool ok) {
+  function try_buyCollateral(uint256 id, uint256 wad) public returns (bool ok) {
     string memory sig = 'buyCollateral(uint256,uint256)';
-    (ok,) = address(increasingDiscountCollateralAuctionHouse).call(abi.encodeWithSignature(sig, id, wad));
+    (ok,) = address(collateralAuctionHouse).call(abi.encodeWithSignature(sig, id, wad));
   }
 
-  function try_increasingDiscount_terminateAuctionPrematurely(uint256 id) public returns (bool ok) {
+  function try_terminateAuctionPrematurely(uint256 id) public returns (bool ok) {
     string memory sig = 'terminateAuctionPrematurely(uint256)';
-    (ok,) = address(increasingDiscountCollateralAuctionHouse).call(abi.encodeWithSignature(sig, id));
+    (ok,) = address(collateralAuctionHouse).call(abi.encodeWithSignature(sig, id));
   }
 }
 
@@ -107,19 +106,19 @@ contract DummyLiquidationEngine {
     currentOnAuctionSystemCoins = rad;
   }
 
-  function removeCoinsFromAuction(uint256 rad) public {
+  function removeCoinsFromAuction(uint256 rad) external {
     currentOnAuctionSystemCoins -= rad;
   }
+
+  function addAuthorization(address) external {}
 }
 
-contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
+abstract contract SingleCollateralAuctionHouseTest is HaiTest {
   using Math for uint256;
-
-  Hevm hevm;
 
   DummyLiquidationEngine liquidationEngine;
   SAFEEngine safeEngine;
-  IncreasingDiscountCollateralAuctionHouse collateralAuctionHouse;
+  ICollateralAuctionHouse collateralAuctionHouse;
   OracleRelayerForTest oracleRelayer;
   Feed collateralFSM;
   Feed collateralMedian;
@@ -130,27 +129,38 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
   address auctionIncomeRecipient;
   address safeAuctioned = address(0xacab);
 
+  // --- Virtual methods ---
+
+  function _deployCollateralAuctionHouse(
+    ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams,
+    ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams
+  ) internal virtual returns (ICollateralAuctionHouse _collateralAuctionHouse);
+
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal virtual;
+  function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal virtual;
+
   function setUp() public {
-    hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
-    hevm.warp(604_411_200);
+    vm.warp(604_411_200);
 
     ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
       ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 0});
     safeEngine = new SAFEEngine(_safeEngineParams);
 
-    safeEngine.initializeCollateralType('collateralType');
+    ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
+      ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: 0, debtFloor: 0});
+    safeEngine.initializeCollateralType('collateralType', _safeEngineCollateralParams);
 
     liquidationEngine = new DummyLiquidationEngine(rad(1000 ether));
 
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams =
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams({
+    ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams = ICollateralAuctionHouse
+      .CollateralAuctionHouseSystemCoinParams({
       lowerSystemCoinDeviation: WAD, // 0% deviation
       upperSystemCoinDeviation: WAD, // 0% deviation
       minSystemCoinDeviation: 0.999e18 // 0.1% deviation
     });
 
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams =
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams({
+    ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams = ICollateralAuctionHouse
+      .CollateralAuctionHouseParams({
       minDiscount: 0.95e18, // 5% discount
       maxDiscount: 0.95e18, // 5% discount
       perSecondDiscountUpdateRate: RAY, // [ray]
@@ -159,24 +169,32 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
       minimumBid: 1e18 // 1 system coin
     });
 
-    collateralAuctionHouse =
-    new IncreasingDiscountCollateralAuctionHouse(address(safeEngine), address(liquidationEngine), 'collateralType',
-         _cahParams,
-         _cahCParams);
-
-    IOracleRelayer.OracleRelayerParams memory _oracleRelayerParams =
-      IOracleRelayer.OracleRelayerParams({redemptionRateUpperBound: RAY * WAD, redemptionRateLowerBound: 1});
-    oracleRelayer = new OracleRelayerForTest(address(safeEngine), _oracleRelayerParams);
-    oracleRelayer.setRedemptionPrice(5 * RAY);
-    collateralAuctionHouse.modifyParameters('oracleRelayer', abi.encode(oracleRelayer));
-
-    collateralFSM = new Feed(bytes32(uint256(0)), true);
-    collateralAuctionHouse.modifyParameters('collateralFSM', abi.encode(collateralFSM));
-
-    collateralMedian = new Feed(bytes32(uint256(0)), true);
     systemCoinMedian = new Feed(bytes32(uint256(0)), true);
+    collateralMedian = new Feed(bytes32(uint256(0)), true);
+    collateralFSM = new Feed(bytes32(uint256(0)), true);
 
     collateralFSM.set_price_source(address(collateralMedian));
+
+    // deploy oracle relayer
+    IOracleRelayer.OracleRelayerParams memory _oracleRelayerParams =
+      IOracleRelayer.OracleRelayerParams({redemptionRateUpperBound: RAY * WAD, redemptionRateLowerBound: 1});
+    oracleRelayer =
+      new OracleRelayerForTest(address(safeEngine), IBaseOracle(address(systemCoinMedian)), _oracleRelayerParams);
+    oracleRelayer.setRedemptionPrice(5 * RAY);
+
+    collateralAuctionHouse = _deployCollateralAuctionHouse(_cahParams, _cahCParams);
+
+    // initialize cType
+    IOracleRelayer.OracleRelayerCollateralParams memory _oracleRelayerCParams = IOracleRelayer
+      .OracleRelayerCollateralParams({
+      oracle: IDelayedOracle(address(collateralFSM)),
+      safetyCRatio: 1e27,
+      liquidationCRatio: 1e27
+    });
+    oracleRelayer.initializeCollateralType('collateralType', _oracleRelayerCParams);
+
+    // setup oracleRelayer
+    _modifyParameters('oracleRelayer', abi.encode(oracleRelayer));
 
     ali = address(new Guy(collateralAuctionHouse));
     bob = address(new Guy(collateralAuctionHouse));
@@ -198,94 +216,93 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
 
   // General tests
   function test_modifyParameters() public {
-    collateralAuctionHouse.modifyParameters('maxDiscount', abi.encode(0.9e18));
-    collateralAuctionHouse.modifyParameters('minDiscount', abi.encode(0.91e18));
-    collateralAuctionHouse.modifyParameters('minimumBid', abi.encode(100 * WAD));
-    collateralAuctionHouse.modifyParameters('perSecondDiscountUpdateRate', abi.encode(RAY - 100));
-    collateralAuctionHouse.modifyParameters('lowerCollateralDeviation', abi.encode(0.95e18));
-    collateralAuctionHouse.modifyParameters('upperCollateralDeviation', abi.encode(0.9e18));
-    collateralAuctionHouse.modifyParameters('lowerSystemCoinDeviation', abi.encode(0.95e18));
-    collateralAuctionHouse.modifyParameters('upperSystemCoinDeviation', abi.encode(0.9e18));
+    _modifyParameters('collateralType', 'maxDiscount', abi.encode(0.9e18));
+    _modifyParameters('collateralType', 'minDiscount', abi.encode(0.91e18));
+    _modifyParameters('collateralType', 'minimumBid', abi.encode(100 * WAD));
+    _modifyParameters('collateralType', 'perSecondDiscountUpdateRate', abi.encode(RAY - 100));
+    _modifyParameters('collateralType', 'lowerCollateralDeviation', abi.encode(0.95e18));
+    _modifyParameters('collateralType', 'upperCollateralDeviation', abi.encode(0.9e18));
+    _modifyParameters('lowerSystemCoinDeviation', abi.encode(0.95e18));
+    _modifyParameters('upperSystemCoinDeviation', abi.encode(0.9e18));
+    _modifyParameters('minSystemCoinDeviation', abi.encode(0.99e18));
 
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams memory _cParams =
-      collateralAuctionHouse.cParams();
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _params =
-      collateralAuctionHouse.params();
+    ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cParams = collateralAuctionHouse.cParams();
+    ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _params = collateralAuctionHouse.params();
 
     assertEq(_cParams.minDiscount, 0.91e18);
     assertEq(_cParams.maxDiscount, 0.9e18);
     assertEq(_cParams.lowerCollateralDeviation, 0.95e18);
     assertEq(_cParams.upperCollateralDeviation, 0.9e18);
-    assertEq(_params.lowerSystemCoinDeviation, 0.95e18);
-    assertEq(_params.upperSystemCoinDeviation, 0.9e18);
     assertEq(_cParams.perSecondDiscountUpdateRate, RAY - 100);
     assertEq(_cParams.minimumBid, 100 * WAD);
+    assertEq(_params.lowerSystemCoinDeviation, 0.95e18);
+    assertEq(_params.upperSystemCoinDeviation, 0.9e18);
+    assertEq(_params.minSystemCoinDeviation, 0.99e18);
   }
 
   function testFail_set_partially_implemented_collateralFSM() public {
     PartiallyImplementedFeed partiallyImplementedCollateralFSM = new PartiallyImplementedFeed(bytes32(uint256(0)), true);
-    collateralAuctionHouse.modifyParameters('collateralFSM', abi.encode(partiallyImplementedCollateralFSM));
+    oracleRelayer.modifyParameters('collateralType', 'oracle', abi.encode(partiallyImplementedCollateralFSM));
   }
 
   function test_no_min_discount() public {
-    collateralAuctionHouse.modifyParameters('minDiscount', abi.encode(1 ether));
+    _modifyParameters('collateralType', 'minDiscount', abi.encode(1 ether));
   }
 
   function testFail_max_discount_lower_than_min() public {
-    collateralAuctionHouse.modifyParameters('maxDiscount', abi.encode(1 ether - 1));
+    _modifyParameters('collateralType', 'maxDiscount', abi.encode(1 ether - 1));
   }
 
   function test_getSystemCoinFloorDeviatedPrice() public {
-    collateralAuctionHouse.modifyParameters('minSystemCoinDeviation', abi.encode(0.9e18));
+    _modifyParameters('minSystemCoinDeviation', abi.encode(0.9e18));
 
-    collateralAuctionHouse.modifyParameters('lowerSystemCoinDeviation', abi.encode(1e18));
+    _modifyParameters('lowerSystemCoinDeviation', abi.encode(1e18));
     assertEq(
       collateralAuctionHouse.getSystemCoinFloorDeviatedPrice(oracleRelayer.redemptionPrice()),
       oracleRelayer.redemptionPrice()
     );
 
-    collateralAuctionHouse.modifyParameters('lowerSystemCoinDeviation', abi.encode(0.95e18));
+    _modifyParameters('lowerSystemCoinDeviation', abi.encode(0.95e18));
     assertEq(
       collateralAuctionHouse.getSystemCoinFloorDeviatedPrice(oracleRelayer.redemptionPrice()),
       oracleRelayer.redemptionPrice()
     );
 
-    collateralAuctionHouse.modifyParameters('lowerSystemCoinDeviation', abi.encode(0.9e18));
+    _modifyParameters('lowerSystemCoinDeviation', abi.encode(0.9e18));
     assertEq(collateralAuctionHouse.getSystemCoinFloorDeviatedPrice(oracleRelayer.redemptionPrice()), 4.5e27);
 
-    collateralAuctionHouse.modifyParameters('lowerSystemCoinDeviation', abi.encode(0.89e18));
+    _modifyParameters('lowerSystemCoinDeviation', abi.encode(0.89e18));
     assertEq(collateralAuctionHouse.getSystemCoinFloorDeviatedPrice(oracleRelayer.redemptionPrice()), 4.45e27);
   }
 
   function test_getSystemCoinCeilingDeviatedPrice() public {
-    collateralAuctionHouse.modifyParameters('minSystemCoinDeviation', abi.encode(0.9e18));
+    _modifyParameters('minSystemCoinDeviation', abi.encode(0.9e18));
 
-    collateralAuctionHouse.modifyParameters('upperSystemCoinDeviation', abi.encode(1e18));
+    _modifyParameters('upperSystemCoinDeviation', abi.encode(1e18));
     assertEq(
       collateralAuctionHouse.getSystemCoinCeilingDeviatedPrice(oracleRelayer.redemptionPrice()),
       oracleRelayer.redemptionPrice()
     );
 
-    collateralAuctionHouse.modifyParameters('upperSystemCoinDeviation', abi.encode(0.95e18));
+    _modifyParameters('upperSystemCoinDeviation', abi.encode(0.95e18));
     assertEq(
       collateralAuctionHouse.getSystemCoinCeilingDeviatedPrice(oracleRelayer.redemptionPrice()),
       oracleRelayer.redemptionPrice()
     );
 
-    collateralAuctionHouse.modifyParameters('upperSystemCoinDeviation', abi.encode(0.9e18));
+    _modifyParameters('upperSystemCoinDeviation', abi.encode(0.9e18));
     assertEq(collateralAuctionHouse.getSystemCoinCeilingDeviatedPrice(oracleRelayer.redemptionPrice()), 5.5e27);
 
-    collateralAuctionHouse.modifyParameters('upperSystemCoinDeviation', abi.encode(0.89e18));
+    _modifyParameters('upperSystemCoinDeviation', abi.encode(0.89e18));
     assertEq(collateralAuctionHouse.getSystemCoinCeilingDeviatedPrice(oracleRelayer.redemptionPrice()), 5.55e27);
   }
 
   function test_startAuction() public {
     collateralAuctionHouse.startAuction({
-      _amountToSell: 100 ether,
+      _collateralToSell: 100 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient,
-      _initialBid: 0
+      _initialBidder: auctionIncomeRecipient
     });
   }
 
@@ -296,11 +313,10 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
 
   function testFail_buyCollateral_null_auction() public {
     collateralAuctionHouse.startAuction({
-      _amountToSell: 100 ether,
+      _collateralToSell: 100 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient,
-      _initialBid: 0
+      _initialBidder: auctionIncomeRecipient
     });
     // can't buy collateral on non-existent
     collateralAuctionHouse.buyCollateral(1, 0);
@@ -308,13 +324,13 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
 
   function testFail_faulty_collateral_fsm_price() public {
     Feed faultyFeed = new Feed(bytes32(uint256(1)), false);
-    collateralAuctionHouse.modifyParameters('collateralFSM', abi.encode(faultyFeed));
+    oracleRelayer.modifyParameters('collateralType', 'oracle', abi.encode(faultyFeed));
+
     collateralAuctionHouse.startAuction({
-      _amountToSell: 100 ether,
+      _collateralToSell: 100 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient,
-      _initialBid: 0
+      _initialBidder: auctionIncomeRecipient
     });
     collateralAuctionHouse.buyCollateral(1, 5 * WAD);
   }
@@ -328,18 +344,17 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient,
-      _initialBid: 0
+      _initialBidder: auctionIncomeRecipient
     });
 
     (bool canBidThisAmount, uint256 adjustedBid) = collateralAuctionHouse.getAdjustedBid(id, 25 * WAD);
-    Guy(ali).buyCollateral_increasingDiscount(id, 25 * WAD);
+    Guy(ali).buyCollateral(id, 25 * WAD);
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), rad(975 ether));
 
-    IncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
 
     assertEq(_auction.amountToRaise, 25 * RAD);
     assertEq(_auction.amountToSell, 1 ether - 131_578_947_368_421_052);
@@ -369,11 +384,10 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient,
-      _initialBid: 0
+      _initialBidder: auctionIncomeRecipient
     });
 
     assertEq(
@@ -388,10 +402,10 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     assertEq(collateralBoughtAdjustedBid, 50 * WAD);
 
     (bool canBidThisAmount, uint256 adjustedBid) = collateralAuctionHouse.getAdjustedBid(id, 50 * WAD);
-    Guy(ali).buyCollateral_increasingDiscount(id, 50 * WAD);
+    Guy(ali).buyCollateral(id, 50 * WAD);
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), rad(950 ether));
 
-    IncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 0);
     assertEq(_auction.amountToRaise, 0);
 
@@ -411,11 +425,10 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     safeEngine.createUnbackedDebt(address(0), ali, rad(200 * RAD - 200 ether));
 
     collateralAuctionHouse.startAuction({
-      _amountToSell: 100,
+      _collateralToSell: 100,
       _amountToRaise: 50,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient,
-      _initialBid: 0
+      _initialBidder: auctionIncomeRecipient
     });
   }
 
@@ -431,18 +444,17 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient,
-      _initialBid: 0
+      _initialBidder: auctionIncomeRecipient
     });
 
     (bool canBidThisAmount, uint256 adjustedBid) = collateralAuctionHouse.getAdjustedBid(id, 5 * WAD);
-    Guy(ali).buyCollateral_increasingDiscount(id, 5 * WAD);
+    Guy(ali).buyCollateral(id, 5 * WAD);
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), rad(950 ether));
 
-    IncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 0);
     assertEq(_auction.amountToRaise, 0);
 
@@ -456,23 +468,22 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
 
   function test_big_discount_buy() public {
     oracleRelayer.setRedemptionPrice(RAY);
-    collateralAuctionHouse.modifyParameters('maxDiscount', abi.encode(0.1e18));
-    collateralAuctionHouse.modifyParameters('minDiscount', abi.encode(0.1e18));
+    _modifyParameters('collateralType', 'maxDiscount', abi.encode(0.1e18));
+    _modifyParameters('collateralType', 'minDiscount', abi.encode(0.1e18));
     collateralFSM.set_val(200 ether);
     safeEngine.createUnbackedDebt(address(0), ali, rad(200 * RAD - 200 ether));
 
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient,
-      _initialBid: 0
+      _initialBidder: auctionIncomeRecipient
     });
-    Guy(ali).buyCollateral_increasingDiscount(id, 50 * WAD);
+    Guy(ali).buyCollateral(id, 50 * WAD);
 
-    IncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 0);
     assertEq(_auction.amountToRaise, 0);
 
@@ -486,23 +497,22 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
 
   function test_small_discount_buy() public {
     oracleRelayer.setRedemptionPrice(RAY);
-    collateralAuctionHouse.modifyParameters('minDiscount', abi.encode(0.99e18));
-    collateralAuctionHouse.modifyParameters('maxDiscount', abi.encode(0.99e18));
+    _modifyParameters('collateralType', 'minDiscount', abi.encode(0.99e18));
+    _modifyParameters('collateralType', 'maxDiscount', abi.encode(0.99e18));
     collateralFSM.set_val(200 ether);
     safeEngine.createUnbackedDebt(address(0), ali, rad(200 * RAD - 200 ether));
 
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient,
-      _initialBid: 0
+      _initialBidder: auctionIncomeRecipient
     });
-    Guy(ali).buyCollateral_increasingDiscount(id, 50 * WAD);
+    Guy(ali).buyCollateral(id, 50 * WAD);
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 0);
     assertEq(_auction.amountToRaise, 0);
 
@@ -523,16 +533,15 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient,
-      _initialBid: 0
+      _initialBidder: auctionIncomeRecipient
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 25 * WAD);
+    Guy(ali).buyCollateral(id, 25 * WAD);
 
-    IncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 1 ether - 131_578_947_368_421_052);
     assertEq(_auction.amountToRaise, 25 * RAD);
 
@@ -554,16 +563,15 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient,
-      _initialBid: 0
+      _initialBidder: auctionIncomeRecipient
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 25 * WAD);
+    Guy(ali).buyCollateral(id, 25 * WAD);
 
-    IncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 1 ether - 145_391_102_064_553_649);
     assertEq(_auction.amountToRaise, 25 * RAD);
 
@@ -585,16 +593,15 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient,
-      _initialBid: 0
+      _initialBidder: auctionIncomeRecipient
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 25 * WAD);
+    Guy(ali).buyCollateral(id, 25 * WAD);
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 1 ether - 125_912_868_295_139_763);
     assertEq(_auction.amountToRaise, 25 * RAD);
 
@@ -616,16 +623,15 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient,
-      _initialBid: 0
+      _initialBidder: auctionIncomeRecipient
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 25 * WAD);
+    Guy(ali).buyCollateral(id, 25 * WAD);
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 1 ether - 125_313_283_208_020_050);
     assertEq(_auction.amountToRaise, 25 * RAD);
 
@@ -647,16 +653,15 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient,
-      _initialBid: 0
+      _initialBidder: auctionIncomeRecipient
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 25 * WAD);
+    Guy(ali).buyCollateral(id, 25 * WAD);
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 1 ether - 146_198_830_409_356_725);
     assertEq(_auction.amountToRaise, 25 * RAD);
 
@@ -678,16 +683,15 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient,
-      _initialBid: 0
+      _initialBidder: auctionIncomeRecipient
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 50 * WAD);
+    Guy(ali).buyCollateral(id, 50 * WAD);
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 0);
     assertEq(_auction.amountToRaise, 0);
 
@@ -708,16 +712,15 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient,
-      _initialBid: 0
+      _initialBidder: auctionIncomeRecipient
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 25 * WAD);
+    Guy(ali).buyCollateral(id, 25 * WAD);
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 1 ether - 131_578_947_368_421_052);
     assertEq(_auction.amountToRaise, 25 * RAD);
 
@@ -735,25 +738,23 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     collateralFSM.set_val(200 ether);
     systemCoinMedian.set_val(1 ether);
 
-    collateralAuctionHouse.modifyParameters('systemCoinOracle', abi.encode(systemCoinMedian));
-    collateralAuctionHouse.modifyParameters('lowerSystemCoinDeviation', abi.encode(0.95e18));
-    collateralAuctionHouse.modifyParameters('upperSystemCoinDeviation', abi.encode(0.9e18));
+    _modifyParameters('lowerSystemCoinDeviation', abi.encode(0.95e18));
+    _modifyParameters('upperSystemCoinDeviation', abi.encode(0.9e18));
 
     safeEngine.createUnbackedDebt(address(0), ali, rad(200 * RAD - 200 ether));
 
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient,
-      _initialBid: 0
+      _initialBidder: auctionIncomeRecipient
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 25 * WAD);
+    Guy(ali).buyCollateral(id, 25 * WAD);
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 1 ether - 131_578_947_368_421_052);
     assertEq(_auction.amountToRaise, 25 * RAD);
 
@@ -771,25 +772,23 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     collateralFSM.set_val(200 ether);
     systemCoinMedian.set_val(0.975e18);
 
-    collateralAuctionHouse.modifyParameters('systemCoinOracle', abi.encode(systemCoinMedian));
-    collateralAuctionHouse.modifyParameters('lowerSystemCoinDeviation', abi.encode(0.95e18));
-    collateralAuctionHouse.modifyParameters('upperSystemCoinDeviation', abi.encode(0.9e18));
+    _modifyParameters('lowerSystemCoinDeviation', abi.encode(0.95e18));
+    _modifyParameters('upperSystemCoinDeviation', abi.encode(0.9e18));
 
     safeEngine.createUnbackedDebt(address(0), ali, rad(200 * RAD - 200 ether));
 
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient,
-      _initialBid: 0
+      _initialBidder: auctionIncomeRecipient
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 25 * WAD);
+    Guy(ali).buyCollateral(id, 25 * WAD);
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 1 ether - 128_289_473_684_210_526);
     assertEq(_auction.amountToRaise, 25 * RAD);
 
@@ -807,25 +806,23 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     collateralFSM.set_val(200 ether);
     systemCoinMedian.set_val(1.05e18);
 
-    collateralAuctionHouse.modifyParameters('systemCoinOracle', abi.encode(systemCoinMedian));
-    collateralAuctionHouse.modifyParameters('lowerSystemCoinDeviation', abi.encode(0.95e18));
-    collateralAuctionHouse.modifyParameters('upperSystemCoinDeviation', abi.encode(0.9e18));
+    _modifyParameters('lowerSystemCoinDeviation', abi.encode(0.95e18));
+    _modifyParameters('upperSystemCoinDeviation', abi.encode(0.9e18));
 
     safeEngine.createUnbackedDebt(address(0), ali, rad(200 * RAD - 200 ether));
 
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient,
-      _initialBid: 0
+      _initialBidder: auctionIncomeRecipient
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 25 * WAD);
+    Guy(ali).buyCollateral(id, 25 * WAD);
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 1 ether - 138_157_894_736_842_105);
     assertEq(_auction.amountToRaise, 25 * RAD);
 
@@ -843,25 +840,23 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     collateralFSM.set_val(200 ether);
     systemCoinMedian.set_val(1.15e18);
 
-    collateralAuctionHouse.modifyParameters('systemCoinOracle', abi.encode(systemCoinMedian));
-    collateralAuctionHouse.modifyParameters('lowerSystemCoinDeviation', abi.encode(0.95e18));
-    collateralAuctionHouse.modifyParameters('upperSystemCoinDeviation', abi.encode(0.9e18));
+    _modifyParameters('lowerSystemCoinDeviation', abi.encode(0.95e18));
+    _modifyParameters('upperSystemCoinDeviation', abi.encode(0.9e18));
 
     safeEngine.createUnbackedDebt(address(0), ali, rad(200 * RAD - 200 ether));
 
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient,
-      _initialBid: 0
+      _initialBidder: auctionIncomeRecipient
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 25 * WAD);
+    Guy(ali).buyCollateral(id, 25 * WAD);
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 1 ether - 144_736_842_105_263_157);
     assertEq(_auction.amountToRaise, 25 * RAD);
 
@@ -879,25 +874,23 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     collateralFSM.set_val(200 ether);
     systemCoinMedian.set_val(0.9e18);
 
-    collateralAuctionHouse.modifyParameters('systemCoinOracle', abi.encode(systemCoinMedian));
-    collateralAuctionHouse.modifyParameters('lowerSystemCoinDeviation', abi.encode(0.95e18));
-    collateralAuctionHouse.modifyParameters('upperSystemCoinDeviation', abi.encode(0.9e18));
+    _modifyParameters('lowerSystemCoinDeviation', abi.encode(0.95e18));
+    _modifyParameters('upperSystemCoinDeviation', abi.encode(0.9e18));
 
     safeEngine.createUnbackedDebt(address(0), ali, rad(200 * RAD - 200 ether));
 
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient,
-      _initialBid: 0
+      _initialBidder: auctionIncomeRecipient
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 25 * WAD);
+    Guy(ali).buyCollateral(id, 25 * WAD);
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 1 ether - 125_000_000_000_000_000);
     assertEq(_auction.amountToRaise, 25 * RAD);
 
@@ -915,25 +908,23 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     collateralFSM.set_val(200 ether);
     systemCoinMedian.set_val(0.9e18);
 
-    collateralAuctionHouse.modifyParameters('systemCoinOracle', abi.encode(systemCoinMedian));
-    collateralAuctionHouse.modifyParameters('lowerSystemCoinDeviation', abi.encode(0.95e18));
-    collateralAuctionHouse.modifyParameters('upperSystemCoinDeviation', abi.encode(0.9e18));
+    _modifyParameters('lowerSystemCoinDeviation', abi.encode(0.95e18));
+    _modifyParameters('upperSystemCoinDeviation', abi.encode(0.9e18));
 
     safeEngine.createUnbackedDebt(address(0), ali, rad(200 * RAD - 200 ether));
 
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient,
-      _initialBid: 0
+      _initialBidder: auctionIncomeRecipient
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 50 * WAD);
+    Guy(ali).buyCollateral(id, 50 * WAD);
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 0);
     assertEq(_auction.amountToRaise, 0);
 
@@ -949,25 +940,24 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     collateralFSM.set_val(200 ether);
     RevertableMedian revertMedian = new RevertableMedian();
 
-    collateralAuctionHouse.modifyParameters('systemCoinOracle', abi.encode(revertMedian));
-    collateralAuctionHouse.modifyParameters('lowerSystemCoinDeviation', abi.encode(0.95e18));
-    collateralAuctionHouse.modifyParameters('upperSystemCoinDeviation', abi.encode(0.9e18));
+    oracleRelayer.modifyParameters('systemCoinOracle', abi.encode(revertMedian));
+    _modifyParameters('lowerSystemCoinDeviation', abi.encode(0.95e18));
+    _modifyParameters('upperSystemCoinDeviation', abi.encode(0.9e18));
 
     safeEngine.createUnbackedDebt(address(0), ali, rad(200 * RAD - 200 ether));
 
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient,
-      _initialBid: 0
+      _initialBidder: auctionIncomeRecipient
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 25 * WAD);
+    Guy(ali).buyCollateral(id, 25 * WAD);
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 1 ether - 131_578_947_368_421_052);
     assertEq(_auction.amountToRaise, 25 * RAD);
 
@@ -987,25 +977,23 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     collateralFSM.set_val(200 ether);
     collateralMedian.set_val(220 ether);
 
-    collateralAuctionHouse.modifyParameters('systemCoinOracle', abi.encode(systemCoinMedian));
-    collateralAuctionHouse.modifyParameters('lowerSystemCoinDeviation', abi.encode(0.95e18));
-    collateralAuctionHouse.modifyParameters('upperSystemCoinDeviation', abi.encode(0.9e18));
+    _modifyParameters('lowerSystemCoinDeviation', abi.encode(0.95e18));
+    _modifyParameters('upperSystemCoinDeviation', abi.encode(0.9e18));
 
     safeEngine.createUnbackedDebt(address(0), ali, rad(200 * RAD - 200 ether));
 
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient,
-      _initialBid: 0
+      _initialBidder: auctionIncomeRecipient
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 25 * WAD);
+    Guy(ali).buyCollateral(id, 25 * WAD);
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 1 ether - 119_047_619_047_619_047);
     assertEq(_auction.amountToRaise, 25 * RAD);
 
@@ -1025,25 +1013,23 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     collateralFSM.set_val(200 ether);
     collateralMedian.set_val(180 ether);
 
-    collateralAuctionHouse.modifyParameters('systemCoinOracle', abi.encode(systemCoinMedian));
-    collateralAuctionHouse.modifyParameters('lowerSystemCoinDeviation', abi.encode(0.95e18));
-    collateralAuctionHouse.modifyParameters('upperSystemCoinDeviation', abi.encode(0.9e18));
+    _modifyParameters('lowerSystemCoinDeviation', abi.encode(0.95e18));
+    _modifyParameters('upperSystemCoinDeviation', abi.encode(0.9e18));
 
     safeEngine.createUnbackedDebt(address(0), ali, rad(200 * RAD - 200 ether));
 
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient,
-      _initialBid: 0
+      _initialBidder: auctionIncomeRecipient
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 25 * WAD);
+    Guy(ali).buyCollateral(id, 25 * WAD);
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 1 ether - 160_818_713_450_292_397);
     assertEq(_auction.amountToRaise, 25 * RAD);
 
@@ -1063,25 +1049,23 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     collateralFSM.set_val(200 ether);
     collateralMedian.set_val(180 ether);
 
-    collateralAuctionHouse.modifyParameters('systemCoinOracle', abi.encode(systemCoinMedian));
-    collateralAuctionHouse.modifyParameters('lowerSystemCoinDeviation', abi.encode(0.95e18));
-    collateralAuctionHouse.modifyParameters('upperSystemCoinDeviation', abi.encode(0.9e18));
+    _modifyParameters('lowerSystemCoinDeviation', abi.encode(0.95e18));
+    _modifyParameters('upperSystemCoinDeviation', abi.encode(0.9e18));
 
     safeEngine.createUnbackedDebt(address(0), ali, rad(200 * RAD - 200 ether));
 
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient,
-      _initialBid: 0
+      _initialBidder: auctionIncomeRecipient
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 25 * WAD);
+    Guy(ali).buyCollateral(id, 25 * WAD);
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 1 ether - 138_888_888_888_888_888);
     assertEq(_auction.amountToRaise, 25 * RAD);
 
@@ -1101,25 +1085,23 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     collateralFSM.set_val(200 ether);
     collateralMedian.set_val(210 ether);
 
-    collateralAuctionHouse.modifyParameters('systemCoinOracle', abi.encode(systemCoinMedian));
-    collateralAuctionHouse.modifyParameters('lowerSystemCoinDeviation', abi.encode(0.95e18));
-    collateralAuctionHouse.modifyParameters('upperSystemCoinDeviation', abi.encode(0.9e18));
+    _modifyParameters('lowerSystemCoinDeviation', abi.encode(0.95e18));
+    _modifyParameters('upperSystemCoinDeviation', abi.encode(0.9e18));
 
     safeEngine.createUnbackedDebt(address(0), ali, rad(200 * RAD - 200 ether));
 
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient,
-      _initialBid: 0
+      _initialBidder: auctionIncomeRecipient
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 25 * WAD);
+    Guy(ali).buyCollateral(id, 25 * WAD);
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 1 ether - 137_844_611_528_822_055);
     assertEq(_auction.amountToRaise, 25 * RAD);
 
@@ -1137,26 +1119,24 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     collateralFSM.set_val(200 ether);
     systemCoinMedian.set_val(0.95e18);
 
-    collateralAuctionHouse.modifyParameters('systemCoinOracle', abi.encode(systemCoinMedian));
-    collateralAuctionHouse.modifyParameters('minSystemCoinDeviation', abi.encode(0.94e18));
-    collateralAuctionHouse.modifyParameters('lowerSystemCoinDeviation', abi.encode(0.95e18));
-    collateralAuctionHouse.modifyParameters('upperSystemCoinDeviation', abi.encode(0.9e18));
+    _modifyParameters('minSystemCoinDeviation', abi.encode(0.94e18));
+    _modifyParameters('lowerSystemCoinDeviation', abi.encode(0.95e18));
+    _modifyParameters('upperSystemCoinDeviation', abi.encode(0.9e18));
 
     safeEngine.createUnbackedDebt(address(0), ali, rad(200 * RAD - 200 ether));
 
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient,
-      _initialBid: 0
+      _initialBidder: auctionIncomeRecipient
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 25 * WAD);
+    Guy(ali).buyCollateral(id, 25 * WAD);
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 1 ether - 131_578_947_368_421_052);
     assertEq(_auction.amountToRaise, 25 * RAD);
 
@@ -1174,26 +1154,24 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     collateralFSM.set_val(200 ether);
     systemCoinMedian.set_val(1.05e18);
 
-    collateralAuctionHouse.modifyParameters('systemCoinOracle', abi.encode(systemCoinMedian));
-    collateralAuctionHouse.modifyParameters('minSystemCoinDeviation', abi.encode(0.89e18));
-    collateralAuctionHouse.modifyParameters('lowerSystemCoinDeviation', abi.encode(0.95e18));
-    collateralAuctionHouse.modifyParameters('upperSystemCoinDeviation', abi.encode(0.9e18));
+    _modifyParameters('minSystemCoinDeviation', abi.encode(0.89e18));
+    _modifyParameters('lowerSystemCoinDeviation', abi.encode(0.95e18));
+    _modifyParameters('upperSystemCoinDeviation', abi.encode(0.9e18));
 
     safeEngine.createUnbackedDebt(address(0), ali, rad(200 * RAD - 200 ether));
 
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient,
-      _initialBid: 0
+      _initialBidder: auctionIncomeRecipient
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 25 * WAD);
+    Guy(ali).buyCollateral(id, 25 * WAD);
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 1 ether - 131_578_947_368_421_052);
     assertEq(_auction.amountToRaise, 25 * RAD);
 
@@ -1214,20 +1192,19 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient,
-      _initialBid: 0
+      _initialBidder: auctionIncomeRecipient
     });
 
     for (uint256 i = 0; i < 10; i++) {
-      Guy(ali).buyCollateral_increasingDiscount(id, 5 * WAD);
+      Guy(ali).buyCollateral(id, 5 * WAD);
     }
 
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), rad(950 ether));
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 0);
     assertEq(_auction.amountToRaise, 0);
 
@@ -1248,18 +1225,17 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient,
-      _initialBid: 0
+      _initialBidder: auctionIncomeRecipient
     });
 
-    hevm.warp(block.timestamp + 1);
+    vm.warp(block.timestamp + 1);
     collateralAuctionHouse.settleAuction(id);
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), rad(1000 ether));
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 1 ether);
     assertEq(_auction.amountToRaise, 50 * RAD);
 
@@ -1281,19 +1257,18 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient,
-      _initialBid: 0
+      _initialBidder: auctionIncomeRecipient
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 25 * WAD);
+    Guy(ali).buyCollateral(id, 25 * WAD);
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), rad(975 ether));
     collateralAuctionHouse.terminateAuctionPrematurely(1);
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), rad(950 ether));
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 0);
     assertEq(_auction.amountToRaise, 0);
 
@@ -1309,10 +1284,8 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
 
   // Custom tests for the increasing discount implementation
   function test_small_discount_change_rate_auction_right_away() public {
-    collateralAuctionHouse.modifyParameters(
-      'perSecondDiscountUpdateRate', abi.encode(999_998_607_628_240_588_157_433_861)
-    ); // -0.5% per hour
-    collateralAuctionHouse.modifyParameters('maxDiscount', abi.encode(0.93e18));
+    _modifyParameters('collateralType', 'perSecondDiscountUpdateRate', abi.encode(999_998_607_628_240_588_157_433_861)); // -0.5% per hour
+    _modifyParameters('collateralType', 'maxDiscount', abi.encode(0.93e18));
 
     oracleRelayer.setRedemptionPrice(RAY);
     collateralFSM.set_val(200 ether);
@@ -1321,17 +1294,16 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient,
-      _initialBid: 0
+      _initialBidder: auctionIncomeRecipient
     });
 
-    Guy(ali).buyCollateral_increasingDiscount(id, 49 * WAD);
+    Guy(ali).buyCollateral(id, 49 * WAD);
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), rad(951 ether));
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 742_105_263_157_894_737);
     assertEq(_auction.amountToRaise, RAY * WAD);
     assertEq(_auction.currentDiscount, collateralAuctionHouse.cParams().minDiscount);
@@ -1348,10 +1320,8 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
   }
 
   function test_small_discount_change_rate_auction_after_short_timeline() public {
-    collateralAuctionHouse.modifyParameters(
-      'perSecondDiscountUpdateRate', abi.encode(999_998_607_628_240_588_157_433_861)
-    ); // -0.5% per hour
-    collateralAuctionHouse.modifyParameters('maxDiscount', abi.encode(0.93e18));
+    _modifyParameters('collateralType', 'perSecondDiscountUpdateRate', abi.encode(999_998_607_628_240_588_157_433_861)); // -0.5% per hour
+    _modifyParameters('collateralType', 'maxDiscount', abi.encode(0.93e18));
 
     oracleRelayer.setRedemptionPrice(RAY);
     collateralFSM.set_val(200 ether);
@@ -1360,18 +1330,17 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient,
-      _initialBid: 0
+      _initialBidder: auctionIncomeRecipient
     });
 
-    hevm.warp(block.timestamp + 30 minutes);
-    Guy(ali).buyCollateral_increasingDiscount(id, 49 * WAD);
+    vm.warp(block.timestamp + 30 minutes);
+    Guy(ali).buyCollateral(id, 49 * WAD);
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), rad(951 ether));
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 741_458_098_434_345_369);
     assertEq(_auction.amountToRaise, RAY * WAD);
     assertEq(_auction.currentDiscount, 947_622_023_804_850_158);
@@ -1392,10 +1361,8 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
    * rateTimeline was supposed to jump to maxDiscount in 1 hour, but since deprecated, we use a rate that simulates the behaviour
    */
   function test_small_discount_change_rate_bid_end_rate_timeline() public {
-    collateralAuctionHouse.modifyParameters(
-      'perSecondDiscountUpdateRate', abi.encode(999_979_841_677_394_287_735_580_746)
-    ); // -7% per hour
-    collateralAuctionHouse.modifyParameters('maxDiscount', abi.encode(0.93e18));
+    _modifyParameters('collateralType', 'perSecondDiscountUpdateRate', abi.encode(999_979_841_677_394_287_735_580_746)); // -7% per hour
+    _modifyParameters('collateralType', 'maxDiscount', abi.encode(0.93e18));
 
     oracleRelayer.setRedemptionPrice(RAY);
     collateralFSM.set_val(200 ether);
@@ -1404,18 +1371,17 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient,
-      _initialBid: 0
+      _initialBidder: auctionIncomeRecipient
     });
 
-    hevm.warp(block.timestamp + 1 hours);
-    Guy(ali).buyCollateral_increasingDiscount(id, 49 * WAD);
+    vm.warp(block.timestamp + 1 hours);
+    Guy(ali).buyCollateral(id, 49 * WAD);
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), rad(951 ether));
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 736_559_139_784_946_237);
     assertEq(_auction.amountToRaise, RAY * WAD);
     assertEq(_auction.currentDiscount, 930_000_000_000_000_000);
@@ -1432,10 +1398,8 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
   }
 
   function test_small_discount_change_rate_auction_long_after_long_timeline() public {
-    collateralAuctionHouse.modifyParameters(
-      'perSecondDiscountUpdateRate', abi.encode(999_998_607_628_240_588_157_433_861)
-    ); // -0.5% per hour
-    collateralAuctionHouse.modifyParameters('maxDiscount', abi.encode(0.93e18));
+    _modifyParameters('collateralType', 'perSecondDiscountUpdateRate', abi.encode(999_998_607_628_240_588_157_433_861)); // -0.5% per hour
+    _modifyParameters('collateralType', 'maxDiscount', abi.encode(0.93e18));
 
     oracleRelayer.setRedemptionPrice(RAY);
     collateralFSM.set_val(200 ether);
@@ -1444,18 +1408,17 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient,
-      _initialBid: 0
+      _initialBidder: auctionIncomeRecipient
     });
 
-    hevm.warp(block.timestamp + 3650 days);
-    Guy(ali).buyCollateral_increasingDiscount(id, 49 * WAD);
+    vm.warp(block.timestamp + 3650 days);
+    Guy(ali).buyCollateral(id, 49 * WAD);
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), rad(951 ether));
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 736_559_139_784_946_237);
     assertEq(_auction.amountToRaise, RAY * WAD);
     assertEq(_auction.currentDiscount, 930_000_000_000_000_000);
@@ -1472,10 +1435,8 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
   }
 
   function test_auction_multi_times_at_different_timestamps() public {
-    collateralAuctionHouse.modifyParameters(
-      'perSecondDiscountUpdateRate', abi.encode(999_998_607_628_240_588_157_433_861)
-    ); // -0.5% per hour
-    collateralAuctionHouse.modifyParameters('maxDiscount', abi.encode(0.93e18));
+    _modifyParameters('collateralType', 'perSecondDiscountUpdateRate', abi.encode(999_998_607_628_240_588_157_433_861)); // -0.5% per hour
+    _modifyParameters('collateralType', 'maxDiscount', abi.encode(0.93e18));
 
     oracleRelayer.setRedemptionPrice(RAY);
     collateralFSM.set_val(200 ether);
@@ -1484,21 +1445,20 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient,
-      _initialBid: 0
+      _initialBidder: auctionIncomeRecipient
     });
 
     for (uint256 i = 0; i < 10; i++) {
-      hevm.warp(block.timestamp + 1 minutes);
-      Guy(ali).buyCollateral_increasingDiscount(id, 5 * WAD);
+      vm.warp(block.timestamp + 1 minutes);
+      Guy(ali).buyCollateral(id, 5 * WAD);
     }
 
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), rad(950 ether));
 
-    IIncreasingDiscountCollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
 
     assertEq(_auction.amountToSell, 0);
     assertEq(_auction.amountToRaise, 0);
@@ -1513,5 +1473,47 @@ contract SingleIncreasingDiscountCollateralAuctionHouseTest is DSTest {
       1 ether - 736_721_153_320_545_015
     );
     assertEq(safeEngine.tokenCollateral('collateralType', address(safeAuctioned)), 736_721_153_320_545_015);
+  }
+}
+
+contract FactorySingleCollateralAuctionHouseTest is SingleCollateralAuctionHouseTest {
+  ICollateralAuctionHouseFactory factory;
+
+  function _deployCollateralAuctionHouse(
+    ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams,
+    ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams
+  ) internal override returns (ICollateralAuctionHouse _collateralAuctionHouse) {
+    factory =
+    new CollateralAuctionHouseFactory(address(safeEngine), address(oracleRelayer), address(liquidationEngine), _cahParams);
+
+    return factory.deployCollateralAuctionHouse('collateralType', _cahCParams);
+  }
+
+  function _modifyParameters(bytes32 _parameter, bytes memory _data) internal override {
+    factory.modifyParameters(_parameter, _data);
+  }
+
+  function _modifyParameters(bytes32 _cType, bytes32 _parameter, bytes memory _data) internal override {
+    factory.modifyParameters(_cType, _parameter, _data);
+  }
+}
+
+contract OrphanSingleCollateralAuctionHouseTest is SingleCollateralAuctionHouseTest {
+  function _deployCollateralAuctionHouse(
+    ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams,
+    ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams
+  ) internal override returns (ICollateralAuctionHouse _collateralAuctionHouse) {
+    return
+    new CollateralAuctionHouse(address(safeEngine), address(oracleRelayer), address(liquidationEngine), 'collateralType',
+         _cahParams,
+         _cahCParams);
+  }
+
+  function _modifyParameters(bytes32 _parameter, bytes memory _data) internal override {
+    collateralAuctionHouse.modifyParameters(_parameter, _data);
+  }
+
+  function _modifyParameters(bytes32 _cType, bytes32 _parameter, bytes memory _data) internal override {
+    collateralAuctionHouse.modifyParameters(_cType, _parameter, _data);
   }
 }

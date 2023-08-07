@@ -7,6 +7,9 @@ interface IJob {
   // --- Events ---
   event Rewarded(address _rewardedAccount, uint256 _rewardAmount);
 
+  // --- Errors ---
+  error NotWorkable();
+
   // --- Data ---
   function rewardAmount() external view returns (uint256 _rewardAmount);
 

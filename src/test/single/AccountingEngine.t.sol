@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import 'ds-test/test.sol';
-import {ERC20ForTest as Gem} from '@contracts/for-test/ERC20ForTest.sol';
+import {ERC20ForTest} from '@contracts/for-test/ERC20ForTest.sol';
 
 import {ISAFEEngine, SAFEEngine} from '@contracts/SAFEEngine.sol';
 import {IAccountingEngine, AccountingEngine} from '@contracts/AccountingEngine.sol';
@@ -28,7 +28,7 @@ contract SingleAccountingEngineTest is DSTest {
   SAH_ONE surplusAuctionHouseOne;
   SAH_TWO surplusAuctionHouseTwo;
   SettlementSurplusAuctioneer postSettlementSurplusDrain;
-  Gem protocolToken;
+  ERC20ForTest protocolToken;
 
   function setUp() public {
     hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
@@ -38,7 +38,7 @@ contract SingleAccountingEngineTest is DSTest {
       ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 0});
     safeEngine = new SAFEEngine(_safeEngineParams);
 
-    protocolToken = new Gem();
+    protocolToken = new ERC20ForTest();
 
     IDebtAuctionHouse.DebtAuctionHouseParams memory _debtAuctionHouseParams = IDebtAuctionHouse.DebtAuctionHouseParams({
       bidDecrease: 1.05e18,
@@ -52,6 +52,7 @@ contract SingleAccountingEngineTest is DSTest {
       bidIncrease: 1.05e18,
       bidDuration: 3 hours,
       totalAuctionLength: 2 days,
+      bidReceiver: address(0x123),
       recyclingPercentage: 0
     });
 
@@ -140,7 +141,9 @@ contract SingleAccountingEngineTest is DSTest {
 
   function _popDebtFromQueue(uint256 wad) internal {
     accountingEngine.pushDebtToQueue(rad(wad));
-    safeEngine.initializeCollateralType('');
+    ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
+      ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: 0, debtFloor: 0});
+    safeEngine.initializeCollateralType('', _safeEngineCollateralParams);
     safeEngine.createUnbackedDebt(address(accountingEngine), address(0), rad(wad));
     accountingEngine.popDebtFromQueue(block.timestamp);
   }
@@ -150,6 +153,7 @@ contract SingleAccountingEngineTest is DSTest {
       bidIncrease: 1.05e18,
       bidDuration: 3 hours,
       totalAuctionLength: 2 days,
+      bidReceiver: address(0x123),
       recyclingPercentage: 0
     });
 

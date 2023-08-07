@@ -26,11 +26,14 @@
     "lint:fix": "sort-package-json && forge fmt && yarn lint:sol --fix",
     "lint:sol": "cross-env solhint 'src/contracts/**/*.sol' 'src/interfaces/**/*.sol' 'src/test/**/*.sol'",
     "prepare": "husky install",
-    "test": "FOUNDRY_FUZZ_MAX_TEST_REJECTS=1000000 forge test -vvv",
-    "test:e2e": "FOUNDRY_FUZZ_MAX_TEST_REJECTS=1000000 forge test --match-contract E2E -vvv",
-    "test:local": "FOUNDRY_FUZZ_RUNS=32 FOUNDRY_FUZZ_MAX_TEST_REJECTS=500000 forge test -vvv",
-    "test:unit": "FOUNDRY_FUZZ_MAX_TEST_REJECTS=1000000 forge test --match-contract Unit -vvv",
-    "test:unit:deep": "FOUNDRY_FUZZ_MAX_TEST_REJECTS=1000000 FOUNDRY_FUZZ_RUNS=5000 yarn test:unit"
+    "script:goerli": "bash -c 'source .env && forge script GoerliScript --with-gas-price 2000000000 -vvvvv --rpc-url $OP_GOERLI_RPC --broadcast --private-key $OP_GOERLI_GOVERNOR_PK --verify --etherscan-api-key $OP_ETHERSCAN_API_KEY'",
+    "script:goerli:delegate": "bash -c 'source .env && forge script GoerliDelegate --with-gas-price 2000000000 -vvvvv --rpc-url $OP_GOERLI_RPC --broadcast --private-key $OP_GOERLI_GOVERNOR_PK --verify --etherscan-api-key $OP_ETHERSCAN_API_KEY'",
+    "test": "FOUNDRY_FUZZ_RUNS=128 FOUNDRY_FUZZ_MAX_TEST_REJECTS=1000000 forge test -vvv",
+    "test:e2e": "forge test --match-contract E2E -vvv",
+    "test:local": "FOUNDRY_FUZZ_RUNS=32 FOUNDRY_FUZZ_MAX_TEST_REJECTS=1000000 forge test -vvv",
+    "test:simulation": "forge test --match-contract Simulation --ffi",
+    "test:unit": "FOUNDRY_FUZZ_RUNS=128 FOUNDRY_FUZZ_MAX_TEST_REJECTS=1000000 forge test --match-contract Unit -vvv",
+    "test:unit:deep": "FOUNDRY_FUZZ_RUNS=1024 FOUNDRY_FUZZ_MAX_TEST_REJECTS=10000000 forge test --match-contract Unit -vvvvv"
   },
   "lint-staged": {
     "*.{js,css,md,ts,sol}": "forge fmt",

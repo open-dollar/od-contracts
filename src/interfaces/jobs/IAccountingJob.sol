@@ -9,9 +9,6 @@ import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
 interface IAccountingJob is IJob, IAuthorizable, IModifiable {
-  // --- Errors ---
-  error NotWorkable();
-
   // --- Data ---
   function shouldWorkPopDebtFromQueue() external view returns (bool _shouldWorkPopDebtFromQueue);
   function shouldWorkAuctionDebt() external view returns (bool _shouldWorkAuctionDebt);

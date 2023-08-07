@@ -1,41 +1,38 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {IncreasingDiscountCollateralAuctionHouse} from '@contracts/CollateralAuctionHouse.sol';
+import {CollateralAuctionHouse} from '@contracts/CollateralAuctionHouse.sol';
 import {InternalCallsExtension} from '@test/utils/InternalCallsWatcher.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
 import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
 
 // solhint-disable
-contract CollateralAuctionHouseForTest {
+contract DummyCollateralAuctionHouse {
   uint256 auctionId = 123_456;
 
   function startAuction(
     address _forgoneCollateralReceiver,
     address _initialBidder,
     uint256 _amountToRaise,
-    uint256 _collateralToSell,
-    uint256 _initialBid
-  ) external returns (uint256 _id) {
+    uint256 _collateralToSell
+  ) external view returns (uint256 _id) {
     return auctionId;
   }
 }
 
-contract IncreasingDiscountCollateralAuctionHouseForTest is
-  IncreasingDiscountCollateralAuctionHouse,
-  InternalCallsExtension
-{
+contract CollateralAuctionHouseForTest is CollateralAuctionHouse, InternalCallsExtension {
   MockCollateralAuctionHouse mockCollateralAuctionHouse;
 
   constructor(
     address _safeEngine,
+    address _oracleRelayer,
     address _liquidationEngine,
-    bytes32 _collateralType,
+    bytes32 _cType,
     MockCollateralAuctionHouse _mockCollateralAuctionHouse,
     CollateralAuctionHouseSystemCoinParams memory _cahParams,
     CollateralAuctionHouseParams memory _cahCParams
-  ) IncreasingDiscountCollateralAuctionHouse(_safeEngine, _liquidationEngine, _collateralType, _cahParams, _cahCParams) {
+  ) CollateralAuctionHouse(_safeEngine, _oracleRelayer, _liquidationEngine, _cType, _cahParams, _cahCParams) {
     mockCollateralAuctionHouse = _mockCollateralAuctionHouse;
   }
 
@@ -277,18 +274,6 @@ contract IncreasingDiscountCollateralAuctionHouseForTest is
 
   function call_updateCurrentDiscount(uint256 _id) external returns (uint256) {
     return super._updateCurrentDiscount(_id);
-  }
-
-  function setCollateralFSM(IDelayedOracle _collateralFSM) external {
-    collateralFSM = _collateralFSM;
-  }
-
-  function setSystemCoinOracle(IBaseOracle _systemCoinOracle) external {
-    systemCoinOracle = _systemCoinOracle;
-  }
-
-  function setOracleRelayer(IOracleRelayer _oracleRelayer) external {
-    oracleRelayer = _oracleRelayer;
   }
 }
 

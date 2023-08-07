@@ -7,37 +7,40 @@ import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {Modifiable} from '@contracts/utils/Modifiable.sol';
 
+import {Assertions} from '@libraries/Assertions.sol';
 import {Encoding} from '@libraries/Encoding.sol';
-import {Math, RAY} from '@libraries/Math.sol';
+import {Math, RAY, WAD} from '@libraries/Math.sol';
 import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
 
 contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
   using Math for uint256;
   using Encoding for bytes;
+  using Assertions for uint256;
+  using Assertions for address;
   using EnumerableSet for EnumerableSet.AddressSet;
   using EnumerableSet for EnumerableSet.Bytes32Set;
-
-  // --- Constants ---
-  uint256 public constant WHOLE_TAX_CUT = 10 ** 29;
 
   // --- Registry ---
   ISAFEEngine public safeEngine;
 
   // --- Data ---
-  TaxCollectorParams internal _params;
+  // solhint-disable-next-line private-vars-leading-underscore
+  TaxCollectorParams public _params;
 
   function params() external view returns (TaxCollectorParams memory _taxCollectorParams) {
     return _params;
   }
 
-  mapping(bytes32 => TaxCollectorCollateralParams) internal _cParams;
+  // solhint-disable-next-line private-vars-leading-underscore
+  mapping(bytes32 => TaxCollectorCollateralParams) public _cParams;
 
   function cParams(bytes32 _cType) external view returns (TaxCollectorCollateralParams memory _taxCollectorCParams) {
     return _cParams[_cType];
   }
 
   // Data about each collateral type
-  mapping(bytes32 => TaxCollectorCollateralData) internal _cData;
+  // solhint-disable-next-line private-vars-leading-underscore
+  mapping(bytes32 => TaxCollectorCollateralData) public _cData;
 
   function cData(bytes32 _cType) external view returns (TaxCollectorCollateralData memory _taxCollectorCData) {
     return _cData[_cType];
@@ -46,9 +49,10 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
   // Each collateral type that sends SF to a specific tax receiver
   mapping(address => EnumerableSet.Bytes32Set) internal _secondaryReceiverRevenueSources;
   // Tax receiver data
-  mapping(bytes32 => mapping(address => TaxReceiver)) internal _secondaryTaxReceivers;
+  // solhint-disable-next-line private-vars-leading-underscore
+  mapping(bytes32 => mapping(address => TaxReceiver)) public _secondaryTaxReceivers;
 
-  function secondaryTaxReceiver(
+  function secondaryTaxReceivers(
     bytes32 _cType,
     address _receiver
   ) external view returns (TaxReceiver memory _secondaryTaxReceiver) {
@@ -62,19 +66,24 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
 
   // --- Init ---
   constructor(address _safeEngine, TaxCollectorParams memory _taxCollectorParams) Authorizable(msg.sender) validParams {
-    safeEngine = ISAFEEngine(_safeEngine);
+    safeEngine = ISAFEEngine(_safeEngine.assertNonNull());
     _params = _taxCollectorParams;
+    _setPrimaryTaxReceiver(_taxCollectorParams.primaryTaxReceiver);
   }
 
   /**
    * @notice Initialize a brand new collateral type
    * @param _cType Collateral type name (e.g ETH-A, TBTC-B)
+   * @param _taxCollectorCParams Collateral type parameters
    */
-  function initializeCollateralType(bytes32 _cType) external isAuthorized {
-    if (!_collateralList.add(_cType)) revert CollateralTypeAlreadyInitialized();
-
+  function initializeCollateralType(
+    bytes32 _cType,
+    TaxCollectorCollateralParams memory _taxCollectorCParams
+  ) external isAuthorized validCParams(_cType) {
+    if (!_collateralList.add(_cType)) revert TaxCollector_CollateralTypeAlreadyInitialized();
     _cData[_cType] =
       TaxCollectorCollateralData({nextStabilityFee: RAY, updateTime: block.timestamp, secondaryReceiverAllotedTax: 0});
+    _cParams[_cType] = _taxCollectorCParams;
 
     emit InitializeCollateralType(_cType);
   }
@@ -84,7 +93,7 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
    * @notice Check if multiple collateral types are up to date with taxation
    */
   function collectedManyTax(uint256 _start, uint256 _end) public view returns (bool _ok) {
-    require(_start <= _end && _end < _collateralList.length(), 'TaxCollector/invalid-indexes');
+    if (_start > _end || _end >= _collateralList.length()) revert TaxCollector_InvalidIndexes();
     for (uint256 _i = _start; _i <= _end; ++_i) {
       if (block.timestamp > _cData[_collateralList.at(_i)].updateTime) {
         _ok = false;
@@ -101,7 +110,7 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
    * @param _end Index in collateralList at which we stop looping and calculating the tax outcome
    */
   function taxManyOutcome(uint256 _start, uint256 _end) public view returns (bool _ok, int256 _rad) {
-    require(_start <= _end && _end < _collateralList.length(), 'TaxCollector/invalid-indexes');
+    if (_start > _end || _end >= _collateralList.length()) revert TaxCollector_InvalidIndexes();
     int256 _primaryReceiverBalance = -safeEngine.coinBalance(_params.primaryTaxReceiver).toInt();
     int256 _deltaRate;
     uint256 _debtAmount;
@@ -184,7 +193,7 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
    * @param _end Index in collateralList at which we stop looping and calculating the tax outcome
    */
   function taxMany(uint256 _start, uint256 _end) external {
-    require(_start <= _end && _end < _collateralList.length(), 'TaxCollector/invalid-indexes');
+    if (_start > _end || _end >= _collateralList.length()) revert TaxCollector_InvalidIndexes();
     for (uint256 _i = _start; _i <= _end; ++_i) {
       taxSingle(_collateralList.at(_i));
     }
@@ -199,7 +208,7 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
 
     if (block.timestamp <= __cData.updateTime) {
       _latestAccumulatedRate = safeEngine.cData(_cType).accumulatedRate;
-      _cData[_cType].nextStabilityFee = _params.globalStabilityFee + _cParams[_cType].stabilityFee;
+      _cData[_cType].nextStabilityFee = _getNextStabilityFee(_cType);
       return _latestAccumulatedRate;
     }
     (, int256 _deltaRate) = taxSingleOutcome(_cType);
@@ -208,11 +217,17 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
     _splitTaxIncome(_cType, _debtAmount, _deltaRate);
     _latestAccumulatedRate = safeEngine.cData(_cType).accumulatedRate;
     __cData.updateTime = block.timestamp;
-    __cData.nextStabilityFee = _params.globalStabilityFee + _cParams[_cType].stabilityFee;
+    __cData.nextStabilityFee = _getNextStabilityFee(_cType);
     _cData[_cType] = __cData;
 
     emit CollectTax(_cType, _latestAccumulatedRate, _deltaRate);
     return _latestAccumulatedRate;
+  }
+
+  function _getNextStabilityFee(bytes32 _cType) internal view returns (uint256 _nextStabilityFee) {
+    _nextStabilityFee = _params.globalStabilityFee.rmul(_cParams[_cType].stabilityFee);
+    if (_nextStabilityFee < RAY - _params.maxStabilityFeeRange) return RAY - _params.maxStabilityFeeRange;
+    if (_nextStabilityFee > RAY + _params.maxStabilityFeeRange) return RAY + _params.maxStabilityFeeRange;
   }
 
   /**
@@ -246,19 +261,20 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
   function _distributeTax(bytes32 _cType, address _receiver, uint256 _debtAmount, int256 _deltaRate) internal {
     // Check how many coins the receiver has and negate the value
     int256 _coinBalance = -safeEngine.coinBalance(_receiver).toInt();
+    int256 __debtAmount = _debtAmount.toInt();
 
     TaxReceiver memory _taxReceiver = _secondaryTaxReceivers[_cType][_receiver];
     // Compute the % out of SF that should be allocated to the receiver
     int256 _currentTaxCut = _receiver == _params.primaryTaxReceiver
-      ? (WHOLE_TAX_CUT - _cData[_cType].secondaryReceiverAllotedTax).mul(_deltaRate) / int256(WHOLE_TAX_CUT)
-      : uint256(_taxReceiver.taxPercentage).mul(_deltaRate) / int256(WHOLE_TAX_CUT);
+      ? (WAD - _cData[_cType].secondaryReceiverAllotedTax).wmul(_deltaRate)
+      : _taxReceiver.taxPercentage.wmul(_deltaRate);
 
     /**
      * If SF is negative and a tax receiver doesn't have enough coins to absorb the loss,
      *           compute a new tax cut that can be absorbed
      */
-    _currentTaxCut = _debtAmount.mul(_currentTaxCut) < 0 && _coinBalance > _debtAmount.mul(_currentTaxCut)
-      ? _coinBalance / int256(_debtAmount)
+    _currentTaxCut = __debtAmount * _currentTaxCut < 0 && _coinBalance > __debtAmount * _currentTaxCut
+      ? _coinBalance / __debtAmount
       : _currentTaxCut;
 
     /**
@@ -274,24 +290,35 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
   }
 
   // --- Administration ---
-
-  function _modifyParameters(bytes32 _param, bytes memory _data) internal override validParams {
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     uint256 _uint256 = _data.toUint256();
 
     if (_param == 'primaryTaxReceiver') _setPrimaryTaxReceiver(_data.toAddress());
     else if (_param == 'globalStabilityFee') _params.globalStabilityFee = _uint256;
+    else if (_param == 'maxStabilityFeeRange') _params.maxStabilityFeeRange = _uint256;
     else if (_param == 'maxSecondaryReceivers') _params.maxSecondaryReceivers = _uint256;
     else revert UnrecognizedParam();
   }
 
   function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override {
+    if (!_collateralList.contains(_cType)) revert UnrecognizedCType();
     if (_param == 'stabilityFee') _cParams[_cType].stabilityFee = _data.toUint256();
     else if (_param == 'secondaryTaxReceiver') _setSecondaryTaxReceiver(_cType, abi.decode(_data, (TaxReceiver)));
     else revert UnrecognizedParam();
   }
 
   function _validateParameters() internal view override {
-    require(_params.primaryTaxReceiver != address(0), 'TaxCollector/null-data');
+    _params.primaryTaxReceiver.assertNonNull();
+    _params.maxStabilityFeeRange.assertGt(0).assertLt(RAY);
+    _params.globalStabilityFee.assertGtEq(RAY - _params.maxStabilityFeeRange).assertLtEq(
+      RAY + _params.maxStabilityFeeRange
+    );
+  }
+
+  function _validateCParameters(bytes32 _cType) internal view override {
+    _cParams[_cType].stabilityFee.assertGtEq(RAY - _params.maxStabilityFeeRange).assertLtEq(
+      RAY + _params.maxStabilityFeeRange
+    );
   }
 
   /**
@@ -309,19 +336,18 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
    * @param _data Encoded data containing the receiver, tax percentage, and whether it supports negative tax
    */
   function _setSecondaryTaxReceiver(bytes32 _cType, TaxReceiver memory _data) internal {
-    require(_data.receiver != address(0), 'TaxCollector/null-account');
-    require(_data.receiver != _params.primaryTaxReceiver, 'TaxCollector/primary-receiver-cannot-be-secondary');
-    require(_collateralList.contains(_cType), 'TaxCollector/collateral-type-not-initialized');
+    if (_data.receiver == address(0)) revert TaxCollector_NullAccount();
+    if (_data.receiver == _params.primaryTaxReceiver) revert TaxCollector_PrimaryReceiverCannotBeSecondary();
+    if (!_collateralList.contains(_cType)) revert TaxCollector_CollateralTypeNotInitialized();
 
     if (_secondaryReceivers.add(_data.receiver)) {
       // receiver is a new secondary receiver
 
-      require(_secondaryReceivers.length() <= _params.maxSecondaryReceivers, 'TaxCollector/exceeds-max-receiver-limit');
-      require(_data.taxPercentage > 0, 'TaxCollector/null-sf');
-      require(
-        _cData[_cType].secondaryReceiverAllotedTax + _data.taxPercentage < WHOLE_TAX_CUT,
-        'TaxCollector/tax-cut-exceeds-hundred'
-      );
+      if (_secondaryReceivers.length() > _params.maxSecondaryReceivers) revert TaxCollector_ExceedsMaxReceiverLimit();
+      if (_data.taxPercentage == 0) revert TaxCollector_NullSF();
+      if (_cData[_cType].secondaryReceiverAllotedTax + _data.taxPercentage > WAD) {
+        revert TaxCollector_TaxCutExceedsHundred();
+      }
 
       _cData[_cType].secondaryReceiverAllotedTax += _data.taxPercentage;
       _secondaryReceiverRevenueSources[_data.receiver].add(_cType);
@@ -346,7 +372,7 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
         uint256 _secondaryReceiverAllotedTax = (
           _cData[_cType].secondaryReceiverAllotedTax - _secondaryTaxReceivers[_cType][_data.receiver].taxPercentage
         ) + _data.taxPercentage;
-        require(_secondaryReceiverAllotedTax < WHOLE_TAX_CUT, 'TaxCollector/tax-cut-too-big');
+        if (_secondaryReceiverAllotedTax > WAD) revert TaxCollector_TaxCutTooBig();
 
         _cData[_cType].secondaryReceiverAllotedTax = _secondaryReceiverAllotedTax;
         _secondaryTaxReceivers[_cType][_data.receiver] = _data;

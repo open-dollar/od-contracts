@@ -25,8 +25,8 @@ contract ChainlinkRelayer is IBaseOracle, IChainlinkRelayer {
   uint256 public staleThreshold;
 
   constructor(address _aggregator, uint256 _staleThreshold) {
-    require(_aggregator != address(0), 'ChainlinkRelayer/null-aggregator');
-    require(_staleThreshold > 0, 'ChainlinkRelayer/null-stale-threshold');
+    if (_aggregator == address(0)) revert ChainlinkRelayer_NullAggregator();
+    if (_staleThreshold == 0) revert ChainlinkRelayer_NullStaleThreshold();
 
     staleThreshold = _staleThreshold;
     chainlinkFeed = IChainlinkOracle(_aggregator);

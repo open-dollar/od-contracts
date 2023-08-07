@@ -7,29 +7,21 @@ contract DebtAuctionHouseForTest is DebtAuctionHouse {
   constructor(
     address _safeEngine,
     address _protocolToken,
-    DebtAuctionHouseParams memory _params
-  ) DebtAuctionHouse(_safeEngine, _protocolToken, _params) {}
+    DebtAuctionHouseParams memory _dahParams
+  ) DebtAuctionHouse(_safeEngine, _protocolToken, _dahParams) {}
 
-  function addBid(
+  function addAuction(
     uint256 _id,
     uint256 _bidAmount,
     uint256 _amountToSell,
     address _highBidder,
-    uint48 _bidExpiry,
-    uint48 _auctionDeadline
+    uint256 _bidExpiry,
+    uint256 _auctionDeadline
   ) external {
-    bids[_id].bidAmount = _bidAmount;
-    bids[_id].amountToSell = _amountToSell;
-    bids[_id].highBidder = _highBidder;
-    bids[_id].bidExpiry = _bidExpiry;
-    bids[_id].auctionDeadline = _auctionDeadline;
-  }
-
-  function setBidDuration(uint48 _bidDuration) external {
-    _params.bidDuration = _bidDuration;
-  }
-
-  function setTotalAuctionLength(uint48 _totalAuctionLength) external {
-    _params.totalAuctionLength = _totalAuctionLength;
+    _auctions[_id].bidAmount = _bidAmount;
+    _auctions[_id].amountToSell = _amountToSell;
+    _auctions[_id].highBidder = _highBidder;
+    _auctions[_id].bidExpiry = _bidExpiry;
+    _auctions[_id].auctionDeadline = _auctionDeadline;
   }
 }

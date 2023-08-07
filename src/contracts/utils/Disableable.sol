@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
+
+import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
 abstract contract Disableable is IDisableable, Authorizable {
   // --- Data ---
-  uint256 public contractEnabled = 1;
+  bool public contractEnabled = true;
 
   // --- External methods ---
   function disableContract() external isAuthorized whenEnabled {
-    contractEnabled = 0;
+    contractEnabled = false;
     _onContractDisable();
     emit DisableContract();
   }
@@ -20,14 +21,18 @@ abstract contract Disableable is IDisableable, Authorizable {
   /// @dev Method is instantiated, if not overriden it will just return
   function _onContractDisable() internal virtual {}
 
+  function _isEnabled() internal view virtual returns (bool _enabled) {
+    return contractEnabled;
+  }
+
   // --- Modifiers ---
   modifier whenEnabled() {
-    if (contractEnabled == 0) revert ContractIsDisabled();
+    if (!_isEnabled()) revert ContractIsDisabled();
     _;
   }
 
   modifier whenDisabled() {
-    if (contractEnabled == 1) revert ContractIsEnabled();
+    if (_isEnabled()) revert ContractIsEnabled();
     _;
   }
 }

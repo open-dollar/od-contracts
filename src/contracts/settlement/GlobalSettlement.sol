@@ -119,7 +119,8 @@ contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettl
   IOracleRelayer public oracleRelayer;
   IStabilityFeeTreasury public stabilityFeeTreasury;
 
-  GlobalSettlementParams internal _params;
+  // solhint-disable-next-line private-vars-leading-underscore
+  GlobalSettlementParams public _params;
 
   function params() external view returns (GlobalSettlementParams memory _globalSettlementParams) {
     return _params;
@@ -141,7 +142,7 @@ contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettl
    */
   function shutdownSystem() external isAuthorized whenEnabled {
     shutdownTime = block.timestamp;
-    contractEnabled = 0;
+    contractEnabled = false;
 
     safeEngine.disableContract();
     liquidationEngine.disableContract();
@@ -183,21 +184,31 @@ contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettl
     address _forgoneCollateralReceiver = _collateralAuctionHouse.forgoneCollateralReceiver(_auctionId);
     uint256 _amountToRaise = _collateralAuctionHouse.amountToRaise(_auctionId);
 
-    safeEngine.createUnbackedDebt(address(accountingEngine), address(accountingEngine), _amountToRaise - _raisedAmount);
-    safeEngine.createUnbackedDebt(address(accountingEngine), address(this), _bidAmount);
+    safeEngine.createUnbackedDebt({
+      _debtDestination: address(accountingEngine),
+      _coinDestination: address(accountingEngine),
+      _rad: _amountToRaise - _raisedAmount
+    });
+
+    safeEngine.createUnbackedDebt({
+      _debtDestination: address(accountingEngine),
+      _coinDestination: address(this),
+      _rad: _bidAmount
+    });
+
     safeEngine.approveSAFEModification(address(_collateralAuctionHouse));
     _collateralAuctionHouse.terminateAuctionPrematurely(_auctionId);
 
     uint256 _debt = (_amountToRaise - _raisedAmount) / _accumulatedRate;
     collateralTotalDebt[_cType] += _debt;
-    safeEngine.confiscateSAFECollateralAndDebt(
-      _cType,
-      _forgoneCollateralReceiver,
-      address(this),
-      address(accountingEngine),
-      _collateralToSell.toInt(),
-      _debt.toInt()
-    );
+    safeEngine.confiscateSAFECollateralAndDebt({
+      _cType: _cType,
+      _safe: _forgoneCollateralReceiver,
+      _collateralSource: address(this),
+      _debtDestination: address(accountingEngine),
+      _deltaCollateral: _collateralToSell.toInt(),
+      _deltaDebt: _debt.toInt()
+    });
     emit FastTrackAuction(_cType, _auctionId, collateralTotalDebt[_cType]);
   }
 
@@ -215,14 +226,14 @@ contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettl
     uint256 _minCollateral = Math.min(_safeData.lockedCollateral, _amountOwed);
     collateralShortfall[_cType] += _amountOwed - _minCollateral;
 
-    safeEngine.confiscateSAFECollateralAndDebt(
-      _cType,
-      _safe,
-      address(this),
-      address(accountingEngine),
-      -int256(_minCollateral), // safe cast: cannot overflow because result of rmul
-      -_safeData.generatedDebt.toInt()
-    );
+    safeEngine.confiscateSAFECollateralAndDebt({
+      _cType: _cType,
+      _safe: _safe,
+      _collateralSource: address(this),
+      _debtDestination: address(accountingEngine),
+      _deltaCollateral: -int256(_minCollateral), // safe cast: cannot overflow because result of rmul
+      _deltaDebt: -_safeData.generatedDebt.toInt()
+    });
 
     emit ProcessSAFE(_cType, _safe, collateralShortfall[_cType]);
   }
@@ -234,10 +245,15 @@ contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettl
   function freeCollateral(bytes32 _cType) external whenDisabled {
     ISAFEEngine.SAFE memory _safeData = safeEngine.safes(_cType, msg.sender);
     if (_safeData.generatedDebt != 0) revert GS_SafeDebtNotZero();
-    safeEngine.confiscateSAFECollateralAndDebt(
-      _cType, msg.sender, msg.sender, address(accountingEngine), -_safeData.lockedCollateral.toInt(), 0
-    );
-    emit FreeCollateral(_cType, msg.sender, -_safeData.lockedCollateral.toInt());
+    safeEngine.confiscateSAFECollateralAndDebt({
+      _cType: _cType,
+      _safe: msg.sender,
+      _collateralSource: msg.sender,
+      _debtDestination: address(accountingEngine),
+      _deltaCollateral: -_safeData.lockedCollateral.toInt(),
+      _deltaDebt: 0
+    });
+    emit FreeCollateral(_cType, msg.sender, _safeData.lockedCollateral);
   }
 
   /**
@@ -296,7 +312,7 @@ contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettl
 
   // --- Administration ---
 
-  function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled validParams {
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled {
     address _address = _data.toAddress();
 
     if (_param == 'safeEngine') safeEngine = ISAFEEngine(_address);

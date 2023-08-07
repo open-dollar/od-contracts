@@ -7,21 +7,16 @@ import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {Disableable} from '@contracts/utils/Disableable.sol';
 
 import {Math} from '@libraries/Math.sol';
+import {Assertions} from '@libraries/Assertions.sol';
 
-/*
-    Here we provide ETHJoin adapter (for native Ether)
-    to connect the SAFEEngine to arbitrary external token implementations,
-    creating a bounded context for the SAFEEngine. 
-    In practice, adapter implementations will be varied and specific to
-    individual collateral types, accounting for different transfer
-    semantics and token standards.
-    Adapters need to implement two basic methods:
-      - `join`: enter collateral into the system
-      - `exit`: remove collateral from the system
-*/
-
+/**
+ * @title ETHJoin
+ * @notice This contract allows to connect the SAFEEngine to native ETH collateral
+ * @dev    All Join adapters need to implement two basic methods: `join` and `exit`
+ */
 contract ETHJoin is Authorizable, Disableable, IETHJoin {
   using Math for uint256;
+  using Assertions for address;
 
   // --- Data ---
   // SAFE database
@@ -33,7 +28,7 @@ contract ETHJoin is Authorizable, Disableable, IETHJoin {
 
   // --- Init ---
   constructor(address _safeEngine, bytes32 _cType) Authorizable(msg.sender) {
-    safeEngine = ISAFEEngine(_safeEngine);
+    safeEngine = ISAFEEngine(_safeEngine.assertNonNull());
     collateralType = _cType;
     decimals = 18;
   }
@@ -50,11 +45,12 @@ contract ETHJoin is Authorizable, Disableable, IETHJoin {
   /**
    * @notice Exit ETH from the system
    * @param _account Account that will receive the ETH representation inside the system
+   * @param _wei Amount of ETH to transfer to account (represented as a number with 18 decimals)
    */
-  function exit(address _account, uint256 _wad) external {
-    safeEngine.modifyCollateralBalance(collateralType, msg.sender, -_wad.toInt());
-    emit Exit(msg.sender, _account, _wad);
-    (bool _success,) = _account.call{value: _wad}('');
+  function exit(address _account, uint256 _wei) external {
+    safeEngine.modifyCollateralBalance(collateralType, msg.sender, -_wei.toInt());
+    emit Exit(msg.sender, _account, _wei);
+    (bool _success,) = _account.call{value: _wei}('');
     if (!_success) revert ETHJoin_FailedTransfer();
   }
 }

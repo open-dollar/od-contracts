@@ -36,7 +36,7 @@ contract UniV3Relayer is IBaseOracle, IUniV3Relayer {
 
   constructor(address _baseToken, address _quoteToken, uint24 _feeTier, uint32 _quotePeriod) {
     uniV3Pool = IUniswapV3Factory(_UNI_V3_FACTORY).getPool(_baseToken, _quoteToken, _feeTier);
-    if (uniV3Pool == address(0)) revert InvalidPool();
+    if (uniV3Pool == address(0)) revert UniV3Relayer_InvalidPool();
 
     address _token0 = IUniswapV3Pool(uniV3Pool).token0();
     address _token1 = IUniswapV3Pool(uniV3Pool).token1();

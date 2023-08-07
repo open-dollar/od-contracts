@@ -11,9 +11,11 @@ import {Modifiable} from '@contracts/utils/Modifiable.sol';
 
 import {Math} from '@libraries/Math.sol';
 import {Encoding} from '@libraries/Encoding.sol';
+import {Assertions} from '@libraries/Assertions.sol';
 
 contract SettlementSurplusAuctioneer is Authorizable, Modifiable, ISettlementSurplusAuctioneer {
   using Encoding for bytes;
+  using Assertions for address;
 
   // --- Data ---
   // Last time when this contract triggered a surplus auction
@@ -26,8 +28,8 @@ contract SettlementSurplusAuctioneer is Authorizable, Modifiable, ISettlementSur
 
   // --- Init ---
   constructor(address _accountingEngine, address _surplusAuctionHouse) Authorizable(msg.sender) validParams {
-    accountingEngine = IAccountingEngine(_accountingEngine);
-    surplusAuctionHouse = ISurplusAuctionHouse(_surplusAuctionHouse);
+    accountingEngine = IAccountingEngine(_accountingEngine.assertNonNull());
+    surplusAuctionHouse = ISurplusAuctionHouse(_surplusAuctionHouse.assertNonNull());
     safeEngine = ISAFEEngine(address(accountingEngine.safeEngine()));
     safeEngine.approveSAFEModification(address(surplusAuctionHouse));
   }
@@ -39,20 +41,21 @@ contract SettlementSurplusAuctioneer is Authorizable, Modifiable, ISettlementSur
    *      start a new auction.
    */
   function auctionSurplus() external returns (uint256 _id) {
-    if (accountingEngine.contractEnabled() != 0) revert SSA_AccountingEngineStillEnabled();
+    if (accountingEngine.contractEnabled()) revert SSA_AccountingEngineStillEnabled();
     IAccountingEngine.AccountingEngineParams memory _accEngineParams = accountingEngine.params();
     if (block.timestamp < lastSurplusTime + _accEngineParams.surplusDelay) revert SSA_SurplusAuctionDelayNotPassed();
     lastSurplusTime = block.timestamp;
-    uint256 _amountToSell = Math.min(safeEngine.coinBalance(address(this)), _accEngineParams.surplusAmount);
+    uint256 _coinBalance = safeEngine.coinBalance(address(this));
+    uint256 _amountToSell = Math.min(_coinBalance, _accEngineParams.surplusAmount);
     if (_amountToSell > 0) {
       _id = surplusAuctionHouse.startAuction(_amountToSell, 0);
-      emit AuctionSurplus(_id, lastSurplusTime, safeEngine.coinBalance(address(this)));
+      emit AuctionSurplus(_id, lastSurplusTime, _coinBalance - _amountToSell);
     }
   }
 
   // --- Administration ---
 
-  function _modifyParameters(bytes32 _param, bytes memory _data) internal override validParams {
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     address _address = _data.toAddress();
 
     if (_param == 'accountingEngine') accountingEngine = IAccountingEngine(_address);

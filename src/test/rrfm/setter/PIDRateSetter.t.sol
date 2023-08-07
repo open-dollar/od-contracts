@@ -4,7 +4,7 @@ pragma solidity 0.8.19;
 import 'ds-test/test.sol';
 
 import {MockPIDCalculator} from '../utils/mock/MockPIDCalculator.sol';
-import {PIDRateSetter} from '@contracts/PIDRateSetter.sol';
+import {IPIDRateSetter, PIDRateSetter} from '@contracts/PIDRateSetter.sol';
 import {OracleForTest as OracleForTest} from '@contracts/for-test/OracleForTest.sol';
 
 import {IOracleRelayer, OracleRelayer as MockOracleRelayer} from '@contracts/OracleRelayer.sol';
@@ -18,7 +18,7 @@ contract PIDRateSetterTest is DSTest {
 
   MockOracleRelayer oracleRelayer;
 
-  PIDRateSetter rateSetter;
+  IPIDRateSetter rateSetter;
 
   MockPIDCalculator calculator;
   OracleForTest orcl;
@@ -32,46 +32,37 @@ contract PIDRateSetterTest is DSTest {
     hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     hevm.warp(604_411_200);
 
+    orcl = new OracleForTest(1 ether);
+
     IOracleRelayer.OracleRelayerParams memory _oracleRelayerParams =
       IOracleRelayer.OracleRelayerParams({redemptionRateUpperBound: RAY * WAD, redemptionRateLowerBound: 1});
-    oracleRelayer = new MockOracleRelayer(address(69), _oracleRelayerParams);
-
-    orcl = new OracleForTest(1 ether);
+    oracleRelayer = new MockOracleRelayer(address(69), orcl, _oracleRelayerParams);
 
     calculator = new MockPIDCalculator();
     rateSetter = new PIDRateSetter(
           address(oracleRelayer),
-          address(orcl),
           address(calculator),
-          periodSize
+          IPIDRateSetter.PIDRateSetterParams(periodSize)
         );
     oracleRelayer.addAuthorization(address(rateSetter));
   }
 
   function test_correct_setup() public {
-    assertEq(rateSetter.authorizedAccounts(address(this)), 1);
+    assertTrue(rateSetter.authorizedAccounts(address(this)));
     assertEq(rateSetter.params().updateRateDelay, periodSize);
   }
 
   function test_modify_parameters() public {
     // Modify
-    rateSetter.modifyParameters('oracle', abi.encode(0x12));
     rateSetter.modifyParameters('oracleRelayer', abi.encode(0x12));
     rateSetter.modifyParameters('pidCalculator', abi.encode(0x12));
     rateSetter.modifyParameters('updateRateDelay', abi.encode(1));
 
     // Check
-    assertTrue(address(rateSetter.oracle()) == address(0x12));
     assertTrue(address(rateSetter.oracleRelayer()) == address(0x12));
     assertTrue(address(rateSetter.pidCalculator()) == address(0x12));
 
     assertEq(rateSetter.params().updateRateDelay, 1);
-  }
-
-  function test_get_redemption_and_market_prices() public {
-    (uint256 marketPrice, uint256 redemptionPrice) = rateSetter.getRedemptionAndMarketPrices();
-    assertEq(marketPrice, 1 ether);
-    assertEq(redemptionPrice, RAY);
   }
 
   function test_first_update_rate_no_warp() public {

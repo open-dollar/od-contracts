@@ -53,10 +53,6 @@ contract OverflowChecker {
     _valid = type(int256).max - _b >= int256(_a);
   }
 
-  function notOverflowAddUint48(uint48 _a, uint48 _b) public pure returns (bool _valid) {
-    _valid = _a <= type(uint48).max - _b;
-  }
-
   function notUnderflow(uint256 _a, uint256 _b) public pure returns (bool _valid) {
     _valid = _a >= _b;
   }
@@ -84,7 +80,7 @@ contract OverflowChecker {
   }
 
   function notOverflowMul(uint256 _a, uint256 _b) public pure returns (bool _valid) {
-    if (_b == 0) {
+    if (_a == 0 || _b == 0) {
       _valid = true;
     } else {
       _valid = _a <= type(uint256).max / _b;

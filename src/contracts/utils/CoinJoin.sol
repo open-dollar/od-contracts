@@ -9,6 +9,7 @@ import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {Disableable} from '@contracts/utils/Disableable.sol';
 
 import {RAY} from '@libraries/Math.sol';
+import {Assertions} from '@libraries/Assertions.sol';
 
 /**
  * @title  CoinJoin
@@ -16,6 +17,8 @@ import {RAY} from '@libraries/Math.sol';
  * @dev    This contract needs to be authorized in Coin and SAFEEngine
  */
 contract CoinJoin is Authorizable, Disableable, ICoinJoin {
+  using Assertions for address;
+
   // --- Data ---
   // SAFE database
   ISAFEEngine public safeEngine;
@@ -26,8 +29,8 @@ contract CoinJoin is Authorizable, Disableable, ICoinJoin {
 
   // --- Init ---
   constructor(address _safeEngine, address _systemCoin) Authorizable(msg.sender) {
-    safeEngine = ISAFEEngine(_safeEngine);
-    systemCoin = ISystemCoin(_systemCoin);
+    safeEngine = ISAFEEngine(_safeEngine.assertNonNull());
+    systemCoin = ISystemCoin(_systemCoin.assertNonNull());
     decimals = 18;
   }
 

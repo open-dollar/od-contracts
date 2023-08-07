@@ -12,6 +12,8 @@ import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 
+import {Assertions} from '@libraries/Assertions.sol';
+
 abstract contract Base is HaiTest {
   using stdStorage for StdStorage;
 
@@ -39,7 +41,7 @@ abstract contract Base is HaiTest {
     vm.stopPrank();
   }
 
-  function _mockContractEnabled(uint256 _contractEnabled) internal {
+  function _mockContractEnabled(bool _contractEnabled) internal {
     vm.mockCall(
       address(mockAccountingEngine),
       abi.encodeCall(mockAccountingEngine.contractEnabled, ()),
@@ -108,7 +110,7 @@ contract Unit_SettlementSurplusAuctioneer_Constructor is Base {
   }
 
   function test_Emit_AddAuthorization() public happyPath {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit AddAuthorization(user);
 
     settlementSurplusAuctioneer =
@@ -130,11 +132,24 @@ contract Unit_SettlementSurplusAuctioneer_Constructor is Base {
   function test_Call_SafeEngine_ApproveSAFEModification() public happyPath {
     vm.expectCall(
       address(mockSafeEngine),
-      abi.encodeCall(mockSafeEngine.approveSAFEModification, (address(mockSurplusAuctionHouse)))
+      abi.encodeCall(mockSafeEngine.approveSAFEModification, (address(mockSurplusAuctionHouse))),
+      1
     );
 
     settlementSurplusAuctioneer =
       new SettlementSurplusAuctioneer(address(mockAccountingEngine), address(mockSurplusAuctionHouse));
+  }
+
+  function test_Revert_Null_AccountingEngine() public {
+    vm.expectRevert(Assertions.NullAddress.selector);
+
+    new SettlementSurplusAuctioneer(address(0), address(mockSurplusAuctionHouse));
+  }
+
+  function test_Revert_Null_SurplusAuctionHouse() public {
+    vm.expectRevert(Assertions.NullAddress.selector);
+
+    new SettlementSurplusAuctioneer(address(mockAccountingEngine), address(0));
   }
 }
 
@@ -154,7 +169,7 @@ contract Unit_SettlementSurplusAuctioneer_AuctionSurplus is Base {
     _;
   }
 
-  function _assumeHappyPath(uint256 _lastSurplusTime, uint256 _surplusDelay) internal {
+  function _assumeHappyPath(uint256 _lastSurplusTime, uint256 _surplusDelay) internal view {
     vm.assume(notOverflowAdd(_lastSurplusTime, _surplusDelay));
     vm.assume(block.timestamp >= _lastSurplusTime + _surplusDelay);
   }
@@ -168,17 +183,15 @@ contract Unit_SettlementSurplusAuctioneer_AuctionSurplus is Base {
     uint256 _idB
   ) internal {
     _mockLastSurplusAuctionTime(_lastSurplusTime);
-    _mockContractEnabled(0);
+    _mockContractEnabled(false);
     _mockAccountingEngineParams(0, _surplusDelay, 0, 0, _surplusAmount, 0, 0, 0);
     _mockCoinBalance(address(settlementSurplusAuctioneer), _coinBalance);
     _mockStartAuction(_coinBalance, 0, _idA);
     _mockStartAuction(_surplusAmount, 0, _idB);
   }
 
-  function test_Revert_AccountingEngineStillEnabled(uint256 _contractEnabled) public {
-    vm.assume(_contractEnabled != 0);
-
-    _mockContractEnabled(_contractEnabled);
+  function test_Revert_AccountingEngineStillEnabled() public {
+    _mockContractEnabled(true);
 
     vm.expectRevert(ISettlementSurplusAuctioneer.SSA_AccountingEngineStillEnabled.selector);
 
@@ -263,8 +276,25 @@ contract Unit_SettlementSurplusAuctioneer_AuctionSurplus is Base {
     vm.assume(_coinBalance < _surplusAmount);
     vm.assume(_coinBalance > 0);
 
-    expectEmitNoIndex();
-    emit AuctionSurplus(_idA, block.timestamp, _coinBalance);
+    vm.expectEmit();
+    emit AuctionSurplus(_idA, block.timestamp, 0);
+
+    settlementSurplusAuctioneer.auctionSurplus();
+  }
+
+  function testFail_Emit_AuctionSurplus_A(
+    uint256 _lastSurplusTime,
+    uint256 _surplusDelay,
+    uint256 _surplusAmount,
+    uint256 _coinBalance,
+    uint256 _idA,
+    uint256 _idB
+  ) public happyPath(_lastSurplusTime, _surplusDelay, _surplusAmount, _coinBalance, _idA, _idB) {
+    vm.assume(_coinBalance < _surplusAmount);
+    vm.assume(_coinBalance == 0);
+
+    vm.expectEmit();
+    emit AuctionSurplus(_idA, block.timestamp, 0);
 
     settlementSurplusAuctioneer.auctionSurplus();
   }
@@ -280,13 +310,13 @@ contract Unit_SettlementSurplusAuctioneer_AuctionSurplus is Base {
     vm.assume(_coinBalance >= _surplusAmount);
     vm.assume(_surplusAmount > 0);
 
-    expectEmitNoIndex();
-    emit AuctionSurplus(_idB, block.timestamp, _coinBalance);
+    vm.expectEmit();
+    emit AuctionSurplus(_idB, block.timestamp, _coinBalance - _surplusAmount);
 
     settlementSurplusAuctioneer.auctionSurplus();
   }
 
-  function testFail_Emit_AuctionSurplus(
+  function testFail_Emit_AuctionSurplus_B(
     uint256 _lastSurplusTime,
     uint256 _surplusDelay,
     uint256 _surplusAmount,
@@ -294,12 +324,11 @@ contract Unit_SettlementSurplusAuctioneer_AuctionSurplus is Base {
     uint256 _idA,
     uint256 _idB
   ) public happyPath(_lastSurplusTime, _surplusDelay, _surplusAmount, _coinBalance, _idA, _idB) {
-    vm.assume(
-      _coinBalance < _surplusAmount && _coinBalance == 0 || _coinBalance >= _surplusAmount && _surplusAmount == 0
-    );
+    vm.assume(_coinBalance >= _surplusAmount);
+    vm.assume(_surplusAmount == 0);
 
-    expectEmitNoIndex();
-    emit AuctionSurplus(0, block.timestamp, _coinBalance);
+    vm.expectEmit();
+    emit AuctionSurplus(_idB, block.timestamp, _coinBalance - _surplusAmount);
 
     settlementSurplusAuctioneer.auctionSurplus();
   }

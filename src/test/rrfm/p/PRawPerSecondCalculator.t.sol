@@ -118,13 +118,13 @@ contract PRawPerSecondCalculatorTest is DSTest {
   }
 
   function test_correct_setup() public {
-    assertEq(calculator.authorizedAccounts(address(this)), 1);
+    assertTrue(calculator.authorizedAccounts(address(this)));
 
     assertEq(calculator.params().noiseBarrier, noiseBarrier);
     assertEq(calculator.params().feedbackOutputUpperBound, feedbackOutputUpperBound);
     assertEq(calculator.params().feedbackOutputLowerBound, feedbackOutputLowerBound);
     assertEq(calculator.params().integralPeriodSize, periodSize);
-    assertEq(calculator.deviation().timestamp, 0);
+    assertEq(calculator.deviationObservation().timestamp, 0);
     assertEq(Kp, calculator.controllerGains().kp);
   }
 
@@ -153,12 +153,12 @@ contract PRawPerSecondCalculatorTest is DSTest {
     // Verify that it did not change state
     // assertEq(calculator.readers(address(this)), 1);
     // assertEq(calculator.readers(address(rateSetter)), 1);
-    assertEq(calculator.authorizedAccounts(address(this)), 1);
+    assertTrue(calculator.authorizedAccounts(address(this)));
 
     assertEq(calculator.params().noiseBarrier, noiseBarrier);
     assertEq(calculator.params().feedbackOutputUpperBound, feedbackOutputUpperBound);
     assertEq(calculator.params().feedbackOutputLowerBound, feedbackOutputLowerBound);
-    assertEq(calculator.deviation().timestamp, 0);
+    assertEq(calculator.deviationObservation().timestamp, 0);
     assertEq(calculator.params().integralPeriodSize, periodSize);
     assertEq(Kp, calculator.controllerGains().kp);
   }
@@ -167,7 +167,7 @@ contract PRawPerSecondCalculatorTest is DSTest {
     hevm.warp(block.timestamp + calculator.params().integralPeriodSize + 1);
 
     rateSetter.updateRate(address(this));
-    assertEq(uint256(calculator.deviation().timestamp), block.timestamp);
+    assertEq(uint256(calculator.deviationObservation().timestamp), block.timestamp);
 
     assertEq(oracleRelayer.redemptionPrice(), TWENTY_SEVEN_DECIMAL_NUMBER);
     assertEq(oracleRelayer.redemptionRate(), TWENTY_SEVEN_DECIMAL_NUMBER);
@@ -222,7 +222,7 @@ contract PRawPerSecondCalculatorTest is DSTest {
 
     rateSetter.updateRate(address(this)); // irrelevant because the contract computes everything by itself
 
-    assertEq(uint256(calculator.deviation().timestamp), block.timestamp);
+    assertEq(uint256(calculator.deviationObservation().timestamp), block.timestamp);
     assertEq(oracleRelayer.redemptionPrice(), TWENTY_SEVEN_DECIMAL_NUMBER);
     assertEq(oracleRelayer.redemptionRate(), 0.95e27);
   }
@@ -241,7 +241,7 @@ contract PRawPerSecondCalculatorTest is DSTest {
 
     rateSetter.updateRate(address(this));
 
-    assertEq(uint256(calculator.deviation().timestamp), block.timestamp);
+    assertEq(uint256(calculator.deviationObservation().timestamp), block.timestamp);
     assertEq(oracleRelayer.redemptionPrice(), TWENTY_SEVEN_DECIMAL_NUMBER);
     assertEq(oracleRelayer.redemptionRate(), 1.05e27);
   }
@@ -307,7 +307,7 @@ contract PRawPerSecondCalculatorTest is DSTest {
 
     rateSetter.updateRate(address(this));
 
-    assertEq(uint256(calculator.deviation().timestamp), block.timestamp);
+    assertEq(uint256(calculator.deviationObservation().timestamp), block.timestamp);
     assertEq(oracleRelayer.redemptionPrice(), 1);
     assertEq(oracleRelayer.redemptionRate(), 1);
   }

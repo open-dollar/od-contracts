@@ -6,7 +6,7 @@ import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
 import {ILiquidationEngine} from '@interfaces/ILiquidationEngine.sol';
-import {IIncreasingDiscountCollateralAuctionHouse} from '@interfaces/IIncreasingDiscountCollateralAuctionHouse.sol';
+import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {Modifiable} from '@contracts/utils/Modifiable.sol';
@@ -18,11 +18,7 @@ import {Math, RAY, WAD} from '@libraries/Math.sol';
 /*
    This thing lets you sell some collateral at an increasing discount in order to instantly recapitalize the system
 */
-contract IncreasingDiscountCollateralAuctionHouse is
-  Authorizable,
-  Modifiable,
-  IIncreasingDiscountCollateralAuctionHouse
-{
+contract CollateralAuctionHouse is Authorizable, Modifiable, ICollateralAuctionHouse {
   using Math for uint256;
   using Encoding for bytes;
   using Assertions for uint256;
@@ -33,33 +29,51 @@ contract IncreasingDiscountCollateralAuctionHouse is
 
   // --- Registry ---
   ISAFEEngine public safeEngine;
-  IOracleRelayer public oracleRelayer;
-  IDelayedOracle public collateralFSM;
-  IBaseOracle public systemCoinOracle;
-  ILiquidationEngine public liquidationEngine;
+  IOracleRelayer internal _oracleRelayer;
+  ILiquidationEngine internal _liquidationEngine;
+
+  function liquidationEngine() public view virtual returns (ILiquidationEngine __liquidationEngine) {
+    return _liquidationEngine;
+  }
+
+  function oracleRelayer() public view virtual returns (IOracleRelayer __oracleRelayer) {
+    return _oracleRelayer;
+  }
 
   // --- Data ---
   // Collateral type name
   bytes32 public collateralType;
   // Number of auctions started up until now
-  uint256 public auctionsStarted = 0;
+  uint256 public auctionsStarted;
   // The last read redemption price
   uint256 public lastReadRedemptionPrice;
 
   // Bid data for each separate auction
-  mapping(uint256 _auctionId => Auction) internal _auctions;
+  // solhint-disable-next-line private-vars-leading-underscore
+  mapping(uint256 _auctionId => Auction) public _auctions;
 
   function auctions(uint256 _auctionId) external view returns (Auction memory _auction) {
     return _auctions[_auctionId];
   }
 
-  CollateralAuctionHouseSystemCoinParams internal _params;
-  CollateralAuctionHouseParams internal _cParams;
+  CollateralAuctionHouseSystemCoinParams internal __params;
 
-  // TODO: move global params to CAHFactory
-  function params() external view returns (CollateralAuctionHouseSystemCoinParams memory _cahParams) {
-    return _params;
+  function params() public view virtual returns (CollateralAuctionHouseSystemCoinParams memory _cahParams) {
+    return __params;
   }
+
+  // solhint-disable-next-line private-vars-leading-underscore
+  function _params()
+    external
+    view
+    virtual
+    returns (uint256 _minSystemCoinDeviation, uint256 _lowerSystemCoinDeviation, uint256 _upperSystemCoinDeviation)
+  {
+    return (__params.minSystemCoinDeviation, __params.lowerSystemCoinDeviation, __params.upperSystemCoinDeviation);
+  }
+
+  // solhint-disable-next-line private-vars-leading-underscore
+  CollateralAuctionHouseParams public _cParams;
 
   function cParams() external view returns (CollateralAuctionHouseParams memory _cahCParams) {
     return _cParams;
@@ -68,18 +82,18 @@ contract IncreasingDiscountCollateralAuctionHouse is
   // --- Init ---
   constructor(
     address _safeEngine,
-    address _liquidationEngine,
-    bytes32 _collateralType,
+    address __oracleRelayer,
+    address __liquidationEngine,
+    bytes32 _cType,
     CollateralAuctionHouseSystemCoinParams memory _cahParams,
     CollateralAuctionHouseParams memory _cahCParams
-  ) Authorizable(msg.sender) validParams {
-    _safeEngine.assertNonNull();
+  ) Authorizable(msg.sender) validParams validCParams(_cType) {
+    safeEngine = ISAFEEngine(_safeEngine.assertNonNull());
+    _oracleRelayer = IOracleRelayer(__oracleRelayer);
+    _setLiquidationEngine(__liquidationEngine);
+    collateralType = _cType;
 
-    safeEngine = ISAFEEngine(_safeEngine);
-    liquidationEngine = ILiquidationEngine(_liquidationEngine);
-    collateralType = _collateralType;
-
-    _params = _cahParams;
+    __params = _cahParams;
     _cParams = _cahCParams;
   }
 
@@ -110,8 +124,8 @@ contract IncreasingDiscountCollateralAuctionHouse is
     // calculate the amount of collateral bought
     _boughtCollateral = _adjustedBid.wdiv(_discountedCollateralPrice);
     // if the calculated collateral amount exceeds the amount still up for sale, adjust it to the remaining amount
-    _boughtCollateral =
-      _boughtCollateral > _auctions[_id].amountToSell ? _auctions[_id].amountToSell : _boughtCollateral;
+    Auction memory _auction = _auctions[_id];
+    _boughtCollateral = _boughtCollateral > _auction.amountToSell ? _auction.amountToSell : _boughtCollateral;
   }
 
   /**
@@ -121,10 +135,10 @@ contract IncreasingDiscountCollateralAuctionHouse is
    */
   function _updateCurrentDiscount(uint256 _id) internal virtual returns (uint256 _updatedDiscount) {
     // Work directly with storage
-    Auction storage _auctionBidData = _auctions[_id];
-    _auctionBidData.currentDiscount = _getNextCurrentDiscount(_id);
-    _auctionBidData.latestDiscountUpdateTime = block.timestamp;
-    _updatedDiscount = _auctionBidData.currentDiscount;
+    Auction storage _auction = _auctions[_id];
+    _auction.currentDiscount = _getNextCurrentDiscount(_id);
+    _auction.latestDiscountUpdateTime = block.timestamp;
+    _updatedDiscount = _auction.currentDiscount;
   }
 
   // --- Public Auction Utils ---
@@ -137,9 +151,11 @@ contract IncreasingDiscountCollateralAuctionHouse is
   }
 
   function _getCollateralMarketPrice() internal view virtual returns (uint256 _priceFeed) {
-    // Fetch the collateral market address from the collateral FSM
+    // Fetch the collateral market address from the oracle relayer
+    IDelayedOracle _delayedOracle = oracleRelayer().cParams(collateralType).oracle;
     IBaseOracle _marketOracle;
-    try collateralFSM.priceSource() returns (IBaseOracle __marketOracle) {
+
+    try _delayedOracle.priceSource() returns (IBaseOracle __marketOracle) {
       _marketOracle = __marketOracle;
     } catch (bytes memory) {}
 
@@ -164,10 +180,11 @@ contract IncreasingDiscountCollateralAuctionHouse is
   }
 
   function _getSystemCoinMarketPrice() internal view virtual returns (uint256 _priceFeed) {
-    if (address(systemCoinOracle) == address(0)) return 0;
+    IBaseOracle _systemCoinOracle = oracleRelayer().systemCoinOracle();
+    if (address(_systemCoinOracle) == address(0)) return 0;
 
     // wrapped call toward the system coin oracle
-    try systemCoinOracle.getResultWithValidity() returns (uint256 _price, bool _valid) {
+    try _systemCoinOracle.getResultWithValidity() returns (uint256 _price, bool _valid) {
       if (_valid) {
         _priceFeed = uint256(_price) * 10 ** 9; // scale to RAY
       }
@@ -190,8 +207,9 @@ contract IncreasingDiscountCollateralAuctionHouse is
     virtual
     returns (uint256 _floorPrice)
   {
-    uint256 _minFloorDeviatedPrice = _redemptionPrice.wmul(_params.minSystemCoinDeviation);
-    _floorPrice = _redemptionPrice.wmul(_params.lowerSystemCoinDeviation);
+    CollateralAuctionHouseSystemCoinParams memory _cahParams = params();
+    uint256 _minFloorDeviatedPrice = _redemptionPrice.wmul(_cahParams.minSystemCoinDeviation);
+    _floorPrice = _redemptionPrice.wmul(_cahParams.lowerSystemCoinDeviation);
     _floorPrice = _floorPrice <= _minFloorDeviatedPrice ? _floorPrice : _redemptionPrice;
   }
 
@@ -209,8 +227,9 @@ contract IncreasingDiscountCollateralAuctionHouse is
     virtual
     returns (uint256 _ceilingPrice)
   {
-    uint256 _minCeilingDeviatedPrice = _redemptionPrice.wmul(2 * WAD - _params.minSystemCoinDeviation);
-    _ceilingPrice = _redemptionPrice.wmul(2 * WAD - _params.upperSystemCoinDeviation);
+    CollateralAuctionHouseSystemCoinParams memory _cahParams = params();
+    uint256 _minCeilingDeviatedPrice = _redemptionPrice.wmul(2 * WAD - _cahParams.minSystemCoinDeviation);
+    _ceilingPrice = _redemptionPrice.wmul(2 * WAD - _cahParams.upperSystemCoinDeviation);
     _ceilingPrice = _ceilingPrice >= _minCeilingDeviatedPrice ? _ceilingPrice : _redemptionPrice;
   }
 
@@ -234,10 +253,10 @@ contract IncreasingDiscountCollateralAuctionHouse is
     virtual
     returns (uint256 _cFsmPriceFeedValue, uint256 _sCoinAdjustedPrice)
   {
-    require(
-      _systemCoinRedemptionPrice > 0, 'IncreasingDiscountCollateralAuctionHouse/invalid-redemption-price-provided'
-    );
-    (uint256 _collateralFsmPriceFeedValue, bool _collateralFsmHasValidValue) = collateralFSM.getResultWithValidity();
+    if (_systemCoinRedemptionPrice == 0) revert CAH_InvalidRedemptionPriceProvided();
+
+    IDelayedOracle _delayedOracle = IDelayedOracle(address(oracleRelayer().cParams(collateralType).oracle));
+    (uint256 _collateralFsmPriceFeedValue, bool _collateralFsmHasValidValue) = _delayedOracle.getResultWithValidity();
     if (!_collateralFsmHasValidValue) {
       return (0, 0);
     }
@@ -345,23 +364,23 @@ contract IncreasingDiscountCollateralAuctionHouse is
   }
 
   function _getNextCurrentDiscount(uint256 _id) internal view virtual returns (uint256 _nextDiscount) {
-    if (_auctions[_id].forgoneCollateralReceiver == address(0)) return RAY;
-    _nextDiscount = _auctions[_id].currentDiscount;
+    Auction memory _auction = _auctions[_id];
+    if (_auction.forgoneCollateralReceiver == address(0)) return RAY;
+    _nextDiscount = _auction.currentDiscount;
 
     // If the current discount is not greater than max
-    if (_auctions[_id].currentDiscount > _auctions[_id].maxDiscount) {
+    if (_auction.currentDiscount > _auction.maxDiscount) {
       // Calculate the new current discount
-      _nextDiscount = _auctions[_id].perSecondDiscountUpdateRate.rpow(
-        block.timestamp - _auctions[_id].latestDiscountUpdateTime
-      ).rmul(_auctions[_id].currentDiscount);
+      _nextDiscount = _auction.perSecondDiscountUpdateRate.rpow(block.timestamp - _auction.latestDiscountUpdateTime)
+        .rmul(_auction.currentDiscount);
 
       // If the new discount is greater than the max
-      if (_nextDiscount <= _auctions[_id].maxDiscount) {
+      if (_nextDiscount <= _auction.maxDiscount) {
         // Top the next discount to max
-        _nextDiscount = _auctions[_id].maxDiscount;
+        _nextDiscount = _auction.maxDiscount;
       }
     } else {
-      _nextDiscount = _auctions[_id].maxDiscount;
+      _nextDiscount = _auction.maxDiscount;
     }
   }
 
@@ -377,13 +396,12 @@ contract IncreasingDiscountCollateralAuctionHouse is
   }
 
   function _getAdjustedBid(uint256 _id, uint256 _wad) internal view virtual returns (bool _valid, uint256 _adjustedBid) {
-    if (
-      _auctions[_id].amountToSell == 0 || _auctions[_id].amountToRaise == 0 || _wad == 0 || _wad < _cParams.minimumBid
-    ) {
+    Auction memory _auction = _auctions[_id];
+    if (_auction.amountToSell == 0 || _auction.amountToRaise == 0 || _wad == 0 || _wad < _cParams.minimumBid) {
       return (false, _wad);
     }
 
-    uint256 _remainingToRaise = _auctions[_id].amountToRaise;
+    uint256 _remainingToRaise = _auction.amountToRaise;
 
     // bound max amount offered in exchange for collateral
     _adjustedBid = _wad;
@@ -391,7 +409,7 @@ contract IncreasingDiscountCollateralAuctionHouse is
       _adjustedBid = (_remainingToRaise / RAY) + 1;
     }
 
-    _remainingToRaise = _adjustedBid * RAY > _remainingToRaise ? 0 : _auctions[_id].amountToRaise - _adjustedBid * RAY;
+    _remainingToRaise = _adjustedBid * RAY > _remainingToRaise ? 0 : _auction.amountToRaise - _adjustedBid * RAY;
     _valid = _remainingToRaise == 0 || _remainingToRaise >= RAY;
   }
 
@@ -402,54 +420,55 @@ contract IncreasingDiscountCollateralAuctionHouse is
    * @param _auctionIncomeRecipient Who receives the amount raised in the auction
    * @param _amountToRaise Total amount of coins to raise (rad)
    * @param _amountToSell Total amount of collateral available to sell (wad)
-   * @param _initialBid Unused
    */
   function startAuction(
     address _forgoneCollateralReceiver,
     address _auctionIncomeRecipient,
     uint256 _amountToRaise,
-    uint256 _amountToSell,
-    uint256 _initialBid // NOTE: ignored, only used in event
+    uint256 _amountToSell
   ) external isAuthorized returns (uint256 _id) {
-    return
-      _startAuction(_forgoneCollateralReceiver, _auctionIncomeRecipient, _amountToRaise, _amountToSell, _initialBid);
+    return _startAuction(_forgoneCollateralReceiver, _auctionIncomeRecipient, _amountToRaise, _amountToSell);
   }
 
+  // TODO: rm this internal method
   function _startAuction(
     address _forgoneCollateralReceiver,
     address _auctionIncomeRecipient,
     uint256 _amountToRaise,
-    uint256 _amountToSell,
-    uint256 _initialBid // NOTE: ignored, only used in event
-  ) internal virtual isAuthorized returns (uint256 _id) {
-    require(_amountToSell > 0, 'IncreasingDiscountCollateralAuctionHouse/no-collateral-for-sale');
-    require(_amountToRaise > 0, 'IncreasingDiscountCollateralAuctionHouse/nothing-to-raise');
-    require(_amountToRaise >= RAY, 'IncreasingDiscountCollateralAuctionHouse/dusty-auction');
+    uint256 _amountToSell
+  ) internal virtual returns (uint256 _id) {
+    if (_amountToSell == 0) revert CAH_NoCollateralForSale();
+    if (_amountToRaise == 0) revert CAH_NothingToRaise();
+    if (_amountToRaise < RAY) revert CAH_DustyAuction();
     _id = ++auctionsStarted;
 
-    _auctions[_id].currentDiscount = _cParams.minDiscount;
-    _auctions[_id].maxDiscount = _cParams.maxDiscount;
-    _auctions[_id].perSecondDiscountUpdateRate = _cParams.perSecondDiscountUpdateRate;
-    _auctions[_id].latestDiscountUpdateTime = block.timestamp;
-    _auctions[_id].amountToSell = _amountToSell;
-    _auctions[_id].forgoneCollateralReceiver = _forgoneCollateralReceiver;
-    _auctions[_id].auctionIncomeRecipient = _auctionIncomeRecipient;
-    _auctions[_id].amountToRaise = _amountToRaise;
+    _auctions[_id] = Auction({
+      currentDiscount: _cParams.minDiscount,
+      maxDiscount: _cParams.maxDiscount,
+      perSecondDiscountUpdateRate: _cParams.perSecondDiscountUpdateRate,
+      latestDiscountUpdateTime: block.timestamp,
+      amountToSell: _amountToSell,
+      forgoneCollateralReceiver: _forgoneCollateralReceiver,
+      auctionIncomeRecipient: _auctionIncomeRecipient,
+      amountToRaise: _amountToRaise
+    });
 
-    safeEngine.transferCollateral(collateralType, msg.sender, address(this), _amountToSell);
+    safeEngine.transferCollateral({
+      _cType: collateralType,
+      _source: msg.sender,
+      _destination: address(this),
+      _wad: _amountToSell
+    });
 
-    emit StartAuction(
-      _id,
-      auctionsStarted, // NOTE: redundant
-      _amountToSell,
-      _initialBid,
-      _amountToRaise,
-      _cParams.minDiscount,
-      _cParams.maxDiscount,
-      _cParams.perSecondDiscountUpdateRate,
-      _forgoneCollateralReceiver,
-      _auctionIncomeRecipient
-    );
+    emit StartAuction({
+      _id: _id,
+      _blockTimestamp: block.timestamp,
+      _amountToSell: _amountToSell,
+      _amountToRaise: _amountToRaise,
+      _initialDiscount: _cParams.minDiscount,
+      _maxDiscount: _cParams.maxDiscount,
+      _perSecondDiscountUpdateRate: _cParams.perSecondDiscountUpdateRate
+    });
   }
 
   /**
@@ -498,7 +517,7 @@ contract IncreasingDiscountCollateralAuctionHouse is
     }
 
     // Read the redemption price
-    lastReadRedemptionPrice = oracleRelayer.redemptionPrice();
+    lastReadRedemptionPrice = oracleRelayer().redemptionPrice();
 
     // check that the oracle doesn't return an invalid value
     (uint256 _collateralFsmPriceFeedValue, uint256 _systemCoinPriceFeedValue) =
@@ -536,25 +555,23 @@ contract IncreasingDiscountCollateralAuctionHouse is
    * @param _wad New bid submitted (as a WAD which has 18 decimals)
    */
   function buyCollateral(uint256 _id, uint256 _wad) external {
-    require(
-      _auctions[_id].amountToSell > 0 && _auctions[_id].amountToRaise > 0,
-      'IncreasingDiscountCollateralAuctionHouse/inexistent-auction'
-    );
-    require(_wad > 0 && _wad >= _cParams.minimumBid, 'IncreasingDiscountCollateralAuctionHouse/invalid-bid');
+    Auction storage _auction = _auctions[_id];
+    if (_auction.amountToSell == 0 || _auction.amountToRaise == 0) revert CAH_InexistentAuction();
+    if (_wad == 0 || _wad < _cParams.minimumBid) revert CAH_InvalidBid();
 
     // bound max amount offered in exchange for collateral (in case someone offers more than it's necessary)
     uint256 _adjustedBid = _wad;
-    if (_adjustedBid * RAY > _auctions[_id].amountToRaise) {
-      _adjustedBid = _auctions[_id].amountToRaise / RAY + 1;
+    if (_adjustedBid * RAY > _auction.amountToRaise) {
+      _adjustedBid = _auction.amountToRaise / RAY + 1;
     }
 
     // Read the redemption price
-    lastReadRedemptionPrice = oracleRelayer.redemptionPrice();
+    lastReadRedemptionPrice = oracleRelayer().redemptionPrice();
 
     // check that the collateral FSM doesn't return an invalid value
     (uint256 _collateralFsmPriceFeedValue, uint256 _systemCoinPriceFeedValue) =
       _getCollateralFSMAndFinalSystemCoinPrices(lastReadRedemptionPrice);
-    require(_collateralFsmPriceFeedValue > 0, 'IncreasingDiscountCollateralAuctionHouse/collateral-fsm-invalid-value');
+    if (_collateralFsmPriceFeedValue == 0) revert CAH_CollateralFSMInvalidValue();
 
     // get the amount of collateral bought
     uint256 _boughtCollateral = _getBoughtCollateral(
@@ -566,48 +583,71 @@ contract IncreasingDiscountCollateralAuctionHouse is
       _updateCurrentDiscount(_id)
     );
     // check that the calculated amount is greater than zero
-    require(_boughtCollateral > 0, 'IncreasingDiscountCollateralAuctionHouse/null-bought-amount');
+    if (_boughtCollateral == 0) revert CAH_NullBoughtAmount();
     // update the amount of collateral to sell
-    _auctions[_id].amountToSell = _auctions[_id].amountToSell - _boughtCollateral;
+    _auction.amountToSell = _auction.amountToSell - _boughtCollateral;
 
     // update remainingToRaise in case amountToSell is zero (everything has been sold)
-    uint256 _remainingToRaise = _wad * RAY >= _auctions[_id].amountToRaise || _auctions[_id].amountToSell == 0
-      ? _auctions[_id].amountToRaise
-      : _auctions[_id].amountToRaise - (_wad * RAY);
+    uint256 _remainingToRaise = _wad * RAY >= _auction.amountToRaise || _auction.amountToSell == 0
+      ? _auction.amountToRaise
+      : _auction.amountToRaise - (_wad * RAY);
 
     // update leftover amount to raise in the bid struct
-    _auctions[_id].amountToRaise =
-      _adjustedBid * RAY > _auctions[_id].amountToRaise ? 0 : _auctions[_id].amountToRaise - _adjustedBid * RAY;
+    _auction.amountToRaise =
+      _adjustedBid * RAY > _auction.amountToRaise ? 0 : _auction.amountToRaise - _adjustedBid * RAY;
 
     // check that the remaining amount to raise is either zero or higher than RAY
-    require(
-      _auctions[_id].amountToRaise == 0 || _auctions[_id].amountToRaise >= RAY,
-      'IncreasingDiscountCollateralAuctionHouse/invalid-left-to-raise'
-    );
+    if (_auction.amountToRaise != 0 && _auction.amountToRaise < RAY) revert CAH_InvalidLeftToRaise();
 
     // transfer the bid to the income recipient and the collateral to the bidder
-    safeEngine.transferInternalCoins(msg.sender, _auctions[_id].auctionIncomeRecipient, _adjustedBid * RAY);
-    safeEngine.transferCollateral(collateralType, address(this), msg.sender, _boughtCollateral);
+    safeEngine.transferInternalCoins({
+      _source: msg.sender,
+      _destination: _auction.auctionIncomeRecipient,
+      _rad: _adjustedBid * RAY
+    });
+
+    safeEngine.transferCollateral({
+      _cType: collateralType,
+      _source: address(this),
+      _destination: msg.sender,
+      _wad: _boughtCollateral
+    });
 
     // Emit the buy event
-    emit BuyCollateral(_id, _adjustedBid, _boughtCollateral);
+    emit BuyCollateral({
+      _id: _id,
+      _bidder: msg.sender,
+      _blockTimestamp: block.timestamp,
+      _raisedAmount: _adjustedBid,
+      _soldAmount: _boughtCollateral
+    });
 
     // Remove coins from the liquidation buffer
-    bool _soldAll = _auctions[_id].amountToRaise == 0 || _auctions[_id].amountToSell == 0;
+    bool _soldAll = _auction.amountToRaise == 0 || _auction.amountToSell == 0;
     if (_soldAll) {
-      liquidationEngine.removeCoinsFromAuction(_remainingToRaise);
+      liquidationEngine().removeCoinsFromAuction(_remainingToRaise);
     } else {
-      liquidationEngine.removeCoinsFromAuction(_adjustedBid * RAY);
+      liquidationEngine().removeCoinsFromAuction(_adjustedBid * RAY);
     }
 
     // If the auction raised the whole amount or all collateral was sold,
     // send remaining collateral to the forgone receiver
     if (_soldAll) {
-      safeEngine.transferCollateral(
-        collateralType, address(this), _auctions[_id].forgoneCollateralReceiver, _auctions[_id].amountToSell
-      );
+      safeEngine.transferCollateral({
+        _cType: collateralType,
+        _source: address(this),
+        _destination: _auction.forgoneCollateralReceiver,
+        _wad: _auction.amountToSell
+      });
+
+      emit SettleAuction({
+        _id: _id,
+        _blockTimestamp: block.timestamp,
+        _leftoverReceiver: _auction.forgoneCollateralReceiver,
+        _leftoverCollateral: _auction.amountToSell
+      });
+
       delete _auctions[_id];
-      emit SettleAuction(_id, _auctions[_id].amountToSell);
     }
   }
 
@@ -624,18 +664,29 @@ contract IncreasingDiscountCollateralAuctionHouse is
    * @param _id ID of the auction to settle
    */
   function terminateAuctionPrematurely(uint256 _id) external isAuthorized {
-    require(
-      _auctions[_id].amountToSell > 0 && _auctions[_id].amountToRaise > 0,
-      'IncreasingDiscountCollateralAuctionHouse/inexistent-auction'
-    );
-    liquidationEngine.removeCoinsFromAuction(_auctions[_id].amountToRaise);
-    safeEngine.transferCollateral(collateralType, address(this), msg.sender, _auctions[_id].amountToSell);
+    Auction memory _auction = _auctions[_id];
+
+    if (_auction.amountToSell == 0 || _auction.amountToRaise == 0) revert CAH_InexistentAuction();
+    liquidationEngine().removeCoinsFromAuction(_auction.amountToRaise);
+
+    safeEngine.transferCollateral({
+      _cType: collateralType,
+      _source: address(this),
+      _destination: msg.sender,
+      _wad: _auction.amountToSell
+    });
+
+    emit TerminateAuctionPrematurely({
+      _id: _id,
+      _blockTimestamp: block.timestamp,
+      _leftoverReceiver: _auction.forgoneCollateralReceiver,
+      _leftoverCollateral: _auction.amountToSell
+    });
+
     delete _auctions[_id];
-    emit TerminateAuctionPrematurely(_id, msg.sender, _auctions[_id].amountToSell);
   }
 
   // --- Getters ---
-
   /**
    * @dev Deprecated
    */
@@ -663,48 +714,58 @@ contract IncreasingDiscountCollateralAuctionHouse is
   }
 
   // --- Administration ---
-
-  function _modifyParameters(bytes32 _param, bytes memory _data) internal override validParams {
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal virtual override {
     uint256 _uint256 = _data.toUint256();
     address _address = _data.toAddress();
 
     // Registry
-    if (_param == 'oracleRelayer') oracleRelayer = IOracleRelayer(_address);
-    else if (_param == 'collateralFSM') collateralFSM = _validateCollateralFSM(_address);
-    else if (_param == 'systemCoinOracle') systemCoinOracle = IBaseOracle(_address);
-    else if (_param == 'liquidationEngine') liquidationEngine = ILiquidationEngine(_address);
+    if (_param == 'oracleRelayer') _oracleRelayer = IOracleRelayer(_address);
+    else if (_param == 'liquidationEngine') _setLiquidationEngine(_address);
+    // SystemCoin Params
+    else if (_param == 'lowerSystemCoinDeviation') __params.lowerSystemCoinDeviation = _uint256;
+    else if (_param == 'upperSystemCoinDeviation') __params.upperSystemCoinDeviation = _uint256;
+    else if (_param == 'minSystemCoinDeviation') __params.minSystemCoinDeviation = _uint256;
+    else revert UnrecognizedParam();
+  }
+
+  function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal virtual override {
+    uint256 _uint256 = _data.toUint256();
+
+    // Checks that the inputted collateral type is the contract's one
+    if (_cType != collateralType) revert UnrecognizedCType();
     // CAH Params
-    else if (_param == 'minDiscount') _cParams.minDiscount = _uint256;
+    if (_param == 'minDiscount') _cParams.minDiscount = _uint256;
     else if (_param == 'maxDiscount') _cParams.maxDiscount = _uint256;
     else if (_param == 'perSecondDiscountUpdateRate') _cParams.perSecondDiscountUpdateRate = _uint256;
     else if (_param == 'lowerCollateralDeviation') _cParams.lowerCollateralDeviation = _uint256;
     else if (_param == 'upperCollateralDeviation') _cParams.upperCollateralDeviation = _uint256;
     else if (_param == 'minimumBid') _cParams.minimumBid = _uint256;
-    // SystemCoin Params
-    else if (_param == 'lowerSystemCoinDeviation') _params.lowerSystemCoinDeviation = _uint256;
-    else if (_param == 'upperSystemCoinDeviation') _params.upperSystemCoinDeviation = _uint256;
-    else if (_param == 'minSystemCoinDeviation') _params.minSystemCoinDeviation = _uint256;
     else revert UnrecognizedParam();
   }
 
-  function _validateCollateralFSM(address _delayedOracle) internal view returns (IDelayedOracle _collateralFSM) {
-    _collateralFSM = IDelayedOracle(_delayedOracle);
-    _collateralFSM.priceSource();
+  function _setLiquidationEngine(address _newLiquidationEngine) internal virtual {
+    if (address(_liquidationEngine) != address(0)) _removeAuthorization(address(_liquidationEngine));
+    _liquidationEngine = ILiquidationEngine(_newLiquidationEngine);
+    _addAuthorization(_newLiquidationEngine);
   }
 
   function _validateParameters() internal view override {
-    // Collateral Auction House
+    // SystemCoin Parameters
+    CollateralAuctionHouseSystemCoinParams memory _cahParams = params();
+    _cahParams.lowerSystemCoinDeviation.assertLtEq(WAD);
+    _cahParams.upperSystemCoinDeviation.assertLtEq(WAD);
+
+    // Registry
+    address(oracleRelayer()).assertNonNull();
+    address(liquidationEngine()).assertNonNull();
+  }
+
+  function _validateCParameters(bytes32) internal view override {
+    // Collateral Parameters
     _cParams.minDiscount.assertGtEq(_cParams.maxDiscount).assertLtEq(WAD);
     _cParams.maxDiscount.assertGt(0).assertLtEq(_cParams.minDiscount);
     _cParams.perSecondDiscountUpdateRate.assertLtEq(RAY);
     _cParams.lowerCollateralDeviation.assertLtEq(WAD);
     _cParams.upperCollateralDeviation.assertLtEq(WAD);
-
-    // SystemCoin Auction House
-    _params.lowerSystemCoinDeviation.assertLtEq(WAD);
-    _params.upperSystemCoinDeviation.assertLtEq(WAD);
-
-    // Liquidation Engine
-    address(liquidationEngine).assertNonNull();
   }
 }

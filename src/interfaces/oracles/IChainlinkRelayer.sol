@@ -5,6 +5,10 @@ import {IChainlinkOracle} from '@interfaces/oracles/IChainlinkOracle.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 
 interface IChainlinkRelayer is IBaseOracle {
+  // --- Errors ---
+  error ChainlinkRelayer_NullAggregator();
+  error ChainlinkRelayer_NullStaleThreshold();
+
   /**
    * @notice Address of the Chainlink aggregator used to consult the price
    */

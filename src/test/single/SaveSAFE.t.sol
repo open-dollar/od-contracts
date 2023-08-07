@@ -10,22 +10,25 @@ import {IAccountingEngine, AccountingEngine} from '@contracts/AccountingEngine.s
 import {ITaxCollector, TaxCollector} from '@contracts/TaxCollector.sol';
 import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
 import {ETHJoin} from '@contracts/utils/ETHJoin.sol';
-import {CollateralJoin} from '@contracts/utils/CollateralJoin.sol';
-import {OracleRelayer} from '@contracts/OracleRelayer.sol';
-import {IDebtAuctionHouse, DebtAuctionHouse} from '@contracts/DebtAuctionHouse.sol';
 import {
-  IIncreasingDiscountCollateralAuctionHouse,
-  IncreasingDiscountCollateralAuctionHouse
-} from '@contracts/CollateralAuctionHouse.sol';
+  ICollateralJoinFactory,
+  ICollateralJoin,
+  CollateralJoinFactory
+} from '@contracts/factories/CollateralJoinFactory.sol';
+import {OracleRelayer, IOracleRelayer} from '@contracts/OracleRelayer.sol';
+import {IDebtAuctionHouse, DebtAuctionHouse} from '@contracts/DebtAuctionHouse.sol';
+import {ICollateralAuctionHouse, CollateralAuctionHouse} from '@contracts/CollateralAuctionHouse.sol';
 import {
   IPostSettlementSurplusAuctionHouse,
   PostSettlementSurplusAuctionHouse
 } from '@contracts/settlement/PostSettlementSurplusAuctionHouse.sol';
+import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 
 import {RAY, WAD} from '@libraries/Math.sol';
 
 abstract contract Hevm {
   function warp(uint256) public virtual;
+  function prank(address) external virtual;
 }
 
 contract Feed {
@@ -57,7 +60,7 @@ contract RevertableSaviour {
     liquidationEngine = liquidationEngine_;
   }
 
-  function saveSAFE(address liquidator, bytes32, address) public returns (bool, uint256, uint256) {
+  function saveSAFE(address liquidator, bytes32, address) public view returns (bool, uint256, uint256) {
     if (liquidator == liquidationEngine) {
       return (true, uint256(int256(-1)), uint256(int256(-1)));
     } else {
@@ -67,13 +70,13 @@ contract RevertableSaviour {
 }
 
 contract MissingFunctionSaviour {
-  function random() public returns (bool, uint256, uint256) {
+  function random() public pure returns (bool, uint256, uint256) {
     return (true, 1, 1);
   }
 }
 
 contract FaultyReturnableSaviour {
-  function saveSAFE(address, bytes32, address) public returns (bool, uint256) {
+  function saveSAFE(address, bytes32, address) public pure returns (bool, uint256) {
     return (true, 1);
   }
 }
@@ -118,14 +121,17 @@ contract SingleSaveSAFETest is DSTest {
   Hevm hevm;
 
   SAFEEngine safeEngine;
+  Feed systemCoinFeed;
+  OracleRelayer oracleRelayer;
   AccountingEngine accountingEngine;
   LiquidationEngine liquidationEngine;
   CoinForTest gold;
   TaxCollector taxCollector;
 
-  CollateralJoin collateralA;
+  ICollateralJoinFactory collateralJoinFactory;
+  ICollateralJoin collateralA;
 
-  IncreasingDiscountCollateralAuctionHouse collateralAuctionHouse;
+  CollateralAuctionHouse collateralAuctionHouse;
   DebtAuctionHouse debtAuctionHouse;
   PostSettlementSurplusAuctionHouse surplusAuctionHouse;
 
@@ -169,6 +175,13 @@ contract SingleSaveSAFETest is DSTest {
       ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: rad(1000 ether)});
     safeEngine = new SAFEEngine(_safeEngineParams);
 
+    systemCoinFeed = new Feed(1 ether, true);
+
+    IOracleRelayer.OracleRelayerParams memory _oracleRelayerParams =
+      IOracleRelayer.OracleRelayerParams({redemptionRateUpperBound: 1e45, redemptionRateLowerBound: 1});
+    oracleRelayer =
+    new OracleRelayer({_safeEngine: address(safeEngine), _systemCoinOracle: IBaseOracle(address(systemCoinFeed)), _oracleRelayerParams: _oracleRelayerParams});
+
     IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams memory _pssahParams = IPostSettlementSurplusAuctionHouse
       .PostSettlementSAHParams({bidIncrease: 1.05e18, bidDuration: 3 hours, totalAuctionLength: 2 days});
     surplusAuctionHouse =
@@ -198,47 +211,50 @@ contract SingleSaveSAFETest is DSTest {
         );
     surplusAuctionHouse.addAuthorization(address(accountingEngine));
     debtAuctionHouse.addAuthorization(address(accountingEngine));
-    debtAuctionHouse.modifyParameters('accountingEngine', abi.encode(accountingEngine));
     safeEngine.addAuthorization(address(accountingEngine));
 
     ITaxCollector.TaxCollectorParams memory _taxCollectorParams = ITaxCollector.TaxCollectorParams({
       primaryTaxReceiver: address(accountingEngine),
-      globalStabilityFee: 0,
+      globalStabilityFee: RAY,
+      maxStabilityFeeRange: RAY - 1,
       maxSecondaryReceivers: 0
     });
 
     taxCollector = new TaxCollector(address(safeEngine), _taxCollectorParams);
-    taxCollector.initializeCollateralType('gold');
+    ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
+      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: RAY});
+    taxCollector.initializeCollateralType('gold', _taxCollectorCollateralParams);
     safeEngine.addAuthorization(address(taxCollector));
 
     ILiquidationEngine.LiquidationEngineParams memory _liquidationEngineParams =
       ILiquidationEngine.LiquidationEngineParams({onAuctionSystemCoinLimit: type(uint256).max});
-    liquidationEngine = new LiquidationEngine(address(safeEngine), _liquidationEngineParams);
-    liquidationEngine.modifyParameters('accountingEngine', abi.encode(accountingEngine));
+    liquidationEngine = new LiquidationEngine(address(safeEngine), address(accountingEngine), _liquidationEngineParams);
     safeEngine.addAuthorization(address(liquidationEngine));
     accountingEngine.addAuthorization(address(liquidationEngine));
 
     gold = new CoinForTest('GEM', 'GEM');
     gold.mint(1000 ether);
 
-    safeEngine.initializeCollateralType('gold');
-    collateralA = new CollateralJoin(address(safeEngine), 'gold', address(gold));
-    safeEngine.addAuthorization(address(collateralA));
+    ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
+      ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: rad(1000 ether), debtFloor: 0});
+    safeEngine.initializeCollateralType('gold', _safeEngineCollateralParams);
+    collateralJoinFactory = new CollateralJoinFactory(address(safeEngine));
+    safeEngine.addAuthorization(address(collateralJoinFactory));
+    collateralA = collateralJoinFactory.deployCollateralJoin('gold', address(gold));
     gold.approve(address(collateralA), type(uint256).max);
     collateralA.join(address(this), 1000 ether);
 
     safeEngine.updateCollateralPrice('gold', ray(1 ether), ray(1 ether));
-    safeEngine.modifyParameters('gold', 'debtCeiling', abi.encode(rad(1000 ether)));
 
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams =
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams({
+    ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams = ICollateralAuctionHouse
+      .CollateralAuctionHouseSystemCoinParams({
       lowerSystemCoinDeviation: WAD, // 0% deviation
       upperSystemCoinDeviation: WAD, // 0% deviation
       minSystemCoinDeviation: 0.999e18 // 0.1% deviation
     });
 
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams =
-    IIncreasingDiscountCollateralAuctionHouse.CollateralAuctionHouseParams({
+    ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams = ICollateralAuctionHouse
+      .CollateralAuctionHouseParams({
       minDiscount: 0.95e18, // 5% discount
       maxDiscount: 0.95e18, // 5% discount
       perSecondDiscountUpdateRate: RAY, // [ray]
@@ -247,12 +263,15 @@ contract SingleSaveSAFETest is DSTest {
       minimumBid: 1e18 // 1 system coin
     });
     collateralAuctionHouse =
-    new IncreasingDiscountCollateralAuctionHouse(address(safeEngine), address(liquidationEngine), 'gold', _cahParams, _cahCParams);
-    collateralAuctionHouse.addAuthorization(address(liquidationEngine));
+    new CollateralAuctionHouse(address(safeEngine), address(oracleRelayer), address(liquidationEngine), 'gold', _cahParams, _cahCParams);
 
-    liquidationEngine.addAuthorization(address(collateralAuctionHouse));
-    liquidationEngine.modifyParameters('gold', 'collateralAuctionHouse', abi.encode(collateralAuctionHouse));
-    liquidationEngine.modifyParameters('gold', 'liquidationPenalty', abi.encode(1 ether));
+    ILiquidationEngine.LiquidationEngineCollateralParams memory _liquidationEngineCollateralParams = ILiquidationEngine
+      .LiquidationEngineCollateralParams({
+      collateralAuctionHouse: address(collateralAuctionHouse),
+      liquidationPenalty: 1 ether,
+      liquidationQuantity: 0
+    });
+    liquidationEngine.initializeCollateralType('gold', _liquidationEngineCollateralParams);
 
     safeEngine.addAuthorization(address(collateralAuctionHouse));
     safeEngine.addAuthorization(address(surplusAuctionHouse));

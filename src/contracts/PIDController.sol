@@ -23,28 +23,31 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
   using Assertions for address;
 
   uint256 internal constant _NEGATIVE_RATE_LIMIT = RAY - 1;
-  uint256 internal constant _POSITIVE_RATE_LIMIT = type(uint256).max - RAY - 1;
+  uint256 internal constant _POSITIVE_RATE_LIMIT = uint256(type(int256).max);
 
   // --- Registry ---
   /// @inheritdoc IPIDController
   address public seedProposer;
 
   // --- Data ---
-  PIDControllerParams internal _params;
+  // solhint-disable-next-line private-vars-leading-underscore
+  PIDControllerParams public _params;
 
   function params() external view returns (PIDControllerParams memory _pidParams) {
     return _params;
   }
 
-  DeviationObservation internal _deviationObservation;
+  // solhint-disable-next-line private-vars-leading-underscore
+  DeviationObservation public _deviationObservation;
 
   /// @inheritdoc IPIDController
-  function deviation() external view returns (DeviationObservation memory _deviation) {
+  function deviationObservation() external view returns (DeviationObservation memory __deviationObservation) {
     return _deviationObservation;
   }
 
   // -- Static & Default Variables ---
-  ControllerGains internal _controllerGains;
+  // solhint-disable-next-line private-vars-leading-underscore
+  ControllerGains public _controllerGains;
 
   /// @inheritdoc IPIDController
   function controllerGains() external view returns (ControllerGains memory _cGains) {
@@ -77,7 +80,7 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
     int256 _boundedPIOutput = _getBoundedPIOutput(_piOutput);
 
     // feedbackOutputLowerBound will never be less than NEGATIVE_RATE_LIMIT : RAY - 1,
-    // and feedbackOutputUpperBound will never be greater than POSITIVE_RATE_LIMIT : type(uint256).max - RAY - 1
+    // and feedbackOutputUpperBound will never be greater than POSITIVE_RATE_LIMIT : uint256(type(int256).max)
     // boundedPIOutput can be safely added to RAY
     _newRedemptionRate = _boundedPIOutput < -int256(RAY) ? _NEGATIVE_RATE_LIMIT : RAY.add(_boundedPIOutput);
 
@@ -88,7 +91,7 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
     _boundedPIOutput = _piOutput;
     if (_piOutput < _params.feedbackOutputLowerBound) {
       _boundedPIOutput = _params.feedbackOutputLowerBound;
-    } else if (_piOutput > int256(_params.feedbackOutputUpperBound)) {
+    } else if (_piOutput > _params.feedbackOutputUpperBound.toInt()) {
       _boundedPIOutput = int256(_params.feedbackOutputUpperBound);
     }
     return _boundedPIOutput;
@@ -127,7 +130,7 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
     uint256 _scaledMarketPrice = _marketPrice * 1e9;
 
     // Calculate the proportional term as (redemptionPrice - marketPrice) * RAY / redemptionPrice
-    _proportionalTerm = _redemptionPrice.sub(_scaledMarketPrice).rdiv(int256(_redemptionPrice));
+    _proportionalTerm = _redemptionPrice.sub(_scaledMarketPrice).rdiv(int256(_redemptionPrice)); // safe cast: cannot overflow because minuend of sub
 
     return _proportionalTerm;
   }
@@ -154,7 +157,7 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
   function _getGainAdjustedPIOutput(
     int256 _proportionalTerm,
     int256 _integralTerm
-  ) internal view virtual returns (int256 _adjsutedPIOutput) {
+  ) internal view virtual returns (int256 _adjustedPIOutput) {
     (int256 _adjustedProportional, int256 _adjustedIntegral) = _getGainAdjustedTerms(_proportionalTerm, _integralTerm);
     return (_adjustedProportional + _adjustedIntegral);
   }
@@ -205,8 +208,7 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
   ) internal view virtual returns (int256 _nextDeviationCumulative, int256 _appliedDeviation) {
     int256 _lastProportionalTerm = _deviationObservation.proportional;
     uint256 _timeElapsed = _timeSinceLastUpdate();
-    int256 _newTimeAdjustedDeviation =
-      int256(_proportionalTerm).riemannSum(_lastProportionalTerm) * int256(_timeElapsed);
+    int256 _newTimeAdjustedDeviation = _proportionalTerm.riemannSum(_lastProportionalTerm) * int256(_timeElapsed);
     int256 _leakedPriceCumulative = _accumulatedLeak.rmul(_deviationObservation.integral);
 
     return (_leakedPriceCumulative + _newTimeAdjustedDeviation, _newTimeAdjustedDeviation);
@@ -243,7 +245,7 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
 
   // --- Administration ---
 
-  function _modifyParameters(bytes32 _param, bytes memory _data) internal override validParams {
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     uint256 _uint256 = _data.toUint256();
     int256 _int256 = _data.toInt256();
 
@@ -275,7 +277,7 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
   function _validateParameters() internal view override {
     _params.integralPeriodSize.assertNonNull();
     _params.noiseBarrier.assertNonNull().assertLtEq(WAD);
-    _params.feedbackOutputUpperBound.assertNonNull().assertLt(_POSITIVE_RATE_LIMIT);
+    _params.feedbackOutputUpperBound.assertNonNull().assertLtEq(_POSITIVE_RATE_LIMIT);
     _params.feedbackOutputLowerBound.assertLt(0).assertGtEq(-int256(_NEGATIVE_RATE_LIMIT));
     _params.perSecondCumulativeLeak.assertLtEq(RAY);
 

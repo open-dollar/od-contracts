@@ -1,17 +1,18 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import './Common.t.sol';
+import {Common, ETH_A, RAY} from './Common.t.sol';
+
+import {BaseUser} from '@test/scopes/BaseUser.t.sol';
+import {DirectUser} from '@test/scopes/DirectUser.t.sol';
+import {ProxyUser} from '@test/scopes/ProxyUser.t.sol';
 
 import {HOUR, YEAR} from '@libraries/Math.sol';
 
-contract E2EStabilityFeeTreasuryTest is Common {
-  uint256 constant INITIAL_DEBT = 1000e18;
+abstract contract E2EStabilityFeeTreasuryTest is BaseUser, Common {
+  uint256 constant INITIAL_DEBT = 100_000_000e18;
 
   function _gatherFees(uint256 _wad, uint256 _timeElapsed) internal {
-    // Funding alice
-    _lockETH(alice, _wad);
-
     // opening alice safe
     _generateDebt({
       _user: alice,
@@ -21,7 +22,7 @@ contract E2EStabilityFeeTreasuryTest is Common {
     });
 
     // Collecting 1 year of fees
-    _collectFees(1 * _timeElapsed);
+    _collectFees(ETH_A, 1 * _timeElapsed);
   }
 
   function test_give_funds() public {
@@ -29,7 +30,6 @@ contract E2EStabilityFeeTreasuryTest is Common {
     _gatherFees(INITIAL_DEBT, YEAR);
 
     uint256 _coinBalance = safeEngine.coinBalance(address(stabilityFeeTreasury));
-    uint256 _previousExpensesAccumulator = stabilityFeeTreasury.expensesAccumulator();
 
     // giving 25% of the balance to bob
     uint256 _rad = _coinBalance / 4;
@@ -41,7 +41,6 @@ contract E2EStabilityFeeTreasuryTest is Common {
     // Assertions
     assertEq(safeEngine.coinBalance(bob), _rad);
     assertEq(safeEngine.coinBalance(address(stabilityFeeTreasury)), _coinBalance - _rad);
-    assertEq(stabilityFeeTreasury.expensesAccumulator(), _previousExpensesAccumulator + _rad);
   }
 
   function test_take_funds() public {
@@ -73,7 +72,6 @@ contract E2EStabilityFeeTreasuryTest is Common {
     _gatherFees(INITIAL_DEBT, YEAR);
 
     uint256 _coinBalance = safeEngine.coinBalance(address(stabilityFeeTreasury));
-    uint256 _previousExpensesAccumulator = stabilityFeeTreasury.expensesAccumulator();
     uint256 _previousAliceBalance = safeEngine.coinBalance(alice);
 
     vm.startPrank(deployer);
@@ -90,9 +88,7 @@ contract E2EStabilityFeeTreasuryTest is Common {
     // Assertions
     assertEq(safeEngine.coinBalance(alice), _previousAliceBalance + _rad);
     assertEq(safeEngine.coinBalance(address(stabilityFeeTreasury)), _coinBalance - _rad);
-    (uint256 _totalAllowance,) = stabilityFeeTreasury.allowance(deployer);
-    assertEq(_totalAllowance, 0); // deployer used all allowance
-    assertEq(stabilityFeeTreasury.expensesAccumulator(), _previousExpensesAccumulator + _rad);
+    assertEq(stabilityFeeTreasury.allowance(deployer).total, 0); // deployer used all allowance
     assertEq(stabilityFeeTreasury.pulledPerHour(deployer, block.timestamp / HOUR), _rad);
   }
 
@@ -101,11 +97,12 @@ contract E2EStabilityFeeTreasuryTest is Common {
     _gatherFees(INITIAL_DEBT, YEAR);
     address _extraSurplusReceiver = stabilityFeeTreasury.extraSurplusReceiver();
     uint256 _coinBalance = safeEngine.coinBalance(address(stabilityFeeTreasury));
+    uint256 _fundsToTransfer = _coinBalance - stabilityFeeTreasury.params().treasuryCapacity;
     uint256 _preexistentBalance = safeEngine.coinBalance(_extraSurplusReceiver);
 
     // Transfering extra surplus to the receiver, in this case to the accounting engine
     stabilityFeeTreasury.transferSurplusFunds();
-    assertEq(safeEngine.coinBalance(_extraSurplusReceiver), _coinBalance + _preexistentBalance);
+    assertEq(safeEngine.coinBalance(_extraSurplusReceiver), _fundsToTransfer + _preexistentBalance);
     assertEq(stabilityFeeTreasury.latestSurplusTransferTime(), block.timestamp);
   }
 
@@ -168,3 +165,7 @@ contract E2EStabilityFeeTreasuryTest is Common {
     assertEq(safeEngine.coinBalance(address(stabilityFeeTreasury)), 0);
   }
 }
+
+// --- Scoped test contracts ---
+
+contract E2EStabilityFeeTreasuryTestDirectUser is DirectUser, E2EStabilityFeeTreasuryTest {}

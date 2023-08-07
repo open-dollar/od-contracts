@@ -125,14 +125,14 @@ contract PIScaledPerSecondCalculatorTest is DSTest {
   function test_correct_setup() public {
     // assertEq(calculator.readers(address(this)), 1);
     // assertEq(calculator.readers(address(rateSetter)), 1);
-    assertEq(calculator.authorizedAccounts(address(this)), 1);
+    assertTrue(calculator.authorizedAccounts(address(this)));
 
     assertEq(calculator.params().noiseBarrier, noiseBarrier);
     assertEq(calculator.params().feedbackOutputUpperBound, feedbackOutputUpperBound);
     assertEq(calculator.params().feedbackOutputLowerBound, feedbackOutputLowerBound);
-    assertEq(calculator.deviation().timestamp, 0);
+    assertEq(calculator.deviationObservation().timestamp, 0);
     assertEq(calculator.params().integralPeriodSize, integralPeriodSize);
-    assertEq(calculator.deviation().integral, 0);
+    assertEq(calculator.deviationObservation().integral, 0);
     assertEq(calculator.params().perSecondCumulativeLeak, perSecondCumulativeLeak);
     assertEq(Kp, calculator.controllerGains().ki);
     assertEq(Ki, calculator.controllerGains().kp);
@@ -171,14 +171,14 @@ contract PIScaledPerSecondCalculatorTest is DSTest {
     // Verify that it did not change state
     // assertEq(calculator.readers(address(this)), 1);
     // assertEq(calculator.readers(address(rateSetter)), 1);
-    assertEq(calculator.authorizedAccounts(address(this)), 1);
+    assertTrue(calculator.authorizedAccounts(address(this)));
 
     assertEq(calculator.params().noiseBarrier, noiseBarrier);
     assertEq(calculator.params().feedbackOutputUpperBound, feedbackOutputUpperBound);
     assertEq(calculator.params().feedbackOutputLowerBound, feedbackOutputLowerBound);
-    assertEq(calculator.deviation().timestamp, 0);
+    assertEq(calculator.deviationObservation().timestamp, 0);
     assertEq(calculator.params().integralPeriodSize, integralPeriodSize);
-    assertEq(calculator.deviation().integral, 0);
+    assertEq(calculator.deviationObservation().integral, 0);
     assertEq(calculator.params().perSecondCumulativeLeak, perSecondCumulativeLeak);
     assertEq(Kp, calculator.controllerGains().ki);
     assertEq(Ki, calculator.controllerGains().kp);
@@ -189,13 +189,13 @@ contract PIScaledPerSecondCalculatorTest is DSTest {
     hevm.warp(block.timestamp + calculator.params().integralPeriodSize + 1);
 
     rateSetter.updateRate(address(this));
-    assertEq(uint256(calculator.deviation().timestamp), block.timestamp);
-    assertEq(uint256(calculator.deviation().integral), 0);
+    assertEq(uint256(calculator.deviationObservation().timestamp), block.timestamp);
+    assertEq(uint256(calculator.deviationObservation().integral), 0);
 
     assertEq(oracleRelayer.redemptionPrice(), TWENTY_SEVEN_DECIMAL_NUMBER);
     assertEq(oracleRelayer.redemptionRate(), TWENTY_SEVEN_DECIMAL_NUMBER);
 
-    (IPIDController.DeviationObservation memory _deviation) = calculator.deviation();
+    (IPIDController.DeviationObservation memory _deviation) = calculator.deviationObservation();
 
     assertEq(_deviation.timestamp, block.timestamp);
     assertEq(_deviation.proportional, 0);
@@ -243,7 +243,7 @@ contract PIScaledPerSecondCalculatorTest is DSTest {
   }
 
   function test_first_small_positive_deviation() public {
-    assertEq(uint256(calculator.deviation().integral), 0);
+    assertEq(uint256(calculator.deviationObservation().integral), 0);
 
     calculator.modifyParameters('noiseBarrier', abi.encode(uint256(0.995e18)));
 
@@ -259,12 +259,12 @@ contract PIScaledPerSecondCalculatorTest is DSTest {
 
     rateSetter.updateRate(address(this)); // irrelevant because the contract computes everything by itself
 
-    assertEq(uint256(calculator.deviation().timestamp), block.timestamp);
-    assertEq(calculator.deviation().integral, 0);
+    assertEq(uint256(calculator.deviationObservation().timestamp), block.timestamp);
+    assertEq(calculator.deviationObservation().integral, 0);
     assertEq(oracleRelayer.redemptionPrice(), TWENTY_SEVEN_DECIMAL_NUMBER);
     assertEq(oracleRelayer.redemptionRate(), 0.95e27);
 
-    (IPIDController.DeviationObservation memory _deviation) = calculator.deviation();
+    (IPIDController.DeviationObservation memory _deviation) = calculator.deviationObservation();
 
     assertEq(_deviation.timestamp, block.timestamp);
     assertEq(_deviation.proportional, -0.05e27);
@@ -272,7 +272,7 @@ contract PIScaledPerSecondCalculatorTest is DSTest {
   }
 
   function test_first_small_negative_deviation() public {
-    assertEq(uint256(calculator.deviation().integral), 0);
+    assertEq(uint256(calculator.deviationObservation().integral), 0);
 
     calculator.modifyParameters('noiseBarrier', abi.encode(uint256(0.995e18)));
 
@@ -289,14 +289,14 @@ contract PIScaledPerSecondCalculatorTest is DSTest {
 
     rateSetter.updateRate(address(this));
 
-    assertEq(uint256(calculator.deviation().timestamp), block.timestamp);
-    assertEq(calculator.deviation().integral, 0);
+    assertEq(uint256(calculator.deviationObservation().timestamp), block.timestamp);
+    assertEq(calculator.deviationObservation().integral, 0);
     assertEq(oracleRelayer.redemptionPrice(), TWENTY_SEVEN_DECIMAL_NUMBER);
     assertEq(oracleRelayer.redemptionRate(), 1.05e27);
   }
 
   function test_leak_sets_integral_to_zero() public {
-    assertEq(uint256(calculator.deviation().integral), 0);
+    assertEq(uint256(calculator.deviationObservation().integral), 0);
 
     calculator.modifyParameters('noiseBarrier', abi.encode(uint256(1e18)));
     calculator.modifyParameters('ki', abi.encode(int256(1000)));
@@ -340,11 +340,11 @@ contract PIScaledPerSecondCalculatorTest is DSTest {
     assertEq(iTerm, 0);
 
     rateSetter.updateRate(address(this));
-    assertEq(calculator.deviation().integral, 0);
+    assertEq(calculator.deviationObservation().integral, 0);
   }
 
   function test_two_small_positive_deviations() public {
-    assertEq(uint256(calculator.deviation().integral), 0);
+    assertEq(uint256(calculator.deviationObservation().integral), 0);
     calculator.modifyParameters('noiseBarrier', abi.encode(uint256(0.995e18)));
 
     hevm.warp(block.timestamp + calculator.params().integralPeriodSize);
@@ -364,16 +364,17 @@ contract PIScaledPerSecondCalculatorTest is DSTest {
 
     rateSetter.updateRate(address(this));
 
-    assertEq(uint256(calculator.deviation().timestamp), block.timestamp);
+    assertEq(uint256(calculator.deviationObservation().timestamp), block.timestamp);
     assertEq(
-      calculator.deviation().integral, -1_889_999_999_999_999_999_999_999_998_290_000_000_000_000_000_000_000_000_000
+      calculator.deviationObservation().integral,
+      -1_889_999_999_999_999_999_999_999_998_290_000_000_000_000_000_000_000_000_000
     );
     assertEq(oracleRelayer.redemptionPrice(), 1);
     assertEq(oracleRelayer.redemptionRate(), 1);
   }
 
   function test_big_delay_positive_deviation() public {
-    assertEq(uint256(calculator.deviation().integral), 0);
+    assertEq(uint256(calculator.deviationObservation().integral), 0);
     calculator.modifyParameters('noiseBarrier', abi.encode(uint256(0.995e18)));
 
     hevm.warp(block.timestamp + calculator.params().integralPeriodSize);
@@ -395,7 +396,7 @@ contract PIScaledPerSecondCalculatorTest is DSTest {
   }
 
   function test_normalized_pi_result() public {
-    assertEq(uint256(calculator.deviation().integral), 0);
+    assertEq(uint256(calculator.deviationObservation().integral), 0);
     calculator.modifyParameters('noiseBarrier', abi.encode(EIGHTEEN_DECIMAL_NUMBER - 1));
 
     hevm.warp(block.timestamp + calculator.params().integralPeriodSize);
@@ -437,7 +438,7 @@ contract PIScaledPerSecondCalculatorTest is DSTest {
   }
 
   function testFail_redemption_way_higher_than_market() public {
-    assertEq(uint256(calculator.deviation().integral), 0);
+    assertEq(uint256(calculator.deviationObservation().integral), 0);
     calculator.modifyParameters('noiseBarrier', abi.encode(EIGHTEEN_DECIMAL_NUMBER - 1));
 
     oracleRelayer.modifyParameters('redemptionPrice', FORTY_FIVE_DECIMAL_NUMBER * EIGHTEEN_DECIMAL_NUMBER);
@@ -446,7 +447,7 @@ contract PIScaledPerSecondCalculatorTest is DSTest {
   }
 
   function test_correct_proportional_calculation() public {
-    assertEq(uint256(calculator.deviation().integral), 0);
+    assertEq(uint256(calculator.deviationObservation().integral), 0);
     calculator.modifyParameters('noiseBarrier', abi.encode(EIGHTEEN_DECIMAL_NUMBER - 1));
 
     oracleRelayer.redemptionPrice();
@@ -501,7 +502,7 @@ contract PIScaledPerSecondCalculatorTest is DSTest {
     calculator.modifyParameters('kp', abi.encode(int256(0)));
     calculator.modifyParameters('ki', abi.encode(int256(0)));
 
-    assertEq(uint256(calculator.deviation().integral), 0);
+    assertEq(uint256(calculator.deviationObservation().integral), 0);
     calculator.modifyParameters('noiseBarrier', abi.encode(EIGHTEEN_DECIMAL_NUMBER - 1));
     uint256 _iapcr = (calculator.params().perSecondCumulativeLeak).rpow(calculator.timeSinceLastUpdate());
 

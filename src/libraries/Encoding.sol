@@ -22,7 +22,7 @@ library Encoding {
 
   function toBool(bytes memory _data) internal pure returns (bool _bool) {
     assembly {
-      _bool := mload(add(_data, 0x20)) // TODO: test if this is correct
+      _bool := mload(add(_data, 0x20))
     }
   }
 }

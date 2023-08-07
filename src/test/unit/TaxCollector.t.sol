@@ -5,8 +5,11 @@ import {TaxCollectorForTest, ITaxCollector} from '@contracts/for-test/TaxCollect
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
-import {Math, RAY} from '@libraries/Math.sol';
+
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
+
+import {Math, RAY, WAD} from '@libraries/Math.sol';
+import {Assertions} from '@libraries/Assertions.sol';
 
 abstract contract Base is HaiTest {
   using Math for uint256;
@@ -16,40 +19,44 @@ abstract contract Base is HaiTest {
   address authorizedAccount = label('authorizedAccount');
   address user = label('user');
 
-  ISAFEEngine mockSafeEngine = ISAFEEngine(mockContract('SafeEngine'));
+  ISAFEEngine mockSafeEngine = ISAFEEngine(mockContract('SAFEEngine'));
 
   TaxCollectorForTest taxCollector;
-
-  uint256 constant WHOLE_TAX_CUT = 100e27; // RAY
 
   // SafeEngine storage
   uint256 coinBalance = RAY;
   uint256 debtAmount = 1e25;
-  uint256 lastAccumulatedRate = 1e20;
+  uint256 lastAccumulatedRate = 1e15;
 
   // TaxCollector storage
   bytes32 collateralTypeA = 'collateralTypeA';
   bytes32 collateralTypeB = 'collateralTypeB';
   bytes32 collateralTypeC = 'collateralTypeC';
-  uint256 stabilityFee = 1e10;
-  uint256 updateTime = block.timestamp - 100;
-  uint256 secondaryReceiverAllotedTax = WHOLE_TAX_CUT / 2;
+  address primaryTaxReceiver = newAddress();
   address secondaryReceiverA = newAddress();
   address secondaryReceiverB = newAddress();
   address secondaryReceiverC = newAddress();
-  uint128 taxPercentage = uint128(WHOLE_TAX_CUT / 4);
+  uint256 maxStabilityFeeRange = RAY - 1;
+  uint256 globalStabilityFee = RAY;
+  uint256 stabilityFee = 1e5;
+  uint256 nextStabilityFee = 1e10;
+  uint256 updateTime = block.timestamp - 100;
+  uint256 secondaryReceiverAllotedTax = WAD / 2;
+  uint256 taxPercentage = WAD / 4;
   bool canTakeBackTax = true;
-  address primaryTaxReceiver = newAddress();
-  uint256 globalStabilityFee = 1e15;
 
   // Input parameters
   address receiver;
 
   ITaxCollector.TaxCollectorParams taxCollectorParams = ITaxCollector.TaxCollectorParams({
     primaryTaxReceiver: primaryTaxReceiver,
-    globalStabilityFee: 0,
+    globalStabilityFee: globalStabilityFee,
+    maxStabilityFeeRange: maxStabilityFeeRange,
     maxSecondaryReceivers: 0
   });
+
+  ITaxCollector.TaxCollectorCollateralParams taxCollectorCollateralParams =
+    ITaxCollector.TaxCollectorCollateralParams({stabilityFee: stabilityFee});
 
   function setUp() public virtual {
     vm.startPrank(deployer);
@@ -71,7 +78,6 @@ abstract contract Base is HaiTest {
     _mockCoinBalance(primaryTaxReceiver, coinBalance);
 
     // TaxCollector storage
-    _mockPrimaryTaxReceiver(primaryTaxReceiver);
     _mockCollateralList(collateralTypeA);
     _mockCollateralList(collateralTypeB);
     _mockCollateralList(collateralTypeC);
@@ -79,11 +85,11 @@ abstract contract Base is HaiTest {
 
   function setUpTaxSingleOutcome(bytes32 _cType) public {
     // SafeEngine storage
-    _mockSafeEngineCData(_cType, debtAmount, lastAccumulatedRate, 0, 0);
+    _mockSafeEngineCData(_cType, debtAmount, 0, lastAccumulatedRate, 0, 0);
 
     // TaxCollector storage
-    _mockCollateralData(_cType, stabilityFee, updateTime);
-    _mockGlobalStabilityFee(globalStabilityFee);
+    _mockNextStabilityFee(_cType, nextStabilityFee);
+    _mockUpdateTime(_cType, updateTime);
   }
 
   function setUpTaxMany() public {
@@ -92,12 +98,20 @@ abstract contract Base is HaiTest {
     setUpSplitTaxIncome(collateralTypeA);
     setUpSplitTaxIncome(collateralTypeB);
     setUpSplitTaxIncome(collateralTypeC);
+
+    // TaxCollector storage
+    _mockStabilityFee(collateralTypeA, stabilityFee);
+    _mockStabilityFee(collateralTypeB, stabilityFee);
+    _mockStabilityFee(collateralTypeC, stabilityFee);
   }
 
   function setUpTaxSingle(bytes32 _cType) public {
     setUpTaxSingleOutcome(_cType);
 
     setUpSplitTaxIncome(_cType);
+
+    // TaxCollector storage
+    _mockStabilityFee(_cType, stabilityFee);
   }
 
   function setUpSplitTaxIncome(bytes32 _cType) public {
@@ -123,7 +137,6 @@ abstract contract Base is HaiTest {
     // TaxCollector storage
     _mockSecondaryReceiverAllotedTax(_cType, secondaryReceiverAllotedTax);
     _mockSecondaryTaxReceiver(_cType, secondaryReceiverA, canTakeBackTax, taxPercentage);
-    _mockPrimaryTaxReceiver(primaryTaxReceiver);
   }
 
   function _mockCoinBalance(address _coinAddress, uint256 _coinBalance) internal {
@@ -135,6 +148,7 @@ abstract contract Base is HaiTest {
   function _mockSafeEngineCData(
     bytes32 _cType,
     uint256 _debtAmount,
+    uint256 _lockedAmount,
     uint256 _accumulatedRate,
     uint256 _safetyPrice,
     uint256 _liquidationPrice
@@ -142,14 +156,38 @@ abstract contract Base is HaiTest {
     vm.mockCall(
       address(mockSafeEngine),
       abi.encodeCall(mockSafeEngine.cData, (_cType)),
-      abi.encode(_debtAmount, _accumulatedRate, _safetyPrice, _liquidationPrice)
+      abi.encode(_debtAmount, _lockedAmount, _accumulatedRate, _safetyPrice, _liquidationPrice)
     );
   }
 
-  function _mockCollateralData(bytes32 _cType, uint256 _nextStabilityFee, uint256 _updateTime) internal {
+  // params
+  function _mockGlobalStabilityFee(uint256 _globalStabilityFee) internal {
+    stdstore.target(address(taxCollector)).sig(ITaxCollector.params.selector).depth(1).checked_write(
+      _globalStabilityFee
+    );
+  }
+
+  function _mockMaxStabilityFeeRange(uint256 _maxStabilityFeeRange) internal {
+    stdstore.target(address(taxCollector)).sig(ITaxCollector.params.selector).depth(2).checked_write(
+      _maxStabilityFeeRange
+    );
+  }
+
+  // cParams
+  function _mockStabilityFee(bytes32 _cType, uint256 _stabilityFee) internal {
+    stdstore.target(address(taxCollector)).sig(ITaxCollector.cParams.selector).with_key(_cType).depth(0).checked_write(
+      _stabilityFee
+    );
+  }
+
+  // cData
+  function _mockNextStabilityFee(bytes32 _cType, uint256 _nextStabilityFee) internal {
     stdstore.target(address(taxCollector)).sig(ITaxCollector.cData.selector).with_key(_cType).depth(0).checked_write(
       _nextStabilityFee
     );
+  }
+
+  function _mockUpdateTime(bytes32 _cType, uint256 _updateTime) internal {
     stdstore.target(address(taxCollector)).sig(ITaxCollector.cData.selector).with_key(_cType).depth(1).checked_write(
       _updateTime
     );
@@ -165,27 +203,10 @@ abstract contract Base is HaiTest {
     bytes32 _cType,
     address _receiver,
     bool _canTakeBackTax,
-    uint128 _taxPercentage
+    uint256 _taxPercentage
   ) internal {
     // BUG: Accessing packed slots is not supported by Std Storage
     taxCollector.addSecondaryTaxReceiver(_cType, _receiver, _canTakeBackTax, _taxPercentage);
-  }
-
-  function _mockPrimaryTaxReceiver(address _primaryTaxReceiver) internal {
-    // BUG: Accessing packed slots is not supported by Std Storage
-    taxCollector.setPrimaryTaxReceiver(_primaryTaxReceiver);
-  }
-
-  function _mockGlobalStabilityFee(uint256 _globalStabilityFee) internal {
-    stdstore.target(address(taxCollector)).sig(ITaxCollector.params.selector).depth(1).checked_write(
-      _globalStabilityFee
-    );
-  }
-
-  function _mockStabilityFee(bytes32 _cType, uint256 _stabilityFee) internal {
-    stdstore.target(address(taxCollector)).sig(ITaxCollector.cParams.selector).with_key(_cType).depth(0).checked_write(
-      _stabilityFee
-    );
   }
 
   function _mockCollateralList(bytes32 _cType) internal {
@@ -205,36 +226,34 @@ abstract contract Base is HaiTest {
     if (_isPrimaryTaxReceiver) {
       receiver = primaryTaxReceiver;
       if (!_isAbsorbable) {
-        vm.assume(
-          _deltaRate <= -int256(WHOLE_TAX_CUT / secondaryReceiverAllotedTax) && _deltaRate >= -int256(WHOLE_TAX_CUT)
-        );
-        _currentTaxCut = (WHOLE_TAX_CUT - secondaryReceiverAllotedTax).mul(_deltaRate) / int256(WHOLE_TAX_CUT);
+        vm.assume(_deltaRate <= -int256(WAD / secondaryReceiverAllotedTax) && _deltaRate >= -int256(WAD));
+        _currentTaxCut = (WAD - secondaryReceiverAllotedTax).wmul(_deltaRate);
         vm.assume(_debtAmount <= coinBalance);
         vm.assume(-int256(coinBalance) > _debtAmount.mul(_currentTaxCut));
         _currentTaxCut = -int256(coinBalance) / int256(_debtAmount);
       } else {
         vm.assume(
-          _deltaRate <= -int256(WHOLE_TAX_CUT / secondaryReceiverAllotedTax) && _deltaRate >= -int256(WHOLE_TAX_CUT)
-            || _deltaRate >= int256(WHOLE_TAX_CUT / secondaryReceiverAllotedTax) && _deltaRate <= int256(WHOLE_TAX_CUT)
+          _deltaRate <= -int256(WAD / secondaryReceiverAllotedTax) && _deltaRate >= -int256(WAD)
+            || _deltaRate >= int256(WAD / secondaryReceiverAllotedTax) && _deltaRate <= int256(WAD)
         );
-        _currentTaxCut = (WHOLE_TAX_CUT - secondaryReceiverAllotedTax).mul(_deltaRate) / int256(WHOLE_TAX_CUT);
+        _currentTaxCut = (WAD - secondaryReceiverAllotedTax).wmul(_deltaRate);
         vm.assume(_debtAmount == 0);
       }
     } else {
       receiver = secondaryReceiverA;
       if (!_isAbsorbable) {
-        vm.assume(_deltaRate <= -int256(WHOLE_TAX_CUT / taxPercentage) && _deltaRate >= -int256(WHOLE_TAX_CUT));
-        _currentTaxCut = int256(uint256(taxPercentage)) * _deltaRate / int256(WHOLE_TAX_CUT);
+        vm.assume(_deltaRate <= -int256(WAD / taxPercentage) && _deltaRate >= -int256(WAD));
+        _currentTaxCut = taxPercentage.wmul(_deltaRate);
         vm.assume(_debtAmount <= coinBalance);
         vm.assume(-int256(coinBalance) > _debtAmount.mul(_currentTaxCut));
         _currentTaxCut = -int256(coinBalance) / int256(_debtAmount);
       } else {
         vm.assume(
-          _deltaRate <= -int256(WHOLE_TAX_CUT / taxPercentage) && _deltaRate >= -int256(WHOLE_TAX_CUT)
-            || _deltaRate >= int256(WHOLE_TAX_CUT / taxPercentage) && _deltaRate <= int256(WHOLE_TAX_CUT)
+          _deltaRate <= -int256(WAD / taxPercentage) && _deltaRate >= -int256(WAD)
+            || _deltaRate >= int256(WAD / taxPercentage) && _deltaRate <= int256(WAD)
         );
-        _currentTaxCut = int256(uint256(taxPercentage)) * _deltaRate / int256(WHOLE_TAX_CUT);
-        vm.assume(_debtAmount <= WHOLE_TAX_CUT && -int256(coinBalance) <= _debtAmount.mul(_currentTaxCut));
+        _currentTaxCut = taxPercentage.wmul(_deltaRate);
+        vm.assume(_debtAmount <= WAD && -int256(coinBalance) <= _debtAmount.mul(_currentTaxCut));
       }
     }
   }
@@ -249,20 +268,109 @@ contract Unit_TaxCollector_Constructor is Base {
   }
 
   function test_Emit_AddAuthorization() public happyPath {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit AddAuthorization(user);
 
-    taxCollector = new TaxCollectorForTest(address(mockSafeEngine), taxCollectorParams);
+    new TaxCollectorForTest(address(mockSafeEngine), taxCollectorParams);
   }
 
   function test_Set_SafeEngine(address _safeEngine) public happyPath {
+    vm.assume(_safeEngine != address(0));
+
     taxCollector = new TaxCollectorForTest(_safeEngine, taxCollectorParams);
 
     assertEq(address(taxCollector.safeEngine()), _safeEngine);
   }
 
-  function test_Set_TaxCollectorParams() public {
-    assertEq(abi.encode(taxCollector.params()), abi.encode(taxCollectorParams));
+  function test_Set_TaxCollectorParams(ITaxCollector.TaxCollectorParams memory _taxCollectorParams) public happyPath {
+    vm.assume(_taxCollectorParams.primaryTaxReceiver != address(0));
+    vm.assume(_taxCollectorParams.maxStabilityFeeRange > 0 && _taxCollectorParams.maxStabilityFeeRange < RAY);
+    vm.assume(
+      _taxCollectorParams.globalStabilityFee >= RAY - _taxCollectorParams.maxStabilityFeeRange
+        && _taxCollectorParams.globalStabilityFee <= RAY + _taxCollectorParams.maxStabilityFeeRange
+    );
+
+    taxCollector = new TaxCollectorForTest(address(mockSafeEngine), _taxCollectorParams);
+
+    assertEq(abi.encode(taxCollector.params()), abi.encode(_taxCollectorParams));
+  }
+
+  function test_Revert_NullAddress_SafeEngine() public {
+    vm.expectRevert(Assertions.NullAddress.selector);
+
+    new TaxCollectorForTest(address(0), taxCollectorParams);
+  }
+
+  function test_Revert_NullAddress_PrimaryTaxReceiver(ITaxCollector.TaxCollectorParams memory _taxCollectorParams)
+    public
+  {
+    _taxCollectorParams.primaryTaxReceiver = address(0);
+
+    vm.expectRevert(Assertions.NullAddress.selector);
+
+    new TaxCollectorForTest(address(mockSafeEngine), _taxCollectorParams);
+  }
+
+  function test_Revert_NotGreaterThan_MaxStabilityFeeRange(ITaxCollector.TaxCollectorParams memory _taxCollectorParams)
+    public
+  {
+    vm.assume(_taxCollectorParams.primaryTaxReceiver != address(0));
+    _taxCollectorParams.maxStabilityFeeRange = 0;
+
+    vm.expectRevert(
+      abi.encodeWithSelector(Assertions.NotGreaterThan.selector, _taxCollectorParams.maxStabilityFeeRange, 0)
+    );
+
+    new TaxCollectorForTest(address(mockSafeEngine), _taxCollectorParams);
+  }
+
+  function test_Revert_NotLesserThan_MaxStabilityFeeRange(ITaxCollector.TaxCollectorParams memory _taxCollectorParams)
+    public
+  {
+    vm.assume(_taxCollectorParams.primaryTaxReceiver != address(0));
+    vm.assume(_taxCollectorParams.maxStabilityFeeRange >= RAY);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(Assertions.NotLesserThan.selector, _taxCollectorParams.maxStabilityFeeRange, RAY)
+    );
+
+    new TaxCollectorForTest(address(mockSafeEngine), _taxCollectorParams);
+  }
+
+  function test_Revert_NotGreaterOrEqualThan_GlobalStabilityFee(
+    ITaxCollector.TaxCollectorParams memory _taxCollectorParams
+  ) public {
+    vm.assume(_taxCollectorParams.primaryTaxReceiver != address(0));
+    vm.assume(_taxCollectorParams.maxStabilityFeeRange > 0 && _taxCollectorParams.maxStabilityFeeRange < RAY);
+    vm.assume(_taxCollectorParams.globalStabilityFee < RAY - _taxCollectorParams.maxStabilityFeeRange);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        Assertions.NotGreaterOrEqualThan.selector,
+        _taxCollectorParams.globalStabilityFee,
+        RAY - _taxCollectorParams.maxStabilityFeeRange
+      )
+    );
+
+    new TaxCollectorForTest(address(mockSafeEngine), _taxCollectorParams);
+  }
+
+  function test_Revert_NotLesserOrEqualThan_GlobalStabilityFee(
+    ITaxCollector.TaxCollectorParams memory _taxCollectorParams
+  ) public {
+    vm.assume(_taxCollectorParams.primaryTaxReceiver != address(0));
+    vm.assume(_taxCollectorParams.maxStabilityFeeRange > 0 && _taxCollectorParams.maxStabilityFeeRange < RAY);
+    vm.assume(_taxCollectorParams.globalStabilityFee > RAY + _taxCollectorParams.maxStabilityFeeRange);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        Assertions.NotLesserOrEqualThan.selector,
+        _taxCollectorParams.globalStabilityFee,
+        RAY + _taxCollectorParams.maxStabilityFeeRange
+      )
+    );
+
+    new TaxCollectorForTest(address(mockSafeEngine), _taxCollectorParams);
   }
 }
 
@@ -277,42 +385,79 @@ contract Unit_TaxCollector_InitializeCollateralType is Base {
   function test_Revert_Unauthorized(bytes32 _cType) public {
     vm.expectRevert(IAuthorizable.Unauthorized.selector);
 
-    taxCollector.initializeCollateralType(_cType);
+    taxCollector.initializeCollateralType(_cType, taxCollectorCollateralParams);
   }
 
   function test_Revert_CollateralTypeAlreadyInit(bytes32 _cType) public {
     vm.startPrank(authorizedAccount);
-
     _mockCollateralList(_cType);
-    _mockCollateralData(_cType, RAY, 0);
 
-    vm.expectRevert(ITaxCollector.CollateralTypeAlreadyInitialized.selector);
+    vm.expectRevert(ITaxCollector.TaxCollector_CollateralTypeAlreadyInitialized.selector);
 
-    taxCollector.initializeCollateralType(_cType);
+    taxCollector.initializeCollateralType(_cType, taxCollectorCollateralParams);
   }
 
-  function test_Set_CollateralTypeStabilityFee(bytes32 _cType) public happyPath {
-    taxCollector.initializeCollateralType(_cType);
+  function test_Revert_NotGreaterOrEqualThan_StabilityFee(
+    bytes32 _cType,
+    ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCParams
+  ) public {
+    vm.startPrank(authorizedAccount);
+    vm.assume(_taxCollectorCParams.stabilityFee < RAY - maxStabilityFeeRange);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        Assertions.NotGreaterOrEqualThan.selector, _taxCollectorCParams.stabilityFee, RAY - maxStabilityFeeRange
+      )
+    );
+
+    taxCollector.initializeCollateralType(_cType, _taxCollectorCParams);
+  }
+
+  function test_Revert_NotLesserOrEqualThan_StabilityFee(
+    bytes32 _cType,
+    ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCParams
+  ) public {
+    vm.startPrank(authorizedAccount);
+    vm.assume(_taxCollectorCParams.stabilityFee > RAY + maxStabilityFeeRange);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        Assertions.NotLesserOrEqualThan.selector, _taxCollectorCParams.stabilityFee, RAY + maxStabilityFeeRange
+      )
+    );
+
+    taxCollector.initializeCollateralType(_cType, _taxCollectorCParams);
+  }
+
+  function test_Set_CollateralList(bytes32 _cType) public happyPath {
+    taxCollector.initializeCollateralType(_cType, taxCollectorCollateralParams);
+
+    assertEq(taxCollector.collateralList()[0], _cType);
+  }
+
+  function test_Set_NextStabilityFee(bytes32 _cType) public happyPath {
+    taxCollector.initializeCollateralType(_cType, taxCollectorCollateralParams);
 
     assertEq(taxCollector.cData(_cType).nextStabilityFee, RAY);
   }
 
-  function test_Set_CollateralTypeUpdateTime(bytes32 _cType) public happyPath {
-    taxCollector.initializeCollateralType(_cType);
+  function test_Set_UpdateTime(bytes32 _cType) public happyPath {
+    taxCollector.initializeCollateralType(_cType, taxCollectorCollateralParams);
 
     assertEq(taxCollector.cData(_cType).updateTime, block.timestamp);
   }
 
-  function test_Set_CollateralList(bytes32 _cType) public happyPath {
-    taxCollector.initializeCollateralType(_cType);
-    assertEq(taxCollector.collateralList()[0], _cType);
+  function test_Set_StabilityFee(bytes32 _cType) public happyPath {
+    taxCollector.initializeCollateralType(_cType, taxCollectorCollateralParams);
+
+    assertEq(taxCollector.cParams(_cType).stabilityFee, stabilityFee);
   }
 
   function test_Emit_InitializeCollateralType(bytes32 _cType) public happyPath {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit InitializeCollateralType(_cType);
 
-    taxCollector.initializeCollateralType(_cType);
+    taxCollector.initializeCollateralType(_cType, taxCollectorCollateralParams);
   }
 }
 
@@ -326,7 +471,7 @@ contract Unit_TaxCollector_CollectedManyTax is Base {
   function test_Revert_InvalidIndexes_0(uint256 _start, uint256 _end) public {
     vm.assume(_start > _end);
 
-    vm.expectRevert('TaxCollector/invalid-indexes');
+    vm.expectRevert(ITaxCollector.TaxCollector_InvalidIndexes.selector);
 
     taxCollector.collectedManyTax(_start, _end);
   }
@@ -335,7 +480,7 @@ contract Unit_TaxCollector_CollectedManyTax is Base {
     vm.assume(_start <= _end);
     vm.assume(_end >= taxCollector.collateralListLength());
 
-    vm.expectRevert('TaxCollector/invalid-indexes');
+    vm.expectRevert(ITaxCollector.TaxCollector_InvalidIndexes.selector);
 
     taxCollector.collectedManyTax(_start, _end);
   }
@@ -352,9 +497,9 @@ contract Unit_TaxCollector_CollectedManyTax is Base {
     _mockCollateralList(collateralTypeA);
     _mockCollateralList(collateralTypeB);
     _mockCollateralList(collateralTypeC);
-    _mockCollateralData(collateralTypeA, stabilityFee, _updateTime);
-    _mockCollateralData(collateralTypeB, stabilityFee, _updateTime);
-    _mockCollateralData(collateralTypeC, stabilityFee, _updateTime);
+    _mockUpdateTime(collateralTypeA, _updateTime);
+    _mockUpdateTime(collateralTypeB, _updateTime);
+    _mockUpdateTime(collateralTypeC, _updateTime);
 
     bool _ok = taxCollector.collectedManyTax(0, 2);
 
@@ -374,7 +519,7 @@ contract Unit_TaxCollector_TaxManyOutcome is Base {
   function test_Revert_InvalidIndexes_0(uint256 _start, uint256 _end) public {
     vm.assume(_start > _end);
 
-    vm.expectRevert('TaxCollector/invalid-indexes');
+    vm.expectRevert(ITaxCollector.TaxCollector_InvalidIndexes.selector);
 
     taxCollector.taxManyOutcome(_start, _end);
   }
@@ -383,7 +528,7 @@ contract Unit_TaxCollector_TaxManyOutcome is Base {
     vm.assume(_start <= _end);
     vm.assume(_end >= taxCollector.collateralListLength());
 
-    vm.expectRevert('TaxCollector/invalid-indexes');
+    vm.expectRevert(ITaxCollector.TaxCollector_InvalidIndexes.selector);
 
     taxCollector.taxManyOutcome(_start, _end);
   }
@@ -422,9 +567,9 @@ contract Unit_TaxCollector_TaxManyOutcome is Base {
 
     vm.assume(_lastAccumulatedRate <= _newlyAccumulatedRate);
 
-    _mockSafeEngineCData(collateralTypeA, debtAmount, _lastAccumulatedRate, 0, 0);
-    _mockSafeEngineCData(collateralTypeB, debtAmount, _lastAccumulatedRate, 0, 0);
-    _mockSafeEngineCData(collateralTypeC, debtAmount, _lastAccumulatedRate, 0, 0);
+    _mockSafeEngineCData(collateralTypeA, debtAmount, 0, _lastAccumulatedRate, 0, 0);
+    _mockSafeEngineCData(collateralTypeB, debtAmount, 0, _lastAccumulatedRate, 0, 0);
+    _mockSafeEngineCData(collateralTypeC, debtAmount, 0, _lastAccumulatedRate, 0, 0);
 
     (bool _ok,) = taxCollector.taxManyOutcome(0, 2);
 
@@ -435,7 +580,8 @@ contract Unit_TaxCollector_TaxManyOutcome is Base {
     vm.assume(_updateTime >= block.timestamp);
 
     _mockCollateralList(collateralTypeB);
-    _mockCollateralData(collateralTypeB, stabilityFee, _updateTime);
+    _mockNextStabilityFee(collateralTypeB, nextStabilityFee);
+    _mockUpdateTime(collateralTypeB, _updateTime);
 
     (, int256 _deltaRate) = taxCollector.taxSingleOutcome(collateralTypeA);
     int256 _expectedRad = debtAmount.mul(_deltaRate) * 2;
@@ -457,7 +603,7 @@ contract Unit_TaxCollector_TaxSingleOutcome is Base {
 
   function test_Return_NewlyAccumulatedRate() public {
     uint256 _expectedNewlyAccumulatedRate =
-      (globalStabilityFee + stabilityFee).rpow(block.timestamp - updateTime).rmul(lastAccumulatedRate);
+      nextStabilityFee.rpow(block.timestamp - updateTime).rmul(lastAccumulatedRate);
 
     (uint256 _newlyAccumulatedRate,) = taxCollector.taxSingleOutcome(collateralTypeA);
 
@@ -465,8 +611,7 @@ contract Unit_TaxCollector_TaxSingleOutcome is Base {
   }
 
   function test_Return_DeltaRate() public {
-    uint256 _newlyAccumulatedRate =
-      (globalStabilityFee + stabilityFee).rpow(block.timestamp - updateTime).rmul(lastAccumulatedRate);
+    uint256 _newlyAccumulatedRate = nextStabilityFee.rpow(block.timestamp - updateTime).rmul(lastAccumulatedRate);
     int256 _expectedDeltaRate = _newlyAccumulatedRate.sub(lastAccumulatedRate);
 
     (, int256 _deltaRate) = taxCollector.taxSingleOutcome(collateralTypeA);
@@ -487,7 +632,7 @@ contract Unit_TaxCollector_TaxMany is Base {
   function test_Revert_InvalidIndexes_0(uint256 _start, uint256 _end) public {
     vm.assume(_start > _end);
 
-    vm.expectRevert('TaxCollector/invalid-indexes');
+    vm.expectRevert(ITaxCollector.TaxCollector_InvalidIndexes.selector);
 
     taxCollector.taxMany(_start, _end);
   }
@@ -496,7 +641,7 @@ contract Unit_TaxCollector_TaxMany is Base {
     vm.assume(_start <= _end);
     vm.assume(_end >= taxCollector.collateralListLength());
 
-    vm.expectRevert('TaxCollector/invalid-indexes');
+    vm.expectRevert(ITaxCollector.TaxCollector_InvalidIndexes.selector);
 
     taxCollector.taxMany(_start, _end);
   }
@@ -504,11 +649,11 @@ contract Unit_TaxCollector_TaxMany is Base {
   function test_Emit_CollectTax() public {
     (, int256 _deltaRate) = taxCollector.taxSingleOutcome(collateralTypeA);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit CollectTax(collateralTypeA, lastAccumulatedRate, _deltaRate);
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit CollectTax(collateralTypeB, lastAccumulatedRate, _deltaRate);
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit CollectTax(collateralTypeC, lastAccumulatedRate, _deltaRate);
 
     taxCollector.taxMany(0, 2);
@@ -516,6 +661,8 @@ contract Unit_TaxCollector_TaxMany is Base {
 }
 
 contract Unit_TaxCollector_TaxSingle is Base {
+  using Math for uint256;
+
   event CollectTax(bytes32 indexed _cType, uint256 _latestAccumulatedRate, int256 _deltaRate);
   event DistributeTax(bytes32 indexed _cType, address indexed _target, int256 _taxCut);
 
@@ -525,71 +672,66 @@ contract Unit_TaxCollector_TaxSingle is Base {
     Base.setUpTaxSingle(collateralTypeA);
   }
 
-  function test_Return_AlreadyLatestAccumulatedRate(uint256 _updateTime) public {
-    vm.assume(block.timestamp <= _updateTime);
-
-    _mockCollateralList(collateralTypeA);
-    _mockCollateralData(collateralTypeA, stabilityFee, _updateTime);
-
-    assertEq(taxCollector.taxSingle(collateralTypeA), lastAccumulatedRate);
-  }
-
-  function test_Set_NextStabilityFee(uint256 _updateTime, uint256 _globalStabilityFee, uint256 _stabilityFee) public {
-    vm.assume(block.timestamp > _updateTime);
-    vm.assume(notOverflowAdd(_globalStabilityFee, _stabilityFee));
+  function test_Set_NextStabilityFee(uint256 _globalStabilityFee, uint256 _stabilityFee, uint256 _updateTime) public {
+    vm.assume(notOverflowMul(_globalStabilityFee, _stabilityFee));
     _mockGlobalStabilityFee(_globalStabilityFee);
     _mockStabilityFee(collateralTypeA, _stabilityFee);
+    _mockUpdateTime(collateralTypeA, _updateTime);
 
-    _mockCollateralList(collateralTypeA);
-    _mockCollateralData(collateralTypeA, stabilityFee, _updateTime);
     taxCollector.taxSingle(collateralTypeA);
 
-    assertEq(taxCollector.cData(collateralTypeA).nextStabilityFee, _globalStabilityFee + _stabilityFee);
+    uint256 _nextStabilityFee = _globalStabilityFee.rmul(_stabilityFee);
+    if (_nextStabilityFee < RAY - maxStabilityFeeRange) _nextStabilityFee = RAY - maxStabilityFeeRange;
+    if (_nextStabilityFee > RAY + maxStabilityFeeRange) _nextStabilityFee = RAY + maxStabilityFeeRange;
+
+    assertEq(taxCollector.cData(collateralTypeA).nextStabilityFee, _nextStabilityFee);
   }
 
-  function testFail_AlreadyLatestAccumulatedRate() public {
-    _mockCollateralList(collateralTypeA);
-    _mockCollateralData(collateralTypeA, stabilityFee, block.timestamp);
-
-    (, int256 _deltaRate) = taxCollector.taxSingleOutcome(collateralTypeA);
-
-    expectEmitNoIndex();
-    emit CollectTax(collateralTypeA, lastAccumulatedRate, _deltaRate);
-
+  function test_Set_UpdateTime() public {
     taxCollector.taxSingle(collateralTypeA);
+
+    assertEq(taxCollector.cData(collateralTypeA).updateTime, block.timestamp);
   }
 
   function test_Emit_DistributeTax() public {
     (, int256 _deltaRate) = taxCollector.taxSingleOutcome(collateralTypeA);
     int256 _currentTaxCut = _assumeCurrentTaxCut(debtAmount, _deltaRate, false, false);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit DistributeTax(collateralTypeA, secondaryReceiverA, _currentTaxCut);
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit DistributeTax(collateralTypeA, secondaryReceiverC, _currentTaxCut);
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit DistributeTax(collateralTypeA, primaryTaxReceiver, _currentTaxCut);
 
     taxCollector.taxSingle(collateralTypeA);
   }
 
-  function test_Set_CollateralTypeUpdateTime() public {
-    taxCollector.taxSingle(collateralTypeA);
-
-    assertEq(taxCollector.cData(collateralTypeA).updateTime, block.timestamp);
-  }
-
   function test_Emit_CollectTax() public {
     (, int256 _deltaRate) = taxCollector.taxSingleOutcome(collateralTypeA);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit CollectTax(collateralTypeA, lastAccumulatedRate, _deltaRate);
 
     taxCollector.taxSingle(collateralTypeA);
   }
 
-  function test_Return_LatestAccumulatedRate() public {
+  function test_Return_LatestAccumulatedRate(uint256 _updateTime) public {
+    _mockUpdateTime(collateralTypeA, _updateTime);
+
     assertEq(taxCollector.taxSingle(collateralTypeA), lastAccumulatedRate);
+  }
+
+  function testFail_AlreadyLatestAccumulatedRate(uint256 _updateTime) public {
+    vm.assume(block.timestamp <= _updateTime);
+    _mockUpdateTime(collateralTypeA, _updateTime);
+
+    (, int256 _deltaRate) = taxCollector.taxSingleOutcome(collateralTypeA);
+
+    vm.expectEmit(false, false, false, false);
+    emit CollectTax(collateralTypeA, lastAccumulatedRate, _deltaRate);
+
+    taxCollector.taxSingle(collateralTypeA);
   }
 }
 
@@ -605,11 +747,11 @@ contract Unit_TaxCollector_SplitTaxIncome is Base {
   function test_Emit_DistributeTax(uint256 _debtAmount, int256 _deltaRate) public {
     int256 _currentTaxCut = _assumeCurrentTaxCut(_debtAmount, _deltaRate, false, false);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit DistributeTax(collateralTypeA, secondaryReceiverA, _currentTaxCut);
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit DistributeTax(collateralTypeA, secondaryReceiverC, _currentTaxCut);
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit DistributeTax(collateralTypeA, primaryTaxReceiver, _currentTaxCut);
 
     taxCollector.splitTaxIncome(collateralTypeA, _debtAmount, _deltaRate);
@@ -618,7 +760,7 @@ contract Unit_TaxCollector_SplitTaxIncome is Base {
   function testFail_ShouldNotDistributeTax(uint256 _debtAmount, int256 _deltaRate) public {
     int256 _currentTaxCut = _assumeCurrentTaxCut(_debtAmount, _deltaRate, false, false);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit DistributeTax(collateralTypeA, secondaryReceiverB, _currentTaxCut);
 
     taxCollector.splitTaxIncome(collateralTypeA, _debtAmount, _deltaRate);
@@ -660,7 +802,8 @@ contract Unit_TaxCollector_DistributeTax is Base {
 
     vm.expectCall(
       address(mockSafeEngine),
-      abi.encodeCall(mockSafeEngine.updateAccumulatedRate, (collateralTypeA, receiver, _currentTaxCut))
+      abi.encodeCall(mockSafeEngine.updateAccumulatedRate, (collateralTypeA, receiver, _currentTaxCut)),
+      1
     );
 
     taxCollector.distributeTax(collateralTypeA, receiver, _debtAmount, _deltaRate);
@@ -674,7 +817,7 @@ contract Unit_TaxCollector_DistributeTax is Base {
   ) public {
     int256 _currentTaxCut = _assumeCurrentTaxCut(_debtAmount, _deltaRate, _isPrimaryTaxReceiver, _isAbsorbable);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit DistributeTax(collateralTypeA, receiver, _currentTaxCut);
 
     taxCollector.distributeTax(collateralTypeA, receiver, _debtAmount, _deltaRate);
@@ -684,7 +827,7 @@ contract Unit_TaxCollector_DistributeTax is Base {
     int256 _deltaRate = 0;
     int256 _currentTaxCut = 0;
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit DistributeTax(collateralTypeA, receiver, _currentTaxCut);
 
     taxCollector.distributeTax(collateralTypeA, receiver, _debtAmount, _deltaRate);
@@ -695,7 +838,7 @@ contract Unit_TaxCollector_DistributeTax is Base {
 
     _mockSecondaryTaxReceiver(collateralTypeA, receiver, !canTakeBackTax, taxPercentage);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit DistributeTax(collateralTypeA, receiver, _currentTaxCut);
 
     taxCollector.distributeTax(collateralTypeA, receiver, _debtAmount, _deltaRate);
@@ -703,7 +846,6 @@ contract Unit_TaxCollector_DistributeTax is Base {
 }
 
 contract Unit_TaxCollector_ModifyParameters is Base {
-  event ModifyParameters(bytes32 indexed _param, bytes32 indexed _cType, bytes _data);
   event SetPrimaryReceiver(bytes32 indexed _cType, address indexed _receiver);
 
   modifier happyPath() {
@@ -711,41 +853,79 @@ contract Unit_TaxCollector_ModifyParameters is Base {
     _;
   }
 
-  function test_Set_PrimaryTaxReceiver(address _primaryTaxReceiver) public happyPath {
-    vm.assume(_primaryTaxReceiver != address(0));
+  function test_Set_Parameters(ITaxCollector.TaxCollectorParams memory _fuzz) public happyPath {
+    vm.assume(_fuzz.primaryTaxReceiver != address(0));
+    vm.assume(_fuzz.maxStabilityFeeRange > 0 && _fuzz.maxStabilityFeeRange < RAY);
+    vm.assume(
+      _fuzz.globalStabilityFee >= RAY - _fuzz.maxStabilityFeeRange
+        && _fuzz.globalStabilityFee <= RAY + _fuzz.maxStabilityFeeRange
+    );
 
-    taxCollector.modifyParameters('primaryTaxReceiver', abi.encode(_primaryTaxReceiver));
+    taxCollector.modifyParameters('primaryTaxReceiver', abi.encode(_fuzz.primaryTaxReceiver));
+    taxCollector.modifyParameters('globalStabilityFee', abi.encode(_fuzz.globalStabilityFee));
+    taxCollector.modifyParameters('maxStabilityFeeRange', abi.encode(_fuzz.maxStabilityFeeRange));
+    taxCollector.modifyParameters('maxSecondaryReceivers', abi.encode(_fuzz.maxSecondaryReceivers));
 
-    assertEq(taxCollector.params().primaryTaxReceiver, _primaryTaxReceiver);
+    ITaxCollector.TaxCollectorParams memory _params = taxCollector.params();
+
+    assertEq(abi.encode(_params), abi.encode(_fuzz));
   }
 
   function test_Emit_SetPrimaryReceiver(address _primaryTaxReceiver) public happyPath {
     vm.assume(_primaryTaxReceiver != address(0));
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit SetPrimaryReceiver(bytes32(0), _primaryTaxReceiver);
 
     taxCollector.modifyParameters('primaryTaxReceiver', abi.encode(_primaryTaxReceiver));
   }
 
-  function test_Revert_PrimaryTaxReceiver_NullData() public {
+  function test_Revert_NullAddress_PrimaryTaxReceiver() public {
     vm.startPrank(authorizedAccount);
 
-    vm.expectRevert('TaxCollector/null-data');
+    vm.expectRevert(Assertions.NullAddress.selector);
 
     taxCollector.modifyParameters('primaryTaxReceiver', abi.encode(0));
   }
 
-  function test_Set_GlobalStabilityFee(uint256 _globalStabilityFee) public happyPath {
-    taxCollector.modifyParameters('globalStabilityFee', abi.encode(_globalStabilityFee));
+  function test_Revert_NotGreaterOrEqualThan_GlobalStabilityFee(uint256 _globalStabilityFee) public {
+    vm.startPrank(authorizedAccount);
+    vm.assume(_globalStabilityFee < RAY - maxStabilityFeeRange);
 
-    assertEq(taxCollector.params().globalStabilityFee, _globalStabilityFee);
+    vm.expectRevert(
+      abi.encodeWithSelector(Assertions.NotGreaterOrEqualThan.selector, _globalStabilityFee, RAY - maxStabilityFeeRange)
+    );
+
+    taxCollector.modifyParameters('globalStabilityFee', abi.encode(_globalStabilityFee));
   }
 
-  function test_Set_MaxSecondaryReceivers(uint256 _maxSecondaryReceivers) public happyPath {
-    taxCollector.modifyParameters('maxSecondaryReceivers', abi.encode(_maxSecondaryReceivers));
+  function test_Revert_NotLesserOrEqualThan_GlobalStabilityFee(uint256 _globalStabilityFee) public {
+    vm.startPrank(authorizedAccount);
+    vm.assume(_globalStabilityFee > RAY + maxStabilityFeeRange);
 
-    assertEq(taxCollector.params().maxSecondaryReceivers, _maxSecondaryReceivers);
+    vm.expectRevert(
+      abi.encodeWithSelector(Assertions.NotLesserOrEqualThan.selector, _globalStabilityFee, RAY + maxStabilityFeeRange)
+    );
+
+    taxCollector.modifyParameters('globalStabilityFee', abi.encode(_globalStabilityFee));
+  }
+
+  function test_Revert_NotGreaterThan_MaxStabilityFeeRange(uint256 _maxStabilityFeeRange) public {
+    vm.startPrank(authorizedAccount);
+    _maxStabilityFeeRange = 0;
+
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NotGreaterThan.selector, _maxStabilityFeeRange, 0));
+
+    taxCollector.modifyParameters('maxStabilityFeeRange', abi.encode(_maxStabilityFeeRange));
+  }
+
+  function test_Revert_NotLesserThan_MaxStabilityFeeRange(uint256 _maxStabilityFeeRange) public {
+    vm.startPrank(authorizedAccount);
+    vm.assume(_maxStabilityFeeRange >= RAY);
+
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NotLesserThan.selector, _maxStabilityFeeRange, RAY));
+
+    taxCollector.modifyParameters('maxStabilityFeeRange', abi.encode(_maxStabilityFeeRange));
   }
 
   function test_Revert_UnrecognizedParam(bytes memory _data) public {
@@ -758,27 +938,65 @@ contract Unit_TaxCollector_ModifyParameters is Base {
 }
 
 contract Unit_TaxCollector_ModifyParametersPerCollateral is Base {
-  event ModifyParameters(bytes32 indexed _param, bytes32 indexed _cType, bytes _data);
-
-  modifier happyPath() {
+  modifier happyPath(bytes32 _cType) {
     vm.startPrank(authorizedAccount);
+
+    _mockValues(_cType);
     _;
   }
 
-  function test_Set_StabilityFee(bytes32 _cType, uint256 _stabilityFeeFuzzed) public happyPath {
+  function _mockValues(bytes32 _cType) internal {
     _mockCollateralList(_cType);
-    _mockCollateralData(_cType, 0, block.timestamp);
+  }
 
-    taxCollector.modifyParameters(_cType, 'stabilityFee', abi.encode(_stabilityFeeFuzzed));
+  function test_Set_StabilityFee(bytes32 _cType, uint256 _stabilityFee) public happyPath(_cType) {
+    vm.assume(_stabilityFee > RAY - maxStabilityFeeRange && _stabilityFee < RAY + maxStabilityFeeRange);
 
-    assertEq(taxCollector.cParams(_cType).stabilityFee, _stabilityFeeFuzzed);
+    taxCollector.modifyParameters(_cType, 'stabilityFee', abi.encode(_stabilityFee));
+
+    assertEq(taxCollector.cParams(_cType).stabilityFee, _stabilityFee);
+  }
+
+  function test_Revert_NotGreaterOrEqualThan_StabilityFee(bytes32 _cType, uint256 _stabilityFee) public {
+    vm.startPrank(authorizedAccount);
+    _mockCollateralList(_cType);
+
+    vm.assume(_stabilityFee < RAY - maxStabilityFeeRange);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(Assertions.NotGreaterOrEqualThan.selector, _stabilityFee, RAY - maxStabilityFeeRange)
+    );
+
+    taxCollector.modifyParameters(_cType, 'stabilityFee', abi.encode(_stabilityFee));
+  }
+
+  function test_Revert_NotLesserOrEqualThan_StabilityFee(bytes32 _cType, uint256 _stabilityFee) public {
+    vm.startPrank(authorizedAccount);
+    _mockCollateralList(_cType);
+
+    vm.assume(_stabilityFee > RAY + maxStabilityFeeRange);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(Assertions.NotLesserOrEqualThan.selector, _stabilityFee, RAY + maxStabilityFeeRange)
+    );
+
+    taxCollector.modifyParameters(_cType, 'stabilityFee', abi.encode(_stabilityFee));
   }
 
   function test_Revert_UnrecognizedParam(bytes32 _cType, bytes memory _data) public {
     vm.startPrank(authorizedAccount);
+    _mockCollateralList(_cType);
 
     vm.expectRevert(IModifiable.UnrecognizedParam.selector);
 
     taxCollector.modifyParameters(_cType, 'unrecognizedParam', _data);
+  }
+
+  function test_Revert_UnrecognizedCType(bytes32 _cType, bytes32 _param, bytes memory _data) public {
+    vm.startPrank(authorizedAccount);
+
+    vm.expectRevert(IModifiable.UnrecognizedCType.selector);
+
+    taxCollector.modifyParameters(_cType, _param, _data);
   }
 }

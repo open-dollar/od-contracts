@@ -6,6 +6,8 @@ import 'ds-test/test.sol';
 import {TaxCollectorForTest as TaxCollector, ITaxCollector} from '@contracts/for-test/TaxCollectorForTest.sol';
 import {ISAFEEngine, SAFEEngine} from '@contracts/SAFEEngine.sol';
 
+import {RAY} from '@libraries/Math.sol';
+
 abstract contract Hevm {
   function warp(uint256) public virtual;
 }
@@ -49,12 +51,15 @@ contract SingleTaxCollectorTest is DSTest {
 
     ITaxCollector.TaxCollectorParams memory _taxCollectorParams = ITaxCollector.TaxCollectorParams({
       primaryTaxReceiver: address(0x744),
-      globalStabilityFee: 0,
+      globalStabilityFee: RAY,
+      maxStabilityFeeRange: RAY - 1,
       maxSecondaryReceivers: 0
     });
     taxCollector = new TaxCollector(address(safeEngine), _taxCollectorParams);
     safeEngine.addAuthorization(address(taxCollector));
-    safeEngine.initializeCollateralType('i');
+    ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
+      ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: 0, debtFloor: 0});
+    safeEngine.initializeCollateralType('i', _safeEngineCollateralParams);
 
     draw('i', 100 ether);
   }
@@ -82,10 +87,11 @@ contract SingleTaxCollectorTest is DSTest {
   }
 
   function test_collect_tax_updates__updateTime() public {
-    taxCollector.initializeCollateralType('i');
+    ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
+      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: RAY});
+    taxCollector.initializeCollateralType('i', _taxCollectorCollateralParams);
     assertEq(_updateTime('i'), block.timestamp);
 
-    taxCollector.modifyParameters('i', 'stabilityFee', abi.encode(10 ** 27));
     taxCollector.taxSingle('i');
     assertEq(_updateTime('i'), block.timestamp);
     hevm.warp(block.timestamp + 1);
@@ -98,25 +104,28 @@ contract SingleTaxCollectorTest is DSTest {
   }
 
   function test_collect_tax_modifyParameters() public {
-    taxCollector.initializeCollateralType('i');
-    taxCollector.modifyParameters('i', 'stabilityFee', abi.encode(10 ** 27));
+    ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
+      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: RAY});
+    taxCollector.initializeCollateralType('i', _taxCollectorCollateralParams);
     taxCollector.taxSingle('i');
     taxCollector.modifyParameters('i', 'stabilityFee', abi.encode(1_000_000_564_701_133_626_865_910_626)); // 5% / day
   }
 
   function test_collect_tax_0d() public {
-    taxCollector.initializeCollateralType('i');
-    taxCollector.modifyParameters('i', 'stabilityFee', abi.encode(1_000_000_564_701_133_626_865_910_626)); // 5% / day
+    ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
+      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: 1_000_000_564_701_133_626_865_910_626}); // 5% / day
+    taxCollector.initializeCollateralType('i', _taxCollectorCollateralParams);
     assertEq(safeEngine.coinBalance(ali), rad(0 ether));
     taxCollector.taxSingle('i');
     assertEq(safeEngine.coinBalance(ali), rad(0 ether));
   }
 
   function test_collect_tax_1d() public {
-    taxCollector.initializeCollateralType('i');
+    ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
+      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: 1_000_000_564_701_133_626_865_910_626}); // 5% / day
+    taxCollector.initializeCollateralType('i', _taxCollectorCollateralParams);
     taxCollector.modifyParameters('primaryTaxReceiver', abi.encode(ali));
 
-    taxCollector.modifyParameters('i', 'stabilityFee', abi.encode(1_000_000_564_701_133_626_865_910_626)); // 5% / day
     taxCollector.taxSingle('i');
 
     hevm.warp(block.timestamp + 1 days);
@@ -126,9 +135,10 @@ contract SingleTaxCollectorTest is DSTest {
   }
 
   function test_collect_tax_2d() public {
-    taxCollector.initializeCollateralType('i');
+    ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
+      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: 1_000_000_564_701_133_626_865_910_626}); // 5% / day
+    taxCollector.initializeCollateralType('i', _taxCollectorCollateralParams);
     taxCollector.modifyParameters('primaryTaxReceiver', abi.encode(ali));
-    taxCollector.modifyParameters('i', 'stabilityFee', abi.encode(1_000_000_564_701_133_626_865_910_626)); // 5% / day
     taxCollector.taxSingle('i');
 
     hevm.warp(block.timestamp + 2 days);
@@ -138,10 +148,11 @@ contract SingleTaxCollectorTest is DSTest {
   }
 
   function test_collect_tax_3d() public {
-    taxCollector.initializeCollateralType('i');
+    ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
+      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: 1_000_000_564_701_133_626_865_910_626}); // 5% / day
+    taxCollector.initializeCollateralType('i', _taxCollectorCollateralParams);
     taxCollector.modifyParameters('primaryTaxReceiver', abi.encode(ali));
 
-    taxCollector.modifyParameters('i', 'stabilityFee', abi.encode(1_000_000_564_701_133_626_865_910_626)); // 5% / day
     taxCollector.taxSingle('i');
 
     hevm.warp(block.timestamp + 3 days);
@@ -151,10 +162,11 @@ contract SingleTaxCollectorTest is DSTest {
   }
 
   function test_collect_tax_negative_3d() public {
-    taxCollector.initializeCollateralType('i');
+    ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
+      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: 999_999_706_969_857_929_985_428_567}); // -2.5% / day
+    taxCollector.initializeCollateralType('i', _taxCollectorCollateralParams);
     taxCollector.modifyParameters('primaryTaxReceiver', abi.encode(ali));
 
-    taxCollector.modifyParameters('i', 'stabilityFee', abi.encode(999_999_706_969_857_929_985_428_567)); // -2.5% / day
     taxCollector.taxSingle('i');
 
     hevm.warp(block.timestamp + 3 days);
@@ -166,10 +178,11 @@ contract SingleTaxCollectorTest is DSTest {
   }
 
   function test_collect_tax_multi() public {
-    taxCollector.initializeCollateralType('i');
+    ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
+      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: 1_000_000_564_701_133_626_865_910_626}); // 5% / day
+    taxCollector.initializeCollateralType('i', _taxCollectorCollateralParams);
     taxCollector.modifyParameters('primaryTaxReceiver', abi.encode(ali));
 
-    taxCollector.modifyParameters('i', 'stabilityFee', abi.encode(1_000_000_564_701_133_626_865_910_626)); // 5% / day
     taxCollector.taxSingle('i');
 
     hevm.warp(block.timestamp + 1 days);
@@ -185,12 +198,16 @@ contract SingleTaxCollectorTest is DSTest {
   }
 
   function test_collect_tax_global_stability_fee() public {
-    safeEngine.initializeCollateralType('j');
+    ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
+      ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: 0, debtFloor: 0});
+    safeEngine.initializeCollateralType('j', _safeEngineCollateralParams);
     draw('j', 100 ether);
 
-    taxCollector.modifyParameters('globalStabilityFee', abi.encode(50_000_000_000_000_000_000_000_000)); // 5% / second
-    taxCollector.initializeCollateralType('i');
-    taxCollector.initializeCollateralType('j');
+    taxCollector.modifyParameters('globalStabilityFee', abi.encode(1_050_000_000_000_000_000_000_000_000)); // 5% / second
+    ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
+      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: RAY});
+    taxCollector.initializeCollateralType('i', _taxCollectorCollateralParams);
+    taxCollector.initializeCollateralType('j', _taxCollectorCollateralParams);
     taxCollector.modifyParameters('primaryTaxReceiver', abi.encode(ali));
 
     taxCollector.modifyParameters('i', 'stabilityFee', abi.encode(1_050_000_000_000_000_000_000_000_000)); // 5% / second
@@ -200,17 +217,20 @@ contract SingleTaxCollectorTest is DSTest {
 
     hevm.warp(block.timestamp + 1);
     taxCollector.taxSingle('i');
-    assertEq(wad(safeEngine.coinBalance(ali)), 10 ether);
+    assertEq(wad(safeEngine.coinBalance(ali)), 10.25 ether);
   }
 
   function test_collect_tax_all_positive() public {
-    safeEngine.initializeCollateralType('j');
+    ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
+      ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: 0, debtFloor: 0});
+    safeEngine.initializeCollateralType('j', _safeEngineCollateralParams);
     draw('j', 100 ether);
 
-    taxCollector.modifyParameters('globalStabilityFee', abi.encode(50_000_000_000_000_000_000_000_000)); // 5% / second
-
-    taxCollector.initializeCollateralType('i');
-    taxCollector.initializeCollateralType('j');
+    taxCollector.modifyParameters('globalStabilityFee', abi.encode(1_050_000_000_000_000_000_000_000_000)); // 5% / second
+    ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
+      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: RAY});
+    taxCollector.initializeCollateralType('i', _taxCollectorCollateralParams);
+    taxCollector.initializeCollateralType('j', _taxCollectorCollateralParams);
     taxCollector.modifyParameters('primaryTaxReceiver', abi.encode(ali));
 
     taxCollector.modifyParameters('i', 'stabilityFee', abi.encode(1_050_000_000_000_000_000_000_000_000)); // 5% / second
@@ -221,7 +241,7 @@ contract SingleTaxCollectorTest is DSTest {
     hevm.warp(block.timestamp + 1);
     taxCollector.taxMany(0, taxCollector.collateralListLength() - 1);
 
-    assertEq(wad(safeEngine.coinBalance(ali)), 18 ether);
+    assertEq(wad(safeEngine.coinBalance(ali)), 18.4 ether);
 
     assertEq(taxCollector.cData('i').updateTime, block.timestamp);
     assertEq(taxCollector.cData('j').updateTime, block.timestamp);
@@ -230,11 +250,15 @@ contract SingleTaxCollectorTest is DSTest {
   }
 
   function test_collect_tax_all_some_negative() public {
-    safeEngine.initializeCollateralType('j');
+    ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
+      ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: 0, debtFloor: 0});
+    safeEngine.initializeCollateralType('j', _safeEngineCollateralParams);
     draw('j', 100 ether);
 
-    taxCollector.initializeCollateralType('i');
-    taxCollector.initializeCollateralType('j');
+    ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
+      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: RAY});
+    taxCollector.initializeCollateralType('i', _taxCollectorCollateralParams);
+    taxCollector.initializeCollateralType('j', _taxCollectorCollateralParams);
     taxCollector.modifyParameters('primaryTaxReceiver', abi.encode(ali));
 
     taxCollector.modifyParameters('i', 'stabilityFee', abi.encode(1_050_000_000_000_000_000_000_000_000));
@@ -260,13 +284,7 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.modifyParameters(
       'i',
       'secondaryTaxReceiver',
-      abi.encode(
-        ITaxCollector.TaxReceiver({
-          receiver: address(this),
-          taxPercentage: uint128(ray(100 ether)),
-          canTakeBackTax: false
-        })
-      )
+      abi.encode(ITaxCollector.TaxReceiver({receiver: address(this), taxPercentage: 1 ether, canTakeBackTax: false}))
     );
   }
 
@@ -275,16 +293,12 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.modifyParameters(
       'i',
       'secondaryTaxReceiver',
-      abi.encode(
-        ITaxCollector.TaxReceiver({receiver: address(this), taxPercentage: uint128(ray(1 ether)), canTakeBackTax: false})
-      )
+      abi.encode(ITaxCollector.TaxReceiver({receiver: address(this), taxPercentage: 0.01 ether, canTakeBackTax: false}))
     );
     taxCollector.modifyParameters(
       'i',
       'secondaryTaxReceiver',
-      abi.encode(
-        ITaxCollector.TaxReceiver({receiver: address(ali), taxPercentage: uint128(ray(1 ether)), canTakeBackTax: false})
-      )
+      abi.encode(ITaxCollector.TaxReceiver({receiver: address(ali), taxPercentage: 0.01 ether, canTakeBackTax: false}))
     );
   }
 
@@ -293,20 +307,12 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.modifyParameters(
       'i',
       'secondaryTaxReceiver',
-      abi.encode(
-        ITaxCollector.TaxReceiver({receiver: address(this), taxPercentage: uint128(ray(1 ether)), canTakeBackTax: false})
-      )
+      abi.encode(ITaxCollector.TaxReceiver({receiver: address(this), taxPercentage: 0.01 ether, canTakeBackTax: false}))
     );
     taxCollector.modifyParameters(
       'i',
       'secondaryTaxReceiver',
-      abi.encode(
-        ITaxCollector.TaxReceiver({
-          receiver: address(this),
-          taxPercentage: uint128(ray(100.1 ether)),
-          canTakeBackTax: false
-        })
-      )
+      abi.encode(ITaxCollector.TaxReceiver({receiver: address(this), taxPercentage: 1.1 ether, canTakeBackTax: false}))
     );
   }
 
@@ -316,9 +322,7 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.modifyParameters(
       'i',
       'secondaryTaxReceiver',
-      abi.encode(
-        ITaxCollector.TaxReceiver({receiver: ali, taxPercentage: uint128(ray(1 ether)), canTakeBackTax: false})
-      )
+      abi.encode(ITaxCollector.TaxReceiver({receiver: ali, taxPercentage: 0.01 ether, canTakeBackTax: false}))
     );
   }
 
@@ -327,117 +331,107 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.modifyParameters(
       'i',
       'secondaryTaxReceiver',
-      abi.encode(
-        ITaxCollector.TaxReceiver({receiver: address(0), taxPercentage: uint128(ray(1 ether)), canTakeBackTax: false})
-      )
+      abi.encode(ITaxCollector.TaxReceiver({receiver: address(0), taxPercentage: 0.01 ether, canTakeBackTax: false}))
     );
   }
 
   function test_add_tax_secondaryTaxReceivers() public {
-    taxCollector.initializeCollateralType('i');
+    ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
+      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: RAY});
+    taxCollector.initializeCollateralType('i', _taxCollectorCollateralParams);
 
     taxCollector.modifyParameters('maxSecondaryReceivers', abi.encode(2));
     taxCollector.modifyParameters(
       'i',
       'secondaryTaxReceiver',
-      abi.encode(
-        ITaxCollector.TaxReceiver({receiver: address(this), taxPercentage: uint128(ray(1 ether)), canTakeBackTax: false})
-      )
+      abi.encode(ITaxCollector.TaxReceiver({receiver: address(this), taxPercentage: 0.01 ether, canTakeBackTax: false}))
     );
-    assertEq(taxCollector.cData('i').secondaryReceiverAllotedTax, ray(1 ether));
+    assertEq(taxCollector.cData('i').secondaryReceiverAllotedTax, 0.01 ether);
     assertEq(taxCollector.secondaryReceiverRevenueSources(address(this)), 1);
-    ITaxCollector.TaxReceiver memory _taxReceiver = taxCollector.secondaryTaxReceiver('i', address(this));
+    ITaxCollector.TaxReceiver memory _taxReceiver = taxCollector.secondaryTaxReceivers('i', address(this));
     assertTrue(!_taxReceiver.canTakeBackTax);
-    assertEq(_taxReceiver.taxPercentage, ray(1 ether));
+    assertEq(_taxReceiver.taxPercentage, 0.01 ether);
   }
 
   function test_modify_tax_receiver_cut() public {
-    taxCollector.initializeCollateralType('i');
+    ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
+      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: RAY});
+    taxCollector.initializeCollateralType('i', _taxCollectorCollateralParams);
 
     taxCollector.modifyParameters('maxSecondaryReceivers', abi.encode(1));
     taxCollector.modifyParameters(
       'i',
       'secondaryTaxReceiver',
-      abi.encode(
-        ITaxCollector.TaxReceiver({receiver: address(this), taxPercentage: uint128(ray(1 ether)), canTakeBackTax: false})
-      )
+      abi.encode(ITaxCollector.TaxReceiver({receiver: address(this), taxPercentage: 0.01 ether, canTakeBackTax: false}))
     );
     taxCollector.modifyParameters(
       'i',
       'secondaryTaxReceiver',
       abi.encode(
-        ITaxCollector.TaxReceiver({
-          receiver: address(this),
-          taxPercentage: uint128(ray(99.9 ether)),
-          canTakeBackTax: false
-        })
+        ITaxCollector.TaxReceiver({receiver: address(this), taxPercentage: 0.999 ether, canTakeBackTax: false})
       )
     );
 
     uint256 _cut = taxCollector.cData('i').secondaryReceiverAllotedTax;
-    assertEq(_cut, ray(99.9 ether));
-    ITaxCollector.TaxReceiver memory _taxReceiver = taxCollector.secondaryTaxReceiver('i', address(this));
-    assertEq(_taxReceiver.taxPercentage, ray(99.9 ether));
+    assertEq(_cut, 0.999 ether);
+    ITaxCollector.TaxReceiver memory _taxReceiver = taxCollector.secondaryTaxReceivers('i', address(this));
+    assertEq(_taxReceiver.taxPercentage, 0.999 ether);
   }
 
   function test_remove_some_tax_secondaryTaxReceivers() public {
-    taxCollector.initializeCollateralType('i');
+    ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
+      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: RAY});
+    taxCollector.initializeCollateralType('i', _taxCollectorCollateralParams);
 
     // Add
     taxCollector.modifyParameters('maxSecondaryReceivers', abi.encode(2));
     taxCollector.modifyParameters(
       'i',
       'secondaryTaxReceiver',
-      abi.encode(
-        ITaxCollector.TaxReceiver({receiver: address(this), taxPercentage: uint128(ray(1 ether)), canTakeBackTax: false})
-      )
+      abi.encode(ITaxCollector.TaxReceiver({receiver: address(this), taxPercentage: 0.01 ether, canTakeBackTax: false}))
     );
     taxCollector.modifyParameters(
       'i',
       'secondaryTaxReceiver',
-      abi.encode(
-        ITaxCollector.TaxReceiver({receiver: ali, taxPercentage: uint128(ray(98 ether)), canTakeBackTax: false})
-      )
+      abi.encode(ITaxCollector.TaxReceiver({receiver: ali, taxPercentage: 0.98 ether, canTakeBackTax: false}))
     );
 
-    assertEq(taxCollector.cData('i').secondaryReceiverAllotedTax, ray(99 ether));
+    assertEq(taxCollector.cData('i').secondaryReceiverAllotedTax, 0.99 ether);
     assertEq(taxCollector.secondaryReceiverRevenueSources(ali), 1);
     assertEq(taxCollector.secondaryReceiverRevenueSources(address(this)), 1);
-    ITaxCollector.TaxReceiver memory _taxReceiver = taxCollector.secondaryTaxReceiver('i', ali);
+    ITaxCollector.TaxReceiver memory _taxReceiver = taxCollector.secondaryTaxReceivers('i', ali);
     assertTrue(!_taxReceiver.canTakeBackTax);
-    assertEq(_taxReceiver.taxPercentage, ray(98 ether));
+    assertEq(_taxReceiver.taxPercentage, 0.98 ether);
     // Remove
     taxCollector.modifyParameters(
       'i',
       'secondaryTaxReceiver',
       abi.encode(ITaxCollector.TaxReceiver({receiver: address(this), taxPercentage: 0, canTakeBackTax: false}))
     );
-    assertEq(taxCollector.cData('i').secondaryReceiverAllotedTax, ray(98 ether));
+    assertEq(taxCollector.cData('i').secondaryReceiverAllotedTax, 0.98 ether);
     assertEq(taxCollector.secondaryReceiverRevenueSources(address(this)), 0);
-    _taxReceiver = taxCollector.secondaryTaxReceiver('i', address(this));
+    _taxReceiver = taxCollector.secondaryTaxReceivers('i', address(this));
     assertTrue(!_taxReceiver.canTakeBackTax);
     assertEq(_taxReceiver.taxPercentage, 0);
     assertEq(taxCollector.secondaryReceiverRevenueSources(ali), 1);
   }
 
   function test_remove_all_secondaryTaxReceivers() public {
-    taxCollector.initializeCollateralType('i');
+    ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
+      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: RAY});
+    taxCollector.initializeCollateralType('i', _taxCollectorCollateralParams);
 
     // Add
     taxCollector.modifyParameters('maxSecondaryReceivers', abi.encode(2));
     taxCollector.modifyParameters(
       'i',
       'secondaryTaxReceiver',
-      abi.encode(
-        ITaxCollector.TaxReceiver({receiver: address(this), taxPercentage: uint128(ray(1 ether)), canTakeBackTax: false})
-      )
+      abi.encode(ITaxCollector.TaxReceiver({receiver: address(this), taxPercentage: 0.01 ether, canTakeBackTax: false}))
     );
     taxCollector.modifyParameters(
       'i',
       'secondaryTaxReceiver',
-      abi.encode(
-        ITaxCollector.TaxReceiver({receiver: ali, taxPercentage: uint128(ray(98 ether)), canTakeBackTax: false})
-      )
+      abi.encode(ITaxCollector.TaxReceiver({receiver: ali, taxPercentage: 0.98 ether, canTakeBackTax: false}))
     );
     assertEq(taxCollector.secondaryReceiverRevenueSources(address(this)), 1);
     assertEq(taxCollector.secondaryReceiverRevenueSources(ali), 1);
@@ -456,22 +450,22 @@ contract SingleTaxCollectorTest is DSTest {
     assertEq(Cut, 0);
     assertEq(taxCollector.secondaryReceiverRevenueSources(ali), 0);
     assertEq(taxCollector.secondaryReceiverRevenueSources(address(this)), 0);
-    ITaxCollector.TaxReceiver memory _taxReceiver = taxCollector.secondaryTaxReceiver('i', address(this));
+    ITaxCollector.TaxReceiver memory _taxReceiver = taxCollector.secondaryTaxReceivers('i', address(this));
     assertTrue(!_taxReceiver.canTakeBackTax);
     assertEq(_taxReceiver.taxPercentage, 0);
   }
 
   function test_add_remove_add_secondaryTaxReceivers() public {
-    taxCollector.initializeCollateralType('i');
+    ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
+      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: RAY});
+    taxCollector.initializeCollateralType('i', _taxCollectorCollateralParams);
 
     // Add
     taxCollector.modifyParameters('maxSecondaryReceivers', abi.encode(2));
     taxCollector.modifyParameters(
       'i',
       'secondaryTaxReceiver',
-      abi.encode(
-        ITaxCollector.TaxReceiver({receiver: address(this), taxPercentage: uint128(ray(1 ether)), canTakeBackTax: false})
-      )
+      abi.encode(ITaxCollector.TaxReceiver({receiver: address(this), taxPercentage: 0.01 ether, canTakeBackTax: false}))
     );
     assertTrue(taxCollector.isSecondaryReceiver(address(this)));
     // Remove
@@ -485,17 +479,15 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.modifyParameters(
       'i',
       'secondaryTaxReceiver',
-      abi.encode(
-        ITaxCollector.TaxReceiver({receiver: address(this), taxPercentage: uint128(ray(1 ether)), canTakeBackTax: false})
-      )
+      abi.encode(ITaxCollector.TaxReceiver({receiver: address(this), taxPercentage: 0.01 ether, canTakeBackTax: false}))
     );
-    assertEq(taxCollector.cData('i').secondaryReceiverAllotedTax, ray(1 ether));
+    assertEq(taxCollector.cData('i').secondaryReceiverAllotedTax, 0.01 ether);
     assertEq(taxCollector.secondaryReceiverRevenueSources(address(this)), 1);
     assertEq(taxCollector.secondaryReceiversAmount(), 1);
     assertTrue(taxCollector.isSecondaryReceiver(address(this)));
-    ITaxCollector.TaxReceiver memory _taxReceiver = taxCollector.secondaryTaxReceiver('i', address(this));
+    ITaxCollector.TaxReceiver memory _taxReceiver = taxCollector.secondaryTaxReceivers('i', address(this));
     assertTrue(!_taxReceiver.canTakeBackTax);
-    assertEq(_taxReceiver.taxPercentage, ray(1 ether));
+    assertEq(_taxReceiver.taxPercentage, 0.01 ether);
 
     // Remove again
     taxCollector.modifyParameters(
@@ -506,7 +498,7 @@ contract SingleTaxCollectorTest is DSTest {
     assertEq(taxCollector.cData('i').secondaryReceiverAllotedTax, 0);
     assertEq(taxCollector.secondaryReceiverRevenueSources(address(this)), 0);
     assertTrue(!taxCollector.isSecondaryReceiver(address(this)));
-    _taxReceiver = taxCollector.secondaryTaxReceiver('i', address(this));
+    _taxReceiver = taxCollector.secondaryTaxReceivers('i', address(this));
     assertTrue(!_taxReceiver.canTakeBackTax);
     assertEq(_taxReceiver.taxPercentage, 0);
   }
@@ -514,23 +506,24 @@ contract SingleTaxCollectorTest is DSTest {
   function test_multi_collateral_types_receivers() public {
     taxCollector.modifyParameters('maxSecondaryReceivers', abi.encode(1));
 
-    safeEngine.initializeCollateralType('j');
+    ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
+      ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: 0, debtFloor: 0});
+    safeEngine.initializeCollateralType('j', _safeEngineCollateralParams);
     draw('j', 100 ether);
-    taxCollector.initializeCollateralType('i');
-    taxCollector.initializeCollateralType('j');
+
+    ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
+      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: RAY});
+    taxCollector.initializeCollateralType('i', _taxCollectorCollateralParams);
+    taxCollector.initializeCollateralType('j', _taxCollectorCollateralParams);
     taxCollector.modifyParameters(
       'i',
       'secondaryTaxReceiver',
-      abi.encode(
-        ITaxCollector.TaxReceiver({receiver: address(this), taxPercentage: uint128(ray(1 ether)), canTakeBackTax: false})
-      )
+      abi.encode(ITaxCollector.TaxReceiver({receiver: address(this), taxPercentage: 0.01 ether, canTakeBackTax: false}))
     );
     taxCollector.modifyParameters(
       'j',
       'secondaryTaxReceiver',
-      abi.encode(
-        ITaxCollector.TaxReceiver({receiver: address(this), taxPercentage: uint128(ray(1 ether)), canTakeBackTax: false})
-      )
+      abi.encode(ITaxCollector.TaxReceiver({receiver: address(this), taxPercentage: 0.01 ether, canTakeBackTax: false}))
     );
 
     assertEq(taxCollector.secondaryReceiverRevenueSources(address(this)), 2);
@@ -552,25 +545,27 @@ contract SingleTaxCollectorTest is DSTest {
   }
 
   function test_toggle_receiver_take() public {
-    taxCollector.initializeCollateralType('i');
+    ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
+      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: RAY});
+    taxCollector.initializeCollateralType('i', _taxCollectorCollateralParams);
 
     // Add
     taxCollector.modifyParameters('maxSecondaryReceivers', abi.encode(2));
     taxCollector.modifyParameters(
       'i',
       'secondaryTaxReceiver',
-      abi.encode(
-        ITaxCollector.TaxReceiver({receiver: address(this), taxPercentage: uint128(ray(1 ether)), canTakeBackTax: true})
-      )
+      abi.encode(ITaxCollector.TaxReceiver({receiver: address(this), taxPercentage: 0.01 ether, canTakeBackTax: true}))
     );
 
     // Toggle
-    ITaxCollector.TaxReceiver memory _taxReceiver = taxCollector.secondaryTaxReceiver('i', address(this));
+    ITaxCollector.TaxReceiver memory _taxReceiver = taxCollector.secondaryTaxReceivers('i', address(this));
     assertTrue(_taxReceiver.canTakeBackTax);
   }
 
   function test_add_secondaryTaxReceivers_single_collateral_type_collect_tax_positive() public {
-    taxCollector.initializeCollateralType('i');
+    ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
+      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: RAY});
+    taxCollector.initializeCollateralType('i', _taxCollectorCollateralParams);
     taxCollector.modifyParameters('i', 'stabilityFee', abi.encode(1_050_000_000_000_000_000_000_000_000));
     taxCollector.taxSingle('i');
 
@@ -579,16 +574,12 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.modifyParameters(
       'i',
       'secondaryTaxReceiver',
-      abi.encode(
-        ITaxCollector.TaxReceiver({receiver: bob, taxPercentage: uint128(ray(40 ether)), canTakeBackTax: false})
-      )
+      abi.encode(ITaxCollector.TaxReceiver({receiver: bob, taxPercentage: 0.4 ether, canTakeBackTax: false}))
     );
     taxCollector.modifyParameters(
       'i',
       'secondaryTaxReceiver',
-      abi.encode(
-        ITaxCollector.TaxReceiver({receiver: char, taxPercentage: uint128(ray(45 ether)), canTakeBackTax: false})
-      )
+      abi.encode(ITaxCollector.TaxReceiver({receiver: char, taxPercentage: 0.45 ether, canTakeBackTax: false}))
     );
 
     hevm.warp(block.timestamp + 10);
@@ -605,7 +596,9 @@ contract SingleTaxCollectorTest is DSTest {
   }
 
   function testFail_tax_when_safe_engine_is_disabled() public {
-    taxCollector.initializeCollateralType('i');
+    ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
+      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: RAY});
+    taxCollector.initializeCollateralType('i', _taxCollectorCollateralParams);
     taxCollector.modifyParameters('i', 'stabilityFee', abi.encode(1_050_000_000_000_000_000_000_000_000));
     taxCollector.taxSingle('i'); // next stability fee is updated at this call
 
@@ -614,16 +607,12 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.modifyParameters(
       'i',
       'secondaryTaxReceiver',
-      abi.encode(
-        ITaxCollector.TaxReceiver({receiver: bob, taxPercentage: uint128(ray(40 ether)), canTakeBackTax: false})
-      )
+      abi.encode(ITaxCollector.TaxReceiver({receiver: bob, taxPercentage: 0.4 ether, canTakeBackTax: false}))
     );
     taxCollector.modifyParameters(
       'i',
       'secondaryTaxReceiver',
-      abi.encode(
-        ITaxCollector.TaxReceiver({receiver: char, taxPercentage: uint128(ray(45 ether)), canTakeBackTax: false})
-      )
+      abi.encode(ITaxCollector.TaxReceiver({receiver: char, taxPercentage: 0.45 ether, canTakeBackTax: false}))
     );
 
     safeEngine.disableContract();
@@ -635,12 +624,16 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.modifyParameters('primaryTaxReceiver', abi.encode(ali));
     taxCollector.modifyParameters('maxSecondaryReceivers', abi.encode(2));
 
-    taxCollector.initializeCollateralType('i');
+    ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
+      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: RAY});
+    taxCollector.initializeCollateralType('i', _taxCollectorCollateralParams);
     taxCollector.modifyParameters('i', 'stabilityFee', abi.encode(1_050_000_000_000_000_000_000_000_000));
 
-    safeEngine.initializeCollateralType('j');
+    ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
+      ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: 0, debtFloor: 0});
+    safeEngine.initializeCollateralType('j', _safeEngineCollateralParams);
     draw('j', 100 ether);
-    taxCollector.initializeCollateralType('j');
+    taxCollector.initializeCollateralType('j', _taxCollectorCollateralParams);
     taxCollector.modifyParameters('j', 'stabilityFee', abi.encode(1_050_000_000_000_000_000_000_000_000));
 
     taxCollector.taxSingle('i');
@@ -649,16 +642,12 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.modifyParameters(
       'i',
       'secondaryTaxReceiver',
-      abi.encode(
-        ITaxCollector.TaxReceiver({receiver: bob, taxPercentage: uint128(ray(40 ether)), canTakeBackTax: false})
-      )
+      abi.encode(ITaxCollector.TaxReceiver({receiver: bob, taxPercentage: 0.4 ether, canTakeBackTax: false}))
     );
     taxCollector.modifyParameters(
       'i',
       'secondaryTaxReceiver',
-      abi.encode(
-        ITaxCollector.TaxReceiver({receiver: char, taxPercentage: uint128(ray(45 ether)), canTakeBackTax: false})
-      )
+      abi.encode(ITaxCollector.TaxReceiver({receiver: char, taxPercentage: 0.45 ether, canTakeBackTax: false}))
     );
 
     hevm.warp(block.timestamp + 10);
@@ -671,16 +660,12 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.modifyParameters(
       'j',
       'secondaryTaxReceiver',
-      abi.encode(
-        ITaxCollector.TaxReceiver({receiver: bob, taxPercentage: uint128(ray(25 ether)), canTakeBackTax: false})
-      )
+      abi.encode(ITaxCollector.TaxReceiver({receiver: bob, taxPercentage: 0.25 ether, canTakeBackTax: false}))
     );
     taxCollector.modifyParameters(
       'j',
       'secondaryTaxReceiver',
-      abi.encode(
-        ITaxCollector.TaxReceiver({receiver: char, taxPercentage: uint128(ray(33 ether)), canTakeBackTax: false})
-      )
+      abi.encode(ITaxCollector.TaxReceiver({receiver: char, taxPercentage: 0.33 ether, canTakeBackTax: false}))
     );
 
     hevm.warp(block.timestamp + 10);
@@ -690,32 +675,34 @@ contract SingleTaxCollectorTest is DSTest {
     assertEq(wad(safeEngine.coinBalance(bob)), 91_741_985_164_951_273_550);
     assertEq(wad(safeEngine.coinBalance(char)), 108_203_698_317_609_204_041);
 
-    assertEq(taxCollector.cData('i').secondaryReceiverAllotedTax, ray(85 ether));
+    assertEq(taxCollector.cData('i').secondaryReceiverAllotedTax, 0.85 ether);
     assertEq(taxCollector.secondaryReceiverRevenueSources(bob), 2);
     assertEq(taxCollector.secondaryReceiverRevenueSources(char), 2);
     assertEq(taxCollector.secondaryReceiversAmount(), 2);
     assertTrue(taxCollector.isSecondaryReceiver(bob));
     assertTrue(taxCollector.isSecondaryReceiver(char));
 
-    ITaxCollector.TaxReceiver memory _bob = taxCollector.secondaryTaxReceiver('i', bob);
+    ITaxCollector.TaxReceiver memory _bob = taxCollector.secondaryTaxReceivers('i', bob);
     assertTrue(!_bob.canTakeBackTax);
-    assertEq(_bob.taxPercentage, ray(40 ether));
+    assertEq(_bob.taxPercentage, 0.4 ether);
 
-    ITaxCollector.TaxReceiver memory _char = taxCollector.secondaryTaxReceiver('i', char);
+    ITaxCollector.TaxReceiver memory _char = taxCollector.secondaryTaxReceivers('i', char);
     assertTrue(!_char.canTakeBackTax);
-    assertEq(_char.taxPercentage, ray(45 ether));
+    assertEq(_char.taxPercentage, 0.45 ether);
 
-    _bob = taxCollector.secondaryTaxReceiver('j', bob);
+    _bob = taxCollector.secondaryTaxReceivers('j', bob);
     assertTrue(!_bob.canTakeBackTax);
-    assertEq(_bob.taxPercentage, ray(25 ether));
+    assertEq(_bob.taxPercentage, 0.25 ether);
 
-    _char = taxCollector.secondaryTaxReceiver('j', char);
+    _char = taxCollector.secondaryTaxReceivers('j', char);
     assertTrue(!_char.canTakeBackTax);
-    assertEq(_char.taxPercentage, ray(33 ether));
+    assertEq(_char.taxPercentage, 0.33 ether);
   }
 
   function test_add_secondaryTaxReceivers_single_collateral_type_toggle_collect_tax_negative() public {
-    taxCollector.initializeCollateralType('i');
+    ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
+      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: RAY});
+    taxCollector.initializeCollateralType('i', _taxCollectorCollateralParams);
     taxCollector.modifyParameters('i', 'stabilityFee', abi.encode(1_050_000_000_000_000_000_000_000_000));
 
     taxCollector.taxSingle('i');
@@ -726,14 +713,12 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.modifyParameters(
       'i',
       'secondaryTaxReceiver',
-      abi.encode(ITaxCollector.TaxReceiver({receiver: bob, taxPercentage: uint128(ray(5 ether)), canTakeBackTax: true}))
+      abi.encode(ITaxCollector.TaxReceiver({receiver: bob, taxPercentage: 0.05 ether, canTakeBackTax: true}))
     );
     taxCollector.modifyParameters(
       'i',
       'secondaryTaxReceiver',
-      abi.encode(
-        ITaxCollector.TaxReceiver({receiver: char, taxPercentage: uint128(ray(10 ether)), canTakeBackTax: true})
-      )
+      abi.encode(ITaxCollector.TaxReceiver({receiver: char, taxPercentage: 0.1 ether, canTakeBackTax: true}))
     );
 
     // note: modifies the stability fee to take effect at the next taxation
@@ -748,16 +733,12 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.modifyParameters(
       'i',
       'secondaryTaxReceiver',
-      abi.encode(
-        ITaxCollector.TaxReceiver({receiver: bob, taxPercentage: uint128(ray(10 ether)), canTakeBackTax: true})
-      )
+      abi.encode(ITaxCollector.TaxReceiver({receiver: bob, taxPercentage: 0.1 ether, canTakeBackTax: true}))
     );
     taxCollector.modifyParameters(
       'i',
       'secondaryTaxReceiver',
-      abi.encode(
-        ITaxCollector.TaxReceiver({receiver: char, taxPercentage: uint128(ray(20 ether)), canTakeBackTax: true})
-      )
+      abi.encode(ITaxCollector.TaxReceiver({receiver: char, taxPercentage: 0.2 ether, canTakeBackTax: true}))
     );
 
     hevm.warp(block.timestamp + 5);
@@ -769,12 +750,16 @@ contract SingleTaxCollectorTest is DSTest {
   }
 
   function test_add_secondaryTaxReceivers_multi_collateral_types_toggle_collect_tax_negative() public {
-    taxCollector.initializeCollateralType('i');
+    ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
+      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: RAY});
+    taxCollector.initializeCollateralType('i', _taxCollectorCollateralParams);
     taxCollector.modifyParameters('i', 'stabilityFee', abi.encode(1_050_000_000_000_000_000_000_000_000));
 
-    safeEngine.initializeCollateralType('j');
+    ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
+      ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: 0, debtFloor: 0});
+    safeEngine.initializeCollateralType('j', _safeEngineCollateralParams);
     draw('j', 100 ether);
-    taxCollector.initializeCollateralType('j');
+    taxCollector.initializeCollateralType('j', _taxCollectorCollateralParams);
     taxCollector.modifyParameters('j', 'stabilityFee', abi.encode(1_050_000_000_000_000_000_000_000_000));
 
     taxCollector.taxSingle('i');
@@ -786,14 +771,12 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.modifyParameters(
       'i',
       'secondaryTaxReceiver',
-      abi.encode(ITaxCollector.TaxReceiver({receiver: bob, taxPercentage: uint128(ray(5 ether)), canTakeBackTax: true}))
+      abi.encode(ITaxCollector.TaxReceiver({receiver: bob, taxPercentage: 0.05 ether, canTakeBackTax: true}))
     );
     taxCollector.modifyParameters(
       'i',
       'secondaryTaxReceiver',
-      abi.encode(
-        ITaxCollector.TaxReceiver({receiver: char, taxPercentage: uint128(ray(10 ether)), canTakeBackTax: true})
-      )
+      abi.encode(ITaxCollector.TaxReceiver({receiver: char, taxPercentage: 0.1 ether, canTakeBackTax: true}))
     );
 
     hevm.warp(block.timestamp + 5);
@@ -807,31 +790,23 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.modifyParameters(
       'i',
       'secondaryTaxReceiver',
-      abi.encode(
-        ITaxCollector.TaxReceiver({receiver: bob, taxPercentage: uint128(ray(10 ether)), canTakeBackTax: true})
-      )
+      abi.encode(ITaxCollector.TaxReceiver({receiver: bob, taxPercentage: 0.1 ether, canTakeBackTax: true}))
     );
     taxCollector.modifyParameters(
       'i',
       'secondaryTaxReceiver',
-      abi.encode(
-        ITaxCollector.TaxReceiver({receiver: char, taxPercentage: uint128(ray(25 ether)), canTakeBackTax: true})
-      )
+      abi.encode(ITaxCollector.TaxReceiver({receiver: char, taxPercentage: 0.25 ether, canTakeBackTax: true}))
     );
 
     taxCollector.modifyParameters(
       'j',
       'secondaryTaxReceiver',
-      abi.encode(
-        ITaxCollector.TaxReceiver({receiver: bob, taxPercentage: uint128(ray(10 ether)), canTakeBackTax: true})
-      )
+      abi.encode(ITaxCollector.TaxReceiver({receiver: bob, taxPercentage: 0.1 ether, canTakeBackTax: true}))
     );
     taxCollector.modifyParameters(
       'j',
       'secondaryTaxReceiver',
-      abi.encode(
-        ITaxCollector.TaxReceiver({receiver: char, taxPercentage: uint128(ray(20 ether)), canTakeBackTax: true})
-      )
+      abi.encode(ITaxCollector.TaxReceiver({receiver: char, taxPercentage: 0.2 ether, canTakeBackTax: true}))
     );
 
     hevm.warp(block.timestamp + 5);
@@ -844,7 +819,9 @@ contract SingleTaxCollectorTest is DSTest {
 
   function test_add_secondaryTaxReceivers_no_toggle_collect_tax_negative() public {
     // Setup
-    taxCollector.initializeCollateralType('i');
+    ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
+      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: RAY});
+    taxCollector.initializeCollateralType('i', _taxCollectorCollateralParams);
     taxCollector.modifyParameters('i', 'stabilityFee', abi.encode(1_050_000_000_000_000_000_000_000_000));
     taxCollector.taxSingle('i');
 
@@ -853,16 +830,12 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.modifyParameters(
       'i',
       'secondaryTaxReceiver',
-      abi.encode(
-        ITaxCollector.TaxReceiver({receiver: bob, taxPercentage: uint128(ray(5 ether)), canTakeBackTax: false})
-      )
+      abi.encode(ITaxCollector.TaxReceiver({receiver: bob, taxPercentage: 0.05 ether, canTakeBackTax: false}))
     );
     taxCollector.modifyParameters(
       'i',
       'secondaryTaxReceiver',
-      abi.encode(
-        ITaxCollector.TaxReceiver({receiver: char, taxPercentage: uint128(ray(10 ether)), canTakeBackTax: false})
-      )
+      abi.encode(ITaxCollector.TaxReceiver({receiver: char, taxPercentage: 0.1 ether, canTakeBackTax: false}))
     );
 
     // note: modifies the stability fee to take effect at the next taxation
@@ -877,16 +850,12 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.modifyParameters(
       'i',
       'secondaryTaxReceiver',
-      abi.encode(
-        ITaxCollector.TaxReceiver({receiver: bob, taxPercentage: uint128(ray(10 ether)), canTakeBackTax: false})
-      )
+      abi.encode(ITaxCollector.TaxReceiver({receiver: bob, taxPercentage: 0.1 ether, canTakeBackTax: false}))
     );
     taxCollector.modifyParameters(
       'i',
       'secondaryTaxReceiver',
-      abi.encode(
-        ITaxCollector.TaxReceiver({receiver: char, taxPercentage: uint128(ray(20 ether)), canTakeBackTax: false})
-      )
+      abi.encode(ITaxCollector.TaxReceiver({receiver: char, taxPercentage: 0.2 ether, canTakeBackTax: false}))
     );
 
     hevm.warp(block.timestamp + 5);
@@ -898,16 +867,20 @@ contract SingleTaxCollectorTest is DSTest {
   }
 
   function test_collectedManyTax() public {
-    safeEngine.initializeCollateralType('j');
+    ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
+      ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: 0, debtFloor: 0});
+    safeEngine.initializeCollateralType('j', _safeEngineCollateralParams);
     draw('j', 100 ether);
 
-    taxCollector.initializeCollateralType('i');
-    taxCollector.initializeCollateralType('j');
+    ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
+      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: RAY});
+    taxCollector.initializeCollateralType('i', _taxCollectorCollateralParams);
+    taxCollector.initializeCollateralType('j', _taxCollectorCollateralParams);
     taxCollector.modifyParameters('primaryTaxReceiver', abi.encode(ali));
 
     taxCollector.modifyParameters('i', 'stabilityFee', abi.encode(1_050_000_000_000_000_000_000_000_000)); // 5% / second
     taxCollector.modifyParameters('j', 'stabilityFee', abi.encode(1_000_000_000_000_000_000_000_000_000)); // 0% / second
-    taxCollector.modifyParameters('globalStabilityFee', abi.encode(50_000_000_000_000_000_000_000_000)); // 5% / second
+    taxCollector.modifyParameters('globalStabilityFee', abi.encode(1_050_000_000_000_000_000_000_000_000)); // 5% / second
 
     taxCollector.taxSingle('i');
     taxCollector.taxSingle('j');
@@ -921,20 +894,26 @@ contract SingleTaxCollectorTest is DSTest {
   }
 
   function test_modify_stabilityFee() public {
-    taxCollector.initializeCollateralType('i');
+    ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
+      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: RAY});
+    taxCollector.initializeCollateralType('i', _taxCollectorCollateralParams);
     taxCollector.modifyParameters('i', 'stabilityFee', abi.encode(1));
 
     assertEq(taxCollector.cParams('i').stabilityFee, 1);
   }
 
   function test_taxManyOutcome_all_untaxed_positive_rates() public {
-    safeEngine.initializeCollateralType('j');
+    ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
+      ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: 0, debtFloor: 0});
+    safeEngine.initializeCollateralType('j', _safeEngineCollateralParams);
     draw('i', 100 ether);
     draw('j', 100 ether);
 
-    taxCollector.modifyParameters('globalStabilityFee', abi.encode(50_000_000_000_000_000_000_000_000)); // 5% / second
-    taxCollector.initializeCollateralType('i');
-    taxCollector.initializeCollateralType('j');
+    taxCollector.modifyParameters('globalStabilityFee', abi.encode(1_050_000_000_000_000_000_000_000_000)); // 5% / second
+    ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
+      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: RAY});
+    taxCollector.initializeCollateralType('i', _taxCollectorCollateralParams);
+    taxCollector.initializeCollateralType('j', _taxCollectorCollateralParams);
     taxCollector.modifyParameters('primaryTaxReceiver', abi.encode(ali));
 
     taxCollector.modifyParameters('i', 'stabilityFee', abi.encode(1_050_000_000_000_000_000_000_000_000)); // 5% / second
@@ -945,17 +924,21 @@ contract SingleTaxCollectorTest is DSTest {
     hevm.warp(block.timestamp + 1);
     (bool _ok, int256 _rad) = taxCollector.taxManyOutcome(0, 1);
     assertTrue(_ok);
-    assertEq(uint256(_rad), 28 * 10 ** 45);
+    assertEq(uint256(_rad), 28.65 * 10 ** 45);
   }
 
   function test_taxManyOutcome_some_untaxed_positive_rates() public {
-    safeEngine.initializeCollateralType('j');
+    ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
+      ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: 0, debtFloor: 0});
+    safeEngine.initializeCollateralType('j', _safeEngineCollateralParams);
     draw('i', 100 ether);
     draw('j', 100 ether);
 
-    taxCollector.modifyParameters('globalStabilityFee', abi.encode(50_000_000_000_000_000_000_000_000)); // 5% / second
-    taxCollector.initializeCollateralType('i');
-    taxCollector.initializeCollateralType('j');
+    taxCollector.modifyParameters('globalStabilityFee', abi.encode(1_050_000_000_000_000_000_000_000_000)); // 5% / second
+    ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
+      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: RAY});
+    taxCollector.initializeCollateralType('i', _taxCollectorCollateralParams);
+    taxCollector.initializeCollateralType('j', _taxCollectorCollateralParams);
     taxCollector.modifyParameters('primaryTaxReceiver', abi.encode(ali));
 
     taxCollector.modifyParameters('i', 'stabilityFee', abi.encode(1_050_000_000_000_000_000_000_000_000)); // 5% / second
@@ -967,16 +950,20 @@ contract SingleTaxCollectorTest is DSTest {
     taxCollector.taxSingle('i');
     (bool _ok, int256 _rad) = taxCollector.taxManyOutcome(0, 1);
     assertTrue(_ok);
-    assertEq(uint256(_rad), 8 * 10 ** 45);
+    assertEq(uint256(_rad), 8.15 * 10 ** 45);
   }
 
   function test_taxManyOutcome_all_untaxed_negative_rates() public {
-    safeEngine.initializeCollateralType('j');
+    ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
+      ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: 0, debtFloor: 0});
+    safeEngine.initializeCollateralType('j', _safeEngineCollateralParams);
     draw('i', 100 ether);
     draw('j', 100 ether);
 
-    taxCollector.initializeCollateralType('i');
-    taxCollector.initializeCollateralType('j');
+    ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
+      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: RAY});
+    taxCollector.initializeCollateralType('i', _taxCollectorCollateralParams);
+    taxCollector.initializeCollateralType('j', _taxCollectorCollateralParams);
     taxCollector.modifyParameters('primaryTaxReceiver', abi.encode(ali));
 
     taxCollector.modifyParameters('i', 'stabilityFee', abi.encode(950_000_000_000_000_000_000_000_000)); // -5% / second
@@ -991,11 +978,15 @@ contract SingleTaxCollectorTest is DSTest {
   }
 
   function test_taxManyOutcome_all_untaxed_mixed_rates() public {
-    safeEngine.initializeCollateralType('j');
+    ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
+      ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: 0, debtFloor: 0});
+    safeEngine.initializeCollateralType('j', _safeEngineCollateralParams);
     draw('j', 100 ether);
 
-    taxCollector.initializeCollateralType('i');
-    taxCollector.initializeCollateralType('j');
+    ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
+      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: RAY});
+    taxCollector.initializeCollateralType('i', _taxCollectorCollateralParams);
+    taxCollector.initializeCollateralType('j', _taxCollectorCollateralParams);
     taxCollector.modifyParameters('primaryTaxReceiver', abi.encode(ali));
 
     taxCollector.modifyParameters('i', 'stabilityFee', abi.encode(950_000_000_000_000_000_000_000_000)); // -5% / second
@@ -1010,8 +1001,12 @@ contract SingleTaxCollectorTest is DSTest {
   }
 
   function test_negative_tax_accumulated_goes_negative() public {
-    safeEngine.initializeCollateralType('j');
-    taxCollector.initializeCollateralType('j');
+    ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
+      ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: 0, debtFloor: 0});
+    safeEngine.initializeCollateralType('j', _safeEngineCollateralParams);
+    ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
+      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: RAY});
+    taxCollector.initializeCollateralType('j', _taxCollectorCollateralParams);
     taxCollector.modifyParameters('primaryTaxReceiver', abi.encode(ali));
 
     draw('j', 100 ether);

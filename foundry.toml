@@ -17,6 +17,7 @@ libs = ['lib']
 fuzz_runs = 1000
 optimizer_runs = 10_000
 block_timestamp = 1675855961
+fs_permissions = [{ access = "write", path = "./src/test/simulations"}]
 
 [profile.optimized]
 via_ir = true

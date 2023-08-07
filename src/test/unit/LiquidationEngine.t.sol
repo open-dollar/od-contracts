@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {Math, RAY, WAD} from '@libraries/Math.sol';
-
 import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
 import {ISAFESaviour} from '@interfaces/external/ISAFESaviour.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
@@ -13,12 +11,13 @@ import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
 import {LiquidationEngine} from '@contracts/LiquidationEngine.sol';
-import {AccountingEngine} from '@contracts/AccountingEngine.sol';
 import {LiquidationEngineForTest} from '@contracts/for-test/LiquidationEngineForTest.sol';
-import {AccountingEngineForTest} from '@contracts/for-test/AccountingEngineForTest.sol';
-import {CollateralAuctionHouseForTest} from '@contracts/for-test/CollateralAuctionHouseForTest.sol';
+import {DummyCollateralAuctionHouse} from '@contracts/for-test/CollateralAuctionHouseForTest.sol';
 import {HaiTest} from '@test/utils/HaiTest.t.sol';
 import {StdStorage, stdStorage} from 'forge-std/StdStorage.sol';
+
+import {Math, MAX_RAD, RAY, WAD} from '@libraries/Math.sol';
+import {Assertions} from '@libraries/Assertions.sol';
 
 abstract contract Base is HaiTest {
   using stdStorage for StdStorage;
@@ -30,17 +29,18 @@ abstract contract Base is HaiTest {
   address safe = label('safe');
   address mockCollateralAuctionHouse = label('collateralTypeSampleAuctionHouse');
   address mockSaviour = label('saviour');
-  address mockAccountingEngine = label('accountingEngine');
   address user = label('user');
 
   bytes32 collateralType = 'collateralTypeSample';
 
   ISAFEEngine mockSafeEngine = ISAFEEngine(mockContract('SAFEEngine'));
+  IAccountingEngine mockAccountingEngine = IAccountingEngine(mockContract('AccountingEngine'));
+
   ILiquidationEngine liquidationEngine;
 
-  IAccountingEngine accountingEngineForTest = IAccountingEngine(address(new AccountingEngineForTest()));
+  // NOTE: calculating _limitAdjustedDebt to mock call is complex, so we use a contract for test
   ICollateralAuctionHouse collateralAuctionHouseForTest =
-    ICollateralAuctionHouse(address(new CollateralAuctionHouseForTest()));
+    ICollateralAuctionHouse(address(new DummyCollateralAuctionHouse()));
 
   ILiquidationEngine.LiquidationEngineParams liquidationEngineParams =
     ILiquidationEngine.LiquidationEngineParams({onAuctionSystemCoinLimit: type(uint256).max});
@@ -48,7 +48,8 @@ abstract contract Base is HaiTest {
   function setUp() public virtual {
     vm.prank(deployer);
 
-    liquidationEngine = new LiquidationEngineForTest(address(mockSafeEngine), liquidationEngineParams);
+    liquidationEngine =
+      new LiquidationEngineForTest(address(mockSafeEngine), address(mockAccountingEngine), liquidationEngineParams);
     label(address(liquidationEngine), 'LiquidationEngine');
   }
 
@@ -87,6 +88,10 @@ abstract contract Base is HaiTest {
     );
   }
 
+  function _mockCollateralList(bytes32 _cType) internal {
+    LiquidationEngineForTest(address(liquidationEngine)).addToCollateralList(_cType);
+  }
+
   function _mockLiquidationEngineCollateralType(
     bytes32 _cType,
     address _collateralAuctionHouse,
@@ -117,6 +122,7 @@ abstract contract Base is HaiTest {
   function _mockSafeEngineCData(
     bytes32 _cType,
     uint256 _debtAmount,
+    uint256 _lockedAmount,
     uint256 _accumulatedRate,
     uint256 _safetyPrice,
     uint256 _liquidationPrice
@@ -124,7 +130,7 @@ abstract contract Base is HaiTest {
     vm.mockCall(
       address(mockSafeEngine),
       abi.encodeCall(ISAFEEngine(mockSafeEngine).cData, (_cType)),
-      abi.encode(_debtAmount, _accumulatedRate, _safetyPrice, _liquidationPrice)
+      abi.encode(_debtAmount, _lockedAmount, _accumulatedRate, _safetyPrice, _liquidationPrice)
     );
   }
 
@@ -139,13 +145,14 @@ abstract contract Base is HaiTest {
   function _mockSafeEngineCollateralTypes(
     bytes32 _cType,
     uint256 _debtAmount,
+    uint256 _lockedAmount,
     uint256 _accumulatedRate,
     uint256 _safetyPrice,
     uint256 _debtCeiling,
     uint256 _debtFloor,
     uint256 _liquidationPrice
   ) internal {
-    _mockSafeEngineCData(_cType, _debtAmount, _accumulatedRate, _safetyPrice, _liquidationPrice);
+    _mockSafeEngineCData(_cType, _debtAmount, _lockedAmount, _accumulatedRate, _safetyPrice, _liquidationPrice);
     _mockSafeEngineCParams(_cType, _debtCeiling, _debtFloor);
   }
 
@@ -169,29 +176,13 @@ abstract contract Base is HaiTest {
 
   function _mockAccountingEnginePushDebtToQueue(uint256 _debt) internal {
     vm.mockCall(
-      mockAccountingEngine, abi.encodeWithSelector(IAccountingEngine.pushDebtToQueue.selector, _debt), abi.encode(0)
+      address(mockAccountingEngine),
+      abi.encodeWithSelector(IAccountingEngine.pushDebtToQueue.selector, _debt),
+      abi.encode(0)
     );
   }
 
-  function _mockCollateralAHStartAuction(
-    uint256 _auctionId,
-    address _safe,
-    address _accountingEngine,
-    uint256 _amountToRaise,
-    uint256 _collateralToSell,
-    uint256 _initialBid
-  ) internal {
-    vm.mockCall(
-      mockCollateralAuctionHouse,
-      abi.encodeCall(
-        ICollateralAuctionHouse(mockCollateralAuctionHouse).startAuction,
-        (_safe, _accountingEngine, _amountToRaise, _collateralToSell, _initialBid)
-      ),
-      abi.encode(_auctionId)
-    );
-  }
-
-  function _mockContractEnabled(uint256 _enabled) internal {
+  function _mockContractEnabled(bool _enabled) internal {
     stdstore.target(address(liquidationEngine)).sig(IDisableable.contractEnabled.selector).checked_write(_enabled);
   }
 
@@ -265,6 +256,7 @@ contract SAFESaviourCollateralTypeModifier is ISAFESaviour, Base {
     _mockSafeEngineCollateralTypes({
       _cType: _cType,
       _debtAmount: 0,
+      _lockedAmount: 0,
       _accumulatedRate: accumulatedRate,
       _safetyPrice: 0,
       _debtCeiling: 0,
@@ -281,11 +273,15 @@ contract Unit_LiquidationEngine_Constructor is Base {
   event ModifyParameters(bytes32 indexed _parameter, bytes32 indexed _cType, bytes _data);
 
   function test_Set_Authorization() public {
-    assertEq(liquidationEngine.authorizedAccounts(deployer), 1);
+    assertEq(liquidationEngine.authorizedAccounts(deployer), true);
   }
 
   function test_Set_SafeEngine() public {
     assertEq(address(liquidationEngine.safeEngine()), address(mockSafeEngine));
+  }
+
+  function test_Set_AccountingEngine() public {
+    assertEq(address(liquidationEngine.accountingEngine()), address(mockAccountingEngine));
   }
 
   function test_Set_OnAuctionSystemCoinLimit() public {
@@ -293,26 +289,35 @@ contract Unit_LiquidationEngine_Constructor is Base {
   }
 
   function test_Set_ContractEnabled() public {
-    assertEq(liquidationEngine.contractEnabled(), 1);
+    assertEq(liquidationEngine.contractEnabled(), true);
   }
 
   function test_Emit_AddAuthorization() public {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit AddAuthorization(deployer);
 
     vm.prank(deployer);
-    new LiquidationEngine(address(mockSafeEngine), liquidationEngineParams);
+    new LiquidationEngine(address(mockSafeEngine), address(mockAccountingEngine), liquidationEngineParams);
   }
 
-  function test_Emit_ModifyParameters() public {
-    vm.expectEmit(true, true, false, false);
-    emit ModifyParameters('onAuctionSystemCoinLimit', bytes32(0), abi.encode(type(uint256).max));
-
-    new LiquidationEngine(address(mockSafeEngine), liquidationEngineParams);
+  function test_Set_LiquidationEngine_Param(ILiquidationEngine.LiquidationEngineParams memory _liquidationEngineParams)
+    public
+  {
+    liquidationEngine =
+      new LiquidationEngine(address(mockSafeEngine), address(mockAccountingEngine), _liquidationEngineParams);
+    assertEq(abi.encode(liquidationEngine.params()), abi.encode(_liquidationEngineParams));
   }
 
-  function test_Set_LiquidationEngine_Param() public {
-    assertEq(abi.encode(liquidationEngine.params()), abi.encode(liquidationEngineParams));
+  function test_Revert_Null_SafeEngine() public {
+    vm.expectRevert(Assertions.NullAddress.selector);
+
+    new LiquidationEngine(address(0),  address(mockAccountingEngine), liquidationEngineParams);
+  }
+
+  function test_Revert_Null_AccountingEngine() public {
+    vm.expectRevert(Assertions.NullAddress.selector);
+
+    new LiquidationEngine(address(mockSafeEngine),  address(0), liquidationEngineParams);
   }
 }
 
@@ -329,6 +334,10 @@ contract Unit_LiquidationEngine_ModifyParameters is Base {
     bytes32 _cType,
     ILiquidationEngine.LiquidationEngineCollateralParams memory _fuzz
   ) public authorized {
+    _mockCollateralList(_cType);
+
+    vm.assume(_fuzz.collateralAuctionHouse != address(0));
+    vm.assume(_fuzz.collateralAuctionHouse != deployer);
     liquidationEngine.modifyParameters(_cType, 'collateralAuctionHouse', abi.encode(_fuzz.collateralAuctionHouse));
     liquidationEngine.modifyParameters(_cType, 'liquidationPenalty', abi.encode(_fuzz.liquidationPenalty));
     vm.assume(_fuzz.liquidationQuantity <= type(uint256).max / RAY);
@@ -343,12 +352,15 @@ contract Unit_LiquidationEngine_ModifyParameters is Base {
     bytes32 _cType,
     uint256 _liquidationQuantity
   ) public authorized {
+    _mockCollateralList(_cType);
+
     vm.assume(_liquidationQuantity > type(uint256).max / RAY);
     vm.expectRevert();
     liquidationEngine.modifyParameters(_cType, 'liquidationQuantity', abi.encode(_liquidationQuantity));
   }
 
-  function test_ModifyParameters_AccoutingEngine(address _accountingEngine) public authorized {
+  function test_ModifyParameters_AccountingEngine(address _accountingEngine) public authorized {
+    vm.assume(_accountingEngine != address(0));
     liquidationEngine.modifyParameters('accountingEngine', abi.encode(_accountingEngine));
 
     assertEq(_accountingEngine, address(liquidationEngine.accountingEngine()));
@@ -359,11 +371,19 @@ contract Unit_LiquidationEngine_ModifyParameters is Base {
     address _previousCAH,
     address _newCAH
   ) public authorized {
+    _mockCollateralList(_cType);
+
+    vm.assume(_newCAH != address(0));
+    vm.assume(_newCAH != deployer);
+    vm.assume(_previousCAH != deployer);
+
     LiquidationEngineForTest(address(liquidationEngine)).setCollateralAuctionHouse(_cType, _previousCAH);
 
-    vm.expectCall(
-      address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.denySAFEModification.selector, _previousCAH)
-    );
+    if (_previousCAH != address(0)) {
+      vm.expectCall(
+        address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.denySAFEModification.selector, _previousCAH)
+      );
+    }
     vm.expectCall(
       address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.approveSAFEModification.selector, _newCAH)
     );
@@ -377,6 +397,8 @@ contract Unit_LiquidationEngine_ModifyParameters is Base {
   }
 
   function test_Revert_ModifyParameters_PerCollateral_UnrecognizedParam(bytes32 _cType) public authorized {
+    _mockCollateralList(_cType);
+
     vm.expectRevert(IModifiable.UnrecognizedParam.selector);
     liquidationEngine.modifyParameters(_cType, 'unrecognizedParam', abi.encode(0));
   }
@@ -403,7 +425,7 @@ contract Unit_LiquidationEngine_RemoveCoinsFromAuction is Base {
     vm.assume(notUnderflow(_initialCurrentOnAuctionSystemCoins, _rad));
     _mockCurrentOnAuctionSystemCoins(_initialCurrentOnAuctionSystemCoins);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit UpdateCurrentOnAuctionSystemCoins(_initialCurrentOnAuctionSystemCoins - _rad);
 
     liquidationEngine.removeCoinsFromAuction(_rad);
@@ -442,6 +464,7 @@ contract Unit_LiquidationEngine_ProtectSafe is Base {
   }
 
   function test_Call_SAFEEngine_CanModifySafe(bytes32 _cType, address _safe, address _saviour) public {
+    vm.assume(_saviour != address(0));
     _mockValues({_safe: _safe, _canModifySafe: true, _saviour: _saviour, _canSave: 1});
     vm.prank(account);
 
@@ -461,9 +484,10 @@ contract Unit_LiquidationEngine_ProtectSafe is Base {
   }
 
   function test_Revert_CannotModifySafe(bytes32 _cType, address _safe, address _saviour) public {
+    vm.assume(_saviour != address(0));
     _mockValues({_safe: _safe, _canModifySafe: false, _saviour: _saviour, _canSave: 1});
 
-    vm.expectRevert(bytes('LiquidationEngine/cannot-modify-safe'));
+    vm.expectRevert(ILiquidationEngine.LiqEng_CannotModifySAFE.selector);
     vm.prank(account);
 
     liquidationEngine.protectSAFE(_cType, _safe, _saviour);
@@ -473,7 +497,7 @@ contract Unit_LiquidationEngine_ProtectSafe is Base {
     vm.assume(_saviour != address(0));
     _mockValues({_safe: _safe, _canModifySafe: true, _saviour: _saviour, _canSave: 0});
 
-    vm.expectRevert(bytes('LiquidationEngine/saviour-not-authorized'));
+    vm.expectRevert(ILiquidationEngine.LiqEng_SaviourNotAuthorized.selector);
     vm.prank(account);
 
     liquidationEngine.protectSAFE(_cType, _safe, _saviour);
@@ -494,7 +518,7 @@ contract Unit_LiquidationEngine_ConnectSAFESaviour is Base {
   function test_Emit_ConnectSAFESaviour() public authorized {
     _mockSaveSafe(true, type(uint256).max, type(uint256).max);
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit ConnectSAFESaviour(mockSaviour);
 
     liquidationEngine.connectSAFESaviour(mockSaviour);
@@ -520,7 +544,7 @@ contract Unit_LiquidationEngine_ConnectSAFESaviour is Base {
   function test_Revert_NotOk() public authorized {
     _mockSaveSafe(false, type(uint256).max, type(uint256).max);
 
-    vm.expectRevert(bytes('LiquidationEngine/saviour-not-ok'));
+    vm.expectRevert(ILiquidationEngine.LiqEng_SaviourNotOk.selector);
 
     liquidationEngine.connectSAFESaviour(mockSaviour);
   }
@@ -529,7 +553,7 @@ contract Unit_LiquidationEngine_ConnectSAFESaviour is Base {
     vm.assume(_collateralAdded < type(uint256).max || _liquidatorReward < type(uint256).max);
     _mockSaveSafe(true, _collateralAdded, _liquidatorReward);
 
-    vm.expectRevert(bytes('LiquidationEngine/invalid-amounts'));
+    vm.expectRevert(ILiquidationEngine.LiqEng_InvalidAmounts.selector);
 
     liquidationEngine.connectSAFESaviour(mockSaviour);
   }
@@ -550,7 +574,7 @@ contract Unit_LiquidationEngine_DisconnectSAFESaviour is Base {
   }
 
   function test_Emit_DisconnectSAFESaviour() public authorized {
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit DisconnectSAFESaviour(mockSaviour);
 
     liquidationEngine.disconnectSAFESaviour(mockSaviour);
@@ -588,6 +612,7 @@ contract Unit_LiquidationEngine_GetLimitAdjustedDebtToCover is Base {
     _mockSafeEngineCData({
       _cType: collateralType,
       _debtAmount: 0,
+      _lockedAmount: 0,
       _accumulatedRate: _accumulatedRate,
       _safetyPrice: 0,
       _liquidationPrice: 0
@@ -720,7 +745,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
 
   function setUp() public virtual override {
     super.setUp();
-    LiquidationEngineForTest(address(liquidationEngine)).setAccountingEngine(address(accountingEngineForTest));
+    LiquidationEngineForTest(address(liquidationEngine)).setAccountingEngine(address(mockAccountingEngine));
     LiquidationEngineForTest(address(liquidationEngine)).setCollateralAuctionHouse(
       collateralType, address(collateralAuctionHouseForTest)
     );
@@ -978,6 +1003,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     _mockSafeEngineCollateralTypes({
       _cType: collateralType,
       _debtAmount: 0,
+      _lockedAmount: 0,
       _accumulatedRate: _liquidation.accumulatedRate,
       _safetyPrice: 0,
       _debtCeiling: 0,
@@ -1015,7 +1041,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
   }
 
   function test_Call_SafeEngine_CData(Liquidation memory _liquidation) public happyPathFullLiquidation(_liquidation) {
-    vm.expectCall(address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.cData.selector, collateralType), 2);
+    vm.expectCall(address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.cData.selector, collateralType), 1);
 
     liquidationEngine.liquidateSAFE(collateralType, safe);
   }
@@ -1027,7 +1053,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
   }
 
   function test_Call_SafeEngine_Safes(Liquidation memory _liquidation) public happyPathFullLiquidation(_liquidation) {
-    vm.expectCall(address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.safes.selector, collateralType, safe), 3);
+    vm.expectCall(address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.safes.selector, collateralType, safe), 1);
 
     liquidationEngine.liquidateSAFE(collateralType, safe);
   }
@@ -1044,7 +1070,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
           collateralType,
           safe,
           address(liquidationEngine),
-          address(accountingEngineForTest),
+          address(mockAccountingEngine),
           -int256(_liquidation.safeCollateral),
           -int256(_liquidation.safeDebt)
         )
@@ -1069,7 +1095,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
           collateralType,
           safe,
           address(liquidationEngine),
-          address(accountingEngineForTest),
+          address(mockAccountingEngine),
           -int256(_collateralToSell),
           -int256(_limitAdjustedDebt)
         )
@@ -1094,7 +1120,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
           collateralType,
           safe,
           address(liquidationEngine),
-          address(accountingEngineForTest),
+          address(mockAccountingEngine),
           -int256(_collateralToSell),
           -int256(_limitAdjustedDebt)
         )
@@ -1112,7 +1138,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
       _liquidation.safeDebt * _liquidation.accumulatedRate * _liquidation.liquidationPenalty / WAD;
     _mockAccountingEnginePushDebtToQueue(_amountToRaise);
     uint256 _limitAdjustedDebtMulAccRate = _liquidation.safeDebt * _liquidation.accumulatedRate;
-    LiquidationEngineForTest(address(liquidationEngine)).setAccountingEngine(mockAccountingEngine);
+    LiquidationEngineForTest(address(liquidationEngine)).setAccountingEngine(address(mockAccountingEngine));
 
     vm.expectCall(
       address(mockAccountingEngine),
@@ -1131,11 +1157,10 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     uint256 _amountToRaise = _limitAdjustedDebt * _liquidation.accumulatedRate * _liquidation.liquidationPenalty / WAD;
     _mockAccountingEnginePushDebtToQueue(_amountToRaise);
     uint256 _limitAdjustedDebtMulAccRate = _limitAdjustedDebt * _liquidation.accumulatedRate;
-    LiquidationEngineForTest(address(liquidationEngine)).setAccountingEngine(mockAccountingEngine);
+    LiquidationEngineForTest(address(liquidationEngine)).setAccountingEngine(address(mockAccountingEngine));
 
     vm.expectCall(
-      address(mockAccountingEngine),
-      abi.encodeCall(IAccountingEngine(mockAccountingEngine).pushDebtToQueue, _limitAdjustedDebtMulAccRate)
+      address(mockAccountingEngine), abi.encodeCall(IAccountingEngine.pushDebtToQueue, _limitAdjustedDebtMulAccRate)
     );
 
     liquidationEngine.liquidateSAFE(collateralType, safe);
@@ -1150,7 +1175,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     uint256 _amountToRaise = _limitAdjustedDebt * _liquidation.accumulatedRate * _liquidation.liquidationPenalty / WAD;
     _mockAccountingEnginePushDebtToQueue(_amountToRaise);
     uint256 _limitAdjustedDebtMulAccRate = _limitAdjustedDebt * _liquidation.accumulatedRate;
-    LiquidationEngineForTest(address(liquidationEngine)).setAccountingEngine(mockAccountingEngine);
+    LiquidationEngineForTest(address(liquidationEngine)).setAccountingEngine(address(mockAccountingEngine));
 
     vm.expectCall(
       address(mockAccountingEngine),
@@ -1166,19 +1191,12 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
   {
     uint256 _amountToRaise =
       _liquidation.safeDebt * _liquidation.accumulatedRate * _liquidation.liquidationPenalty / WAD;
-    _mockCollateralAHStartAuction(
-      1, safe, address(accountingEngineForTest), _amountToRaise, _liquidation.safeCollateral, 0
-    );
-
-    LiquidationEngineForTest(address(liquidationEngine)).setCollateralAuctionHouse(
-      collateralType, mockCollateralAuctionHouse
-    );
 
     vm.expectCall(
-      address(mockCollateralAuctionHouse),
+      address(collateralAuctionHouseForTest),
       abi.encodeCall(
-        ICollateralAuctionHouse(mockCollateralAuctionHouse).startAuction,
-        (safe, address(accountingEngineForTest), _amountToRaise, _liquidation.safeCollateral, 0)
+        ICollateralAuctionHouse.startAuction,
+        (safe, address(mockAccountingEngine), _amountToRaise, _liquidation.safeCollateral)
       )
     );
 
@@ -1193,17 +1211,10 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     uint256 _amountToRaise = _limitAdjustedDebt * _liquidation.accumulatedRate * _liquidation.liquidationPenalty / WAD;
     uint256 _collateralToSell = _liquidation.safeCollateral * _limitAdjustedDebt / _liquidation.safeDebt;
 
-    _mockCollateralAHStartAuction(1, safe, address(accountingEngineForTest), _amountToRaise, _collateralToSell, 0);
-
-    LiquidationEngineForTest(address(liquidationEngine)).setCollateralAuctionHouse(
-      collateralType, mockCollateralAuctionHouse
-    );
-
     vm.expectCall(
-      address(mockCollateralAuctionHouse),
+      address(collateralAuctionHouseForTest),
       abi.encodeCall(
-        ICollateralAuctionHouse(mockCollateralAuctionHouse).startAuction,
-        (safe, address(accountingEngineForTest), _amountToRaise, _collateralToSell, 0)
+        ICollateralAuctionHouse.startAuction, (safe, address(mockAccountingEngine), _amountToRaise, _collateralToSell)
       )
     );
 
@@ -1219,17 +1230,10 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     uint256 _amountToRaise = _limitAdjustedDebt * _liquidation.accumulatedRate * _liquidation.liquidationPenalty / WAD;
     uint256 _collateralToSell = _liquidation.safeCollateral * _limitAdjustedDebt / _liquidation.safeDebt;
 
-    _mockCollateralAHStartAuction(1, safe, address(accountingEngineForTest), _amountToRaise, _collateralToSell, 0);
-
-    LiquidationEngineForTest(address(liquidationEngine)).setCollateralAuctionHouse(
-      collateralType, mockCollateralAuctionHouse
-    );
-
     vm.expectCall(
-      address(mockCollateralAuctionHouse),
+      address(collateralAuctionHouseForTest),
       abi.encodeCall(
-        ICollateralAuctionHouse(mockCollateralAuctionHouse).startAuction,
-        (safe, address(accountingEngineForTest), _amountToRaise, _collateralToSell, 0)
+        ICollateralAuctionHouse.startAuction, (safe, address(mockAccountingEngine), _amountToRaise, _collateralToSell)
       )
     );
 
@@ -1277,7 +1281,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
   {
     uint256 _amountToRaise =
       _liquidation.safeDebt * _liquidation.accumulatedRate * _liquidation.liquidationPenalty / WAD;
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit UpdateCurrentOnAuctionSystemCoins(_liquidation.currentOnAuctionSystemCoins + _amountToRaise);
 
     liquidationEngine.liquidateSAFE(collateralType, safe);
@@ -1289,7 +1293,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     uint256 _limitAdjustedDebt =
       _liquidation.liquidationQuantity * WAD / _liquidation.liquidationPenalty / _liquidation.accumulatedRate;
     uint256 _amountToRaise = _limitAdjustedDebt * _liquidation.accumulatedRate * _liquidation.liquidationPenalty / WAD;
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit UpdateCurrentOnAuctionSystemCoins(_liquidation.currentOnAuctionSystemCoins + _amountToRaise);
 
     liquidationEngine.liquidateSAFE(collateralType, safe);
@@ -1302,7 +1306,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     uint256 _limitAdjustedDebt = (_liquidation.onAuctionSystemCoinLimit - _liquidation.currentOnAuctionSystemCoins)
       * WAD / _liquidation.liquidationPenalty / _liquidation.accumulatedRate;
     uint256 _amountToRaise = _limitAdjustedDebt * _liquidation.accumulatedRate * _liquidation.liquidationPenalty / WAD;
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit UpdateCurrentOnAuctionSystemCoins(_liquidation.currentOnAuctionSystemCoins + _amountToRaise);
 
     liquidationEngine.liquidateSAFE(collateralType, safe);
@@ -1310,7 +1314,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
 
   function test_Emit_Liquidate(Liquidation memory _liquidation) public happyPathFullLiquidation(_liquidation) {
     uint256 acRateMulLimitAdDebt = _liquidation.safeDebt * _liquidation.accumulatedRate;
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit Liquidate(
       collateralType,
       safe,
@@ -1332,7 +1336,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
       _liquidation.liquidationQuantity * WAD / _liquidation.liquidationPenalty / _liquidation.accumulatedRate;
     uint256 acRateMulLimitAdDebt = _limitAdjustedDebt * _liquidation.accumulatedRate;
     uint256 _collateralToSell = _liquidation.safeCollateral * _limitAdjustedDebt / _liquidation.safeDebt;
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit Liquidate(
       collateralType,
       safe,
@@ -1355,7 +1359,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     uint256 acRateMulLimitAdDebt = _limitAdjustedDebt * _liquidation.accumulatedRate;
     uint256 _collateralToSell = _liquidation.safeCollateral * _limitAdjustedDebt / _liquidation.safeDebt;
 
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit Liquidate(
       collateralType,
       safe,
@@ -1372,8 +1376,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
   function test_Revert_ContractNotEnabled() public {
     // We don't care about any of these values just mocking for call to work when calling safe engine
     _mockValues(Liquidation(0, 0, 0, 0, 0, 0, 0, 0, 0));
-    uint256 _enabled = 0;
-    _mockContractEnabled(_enabled);
+    _mockContractEnabled(false);
 
     vm.expectRevert(IDisableable.ContractIsDisabled.selector);
 
@@ -1404,7 +1407,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
       })
     );
 
-    vm.expectRevert(bytes('LiquidationEngine/safe-not-unsafe'));
+    vm.expectRevert(ILiquidationEngine.LiqEng_SAFENotUnsafe.selector);
 
     liquidationEngine.liquidateSAFE(collateralType, safe);
   }
@@ -1444,7 +1447,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
       })
     );
 
-    vm.expectRevert(bytes('LiquidationEngine/liquidation-limit-hit'));
+    vm.expectRevert(ILiquidationEngine.LiqEng_LiquidationLimitHit.selector);
 
     liquidationEngine.liquidateSAFE(collateralType, safe);
   }
@@ -1487,7 +1490,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
       })
     );
 
-    vm.expectRevert(bytes('LiquidationEngine/null-auction'));
+    vm.expectRevert(ILiquidationEngine.LiqEng_NullAuction.selector);
 
     liquidationEngine.liquidateSAFE(collateralType, safe);
   }
@@ -1521,55 +1524,10 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
       })
     );
 
-    vm.expectRevert(bytes('LiquidationEngine/dusty-safe'));
+    vm.expectRevert(ILiquidationEngine.LiqEng_DustySAFE.selector);
 
     liquidationEngine.liquidateSAFE(collateralType, safe);
   }
-
-  // It seems that there is not a math possible path for this test, commenting it
-  /*
-  function test_Revert_DustySafe_Coins(
-    uint256 _safeDebt,
-    uint256 _onAuctionSystemCoinLimit,
-    uint256 _currentOnAuctionSystemCoins,
-    uint256 _accumulatedRate,
-    uint256 _liquidationPenalty,
-    uint256 _debtFloor,
-    uint256 _liquidationPrice,
-    uint256 _safeCollateral
-  ) public {
-     vm.assume(_notZeroDivision(_accumulatedRate, _liquidationPenalty));
-    vm.assume(_notSafe(_liquidationPrice, _safeCollateral, _safeDebt, _accumulatedRate));
-    vm.assume(_notHitLimit(_onAuctionSystemCoinLimit, _currentOnAuctionSystemCoins, _debtFloor));
-      vm.assume(_notNullAuction(_onAuctionSystemCoinLimit - _currentOnAuctionSystemCoins, _liquidationPenalty, _accumulatedRate));
-     _limitByCoins(
-      _safeDebt,
-      type(uint256).max,
-      _onAuctionSystemCoinLimit,
-      _currentOnAuctionSystemCoins,
-      _accumulatedRate,
-      _liquidationPenalty
-    );
-    // Making it dusty
-    vm.assume(!_notDusty(_safeDebt, _onAuctionSystemCoinLimit - _currentOnAuctionSystemCoins, _liquidationPenalty, _debtFloor, _accumulatedRate));
-
-    _mockValues({
-      _accumulatedRate: _accumulatedRate,
-      _debtFloor: _debtFloor,
-      _liquidationPrice: _liquidationPrice,
-      _safeCollateral: _safeCollateral,
-      _safeDebt: _safeDebt,
-      _onAuctionSystemCoinLimit: _onAuctionSystemCoinLimit,
-      _currentOnAuctionSystemCoins: _currentOnAuctionSystemCoins,
-      _liquidationPenalty: _liquidationPenalty,
-      _liquidationQuantity: type(uint256).max
-    });
-
-    vm.expectRevert(bytes('LiquidationEngine/dusty-safe'));
-
-    liquidationEngine.liquidateSAFE(collateralType, safe);
-  }
-  */
 
   function test_Revert_NullCollateralToSell(Liquidation memory _liquidation) public {
     vm.assume(_notZeroDivision(_liquidation.accumulatedRate, _liquidation.liquidationPenalty));
@@ -1628,7 +1586,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
       )
     );
 
-    vm.expectRevert(bytes('LiquidationEngine/null-collateral-to-sell'));
+    vm.expectRevert(ILiquidationEngine.LiqEng_NullCollateralToSell.selector);
 
     liquidationEngine.liquidateSAFE(collateralType, safe);
   }
@@ -1653,7 +1611,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
       })
     );
 
-    vm.expectRevert(bytes('LiquidationEngine/collateral-or-debt-overflow'));
+    vm.expectRevert(Math.IntOverflow.selector);
 
     liquidationEngine.liquidateSAFE(collateralType, safe);
   }
@@ -1679,7 +1637,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
       })
     );
 
-    vm.expectRevert(bytes('LiquidationEngine/collateral-or-debt-overflow'));
+    vm.expectRevert(Math.IntOverflow.selector);
 
     liquidationEngine.liquidateSAFE(collateralType, safe);
   }
@@ -1725,7 +1683,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     _mockSafeSaviours(address(_testSaveSaviour), 1);
 
     bytes memory _reason = abi.encodeWithSignature('Error(string)', 'Failed to save safe');
-    expectEmitNoIndex();
+    vm.expectEmit();
     emit FailedSAFESave(_reason);
 
     vm.prank(user);
@@ -1744,7 +1702,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     _mockSafeSaviours(address(_testSaveSaviour), 1);
     _mockSafeEngineSafes(collateralType, safe, _liquidation.safeCollateral, _liquidation.safeDebt);
 
-    vm.expectRevert(bytes('LiquidationEngine/invalid-safe-saviour-operation'));
+    vm.expectRevert(ILiquidationEngine.LiqEng_InvalidSAFESaviourOperation.selector);
 
     vm.prank(user);
     liquidationEngine.liquidateSAFE(collateralType, safe);
@@ -1759,7 +1717,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     _mockChosenSafeSaviour(collateralType, safe, address(_testSaveSaviour));
     _mockSafeSaviours(address(_testSaveSaviour), 1);
 
-    vm.expectRevert(bytes('LiquidationEngine/invalid-safe-saviour-operation'));
+    vm.expectRevert(ILiquidationEngine.LiqEng_InvalidSAFESaviourOperation.selector);
 
     vm.prank(user);
     liquidationEngine.liquidateSAFE(collateralType, safe);
@@ -1799,5 +1757,103 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
 
     vm.prank(user);
     liquidationEngine.liquidateSAFE(collateralType, safe);
+  }
+}
+
+contract Unit_LiquidationEngine_InitializeCollateralType is Base {
+  event AddAuthorization(address _account);
+
+  modifier happyPath(ILiquidationEngine.LiquidationEngineCollateralParams memory _liqEngineCParams) {
+    _assumeHappyPath(_liqEngineCParams);
+    _mockValues(_liqEngineCParams);
+    _;
+  }
+
+  function _assumeHappyPath(ILiquidationEngine.LiquidationEngineCollateralParams memory _liqEngineCParams)
+    internal
+    view
+  {
+    vm.assume(_liqEngineCParams.collateralAuctionHouse != address(0));
+    vm.assume(_liqEngineCParams.collateralAuctionHouse != deployer);
+    vm.assume(_liqEngineCParams.liquidationQuantity <= MAX_RAD);
+  }
+
+  function _mockValues(ILiquidationEngine.LiquidationEngineCollateralParams memory _liqEngineCParams) internal {}
+
+  function test_Set_CParams(
+    bytes32 _cType,
+    ILiquidationEngine.LiquidationEngineCollateralParams memory _liqEngineCParams
+  ) public authorized happyPath(_liqEngineCParams) {
+    liquidationEngine.initializeCollateralType(_cType, _liqEngineCParams);
+
+    assertEq(abi.encode(liquidationEngine.cParams(_cType)), abi.encode(_liqEngineCParams));
+  }
+
+  function test_Call_SAFEEngine_ApproveSAFEModification(
+    bytes32 _cType,
+    ILiquidationEngine.LiquidationEngineCollateralParams memory _liqEngineCParams
+  ) public authorized happyPath(_liqEngineCParams) {
+    vm.expectCall(
+      address(mockSafeEngine),
+      abi.encodeCall(mockSafeEngine.approveSAFEModification, (_liqEngineCParams.collateralAuctionHouse))
+    );
+
+    liquidationEngine.initializeCollateralType(_cType, _liqEngineCParams);
+  }
+
+  function test_Emit_AddAuthorization(
+    bytes32 _cType,
+    ILiquidationEngine.LiquidationEngineCollateralParams memory _liqEngineCParams
+  ) public authorized happyPath(_liqEngineCParams) {
+    vm.expectEmit();
+    emit AddAuthorization(_liqEngineCParams.collateralAuctionHouse);
+
+    liquidationEngine.initializeCollateralType(_cType, _liqEngineCParams);
+  }
+
+  function test_Revert_CollateralAuctionHouse_NullAddress(
+    bytes32 _cType,
+    ILiquidationEngine.LiquidationEngineCollateralParams memory _liqEngineCParams
+  ) public authorized {
+    _liqEngineCParams.collateralAuctionHouse = address(0);
+
+    vm.expectRevert(Assertions.NullAddress.selector);
+
+    liquidationEngine.initializeCollateralType(_cType, _liqEngineCParams);
+  }
+
+  function test_Revert_LiquidationQuantity_NotLesserOrEqualThan(
+    bytes32 _cType,
+    ILiquidationEngine.LiquidationEngineCollateralParams memory _liqEngineCParams
+  ) public authorized {
+    vm.assume(_liqEngineCParams.collateralAuctionHouse != address(0));
+    vm.assume(_liqEngineCParams.collateralAuctionHouse != deployer);
+    vm.assume(_liqEngineCParams.liquidationQuantity > MAX_RAD);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(Assertions.NotLesserOrEqualThan.selector, _liqEngineCParams.liquidationQuantity, MAX_RAD)
+    );
+
+    liquidationEngine.initializeCollateralType(_cType, _liqEngineCParams);
+  }
+
+  function test_Revert_NotAuthorized(
+    bytes32 _cType,
+    ILiquidationEngine.LiquidationEngineCollateralParams memory _liqEngineCParams
+  ) public {
+    vm.expectRevert(IAuthorizable.Unauthorized.selector);
+
+    liquidationEngine.initializeCollateralType(_cType, _liqEngineCParams);
+  }
+
+  function test_Revert_CollateralTypeAlreadyInitialized(
+    bytes32 _cType,
+    ILiquidationEngine.LiquidationEngineCollateralParams memory _liqEngineCParams
+  ) public authorized {
+    _mockCollateralList(_cType);
+
+    vm.expectRevert(ILiquidationEngine.LiqEng_CollateralTypeAlreadyInitialized.selector);
+
+    liquidationEngine.initializeCollateralType(_cType, _liqEngineCParams);
   }
 }

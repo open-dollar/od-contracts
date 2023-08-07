@@ -44,7 +44,7 @@ contract OracleJob is Job, Authorizable, Modifiable, IOracleJob {
     if (!shouldWorkUpdateCollateralPrice) revert NotWorkable();
 
     IDelayedOracle _delayedOracle = IDelayedOracle(address(oracleRelayer.cParams(_cType).oracle));
-    if (!_delayedOracle.updateResult()) revert InvalidPrice();
+    if (!_delayedOracle.updateResult()) revert OracleJob_InvalidPrice();
 
     oracleRelayer.updateCollateralPrice(_cType);
   }

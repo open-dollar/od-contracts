@@ -19,7 +19,7 @@ interface IGlobalSettlement is IAuthorizable, IDisableable, IModifiable {
   event FreezeCollateralType(bytes32 indexed _cType, uint256 _finalCoinPerCollateralPrice);
   event FastTrackAuction(bytes32 indexed _cType, uint256 indexed _auctionId, uint256 _collateralTotalDebt);
   event ProcessSAFE(bytes32 indexed _cType, address indexed _safe, uint256 _collateralShortfall);
-  event FreeCollateral(bytes32 indexed _cType, address indexed _sender, int256 _collateralAmount);
+  event FreeCollateral(bytes32 indexed _cType, address indexed _sender, uint256 _collateralAmount);
   event SetOutstandingCoinSupply(uint256 _outstandingCoinSupply);
   event CalculateCashPrice(bytes32 indexed _cType, uint256 _collateralCashPrice);
   event PrepareCoinsForRedeeming(address indexed _sender, uint256 _coinBag);
@@ -40,13 +40,14 @@ interface IGlobalSettlement is IAuthorizable, IDisableable, IModifiable {
   error GS_InsufficientBagBalance();
 
   // --- Structs ---
-
   struct GlobalSettlementParams {
     uint256 shutdownCooldown;
   }
 
   // --- Data ---
   function params() external view returns (GlobalSettlementParams memory _globalSettlementParams);
+  // solhint-disable-next-line private-vars-leading-underscore
+  function _params() external view returns (uint256 _shutdownCooldown);
 
   function shutdownTime() external view returns (uint256 _shutdownTime);
   function outstandingCoinSupply() external view returns (uint256 _outstandingCoinSupply);

@@ -20,18 +20,4 @@ contract SystemCoin is ERC20, Authorizable, ISystemCoin {
   function burn(address _usr, uint256 _wad) external isAuthorized {
     _burn(_usr, _wad);
   }
-
-  function _transfer(address _from, address _to, uint256 _value) internal override {
-    if (_to == address(this)) revert SystemCoin_CannotTransferToThisAddress();
-    super._transfer(_from, _to, _value);
-  }
-
-  function transferFrom(address _from, address _to, uint256 _amount) public override(ERC20, IERC20) returns (bool _ok) {
-    address _spender = msg.sender;
-    if (_from != msg.sender) {
-      _spendAllowance(_from, _spender, _amount);
-    }
-    _transfer(_from, _to, _amount);
-    return true;
-  }
 }
