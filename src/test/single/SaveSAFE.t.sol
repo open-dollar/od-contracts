@@ -10,8 +10,11 @@ import {IAccountingEngine, AccountingEngine} from '@contracts/AccountingEngine.s
 import {ITaxCollector, TaxCollector} from '@contracts/TaxCollector.sol';
 import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
 import {ETHJoin} from '@contracts/utils/ETHJoin.sol';
-import {CollateralJoin} from '@contracts/utils/CollateralJoin.sol';
-import {CollateralJoinFactory} from '@contracts/factories/CollateralJoinFactory.sol';
+import {
+  ICollateralJoinFactory,
+  ICollateralJoin,
+  CollateralJoinFactory
+} from '@contracts/factories/CollateralJoinFactory.sol';
 import {OracleRelayer, IOracleRelayer} from '@contracts/OracleRelayer.sol';
 import {IDebtAuctionHouse, DebtAuctionHouse} from '@contracts/DebtAuctionHouse.sol';
 import {ICollateralAuctionHouse, CollateralAuctionHouse} from '@contracts/CollateralAuctionHouse.sol';
@@ -125,8 +128,8 @@ contract SingleSaveSAFETest is DSTest {
   CoinForTest gold;
   TaxCollector taxCollector;
 
-  CollateralJoinFactory collateralJoinFactory;
-  CollateralJoin collateralA;
+  ICollateralJoinFactory collateralJoinFactory;
+  ICollateralJoin collateralA;
 
   CollateralAuctionHouse collateralAuctionHouse;
   DebtAuctionHouse debtAuctionHouse;
@@ -237,7 +240,7 @@ contract SingleSaveSAFETest is DSTest {
     safeEngine.initializeCollateralType('gold', _safeEngineCollateralParams);
     collateralJoinFactory = new CollateralJoinFactory(address(safeEngine));
     safeEngine.addAuthorization(address(collateralJoinFactory));
-    collateralA = CollateralJoin(collateralJoinFactory.deployCollateralJoin('gold', address(gold)));
+    collateralA = collateralJoinFactory.deployCollateralJoin('gold', address(gold));
     gold.approve(address(collateralA), type(uint256).max);
     collateralA.join(address(this), 1000 ether);
 

@@ -84,6 +84,8 @@ abstract contract CommonDeploymentTest is HaiTest, Deploy {
 
   function test_Grant_Auth() public {
     _test_Authorizations(governor, true);
+    if (delegate != address(0)) _test_Authorizations(delegate, true);
+    _test_Authorizations(deployer, false);
   }
 
   function _test_Authorizations(address _target, bool _permission) internal {
@@ -97,6 +99,17 @@ abstract contract CommonDeploymentTest is HaiTest, Deploy {
     assertEq(surplusAuctionHouse.authorizedAccounts(_target), _permission);
     assertEq(debtAuctionHouse.authorizedAccounts(_target), _permission);
 
+    // settlement
+    assertEq(globalSettlement.authorizedAccounts(_target), _permission);
+    assertEq(postSettlementSurplusAuctionHouse.authorizedAccounts(_target), _permission);
+    assertEq(settlementSurplusAuctioneer.authorizedAccounts(_target), _permission);
+
+    // factories
+    assertEq(chainlinkRelayerFactory.authorizedAccounts(_target), _permission);
+    assertEq(uniV3RelayerFactory.authorizedAccounts(_target), _permission);
+    assertEq(denominatedOracleFactory.authorizedAccounts(_target), _permission);
+    assertEq(delayedOracleFactory.authorizedAccounts(_target), _permission);
+
     assertEq(collateralJoinFactory.authorizedAccounts(_target), _permission);
     assertEq(collateralAuctionHouseFactory.authorizedAccounts(_target), _permission);
 
@@ -106,11 +119,6 @@ abstract contract CommonDeploymentTest is HaiTest, Deploy {
 
     // token adapters
     assertEq(coinJoin.authorizedAccounts(_target), _permission);
-
-    for (uint256 _i; _i < collateralTypes.length; _i++) {
-      bytes32 _cType = collateralTypes[_i];
-      assertEq(collateralAuctionHouse[_cType].authorizedAccounts(_target), _permission);
-    }
 
     // jobs
     assertEq(accountingJob.authorizedAccounts(_target), _permission);
@@ -129,8 +137,8 @@ contract E2EDeploymentMainnetTest is DeployMainnet, CommonDeploymentTest {
     run();
   }
 
-  function _setupEnvironment() internal override(DeployMainnet, Deploy) {
-    super._setupEnvironment();
+  function setupEnvironment() public override(DeployMainnet, Deploy) {
+    super.setupEnvironment();
   }
 }
 
@@ -144,8 +152,8 @@ contract E2EDeploymentGoerliTest is DeployGoerli, CommonDeploymentTest {
     run();
   }
 
-  function _setupEnvironment() internal override(DeployGoerli, Deploy) {
-    super._setupEnvironment();
+  function setupEnvironment() public override(DeployGoerli, Deploy) {
+    super.setupEnvironment();
   }
 }
 

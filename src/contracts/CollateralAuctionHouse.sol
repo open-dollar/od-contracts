@@ -663,7 +663,6 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, ICollateralAuctionH
    * @notice Terminate an auction prematurely. Usually called by Global Settlement.
    * @param _id ID of the auction to settle
    */
-  // TODO: why this method is not whenDisabled?
   function terminateAuctionPrematurely(uint256 _id) external isAuthorized {
     Auction memory _auction = _auctions[_id];
 

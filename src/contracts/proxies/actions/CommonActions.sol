@@ -23,6 +23,11 @@ contract CommonActions {
     _exitSystemCoins(_coinJoin, _coinsToExit);
   }
 
+  function exitAllSystemCoins(address _coinJoin) external delegateCall {
+    uint256 _coinsToExit = ICoinJoin(_coinJoin).safeEngine().coinBalance(address(this));
+    _exitSystemCoins(_coinJoin, _coinsToExit);
+  }
+
   function exitCollateral(address _collateralJoin, uint256 _wad) external delegateCall {
     _exitCollateral(_collateralJoin, _wad);
   }

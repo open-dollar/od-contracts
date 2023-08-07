@@ -11,10 +11,20 @@ import {LiquidationEngine, ILiquidationEngine} from '@contracts/LiquidationEngin
 import {SurplusAuctionHouse, ISurplusAuctionHouse} from '@contracts/SurplusAuctionHouse.sol';
 import {DebtAuctionHouse, IDebtAuctionHouse} from '@contracts/DebtAuctionHouse.sol';
 import {CollateralAuctionHouse, ICollateralAuctionHouse} from '@contracts/CollateralAuctionHouse.sol';
-import {GlobalSettlement, IGlobalSettlement} from '@contracts/settlement/GlobalSettlement.sol';
 import {StabilityFeeTreasury, IStabilityFeeTreasury} from '@contracts/StabilityFeeTreasury.sol';
 import {PIDController, IPIDController} from '@contracts/PIDController.sol';
 import {PIDRateSetter, IPIDRateSetter} from '@contracts/PIDRateSetter.sol';
+
+// --- Settlement ---
+import {GlobalSettlement, IGlobalSettlement} from '@contracts/settlement/GlobalSettlement.sol';
+import {
+  PostSettlementSurplusAuctionHouse,
+  IPostSettlementSurplusAuctionHouse
+} from '@contracts/settlement/PostSettlementSurplusAuctionHouse.sol';
+import {
+  SettlementSurplusAuctioneer,
+  ISettlementSurplusAuctioneer
+} from '@contracts/settlement/SettlementSurplusAuctioneer.sol';
 
 // --- Oracles ---
 import {OracleRelayer, IOracleRelayer} from '@contracts/OracleRelayer.sol';
@@ -42,6 +52,10 @@ import {
   CollateralAuctionHouseFactory,
   ICollateralAuctionHouseFactory
 } from '@contracts/factories/CollateralAuctionHouseFactory.sol';
+import {ChainlinkRelayerFactory, IChainlinkRelayerFactory} from '@contracts/factories/ChainlinkRelayerFactory.sol';
+import {UniV3RelayerFactory, IUniV3RelayerFactory} from '@contracts/factories/UniV3RelayerFactory.sol';
+import {DenominatedOracleFactory, IDenominatedOracleFactory} from '@contracts/factories/DenominatedOracleFactory.sol';
+import {DelayedOracleFactory, IDelayedOracleFactory} from '@contracts/factories/DelayedOracleFactory.sol';
 
 // --- Jobs ---
 import {AccountingJob, IAccountingJob} from '@contracts/jobs/AccountingJob.sol';
@@ -109,8 +123,15 @@ abstract contract Contracts {
   ICollateralJoinFactory public collateralJoinFactory;
   ICollateralAuctionHouseFactory public collateralAuctionHouseFactory;
 
+  IChainlinkRelayerFactory public chainlinkRelayerFactory;
+  IUniV3RelayerFactory public uniV3RelayerFactory;
+  IDenominatedOracleFactory public denominatedOracleFactory;
+  IDelayedOracleFactory public delayedOracleFactory;
+
   // --- Settlement contracts ---
   IGlobalSettlement public globalSettlement;
+  IPostSettlementSurplusAuctionHouse public postSettlementSurplusAuctionHouse;
+  ISettlementSurplusAuctioneer public settlementSurplusAuctioneer;
 
   // --- Job contracts ---
   IAccountingJob public accountingJob;
@@ -118,12 +139,13 @@ abstract contract Contracts {
   IOracleJob public oracleJob;
 
   // --- Proxy contracts ---
-  BasicActions public proxyActions;
-  DebtBidActions public debtBidActions;
-  SurplusBidActions public surplusActions;
-  CollateralBidActions public collateralActions;
-  RewardedActions public rewardedActions;
   HaiProxyRegistry public proxyRegistry;
-  HaiProxyFactory public dsProxyFactory;
+  HaiProxyFactory public proxyFactory;
   HaiSafeManager public safeManager;
+
+  BasicActions public basicActions;
+  DebtBidActions public debtBidActions;
+  SurplusBidActions public surplusBidActions;
+  CollateralBidActions public collateralBidActions;
+  RewardedActions public rewardedActions;
 }

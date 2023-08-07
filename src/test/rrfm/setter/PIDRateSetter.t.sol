@@ -4,7 +4,7 @@ pragma solidity 0.8.19;
 import 'ds-test/test.sol';
 
 import {MockPIDCalculator} from '../utils/mock/MockPIDCalculator.sol';
-import {PIDRateSetter} from '@contracts/PIDRateSetter.sol';
+import {IPIDRateSetter, PIDRateSetter} from '@contracts/PIDRateSetter.sol';
 import {OracleForTest as OracleForTest} from '@contracts/for-test/OracleForTest.sol';
 
 import {IOracleRelayer, OracleRelayer as MockOracleRelayer} from '@contracts/OracleRelayer.sol';
@@ -18,7 +18,7 @@ contract PIDRateSetterTest is DSTest {
 
   MockOracleRelayer oracleRelayer;
 
-  PIDRateSetter rateSetter;
+  IPIDRateSetter rateSetter;
 
   MockPIDCalculator calculator;
   OracleForTest orcl;
@@ -42,7 +42,7 @@ contract PIDRateSetterTest is DSTest {
     rateSetter = new PIDRateSetter(
           address(oracleRelayer),
           address(calculator),
-          periodSize
+          IPIDRateSetter.PIDRateSetterParams(periodSize)
         );
     oracleRelayer.addAuthorization(address(rateSetter));
   }

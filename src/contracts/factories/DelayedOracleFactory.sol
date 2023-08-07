@@ -3,6 +3,7 @@ pragma solidity 0.8.19;
 
 import {IDelayedOracleFactory} from '@interfaces/factories/IDelayedOracleFactory.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
+import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
 
 import {DelayedOracleChild} from '@contracts/factories/DelayedOracleChild.sol';
 
@@ -23,10 +24,10 @@ contract DelayedOracleFactory is Authorizable, IDelayedOracleFactory {
   function deployDelayedOracle(
     IBaseOracle _priceSource,
     uint256 _updateDelay
-  ) external isAuthorized returns (address _delayedOracle) {
-    _delayedOracle = address(new DelayedOracleChild(_priceSource, _updateDelay));
-    _delayedOracles.add(_delayedOracle);
-    emit NewDelayedOracle(_delayedOracle, address(_priceSource), _updateDelay);
+  ) external isAuthorized returns (IDelayedOracle _delayedOracle) {
+    _delayedOracle = new DelayedOracleChild(_priceSource, _updateDelay);
+    _delayedOracles.add(address(_delayedOracle));
+    emit NewDelayedOracle(address(_delayedOracle), address(_priceSource), _updateDelay);
   }
 
   // --- Views ---

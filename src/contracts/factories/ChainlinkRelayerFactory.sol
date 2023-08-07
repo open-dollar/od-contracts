@@ -2,6 +2,7 @@
 pragma solidity 0.8.19;
 
 import {IChainlinkRelayerFactory} from '@interfaces/factories/IChainlinkRelayerFactory.sol';
+import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 
 import {ChainlinkRelayerChild} from '@contracts/factories/ChainlinkRelayerChild.sol';
 
@@ -22,10 +23,10 @@ contract ChainlinkRelayerFactory is Authorizable, IChainlinkRelayerFactory {
   function deployChainlinkRelayer(
     address _aggregator,
     uint256 _staleThreshold
-  ) external isAuthorized returns (address _chainlinkRelayer) {
-    _chainlinkRelayer = address(new ChainlinkRelayerChild(_aggregator, _staleThreshold));
-    _chainlinkRelayers.add(_chainlinkRelayer);
-    emit NewChainlinkRelayer(_chainlinkRelayer, _aggregator, _staleThreshold);
+  ) external isAuthorized returns (IBaseOracle _chainlinkRelayer) {
+    _chainlinkRelayer = new ChainlinkRelayerChild(_aggregator, _staleThreshold);
+    _chainlinkRelayers.add(address(_chainlinkRelayer));
+    emit NewChainlinkRelayer(address(_chainlinkRelayer), _aggregator, _staleThreshold);
   }
 
   // --- Views ---

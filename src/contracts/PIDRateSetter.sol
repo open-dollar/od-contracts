@@ -39,11 +39,11 @@ contract PIDRateSetter is Authorizable, Modifiable, IPIDRateSetter {
   constructor(
     address _oracleRelayer,
     address _pidCalculator,
-    uint256 _updateRateDelay
+    PIDRateSetterParams memory _pidRateSetterParams
   ) Authorizable(msg.sender) validParams {
     oracleRelayer = IOracleRelayer(_oracleRelayer);
     pidCalculator = IPIDController(_pidCalculator);
-    _params.updateRateDelay = _updateRateDelay;
+    _params = _pidRateSetterParams;
   }
 
   // --- Methods ---

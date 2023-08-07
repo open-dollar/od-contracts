@@ -5,7 +5,10 @@ import {HaiTest} from '@test/utils/HaiTest.t.sol';
 
 import {ISAFEEngine, SAFEEngine} from '@contracts/SAFEEngine.sol';
 import {CollateralAuctionHouse, ICollateralAuctionHouse} from '@contracts/CollateralAuctionHouse.sol';
-import {CollateralAuctionHouseFactory} from '@contracts/factories/CollateralAuctionHouseFactory.sol';
+import {
+  ICollateralAuctionHouseFactory,
+  CollateralAuctionHouseFactory
+} from '@contracts/factories/CollateralAuctionHouseFactory.sol';
 import {IOracleRelayer, OracleRelayerForTest} from '@contracts/for-test/OracleRelayerForTest.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
@@ -13,9 +16,9 @@ import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
 import {Math, WAD, RAY, RAD} from '@libraries/Math.sol';
 
 contract Guy {
-  CollateralAuctionHouse collateralAuctionHouse;
+  ICollateralAuctionHouse collateralAuctionHouse;
 
-  constructor(CollateralAuctionHouse collateralAuctionHouse_) {
+  constructor(ICollateralAuctionHouse collateralAuctionHouse_) {
     collateralAuctionHouse = collateralAuctionHouse_;
   }
 
@@ -115,7 +118,7 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
 
   DummyLiquidationEngine liquidationEngine;
   SAFEEngine safeEngine;
-  CollateralAuctionHouse collateralAuctionHouse;
+  ICollateralAuctionHouse collateralAuctionHouse;
   OracleRelayerForTest oracleRelayer;
   Feed collateralFSM;
   Feed collateralMedian;
@@ -131,7 +134,7 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
   function _deployCollateralAuctionHouse(
     ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams,
     ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams
-  ) internal virtual returns (CollateralAuctionHouse _collateralAuctionHouse);
+  ) internal virtual returns (ICollateralAuctionHouse _collateralAuctionHouse);
 
   function _modifyParameters(bytes32 _param, bytes memory _data) internal virtual;
   function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal virtual;
@@ -296,10 +299,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
 
   function test_startAuction() public {
     collateralAuctionHouse.startAuction({
-      _amountToSell: 100 ether,
+      _collateralToSell: 100 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient
+      _initialBidder: auctionIncomeRecipient
     });
   }
 
@@ -310,10 +313,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
 
   function testFail_buyCollateral_null_auction() public {
     collateralAuctionHouse.startAuction({
-      _amountToSell: 100 ether,
+      _collateralToSell: 100 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient
+      _initialBidder: auctionIncomeRecipient
     });
     // can't buy collateral on non-existent
     collateralAuctionHouse.buyCollateral(1, 0);
@@ -324,10 +327,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     oracleRelayer.modifyParameters('collateralType', 'oracle', abi.encode(faultyFeed));
 
     collateralAuctionHouse.startAuction({
-      _amountToSell: 100 ether,
+      _collateralToSell: 100 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient
+      _initialBidder: auctionIncomeRecipient
     });
     collateralAuctionHouse.buyCollateral(1, 5 * WAD);
   }
@@ -341,10 +344,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient
+      _initialBidder: auctionIncomeRecipient
     });
 
     (bool canBidThisAmount, uint256 adjustedBid) = collateralAuctionHouse.getAdjustedBid(id, 25 * WAD);
@@ -381,10 +384,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient
+      _initialBidder: auctionIncomeRecipient
     });
 
     assertEq(
@@ -422,10 +425,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     safeEngine.createUnbackedDebt(address(0), ali, rad(200 * RAD - 200 ether));
 
     collateralAuctionHouse.startAuction({
-      _amountToSell: 100,
+      _collateralToSell: 100,
       _amountToRaise: 50,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient
+      _initialBidder: auctionIncomeRecipient
     });
   }
 
@@ -441,10 +444,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient
+      _initialBidder: auctionIncomeRecipient
     });
 
     (bool canBidThisAmount, uint256 adjustedBid) = collateralAuctionHouse.getAdjustedBid(id, 5 * WAD);
@@ -473,10 +476,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient
+      _initialBidder: auctionIncomeRecipient
     });
     Guy(ali).buyCollateral(id, 50 * WAD);
 
@@ -502,10 +505,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient
+      _initialBidder: auctionIncomeRecipient
     });
     Guy(ali).buyCollateral(id, 50 * WAD);
 
@@ -530,10 +533,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient
+      _initialBidder: auctionIncomeRecipient
     });
 
     Guy(ali).buyCollateral(id, 25 * WAD);
@@ -560,10 +563,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient
+      _initialBidder: auctionIncomeRecipient
     });
 
     Guy(ali).buyCollateral(id, 25 * WAD);
@@ -590,10 +593,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient
+      _initialBidder: auctionIncomeRecipient
     });
 
     Guy(ali).buyCollateral(id, 25 * WAD);
@@ -620,10 +623,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient
+      _initialBidder: auctionIncomeRecipient
     });
 
     Guy(ali).buyCollateral(id, 25 * WAD);
@@ -650,10 +653,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient
+      _initialBidder: auctionIncomeRecipient
     });
 
     Guy(ali).buyCollateral(id, 25 * WAD);
@@ -680,10 +683,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient
+      _initialBidder: auctionIncomeRecipient
     });
 
     Guy(ali).buyCollateral(id, 50 * WAD);
@@ -709,10 +712,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient
+      _initialBidder: auctionIncomeRecipient
     });
 
     Guy(ali).buyCollateral(id, 25 * WAD);
@@ -743,10 +746,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient
+      _initialBidder: auctionIncomeRecipient
     });
 
     Guy(ali).buyCollateral(id, 25 * WAD);
@@ -777,10 +780,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient
+      _initialBidder: auctionIncomeRecipient
     });
 
     Guy(ali).buyCollateral(id, 25 * WAD);
@@ -811,10 +814,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient
+      _initialBidder: auctionIncomeRecipient
     });
 
     Guy(ali).buyCollateral(id, 25 * WAD);
@@ -845,10 +848,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient
+      _initialBidder: auctionIncomeRecipient
     });
 
     Guy(ali).buyCollateral(id, 25 * WAD);
@@ -879,10 +882,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient
+      _initialBidder: auctionIncomeRecipient
     });
 
     Guy(ali).buyCollateral(id, 25 * WAD);
@@ -913,10 +916,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient
+      _initialBidder: auctionIncomeRecipient
     });
 
     Guy(ali).buyCollateral(id, 50 * WAD);
@@ -946,10 +949,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient
+      _initialBidder: auctionIncomeRecipient
     });
 
     Guy(ali).buyCollateral(id, 25 * WAD);
@@ -982,10 +985,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient
+      _initialBidder: auctionIncomeRecipient
     });
 
     Guy(ali).buyCollateral(id, 25 * WAD);
@@ -1018,10 +1021,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient
+      _initialBidder: auctionIncomeRecipient
     });
 
     Guy(ali).buyCollateral(id, 25 * WAD);
@@ -1054,10 +1057,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient
+      _initialBidder: auctionIncomeRecipient
     });
 
     Guy(ali).buyCollateral(id, 25 * WAD);
@@ -1090,10 +1093,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient
+      _initialBidder: auctionIncomeRecipient
     });
 
     Guy(ali).buyCollateral(id, 25 * WAD);
@@ -1125,10 +1128,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient
+      _initialBidder: auctionIncomeRecipient
     });
 
     Guy(ali).buyCollateral(id, 25 * WAD);
@@ -1160,10 +1163,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient
+      _initialBidder: auctionIncomeRecipient
     });
 
     Guy(ali).buyCollateral(id, 25 * WAD);
@@ -1189,10 +1192,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient
+      _initialBidder: auctionIncomeRecipient
     });
 
     for (uint256 i = 0; i < 10; i++) {
@@ -1222,10 +1225,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient
+      _initialBidder: auctionIncomeRecipient
     });
 
     vm.warp(block.timestamp + 1);
@@ -1254,10 +1257,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient
+      _initialBidder: auctionIncomeRecipient
     });
 
     Guy(ali).buyCollateral(id, 25 * WAD);
@@ -1291,10 +1294,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient
+      _initialBidder: auctionIncomeRecipient
     });
 
     Guy(ali).buyCollateral(id, 49 * WAD);
@@ -1327,10 +1330,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient
+      _initialBidder: auctionIncomeRecipient
     });
 
     vm.warp(block.timestamp + 30 minutes);
@@ -1368,10 +1371,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient
+      _initialBidder: auctionIncomeRecipient
     });
 
     vm.warp(block.timestamp + 1 hours);
@@ -1405,10 +1408,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient
+      _initialBidder: auctionIncomeRecipient
     });
 
     vm.warp(block.timestamp + 3650 days);
@@ -1442,10 +1445,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     uint256 collateralAmountPreBid = safeEngine.tokenCollateral('collateralType', address(ali));
 
     uint256 id = collateralAuctionHouse.startAuction({
-      _amountToSell: 1 ether,
+      _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _auctionIncomeRecipient: auctionIncomeRecipient
+      _initialBidder: auctionIncomeRecipient
     });
 
     for (uint256 i = 0; i < 10; i++) {
@@ -1474,16 +1477,16 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
 }
 
 contract FactorySingleCollateralAuctionHouseTest is SingleCollateralAuctionHouseTest {
-  CollateralAuctionHouseFactory factory;
+  ICollateralAuctionHouseFactory factory;
 
   function _deployCollateralAuctionHouse(
     ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams,
     ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams
-  ) internal override returns (CollateralAuctionHouse _collateralAuctionHouse) {
+  ) internal override returns (ICollateralAuctionHouse _collateralAuctionHouse) {
     factory =
     new CollateralAuctionHouseFactory(address(safeEngine), address(oracleRelayer), address(liquidationEngine), _cahParams);
 
-    return CollateralAuctionHouse(factory.deployCollateralAuctionHouse('collateralType', _cahCParams));
+    return factory.deployCollateralAuctionHouse('collateralType', _cahCParams);
   }
 
   function _modifyParameters(bytes32 _parameter, bytes memory _data) internal override {
@@ -1499,7 +1502,7 @@ contract OrphanSingleCollateralAuctionHouseTest is SingleCollateralAuctionHouseT
   function _deployCollateralAuctionHouse(
     ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams,
     ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams
-  ) internal override returns (CollateralAuctionHouse _collateralAuctionHouse) {
+  ) internal override returns (ICollateralAuctionHouse _collateralAuctionHouse) {
     return
     new CollateralAuctionHouse(address(safeEngine), address(oracleRelayer), address(liquidationEngine), 'collateralType',
          _cahParams,

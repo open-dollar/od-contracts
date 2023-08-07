@@ -90,6 +90,11 @@ abstract contract MainnetParams is Contracts, Params {
 
     // --- Global Settlement Params ---
     _globalSettlementParams = IGlobalSettlement.GlobalSettlementParams({shutdownCooldown: 3 days});
+    _postSettlementSAHParams = IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams({
+      bidIncrease: 1.01e18, // +1 %
+      bidDuration: 3 hours,
+      totalAuctionLength: 2 days
+    });
 
     // --- Collateral Default Params ---
     for (uint256 _i; _i < collateralTypes.length; _i++) {

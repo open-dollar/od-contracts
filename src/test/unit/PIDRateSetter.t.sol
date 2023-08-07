@@ -26,7 +26,8 @@ contract Base is HaiTest {
 
   function _createDefaulPIDRateSetter() internal returns (PIDRateSetter _pidRateSetter) {
     vm.prank(deployer);
-    _pidRateSetter = new PIDRateSetter(address(mockOracleRelayer), address(mockPIDController), periodSize);
+    _pidRateSetter =
+    new PIDRateSetter(address(mockOracleRelayer), address(mockPIDController), IPIDRateSetter.PIDRateSetterParams(periodSize));
   }
 
   function setUp() public virtual {
@@ -98,12 +99,12 @@ contract Unit_PIDRateSetter_Constructor is Base {
 
   function test_Revert_NullOracleRelayerAddress() public {
     vm.expectRevert(Assertions.NullAddress.selector);
-    new PIDRateSetter(address(0), address(mockPIDController), periodSize);
+    new PIDRateSetter(address(0), address(mockPIDController), IPIDRateSetter.PIDRateSetterParams(periodSize));
   }
 
   function test_Revert_NullCalculator() public {
     vm.expectRevert(Assertions.NullAddress.selector);
-    new PIDRateSetter(address(mockOracleRelayer), address(0), periodSize);
+    new PIDRateSetter(address(mockOracleRelayer), address(0), IPIDRateSetter.PIDRateSetterParams(periodSize));
   }
 }
 

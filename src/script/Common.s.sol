@@ -9,14 +9,13 @@ abstract contract Common is Contracts, Params {
   uint256 internal _deployerPk = 69; // for tests
   uint256 internal _governorPK;
 
-  function deployEthCollateralContracts() public {
+  function deployEthCollateralContracts() public updateParams {
     // deploy ETHJoin and CollateralAuctionHouse
     ethJoin = new ETHJoin(address(safeEngine), ETH_A);
 
     if (address(collateralAuctionHouseFactory) != address(0)) {
-      collateralAuctionHouse[ETH_A] = ICollateralAuctionHouse(
-        collateralAuctionHouseFactory.deployCollateralAuctionHouse(ETH_A, _collateralAuctionHouseCParams[ETH_A])
-      );
+      collateralAuctionHouse[ETH_A] =
+        collateralAuctionHouseFactory.deployCollateralAuctionHouse(ETH_A, _collateralAuctionHouseCParams[ETH_A]);
     } else {
       collateralAuctionHouse[ETH_A] = new CollateralAuctionHouse({
           _safeEngine: address(safeEngine), 
@@ -32,48 +31,25 @@ abstract contract Common is Contracts, Params {
     safeEngine.addAuthorization(address(ethJoin));
   }
 
-  function deployCollateralContracts(bytes32 _cType) public {
+  function deployCollateralContracts(bytes32 _cType) public updateParams {
     // deploy CollateralJoin and CollateralAuctionHouse
-    if (address(collateralJoinFactory) != address(0)) {
-      address _delegatee = delegatee[_cType];
-      if (_delegatee == address(0)) {
-        collateralJoin[_cType] = CollateralJoin(
-          collateralJoinFactory.deployCollateralJoin({_cType: _cType, _collateral: address(collateral[_cType])})
-        );
-      } else {
-        collateralJoin[_cType] = CollateralJoin(
-          collateralJoinFactory.deployDelegatableCollateralJoin({
-            _cType: _cType,
-            _collateral: address(collateral[_cType]),
-            _delegatee: _delegatee
-          })
-        );
-      }
+    address _delegatee = delegatee[_cType];
+    if (_delegatee == address(0)) {
+      collateralJoin[_cType] =
+        collateralJoinFactory.deployCollateralJoin({_cType: _cType, _collateral: address(collateral[_cType])});
     } else {
-      collateralJoin[_cType] = new CollateralJoin({
-        _safeEngine: address(safeEngine), 
+      collateralJoin[_cType] = collateralJoinFactory.deployDelegatableCollateralJoin({
         _cType: _cType,
-        _collateral: address(collateral[_cType])
-        });
+        _collateral: address(collateral[_cType]),
+        _delegatee: _delegatee
+      });
     }
 
-    if (address(collateralAuctionHouseFactory) != address(0)) {
-      collateralAuctionHouse[_cType] = ICollateralAuctionHouse(
-        collateralAuctionHouseFactory.deployCollateralAuctionHouse(_cType, _collateralAuctionHouseCParams[_cType])
-      );
-    } else {
-      collateralAuctionHouse[_cType] = new CollateralAuctionHouse({
-          _safeEngine: address(safeEngine), 
-          __oracleRelayer: address(oracleRelayer),
-          __liquidationEngine: address(liquidationEngine), 
-          _cType: _cType,
-          _cahParams: _collateralAuctionHouseSystemCoinParams,
-          _cahCParams: _collateralAuctionHouseCParams[_cType]
-          });
-    }
+    collateralAuctionHouse[_cType] =
+      collateralAuctionHouseFactory.deployCollateralAuctionHouse(_cType, _collateralAuctionHouseCParams[_cType]);
   }
 
-  function revokeAllTo(address _governor) public {
+  function _revokeAllTo(address _governor) internal {
     if (!_shouldRevoke()) return;
 
     // base contracts
@@ -106,26 +82,18 @@ abstract contract Common is Contracts, Params {
     }
 
     // factories or children
-    if (address(collateralJoinFactory) != address(0)) {
-      _revoke(collateralJoinFactory, _governor);
-    } else {
-      for (uint256 _i; _i < collateralTypes.length; _i++) {
-        bytes32 _cType = collateralTypes[_i];
-        _revoke(collateralJoin[_cType], _governor);
-      }
-    }
+    _revoke(chainlinkRelayerFactory, _governor);
+    _revoke(uniV3RelayerFactory, _governor);
+    _revoke(denominatedOracleFactory, _governor);
+    _revoke(delayedOracleFactory, _governor);
 
-    if (address(collateralAuctionHouseFactory) != address(0)) {
-      _revoke(collateralAuctionHouseFactory, _governor);
-    } else {
-      for (uint256 _i; _i < collateralTypes.length; _i++) {
-        bytes32 _cType = collateralTypes[_i];
-        _revoke(collateralAuctionHouse[_cType], _governor);
-      }
-    }
+    _revoke(collateralJoinFactory, _governor);
+    _revoke(collateralAuctionHouseFactory, _governor);
 
     // global settlement
     _revoke(globalSettlement, _governor);
+    _revoke(postSettlementSurplusAuctionHouse, _governor);
+    _revoke(settlementSurplusAuctioneer, _governor);
 
     // jobs
     _revoke(accountingJob, _governor);
@@ -133,18 +101,12 @@ abstract contract Common is Contracts, Params {
     _revoke(oracleJob, _governor);
   }
 
-  function revokeTo(IAuthorizable _contract, address _target) public {
-    if (!_shouldRevoke()) return;
-
-    _revoke(_contract, _target);
-  }
-
   function _revoke(IAuthorizable _contract, address _target) internal {
     _contract.addAuthorization(_target);
     _contract.removeAuthorization(deployer);
   }
 
-  function delegateAllTo(address __delegate) public {
+  function _delegateAllTo(address __delegate) internal {
     // base contracts
     _delegate(safeEngine, __delegate);
     _delegate(liquidationEngine, __delegate);
@@ -170,14 +132,13 @@ abstract contract Common is Contracts, Params {
     // token adapters
     _delegate(coinJoin, __delegate);
 
-    if (address(collateralJoinFactory) != address(0)) {
-      _delegate(collateralJoinFactory, __delegate);
-    } else {
-      for (uint256 _i; _i < collateralTypes.length; _i++) {
-        bytes32 _cType = collateralTypes[_i];
-        _delegate(collateralJoin[_cType], __delegate);
-      }
-    }
+    _delegate(chainlinkRelayerFactory, __delegate);
+    _delegate(uniV3RelayerFactory, __delegate);
+    _delegate(denominatedOracleFactory, __delegate);
+    _delegate(delayedOracleFactory, __delegate);
+
+    _delegate(collateralJoinFactory, __delegate);
+    _delegate(collateralAuctionHouseFactory, __delegate);
 
     if (address(ethJoin) != address(0)) {
       _delegate(ethJoin, __delegate);
@@ -185,6 +146,8 @@ abstract contract Common is Contracts, Params {
 
     // global settlement
     _delegate(globalSettlement, __delegate);
+    _delegate(postSettlementSurplusAuctionHouse, __delegate);
+    _delegate(settlementSurplusAuctioneer, __delegate);
 
     // jobs
     _delegate(accountingJob, __delegate);
@@ -196,7 +159,11 @@ abstract contract Common is Contracts, Params {
     _contract.addAuthorization(_target);
   }
 
-  function deployContracts() public {
+  function _shouldRevoke() internal view returns (bool) {
+    return governor != deployer && governor != address(0);
+  }
+
+  function deployContracts() public updateParams {
     // deploy Tokens
     systemCoin = new SystemCoin('HAI Index Token', 'HAI');
     protocolToken = new ProtocolToken('Protocol Token', 'KITE');
@@ -221,9 +188,9 @@ abstract contract Common is Contracts, Params {
     // deploy Token adapters
     coinJoin = new CoinJoin(address(safeEngine), address(systemCoin));
     collateralJoinFactory = new CollateralJoinFactory(address(safeEngine));
+  }
 
-    // TODO: deploy in separate module
-    _getEnvironmentParams();
+  function deployTaxModule() public updateParams {
     taxCollector = new TaxCollector(address(safeEngine), _taxCollectorParams);
 
     stabilityFeeTreasury = new StabilityFeeTreasury(
@@ -232,16 +199,19 @@ abstract contract Common is Contracts, Params {
           address(coinJoin),
           _stabilityFeeTreasuryParams
         );
-
-    _deployGlobalSettlement();
-    _deployProxyContracts(address(safeEngine));
-    _deployProxyActions();
   }
 
-  // TODO: deploy PostSettlementSurplusAuctionHouse & SettlementSurplusAuctioneer
-  function _deployGlobalSettlement() internal {
+  function deployGlobalSettlement() public updateParams {
     globalSettlement = new GlobalSettlement();
 
+    postSettlementSurplusAuctionHouse =
+      new PostSettlementSurplusAuctionHouse(address(safeEngine), address(protocolToken), _postSettlementSAHParams);
+
+    settlementSurplusAuctioneer =
+      new SettlementSurplusAuctioneer(address(accountingEngine), address(postSettlementSurplusAuctionHouse));
+  }
+
+  function _setupGlobalSettlement() internal {
     // setup globalSettlement [auth: disableContract]
     globalSettlement.modifyParameters('safeEngine', abi.encode(safeEngine));
     safeEngine.addAuthorization(address(globalSettlement));
@@ -287,7 +257,14 @@ abstract contract Common is Contracts, Params {
     oracleRelayer.updateCollateralPrice(_cType);
   }
 
-  function deployPIDController() public {
+  function deployOracleFactories() public updateParams {
+    chainlinkRelayerFactory = new ChainlinkRelayerFactory();
+    uniV3RelayerFactory = new UniV3RelayerFactory();
+    denominatedOracleFactory = new DenominatedOracleFactory();
+    delayedOracleFactory = new DelayedOracleFactory();
+  }
+
+  function deployPIDController() public updateParams {
     pidController = new PIDController({
       _cGains: _pidControllerGains,
       _pidParams: _pidControllerParams,
@@ -297,9 +274,11 @@ abstract contract Common is Contracts, Params {
     pidRateSetter = new PIDRateSetter({
      _oracleRelayer: address(oracleRelayer),
      _pidCalculator: address(pidController),
-     _updateRateDelay: _pidRateSetterParams.updateRateDelay
+     _pidRateSetterParams: _pidRateSetterParams
     });
+  }
 
+  function _setupPIDController() internal {
     // setup registry
     pidController.modifyParameters('seedProposer', abi.encode(pidRateSetter));
 
@@ -310,7 +289,7 @@ abstract contract Common is Contracts, Params {
     pidRateSetter.updateRate();
   }
 
-  function deployJobContracts() public {
+  function deployJobContracts() public updateParams {
     accountingJob = new AccountingJob(address(accountingEngine), address(stabilityFeeTreasury), JOB_REWARD);
     liquidationJob = new LiquidationJob(address(liquidationEngine), address(stabilityFeeTreasury), JOB_REWARD);
     oracleJob = new OracleJob(address(oracleRelayer), address(pidRateSetter), address(stabilityFeeTreasury), JOB_REWARD);
@@ -322,21 +301,23 @@ abstract contract Common is Contracts, Params {
     stabilityFeeTreasury.setTotalAllowance(address(oracleJob), type(uint256).max);
   }
 
-  function _deployProxyContracts(address _safeEngine) internal {
-    dsProxyFactory = new HaiProxyFactory();
-    proxyRegistry = new HaiProxyRegistry(address(dsProxyFactory));
+  function deployProxyContracts(address _safeEngine) public updateParams {
+    proxyFactory = new HaiProxyFactory();
+    proxyRegistry = new HaiProxyRegistry(address(proxyFactory));
     safeManager = new HaiSafeManager(_safeEngine);
+    _deployProxyActions();
   }
 
   function _deployProxyActions() internal {
-    proxyActions = new BasicActions();
+    basicActions = new BasicActions();
     debtBidActions = new DebtBidActions();
-    surplusActions = new SurplusBidActions();
-    collateralActions = new CollateralBidActions();
+    surplusBidActions = new SurplusBidActions();
+    collateralBidActions = new CollateralBidActions();
     rewardedActions = new RewardedActions();
   }
 
-  function _shouldRevoke() internal view returns (bool) {
-    return governor != deployer && governor != address(0);
+  modifier updateParams() {
+    _;
+    _getEnvironmentParams();
   }
 }

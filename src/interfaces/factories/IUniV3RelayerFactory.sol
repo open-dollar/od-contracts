@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
+import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 
 interface IUniV3RelayerFactory is IAuthorizable {
@@ -15,7 +16,7 @@ interface IUniV3RelayerFactory is IAuthorizable {
     address _quoteToken,
     uint24 _feeTier,
     uint32 _quotePeriod
-  ) external returns (address _uniV3Relayer);
+  ) external returns (IBaseOracle _uniV3Relayer);
 
   // --- Views ---
   function uniV3RelayersList() external view returns (address[] memory _uniV3RelayersList);

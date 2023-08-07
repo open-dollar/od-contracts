@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
+import {ICollateralJoin} from '@interfaces/utils/ICollateralJoin.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 
@@ -21,11 +22,11 @@ interface ICollateralJoinFactory is IAuthorizable, IDisableable {
   function collateralJoinsList() external view returns (address[] memory _collateralJoinsList);
 
   // --- Methods ---
-  function deployCollateralJoin(bytes32 _cType, address _collateral) external returns (address _collateralJoin);
+  function deployCollateralJoin(bytes32 _cType, address _collateral) external returns (ICollateralJoin _collateralJoin);
   function deployDelegatableCollateralJoin(
     bytes32 _cType,
     address _collateral,
     address _delegatee
-  ) external returns (address _collateralJoin);
+  ) external returns (ICollateralJoin _collateralJoin);
   function disableCollateralJoin(bytes32 _cType) external;
 }

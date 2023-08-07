@@ -205,7 +205,7 @@ contract Unit_CollateralAuctionHouseFactory_DeployCollateralAuctionHouse is Base
 
   function test_Return_CollateralAuctionHouse(bytes32 _cType) public happyPath {
     assertEq(
-      collateralAuctionHouseFactory.deployCollateralAuctionHouse(_cType, _cahCParams),
+      address(collateralAuctionHouseFactory.deployCollateralAuctionHouse(_cType, _cahCParams)),
       address(collateralAuctionHouseChild)
     );
   }

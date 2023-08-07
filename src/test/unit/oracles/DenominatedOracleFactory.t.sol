@@ -107,7 +107,7 @@ contract Unit_DenominatedOracleFactory_DeployDenominatedOracle is Base {
 
   function test_Return_DenominatedOracle(bool _inverted, string memory _symbol) public happyPath(_symbol) {
     assertEq(
-      denominatedOracleFactory.deployDenominatedOracle(mockPriceSource, mockDenominationPriceSource, _inverted),
+      address(denominatedOracleFactory.deployDenominatedOracle(mockPriceSource, mockDenominationPriceSource, _inverted)),
       address(denominatedOracleChild)
     );
   }

@@ -50,7 +50,7 @@ contract GoerliDelegate is GoerliDeployment, Common, Script {
     require(_governor == governor);
     vm.startBroadcast(_governor);
 
-    delegateAllTo(delegate);
+    _delegateAllTo(delegate);
 
     vm.stopBroadcast();
   }

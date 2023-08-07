@@ -17,6 +17,7 @@ import {
   IPIDRateSetter,
   ITaxCollector,
   IGlobalSettlement,
+  IPostSettlementSurplusAuctionHouse,
   IModifiable
 } from '@script/Contracts.s.sol';
 
@@ -83,6 +84,7 @@ abstract contract Params {
   ITaxCollector.TaxReceiver _taxCollectorSecondaryTaxReceiver;
 
   IGlobalSettlement.GlobalSettlementParams _globalSettlementParams;
+  IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams _postSettlementSAHParams;
 }
 
 /**

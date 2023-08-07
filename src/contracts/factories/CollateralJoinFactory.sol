@@ -2,6 +2,7 @@
 pragma solidity 0.8.19;
 
 import {ICollateralJoinFactory} from '@interfaces/factories/ICollateralJoinFactory.sol';
+import {ICollateralJoin} from '@interfaces/utils/ICollateralJoin.sol';
 
 import {CollateralJoinChild} from '@contracts/factories/CollateralJoinChild.sol';
 import {CollateralJoinDelegatableChild} from '@contracts/factories/CollateralJoinDelegatableChild.sol';
@@ -32,26 +33,26 @@ contract CollateralJoinFactory is Authorizable, Disableable, ICollateralJoinFact
   function deployCollateralJoin(
     bytes32 _cType,
     address _collateral
-  ) external isAuthorized whenEnabled returns (address _collateralJoin) {
+  ) external isAuthorized whenEnabled returns (ICollateralJoin _collateralJoin) {
     if (!_collateralTypes.add(_cType)) revert CollateralJoinFactory_CollateralJoinExistent();
 
-    _collateralJoin = address(new CollateralJoinChild(safeEngine, _cType, _collateral));
-    collateralJoins[_cType] = _collateralJoin;
-    IAuthorizable(safeEngine).addAuthorization(_collateralJoin);
-    emit DeployCollateralJoin(_cType, _collateral, _collateralJoin);
+    _collateralJoin = new CollateralJoinChild(safeEngine, _cType, _collateral);
+    collateralJoins[_cType] = address(_collateralJoin);
+    IAuthorizable(safeEngine).addAuthorization(address(_collateralJoin));
+    emit DeployCollateralJoin(_cType, _collateral, address(_collateralJoin));
   }
 
   function deployDelegatableCollateralJoin(
     bytes32 _cType,
     address _collateral,
     address _delegatee
-  ) external isAuthorized whenEnabled returns (address _collateralJoin) {
+  ) external isAuthorized whenEnabled returns (ICollateralJoin _collateralJoin) {
     if (!_collateralTypes.add(_cType)) revert CollateralJoinFactory_CollateralJoinExistent();
 
-    _collateralJoin = address(new CollateralJoinDelegatableChild(safeEngine, _cType, _collateral, _delegatee));
-    collateralJoins[_cType] = _collateralJoin;
-    IAuthorizable(safeEngine).addAuthorization(_collateralJoin);
-    emit DeployCollateralJoin(_cType, _collateral, _collateralJoin);
+    _collateralJoin = new CollateralJoinDelegatableChild(safeEngine, _cType, _collateral, _delegatee);
+    collateralJoins[_cType] = address(_collateralJoin);
+    IAuthorizable(safeEngine).addAuthorization(address(_collateralJoin));
+    emit DeployCollateralJoin(_cType, _collateral, address(_collateralJoin));
   }
 
   function disableCollateralJoin(bytes32 _cType) external isAuthorized {

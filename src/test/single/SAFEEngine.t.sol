@@ -10,8 +10,11 @@ import {IAccountingEngine, AccountingEngine} from '@contracts/AccountingEngine.s
 import {ITaxCollector, TaxCollector} from '@contracts/TaxCollector.sol';
 import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
 import {ETHJoin} from '@contracts/utils/ETHJoin.sol';
-import {CollateralJoin} from '@contracts/utils/CollateralJoin.sol';
-import {CollateralJoinFactory} from '@contracts/factories/CollateralJoinFactory.sol';
+import {
+  ICollateralJoinFactory,
+  ICollateralJoin,
+  CollateralJoinFactory
+} from '@contracts/factories/CollateralJoinFactory.sol';
 import {IOracleRelayer, OracleRelayer} from '@contracts/OracleRelayer.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
@@ -144,11 +147,11 @@ contract Usr {
   }
 
   function join(address _adapter, address _safe, uint256 _wad) external {
-    CollateralJoin(_adapter).join(_safe, _wad);
+    ICollateralJoin(_adapter).join(_safe, _wad);
   }
 
   function exit(address _adapter, address _safe, uint256 _wad) external {
-    CollateralJoin(_adapter).exit(_safe, _wad);
+    ICollateralJoin(_adapter).exit(_safe, _wad);
   }
 
   function modifySAFECollateralization(
@@ -187,8 +190,8 @@ contract SingleModifySAFECollateralizationTest is DSTest {
   CoinForTest stable;
   TaxCollector taxCollector;
 
-  CollateralJoinFactory collateralJoinFactory;
-  CollateralJoin collateralA;
+  ICollateralJoinFactory collateralJoinFactory;
+  ICollateralJoin collateralA;
   address me;
 
   function try_modifySAFECollateralization(
@@ -237,7 +240,7 @@ contract SingleModifySAFECollateralizationTest is DSTest {
     collateralJoinFactory = new CollateralJoinFactory(address(safeEngine));
     safeEngine.addAuthorization(address(collateralJoinFactory));
 
-    collateralA = CollateralJoin(collateralJoinFactory.deployCollateralJoin('gold', address(gold)));
+    collateralA = collateralJoinFactory.deployCollateralJoin('gold', address(gold));
 
     safeEngine.updateCollateralPrice('gold', ray(1 ether), ray(1 ether));
 
@@ -455,8 +458,8 @@ contract SingleSAFEDebtLimitTest is DSTest {
   CoinForTest stable;
   TaxCollector taxCollector;
 
-  CollateralJoinFactory collateralJoinFactory;
-  CollateralJoin collateralA;
+  ICollateralJoinFactory collateralJoinFactory;
+  ICollateralJoin collateralA;
   address me;
 
   function try_modifySAFECollateralization(
@@ -508,7 +511,7 @@ contract SingleSAFEDebtLimitTest is DSTest {
 
     collateralJoinFactory = new CollateralJoinFactory(address(safeEngine));
     safeEngine.addAuthorization(address(collateralJoinFactory));
-    collateralA = CollateralJoin(collateralJoinFactory.deployCollateralJoin('gold', address(gold)));
+    collateralA = collateralJoinFactory.deployCollateralJoin('gold', address(gold));
 
     safeEngine.updateCollateralPrice('gold', ray(1 ether), ray(1 ether));
 
@@ -611,8 +614,8 @@ contract SingleJoinTest is DSTest {
 
   SAFEEngine safeEngine;
   CoinForTest collateral;
-  CollateralJoinFactory collateralJoinFactory;
-  CollateralJoin collateralA;
+  ICollateralJoinFactory collateralJoinFactory;
+  ICollateralJoin collateralA;
   ETHJoin ethA;
   CoinJoin coinA;
   CoinForTest coin;
@@ -632,7 +635,7 @@ contract SingleJoinTest is DSTest {
     collateral = new CoinForTest('Coin', 'Coin');
     collateralJoinFactory = new CollateralJoinFactory(address(safeEngine));
     safeEngine.addAuthorization(address(collateralJoinFactory));
-    collateralA = CollateralJoin(collateralJoinFactory.deployCollateralJoin('collateral', address(collateral)));
+    collateralA = collateralJoinFactory.deployCollateralJoin('collateral', address(collateral));
 
     ethA = new ETHJoin(address(safeEngine), 'ETH');
     safeEngine.addAuthorization(address(ethA));
@@ -784,8 +787,8 @@ contract SingleLiquidationTest is DSTest {
   OracleRelayer oracleRelayer;
   DummyFSM oracleFSM;
 
-  CollateralJoinFactory collateralJoinFactory;
-  CollateralJoin collateralA;
+  ICollateralJoinFactory collateralJoinFactory;
+  ICollateralJoin collateralA;
 
   CollateralAuctionHouse collateralAuctionHouse;
   DebtAuctionHouse debtAuctionHouse;
@@ -895,7 +898,7 @@ contract SingleLiquidationTest is DSTest {
     safeEngine.initializeCollateralType('gold', _safeEngineCollateralParams);
     collateralJoinFactory = new CollateralJoinFactory(address(safeEngine));
     safeEngine.addAuthorization(address(collateralJoinFactory));
-    collateralA = CollateralJoin(collateralJoinFactory.deployCollateralJoin('gold', address(gold)));
+    collateralA = collateralJoinFactory.deployCollateralJoin('gold', address(gold));
 
     gold.approve(address(collateralA), type(uint256).max);
     collateralA.join(address(this), 1000 ether);

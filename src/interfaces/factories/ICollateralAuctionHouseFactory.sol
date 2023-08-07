@@ -53,5 +53,5 @@ interface ICollateralAuctionHouseFactory is IAuthorizable, IDisableable, IModifi
   function deployCollateralAuctionHouse(
     bytes32 _cType,
     ICollateralAuctionHouse.CollateralAuctionHouseParams calldata _cahCParams
-  ) external returns (address _collateralAuctionHouse);
+  ) external returns (ICollateralAuctionHouse _collateralAuctionHouse);
 }

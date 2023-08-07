@@ -11,8 +11,11 @@ import {IStabilityFeeTreasury, StabilityFeeTreasury} from '@contracts/StabilityF
 import {ICollateralAuctionHouse, CollateralAuctionHouse} from '@contracts/CollateralAuctionHouse.sol';
 import {ISurplusAuctionHouse, SurplusAuctionHouse} from '@contracts/SurplusAuctionHouse.sol';
 import {IDebtAuctionHouse, DebtAuctionHouse} from '@contracts/DebtAuctionHouse.sol';
-import {CollateralJoin} from '@contracts/utils/CollateralJoin.sol';
-import {CollateralJoinFactory} from '@contracts/factories/CollateralJoinFactory.sol';
+import {
+  ICollateralJoinFactory,
+  ICollateralJoin,
+  CollateralJoinFactory
+} from '@contracts/factories/CollateralJoinFactory.sol';
 import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
 import {GlobalSettlement} from '@contracts/settlement/GlobalSettlement.sol';
 import {SettlementSurplusAuctioneer} from '@contracts/settlement/SettlementSurplusAuctioneer.sol';
@@ -108,7 +111,7 @@ contract Guy {
     safeEngine.approveSAFEModification(usr);
   }
 
-  function exit(CollateralJoin _collateralJoin, address _usr, uint256 _wad) public {
+  function exit(ICollateralJoin _collateralJoin, address _usr, uint256 _wad) public {
     _collateralJoin.exit(_usr, _wad);
   }
 
@@ -141,13 +144,13 @@ contract SingleGlobalSettlementTest is DSTest {
   CoinForTest protocolToken;
   CoinForTest systemCoin;
   CoinJoin coinJoin;
-  CollateralJoinFactory collateralJoinFactory;
+  ICollateralJoinFactory collateralJoinFactory;
 
   struct CollateralType {
     DummyFSM oracleSecurityModule;
     CoinForTest collateral;
-    CollateralJoin collateralJoin;
-    CollateralAuctionHouse collateralAuctionHouse;
+    ICollateralJoin collateralJoin;
+    ICollateralAuctionHouse collateralAuctionHouse;
   }
 
   mapping(bytes32 => CollateralType) collateralTypes;
@@ -186,8 +189,7 @@ contract SingleGlobalSettlementTest is DSTest {
     ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
       ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: rad(10_000_000 ether), debtFloor: 0});
     safeEngine.initializeCollateralType(_encodedName, _safeEngineCollateralParams);
-    CollateralJoin collateralJoin =
-      CollateralJoin(collateralJoinFactory.deployCollateralJoin(_encodedName, address(newCollateral)));
+    ICollateralJoin collateralJoin = collateralJoinFactory.deployCollateralJoin(_encodedName, address(newCollateral));
     newCollateral.approve(address(collateralJoin), type(uint256).max);
 
     safeEngine.updateCollateralPrice(_encodedName, ray(3 ether), ray(3 ether));

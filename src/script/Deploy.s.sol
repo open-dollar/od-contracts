@@ -2,49 +2,64 @@
 pragma solidity 0.8.19;
 
 import '@script/Contracts.s.sol';
+import '@script/Registry.s.sol';
+import '@script/Params.s.sol';
+
 import {Script} from 'forge-std/Script.sol';
-import {Params, ParamChecker, HAI, WETH, ETH_A, WSTETH, OP, HAI_INITIAL_PRICE} from '@script/Params.s.sol';
 import {Common} from '@script/Common.s.sol';
 import {GoerliParams} from '@script/GoerliParams.s.sol';
 import {MainnetParams} from '@script/MainnetParams.s.sol';
-import '@script/Registry.s.sol';
 
 abstract contract Deploy is Common, Script {
-  function _setupEnvironment() internal virtual {}
+  function setupEnvironment() public virtual {}
 
   function run() public {
     deployer = vm.addr(_deployerPk);
     vm.startBroadcast(deployer);
 
+    // Deploy oracle factories used to setup the environment
+    deployOracleFactories();
+
     // Environment may be different for each network
-    _setupEnvironment();
+    setupEnvironment();
 
     // Common deployment routine for all networks
     deployContracts();
+    deployTaxModule();
     _setupContracts();
 
+    deployGlobalSettlement();
+    _setupGlobalSettlement();
+
+    // PID Controller contracts
+    deployPIDController();
+    _setupPIDController();
+
+    // Rewarded Actions contracts
+    deployJobContracts();
+    _setupJobContracts();
+
+    // Deploy collateral contracts
     for (uint256 _i; _i < collateralTypes.length; _i++) {
       bytes32 _cType = collateralTypes[_i];
 
       if (_cType == ETH_A) deployEthCollateralContracts();
       else deployCollateralContracts(_cType);
-    }
-
-    // Get parameters from Params.s.sol
-    _getEnvironmentParams();
-
-    deployPIDController();
-
-    // Loop through the collateral types configured in the environment
-    for (uint256 _i; _i < collateralTypes.length; _i++) {
-      bytes32 _cType = collateralTypes[_i];
       _setupCollateral(_cType);
     }
 
-    deployJobContracts();
-    _setupJobContracts();
+    // Deploy contracts related to the SafeManager usecase
+    deployProxyContracts(address(safeEngine));
 
-    revokeAllTo(governor);
+    if (delegate == address(0)) {
+      _revokeAllTo(governor);
+    } else if (delegate == deployer) {
+      _delegateAllTo(governor);
+    } else {
+      _delegateAllTo(delegate);
+      _revokeAllTo(governor);
+    }
+
     vm.stopBroadcast();
   }
 }
@@ -55,28 +70,27 @@ contract DeployMainnet is MainnetParams, Deploy {
     chainId = 10;
   }
 
-  function _setupEnvironment() internal virtual override {
+  function setupEnvironment() public virtual override updateParams {
     // Setup oracle feeds
-    IBaseOracle _ethUSDPriceFeed = new ChainlinkRelayer(OP_CHAINLINK_ETH_USD_FEED, 1 hours);
-    IBaseOracle _wstethETHPriceFeed = new ChainlinkRelayer(OP_CHAINLINK_WSTETH_ETH_FEED, 1 hours);
+    IBaseOracle _ethUSDPriceFeed = chainlinkRelayerFactory.deployChainlinkRelayer(OP_CHAINLINK_ETH_USD_FEED, 1 hours);
+    IBaseOracle _wstethETHPriceFeed =
+      chainlinkRelayerFactory.deployChainlinkRelayer(OP_CHAINLINK_WSTETH_ETH_FEED, 1 hours);
 
-    IBaseOracle _wstethUSDPriceFeed = new DenominatedOracle({
+    IBaseOracle _wstethUSDPriceFeed = denominatedOracleFactory.deployDenominatedOracle({
       _priceSource: _wstethETHPriceFeed,
       _denominationPriceSource: _ethUSDPriceFeed,
       _inverted: false
     });
 
     systemCoinOracle = new OracleForTest(HAI_INITIAL_PRICE); // 1 HAI = 1 USD
-    delayedOracle[WETH] = new DelayedOracle(_ethUSDPriceFeed, 1 hours);
-    delayedOracle[WSTETH] = new DelayedOracle(_wstethUSDPriceFeed, 1 hours);
+    delayedOracle[WETH] = delayedOracleFactory.deployDelayedOracle(_ethUSDPriceFeed, 1 hours);
+    delayedOracle[WSTETH] = delayedOracleFactory.deployDelayedOracle(_wstethUSDPriceFeed, 1 hours);
 
     collateral[WETH] = IERC20Metadata(OP_WETH);
     collateral[WSTETH] = IERC20Metadata(OP_WSTETH);
 
     collateralTypes.push(WETH);
     collateralTypes.push(WSTETH);
-
-    _getEnvironmentParams();
   }
 }
 
@@ -86,33 +100,48 @@ contract DeployGoerli is GoerliParams, Deploy {
     chainId = 420;
   }
 
-  function _setupEnvironment() internal virtual override {
+  function setupEnvironment() public virtual override updateParams {
     // Setup oracle feeds
 
     systemCoinOracle = new OracleForTestnet(HAI_INITIAL_PRICE); // 1 HAI = 1 USD
 
-    IBaseOracle _ethUSDPriceFeed = new ChainlinkRelayer(OP_GOERLI_CHAINLINK_ETH_USD_FEED, 1 hours);
-    OracleForTestnet _opETHPriceFeed = new OracleForTestnet(OP_GOERLI_OP_ETH_PRICE_FEED);
+    // WETH
+    collateral[WETH] = IERC20Metadata(OP_WETH);
+    IBaseOracle _ethUSDPriceFeed =
+      chainlinkRelayerFactory.deployChainlinkRelayer(OP_GOERLI_CHAINLINK_ETH_USD_FEED, 1 hours); // live feed
 
-    DenominatedOracle _opUSDPriceFeed = new DenominatedOracle({
+    // OP
+    collateral[OP] = IERC20Metadata(OP_OPTIMISM);
+    OracleForTestnet _opETHPriceFeed = new OracleForTestnet(OP_GOERLI_OP_ETH_PRICE_FEED); // denominated feed
+    IBaseOracle _opUSDPriceFeed = denominatedOracleFactory.deployDenominatedOracle({
       _priceSource: _opETHPriceFeed,
       _denominationPriceSource: _ethUSDPriceFeed,
       _inverted: false
     });
 
-    delayedOracle[WETH] = new DelayedOracle(_ethUSDPriceFeed, 1 hours);
-    delayedOracle[OP] = new DelayedOracle(_opUSDPriceFeed, 1 hours);
+    // Test tokens
+    collateral[WBTC] = new ERC20ForTestnet('Wrapped BTC', 'wBTC', 8);
+    collateral[STONES] = new ERC20ForTestnet('Stones', 'STN', 3);
+    collateral[TOTEM] = new ERC20ForTestnet('Totem', 'TTM', 0);
 
-    collateral[WETH] = IERC20Metadata(OP_WETH);
-    collateral[OP] = IERC20Metadata(OP_OPTIMISM);
+    IBaseOracle _wbtcUsdOracle =
+      chainlinkRelayerFactory.deployChainlinkRelayer(OP_GOERLI_CHAINLINK_BTC_USD_FEED, 1 hours); // live feed
+    IBaseOracle _stonesWbtcOracle = new OracleForTestnet(0.001e18); // denominated feed
+    IBaseOracle _stonesOracle =
+      denominatedOracleFactory.deployDenominatedOracle(_stonesWbtcOracle, _wbtcUsdOracle, false);
+    IBaseOracle _totemOracle = new OracleForTestnet(1e18); // hardcoded feed
 
-    // Setup collateral params
+    delayedOracle[WETH] = delayedOracleFactory.deployDelayedOracle(_ethUSDPriceFeed, 1 hours);
+    delayedOracle[OP] = delayedOracleFactory.deployDelayedOracle(_opUSDPriceFeed, 1 hours);
+    delayedOracle[WBTC] = delayedOracleFactory.deployDelayedOracle(_wbtcUsdOracle, 1 hours);
+    delayedOracle[STONES] = delayedOracleFactory.deployDelayedOracle(_stonesOracle, 1 hours);
+    delayedOracle[TOTEM] = delayedOracleFactory.deployDelayedOracle(_totemOracle, 1 hours);
+
+    // Setup collateral types
     collateralTypes.push(WETH);
     collateralTypes.push(OP);
-
-    _getEnvironmentParams();
-
-    // Setup delegated collateral joins
-    delegatee[OP] = governor;
+    collateralTypes.push(WBTC);
+    collateralTypes.push(STONES);
+    collateralTypes.push(TOTEM);
   }
 }

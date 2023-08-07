@@ -64,7 +64,6 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
     accountingEngine = IAccountingEngine(_accountingEngine);
 
     _params = _liqEngineParams;
-    emit ModifyParameters('onAuctionSystemCoinLimit', _GLOBAL_PARAM, abi.encode(type(uint256).max));
   }
 
   /**

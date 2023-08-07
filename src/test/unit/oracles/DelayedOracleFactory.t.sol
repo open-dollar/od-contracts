@@ -131,6 +131,8 @@ contract Unit_DelayedOracleFactory_DeployDelayedOracle is Base {
     uint256 _result,
     bool _validity
   ) public happyPath(_updateDelay, _symbol, _result, _validity) {
-    assertEq(delayedOracleFactory.deployDelayedOracle(mockPriceSource, _updateDelay), address(delayedOracleChild));
+    assertEq(
+      address(delayedOracleFactory.deployDelayedOracle(mockPriceSource, _updateDelay)), address(delayedOracleChild)
+    );
   }
 }

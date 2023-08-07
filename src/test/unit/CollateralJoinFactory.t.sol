@@ -157,7 +157,9 @@ contract Unit_CollateralJoinFactory_DeployCollateralJoin is Base {
   }
 
   function test_Return_CollateralJoin(bytes32 _cType, uint8 _decimals) public happyPath(_decimals) {
-    assertEq(collateralJoinFactory.deployCollateralJoin(_cType, address(mockCollateral)), address(collateralJoinChild));
+    assertEq(
+      address(collateralJoinFactory.deployCollateralJoin(_cType, address(mockCollateral))), address(collateralJoinChild)
+    );
   }
 
   function test_Call_SafeEngineAuth(bytes32 _cType) public happyPath(18) {
@@ -250,7 +252,7 @@ contract Unit_CollateralJoinFactory_DeployDelegatableCollateralJoin is Base {
 
   function test_Return_CollateralJoin(bytes32 _cType, uint8 _decimals) public happyPath(_decimals) {
     assertEq(
-      collateralJoinFactory.deployDelegatableCollateralJoin(_cType, address(mockCollateral), delegatee),
+      address(collateralJoinFactory.deployDelegatableCollateralJoin(_cType, address(mockCollateral), delegatee)),
       address(collateralJoinChild)
     );
   }

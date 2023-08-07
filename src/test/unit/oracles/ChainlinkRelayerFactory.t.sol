@@ -125,7 +125,7 @@ contract Unit_ChainlinkRelayerFactory_DeployChainlinkRelayer is Base {
     string memory _description
   ) public happyPath(_staleThreshold, _decimals, _description) {
     assertEq(
-      chainlinkRelayerFactory.deployChainlinkRelayer(address(mockChainlinkFeed), _staleThreshold),
+      address(chainlinkRelayerFactory.deployChainlinkRelayer(address(mockChainlinkFeed), _staleThreshold)),
       address(chainlinkRelayerChild)
     );
   }

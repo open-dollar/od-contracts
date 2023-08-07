@@ -300,13 +300,6 @@ contract Unit_LiquidationEngine_Constructor is Base {
     new LiquidationEngine(address(mockSafeEngine), address(mockAccountingEngine), liquidationEngineParams);
   }
 
-  function test_Emit_ModifyParameters() public {
-    vm.expectEmit(true, true, false, false);
-    emit ModifyParameters('onAuctionSystemCoinLimit', bytes32(0), abi.encode(type(uint256).max));
-
-    new LiquidationEngine(address(mockSafeEngine), address(mockAccountingEngine), liquidationEngineParams);
-  }
-
   function test_Set_LiquidationEngine_Param(ILiquidationEngine.LiquidationEngineParams memory _liquidationEngineParams)
     public
   {

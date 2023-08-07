@@ -2,7 +2,6 @@
 pragma solidity 0.8.19;
 
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
-
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 
 interface IDenominatedOracleFactory is IAuthorizable {
@@ -16,7 +15,7 @@ interface IDenominatedOracleFactory is IAuthorizable {
     IBaseOracle _priceSource,
     IBaseOracle _denominationPriceSource,
     bool _inverted
-  ) external returns (address _denominatedOracle);
+  ) external returns (IBaseOracle _denominatedOracle);
 
   // --- Views ---
   function denominatedOraclesList() external view returns (address[] memory _denominatedOraclesList);

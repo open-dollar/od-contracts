@@ -35,7 +35,7 @@ contract DeployForTest is TestParams, Deploy {
     vm.createSelectFork(vm.rpcUrl('mainnet'));
   }
 
-  function _setupEnvironment() internal virtual override {
+  function setupEnvironment() public virtual override {
     WETH9 weth = WETH9(payable(0x4200000000000000000000000000000000000006));
 
     systemCoinOracle = new OracleForTest(HAI_INITIAL_PRICE); // 1 HAI = 1 USD

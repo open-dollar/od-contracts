@@ -84,24 +84,22 @@ contract CollateralAuctionHouseFactory is Authorizable, Disableable, Modifiable,
   function deployCollateralAuctionHouse(
     bytes32 _cType,
     ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams
-  ) external isAuthorized whenEnabled returns (address _collateralAuctionHouse) {
+  ) external isAuthorized whenEnabled returns (ICollateralAuctionHouse _collateralAuctionHouse) {
     if (!_collateralList.add(_cType)) revert CAHFactory_CAHExists();
 
     ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _emptyCahParams;
 
-    _collateralAuctionHouse = address(
-      new CollateralAuctionHouseChild({
+    _collateralAuctionHouse = new CollateralAuctionHouseChild({
       _safeEngine: safeEngine,
       _oracleRelayer: address(0), // read from factory
       _liquidationEngine: address(0), // read from factory
       _cType: _cType, 
       _cahParams: _emptyCahParams, // read from factory
       _cahCParams: _cahCParams
-      })
-    );
+      });
 
-    collateralAuctionHouses[_cType] = _collateralAuctionHouse;
-    emit DeployCollateralAuctionHouse(_cType, _collateralAuctionHouse);
+    collateralAuctionHouses[_cType] = address(_collateralAuctionHouse);
+    emit DeployCollateralAuctionHouse(_cType, address(_collateralAuctionHouse));
   }
 
   // --- Views ---

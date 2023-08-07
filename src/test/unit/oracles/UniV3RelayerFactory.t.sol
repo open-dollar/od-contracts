@@ -160,7 +160,9 @@ contract Unit_UniV3RelayerFactory_DeployUniV3Relayer is Base {
     uint8 _decimals
   ) public happyPath(_feeTier, _symbol, _decimals) {
     assertEq(
-      uniV3RelayerFactory.deployUniV3Relayer(address(mockBaseToken), address(mockQuoteToken), _feeTier, _quotePeriod),
+      address(
+        uniV3RelayerFactory.deployUniV3Relayer(address(mockBaseToken), address(mockQuoteToken), _feeTier, _quotePeriod)
+      ),
       address(uniV3RelayerChild)
     );
   }

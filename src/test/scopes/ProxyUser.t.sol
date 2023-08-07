@@ -64,7 +64,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     //   _collatAmount,
     //   true
     // );
-    // _proxy.execute(address(proxyActions), _callData);
+    // _proxy.execute(address(basicActions), _callData);
     vm.stopPrank();
   }
 
@@ -95,7 +95,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     bytes memory _callData =
       abi.encodeWithSelector(CommonActions.joinSystemCoins.selector, address(coinJoin), _user, _amount);
 
-    _proxy.execute(address(proxyActions), _callData);
+    _proxy.execute(address(basicActions), _callData);
     vm.stopPrank();
   }
 
@@ -133,7 +133,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     );
 
     vm.prank(_user);
-    _proxy.execute(address(proxyActions), _callData);
+    _proxy.execute(address(basicActions), _callData);
   }
 
   function _repayDebtAndExit(
@@ -160,7 +160,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
       _deltaDebt
     );
 
-    _proxy.execute(address(proxyActions), _callData);
+    _proxy.execute(address(basicActions), _callData);
     vm.stopPrank();
   }
 
@@ -178,7 +178,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
       bytes memory _callData =
         abi.encodeWithSelector(BasicActions.openSAFE.selector, address(safeManager), _cType, address(_proxy));
 
-      (bytes memory _response) = _proxy.execute(address(proxyActions), _callData);
+      (bytes memory _response) = _proxy.execute(address(basicActions), _callData);
       _safeId = abi.decode(_response, (uint256));
       _safeHandler = safeManager.safeData(_safeId).safeHandler;
 
@@ -212,7 +212,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
       _amountToBid
     );
 
-    _proxy.execute(address(collateralActions), _callData);
+    _proxy.execute(address(collateralBidActions), _callData);
     vm.stopPrank();
   }
 
@@ -254,7 +254,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
       SurplusBidActions.increaseBidSize.selector, address(surplusAuctionHouse), _auctionId, _bidAmount
     );
 
-    _proxy.execute(address(surplusActions), _callData);
+    _proxy.execute(address(surplusBidActions), _callData);
     vm.stopPrank();
   }
 
@@ -266,7 +266,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     );
 
     vm.prank(_user);
-    _proxy.execute(address(surplusActions), _callData);
+    _proxy.execute(address(surplusBidActions), _callData);
   }
 
   function _collectSystemCoins(address _user) internal override {
@@ -278,7 +278,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
       abi.encodeWithSelector(CommonActions.exitSystemCoins.selector, address(coinJoin), _coinsToExit);
 
     vm.prank(_user);
-    _proxy.execute(address(surplusActions), _callData);
+    _proxy.execute(address(surplusBidActions), _callData);
   }
 
   function _workPopDebtFromQueue(address _user, uint256 _debtBlockTimestamp) internal override {

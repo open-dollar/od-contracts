@@ -24,10 +24,12 @@ contract DenominatedOracleFactory is Authorizable, IDenominatedOracleFactory {
     IBaseOracle _priceSource,
     IBaseOracle _denominationPriceSource,
     bool _inverted
-  ) external isAuthorized returns (address _denominatedOracle) {
-    _denominatedOracle = address(new DenominatedOracleChild(_priceSource, _denominationPriceSource, _inverted));
-    _denominatedOracles.add(_denominatedOracle);
-    emit NewDenominatedOracle(_denominatedOracle, address(_priceSource), address(_denominationPriceSource), _inverted);
+  ) external isAuthorized returns (IBaseOracle _denominatedOracle) {
+    _denominatedOracle = new DenominatedOracleChild(_priceSource, _denominationPriceSource, _inverted);
+    _denominatedOracles.add(address(_denominatedOracle));
+    emit NewDenominatedOracle(
+      address(_denominatedOracle), address(_priceSource), address(_denominationPriceSource), _inverted
+    );
   }
 
   // --- Views ---

@@ -8,12 +8,15 @@ abstract contract GoerliParams is Contracts, Params {
   uint256 constant OP_GOERLI_OP_ETH_PRICE_FEED = 0.001e18;
 
   function _getEnvironmentParams() internal override {
-    governor = 0x8125aAa8F7912aEb500553a5b1710BB16f7A6C65;
+    governor = 0x8679A33Dc1DB18b0eD67260b97730213a77C2e6e;
     delegate = 0x58F84023DC3E0941Faa5904E974BAc5bfF3E047f;
 
+    // Setup delegated collateral joins
+    delegatee[OP] = governor;
+
     _safeEngineParams = ISAFEEngine.SAFEEngineParams({
-      safeDebtCeiling: 10_000_000 * WAD, // 10M COINs
-      globalDebtCeiling: 10_000_000_000 * RAD // 10B COINs
+      safeDebtCeiling: 2_000_000 * WAD, // 2M COINs
+      globalDebtCeiling: 25_000_000 * RAD // 25M COINs
     });
 
     _accountingEngineParams = IAccountingEngine.AccountingEngineParams({
@@ -95,6 +98,11 @@ abstract contract GoerliParams is Contracts, Params {
 
     // --- Global Settlement Params ---
     _globalSettlementParams = IGlobalSettlement.GlobalSettlementParams({shutdownCooldown: 3 days});
+    _postSettlementSAHParams = IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams({
+      bidIncrease: 1.01e18, // +1 %
+      bidDuration: 900,
+      totalAuctionLength: 1800
+    });
 
     // --- Collateral Default Params ---
     for (uint256 _i; _i < collateralTypes.length; _i++) {
