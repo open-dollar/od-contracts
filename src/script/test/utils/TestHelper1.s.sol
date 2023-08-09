@@ -4,28 +4,27 @@ pragma solidity ^0.8.13;
 import 'forge-std/Script.sol';
 
 import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
-
-// Proxies
+import {TestContracts} from '@script/test/utils/TestContracts.s.sol';
 import {HaiProxy} from '@contracts/proxies/HaiProxy.sol';
 import {HaiProxyFactory} from '@contracts/proxies/HaiProxyFactory.sol';
 import {HaiProxyRegistry} from '@contracts/proxies/HaiProxyRegistry.sol';
 import {HaiSafeManager} from '@contracts/proxies/HaiSafeManager.sol';
-
-// GEB Actions
 import {BasicActions} from '@contracts/proxies/actions/BasicActions.sol';
 import {CollateralBidActions} from '@contracts/proxies/actions/CollateralBidActions.sol';
 import {CommonActions} from '@contracts/proxies/actions/CommonActions.sol';
 import {DebtBidActions} from '@contracts/proxies/actions/DebtBidActions.sol';
 import {SurplusBidActions} from '@contracts/proxies/actions/SurplusBidActions.sol';
-
-// tokens
+// import {RewardedActions} from '@contracts/proxies/actions/RewardedActions.sol';
 import {ProtocolToken} from '@contracts/tokens/ProtocolToken.sol';
 import {SystemCoin} from '@contracts/tokens/SystemCoin.sol';
+import {CollateralJoin} from '@contracts/utils/CollateralJoin.sol';
+import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
+import {TaxCollector} from '@contracts/TaxCollector.sol';
 
 /**
  * @dev to avoid msg.sender context of forge's DefaultSender, fill in USER with desired wallet/EOA
  */
-contract TestHelperScript is Script {
+contract TestHelperScript1 is TestContracts, Script {
   // Wad
   uint256 public constant WAD = 1e16;
 
@@ -37,31 +36,33 @@ contract TestHelperScript is Script {
   IERC20 public constant wEthToken = IERC20(0x4200000000000000000000000000000000000006);
 
   // User wallet address
-  address public constant USER = 0x23aD35FAab005a5E69615d275176e5C22b2ceb9E;
+  address public constant USER1 = 0x23aD35FAab005a5E69615d275176e5C22b2ceb9E;
+  address public constant USER2 = 0x37c5B029f9c3691B3d47cb024f84E5E257aEb0BB;
 
-  // Hai Protocol contracts
-  HaiProxyFactory public constant proxyFactory = HaiProxyFactory(0x74044fDd9C267050f5b11987e1009b76b5ef806b);
-  HaiProxyRegistry public constant proxyRegistry = HaiProxyRegistry(0x8505e8D84654467d032DB394637D0FaFf477568a);
-  HaiSafeManager public constant safeManager = HaiSafeManager(0xE5559B4C5605a2cd4F6F3DD84D9eeF2Df7aC3EB1);
-  BasicActions public constant basicActions = BasicActions(0x48fC4859e06c1096b3A02d391F96376AdA9259a8);
-  DebtBidActions public constant debtBidActions = DebtBidActions(0x5fc994EBfAe4ABeFca0f2DeeFDC2C8A46AD2bEb0);
-  SurplusBidActions public constant surplusBidActions = SurplusBidActions(0xB0C1470255f08a06A5123e03554Fb7CeBF41Ed6a);
-  CollateralBidActions public constant collateralBidActions =
-    CollateralBidActions(0xE4f9DbD083419944e401Bd709eA74fb52a8dcdCa);
-  ProtocolToken public constant protocolToken = ProtocolToken(0xe305D09d46bD6c9C0178799Bc1424282b798876C); // OPEN
-  SystemCoin public constant systemCoin = SystemCoin(0xD0fbafe59e8af03C81b48ADbd3c3679E5D7Fa613); // HAI
+  function setUp() public {
+    proxyFactory = HaiProxyFactory(0x7cE9283e10543F7792AA9dFABC66A61C87ecC6F2);
+    proxyRegistry = HaiProxyRegistry(0xCEC3AfFac05522c21B59e62CF98122aD47168B9d);
+    safeManager = HaiSafeManager(0x1575B37E8bacE8d07594314537109A59658DAD22);
+    basicActions = BasicActions(0x44Be9d8e63F0746413eAFaf9379fE91982EC8801);
+    debtBidActions = DebtBidActions(0x2c1d3156725388820c6b9aA4CC0d33f38e268C67);
+    surplusBidActions = SurplusBidActions(0xd976B790B5440a493EbE310852f193437D01796E);
+    collateralBidActions = CollateralBidActions(0x73991C3a4CA35b0373C163321Cac9C31Ed4bf0ae);
+    // rewardedActions = RewardedActions(0x2Ec6a44AA9dBCd62886498D4B67887AF50563098);
 
-  // Hai Protocol addresses
-  address public constant taxCollector = 0x979175221543b23ef11577898dA53C87779A54cE;
-  address public constant coinJoin = 0x1ceABCDB63dFF8734bB9D969C398936C0d6B4ad5;
-  address public constant collatJoinWETH = 0xa460cE97C6CD53dccBA7d1adc0dCaa51206eae8b;
+    protocolToken = ProtocolToken(0xe305D09d46bD6c9C0178799Bc1424282b798876C); // OPEN
+    systemCoin = SystemCoin(0xD0fbafe59e8af03C81b48ADbd3c3679E5D7Fa613); // HAI
+
+    taxCollector = TaxCollector(0x14e604A11a6AF9495F08f8647053467AeBdd226e);
+    coinJoin = CoinJoin(0xAa6bC900E76C76D61875765Be902Db0b4beA4B4D);
+    collateralJoin[WETH] = CollateralJoin(0xc98B42c0008Ea860c17f5C374BA782130b333DF5);
+  }
 
   /**
    * @dev this function calls the proxyFactory via ProxyRegistry,
    * and it will only allow 1 proxy per wallet/EOA.
    * use the `deployProxy` script to bypass the ProxyRegistry
    */
-  function findOrDeploy(address owner) public returns (address payable) {
+  function deployOrFind(address owner) public returns (address payable) {
     HaiProxy proxy = proxyRegistry.proxies(owner);
     if (proxy == HaiProxy(payable(address(0))) || proxy.owner() != owner) {
       return proxyRegistry.build(owner);
@@ -70,9 +71,3 @@ contract TestHelperScript is Script {
     }
   }
 }
-
-/**
- * existing proxies to EOAs:
- * 0xD652BbC552FC71c6a68db126D10eba9720E2eC4a => 0x23aD35FAab005a5E69615d275176e5C22b2ceb9E
- * 0xC021d508AF319DD40710Bc2896882671c578036A => 0x37c5B029f9c3691B3d47cb024f84E5E257aEb0BB
- */

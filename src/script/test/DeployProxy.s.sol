@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import {TestHelperScript} from './TestHelper.s.sol';
+import {TestHelperScript2} from '@script/test/utils/TestHelper2.s.sol';
 
 // source .env && forge script DeployProxy --with-gas-price 2000000000 -vvvvv --rpc-url $OP_GOERLI_RPC --broadcast --verify --etherscan-api-key $OP_ETHERSCAN_API_KEY
 
-contract DeployProxy is TestHelperScript {
+contract DeployProxy is TestHelperScript2 {
   function run() public {
     vm.startBroadcast(vm.envUint('OP_GOERLI_PK'));
     deploy();
