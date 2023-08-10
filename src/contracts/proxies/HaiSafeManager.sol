@@ -133,7 +133,7 @@ contract HaiSafeManager {
 
   // Give the safe ownership to a dst address.
   function transferSAFEOwnership(uint256 _safe, address _dst) external {
-    require(msg.sender == address(vault721), 'SafeManager: Only Vault721.');
+    require(msg.sender == address(vault721), 'SafeMngr: Only Vault721');
 
     if (_dst == address(0)) revert ZeroAddress();
     SAFEData memory _sData = _safeData[_safe];
