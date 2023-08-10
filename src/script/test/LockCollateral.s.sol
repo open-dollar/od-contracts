@@ -8,13 +8,13 @@ import {HaiProxy} from '@contracts/proxies/HaiProxy.sol';
 // source .env && forge script LockCollateral --with-gas-price 2000000000 -vvvvv --rpc-url $OP_GOERLI_RPC --broadcast --verify --etherscan-api-key $OP_ETHERSCAN_API_KEY
 // source .env && forge script LockCollateral --with-gas-price 2000000000 -vvvvv --rpc-url $OP_GOERLI_RPC
 
-contract LockCollateral is TestHelperScript2 {
+contract LockCollateral is TestHelperScript1 {
   function run() public {
     vm.startBroadcast(vm.envUint('OP_GOERLI_PK'));
     address proxy = address(deployOrFind(USER2));
-    wEthToken.approve(address(proxy), 0.01 ether);
+    WETH_TOKEN.approve(address(proxy), type(uint256).max);
 
-    depositCollatAndGenDebt(12, 0.0001 ether, proxy);
+    depositCollatAndGenDebt(1, 0.0001 ether, proxy);
     vm.stopBroadcast();
   }
 

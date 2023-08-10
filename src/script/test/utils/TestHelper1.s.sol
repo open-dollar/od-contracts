@@ -14,7 +14,7 @@ import {CollateralBidActions} from '@contracts/proxies/actions/CollateralBidActi
 import {CommonActions} from '@contracts/proxies/actions/CommonActions.sol';
 import {DebtBidActions} from '@contracts/proxies/actions/DebtBidActions.sol';
 import {SurplusBidActions} from '@contracts/proxies/actions/SurplusBidActions.sol';
-// import {RewardedActions} from '@contracts/proxies/actions/RewardedActions.sol';
+import {RewardedActions} from '@contracts/proxies/actions/RewardedActions.sol';
 import {ProtocolToken} from '@contracts/tokens/ProtocolToken.sol';
 import {SystemCoin} from '@contracts/tokens/SystemCoin.sol';
 import {CollateralJoin} from '@contracts/utils/CollateralJoin.sol';
@@ -22,7 +22,7 @@ import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
 import {TaxCollector} from '@contracts/TaxCollector.sol';
 
 /**
- * @dev to avoid msg.sender context of forge's DefaultSender, fill in USER with desired wallet/EOA
+ * @dev TestHelperScript1 refers to new contracts deployed by daopunk (initial deployment no longer works)
  */
 contract TestHelperScript1 is TestContracts, Script {
   // Wad
@@ -33,7 +33,7 @@ contract TestHelperScript1 is TestContracts, Script {
   bytes32 public constant WETH = bytes32('WETH'); // 0x5745544800000000000000000000000000000000000000000000000000000000
   bytes32 public constant OP = bytes32('OP'); // 0x4f50000000000000000000000000000000000000000000000000000000000000
 
-  IERC20 public constant wEthToken = IERC20(0x4200000000000000000000000000000000000006);
+  IERC20 public constant WETH_TOKEN = IERC20(0x4200000000000000000000000000000000000006);
 
   // User wallet address
   address public constant USER1 = 0x23aD35FAab005a5E69615d275176e5C22b2ceb9E;
