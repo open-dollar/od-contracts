@@ -87,7 +87,7 @@ abstract contract GoerliDeployment is Contracts, GoerliParams {
     proxyRegistry = HaiProxyRegistry(0x8FF12e19f1f246D0257D478C90eB47a960F4DBb4);
     safeManager = HaiSafeManager(0xc0C6e2e5a31896e888eBEF5837Bb70CB3c37D86C);
 
-    basicActions = BasicActions(0x0c3287b5C1Ea5b04E90A3d1af02B78544b33f573);
+    basicActions = BasicActions(0x22C2291eA7fa259aa57D2f683e598AFCe020e0d9);
     debtBidActions = DebtBidActions(0xFb47e938010Cbd6f6b5953Be7aDc10F9c07d5CAA);
     surplusBidActions = SurplusBidActions(0xd7d804b859B2C23B310db2510316426D99976ff6);
     collateralBidActions = CollateralBidActions(0x85f9a28F7F7e343e1806E112272bd783eA73b4B9);
