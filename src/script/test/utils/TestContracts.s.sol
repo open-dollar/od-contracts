@@ -72,7 +72,7 @@ import {BasicActions, CommonActions} from '@contracts/proxies/actions/BasicActio
 import {DebtBidActions} from '@contracts/proxies/actions/DebtBidActions.sol';
 import {SurplusBidActions} from '@contracts/proxies/actions/SurplusBidActions.sol';
 import {CollateralBidActions} from '@contracts/proxies/actions/CollateralBidActions.sol';
-import {RewardedActions} from '@contracts/proxies/actions/RewardedActions.sol';
+// import {RewardedActions} from '@contracts/proxies/actions/RewardedActions.sol';
 import {HaiProxy} from '@contracts/proxies/HaiProxy.sol';
 import {HaiProxyRegistry} from '@contracts/proxies/HaiProxyRegistry.sol';
 import {HaiProxyFactory} from '@contracts/proxies/HaiProxyFactory.sol';
@@ -142,5 +142,5 @@ abstract contract TestContracts {
   DebtBidActions public debtBidActions;
   SurplusBidActions public surplusBidActions;
   CollateralBidActions public collateralBidActions;
-  RewardedActions public rewardedActions;
+  // RewardedActions public rewardedActions;
 }

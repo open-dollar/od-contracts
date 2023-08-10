@@ -2,6 +2,7 @@
 pragma solidity ^0.8.13;
 
 import {TestHelperScript1} from '@script/test/utils/TestHelper1.s.sol';
+import {TestHelperScript2} from '@script/test/utils/TestHelper2.s.sol';
 import {HaiProxy} from '@contracts/proxies/HaiProxy.sol';
 import {HaiProxyRegistry} from '@contracts/proxies/HaiProxyRegistry.sol';
 
