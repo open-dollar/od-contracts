@@ -25,7 +25,7 @@ contract HaiSafeManager {
   address public safeEngine;
 
   // --- ERC721 ---
-  address public vault721;
+  IVault721 public vault721;
 
   uint256 internal _safeId; // Auto incremental
   mapping(address _safeOwner => EnumerableSet.UintSet) private _usrSafes;
@@ -68,7 +68,7 @@ contract HaiSafeManager {
 
   constructor(address _safeEngine, address _vault721) {
     safeEngine = _safeEngine.assertNonNull();
-    vault721 = _vault721;
+    vault721 = IVault721(_vault721);
   }
 
   // --- Getters ---
@@ -125,7 +125,7 @@ contract HaiSafeManager {
     _usrSafes[_usr].add(_safeId);
     _usrSafesPerCollat[_usr][_cType].add(_safeId);
 
-    IVault721(vault721).mint(_usr, _safeId);
+    vault721.mint(_usr, _safeId);
 
     emit OpenSAFE(msg.sender, _usr, _safeId);
     return _safeId;
@@ -133,7 +133,7 @@ contract HaiSafeManager {
 
   // Give the safe ownership to a dst address.
   function transferSAFEOwnership(uint256 _safe, address _dst) external {
-    require(msg.sender == vault721, 'SafeManager: Only Vault721.');
+    require(msg.sender == address(vault721), 'SafeManager: Only Vault721.');
 
     if (_dst == address(0)) revert ZeroAddress();
     SAFEData memory _sData = _safeData[_safe];
