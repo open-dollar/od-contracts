@@ -290,8 +290,6 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
 
     vm.prank(_user);
     _proxy.execute(address(rewardedActions), _callData);
-
-    _collectSystemCoins(_user);
   }
 
   function _workAuctionDebt(address _user) internal override {
@@ -302,8 +300,6 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
 
     vm.prank(_user);
     _proxy.execute(address(rewardedActions), _callData);
-
-    _collectSystemCoins(_user);
   }
 
   function _workAuctionSurplus(address _user) internal override {
@@ -314,8 +310,6 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
 
     vm.prank(_user);
     _proxy.execute(address(rewardedActions), _callData);
-
-    _collectSystemCoins(_user);
   }
 
   function _workTransferExtraSurplus(address _user) internal override {
@@ -326,8 +320,6 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
 
     vm.prank(_user);
     _proxy.execute(address(rewardedActions), _callData);
-
-    _collectSystemCoins(_user);
   }
 
   function _workLiquidation(address _user, bytes32 _cType, address _safe) internal override {
@@ -339,8 +331,6 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
 
     vm.prank(_user);
     _proxy.execute(address(rewardedActions), _callData);
-
-    _collectSystemCoins(_user);
   }
 
   function _workUpdateCollateralPrice(address _user, bytes32 _cType) internal override {
@@ -352,8 +342,6 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
 
     vm.prank(_user);
     _proxy.execute(address(rewardedActions), _callData);
-
-    _collectSystemCoins(_user);
   }
 
   function _workUpdateRate(address _user) internal override {
@@ -364,7 +352,5 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
 
     vm.prank(_user);
     _proxy.execute(address(rewardedActions), _callData);
-
-    _collectSystemCoins(_user);
   }
 }
