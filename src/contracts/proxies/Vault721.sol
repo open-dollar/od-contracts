@@ -85,7 +85,7 @@ contract Vault721 is ERC721('OpenDollarVault', 'ODV') {
    * updates _proxyRegistry and _userRegistry mappings for new ODProxy
    */
   function _build(address _user) internal returns (address payable _proxy) {
-    _proxy = payable(address(new ODProxy(address(this))));
+    _proxy = payable(address(new ODProxy(_user)));
     _proxyRegistry[_proxy] = _user;
     _userRegistry[_user] = _proxy;
     emit CreateProxy(_user, address(_proxy));
