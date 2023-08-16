@@ -5,14 +5,18 @@ import '@script/Params.s.sol';
 
 abstract contract GoerliParams is Contracts, Params {
   // --- Testnet Params ---
-  uint256 constant OP_GOERLI_OP_ETH_PRICE_FEED = 0.001e18;
+  uint256 constant ARB_GOERLI_FTRG_ETH_PRICE_FEED = 0.001e18;
 
   function _getEnvironmentParams() internal override {
-    governor = 0x8679A33Dc1DB18b0eD67260b97730213a77C2e6e;
-    delegate = 0x58F84023DC3E0941Faa5904E974BAc5bfF3E047f;
+    // governor = 0x8679A33Dc1DB18b0eD67260b97730213a77C2e6e;
+    // delegate = 0x58F84023DC3E0941Faa5904E974BAc5bfF3E047f;
+
+    governor = 0x37c5B029f9c3691B3d47cb024f84E5E257aEb0BB; // cannot be the deployer
+    delegate = 0xD5d1bb95259Fe2c5a84da04D1Aa682C71A1B8C0E;
+    // delegate = address(0);
 
     // Setup delegated collateral joins
-    delegatee[OP] = governor;
+    delegatee[FTRG] = governor;
 
     _safeEngineParams = ISAFEEngine.SAFEEngineParams({
       safeDebtCeiling: 2_000_000 * WAD, // 2M COINs
@@ -146,7 +150,7 @@ abstract contract GoerliParams is Contracts, Params {
     _taxCollectorCParams[WETH].stabilityFee = RAY + 1.54713e18; // + 5%/yr
     _safeEngineCParams[WETH].debtCeiling = 100_000_000 * RAD; // 100M COINs
 
-    _liquidationEngineCParams[OP].liquidationPenalty = 1.2e18; // 20%
-    _collateralAuctionHouseCParams[OP].maxDiscount = 0.5e18; // -50%
+    _liquidationEngineCParams[FTRG].liquidationPenalty = 1.2e18; // 20%
+    _collateralAuctionHouseCParams[FTRG].maxDiscount = 0.5e18; // -50%
   }
 }

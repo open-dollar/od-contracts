@@ -2,8 +2,8 @@
 pragma solidity 0.8.19;
 
 import '@script/Contracts.s.sol';
-import {GoerliParams, WETH, OP, WBTC, STONES, TOTEM} from '@script/GoerliParams.s.sol';
-import {OP_WETH, OP_OPTIMISM} from '@script/Registry.s.sol';
+import {GoerliParams, WETH, FTRG, WBTC, STONES, TOTEM} from '@script/GoerliParams.s.sol';
+import {ARB_GOERLI_WETH, ARB_GOERLI_GOV_TOKEN} from '@script/Registry.s.sol';
 
 abstract contract GoerliDeployment is Contracts, GoerliParams {
   // NOTE: The last significant change in the Goerli deployment, to be used in the test scenarios
@@ -16,17 +16,17 @@ abstract contract GoerliDeployment is Contracts, GoerliParams {
   constructor() {
     // --- collateral types ---
     collateralTypes.push(WETH);
-    collateralTypes.push(OP);
+    collateralTypes.push(FTRG);
     collateralTypes.push(WBTC);
     collateralTypes.push(STONES);
     collateralTypes.push(TOTEM);
 
     // --- utils ---
-    delegatee[OP] = governor;
+    delegatee[FTRG] = governor;
 
     // --- ERC20s ---
-    collateral[WETH] = IERC20Metadata(OP_WETH);
-    collateral[OP] = IERC20Metadata(OP_OPTIMISM);
+    collateral[WETH] = IERC20Metadata(ARB_GOERLI_WETH);
+    collateral[FTRG] = IERC20Metadata(ARB_GOERLI_GOV_TOKEN);
     collateral[WBTC] = IERC20Metadata(0x5E0e96b2c318E63EceA56Be06c7dEc0e8E87D5de);
     collateral[STONES] = IERC20Metadata(0x5eb7112b1cC8E6AC08566881c6F4f6508Fd99578);
     collateral[TOTEM] = IERC20Metadata(0x09880394A9034e0337893A201A4B6AAC89bE6Cae);
@@ -65,8 +65,8 @@ abstract contract GoerliDeployment is Contracts, GoerliParams {
     collateralJoin[WETH] = CollateralJoin(0xFb0758b07B4260958Cb1589091489E2A2d9af513);
     collateralAuctionHouse[WETH] = CollateralAuctionHouse(0x40B5dAD43D2582d5c3975c3B1b55c36b7D2812c8);
 
-    collateralJoin[OP] = CollateralJoin(0x66b42623a06744d40dF27bb32816d4d1A6905914);
-    collateralAuctionHouse[OP] = CollateralAuctionHouse(0xbe5940d9572DD1e8A594b5691894CDb8eb130BE6);
+    collateralJoin[FTRG] = CollateralJoin(0x66b42623a06744d40dF27bb32816d4d1A6905914);
+    collateralAuctionHouse[FTRG] = CollateralAuctionHouse(0xbe5940d9572DD1e8A594b5691894CDb8eb130BE6);
 
     collateralJoin[WBTC] = CollateralJoin(0xfa27ed51bd028085C29b69dced2bDdd3FA777Ecd);
     collateralAuctionHouse[WBTC] = CollateralAuctionHouse(0x92591B6EA0552E1B09d1fAB697628dA306401aD6);
@@ -96,7 +96,7 @@ abstract contract GoerliDeployment is Contracts, GoerliParams {
     // --- oracles ---
     systemCoinOracle = IBaseOracle(0x4845E891dB00979B0A017182b1dad52cbc75aEF0);
     delayedOracle[WETH] = IDelayedOracle(0x6fEbFFd8174c950D4D357ce9960F68fef4769Bed);
-    delayedOracle[OP] = IDelayedOracle(0x409e0666ea8ECea543C1E95288493CB4fe0C7773);
+    delayedOracle[FTRG] = IDelayedOracle(0x409e0666ea8ECea543C1E95288493CB4fe0C7773);
     delayedOracle[WBTC] = IDelayedOracle(0x1c31737D56925B862EFfd9d256c10cC71Ed46949);
     delayedOracle[STONES] = IDelayedOracle(0x40E2A30E6b2e3d626eD93A4067E911632C54B07E);
     delayedOracle[TOTEM] = IDelayedOracle(0x9881c2f838BbC4D8E8624F7739E93EF6D407b52f);
