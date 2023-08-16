@@ -32,6 +32,8 @@ contract Vault721 is ERC721('OpenDollarVault', 'ODV') {
   address public safeManager;
   address public governor;
 
+  uint256 public totalSupply = 0;
+
   mapping(address proxy => address user) private _proxyRegistry;
   mapping(address user => address proxy) private _userRegistry;
 
@@ -63,6 +65,7 @@ contract Vault721 is ERC721('OpenDollarVault', 'ODV') {
     require(_proxyRegistry[proxy] != address(0), 'Vault721: Non-native proxy call.');
     address user = _proxyRegistry[proxy];
     _safeMint(user, safeId);
+    ++totalSupply;
   }
 
   /**
