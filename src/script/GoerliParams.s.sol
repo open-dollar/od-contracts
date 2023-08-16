@@ -17,7 +17,7 @@ abstract contract GoerliParams is Contracts, Params {
     });
 
     _accountingEngineParams = IAccountingEngine.AccountingEngineParams({
-      surplusIsTransferred: 50, // 100% - surplusIsTransferred 50% surplus is auctioned. The rest is sent to governor
+      surplusIsTransferred: 0, // boolean. 0 = auction, 1 = transfer out.
       surplusDelay: 1800,
       popDebtDelay: 1800,
       disableCooldown: 3 days,
