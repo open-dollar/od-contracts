@@ -57,7 +57,7 @@ interface IOracleRelayer is IAuthorizable, IModifiable, IDisableable {
     returns (IDelayedOracle _oracle, uint256 _safetyCRatio, uint256 _liquidationCRatio);
 
   // --- Data ---
-  function lastRedemptionPrice() external view returns (uint256 _redemptionPrice);
+  function calcRedemptionPrice() external view returns (uint256 _redemptionPrice);
   function marketPrice() external view returns (uint256 _marketPrice);
   function redemptionRate() external view returns (uint256 _redemptionRate);
   function redemptionPriceUpdateTime() external view returns (uint256 _redemptionPriceUpdateTime);

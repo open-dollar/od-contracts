@@ -27,39 +27,22 @@ contract CollateralAuctionHouseFactory is Authorizable, Disableable, Modifiable,
   address public oracleRelayer;
 
   // --- Data ---
-  // solhint-disable-next-line private-vars-leading-underscore
-  ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams public _params;
-
-  function params()
-    external
-    view
-    returns (ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams)
-  {
-    return _params;
-  }
 
   function cParams(bytes32 _cType)
     external
     view
-    returns (ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams)
+    returns (ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahParams)
   {
-    return ICollateralAuctionHouse(collateralAuctionHouses[_cType]).cParams();
+    return ICollateralAuctionHouse(collateralAuctionHouses[_cType]).params();
   }
 
   // solhint-disable-next-line private-vars-leading-underscore
   function _cParams(bytes32 _cType)
     external
     view
-    returns (
-      uint256 _minimumBid,
-      uint256 _minDiscount,
-      uint256 _maxDiscount,
-      uint256 _perSecondDiscountUpdateRate,
-      uint256 _lowerCollateralDeviation,
-      uint256 _upperCollateralDeviation
-    )
+    returns (uint256 _minimumBid, uint256 _minDiscount, uint256 _maxDiscount, uint256 _perSecondDiscountUpdateRate)
   {
-    return ICollateralAuctionHouse(collateralAuctionHouses[_cType])._cParams();
+    return ICollateralAuctionHouse(collateralAuctionHouses[_cType])._params();
   }
 
   mapping(bytes32 => address) public collateralAuctionHouses;
@@ -69,33 +52,27 @@ contract CollateralAuctionHouseFactory is Authorizable, Disableable, Modifiable,
   // --- Init ---
   constructor(
     address _safeEngine,
-    address _oracleRelayer,
     address _liquidationEngine,
-    ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams
+    address _oracleRelayer
   ) Authorizable(msg.sender) validParams {
     safeEngine = _safeEngine.assertNonNull();
-    oracleRelayer = _oracleRelayer;
     _setLiquidationEngine(_liquidationEngine);
-
-    _params = _cahParams;
+    oracleRelayer = _oracleRelayer;
   }
 
   // --- Methods ---
   function deployCollateralAuctionHouse(
     bytes32 _cType,
-    ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams
+    ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahParams
   ) external isAuthorized whenEnabled returns (ICollateralAuctionHouse _collateralAuctionHouse) {
     if (!_collateralList.add(_cType)) revert CAHFactory_CAHExists();
 
-    ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _emptyCahParams;
-
     _collateralAuctionHouse = new CollateralAuctionHouseChild({
       _safeEngine: safeEngine,
-      _oracleRelayer: address(0), // read from factory
       _liquidationEngine: address(0), // read from factory
-      _cType: _cType, 
-      _cahParams: _emptyCahParams, // read from factory
-      _cahCParams: _cahCParams
+      _oracleRelayer: address(0), // read from factory
+      _cType: _cType,
+      _cahParams: _cahParams
       });
 
     collateralAuctionHouses[_cType] = address(_collateralAuctionHouse);
@@ -117,22 +94,17 @@ contract CollateralAuctionHouseFactory is Authorizable, Disableable, Modifiable,
 
   // --- Administration ---
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
-    uint256 _uint256 = _data.toUint256();
     address _address = _data.toAddress();
 
     // Registry
-    if (_param == 'oracleRelayer') oracleRelayer = _address;
-    else if (_param == 'liquidationEngine') _setLiquidationEngine(_address);
-    // SystemCoin Params
-    else if (_param == 'lowerSystemCoinDeviation') _params.lowerSystemCoinDeviation = _uint256;
-    else if (_param == 'upperSystemCoinDeviation') _params.upperSystemCoinDeviation = _uint256;
-    else if (_param == 'minSystemCoinDeviation') _params.minSystemCoinDeviation = _uint256;
+    if (_param == 'liquidationEngine') _setLiquidationEngine(_address);
+    else if (_param == 'oracleRelayer') oracleRelayer = _address;
     else revert UnrecognizedParam();
   }
 
   function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override {
     if (!_collateralList.contains(_cType)) revert UnrecognizedCType();
-    IModifiable(collateralAuctionHouses[_cType]).modifyParameters(_cType, _param, _data);
+    IModifiable(collateralAuctionHouses[_cType]).modifyParameters(_param, _data);
   }
 
   function _setLiquidationEngine(address _newLiquidationEngine) internal {
@@ -142,12 +114,7 @@ contract CollateralAuctionHouseFactory is Authorizable, Disableable, Modifiable,
   }
 
   function _validateParameters() internal view override {
-    // SystemCoin Auction House
-    _params.lowerSystemCoinDeviation.assertLtEq(WAD);
-    _params.upperSystemCoinDeviation.assertLtEq(WAD);
-
-    // Liquidation Engine
-    oracleRelayer.assertNonNull();
     liquidationEngine.assertNonNull();
+    oracleRelayer.assertNonNull();
   }
 }

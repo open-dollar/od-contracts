@@ -21,12 +21,12 @@ contract DeviatedOracle is IBaseOracle {
 
   function getResultWithValidity() external view returns (uint256 _price, bool _validity) {
     _validity = true;
-    _price = oracleRelayer.lastRedemptionPrice();
+    _price = oracleRelayer.calcRedemptionPrice();
     _price = (_price / 1e9).wmul(deviation);
   }
 
   function read() external view returns (uint256 _price) {
-    _price = oracleRelayer.lastRedemptionPrice();
+    _price = oracleRelayer.calcRedemptionPrice();
     _price = (_price / 1e9).wmul(deviation);
   }
 }

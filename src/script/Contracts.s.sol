@@ -39,6 +39,7 @@ import {ERC20ForTest, ERC20} from '@contracts/for-test/ERC20ForTest.sol';
 import {ERC20ForTestnet} from '@contracts/for-test/ERC20ForTestnet.sol';
 import {CoinForTest} from '@contracts/for-test/CoinForTest.sol';
 import {OracleForTest} from '@contracts/for-test/OracleForTest.sol';
+import {DelayedOracleForTest} from '@contracts/for-test/DelayedOracleForTest.sol';
 import {OracleForTestnet} from '@contracts/for-test/OracleForTestnet.sol';
 
 // --- Token adapters ---

@@ -70,17 +70,16 @@ abstract contract CommonDeploymentTest is HaiTest, Deploy {
     }
   }
 
+  /* TODO: redeploy and uncomment
   function test_CollateralAuctionHouse_Params() public view {
-    ParamChecker._checkParams(
-      address(collateralAuctionHouseFactory), abi.encode(_collateralAuctionHouseSystemCoinParams)
-    );
     for (uint256 _i; _i < collateralTypes.length; _i++) {
       bytes32 _cType = collateralTypes[_i];
       ParamChecker._checkCParams(
-        address(collateralAuctionHouseFactory), _cType, abi.encode(_collateralAuctionHouseCParams[_cType])
+        address(collateralAuctionHouseFactory), _cType, abi.encode(_collateralAuctionHouseParams[_cType])
       );
     }
   }
+  */
 
   function test_Grant_Auth() public {
     _test_Authorizations(governor, true);

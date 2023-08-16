@@ -45,12 +45,6 @@ abstract contract GoerliParams is Contracts, Params {
       recyclingPercentage: 0 // 100% is burned
     });
 
-    _collateralAuctionHouseSystemCoinParams = ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams({
-      lowerSystemCoinDeviation: WAD, // 0% deviation
-      upperSystemCoinDeviation: WAD, // 0% deviation
-      minSystemCoinDeviation: WAD // 0% deviation
-    });
-
     _liquidationEngineParams = ILiquidationEngine.LiquidationEngineParams({
       onAuctionSystemCoinLimit: 500_000 * RAD // 500k COINs
     });
@@ -130,13 +124,11 @@ abstract contract GoerliParams is Contracts, Params {
         liquidationQuantity: 1000 * RAD // 1000 COINs
       });
 
-      _collateralAuctionHouseCParams[_cType] = ICollateralAuctionHouse.CollateralAuctionHouseParams({
+      _collateralAuctionHouseParams[_cType] = ICollateralAuctionHouse.CollateralAuctionHouseParams({
         minimumBid: WAD, // 1 COINs
         minDiscount: WAD, // no discount
         maxDiscount: 0.9e18, // -10%
-        perSecondDiscountUpdateRate: MINUS_0_5_PERCENT_PER_HOUR, // RAY
-        lowerCollateralDeviation: 0.99e18, // -1%
-        upperCollateralDeviation: 0.99e18 // +1%
+        perSecondDiscountUpdateRate: MINUS_0_5_PERCENT_PER_HOUR // RAY
       });
     }
 
@@ -147,6 +139,6 @@ abstract contract GoerliParams is Contracts, Params {
     _safeEngineCParams[WETH].debtCeiling = 100_000_000 * RAD; // 100M COINs
 
     _liquidationEngineCParams[OP].liquidationPenalty = 1.2e18; // 20%
-    _collateralAuctionHouseCParams[OP].maxDiscount = 0.5e18; // -50%
+    _collateralAuctionHouseParams[OP].maxDiscount = 0.5e18; // -50%
   }
 }

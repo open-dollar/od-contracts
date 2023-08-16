@@ -12,6 +12,7 @@ import {
   ERC20ForTestnet,
   IERC20Metadata,
   OracleForTest,
+  DelayedOracleForTest,
   IBaseOracle,
   ISAFEEngine
 } from '@script/Contracts.s.sol';
@@ -39,16 +40,16 @@ contract DeployForTest is TestParams, Deploy {
     WETH9 weth = WETH9(payable(0x4200000000000000000000000000000000000006));
 
     systemCoinOracle = new OracleForTest(HAI_INITIAL_PRICE); // 1 HAI = 1 USD
-    delayedOracle[ETH_A] = new OracleForTest(TEST_ETH_PRICE); // 1 ETH = 2000 USD
-    delayedOracle[TKN] = new OracleForTest(TEST_TKN_PRICE); // 1 TKN = 1 USD
+    delayedOracle[ETH_A] = new DelayedOracleForTest(TEST_ETH_PRICE, address(0)); // 1 ETH = 2000 USD
+    delayedOracle[TKN] = new DelayedOracleForTest(TEST_TKN_PRICE, address(0)); // 1 TKN = 1 USD
 
     collateral[ETH_A] = IERC20Metadata(address(weth));
     collateral[TKN] = new ERC20ForTest();
 
-    delayedOracle['TKN-A'] = new OracleForTest(COLLATERAL_PRICE);
-    delayedOracle['TKN-B'] = new OracleForTest(COLLATERAL_PRICE);
-    delayedOracle['TKN-C'] = new OracleForTest(COLLATERAL_PRICE);
-    delayedOracle['TKN-8D'] = new OracleForTest(COLLATERAL_PRICE);
+    delayedOracle['TKN-A'] = new DelayedOracleForTest(COLLATERAL_PRICE, address(0));
+    delayedOracle['TKN-B'] = new DelayedOracleForTest(COLLATERAL_PRICE, address(0));
+    delayedOracle['TKN-C'] = new DelayedOracleForTest(COLLATERAL_PRICE, address(0));
+    delayedOracle['TKN-8D'] = new DelayedOracleForTest(COLLATERAL_PRICE, address(0));
 
     collateral['TKN-A'] = new ERC20ForTest();
     collateral['TKN-B'] = new ERC20ForTest();

@@ -75,8 +75,7 @@ abstract contract Params {
   ISurplusAuctionHouse.SurplusAuctionHouseParams _surplusAuctionHouseParams;
   ILiquidationEngine.LiquidationEngineParams _liquidationEngineParams;
   mapping(bytes32 => ILiquidationEngine.LiquidationEngineCollateralParams) _liquidationEngineCParams;
-  ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams _collateralAuctionHouseSystemCoinParams;
-  mapping(bytes32 => ICollateralAuctionHouse.CollateralAuctionHouseParams) _collateralAuctionHouseCParams;
+  mapping(bytes32 => ICollateralAuctionHouse.CollateralAuctionHouseParams) _collateralAuctionHouseParams;
 
   IStabilityFeeTreasury.StabilityFeeTreasuryParams _stabilityFeeTreasuryParams;
   ITaxCollector.TaxCollectorParams _taxCollectorParams;

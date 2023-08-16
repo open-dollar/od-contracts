@@ -15,15 +15,14 @@ abstract contract Common is Contracts, Params {
 
     if (address(collateralAuctionHouseFactory) != address(0)) {
       collateralAuctionHouse[ETH_A] =
-        collateralAuctionHouseFactory.deployCollateralAuctionHouse(ETH_A, _collateralAuctionHouseCParams[ETH_A]);
+        collateralAuctionHouseFactory.deployCollateralAuctionHouse(ETH_A, _collateralAuctionHouseParams[ETH_A]);
     } else {
       collateralAuctionHouse[ETH_A] = new CollateralAuctionHouse({
-          _safeEngine: address(safeEngine), 
+          _safeEngine: address(safeEngine),
+          __liquidationEngine: address(liquidationEngine),
           __oracleRelayer: address(oracleRelayer),
-          __liquidationEngine: address(liquidationEngine), 
           _cType: ETH_A,
-          _cahParams: _collateralAuctionHouseSystemCoinParams,
-          _cahCParams: _collateralAuctionHouseCParams[ETH_A]
+          _cahParams: _collateralAuctionHouseParams[ETH_A]
           });
     }
 
@@ -46,7 +45,7 @@ abstract contract Common is Contracts, Params {
     }
 
     collateralAuctionHouse[_cType] =
-      collateralAuctionHouseFactory.deployCollateralAuctionHouse(_cType, _collateralAuctionHouseCParams[_cType]);
+      collateralAuctionHouseFactory.deployCollateralAuctionHouse(_cType, _collateralAuctionHouseParams[_cType]);
   }
 
   function _revokeAllTo(address _governor) internal {
@@ -183,7 +182,7 @@ abstract contract Common is Contracts, Params {
     liquidationEngine = new LiquidationEngine(address(safeEngine), address(accountingEngine), _liquidationEngineParams);
 
     collateralAuctionHouseFactory =
-    new CollateralAuctionHouseFactory(address(safeEngine), address(oracleRelayer), address(liquidationEngine), _collateralAuctionHouseSystemCoinParams);
+      new CollateralAuctionHouseFactory(address(safeEngine), address(liquidationEngine), address(oracleRelayer));
 
     // deploy Token adapters
     coinJoin = new CoinJoin(address(safeEngine), address(systemCoin));

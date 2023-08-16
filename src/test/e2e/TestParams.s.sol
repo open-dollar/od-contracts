@@ -48,12 +48,6 @@ abstract contract TestParams is Contracts, Params {
       recyclingPercentage: 0.5e18 // 50% is burned
     });
 
-    _collateralAuctionHouseSystemCoinParams = ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams({
-      lowerSystemCoinDeviation: WAD, // 0% deviation
-      upperSystemCoinDeviation: WAD, // 0% deviation
-      minSystemCoinDeviation: 0.999e18 // 0.1% deviation
-    });
-
     _liquidationEngineParams = ILiquidationEngine.LiquidationEngineParams({
       onAuctionSystemCoinLimit: 10_000 * RAD // 10_000 COINs
     });
@@ -126,13 +120,11 @@ abstract contract TestParams is Contracts, Params {
         liquidationQuantity: 100_000e45 // RAD
       });
 
-      _collateralAuctionHouseCParams[_cType] = ICollateralAuctionHouse.CollateralAuctionHouseParams({
+      _collateralAuctionHouseParams[_cType] = ICollateralAuctionHouse.CollateralAuctionHouseParams({
         minimumBid: 0, // no min
         minDiscount: WAD, // no discount
         maxDiscount: 0.9e18, // -10%
-        perSecondDiscountUpdateRate: MINUS_0_5_PERCENT_PER_HOUR, // RAY
-        lowerCollateralDeviation: 0.99e18, // -1%
-        upperCollateralDeviation: 0.99e18 // 1%
+        perSecondDiscountUpdateRate: MINUS_0_5_PERCENT_PER_HOUR // RAY
       });
     }
 
