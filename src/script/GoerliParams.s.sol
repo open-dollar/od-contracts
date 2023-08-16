@@ -42,7 +42,7 @@ abstract contract GoerliParams is Contracts, Params {
       bidDuration: 900,
       totalAuctionLength: 1800,
       bidReceiver: governor,
-      recyclingPercentage: 0 // 100% is burned
+      recyclingPercentage: 50 // 50% of ODG earned from surplus auction is burned
     });
 
     _liquidationEngineParams = ILiquidationEngine.LiquidationEngineParams({
@@ -120,7 +120,7 @@ abstract contract GoerliParams is Contracts, Params {
 
       _liquidationEngineCParams[_cType] = ILiquidationEngine.LiquidationEngineCollateralParams({
         collateralAuctionHouse: address(collateralAuctionHouse[_cType]),
-        liquidationPenalty: 1.1e18, // 10%
+        liquidationPenalty: 1.15e18, // 15%
         liquidationQuantity: 1000 * RAD // 1000 COINs
       });
 
