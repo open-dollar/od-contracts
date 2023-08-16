@@ -17,7 +17,7 @@ abstract contract GoerliParams is Contracts, Params {
     });
 
     _accountingEngineParams = IAccountingEngine.AccountingEngineParams({
-      surplusIsTransferred: 0, // surplus is auctioned
+      surplusIsTransferred: 50, // 100% - surplusIsTransferred 50% surplus is auctioned. The rest is sent to governor
       surplusDelay: 1800,
       popDebtDelay: 1800,
       disableCooldown: 3 days,
@@ -39,7 +39,7 @@ abstract contract GoerliParams is Contracts, Params {
       bidDuration: 900,
       totalAuctionLength: 1800,
       bidReceiver: governor,
-      recyclingPercentage: 0 // 100% is burned
+      recyclingPercentage: 50 // 50% of ODG is burned, the rest is sent to the governor param address
     });
 
     _collateralAuctionHouseSystemCoinParams = ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams({
