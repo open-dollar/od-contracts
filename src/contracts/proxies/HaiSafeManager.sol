@@ -23,6 +23,7 @@ contract HaiSafeManager {
 
   // --- Registry ---
   address public safeEngine;
+  address public immutable governor;
 
   // --- ERC721 ---
   IVault721 public vault721;
@@ -69,6 +70,8 @@ contract HaiSafeManager {
   constructor(address _safeEngine, address _vault721) {
     safeEngine = _safeEngine.assertNonNull();
     vault721 = IVault721(_vault721);
+    vault721.initialize();
+    governor = vault721.governor();
   }
 
   // --- Getters ---
@@ -250,5 +253,11 @@ contract HaiSafeManager {
     SAFEData memory _sData = _safeData[_safe];
     ILiquidationEngine(_liquidationEngine).protectSAFE(_sData.collateralType, _sData.safeHandler, _saviour);
     emit ProtectSAFE(msg.sender, _safe, _liquidationEngine, _saviour);
+  }
+
+  // update Vault721 address
+  function updateVault721(address _vault721) external {
+    require(msg.sender == governor, 'SafeMngr: Only gov');
+    vault721 = IVault721(_vault721);
   }
 }
