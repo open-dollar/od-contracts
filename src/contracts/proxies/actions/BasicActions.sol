@@ -2,8 +2,7 @@
 pragma solidity 0.8.19;
 
 import {ODSafeManager} from '@contracts/proxies/ODSafeManager.sol';
-import {HaiProxyRegistry} from '@contracts/proxies/HaiProxyRegistry.sol';
-import {HaiProxy} from '@contracts/proxies/HaiProxy.sol';
+import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ICoinJoin} from '@interfaces/utils/ICoinJoin.sol';

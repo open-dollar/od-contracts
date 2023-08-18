@@ -39,9 +39,8 @@ contract Deployment is TestContracts, Script {
   address public constant USER2 = 0x37c5B029f9c3691B3d47cb024f84E5E257aEb0BB;
 
   function setUp() public {
-    proxyFactory = HaiProxyFactory(address(0));
-    proxyRegistry = HaiProxyRegistry(address(0));
-    safeManager = HaiSafeManager(address(0));
+    safeManager = ODSafeManager(address(0));
+    vault721 = Vault721(address(0));
     basicActions = BasicActions(address(0));
     debtBidActions = DebtBidActions(address(0));
     surplusBidActions = SurplusBidActions(address(0));

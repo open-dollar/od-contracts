@@ -13,7 +13,7 @@ contract TestScripts is Deployment {
    * will not be saved in the proxyRegistry mapping
    */
   function deploy() public returns (address payable) {
-    return proxyFactory.build();
+    return vault721.build();
   }
 
   /**
@@ -22,8 +22,14 @@ contract TestScripts is Deployment {
    * use the `deployProxy` script to bypass the ProxyRegistry
    */
   function deployOrFind(address owner) public returns (address payable) {
-    ODProxy proxy = vault721.getProxy(owner);
-    if (proxy == ODProxy(payable(address(0))) || proxy.owner() != owner) {
+    // ODProxy proxy = vault721.getProxy(owner);
+    // if (proxy == ODProxy(payable(address(0))) || proxy.owner() != owner) {
+    //   return vault721.build(owner);
+    // } else {
+    //   return payable(address(proxy));
+    // }
+    address proxy = vault721.getProxy(owner);
+    if (proxy == address(0)) {
       return vault721.build(owner);
     } else {
       return payable(address(proxy));

@@ -303,7 +303,7 @@ abstract contract Common is Contracts, Params {
 
   function deployProxyContracts(address _safeEngine) public updateParams {
     vault721 = new Vault721(0x37c5B029f9c3691B3d47cb024f84E5E257aEb0BB);
-    safeManager = new HaiSafeManager(_safeEngine, address(vault721));
+    safeManager = new ODSafeManager(_safeEngine, address(vault721));
     _deployProxyActions();
   }
 
