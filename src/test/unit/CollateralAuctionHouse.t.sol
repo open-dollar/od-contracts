@@ -146,10 +146,6 @@ contract Unit_CollateralAuctionHouse_Constants is Base {
   function test_Set_AUCTION_HOUSE_TYPE() public {
     assertEq(collateralAuctionHouse.AUCTION_HOUSE_TYPE(), bytes32('COLLATERAL'));
   }
-
-  function test_Set_SURPLUS_AUCTION_TYPE() public {
-    assertEq(collateralAuctionHouse.AUCTION_TYPE(), bytes32('INCREASING_DISCOUNT'));
-  }
 }
 
 contract Unit_CollateralAuctionHouse_Constructor is Base {
@@ -268,7 +264,13 @@ contract Unit_CollateralAuctionHouse_Constructor is Base {
 }
 
 contract Unit_CollateralAuctionHouse_StartAuction is Base {
-  event StartAuction(uint256 indexed _id, uint256 _blockTimestamp, uint256 _amountToSell, uint256 _amountToRaise);
+  event StartAuction(
+    uint256 indexed _id,
+    address indexed _auctioneer,
+    uint256 _blockTimestamp,
+    uint256 _amountToSell,
+    uint256 _amountToRaise
+  );
 
   modifier happyPath(CollateralAuction memory _auction, uint256 _auctionsStarted) {
     vm.startPrank(authorizedAccount);
@@ -394,7 +396,9 @@ contract Unit_CollateralAuctionHouse_StartAuction is Base {
     uint256 _auctionsStarted
   ) public happyPath(_auction, _auctionsStarted) {
     vm.expectEmit();
-    emit StartAuction(_auctionsStarted + 1, block.timestamp, _auction.amountToSell, _auction.amountToRaise);
+    emit StartAuction(
+      _auctionsStarted + 1, authorizedAccount, block.timestamp, _auction.amountToSell, _auction.amountToRaise
+    );
 
     collateralAuctionHouse.startAuction(
       _auction.forgoneCollateralReceiver, _auction.auctionIncomeRecipient, _auction.amountToRaise, _auction.amountToSell

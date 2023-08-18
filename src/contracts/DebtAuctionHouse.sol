@@ -98,6 +98,7 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
 
     emit StartAuction({
       _id: _id,
+      _auctioneer: msg.sender,
       _blockTimestamp: block.timestamp,
       _amountToSell: _amountToSell,
       _amountToRaise: _initialBid,

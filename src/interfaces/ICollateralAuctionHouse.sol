@@ -10,7 +10,13 @@ import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
 interface ICollateralAuctionHouse is IAuthorizable, IModifiable {
   // --- Events ---
-  event StartAuction(uint256 indexed _id, uint256 _blockTimestamp, uint256 _amountToSell, uint256 _amountToRaise);
+  event StartAuction(
+    uint256 indexed _id,
+    address indexed _auctioneer,
+    uint256 _blockTimestamp,
+    uint256 _amountToSell,
+    uint256 _amountToRaise
+  );
 
   // NOTE: Doesn't have RestartAuction event
 
@@ -61,6 +67,9 @@ interface ICollateralAuctionHouse is IAuthorizable, IModifiable {
     // Who receives the coins raised by the auction (usually the AccountingEngine)
     address auctionIncomeRecipient;
   }
+
+  // solhint-disable-next-line func-name-mixedcase
+  function AUCTION_HOUSE_TYPE() external view returns (bytes32 _auctionHouseType);
 
   function auctions(uint256 _auctionId) external view returns (Auction memory _auction);
   // solhint-disable-next-line private-vars-leading-underscore

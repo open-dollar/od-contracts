@@ -22,7 +22,6 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
   using SafeERC20 for IProtocolToken;
 
   bytes32 public constant AUCTION_HOUSE_TYPE = bytes32('SURPLUS');
-  bytes32 public constant SURPLUS_AUCTION_TYPE = bytes32('MIXED-STRAT');
 
   // --- Data ---
   // Data for each separate auction
@@ -97,6 +96,7 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
 
     emit StartAuction({
       _id: _id,
+      _auctioneer: msg.sender,
       _blockTimestamp: block.timestamp,
       _amountToSell: _amountToSell,
       _amountToRaise: _initialBid,

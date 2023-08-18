@@ -3,9 +3,8 @@ pragma solidity 0.8.19;
 
 import {AccountingEngineForTest, IAccountingEngine} from '@contracts/for-test/AccountingEngineForTest.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
-import {ISurplusAuctionHouse} from '@interfaces/ISurplusAuctionHouse.sol';
 import {IDebtAuctionHouse} from '@interfaces/IDebtAuctionHouse.sol';
-import {ISurplusAuctionHouse} from '@interfaces/ISurplusAuctionHouse.sol';
+import {ICommonSurplusAuctionHouse} from '@interfaces/ICommonSurplusAuctionHouse.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
@@ -100,7 +99,7 @@ abstract contract Base is HaiTest {
   function _mockSurplusStartAuction(uint256 _id, uint256 _amountToSell) internal {
     vm.mockCall(
       address(mockSurplusAuctionHouse),
-      abi.encodeWithSelector(ISurplusAuctionHouse.startAuction.selector, _amountToSell, 0),
+      abi.encodeWithSelector(ICommonSurplusAuctionHouse.startAuction.selector, _amountToSell, 0),
       abi.encode(_id)
     );
   }
@@ -828,7 +827,7 @@ contract Unit_AccountingEngine_AuctionSurplus is Base {
 
     vm.expectCall(
       address(mockSurplusAuctionHouse),
-      abi.encodeWithSelector(ISurplusAuctionHouse.startAuction.selector, _scenario.surplusAmount, 0)
+      abi.encodeWithSelector(ICommonSurplusAuctionHouse.startAuction.selector, _scenario.surplusAmount, 0)
     );
 
     vm.warp(block.timestamp + 1);

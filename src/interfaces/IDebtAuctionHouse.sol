@@ -13,6 +13,7 @@ interface IDebtAuctionHouse is IAuthorizable, IDisableable, IModifiable {
   // --- Events ---
   event StartAuction(
     uint256 indexed _id,
+    address indexed _auctioneer,
     uint256 _blockTimestamp,
     uint256 _amountToSell,
     uint256 _amountToRaise,

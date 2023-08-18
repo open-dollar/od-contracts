@@ -24,7 +24,6 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, ICollateralAuctionH
   using Assertions for address;
 
   bytes32 public constant AUCTION_HOUSE_TYPE = bytes32('COLLATERAL');
-  bytes32 public constant AUCTION_TYPE = bytes32('INCREASING_DISCOUNT');
 
   // --- Registry ---
   ISAFEEngine public safeEngine;
@@ -185,6 +184,7 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, ICollateralAuctionH
 
     emit StartAuction({
       _id: _id,
+      _auctioneer: msg.sender,
       _blockTimestamp: block.timestamp,
       _amountToSell: _amountToSell,
       _amountToRaise: _amountToRaise
