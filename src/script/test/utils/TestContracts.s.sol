@@ -77,12 +77,7 @@ import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 import {ODSafeManager} from '@contracts/proxies/ODSafeManager.sol';
 import {Vault721} from '@contracts/proxies/Vault721.sol';
 
-/**
- * @title  Contracts
- * @notice This contract initializes all the contracts, so that they're inherited and available throughout scripts scopes.
- * @dev    It exports all the contracts and interfaces to be inherited or modified during the scripts dev and execution.
- */
-abstract contract Contracts {
+abstract contract TestContracts {
   // --- Helpers ---
   uint256 public chainId;
   address public deployer;

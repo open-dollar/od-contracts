@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import {Ownable} from '@contracts/utils/Ownable.sol';
 
-contract HaiProxy is Ownable {
+contract ODProxy is Ownable {
   error TargetAddressRequired();
   error TargetCallFailed(bytes _response);
 

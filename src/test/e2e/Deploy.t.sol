@@ -4,8 +4,8 @@ pragma solidity 0.8.19;
 import {HaiTest} from '@test/utils/HaiTest.t.sol';
 import {Deploy, DeployMainnet, DeployGoerli} from '@script/Deploy.s.sol';
 
-import {ParamChecker, WETH, WSTETH, OP} from '@script/Params.s.sol';
-import {OP_OPTIMISM} from '@script/Registry.s.sol';
+import {ParamChecker, WETH, WSTETH, FTRG} from '@script/Params.s.sol';
+import {ARB_GOERLI_GOV_TOKEN} from '@script/Registry.s.sol';
 import {ERC20Votes} from '@openzeppelin/token/ERC20/extensions/ERC20Votes.sol';
 
 import {Contracts} from '@script/Contracts.s.sol';
@@ -131,8 +131,13 @@ contract E2EDeploymentMainnetTest is DeployMainnet, CommonDeploymentTest {
   uint256 FORK_BLOCK = 99_000_000;
 
   function setUp() public override {
-    vm.createSelectFork(vm.rpcUrl('mainnet'), FORK_BLOCK);
-    governor = address(69);
+    // vm.createSelectFork(vm.rpcUrl('mainnet'), FORK_BLOCK);
+    uint256 forkId = vm.createFork(vm.rpcUrl('mainnet'));
+    vm.selectFork(forkId);
+
+    // governor = address(69);
+    governor = address(0x37c5B029f9c3691B3d47cb024f84E5E257aEb0BB);
+
     super.setUp();
     run();
   }
@@ -146,8 +151,13 @@ contract E2EDeploymentGoerliTest is DeployGoerli, CommonDeploymentTest {
   uint256 FORK_BLOCK = 10_000_000;
 
   function setUp() public override {
-    vm.createSelectFork(vm.rpcUrl('goerli'), FORK_BLOCK);
-    governor = address(69);
+    // vm.createSelectFork(vm.rpcUrl('goerli'), FORK_BLOCK);
+    uint256 forkId = vm.createFork(vm.rpcUrl('goerli'));
+    vm.selectFork(forkId);
+
+    // governor = address(69);
+    governor = address(0x37c5B029f9c3691B3d47cb024f84E5E257aEb0BB);
+
     super.setUp();
     run();
   }
@@ -159,11 +169,14 @@ contract E2EDeploymentGoerliTest is DeployGoerli, CommonDeploymentTest {
 
 contract GoerliDeploymentTest is GoerliDeployment, CommonDeploymentTest {
   function setUp() public {
-    vm.createSelectFork(vm.rpcUrl('goerli'), GOERLI_DEPLOYMENT_BLOCK);
+    // vm.createSelectFork(vm.rpcUrl('goerli'), GOERLI_DEPLOYMENT_BLOCK);
+    uint256 forkId = vm.createFork(vm.rpcUrl('goerli'));
+    vm.selectFork(forkId);
+
     _getEnvironmentParams();
   }
 
   function test_Delegated_OP() public {
-    assertEq(ERC20Votes(OP_OPTIMISM).delegates(address(collateralJoin[OP])), governor);
+    assertEq(ERC20Votes(ARB_GOERLI_GOV_TOKEN).delegates(address(collateralJoin[FTRG])), governor);
   }
 }

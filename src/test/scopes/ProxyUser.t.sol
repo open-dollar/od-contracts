@@ -18,13 +18,13 @@ import {
   CollateralBidActions,
   RewardedActions,
   CommonActions,
-  HaiProxy
+  ODProxy
 } from '@script/Contracts.s.sol';
 import {IWeth} from '@interfaces/external/IWeth.sol';
 import {BaseUser} from '@test/scopes/BaseUser.t.sol';
 
 abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
-  mapping(address => HaiProxy) proxy;
+  mapping(address => ODProxy) proxy;
   mapping(address => mapping(bytes32 => uint256)) safe;
   mapping(address => mapping(bytes32 => address)) safeHandler;
 
@@ -48,7 +48,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
   }
 
   function _lockETH(address _user, uint256 _collatAmount) internal override {
-    HaiProxy _proxy = _getProxy(_user);
+    ODProxy _proxy = _getProxy(_user);
     (uint256 _safeId,) = _getSafe(_user, ETH_A);
 
     vm.startPrank(_user);
@@ -70,7 +70,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
 
   function _joinTKN(address _user, address _collateralJoin, uint256 _amount) internal override {
     // NOTE: proxy implementation only needs approval for operating with the collateral
-    HaiProxy _proxy = _getProxy(_user);
+    ODProxy _proxy = _getProxy(_user);
 
     IERC20Metadata _collateral = ICollateralJoin(_collateralJoin).collateral();
     uint256 _decimals = _collateral.decimals();
@@ -87,7 +87,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
   }
 
   function _joinCoins(address _user, uint256 _amount) internal override {
-    HaiProxy _proxy = _getProxy(_user);
+    ODProxy _proxy = _getProxy(_user);
 
     vm.startPrank(_user);
     systemCoin.approve(address(_proxy), _amount);
@@ -114,7 +114,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     int256 _collatAmount,
     int256 _deltaDebt
   ) internal override {
-    HaiProxy _proxy = _getProxy(_user);
+    ODProxy _proxy = _getProxy(_user);
     bytes32 _cType = ICollateralJoin(_collateralJoin).collateralType();
     (uint256 _safeId,) = _getSafe(_user, _cType);
 
@@ -142,7 +142,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     uint256 _deltaCollat,
     uint256 _deltaDebt
   ) internal override {
-    HaiProxy _proxy = _getProxy(_user);
+    ODProxy _proxy = _getProxy(_user);
     bytes32 _cType = ICollateralJoin(_collateralJoin).collateralType();
     (uint256 _safeId,) = _getSafe(_user, _cType);
 
@@ -164,15 +164,15 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     vm.stopPrank();
   }
 
-  function _getProxy(address _user) internal returns (HaiProxy) {
-    if (proxy[_user] == HaiProxy(address(0))) {
-      proxy[_user] = HaiProxy(proxyRegistry.build());
+  function _getProxy(address _user) internal returns (ODProxy) {
+    if (proxy[_user] == ODProxy(address(0))) {
+      proxy[_user] = ODProxy(vault721.build());
     }
     return proxy[_user];
   }
 
   function _getSafe(address _user, bytes32 _cType) internal returns (uint256 _safeId, address _safeHandler) {
-    HaiProxy _proxy = _getProxy(_user);
+    ODProxy _proxy = _getProxy(_user);
 
     if (safe[_user][_cType] == 0) {
       bytes memory _callData =
@@ -197,7 +197,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     uint256 _soldAmount,
     uint256 _amountToBid
   ) internal override {
-    HaiProxy _proxy = _getProxy(_user);
+    ODProxy _proxy = _getProxy(_user);
     _joinCoins(_user, _amountToBid);
 
     vm.startPrank(_user);
@@ -222,7 +222,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     uint256 _amountToBuy,
     uint256 _amountToBid
   ) internal override {
-    HaiProxy _proxy = _getProxy(_user);
+    ODProxy _proxy = _getProxy(_user);
 
     vm.startPrank(_user);
     systemCoin.approve(address(_proxy), _amountToBid);
@@ -235,7 +235,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
   }
 
   function _settleDebtAuction(address _user, uint256 _auctionId) internal override {
-    HaiProxy _proxy = _getProxy(_user);
+    ODProxy _proxy = _getProxy(_user);
 
     bytes memory _callData =
       abi.encodeWithSelector(DebtBidActions.settleAuction.selector, coinJoin, debtAuctionHouse, _auctionId);
@@ -245,7 +245,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
   }
 
   function _increaseBidSize(address _user, uint256 _auctionId, uint256 _bidAmount) internal override {
-    HaiProxy _proxy = _getProxy(_user);
+    ODProxy _proxy = _getProxy(_user);
 
     vm.startPrank(_user);
     protocolToken.approve(address(_proxy), _bidAmount);
@@ -259,7 +259,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
   }
 
   function _settleAuction(address _user, uint256 _auctionId) internal override {
-    HaiProxy _proxy = _getProxy(_user);
+    ODProxy _proxy = _getProxy(_user);
 
     bytes memory _callData = abi.encodeWithSelector(
       SurplusBidActions.settleAuction.selector, address(coinJoin), address(surplusAuctionHouse), _auctionId
@@ -270,7 +270,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
   }
 
   function _collectSystemCoins(address _user) internal override {
-    HaiProxy _proxy = _getProxy(_user);
+    ODProxy _proxy = _getProxy(_user);
 
     uint256 _coinsToExit = safeEngine.coinBalance(address(_proxy));
 
@@ -282,7 +282,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
   }
 
   function _workPopDebtFromQueue(address _user, uint256 _debtBlockTimestamp) internal override {
-    HaiProxy _proxy = _getProxy(_user);
+    ODProxy _proxy = _getProxy(_user);
 
     bytes memory _callData = abi.encodeWithSelector(
       RewardedActions.popDebtFromQueue.selector, address(accountingJob), address(coinJoin), _debtBlockTimestamp
@@ -295,7 +295,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
   }
 
   function _workAuctionDebt(address _user) internal override {
-    HaiProxy _proxy = _getProxy(_user);
+    ODProxy _proxy = _getProxy(_user);
 
     bytes memory _callData =
       abi.encodeWithSelector(RewardedActions.startDebtAuction.selector, address(accountingJob), address(coinJoin));
@@ -307,7 +307,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
   }
 
   function _workAuctionSurplus(address _user) internal override {
-    HaiProxy _proxy = _getProxy(_user);
+    ODProxy _proxy = _getProxy(_user);
 
     bytes memory _callData =
       abi.encodeWithSelector(RewardedActions.startSurplusAuction.selector, address(accountingJob), address(coinJoin));
@@ -319,7 +319,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
   }
 
   function _workTransferExtraSurplus(address _user) internal override {
-    HaiProxy _proxy = _getProxy(_user);
+    ODProxy _proxy = _getProxy(_user);
 
     bytes memory _callData =
       abi.encodeWithSelector(RewardedActions.transferExtraSurplus.selector, address(accountingJob), address(coinJoin));
@@ -331,7 +331,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
   }
 
   function _workLiquidation(address _user, bytes32 _cType, address _safe) internal override {
-    HaiProxy _proxy = _getProxy(_user);
+    ODProxy _proxy = _getProxy(_user);
 
     bytes memory _callData = abi.encodeWithSelector(
       RewardedActions.liquidateSAFE.selector, address(liquidationJob), address(coinJoin), _cType, _safe
@@ -344,7 +344,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
   }
 
   function _workUpdateCollateralPrice(address _user, bytes32 _cType) internal override {
-    HaiProxy _proxy = _getProxy(_user);
+    ODProxy _proxy = _getProxy(_user);
 
     bytes memory _callData = abi.encodeWithSelector(
       RewardedActions.updateCollateralPrice.selector, address(oracleJob), address(coinJoin), _cType
@@ -357,7 +357,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
   }
 
   function _workUpdateRate(address _user) internal override {
-    HaiProxy _proxy = _getProxy(_user);
+    ODProxy _proxy = _getProxy(_user);
 
     bytes memory _callData =
       abi.encodeWithSelector(RewardedActions.updateRedemptionRate.selector, address(oracleJob), address(coinJoin));
