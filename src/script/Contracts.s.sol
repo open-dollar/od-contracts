@@ -74,7 +74,7 @@ import {SurplusBidActions} from '@contracts/proxies/actions/SurplusBidActions.so
 import {CollateralBidActions} from '@contracts/proxies/actions/CollateralBidActions.sol';
 import {RewardedActions} from '@contracts/proxies/actions/RewardedActions.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
-import {HaiSafeManager} from '@contracts/proxies/HaiSafeManager.sol';
+import {ODSafeManager} from '@contracts/proxies/ODSafeManager.sol';
 import {Vault721} from '@contracts/proxies/Vault721.sol';
 
 /**
@@ -138,7 +138,7 @@ abstract contract Contracts {
   IOracleJob public oracleJob;
 
   // --- Proxy contracts ---
-  HaiSafeManager public safeManager;
+  ODSafeManager public safeManager;
   Vault721 public vault721;
 
   BasicActions public basicActions;

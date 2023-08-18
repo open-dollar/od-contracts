@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {HaiSafeManager} from '@contracts/proxies/HaiSafeManager.sol';
+import {ODSafeManager} from '@contracts/proxies/ODSafeManager.sol';
 import {HaiProxyRegistry} from '@contracts/proxies/HaiProxyRegistry.sol';
 import {HaiProxy} from '@contracts/proxies/HaiProxy.sol';
 
@@ -115,8 +115,8 @@ contract BasicActions is CommonActions {
     uint256 _safeId,
     uint256 _deltaWad
   ) internal {
-    address _safeEngine = HaiSafeManager(_manager).safeEngine();
-    HaiSafeManager.SAFEData memory _safeInfo = HaiSafeManager(_manager).safeData(_safeId);
+    address _safeEngine = ODSafeManager(_manager).safeEngine();
+    ODSafeManager.SAFEData memory _safeInfo = ODSafeManager(_manager).safeData(_safeId);
     ITaxCollector(_taxCollector).taxSingle(_safeInfo.collateralType);
 
     // Generates debt in the SAFE
@@ -146,8 +146,8 @@ contract BasicActions is CommonActions {
     uint256 _safeId,
     uint256 _deltaWad
   ) internal {
-    address _safeEngine = HaiSafeManager(_manager).safeEngine();
-    HaiSafeManager.SAFEData memory _safeInfo = HaiSafeManager(_manager).safeData(_safeId);
+    address _safeEngine = ODSafeManager(_manager).safeEngine();
+    ODSafeManager.SAFEData memory _safeInfo = ODSafeManager(_manager).safeData(_safeId);
     ITaxCollector(_taxCollector).taxSingle(_safeInfo.collateralType);
 
     // Joins COIN amount into the safeEngine
@@ -160,16 +160,16 @@ contract BasicActions is CommonActions {
   }
 
   function _openSAFE(address _manager, bytes32 _cType, address _usr) internal returns (uint256 _safeId) {
-    _safeId = HaiSafeManager(_manager).openSAFE(_cType, _usr);
+    _safeId = ODSafeManager(_manager).openSAFE(_cType, _usr);
   }
 
   function _transferCollateral(address _manager, uint256 _safeId, address _dst, uint256 _deltaWad) internal {
     if (_deltaWad == 0) return;
-    HaiSafeManager(_manager).transferCollateral(_safeId, _dst, _deltaWad);
+    ODSafeManager(_manager).transferCollateral(_safeId, _dst, _deltaWad);
   }
 
   function _transferInternalCoins(address _manager, uint256 _safeId, address _dst, uint256 _rad) internal {
-    HaiSafeManager(_manager).transferInternalCoins(_safeId, _dst, _rad);
+    ODSafeManager(_manager).transferInternalCoins(_safeId, _dst, _rad);
   }
 
   function _modifySAFECollateralization(
@@ -178,7 +178,7 @@ contract BasicActions is CommonActions {
     int256 _deltaCollateral,
     int256 _deltaDebt
   ) internal {
-    HaiSafeManager(_manager).modifySAFECollateralization(_safeId, _deltaCollateral, _deltaDebt);
+    ODSafeManager(_manager).modifySAFECollateralization(_safeId, _deltaCollateral, _deltaDebt);
   }
 
   /**
@@ -193,8 +193,8 @@ contract BasicActions is CommonActions {
     uint256 _collateralAmount,
     uint256 _deltaWad
   ) internal {
-    address _safeEngine = HaiSafeManager(_manager).safeEngine();
-    HaiSafeManager.SAFEData memory _safeInfo = HaiSafeManager(_manager).safeData(_safeId);
+    address _safeEngine = ODSafeManager(_manager).safeEngine();
+    ODSafeManager.SAFEData memory _safeInfo = ODSafeManager(_manager).safeData(_safeId);
     ITaxCollector(_taxCollector).taxSingle(_safeInfo.collateralType);
 
     // Takes token amount from user's wallet and joins into the safeEngine
@@ -316,8 +316,8 @@ contract BasicActions is CommonActions {
     address _coinJoin,
     uint256 _safeId
   ) external delegateCall {
-    address _safeEngine = HaiSafeManager(_manager).safeEngine();
-    HaiSafeManager.SAFEData memory _safeInfo = HaiSafeManager(_manager).safeData(_safeId);
+    address _safeEngine = ODSafeManager(_manager).safeEngine();
+    ODSafeManager.SAFEData memory _safeInfo = ODSafeManager(_manager).safeData(_safeId);
     ITaxCollector(_taxCollector).taxSingle(_safeInfo.collateralType);
 
     ISAFEEngine.SAFE memory _safeData = ISAFEEngine(_safeEngine).safes(_safeInfo.collateralType, _safeInfo.safeHandler);
@@ -379,8 +379,8 @@ contract BasicActions is CommonActions {
     uint256 _collateralWad,
     uint256 _debtWad
   ) external delegateCall {
-    address _safeEngine = HaiSafeManager(_manager).safeEngine();
-    HaiSafeManager.SAFEData memory _safeInfo = HaiSafeManager(_manager).safeData(_safeId);
+    address _safeEngine = ODSafeManager(_manager).safeEngine();
+    ODSafeManager.SAFEData memory _safeInfo = ODSafeManager(_manager).safeData(_safeId);
     ITaxCollector(_taxCollector).taxSingle(_safeInfo.collateralType);
 
     // Joins COIN amount into the safeEngine
@@ -406,8 +406,8 @@ contract BasicActions is CommonActions {
     uint256 _safeId,
     uint256 _collateralWad
   ) external delegateCall {
-    address _safeEngine = HaiSafeManager(_manager).safeEngine();
-    HaiSafeManager.SAFEData memory _safeInfo = HaiSafeManager(_manager).safeData(_safeId);
+    address _safeEngine = ODSafeManager(_manager).safeEngine();
+    ODSafeManager.SAFEData memory _safeInfo = ODSafeManager(_manager).safeData(_safeId);
     ITaxCollector(_taxCollector).taxSingle(_safeInfo.collateralType);
 
     ISAFEEngine.SAFE memory _safeData = ISAFEEngine(_safeEngine).safes(_safeInfo.collateralType, _safeInfo.safeHandler);
