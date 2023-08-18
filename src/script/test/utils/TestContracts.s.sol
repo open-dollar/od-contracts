@@ -72,11 +72,10 @@ import {BasicActions, CommonActions} from '@contracts/proxies/actions/BasicActio
 import {DebtBidActions} from '@contracts/proxies/actions/DebtBidActions.sol';
 import {SurplusBidActions} from '@contracts/proxies/actions/SurplusBidActions.sol';
 import {CollateralBidActions} from '@contracts/proxies/actions/CollateralBidActions.sol';
-// import {RewardedActions} from '@contracts/proxies/actions/RewardedActions.sol';
-import {HaiProxy} from '@contracts/proxies/HaiProxy.sol';
-import {HaiProxyRegistry} from '@contracts/proxies/HaiProxyRegistry.sol';
-import {HaiProxyFactory} from '@contracts/proxies/HaiProxyFactory.sol';
-import {HaiSafeManager} from '@contracts/proxies/HaiSafeManager.sol';
+import {RewardedActions} from '@contracts/proxies/actions/RewardedActions.sol';
+import {ODProxy} from '@contracts/proxies/ODProxy.sol';
+import {ODSafeManager} from '@contracts/proxies/ODSafeManager.sol';
+import {Vault721} from '@contracts/proxies/Vault721.sol';
 
 abstract contract TestContracts {
   // --- Helpers ---
@@ -134,13 +133,12 @@ abstract contract TestContracts {
   IOracleJob public oracleJob;
 
   // --- Proxy contracts ---
-  HaiProxyRegistry public proxyRegistry;
-  HaiProxyFactory public proxyFactory;
-  HaiSafeManager public safeManager;
+  ODSafeManager public safeManager;
+  Vault721 public vault721;
 
   BasicActions public basicActions;
   DebtBidActions public debtBidActions;
   SurplusBidActions public surplusBidActions;
   CollateralBidActions public collateralBidActions;
-  // RewardedActions public rewardedActions;
+  RewardedActions public rewardedActions;
 }

@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import {Deployment} from '@script/test/utils/Deployment.s.sol';
-import {HaiProxy} from '@contracts/proxies/HaiProxy.sol';
+import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 
 // TODO update these scritps to work with the NFT-mods / new contracts
 
@@ -22,9 +22,9 @@ contract TestScripts is Deployment {
    * use the `deployProxy` script to bypass the ProxyRegistry
    */
   function deployOrFind(address owner) public returns (address payable) {
-    HaiProxy proxy = proxyRegistry.proxies(owner);
-    if (proxy == HaiProxy(payable(address(0))) || proxy.owner() != owner) {
-      return proxyRegistry.build(owner);
+    ODProxy proxy = vault721.getProxy(owner);
+    if (proxy == ODProxy(payable(address(0))) || proxy.owner() != owner) {
+      return vault721.build(owner);
     } else {
       return payable(address(proxy));
     }
@@ -35,7 +35,7 @@ contract TestScripts is Deployment {
    */
   function openSafe(bytes32 _cType, address _proxy) public returns (uint256 _safeId) {
     bytes memory payload = abi.encodeWithSelector(basicActions.openSAFE.selector, address(safeManager), _cType, _proxy);
-    bytes memory safeData = HaiProxy(_proxy).execute(address(basicActions), payload);
+    bytes memory safeData = ODProxy(_proxy).execute(address(basicActions), payload);
     _safeId = abi.decode(safeData, (uint256));
   }
 
@@ -60,7 +60,7 @@ contract TestScripts is Deployment {
       _collatAmount,
       _deltaWad
     );
-    HaiProxy(_proxy).execute(address(basicActions), payload);
+    ODProxy(_proxy).execute(address(basicActions), payload);
   }
 
   /**
@@ -75,7 +75,7 @@ contract TestScripts is Deployment {
       _safeId,
       _collatAmount
     );
-    HaiProxy(_proxy).execute(address(basicActions), payload);
+    ODProxy(_proxy).execute(address(basicActions), payload);
   }
 
   /**
@@ -90,6 +90,6 @@ contract TestScripts is Deployment {
       _safeId,
       _deltaWad
     );
-    HaiProxy(_proxy).execute(address(basicActions), payload);
+    ODProxy(_proxy).execute(address(basicActions), payload);
   }
 }
