@@ -93,7 +93,7 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, ICollateralAuctionH
     uint256 _amountToSell,
     uint256 _adjustedBid,
     uint256 _customDiscount
-  ) internal view virtual returns (uint256 _boughtCollateral, uint256 _readjustedBid) {
+  ) internal pure returns (uint256 _boughtCollateral, uint256 _readjustedBid) {
     // calculate the collateral price in relation to the latest system coin price and apply the discount
     uint256 _discountedPrice = _collateralPrice.rdiv(_systemCoinPrice).wmul(_customDiscount);
     // calculate the amount of collateral bought
@@ -108,7 +108,7 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, ICollateralAuctionH
     }
   }
 
-  function _getCollateralPrice() internal view virtual returns (uint256 _collateralPrice) {
+  function _getCollateralPrice() internal view returns (uint256 _collateralPrice) {
     IDelayedOracle _delayedOracle = oracleRelayer().cParams(collateralType).oracle;
     bool _hasValidValue;
     (_collateralPrice, _hasValidValue) = _delayedOracle.getResultWithValidity();
@@ -122,7 +122,7 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, ICollateralAuctionH
    * @param _id The ID of the auction to calculate the upcoming discount for
    * @return _auctionDiscount The upcoming discount that will be used in the targeted auction
    */
-  function _getAuctionDiscount(uint256 _id) internal view virtual returns (uint256 _auctionDiscount) {
+  function _getAuctionDiscount(uint256 _id) internal view returns (uint256 _auctionDiscount) {
     uint256 _auctionTimestamp = _auctions[_id].initialTimestamp;
     if (_auctionTimestamp == 0) return WAD; // auction is finished, return no discount
 
@@ -136,25 +136,17 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, ICollateralAuctionH
    * @notice Get the actual bid that will be used in an auction (taking into account the bidder input)
    * @param _id The id of the auction to calculate the adjusted bid for
    * @param _wad The initial bid submitted
-   * @return _valid Whether the bid is valid or not
    * @return _adjustedBid The adjusted bid
    */
-  function _getAdjustedBid(uint256 _id, uint256 _wad) internal view virtual returns (bool _valid, uint256 _adjustedBid) {
+  function _getAdjustedBid(uint256 _id, uint256 _wad) internal view returns (uint256 _adjustedBid) {
     Auction memory _auction = _auctions[_id];
-    if (_auction.amountToSell == 0 || _auction.amountToRaise == 0 || _wad == 0 || _wad < _params.minimumBid) {
-      return (false, _wad);
-    }
-
-    uint256 _remainingToRaise = _auction.amountToRaise;
+    if (_auction.amountToRaise == 0 || _auction.amountToSell == 0) return 0;
 
     // bound max amount offered in exchange for collateral
     _adjustedBid = _wad;
-    if (_adjustedBid * RAY > _remainingToRaise) {
-      _adjustedBid = (_remainingToRaise / RAY) + 1;
+    if (_adjustedBid * RAY > _auction.amountToRaise) {
+      _adjustedBid = (_auction.amountToRaise / RAY) + 1;
     }
-
-    _remainingToRaise = _adjustedBid * RAY > _remainingToRaise ? 0 : _auction.amountToRaise - _adjustedBid * RAY;
-    _valid = _remainingToRaise == 0 || _remainingToRaise >= RAY;
   }
 
   // --- Core Auction Logic ---
@@ -213,9 +205,8 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, ICollateralAuctionH
     uint256 _id,
     uint256 _wad
   ) external view returns (uint256 _boughtCollateral, uint256 _adjustedBid) {
-    bool _validAuctionAndBid;
-    (_validAuctionAndBid, _adjustedBid) = _getAdjustedBid(_id, _wad);
-    if (!_validAuctionAndBid) return (0, _adjustedBid);
+    _adjustedBid = _getAdjustedBid(_id, _wad);
+    if (_adjustedBid == 0) return (0, 0);
 
     // Read (but not update) redemption price
     uint256 _calcRedemptionPrice = oracleRelayer().calcRedemptionPrice();
@@ -239,47 +230,27 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, ICollateralAuctionH
    */
   function buyCollateral(uint256 _id, uint256 _wad) external returns (uint256 _boughtCollateral, uint256 _adjustedBid) {
     Auction storage _auction = _auctions[_id];
-    if (_auction.amountToSell == 0 || _auction.amountToRaise == 0) revert CAH_InexistentAuction();
     if (_wad == 0 || _wad < _params.minimumBid) revert CAH_InvalidBid();
 
-    // bound max amount offered in exchange for collateral (in case someone offers more than it's necessary)
-    _adjustedBid = _wad;
-    if (_adjustedBid * RAY > _auction.amountToRaise) {
-      _adjustedBid = _auction.amountToRaise / RAY + 1;
-    }
+    // Bound max amount offered in exchange for collateral (in case someone offers more than it's necessary)
+    _adjustedBid = _getAdjustedBid(_id, _wad);
+    if (_adjustedBid == 0) revert CAH_InexistentAuction();
 
     // Read (and update) the redemption price
     uint256 _redemptionPrice = oracleRelayer().redemptionPrice();
     if (_redemptionPrice == 0) revert CAH_InvalidRedemptionPriceProvided();
 
-    // check that the collateral Oracle doesn't return an invalid value
+    // Read and check the collateral price
     uint256 _collateralPrice = _getCollateralPrice();
     if (_collateralPrice == 0) revert CAH_CollateralOracleInvalidValue();
 
-    // get the amount of collateral bought
+    // Get and check the amount of collateral bought
     (_boughtCollateral, _adjustedBid) = _getBoughtCollateral(
       _collateralPrice, _redemptionPrice, _auction.amountToSell, _adjustedBid, _getAuctionDiscount(_id)
     );
-
-    // check that the calculated amount is greater than zero
     if (_boughtCollateral == 0) revert CAH_NullBoughtAmount();
 
-    // update the amount of collateral to sell
-    _auction.amountToSell = _auction.amountToSell - _boughtCollateral;
-
-    // update remainingToRaise in case amountToSell is zero (everything has been sold)
-    uint256 _remainingToRaise = _wad * RAY >= _auction.amountToRaise || _auction.amountToSell == 0
-      ? _auction.amountToRaise
-      : _auction.amountToRaise - (_wad * RAY);
-
-    // update leftover amount to raise in the bid struct
-    _auction.amountToRaise =
-      _adjustedBid * RAY > _auction.amountToRaise ? 0 : _auction.amountToRaise - _adjustedBid * RAY;
-
-    // check that the remaining amount to raise is either zero or higher than RAY
-    if (_auction.amountToRaise != 0 && _auction.amountToRaise < RAY) revert CAH_InvalidLeftToRaise();
-
-    // transfer the bid to the income recipient and the collateral to the bidder
+    // Transfer the bid to the income recipient and the collateral to the bidder
     safeEngine.transferInternalCoins({
       _source: msg.sender,
       _destination: _auction.auctionIncomeRecipient,
@@ -293,6 +264,52 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, ICollateralAuctionH
       _wad: _boughtCollateral
     });
 
+    if (_adjustedBid * RAY < _auction.amountToRaise && _auction.amountToSell > _boughtCollateral) {
+      // --- Partial bid ---
+      // If the bid doesn't raise the whole amount or purchase all collateral to sell:
+
+      // Update the amount of collateral to sell
+      _auction.amountToSell -= _boughtCollateral;
+
+      // Update leftover amount to raise in the bid struct
+      _auction.amountToRaise -= _adjustedBid * RAY;
+
+      // Check that the remaining amount to raise is higher than minimum bid
+      if (_auction.amountToRaise < _params.minimumBid * RAY) revert CAH_InvalidLeftToRaise();
+
+      // Remove raised amount from the liquidation engine queue
+      liquidationEngine().removeCoinsFromAuction(_adjustedBid * RAY);
+    } else {
+      // --- Full bid ---
+      // If the bid raises the whole amount left or purchases all collateral left:
+
+      // Calculate (if any) the remaining collateral to send to the forgone receiver
+      uint256 _remainingCollateral = _auction.amountToSell - _boughtCollateral;
+
+      if (_remainingCollateral > 0) {
+        // Send remaining collateral to the forgone receiver
+        safeEngine.transferCollateral({
+          _cType: collateralType,
+          _source: address(this),
+          _destination: _auction.forgoneCollateralReceiver,
+          _wad: _remainingCollateral
+        });
+      }
+
+      // Remove remaining to raise from the liquidation engine queue
+      liquidationEngine().removeCoinsFromAuction(_auction.amountToRaise);
+
+      emit SettleAuction({
+        _id: _id,
+        _blockTimestamp: block.timestamp,
+        _leftoverReceiver: _auction.forgoneCollateralReceiver,
+        _leftoverCollateral: _remainingCollateral
+      });
+
+      // Delete the auction
+      delete _auctions[_id];
+    }
+
     // Emit the buy event
     emit BuyCollateral({
       _id: _id,
@@ -301,34 +318,6 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, ICollateralAuctionH
       _raisedAmount: _adjustedBid,
       _soldAmount: _boughtCollateral
     });
-
-    // Remove coins from the liquidation buffer
-    bool _soldAll = _auction.amountToRaise == 0 || _auction.amountToSell == 0;
-    if (_soldAll) {
-      liquidationEngine().removeCoinsFromAuction(_remainingToRaise);
-    } else {
-      liquidationEngine().removeCoinsFromAuction(_adjustedBid * RAY);
-    }
-
-    // If the auction raised the whole amount or all collateral was sold,
-    // send remaining collateral to the forgone receiver
-    if (_soldAll) {
-      safeEngine.transferCollateral({
-        _cType: collateralType,
-        _source: address(this),
-        _destination: _auction.forgoneCollateralReceiver,
-        _wad: _auction.amountToSell
-      });
-
-      emit SettleAuction({
-        _id: _id,
-        _blockTimestamp: block.timestamp,
-        _leftoverReceiver: _auction.forgoneCollateralReceiver,
-        _leftoverCollateral: _auction.amountToSell
-      });
-
-      delete _auctions[_id];
-    }
   }
 
   /**

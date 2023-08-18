@@ -41,7 +41,7 @@ contract CollateralAuctionHouseForTest is CollateralAuctionHouse {
     _auctions[_id].auctionIncomeRecipient = _auctionIncomeRecipient;
   }
 
-  function getAdjustedBid(uint256 _id, uint256 _wad) external view returns (bool _valid, uint256 _adjustedBid) {
+  function getAdjustedBid(uint256 _id, uint256 _wad) external view returns (uint256 _adjustedBid) {
     return _getAdjustedBid(_id, _wad);
   }
 
