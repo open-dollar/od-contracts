@@ -73,10 +73,9 @@ import {DebtBidActions} from '@contracts/proxies/actions/DebtBidActions.sol';
 import {SurplusBidActions} from '@contracts/proxies/actions/SurplusBidActions.sol';
 import {CollateralBidActions} from '@contracts/proxies/actions/CollateralBidActions.sol';
 import {RewardedActions} from '@contracts/proxies/actions/RewardedActions.sol';
-import {HaiProxy} from '@contracts/proxies/HaiProxy.sol';
-import {HaiProxyRegistry} from '@contracts/proxies/HaiProxyRegistry.sol';
-import {HaiProxyFactory} from '@contracts/proxies/HaiProxyFactory.sol';
+import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 import {HaiSafeManager} from '@contracts/proxies/HaiSafeManager.sol';
+import {Vault721} from '@contracts/proxies/Vault721.sol';
 
 /**
  * @title  Contracts
@@ -139,9 +138,8 @@ abstract contract Contracts {
   IOracleJob public oracleJob;
 
   // --- Proxy contracts ---
-  HaiProxyRegistry public proxyRegistry;
-  HaiProxyFactory public proxyFactory;
   HaiSafeManager public safeManager;
+  Vault721 public vault721;
 
   BasicActions public basicActions;
   DebtBidActions public debtBidActions;
