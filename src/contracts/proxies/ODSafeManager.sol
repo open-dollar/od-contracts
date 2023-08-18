@@ -10,7 +10,7 @@ import {Math} from '@libraries/Math.sol';
 import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 
-contract HaiSafeManager {
+contract ODSafeManager {
   using Math for uint256;
   using EnumerableSet for EnumerableSet.UintSet;
   using Assertions for address;
