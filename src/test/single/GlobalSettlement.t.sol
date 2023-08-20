@@ -16,8 +16,12 @@ import {
   ICollateralJoin,
   CollateralJoinFactory
 } from '@contracts/factories/CollateralJoinFactory.sol';
+import {
+  ICollateralAuctionHouseFactory,
+  CollateralAuctionHouseFactory
+} from '@contracts/factories/CollateralAuctionHouseFactory.sol';
 import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
-import {GlobalSettlement} from '@contracts/settlement/GlobalSettlement.sol';
+import {GlobalSettlement, IGlobalSettlement} from '@contracts/settlement/GlobalSettlement.sol';
 import {SettlementSurplusAuctioneer} from '@contracts/settlement/SettlementSurplusAuctioneer.sol';
 import {IOracleRelayer, OracleRelayerForTest} from '@contracts/for-test/OracleRelayerForTest.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
@@ -97,6 +101,7 @@ contract SingleGlobalSettlementTest is DSTest {
   CoinForTest systemCoin;
   CoinJoin coinJoin;
   ICollateralJoinFactory collateralJoinFactory;
+  ICollateralAuctionHouseFactory collateralAuctionHouseFactory;
 
   struct CollateralType {
     DelayedOracleForTest oracleSecurityModule;
@@ -152,8 +157,9 @@ contract SingleGlobalSettlementTest is DSTest {
       perSecondDiscountUpdateRate: RAY, // [ray]
       minimumBid: 1e18 // 1 system coin
     });
-    CollateralAuctionHouse _collateralAuctionHouse =
-    new CollateralAuctionHouse(address(safeEngine), address(liquidationEngine), address(oracleRelayer), _encodedName, _cahParams);
+
+    ICollateralAuctionHouse _collateralAuctionHouse =
+      collateralAuctionHouseFactory.deployCollateralAuctionHouse(_encodedName, _cahParams);
 
     safeEngine.approveSAFEModification(address(_collateralAuctionHouse));
     _collateralAuctionHouse.addAuthorization(address(globalSettlement));
@@ -253,23 +259,38 @@ contract SingleGlobalSettlementTest is DSTest {
       });
     safeEngine.addAuthorization(address(oracleRelayer));
 
+    collateralAuctionHouseFactory = new CollateralAuctionHouseFactory(
+      address(safeEngine),
+      address(liquidationEngine),
+      address(oracleRelayer)
+    );
+    safeEngine.addAuthorization(address(collateralAuctionHouseFactory));
+
     IStabilityFeeTreasury.StabilityFeeTreasuryParams memory _stabilityFeeTreasuryParams = IStabilityFeeTreasury
       .StabilityFeeTreasuryParams({treasuryCapacity: 0, pullFundsMinThreshold: 0, surplusTransferDelay: 0});
     stabilityFeeTreasury =
     new StabilityFeeTreasury(address(safeEngine), address(accountingEngine), address(coinJoin), _stabilityFeeTreasuryParams);
 
-    globalSettlement = new GlobalSettlement();
-    globalSettlement.modifyParameters('safeEngine', abi.encode(safeEngine));
-    globalSettlement.modifyParameters('liquidationEngine', abi.encode(liquidationEngine));
-    globalSettlement.modifyParameters('accountingEngine', abi.encode(accountingEngine));
-    globalSettlement.modifyParameters('oracleRelayer', abi.encode(oracleRelayer));
-    globalSettlement.modifyParameters('shutdownCooldown', abi.encode(1 hours));
+    globalSettlement = new GlobalSettlement(
+    address (safeEngine),
+    address (liquidationEngine),
+    address (oracleRelayer),
+    address (coinJoin),
+    address (collateralJoinFactory),
+    address (collateralAuctionHouseFactory),
+    address (stabilityFeeTreasury),
+    address (accountingEngine),
+    IGlobalSettlement.GlobalSettlementParams({shutdownCooldown: 1 hours})
+    );
+
     safeEngine.addAuthorization(address(globalSettlement));
     accountingEngine.addAuthorization(address(globalSettlement));
     oracleRelayer.addAuthorization(address(globalSettlement));
     liquidationEngine.addAuthorization(address(globalSettlement));
     stabilityFeeTreasury.addAuthorization(address(globalSettlement));
+    coinJoin.addAuthorization(address(globalSettlement));
     collateralJoinFactory.addAuthorization(address(globalSettlement));
+    collateralAuctionHouseFactory.addAuthorization(address(globalSettlement));
 
     surplusAuctionHouseOne.addAuthorization(address(accountingEngine));
     debtAuctionHouse.addAuthorization(address(accountingEngine));

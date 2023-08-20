@@ -402,6 +402,13 @@ contract Unit_LiquidationEngine_ModifyParameters is Base {
     vm.expectRevert(IModifiable.UnrecognizedParam.selector);
     liquidationEngine.modifyParameters(_cType, 'unrecognizedParam', abi.encode(0));
   }
+
+  function test_Revert_ModifyParameters_PerCollateral_ContractIsDisabled(bytes32 _cType) public authorized {
+    _mockContractEnabled(false);
+
+    vm.expectRevert();
+    liquidationEngine.modifyParameters(_cType, 'unrecognizedParam', abi.encode(0));
+  }
 }
 
 contract Unit_LiquidationEngine_RemoveCoinsFromAuction is Base {
@@ -1373,7 +1380,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     liquidationEngine.liquidateSAFE(collateralType, safe);
   }
 
-  function test_Revert_ContractNotEnabled() public {
+  function test_Revert_ContractIsDisabled() public {
     // We don't care about any of these values just mocking for call to work when calling safe engine
     _mockValues(Liquidation(0, 0, 0, 0, 0, 0, 0, 0, 0));
     _mockContractEnabled(false);
@@ -1859,6 +1866,17 @@ contract Unit_LiquidationEngine_InitializeCollateralType is Base {
 
     vm.expectRevert(ILiquidationEngine.LiqEng_CollateralTypeAlreadyInitialized.selector);
 
+    liquidationEngine.initializeCollateralType(_cType, _liqEngineCParams);
+  }
+
+  function test_Revert_ContractIsDisabled(
+    bytes32 _cType,
+    ILiquidationEngine.LiquidationEngineCollateralParams memory _liqEngineCParams
+  ) public authorized {
+    _mockCollateralList(_cType);
+    _mockContractEnabled(false);
+
+    vm.expectRevert();
     liquidationEngine.initializeCollateralType(_cType, _liqEngineCParams);
   }
 }

@@ -7,6 +7,7 @@ import {ILiquidationEngine} from '@interfaces/ILiquidationEngine.sol';
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
 import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
 
+import {Disableable} from '@contracts/utils/Disableable.sol';
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {Modifiable} from '@contracts/utils/Modifiable.sol';
 
@@ -17,7 +18,7 @@ import {Math, RAY, WAD} from '@libraries/Math.sol';
 /*
    This thing lets you sell some collateral at an increasing discount in order to instantly recapitalize the system
 */
-contract CollateralAuctionHouse is Authorizable, Modifiable, ICollateralAuctionHouse {
+contract CollateralAuctionHouse is Authorizable, Modifiable, Disableable, ICollateralAuctionHouse {
   using Math for uint256;
   using Encoding for bytes;
   using Assertions for uint256;
@@ -161,7 +162,7 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, ICollateralAuctionH
     address _auctionIncomeRecipient,
     uint256 _amountToRaise,
     uint256 _amountToSell
-  ) external isAuthorized returns (uint256 _id) {
+  ) external isAuthorized whenEnabled returns (uint256 _id) {
     if (_amountToSell == 0) revert CAH_NoCollateralForSale();
     if (_amountToRaise == 0) revert CAH_NothingToRaise();
     if (_amountToRaise < RAY) revert CAH_DustyAuction();
@@ -228,7 +229,10 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, ICollateralAuctionH
    * @return _boughtCollateral Amount of collateral bought
    * @return _adjustedBid The amount of coins used to buy the collateral (in WAD)
    */
-  function buyCollateral(uint256 _id, uint256 _wad) external returns (uint256 _boughtCollateral, uint256 _adjustedBid) {
+  function buyCollateral(
+    uint256 _id,
+    uint256 _wad
+  ) external whenEnabled returns (uint256 _boughtCollateral, uint256 _adjustedBid) {
     Auction storage _auction = _auctions[_id];
     if (_wad == 0 || _wad < _params.minimumBid) revert CAH_InvalidBid();
 
@@ -353,33 +357,6 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, ICollateralAuctionH
     });
 
     delete _auctions[_id];
-  }
-
-  // --- Getters ---
-  /**
-   * @dev Deprecated
-   */
-  function bidAmount(uint256) external pure returns (uint256 _bidAmount) {
-    return 0;
-  }
-
-  function remainingAmountToSell(uint256 _id) external view returns (uint256 _remainingAmountToSell) {
-    return _auctions[_id].amountToSell;
-  }
-
-  function forgoneCollateralReceiver(uint256 _id) external view returns (address _forgoneCollateralReceiver) {
-    return _auctions[_id].forgoneCollateralReceiver;
-  }
-
-  /**
-   * @dev Deprecated
-   */
-  function raisedAmount(uint256) external pure returns (uint256 _raisedAmount) {
-    return 0;
-  }
-
-  function amountToRaise(uint256 _id) external view returns (uint256 _amountToRaise) {
-    return _auctions[_id].amountToRaise;
   }
 
   // --- Administration ---

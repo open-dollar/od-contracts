@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
-import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
-import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
-interface ILiquidationEngine is IAuthorizable, IDisableable, IModifiable {
+import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
+import {IModifiable} from '@interfaces/utils/IModifiable.sol';
+import {IDisableable} from '@interfaces/utils/IDisableable.sol';
+
+interface ILiquidationEngine is IAuthorizable, IModifiable, IDisableable {
   // --- Events ---
   event ConnectSAFESaviour(address _saviour);
   event DisconnectSAFESaviour(address _saviour);

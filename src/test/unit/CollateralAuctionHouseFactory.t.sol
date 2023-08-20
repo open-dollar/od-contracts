@@ -56,11 +56,6 @@ abstract contract Base is HaiTest {
     vm.stopPrank();
   }
 
-  function _mockContractEnabled(bool _contractEnabled) internal {
-    // BUG: Accessing packed slots is not supported by Std Storage
-    collateralAuctionHouseFactory.setContractEnabled(_contractEnabled);
-  }
-
   function _mockLiquidationEngine(address _liquidationEngine) internal {
     stdstore.target(address(collateralAuctionHouseFactory)).sig(
       ICollateralAuctionHouseFactory.liquidationEngine.selector
@@ -75,6 +70,10 @@ abstract contract Base is HaiTest {
 
   function _mockCollateralList(bytes32 _cType) internal {
     collateralAuctionHouseFactory.addToCollateralList(_cType);
+  }
+
+  function _mockContractEnabled(bool _contractEnabled) internal {
+    collateralAuctionHouseFactory.setContractEnabled(_contractEnabled);
   }
 }
 

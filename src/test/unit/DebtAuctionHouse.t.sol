@@ -918,16 +918,6 @@ contract Unit_DebtAuctionHouse_ModifyParameters is Base {
     _;
   }
 
-  function test_Revert_ContractIsDisabled(bytes32 _param, bytes memory _data) public {
-    vm.startPrank(authorizedAccount);
-
-    _mockContractEnabled(false);
-
-    vm.expectRevert(IDisableable.ContractIsDisabled.selector);
-
-    debtAuctionHouse.modifyParameters(_param, _data);
-  }
-
   function test_Set_Parameters(IDebtAuctionHouse.DebtAuctionHouseParams memory _fuzz) public happyPath {
     debtAuctionHouse.modifyParameters('bidDecrease', abi.encode(_fuzz.bidDecrease));
     debtAuctionHouse.modifyParameters('amountSoldIncrease', abi.encode(_fuzz.amountSoldIncrease));

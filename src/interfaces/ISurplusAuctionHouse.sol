@@ -4,8 +4,8 @@ pragma solidity 0.8.19;
 import {ICommonSurplusAuctionHouse} from '@interfaces/ICommonSurplusAuctionHouse.sol';
 
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
-import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
+import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 
 interface ISurplusAuctionHouse is IAuthorizable, IDisableable, IModifiable, ICommonSurplusAuctionHouse {
   // --- Events ---

@@ -26,6 +26,10 @@ contract CollateralAuctionHouseForTest is CollateralAuctionHouse {
     CollateralAuctionHouseParams memory _cahParams
   ) CollateralAuctionHouse(_safeEngine, _liquidationEngine, _oracleRelayer, _cType, _cahParams) {}
 
+  function setContractEnabled(bool _contractEnabled) external {
+    contractEnabled = _contractEnabled;
+  }
+
   function addAuction(
     uint256 _id,
     uint256 _amountToSell,

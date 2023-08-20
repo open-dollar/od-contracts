@@ -4,10 +4,9 @@ pragma solidity 0.8.19;
 import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
 
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
-import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
-interface ICollateralAuctionHouseFactory is IAuthorizable, IDisableable, IModifiable {
+interface ICollateralAuctionHouseFactory is IAuthorizable, IModifiable {
   event DeployCollateralAuctionHouse(bytes32 indexed _cType, address indexed _collateralAuctionHouse);
 
   error CAHFactory_CAHExists();

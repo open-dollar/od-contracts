@@ -9,6 +9,7 @@ import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
 import {CollateralAuctionHouse, ICollateralAuctionHouse} from '@contracts/CollateralAuctionHouse.sol';
 
 import {AuthorizableChild, Authorizable} from '@contracts/factories/AuthorizableChild.sol';
+import {DisableableChild, Disableable} from '@contracts/factories/DisableableChild.sol';
 
 import {Math, RAY, WAD} from '@libraries/Math.sol';
 import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
@@ -17,7 +18,12 @@ import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
  * @title  CollateralAuctionHouseChild
  * @notice This contract inherits all the functionality of `CollateralAuctionHouse.sol` to be factory deployed
  */
-contract CollateralAuctionHouseChild is AuthorizableChild, CollateralAuctionHouse, ICollateralAuctionHouseChild {
+contract CollateralAuctionHouseChild is
+  DisableableChild,
+  AuthorizableChild,
+  CollateralAuctionHouse,
+  ICollateralAuctionHouseChild
+{
   using EnumerableSet for EnumerableSet.AddressSet;
   using Math for uint256;
 
@@ -70,5 +76,13 @@ contract CollateralAuctionHouseChild is AuthorizableChild, CollateralAuctionHous
     returns (bool _authorized)
   {
     return super._isAuthorized(_account);
+  }
+
+  function _isEnabled() internal view override(DisableableChild, Disableable) returns (bool _enabled) {
+    return super._isEnabled();
+  }
+
+  function _onContractDisable() internal override(DisableableChild, Disableable) {
+    super._onContractDisable();
   }
 }

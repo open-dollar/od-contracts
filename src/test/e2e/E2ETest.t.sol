@@ -224,7 +224,7 @@ abstract contract E2ETest is BaseUser, Base_CType, Common {
     vm.warp(_auction.auctionDeadline);
 
     assertEq(protocolToken.totalSupply(), INITIAL_BID);
-    _settleAuction(address(this), _auctionId);
+    _settleSurplusAuction(address(this), _auctionId);
     assertEq(protocolToken.totalSupply(), INITIAL_BID / 2); // 50% of the bid is burned
     assertEq(protocolToken.balanceOf(SURPLUS_AUCTION_BID_RECEIVER), INITIAL_BID / 2); // 50% is sent to the receiver
     assertEq(protocolToken.balanceOf(address(this)), 0);

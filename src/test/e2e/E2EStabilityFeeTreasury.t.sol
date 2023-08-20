@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {Common, ETH_A, RAY} from './Common.t.sol';
+import {Common, TKN, RAY, COLLAT, DEBT} from './Common.t.sol';
 
 import {BaseUser} from '@test/scopes/BaseUser.t.sol';
 import {DirectUser} from '@test/scopes/DirectUser.t.sol';
@@ -12,22 +12,19 @@ import {HOUR, YEAR} from '@libraries/Math.sol';
 abstract contract E2EStabilityFeeTreasuryTest is BaseUser, Common {
   uint256 constant INITIAL_DEBT = 100_000_000e18;
 
-  function _gatherFees(uint256 _wad, uint256 _timeElapsed) internal {
-    // opening alice safe
-    _generateDebt({
-      _user: alice,
-      _collateralJoin: address(collateralJoin[ETH_A]),
-      _deltaCollat: int256(_wad),
-      _deltaDebt: int256(_wad)
-    });
+  function _gatherFees() internal {
+    // Opening a SAFE to generate stability fees
+    address alice = address(0x420);
 
-    // Collecting 1 year of fees
-    _collectFees(ETH_A, 1 * _timeElapsed);
+    _generateDebt(alice, address(collateralJoin[TKN]), int256(1000 * COLLAT), int256(DEBT));
+
+    // Collecting fees for stabilityFeeTreasury
+    _collectFees(TKN, YEAR * 100);
   }
 
   function test_give_funds() public {
     // Collecting fees for stabilityFeeTreasury
-    _gatherFees(INITIAL_DEBT, YEAR);
+    _gatherFees();
 
     uint256 _coinBalance = safeEngine.coinBalance(address(stabilityFeeTreasury));
 
@@ -49,8 +46,8 @@ abstract contract E2EStabilityFeeTreasuryTest is BaseUser, Common {
     // opening alice safe
     _generateDebt({
       _user: alice,
-      _collateralJoin: address(collateralJoin[ETH_A]),
-      _deltaCollat: int256(_wad),
+      _collateralJoin: address(collateralJoin[TKN]),
+      _deltaCollat: int256(1000 * _wad),
       _deltaDebt: int256(_wad)
     });
 
@@ -69,7 +66,7 @@ abstract contract E2EStabilityFeeTreasuryTest is BaseUser, Common {
 
   function test_pull_funds() public {
     // Collecting fees for stabilityFeeTreasury
-    _gatherFees(INITIAL_DEBT, YEAR);
+    _gatherFees();
 
     uint256 _coinBalance = safeEngine.coinBalance(address(stabilityFeeTreasury));
     uint256 _previousAliceBalance = safeEngine.coinBalance(alice);
@@ -94,7 +91,7 @@ abstract contract E2EStabilityFeeTreasuryTest is BaseUser, Common {
 
   function test_transfer_surplus_funds() public {
     // Collecting fees for stabilityFeeTreasury
-    _gatherFees(INITIAL_DEBT, YEAR);
+    _gatherFees();
     address _extraSurplusReceiver = stabilityFeeTreasury.extraSurplusReceiver();
     uint256 _coinBalance = safeEngine.coinBalance(address(stabilityFeeTreasury));
     uint256 _fundsToTransfer = _coinBalance - stabilityFeeTreasury.params().treasuryCapacity;
@@ -108,7 +105,7 @@ abstract contract E2EStabilityFeeTreasuryTest is BaseUser, Common {
 
   function test_repay_debt_before_pull() public {
     // Collecting fees for stabilityFeeTreasury
-    _gatherFees(INITIAL_DEBT, YEAR);
+    _gatherFees();
     uint256 _coinBalance = safeEngine.coinBalance(address(stabilityFeeTreasury));
     uint256 _previousAliceBalance = safeEngine.coinBalance(alice);
 
@@ -144,8 +141,8 @@ abstract contract E2EStabilityFeeTreasuryTest is BaseUser, Common {
     // opening alice safe
     _generateDebt({
       _user: alice,
-      _collateralJoin: address(collateralJoin[ETH_A]),
-      _deltaCollat: int256(_wad),
+      _collateralJoin: address(collateralJoin[TKN]),
+      _deltaCollat: int256(1000 * _wad),
       _deltaDebt: int256(_wad)
     });
 

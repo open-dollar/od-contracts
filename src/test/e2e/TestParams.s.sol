@@ -53,7 +53,7 @@ abstract contract TestParams is Contracts, Params {
     });
 
     _stabilityFeeTreasuryParams = IStabilityFeeTreasury.StabilityFeeTreasuryParams({
-      treasuryCapacity: 1_000_000e45, // 1M COINs
+      treasuryCapacity: 1000e45, // 1_000 COINs
       pullFundsMinThreshold: 0, // no threshold
       surplusTransferDelay: 1 days
     });
@@ -131,5 +131,10 @@ abstract contract TestParams is Contracts, Params {
     // --- Global Settlement Params ---
 
     _globalSettlementParams = IGlobalSettlement.GlobalSettlementParams({shutdownCooldown: 3 days});
+    _postSettlementSAHParams = IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams({
+      bidIncrease: 1.01e18, // +1 %
+      bidDuration: 900,
+      totalAuctionLength: 1800
+    });
   }
 }

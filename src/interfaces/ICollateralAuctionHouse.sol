@@ -7,8 +7,9 @@ import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
 
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
+import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 
-interface ICollateralAuctionHouse is IAuthorizable, IModifiable {
+interface ICollateralAuctionHouse is IAuthorizable, IModifiable, IDisableable {
   // --- Events ---
   event StartAuction(
     uint256 indexed _id,
@@ -98,11 +99,6 @@ interface ICollateralAuctionHouse is IAuthorizable, IModifiable {
 
   function auctionsStarted() external view returns (uint256 _auctionsStarted);
   function getAuctionDiscount(uint256 _id) external view returns (uint256 _auctionDiscount);
-  function bidAmount(uint256 _id) external view returns (uint256 _rad);
-  function raisedAmount(uint256 _id) external view returns (uint256 _rad);
-  function remainingAmountToSell(uint256 _id) external view returns (uint256 _wad);
-  function forgoneCollateralReceiver(uint256 _id) external view returns (address _receiver);
-  function amountToRaise(uint256 _id) external view returns (uint256 _rad);
 
   function getCollateralBought(
     uint256 _id,

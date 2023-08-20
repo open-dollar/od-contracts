@@ -8,6 +8,7 @@ import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ILiquidationEngine} from '@interfaces/ILiquidationEngine.sol';
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
 import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
+import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
@@ -89,6 +90,10 @@ contract Base is HaiTest {
     stdstore.target(address(collateralAuctionHouse)).sig(ICollateralAuctionHouse.params.selector).depth(3).checked_write(
       _perSecondDiscountUpdateRate
     );
+  }
+
+  function _mockContractEnabled(bool _contractEnabled) internal {
+    collateralAuctionHouse.setContractEnabled(_contractEnabled);
   }
 
   // --- Data ---
@@ -414,6 +419,19 @@ contract Unit_CollateralAuctionHouse_StartAuction is Base {
     );
 
     assertEq(_id, _auctionsStarted + 1);
+  }
+
+  function test_Revert_ContractIsDisabled(
+    CollateralAuction memory _auction,
+    uint256 _auctionsStarted
+  ) public happyPath(_auction, _auctionsStarted) {
+    _mockContractEnabled(false);
+
+    vm.expectRevert(IDisableable.ContractIsDisabled.selector);
+
+    collateralAuctionHouse.startAuction(
+      _auction.forgoneCollateralReceiver, _auction.auctionIncomeRecipient, _auction.amountToRaise, _auction.amountToSell
+    );
   }
 }
 
@@ -1426,6 +1444,17 @@ contract Unit_CollateralAuctionHouse_BuyCollateral is Base {
 
     assertEq(__boughtCollateral, _boughtCollateral);
     assertEq(__readjustedBid, _readjustedBid);
+  }
+
+  function test_Revert_ContractIsDisabled(BuyCollateralScenario memory _buyCollateralScenario)
+    public
+    happyPath(_buyCollateralScenario)
+  {
+    _mockContractEnabled(false);
+
+    vm.expectRevert(IDisableable.ContractIsDisabled.selector);
+
+    collateralAuctionHouse.buyCollateral(_buyCollateralScenario.auction.id, _buyCollateralScenario.bid);
   }
 }
 

@@ -223,7 +223,7 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
   function initializeCollateralType(
     bytes32 _cType,
     LiquidationEngineCollateralParams memory _liqEngineCParams
-  ) external isAuthorized validCParams(_cType) {
+  ) external isAuthorized whenEnabled validCParams(_cType) {
     if (!_collateralList.add(_cType)) revert LiqEng_CollateralTypeAlreadyInitialized();
     _setCollateralAuctionHouse(_cType, _liqEngineCParams.collateralAuctionHouse);
     _cParams[_cType] = _liqEngineCParams;
@@ -272,7 +272,7 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
     else revert UnrecognizedParam();
   }
 
-  function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override {
+  function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override whenEnabled {
     uint256 _uint256 = _data.toUint256();
 
     if (!_collateralList.contains(_cType)) revert UnrecognizedCType();

@@ -3,11 +3,7 @@ pragma solidity 0.8.19;
 
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ILiquidationEngine} from '@interfaces/ILiquidationEngine.sol';
-import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
-import {IStabilityFeeTreasury} from '@interfaces/IStabilityFeeTreasury.sol';
-import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
-import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
@@ -63,9 +59,12 @@ interface IGlobalSettlement is IAuthorizable, IDisableable, IModifiable {
   // --- Registry ---
   function safeEngine() external view returns (ISAFEEngine _safeEngine);
   function liquidationEngine() external view returns (ILiquidationEngine _liquidationEngine);
-  function accountingEngine() external view returns (IAccountingEngine _accountingEngine);
   function oracleRelayer() external view returns (IOracleRelayer _oracleRelayer);
-  function stabilityFeeTreasury() external view returns (IStabilityFeeTreasury _stabilityFeeTreasury);
+
+  function accountingEngine() external view returns (IDisableable _accountingEngine);
+  function stabilityFeeTreasury() external view returns (IDisableable _stabilityFeeTreasury);
+  function coinJoin() external view returns (IDisableable _coinJoin);
+  function collateralJoinFactory() external view returns (IDisableable _collateralJoinFactory);
 
   // --- Settlement ---
   function shutdownSystem() external;

@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import {HaiTest} from '@test/utils/HaiTest.t.sol';
-import {HAI, HAI_INITIAL_PRICE, ETH_A} from '@script/Params.s.sol';
+import {HAI, HAI_INITIAL_PRICE, WETH} from '@script/Params.s.sol';
 import {Deploy} from '@script/Deploy.s.sol';
 import {TestParams, TKN, TEST_ETH_PRICE, TEST_TKN_PRICE} from '@test/e2e/TestParams.s.sol';
 import {
@@ -40,10 +40,10 @@ contract DeployForTest is TestParams, Deploy {
     WETH9 weth = WETH9(payable(0x4200000000000000000000000000000000000006));
 
     systemCoinOracle = new OracleForTest(HAI_INITIAL_PRICE); // 1 HAI = 1 USD
-    delayedOracle[ETH_A] = new DelayedOracleForTest(TEST_ETH_PRICE, address(0)); // 1 ETH = 2000 USD
+    delayedOracle[WETH] = new DelayedOracleForTest(TEST_ETH_PRICE, address(0)); // 1 ETH = 2000 USD
     delayedOracle[TKN] = new DelayedOracleForTest(TEST_TKN_PRICE, address(0)); // 1 TKN = 1 USD
 
-    collateral[ETH_A] = IERC20Metadata(address(weth));
+    collateral[WETH] = IERC20Metadata(address(weth));
     collateral[TKN] = new ERC20ForTest();
 
     delayedOracle['TKN-A'] = new DelayedOracleForTest(COLLATERAL_PRICE, address(0));
@@ -56,7 +56,7 @@ contract DeployForTest is TestParams, Deploy {
     collateral['TKN-C'] = new ERC20ForTest();
     collateral['TKN-8D'] = new ERC20ForTestnet('8 Decimals TKN', 'TKN', 8);
 
-    collateralTypes.push(ETH_A);
+    collateralTypes.push(WETH);
     collateralTypes.push(TKN);
     collateralTypes.push('TKN-A');
     collateralTypes.push('TKN-B');

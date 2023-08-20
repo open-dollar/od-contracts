@@ -85,7 +85,7 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
   function initializeCollateralType(
     bytes32 _cType,
     SAFEEngineCollateralParams memory _safeEngineCParams
-  ) external isAuthorized {
+  ) external isAuthorized whenEnabled {
     if (!_collateralList.add(_cType)) revert SAFEEng_CollateralTypeAlreadyExists();
     _cData[_cType].accumulatedRate = RAY;
     _cParams[_cType] = _safeEngineCParams;
@@ -437,7 +437,7 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
   }
 
   // --- Administration ---
-  function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled {
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     uint256 _uint256 = _data.toUint256();
 
     if (_param == 'globalDebtCeiling') _params.globalDebtCeiling = _uint256;
@@ -445,7 +445,7 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
     else revert UnrecognizedParam();
   }
 
-  function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override whenEnabled {
+  function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override {
     uint256 _uint256 = _data.toUint256();
 
     if (!_collateralList.contains(_cType)) revert UnrecognizedCType();

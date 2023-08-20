@@ -5,28 +5,29 @@ import {ScriptBase} from 'forge-std/Script.sol';
 import {ETH_A} from '@script/Params.s.sol';
 import {
   Contracts,
-  ICoinJoin,
   ICollateralJoin,
   ERC20ForTest,
   IERC20Metadata,
   ISAFEEngine,
   ICollateralAuctionHouse,
-  IDebtAuctionHouse,
   BasicActions,
   DebtBidActions,
   SurplusBidActions,
   CollateralBidActions,
+  PostSettlementSurplusBidActions,
+  GlobalSettlementActions,
   RewardedActions,
   CommonActions,
   HaiProxy
 } from '@script/Contracts.s.sol';
+import {OP_WETH} from '@script/Registry.s.sol';
 import {IWeth} from '@interfaces/external/IWeth.sol';
 import {BaseUser} from '@test/scopes/BaseUser.t.sol';
 
 abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
-  mapping(address => HaiProxy) proxy;
-  mapping(address => mapping(bytes32 => uint256)) safe;
-  mapping(address => mapping(bytes32 => address)) safeHandler;
+  mapping(address => HaiProxy) private proxy;
+  mapping(address => mapping(bytes32 => uint256)) private safe;
+  mapping(address => mapping(bytes32 => address)) private safeHandler;
 
   function _getSafeStatus(
     bytes32 _cType,
@@ -40,12 +41,23 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     _lockedCollateral = _safe.lockedCollateral;
   }
 
+  function _getSafeHandler(bytes32 _cType, address _user) internal override returns (address _safeHandler) {
+    (, _safeHandler) = _getSafe(_user, _cType);
+  }
+
   function _getCollateralBalance(address _user, bytes32 _cType) internal view override returns (uint256 _wad) {
     IERC20Metadata _collateral = collateral[_cType];
     uint256 _decimals = _collateral.decimals();
     uint256 _wei = _collateral.balanceOf(_user);
     _wad = _wei * 10 ** (18 - _decimals);
   }
+
+  function _getInternalCoinBalance(address _user) internal override returns (uint256 _rad) {
+    HaiProxy _proxy = _getProxy(_user);
+    _rad = safeEngine.coinBalance(address(_proxy));
+  }
+
+  // --- SAFE actions ---
 
   function _lockETH(address _user, uint256 _collatAmount) internal override {
     HaiProxy _proxy = _getProxy(_user);
@@ -77,7 +89,13 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     uint256 _wei = _amount / 10 ** (18 - _decimals);
 
     vm.startPrank(_user);
-    ERC20ForTest(address(_collateral)).mint(_user, _wei);
+    if (address(_collateral) != OP_WETH) {
+      ERC20ForTest(address(_collateral)).mint(_user, _wei);
+    } else {
+      vm.deal(_user, _wei);
+      IWeth(address(_collateral)).deposit{value: _wei}();
+    }
+
     _collateral.approve(address(_proxy), _wei);
     vm.stopPrank();
   }
@@ -166,7 +184,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
 
   function _getProxy(address _user) internal returns (HaiProxy) {
     if (proxy[_user] == HaiProxy(address(0))) {
-      proxy[_user] = HaiProxy(proxyRegistry.build());
+      proxy[_user] = HaiProxy(proxyRegistry.build(_user));
     }
     return proxy[_user];
   }
@@ -178,6 +196,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
       bytes memory _callData =
         abi.encodeWithSelector(BasicActions.openSAFE.selector, address(safeManager), _cType, address(_proxy));
 
+      vm.prank(_user);
       (bytes memory _response) = _proxy.execute(address(basicActions), _callData);
       _safeId = abi.decode(_response, (uint256));
       _safeHandler = safeManager.safeData(_safeId).safeHandler;
@@ -189,6 +208,8 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
 
     return (safe[_user][_cType], safeHandler[_user][_cType]);
   }
+
+  // --- Bidding actions ---
 
   function _buyCollateral(
     address _user,
@@ -258,7 +279,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     vm.stopPrank();
   }
 
-  function _settleAuction(address _user, uint256 _auctionId) internal override {
+  function _settleSurplusAuction(address _user, uint256 _auctionId) internal override {
     HaiProxy _proxy = _getProxy(_user);
 
     bytes memory _callData = abi.encodeWithSelector(
@@ -280,6 +301,81 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     vm.prank(_user);
     _proxy.execute(address(surplusBidActions), _callData);
   }
+
+  // --- Global Settlement actions ---
+
+  function _increasePostSettlementBidSize(address _user, uint256 _auctionId, uint256 _bidAmount) internal override {
+    HaiProxy _proxy = _getProxy(_user);
+
+    vm.startPrank(_user);
+    protocolToken.approve(address(_proxy), _bidAmount);
+
+    bytes memory _callData = abi.encodeWithSelector(
+      SurplusBidActions.increaseBidSize.selector, address(postSettlementSurplusAuctionHouse), _auctionId, _bidAmount
+    );
+
+    _proxy.execute(address(postSettlementSurplusBidActions), _callData);
+    vm.stopPrank();
+  }
+
+  function _settlePostSettlementSurplusAuction(address _user, uint256 _auctionId) internal override {
+    HaiProxy _proxy = _getProxy(_user);
+
+    bytes memory _callData = abi.encodeWithSelector(
+      SurplusBidActions.settleAuction.selector,
+      address(globalSettlement),
+      address(postSettlementSurplusAuctionHouse),
+      _auctionId
+    );
+
+    vm.prank(_user);
+    _proxy.execute(address(postSettlementSurplusBidActions), _callData);
+  }
+
+  function _freeCollateral(address _user, bytes32 _cType) internal override returns (uint256 _remainderCollateral) {
+    HaiProxy _proxy = _getProxy(_user);
+    (uint256 _safeId,) = _getSafe(_user, _cType);
+
+    bytes memory _callData = abi.encodeWithSelector(
+      GlobalSettlementActions.freeCollateral.selector, safeManager, globalSettlement, collateralJoin[_cType], _safeId
+    );
+
+    vm.prank(_user);
+    bytes memory _response = _proxy.execute(address(globalSettlementActions), _callData);
+    _remainderCollateral = abi.decode(_response, (uint256));
+  }
+
+  function _prepareCoinsForRedeeming(address _user, uint256 _amount) internal override {
+    HaiProxy _proxy = _getProxy(_user);
+
+    bytes memory _callData = abi.encodeWithSelector(
+      GlobalSettlementActions.prepareCoinsForRedeeming.selector, globalSettlement, coinJoin, _amount
+    );
+
+    vm.startPrank(_user);
+    systemCoin.approve(address(_proxy), _amount);
+    _proxy.execute(address(globalSettlementActions), _callData);
+    vm.stopPrank();
+  }
+
+  function _redeemCollateral(
+    address _user,
+    bytes32 _cType,
+    uint256 _coinsAmount
+  ) internal override returns (uint256 _collateralAmount) {
+    HaiProxy _proxy = _getProxy(_user);
+
+    // NOTE: proxy implementation uses all available coins in bag
+    bytes memory _callData = abi.encodeWithSelector(
+      GlobalSettlementActions.redeemCollateral.selector, globalSettlement, collateralJoin[_cType]
+    );
+
+    vm.prank(_user);
+    bytes memory _response = _proxy.execute(address(globalSettlementActions), _callData);
+    _collateralAmount = abi.decode(_response, (uint256));
+  }
+
+  // --- Rewarded actions ---
 
   function _workPopDebtFromQueue(address _user, uint256 _debtBlockTimestamp) internal override {
     HaiProxy _proxy = _getProxy(_user);

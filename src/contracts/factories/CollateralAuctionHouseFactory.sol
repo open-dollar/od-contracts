@@ -15,7 +15,7 @@ import {Assertions} from '@libraries/Assertions.sol';
 import {WAD} from '@libraries/Math.sol';
 import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
 
-contract CollateralAuctionHouseFactory is Authorizable, Disableable, Modifiable, ICollateralAuctionHouseFactory {
+contract CollateralAuctionHouseFactory is Authorizable, Modifiable, Disableable, ICollateralAuctionHouseFactory {
   using Assertions for uint256;
   using Assertions for address;
   using Encoding for bytes;

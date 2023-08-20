@@ -87,11 +87,13 @@ abstract contract GoerliDeployment is Contracts, GoerliParams {
     proxyRegistry = HaiProxyRegistry(0x8FF12e19f1f246D0257D478C90eB47a960F4DBb4);
     safeManager = HaiSafeManager(0xc0C6e2e5a31896e888eBEF5837Bb70CB3c37D86C);
 
-    basicActions = BasicActions(0x22C2291eA7fa259aa57D2f683e598AFCe020e0d9);
-    debtBidActions = DebtBidActions(0xFb47e938010Cbd6f6b5953Be7aDc10F9c07d5CAA);
-    surplusBidActions = SurplusBidActions(0xd7d804b859B2C23B310db2510316426D99976ff6);
-    collateralBidActions = CollateralBidActions(0x85f9a28F7F7e343e1806E112272bd783eA73b4B9);
-    rewardedActions = RewardedActions(0xdD481aF67e8dfee190545Ae1b97c36373BfA1a7e);
+    basicActions = BasicActions(0x659302F39e4a02C207fff42886be67e03eA9eEf6);
+    debtBidActions = DebtBidActions(0x68879209C06aFD673cF908A8b4E7cF80586a7bec);
+    surplusBidActions = SurplusBidActions(0xa1693DC0C081051f505A79e9bA94BDEa86f7B028);
+    collateralBidActions = CollateralBidActions(0x1bfaA6EFd8AB497f3D5fA592186eA41322805D65);
+    postSettlementSurplusBidActions = PostSettlementSurplusBidActions(0x41Fc47eFBbbbc123045930ceAb87B391d27bB41F);
+    globalSettlementActions = GlobalSettlementActions(0x718CfA7e479D3B155c736F71F1ebe28fF56E2265);
+    rewardedActions = RewardedActions(0x3884089C2DB189F866b82a6b214e7217e23cDE4c);
 
     // --- oracles ---
     systemCoinOracle = IBaseOracle(0x4845E891dB00979B0A017182b1dad52cbc75aEF0);
