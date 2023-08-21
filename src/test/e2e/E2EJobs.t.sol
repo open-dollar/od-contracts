@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {Common, ETH_A, COLLAT, DEBT} from './Common.t.sol';
+import {Common, COLLAT, DEBT, TKN} from './Common.t.sol';
 import {JOB_REWARD} from '@script/Params.s.sol';
 
 import {AccountingJob, IAccountingJob} from '@contracts/jobs/AccountingJob.sol';
@@ -15,27 +15,19 @@ import {DirectUser} from '@test/scopes/DirectUser.t.sol';
 import {ProxyUser} from '@test/scopes/ProxyUser.t.sol';
 
 abstract contract E2EJobsTest is BaseUser, Common {
+  address safeHandler;
+
   function setUp() public override {
     super.setUp();
 
     // Opening a SAFE to generate stability fees
     address alice = address(0x420);
-    vm.deal(alice, COLLAT);
-    vm.startPrank(alice);
-    safeEngine.approveSAFEModification(address(collateralJoin[ETH_A]));
-    ethJoin.join{value: COLLAT}(alice);
-    safeEngine.modifySAFECollateralization({
-      _cType: ETH_A,
-      _safe: alice,
-      _collateralSource: alice,
-      _debtDestination: alice,
-      _deltaCollateral: int256(COLLAT),
-      _deltaDebt: int256(DEBT)
-    });
-    vm.stopPrank();
+
+    _generateDebt(alice, address(collateralJoin[TKN]), int256(1000 * COLLAT), int256(DEBT));
+    safeHandler = _getSafeHandler(TKN, alice);
 
     // Collecting fees for stabilityFeeTreasury
-    _collectFees(ETH_A, YEAR * 10);
+    _collectFees(TKN, YEAR * 10);
   }
 
   function test_work_pop_debt_from_queue(uint256 _debtBlock) public {
@@ -52,7 +44,7 @@ abstract contract E2EJobsTest is BaseUser, Common {
   }
 
   function test_work_auction_debt() public {
-    liquidationEngine.liquidateSAFE(ETH_A, alice);
+    liquidationEngine.liquidateSAFE(TKN, safeHandler);
     accountingEngine.popDebtFromQueue(block.timestamp);
 
     uint256 _initialBalance = systemCoin.balanceOf(address(this));
@@ -82,14 +74,14 @@ abstract contract E2EJobsTest is BaseUser, Common {
 
   function test_work_liquidation() public {
     uint256 _initialBalance = systemCoin.balanceOf(address(this));
-    _workLiquidation(address(this), ETH_A, alice);
+    _workLiquidation(address(this), TKN, safeHandler);
 
     assertEq(systemCoin.balanceOf(address(this)) - _initialBalance, JOB_REWARD);
   }
 
   function test_work_update_collateral_price() public {
     uint256 _initialBalance = systemCoin.balanceOf(address(this));
-    _workUpdateCollateralPrice(address(this), ETH_A);
+    _workUpdateCollateralPrice(address(this), TKN);
 
     assertEq(systemCoin.balanceOf(address(this)) - _initialBalance, JOB_REWARD);
   }

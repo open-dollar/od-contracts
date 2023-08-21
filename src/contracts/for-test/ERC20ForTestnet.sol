@@ -15,11 +15,12 @@ contract ERC20ForTestnet is IERC20Metadata, ERC20 {
     return _decimals;
   }
 
+  // minting amount is capped to uint192 avoid overflowing supply
   function mint(uint256 _wad) external {
-    _mint(msg.sender, _wad);
+    _mint(msg.sender, uint256(uint192(_wad)));
   }
 
   function mint(address _usr, uint256 _wad) external {
-    _mint(_usr, _wad);
+    _mint(_usr, uint256(uint192(_wad)));
   }
 }

@@ -39,8 +39,8 @@ library Math {
     return (_x * _y) / RAY;
   }
 
-  function rmul(uint256 _x, int256 y) internal pure returns (int256 _rmul) {
-    return (toInt(_x) * y) / int256(RAY);
+  function rmul(uint256 _x, int256 _y) internal pure returns (int256 _rmul) {
+    return (toInt(_x) * _y) / int256(RAY);
   }
 
   function wmul(uint256 _x, uint256 _y) internal pure returns (uint256 _wmul) {

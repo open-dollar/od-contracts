@@ -40,9 +40,14 @@ abstract contract CommonDeploymentTest is HaiTest, Deploy {
     ParamChecker._checkParams(address(accountingEngine), abi.encode(_accountingEngineParams));
   }
 
-  // Coin (system)
-  function test_Coin_Auth() public {
+  // SystemCoin
+  function test_SystemCoin_Auth() public {
     assertEq(systemCoin.authorizedAccounts(address(coinJoin)), true);
+  }
+
+  // ProtocolToken
+  function test_ProtocolToken_Auth() public {
+    assertEq(protocolToken.authorizedAccounts(address(debtAuctionHouse)), true);
   }
 
   // SurplusAuctionHouse
@@ -63,6 +68,7 @@ abstract contract CommonDeploymentTest is HaiTest, Deploy {
     ParamChecker._checkParams(address(debtAuctionHouse), abi.encode(_debtAuctionHouseParams));
   }
 
+  // CollateralAuctionHouse
   function test_CollateralAuctionHouse_Auth() public {
     for (uint256 _i; _i < collateralTypes.length; _i++) {
       bytes32 _cType = collateralTypes[_i];
@@ -71,13 +77,10 @@ abstract contract CommonDeploymentTest is HaiTest, Deploy {
   }
 
   function test_CollateralAuctionHouse_Params() public view {
-    ParamChecker._checkParams(
-      address(collateralAuctionHouseFactory), abi.encode(_collateralAuctionHouseSystemCoinParams)
-    );
     for (uint256 _i; _i < collateralTypes.length; _i++) {
       bytes32 _cType = collateralTypes[_i];
       ParamChecker._checkCParams(
-        address(collateralAuctionHouseFactory), _cType, abi.encode(_collateralAuctionHouseCParams[_cType])
+        address(collateralAuctionHouseFactory), _cType, abi.encode(_collateralAuctionHouseParams[_cType])
       );
     }
   }
@@ -140,6 +143,10 @@ contract E2EDeploymentMainnetTest is DeployMainnet, CommonDeploymentTest {
   function setupEnvironment() public override(DeployMainnet, Deploy) {
     super.setupEnvironment();
   }
+
+  function setupPostEnvironment() public override(DeployMainnet, Deploy) {
+    super.setupPostEnvironment();
+  }
 }
 
 contract E2EDeploymentGoerliTest is DeployGoerli, CommonDeploymentTest {
@@ -154,6 +161,10 @@ contract E2EDeploymentGoerliTest is DeployGoerli, CommonDeploymentTest {
 
   function setupEnvironment() public override(DeployGoerli, Deploy) {
     super.setupEnvironment();
+  }
+
+  function setupPostEnvironment() public override(DeployGoerli, Deploy) {
+    super.setupPostEnvironment();
   }
 }
 

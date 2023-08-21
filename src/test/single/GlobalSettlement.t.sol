@@ -16,69 +16,25 @@ import {
   ICollateralJoin,
   CollateralJoinFactory
 } from '@contracts/factories/CollateralJoinFactory.sol';
+import {
+  ICollateralAuctionHouseFactory,
+  CollateralAuctionHouseFactory
+} from '@contracts/factories/CollateralAuctionHouseFactory.sol';
 import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
-import {GlobalSettlement} from '@contracts/settlement/GlobalSettlement.sol';
+import {GlobalSettlement, IGlobalSettlement} from '@contracts/settlement/GlobalSettlement.sol';
 import {SettlementSurplusAuctioneer} from '@contracts/settlement/SettlementSurplusAuctioneer.sol';
 import {IOracleRelayer, OracleRelayerForTest} from '@contracts/for-test/OracleRelayerForTest.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
+
+import {DelayedOracleForTest} from '@contracts/for-test/DelayedOracleForTest.sol';
+import {OracleForTest} from '@contracts/for-test/OracleForTest.sol';
 
 import {Math, RAY, WAD} from '@libraries/Math.sol';
 
 abstract contract Hevm {
   function warp(uint256) public virtual;
   function prank(address) external virtual;
-}
-
-contract DummyFSM {
-  address public priceSource;
-  bool validPrice;
-  uint256 price;
-
-  function getResultWithValidity() public view returns (uint256, bool) {
-    return (price, validPrice);
-  }
-
-  function read() public view returns (uint256) {
-    uint256 _price;
-    bool _validPrice;
-    (_price, _validPrice) = getResultWithValidity();
-    require(_validPrice, 'not-valid');
-    return uint256(_price);
-  }
-
-  function updateCollateralPrice(bytes32 _newPrice) public /* note auth */ {
-    price = uint256(_newPrice);
-    validPrice = true;
-  }
-
-  function restart() public /* note auth */ {
-    // unset the value
-    validPrice = false;
-  }
-}
-
-// TODO: refactor and deprecate
-contract DummyFeed {
-  bool validPrice;
-  uint256 price;
-
-  function getResultWithValidity() public view returns (uint256, bool) {
-    return (price, validPrice);
-  }
-
-  function read() public view returns (uint256) {
-    uint256 _price;
-    bool _validPrice;
-    (_price, _validPrice) = getResultWithValidity();
-    require(_validPrice, 'not-valid');
-    return uint256(_price);
-  }
-
-  function setPrice(uint256 _newPrice) public /* note auth */ {
-    price = _newPrice;
-    validPrice = true;
-  }
 }
 
 contract Guy {
@@ -145,9 +101,10 @@ contract SingleGlobalSettlementTest is DSTest {
   CoinForTest systemCoin;
   CoinJoin coinJoin;
   ICollateralJoinFactory collateralJoinFactory;
+  ICollateralAuctionHouseFactory collateralAuctionHouseFactory;
 
   struct CollateralType {
-    DummyFSM oracleSecurityModule;
+    DelayedOracleForTest oracleSecurityModule;
     CoinForTest collateral;
     ICollateralJoin collateralJoin;
     ICollateralAuctionHouse collateralAuctionHouse;
@@ -174,17 +131,16 @@ contract SingleGlobalSettlementTest is DSTest {
     CoinForTest newCollateral = new CoinForTest(_name, _name);
     newCollateral.mint(20 ether);
 
-    DummyFSM oracleFSM = new DummyFSM();
+    // initial collateral price of 5
+    DelayedOracleForTest oracleFSM = new DelayedOracleForTest(5 * WAD, address(0));
+
     IOracleRelayer.OracleRelayerCollateralParams memory _oracleRelayerCollateralParams = IOracleRelayer
       .OracleRelayerCollateralParams({
-      oracle: IDelayedOracle(address(oracleFSM)),
+      oracle: IDelayedOracle(oracleFSM),
       safetyCRatio: ray(1.5 ether),
       liquidationCRatio: ray(1.5 ether)
     });
     oracleRelayer.initializeCollateralType(_encodedName, _oracleRelayerCollateralParams);
-
-    // initial collateral price of 5
-    oracleFSM.updateCollateralPrice(bytes32(5 * WAD));
 
     ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
       ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: rad(10_000_000 ether), debtFloor: 0});
@@ -194,28 +150,20 @@ contract SingleGlobalSettlementTest is DSTest {
 
     safeEngine.updateCollateralPrice(_encodedName, ray(3 ether), ray(3 ether));
 
-    ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams = ICollateralAuctionHouse
-      .CollateralAuctionHouseSystemCoinParams({
-      lowerSystemCoinDeviation: WAD, // 0% deviation
-      upperSystemCoinDeviation: WAD, // 0% deviation
-      minSystemCoinDeviation: 0.999e18 // 0.1% deviation
-    });
-
-    ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams = ICollateralAuctionHouse
+    ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahParams = ICollateralAuctionHouse
       .CollateralAuctionHouseParams({
       minDiscount: 0.95e18, // 5% discount
       maxDiscount: 0.95e18, // 5% discount
       perSecondDiscountUpdateRate: RAY, // [ray]
-      lowerCollateralDeviation: 0.9e18, // 10% deviation
-      upperCollateralDeviation: 0.95e18, // 5% deviation
       minimumBid: 1e18 // 1 system coin
     });
-    CollateralAuctionHouse _collateralAuctionHouse =
-    new CollateralAuctionHouse(address(safeEngine), address(oracleRelayer), address(liquidationEngine), _encodedName, _cahParams, _cahCParams);
+
+    ICollateralAuctionHouse _collateralAuctionHouse =
+      collateralAuctionHouseFactory.deployCollateralAuctionHouse(_encodedName, _cahParams);
 
     safeEngine.approveSAFEModification(address(_collateralAuctionHouse));
     _collateralAuctionHouse.addAuthorization(address(globalSettlement));
-    oracleFSM.updateCollateralPrice(bytes32(200 * WAD));
+    oracleFSM.setPriceAndValidity(200 * WAD, true);
 
     // Start with English auction house
     ILiquidationEngine.LiquidationEngineCollateralParams memory _liquidationEngineCollateralParams = ILiquidationEngine
@@ -238,8 +186,7 @@ contract SingleGlobalSettlementTest is DSTest {
     hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     hevm.warp(604_411_200);
 
-    DummyFeed _mockSystemCoinOracle = new DummyFeed();
-    _mockSystemCoinOracle.setPrice(1 ether);
+    OracleForTest _mockSystemCoinOracle = new OracleForTest(1 ether);
 
     ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
       ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: rad(10_000_000 ether)});
@@ -312,23 +259,38 @@ contract SingleGlobalSettlementTest is DSTest {
       });
     safeEngine.addAuthorization(address(oracleRelayer));
 
+    collateralAuctionHouseFactory = new CollateralAuctionHouseFactory(
+      address(safeEngine),
+      address(liquidationEngine),
+      address(oracleRelayer)
+    );
+    safeEngine.addAuthorization(address(collateralAuctionHouseFactory));
+
     IStabilityFeeTreasury.StabilityFeeTreasuryParams memory _stabilityFeeTreasuryParams = IStabilityFeeTreasury
       .StabilityFeeTreasuryParams({treasuryCapacity: 0, pullFundsMinThreshold: 0, surplusTransferDelay: 0});
     stabilityFeeTreasury =
     new StabilityFeeTreasury(address(safeEngine), address(accountingEngine), address(coinJoin), _stabilityFeeTreasuryParams);
 
-    globalSettlement = new GlobalSettlement();
-    globalSettlement.modifyParameters('safeEngine', abi.encode(safeEngine));
-    globalSettlement.modifyParameters('liquidationEngine', abi.encode(liquidationEngine));
-    globalSettlement.modifyParameters('accountingEngine', abi.encode(accountingEngine));
-    globalSettlement.modifyParameters('oracleRelayer', abi.encode(oracleRelayer));
-    globalSettlement.modifyParameters('shutdownCooldown', abi.encode(1 hours));
+    globalSettlement = new GlobalSettlement(
+    address (safeEngine),
+    address (liquidationEngine),
+    address (oracleRelayer),
+    address (coinJoin),
+    address (collateralJoinFactory),
+    address (collateralAuctionHouseFactory),
+    address (stabilityFeeTreasury),
+    address (accountingEngine),
+    IGlobalSettlement.GlobalSettlementParams({shutdownCooldown: 1 hours})
+    );
+
     safeEngine.addAuthorization(address(globalSettlement));
     accountingEngine.addAuthorization(address(globalSettlement));
     oracleRelayer.addAuthorization(address(globalSettlement));
     liquidationEngine.addAuthorization(address(globalSettlement));
     stabilityFeeTreasury.addAuthorization(address(globalSettlement));
+    coinJoin.addAuthorization(address(globalSettlement));
     collateralJoinFactory.addAuthorization(address(globalSettlement));
+    collateralAuctionHouseFactory.addAuthorization(address(globalSettlement));
 
     surplusAuctionHouseOne.addAuthorization(address(accountingEngine));
     debtAuctionHouse.addAuthorization(address(accountingEngine));
@@ -370,7 +332,7 @@ contract SingleGlobalSettlementTest is DSTest {
     assertEq(safeEngine.globalUnbackedDebt(), 0);
 
     // collateral price is 5
-    gold.oracleSecurityModule.updateCollateralPrice(bytes32(5 * WAD));
+    gold.oracleSecurityModule.setPriceAndValidity(5 * WAD, true);
     globalSettlement.shutdownSystem();
     globalSettlement.freezeCollateralType('gold');
     globalSettlement.processSAFE('gold', _safe1);
@@ -439,7 +401,7 @@ contract SingleGlobalSettlementTest is DSTest {
     assertEq(safeEngine.globalUnbackedDebt(), 0);
 
     // collateral price is 2
-    gold.oracleSecurityModule.updateCollateralPrice(bytes32(2 * WAD));
+    gold.oracleSecurityModule.setPriceAndValidity(2 * WAD, true);
     globalSettlement.shutdownSystem();
     globalSettlement.freezeCollateralType('gold');
     globalSettlement.processSAFE('gold', _safe1); // over-collateralised
@@ -531,7 +493,7 @@ contract SingleGlobalSettlementTest is DSTest {
     assertEq(_collateralBought, 26_315_789_473_684_210); // ~0.02 ether
 
     // collateral price is 5
-    gold.oracleSecurityModule.updateCollateralPrice(bytes32(5 * WAD));
+    gold.oracleSecurityModule.setPriceAndValidity(5 * WAD, true);
     globalSettlement.shutdownSystem();
     globalSettlement.freezeCollateralType('gold');
 
@@ -605,7 +567,7 @@ contract SingleGlobalSettlementTest is DSTest {
     assertEq(safeEngine.globalUnbackedDebt(), rad(1 ether));
 
     // collateral price is 5
-    gold.oracleSecurityModule.updateCollateralPrice(bytes32(5 * WAD));
+    gold.oracleSecurityModule.setPriceAndValidity(5 * WAD, true);
     globalSettlement.shutdownSystem();
     globalSettlement.freezeCollateralType('gold');
     globalSettlement.processSAFE('gold', _safe1);
@@ -652,7 +614,7 @@ contract SingleGlobalSettlementTest is DSTest {
 
   function test_shutdown_process_safe_has_bug() public {
     CollateralType memory gold = _init_collateral('gold', 'gold');
-    gold.oracleSecurityModule.updateCollateralPrice(bytes32(5 * WAD));
+    gold.oracleSecurityModule.setPriceAndValidity(5 * WAD, true);
 
     Guy _ali = new Guy(safeEngine, globalSettlement);
     Guy _bob = new Guy(safeEngine, globalSettlement);
@@ -723,7 +685,7 @@ contract SingleGlobalSettlementTest is DSTest {
     assertEq(safeEngine.globalUnbackedDebt(), 0);
 
     // collateral price is 5
-    gold.oracleSecurityModule.updateCollateralPrice(bytes32(5 * WAD));
+    gold.oracleSecurityModule.setPriceAndValidity(5 * WAD, true);
     // redemption price is 0.5
     oracleRelayer.setRedemptionPrice(ray(0.5 ether));
 
@@ -809,7 +771,7 @@ contract SingleGlobalSettlementTest is DSTest {
     assertEq(safeEngine.globalUnbackedDebt(), 0);
 
     // collateral price is 5
-    gold.oracleSecurityModule.updateCollateralPrice(bytes32(5 * WAD));
+    gold.oracleSecurityModule.setPriceAndValidity(5 * WAD, true);
     // redemption price is 0.5
     oracleRelayer.setRedemptionPrice(ray(2 ether));
 
@@ -901,7 +863,7 @@ contract SingleGlobalSettlementTest is DSTest {
     assertEq(safeEngine.globalUnbackedDebt(), 0);
 
     // collateral price is 2
-    gold.oracleSecurityModule.updateCollateralPrice(bytes32(2 * WAD));
+    gold.oracleSecurityModule.setPriceAndValidity(2 * WAD, true);
     globalSettlement.shutdownSystem();
     globalSettlement.freezeCollateralType('gold');
     globalSettlement.processSAFE('gold', _safe1); // over-collateralised
@@ -992,9 +954,9 @@ contract SingleGlobalSettlementTest is DSTest {
     safeEngine.updateCollateralPrice('coal', ray(5 ether), ray(5 ether));
     _bob.modifySAFECollateralization('coal', safe2, safe2, safe2, 1 ether, 5 ether);
 
-    gold.oracleSecurityModule.updateCollateralPrice(bytes32(2 * WAD));
+    gold.oracleSecurityModule.setPriceAndValidity(2 * WAD, true);
     // _safe1 has 20 coin of lockedCollateral and 15 coin of tab
-    coal.oracleSecurityModule.updateCollateralPrice(bytes32(2 * WAD));
+    coal.oracleSecurityModule.setPriceAndValidity(2 * WAD, true);
     // safe2 has 2 coin of lockedCollateral and 5 coin of tab
     globalSettlement.shutdownSystem();
     globalSettlement.freezeCollateralType('gold');
@@ -1078,7 +1040,7 @@ contract SingleGlobalSettlementTest is DSTest {
     assertEq(safeEngine.globalUnbackedDebt(), 0);
 
     // collateral price is 5
-    gold.oracleSecurityModule.updateCollateralPrice(bytes32(5 * WAD));
+    gold.oracleSecurityModule.setPriceAndValidity(5 * WAD, true);
     globalSettlement.shutdownSystem();
     globalSettlement.freezeCollateralType('gold');
     globalSettlement.processSAFE('gold', _safe1);

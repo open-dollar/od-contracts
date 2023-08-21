@@ -114,15 +114,19 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
     ISAFEEngine.SAFEEngineCollateralData memory _safeEngCData = safeEngine.cData(_cType);
     ISAFEEngine.SAFE memory _safeData = safeEngine.safes(_cType, _safe);
 
-    if (
-      _safeEngCData.liquidationPrice == 0
-        || _safeData.lockedCollateral * _safeEngCData.liquidationPrice
-          >= _safeData.generatedDebt * _safeEngCData.accumulatedRate
-    ) revert LiqEng_SAFENotUnsafe();
-    if (
-      currentOnAuctionSystemCoins >= _params.onAuctionSystemCoinLimit
-        || _params.onAuctionSystemCoinLimit - currentOnAuctionSystemCoins < _debtFloor
-    ) revert LiqEng_LiquidationLimitHit();
+    // --- Safety checks ---
+    {
+      if (
+        _safeEngCData.liquidationPrice == 0
+          || _safeData.lockedCollateral * _safeEngCData.liquidationPrice
+            >= _safeData.generatedDebt * _safeEngCData.accumulatedRate
+      ) revert LiqEng_SAFENotUnsafe();
+
+      if (
+        currentOnAuctionSystemCoins >= _params.onAuctionSystemCoinLimit
+          || _params.onAuctionSystemCoinLimit - currentOnAuctionSystemCoins < _debtFloor
+      ) revert LiqEng_LiquidationLimitHit();
+    }
 
     if (chosenSAFESaviour[_cType][_safe] != address(0) && safeSaviours[chosenSAFESaviour[_cType][_safe]] == 1) {
       try ISAFESaviour(chosenSAFESaviour[_cType][_safe]).saveSAFE(msg.sender, _cType, _safe) returns (
@@ -131,10 +135,15 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
         if (_ok && _collateralAddedOrDebtRepaid > 0) {
           // Checks that the saviour didn't take collateral or add more debt to the SAFE
           ISAFEEngine.SAFE memory _newSafeData = safeEngine.safes(_cType, _safe);
-          if (
-            _newSafeData.lockedCollateral < _safeData.lockedCollateral
-              || _newSafeData.generatedDebt > _safeData.generatedDebt
-          ) revert LiqEng_InvalidSAFESaviourOperation();
+
+          // --- Safety checks ---
+          {
+            if (
+              _newSafeData.lockedCollateral < _safeData.lockedCollateral
+                || _newSafeData.generatedDebt > _safeData.generatedDebt
+            ) revert LiqEng_InvalidSAFESaviourOperation();
+          }
+
           _safeEngCData = safeEngine.cData(_cType);
           _safeData = _newSafeData;
           emit SaveSAFE(_cType, _safe, _collateralAddedOrDebtRepaid);
@@ -145,30 +154,33 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
     }
 
     if (
-      (_safeEngCData.liquidationPrice > 0)
-        && (
-          _safeData.lockedCollateral * _safeEngCData.liquidationPrice
-            < _safeData.generatedDebt * _safeEngCData.accumulatedRate
-        )
+      _safeData.lockedCollateral * _safeEngCData.liquidationPrice
+        < _safeData.generatedDebt * _safeEngCData.accumulatedRate
     ) {
       LiquidationEngineCollateralParams memory __cParams = _cParams[_cType];
 
       uint256 _limitAdjustedDebt = Math.min(
         _safeData.generatedDebt,
-        Math.min(__cParams.liquidationQuantity, _params.onAuctionSystemCoinLimit - currentOnAuctionSystemCoins) * WAD
-          / _safeEngCData.accumulatedRate / __cParams.liquidationPenalty
+        Math.min(__cParams.liquidationQuantity, _params.onAuctionSystemCoinLimit - currentOnAuctionSystemCoins).wdiv(
+          _safeEngCData.accumulatedRate
+        ) / __cParams.liquidationPenalty
       );
-
-      if (_limitAdjustedDebt == 0) revert LiqEng_NullAuction();
-      if (
-        _limitAdjustedDebt != _safeData.generatedDebt
-          && (_safeData.generatedDebt - _limitAdjustedDebt) * _safeEngCData.accumulatedRate < _debtFloor
-      ) revert LiqEng_DustySAFE();
 
       uint256 _collateralToSell =
         Math.min(_safeData.lockedCollateral, _safeData.lockedCollateral * _limitAdjustedDebt / _safeData.generatedDebt);
+      uint256 _amountToRaise = (_limitAdjustedDebt * _safeEngCData.accumulatedRate).wmul(__cParams.liquidationPenalty);
 
-      if (_collateralToSell == 0) revert LiqEng_NullCollateralToSell();
+      // --- Safety checks ---
+      {
+        if (_limitAdjustedDebt == 0) revert LiqEng_NullAuction();
+
+        if (_collateralToSell == 0) revert LiqEng_NullCollateralToSell();
+
+        if (
+          _limitAdjustedDebt != _safeData.generatedDebt
+            && (_safeData.generatedDebt - _limitAdjustedDebt) * _safeEngCData.accumulatedRate < _debtFloor
+        ) revert LiqEng_DustySAFE();
+      }
 
       safeEngine.confiscateSAFECollateralAndDebt({
         _cType: _cType,
@@ -181,9 +193,6 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
 
       accountingEngine.pushDebtToQueue(_limitAdjustedDebt * _safeEngCData.accumulatedRate);
 
-      // This calcuation will overflow if multiply(limitAdjustedDebt, accumulatedRate) exceeds ~10^14,
-      // i.e. the maximum amountToRaise is roughly 100 trillion system coins.
-      uint256 _amountToRaise = _limitAdjustedDebt * _safeEngCData.accumulatedRate * __cParams.liquidationPenalty / WAD;
       currentOnAuctionSystemCoins += _amountToRaise;
 
       _auctionId = ICollateralAuctionHouse(__cParams.collateralAuctionHouse).startAuction({
@@ -214,7 +223,7 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
   function initializeCollateralType(
     bytes32 _cType,
     LiquidationEngineCollateralParams memory _liqEngineCParams
-  ) external isAuthorized validCParams(_cType) {
+  ) external isAuthorized whenEnabled validCParams(_cType) {
     if (!_collateralList.add(_cType)) revert LiqEng_CollateralTypeAlreadyInitialized();
     _setCollateralAuctionHouse(_cType, _liqEngineCParams.collateralAuctionHouse);
     _cParams[_cType] = _liqEngineCParams;
@@ -245,8 +254,9 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
 
     return Math.min(
       _generatedDebt,
-      Math.min(__cParams.liquidationQuantity, _params.onAuctionSystemCoinLimit - currentOnAuctionSystemCoins) * WAD
-        / _accumulatedRate / __cParams.liquidationPenalty
+      Math.min(__cParams.liquidationQuantity, _params.onAuctionSystemCoinLimit - currentOnAuctionSystemCoins).wdiv(
+        _accumulatedRate
+      ) / __cParams.liquidationPenalty
     );
   }
 
@@ -262,7 +272,7 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
     else revert UnrecognizedParam();
   }
 
-  function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override {
+  function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override whenEnabled {
     uint256 _uint256 = _data.toUint256();
 
     if (!_collateralList.contains(_cType)) revert UnrecognizedCType();

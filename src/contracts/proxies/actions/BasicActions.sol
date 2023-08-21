@@ -291,8 +291,10 @@ contract BasicActions is CommonActions {
     uint256 _safeId,
     uint256 _deltaWad
   ) external delegateCall {
+    HaiSafeManager.SAFEData memory _safeInfo = HaiSafeManager(_manager).safeData(_safeId);
+
     // Takes token amount from user's wallet and joins into the safeEngine
-    _joinCollateral(_collateralJoin, address(this), _deltaWad);
+    _joinCollateral(_collateralJoin, _safeInfo.safeHandler, _deltaWad);
 
     // Locks token amount in the safe
     _modifySAFECollateralization(_manager, _safeId, _deltaWad.toInt(), 0);

@@ -13,19 +13,8 @@ abstract contract Common is Contracts, Params {
     // deploy ETHJoin and CollateralAuctionHouse
     ethJoin = new ETHJoin(address(safeEngine), ETH_A);
 
-    if (address(collateralAuctionHouseFactory) != address(0)) {
-      collateralAuctionHouse[ETH_A] =
-        collateralAuctionHouseFactory.deployCollateralAuctionHouse(ETH_A, _collateralAuctionHouseCParams[ETH_A]);
-    } else {
-      collateralAuctionHouse[ETH_A] = new CollateralAuctionHouse({
-          _safeEngine: address(safeEngine), 
-          __oracleRelayer: address(oracleRelayer),
-          __liquidationEngine: address(liquidationEngine), 
-          _cType: ETH_A,
-          _cahParams: _collateralAuctionHouseSystemCoinParams,
-          _cahCParams: _collateralAuctionHouseCParams[ETH_A]
-          });
-    }
+    collateralAuctionHouse[ETH_A] =
+      collateralAuctionHouseFactory.deployCollateralAuctionHouse(ETH_A, _collateralAuctionHouseParams[ETH_A]);
 
     collateralJoin[ETH_A] = CollateralJoin(address(ethJoin));
     safeEngine.addAuthorization(address(ethJoin));
@@ -46,7 +35,7 @@ abstract contract Common is Contracts, Params {
     }
 
     collateralAuctionHouse[_cType] =
-      collateralAuctionHouseFactory.deployCollateralAuctionHouse(_cType, _collateralAuctionHouseCParams[_cType]);
+      collateralAuctionHouseFactory.deployCollateralAuctionHouse(_cType, _collateralAuctionHouseParams[_cType]);
   }
 
   function _revokeAllTo(address _governor) internal {
@@ -171,19 +160,38 @@ abstract contract Common is Contracts, Params {
     // deploy Base contracts
     safeEngine = new SAFEEngine(_safeEngineParams);
 
-    oracleRelayer = new OracleRelayer(address(safeEngine), systemCoinOracle, _oracleRelayerParams);
+    oracleRelayer = new OracleRelayer(
+            address(safeEngine),
+            systemCoinOracle,
+            _oracleRelayerParams
+        );
 
-    surplusAuctionHouse =
-      new SurplusAuctionHouse(address(safeEngine), address(protocolToken), _surplusAuctionHouseParams);
-    debtAuctionHouse = new DebtAuctionHouse(address(safeEngine), address(protocolToken), _debtAuctionHouseParams);
+    surplusAuctionHouse = new SurplusAuctionHouse(
+            address(safeEngine),
+            address(protocolToken),
+            _surplusAuctionHouseParams
+        );
+    debtAuctionHouse = new DebtAuctionHouse(
+            address(safeEngine),
+            address(protocolToken),
+            _debtAuctionHouseParams
+        );
 
-    accountingEngine =
-    new AccountingEngine(address(safeEngine), address(surplusAuctionHouse), address(debtAuctionHouse), _accountingEngineParams);
+    accountingEngine = new AccountingEngine(
+            address(safeEngine),
+            address(surplusAuctionHouse),
+            address(debtAuctionHouse),
+            _accountingEngineParams
+        );
 
-    liquidationEngine = new LiquidationEngine(address(safeEngine), address(accountingEngine), _liquidationEngineParams);
+    liquidationEngine = new LiquidationEngine(
+            address(safeEngine),
+            address(accountingEngine),
+            _liquidationEngineParams
+        );
 
     collateralAuctionHouseFactory =
-    new CollateralAuctionHouseFactory(address(safeEngine), address(oracleRelayer), address(liquidationEngine), _collateralAuctionHouseSystemCoinParams);
+      new CollateralAuctionHouseFactory(address(safeEngine), address(liquidationEngine), address(oracleRelayer));
 
     // deploy Token adapters
     coinJoin = new CoinJoin(address(safeEngine), address(systemCoin));
@@ -191,40 +199,60 @@ abstract contract Common is Contracts, Params {
   }
 
   function deployTaxModule() public updateParams {
-    taxCollector = new TaxCollector(address(safeEngine), _taxCollectorParams);
+    taxCollector = new TaxCollector(
+            address(safeEngine),
+            _taxCollectorParams
+        );
 
     stabilityFeeTreasury = new StabilityFeeTreasury(
-          address(safeEngine),
-          address(accountingEngine),
-          address(coinJoin),
-          _stabilityFeeTreasuryParams
+            address(safeEngine),
+            address(accountingEngine),
+            address(coinJoin),
+            _stabilityFeeTreasuryParams
         );
   }
 
   function deployGlobalSettlement() public updateParams {
-    globalSettlement = new GlobalSettlement();
+    globalSettlement = new GlobalSettlement(
+            address(safeEngine),
+            address(liquidationEngine),
+            address(oracleRelayer),
+            address(coinJoin),
+            address(collateralJoinFactory),
+            address(collateralAuctionHouseFactory),
+            address(stabilityFeeTreasury),
+            address(accountingEngine),
+            _globalSettlementParams
+        );
 
-    postSettlementSurplusAuctionHouse =
-      new PostSettlementSurplusAuctionHouse(address(safeEngine), address(protocolToken), _postSettlementSAHParams);
+    postSettlementSurplusAuctionHouse = new PostSettlementSurplusAuctionHouse(
+            address(safeEngine),
+            address(protocolToken),
+            _postSettlementSAHParams
+        );
 
-    settlementSurplusAuctioneer =
-      new SettlementSurplusAuctioneer(address(accountingEngine), address(postSettlementSurplusAuctionHouse));
+    settlementSurplusAuctioneer = new SettlementSurplusAuctioneer(
+            address(accountingEngine),
+            address(postSettlementSurplusAuctionHouse)
+        );
   }
 
   function _setupGlobalSettlement() internal {
     // setup globalSettlement [auth: disableContract]
-    globalSettlement.modifyParameters('safeEngine', abi.encode(safeEngine));
     safeEngine.addAuthorization(address(globalSettlement));
-    globalSettlement.modifyParameters('liquidationEngine', abi.encode(liquidationEngine));
     liquidationEngine.addAuthorization(address(globalSettlement));
-    globalSettlement.modifyParameters('stabilityFeeTreasury', abi.encode(stabilityFeeTreasury));
     stabilityFeeTreasury.addAuthorization(address(globalSettlement));
-    globalSettlement.modifyParameters('accountingEngine', abi.encode(accountingEngine));
     accountingEngine.addAuthorization(address(globalSettlement));
-    globalSettlement.modifyParameters('oracleRelayer', abi.encode(oracleRelayer));
     oracleRelayer.addAuthorization(address(globalSettlement));
+    coinJoin.addAuthorization(address(globalSettlement));
+    collateralJoinFactory.addAuthorization(address(globalSettlement));
+    collateralAuctionHouseFactory.addAuthorization(address(globalSettlement)); // [+ terminateAuctionPrematurely]
 
-    collateralAuctionHouseFactory.addAuthorization(address(globalSettlement));
+    // registry
+    accountingEngine.modifyParameters('postSettlementSurplusDrain', abi.encode(settlementSurplusAuctioneer));
+
+    // auth
+    postSettlementSurplusAuctionHouse.addAuthorization(address(settlementSurplusAuctioneer)); // startAuction
   }
 
   function _setupContracts() internal {
@@ -266,16 +294,16 @@ abstract contract Common is Contracts, Params {
 
   function deployPIDController() public updateParams {
     pidController = new PIDController({
-      _cGains: _pidControllerGains,
-      _pidParams: _pidControllerParams,
-      _importedState: IPIDController.DeviationObservation(0,0,0)
-    });
+            _cGains: _pidControllerGains,
+            _pidParams: _pidControllerParams,
+            _importedState: IPIDController.DeviationObservation(0, 0, 0)
+        });
 
     pidRateSetter = new PIDRateSetter({
-     _oracleRelayer: address(oracleRelayer),
-     _pidCalculator: address(pidController),
-     _pidRateSetterParams: _pidRateSetterParams
-    });
+             _oracleRelayer: address(oracleRelayer),
+            _pidCalculator: address(pidController),
+            _pidRateSetterParams: _pidRateSetterParams
+        });
   }
 
   function _setupPIDController() internal {
@@ -290,9 +318,22 @@ abstract contract Common is Contracts, Params {
   }
 
   function deployJobContracts() public updateParams {
-    accountingJob = new AccountingJob(address(accountingEngine), address(stabilityFeeTreasury), JOB_REWARD);
-    liquidationJob = new LiquidationJob(address(liquidationEngine), address(stabilityFeeTreasury), JOB_REWARD);
-    oracleJob = new OracleJob(address(oracleRelayer), address(pidRateSetter), address(stabilityFeeTreasury), JOB_REWARD);
+    accountingJob = new AccountingJob(
+            address(accountingEngine),
+            address(stabilityFeeTreasury),
+            JOB_REWARD
+        );
+    liquidationJob = new LiquidationJob(
+            address(liquidationEngine),
+            address(stabilityFeeTreasury),
+            JOB_REWARD
+        );
+    oracleJob = new OracleJob(
+            address(oracleRelayer),
+            address(pidRateSetter),
+            address(stabilityFeeTreasury),
+            JOB_REWARD
+        );
   }
 
   function _setupJobContracts() internal {
@@ -313,10 +354,13 @@ abstract contract Common is Contracts, Params {
     debtBidActions = new DebtBidActions();
     surplusBidActions = new SurplusBidActions();
     collateralBidActions = new CollateralBidActions();
+    postSettlementSurplusBidActions = new PostSettlementSurplusBidActions();
+    globalSettlementActions = new GlobalSettlementActions();
     rewardedActions = new RewardedActions();
   }
 
   modifier updateParams() {
+    _getEnvironmentParams();
     _;
     _getEnvironmentParams();
   }

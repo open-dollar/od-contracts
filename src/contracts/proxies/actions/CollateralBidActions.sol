@@ -35,12 +35,10 @@ contract CollateralBidActions is CommonActions {
       _safeEngine.approveSAFEModification(address(_collateralAuctionHouse));
     }
 
-    bytes32 _cType = ICollateralAuctionHouse(_collateralAuctionHouse).collateralType();
-    uint256 _initialCollateralBalance = _safeEngine.tokenCollateral(_cType, address(this));
-    ICollateralAuctionHouse(_collateralAuctionHouse).buyCollateral(_auctionId, _bidAmount);
-    uint256 _finalCollateralBalance = _safeEngine.tokenCollateral(_cType, address(this));
+    (uint256 _boughtAmount, uint256 _adjustedBid) =
+      ICollateralAuctionHouse(_collateralAuctionHouse).buyCollateral(_auctionId, _bidAmount);
 
-    uint256 _boughtAmount = _finalCollateralBalance - _initialCollateralBalance;
+    require(_adjustedBid <= _bidAmount, 'Invalid adjusted bid');
     require(_boughtAmount >= _minCollateralAmount, 'Invalid bought amount');
 
     // exit collateral

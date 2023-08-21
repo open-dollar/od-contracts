@@ -72,11 +72,11 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
   }
 
   /**
-   * @notice Fetch the last recorded redemptionPrice
-   * @dev To be used when having the absolute latest redemptionPrice is irrelevant
+   * @notice Calculate the current redemption price
+   * @dev To be used when requiring a view, not to be used in transactions use `redemptionPrice` instead
    */
-  function lastRedemptionPrice() external view returns (uint256 _lastRedemptionPrice) {
-    return _redemptionPrice;
+  function calcRedemptionPrice() external view returns (uint256 _virtualRedemptionPrice) {
+    return redemptionRate.rpow(block.timestamp - redemptionPriceUpdateTime).rmul(_redemptionPrice);
   }
 
   // --- Redemption Price Update ---
@@ -113,13 +113,11 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
     (uint256 _priceFeedValue, bool _hasValidValue) = _cParams[_cType].oracle.getResultWithValidity();
     uint256 _updatedRedemptionPrice = _getRedemptionPrice();
 
-    uint256 _safetyPrice = _hasValidValue
-      ? (uint256(_priceFeedValue) * uint256(10 ** 9)).rdiv(_updatedRedemptionPrice).rdiv(_cParams[_cType].safetyCRatio)
-      : 0;
+    uint256 _safetyPrice =
+      _hasValidValue ? (_priceFeedValue * 1e9).rdiv(_updatedRedemptionPrice).rdiv(_cParams[_cType].safetyCRatio) : 0;
+
     uint256 _liquidationPrice = _hasValidValue
-      ? (uint256(_priceFeedValue) * uint256(10 ** 9)).rdiv(_updatedRedemptionPrice).rdiv(
-        _cParams[_cType].liquidationCRatio
-      )
+      ? (_priceFeedValue * 1e9).rdiv(_updatedRedemptionPrice).rdiv(_cParams[_cType].liquidationCRatio)
       : 0;
 
     safeEngine.updateCollateralPrice(_cType, _safetyPrice, _liquidationPrice);

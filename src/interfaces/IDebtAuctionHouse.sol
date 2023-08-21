@@ -6,13 +6,14 @@ import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
 import {IProtocolToken} from '@interfaces/tokens/IProtocolToken.sol';
 
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
-import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
+import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 
-interface IDebtAuctionHouse is IAuthorizable, IDisableable, IModifiable {
+interface IDebtAuctionHouse is IAuthorizable, IModifiable, IDisableable {
   // --- Events ---
   event StartAuction(
     uint256 indexed _id,
+    address indexed _auctioneer,
     uint256 _blockTimestamp,
     uint256 _amountToSell,
     uint256 _amountToRaise,

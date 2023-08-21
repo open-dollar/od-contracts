@@ -98,6 +98,7 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
 
     emit StartAuction({
       _id: _id,
+      _auctioneer: msg.sender,
       _blockTimestamp: block.timestamp,
       _amountToSell: _amountToSell,
       _amountToRaise: _initialBid,
@@ -209,7 +210,7 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
 
   // --- Administration ---
 
-  function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled {
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     address _address = _data.toAddress();
     uint256 _uint256 = _data.toUint256();
 

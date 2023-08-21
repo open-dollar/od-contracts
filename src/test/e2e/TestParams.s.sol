@@ -48,18 +48,12 @@ abstract contract TestParams is Contracts, Params {
       recyclingPercentage: 0.5e18 // 50% is burned
     });
 
-    _collateralAuctionHouseSystemCoinParams = ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams({
-      lowerSystemCoinDeviation: WAD, // 0% deviation
-      upperSystemCoinDeviation: WAD, // 0% deviation
-      minSystemCoinDeviation: 0.999e18 // 0.1% deviation
-    });
-
     _liquidationEngineParams = ILiquidationEngine.LiquidationEngineParams({
       onAuctionSystemCoinLimit: 10_000 * RAD // 10_000 COINs
     });
 
     _stabilityFeeTreasuryParams = IStabilityFeeTreasury.StabilityFeeTreasuryParams({
-      treasuryCapacity: 1_000_000e45, // 1M COINs
+      treasuryCapacity: 1000e45, // 1_000 COINs
       pullFundsMinThreshold: 0, // no threshold
       surplusTransferDelay: 1 days
     });
@@ -126,18 +120,21 @@ abstract contract TestParams is Contracts, Params {
         liquidationQuantity: 100_000e45 // RAD
       });
 
-      _collateralAuctionHouseCParams[_cType] = ICollateralAuctionHouse.CollateralAuctionHouseParams({
+      _collateralAuctionHouseParams[_cType] = ICollateralAuctionHouse.CollateralAuctionHouseParams({
         minimumBid: 0, // no min
         minDiscount: WAD, // no discount
         maxDiscount: 0.9e18, // -10%
-        perSecondDiscountUpdateRate: MINUS_0_5_PERCENT_PER_HOUR, // RAY
-        lowerCollateralDeviation: 0.99e18, // -1%
-        upperCollateralDeviation: 0.99e18 // 1%
+        perSecondDiscountUpdateRate: MINUS_0_5_PERCENT_PER_HOUR // RAY
       });
     }
 
     // --- Global Settlement Params ---
 
     _globalSettlementParams = IGlobalSettlement.GlobalSettlementParams({shutdownCooldown: 3 days});
+    _postSettlementSAHParams = IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams({
+      bidIncrease: 1.01e18, // +1 %
+      bidDuration: 900,
+      totalAuctionLength: 1800
+    });
   }
 }

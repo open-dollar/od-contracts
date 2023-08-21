@@ -63,8 +63,10 @@ contract RewardedActions is CommonActions {
     _exitReward(_oracleJob, _coinJoin);
   }
 
+  // --- Internal functions ---
+
   function _exitReward(address _job, address _coinJoin) internal {
     uint256 _rewardAmount = IJob(_job).rewardAmount();
-    _exitSystemCoins(_coinJoin, _rewardAmount);
+    _exitSystemCoins(_coinJoin, _rewardAmount * RAY);
   }
 }

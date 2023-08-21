@@ -3,9 +3,10 @@ pragma solidity 0.8.19;
 
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
+import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
+
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
-import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 
 interface IOracleRelayer is IAuthorizable, IModifiable, IDisableable {
@@ -57,7 +58,7 @@ interface IOracleRelayer is IAuthorizable, IModifiable, IDisableable {
     returns (IDelayedOracle _oracle, uint256 _safetyCRatio, uint256 _liquidationCRatio);
 
   // --- Data ---
-  function lastRedemptionPrice() external view returns (uint256 _redemptionPrice);
+  function calcRedemptionPrice() external view returns (uint256 _redemptionPrice);
   function marketPrice() external view returns (uint256 _marketPrice);
   function redemptionRate() external view returns (uint256 _redemptionRate);
   function redemptionPriceUpdateTime() external view returns (uint256 _redemptionPriceUpdateTime);

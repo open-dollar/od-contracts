@@ -12,6 +12,7 @@ import {MainnetParams} from '@script/MainnetParams.s.sol';
 
 abstract contract Deploy is Common, Script {
   function setupEnvironment() public virtual {}
+  function setupPostEnvironment() public virtual {}
 
   function run() public {
     deployer = vm.addr(_deployerPk);
@@ -51,6 +52,9 @@ abstract contract Deploy is Common, Script {
     // Deploy contracts related to the SafeManager usecase
     deployProxyContracts(address(safeEngine));
 
+    // Deploy and setup contracts that rely on deployed environment
+    setupPostEnvironment();
+
     if (delegate == address(0)) {
       _revokeAllTo(governor);
     } else if (delegate == deployer) {
@@ -82,7 +86,7 @@ contract DeployMainnet is MainnetParams, Deploy {
       _inverted: false
     });
 
-    systemCoinOracle = new OracleForTest(HAI_INITIAL_PRICE); // 1 HAI = 1 USD
+    systemCoinOracle = new HardcodedOracle('HAI / USD', HAI_INITIAL_PRICE); // 1 HAI = 1 USD
     delayedOracle[WETH] = delayedOracleFactory.deployDelayedOracle(_ethUSDPriceFeed, 1 hours);
     delayedOracle[WSTETH] = delayedOracleFactory.deployDelayedOracle(_wstethUSDPriceFeed, 1 hours);
 
@@ -92,6 +96,8 @@ contract DeployMainnet is MainnetParams, Deploy {
     collateralTypes.push(WETH);
     collateralTypes.push(WSTETH);
   }
+
+  function setupPostEnvironment() public virtual override updateParams {}
 }
 
 contract DeployGoerli is GoerliParams, Deploy {
@@ -103,7 +109,8 @@ contract DeployGoerli is GoerliParams, Deploy {
   function setupEnvironment() public virtual override updateParams {
     // Setup oracle feeds
 
-    systemCoinOracle = new OracleForTestnet(HAI_INITIAL_PRICE); // 1 HAI = 1 USD
+    // HAI
+    systemCoinOracle = new HardcodedOracle('HAI / USD', HAI_INITIAL_PRICE); // 1 HAI = 1 USD
 
     // WETH
     collateral[WETH] = IERC20Metadata(OP_WETH);
@@ -112,7 +119,7 @@ contract DeployGoerli is GoerliParams, Deploy {
 
     // OP
     collateral[OP] = IERC20Metadata(OP_OPTIMISM);
-    OracleForTestnet _opETHPriceFeed = new OracleForTestnet(OP_GOERLI_OP_ETH_PRICE_FEED); // denominated feed
+    HardcodedOracle _opETHPriceFeed = new HardcodedOracle('OP / ETH', OP_GOERLI_OP_ETH_PRICE_FEED); // denominated feed
     IBaseOracle _opUSDPriceFeed = denominatedOracleFactory.deployDenominatedOracle({
       _priceSource: _opETHPriceFeed,
       _denominationPriceSource: _ethUSDPriceFeed,
@@ -124,12 +131,15 @@ contract DeployGoerli is GoerliParams, Deploy {
     collateral[STONES] = new ERC20ForTestnet('Stones', 'STN', 3);
     collateral[TOTEM] = new ERC20ForTestnet('Totem', 'TTM', 0);
 
+    // BTC: live feed
     IBaseOracle _wbtcUsdOracle =
-      chainlinkRelayerFactory.deployChainlinkRelayer(OP_GOERLI_CHAINLINK_BTC_USD_FEED, 1 hours); // live feed
-    IBaseOracle _stonesWbtcOracle = new OracleForTestnet(0.001e18); // denominated feed
+      chainlinkRelayerFactory.deployChainlinkRelayer(OP_GOERLI_CHAINLINK_BTC_USD_FEED, 1 hours);
+    // STN: denominated feed (1000 STN = 1 wBTC)
+    IBaseOracle _stonesWbtcOracle = new HardcodedOracle('STN / BTC', 0.001e18);
     IBaseOracle _stonesOracle =
       denominatedOracleFactory.deployDenominatedOracle(_stonesWbtcOracle, _wbtcUsdOracle, false);
-    IBaseOracle _totemOracle = new OracleForTestnet(1e18); // hardcoded feed
+    // TTM: hardcoded feed (TTM price is 1)
+    IBaseOracle _totemOracle = new HardcodedOracle('TTM', 1e18);
 
     delayedOracle[WETH] = delayedOracleFactory.deployDelayedOracle(_ethUSDPriceFeed, 1 hours);
     delayedOracle[OP] = delayedOracleFactory.deployDelayedOracle(_opUSDPriceFeed, 1 hours);
@@ -143,5 +153,16 @@ contract DeployGoerli is GoerliParams, Deploy {
     collateralTypes.push(WBTC);
     collateralTypes.push(STONES);
     collateralTypes.push(TOTEM);
+  }
+
+  function setupPostEnvironment() public virtual override updateParams {
+    // Setup deviated oracle
+    systemCoinOracle = new DeviatedOracle({
+      _symbol: 'HAI/USD',
+      _oracleRelayer: address(oracleRelayer),
+      _deviation: OP_GOERLI_HAI_PRICE_DEVIATION
+    });
+
+    oracleRelayer.modifyParameters('systemCoinOracle', abi.encode(systemCoinOracle));
   }
 }

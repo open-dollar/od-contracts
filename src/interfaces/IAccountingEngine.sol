@@ -5,10 +5,10 @@ import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ISurplusAuctionHouse} from '@interfaces/ISurplusAuctionHouse.sol';
 import {IDebtAuctionHouse} from '@interfaces/IDebtAuctionHouse.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
-import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
+import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 
-interface IAccountingEngine is IAuthorizable, IDisableable, IModifiable {
+interface IAccountingEngine is IAuthorizable, IModifiable, IDisableable {
   // --- Events ---
   event PushDebtToQueue(uint256 indexed _timestamp, uint256 _debtAmount);
   event PopDebtFromQueue(uint256 indexed _timestamp, uint256 _debtAmount);

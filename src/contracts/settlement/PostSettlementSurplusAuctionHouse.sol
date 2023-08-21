@@ -19,7 +19,6 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, Modifiable, IPostSet
   using Assertions for address;
 
   bytes32 public constant AUCTION_HOUSE_TYPE = bytes32('SURPLUS');
-  bytes32 public constant SURPLUS_AUCTION_TYPE = bytes32('POST-SETTLEMENT');
 
   // --- Data ---
   // Data for each separate auction
@@ -78,7 +77,14 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, Modifiable, IPostSet
 
     safeEngine.transferInternalCoins(msg.sender, address(this), _amountToSell);
 
-    emit StartAuction(_id, block.timestamp, _amountToSell, _initialBid, _auctions[_id].auctionDeadline);
+    emit StartAuction({
+      _id: _id,
+      _auctioneer: msg.sender,
+      _blockTimestamp: block.timestamp,
+      _amountToSell: _amountToSell,
+      _amountToRaise: _initialBid,
+      _auctionDeadline: _auctions[_id].auctionDeadline
+    });
   }
 
   /**
@@ -86,10 +92,10 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, Modifiable, IPostSet
    * @param _id ID of the auction to restart
    */
   function restartAuction(uint256 _id) external {
-    if (_id == 0 || _id > auctionsStarted) revert PSSAH_AuctionNeverStarted();
+    if (_id == 0 || _id > auctionsStarted) revert SAH_AuctionNeverStarted();
     Auction storage _auction = _auctions[_id];
-    if (_auction.auctionDeadline > block.timestamp) revert PSSAH_AuctionNotFinished();
-    if (_auction.bidExpiry != 0) revert PSSAH_BidAlreadyPlaced();
+    if (_auction.auctionDeadline > block.timestamp) revert SAH_AuctionNotFinished();
+    if (_auction.bidExpiry != 0) revert SAH_BidAlreadyPlaced();
     _auction.auctionDeadline = block.timestamp + _params.totalAuctionLength;
     emit RestartAuction(_id, block.timestamp, _auction.auctionDeadline);
   }
@@ -102,12 +108,12 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, Modifiable, IPostSet
    */
   function increaseBidSize(uint256 _id, uint256 _amountToBuy, uint256 _bid) external {
     Auction storage _auction = _auctions[_id];
-    if (_auction.highBidder == address(0)) revert PSSAH_HighBidderNotSet();
-    if (_auction.bidExpiry <= block.timestamp && _auction.bidExpiry != 0) revert PSSAH_BidAlreadyExpired();
-    if (_auction.auctionDeadline <= block.timestamp) revert PSSAH_AuctionAlreadyExpired();
-    if (_amountToBuy != _auction.amountToSell) revert PSSAH_AmountsNotMatching();
-    if (_bid <= _auction.bidAmount) revert PSSAH_BidNotHigher();
-    if (_bid * WAD < _params.bidIncrease * _auction.bidAmount) revert PSSAH_InsufficientIncrease();
+    if (_auction.highBidder == address(0)) revert SAH_HighBidderNotSet();
+    if (_auction.bidExpiry <= block.timestamp && _auction.bidExpiry != 0) revert SAH_BidAlreadyExpired();
+    if (_auction.auctionDeadline <= block.timestamp) revert SAH_AuctionAlreadyExpired();
+    if (_amountToBuy != _auction.amountToSell) revert SAH_AmountsNotMatching();
+    if (_bid <= _auction.bidAmount) revert SAH_BidNotHigher();
+    if (_bid * WAD < _params.bidIncrease * _auction.bidAmount) revert SAH_InsufficientIncrease();
 
     if (msg.sender != _auction.highBidder) {
       protocolToken.safeTransferFrom(msg.sender, _auction.highBidder, _auction.bidAmount);
@@ -129,7 +135,7 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, Modifiable, IPostSet
     Auction memory _auction = _auctions[_id];
     if (_auction.bidExpiry == 0 || (_auction.bidExpiry > block.timestamp && _auction.auctionDeadline > block.timestamp))
     {
-      revert PSSAH_AuctionNotFinished();
+      revert SAH_AuctionNotFinished();
     }
 
     safeEngine.transferInternalCoins(address(this), _auction.highBidder, _auction.amountToSell);

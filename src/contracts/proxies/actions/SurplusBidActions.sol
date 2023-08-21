@@ -32,12 +32,6 @@ contract SurplusBidActions is CommonActions {
     uint256 _amountToSell = ISurplusAuctionHouse(_surplusAuctionHouse).auctions(_auctionId).amountToSell;
     ISurplusAuctionHouse(_surplusAuctionHouse).settleAuction(_auctionId);
 
-    ISAFEEngine _safeEngine = ISurplusAuctionHouse(_surplusAuctionHouse).safeEngine();
-    if (!_safeEngine.canModifySAFE(address(this), _coinJoin)) {
-      _safeEngine.approveSAFEModification(_coinJoin);
-    }
-
-    // get the amount of system coins that were sold
-    ICoinJoin(_coinJoin).exit(msg.sender, _amountToSell / RAY);
+    _exitSystemCoins(_coinJoin, _amountToSell);
   }
 }

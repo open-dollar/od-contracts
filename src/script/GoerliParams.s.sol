@@ -5,11 +5,12 @@ import '@script/Params.s.sol';
 
 abstract contract GoerliParams is Contracts, Params {
   // --- Testnet Params ---
-  uint256 constant OP_GOERLI_OP_ETH_PRICE_FEED = 0.001e18;
+  uint256 constant OP_GOERLI_OP_ETH_PRICE_FEED = 0.001e18; // 1000 OP = 1 ETH
+  uint256 constant OP_GOERLI_HAI_PRICE_DEVIATION = 0.995e18; // -0.5%
 
   function _getEnvironmentParams() internal override {
-    governor = 0x8679A33Dc1DB18b0eD67260b97730213a77C2e6e;
-    delegate = 0x58F84023DC3E0941Faa5904E974BAc5bfF3E047f;
+    governor = 0xA6A772CCaa47eA3A6f267d31D782e8Ac5a5Ed743;
+    delegate = 0x8125aAa8F7912aEb500553a5b1710BB16f7A6C65;
 
     // Setup delegated collateral joins
     delegatee[OP] = governor;
@@ -21,8 +22,8 @@ abstract contract GoerliParams is Contracts, Params {
 
     _accountingEngineParams = IAccountingEngine.AccountingEngineParams({
       surplusIsTransferred: 0, // surplus is auctioned
-      surplusDelay: 1800,
-      popDebtDelay: 1800,
+      surplusDelay: 1800, // 30 minutes
+      popDebtDelay: 1800, // 30 minutes
       disableCooldown: 3 days,
       surplusAmount: 100 * RAD, // 100 COINs
       surplusBuffer: 1000 * RAD, // 1000 COINs
@@ -33,22 +34,16 @@ abstract contract GoerliParams is Contracts, Params {
     _debtAuctionHouseParams = IDebtAuctionHouse.DebtAuctionHouseParams({
       bidDecrease: 1.05e18, // - 5%
       amountSoldIncrease: 1.05e18, // + 5%
-      bidDuration: 900,
-      totalAuctionLength: 1800
+      bidDuration: 900, // 15 minutes
+      totalAuctionLength: 1800 // 30 minutes
     });
 
     _surplusAuctionHouseParams = ISurplusAuctionHouse.SurplusAuctionHouseParams({
       bidIncrease: 1.01e18, // +1 %
-      bidDuration: 900,
-      totalAuctionLength: 1800,
+      bidDuration: 900, // 15 minutes
+      totalAuctionLength: 1800, // 30 minutes
       bidReceiver: governor,
       recyclingPercentage: 0 // 100% is burned
-    });
-
-    _collateralAuctionHouseSystemCoinParams = ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams({
-      lowerSystemCoinDeviation: WAD, // 0% deviation
-      upperSystemCoinDeviation: WAD, // 0% deviation
-      minSystemCoinDeviation: WAD // 0% deviation
     });
 
     _liquidationEngineParams = ILiquidationEngine.LiquidationEngineParams({
@@ -100,8 +95,8 @@ abstract contract GoerliParams is Contracts, Params {
     _globalSettlementParams = IGlobalSettlement.GlobalSettlementParams({shutdownCooldown: 3 days});
     _postSettlementSAHParams = IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams({
       bidIncrease: 1.01e18, // +1 %
-      bidDuration: 900,
-      totalAuctionLength: 1800
+      bidDuration: 900, // 15 minutes
+      totalAuctionLength: 1800 // 30 minutes
     });
 
     // --- Collateral Default Params ---
@@ -130,13 +125,11 @@ abstract contract GoerliParams is Contracts, Params {
         liquidationQuantity: 1000 * RAD // 1000 COINs
       });
 
-      _collateralAuctionHouseCParams[_cType] = ICollateralAuctionHouse.CollateralAuctionHouseParams({
+      _collateralAuctionHouseParams[_cType] = ICollateralAuctionHouse.CollateralAuctionHouseParams({
         minimumBid: WAD, // 1 COINs
         minDiscount: WAD, // no discount
         maxDiscount: 0.9e18, // -10%
-        perSecondDiscountUpdateRate: MINUS_0_5_PERCENT_PER_HOUR, // RAY
-        lowerCollateralDeviation: 0.99e18, // -1%
-        upperCollateralDeviation: 0.99e18 // +1%
+        perSecondDiscountUpdateRate: MINUS_0_5_PERCENT_PER_HOUR // RAY
       });
     }
 
@@ -147,6 +140,6 @@ abstract contract GoerliParams is Contracts, Params {
     _safeEngineCParams[WETH].debtCeiling = 100_000_000 * RAD; // 100M COINs
 
     _liquidationEngineCParams[OP].liquidationPenalty = 1.2e18; // 20%
-    _collateralAuctionHouseCParams[OP].maxDiscount = 0.5e18; // -50%
+    _collateralAuctionHouseParams[OP].maxDiscount = 0.5e18; // -50%
   }
 }
