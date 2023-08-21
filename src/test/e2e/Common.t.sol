@@ -5,14 +5,14 @@ import {HaiTest} from '@test/utils/HaiTest.t.sol';
 import {HAI, HAI_INITIAL_PRICE, WETH} from '@script/Params.s.sol';
 import {Deploy} from '@script/Deploy.s.sol';
 import {TestParams, TKN, TEST_ETH_PRICE, TEST_TKN_PRICE} from '@test/e2e/TestParams.s.sol';
+import {ERC20ForTest} from '@contracts/for-test/ERC20ForTest.sol';
+import {OracleForTest} from '@contracts/for-test/OracleForTest.sol';
+import {DelayedOracleForTest} from '@contracts/for-test/DelayedOracleForTest.sol';
 import {
   Contracts,
   ICollateralJoin,
-  ERC20ForTest,
   ERC20ForTestnet,
   IERC20Metadata,
-  OracleForTest,
-  DelayedOracleForTest,
   IBaseOracle,
   ISAFEEngine
 } from '@script/Contracts.s.sol';

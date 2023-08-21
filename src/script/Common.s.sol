@@ -13,18 +13,8 @@ abstract contract Common is Contracts, Params {
     // deploy ETHJoin and CollateralAuctionHouse
     ethJoin = new ETHJoin(address(safeEngine), ETH_A);
 
-    if (address(collateralAuctionHouseFactory) != address(0)) {
-      collateralAuctionHouse[ETH_A] =
-        collateralAuctionHouseFactory.deployCollateralAuctionHouse(ETH_A, _collateralAuctionHouseParams[ETH_A]);
-    } else {
-      collateralAuctionHouse[ETH_A] = new CollateralAuctionHouse({
-          _safeEngine: address(safeEngine),
-          __liquidationEngine: address(liquidationEngine),
-          __oracleRelayer: address(oracleRelayer),
-          _cType: ETH_A,
-          _cahParams: _collateralAuctionHouseParams[ETH_A]
-          });
-    }
+    collateralAuctionHouse[ETH_A] =
+      collateralAuctionHouseFactory.deployCollateralAuctionHouse(ETH_A, _collateralAuctionHouseParams[ETH_A]);
 
     collateralJoin[ETH_A] = CollateralJoin(address(ethJoin));
     safeEngine.addAuthorization(address(ethJoin));
@@ -370,6 +360,7 @@ abstract contract Common is Contracts, Params {
   }
 
   modifier updateParams() {
+    _getEnvironmentParams();
     _;
     _getEnvironmentParams();
   }

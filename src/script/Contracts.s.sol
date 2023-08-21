@@ -34,13 +34,10 @@ import {DenominatedOracle} from '@contracts/oracles/DenominatedOracle.sol';
 import {ChainlinkRelayer} from '@contracts/oracles/ChainlinkRelayer.sol';
 import {UniV3Relayer} from '@contracts/oracles/UniV3Relayer.sol';
 
-// --- Tokens ---
-import {ERC20ForTest, ERC20} from '@contracts/for-test/ERC20ForTest.sol';
+// --- Testnet contracts ---
 import {ERC20ForTestnet} from '@contracts/for-test/ERC20ForTestnet.sol';
-import {CoinForTest} from '@contracts/for-test/CoinForTest.sol';
-import {OracleForTest} from '@contracts/for-test/OracleForTest.sol';
-import {DelayedOracleForTest} from '@contracts/for-test/DelayedOracleForTest.sol';
-import {OracleForTestnet} from '@contracts/for-test/OracleForTestnet.sol';
+import {DeviatedOracle} from '@contracts/for-test/DeviatedOracle.sol';
+import {HardcodedOracle} from '@contracts/for-test/HardcodedOracle.sol';
 
 // --- Token adapters ---
 import {CoinJoin, ICoinJoin} from '@contracts/utils/CoinJoin.sol';

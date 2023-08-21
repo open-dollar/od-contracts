@@ -6,7 +6,7 @@ import {ETH_A} from '@script/Params.s.sol';
 import {
   Contracts,
   ICollateralJoin,
-  ERC20ForTest,
+  ERC20ForTestnet,
   IERC20Metadata,
   ISAFEEngine,
   ICollateralAuctionHouse,
@@ -90,7 +90,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
 
     vm.startPrank(_user);
     if (address(_collateral) != OP_WETH) {
-      ERC20ForTest(address(_collateral)).mint(_user, _wei);
+      ERC20ForTestnet(address(_collateral)).mint(_user, _wei);
     } else {
       vm.deal(_user, _wei);
       IWeth(address(_collateral)).deposit{value: _wei}();
