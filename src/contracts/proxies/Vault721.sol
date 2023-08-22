@@ -30,7 +30,7 @@ contract Vault721 is ERC721('OpenDollarVault', 'ODV') {
     safeManager = msg.sender;
   }
 
-  function getProxy(address _user) external returns (address _proxy) {
+  function getProxy(address _user) external view returns (address _proxy) {
     _proxy = _userRegistry[_user];
   }
 
@@ -68,6 +68,20 @@ contract Vault721 is ERC721('OpenDollarVault', 'ODV') {
     require(msg.sender == governor, 'Vault: Only governor');
     require(_safeManager != address(0), 'Vault: ZeroAddr');
     safeManager = _safeManager;
+  }
+
+  /**
+   * @dev allows user to transfer Proxy and corresponding NFT-vaults
+   */
+  function transferProxy(address _proxy, address _newOwner) external {
+    require(_proxyRegistry[_proxy] == msg.sender, 'Vault: Only owner');
+    _setApprovalForAll(msg.sender, _proxy, true);
+
+    ODProxy(_proxy).setOwner(_newOwner);
+
+    _setApprovalForAll(msg.sender, _proxy, false);
+    _proxyRegistry[_proxy] = _newOwner;
+    _userRegistry[_newOwner] = _proxy;
   }
 
   /**
