@@ -19,8 +19,10 @@ contract DeployNewProxies is Script {
   CommonActions public commonActions;
 
   function run() public {
+    vm.startBroadcast(vm.envUint('ARB_GOERLI_PK'));
     newProxies();
     modifiedProxies();
+    vm.stopBroadcast();
   }
 
   function newProxies() public {
