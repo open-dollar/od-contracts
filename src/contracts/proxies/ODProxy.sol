@@ -9,12 +9,12 @@ contract ODProxy is Ownable {
   error TargetAddressRequired();
   error TargetCallFailed(bytes _response);
 
-  address immutable vault721;
-  ISafeManager immutable safeManager;
+  address private immutable _VAULT721;
+  ISafeManager private immutable _SAFE_MANAGER;
 
   constructor(address _owner, address _safeManager) Ownable(_owner) {
-    vault721 = msg.sender;
-    safeManager = ISafeManager(_safeManager);
+    _VAULT721 = msg.sender;
+    _SAFE_MANAGER = ISafeManager(_safeManager);
   }
 
   function execute(address _target, bytes memory _data) external payable onlyOwner returns (bytes memory _response) {
@@ -29,17 +29,17 @@ contract ODProxy is Ownable {
   }
 
   function setOwner(address _owner) external override {
-    require(msg.sender == vault721, 'Only Vault721');
+    require(msg.sender == _VAULT721, 'Only Vault721');
     _setOwner(_owner);
   }
 
   // --- Internal ---
   function _setOwner(address _newOwner) internal override {
-    uint256[] memory safeIds = safeManager.getSafes(address(this));
+    uint256[] memory _safeIds = _SAFE_MANAGER.getSafes(address(this));
 
-    uint256 length = safeIds.length;
+    uint256 length = _safeIds.length;
     for (uint256 i = 0; i < length;) {
-      IERC721(vault721).safeTransferFrom(owner, _newOwner, safeIds[i]);
+      IERC721(_VAULT721).safeTransferFrom(owner, _newOwner, _safeIds[i]);
       ++i; // gas optimized
     }
 
