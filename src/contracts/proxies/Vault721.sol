@@ -103,12 +103,19 @@ contract Vault721 is ERC721('OpenDollarVault', 'ODV') {
   }
 
   /**
+   * @dev prevent token burning, which would de-link NFT from Safe
+   */
+  function _beforeTokenTransfer(address from, address to, uint256 firstTokenId, uint256 batchSize) internal override {
+    require(to != address(0), 'Vault: No burn');
+  }
+
+  /**
    * @dev _transfer calls `transferSAFEOwnership` on SafeManager
-   * enforces that ODProxy exists for transfer or it deploys a new ODProxy for receiver of vault/nft
+   * enforces that ODProxy exists for transfer or it deploys a new ODProxy for receiver of vault/nft.
+   * if `from == _proxyRegistry[msg.sender]`, then tx is a Proxy transfer
    */
   function _afterTokenTransfer(address from, address to, uint256 firstTokenId, uint256 batchSize) internal override {
-    require(to != address(0), 'Vault: No burn');
-    if (from != address(0)) {
+    if (from != address(0) && from != _proxyRegistry[msg.sender]) {
       address payable proxy;
 
       if (_isNotProxy(to)) {
