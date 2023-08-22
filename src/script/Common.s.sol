@@ -165,8 +165,8 @@ abstract contract Common is Contracts, Params {
 
   function deployContracts() public updateParams {
     // deploy Tokens
-    systemCoin = new SystemCoin('HAI Index Token', 'HAI');
-    protocolToken = new ProtocolToken('Protocol Token', 'KITE');
+    systemCoin = new SystemCoin('Open Dollar', 'OD');
+    protocolToken = new ProtocolToken('Open Dollar Governance', 'ODG');
 
     // deploy Base contracts
     safeEngine = new SAFEEngine(_safeEngineParams);
