@@ -92,6 +92,8 @@ abstract contract GoerliDeployment is Contracts, GoerliParams, GoerliContracts {
     surplusBidActions = SurplusBidActions(surplusBidActionsAddr);
     collateralBidActions = CollateralBidActions(collateralBidActionsAddr);
     rewardedActions = RewardedActions(rewardedActionsAddr);
+    globalSettlementActions = GlobalSettlementActions(globalSettlementActionsAddr);
+    postSettlementSurplusBidActions = PostSettlementSurplusBidActions(postSettlementSurplusBidActionsAddr);
 
     // --- oracles ---
     systemCoinOracle = IBaseOracle(0x4845E891dB00979B0A017182b1dad52cbc75aEF0);

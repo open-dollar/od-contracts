@@ -73,6 +73,8 @@ import {DebtBidActions} from '@contracts/proxies/actions/DebtBidActions.sol';
 import {SurplusBidActions} from '@contracts/proxies/actions/SurplusBidActions.sol';
 import {CollateralBidActions} from '@contracts/proxies/actions/CollateralBidActions.sol';
 import {RewardedActions} from '@contracts/proxies/actions/RewardedActions.sol';
+import {GlobalSettlementActions} from '@contracts/proxies/actions/GlobalSettlementActions.sol';
+import {PostSettlementSurplusBidActions} from '@contracts/proxies/actions/PostSettlementSurplusBidActions.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 import {ODSafeManager} from '@contracts/proxies/ODSafeManager.sol';
 import {Vault721} from '@contracts/proxies/Vault721.sol';
@@ -146,4 +148,6 @@ abstract contract Contracts {
   SurplusBidActions public surplusBidActions;
   CollateralBidActions public collateralBidActions;
   RewardedActions public rewardedActions;
+  GlobalSettlementActions public globalSettlementActions;
+  PostSettlementSurplusBidActions public postSettlementSurplusBidActions;
 }

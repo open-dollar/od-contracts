@@ -313,6 +313,8 @@ abstract contract Common is Contracts, Params {
     surplusBidActions = new SurplusBidActions();
     collateralBidActions = new CollateralBidActions();
     rewardedActions = new RewardedActions();
+    globalSettlementActions = new GlobalSettlementActions();
+    postSettlementSurplusBidActions = new PostSettlementSurplusBidActions();
   }
 
   modifier updateParams() {

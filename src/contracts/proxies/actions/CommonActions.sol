@@ -47,7 +47,7 @@ contract CommonActions {
     ICoinJoin(_coinJoin).join(_dst, _wad);
   }
 
-  function _exitSystemCoins(address _coinJoin, uint256 _coinsToExit) internal {
+  function _exitSystemCoins(address _coinJoin, uint256 _coinsToExit) internal virtual {
     if (_coinsToExit == 0) return;
 
     ICoinJoin __coinJoin = ICoinJoin(_coinJoin);
