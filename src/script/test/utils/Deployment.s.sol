@@ -14,6 +14,8 @@ import {CommonActions} from '@contracts/proxies/actions/CommonActions.sol';
 import {DebtBidActions} from '@contracts/proxies/actions/DebtBidActions.sol';
 import {SurplusBidActions} from '@contracts/proxies/actions/SurplusBidActions.sol';
 import {RewardedActions} from '@contracts/proxies/actions/RewardedActions.sol';
+import {GlobalSettlementActions} from '@contracts/proxies/actions/GlobalSettlementActions.sol';
+import {PostSettlementSurplusBidActions} from '@contracts/proxies/actions/PostSettlementSurplusBidActions.sol';
 import {ProtocolToken} from '@contracts/tokens/ProtocolToken.sol';
 import {SystemCoin} from '@contracts/tokens/SystemCoin.sol';
 import {CollateralJoin} from '@contracts/utils/CollateralJoin.sol';
