@@ -66,8 +66,8 @@ abstract contract GoerliDeployment is Contracts, GoerliParams, GoerliContracts {
     collateralJoin[WETH] = CollateralJoin(collateralJoinChild_WETHAddr);
     collateralAuctionHouse[WETH] = CollateralAuctionHouse(collateralAuctionHouseChild_WETHAddr);
 
-    collateralJoin[FTRG] = CollateralJoin(collateralJoinDelegatableChild_OPAddr);
-    collateralAuctionHouse[FTRG] = CollateralAuctionHouse(collateralAuctionHouseChild_OPAddr);
+    collateralJoin[FTRG] = CollateralJoin(collateralJoinDelegatableChild_FTRGAddr);
+    collateralAuctionHouse[FTRG] = CollateralAuctionHouse(collateralAuctionHouseChild_FTRGAddr);
 
     collateralJoin[WBTC] = CollateralJoin(collateralJoinChild_WBTCAddr);
     collateralAuctionHouse[WBTC] = CollateralAuctionHouse(collateralAuctionHouseChild_WBTCAddr);
@@ -85,7 +85,7 @@ abstract contract GoerliDeployment is Contracts, GoerliParams, GoerliContracts {
 
     // --- proxies ---
     vault721 = Vault721(vault721Addr);
-    safeManager = ODSafeManager(haiSafeManagerAddr);
+    safeManager = ODSafeManager(odSafeManagerAddr);
 
     basicActions = BasicActions(basicActionsAddr);
     debtBidActions = DebtBidActions(debtBidActionsAddr);
@@ -96,7 +96,7 @@ abstract contract GoerliDeployment is Contracts, GoerliParams, GoerliContracts {
     postSettlementSurplusBidActions = PostSettlementSurplusBidActions(postSettlementSurplusBidActionsAddr);
 
     // --- oracles ---
-    systemCoinOracle = IBaseOracle(0x4845E891dB00979B0A017182b1dad52cbc75aEF0);
+    systemCoinOracle = IBaseOracle(address(0));
     delayedOracle[WETH] = IDelayedOracle(delayedOracleChild1Addr);
     delayedOracle[FTRG] = IDelayedOracle(delayedOracleChild2Addr);
     delayedOracle[WBTC] = IDelayedOracle(delayedOracleChild3Addr);
