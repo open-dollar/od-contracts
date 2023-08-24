@@ -16,8 +16,8 @@ import {GoerliContracts} from '@script/GoerliContracts.s.sol';
 
 contract GetLiqPool is GoerliContracts, Script {
   IUniswapV3Factory public uniswapV3Factory = IUniswapV3Factory(0x4893376342d5D7b3e31d4184c08b265e5aB2A3f6);
-  address public tokenB = ARB_GOERLI_WETH;
   address public tokenA = systemCoinAddr;
+  address public tokenB = ARB_GOERLI_WETH;
   uint24 public fee = uint24(0x2710);
 
   address public pool;
