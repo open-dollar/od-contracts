@@ -80,4 +80,7 @@ abstract contract GoerliContracts {
   address public surplusBidActionsAddr = 0x267D4BDf13DaDD3Da7C90074E163c44443505CA5;
   address public collateralBidActionsAddr = 0x92A093f53360ffc42f75f6D00af51E26138725b4;
   address public rewardedActionsAddr = 0xA2C86fBae73C2672ace63a732274a1D4c0FE938F;
+
+  address public globalSettlementActionsAddr = address(0);
+  address public postSettlementSurplusBidActionsAddr = address(0);
 }

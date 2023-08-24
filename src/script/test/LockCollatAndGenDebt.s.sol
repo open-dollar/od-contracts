@@ -14,8 +14,9 @@ contract LockCollAndGenDebt is TestScripts {
     vm.startBroadcast(vm.envUint('ARB_GOERLI_PK'));
     address proxy = address(deployOrFind(USER2));
     WETH_TOKEN.approve(address(proxy), type(uint256).max);
+    uint256 safeId = 3;
 
-    depositCollatAndGenDebt(WETH, 12, 0.4 ether, 200 ether, proxy);
+    depositCollatAndGenDebt(WETH, safeId, 0.3 ether, 150 ether, proxy);
     vm.stopBroadcast();
   }
 }
