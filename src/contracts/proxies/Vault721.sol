@@ -29,7 +29,7 @@ contract Vault721 is ERC721('OpenDollarVault', 'ODV') {
     safeManager = msg.sender;
   }
 
-  function getProxy(address _user) external returns (address _proxy) {
+  function getProxy(address _user) external view returns (address _proxy) {
     _proxy = _userRegistry[_user];
   }
 
