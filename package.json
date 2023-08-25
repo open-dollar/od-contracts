@@ -1,8 +1,7 @@
 {
   "name": "hai",
-  "version": "0.0.1",
-  "private": true,
-  "description": "Multicollateral ETH backed stablecoin",
+  "version": "0.1.2",
+  "description": "Multicollateral debt backed stablecoin",
   "homepage": "https://github.com/hai-on-op/hai#readme",
   "repository": {
     "type": "git",
@@ -21,6 +20,7 @@
     "coverage": "forge coverage",
     "deploy:goerli": "bash -c 'source .env && forge script DeployGoerli --with-gas-price 2000000000 -vvvvv --rpc-url $OP_GOERLI_RPC --broadcast --private-key $OP_GOERLI_DEPLOYER_PK --verify --etherscan-api-key $OP_ETHERSCAN_API_KEY'",
     "deploy:mainnet": "bash -c 'source .env && forge script DeployMainnet --rpc-url $OP_MAINNET_RPC --broadcast --private-key $OP_MAINNET_DEPLOYER_PK --verify --etherscan-api-key $OP_ETHERSCAN_API_KEY'",
+    "docs": "forge doc --serve",
     "postinstall": "forge install",
     "lint:check": "yarn lint:sol && forge fmt check",
     "lint:fix": "sort-package-json && forge fmt && yarn lint:sol --fix",

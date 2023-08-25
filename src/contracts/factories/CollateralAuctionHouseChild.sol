@@ -16,7 +16,7 @@ import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
 
 /**
  * @title  CollateralAuctionHouseChild
- * @notice This contract inherits all the functionality of `CollateralAuctionHouse.sol` to be factory deployed
+ * @notice This contract inherits all the functionality of CollateralAuctionHouse to be factory deployed
  */
 contract CollateralAuctionHouseChild is
   DisableableChild,
@@ -28,6 +28,14 @@ contract CollateralAuctionHouseChild is
   using Math for uint256;
 
   // --- Init ---
+
+  /**
+   * @param  _safeEngine Address of the SAFEEngine contract
+   * @param  _liquidationEngine Ignored parameter (read from factory)
+   * @param  _oracleRelayer Ignored parameter (read from factory)
+   * @param  _cType Bytes32 representation of the collateral type
+   * @param  _cahParams Initial valid CollateralAuctionHouse parameters struct
+   */
   constructor(
     address _safeEngine,
     address _liquidationEngine,
@@ -44,7 +52,12 @@ contract CollateralAuctionHouseChild is
     )
   {}
 
-  // NOTE: child implementation reads liquidationEngine from factory
+  // --- Overrides ---
+
+  /**
+   * @dev Overriding method reads liquidationEngine from factory
+   * @inheritdoc ICollateralAuctionHouse
+   */
   function liquidationEngine()
     public
     view
@@ -54,7 +67,10 @@ contract CollateralAuctionHouseChild is
     return ILiquidationEngine(ICollateralAuctionHouseFactory(factory).liquidationEngine());
   }
 
-  // NOTE: child implementation reads oracleRelayer from factory
+  /**
+   * @dev Overriding method reads oracleRelayer from factory
+   * @inheritdoc ICollateralAuctionHouse
+   */
   function oracleRelayer()
     public
     view
@@ -64,11 +80,21 @@ contract CollateralAuctionHouseChild is
     return IOracleRelayer(ICollateralAuctionHouseFactory(factory).oracleRelayer());
   }
 
-  // NOTE: ignores modifying liquidationEngine's address (read from factory)
+  /**
+   * @dev    Modifying liquidationEngine's address results in a no-operation (is read from factory)
+   * @param  _newLiquidationEngine Ignored parameter (read from factory)
+   * @inheritdoc CollateralAuctionHouse
+   */
   function _setLiquidationEngine(address _newLiquidationEngine) internal override {}
-  // NOTE: ignores modifying oracleRelayer's address (read from factory)
-  function _setOracleRelayer(address _newLiquidationEngine) internal override {}
 
+  /**
+   * @dev    Modifying oracleRelayer's address results in a no-operation (is read from factory)
+   * @param  _newOracleRelayer Ignored parameter (read from factory)
+   * @inheritdoc CollateralAuctionHouse
+   */
+  function _setOracleRelayer(address _newOracleRelayer) internal override {}
+
+  /// @inheritdoc AuthorizableChild
   function _isAuthorized(address _account)
     internal
     view
@@ -78,10 +104,12 @@ contract CollateralAuctionHouseChild is
     return super._isAuthorized(_account);
   }
 
+  /// @inheritdoc DisableableChild
   function _isEnabled() internal view override(DisableableChild, Disableable) returns (bool _enabled) {
     return super._isEnabled();
   }
 
+  /// @inheritdoc DisableableChild
   function _onContractDisable() internal override(DisableableChild, Disableable) {
     super._onContractDisable();
   }

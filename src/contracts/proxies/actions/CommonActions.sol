@@ -8,32 +8,65 @@ import {ICollateralJoin} from '@interfaces/utils/ICollateralJoin.sol';
 
 import {RAY} from '@libraries/Math.sol';
 
-contract CommonActions {
+/**
+ * @title  CommonActions
+ * @notice This abstract contract defines common actions to be used by the proxy actions contracts
+ */
+abstract contract CommonActions {
+  // --- Errors ---
+
+  /// @notice Throws if the method is being directly called, without a delegate call
   error OnlyDelegateCalls();
 
+  /// @notice Address of the inheriting contract, used to check if the call is being made through a delegate call
   // solhint-disable-next-line var-name-mixedcase
   address internal immutable _THIS = address(this);
 
-  // Public functions
+  // --- Methods ---
+
+  /**
+   * @notice Joins system coins into the safeEngine
+   * @param  _coinJoin Address of the CoinJoin contract
+   * @param  _dst Address of the SAFE to join the coins into
+   * @param  _wad Amount of coins to join [wad]
+   */
   function joinSystemCoins(address _coinJoin, address _dst, uint256 _wad) external delegateCall {
     _joinSystemCoins(_coinJoin, _dst, _wad);
   }
 
+  /**
+   * @notice Exits system coins from the safeEngine
+   * @param  _coinJoin Address of the CoinJoin contract
+   * @param  _coinsToExit Amount of coins to exit [wad]
+   */
   function exitSystemCoins(address _coinJoin, uint256 _coinsToExit) external delegateCall {
     _exitSystemCoins(_coinJoin, _coinsToExit);
   }
 
+  /**
+   * @notice Exits all system coins from the safeEngine
+   * @param  _coinJoin Address of the CoinJoin contract
+   */
   function exitAllSystemCoins(address _coinJoin) external delegateCall {
     uint256 _coinsToExit = ICoinJoin(_coinJoin).safeEngine().coinBalance(address(this));
     _exitSystemCoins(_coinJoin, _coinsToExit);
   }
 
+  /**
+   * @notice Exits collateral tokens from the safeEngine
+   * @param  _collateralJoin Address of the CollateralJoin contract
+   * @param  _wad Amount of collateral tokens to exit [wad]
+   */
   function exitCollateral(address _collateralJoin, uint256 _wad) external delegateCall {
     _exitCollateral(_collateralJoin, _wad);
   }
 
   // --- Internal functions ---
 
+  /**
+   * @notice Joins system coins into the safeEngine
+   * @dev    Transfers ERC20 coins from the user to the proxy, then joins them through the CoinJoin contract into the destination SAFE
+   */
   function _joinSystemCoins(address _coinJoin, address _dst, uint256 _wad) internal {
     if (_wad == 0) return;
 
@@ -47,6 +80,10 @@ contract CommonActions {
     ICoinJoin(_coinJoin).join(_dst, _wad);
   }
 
+  /**
+   * @notice Exits system coins from the safeEngine
+   * @dev    Exits system coins through the CoinJoin contract, transferring the ERC20 coins to the user
+   */
   function _exitSystemCoins(address _coinJoin, uint256 _coinsToExit) internal virtual {
     if (_coinsToExit == 0) return;
 
@@ -61,6 +98,10 @@ contract CommonActions {
     __coinJoin.exit(msg.sender, _coinsToExit / RAY);
   }
 
+  /**
+   * @notice Joins collateral tokens into the safeEngine
+   * @dev    Transfers ERC20 tokens from the user to the proxy, then joins them through the CollateralJoin contract into the destination SAFE
+   */
   function _joinCollateral(address _collateralJoin, address _safe, uint256 _wad) internal {
     ICollateralJoin __collateralJoin = ICollateralJoin(_collateralJoin);
     IERC20Metadata _token = __collateralJoin.collateral();
@@ -78,7 +119,11 @@ contract CommonActions {
     __collateralJoin.join(_safe, _wei);
   }
 
-  // NOTE: the exited tokens will be rounded down to collateral decimals
+  /**
+   * @notice Exits collateral tokens from the safeEngine
+   * @dev    Exits collateral tokens through the CollateralJoin contract, transferring the ERC20 tokens to the user
+   * @dev    The exited tokens will be rounded down to collateral decimals precision
+   */
   function _exitCollateral(address _collateralJoin, uint256 _wad) internal {
     if (_wad == 0) return;
 
@@ -94,6 +139,9 @@ contract CommonActions {
     __collateralJoin.exit(msg.sender, _weiAmount);
   }
 
+  // --- Modifiers ---
+
+  /// @notice Checks if the call is being made through a delegate call
   modifier delegateCall() {
     if (address(this) == _THIS) revert OnlyDelegateCalls();
     _;

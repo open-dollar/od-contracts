@@ -8,6 +8,11 @@ quote_style = 'single'
 number_underscore = 'thousands'
 wrap_comments = false
 
+[doc]
+title = 'HAI docs'
+repository = 'https://github.com/hai-on-op/hai/'
+ignore = ['**/for-test/*.sol', '**/test/**/*.sol', '**/*.t.sol', '**/*.s.sol']
+
 [profile.default]
 solc = '0.8.19'
 src = 'src'

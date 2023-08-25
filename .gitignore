@@ -8,6 +8,7 @@ cache
 out
 out-via-ir
 broadcast/**/run-*.json
+docs
 
 # Config files
 .env
