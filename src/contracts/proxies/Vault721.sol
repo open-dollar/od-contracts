@@ -12,7 +12,6 @@ contract Vault721 is ERC721('OpenDollarVault', 'ODV') {
   mapping(address proxy => address user) internal _proxyRegistry;
   mapping(address user => address proxy) internal _userRegistry;
 
-  event Mint(address _proxy, uint256 _safeId);
   event CreateProxy(address indexed _user, address _proxy);
 
   /**
