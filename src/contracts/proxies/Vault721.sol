@@ -74,7 +74,7 @@ contract Vault721 is ERC721('OpenDollarVault', 'ODV') {
    * @dev check that proxy does not exist OR that the user does not own proxy
    */
   function _isNotProxy(address _user) internal view returns (bool) {
-    return _userRegistry[_user] == address(0) || ODProxy(_userRegistry[_user]).owner() != _user;
+    return _userRegistry[_user] == address(0) || ODProxy(_userRegistry[_user]).OWNER() != _user;
   }
 
   /**
