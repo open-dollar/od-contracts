@@ -7,6 +7,8 @@ import {GoerliDeployment} from '@script/GoerliDeployment.s.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 
 contract GoerliForkSetup is Test, GoerliDeployment {
+  uint256 public currSafeId = 10;
+
   // TODO replace with Arbitrum addrs
   address public ARB_WBTC = address(0);
   address public ARB_STONES = address(0);
