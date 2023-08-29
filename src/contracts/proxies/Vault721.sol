@@ -2,10 +2,11 @@
 pragma solidity 0.8.19;
 
 import {ERC721} from '@openzeppelin/token/ERC721/ERC721.sol';
+import {ERC721Enumerable} from '@openzeppelin/token/ERC721/extensions/ERC721Enumerable.sol';
 import {ISafeManager} from '@interfaces/proxies/ISafeManager.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 
-contract Vault721 is ERC721('OpenDollarVault', 'ODV') {
+contract Vault721 is ERC721, ERC721Enumerable {
   address public safeManager;
   address public governor;
 
@@ -18,7 +19,7 @@ contract Vault721 is ERC721('OpenDollarVault', 'ODV') {
   /**
    * @dev initializes DAO governor contract
    */
-  constructor(address _governor) {
+  constructor(address _governor) ERC721('OpenDollar Vault', 'ODV') {
     governor = _governor;
   }
 
@@ -30,7 +31,7 @@ contract Vault721 is ERC721('OpenDollarVault', 'ODV') {
     safeManager = msg.sender;
   }
 
-  function getProxy(address _user) external returns (address _proxy) {
+  function getProxy(address _user) view returns (address _proxy) {
     _proxy = _userRegistry[_user];
   }
 
@@ -105,9 +106,28 @@ contract Vault721 is ERC721('OpenDollarVault', 'ODV') {
       ISafeManager(safeManager).transferSAFEOwnership(firstTokenId, address(proxy));
     }
   }
+
+  /*
+   * @dev
+   * The following functions are overrides required by Solidity.
+   */
+
+  function _beforeTokenTransfer(
+    address from,
+    address to,
+    uint256 tokenId,
+    uint256 batchSize
+  ) internal override(ERC721, ERC721Enumerable) {
+    super._beforeTokenTransfer(from, to, tokenId, batchSize);
+  }
+
+  function supportsInterface(bytes4 interfaceId) public view override(ERC721, ERC721Enumerable) returns (bool) {
+    return super.supportsInterface(interfaceId);
+  }
 }
 
 // TODO Vars to inlcude and where to find them:
+// These will be required to have a cool URI image that uses certain data
 // these vars will be for NFT marketplace to show up-to-date vault info
 
 // Collateral Type
