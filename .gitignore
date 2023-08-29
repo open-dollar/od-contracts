@@ -17,3 +17,5 @@ broadcast/**/run-*.json
 
 lcov.info
 .vscode/
+
+docs/
