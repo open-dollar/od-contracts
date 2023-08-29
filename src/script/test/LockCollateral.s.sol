@@ -15,7 +15,7 @@ contract LockCollateral is TestScripts {
     address proxy = address(deployOrFind(USER2));
     WETH_TOKEN.approve(proxy, type(uint256).max);
 
-    depositCollatAndGenDebt(WETH, 12, 0.01 ether, 0, proxy);
+    depositCollatAndGenDebt(WETH, SAFE, COLLATERAL, ZERO_DEBT, proxy);
     vm.stopBroadcast();
   }
 }

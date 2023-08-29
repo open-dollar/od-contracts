@@ -12,9 +12,9 @@ contract GoerliForkSetup is Test, GoerliDeployment {
   address public ARB_STONES = address(0);
   address public ARB_TOTEM = address(0);
 
-  address public alice = address(0x37c5B029f9c3691B3d47cb024f84E5E257aEb0BB);
-  address public bob = address(0x23aD35FAab005a5E69615d275176e5C22b2ceb9E);
-  address public cobra = address(0xD5d1bb95259Fe2c5a84da04D1Aa682C71A1B8C0E);
+  address public alice = 0x37c5B029f9c3691B3d47cb024f84E5E257aEb0BB;
+  address public bob = 0x23aD35FAab005a5E69615d275176e5C22b2ceb9E;
+  address public cobra = 0xD5d1bb95259Fe2c5a84da04D1Aa682C71A1B8C0E;
   address aliceProxy;
 
   function setUp() public {
