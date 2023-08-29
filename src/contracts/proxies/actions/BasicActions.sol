@@ -10,6 +10,7 @@ import {ICoinJoin} from '@interfaces/utils/ICoinJoin.sol';
 import {ITaxCollector} from '@interfaces/ITaxCollector.sol';
 import {ICollateralJoin} from '@interfaces/utils/ICollateralJoin.sol';
 import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
+import {IBasicActions} from '@interfaces/proxies/actions/IBasicActions.sol';
 
 import {Math, WAD, RAY, RAD} from '@libraries/Math.sol';
 
@@ -19,7 +20,7 @@ import {CommonActions} from '@contracts/proxies/actions/CommonActions.sol';
  * @title  BasicActions
  * @notice This contract defines the actions that can be executed to manage a SAFE
  */
-contract BasicActions is CommonActions {
+contract BasicActions is CommonActions, IBasicActions {
   using Math for uint256;
 
   // --- Internal functions ---
@@ -222,25 +223,12 @@ contract BasicActions is CommonActions {
 
   // --- Methods ---
 
-  /**
-   * @notice Opens a brand new SAFE
-   * @param  _manager Address of the HaiSafeManager contract
-   * @param  _cType Bytes32 representing the collateral type
-   * @param  _usr Address of the SAFE owner
-   * @return _safeId Id of the created SAFE
-   */
+  /// @inheritdoc IBasicActions
   function openSAFE(address _manager, bytes32 _cType, address _usr) external delegateCall returns (uint256 _safeId) {
     return _openSAFE(_manager, _cType, _usr);
   }
 
-  /**
-   * @notice Generates debt and sends COIN amount to msg.sender
-   * @param  _manager Address of the HaiSafeManager contract
-   * @param  _taxCollector Address of the TaxCollector contract
-   * @param  _coinJoin Address of the CoinJoin contract
-   * @param  _safeId Id of the SAFE
-   * @param  _deltaWad Amount of COIN to generate [wad]
-   */
+  /// @inheritdoc IBasicActions
   function generateDebt(
     address _manager,
     address _taxCollector,
@@ -251,14 +239,7 @@ contract BasicActions is CommonActions {
     _generateDebt(_manager, _taxCollector, _coinJoin, _safeId, _deltaWad);
   }
 
-  /**
-   * @notice Repays an amount of debt
-   * @param  _manager Address of the HaiSafeManager contract
-   * @param  _taxCollector Address of the TaxCollector contract
-   * @param  _coinJoin Address of the CoinJoin contract
-   * @param  _safeId Id of the SAFE
-   * @param  _deltaWad Amount of COIN to repay [wad]
-   */
+  /// @inheritdoc IBasicActions
   function repayDebt(
     address _manager,
     address _taxCollector,
@@ -269,13 +250,7 @@ contract BasicActions is CommonActions {
     _repayDebt(_manager, _taxCollector, _coinJoin, _safeId, _deltaWad);
   }
 
-  /**
-   * @notice Locks a collateral token amount in the SAFE
-   * @param  _manager Address of the HaiSafeManager contract
-   * @param  _collateralJoin Address of the CollateralJoin contract
-   * @param  _safeId Id of the SAFE
-   * @param  _deltaWad Amount of collateral to collateralize [wad]
-   */
+  /// @inheritdoc IBasicActions
   function lockTokenCollateral(
     address _manager,
     address _collateralJoin,
@@ -291,13 +266,7 @@ contract BasicActions is CommonActions {
     _modifySAFECollateralization(_manager, _safeId, _deltaWad.toInt(), 0);
   }
 
-  /**
-   * @notice Unlocks a collateral token amount from the SAFE, and transfers the ERC20 collateral to the user's address
-   * @param  _manager Address of the HaiSafeManager contract
-   * @param  _collateralJoin Address of the CollateralJoin contract
-   * @param  _safeId Id of the SAFE
-   * @param  _deltaWad Amount of collateral to free [wad]
-   */
+  /// @inheritdoc IBasicActions
   function freeTokenCollateral(
     address _manager,
     address _collateralJoin,
@@ -310,14 +279,7 @@ contract BasicActions is CommonActions {
     _collectAndExitCollateral(_manager, _collateralJoin, _safeId, _deltaWad);
   }
 
-  /**
-   * @notice Repays the total amount of debt of a SAFE
-   * @param  _manager Address of the HaiSafeManager contract
-   * @param  _taxCollector Address of the TaxCollector contract
-   * @param  _coinJoin Address of the CoinJoin contract
-   * @param  _safeId Id of the SAFE
-   * @dev    This method is used to close a SAFE's debt, when the amount of debt is increasing due to stability fees
-   */
+  /// @inheritdoc IBasicActions
   function repayAllDebt(
     address _manager,
     address _taxCollector,
@@ -348,16 +310,7 @@ contract BasicActions is CommonActions {
     });
   }
 
-  /**
-   * @notice Locks a collateral token amount in the SAFE and generates debt
-   * @param  _manager Address of the HaiSafeManager contract
-   * @param  _taxCollector Address of the TaxCollector contract
-   * @param  _collateralJoin Address of the CollateralJoin contract
-   * @param  _coinJoin Address of the CoinJoin contract
-   * @param  _safe Id of the SAFE
-   * @param  _collateralAmount Amount of collateral to collateralize [wad]
-   * @param  _deltaWad Amount of COIN to generate [wad]
-   */
+  /// @inheritdoc IBasicActions
   function lockTokenCollateralAndGenerateDebt(
     address _manager,
     address _taxCollector,
@@ -372,17 +325,7 @@ contract BasicActions is CommonActions {
     );
   }
 
-  /**
-   * @notice Creates a SAFE, locks a collateral token amount in it and generates debt
-   * @param  _manager Address of the HaiSafeManager contract
-   * @param  _taxCollector Address of the TaxCollector contract
-   * @param  _collateralJoin Address of the CollateralJoin contract
-   * @param  _coinJoin Address of the CoinJoin contract
-   * @param  _cType Bytes32 representing the collateral type
-   * @param  _collateralAmount Amount of collateral to collateralize [wad]
-   * @param  _deltaWad Amount of COIN to generate [wad]
-   * @return _safe Id of the created SAFE
-   */
+  /// @inheritdoc IBasicActions
   function openLockTokenCollateralAndGenerateDebt(
     address _manager,
     address _taxCollector,
@@ -399,16 +342,7 @@ contract BasicActions is CommonActions {
     );
   }
 
-  /**
-   * @notice Repays debt and unlocks a collateral token amount from the SAFE
-   * @param  _manager Address of the HaiSafeManager contract
-   * @param  _taxCollector Address of the TaxCollector contract
-   * @param  _collateralJoin Address of the CollateralJoin contract
-   * @param  _coinJoin Address of the CoinJoin contract
-   * @param  _safeId Id of the SAFE
-   * @param  _collateralWad Amount of collateral to free [wad]
-   * @param  _debtWad Amount of COIN to repay [wad]
-   */
+  /// @inheritdoc IBasicActions
   function repayDebtAndFreeTokenCollateral(
     address _manager,
     address _taxCollector,
@@ -437,15 +371,7 @@ contract BasicActions is CommonActions {
     _collectAndExitCollateral(_manager, _collateralJoin, _safeId, _collateralWad);
   }
 
-  /**
-   * @notice Repays all debt and unlocks collateral from the SAFE
-   * @param  _manager Address of the HaiSafeManager contract
-   * @param  _taxCollector Address of the TaxCollector contract
-   * @param  _collateralJoin Address of the CollateralJoin contract
-   * @param  _coinJoin Address of the CoinJoin contract
-   * @param  _safeId Id of the SAFE
-   * @param  _collateralWad Amount of collateral to free [wad]
-   */
+  /// @inheritdoc IBasicActions
   function repayAllDebtAndFreeTokenCollateral(
     address _manager,
     address _taxCollector,

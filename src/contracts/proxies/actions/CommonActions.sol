@@ -5,6 +5,7 @@ import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
 import {ICoinJoin} from '@interfaces/utils/ICoinJoin.sol';
 import {ICollateralJoin} from '@interfaces/utils/ICollateralJoin.sol';
+import {ICommonActions} from '@interfaces/proxies/actions/ICommonActions.sol';
 
 import {RAY} from '@libraries/Math.sol';
 
@@ -12,51 +13,30 @@ import {RAY} from '@libraries/Math.sol';
  * @title  CommonActions
  * @notice This abstract contract defines common actions to be used by the proxy actions contracts
  */
-abstract contract CommonActions {
-  // --- Errors ---
-
-  /// @notice Throws if the method is being directly called, without a delegate call
-  error OnlyDelegateCalls();
-
+abstract contract CommonActions is ICommonActions {
   /// @notice Address of the inheriting contract, used to check if the call is being made through a delegate call
   // solhint-disable-next-line var-name-mixedcase
   address internal immutable _THIS = address(this);
 
   // --- Methods ---
 
-  /**
-   * @notice Joins system coins into the safeEngine
-   * @param  _coinJoin Address of the CoinJoin contract
-   * @param  _dst Address of the SAFE to join the coins into
-   * @param  _wad Amount of coins to join [wad]
-   */
+  /// @inheritdoc ICommonActions
   function joinSystemCoins(address _coinJoin, address _dst, uint256 _wad) external delegateCall {
     _joinSystemCoins(_coinJoin, _dst, _wad);
   }
 
-  /**
-   * @notice Exits system coins from the safeEngine
-   * @param  _coinJoin Address of the CoinJoin contract
-   * @param  _coinsToExit Amount of coins to exit [wad]
-   */
+  /// @inheritdoc ICommonActions
   function exitSystemCoins(address _coinJoin, uint256 _coinsToExit) external delegateCall {
     _exitSystemCoins(_coinJoin, _coinsToExit);
   }
 
-  /**
-   * @notice Exits all system coins from the safeEngine
-   * @param  _coinJoin Address of the CoinJoin contract
-   */
+  /// @inheritdoc ICommonActions
   function exitAllSystemCoins(address _coinJoin) external delegateCall {
     uint256 _coinsToExit = ICoinJoin(_coinJoin).safeEngine().coinBalance(address(this));
     _exitSystemCoins(_coinJoin, _coinsToExit);
   }
 
-  /**
-   * @notice Exits collateral tokens from the safeEngine
-   * @param  _collateralJoin Address of the CollateralJoin contract
-   * @param  _wad Amount of collateral tokens to exit [wad]
-   */
+  /// @inheritdoc ICommonActions
   function exitCollateral(address _collateralJoin, uint256 _wad) external delegateCall {
     _exitCollateral(_collateralJoin, _wad);
   }

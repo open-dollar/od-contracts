@@ -7,6 +7,7 @@ import {CommonActions} from '@contracts/proxies/actions/CommonActions.sol';
 import {IGlobalSettlement} from '@interfaces/settlement/IGlobalSettlement.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ICollateralJoin} from '@interfaces/utils/ICollateralJoin.sol';
+import {IGlobalSettlementActions} from '@interfaces/proxies/actions/IGlobalSettlementActions.sol';
 
 import {RAY} from '@libraries/Math.sol';
 
@@ -14,17 +15,10 @@ import {RAY} from '@libraries/Math.sol';
  * @title  GlobalSettlementActions
  * @notice All methods here are executed as delegatecalls from the user's proxy
  */
-contract GlobalSettlementActions is CommonActions {
+contract GlobalSettlementActions is CommonActions, IGlobalSettlementActions {
   // --- Methods ---
 
-  /**
-   * @notice Free remaining collateral from a SAFE after being processed by the global settlement
-   * @param  _manager Address of the HaiSafeManager contract
-   * @param  _globalSettlement Address of the GlobalSettlement contract
-   * @param  _collateralJoin Address of the CollateralJoin contract
-   * @param  _safeId Id of the SAFE to free collateral from
-   * @return _collateralAmount Amount of collateral freed [wad]
-   */
+  /// @inheritdoc IGlobalSettlementActions
   function freeCollateral(
     address _manager,
     address _globalSettlement,
@@ -58,12 +52,7 @@ contract GlobalSettlementActions is CommonActions {
     _exitCollateral(_collateralJoin, _collateralAmount);
   }
 
-  /**
-   * @notice Prepare coins for redeeming
-   * @param  _globalSettlement Address of the GlobalSettlement contract
-   * @param  _coinJoin Address of the CoinJoin contract
-   * @param  _coinAmount Amount of coins to prepare for redeeming [wad]
-   */
+  /// @inheritdoc IGlobalSettlementActions
   function prepareCoinsForRedeeming(
     address _globalSettlement,
     address _coinJoin,
@@ -83,12 +72,7 @@ contract GlobalSettlementActions is CommonActions {
     IGlobalSettlement(_globalSettlement).prepareCoinsForRedeeming(_coinAmount);
   }
 
-  /**
-   * @notice Redeem collateral tokens from the global settlement
-   * @param  _globalSettlement Address of the GlobalSettlement contract
-   * @param  _collateralJoin Address of the CollateralJoin contract
-   * @return _collateralAmount Amount of collateral redeemed [wad]
-   */
+  /// @inheritdoc IGlobalSettlementActions
   function redeemCollateral(
     address _globalSettlement,
     address _collateralJoin

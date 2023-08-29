@@ -7,6 +7,7 @@ import {IOracleJob} from '@interfaces/jobs/IOracleJob.sol';
 import {IJob} from '@interfaces/jobs/IJob.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ICoinJoin} from '@interfaces/utils/ICoinJoin.sol';
+import {IRewardedActions} from '@interfaces/proxies/actions/IRewardedActions.sol';
 
 import {CommonActions} from '@contracts/proxies/actions/CommonActions.sol';
 
@@ -16,45 +17,28 @@ import {RAY} from '@libraries/Math.sol';
  * @title  RewardedActions
  * @notice All methods here are executed as delegatecalls from the user's proxy
  */
-contract RewardedActions is CommonActions {
+contract RewardedActions is CommonActions, IRewardedActions {
   // --- AccountingJob ---
 
-  /**
-   * @notice Starts a debt auction and transfers the reward to the user
-   * @param  _accountingJob Address of the AccountingJob contract
-   * @param  _coinJoin Address of the CoinJoin contract
-   */
+  /// @inheritdoc IRewardedActions
   function startDebtAuction(address _accountingJob, address _coinJoin) external delegateCall {
     IAccountingJob(_accountingJob).workAuctionDebt();
     _exitReward(_accountingJob, _coinJoin);
   }
 
-  /**
-   * @notice Starts a surplus auction and transfers the reward to the user
-   * @param  _accountingJob Address of the AccountingJob contract
-   * @param  _coinJoin Address of the CoinJoin contract
-   */
+  /// @inheritdoc IRewardedActions
   function startSurplusAuction(address _accountingJob, address _coinJoin) external delegateCall {
     IAccountingJob(_accountingJob).workAuctionSurplus();
     _exitReward(_accountingJob, _coinJoin);
   }
 
-  /**
-   * @notice Pops debt from accounting engine's queue and transfers the reward to the user
-   * @param  _accountingJob Address of the AccountingJob contract
-   * @param  _coinJoin Address of the CoinJoin contract
-   * @param  _debtTimestamp Timestamp of the debt to pop from the queue
-   */
+  /// @inheritdoc IRewardedActions
   function popDebtFromQueue(address _accountingJob, address _coinJoin, uint256 _debtTimestamp) external delegateCall {
     IAccountingJob(_accountingJob).workPopDebtFromQueue(_debtTimestamp);
     _exitReward(_accountingJob, _coinJoin);
   }
 
-  /**
-   * @notice Transfers surplus from accounting engine and transfers the reward to the user
-   * @param  _accountingJob Address of the AccountingJob contract
-   * @param  _coinJoin Address of the CoinJoin contract
-   */
+  /// @inheritdoc IRewardedActions
   function transferExtraSurplus(address _accountingJob, address _coinJoin) external delegateCall {
     IAccountingJob(_accountingJob).workTransferExtraSurplus();
     _exitReward(_accountingJob, _coinJoin);
@@ -62,13 +46,7 @@ contract RewardedActions is CommonActions {
 
   // --- LiquidationJob ---
 
-  /**
-   * @notice Starts a liquidation and transfers the reward to the user
-   * @param  _liquidationJob Address of the LiquidationJob contract
-   * @param  _coinJoin Address of the CoinJoin contract
-   * @param  _cType Bytes32 representation of the collateral type
-   * @param  _safe Address of the SAFE to liquidate
-   */
+  /// @inheritdoc IRewardedActions
   function liquidateSAFE(
     address _liquidationJob,
     address _coinJoin,
@@ -81,22 +59,13 @@ contract RewardedActions is CommonActions {
 
   // --- OracleJob ---
 
-  /**
-   * @notice Updates the price of a collateral type and transfers the reward to the user
-   * @param  _oracleJob Address of the OracleJob contract
-   * @param  _coinJoin Address of the CoinJoin contract
-   * @param  _cType Bytes32 representation of the collateral type
-   */
+  /// @inheritdoc IRewardedActions
   function updateCollateralPrice(address _oracleJob, address _coinJoin, bytes32 _cType) external delegateCall {
     IOracleJob(_oracleJob).workUpdateCollateralPrice(_cType);
     _exitReward(_oracleJob, _coinJoin);
   }
 
-  /**
-   * @notice Updates the redemption rate and transfers the reward to the user
-   * @param  _oracleJob Address of the OracleJob contract
-   * @param  _coinJoin Address of the CoinJoin contract
-   */
+  /// @inheritdoc IRewardedActions
   function updateRedemptionRate(address _oracleJob, address _coinJoin) external delegateCall {
     IOracleJob(_oracleJob).workUpdateRate();
     _exitReward(_oracleJob, _coinJoin);

@@ -5,6 +5,7 @@ import {ICollateralJoin} from '@interfaces/utils/ICollateralJoin.sol';
 import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ICoinJoin} from '@interfaces/utils/ICoinJoin.sol';
+import {ICollateralBidActions} from '@interfaces/proxies/actions/ICollateralBidActions.sol';
 
 import {CommonActions} from '@contracts/proxies/actions/CommonActions.sol';
 
@@ -14,19 +15,10 @@ import {RAY} from '@libraries/Math.sol';
  * @title  CollateralBidActions
  * @notice All methods here are executed as delegatecalls from the user's proxy
  */
-contract CollateralBidActions is CommonActions {
+contract CollateralBidActions is CommonActions, ICollateralBidActions {
   // --- Methods ---
 
-  /**
-   * @notice Buys collateral tokens from a collateral auction
-   * @param  _coinJoin Address of the CoinJoin contract
-   * @param  _collateralJoin Address of the CollateralJoin contract
-   * @param  _collateralAuctionHouse Address of the CollateralAuctionHouse contract
-   * @param  _auctionId Id of the auction to bid on
-   * @param  _minCollateralAmount Minimum amount of collateral tokens to buy [wad]
-   * @param  _bidAmount Amount of system coins to bid [wad]
-   * @dev    This method will fail if the purchased amount is lower than the minimum, or the bid higher than the specified amount
-   */
+  /// @inheritdoc ICollateralBidActions
   function buyCollateral(
     address _coinJoin,
     address _collateralJoin,
