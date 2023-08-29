@@ -63,6 +63,8 @@ jobs:
           echo OP_GOERLI_RPC="${{ secrets.OP_GOERLI_RPC }}" >> .env
           echo OP_MAINNET_DEPLOYER_PK="${{ secrets.TEST_DEPLOYER_PK }}" >> .env
           echo OP_GOERLI_DEPLOYER_PK="${{ secrets.TEST_DEPLOYER_PK }}" >> .env
+          echo ARB_GOERLI_RPC="${{ secrets.ARB_GOERLI_RPC }}" >> .env
+          echo ARB_MAINNET_RPC="${{ secrets.ARB_MAINNET_RPC }}" >> .env
           cat .env
 
       - name: Run tests
