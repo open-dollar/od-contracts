@@ -31,7 +31,7 @@ contract Vault721 is ERC721, ERC721Enumerable {
     safeManager = msg.sender;
   }
 
-  function getProxy(address _user) view returns (address _proxy) {
+  function getProxy(address _user) public view returns (address _proxy) {
     _proxy = _userRegistry[_user];
   }
 
