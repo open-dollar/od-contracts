@@ -28,6 +28,7 @@ import {TaxCollector} from '@contracts/TaxCollector.sol';
 /**
  * @dev Deployment2 refers to HAI contracts
  */
+
 contract Deployment is Contracts, GoerliContracts, Script {
   // Wad
   uint256 public constant WAD = 1 ether;
@@ -39,8 +40,6 @@ contract Deployment is Contracts, GoerliContracts, Script {
   bytes32 public constant FTRG = bytes32('FTRG');
 
   IERC20 public constant WETH_TOKEN = IERC20(ARB_GOERLI_WETH);
-
-  // --- ENV VARS ---
 
   // User wallet address
   address public USER1 = vm.envAddress('ARB_GOERLI_PUBLIC1');
