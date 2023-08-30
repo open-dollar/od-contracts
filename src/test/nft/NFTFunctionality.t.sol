@@ -13,11 +13,22 @@ import {Vault721} from '@contracts/proxies/Vault721.sol';
 contract NFTFunctionality is GoerliForkSetup {
   using SafeERC20 for IERC20;
 
-  function test_openSafe() public {
+  function test_openSafe_WETH() public {
     vm.startPrank(alice);
 
     uint256 safeId = openSafe(WETH, aliceProxy);
-    assertEq(safeId, 1);
+    assertEq(safeId, currSafeId);
+
+    address ownerOfToken = Vault721(vault721).ownerOf(safeId);
+    assertEq(ownerOfToken, alice);
+    vm.stopPrank();
+  }
+
+  function test_openSafe_FTRG() public {
+    vm.startPrank(alice);
+
+    uint256 safeId = openSafe(FTRG, aliceProxy);
+    assertEq(safeId, currSafeId);
 
     address ownerOfToken = Vault721(vault721).ownerOf(safeId);
     assertEq(ownerOfToken, alice);
@@ -28,21 +39,10 @@ contract NFTFunctionality is GoerliForkSetup {
     vm.startPrank(alice);
 
     uint256 safeId = openSafe(WETH, aliceProxy);
-    assertEq(safeId, 1);
+    assertEq(safeId, currSafeId);
 
     IERC20(ARB_GOERLI_WETH).approve(aliceProxy, type(uint256).max);
-    depositCollatAndGenDebt(WETH, 1, 0.0001 ether, 0, aliceProxy);
-    vm.stopPrank();
-  }
-
-  function test_openSafe_lockCollateral_generateDebt_WETH() public {
-    vm.startPrank(alice);
-
-    uint256 safeId = openSafe(WETH, aliceProxy);
-    assertEq(safeId, 1);
-
-    IERC20(ARB_GOERLI_WETH).approve(aliceProxy, type(uint256).max);
-    depositCollatAndGenDebt(WETH, 1, 0.4 ether, 300 ether, aliceProxy);
+    depositCollatAndGenDebt(WETH, currSafeId, 0.0001 ether, 0, aliceProxy);
     vm.stopPrank();
   }
 
@@ -50,10 +50,21 @@ contract NFTFunctionality is GoerliForkSetup {
     vm.startPrank(alice);
 
     uint256 safeId = openSafe(FTRG, aliceProxy);
-    assertEq(safeId, 1);
+    assertEq(safeId, currSafeId);
 
     IERC20(ARB_GOERLI_GOV_TOKEN).approve(aliceProxy, type(uint256).max);
-    depositCollatAndGenDebt(FTRG, 1, 125 ether, 0, aliceProxy);
+    depositCollatAndGenDebt(FTRG, currSafeId, 1 ether, 0, aliceProxy);
+    vm.stopPrank();
+  }
+
+  function test_openSafe_lockCollateral_generateDebt_WETH() public {
+    vm.startPrank(alice);
+
+    uint256 safeId = openSafe(WETH, aliceProxy);
+    assertEq(safeId, currSafeId);
+
+    IERC20(ARB_GOERLI_WETH).approve(aliceProxy, type(uint256).max);
+    depositCollatAndGenDebt(WETH, currSafeId, 0.3 ether, 150 ether, aliceProxy);
     vm.stopPrank();
   }
 
@@ -61,10 +72,10 @@ contract NFTFunctionality is GoerliForkSetup {
     vm.startPrank(alice);
 
     uint256 safeId = openSafe(FTRG, aliceProxy);
-    assertEq(safeId, 1);
+    assertEq(safeId, currSafeId);
 
     IERC20(ARB_GOERLI_GOV_TOKEN).approve(aliceProxy, type(uint256).max);
-    depositCollatAndGenDebt(FTRG, 1, 125 ether, 75 ether, aliceProxy);
+    depositCollatAndGenDebt(FTRG, currSafeId, 125 ether, 75 ether, aliceProxy);
     vm.stopPrank();
   }
 
@@ -72,37 +83,49 @@ contract NFTFunctionality is GoerliForkSetup {
     vm.startPrank(alice);
 
     uint256 safeId = openSafe(WETH, aliceProxy);
-    assertEq(safeId, 1);
+    assertEq(safeId, currSafeId);
 
     IERC20(ARB_GOERLI_WETH).approve(aliceProxy, type(uint256).max);
-    depositCollatAndGenDebt(WETH, 1, 0.0001 ether, 0, aliceProxy);
+    depositCollatAndGenDebt(WETH, currSafeId, 0.0001 ether, 0, aliceProxy);
 
-    Vault721(vault721).transferFrom(alice, bob, 1);
+    uint256 nftBalAliceBefore = Vault721(vault721).balanceOf(alice);
+    assertEq(nftBalAliceBefore, 2);
+    Vault721(vault721).transferFrom(alice, bob, currSafeId);
 
     uint256 nftBalAlice = Vault721(vault721).balanceOf(alice);
     uint256 nftBalBob = Vault721(vault721).balanceOf(bob);
 
-    assertEq(nftBalAlice, 0);
+    assertEq(nftBalAlice, 1);
     assertEq(nftBalBob, 1);
     vm.stopPrank();
+
+    uint256[] memory _safes = safeManager.getSafes(deployOrFind(bob));
+    assertEq(_safes.length, 1);
+    assertEq(_safes[0], currSafeId);
   }
 
   function test_openSafe_lockCollateral_generateDebt_transfer_FTRG() public {
     vm.startPrank(alice);
 
     uint256 safeId = openSafe(FTRG, aliceProxy);
-    assertEq(safeId, 1);
+    assertEq(safeId, currSafeId);
 
     IERC20(ARB_GOERLI_GOV_TOKEN).approve(aliceProxy, type(uint256).max);
-    depositCollatAndGenDebt(FTRG, 1, 125 ether, 75 ether, aliceProxy);
+    depositCollatAndGenDebt(FTRG, currSafeId, 125 ether, 75 ether, aliceProxy);
 
-    Vault721(vault721).transferFrom(alice, bob, 1);
+    uint256 nftBalAliceBefore = Vault721(vault721).balanceOf(alice);
+    assertEq(nftBalAliceBefore, 2);
+    Vault721(vault721).transferFrom(alice, bob, currSafeId);
 
     uint256 nftBalAlice = Vault721(vault721).balanceOf(alice);
     uint256 nftBalBob = Vault721(vault721).balanceOf(bob);
 
-    assertEq(nftBalAlice, 0);
+    assertEq(nftBalAlice, 1);
     assertEq(nftBalBob, 1);
     vm.stopPrank();
+
+    uint256[] memory _safes = safeManager.getSafes(deployOrFind(bob));
+    assertEq(_safes.length, 1);
+    assertEq(_safes[0], currSafeId);
   }
 }

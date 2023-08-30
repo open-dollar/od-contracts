@@ -60,8 +60,8 @@ abstract contract GoerliContracts {
   address public collateralJoinChild_WETHAddr = 0xd4F5Dc250893cA025603A03d1fe5650D03fA5891;
   address public collateralAuctionHouseChild_WETHAddr = 0x74B840D4B626e9bD174F74eFF8a59dE30Fc03eF9;
 
-  address public collateralAuctionHouseChild_FTRGAddr = 0x01c9E717B10605163D5B0beB45ab93497C34E77A;
-  address public collateralJoinDelegatableChild_FTRGAddr = 0xEc467776f0D8FF8FDE41057b8b2D0ed298072edF;
+  address public collateralJoinDelegatableChild_FTRGAddr = 0x01c9E717B10605163D5B0beB45ab93497C34E77A;
+  address public collateralAuctionHouseChild_FTRGAddr = 0xEc467776f0D8FF8FDE41057b8b2D0ed298072edF;
 
   address public collateralJoinChild_WBTCAddr = 0x32490555704591fF252287E888523bDC0cC42226;
   address public collateralAuctionHouseChild_WBTCAddr = 0xf214ADE436451fbb6909F444efFf7C34C2F2bB92;
@@ -80,7 +80,6 @@ abstract contract GoerliContracts {
   address public surplusBidActionsAddr = 0x267D4BDf13DaDD3Da7C90074E163c44443505CA5;
   address public collateralBidActionsAddr = 0x92A093f53360ffc42f75f6D00af51E26138725b4;
   address public rewardedActionsAddr = 0xA2C86fBae73C2672ace63a732274a1D4c0FE938F;
-
-  address public globalSettlementActionsAddr = address(0);
-  address public postSettlementSurplusBidActionsAddr = address(0);
+  address public globalSettlementActionsAddr = 0x173C75bc966FBF33191919B68fFfC688B91859c8;
+  address public postSettlementSurplusBidActionsAddr = 0x3b0156CB12A3eac5Cdb0AbDbE90a32e66fE4AEB1;
 }
