@@ -12,7 +12,6 @@ contract Vault721 is ERC721('OpenDollarVault', 'ODV') {
   mapping(address proxy => address user) internal _proxyRegistry;
   mapping(address user => address proxy) internal _userRegistry;
 
-  event Mint(address _proxy, uint256 _safeId);
   event CreateProxy(address indexed _user, address _proxy);
 
   /**
@@ -30,7 +29,7 @@ contract Vault721 is ERC721('OpenDollarVault', 'ODV') {
     safeManager = msg.sender;
   }
 
-  function getProxy(address _user) external returns (address _proxy) {
+  function getProxy(address _user) external view returns (address _proxy) {
     _proxy = _userRegistry[_user];
   }
 
@@ -74,7 +73,7 @@ contract Vault721 is ERC721('OpenDollarVault', 'ODV') {
    * @dev check that proxy does not exist OR that the user does not own proxy
    */
   function _isNotProxy(address _user) internal view returns (bool) {
-    return _userRegistry[_user] == address(0) || ODProxy(_userRegistry[_user]).owner() != _user;
+    return _userRegistry[_user] == address(0) || ODProxy(_userRegistry[_user]).OWNER() != _user;
   }
 
   /**
