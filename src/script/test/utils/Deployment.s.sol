@@ -2,11 +2,12 @@
 pragma solidity ^0.8.13;
 
 import 'forge-std/Script.sol';
+import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
+
 import {GoerliContracts} from '@script/GoerliContracts.s.sol';
+import {Contracts} from '@script/Contracts.s.sol';
 import {ARB_GOERLI_WETH} from '@script/Registry.s.sol';
 
-import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
-import {TestContracts} from '@script/test/utils/TestContracts.s.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 import {ODSafeManager} from '@contracts/proxies/ODSafeManager.sol';
 import {Vault721} from '@contracts/proxies/Vault721.sol';
@@ -27,9 +28,11 @@ import {TaxCollector} from '@contracts/TaxCollector.sol';
 /**
  * @dev Deployment2 refers to HAI contracts
  */
-contract Deployment is TestContracts, GoerliContracts, Script {
+
+contract Deployment is Contracts, GoerliContracts, Script {
   // Wad
   uint256 public constant WAD = 1 ether;
+  uint256 public constant ZERO_DEBT = 0;
 
   // Collateral
   bytes32 public constant ETH_A = bytes32('ETH-A'); // 0x4554482d41000000000000000000000000000000000000000000000000000000
@@ -39,8 +42,15 @@ contract Deployment is TestContracts, GoerliContracts, Script {
   IERC20 public constant WETH_TOKEN = IERC20(ARB_GOERLI_WETH);
 
   // User wallet address
-  address public constant USER1 = 0x23aD35FAab005a5E69615d275176e5C22b2ceb9E;
-  address public constant USER2 = 0x37c5B029f9c3691B3d47cb024f84E5E257aEb0BB;
+  address public USER1 = vm.envAddress('ARB_GOERLI_PUBLIC1');
+  address public USER2 = vm.envAddress('ARB_GOERLI_PUBLIC2');
+
+  // Safe id
+  uint256 public SAFE = vm.envUint('SAFE');
+
+  // Collateral and debt
+  uint256 public COLLATERAL = vm.envUint('COLLATERAL'); // ex: COLLATERAL=400000000000000000 (0.4 ether)
+  uint256 public DEBT = vm.envUint('DEBT'); // ex: DEBT=200000000000000000000 (200 ether)
 
   function setUp() public {
     safeManager = ODSafeManager(odSafeManagerAddr);

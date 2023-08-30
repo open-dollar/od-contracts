@@ -16,7 +16,7 @@ contract LockCollateral is TestScripts {
     WETH_TOKEN.approve(proxy, type(uint256).max);
     uint256 safeId = 0;
 
-    depositCollatAndGenDebt(WETH, safeId, 0.01 ether, 0, proxy);
+    depositCollatAndGenDebt(WETH, SAFE, COLLATERAL, ZERO_DEBT, proxy);
     vm.stopBroadcast();
   }
 }

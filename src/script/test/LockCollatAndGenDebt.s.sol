@@ -16,7 +16,7 @@ contract LockCollAndGenDebt is TestScripts {
     WETH_TOKEN.approve(address(proxy), type(uint256).max);
     uint256 safeId = 3;
 
-    depositCollatAndGenDebt(WETH, safeId, 0.3 ether, 150 ether, proxy);
+    depositCollatAndGenDebt(WETH, SAFE, COLLATERAL, DEBT, proxy);
     vm.stopBroadcast();
   }
 }
