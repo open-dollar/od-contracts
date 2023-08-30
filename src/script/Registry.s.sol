@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
+// for Goerli, add oracleForTestnet auth
+address constant J = 0xC295763Eed507d4A0f8B77241c03dd3354781a15;
+address constant P = 0xC295763Eed507d4A0f8B77241c03dd3354781a15;
+
 address constant UNISWAP_V3_FACTORY = 0x1F98431c8aD98523631AE4a59f267346ea31F984;
 
 // --- ARB Goerli ---

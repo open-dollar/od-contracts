@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import {HaiTest} from '@test/utils/HaiTest.t.sol';
-import {HAI, HAI_INITIAL_PRICE, ETH_A} from '@script/Params.s.sol';
+import {HAI, OD_INITIAL_PRICE, ETH_A} from '@script/Params.s.sol';
 import {Deploy} from '@script/Deploy.s.sol';
 import {TestParams, TKN, TEST_ETH_PRICE, TEST_TKN_PRICE} from '@test/e2e/TestParams.s.sol';
 import {
@@ -38,7 +38,7 @@ contract DeployForTest is TestParams, Deploy {
   function setupEnvironment() public virtual override {
     WETH9 weth = WETH9(payable(0x4200000000000000000000000000000000000006));
 
-    systemCoinOracle = new OracleForTest(HAI_INITIAL_PRICE); // 1 HAI = 1 USD
+    systemCoinOracle = new OracleForTest(OD_INITIAL_PRICE); // 1 HAI = 1 USD
     delayedOracle[ETH_A] = new OracleForTest(TEST_ETH_PRICE); // 1 ETH = 2000 USD
     delayedOracle[TKN] = new OracleForTest(TEST_TKN_PRICE); // 1 TKN = 1 USD
 

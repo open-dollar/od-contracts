@@ -82,7 +82,7 @@ contract DeployMainnet is MainnetParams, Deploy {
       _inverted: false
     });
 
-    systemCoinOracle = new OracleForTest(HAI_INITIAL_PRICE); // 1 HAI = 1 USD
+    systemCoinOracle = new OracleForTest(OD_INITIAL_PRICE); // 1 OD = 1 USD
     delayedOracle[WETH] = delayedOracleFactory.deployDelayedOracle(_ethUSDPriceFeed, 1 hours);
     delayedOracle[WSTETH] = delayedOracleFactory.deployDelayedOracle(_wstethUSDPriceFeed, 1 hours);
 
@@ -103,7 +103,7 @@ contract DeployGoerli is GoerliParams, Deploy {
   function setupEnvironment() public virtual override updateParams {
     // Setup oracle feeds
 
-    systemCoinOracle = new OracleForTestnet(HAI_INITIAL_PRICE); // 1 HAI = 1 USD
+    systemCoinOracle = new OracleForTestnet(OD_INITIAL_PRICE); // 1 OD = 1 USD
 
     // WETH
     collateral[WETH] = IERC20Metadata(ARB_GOERLI_WETH);
