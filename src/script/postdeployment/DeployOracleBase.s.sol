@@ -15,7 +15,7 @@ import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 // SIMULATE
 // source .env && forge script DeployOracles --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_GOERLI_RPC
 
-contract DeployOracles is GoerliContracts, Script {
+contract DeployOracleBase is GoerliContracts, Script {
   UniV3RelayerFactory public uniV3RelayerFactory = UniV3RelayerFactory(uniV3RelayerFactoryAddr);
   DenominatedOracleFactory public denominatedOracleFactory = DenominatedOracleFactory(denominatedOracleFactoryAddr);
 
@@ -23,21 +23,11 @@ contract DeployOracles is GoerliContracts, Script {
   address public ODG_token = protocolTokenAddr;
   address public WETH_token = ARB_GOERLI_WETH;
 
-  uint24 public fee = uint24(0x2710);
+  uint24 public fee = uint24(0xbb8);
   uint32 public period = uint32(1 days);
 
   IBaseOracle public od_weth_UniV3Relayer;
   IBaseOracle public odg_weth_UniV3Relayer;
   IBaseOracle public weth_usd_denominatedOracle;
   IBaseOracle public totem_weth_denominatedOracle;
-
-  function run() public {
-    vm.startBroadcast(vm.envUint('ARB_GOERLI_PK'));
-    od_weth_UniV3Relayer = uniV3RelayerFactory.deployUniV3Relayer(OD_token, WETH_token, fee, period);
-    odg_weth_UniV3Relayer = uniV3RelayerFactory.deployUniV3Relayer(ODG_token, WETH_token, fee, period);
-    weth_usd_denominatedOracle = denominatedOracleFactory.deployDenominatedOracle(
-      od_weth_UniV3Relayer, IBaseOracle(delayedOracleChild1Addr), false
-    );
-    vm.stopBroadcast();
-  }
 }
