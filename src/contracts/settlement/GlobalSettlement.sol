@@ -22,46 +22,67 @@ import {Assertions} from '@libraries/Assertions.sol';
 /**
  * @title  Global Settlement
  * @notice This contract is responsible for processing the system settlement, a stateful process that takes place over nine steps.
+ * @notice #### System shutdown:
+ *         > We must freeze the system and start the cooldown period before we can process any system state.
+ *         > In particular, oracle prices are frozen, and no more debt can be generated from the SAFEEngine.
  *
- *         !System shutdown:
- *         1. `shutdownSystem()`: freeze the system and start the cooldown period
- *         2. `freezeCollateralType(_cType)`: read and store the final price for each collateral type
- *           - initializes `collateralTotalDebt` to the total debt registered in safe engine
+ *         1) `shutdownSystem()`
+ *             - freeze the system and start the cooldown period
  *
- *         !Cooldown period:
- *         We must process some system state before it is possible to calculate the final coin / collateral price.
- *         In particular, we need to determine:
- *           a. `collateralShortfall` (considers under-collateralized SAFEs)
- *           b. `outstandingCoinSupply` (after including system surplus / deficit)
+ *         2) `freezeCollateralType(_cType)`
+ *             - reads and store the final price for each collateral type
+ *             - initializes `collateralTotalDebt` to the total debt registered in safe engine
  *
- *         We determine (a) by processing all under-collateralized SAFEs:
- *         3. `processSAFE(_cType, _safe)`: confiscates SAFE debt and backing collateral (excess of collateral remains)
+ *         #### Cooldown period:
+ *         > We must process some system state before it is possible to calculate the final coin / collateral price.
+ *         > In particular, we need to determine:
+ *         >
+ *         > + (a) `collateralShortfall` (considers under-collateralized SAFEs)
+ *         > + (b) `outstandingCoinSupply` (after including system surplus / deficit)
+ *         >
+ *         > - We determine (a) by processing all under-collateralized SAFEs.
+ *         > - We determine (b) by processing ongoing coin generating processes, i.e. auctions. We need to ensure that auctions will not generate any further coin income.
  *
- *         We determine (b) by processing ongoing coin generating processes, i.e. auctions.
- *         We need to ensure that auctions will not generate any further coin income.
- *         4. Auctions at SAH and DAH can be terminated prematurely, while CAH auctions are handled by this contract
- *           4.a) `SAH.terminateAuctionPrematurely` settles the auction: transfers the surplus to the highest bidder
- *           4.b) `DAH.terminateAuctionPrematurely` settles the auction:
+ *
+ *         3) `processSAFE(_cType, _safe)`
+ *           - confiscates SAFE debt and backing collateral (excess of collateral remains).
+ *
+ *         4) Auctions at SAH and DAH can be terminated prematurely, while CAH auctions are handled by this contract
+ *           + 4.a. `SAH.terminateAuctionPrematurely(_id)`
+ *             - settles the auction
+ *             - transfers the surplus to the highest bidder
+ *           + 4.b. `DAH.terminateAuctionPrematurely(_id)`
+ *             - settles the auction
  *             - returns the coins to the highest bidder
  *             - registers the unbacked debt at the accounting engine
- *           4.c) `this.fastTrackAuction`
+ *           + 4.c. `this.fastTrackAuction(_cType, _id)`
  *             - settles the auction: returns collateral and debt to the SAFE
  *             - registers returned debt in `collateralTotalDebt`
  *
- *         When an overcollateralized SAFE has been processed and has no debt remaining, the remaining collateral can be withdrawn:
- *         5. `freeCollateral(_cType)`: remove collateral from the caller's SAFE (requires SAFE to have no debt)
+ *         > When an overcollateralized SAFE has been processed and has no debt remaining, the remaining collateral can be withdrawn:
  *
- *         !After cooldown period:
- *         We enable calculation of the final price for each collateral type, requires accounting engine to have no surplus
- *         6. `setOutstandingCoinSupply()`: fixes the total outstanding supply of coin
- *         7. `calculateCashPrice(_cType)`: calculate `collateralCashPrice` adjusted in the case of deficit / surplus
+ *         5) `freeCollateral(_cType)`
+ *             - remove collateral from the caller's SAFE (requires SAFE to have no debt)
  *
- *         !Redeeming:
- *         At this point we have computed the final price for each collateral type and coin holders can now turn their coin into collateral:
- *         8. `prepareCoinsForRedeeming(_coinAmount)`: deposit the amount of coins to redeem in caller's accountance
+ *         #### After cooldown period:
+ *         > We enable calculation of the final price for each collateral type.
+ *         > Requires accounting engine to have no surplus.
+ *
+ *         7) `setOutstandingCoinSupply()`
+ *             - fixes the total outstanding supply of coin
+ *         6) `calculateCashPrice(_cType)`
+ *             - calculate `collateralCashPrice` adjusted in the case of deficit / surplus
+ *
+ *         #### Redeeming:
+ *         > At this point we have computed the final price for each collateral type and coin holders can now turn their coin into collateral.
+ *
+ *         8) `prepareCoinsForRedeeming(_wad)`
+ *           - deposit the amount of coins to redeem in caller's accountance
  *           - Each unit of coin can claim a proportional amount of all of the system's collateral
- *           - At any point can a user get more coins to redeem for more collateral
- *         9. `redeemCollateral(_cType, _wad)`: claim tokens from a specific collateral type given the amount of coins caller has deposited
+ *           - At any point a user can get and prepare more coins to redeem for more collateral
+ *
+ *         9) `redeemCollateral(_cType, _wad)`
+ *           - claim tokens from a specific collateral type given the amount of coins caller has deposited
  *           - The amount of collateral to redeem depends exclusively in the state variables calculated in the previous steps
  *           - The amount of collaterals left when all circulating coins are redeemed should be 0
  */
@@ -72,45 +93,67 @@ contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettl
   using Encoding for bytes;
 
   // --- Data ---
-  // The timestamp when settlement was triggered
+  /// @inheritdoc IGlobalSettlement
   uint256 public shutdownTime;
-
-  // The outstanding supply of system coins computed during the setOutstandingCoinSupply() phase
+  /// @inheritdoc IGlobalSettlement
   uint256 /* RAD */ public outstandingCoinSupply;
 
-  // The amount of collateral that a system coin can redeem
+  /// @inheritdoc IGlobalSettlement
   mapping(bytes32 _cType => uint256 _ray) public finalCoinPerCollateralPrice;
-  // Total amount of bad debt in SAFEs per collateral
+  /// @inheritdoc IGlobalSettlement
   mapping(bytes32 _cType => uint256 _wad) public collateralShortfall;
-  // Total debt backed by every collateral type
+  /// @inheritdoc IGlobalSettlement
   mapping(bytes32 _cType => uint256 _wad) public collateralTotalDebt;
-  // Final collateral prices in terms of system coins (applying system surplus/deficit & finalCoinPerCollateralPrices)
+  /// @inheritdoc IGlobalSettlement
   mapping(bytes32 _cType => uint256 _ray) public collateralCashPrice;
 
-  // Bags of coins ready to be used for collateral redemption
+  /// @inheritdoc IGlobalSettlement
   mapping(address _usr => uint256 _wad) public coinBag;
-  // Amount of coins already used for collateral redemption per user per collateral types
+  /// @inheritdoc IGlobalSettlement
   mapping(bytes32 _cType => mapping(address _usr => uint256 _wad)) public coinsUsedToRedeem;
 
   // --- Registry ---
+
+  /// @inheritdoc IGlobalSettlement
   ISAFEEngine public safeEngine;
+  /// @inheritdoc IGlobalSettlement
   ILiquidationEngine public liquidationEngine;
+  /// @inheritdoc IGlobalSettlement
   IOracleRelayer public oracleRelayer;
 
+  /// @inheritdoc IGlobalSettlement
   IDisableable public coinJoin;
+  /// @inheritdoc IGlobalSettlement
   IDisableable public collateralJoinFactory;
+  /// @inheritdoc IGlobalSettlement
   IDisableable public collateralAuctionHouseFactory;
+  /// @inheritdoc IGlobalSettlement
   IDisableable public stabilityFeeTreasury;
+  /// @inheritdoc IGlobalSettlement
   IDisableable public accountingEngine;
 
+  /// @inheritdoc IGlobalSettlement
   // solhint-disable-next-line private-vars-leading-underscore
   GlobalSettlementParams public _params;
 
+  /// @inheritdoc IGlobalSettlement
   function params() external view returns (GlobalSettlementParams memory _globalSettlementParams) {
     return _params;
   }
 
   // --- Init ---
+
+  /**
+   * @param  _safeEngine Address of the SAFEEngine contract
+   * @param  _liquidationEngine Address of the LiquidationEngine contract
+   * @param  _oracleRelayer Address of the OracleRelayer contract
+   * @param  _coinJoin Address of the CoinJoin contract
+   * @param  _collateralJoinFactory Address of the CollateralJoinFactory contract
+   * @param  _collateralAuctionHouseFactory Address of the CollateralAuctionHouseFactory contract
+   * @param  _stabilityFeeTreasury Address of the StabilityFeeTreasury contract
+   * @param  _accountingEngine Address of the AccountingEngine contract
+   * @param  _gsParams Initial valid GlobalSettlement parameters struct
+   */
   constructor(
     address _safeEngine,
     address _liquidationEngine,
@@ -136,16 +179,17 @@ contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettl
 
   // --- Shutdown ---
 
-  /// @dev Avoids externally disabling this contract
+  /**
+   * @dev   Method override avoids externally disabling this contract
+   * @inheritdoc Disableable
+   */
   function _onContractDisable() internal pure override {
     revert NonDisableable();
   }
 
   // --- Settlement ---
 
-  /**
-   * @notice Freeze the system and start the cooldown period
-   */
+  /// @inheritdoc IGlobalSettlement
   function shutdownSystem() external isAuthorized whenEnabled {
     shutdownTime = block.timestamp;
     contractEnabled = false;
@@ -170,10 +214,7 @@ contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettl
     emit ShutdownSystem();
   }
 
-  /**
-   * @notice Calculate a collateral type's final price according to the latest system coin redemption price
-   * @param _cType The collateral type to calculate the price for
-   */
+  /// @inheritdoc IGlobalSettlement
   function freezeCollateralType(bytes32 _cType) external whenDisabled {
     if (finalCoinPerCollateralPrice[_cType] != 0) revert GS_FinalCollateralPriceAlreadyDefined();
     collateralTotalDebt[_cType] = safeEngine.cData(_cType).debtAmount;
@@ -184,11 +225,7 @@ contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettl
     emit FreezeCollateralType(_cType, finalCoinPerCollateralPrice[_cType]);
   }
 
-  /**
-   * @notice Fast track an ongoing collateral auction
-   * @param _cType The collateral type associated with the auction contract
-   * @param _auctionId The ID of the auction to be fast tracked
-   */
+  /// @inheritdoc IGlobalSettlement
   function fastTrackAuction(bytes32 _cType, uint256 _auctionId) external {
     if (finalCoinPerCollateralPrice[_cType] == 0) revert GS_FinalCollateralPriceNotDefined();
 
@@ -224,11 +261,7 @@ contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettl
     emit FastTrackAuction(_cType, _auctionId, collateralTotalDebt[_cType]);
   }
 
-  /**
-   * @notice Cancel a SAFE's debt and leave any extra collateral in it
-   * @param _cType The collateral type associated with the SAFE
-   * @param _safe The SAFE to be processed
-   */
+  /// @inheritdoc IGlobalSettlement
   function processSAFE(bytes32 _cType, address _safe) external {
     if (finalCoinPerCollateralPrice[_cType] == 0) revert GS_FinalCollateralPriceNotDefined();
 
@@ -252,10 +285,7 @@ contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettl
     emit ProcessSAFE(_cType, _safe, collateralShortfall[_cType]);
   }
 
-  /**
-   * @notice Remove collateral from the caller's SAFE (requires SAFE to have no debt)
-   * @param _cType The collateral type to free
-   */
+  /// @inheritdoc IGlobalSettlement
   function freeCollateral(bytes32 _cType) external whenDisabled {
     ISAFEEngine.SAFE memory _safeData = safeEngine.safes(_cType, msg.sender);
     if (_safeData.generatedDebt != 0) revert GS_SafeDebtNotZero();
@@ -272,10 +302,7 @@ contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettl
     emit FreeCollateral(_cType, msg.sender, _safeData.lockedCollateral);
   }
 
-  /**
-   * @notice Set the final outstanding supply of system coins
-   * @dev There must be no remaining surplus in the accounting engine
-   */
+  /// @inheritdoc IGlobalSettlement
   function setOutstandingCoinSupply() external whenDisabled {
     if (outstandingCoinSupply != 0) revert GS_OutstandingCoinSupplyNotZero();
     if (safeEngine.coinBalance(address(accountingEngine)) != 0) revert GS_SurplusNotZero();
@@ -286,10 +313,7 @@ contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettl
     emit SetOutstandingCoinSupply(outstandingCoinSupply);
   }
 
-  /**
-   * @notice Calculate a collateral's price taking into consideration system surplus/deficit and the finalCoinPerCollateralPrice
-   * @param _cType The collateral whose cash price will be calculated
-   */
+  /// @inheritdoc IGlobalSettlement
   function calculateCashPrice(bytes32 _cType) external {
     if (outstandingCoinSupply == 0) revert GS_OutstandingCoinSupplyZero();
     if (collateralCashPrice[_cType] != 0) revert GS_CollateralCashPriceAlreadyDefined();
@@ -304,10 +328,7 @@ contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettl
     emit CalculateCashPrice(_cType, collateralCashPrice[_cType]);
   }
 
-  /**
-   * @notice Add coins into a 'bag' so that you can use them to redeem collateral
-   * @param _coinAmount The amount of internal system coins to add into the bag
-   */
+  /// @inheritdoc IGlobalSettlement
   function prepareCoinsForRedeeming(uint256 _coinAmount) external {
     if (outstandingCoinSupply == 0) revert GS_OutstandingCoinSupplyZero();
 
@@ -317,11 +338,7 @@ contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettl
     emit PrepareCoinsForRedeeming(msg.sender, coinBag[msg.sender]);
   }
 
-  /**
-   * @notice Redeem a specific collateral type using an amount of internal system coins from your bag
-   * @param _cType The collateral type to redeem
-   * @param _coinsAmount The amount of internal coins to use from your bag
-   */
+  /// @inheritdoc IGlobalSettlement
   function redeemCollateral(bytes32 _cType, uint256 _coinsAmount) external {
     if (collateralCashPrice[_cType] == 0) revert GS_CollateralCashPriceNotDefined();
 
@@ -342,6 +359,7 @@ contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettl
 
   // --- Administration ---
 
+  /// @inheritdoc Modifiable
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled {
     address _address = _data.toAddress();
 
@@ -356,6 +374,7 @@ contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettl
     else revert UnrecognizedParam();
   }
 
+  /// @inheritdoc Modifiable
   function _validateParameters() internal view override {
     address(liquidationEngine).assertNonNull();
     address(oracleRelayer).assertNonNull();

@@ -6,16 +6,20 @@ import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
 import {IDebtAuctionHouse} from '@interfaces/IDebtAuctionHouse.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ICoinJoin} from '@interfaces/utils/ICoinJoin.sol';
+import {IDebtBidActions} from '@interfaces/proxies/actions/IDebtBidActions.sol';
 
 import {CommonActions} from '@contracts/proxies/actions/CommonActions.sol';
 
 import {RAY} from '@libraries/Math.sol';
 
 /**
- * @title DebtBidActions
+ * @title  DebtBidActions
  * @notice All methods here are executed as delegatecalls from the user's proxy
  */
-contract DebtBidActions is CommonActions {
+contract DebtBidActions is CommonActions, IDebtBidActions {
+  // --- Methods ---
+
+  /// @inheritdoc IDebtBidActions
   function decreaseSoldAmount(
     address _coinJoin,
     address _debtAuctionHouse,
@@ -39,6 +43,7 @@ contract DebtBidActions is CommonActions {
     IDebtAuctionHouse(_debtAuctionHouse).decreaseSoldAmount(_auctionId, _soldAmount, _bidAmount);
   }
 
+  /// @inheritdoc IDebtBidActions
   function settleAuction(address _coinJoin, address _debtAuctionHouse, uint256 _auctionId) external delegateCall {
     IDebtAuctionHouse.Auction memory _auction = IDebtAuctionHouse(_debtAuctionHouse).auctions(_auctionId);
     IDebtAuctionHouse(_debtAuctionHouse).settleAuction(_auctionId);
@@ -57,6 +62,7 @@ contract DebtBidActions is CommonActions {
     }
   }
 
+  /// @inheritdoc IDebtBidActions
   function collectProtocolTokens(address _protocolToken) external delegateCall {
     // get the amount of protocol tokens that the proxy has
     uint256 _coinsToCollect = IERC20Metadata(_protocolToken).balanceOf(address(this));

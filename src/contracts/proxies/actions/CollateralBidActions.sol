@@ -5,16 +5,20 @@ import {ICollateralJoin} from '@interfaces/utils/ICollateralJoin.sol';
 import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ICoinJoin} from '@interfaces/utils/ICoinJoin.sol';
+import {ICollateralBidActions} from '@interfaces/proxies/actions/ICollateralBidActions.sol';
 
 import {CommonActions} from '@contracts/proxies/actions/CommonActions.sol';
 
 import {RAY} from '@libraries/Math.sol';
 
 /**
- * @title CollateralBidActions
+ * @title  CollateralBidActions
  * @notice All methods here are executed as delegatecalls from the user's proxy
  */
-contract CollateralBidActions is CommonActions {
+contract CollateralBidActions is CommonActions, ICollateralBidActions {
+  // --- Methods ---
+
+  /// @inheritdoc ICollateralBidActions
   function buyCollateral(
     address _coinJoin,
     address _collateralJoin,

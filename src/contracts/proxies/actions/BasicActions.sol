@@ -10,27 +10,24 @@ import {ICoinJoin} from '@interfaces/utils/ICoinJoin.sol';
 import {ITaxCollector} from '@interfaces/ITaxCollector.sol';
 import {ICollateralJoin} from '@interfaces/utils/ICollateralJoin.sol';
 import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
+import {IBasicActions} from '@interfaces/proxies/actions/IBasicActions.sol';
 
 import {Math, WAD, RAY, RAD} from '@libraries/Math.sol';
 
 import {CommonActions} from '@contracts/proxies/actions/CommonActions.sol';
 
 /**
- * @title BasicActions
- * @notice All methods here are executed as delegatecalls from the user's proxy
+ * @title  BasicActions
+ * @notice This contract defines the actions that can be executed to manage a SAFE
  */
-contract BasicActions is CommonActions {
+contract BasicActions is CommonActions, IBasicActions {
   using Math for uint256;
 
-  // Internal functions
+  // --- Internal functions ---
 
   /**
    * @notice Gets delta debt generated for delta wad (always positive)
-   * @dev    Total Safe debt minus available safeHandler COIN balance
-   * @param _safeEngine address
-   * @param _cType bytes32
-   * @param _safeHandler address
-   * @param _deltaWad uint
+   * @dev    Total SAFE debt minus available safeHandler COIN balance
    */
   function _getGeneratedDeltaDebt(
     address _safeEngine,
@@ -53,10 +50,6 @@ contract BasicActions is CommonActions {
   /**
    * @notice Gets repaid delta debt generated
    * @dev    The rate adjusted debt of the SAFE
-   * @param _safeEngine address
-   * @param _cType bytes32
-   * @param _safeHandler address - safe handler
-   * @return _deltaDebt uint - amount of debt to be repayed
    */
   function _getRepaidDeltaDebt(
     address _safeEngine,
@@ -76,11 +69,6 @@ contract BasicActions is CommonActions {
   /**
    * @notice Gets repaid debt
    * @dev    The rate adjusted SAFE's debt minus COIN balance available in usr's address
-   * @param _safeEngine address
-   * @param _usr address
-   * @param _cType  bytes32
-   * @param _safeHandler address
-   * @return _deltaWad
    */
   function _getRepaidDebt(
     address _safeEngine,
@@ -101,12 +89,8 @@ contract BasicActions is CommonActions {
   }
 
   /**
-   * @notice Generates debt and sends COIN amount to user's address
-   * @param _manager address
-   * @param _taxCollector address
-   * @param _coinJoin address
-   * @param _safeId uint - safeId
-   * @param _deltaWad uint - amount of debt to be generated
+   * @notice Generates debt
+   * @dev    Modifies the SAFE collateralization ratio, increasing the debt and sends the COIN amount to the user's address
    */
   function _generateDebt(
     address _manager,
@@ -133,11 +117,7 @@ contract BasicActions is CommonActions {
 
   /**
    * @notice Repays debt
-   * @param _manager address
-   * @param _taxCollector address
-   * @param _coinJoin addres
-   * @param _safeId uint - safeId
-   * @param _deltaWad uint - amount of debt to be repayed
+   * @dev    Joins COIN amount into the safeEngine and modifies the SAFE collateralization reducing the debt
    */
   function _repayDebt(
     address _manager,
@@ -159,19 +139,23 @@ contract BasicActions is CommonActions {
     );
   }
 
+  /// @notice Routes the openSAFE call to the HaiSafeManager contract
   function _openSAFE(address _manager, bytes32 _cType, address _usr) internal returns (uint256 _safeId) {
     _safeId = HaiSafeManager(_manager).openSAFE(_cType, _usr);
   }
 
+  /// @notice Routes the transferCollateral call to the HaiSafeManager contract
   function _transferCollateral(address _manager, uint256 _safeId, address _dst, uint256 _deltaWad) internal {
     if (_deltaWad == 0) return;
     HaiSafeManager(_manager).transferCollateral(_safeId, _dst, _deltaWad);
   }
 
+  /// @notice Routes the transferInternalCoins call to the HaiSafeManager contract
   function _transferInternalCoins(address _manager, uint256 _safeId, address _dst, uint256 _rad) internal {
     HaiSafeManager(_manager).transferInternalCoins(_safeId, _dst, _rad);
   }
 
+  /// @notice Routes the modifySAFECollateralization call to the HaiSafeManager contract
   function _modifySAFECollateralization(
     address _manager,
     uint256 _safeId,
@@ -239,24 +223,12 @@ contract BasicActions is CommonActions {
 
   // --- Methods ---
 
-  /**
-   * @notice Opens a brand new Safe
-   * @param _manager address
-   * @param _cType bytes32
-   * @param _usr address
-   */
+  /// @inheritdoc IBasicActions
   function openSAFE(address _manager, bytes32 _cType, address _usr) external delegateCall returns (uint256 _safeId) {
     return _openSAFE(_manager, _cType, _usr);
   }
 
-  /**
-   * @notice Generates debt and sends COIN amount to msg.sender
-   * @param _manager address
-   * @param _taxCollector address
-   * @param _coinJoin address
-   * @param _safeId uint - Safe Id
-   * @param _deltaWad uint
-   */
+  /// @inheritdoc IBasicActions
   function generateDebt(
     address _manager,
     address _taxCollector,
@@ -267,14 +239,7 @@ contract BasicActions is CommonActions {
     _generateDebt(_manager, _taxCollector, _coinJoin, _safeId, _deltaWad);
   }
 
-  /**
-   * @notice Repays an amount of debt
-   * @param _manager address
-   * @param _taxCollector address
-   * @param _coinJoin address
-   * @param _safeId uint - Safe Id
-   * @param _deltaWad uint - Amount
-   */
+  /// @inheritdoc IBasicActions
   function repayDebt(
     address _manager,
     address _taxCollector,
@@ -285,6 +250,7 @@ contract BasicActions is CommonActions {
     _repayDebt(_manager, _taxCollector, _coinJoin, _safeId, _deltaWad);
   }
 
+  /// @inheritdoc IBasicActions
   function lockTokenCollateral(
     address _manager,
     address _collateralJoin,
@@ -300,6 +266,7 @@ contract BasicActions is CommonActions {
     _modifySAFECollateralization(_manager, _safeId, _deltaWad.toInt(), 0);
   }
 
+  /// @inheritdoc IBasicActions
   function freeTokenCollateral(
     address _manager,
     address _collateralJoin,
@@ -312,6 +279,7 @@ contract BasicActions is CommonActions {
     _collectAndExitCollateral(_manager, _collateralJoin, _safeId, _deltaWad);
   }
 
+  /// @inheritdoc IBasicActions
   function repayAllDebt(
     address _manager,
     address _taxCollector,
@@ -342,6 +310,7 @@ contract BasicActions is CommonActions {
     });
   }
 
+  /// @inheritdoc IBasicActions
   function lockTokenCollateralAndGenerateDebt(
     address _manager,
     address _taxCollector,
@@ -356,6 +325,7 @@ contract BasicActions is CommonActions {
     );
   }
 
+  /// @inheritdoc IBasicActions
   function openLockTokenCollateralAndGenerateDebt(
     address _manager,
     address _taxCollector,
@@ -372,6 +342,7 @@ contract BasicActions is CommonActions {
     );
   }
 
+  /// @inheritdoc IBasicActions
   function repayDebtAndFreeTokenCollateral(
     address _manager,
     address _taxCollector,
@@ -400,6 +371,7 @@ contract BasicActions is CommonActions {
     _collectAndExitCollateral(_manager, _collateralJoin, _safeId, _collateralWad);
   }
 
+  /// @inheritdoc IBasicActions
   function repayAllDebtAndFreeTokenCollateral(
     address _manager,
     address _taxCollector,

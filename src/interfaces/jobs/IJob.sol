@@ -5,14 +5,26 @@ import {IStabilityFeeTreasury} from '@interfaces/IStabilityFeeTreasury.sol';
 
 interface IJob {
   // --- Events ---
+
+  /**
+   * @notice Emitted when a reward is issued
+   * @param _rewardedAccount Account that received the reward
+   * @param _rewardAmount Amount of reward issued [wad]
+   */
   event Rewarded(address _rewardedAccount, uint256 _rewardAmount);
 
   // --- Errors ---
+
+  /// @notice Throws when trying to call a not-workable job function
   error NotWorkable();
 
   // --- Data ---
+
+  /// @notice Amount of tokens to reward per job transaction [wad]
   function rewardAmount() external view returns (uint256 _rewardAmount);
 
   // --- Registry ---
+
+  /// @notice Address of the StabilityFeeTreasury contract
   function stabilityFeeTreasury() external view returns (IStabilityFeeTreasury _stabilityFeeTreasury);
 }

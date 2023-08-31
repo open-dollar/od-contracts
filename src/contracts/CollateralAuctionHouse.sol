@@ -15,52 +15,74 @@ import {Assertions} from '@libraries/Assertions.sol';
 import {Encoding} from '@libraries/Encoding.sol';
 import {Math, RAY, WAD} from '@libraries/Math.sol';
 
-/*
-   This thing lets you sell some collateral at an increasing discount in order to instantly recapitalize the system
-*/
+/**
+ * @title  CollateralAuctionHouse
+ * @notice This contract enables the sell of a confiscated collateral in exchange for system coins to cover a SAFE's debt
+ */
 contract CollateralAuctionHouse is Authorizable, Modifiable, Disableable, ICollateralAuctionHouse {
   using Math for uint256;
   using Encoding for bytes;
   using Assertions for uint256;
   using Assertions for address;
 
+  /// @inheritdoc ICollateralAuctionHouse
   bytes32 public constant AUCTION_HOUSE_TYPE = bytes32('COLLATERAL');
 
   // --- Registry ---
+
+  /// @inheritdoc ICollateralAuctionHouse
   ISAFEEngine public safeEngine;
+
+  /// @dev Internal storage variable to allow overrides in child implementation contract
   ILiquidationEngine internal _liquidationEngine;
+
+  /// @dev Internal storage variable to allow overrides in child implementation contract
   IOracleRelayer internal _oracleRelayer;
 
+  /// @inheritdoc ICollateralAuctionHouse
   function liquidationEngine() public view virtual returns (ILiquidationEngine __liquidationEngine) {
     return _liquidationEngine;
   }
 
+  /// @inheritdoc ICollateralAuctionHouse
   function oracleRelayer() public view virtual returns (IOracleRelayer __oracleRelayer) {
     return _oracleRelayer;
   }
 
   // --- Data ---
-  // Collateral type name
+
+  /// @inheritdoc ICollateralAuctionHouse
   bytes32 public collateralType;
-  // Number of auctions started up until now
+  /// @inheritdoc ICollateralAuctionHouse
   uint256 public auctionsStarted;
 
-  // Bid data for each separate auction
+  /// @inheritdoc ICollateralAuctionHouse
   // solhint-disable-next-line private-vars-leading-underscore
   mapping(uint256 _auctionId => Auction) public _auctions;
 
+  /// @inheritdoc ICollateralAuctionHouse
   function auctions(uint256 _auctionId) external view returns (Auction memory _auction) {
     return _auctions[_auctionId];
   }
 
+  /// @inheritdoc ICollateralAuctionHouse
   // solhint-disable-next-line private-vars-leading-underscore
   CollateralAuctionHouseParams public _params;
 
+  /// @inheritdoc ICollateralAuctionHouse
   function params() external view returns (CollateralAuctionHouseParams memory _cahParams) {
     return _params;
   }
 
   // --- Init ---
+
+  /**
+   * @param  _safeEngine Address of the SAFEEngine contract
+   * @param  __liquidationEngine Address of the LiquidationEngine contract
+   * @param  __oracleRelayer Address of the OracleRelayer contract
+   * @param  _cType Bytes32 representation of the collateral type
+   * @param  _cahParams Initial valid CollateralAuctionHouse parameters struct
+   */
   constructor(
     address _safeEngine,
     address __liquidationEngine,
@@ -76,16 +98,18 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, Disableable, IColla
     _params = _cahParams;
   }
 
-  // --- Private Auction Utils ---
+  // --- Internal Utils ---
+
   /**
-   * @notice Get the amount of bought collateral from a specific auction using custom collateral price feeds, a system
-   *         coin price feed and a custom discount
+   * @notice Get the amount of bought collateral from a specific auction using collateral and system coin prices, with a custom discount
    * @param  _collateralPrice The collateral price fetched from the Oracle
    * @param  _systemCoinPrice The system coin redemption price fetched from the OracleRelayer
    * @param  _amountToSell The amount of collateral being auctioned
    * @param  _adjustedBid The limited system coin bid
    * @param  _customDiscount The discount offered
    * @return _boughtCollateral Amount of collateral bought for given parameters
+   * @return _readjustedBid Amount of system coins actually used to buy the collateral
+   * @dev    The inputted bid is capped to the amount of system coins needed to buy all collateral
    */
   function _getBoughtCollateral(
     uint256 _collateralPrice,
@@ -108,6 +132,10 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, Disableable, IColla
     }
   }
 
+  /**
+   * @notice Get the collateral price from the oracle
+   * @return _collateralPrice The collateral price if valid [wad]
+   */
   function _getCollateralPrice() internal view returns (uint256 _collateralPrice) {
     IDelayedOracle _delayedOracle = oracleRelayer().cParams(collateralType).oracle;
     bool _hasValidValue;
@@ -119,7 +147,7 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, Disableable, IColla
 
   /**
    * @notice Get the upcoming discount that will be used in a specific auction
-   * @param _id The ID of the auction to calculate the upcoming discount for
+   * @param  _id The ID of the auction to calculate the upcoming discount for
    * @return _auctionDiscount The upcoming discount that will be used in the targeted auction
    */
   function _getAuctionDiscount(uint256 _id) internal view returns (uint256 _auctionDiscount) {
@@ -134,9 +162,10 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, Disableable, IColla
 
   /**
    * @notice Get the actual bid that will be used in an auction (taking into account the bidder input)
-   * @param _id The id of the auction to calculate the adjusted bid for
-   * @param _wad The initial bid submitted
+   * @param  _id The id of the auction to calculate the adjusted bid for
+   * @param  _wad The initial bid submitted
    * @return _adjustedBid The adjusted bid
+   * @dev    The inputted bid is capped to the amount of system coins the auction needs to raise
    */
   function _getAdjustedBid(uint256 _id, uint256 _wad) internal view returns (uint256 _adjustedBid) {
     Auction memory _auction = _auctions[_id];
@@ -149,14 +178,9 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, Disableable, IColla
     }
   }
 
-  // --- Core Auction Logic ---
-  /**
-   * @notice Start a new collateral auction
-   * @param _forgoneCollateralReceiver Who receives leftover collateral that is not auctioned
-   * @param _auctionIncomeRecipient Who receives the amount raised in the auction
-   * @param _amountToRaise Total amount of coins to raise (rad)
-   * @param _amountToSell Total amount of collateral available to sell (wad)
-   */
+  // --- Auction Methods ---
+
+  /// @inheritdoc ICollateralAuctionHouse
   function startAuction(
     address _forgoneCollateralReceiver,
     address _auctionIncomeRecipient,
@@ -192,16 +216,12 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, Disableable, IColla
     });
   }
 
+  /// @inheritdoc ICollateralAuctionHouse
   function getAuctionDiscount(uint256 _id) external view returns (uint256 _auctionDiscount) {
     return _getAuctionDiscount(_id);
   }
 
-  /**
-   * @notice Calculate how much collateral someone would buy from an auction using the last read redemption price and the old current
-   *         discount associated with the auction
-   * @param _id ID of the auction to buy collateral from
-   * @param _wad New bid submitted
-   */
+  /// @inheritdoc ICollateralAuctionHouse
   function getCollateralBought(
     uint256 _id,
     uint256 _wad
@@ -222,13 +242,7 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, Disableable, IColla
     );
   }
 
-  /**
-   * @notice Buy collateral from an auction at an increasing discount
-   * @param _id ID of the auction to buy collateral from
-   * @param _wad New bid submitted (as a WAD which has 18 decimals)
-   * @return _boughtCollateral Amount of collateral bought
-   * @return _adjustedBid The amount of coins used to buy the collateral (in WAD)
-   */
+  /// @inheritdoc ICollateralAuctionHouse
   function buyCollateral(
     uint256 _id,
     uint256 _wad
@@ -324,18 +338,12 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, Disableable, IColla
     });
   }
 
-  /**
-   * @notice Settle/finish an auction
-   * @dev Deprecated
-   */
+  /// @inheritdoc ICollateralAuctionHouse
   function settleAuction(uint256) external pure {
     return;
   }
 
-  /**
-   * @notice Terminate an auction prematurely. Usually called by Global Settlement.
-   * @param _id ID of the auction to settle
-   */
+  /// @inheritdoc ICollateralAuctionHouse
   function terminateAuctionPrematurely(uint256 _id) external isAuthorized {
     Auction memory _auction = _auctions[_id];
 
@@ -360,6 +368,8 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, Disableable, IColla
   }
 
   // --- Administration ---
+
+  /// @inheritdoc Modifiable
   function _modifyParameters(bytes32 _param, bytes memory _data) internal virtual override {
     address _address = _data.toAddress();
     uint256 _uint256 = _data.toUint256();
@@ -376,16 +386,19 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, Disableable, IColla
     else revert UnrecognizedParam();
   }
 
+  /// @dev Sets the LiquidationEngine contract address, revoking the previous, and granting the new one authorization
   function _setLiquidationEngine(address _newLiquidationEngine) internal virtual {
     if (address(_liquidationEngine) != address(0)) _removeAuthorization(address(_liquidationEngine));
     _liquidationEngine = ILiquidationEngine(_newLiquidationEngine);
     _addAuthorization(_newLiquidationEngine);
   }
 
+  /// @dev Sets the OracleRelayer contract address
   function _setOracleRelayer(address _newOracleRelayer) internal virtual {
     _oracleRelayer = IOracleRelayer(_newOracleRelayer);
   }
 
+  /// @inheritdoc Modifiable
   function _validateParameters() internal view override {
     // Registry
     address(liquidationEngine()).assertNonNull();

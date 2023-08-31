@@ -6,7 +6,7 @@ import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
 /**
- * @title Modifiable
+ * @title  Modifiable
  * @notice Allows inheriting contracts to modify parameters values
  * @dev    Requires inheriting contracts to override `_modifyParameters` virtual methods
  */
@@ -54,22 +54,21 @@ abstract contract Modifiable is IModifiable, Authorizable {
     revert UnrecognizedParam();
   }
 
-  /**
-   * @notice Internal function to be overriden with custom logic to validate parameters
-   */
+  /// @notice Internal function to be overriden with custom logic to validate parameters
   function _validateParameters() internal view virtual {}
 
-  /**
-   * @notice Internal function to be overriden with custom logic to validate collateral parameters
-   */
+  /// @notice Internal function to be overriden with custom logic to validate collateral parameters
   function _validateCParameters(bytes32 _cType) internal view virtual {}
 
   // --- Modifiers ---
+
+  /// @notice Triggers a routine to validate parameters after a modification
   modifier validParams() {
     _;
     _validateParameters();
   }
 
+  /// @notice Triggers a routine to validate collateral parameters after a modification
   modifier validCParams(bytes32 _cType) {
     _;
     _validateCParameters(_cType);

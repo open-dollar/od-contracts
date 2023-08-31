@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {IPostSettlementSurplusAuctionHouse} from '@interfaces/settlement/IPostSettlementSurplusAuctionHouse.sol';
+import {
+  IPostSettlementSurplusAuctionHouse,
+  ICommonSurplusAuctionHouse
+} from '@interfaces/settlement/IPostSettlementSurplusAuctionHouse.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IProtocolToken} from '@interfaces/tokens/IProtocolToken.sol';
 
@@ -13,6 +16,11 @@ import {Encoding} from '@libraries/Encoding.sol';
 import {WAD} from '@libraries/Math.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 
+/**
+ * @title  PostSettlementSurplusAuctionHouse
+ * @notice This contract enables the sell of system coins in exchange for protocol tokens after Global Settlement is triggered
+ * @dev    The reason to auction the post settlement surplus is to avoid incentives to trigger Global Settlement if the system has a surplus
+ */
 contract PostSettlementSurplusAuctionHouse is Authorizable, Modifiable, IPostSettlementSurplusAuctionHouse {
   using Encoding for bytes;
   using SafeERC20 for IProtocolToken;
@@ -21,32 +29,44 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, Modifiable, IPostSet
   bytes32 public constant AUCTION_HOUSE_TYPE = bytes32('SURPLUS');
 
   // --- Data ---
-  // Data for each separate auction
+
+  /// @inheritdoc ICommonSurplusAuctionHouse
   // solhint-disable-next-line private-vars-leading-underscore
   mapping(uint256 => Auction) public _auctions;
 
+  /// @inheritdoc ICommonSurplusAuctionHouse
   function auctions(uint256 _id) external view returns (Auction memory _auction) {
     return _auctions[_id];
   }
 
-  // Number of auctions started up until now
+  /// @inheritdoc ICommonSurplusAuctionHouse
   uint256 public auctionsStarted;
 
   // --- Registry ---
-  // SAFE database
+
+  /// @inheritdoc ICommonSurplusAuctionHouse
   ISAFEEngine public safeEngine;
-  // Protocol token address
+  /// @inheritdoc ICommonSurplusAuctionHouse
   IProtocolToken public protocolToken;
 
   // --- Params ---
+
+  /// @inheritdoc IPostSettlementSurplusAuctionHouse
   // solhint-disable-next-line private-vars-leading-underscore
   PostSettlementSAHParams public _params;
 
+  /// @inheritdoc IPostSettlementSurplusAuctionHouse
   function params() external view returns (PostSettlementSAHParams memory _pssahParams) {
     return _params;
   }
 
   // --- Init ---
+
+  /**
+   * @param  _safeEngine Address of the SAFEEngine contract
+   * @param  _protocolToken Address of the ProtocolToken contract
+   * @param  _pssahParams Initial valid PostSettlementSAH parameters struct
+   */
   constructor(
     address _safeEngine,
     address _protocolToken,
@@ -59,11 +79,8 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, Modifiable, IPostSet
   }
 
   // --- Auction ---
-  /**
-   * @notice Start a new surplus auction
-   * @param _amountToSell Total amount of system coins to sell (wad)
-   * @param _initialBid Initial protocol token bid (rad)
-   */
+
+  /// @inheritdoc ICommonSurplusAuctionHouse
   function startAuction(uint256 _amountToSell, uint256 _initialBid) external isAuthorized returns (uint256 _id) {
     _id = ++auctionsStarted;
 
@@ -87,10 +104,7 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, Modifiable, IPostSet
     });
   }
 
-  /**
-   * @notice Restart an auction if no bids were submitted for it
-   * @param _id ID of the auction to restart
-   */
+  /// @inheritdoc ICommonSurplusAuctionHouse
   function restartAuction(uint256 _id) external {
     if (_id == 0 || _id > auctionsStarted) revert SAH_AuctionNeverStarted();
     Auction storage _auction = _auctions[_id];
@@ -100,12 +114,7 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, Modifiable, IPostSet
     emit RestartAuction(_id, block.timestamp, _auction.auctionDeadline);
   }
 
-  /**
-   * @notice Submit a higher protocol token bid for the same amount of system coins
-   * @param _id ID of the auction you want to submit the bid for
-   * @param _amountToBuy Amount of system coins to buy (wad)
-   * @param _bid New bid submitted (rad)
-   */
+  /// @inheritdoc ICommonSurplusAuctionHouse
   function increaseBidSize(uint256 _id, uint256 _amountToBuy, uint256 _bid) external {
     Auction storage _auction = _auctions[_id];
     if (_auction.highBidder == address(0)) revert SAH_HighBidderNotSet();
@@ -127,10 +136,7 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, Modifiable, IPostSet
     emit IncreaseBidSize(_id, msg.sender, block.timestamp, _bid, _amountToBuy, _auction.bidExpiry);
   }
 
-  /**
-   * @notice Settle/finish an auction
-   * @param _id ID of the auction to settle
-   */
+  /// @inheritdoc ICommonSurplusAuctionHouse
   function settleAuction(uint256 _id) external {
     Auction memory _auction = _auctions[_id];
     if (_auction.bidExpiry == 0 || (_auction.bidExpiry > block.timestamp && _auction.auctionDeadline > block.timestamp))
@@ -147,6 +153,7 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, Modifiable, IPostSet
 
   // --- Administration ---
 
+  /// @inheritdoc Modifiable
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     address _address = _data.toAddress();
     uint256 _uint256 = _data.toUint256();
@@ -158,6 +165,7 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, Modifiable, IPostSet
     else revert UnrecognizedParam();
   }
 
+  /// @inheritdoc Modifiable
   function _validateParameters() internal view override {
     address(protocolToken).assertNonNull();
   }

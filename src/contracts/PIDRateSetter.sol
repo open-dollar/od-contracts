@@ -11,18 +11,25 @@ import {Modifiable} from '@contracts/utils/Modifiable.sol';
 import {Encoding} from '@libraries/Encoding.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 
+/**
+ * @title  PIDRateSetter
+ * @notice This contract is used to trigger the update of the redemption rate using the PID controller
+ */
 contract PIDRateSetter is Authorizable, Modifiable, IPIDRateSetter {
   using Encoding for bytes;
   using Assertions for uint256;
   using Assertions for address;
 
   // --- Registry ---
+
   /// @inheritdoc IPIDRateSetter
   IOracleRelayer public oracleRelayer;
   /// @inheritdoc IPIDRateSetter
   IPIDController public pidCalculator;
 
   // --- Params ---
+
+  /// @inheritdoc IPIDRateSetter
   // solhint-disable-next-line private-vars-leading-underscore
   PIDRateSetterParams public _params;
 
@@ -32,10 +39,17 @@ contract PIDRateSetter is Authorizable, Modifiable, IPIDRateSetter {
   }
 
   // --- Data ---
+
   /// @inheritdoc IPIDRateSetter
   uint256 public lastUpdateTime;
 
   // --- Init ---
+
+  /**
+   * @param  _oracleRelayer Address of the oracle relayer
+   * @param  _pidCalculator Address of the PID calculator
+   * @param  _pidRateSetterParams Initial valid PID rate setter parameters struct
+   */
   constructor(
     address _oracleRelayer,
     address _pidCalculator,
@@ -72,6 +86,7 @@ contract PIDRateSetter is Authorizable, Modifiable, IPIDRateSetter {
 
   // --- Administration ---
 
+  /// @inheritdoc Modifiable
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     address _address = _data.toAddress();
     uint256 _uint256 = _data.toUint256();
@@ -82,6 +97,7 @@ contract PIDRateSetter is Authorizable, Modifiable, IPIDRateSetter {
     else revert UnrecognizedParam();
   }
 
+  /// @inheritdoc Modifiable
   function _validateParameters() internal view override {
     _params.updateRateDelay.assertGt(0);
 

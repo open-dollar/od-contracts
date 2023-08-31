@@ -10,16 +10,26 @@ import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
 import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
 
+/**
+ * @title  UniV3RelayerFactory
+ * @notice This contract is used to deploy UniV3Relayer contracts
+ * @dev    The deployed contracts are UniV3RelayerChild instances
+ */
 contract UniV3RelayerFactory is Authorizable, IUniV3RelayerFactory {
   using EnumerableSet for EnumerableSet.AddressSet;
 
   // --- Data ---
+
+  /// @notice The enumerable set of deployed UniV3Relayer contracts
   EnumerableSet.AddressSet internal _uniV3Relayers;
 
   // --- Init ---
+
   constructor() Authorizable(msg.sender) {}
 
   // --- Methods ---
+
+  /// @inheritdoc IUniV3RelayerFactory
   function deployUniV3Relayer(
     address _baseToken,
     address _quoteToken,
@@ -32,6 +42,8 @@ contract UniV3RelayerFactory is Authorizable, IUniV3RelayerFactory {
   }
 
   // --- Views ---
+
+  /// @inheritdoc IUniV3RelayerFactory
   function uniV3RelayersList() external view returns (address[] memory _uniV3RelayersList) {
     return _uniV3Relayers.values();
   }

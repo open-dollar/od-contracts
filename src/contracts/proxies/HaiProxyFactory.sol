@@ -2,24 +2,31 @@
 pragma solidity 0.8.19;
 
 import {HaiProxy} from '@contracts/proxies/HaiProxy.sol';
+import {IHaiProxyFactory} from '@interfaces/proxies/IHaiProxyFactory.sol';
 
-contract HaiProxyFactory {
-  event Created(address indexed _sender, address indexed _owner, address _proxy);
+/**
+ * @title  HaiProxyFactory
+ * @notice This contract is used to deploy new HaiProxy instances
+ */
+contract HaiProxyFactory is IHaiProxyFactory {
+  // --- Data ---
 
-  mapping(address => bool) public isProxy;
+  /// @inheritdoc IHaiProxyFactory
+  mapping(address _proxyAddress => bool _exists) public isProxy;
 
-  // deploys a new proxy instance
-  // sets owner of proxy to caller
+  // --- Methods ---
+
+  /// @inheritdoc IHaiProxyFactory
   function build() external returns (address payable _proxy) {
     _proxy = _build(msg.sender);
   }
 
-  // deploys a new_ proxy instance
-  // sets custom owner of proxy
+  /// @inheritdoc IHaiProxyFactory
   function build(address _owner) external returns (address payable _proxy) {
     _proxy = _build(_owner);
   }
 
+  /// @notice Internal method used to deploy a new proxy instance
   function _build(address _owner) internal returns (address payable _proxy) {
     _proxy = payable(address(new HaiProxy(_owner)));
     isProxy[_proxy] = true;

@@ -8,16 +8,20 @@ quote_style = 'single'
 number_underscore = 'thousands'
 wrap_comments = false
 
+[profile.docs]
+title = 'HAI docs'
+src ='src' # root_path variable in build-docs.sh
+
 [profile.default]
 solc = '0.8.19'
 src = 'src'
-test = 'src/test'
+test = 'test'
 out = 'out'
 libs = ['lib']
 fuzz_runs = 1000
 optimizer_runs = 10_000
 block_timestamp = 1675855961
-fs_permissions = [{ access = "write", path = "./src/test/simulations"}]
+fs_permissions = [{ access = "write", path = "./test/simulations"}]
 
 [profile.optimized]
 via_ir = true
@@ -28,7 +32,7 @@ fuzz_runs = 5000
 via_ir = true
 out = 'out-via-ir'
 fuzz_runs = 5000
-src = 'src/test'
+src = 'test'
 
 [rpc_endpoints]
 mainnet = "${OP_MAINNET_RPC}"

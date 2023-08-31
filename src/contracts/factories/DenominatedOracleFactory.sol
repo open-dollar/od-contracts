@@ -10,16 +10,26 @@ import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
 import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
 
+/**
+ * @title  DenominatedOracleFactory
+ * @notice This contract is used to deploy DenominatedOracle contracts
+ * @dev    The deployed contracts are DenominatedOracleChild instances
+ */
 contract DenominatedOracleFactory is Authorizable, IDenominatedOracleFactory {
   using EnumerableSet for EnumerableSet.AddressSet;
 
   // --- Data ---
+
+  /// @notice The enumerable set of deployed DenominatedOracle contracts
   EnumerableSet.AddressSet internal _denominatedOracles;
 
   // --- Init ---
+
   constructor() Authorizable(msg.sender) {}
 
   // --- Methods ---
+
+  /// @inheritdoc IDenominatedOracleFactory
   function deployDenominatedOracle(
     IBaseOracle _priceSource,
     IBaseOracle _denominationPriceSource,
@@ -33,6 +43,8 @@ contract DenominatedOracleFactory is Authorizable, IDenominatedOracleFactory {
   }
 
   // --- Views ---
+
+  /// @inheritdoc IDenominatedOracleFactory
   function denominatedOraclesList() external view returns (address[] memory _denominatedOraclesList) {
     return _denominatedOracles.values();
   }

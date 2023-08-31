@@ -15,6 +15,11 @@ import {Assertions} from '@libraries/Assertions.sol';
 import {WAD} from '@libraries/Math.sol';
 import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
 
+/**
+ * @title  CollateralAuctionHouseFactory
+ * @notice This contract is used to deploy CollateralAuctionHouse contracts
+ * @dev    The deployed contracts are CollateralAuctionHouseChild instances
+ */
 contract CollateralAuctionHouseFactory is Authorizable, Modifiable, Disableable, ICollateralAuctionHouseFactory {
   using Assertions for uint256;
   using Assertions for address;
@@ -22,12 +27,17 @@ contract CollateralAuctionHouseFactory is Authorizable, Modifiable, Disableable,
   using EnumerableSet for EnumerableSet.Bytes32Set;
 
   // --- Registry ---
+
+  /// @inheritdoc ICollateralAuctionHouseFactory
   address public safeEngine;
+  /// @inheritdoc ICollateralAuctionHouseFactory
   address public liquidationEngine;
+  /// @inheritdoc ICollateralAuctionHouseFactory
   address public oracleRelayer;
 
   // --- Data ---
 
+  /// @inheritdoc ICollateralAuctionHouseFactory
   function cParams(bytes32 _cType)
     external
     view
@@ -36,6 +46,7 @@ contract CollateralAuctionHouseFactory is Authorizable, Modifiable, Disableable,
     return ICollateralAuctionHouse(collateralAuctionHouses[_cType]).params();
   }
 
+  /// @inheritdoc ICollateralAuctionHouseFactory
   // solhint-disable-next-line private-vars-leading-underscore
   function _cParams(bytes32 _cType)
     external
@@ -45,11 +56,20 @@ contract CollateralAuctionHouseFactory is Authorizable, Modifiable, Disableable,
     return ICollateralAuctionHouse(collateralAuctionHouses[_cType])._params();
   }
 
-  mapping(bytes32 => address) public collateralAuctionHouses;
+  /// @inheritdoc ICollateralAuctionHouseFactory
+  mapping(bytes32 _cType => address) public collateralAuctionHouses;
 
+  /// @notice The enumerable set of collateral types
   EnumerableSet.Bytes32Set internal _collateralList;
 
   // --- Init ---
+
+  /**
+   * @param  _safeEngine Address of the SAFEEngine contract
+   * @param  _liquidationEngine Address of the LiquidationEngine contract
+   * @param  _oracleRelayer Address of the OracleRelayer contract
+   * @dev    Adds authorization to the LiquidationEngine (extended to all child contracts)
+   */
   constructor(
     address _safeEngine,
     address _liquidationEngine,
@@ -61,6 +81,8 @@ contract CollateralAuctionHouseFactory is Authorizable, Modifiable, Disableable,
   }
 
   // --- Methods ---
+
+  /// @inheritdoc ICollateralAuctionHouseFactory
   function deployCollateralAuctionHouse(
     bytes32 _cType,
     ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahParams
@@ -80,10 +102,13 @@ contract CollateralAuctionHouseFactory is Authorizable, Modifiable, Disableable,
   }
 
   // --- Views ---
+
+  /// @inheritdoc ICollateralAuctionHouseFactory
   function collateralList() external view returns (bytes32[] memory __collateralList) {
     return _collateralList.values();
   }
 
+  /// @inheritdoc ICollateralAuctionHouseFactory
   function collateralAuctionHousesList() external view returns (address[] memory _collateralAuctionHousesList) {
     bytes32[] memory __collateralList = _collateralList.values();
     _collateralAuctionHousesList = new address[](__collateralList.length);
@@ -93,6 +118,8 @@ contract CollateralAuctionHouseFactory is Authorizable, Modifiable, Disableable,
   }
 
   // --- Administration ---
+
+  /// @inheritdoc Modifiable
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     address _address = _data.toAddress();
 
@@ -102,17 +129,26 @@ contract CollateralAuctionHouseFactory is Authorizable, Modifiable, Disableable,
     else revert UnrecognizedParam();
   }
 
+  /**
+   * @dev    Overriding method routes the parameter modification to the child contracts
+   * @param  _cType Bytes32 representation of the collateral type
+   * @param  _param Bytes32 representation of the parameter
+   * @param  _data  Bytes representation of the parameter data
+   * @inheritdoc Modifiable
+   */
   function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override {
     if (!_collateralList.contains(_cType)) revert UnrecognizedCType();
     IModifiable(collateralAuctionHouses[_cType]).modifyParameters(_param, _data);
   }
 
+  /// @dev Sets the LiquidationEngine contract address, revoking the previous, and granting the new one authorization
   function _setLiquidationEngine(address _newLiquidationEngine) internal {
     if (liquidationEngine != address(0)) _removeAuthorization(liquidationEngine);
     liquidationEngine = _newLiquidationEngine;
     _addAuthorization(_newLiquidationEngine);
   }
 
+  /// @inheritdoc Modifiable
   function _validateParameters() internal view override {
     liquidationEngine.assertNonNull();
     oracleRelayer.assertNonNull();
