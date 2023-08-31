@@ -127,9 +127,9 @@ contract DeployGoerli is GoerliParams, Deploy {
     });
 
     // Test tokens
-    collateral[WBTC] = new ERC20ForTestnet('Wrapped BTC', 'wBTC', 8);
-    collateral[STONES] = new ERC20ForTestnet('Stones', 'STN', 3);
-    collateral[TOTEM] = new ERC20ForTestnet('Totem', 'TTM', 0);
+    collateral[WBTC] = new MintableERC20('Wrapped BTC', 'wBTC', 8);
+    collateral[STONES] = new MintableERC20('Stones', 'STN', 3);
+    collateral[TOTEM] = new MintableERC20('Totem', 'TTM', 0);
 
     // BTC: live feed
     IBaseOracle _wbtcUsdOracle =

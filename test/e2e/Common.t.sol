@@ -9,12 +9,7 @@ import {ERC20ForTest} from '@test/mocks/ERC20ForTest.sol';
 import {OracleForTest} from '@test/mocks/OracleForTest.sol';
 import {DelayedOracleForTest} from '@test/mocks/DelayedOracleForTest.sol';
 import {
-  Contracts,
-  ICollateralJoin,
-  ERC20ForTestnet,
-  IERC20Metadata,
-  IBaseOracle,
-  ISAFEEngine
+  Contracts, ICollateralJoin, MintableERC20, IERC20Metadata, IBaseOracle, ISAFEEngine
 } from '@script/Contracts.s.sol';
 import {WETH9} from '@test/mocks/WETH9.sol';
 import {Math, RAY} from '@libraries/Math.sol';
@@ -54,7 +49,7 @@ contract DeployForTest is TestParams, Deploy {
     collateral['TKN-A'] = new ERC20ForTest();
     collateral['TKN-B'] = new ERC20ForTest();
     collateral['TKN-C'] = new ERC20ForTest();
-    collateral['TKN-8D'] = new ERC20ForTestnet('8 Decimals TKN', 'TKN', 8);
+    collateral['TKN-8D'] = new MintableERC20('8 Decimals TKN', 'TKN', 8);
 
     collateralTypes.push(WETH);
     collateralTypes.push(TKN);

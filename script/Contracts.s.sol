@@ -35,7 +35,7 @@ import {ChainlinkRelayer} from '@contracts/oracles/ChainlinkRelayer.sol';
 import {UniV3Relayer} from '@contracts/oracles/UniV3Relayer.sol';
 
 // --- Testnet contracts ---
-import {ERC20ForTestnet} from '@contracts/for-test/ERC20ForTestnet.sol';
+import {MintableERC20} from '@contracts/for-test/MintableERC20.sol';
 import {DeviatedOracle} from '@contracts/for-test/DeviatedOracle.sol';
 import {HardcodedOracle} from '@contracts/for-test/HardcodedOracle.sol';
 

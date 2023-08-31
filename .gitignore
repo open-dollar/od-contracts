@@ -8,7 +8,6 @@ cache
 out
 out-via-ir
 broadcast/**/run-*.json
-docs
 
 # Config files
 .env
@@ -18,3 +17,8 @@ docs
 
 lcov.info
 .vscode/
+
+# Docs build files
+docs/book
+docs/src/src/
+docs/src/static
