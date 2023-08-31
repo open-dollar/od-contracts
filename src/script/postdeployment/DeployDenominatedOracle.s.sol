@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {DeployOracleBase} from '@script/postdeployment/DeployOracleBase.s.sol';
+import {OracleBase} from '@script/postdeployment/base/OracleBase.s.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 
 // BROADCAST
@@ -10,7 +10,7 @@ import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 // SIMULATE
 // source .env && forge script DeployDenominatedOracle --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_GOERLI_RPC
 
-contract DeployDenominatedOracle is DeployOracleBase {
+contract DeployDenominatedOracle is OracleBase {
   function run() public {
     vm.startBroadcast(vm.envUint('ARB_GOERLI_PK'));
     weth_usd_denominatedOracle = denominatedOracleFactory.deployDenominatedOracle(

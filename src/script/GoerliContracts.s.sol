@@ -88,4 +88,7 @@ abstract contract GoerliContracts {
   address public uniV3PoolAddr = 0x020a79c27d1bC1fe577674921263152719451bB1; // OD / WETH UniSwap pool
   address public uniV3RelayerChildAddr = 0xFcD380C21f5ABa67ADF366213Bb5B7bB0Ee650F2; // OD / WETH
   address public collateralJoinChild_HAIAddr = 0xd5F924c95A2C8C2FcB14618a503aC19dC3276a04;
+  address public collateralAuctionHouseChild_HAIAddr = 0x80FFd938e08d65D575798E1b8D74E588F1127547;
+  address public collateralJoinChild_KITEAddr = 0x721DCA78c2e370CA4774C551A64da96E7FD3042c;
+  address public collateralAuctionHouseChild_KITEAddr = 0x93ff3cDc844a3240abce5c10Bd638fE3815cea33;
 }

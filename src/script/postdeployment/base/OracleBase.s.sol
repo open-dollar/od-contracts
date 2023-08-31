@@ -9,13 +9,7 @@ import {DenominatedOracleFactory} from '@contracts/factories/DenominatedOracleFa
 import {UniV3RelayerFactory} from '@contracts/factories/UniV3RelayerFactory.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 
-// BROADCAST
-// source .env && forge script DeployOracles --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_GOERLI_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
-
-// SIMULATE
-// source .env && forge script DeployOracles --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_GOERLI_RPC
-
-contract DeployOracleBase is GoerliContracts, Script {
+contract OracleBase is GoerliContracts, Script {
   UniV3RelayerFactory public uniV3RelayerFactory = UniV3RelayerFactory(uniV3RelayerFactoryAddr);
   DenominatedOracleFactory public denominatedOracleFactory = DenominatedOracleFactory(denominatedOracleFactoryAddr);
 
