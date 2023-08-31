@@ -85,6 +85,7 @@ abstract contract GoerliContracts {
   address public postSettlementSurplusBidActionsAddr = 0x1C465a2aC0362306A5a130be59409C4aCCab4636;
 
   // Postdeployment
-  address public UniV3PoolAddr = 0x020a79c27d1bC1fe577674921263152719451bB1; // OD / WETH UniSwap pool
-  address public UniV3RelayerChildAddr = 0xFcD380C21f5ABa67ADF366213Bb5B7bB0Ee650F2; // OD / WETH
+  address public uniV3PoolAddr = 0x020a79c27d1bC1fe577674921263152719451bB1; // OD / WETH UniSwap pool
+  address public uniV3RelayerChildAddr = 0xFcD380C21f5ABa67ADF366213Bb5B7bB0Ee650F2; // OD / WETH
+  address public collateralJoinChild_HAIAddr = 0xd5F924c95A2C8C2FcB14618a503aC19dC3276a04;
 }
