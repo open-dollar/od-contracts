@@ -2,10 +2,12 @@
 pragma solidity 0.8.19;
 
 import {Script} from 'forge-std/Script.sol';
+import {GoerliContracts} from '@script/GoerliContracts.s.sol';
+import {ARB_GOERLI_WETH} from '@script/Registry.s.sol';
 
-import {UniV3Relayer} from '@contracts/oracles/UniV3Relayer.sol';
-import {DenominatedOracle} from '@contracts/oracles/DenominatedOracle.sol';
-import {IUniswapV3Factory} from '@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol';
+import {DenominatedOracleFactory} from '@contracts/factories/DenominatedOracleFactory.sol';
+import {UniV3RelayerFactory} from '@contracts/factories/UniV3RelayerFactory.sol';
+import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 
 // BROADCAST
 // source .env && forge script DeployOracles --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_GOERLI_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
@@ -13,18 +15,29 @@ import {IUniswapV3Factory} from '@uniswap/v3-core/contracts/interfaces/IUniswapV
 // SIMULATE
 // source .env && forge script DeployOracles --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_GOERLI_RPC
 
-contract DeployOracles is Script {
-  IUniswapV3Factory public uniswapV3Factory = IUniswapV3Factory(0x4893376342d5D7b3e31d4184c08b265e5aB2A3f6);
+contract DeployOracles is GoerliContracts, Script {
+  UniV3RelayerFactory public uniV3RelayerFactory = UniV3RelayerFactory(uniV3RelayerFactoryAddr);
+  DenominatedOracleFactory public denominatedOracleFactory = DenominatedOracleFactory(denominatedOracleFactoryAddr);
 
-  UniV3Relayer public od_weth_UniV3Relayer;
-  UniV3Relayer public odg_weth_UniV3Relayer;
-  DenominatedOracle public weth_usd_denominatedOracle;
+  address public OD_token = systemCoinAddr;
+  address public ODG_token = protocolTokenAddr;
+  address public WETH_token = ARB_GOERLI_WETH;
+
+  uint24 public fee = uint24(0x2710);
+  uint32 public period = uint32(1 days);
+
+  IBaseOracle public od_weth_UniV3Relayer;
+  IBaseOracle public odg_weth_UniV3Relayer;
+  IBaseOracle public weth_usd_denominatedOracle;
+  IBaseOracle public totem_weth_denominatedOracle;
 
   function run() public {
     vm.startBroadcast(vm.envUint('ARB_GOERLI_PK'));
-    od_weth_UniV3Relayer = uniswapV3Factory.
-    odg_weth_UniV3Relayer = uniswapV3Factory
-    weth_usd_denominatedOracle = new DenominatedOracle();
+    od_weth_UniV3Relayer = uniV3RelayerFactory.deployUniV3Relayer(OD_token, WETH_token, fee, period);
+    odg_weth_UniV3Relayer = uniV3RelayerFactory.deployUniV3Relayer(ODG_token, WETH_token, fee, period);
+    weth_usd_denominatedOracle = denominatedOracleFactory.deployDenominatedOracle(
+      od_weth_UniV3Relayer, IBaseOracle(delayedOracleChild1Addr), false
+    );
     vm.stopBroadcast();
   }
 }

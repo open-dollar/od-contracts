@@ -126,10 +126,14 @@ contract DeployGoerli is GoerliParams, Deploy {
 
     IBaseOracle _wbtcUsdOracle =
       chainlinkRelayerFactory.deployChainlinkRelayer(ARB_GOERLI_CHAINLINK_BTC_USD_FEED, 1 hours); // live feed
+
     IBaseOracle _stonesWbtcOracle = new OracleForTestnet(0.001e18); // denominated feed
     IBaseOracle _stonesOracle =
       denominatedOracleFactory.deployDenominatedOracle(_stonesWbtcOracle, _wbtcUsdOracle, false);
-    IBaseOracle _totemOracle = new OracleForTestnet(1e18); // hardcoded feed
+
+    IBaseOracle _totemWethOracle = new OracleForTestnet(1e18); // hardcoded feed
+    IBaseOracle _totemOracle =
+      denominatedOracleFactory.deployDenominatedOracle(_totemWethOracle, _ethUSDPriceFeed, false);
 
     delayedOracle[WETH] = delayedOracleFactory.deployDelayedOracle(_ethUSDPriceFeed, 1 hours);
     delayedOracle[FTRG] = delayedOracleFactory.deployDelayedOracle(_opUSDPriceFeed, 1 hours);

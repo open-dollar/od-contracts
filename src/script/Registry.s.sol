@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 // for Goerli, add oracleForTestnet auth
-address constant J = 0xC295763Eed507d4A0f8B77241c03dd3354781a15;
+address constant J = 0xcb81A76a565aC4870EDA5B0e32c5a0D2ec734174;
 address constant P = 0xC295763Eed507d4A0f8B77241c03dd3354781a15;
 
 address constant UNISWAP_V3_FACTORY = 0x1F98431c8aD98523631AE4a59f267346ea31F984;
