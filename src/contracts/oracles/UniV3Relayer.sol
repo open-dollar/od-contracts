@@ -14,7 +14,8 @@ import {OracleLibrary, IUniswapV3Pool} from '@uniswap/v3-periphery/contracts/lib
  */
 contract UniV3Relayer is IBaseOracle, IUniV3Relayer {
   // --- Registry ---
-  address internal constant _UNI_V3_FACTORY = address(0x1F98431c8aD98523631AE4a59f267346ea31F984);
+  // address internal constant _UNI_V3_FACTORY = address(0x1F98431c8aD98523631AE4a59f267346ea31F984);
+  address internal constant _UNI_V3_FACTORY = address(0x4893376342d5D7b3e31d4184c08b265e5aB2A3f6);
 
   /// @inheritdoc IUniV3Relayer
   address public uniV3Pool;

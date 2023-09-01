@@ -13,10 +13,7 @@ contract GenerateDebt is TestScripts {
   function run() public {
     vm.startBroadcast(vm.envUint('ARB_GOERLI_PK'));
     address proxy = address(deployOrFind(USER2));
-    WETH_TOKEN.approve(address(proxy), type(uint256).max);
-
-    depositCollatAndGenDebt(WETH, 12, 0.4 ether, 0, proxy);
-    genDebt(12, 200 ether, proxy);
+    genDebt(SAFE, DEBT, proxy);
     vm.stopBroadcast();
   }
 }
