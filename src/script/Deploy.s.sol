@@ -82,7 +82,7 @@ contract DeployMainnet is MainnetParams, Deploy {
       _inverted: false
     });
 
-    systemCoinOracle = new OracleForTest(HAI_INITIAL_PRICE); // 1 HAI = 1 USD
+    systemCoinOracle = new OracleForTest(OD_INITIAL_PRICE); // 1 OD = 1 USD
     delayedOracle[WETH] = delayedOracleFactory.deployDelayedOracle(_ethUSDPriceFeed, 1 hours);
     delayedOracle[WSTETH] = delayedOracleFactory.deployDelayedOracle(_wstethUSDPriceFeed, 1 hours);
 
@@ -103,7 +103,7 @@ contract DeployGoerli is GoerliParams, Deploy {
   function setupEnvironment() public virtual override updateParams {
     // Setup oracle feeds
 
-    systemCoinOracle = new OracleForTestnet(HAI_INITIAL_PRICE); // 1 HAI = 1 USD
+    systemCoinOracle = new OracleForTestnet(OD_INITIAL_PRICE); // 1 OD = 1 USD
 
     // WETH
     collateral[WETH] = IERC20Metadata(ARB_GOERLI_WETH);
@@ -126,10 +126,14 @@ contract DeployGoerli is GoerliParams, Deploy {
 
     IBaseOracle _wbtcUsdOracle =
       chainlinkRelayerFactory.deployChainlinkRelayer(ARB_GOERLI_CHAINLINK_BTC_USD_FEED, 1 hours); // live feed
+
     IBaseOracle _stonesWbtcOracle = new OracleForTestnet(0.001e18); // denominated feed
     IBaseOracle _stonesOracle =
       denominatedOracleFactory.deployDenominatedOracle(_stonesWbtcOracle, _wbtcUsdOracle, false);
-    IBaseOracle _totemOracle = new OracleForTestnet(1e18); // hardcoded feed
+
+    IBaseOracle _totemWethOracle = new OracleForTestnet(1e18); // hardcoded feed
+    IBaseOracle _totemOracle =
+      denominatedOracleFactory.deployDenominatedOracle(_totemWethOracle, _ethUSDPriceFeed, false);
 
     delayedOracle[WETH] = delayedOracleFactory.deployDelayedOracle(_ethUSDPriceFeed, 1 hours);
     delayedOracle[FTRG] = delayedOracleFactory.deployDelayedOracle(_opUSDPriceFeed, 1 hours);
