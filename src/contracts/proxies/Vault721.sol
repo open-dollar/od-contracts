@@ -3,6 +3,7 @@ pragma solidity 0.8.19;
 
 import {ERC721} from '@openzeppelin/token/ERC721/ERC721.sol';
 import {ERC721Enumerable} from '@openzeppelin/token/ERC721/extensions/ERC721Enumerable.sol';
+import {Base64} from '@openzeppelin/utils/Base64.sol';
 import {ISafeManager} from '@interfaces/proxies/ISafeManager.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 
@@ -107,11 +108,10 @@ contract Vault721 is ERC721, ERC721Enumerable {
     }
   }
 
-  /*
+  /**
    * @dev
    * The following functions are overrides required by Solidity.
    */
-
   function _beforeTokenTransfer(
     address from,
     address to,
