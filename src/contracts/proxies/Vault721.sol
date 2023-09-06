@@ -6,7 +6,7 @@ import {ERC721Enumerable} from '@openzeppelin/token/ERC721/extensions/ERC721Enum
 import {ISafeManager} from '@interfaces/proxies/ISafeManager.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 
-contract Vault721 is ERC721, ERC721Enumerable {
+contract Vault721 is ERC721Enumerable {
   address public safeManager;
   address public governor;
 
@@ -106,42 +106,4 @@ contract Vault721 is ERC721, ERC721Enumerable {
       ISafeManager(safeManager).transferSAFEOwnership(firstTokenId, address(proxy));
     }
   }
-
-  /*
-   * @dev
-   * The following functions are overrides required by Solidity.
-   */
-
-  function _beforeTokenTransfer(
-    address from,
-    address to,
-    uint256 tokenId,
-    uint256 batchSize
-  ) internal override(ERC721, ERC721Enumerable) {
-    super._beforeTokenTransfer(from, to, tokenId, batchSize);
-  }
-
-  function supportsInterface(bytes4 interfaceId) public view override(ERC721, ERC721Enumerable) returns (bool) {
-    return super.supportsInterface(interfaceId);
-  }
 }
-
-// TODO Vars to inlcude and where to find them:
-// These will be required to have a cool URI image that uses certain data
-// these vars will be for NFT marketplace to show up-to-date vault info
-
-// Collateral Type
-//   contract: HaiSafeManager
-//   function: safeData(uint256 _safe)
-
-// Collateral Ratio
-//   contract: OracleRelayer
-//   function: cParams(bytes32 _cType)
-
-// Stability Fee
-//   contract: TaxCollector
-//   function: cParams(bytes32 _cType)
-
-// Liquidation Penalty
-//   contract: LiquidationEngine
-//   function: cParams(bytes32 _cType)
