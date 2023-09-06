@@ -8,7 +8,7 @@ import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
 import {ITaxCollector} from '@interfaces/ITaxCollector.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
-import {NFTRenderer} from '@libraries/NFTRenderer.sol';
+import {NFTRenderer2} from '@libraries/NFTRenderer2.sol';
 
 contract Vault721 is ERC721, ERC721Enumerable {
   address public governor;
@@ -151,7 +151,7 @@ contract Vault721 is ERC721, ERC721Enumerable {
     uint256 safetyCRatio = _getCTypeRatio(cType);
     uint256 stabilityFee = _getStabilityFee(cType);
 
-    NFTRenderer.VaultParams memory params = NFTRenderer.VaultParams({
+    NFTRenderer2.VaultParams memory params = NFTRenderer2.VaultParams({
       cType: cType,
       handler: safeHandler,
       tokenId: _safeId,
@@ -161,7 +161,7 @@ contract Vault721 is ERC721, ERC721Enumerable {
       fee: stabilityFee
     });
 
-    uri = NFTRenderer.render(params);
+    uri = NFTRenderer2.render(params);
   }
 
   /**
