@@ -15,9 +15,11 @@ import {Vault721} from '@contracts/proxies/Vault721.sol';
 contract RedeployVault721 is GoerliDeployment, Script {
   function run() public {
     vm.startBroadcast(vm.envUint('ARB_GOERLI_PK'));
-    vault721 = new Vault721(GOVERNOR_DAO, oracleRelayer, taxCollector);
+    vault721 = new Vault721(GOVERNOR_DAO, oracleRelayer, taxCollector, collateralJoinFactory);
     safeManager.updateVault721(address(vault721));
-    vault721.updateImplementation(address(safeManager), address(oracleRelayer), address(taxCollector));
+    vault721.updateImplementation(
+      address(safeManager), address(oracleRelayer), address(taxCollector), address(collateralJoinFactory)
+    );
     vm.stopBroadcast();
   }
 }

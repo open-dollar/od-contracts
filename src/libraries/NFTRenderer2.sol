@@ -9,13 +9,12 @@ library NFTRenderer2 {
   using Strings for address;
 
   struct VaultParams {
-    bytes32 cType;
-    address handler;
     uint256 tokenId;
     uint256 collat;
     uint256 debt;
     uint256 ratio;
     uint256 fee;
+    string symbol;
   }
 
   function render(VaultParams memory params) external pure returns (string memory) {
@@ -36,8 +35,6 @@ library NFTRenderer2 {
   }
 
   function _renderImage(VaultParams memory params) internal pure returns (string memory image) {
-    string memory cType = string(abi.encodePacked(params.cType));
-
     image = string.concat(
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 480">',
       '<style>',
@@ -49,24 +46,28 @@ library NFTRenderer2 {
       '<rect x="30" y="30" width="240" height="420" rx="15" ry="15" fill="hsl(330,90%,50%)" stroke="#000" />',
       '<rect x="30" y="87" width="240" height="42" />',
       '<text x="39" y="120" class="tokens" fill="#fff">',
+      'Vault ',
       params.tokenId.toString(),
+      ': ',
+      params.symbol,
+      ' / OD',
       '</text>',
       '<rect x="30" y="132" width="240" height="30" />',
       '<text x="39" y="120" dy="36" class="fee" fill="#fff">',
       params.collat.toString(),
-      ' ',
-      // cType,
       '</text>',
       '<rect x="30" y="165" width="240" height="30" />',
       '<text x="39" y="153" dy="36" class="fee" fill="#fff">',
       params.debt.toString(),
-      ' OD' '</text>',
+      '</text>',
       '<rect x="30" y="342" width="240" height="24" />',
       '<text x="39" y="360" class="tick" fill="#fff">',
+      'ratio: ',
       params.ratio.toString(),
       '</text>',
       '<rect x="30" y="372" width="240" height="24" />',
       '<text x="39" y="360" dy="30" class="tick" fill="#fff">',
+      'fee: ',
       params.fee.toString(),
       '</text>',
       '</svg>'
@@ -77,9 +78,7 @@ library NFTRenderer2 {
     description = string.concat(
       params.tokenId.toString(),
       ' ',
-      uint256(params.cType).toHexString(),
-      ' ',
-      params.handler.toHexString(),
+      params.symbol,
       ' ',
       params.collat.toString(),
       ' ',

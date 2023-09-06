@@ -302,7 +302,7 @@ abstract contract Common is Contracts, Params {
   }
 
   function deployProxyContracts(address _safeEngine) public updateParams {
-    vault721 = new Vault721(GOVERNOR_DAO, oracleRelayer, taxCollector);
+    vault721 = new Vault721(GOVERNOR_DAO, oracleRelayer, taxCollector, collateralJoinFactory);
     safeManager = new ODSafeManager(_safeEngine, address(vault721));
     _deployProxyActions();
   }

@@ -7,6 +7,9 @@ import {ISafeManager} from '@interfaces/proxies/ISafeManager.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
 import {ITaxCollector} from '@interfaces/ITaxCollector.sol';
+import {ICollateralJoinFactory} from '@interfaces/factories/ICollateralJoinFactory.sol';
+import {ICollateralJoin} from '@interfaces/utils/ICollateralJoin.sol';
+import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 import {NFTRenderer2} from '@libraries/NFTRenderer2.sol';
 
@@ -16,6 +19,7 @@ contract Vault721 is ERC721, ERC721Enumerable {
   ISAFEEngine public safeEngine;
   IOracleRelayer public oracleRelayer;
   ITaxCollector public taxCollector;
+  ICollateralJoinFactory public collateralJoinFactory;
 
   mapping(address proxy => address user) internal _proxyRegistry;
   mapping(address user => address proxy) internal _userRegistry;
@@ -28,11 +32,13 @@ contract Vault721 is ERC721, ERC721Enumerable {
   constructor(
     address _governor,
     IOracleRelayer _oracleRelayer,
-    ITaxCollector _taxCollector
+    ITaxCollector _taxCollector,
+    ICollateralJoinFactory _collateralJoinFactory
   ) ERC721('OpenDollar Vault', 'ODV') {
     governor = _governor;
     oracleRelayer = _oracleRelayer;
     taxCollector = _taxCollector;
+    collateralJoinFactory = _collateralJoinFactory;
   }
 
   /**
@@ -78,15 +84,23 @@ contract Vault721 is ERC721, ERC721Enumerable {
   /**
    * @dev allows DAO to update protocol implementation
    */
-  function updateImplementation(address _safeManager, address _oracleRelayer, address _taxCollector) external {
+  function updateImplementation(
+    address _safeManager,
+    address _oracleRelayer,
+    address _taxCollector,
+    address _collateralJoinFactory
+  ) external {
     require(msg.sender == governor, 'Vault: Only governor');
     require(
-      _safeManager != address(0) && _oracleRelayer != address(0) && _taxCollector != address(0), 'Vault: ZeroAddr'
+      _safeManager != address(0) && _oracleRelayer != address(0) && _taxCollector != address(0)
+        && _collateralJoinFactory != address(0),
+      'Vault: ZeroAddr'
     );
     safeManager = ISafeManager(_safeManager);
     safeEngine = ISAFEEngine(safeManager.safeEngine());
     oracleRelayer = IOracleRelayer(_oracleRelayer);
     taxCollector = ITaxCollector(_taxCollector);
+    collateralJoinFactory = ICollateralJoinFactory(_collateralJoinFactory);
   }
 
   /**
@@ -150,15 +164,15 @@ contract Vault721 is ERC721, ERC721Enumerable {
     (uint256 lockedCollat, uint256 genDebt) = _getLockedCollatAndGenDebt(cType, safeHandler);
     uint256 safetyCRatio = _getCTypeRatio(cType);
     uint256 stabilityFee = _getStabilityFee(cType);
+    string memory symbol = _getTokenSymbol(cType);
 
     NFTRenderer2.VaultParams memory params = NFTRenderer2.VaultParams({
-      cType: cType,
-      handler: safeHandler,
       tokenId: _safeId,
       collat: lockedCollat,
       debt: genDebt,
       ratio: safetyCRatio,
-      fee: stabilityFee
+      fee: stabilityFee,
+      symbol: symbol
     });
 
     uri = NFTRenderer2.render(params);
@@ -167,7 +181,7 @@ contract Vault721 is ERC721, ERC721Enumerable {
   /**
    * @dev getter functions to render SVG image
    */
-  function _getCType(uint256 _safeId) public view returns (bytes32 cType, address safeHandler) {
+  function _getCType(uint256 _safeId) internal view returns (bytes32 cType, address safeHandler) {
     ISafeManager.SAFEData memory sData = ISafeManager(safeManager).safeData(_safeId);
     cType = sData.collateralType;
     safeHandler = sData.safeHandler;
@@ -176,19 +190,25 @@ contract Vault721 is ERC721, ERC721Enumerable {
   function _getLockedCollatAndGenDebt(
     bytes32 _cType,
     address _safeHandler
-  ) public view returns (uint256 lockedCollat, uint256 genDebt) {
+  ) internal view returns (uint256 lockedCollat, uint256 genDebt) {
     ISAFEEngine.SAFE memory sData = safeEngine.safes(_cType, _safeHandler);
     lockedCollat = sData.lockedCollateral;
     genDebt = sData.generatedDebt;
   }
 
-  function _getCTypeRatio(bytes32 _cType) public view returns (uint256 safetyCRatio) {
+  function _getCTypeRatio(bytes32 _cType) internal view returns (uint256 safetyCRatio) {
     IOracleRelayer.OracleRelayerCollateralParams memory cParams = oracleRelayer.cParams(_cType);
     safetyCRatio = cParams.safetyCRatio;
   }
 
-  function _getStabilityFee(bytes32 _cType) public view returns (uint256 stabilityFee) {
+  function _getStabilityFee(bytes32 _cType) internal view returns (uint256 stabilityFee) {
     ITaxCollector.TaxCollectorCollateralParams memory cParams = taxCollector.cParams(_cType);
     stabilityFee = cParams.stabilityFee;
+  }
+
+  function _getTokenSymbol(bytes32 cType) internal view returns (string memory tokenSymbol) {
+    address collateralJoin = collateralJoinFactory.collateralJoins(cType);
+    IERC20Metadata token = ICollateralJoin(collateralJoin).collateral();
+    tokenSymbol = token.symbol();
   }
 }
