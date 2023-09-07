@@ -18,6 +18,7 @@ interface ICollateralJoinFactory is IAuthorizable, IDisableable {
   function safeEngine() external view returns (address _safeEngine);
 
   // --- Data ---
+  function collateralJoins(bytes32 cType) external view returns (address _collateralJoin);
   function collateralTypesList() external view returns (bytes32[] memory _collateralTypesList);
   function collateralJoinsList() external view returns (address[] memory _collateralJoinsList);
 
