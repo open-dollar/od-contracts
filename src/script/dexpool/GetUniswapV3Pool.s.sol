@@ -9,13 +9,13 @@ import {ARB_GOERLI_WETH} from '@script/Registry.s.sol';
 import {GoerliContracts} from '@script/GoerliContracts.s.sol';
 
 // BROADCAST
-// source .env && forge script GetLiqPool --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_GOERLI_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
+// source .env && forge script GetUniswapV3Pool --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_GOERLI_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
 
 // SIMULATE
-// source .env && forge script GetLiqPool --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_GOERLI_RPC
+// source .env && forge script GetUniswapV3Pool --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_GOERLI_RPC
 
-contract GetLiqPool is GoerliContracts, Script {
-  IUniswapV3Factory public uniswapV3Factory = IUniswapV3Factory(0x4893376342d5D7b3e31d4184c08b265e5aB2A3f6);
+contract GetUniswapV3Pool is GoerliContracts, Script {
+  IUniswapV3Factory public camelotFactory = IUniswapV3Factory(0x659fd9F4536f540bd051c2739Fc8b8e9355E5042);
   address public tokenA = systemCoinAddr;
   address public tokenB = ARB_GOERLI_WETH;
   uint24 public fee = uint24(0x2710);
