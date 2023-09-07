@@ -13,7 +13,7 @@ import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadat
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 import {NFTRenderer2} from '@libraries/NFTRenderer2.sol';
 
-contract Vault721 is ERC721, ERC721Enumerable {
+contract Vault721 is ERC721Enumerable {
   address public governor;
   ISafeManager public safeManager;
   ISAFEEngine public safeEngine;
@@ -138,7 +138,7 @@ contract Vault721 is ERC721, ERC721Enumerable {
       ISafeManager(safeManager).transferSAFEOwnership(firstTokenId, address(proxy));
     }
   }
-
+  
   /**
    * @dev
    * The following functions are overrides required by Solidity.
