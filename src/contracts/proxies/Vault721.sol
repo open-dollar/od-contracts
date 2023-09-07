@@ -44,10 +44,10 @@ contract Vault721 is ERC721Enumerable {
   /**
    * @dev initializes SafeManager contract
    */
-  function initialize() external {
+  function initialize(address _safeEngine) external {
     require(address(safeManager) == address(0), 'Vault: already initialized');
     safeManager = ISafeManager(msg.sender);
-    safeEngine = ISAFEEngine(safeManager.safeEngine());
+    safeEngine = ISAFEEngine(_safeEngine);
   }
 
   function getProxy(address _user) external view returns (address _proxy) {
