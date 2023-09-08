@@ -4,6 +4,7 @@ pragma solidity 0.8.19;
 abstract contract GoerliContracts {
   address public chainlinkRelayerFactoryAddr = 0xf67824c9dD65425600639Bb1F18c08368A147c69;
   address public uniV3RelayerFactoryAddr = 0xC2d2F3fcA75D05387DB01214D03B6d1EC5F22e44;
+  address public camelotRelayerFactoryAddr = 0xc7380eE90117d33583a2cdCb621115FE974111A7;
   address public denominatedOracleFactoryAddr = 0x290Fdb5878Ac39C888aB0ebdF07c6d5929F6bf65;
   address public delayedOracleFactoryAddr = 0x76E0D3f31B633dBeDd07ec21Dd2Af389E6A6E6e0;
 
@@ -85,10 +86,6 @@ abstract contract GoerliContracts {
   address public postSettlementSurplusBidActionsAddr = 0x1C465a2aC0362306A5a130be59409C4aCCab4636;
 
   // Postdeployment
-  address public uniV3PoolAddr = 0x020a79c27d1bC1fe577674921263152719451bB1; // OD / WETH UniSwap pool
-  address public uniV3RelayerChildAddr = 0xFcD380C21f5ABa67ADF366213Bb5B7bB0Ee650F2; // OD / WETH
-  address public collateralJoinChild_HAIAddr = 0xd5F924c95A2C8C2FcB14618a503aC19dC3276a04;
-  address public collateralAuctionHouseChild_HAIAddr = 0x80FFd938e08d65D575798E1b8D74E588F1127547;
-  address public collateralJoinChild_KITEAddr = 0x721DCA78c2e370CA4774C551A64da96E7FD3042c;
-  address public collateralAuctionHouseChild_KITEAddr = 0x93ff3cDc844a3240abce5c10Bd638fE3815cea33;
+  address public camelotPairAddr = 0xe14EA14894596D768eD9d998f82d92742Ed69b51; // OD / WETH pool
+  address public camelotRelayerChildAddr = 0xb12812e5d8Eb6e492DdF3C9630EdC8cAC570097c; // OD / WETH
 }
