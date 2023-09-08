@@ -26,10 +26,12 @@ fs.readFile(filePath, "utf8", (err, data) => {
     parsed[key.trim()] = value?.trim();
   });
 
+  // VERIFY!!!
+  const ETH_ADDRESS = "0xEe01c0CD76354C383B8c7B4e65EA88D00B06f36f";
+
   const final = {
     MULTICALL: "0xcA11bde05977b3631167028862bE2a173976CA11",
-    // VERIFY!!!
-    ETH: "0xEe01c0CD76354C383B8c7B4e65EA88D00B06f36f",
+    ETH: ETH_ADDRESS,
     GEB_SYSTEM_COIN: parsed.systemCoinAddr,
     GEB_PROTOCOL_TOKEN: parsed.protocolTokenAddr,
     GEB_SAFE_ENGINE: parsed.safeEngineAddr,
@@ -68,6 +70,39 @@ fs.readFile(filePath, "utf8", (err, data) => {
     JOB_ORACLES: parsed.oracleJobAddr,
   };
 
+  const collateral = {
+    OD: {
+      address: parsed.systemCoinAddr,
+    },
+    ODG: {
+      address: parsed.protocolTokenAddr,
+    },
+    WETH: {
+      address: ETH_ADDRESS,
+      collateralJoin: parsed.collateralJoinChild_WETHAddr,
+      collateralAuctionHouse: parsed.collateralAuctionHouseChild_WETHAddr,
+    },
+    WBTC: {
+      address: parsed.erc20ForTestnetWBTC,
+      collateralJoin: parsed.collateralJoinChild_WBTCAddr,
+      collateralAuctionHouse: parsed.collateralAuctionHouseChild_WBTCAddr,
+    },
+    FTRG: {
+      address: parsed.erc20ForTestnetFTRG,
+      collateralJoin: parsed.collateralJoinDelegatableChild_FTRGAddr,
+      collateralAuctionHouse: parsed.collateralAuctionHouseChild_FTRGAddr,
+    },
+    STN: {
+      address: parsed.erc20ForTestnetSTONES,
+      collateralJoin: parsed.collateralJoinChild_STONESAddr,
+      collateralAuctionHouse: parsed.collateralAuctionHouseChild_STONESAddr,
+    },
+    TOTEM: {
+      address: parsed.erc20ForTestnetTOTEM,
+      collateralJoin: parsed.collateralJoinChild_TOTEMAddr,
+      collateralAuctionHouse: parsed.collateralAuctionHouseChild_TOTEMAddr,
+    },
+  };
   const validate = (obj) => {
     const missing = Object.values(obj).reduce((acc, curr, i) => {
       if (!curr) {
@@ -81,7 +116,13 @@ fs.readFile(filePath, "utf8", (err, data) => {
   validate(final);
 
   const outputPath = path.join(__dirname, "./output.js");
-  const content = `export default ${JSON.stringify(final, null, 2)}`;
+  const content = `// WARNING: You must verify the ETH address is still correct 
+// which is used in both 'addresses' and 'collateral'
+
+
+const addresses = ${JSON.stringify(final, null, 2)}
+  
+const collateral = ${JSON.stringify(collateral, null, 2)}`;
   fs.writeFile(outputPath, content, (err) => {
     if (err) {
       console.error(err);

@@ -33,6 +33,7 @@ import {DelayedOracle, IDelayedOracle} from '@contracts/oracles/DelayedOracle.so
 import {DenominatedOracle} from '@contracts/oracles/DenominatedOracle.sol';
 import {ChainlinkRelayer} from '@contracts/oracles/ChainlinkRelayer.sol';
 import {UniV3Relayer} from '@contracts/oracles/UniV3Relayer.sol';
+import {CamelotRelayer} from '@contracts/oracles/CamelotRelayer.sol';
 
 // --- Tokens ---
 import {ERC20ForTest, ERC20} from '@contracts/for-test/ERC20ForTest.sol';
@@ -54,6 +55,7 @@ import {
 } from '@contracts/factories/CollateralAuctionHouseFactory.sol';
 import {ChainlinkRelayerFactory, IChainlinkRelayerFactory} from '@contracts/factories/ChainlinkRelayerFactory.sol';
 import {UniV3RelayerFactory, IUniV3RelayerFactory} from '@contracts/factories/UniV3RelayerFactory.sol';
+import {CamelotRelayerFactory, ICamelotRelayerFactory} from '@contracts/factories/CamelotRelayerFactory.sol';
 import {DenominatedOracleFactory, IDenominatedOracleFactory} from '@contracts/factories/DenominatedOracleFactory.sol';
 import {DelayedOracleFactory, IDelayedOracleFactory} from '@contracts/factories/DelayedOracleFactory.sol';
 
@@ -130,6 +132,7 @@ abstract contract Contracts {
 
   IChainlinkRelayerFactory public chainlinkRelayerFactory;
   IUniV3RelayerFactory public uniV3RelayerFactory;
+  ICamelotRelayerFactory public camelotRelayerFactory;
   IDenominatedOracleFactory public denominatedOracleFactory;
   IDelayedOracleFactory public delayedOracleFactory;
 

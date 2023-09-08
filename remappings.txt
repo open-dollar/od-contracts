@@ -1,6 +1,7 @@
 @defi-wonderland/solidity-utils/=node_modules/@defi-wonderland/solidity-utils/solidity/
 @openzeppelin/=node_modules/@openzeppelin/contracts/
 @uniswap/=node_modules/@uniswap/
+@camelot/=lib/core/contracts/
 
 @contracts/=src/contracts/
 @interfaces/=src/interfaces/
