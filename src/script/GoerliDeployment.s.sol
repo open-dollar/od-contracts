@@ -56,6 +56,7 @@ abstract contract GoerliDeployment is Contracts, GoerliParams, GoerliContracts {
     // --- factories ---
     chainlinkRelayerFactory = ChainlinkRelayerFactory(chainlinkRelayerFactoryAddr);
     uniV3RelayerFactory = UniV3RelayerFactory(uniV3RelayerFactoryAddr);
+    camelotRelayerFactory = CamelotRelayerFactory(camelotRelayerFactoryAddr);
     denominatedOracleFactory = DenominatedOracleFactory(denominatedOracleFactoryAddr);
     delayedOracleFactory = DelayedOracleFactory(delayedOracleFactoryAddr);
 
