@@ -79,6 +79,10 @@ import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 import {ODSafeManager} from '@contracts/proxies/ODSafeManager.sol';
 import {Vault721} from '@contracts/proxies/Vault721.sol';
 
+// --- Governance Contracts ---
+import {TimelockController} from '@openzeppelin/governance/TimelockController.sol';
+import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
+
 /**
  * @title  Contracts
  * @notice This contract initializes all the contracts, so that they're inherited and available throughout scripts scopes.
@@ -150,4 +154,8 @@ abstract contract Contracts {
   RewardedActions public rewardedActions;
   GlobalSettlementActions public globalSettlementActions;
   PostSettlementSurplusBidActions public postSettlementSurplusBidActions;
+
+  // --- Governance Contracts ---
+  TimelockController public timelockController;
+  ODGovernor public odGovernor;
 }

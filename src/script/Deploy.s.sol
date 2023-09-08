@@ -51,6 +51,14 @@ abstract contract Deploy is Common, Script {
     // Deploy contracts related to the SafeManager usecase
     deployProxyContracts(address(safeEngine));
 
+    address[] memory t = new address[](3);
+    t[0] = H;
+    t[1] = J;
+    t[2] = P;
+
+    mintAirdrop(t);
+    deployGovernor(address(protocolToken), t, H);
+
     if (delegate == address(0)) {
       _revokeAllTo(governor);
     } else if (delegate == deployer) {
