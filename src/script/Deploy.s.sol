@@ -72,9 +72,10 @@ contract DeployMainnet is MainnetParams, Deploy {
 
   function setupEnvironment() public virtual override updateParams {
     // Setup oracle feeds
-    IBaseOracle _ethUSDPriceFeed = chainlinkRelayerFactory.deployChainlinkRelayer(ARB_CHAINLINK_ETH_USD_FEED, 1 hours);
+    IBaseOracle _ethUSDPriceFeed =
+      chainlinkRelayerFactory.deployChainlinkRelayer(ARB_CHAINLINK_ETH_USD_FEED, ORACLE_INTERVAL_PROD);
     IBaseOracle _wstethETHPriceFeed =
-      chainlinkRelayerFactory.deployChainlinkRelayer(ARB_CHAINLINK_WSTETH_ETH_FEED, 1 hours);
+      chainlinkRelayerFactory.deployChainlinkRelayer(ARB_CHAINLINK_WSTETH_ETH_FEED, ORACLE_INTERVAL_PROD);
 
     IBaseOracle _wstethUSDPriceFeed = denominatedOracleFactory.deployDenominatedOracle({
       _priceSource: _wstethETHPriceFeed,
@@ -83,8 +84,8 @@ contract DeployMainnet is MainnetParams, Deploy {
     });
 
     systemCoinOracle = new OracleForTest(OD_INITIAL_PRICE); // 1 OD = 1 USD
-    delayedOracle[WETH] = delayedOracleFactory.deployDelayedOracle(_ethUSDPriceFeed, 1 hours);
-    delayedOracle[WSTETH] = delayedOracleFactory.deployDelayedOracle(_wstethUSDPriceFeed, 1 hours);
+    delayedOracle[WETH] = delayedOracleFactory.deployDelayedOracle(_ethUSDPriceFeed, ORACLE_INTERVAL_PROD);
+    delayedOracle[WSTETH] = delayedOracleFactory.deployDelayedOracle(_wstethUSDPriceFeed, ORACLE_INTERVAL_PROD);
 
     collateral[WETH] = IERC20Metadata(ARB_WETH);
     collateral[WSTETH] = IERC20Metadata(ARB_WSTETH);
@@ -108,7 +109,7 @@ contract DeployGoerli is GoerliParams, Deploy {
     // WETH
     collateral[WETH] = IERC20Metadata(ARB_GOERLI_WETH);
     IBaseOracle _ethUSDPriceFeed =
-      chainlinkRelayerFactory.deployChainlinkRelayer(ARB_GOERLI_CHAINLINK_ETH_USD_FEED, 1 hours); // live feed
+      chainlinkRelayerFactory.deployChainlinkRelayer(ARB_GOERLI_CHAINLINK_ETH_USD_FEED, ORACLE_INTERVAL_TEST); // live feed
 
     // OP
     collateral[FTRG] = IERC20Metadata(ARB_GOERLI_GOV_TOKEN);
@@ -125,7 +126,7 @@ contract DeployGoerli is GoerliParams, Deploy {
     collateral[TOTEM] = new ERC20ForTestnet('Totem', 'TTM', 0);
 
     IBaseOracle _wbtcUsdOracle =
-      chainlinkRelayerFactory.deployChainlinkRelayer(ARB_GOERLI_CHAINLINK_BTC_USD_FEED, 1 hours); // live feed
+      chainlinkRelayerFactory.deployChainlinkRelayer(ARB_GOERLI_CHAINLINK_BTC_USD_FEED, ORACLE_INTERVAL_TEST); // live feed
 
     IBaseOracle _stonesWbtcOracle = new OracleForTestnet(0.001e18); // denominated feed
     IBaseOracle _stonesOracle =
@@ -135,11 +136,11 @@ contract DeployGoerli is GoerliParams, Deploy {
     IBaseOracle _totemOracle =
       denominatedOracleFactory.deployDenominatedOracle(_totemWethOracle, _ethUSDPriceFeed, false);
 
-    delayedOracle[WETH] = delayedOracleFactory.deployDelayedOracle(_ethUSDPriceFeed, 1 hours);
-    delayedOracle[FTRG] = delayedOracleFactory.deployDelayedOracle(_opUSDPriceFeed, 1 hours);
-    delayedOracle[WBTC] = delayedOracleFactory.deployDelayedOracle(_wbtcUsdOracle, 1 hours);
-    delayedOracle[STONES] = delayedOracleFactory.deployDelayedOracle(_stonesOracle, 1 hours);
-    delayedOracle[TOTEM] = delayedOracleFactory.deployDelayedOracle(_totemOracle, 1 hours);
+    delayedOracle[WETH] = delayedOracleFactory.deployDelayedOracle(_ethUSDPriceFeed, ORACLE_INTERVAL_TEST);
+    delayedOracle[FTRG] = delayedOracleFactory.deployDelayedOracle(_opUSDPriceFeed, ORACLE_INTERVAL_TEST);
+    delayedOracle[WBTC] = delayedOracleFactory.deployDelayedOracle(_wbtcUsdOracle, ORACLE_INTERVAL_TEST);
+    delayedOracle[STONES] = delayedOracleFactory.deployDelayedOracle(_stonesOracle, ORACLE_INTERVAL_TEST);
+    delayedOracle[TOTEM] = delayedOracleFactory.deployDelayedOracle(_totemOracle, ORACLE_INTERVAL_TEST);
 
     // Setup collateral types
     collateralTypes.push(WETH);

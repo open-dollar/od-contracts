@@ -44,10 +44,10 @@ contract Vault721 is ERC721Enumerable {
   /**
    * @dev initializes SafeManager contract
    */
-  function initialize() external {
+  function initialize(address _safeEngine) external {
     require(address(safeManager) == address(0), 'Vault: already initialized');
     safeManager = ISafeManager(msg.sender);
-    safeEngine = ISAFEEngine(safeManager.safeEngine());
+    safeEngine = ISAFEEngine(_safeEngine);
   }
 
   function getProxy(address _user) external view returns (address _proxy) {
@@ -137,23 +137,6 @@ contract Vault721 is ERC721Enumerable {
       }
       ISafeManager(safeManager).transferSAFEOwnership(firstTokenId, address(proxy));
     }
-  }
-  
-  /**
-   * @dev
-   * The following functions are overrides required by Solidity.
-   */
-  function _beforeTokenTransfer(
-    address from,
-    address to,
-    uint256 tokenId,
-    uint256 batchSize
-  ) internal override(ERC721, ERC721Enumerable) {
-    super._beforeTokenTransfer(from, to, tokenId, batchSize);
-  }
-
-  function supportsInterface(bytes4 interfaceId) public view override(ERC721, ERC721Enumerable) returns (bool) {
-    return super.supportsInterface(interfaceId);
   }
 
   /**
