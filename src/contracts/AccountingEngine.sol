@@ -188,7 +188,7 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
    * @return _id the Id of the surplus auction that was started
    */
   function auctionSurplus() external returns (uint256 _id) {
-    if (_params.surplusIsTransferred == 1) revert AccEng_SurplusAuctionDisabled();
+    if (_params.surplusIsTransferred == 100) revert AccEng_SurplusAuctionDisabled();
     if (_params.surplusAmount == 0) revert AccEng_NullAmount();
     if (block.timestamp < lastSurplusTime + _params.surplusDelay) revert AccEng_SurplusCooldown();
 
@@ -200,10 +200,24 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
       revert AccEng_InsufficientSurplus();
     }
 
-    _id = surplusAuctionHouse.startAuction({_amountToSell: _params.surplusAmount, _initialBid: 0});
+    _id = surplusAuctionHouse.startAuction({_amountToSell: _params.surplusAmount * (100 - _params.surplusIsTransferred) / 100, _initialBid: 0});
 
     lastSurplusTime = block.timestamp;
-    emit AuctionSurplus(_id, 0, _params.surplusAmount);
+    emit AuctionSurplus(_id, 0, _params.surplusAmount * (100 - _params.surplusIsTransferred) / 100);
+
+    //Transfer remaining surplus percentage
+    if(_params.surplusIsTransferred > 0){
+      if (extraSurplusReceiver == address(0)) revert AccEng_NullSurplusReceiver();
+
+      safeEngine.transferInternalCoins({
+        _source: address(this),
+        _destination: extraSurplusReceiver,
+        _rad: _params.surplusAmount * _params.surplusIsTransferred / 100
+      });
+
+      lastSurplusTime = block.timestamp;
+      emit TransferSurplus(extraSurplusReceiver, _params.surplusAmount * _params.surplusIsTransferred / 100);
+    }
   }
 
   // Extra surplus transfers/surplus auction alternative
@@ -213,7 +227,7 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
    *           transfer, if we keep enough surplus in the buffer and if there is no bad debt left to settle
    */
   function transferExtraSurplus() external {
-    if (_params.surplusIsTransferred != 1) revert AccEng_SurplusTransferDisabled();
+    if (_params.surplusIsTransferred <= 0) revert AccEng_SurplusTransferDisabled();
     if (extraSurplusReceiver == address(0)) revert AccEng_NullSurplusReceiver();
     if (_params.surplusAmount == 0) revert AccEng_NullAmount();
     if (block.timestamp < lastSurplusTime + _params.surplusDelay) revert AccEng_SurplusCooldown();
@@ -229,11 +243,19 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
     safeEngine.transferInternalCoins({
       _source: address(this),
       _destination: extraSurplusReceiver,
-      _rad: _params.surplusAmount
+      _rad: _params.surplusAmount * _params.surplusIsTransferred / 100
     });
 
     lastSurplusTime = block.timestamp;
-    emit TransferSurplus(extraSurplusReceiver, _params.surplusAmount);
+    emit TransferSurplus(extraSurplusReceiver, _params.surplusAmount * _params.surplusIsTransferred / 100);
+
+    //auction remaining surplus percentage
+    if(_params.surplusIsTransferred < 100){
+      uint _id = surplusAuctionHouse.startAuction({_amountToSell: _params.surplusAmount * (100 - _params.surplusIsTransferred) / 100, _initialBid: 0});
+
+      lastSurplusTime = block.timestamp;
+      emit AuctionSurplus(_id, 0, _params.surplusAmount * (100 - _params.surplusIsTransferred) / 100);
+    }
   }
 
   // --- Shutdown ---
