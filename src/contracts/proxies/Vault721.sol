@@ -21,6 +21,8 @@ contract Vault721 is ERC721Enumerable {
   ITaxCollector public taxCollector;
   ICollateralJoinFactory public collateralJoinFactory;
 
+  string public contractMetaData = "{'name': 'Open Dollar Vaults','description': 'Tradable Vaults for the Open Dollar stablecoin protocol. Caution! Trading this NFT means trading the ownership of your Vault in the Open Dollar protocol and all of the assets/collateral inside each Vault.','image': 'opendollar.com/logo.png','external_link': 'opendollar.com'}";
+
   mapping(address proxy => address user) internal _proxyRegistry;
   mapping(address user => address proxy) internal _userRegistry;
 
@@ -193,5 +195,15 @@ contract Vault721 is ERC721Enumerable {
     address collateralJoin = collateralJoinFactory.collateralJoins(cType);
     IERC20Metadata token = ICollateralJoin(collateralJoin).collateral();
     tokenSymbol = token.symbol();
+  }
+
+  //Contract level meta data
+  function contractURI() public view returns (string memory) {
+    return string.concat("data:application/json;utf8,", contractMetaData);
+  }
+
+  function updateContractURI(string memory _metaData) external{
+    require(msg.sender == governor, "Only the DAO can update this.");
+    contractMetaData = _metaData;
   }
 }
