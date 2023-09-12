@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import 'ds-test/test.sol';
-import {CoinForTest} from '@contracts/for-test/CoinForTest.sol';
+import {CoinForTest} from '@test/mocks/CoinForTest.sol';
 
 import {ISAFEEngine, SAFEEngine} from '@contracts/SAFEEngine.sol';
 import {ILiquidationEngine, LiquidationEngine} from '@contracts/LiquidationEngine.sol';
@@ -246,24 +246,15 @@ contract SingleSaveSAFETest is DSTest {
 
     safeEngine.updateCollateralPrice('gold', ray(1 ether), ray(1 ether));
 
-    ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams = ICollateralAuctionHouse
-      .CollateralAuctionHouseSystemCoinParams({
-      lowerSystemCoinDeviation: WAD, // 0% deviation
-      upperSystemCoinDeviation: WAD, // 0% deviation
-      minSystemCoinDeviation: 0.999e18 // 0.1% deviation
-    });
-
-    ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams = ICollateralAuctionHouse
+    ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahParams = ICollateralAuctionHouse
       .CollateralAuctionHouseParams({
       minDiscount: 0.95e18, // 5% discount
       maxDiscount: 0.95e18, // 5% discount
       perSecondDiscountUpdateRate: RAY, // [ray]
-      lowerCollateralDeviation: 0.9e18, // 10% deviation
-      upperCollateralDeviation: 0.95e18, // 5% deviation
       minimumBid: 1e18 // 1 system coin
     });
     collateralAuctionHouse =
-    new CollateralAuctionHouse(address(safeEngine), address(oracleRelayer), address(liquidationEngine), 'gold', _cahParams, _cahCParams);
+    new CollateralAuctionHouse(address(safeEngine), address(liquidationEngine), address(oracleRelayer), 'gold', _cahParams);
 
     ILiquidationEngine.LiquidationEngineCollateralParams memory _liquidationEngineCollateralParams = ILiquidationEngine
       .LiquidationEngineCollateralParams({

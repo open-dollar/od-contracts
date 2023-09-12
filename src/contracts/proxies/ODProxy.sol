@@ -20,6 +20,9 @@ contract ODProxy {
     _;
   }
 
+  // --- Methods ---
+
+  /// @inheritdoc IHaiProxy
   function execute(address _target, bytes memory _data) external payable onlyOwner returns (bytes memory _response) {
     if (_target == address(0)) revert TargetAddressRequired();
 

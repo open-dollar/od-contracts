@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {JobForTest, IJob} from '@contracts/for-test/JobForTest.sol';
+import {JobForTest, IJob} from '@test/mocks/JobForTest.sol';
 import {IStabilityFeeTreasury} from '@interfaces/IStabilityFeeTreasury.sol';
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 

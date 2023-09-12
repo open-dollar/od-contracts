@@ -9,7 +9,7 @@ import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ICoinJoin} from '@interfaces/utils/ICoinJoin.sol';
 import {ISystemCoin} from '@interfaces/tokens/ISystemCoin.sol';
 
-import {StabilityFeeTreasuryForTest} from '@contracts/for-test/StabilityFeeTreasuryForTest.sol';
+import {StabilityFeeTreasuryForTest} from '@test/mocks/StabilityFeeTreasuryForTest.sol';
 import {HaiTest} from '@test/utils/HaiTest.t.sol';
 import {StdStorage, stdStorage} from 'forge-std/StdStorage.sol';
 

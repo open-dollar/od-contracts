@@ -1,0 +1,114 @@
+/* Replace theme toggle brush for custom light/dark icons */
+#theme-toggle {
+  display: none;
+}
+html.light #theme-toggle-light {
+  display: none;
+}
+html.ayu #theme-toggle-dark {
+  display: none;
+}
+
+/* Overwrite dark theme colors */
+html.ayu {
+  --bg: #040c20;
+  --fg: rgba(255, 255, 255, 0.87);
+  --sidebar-bg: #040c20;
+  --sidebar-fg: rgba(255, 255, 255, 0.5);
+  --sidebar-active: #ff9d0a;
+  --border: rgba(255, 255, 255, 0.12);
+  --border-active: rgba(255, 255, 255, 0.3);
+  --link-visited: #acacac;
+  --logo-h: url(/images/logo.png);
+  --quote-bg: #040c20;
+}
+
+/* Overwrite light theme colors */
+html.light {
+  --bg: #fff;
+  --fg: rgba(0, 0, 0, 0.87);
+  --sidebar-bg: #fff;
+  --sidebar-fg: rgba(0, 0, 0, 0.54);
+  --sidebar-active: #ff9d0a;
+  --border: rgba(0, 0, 0, 0.12);
+  --border-active: rgba(0, 0, 0, 0.3);
+  --link-visited: #909090;
+  --logo-h: url(/images/logo.png);
+  --quote-bg: #fff;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  letter-spacing: -0.05px;
+  padding: 0 24px;
+}
+
+h1 {
+  font-size: 32px;
+}
+
+h2 {
+  font-size: 24px;
+}
+
+h3 {
+  font-size: 20px;
+}
+
+p,
+pre,
+.table-wrapper {
+  padding: 0 24px;
+}
+
+.content p {
+  line-height: 1.5;
+}
+
+li,
+li > p {
+  padding: unset;
+  margin: unset;
+  margin-top: 10px;
+}
+
+blockquote {
+  margin: 12px 0;
+  font-style: italic;
+  border: unset;
+  border-left: 2px solid var(--fg);
+}
+
+blockquote p {
+  font-style: italic;
+  padding: unset;
+}
+
+.table-wrapper + h3 {
+  margin-top: 96px;
+}
+
+@media screen and (max-width: 600px) {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    padding: 0 16px;
+  }
+
+  p,
+  pre,
+  .table-wrapper {
+    padding: 0 16px;
+  }
+
+  blockquote {
+    padding-left: 16px;
+  }
+}

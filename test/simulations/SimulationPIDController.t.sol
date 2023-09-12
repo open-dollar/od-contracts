@@ -8,7 +8,7 @@ import {Math} from '@libraries/Math.sol';
 import {RAY, YEAR} from '@libraries/Math.sol';
 import {PROPORTIONAL_GAIN, INTEGRAL_GAIN, HALF_LIFE_30_DAYS} from '@script/Params.s.sol';
 
-import {OracleForTest, IBaseOracle} from '@contracts/for-test/OracleForTest.sol';
+import {OracleForTest, IBaseOracle} from '@test/mocks/OracleForTest.sol';
 import {IPIDController} from '@interfaces/IPIDController.sol';
 
 /**
@@ -20,7 +20,7 @@ contract SimulationPIDController is TestParams, Deploy, HaiTest {
   using Math for uint256;
 
   OracleForTest marketOracle;
-  string filePath = './src/test/simulations/pid-controller/';
+  string filePath = './test/simulations/pid-controller/';
 
   function setUp() public {
     marketOracle = new OracleForTest(1e18);

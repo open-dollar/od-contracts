@@ -1,0 +1,18 @@
+[book]
+src = "src"
+title = "HAI docs"
+description = ''
+language = 'en'
+
+[output.html]
+no-section-label = true
+theme = 'src/theme'
+additional-css = ['src/theme/css/fonts.css', 'src/theme/css/colors.css', 'src/theme/css/base.css']
+additional-js = ['src/theme/js/theme.js', 'src/theme/js/base.js', 'src/theme/js/solidity.min.js']
+git-repository-url = "https://github.com/hai-on-op/hai/"
+git-repository-icon = 'fa-github'
+mathjax-support = true
+
+[output.html.fold]
+enable = true    # whether or not to enable section folding
+level = 1        # the depth to start folding

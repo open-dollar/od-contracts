@@ -35,12 +35,10 @@ import {ChainlinkRelayer} from '@contracts/oracles/ChainlinkRelayer.sol';
 import {UniV3Relayer} from '@contracts/oracles/UniV3Relayer.sol';
 import {CamelotRelayer} from '@contracts/oracles/CamelotRelayer.sol';
 
-// --- Tokens ---
-import {ERC20ForTest, ERC20} from '@contracts/for-test/ERC20ForTest.sol';
-import {ERC20ForTestnet} from '@contracts/for-test/ERC20ForTestnet.sol';
-import {CoinForTest} from '@contracts/for-test/CoinForTest.sol';
-import {OracleForTest} from '@contracts/for-test/OracleForTest.sol';
-import {OracleForTestnet} from '@contracts/for-test/OracleForTestnet.sol';
+// --- Testnet contracts ---
+import {MintableERC20} from '@contracts/for-test/MintableERC20.sol';
+import {DeviatedOracle} from '@contracts/for-test/DeviatedOracle.sol';
+import {HardcodedOracle} from '@contracts/for-test/HardcodedOracle.sol';
 
 // --- Token adapters ---
 import {CoinJoin, ICoinJoin} from '@contracts/utils/CoinJoin.sol';
@@ -74,6 +72,8 @@ import {BasicActions, CommonActions} from '@contracts/proxies/actions/BasicActio
 import {DebtBidActions} from '@contracts/proxies/actions/DebtBidActions.sol';
 import {SurplusBidActions} from '@contracts/proxies/actions/SurplusBidActions.sol';
 import {CollateralBidActions} from '@contracts/proxies/actions/CollateralBidActions.sol';
+import {PostSettlementSurplusBidActions} from '@contracts/proxies/actions/PostSettlementSurplusBidActions.sol';
+import {GlobalSettlementActions} from '@contracts/proxies/actions/GlobalSettlementActions.sol';
 import {RewardedActions} from '@contracts/proxies/actions/RewardedActions.sol';
 import {GlobalSettlementActions} from '@contracts/proxies/actions/GlobalSettlementActions.sol';
 import {PostSettlementSurplusBidActions} from '@contracts/proxies/actions/PostSettlementSurplusBidActions.sol';
@@ -154,6 +154,8 @@ abstract contract Contracts {
   DebtBidActions public debtBidActions;
   SurplusBidActions public surplusBidActions;
   CollateralBidActions public collateralBidActions;
+  PostSettlementSurplusBidActions public postSettlementSurplusBidActions;
+  GlobalSettlementActions public globalSettlementActions;
   RewardedActions public rewardedActions;
   GlobalSettlementActions public globalSettlementActions;
   PostSettlementSurplusBidActions public postSettlementSurplusBidActions;

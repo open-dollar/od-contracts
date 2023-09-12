@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import 'ds-test/test.sol';
 
-import {TaxCollectorForTest as TaxCollector, ITaxCollector} from '@contracts/for-test/TaxCollectorForTest.sol';
+import {TaxCollectorForTest as TaxCollector, ITaxCollector} from '@test/mocks/TaxCollectorForTest.sol';
 import {ISAFEEngine, SAFEEngine} from '@contracts/SAFEEngine.sol';
 
 import {RAY} from '@libraries/Math.sol';

@@ -4,18 +4,14 @@ pragma solidity 0.8.19;
 import {HaiTest} from '@test/utils/HaiTest.t.sol';
 import {HAI, OD_INITIAL_PRICE, ETH_A} from '@script/Params.s.sol';
 import {Deploy} from '@script/Deploy.s.sol';
-import {TestParams, TKN, TEST_ETH_PRICE, TEST_TKN_PRICE} from '@test/e2e/TestParams.s.sol';
+import {TestParams, TKN, TEST_ETH_PRICE, TEST_TKN_PRICE} from '@test/e2e/TestParams.t.sol';
+import {ERC20ForTest} from '@test/mocks/ERC20ForTest.sol';
+import {OracleForTest} from '@test/mocks/OracleForTest.sol';
+import {DelayedOracleForTest} from '@test/mocks/DelayedOracleForTest.sol';
 import {
-  Contracts,
-  ICollateralJoin,
-  ERC20ForTest,
-  ERC20ForTestnet,
-  IERC20Metadata,
-  OracleForTest,
-  IBaseOracle,
-  ISAFEEngine
+  Contracts, ICollateralJoin, MintableERC20, IERC20Metadata, IBaseOracle, ISAFEEngine
 } from '@script/Contracts.s.sol';
-import {WETH9} from '@contracts/for-test/WETH9.sol';
+import {WETH9} from '@test/mocks/WETH9.sol';
 import {Math, RAY} from '@libraries/Math.sol';
 
 uint256 constant RAD_DELTA = 0.0001e45;
@@ -42,20 +38,20 @@ contract DeployForTest is TestParams, Deploy {
     delayedOracle[ETH_A] = new OracleForTest(TEST_ETH_PRICE); // 1 ETH = 2000 USD
     delayedOracle[TKN] = new OracleForTest(TEST_TKN_PRICE); // 1 TKN = 1 USD
 
-    collateral[ETH_A] = IERC20Metadata(address(weth));
+    collateral[WETH] = IERC20Metadata(address(weth));
     collateral[TKN] = new ERC20ForTest();
 
-    delayedOracle['TKN-A'] = new OracleForTest(COLLATERAL_PRICE);
-    delayedOracle['TKN-B'] = new OracleForTest(COLLATERAL_PRICE);
-    delayedOracle['TKN-C'] = new OracleForTest(COLLATERAL_PRICE);
-    delayedOracle['TKN-8D'] = new OracleForTest(COLLATERAL_PRICE);
+    delayedOracle['TKN-A'] = new DelayedOracleForTest(COLLATERAL_PRICE, address(0));
+    delayedOracle['TKN-B'] = new DelayedOracleForTest(COLLATERAL_PRICE, address(0));
+    delayedOracle['TKN-C'] = new DelayedOracleForTest(COLLATERAL_PRICE, address(0));
+    delayedOracle['TKN-8D'] = new DelayedOracleForTest(COLLATERAL_PRICE, address(0));
 
     collateral['TKN-A'] = new ERC20ForTest();
     collateral['TKN-B'] = new ERC20ForTest();
     collateral['TKN-C'] = new ERC20ForTest();
-    collateral['TKN-8D'] = new ERC20ForTestnet('8 Decimals TKN', 'TKN', 8);
+    collateral['TKN-8D'] = new MintableERC20('8 Decimals TKN', 'TKN', 8);
 
-    collateralTypes.push(ETH_A);
+    collateralTypes.push(WETH);
     collateralTypes.push(TKN);
     collateralTypes.push('TKN-A');
     collateralTypes.push('TKN-B');

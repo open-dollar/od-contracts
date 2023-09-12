@@ -12,7 +12,13 @@ abstract contract BaseUser {
     address _user
   ) internal virtual returns (uint256 _generatedDebt, uint256 _lockedCollateral);
 
+  function _getSafeHandler(bytes32 _cType, address _user) internal virtual returns (address _safeHandler);
+
   function _getCollateralBalance(address _user, bytes32 _cType) internal view virtual returns (uint256 _wad);
+
+  function _getInternalCoinBalance(address _user) internal virtual returns (uint256 _rad);
+
+  // --- SAFE actions ---
 
   function _lockETH(address _user, uint256 _amount) internal virtual;
 
@@ -40,6 +46,8 @@ abstract contract BaseUser {
 
   function _liquidateSAFE(bytes32 _cType, address _user) internal virtual;
 
+  // --- Bidding actions ---
+
   function _buyCollateral(
     address _user,
     address _collateralAuctionHouse,
@@ -59,9 +67,27 @@ abstract contract BaseUser {
 
   function _increaseBidSize(address _user, uint256 _auctionId, uint256 _bidAmount) internal virtual;
 
-  function _settleAuction(address _user, uint256 _auctionId) internal virtual;
+  function _settleSurplusAuction(address _user, uint256 _auctionId) internal virtual;
 
   function _collectSystemCoins(address _user) internal virtual;
+
+  // --- Global Settlement actions ---
+
+  function _increasePostSettlementBidSize(address _user, uint256 _auctionId, uint256 _bidAmount) internal virtual;
+
+  function _settlePostSettlementSurplusAuction(address _user, uint256 _auctionId) internal virtual;
+
+  function _freeCollateral(address _account, bytes32 _cType) internal virtual returns (uint256 _remainderCollateral);
+
+  function _prepareCoinsForRedeeming(address _account, uint256 _amount) internal virtual;
+
+  function _redeemCollateral(
+    address _account,
+    bytes32 _cType,
+    uint256 _coinsAmount
+  ) internal virtual returns (uint256 _collateralAmount);
+
+  // --- Rewarded actions ---
 
   function _workPopDebtFromQueue(address _user, uint256 _debtBlockTimestamp) internal virtual;
 

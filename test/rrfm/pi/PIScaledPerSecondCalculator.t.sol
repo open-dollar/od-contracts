@@ -7,7 +7,7 @@ import {PIDController as PIScaledPerSecondCalculator, IPIDController} from '@con
 
 import {MockPIDRateSetter} from '../utils/mock/MockPIDRateSetter.sol';
 import {MockOracleRelayer} from '../utils/mock/MockOracleRelayer.sol';
-import {OracleForTest} from '@contracts/for-test/OracleForTest.sol';
+import {OracleForTest} from '@test/mocks/OracleForTest.sol';
 
 import {Math} from '@libraries/Math.sol';
 
