@@ -4,10 +4,11 @@ pragma solidity 0.8.19;
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {ICamelotRelayer} from '@interfaces/oracles/ICamelotRelayer.sol';
 import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
-import {ICamelotFactory} from '@camelot/interfaces/ICamelotFactory.sol';
+// import {ICamelotFactory} from '@camelot/interfaces/ICamelotFactory.sol';
+import {IAlgebraFactory} from '@interfaces/factories/IAlgebraFactory.sol';
 import {ICamelotPair} from '@camelot/interfaces/ICamelotPair.sol';
 import {OracleLibrary} from '@uniswap/v3-periphery/contracts/libraries/OracleLibrary.sol';
-import {CAMELOT_FACTORY, GOERLI_CAMELOT_FACTORY} from '@script/Registry.s.sol';
+import {CAMELOT_V3_FACTORY, GOERLI_CAMELOT_V3_FACTORY} from '@script/Registry.s.sol';
 
 /**
  * @title  CamelotRelayer
@@ -16,7 +17,7 @@ import {CAMELOT_FACTORY, GOERLI_CAMELOT_FACTORY} from '@script/Registry.s.sol';
  */
 contract CamelotRelayer is IBaseOracle, ICamelotRelayer {
   // --- Registry ---
-  address internal constant _CAMELOT_FACTORY = GOERLI_CAMELOT_FACTORY;
+  address internal constant _CAMELOT_FACTORY = GOERLI_CAMELOT_V3_FACTORY;
 
   /// @inheritdoc ICamelotRelayer
   address public camelotPair;
@@ -37,7 +38,8 @@ contract CamelotRelayer is IBaseOracle, ICamelotRelayer {
   uint32 public quotePeriod;
 
   constructor(address _baseToken, address _quoteToken, uint24 _feeTier, uint32 _quotePeriod) {
-    camelotPair = ICamelotFactory(_CAMELOT_FACTORY).getPair(_baseToken, _quoteToken);
+    // camelotPair = ICamelotFactory(_CAMELOT_FACTORY).getPair(_baseToken, _quoteToken);
+    camelotPair = IAlgebraFactory(_CAMELOT_FACTORY).poolByPair(_baseToken, _quoteToken);
     if (camelotPair == address(0)) revert CamelotRelayer_InvalidPool();
 
     address _token0 = ICamelotPair(camelotPair).token0();

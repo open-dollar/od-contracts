@@ -4,7 +4,7 @@ pragma solidity 0.8.19;
 abstract contract GoerliContracts {
   address public chainlinkRelayerFactoryAddr = 0xF4D170497F8491FD3bdB31B1c0e9Ed6e3C4c03d6;
   address public uniV3RelayerFactoryAddr = 0xb13cD0cdA3c13c3Da428B694A81c3De4dAca3bFC;
-  address public camelotRelayerFactoryAddr = 0xb13cD0cdA3c13c3Da428B694A81c3De4dAca3bFC;
+  address public camelotRelayerFactoryAddr = 0x023190DF237971377bbA501AA16801f4B23bCAb2;
   address public denominatedOracleFactoryAddr = 0x45063443256fb264e8fB464eb6051D29fF2BebE5;
   address public delayedOracleFactoryAddr = 0xc76CC3153CCB9e088566DDB42441840e9c83baC3;
 

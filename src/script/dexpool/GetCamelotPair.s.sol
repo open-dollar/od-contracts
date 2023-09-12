@@ -14,7 +14,7 @@ contract GetCamelotPair is LiquidityBase {
 
   function run() public {
     vm.startBroadcast(vm.envUint('ARB_GOERLI_PK'));
-    pair = camelotFactory.getPair(tokenA, tokenB);
+    pair = camelotV2Factory.getPair(tokenA, tokenB);
     vm.stopBroadcast();
   }
 }
