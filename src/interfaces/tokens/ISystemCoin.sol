@@ -5,7 +5,25 @@ import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadat
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 
 interface ISystemCoin is IERC20Metadata, IAuthorizable {
+  /**
+   * @notice Mint an amount of tokens to an account
+   * @param _account Address of the account to mint tokens to
+   * @param _amount Amount of tokens to mint [wad]
+   * @dev   Only authorized addresses can mint tokens
+   */
   function mint(address _account, uint256 _amount) external;
+
+  /**
+   * @notice Burn an amount of tokens from an account
+   * @param _account Address of the account to burn tokens from
+   * @param _amount Amount of tokens to burn [wad]
+   * @dev   Only authorized addresses can burn tokens from an account
+   */
   function burn(address _account, uint256 _amount) external;
+
+  /**
+   * @notice Burn an amount of tokens from the sender
+   * @param _amount Amount of tokens to burn [wad]
+   */
   function burn(uint256 _amount) external;
 }
