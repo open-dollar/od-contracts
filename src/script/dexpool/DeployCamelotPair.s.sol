@@ -12,7 +12,7 @@ import {LiquidityBase} from '@script/dexpool/base/LiquidityBase.s.sol';
 contract DeployCamelotPair is LiquidityBase {
   function run() public {
     vm.startBroadcast(vm.envUint('ARB_GOERLI_PK'));
-    camelotFactory.createPair(tokenA, tokenB);
+    camelotV3Factory.createPool(tokenA, tokenB);
     vm.stopBroadcast();
   }
 }
