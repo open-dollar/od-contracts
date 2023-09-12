@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {
-  DebtAuctionHouseForTest, IDebtAuctionHouse, DebtAuctionHouse
-} from '@contracts/for-test/DebtAuctionHouseForTest.sol';
+import {DebtAuctionHouseForTest, IDebtAuctionHouse, DebtAuctionHouse} from '@test/mocks/DebtAuctionHouseForTest.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IProtocolToken} from '@interfaces/tokens/IProtocolToken.sol';
 import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
@@ -211,6 +209,7 @@ contract Unit_DebtAuctionHouse_DisableContract is Base {
 contract Unit_DebtAuctionHouse_StartAuction is Base {
   event StartAuction(
     uint256 indexed _id,
+    address indexed _auctioneer,
     uint256 _blockTimestamp,
     uint256 _amountToSell,
     uint256 _amountToRaise,
@@ -339,7 +338,12 @@ contract Unit_DebtAuctionHouse_StartAuction is Base {
   ) public happyPath(_auctionsStarted, _activeDebtAuctions, _totalAuctionLength) {
     vm.expectEmit();
     emit StartAuction(
-      _auctionsStarted + 1, block.timestamp, _amountToSell, _initialBid, block.timestamp + _totalAuctionLength
+      _auctionsStarted + 1,
+      authorizedAccount,
+      block.timestamp,
+      _amountToSell,
+      _initialBid,
+      block.timestamp + _totalAuctionLength
     );
 
     debtAuctionHouse.startAuction(_incomeReceiver, _amountToSell, _initialBid);
@@ -910,16 +914,6 @@ contract Unit_DebtAuctionHouse_ModifyParameters is Base {
   modifier happyPath() {
     vm.startPrank(authorizedAccount);
     _;
-  }
-
-  function test_Revert_ContractIsDisabled(bytes32 _param, bytes memory _data) public {
-    vm.startPrank(authorizedAccount);
-
-    _mockContractEnabled(false);
-
-    vm.expectRevert(IDisableable.ContractIsDisabled.selector);
-
-    debtAuctionHouse.modifyParameters(_param, _data);
   }
 
   function test_Set_Parameters(IDebtAuctionHouse.DebtAuctionHouseParams memory _fuzz) public happyPath {

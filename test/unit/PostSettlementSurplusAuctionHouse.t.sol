@@ -4,7 +4,8 @@ pragma solidity 0.8.19;
 import {
   PostSettlementSurplusAuctionHouseForTest,
   IPostSettlementSurplusAuctionHouse
-} from '@contracts/for-test/PostSettlementSurplusAuctionHouseForTest.sol';
+} from '@test/mocks/PostSettlementSurplusAuctionHouseForTest.sol';
+import {ICommonSurplusAuctionHouse} from '@interfaces/ICommonSurplusAuctionHouse.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IProtocolToken} from '@interfaces/tokens/IProtocolToken.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
@@ -63,9 +64,8 @@ abstract contract Base is HaiTest {
   }
 
   function _mockAuctionsStarted(uint256 _auctionsStarted) internal {
-    stdstore.target(address(postSettlementSurplusAuctionHouse)).sig(
-      IPostSettlementSurplusAuctionHouse.auctionsStarted.selector
-    ).checked_write(_auctionsStarted);
+    stdstore.target(address(postSettlementSurplusAuctionHouse)).sig(ICommonSurplusAuctionHouse.auctionsStarted.selector)
+      .checked_write(_auctionsStarted);
   }
 
   // params
@@ -88,10 +88,6 @@ abstract contract Base is HaiTest {
 contract Unit_PostSettlementSurplusAuctionHouse_Constants is Base {
   function test_Set_AUCTION_HOUSE_TYPE() public {
     assertEq(postSettlementSurplusAuctionHouse.AUCTION_HOUSE_TYPE(), bytes32('SURPLUS'));
-  }
-
-  function test_Set_SURPLUS_AUCTION_TYPE() public {
-    assertEq(postSettlementSurplusAuctionHouse.SURPLUS_AUCTION_TYPE(), bytes32('POST-SETTLEMENT'));
   }
 }
 
@@ -152,6 +148,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_Constructor is Base {
 contract Unit_PostSettlementSurplusAuctionHouse_StartAuction is Base {
   event StartAuction(
     uint256 indexed _id,
+    address indexed _auctioneer,
     uint256 _blockTimestamp,
     uint256 _amountToSell,
     uint256 _amountToRaise,
@@ -246,7 +243,12 @@ contract Unit_PostSettlementSurplusAuctionHouse_StartAuction is Base {
   ) public happyPath(_auctionsStarted, _totalAuctionLength) {
     vm.expectEmit();
     emit StartAuction(
-      _auctionsStarted + 1, block.timestamp, _amountToSell, _initialBid, block.timestamp + _totalAuctionLength
+      _auctionsStarted + 1,
+      authorizedAccount,
+      block.timestamp,
+      _amountToSell,
+      _initialBid,
+      block.timestamp + _totalAuctionLength
     );
 
     postSettlementSurplusAuctionHouse.startAuction(_amountToSell, _initialBid);
@@ -293,7 +295,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_RestartAuction is Base {
 
     _mockValues(_auction, 0, 0);
 
-    vm.expectRevert(IPostSettlementSurplusAuctionHouse.PSSAH_AuctionNeverStarted.selector);
+    vm.expectRevert(ICommonSurplusAuctionHouse.SAH_AuctionNeverStarted.selector);
 
     postSettlementSurplusAuctionHouse.restartAuction(_auction.id);
   }
@@ -303,7 +305,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_RestartAuction is Base {
 
     _mockValues(_auction, _auctionsStarted, 0);
 
-    vm.expectRevert(IPostSettlementSurplusAuctionHouse.PSSAH_AuctionNeverStarted.selector);
+    vm.expectRevert(ICommonSurplusAuctionHouse.SAH_AuctionNeverStarted.selector);
 
     postSettlementSurplusAuctionHouse.restartAuction(_auction.id);
   }
@@ -314,7 +316,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_RestartAuction is Base {
 
     _mockValues(_auction, _auctionsStarted, 0);
 
-    vm.expectRevert(IPostSettlementSurplusAuctionHouse.PSSAH_AuctionNotFinished.selector);
+    vm.expectRevert(ICommonSurplusAuctionHouse.SAH_AuctionNotFinished.selector);
 
     postSettlementSurplusAuctionHouse.restartAuction(_auction.id);
   }
@@ -326,7 +328,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_RestartAuction is Base {
 
     _mockValues(_auction, _auctionsStarted, 0);
 
-    vm.expectRevert(IPostSettlementSurplusAuctionHouse.PSSAH_BidAlreadyPlaced.selector);
+    vm.expectRevert(ICommonSurplusAuctionHouse.SAH_BidAlreadyPlaced.selector);
 
     postSettlementSurplusAuctionHouse.restartAuction(_auction.id);
   }
@@ -400,7 +402,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_IncreaseBidSize is Base {
 
     _mockValues(_auction, 0, 0);
 
-    vm.expectRevert(IPostSettlementSurplusAuctionHouse.PSSAH_HighBidderNotSet.selector);
+    vm.expectRevert(ICommonSurplusAuctionHouse.SAH_HighBidderNotSet.selector);
 
     postSettlementSurplusAuctionHouse.increaseBidSize(_auction.id, _amountToBuy, _bid);
   }
@@ -411,7 +413,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_IncreaseBidSize is Base {
 
     _mockValues(_auction, 0, 0);
 
-    vm.expectRevert(IPostSettlementSurplusAuctionHouse.PSSAH_BidAlreadyExpired.selector);
+    vm.expectRevert(ICommonSurplusAuctionHouse.SAH_BidAlreadyExpired.selector);
 
     postSettlementSurplusAuctionHouse.increaseBidSize(_auction.id, _amountToBuy, _bid);
   }
@@ -423,7 +425,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_IncreaseBidSize is Base {
 
     _mockValues(_auction, 0, 0);
 
-    vm.expectRevert(IPostSettlementSurplusAuctionHouse.PSSAH_AuctionAlreadyExpired.selector);
+    vm.expectRevert(ICommonSurplusAuctionHouse.SAH_AuctionAlreadyExpired.selector);
 
     postSettlementSurplusAuctionHouse.increaseBidSize(_auction.id, _amountToBuy, _bid);
   }
@@ -436,7 +438,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_IncreaseBidSize is Base {
 
     _mockValues(_auction, 0, 0);
 
-    vm.expectRevert(IPostSettlementSurplusAuctionHouse.PSSAH_AmountsNotMatching.selector);
+    vm.expectRevert(ICommonSurplusAuctionHouse.SAH_AmountsNotMatching.selector);
 
     postSettlementSurplusAuctionHouse.increaseBidSize(_auction.id, _amountToBuy, _bid);
   }
@@ -449,7 +451,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_IncreaseBidSize is Base {
 
     _mockValues(_auction, 0, 0);
 
-    vm.expectRevert(IPostSettlementSurplusAuctionHouse.PSSAH_BidNotHigher.selector);
+    vm.expectRevert(ICommonSurplusAuctionHouse.SAH_BidNotHigher.selector);
 
     postSettlementSurplusAuctionHouse.increaseBidSize(_auction.id, _auction.amountToSell, _bid);
   }
@@ -465,7 +467,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_IncreaseBidSize is Base {
 
     _mockValues(_auction, _bidIncrease, 0);
 
-    vm.expectRevert(IPostSettlementSurplusAuctionHouse.PSSAH_InsufficientIncrease.selector);
+    vm.expectRevert(ICommonSurplusAuctionHouse.SAH_InsufficientIncrease.selector);
 
     postSettlementSurplusAuctionHouse.increaseBidSize(_auction.id, _auction.amountToSell, _bid);
   }
@@ -600,7 +602,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_SettleAuction is Base {
 
     _mockValues(_auction);
 
-    vm.expectRevert(IPostSettlementSurplusAuctionHouse.PSSAH_AuctionNotFinished.selector);
+    vm.expectRevert(ICommonSurplusAuctionHouse.SAH_AuctionNotFinished.selector);
 
     postSettlementSurplusAuctionHouse.settleAuction(_auction.id);
   }
@@ -611,7 +613,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_SettleAuction is Base {
 
     _mockValues(_auction);
 
-    vm.expectRevert(IPostSettlementSurplusAuctionHouse.PSSAH_AuctionNotFinished.selector);
+    vm.expectRevert(ICommonSurplusAuctionHouse.SAH_AuctionNotFinished.selector);
 
     postSettlementSurplusAuctionHouse.settleAuction(_auction.id);
   }

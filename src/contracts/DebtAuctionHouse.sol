@@ -14,44 +14,60 @@ import {Math, WAD} from '@libraries/Math.sol';
 import {Encoding} from '@libraries/Encoding.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 
-// This thing creates protocol tokens on demand in return for system coins
+/**
+ * @title  DebtAuctionHouse
+ * @notice This contract enables the sell of newly minted protocol tokens in exchange for system coins to cover a protocol debt
+ */
 contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuctionHouse {
   using Encoding for bytes;
   using Assertions for address;
 
+  /// @inheritdoc IDebtAuctionHouse
   bytes32 public constant AUCTION_HOUSE_TYPE = bytes32('DEBT');
 
   // --- Data ---
-  // Data for each separate auction
-  // solhint-disable-next-line private-vars-leading-underscore
-  mapping(uint256 => Auction) public _auctions;
 
+  /// @inheritdoc IDebtAuctionHouse
+  // solhint-disable-next-line private-vars-leading-underscore
+  mapping(uint256 _auctionId => Auction) public _auctions;
+
+  /// @inheritdoc IDebtAuctionHouse
   function auctions(uint256 _id) external view returns (Auction memory _auction) {
     return _auctions[_id];
   }
 
-  // Number of auctions started up until now
+  /// @inheritdoc IDebtAuctionHouse
   uint256 public auctionsStarted;
-  // Accumulator for all debt auctions currently not settled
+  /// @inheritdoc IDebtAuctionHouse
   uint256 public activeDebtAuctions;
 
   // --- Registry ---
-  // SAFE database
+
+  /// @inheritdoc IDebtAuctionHouse
   ISAFEEngine public safeEngine;
-  // Protocol token address
+  /// @inheritdoc IDebtAuctionHouse
   IProtocolToken public protocolToken;
-  // Accounting engine
+  /// @inheritdoc IDebtAuctionHouse
   address public accountingEngine;
 
   // --- Params ---
+
+  /// @inheritdoc IDebtAuctionHouse
   // solhint-disable-next-line private-vars-leading-underscore
   DebtAuctionHouseParams public _params;
 
+  /// @inheritdoc IDebtAuctionHouse
   function params() external view returns (DebtAuctionHouseParams memory _dahParams) {
     return _params;
   }
 
   // --- Init ---
+
+  /**
+   * @param  _safeEngine Address of the SAFEEngine contract
+   * @param  _protocolToken Address of the protocol governance token
+   * @param  _dahParams Initial valid DebtAuctionHouse parameters struct
+   */
   constructor(
     address _safeEngine,
     address _protocolToken,
@@ -66,7 +82,8 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
   // --- Shutdown ---
 
   /**
-   * @notice Disable the auction house (usually called by the AccountingEngine)
+   * @dev Sets the accountingEngine state var to the caller's address
+   * @inheritdoc Disableable
    */
   function _onContractDisable() internal override {
     accountingEngine = msg.sender;
@@ -74,12 +91,8 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
   }
 
   // --- Auction ---
-  /**
-   * @notice Start a new debt auction
-   * @param _incomeReceiver Who receives the auction proceeds
-   * @param _amountToSell Amount of protocol tokens to sell (wad)
-   * @param _initialBid Initial bid size (rad)
-   */
+
+  /// @inheritdoc IDebtAuctionHouse
   function startAuction(
     address _incomeReceiver,
     uint256 _amountToSell,
@@ -98,6 +111,7 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
 
     emit StartAuction({
       _id: _id,
+      _auctioneer: msg.sender,
       _blockTimestamp: block.timestamp,
       _amountToSell: _amountToSell,
       _amountToRaise: _initialBid,
@@ -105,10 +119,7 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
     });
   }
 
-  /**
-   * @notice Restart an auction if no bids were submitted for it
-   * @param _id ID of the auction to restart
-   */
+  /// @inheritdoc IDebtAuctionHouse
   function restartAuction(uint256 _id) external {
     Auction storage _auction = _auctions[_id];
     if (_id == 0 || _id > auctionsStarted) revert DAH_AuctionNeverStarted();
@@ -120,13 +131,7 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
     emit RestartAuction({_id: _id, _blockTimestamp: block.timestamp, _auctionDeadline: _auction.auctionDeadline});
   }
 
-  /**
-   * @notice Decrease the protocol token amount you're willing to receive in
-   *         exchange for providing the same amount of system coins being raised by the auction
-   * @param _id ID of the auction for which you want to submit a new bid
-   * @param _amountToBuy Amount of protocol tokens to buy (must be smaller than the previous proposed amount) (wad)
-   * @param _bid New system coin bid (must always equal the total amount raised by the auction) (rad)
-   */
+  /// @inheritdoc IDebtAuctionHouse
   function decreaseSoldAmount(uint256 _id, uint256 _amountToBuy, uint256 _bid) external whenEnabled {
     Auction storage _auction = _auctions[_id];
     if (_auction.highBidder == address(0)) revert DAH_HighBidderNotSet();
@@ -159,10 +164,7 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
     });
   }
 
-  /**
-   * @notice Settle/finish an auction
-   * @param _id ID of the auction to settle
-   */
+  /// @inheritdoc IDebtAuctionHouse
   function settleAuction(uint256 _id) external whenEnabled {
     Auction memory _auction = _auctions[_id];
     if (_auction.bidExpiry == 0 || (_auction.bidExpiry > block.timestamp && _auction.auctionDeadline > block.timestamp))
@@ -183,10 +185,7 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
     delete _auctions[_id];
   }
 
-  /**
-   * @notice Terminate an auction prematurely
-   * @param _id ID of the auction to terminate
-   */
+  /// @inheritdoc IDebtAuctionHouse
   function terminateAuctionPrematurely(uint256 _id) external whenDisabled {
     Auction memory _auction = _auctions[_id];
     if (_auction.highBidder == address(0)) revert DAH_HighBidderNotSet();
@@ -209,7 +208,8 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
 
   // --- Administration ---
 
-  function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled {
+  /// @inheritdoc Modifiable
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     address _address = _data.toAddress();
     uint256 _uint256 = _data.toUint256();
 
@@ -221,6 +221,7 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
     else revert UnrecognizedParam();
   }
 
+  /// @inheritdoc Modifiable
   function _validateParameters() internal view override {
     address(protocolToken).assertNonNull();
   }

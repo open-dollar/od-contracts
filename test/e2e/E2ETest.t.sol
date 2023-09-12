@@ -9,7 +9,7 @@ import {
   ONE_HUNDRED_COINS,
   PERCENTAGE_OF_STABILITY_FEE_TO_TREASURY,
   SURPLUS_AUCTION_BID_RECEIVER
-} from '@test/e2e/TestParams.s.sol';
+} from '@test/e2e/TestParams.t.sol';
 
 import {Math, RAY, YEAR} from '@libraries/Math.sol';
 
@@ -129,7 +129,7 @@ abstract contract E2ETest is BaseUser, Base_CType, Common {
     _setCollateralPrice(_cType(), PRICE_DROP);
     _liquidateSAFE(_cType(), address(this));
 
-    uint256 _discount = collateralAuctionHouse[_cType()].cParams().minDiscount;
+    uint256 _discount = collateralAuctionHouse[_cType()].params().minDiscount;
     uint256 _amountToBid = Math.wmul(Math.wmul(COLLATERAL_AMOUNT, _discount), PRICE_DROP);
     // NOTE: getExpectedCollateralBought doesn't have a previous reference (lastReadRedemptionPrice)
     (uint256 _expectedCollateral,) = collateralAuctionHouse[_cType()].getCollateralBought(1, _amountToBid);
@@ -154,7 +154,7 @@ abstract contract E2ETest is BaseUser, Base_CType, Common {
     _setCollateralPrice(_cType(), PRICE_DROP);
     _liquidateSAFE(_cType(), address(this));
 
-    uint256 _discount = collateralAuctionHouse[_cType()].cParams().minDiscount;
+    uint256 _discount = collateralAuctionHouse[_cType()].params().minDiscount;
     uint256 _amountToBid = Math.wmul(Math.wmul(COLLATERAL_AMOUNT, _discount), PRICE_DROP) / 2;
     // NOTE: getExpectedCollateralBought doesn't have a previous reference (lastReadRedemptionPrice)
     (uint256 _expectedCollateral,) = collateralAuctionHouse[_cType()].getCollateralBought(1, _amountToBid);
@@ -224,7 +224,7 @@ abstract contract E2ETest is BaseUser, Base_CType, Common {
     vm.warp(_auction.auctionDeadline);
 
     assertEq(protocolToken.totalSupply(), INITIAL_BID);
-    _settleAuction(address(this), _auctionId);
+    _settleSurplusAuction(address(this), _auctionId);
     assertEq(protocolToken.totalSupply(), INITIAL_BID / 2); // 50% of the bid is burned
     assertEq(protocolToken.balanceOf(SURPLUS_AUCTION_BID_RECEIVER), INITIAL_BID / 2); // 50% is sent to the receiver
     assertEq(protocolToken.balanceOf(address(this)), 0);

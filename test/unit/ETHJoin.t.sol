@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {ETHJoinForTest, IETHJoin} from '@contracts/for-test/ETHJoinForTest.sol';
+import {ETHJoinForTest, IETHJoin} from '@test/mocks/ETHJoinForTest.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';

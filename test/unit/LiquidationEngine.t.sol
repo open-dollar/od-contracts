@@ -11,8 +11,8 @@ import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
 import {LiquidationEngine} from '@contracts/LiquidationEngine.sol';
-import {LiquidationEngineForTest} from '@contracts/for-test/LiquidationEngineForTest.sol';
-import {DummyCollateralAuctionHouse} from '@contracts/for-test/CollateralAuctionHouseForTest.sol';
+import {LiquidationEngineForTest} from '@test/mocks/LiquidationEngineForTest.sol';
+import {DummyCollateralAuctionHouse} from '@test/mocks/CollateralAuctionHouseForTest.sol';
 import {HaiTest} from '@test/utils/HaiTest.t.sol';
 import {StdStorage, stdStorage} from 'forge-std/StdStorage.sol';
 
@@ -400,6 +400,13 @@ contract Unit_LiquidationEngine_ModifyParameters is Base {
     _mockCollateralList(_cType);
 
     vm.expectRevert(IModifiable.UnrecognizedParam.selector);
+    liquidationEngine.modifyParameters(_cType, 'unrecognizedParam', abi.encode(0));
+  }
+
+  function test_Revert_ModifyParameters_PerCollateral_ContractIsDisabled(bytes32 _cType) public authorized {
+    _mockContractEnabled(false);
+
+    vm.expectRevert();
     liquidationEngine.modifyParameters(_cType, 'unrecognizedParam', abi.encode(0));
   }
 }
@@ -1373,7 +1380,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     liquidationEngine.liquidateSAFE(collateralType, safe);
   }
 
-  function test_Revert_ContractNotEnabled() public {
+  function test_Revert_ContractIsDisabled() public {
     // We don't care about any of these values just mocking for call to work when calling safe engine
     _mockValues(Liquidation(0, 0, 0, 0, 0, 0, 0, 0, 0));
     _mockContractEnabled(false);
@@ -1383,26 +1390,24 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     liquidationEngine.liquidateSAFE(collateralType, safe);
   }
 
-  function test_Revert_SafeNotSafe(
-    uint256 _accumulatedRate,
-    uint256 _liquidationPrice,
-    uint256 _safeCollateral,
-    uint256 _safeDebt,
-    uint256 _liquidationPenalty
-  ) public {
-    vm.assume(_notZeroDivision(_accumulatedRate, _liquidationPenalty));
-    vm.assume(!_notSafe(_liquidationPrice, _safeCollateral, _safeDebt, _accumulatedRate));
+  function test_Revert_SafeNotSafe(Liquidation memory _liquidation) public {
+    vm.assume(_notZeroDivision(_liquidation.accumulatedRate, _liquidation.liquidationPenalty));
+    vm.assume(
+      !_notSafe(
+        _liquidation.liquidationPrice, _liquidation.safeCollateral, _liquidation.safeDebt, _liquidation.accumulatedRate
+      )
+    );
 
     _mockValues(
       Liquidation({
-        accumulatedRate: _accumulatedRate,
+        accumulatedRate: _liquidation.accumulatedRate,
         debtFloor: 0,
-        liquidationPrice: _liquidationPrice,
-        safeCollateral: _safeCollateral,
-        safeDebt: _safeDebt,
+        liquidationPrice: _liquidation.liquidationPrice,
+        safeCollateral: _liquidation.safeCollateral,
+        safeDebt: _liquidation.safeDebt,
         onAuctionSystemCoinLimit: 0,
         currentOnAuctionSystemCoins: 0,
-        liquidationPenalty: _liquidationPenalty,
+        liquidationPenalty: _liquidation.liquidationPenalty,
         liquidationQuantity: 0
       })
     );
@@ -1495,40 +1500,6 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     liquidationEngine.liquidateSAFE(collateralType, safe);
   }
 
-  function test_Revert_DustySafe_LiquidationQuantity(
-    uint256 _accumulatedRate,
-    uint256 _debtFloor,
-    uint256 _liquidationPrice,
-    uint256 _safeCollateral,
-    uint256 _safeDebt,
-    uint256 _liquidationPenalty,
-    uint256 _liquidationQuantity
-  ) public {
-    vm.assume(_notZeroDivision(_accumulatedRate, _liquidationPenalty));
-    vm.assume(_notSafe(_liquidationPrice, _safeCollateral, _safeDebt, _accumulatedRate));
-    vm.assume(_notNullAuction(_liquidationQuantity, _liquidationPenalty, _accumulatedRate));
-    // Making it dusty
-    vm.assume(!_notDusty(_safeDebt, _liquidationQuantity, _liquidationPenalty, _debtFloor, _accumulatedRate));
-
-    _mockValues(
-      Liquidation({
-        accumulatedRate: _accumulatedRate,
-        debtFloor: _debtFloor,
-        liquidationPrice: _liquidationPrice,
-        safeCollateral: _safeCollateral,
-        safeDebt: _safeDebt,
-        onAuctionSystemCoinLimit: type(uint256).max,
-        currentOnAuctionSystemCoins: 0,
-        liquidationPenalty: _liquidationPenalty,
-        liquidationQuantity: _liquidationQuantity
-      })
-    );
-
-    vm.expectRevert(ILiquidationEngine.LiqEng_DustySAFE.selector);
-
-    liquidationEngine.liquidateSAFE(collateralType, safe);
-  }
-
   function test_Revert_NullCollateralToSell(Liquidation memory _liquidation) public {
     vm.assume(_notZeroDivision(_liquidation.accumulatedRate, _liquidation.liquidationPenalty));
     vm.assume(
@@ -1551,15 +1522,6 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
       _liquidation.currentOnAuctionSystemCoins,
       _liquidation.accumulatedRate,
       _liquidation.liquidationPenalty
-    );
-    vm.assume(
-      _notDusty(
-        _liquidation.safeDebt,
-        _liquidation.liquidationQuantity,
-        _liquidation.liquidationPenalty,
-        _liquidation.debtFloor,
-        _liquidation.accumulatedRate
-      )
     );
     vm.assume(
       !_notNullCollateralToSell(
@@ -1587,6 +1549,56 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     );
 
     vm.expectRevert(ILiquidationEngine.LiqEng_NullCollateralToSell.selector);
+
+    liquidationEngine.liquidateSAFE(collateralType, safe);
+  }
+
+  function test_Revert_DustySafe_LiquidationQuantity(Liquidation memory _liquidation) public {
+    vm.assume(_notZeroDivision(_liquidation.accumulatedRate, _liquidation.liquidationPenalty));
+    vm.assume(
+      _notSafe(
+        _liquidation.liquidationPrice, _liquidation.safeCollateral, _liquidation.safeDebt, _liquidation.accumulatedRate
+      )
+    );
+    vm.assume(
+      _notNullAuction(_liquidation.liquidationQuantity, _liquidation.liquidationPenalty, _liquidation.accumulatedRate)
+    );
+    vm.assume(
+      _notNullCollateralToSell(
+        _liquidation.safeDebt,
+        _liquidation.safeCollateral,
+        _liquidation.liquidationQuantity,
+        _liquidation.accumulatedRate,
+        _liquidation.liquidationPenalty,
+        _liquidation.currentOnAuctionSystemCoins
+      )
+    );
+    // Making it dusty
+    vm.assume(
+      !_notDusty(
+        _liquidation.safeDebt,
+        _liquidation.liquidationQuantity,
+        _liquidation.liquidationPenalty,
+        _liquidation.debtFloor,
+        _liquidation.accumulatedRate
+      )
+    );
+
+    _mockValues(
+      Liquidation({
+        accumulatedRate: _liquidation.accumulatedRate,
+        debtFloor: _liquidation.debtFloor,
+        liquidationPrice: _liquidation.liquidationPrice,
+        safeCollateral: _liquidation.safeCollateral,
+        safeDebt: _liquidation.safeDebt,
+        onAuctionSystemCoinLimit: type(uint256).max,
+        currentOnAuctionSystemCoins: 0,
+        liquidationPenalty: _liquidation.liquidationPenalty,
+        liquidationQuantity: _liquidation.liquidationQuantity
+      })
+    );
+
+    vm.expectRevert(ILiquidationEngine.LiqEng_DustySAFE.selector);
 
     liquidationEngine.liquidateSAFE(collateralType, safe);
   }
@@ -1854,6 +1866,17 @@ contract Unit_LiquidationEngine_InitializeCollateralType is Base {
 
     vm.expectRevert(ILiquidationEngine.LiqEng_CollateralTypeAlreadyInitialized.selector);
 
+    liquidationEngine.initializeCollateralType(_cType, _liqEngineCParams);
+  }
+
+  function test_Revert_ContractIsDisabled(
+    bytes32 _cType,
+    ILiquidationEngine.LiquidationEngineCollateralParams memory _liqEngineCParams
+  ) public authorized {
+    _mockCollateralList(_cType);
+    _mockContractEnabled(false);
+
+    vm.expectRevert();
     liquidationEngine.initializeCollateralType(_cType, _liqEngineCParams);
   }
 }

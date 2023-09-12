@@ -5,7 +5,7 @@ import 'ds-test/test.sol';
 
 import {MockPIDCalculator} from '../utils/mock/MockPIDCalculator.sol';
 import {IPIDRateSetter, PIDRateSetter} from '@contracts/PIDRateSetter.sol';
-import {OracleForTest as OracleForTest} from '@contracts/for-test/OracleForTest.sol';
+import {OracleForTest as OracleForTest} from '@test/mocks/OracleForTest.sol';
 
 import {IOracleRelayer, OracleRelayer as MockOracleRelayer} from '@contracts/OracleRelayer.sol';
 

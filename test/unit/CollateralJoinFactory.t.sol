@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {
-  CollateralJoinFactoryForTest, ICollateralJoinFactory
-} from '@contracts/for-test/CollateralJoinFactoryForTest.sol';
+import {CollateralJoinFactoryForTest, ICollateralJoinFactory} from '@test/mocks/CollateralJoinFactoryForTest.sol';
 import {CollateralJoinChild} from '@contracts/factories/CollateralJoinChild.sol';
 import {CollateralJoinDelegatableChild} from '@contracts/factories/CollateralJoinDelegatableChild.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';

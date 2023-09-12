@@ -4,14 +4,12 @@ pragma solidity 0.8.19;
 import {GlobalSettlement, IGlobalSettlement} from '@contracts/settlement/GlobalSettlement.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ILiquidationEngine} from '@interfaces/ILiquidationEngine.sol';
-import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
-import {IStabilityFeeTreasury} from '@interfaces/IStabilityFeeTreasury.sol';
 import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
-import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
+import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 
 import {Math, RAY, WAD} from '@libraries/Math.sol';
@@ -25,18 +23,32 @@ abstract contract Base is HaiTest {
 
   ISAFEEngine mockSafeEngine = ISAFEEngine(mockContract('SafeEngine'));
   ILiquidationEngine mockLiquidationEngine = ILiquidationEngine(mockContract('LiquidationEngine'));
-  IAccountingEngine mockAccountingEngine = IAccountingEngine(mockContract('AccountingEngine'));
   IOracleRelayer mockOracleRelayer = IOracleRelayer(mockContract('OracleRelayer'));
-  IStabilityFeeTreasury mockStabilityFeeTreasury = IStabilityFeeTreasury(mockContract('StabilityFeeTreasury'));
-  ICollateralAuctionHouse mockCollateralAuctionHouse = ICollateralAuctionHouse(mockContract('CollateralAuctionHouse'));
-  IBaseOracle mockOracle = IBaseOracle(mockContract('Oracle'));
+
+  IDisableable mockAccountingEngine = IDisableable(mockContract('AccountingEngine'));
+  IDisableable mockCoinJoin = IDisableable(mockContract('CoinJoin'));
+  IDisableable mockCollateralJoinFactory = IDisableable(mockContract('CollateralJoinFactory'));
+  IDisableable mockCollateralAuctionHouseFactory = IDisableable(mockContract('CollateralAuctionHouseFactory'));
+  IDisableable mockStabilityFeeTreasury = IDisableable(mockContract('StabilityFeeTreasury'));
+  IDisableable mockCollateralAuctionHouse = IDisableable(mockContract('CollateralAuctionHouse'));
+  IDisableable mockOracle = IDisableable(mockContract('Oracle'));
 
   GlobalSettlement globalSettlement;
 
   function setUp() public virtual {
     vm.startPrank(deployer);
 
-    globalSettlement = new GlobalSettlement();
+    globalSettlement = new GlobalSettlement(
+      address (mockSafeEngine),
+      address (mockLiquidationEngine),
+      address (mockOracleRelayer),
+      address (mockCoinJoin),
+      address (mockCollateralJoinFactory),
+      address (mockCollateralAuctionHouseFactory),
+      address (mockStabilityFeeTreasury),
+      address (mockAccountingEngine),
+      IGlobalSettlement.GlobalSettlementParams({shutdownCooldown: 0})
+    );
     label(address(globalSettlement), 'GlobalSettlement');
 
     globalSettlement.addAuthorization(authorizedAccount);
@@ -116,41 +128,19 @@ abstract contract Base is HaiTest {
 
   function _mockAuction(
     uint256 _id,
-    uint256 _bidAmount,
     uint256 _amountToSell,
     uint256 _amountToRaise,
-    uint256 _raisedAmount,
     address _forgoneCollateralReceiver
   ) internal {
     vm.mockCall(
       address(mockCollateralAuctionHouse),
-      abi.encodeCall(mockCollateralAuctionHouse.bidAmount, (_id)),
-      abi.encode(_bidAmount)
-    );
-    vm.mockCall(
-      address(mockCollateralAuctionHouse),
-      abi.encodeCall(mockCollateralAuctionHouse.remainingAmountToSell, (_id)),
-      abi.encode(_amountToSell)
-    );
-    vm.mockCall(
-      address(mockCollateralAuctionHouse),
-      abi.encodeCall(mockCollateralAuctionHouse.amountToRaise, (_id)),
-      abi.encode(_amountToRaise)
-    );
-    vm.mockCall(
-      address(mockCollateralAuctionHouse),
-      abi.encodeCall(mockCollateralAuctionHouse.raisedAmount, (_id)),
-      abi.encode(_raisedAmount)
-    );
-    vm.mockCall(
-      address(mockCollateralAuctionHouse),
-      abi.encodeCall(mockCollateralAuctionHouse.forgoneCollateralReceiver, (_id)),
-      abi.encode(_forgoneCollateralReceiver)
+      abi.encodeCall(ICollateralAuctionHouse.auctions, (_id)),
+      abi.encode(_amountToSell, _amountToRaise, block.timestamp, _forgoneCollateralReceiver, address(0))
     );
   }
 
   function _mockOracleRead(uint256 _oracleReadValue) internal {
-    vm.mockCall(address(mockOracle), abi.encodeCall(mockOracle.read, ()), abi.encode(_oracleReadValue));
+    vm.mockCall(address(mockOracle), abi.encodeCall(IBaseOracle.read, ()), abi.encode(_oracleReadValue));
   }
 
   function _mockContractEnabled(bool _contractEnabled) internal {
@@ -205,34 +195,6 @@ abstract contract Base is HaiTest {
     stdstore.target(address(globalSettlement)).sig(IGlobalSettlement.coinsUsedToRedeem.selector).with_key(_cType)
       .with_key(_coinHolder).checked_write(_coinsUsedToRedeem);
   }
-
-  function _mockSafeEngine(address _safeEngine) internal {
-    stdstore.target(address(globalSettlement)).sig(IGlobalSettlement.safeEngine.selector).checked_write(_safeEngine);
-  }
-
-  function _mockLiquidationEngine(address _liquidationEngine) internal {
-    stdstore.target(address(globalSettlement)).sig(IGlobalSettlement.liquidationEngine.selector).checked_write(
-      _liquidationEngine
-    );
-  }
-
-  function _mockAccountingEngine(address _accountingEngine) internal {
-    stdstore.target(address(globalSettlement)).sig(IGlobalSettlement.accountingEngine.selector).checked_write(
-      _accountingEngine
-    );
-  }
-
-  function _mockOracleRelayer(address _oracleRelayer) internal {
-    stdstore.target(address(globalSettlement)).sig(IGlobalSettlement.oracleRelayer.selector).checked_write(
-      _oracleRelayer
-    );
-  }
-
-  function _mockStabilityFeeTreasury(address _stabilityFeeTreasury) internal {
-    stdstore.target(address(globalSettlement)).sig(IGlobalSettlement.stabilityFeeTreasury.selector).checked_write(
-      _stabilityFeeTreasury
-    );
-  }
 }
 
 contract Unit_GlobalSettlement_Constructor is Base {
@@ -247,11 +209,164 @@ contract Unit_GlobalSettlement_Constructor is Base {
     vm.expectEmit();
     emit AddAuthorization(user);
 
-    globalSettlement = new GlobalSettlement();
+    globalSettlement = new GlobalSettlement(
+      address(mockSafeEngine),
+      address(mockLiquidationEngine),
+      address(mockOracleRelayer),
+      address(mockCoinJoin),
+      address(mockCollateralJoinFactory),
+      address(mockCollateralAuctionHouseFactory),
+      address(mockStabilityFeeTreasury),
+      address(mockAccountingEngine),
+      IGlobalSettlement.GlobalSettlementParams({shutdownCooldown: 0})
+      );
   }
 
   function test_Set_ContractEnabled() public happyPath {
     assertEq(globalSettlement.contractEnabled(), true);
+  }
+
+  function test_Set_SafeEngine(address _safeEngine) public happyPath {
+    vm.assume(address(_safeEngine) != address(0));
+    globalSettlement = new GlobalSettlement(
+      _safeEngine,
+      address(mockLiquidationEngine),
+      address(mockOracleRelayer),
+      address(mockCoinJoin),
+      address(mockCollateralJoinFactory),
+      address(mockCollateralAuctionHouseFactory),
+      address(mockStabilityFeeTreasury),
+      address(mockAccountingEngine),
+      IGlobalSettlement.GlobalSettlementParams({shutdownCooldown: 0})
+      );
+    assertEq(address(globalSettlement.safeEngine()), _safeEngine);
+  }
+
+  function test_Set_LiquidationEngine(address _liquidationEngine) public happyPath {
+    vm.assume(address(_liquidationEngine) != address(0));
+    globalSettlement = new GlobalSettlement(
+      address(mockSafeEngine),
+      address(_liquidationEngine),
+      address(mockOracleRelayer),
+      address(mockCoinJoin),
+      address(mockCollateralJoinFactory),
+      address(mockCollateralAuctionHouseFactory),
+      address(mockStabilityFeeTreasury),
+      address(mockAccountingEngine),
+      IGlobalSettlement.GlobalSettlementParams({shutdownCooldown: 0})
+      );
+    assertEq(address(globalSettlement.liquidationEngine()), _liquidationEngine);
+  }
+
+  function test_Set_OracleRelayer(address _oracleRelayer) public happyPath {
+    vm.assume(address(_oracleRelayer) != address(0));
+    globalSettlement = new GlobalSettlement(
+      address(mockSafeEngine),
+      address(mockLiquidationEngine),
+      address(_oracleRelayer),
+      address(mockCoinJoin),
+      address(mockCollateralJoinFactory),
+      address(mockCollateralAuctionHouseFactory),
+      address(mockStabilityFeeTreasury),
+      address(mockAccountingEngine),
+      IGlobalSettlement.GlobalSettlementParams({shutdownCooldown: 0})
+      );
+    assertEq(address(globalSettlement.oracleRelayer()), _oracleRelayer);
+  }
+
+  function test_Set_CoinJoin(address _coinJoin) public happyPath {
+    vm.assume(address(_coinJoin) != address(0));
+    globalSettlement = new GlobalSettlement(
+      address(mockSafeEngine),
+      address(mockLiquidationEngine),
+      address(mockOracleRelayer),
+      address(_coinJoin),
+      address(mockCollateralJoinFactory),
+      address(mockCollateralAuctionHouseFactory),
+      address(mockStabilityFeeTreasury),
+      address(mockAccountingEngine),
+      IGlobalSettlement.GlobalSettlementParams({shutdownCooldown: 0})
+      );
+    assertEq(address(globalSettlement.coinJoin()), _coinJoin);
+  }
+
+  function test_Set_CollateralJoinFactory(address _collateralJoinFactory) public happyPath {
+    vm.assume(address(_collateralJoinFactory) != address(0));
+    globalSettlement = new GlobalSettlement(
+      address(mockSafeEngine),
+      address(mockLiquidationEngine),
+      address(mockOracleRelayer),
+      address(mockCoinJoin),
+      address(_collateralJoinFactory),
+      address(mockCollateralAuctionHouseFactory),
+      address(mockStabilityFeeTreasury),
+      address(mockAccountingEngine),
+      IGlobalSettlement.GlobalSettlementParams({shutdownCooldown: 0})
+      );
+    assertEq(address(globalSettlement.collateralJoinFactory()), _collateralJoinFactory);
+  }
+
+  function test_Set_CollateralAuctionHouseFactory(address _collateralAuctionHouseFactory) public happyPath {
+    vm.assume(address(_collateralAuctionHouseFactory) != address(0));
+    globalSettlement = new GlobalSettlement(
+      address(mockSafeEngine),
+      address(mockLiquidationEngine),
+      address(mockOracleRelayer),
+      address(mockCoinJoin),
+      address(mockCollateralJoinFactory),
+      address(_collateralAuctionHouseFactory),
+      address(mockStabilityFeeTreasury),
+      address(mockAccountingEngine),
+      IGlobalSettlement.GlobalSettlementParams({shutdownCooldown: 0})
+      );
+    assertEq(address(globalSettlement.collateralAuctionHouseFactory()), _collateralAuctionHouseFactory);
+  }
+
+  function test_Set_StabilityFeeTreasury(address _sfTreasury) public happyPath {
+    vm.assume(address(_sfTreasury) != address(0));
+    globalSettlement = new GlobalSettlement(
+      address(mockSafeEngine),
+      address(mockLiquidationEngine),
+      address(mockOracleRelayer),
+      address(mockCoinJoin),
+      address(mockCollateralJoinFactory),
+      address(mockCollateralAuctionHouseFactory),
+      address(_sfTreasury),
+      address(mockAccountingEngine),
+      IGlobalSettlement.GlobalSettlementParams({shutdownCooldown: 0})
+      );
+    assertEq(address(globalSettlement.stabilityFeeTreasury()), _sfTreasury);
+  }
+
+  function test_Set_AccountingEngine(address _accountingEngine) public happyPath {
+    vm.assume(address(_accountingEngine) != address(0));
+    globalSettlement = new GlobalSettlement(
+      address(mockSafeEngine),
+      address(mockLiquidationEngine),
+      address(mockOracleRelayer),
+      address(mockCoinJoin),
+      address(mockCollateralJoinFactory),
+      address(mockCollateralAuctionHouseFactory),
+      address(mockStabilityFeeTreasury),
+      address(_accountingEngine),
+      IGlobalSettlement.GlobalSettlementParams({shutdownCooldown: 0})
+      );
+    assertEq(address(globalSettlement.accountingEngine()), _accountingEngine);
+  }
+
+  function test_Set_ShutdownCooldown(uint256 _cooldown) public happyPath {
+    globalSettlement = new GlobalSettlement(
+      address(mockSafeEngine),
+      address(mockLiquidationEngine),
+      address(mockOracleRelayer),
+      address(mockCoinJoin),
+      address(mockCollateralJoinFactory),
+      address(mockCollateralAuctionHouseFactory),
+      address(mockStabilityFeeTreasury),
+      address(mockAccountingEngine),
+      IGlobalSettlement.GlobalSettlementParams({shutdownCooldown: _cooldown})
+      );
+    assertEq(globalSettlement.params().shutdownCooldown, _cooldown);
   }
 }
 
@@ -271,16 +386,7 @@ contract Unit_GlobalSettlement_ShutdownSystem is Base {
   modifier happyPath() {
     vm.startPrank(authorizedAccount);
 
-    _mockValues();
     _;
-  }
-
-  function _mockValues() internal {
-    _mockSafeEngine(address(mockSafeEngine));
-    _mockLiquidationEngine(address(mockLiquidationEngine));
-    _mockAccountingEngine(address(mockAccountingEngine));
-    _mockOracleRelayer(address(mockOracleRelayer));
-    _mockStabilityFeeTreasury(address(mockStabilityFeeTreasury));
   }
 
   function test_Revert_Unauthorized() public {
@@ -306,39 +412,49 @@ contract Unit_GlobalSettlement_ShutdownSystem is Base {
   }
 
   function test_Call_SafeEngine_DisableContract() public happyPath {
-    vm.expectCall(address(mockSafeEngine), abi.encodeCall(mockSafeEngine.disableContract, ()), 1);
+    vm.expectCall(address(mockSafeEngine), abi.encodeCall(IDisableable.disableContract, ()), 1);
+
+    globalSettlement.shutdownSystem();
+  }
+
+  function test_Call_CAHFactory_DisableContract() public happyPath {
+    vm.expectCall(address(mockCollateralAuctionHouseFactory), abi.encodeCall(IDisableable.disableContract, ()), 1);
+
+    globalSettlement.shutdownSystem();
+  }
+
+  function test_Call_CoinJoin_DisableContract() public happyPath {
+    vm.expectCall(address(mockCoinJoin), abi.encodeCall(IDisableable.disableContract, ()), 1);
+
+    globalSettlement.shutdownSystem();
+  }
+
+  function test_Call_CollateralJoinFactory_DisableContract() public happyPath {
+    vm.expectCall(address(mockCollateralJoinFactory), abi.encodeCall(IDisableable.disableContract, ()), 1);
 
     globalSettlement.shutdownSystem();
   }
 
   function test_Call_LiquidationEngine_DisableContract() public happyPath {
-    vm.expectCall(address(mockLiquidationEngine), abi.encodeCall(mockLiquidationEngine.disableContract, ()), 1);
-
-    globalSettlement.shutdownSystem();
-  }
-
-  function test_NotCall_StabilityFeeTreasury_DisableContract() public happyPath {
-    _mockStabilityFeeTreasury(address(0));
-
-    vm.expectCall(address(mockStabilityFeeTreasury), abi.encodeCall(mockStabilityFeeTreasury.disableContract, ()), 0);
+    vm.expectCall(address(mockLiquidationEngine), abi.encodeCall(IDisableable.disableContract, ()), 1);
 
     globalSettlement.shutdownSystem();
   }
 
   function test_Call_StabilityFeeTreasury_DisableContract() public happyPath {
-    vm.expectCall(address(mockStabilityFeeTreasury), abi.encodeCall(mockStabilityFeeTreasury.disableContract, ()), 1);
+    vm.expectCall(address(mockStabilityFeeTreasury), abi.encodeCall(IDisableable.disableContract, ()), 1);
 
     globalSettlement.shutdownSystem();
   }
 
   function test_Call_AccountingEngine_DisableContract() public happyPath {
-    vm.expectCall(address(mockAccountingEngine), abi.encodeCall(mockAccountingEngine.disableContract, ()), 1);
+    vm.expectCall(address(mockAccountingEngine), abi.encodeCall(IDisableable.disableContract, ()), 1);
 
     globalSettlement.shutdownSystem();
   }
 
   function test_Call_OracleRelayer_DisableContract() public happyPath {
-    vm.expectCall(address(mockOracleRelayer), abi.encodeCall(mockOracleRelayer.disableContract, ()), 1);
+    vm.expectCall(address(mockOracleRelayer), abi.encodeCall(IDisableable.disableContract, ()), 1);
 
     globalSettlement.shutdownSystem();
   }
@@ -376,8 +492,6 @@ contract Unit_GlobalSettlement_FreezeCollateralType is Base {
   ) internal {
     _mockContractEnabled(false);
     _mockFinalCoinPerCollateralPrice(_cType, _finalCoinPerCollateralPrice);
-    _mockSafeEngine(address(mockSafeEngine));
-    _mockOracleRelayer(address(mockOracleRelayer));
     _mockSafeEngineCollateralData(_cType, _debtAmount, 0, 0, 0, 0);
     _mockOracleRelayerCollateralParams(_cType, address(mockOracle), 0, 0);
     _mockRedemptionPrice(_redemptionPrice);
@@ -442,10 +556,8 @@ contract Unit_GlobalSettlement_FastTrackAuction is Base {
     uint256 collateralTotalDebt;
     uint256 accumulatedRate;
     uint256 id;
-    uint256 bidAmount;
     uint256 amountToSell;
     uint256 amountToRaise;
-    uint256 raisedAmount;
     address forgoneCollateralReceiver;
   }
 
@@ -459,10 +571,11 @@ contract Unit_GlobalSettlement_FastTrackAuction is Base {
 
   function _assumeHappyPath(FastTrackAuctionStruct memory _auction) internal pure returns (uint256 _debt) {
     vm.assume(_auction.finalCoinPerCollateralPrice != 0);
-    vm.assume(notUnderflow(_auction.amountToRaise, _auction.raisedAmount));
     vm.assume(_auction.accumulatedRate != 0);
+    vm.assume(_auction.amountToSell > 0);
+    vm.assume(_auction.amountToRaise > 0);
 
-    _debt = (_auction.amountToRaise - _auction.raisedAmount) / _auction.accumulatedRate;
+    _debt = _auction.amountToRaise / _auction.accumulatedRate;
 
     vm.assume(notOverflowAdd(_auction.collateralTotalDebt, _debt));
     vm.assume(notOverflowInt256(_auction.amountToSell));
@@ -472,19 +585,9 @@ contract Unit_GlobalSettlement_FastTrackAuction is Base {
   function _mockValues(FastTrackAuctionStruct memory _auction) internal {
     _mockFinalCoinPerCollateralPrice(_auction.collateralType, _auction.finalCoinPerCollateralPrice);
     _mockCollateralTotalDebt(_auction.collateralType, _auction.collateralTotalDebt);
-    _mockSafeEngine(address(mockSafeEngine));
-    _mockLiquidationEngine(address(mockLiquidationEngine));
-    _mockAccountingEngine(address(mockAccountingEngine));
     _mockSafeEngineCollateralData(_auction.collateralType, 0, 0, _auction.accumulatedRate, 0, 0);
     _mockLiquidationEngineCollateralParams(_auction.collateralType, address(mockCollateralAuctionHouse), 0, 0);
-    _mockAuction(
-      _auction.id,
-      _auction.bidAmount,
-      _auction.amountToSell,
-      _auction.amountToRaise,
-      _auction.raisedAmount,
-      _auction.forgoneCollateralReceiver
-    );
+    _mockAuction(_auction.id, _auction.amountToSell, _auction.amountToRaise, _auction.forgoneCollateralReceiver);
   }
 
   function test_Revert_FinalCollateralPriceNotDefined(FastTrackAuctionStruct memory _auction) public {
@@ -495,10 +598,9 @@ contract Unit_GlobalSettlement_FastTrackAuction is Base {
 
   function test_Revert_IntOverflow_0(FastTrackAuctionStruct memory _auction) public {
     vm.assume(_auction.finalCoinPerCollateralPrice != 0);
-    vm.assume(notUnderflow(_auction.amountToRaise, _auction.raisedAmount));
     vm.assume(_auction.accumulatedRate != 0);
 
-    uint256 _debt = (_auction.amountToRaise - _auction.raisedAmount) / _auction.accumulatedRate;
+    uint256 _debt = _auction.amountToRaise / _auction.accumulatedRate;
 
     vm.assume(notOverflowAdd(_auction.collateralTotalDebt, _debt));
     vm.assume(!notOverflowInt256(_auction.amountToSell));
@@ -512,10 +614,9 @@ contract Unit_GlobalSettlement_FastTrackAuction is Base {
 
   function test_Revert_IntOverflow_1(FastTrackAuctionStruct memory _auction) public {
     vm.assume(_auction.finalCoinPerCollateralPrice != 0);
-    vm.assume(notUnderflow(_auction.amountToRaise, _auction.raisedAmount));
     vm.assume(_auction.accumulatedRate != 0);
 
-    uint256 _debt = (_auction.amountToRaise - _auction.raisedAmount) / _auction.accumulatedRate;
+    uint256 _debt = _auction.amountToRaise / _auction.accumulatedRate;
 
     vm.assume(notOverflowAdd(_auction.collateralTotalDebt, _debt));
     vm.assume(notOverflowInt256(_auction.amountToSell));
@@ -533,29 +634,8 @@ contract Unit_GlobalSettlement_FastTrackAuction is Base {
       address(mockSafeEngine),
       abi.encodeCall(
         mockSafeEngine.createUnbackedDebt,
-        (address(mockAccountingEngine), address(mockAccountingEngine), _auction.amountToRaise - _auction.raisedAmount)
+        (address(mockAccountingEngine), address(mockAccountingEngine), _auction.amountToRaise)
       ),
-      1
-    );
-    vm.expectCall(
-      address(mockSafeEngine),
-      abi.encodeCall(
-        mockSafeEngine.createUnbackedDebt,
-        (address(mockAccountingEngine), address(globalSettlement), _auction.bidAmount)
-      ),
-      1
-    );
-
-    globalSettlement.fastTrackAuction(_auction.collateralType, _auction.id);
-  }
-
-  function test_Call_SafeEngine_ApproveSAFEModification(FastTrackAuctionStruct memory _auction)
-    public
-    happyPath(_auction)
-  {
-    vm.expectCall(
-      address(mockSafeEngine),
-      abi.encodeCall(mockSafeEngine.approveSAFEModification, (address(mockCollateralAuctionHouse))),
       1
     );
 
@@ -568,7 +648,7 @@ contract Unit_GlobalSettlement_FastTrackAuction is Base {
   {
     vm.expectCall(
       address(mockCollateralAuctionHouse),
-      abi.encodeCall(mockCollateralAuctionHouse.terminateAuctionPrematurely, (_auction.id)),
+      abi.encodeCall(ICollateralAuctionHouse.terminateAuctionPrematurely, (_auction.id)),
       1
     );
 
@@ -655,8 +735,6 @@ contract Unit_GlobalSettlement_ProcessSAFE is Base {
   function _mockValues(ProcessSAFEStruct memory _safeData) internal {
     _mockFinalCoinPerCollateralPrice(_safeData.collateralType, _safeData.finalCoinPerCollateralPrice);
     _mockCollateralShortfall(_safeData.collateralType, _safeData.collateralShortfall);
-    _mockSafeEngine(address(mockSafeEngine));
-    _mockAccountingEngine(address(mockAccountingEngine));
     _mockSafeEngineCollateralData(_safeData.collateralType, 0, 0, _safeData.accumulatedRate, 0, 0);
     _mockSafeEngineSafeData(
       _safeData.collateralType, _safeData.safe, _safeData.lockedCollateral, _safeData.generatedDebt
@@ -756,8 +834,6 @@ contract Unit_GlobalSettlement_FreeCollateral is Base {
 
   function _mockValues(bytes32 _cType, uint256 _lockedCollateral, uint256 _generatedDebt) internal {
     _mockContractEnabled(false);
-    _mockSafeEngine(address(mockSafeEngine));
-    _mockAccountingEngine(address(mockAccountingEngine));
     _mockSafeEngineSafeData(_cType, user, _lockedCollateral, _generatedDebt);
   }
 
@@ -841,8 +917,6 @@ contract Unit_GlobalSettlement_SetOutstandingCoinSupply is Base {
     _mockShutdownTime(_shutdownTime);
     _mockShutdownCooldown(_shutdownCooldown);
     _mockOutstandingCoinSupply(_outstandingCoinSupply);
-    _mockSafeEngine(address(mockSafeEngine));
-    _mockAccountingEngine(address(mockAccountingEngine));
     _mockCoinBalance(address(mockAccountingEngine), _coinBalance);
     _mockGlobalDebt(_globalDebt);
   }
@@ -942,7 +1016,6 @@ contract Unit_GlobalSettlement_CalculateCashPrice is Base {
     _mockCollateralShortfall(_cType, _collateralShortfall);
     _mockCollateralTotalDebt(_cType, _collateralTotalDebt);
     _mockCollateralCashPrice(_cType, _collateralCashPrice);
-    _mockSafeEngine(address(mockSafeEngine));
     _mockSafeEngineCollateralData(_cType, 0, 0, _accumulatedRate, 0, 0);
   }
 
@@ -1046,8 +1119,6 @@ contract Unit_GlobalSettlement_PrepareCoinsForRedeeming is Base {
   function _mockValues(uint256 _outstandingCoinSupply, uint256 _coinBag) internal {
     _mockOutstandingCoinSupply(_outstandingCoinSupply);
     _mockCoinBag(user, _coinBag);
-    _mockSafeEngine(address(mockSafeEngine));
-    _mockAccountingEngine(address(mockAccountingEngine));
   }
 
   function test_Revert_OutstandingCoinSupplyZero(uint256 _coinAmount) public {
@@ -1126,7 +1197,6 @@ contract Unit_GlobalSettlement_RedeemCollateral is Base {
     _mockCollateralCashPrice(_collateralData.collateralType, _collateralData.collateralCashPrice);
     _mockCoinBag(user, _collateralData.coinBag);
     _mockCoinsUsedToRedeem(_collateralData.collateralType, user, _collateralData.coinsUsedToRedeem);
-    _mockSafeEngine(address(mockSafeEngine));
   }
 
   function test_Revert_CollateralCashPriceNotDefined(RedeemCollateralStruct memory _collateralData) public {
@@ -1210,31 +1280,43 @@ contract Unit_GlobalSettlement_ModifyParameters is Base {
     globalSettlement.modifyParameters(_param, _data);
   }
 
-  function test_Set_SafeEngine(address _safeEngine) public happyPath {
-    globalSettlement.modifyParameters('safeEngine', abi.encode(_safeEngine));
-
-    assertEq(address(globalSettlement.safeEngine()), _safeEngine);
-  }
-
   function test_Set_LiquidationEngine(address _liquidationEngine) public happyPath {
+    vm.assume(_liquidationEngine != address(0));
     globalSettlement.modifyParameters('liquidationEngine', abi.encode(_liquidationEngine));
 
     assertEq(address(globalSettlement.liquidationEngine()), _liquidationEngine);
   }
 
   function test_Set_AccountingEngine(address _accountingEngine) public happyPath {
+    vm.assume(_accountingEngine != address(0));
     globalSettlement.modifyParameters('accountingEngine', abi.encode(_accountingEngine));
 
     assertEq(address(globalSettlement.accountingEngine()), _accountingEngine);
   }
 
   function test_Set_OracleRelayer(address _oracleRelayer) public happyPath {
+    vm.assume(_oracleRelayer != address(0));
     globalSettlement.modifyParameters('oracleRelayer', abi.encode(_oracleRelayer));
 
     assertEq(address(globalSettlement.oracleRelayer()), _oracleRelayer);
   }
 
+  function test_Set_CoinJoin(address _coinJoin) public happyPath {
+    vm.assume(_coinJoin != address(0));
+    globalSettlement.modifyParameters('coinJoin', abi.encode(_coinJoin));
+
+    assertEq(address(globalSettlement.coinJoin()), _coinJoin);
+  }
+
+  function test_Set_CollateralJoinFactory(address _collateralJoinFactory) public happyPath {
+    vm.assume(_collateralJoinFactory != address(0));
+    globalSettlement.modifyParameters('collateralJoinFactory', abi.encode(_collateralJoinFactory));
+
+    assertEq(address(globalSettlement.collateralJoinFactory()), _collateralJoinFactory);
+  }
+
   function test_Set_StabilityFeeTreasury(address _stabilityFeeTreasury) public happyPath {
+    vm.assume(_stabilityFeeTreasury != address(0));
     globalSettlement.modifyParameters('stabilityFeeTreasury', abi.encode(_stabilityFeeTreasury));
 
     assertEq(address(globalSettlement.stabilityFeeTreasury()), _stabilityFeeTreasury);

@@ -12,16 +12,30 @@ import {Modifiable} from '@contracts/utils/Modifiable.sol';
 
 import {Encoding} from '@libraries/Encoding.sol';
 
+/**
+ * @title  LiquidationJob
+ * @notice This contract contains rewarded methods to handle the SAFE liquidations
+ */
 contract LiquidationJob is Job, Authorizable, Modifiable, ILiquidationJob {
   using Encoding for bytes;
 
   // --- Data ---
+
+  /// @inheritdoc ILiquidationJob
   bool public shouldWork;
 
   // --- Registry ---
+
+  /// @inheritdoc ILiquidationJob
   ILiquidationEngine public liquidationEngine;
 
   // --- Init ---
+
+  /**
+   * @param  _liquidationEngine Address of the LiquidationEngine contract
+   * @param  _stabilityFeeTreasury Address of the StabilityFeeTreasury contract
+   * @param  _rewardAmount Amount of tokens to reward per job transaction [wad]
+   */
   constructor(
     address _liquidationEngine,
     address _stabilityFeeTreasury,
@@ -33,6 +47,8 @@ contract LiquidationJob is Job, Authorizable, Modifiable, ILiquidationJob {
   }
 
   // --- Job ---
+
+  /// @inheritdoc ILiquidationJob
   function workLiquidation(bytes32 _cType, address _safe) external reward {
     if (!shouldWork) revert NotWorkable();
     liquidationEngine.liquidateSAFE(_cType, _safe);
@@ -40,6 +56,7 @@ contract LiquidationJob is Job, Authorizable, Modifiable, ILiquidationJob {
 
   // --- Administration ---
 
+  /// @inheritdoc Modifiable
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     address _address = _data.toAddress();
 

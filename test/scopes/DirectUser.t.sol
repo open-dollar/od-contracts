@@ -6,11 +6,13 @@ import {ETH_A} from '@script/Params.s.sol';
 import {
   Contracts,
   ICollateralJoin,
-  ERC20ForTest,
+  MintableERC20,
   IERC20Metadata,
   ISAFEEngine,
   ICollateralAuctionHouse
 } from '@script/Contracts.s.sol';
+import {IWeth} from '@interfaces/external/IWeth.sol';
+import {OP_WETH} from '@script/Registry.s.sol';
 import {BaseUser} from '@test/scopes/BaseUser.t.sol';
 
 abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
@@ -23,12 +25,22 @@ abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
     _lockedCollateral = _safe.lockedCollateral;
   }
 
+  function _getSafeHandler(bytes32, address _user) internal pure override returns (address _safeHandler) {
+    return _user;
+  }
+
   function _getCollateralBalance(address _user, bytes32 _cType) internal view override returns (uint256 _wad) {
     IERC20Metadata _collateral = collateral[_cType];
     uint256 _decimals = _collateral.decimals();
     uint256 _wei = _collateral.balanceOf(_user);
     _wad = _wei * 10 ** (18 - _decimals);
   }
+
+  function _getInternalCoinBalance(address _user) internal view override returns (uint256 _rad) {
+    _rad = safeEngine.coinBalance(_user);
+  }
+
+  // --- SAFE actions ---
 
   function _lockETH(address _user, uint256 _amount) internal override {
     vm.prank(_user);
@@ -42,7 +54,13 @@ abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
     uint256 _wei = _amount / 10 ** (18 - _decimals);
 
     vm.startPrank(_user);
-    ERC20ForTest(address(_collateral)).mint(_user, _wei);
+    if (address(_collateral) != OP_WETH) {
+      MintableERC20(address(_collateral)).mint(_user, _wei);
+    } else {
+      vm.deal(_user, _wei);
+      IWeth(address(_collateral)).deposit{value: _wei}();
+    }
+
     _collateral.approve(address(_collateralJoin), _wei);
     ICollateralJoin(_collateralJoin).join(_user, _wei);
     vm.stopPrank();
@@ -128,6 +146,8 @@ abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
     _exitCollateral(_user, _collateralJoin, _deltaCollat);
   }
 
+  // --- Bidding actions ---
+
   function _buyCollateral(
     address _user,
     address _collateralAuctionHouse,
@@ -174,7 +194,7 @@ abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
     vm.stopPrank();
   }
 
-  function _settleAuction(address _user, uint256 _auctionId) internal override {
+  function _settleSurplusAuction(address _user, uint256 _auctionId) internal override {
     surplusAuctionHouse.settleAuction(_auctionId);
 
     _collectSystemCoins(_user);
@@ -185,6 +205,57 @@ abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
 
     _exitCoin(_user, _systemCoinInternalBalance / 1e27);
   }
+
+  // --- Global Settlement actions ---
+
+  function _increasePostSettlementBidSize(address _user, uint256 _auctionId, uint256 _bidAmount) internal override {
+    uint256 _amountToSell = postSettlementSurplusAuctionHouse.auctions(_auctionId).amountToSell;
+
+    vm.startPrank(_user);
+    protocolToken.approve(address(postSettlementSurplusAuctionHouse), _bidAmount);
+    postSettlementSurplusAuctionHouse.increaseBidSize(_auctionId, _amountToSell, _bidAmount);
+    vm.stopPrank();
+  }
+
+  function _settlePostSettlementSurplusAuction(address _user, uint256 _auctionId) internal override {
+    postSettlementSurplusAuctionHouse.settleAuction(_auctionId);
+  }
+
+  function _freeCollateral(address _user, bytes32 _cType) internal override returns (uint256 _remainderCollateral) {
+    globalSettlement.processSAFE(_cType, _user);
+
+    _remainderCollateral = safeEngine.safes(_cType, _user).lockedCollateral;
+    if (_remainderCollateral > 0) {
+      vm.prank(_user);
+      globalSettlement.freeCollateral(_cType);
+      _exitCollateral(_user, address(collateralJoin[_cType]), _remainderCollateral);
+    }
+  }
+
+  function _prepareCoinsForRedeeming(address _user, uint256 _amount) internal override {
+    uint256 _internalCoins = safeEngine.coinBalance(_user) / 1e27;
+    uint256 _coinsToJoin = _internalCoins >= _amount ? 0 : _amount - _internalCoins;
+
+    _joinCoins(_user, _coinsToJoin); // has prank
+    vm.startPrank(_user);
+    safeEngine.approveSAFEModification(address(globalSettlement));
+    globalSettlement.prepareCoinsForRedeeming(_amount);
+    vm.stopPrank();
+  }
+
+  function _redeemCollateral(
+    address _user,
+    bytes32 _cType,
+    uint256 _coinsAmount
+  ) internal override returns (uint256 _collateralAmount) {
+    vm.prank(_user);
+    globalSettlement.redeemCollateral(_cType, _coinsAmount);
+
+    _collateralAmount = safeEngine.tokenCollateral(_cType, _user);
+    _exitCollateral(_user, address(collateralJoin[_cType]), _collateralAmount);
+  }
+
+  // --- Rewarded actions ---
 
   function _workPopDebtFromQueue(address _user, uint256 _debtBlockTimestamp) internal override {
     vm.prank(_user);

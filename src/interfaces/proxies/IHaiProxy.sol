@@ -1,0 +1,28 @@
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity 0.8.19;
+
+import {IOwnable} from '@interfaces/utils/IOwnable.sol';
+
+interface IHaiProxy is IOwnable {
+  // --- Errors ---
+
+  /// @notice Throws if the target address is null
+  error TargetAddressRequired();
+
+  /**
+   * @notice Throws if the target call fails
+   * @param  _response The error response log of the target call
+   */
+  error TargetCallFailed(bytes _response);
+
+  // --- Methods ---
+
+  /**
+   * @notice Executes a call to the target contract through a delegate call
+   * @param  _target Address of the target Actions contract
+   * @param  _data Encoded data of the transaction to execute
+   * @return _response The raw response of the target call
+   * @dev    The proxy will call the target through a delegate call (the target must not be a direct protocol contract)
+   */
+  function execute(address _target, bytes memory _data) external payable returns (bytes memory _response);
+}
