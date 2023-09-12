@@ -12,6 +12,10 @@ import {Encoding} from '@libraries/Encoding.sol';
 import {Math, RAY, WAD} from '@libraries/Math.sol';
 import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
 
+/**
+ * @title  TaxCollector
+ * @notice This contract calculates and collects the stability fee from all collateral types
+ */
 contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
   using Math for uint256;
   using Encoding for bytes;
@@ -21,37 +25,47 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
   using EnumerableSet for EnumerableSet.Bytes32Set;
 
   // --- Registry ---
+
+  /// @inheritdoc ITaxCollector
   ISAFEEngine public safeEngine;
 
   // --- Data ---
+
+  /// @inheritdoc ITaxCollector
   // solhint-disable-next-line private-vars-leading-underscore
   TaxCollectorParams public _params;
 
+  /// @inheritdoc ITaxCollector
   function params() external view returns (TaxCollectorParams memory _taxCollectorParams) {
     return _params;
   }
 
+  /// @inheritdoc ITaxCollector
   // solhint-disable-next-line private-vars-leading-underscore
-  mapping(bytes32 => TaxCollectorCollateralParams) public _cParams;
+  mapping(bytes32 _cType => TaxCollectorCollateralParams) public _cParams;
 
+  /// @inheritdoc ITaxCollector
   function cParams(bytes32 _cType) external view returns (TaxCollectorCollateralParams memory _taxCollectorCParams) {
     return _cParams[_cType];
   }
 
-  // Data about each collateral type
+  /// @inheritdoc ITaxCollector
   // solhint-disable-next-line private-vars-leading-underscore
-  mapping(bytes32 => TaxCollectorCollateralData) public _cData;
+  mapping(bytes32 _cType => TaxCollectorCollateralData) public _cData;
 
+  /// @inheritdoc ITaxCollector
   function cData(bytes32 _cType) external view returns (TaxCollectorCollateralData memory _taxCollectorCData) {
     return _cData[_cType];
   }
 
-  // Each collateral type that sends SF to a specific tax receiver
-  mapping(address => EnumerableSet.Bytes32Set) internal _secondaryReceiverRevenueSources;
-  // Tax receiver data
-  // solhint-disable-next-line private-vars-leading-underscore
-  mapping(bytes32 => mapping(address => TaxReceiver)) public _secondaryTaxReceivers;
+  /// @notice List of collateral types that send SF to a specific tax receiver
+  mapping(address _taxReceiver => EnumerableSet.Bytes32Set) internal _secondaryReceiverRevenueSources;
 
+  /// @inheritdoc ITaxCollector
+  // solhint-disable-next-line private-vars-leading-underscore
+  mapping(bytes32 _cType => mapping(address _taxReceiver => TaxReceiver)) public _secondaryTaxReceivers;
+
+  /// @inheritdoc ITaxCollector
   function secondaryTaxReceivers(
     bytes32 _cType,
     address _receiver
@@ -59,23 +73,25 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
     return _secondaryTaxReceivers[_cType][_receiver];
   }
 
-  // All collateral types
+  /// @notice Enumerable set with the initialized collateral types
   EnumerableSet.Bytes32Set internal _collateralList;
-  // Enumerable set with tax receiver data
+
+  /// @notice Enumerable set with the active secondary tax receivers
   EnumerableSet.AddressSet internal _secondaryReceivers;
 
   // --- Init ---
+
+  /**
+   * @param  _safeEngine Address of the SAFEEngine contract
+   * @param  _taxCollectorParams Initial valid TaxCollector parameters struct
+   */
   constructor(address _safeEngine, TaxCollectorParams memory _taxCollectorParams) Authorizable(msg.sender) validParams {
     safeEngine = ISAFEEngine(_safeEngine.assertNonNull());
     _params = _taxCollectorParams;
     _setPrimaryTaxReceiver(_taxCollectorParams.primaryTaxReceiver);
   }
 
-  /**
-   * @notice Initialize a brand new collateral type
-   * @param _cType Collateral type name (e.g ETH-A, TBTC-B)
-   * @param _taxCollectorCParams Collateral type parameters
-   */
+  /// @inheritdoc ITaxCollector
   function initializeCollateralType(
     bytes32 _cType,
     TaxCollectorCollateralParams memory _taxCollectorCParams
@@ -89,9 +105,8 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
   }
 
   // --- Tax Collection Utils ---
-  /**
-   * @notice Check if multiple collateral types are up to date with taxation
-   */
+
+  /// @inheritdoc ITaxCollector
   function collectedManyTax(uint256 _start, uint256 _end) public view returns (bool _ok) {
     if (_start > _end || _end >= _collateralList.length()) revert TaxCollector_InvalidIndexes();
     for (uint256 _i = _start; _i <= _end; ++_i) {
@@ -103,12 +118,7 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
     _ok = true;
   }
 
-  /**
-   * @notice Check how much SF will be charged (to collateral types between indexes 'start' and 'end'
-   *         in the collateralList) during the next taxation
-   * @param _start Index in collateralList from which to start looping and calculating the tax outcome
-   * @param _end Index in collateralList at which we stop looping and calculating the tax outcome
-   */
+  /// @inheritdoc ITaxCollector
   function taxManyOutcome(uint256 _start, uint256 _end) public view returns (bool _ok, int256 _rad) {
     if (_start > _end || _end >= _collateralList.length()) revert TaxCollector_InvalidIndexes();
     int256 _primaryReceiverBalance = -safeEngine.coinBalance(_params.primaryTaxReceiver).toInt();
@@ -132,12 +142,7 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
     }
   }
 
-  /**
-   * @notice Get how much SF will be distributed after taxing a specific collateral type
-   * @param _cType Collateral type to compute the taxation outcome for
-   * @return _newlyAccumulatedRate The newly accumulated rate
-   * @return _deltaRate The delta between the new and the last accumulated rates
-   */
+  /// @inheritdoc ITaxCollector
   function taxSingleOutcome(bytes32 _cType) public view returns (uint256 _newlyAccumulatedRate, int256 _deltaRate) {
     uint256 _lastAccumulatedRate = safeEngine.cData(_cType).accumulatedRate;
 
@@ -148,36 +153,35 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
   }
 
   // --- Tax Receiver Utils ---
-  /**
-   * @notice Get the secondary tax receiver list length
-   */
+
+  /// @inheritdoc ITaxCollector
   function secondaryReceiversListLength() public view returns (uint256 _secondaryReceiversListLength) {
     return _secondaryReceivers.length();
   }
 
-  /**
-   * @notice Get the collateralList length
-   */
+  /// @inheritdoc ITaxCollector
   function collateralListLength() public view returns (uint256 _collateralListLength) {
     return _collateralList.length();
   }
 
-  /**
-   * @notice Check if a tax receiver is at a certain position in the list
-   */
+  /// @inheritdoc ITaxCollector
   function isSecondaryReceiver(address _receiver) public view returns (bool _isSecondaryReceiver) {
     return _secondaryReceivers.contains(_receiver);
   }
 
   // --- Views ---
+
+  /// @inheritdoc ITaxCollector
   function collateralList() external view returns (bytes32[] memory __collateralList) {
     return _collateralList.values();
   }
 
+  /// @inheritdoc ITaxCollector
   function secondaryReceiversList() external view returns (address[] memory _secondaryReceiversList) {
     return _secondaryReceivers.values();
   }
 
+  /// @inheritdoc ITaxCollector
   function secondaryReceiverRevenueSourcesList(address _secondaryReceiver)
     external
     view
@@ -187,11 +191,8 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
   }
 
   // --- Tax (Stability Fee) Collection ---
-  /**
-   * @notice Collect tax from multiple collateral types at once
-   * @param _start Index in collateralList from which to start looping and calculating the tax outcome
-   * @param _end Index in collateralList at which we stop looping and calculating the tax outcome
-   */
+
+  /// @inheritdoc ITaxCollector
   function taxMany(uint256 _start, uint256 _end) external {
     if (_start > _end || _end >= _collateralList.length()) revert TaxCollector_InvalidIndexes();
     for (uint256 _i = _start; _i <= _end; ++_i) {
@@ -199,10 +200,7 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
     }
   }
 
-  /**
-   * @notice Collect tax from a single collateral type
-   * @param _cType Collateral type to tax
-   */
+  /// @inheritdoc ITaxCollector
   function taxSingle(bytes32 _cType) public returns (uint256 _latestAccumulatedRate) {
     TaxCollectorCollateralData memory __cData = _cData[_cType];
 
@@ -224,6 +222,12 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
     return _latestAccumulatedRate;
   }
 
+  /**
+   * @notice Compute the next stability fee for a collateral type, bounded by the maxStabilityFeeRange
+   * @param  _cType Bytes32 identifier of the collateral type
+   * @return _nextStabilityFee The next stability fee to be applied for the collateral type
+   * @dev    The stability fee calculation is bounded by the maxStabilityFeeRange
+   */
   function _getNextStabilityFee(bytes32 _cType) internal view returns (uint256 _nextStabilityFee) {
     _nextStabilityFee = _params.globalStabilityFee.rmul(_cParams[_cType].stabilityFee);
     if (_nextStabilityFee < RAY - _params.maxStabilityFeeRange) return RAY - _params.maxStabilityFeeRange;
@@ -232,8 +236,9 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
 
   /**
    * @notice Split SF between all tax receivers
-   * @param _cType Collateral type to distribute SF for
-   * @param _deltaRate Difference between the last and the latest accumulate rates for the collateralType
+   * @param  _cType Collateral type to distribute SF for
+   * @param  _debtAmount Total debt currently issued for the collateral type
+   * @param  _deltaRate Difference between the last and the latest accumulate rates for the collateralType
    */
   function _splitTaxIncome(bytes32 _cType, uint256 _debtAmount, int256 _deltaRate) internal {
     // Start looping from the oldest tax receiver
@@ -253,10 +258,10 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
 
   /**
    * @notice Give/withdraw SF from a tax receiver
-   * @param _cType Collateral type to distribute SF for
-   * @param _receiver Tax receiver address
-   * @param _debtAmount Total debt currently issued
-   * @param _deltaRate Difference between the latest and the last accumulated rates for the collateralType
+   * @param  _cType Collateral type to distribute SF for
+   * @param  _receiver Tax receiver address
+   * @param  _debtAmount Total debt currently issued
+   * @param  _deltaRate Difference between the latest and the last accumulated rates for the collateralType
    */
   function _distributeTax(bytes32 _cType, address _receiver, uint256 _debtAmount, int256 _deltaRate) internal {
     // Check how many coins the receiver has and negate the value
@@ -290,6 +295,8 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
   }
 
   // --- Administration ---
+
+  /// @inheritdoc Modifiable
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     uint256 _uint256 = _data.toUint256();
 
@@ -300,6 +307,7 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
     else revert UnrecognizedParam();
   }
 
+  /// @inheritdoc Modifiable
   function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override {
     if (!_collateralList.contains(_cType)) revert UnrecognizedCType();
     if (_param == 'stabilityFee') _cParams[_cType].stabilityFee = _data.toUint256();
@@ -307,6 +315,7 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
     else revert UnrecognizedParam();
   }
 
+  /// @inheritdoc Modifiable
   function _validateParameters() internal view override {
     _params.primaryTaxReceiver.assertNonNull();
     _params.maxStabilityFeeRange.assertGt(0).assertLt(RAY);
@@ -315,6 +324,7 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
     );
   }
 
+  /// @inheritdoc Modifiable
   function _validateCParameters(bytes32 _cType) internal view override {
     _cParams[_cType].stabilityFee.assertGtEq(RAY - _params.maxStabilityFeeRange).assertLtEq(
       RAY + _params.maxStabilityFeeRange
@@ -323,7 +333,7 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
 
   /**
    * @notice Sets the primary tax receiver, the address that receives the unallocated SF from all collateral types
-   * @param _primaryTaxReceiver Address of the primary tax receiver
+   * @param  _primaryTaxReceiver Address of the primary tax receiver
    */
   function _setPrimaryTaxReceiver(address _primaryTaxReceiver) internal {
     _params.primaryTaxReceiver = _primaryTaxReceiver;
@@ -332,8 +342,8 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
 
   /**
    * @notice Add a new secondary tax receiver or update data (add a new SF source or modify % of SF taken from a collateral type)
-   * @param _cType Collateral type that will give SF to the tax receiver
-   * @param _data Encoded data containing the receiver, tax percentage, and whether it supports negative tax
+   * @param  _cType Collateral type that will give SF to the tax receiver
+   * @param  _data Encoded data containing the receiver, tax percentage, and whether it supports negative tax
    */
   function _setSecondaryTaxReceiver(bytes32 _cType, TaxReceiver memory _data) internal {
     if (_data.receiver == address(0)) revert TaxCollector_NullAccount();
