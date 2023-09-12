@@ -11,6 +11,7 @@ import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
  */
 contract DelayedOracle is IBaseOracle, IDelayedOracle {
   // --- Registry ---
+
   /// @inheritdoc IDelayedOracle
   IBaseOracle public priceSource;
 
@@ -23,9 +24,17 @@ contract DelayedOracle is IBaseOracle, IDelayedOracle {
   /// @inheritdoc IDelayedOracle
   uint256 public lastUpdateTime;
 
+  /// @notice The current valid price feed storage struct
   Feed internal _currentFeed;
+  /// @notice The next valid price feed storage struct
   Feed internal _nextFeed;
 
+  // --- Init ---
+
+  /**
+   * @param  _priceSource The address of the non-delayed price source
+   * @param  _updateDelay The delay in seconds that should elapse between updates
+   */
   constructor(IBaseOracle _priceSource, uint256 _updateDelay) {
     if (address(_priceSource) == address(0)) revert DelayedOracle_NullPriceSource();
     if (_updateDelay == 0) revert DelayedOracle_NullDelay();
@@ -86,16 +95,12 @@ contract DelayedOracle is IBaseOracle, IDelayedOracle {
     return (_nextFeed.value, _nextFeed.isValid);
   }
 
-  /**
-   * @dev View function that queries the standard price source
-   */
+  /// @notice Internal view function that queries the standard price source
   function _getPriceSourceResult() internal view returns (uint256 _priceFeedValue, bool _hasValidValue) {
     return priceSource.getResultWithValidity();
   }
 
-  /**
-   * @dev View function that returns whether the delay between calls has been passed
-   */
+  /// @notice Internal view function that returns whether the delay between calls has been passed
   function _delayHasElapsed() internal view returns (bool _ok) {
     return block.timestamp >= lastUpdateTime + updateDelay;
   }

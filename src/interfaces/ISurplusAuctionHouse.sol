@@ -1,104 +1,60 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
-import {IProtocolToken} from '@interfaces/tokens/IProtocolToken.sol';
+import {ICommonSurplusAuctionHouse} from '@interfaces/ICommonSurplusAuctionHouse.sol';
 
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
-import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
+import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 
-interface ISurplusAuctionHouse is IAuthorizable, IDisableable, IModifiable {
+interface ISurplusAuctionHouse is IAuthorizable, IDisableable, IModifiable, ICommonSurplusAuctionHouse {
   // --- Events ---
-  event StartAuction(
-    uint256 indexed _id,
-    uint256 _blockTimestamp,
-    uint256 _amountToSell,
-    uint256 _amountToRaise,
-    uint256 _auctionDeadline
-  );
 
-  event RestartAuction(uint256 indexed _id, uint256 _blockTimestamp, uint256 _auctionDeadline);
-
-  event IncreaseBidSize(
-    uint256 indexed _id,
-    address _bidder,
-    uint256 _blockTimestamp,
-    uint256 _raisedAmount,
-    uint256 _soldAmount,
-    uint256 _bidExpiry
-  );
-
-  event SettleAuction(uint256 indexed _id, uint256 _blockTimestamp, address _highBidder, uint256 _raisedAmount);
-
+  /**
+   * @notice Emitted when an auction is prematurely terminated
+   * @param  _id Id of the auction
+   * @param  _blockTimestamp Time when the auction was terminated
+   * @param  _highBidder Who won the auction
+   * @param  _raisedAmount Amount of protocol tokens raised in the auction [rad]
+   */
   event TerminateAuctionPrematurely(
     uint256 indexed _id, uint256 _blockTimestamp, address _highBidder, uint256 _raisedAmount
   );
 
   // --- Errors ---
-  error SAH_AuctionNeverStarted();
-  error SAH_AuctionNotFinished();
-  error SAH_AuctionAlreadyExpired();
-  error SAH_BidAlreadyPlaced();
-  error SAH_BidAlreadyExpired();
-  error SAH_AmountsNotMatching();
-  error SAH_BidNotHigher();
-  error SAH_InsufficientIncrease();
-  error SAH_HighBidderNotSet();
-  error SAH_NullProtTokenReceiver();
 
-  // --- Data ---
-  struct Auction {
-    // Bid size (how many protocol tokens are offered per system coins sold)
-    uint256 bidAmount; // [wad]
-    // How many system coins are sold in an auction
-    uint256 amountToSell; // [rad]
-    // Who the high bidder is
-    address highBidder;
-    // When the latest bid expires and the auction can be settled
-    uint256 bidExpiry; // [unix epoch time]
-    // Hard deadline for the auction after which no more bids can be placed
-    uint256 auctionDeadline; // [unix epoch time]
-  }
+  /// @notice Throws when trying to start an auction with non-zero recycling percentage and null bid receiver
+  error SAH_NullProtTokenReceiver();
 
   struct SurplusAuctionHouseParams {
     // Minimum bid increase compared to the last bid in order to take the new one in consideration
-    uint256 bidIncrease; // [wad]
+    uint256 /* WAD %   */ bidIncrease;
     // How long the auction lasts after a new bid is submitted
-    uint256 bidDuration; // [seconds]
+    uint256 /* seconds */ bidDuration;
     // Total length of the auction
-    uint256 totalAuctionLength; // [seconds]
+    uint256 /* seconds */ totalAuctionLength;
     // Receiver of protocol tokens
-    address bidReceiver;
-    uint256 recyclingPercentage; // [wad%]
+    address /*         */ bidReceiver;
+    // Percentage of protocol tokens to recycle
+    uint256 /* WAD %   */ recyclingPercentage;
   }
 
-  // solhint-disable-next-line func-name-mixedcase
-  function AUCTION_HOUSE_TYPE() external view returns (bytes32 _auctionHouseType);
-  // solhint-disable-next-line func-name-mixedcase
-  function SURPLUS_AUCTION_TYPE() external view returns (bytes32 _surplusAuctionHouseType);
-
-  function auctions(uint256 _id) external view returns (Auction memory _auction);
-  // solhint-disable-next-line private-vars-leading-underscore
-  function _auctions(uint256 _id)
-    external
-    view
-    returns (
-      uint256 _bidAmount,
-      uint256 _amountToSell,
-      address _highBidder,
-      uint256 _bidExpiry,
-      uint256 _auctionDeadline
-    );
-
-  function auctionsStarted() external view returns (uint256 _auctionsStarted);
-
-  // --- Registry ---
-  function safeEngine() external view returns (ISAFEEngine _safeEngine);
-  function protocolToken() external view returns (IProtocolToken _protocolToken);
-
   // --- Params ---
+
+  /**
+   * @notice Getter for the contract parameters struct
+   * @return _sahParams Auction house parameters struct
+   */
   function params() external view returns (SurplusAuctionHouseParams memory _sahParams);
+
+  /**
+   * @notice Getter for the unpacked contract parameters struct
+   * @return _bidIncrease Minimum bid increase compared to the last bid in order to take the new one in consideration [wad %]
+   * @return _bidDuration How long the auction lasts after a new bid is submitted [seconds]
+   * @return _totalAuctionLength Total length of the auction [seconds]
+   * @return _bidReceiver Receiver of protocol tokens
+   * @return _recyclingPercentage Percentage of protocol tokens to recycle [wad %]
+   */
   // solhint-disable-next-line private-vars-leading-underscore
   function _params()
     external
@@ -111,10 +67,9 @@ interface ISurplusAuctionHouse is IAuthorizable, IDisableable, IModifiable {
       uint256 _recyclingPercentage
     );
 
-  // --- Auction ---
-  function startAuction(uint256 /* RAD */ _amountToSell, uint256 /* WAD */ _initialBid) external returns (uint256 _id);
-  function restartAuction(uint256 _id) external;
-  function increaseBidSize(uint256 _id, uint256 /* RAD */ _amountToBuy, uint256 /* WAD */ _bid) external;
-  function settleAuction(uint256 _id) external;
+  /**
+   * @notice Terminate an auction prematurely.
+   * @param  _id ID of the auction to settle/terminate
+   */
   function terminateAuctionPrematurely(uint256 _id) external;
 }
