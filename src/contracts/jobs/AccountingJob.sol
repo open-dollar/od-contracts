@@ -12,36 +12,19 @@ import {Modifiable} from '@contracts/utils/Modifiable.sol';
 
 import {Encoding} from '@libraries/Encoding.sol';
 
-/**
- * @title  AccountingJob
- * @notice This contract contains rewarded methods to handle the accounting engine debt and surplus
- */
 contract AccountingJob is Job, Authorizable, Modifiable, IAccountingJob {
   using Encoding for bytes;
 
   // --- Data ---
-
-  /// @inheritdoc IAccountingJob
   bool public shouldWorkPopDebtFromQueue;
-  /// @inheritdoc IAccountingJob
   bool public shouldWorkAuctionDebt;
-  /// @inheritdoc IAccountingJob
   bool public shouldWorkAuctionSurplus;
-  /// @inheritdoc IAccountingJob
   bool public shouldWorkTransferExtraSurplus;
 
   // --- Registry ---
-
-  /// @inheritdoc IAccountingJob
   IAccountingEngine public accountingEngine;
 
   // --- Init ---
-
-  /**
-   * @param  _accountingEngine Address of the AccountingEngine contract
-   * @param  _stabilityFeeTreasury Address of the StabilityFeeTreasury contract
-   * @param  _rewardAmount Amount of tokens to reward per job transaction [wad]
-   */
   constructor(
     address _accountingEngine,
     address _stabilityFeeTreasury,
@@ -56,26 +39,21 @@ contract AccountingJob is Job, Authorizable, Modifiable, IAccountingJob {
   }
 
   // --- Job ---
-
-  /// @inheritdoc IAccountingJob
   function workPopDebtFromQueue(uint256 _debtBlockTimestamp) external reward {
     if (!shouldWorkPopDebtFromQueue) revert NotWorkable();
     accountingEngine.popDebtFromQueue(_debtBlockTimestamp);
   }
 
-  /// @inheritdoc IAccountingJob
   function workAuctionDebt() external reward {
     if (!shouldWorkAuctionDebt) revert NotWorkable();
     accountingEngine.auctionDebt();
   }
 
-  /// @inheritdoc IAccountingJob
   function workAuctionSurplus() external reward {
     if (!shouldWorkAuctionSurplus) revert NotWorkable();
     accountingEngine.auctionSurplus();
   }
 
-  /// @inheritdoc IAccountingJob
   function workTransferExtraSurplus() external reward {
     if (!shouldWorkTransferExtraSurplus) revert NotWorkable();
     accountingEngine.transferExtraSurplus();
@@ -83,7 +61,6 @@ contract AccountingJob is Job, Authorizable, Modifiable, IAccountingJob {
 
   // --- Administration ---
 
-  /// @inheritdoc Modifiable
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     address _address = _data.toAddress();
     bool _bool = _data.toBool();

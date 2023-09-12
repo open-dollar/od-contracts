@@ -14,72 +14,43 @@ import {Encoding} from '@libraries/Encoding.sol';
 import {Math} from '@libraries/Math.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 
-/**
- * @title  AccountingEngine
- * @notice This contract is responsible for handling protocol surplus and debt
- * @notice It allows the system to auction surplus and debt, as well as transfer surplus
- * @dev    This is a system contract, therefore it is not meant to be used by users directly
- */
 contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingEngine {
   using Encoding for bytes;
   using Assertions for address;
 
   // --- Auth ---
-
-  /**
-   * @notice Overriding method allows new authorizations only if the contract is enabled
-   * @param  _account The account to authorize
-   * @inheritdoc IAuthorizable
-   */
   function addAuthorization(address _account) external override(Authorizable, IAuthorizable) isAuthorized whenEnabled {
     _addAuthorization(_account);
   }
 
   // --- Registry ---
-
-  /// @inheritdoc IAccountingEngine
   ISAFEEngine public safeEngine;
-  /// @inheritdoc IAccountingEngine
   ISurplusAuctionHouse public surplusAuctionHouse;
-  /// @inheritdoc IAccountingEngine
   IDebtAuctionHouse public debtAuctionHouse;
-  /// @inheritdoc IAccountingEngine
   address public postSettlementSurplusDrain;
-  /// @inheritdoc IAccountingEngine
   address public extraSurplusReceiver;
 
   // --- Params ---
-
-  /// @inheritdoc IAccountingEngine
   // solhint-disable-next-line private-vars-leading-underscore
   AccountingEngineParams public _params;
 
-  /// @inheritdoc IAccountingEngine
   function params() external view returns (AccountingEngineParams memory _accEngineParams) {
     return _params;
   }
 
   // --- Data ---
-
-  /// @inheritdoc IAccountingEngine
-  mapping(uint256 _timestamp => uint256 _rad) public debtQueue;
-  /// @inheritdoc IAccountingEngine
-  uint256 public /* RAD */ totalOnAuctionDebt;
-  /// @inheritdoc IAccountingEngine
-  uint256 public /* RAD */ totalQueuedDebt;
-  /// @inheritdoc IAccountingEngine
-  uint256 public lastSurplusTime;
-  /// @inheritdoc IAccountingEngine
-  uint256 public disableTimestamp;
+  // Debt blocks that need to be covered by auctions
+  mapping(uint256 => uint256) public debtQueue; // [unix timestamp => rad]
+  // Total debt in the queue
+  uint256 public totalQueuedDebt; // [rad]
+  // Total debt being auctioned in DebtAuctionHouse
+  uint256 public totalOnAuctionDebt; // [rad]
+  // When the last surplus transfer or auction was triggered
+  uint256 public lastSurplusTime; // [unix timestamp]
+  // When the contract was disabled
+  uint256 public disableTimestamp; // [unix timestamp]
 
   // --- Init ---
-
-  /**
-   * @param  _safeEngine Address of the SAFEEngine
-   * @param  _surplusAuctionHouse Address of the SurplusAuctionHouse
-   * @param  _debtAuctionHouse Address of the DebtAuctionHouse
-   * @param  _accEngineParams Initial valid AccountingEngine parameters struct
-   */
   constructor(
     address _safeEngine,
     address _surplusAuctionHouse,
@@ -96,8 +67,9 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
   }
 
   // --- Getters ---
-
-  /// @inheritdoc IAccountingEngine
+  /**
+   * @notice Returns the amount of bad debt that is not in the debtQueue and is not currently handled by debt auctions
+   */
   function unqueuedUnauctionedDebt() external view returns (uint256 __unqueuedUnauctionedDebt) {
     return _unqueuedUnauctionedDebt(safeEngine.debtBalance(address(this)));
   }
@@ -107,8 +79,12 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
   }
 
   // --- Debt Queueing ---
-
-  /// @inheritdoc IAccountingEngine
+  /**
+   * @notice Push a block of bad debt to the debt queue
+   * @dev    Debt is locked in a queue to give the system enough time to auction collateral
+   *         and gather surplus
+   * @param  _debtBlock Amount of debt to push
+   */
   function pushDebtToQueue(uint256 _debtBlock) external isAuthorized {
     debtQueue[block.timestamp] = debtQueue[block.timestamp] + _debtBlock;
     totalQueuedDebt = totalQueuedDebt + _debtBlock;
@@ -116,7 +92,12 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
     emit PushDebtToQueue(block.timestamp, _debtBlock);
   }
 
-  /// @inheritdoc IAccountingEngine
+  /**
+   * @notice Pop a block of bad debt from the debt queue
+   * @dev    A block of debt can be popped from the queue after popDebtDelay seconds have passed since it was
+   *           added there
+   * @param  _debtBlockTimestamp Timestamp of the block of debt that should be popped out
+   */
   function popDebtFromQueue(uint256 _debtBlockTimestamp) external {
     if (block.timestamp < _debtBlockTimestamp + _params.popDebtDelay) revert AccEng_PopDebtCooldown();
 
@@ -131,8 +112,11 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
   }
 
   // Debt settlement
-
-  /// @inheritdoc IAccountingEngine
+  /**
+   * @notice Destroy an equal amount of coins and bad debt
+   * @dev We can only destroy debt that is not locked in the queue and also not in a debt auction
+   * @param _rad Amount of coins/debt to destroy (number with 45 decimals)
+   */
   function settleDebt(uint256 _rad) external {
     _settleDebt(safeEngine.coinBalance(address(this)), safeEngine.debtBalance(address(this)), _rad);
   }
@@ -152,7 +136,10 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
     emit SettleDebt(_rad, _newCoinBalance, _newDebtBalance);
   }
 
-  /// @inheritdoc IAccountingEngine
+  /**
+   * @notice Use surplus coins to destroy debt that was in a debt auction
+   * @param _rad Amount of coins/debt to destroy (number with 45 decimals)
+   */
   function cancelAuctionedDebtWithSurplus(uint256 _rad) external {
     if (_rad > totalOnAuctionDebt) revert AccEng_InsufficientDebt();
 
@@ -167,8 +154,12 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
   }
 
   // Debt auction
-
-  /// @inheritdoc IAccountingEngine
+  /**
+   * @notice Start a debt auction (print protocol tokens in exchange for coins so that the
+   *         system can be recapitalized)
+   * @dev    We can only auction debt that is not already being auctioned and is not locked in the debt queue
+   * @return _id Id of the debt auction that was started
+   */
   function auctionDebt() external returns (uint256 _id) {
     if (_params.debtAuctionBidSize == 0) revert AccEng_DebtAuctionDisabled();
 
@@ -190,8 +181,12 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
   }
 
   // Surplus auction
-
-  /// @inheritdoc IAccountingEngine
+  /**
+   * @notice Start a surplus auction
+   * @dev    We can only auction surplus if we wait at least 'surplusDelay' seconds since the last
+   *         surplus auction trigger, if we keep enough surplus in the buffer and if there is no bad debt left to settle
+   * @return _id the Id of the surplus auction that was started
+   */
   function auctionSurplus() external returns (uint256 _id) {
     if (_params.surplusIsTransferred == 100) revert AccEng_SurplusAuctionDisabled();
     if (_params.surplusAmount == 0) revert AccEng_NullAmount();
@@ -226,8 +221,11 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
   }
 
   // Extra surplus transfers/surplus auction alternative
-
-  /// @inheritdoc IAccountingEngine
+  /**
+   * @notice Send surplus to an address as an alternative to surplus auctions
+   * @dev    We can only transfer surplus if we wait at least 'surplusDelay' seconds since the last
+   *           transfer, if we keep enough surplus in the buffer and if there is no bad debt left to settle
+   */
   function transferExtraSurplus() external {
     if (_params.surplusIsTransferred <= 0) revert AccEng_SurplusTransferDisabled();
     if (extraSurplusReceiver == address(0)) revert AccEng_NullSurplusReceiver();
@@ -263,11 +261,10 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
   // --- Shutdown ---
 
   /**
-   * @notice Runtime to be run when the contract is disabled (normally triggered by GlobalSettlement)
+   * @notice Disable this contract (normally called by Global Settlement)
    * @dev When it's being disabled, the contract will record the current timestamp. Afterwards,
    *      the contract tries to settle as much debt as possible (if there's any) with any surplus that's
    *      left in the AccountingEngine
-   * @inheritdoc Disableable
    */
   function _onContractDisable() internal override {
     totalQueuedDebt = 0;
@@ -281,7 +278,13 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
     safeEngine.settleDebt(_debtToSettle);
   }
 
-  /// @inheritdoc IAccountingEngine
+  /**
+   * @notice Transfer any remaining surplus after the disable cooldown has passed. Meant to be a backup in case GlobalSettlement.processSAFE
+   *              has a bug, governance doesn't have power over the system and there's still surplus left in the AccountingEngine
+   *              which then blocks GlobalSettlement.setOutstandingCoinSupply.
+   * @dev Transfer any remaining surplus after disableCooldown seconds have passed since disabling the contract
+   *
+   */
   function transferPostSettlementSurplus() external whenDisabled {
     if (address(postSettlementSurplusDrain) == address(0)) revert AccEng_NullSurplusReceiver();
     if (block.timestamp < disableTimestamp + _params.disableCooldown) revert AccEng_PostSettlementCooldown();
@@ -304,7 +307,6 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
 
   // --- Administration ---
 
-  /// @inheritdoc Modifiable
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     uint256 _uint256 = _data.toUint256();
     address _address = _data.toAddress();
@@ -326,7 +328,6 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
     else revert UnrecognizedParam();
   }
 
-  /// @dev Set the surplus auction house, deny permissions on the old one and approve on the new one
   function _setSurplusAuctionHouse(address _surplusAuctionHouse) internal {
     if (address(surplusAuctionHouse) != address(0)) {
       safeEngine.denySAFEModification(address(surplusAuctionHouse));
@@ -335,7 +336,6 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
     safeEngine.approveSAFEModification(_surplusAuctionHouse);
   }
 
-  /// @inheritdoc Modifiable
   function _validateParameters() internal view override {
     address(surplusAuctionHouse).assertNonNull();
     address(debtAuctionHouse).assertNonNull();

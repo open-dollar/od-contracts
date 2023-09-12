@@ -26,48 +26,39 @@ import {Encoding} from '@libraries/Encoding.sol';
 import {Math, RAY} from '@libraries/Math.sol';
 import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
 
-/**
- * @title  SAFEEngine
- * @notice Core contract that manages the state of the SAFE system
- */
 contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
   using Math for uint256;
   using Encoding for bytes;
   using EnumerableSet for EnumerableSet.Bytes32Set;
 
   // --- Data ---
-
-  /// @inheritdoc ISAFEEngine
+  // Data about system parameters
   // solhint-disable-next-line private-vars-leading-underscore
   SAFEEngineParams public _params;
-  /// @inheritdoc ISAFEEngine
+  // Data about each collateral type parameters
   // solhint-disable-next-line private-vars-leading-underscore
   mapping(bytes32 _cType => SAFEEngineCollateralParams) public _cParams;
-  /// @inheritdoc ISAFEEngine
+  // Data about each collateral type
   // solhint-disable-next-line private-vars-leading-underscore
   mapping(bytes32 _cType => SAFEEngineCollateralData) public _cData;
-  /// @inheritdoc ISAFEEngine
+  // Data about each SAFE
   // solhint-disable-next-line private-vars-leading-underscore
   mapping(bytes32 _cType => mapping(address _safe => SAFE)) public _safes;
-  /// @inheritdoc ISAFEEngine
-  mapping(address _caller => mapping(address _account => uint256 _isAllowed)) public safeRights;
+  // Who can transfer collateral & debt in/out of a SAFE
+  mapping(address _cType => mapping(address _safe => uint256 _isAllowed)) public safeRights;
 
-  /// @inheritdoc ISAFEEngine
   function params() external view returns (SAFEEngineParams memory _safeEngineParams) {
     return _params;
   }
 
-  /// @inheritdoc ISAFEEngine
   function cParams(bytes32 _cType) external view returns (SAFEEngineCollateralParams memory _safeEngineCParams) {
     return _cParams[_cType];
   }
 
-  /// @inheritdoc ISAFEEngine
   function cData(bytes32 _cType) external view returns (SAFEEngineCollateralData memory _safeEngineCData) {
     return _cData[_cType];
   }
 
-  /// @inheritdoc ISAFEEngine
   function safes(bytes32 _cType, address _safe) external view returns (SAFE memory _safeData) {
     return _safes[_cType][_safe];
   }
@@ -75,32 +66,26 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
   EnumerableSet.Bytes32Set internal _collateralList;
 
   // --- Balances ---
-
-  /// @inheritdoc ISAFEEngine
-  mapping(bytes32 _cType => mapping(address _safe => uint256 _wad)) public tokenCollateral;
-  /// @inheritdoc ISAFEEngine
-  mapping(address _safe => uint256 _rad) public coinBalance;
-  /// @inheritdoc ISAFEEngine
-  mapping(address _safe => uint256 _rad) public debtBalance;
-  /// @inheritdoc ISAFEEngine
-  uint256 public /* RAD */ globalDebt;
-  /// @inheritdoc ISAFEEngine
-  uint256 public /* RAD */ globalUnbackedDebt;
+  // Balance of each collateral type
+  mapping(bytes32 _cType => mapping(address _safe => uint256)) public tokenCollateral; // [wad]
+  // Internal balance of system coins
+  mapping(address _safe => uint256) public coinBalance; // [rad]
+  // Amount of debt held by an account. Coins & debt are like matter and antimatter. They nullify each other
+  mapping(address _safe => uint256) public debtBalance; // [rad]
+  // Total amount of debt (coins) currently issued
+  uint256 public globalDebt; // [rad]
+  // 'Bad' debt that's not covered by collateral
+  uint256 public globalUnbackedDebt; // [rad]
 
   // --- Init ---
-
-  /**
-   * @param  _safeEngineParams Initial SAFEEngine valid parameters struct
-   */
   constructor(SAFEEngineParams memory _safeEngineParams) Authorizable(msg.sender) validParams {
     _params = _safeEngineParams;
   }
 
-  /// @inheritdoc ISAFEEngine
   function initializeCollateralType(
     bytes32 _cType,
     SAFEEngineCollateralParams memory _safeEngineCParams
-  ) external isAuthorized whenEnabled {
+  ) external isAuthorized {
     if (!_collateralList.add(_cType)) revert SAFEEng_CollateralTypeAlreadyExists();
     _cData[_cType].accumulatedRate = RAY;
     _cParams[_cType] = _safeEngineCParams;
@@ -108,8 +93,13 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
   }
 
   // --- Fungibility ---
-
-  /// @inheritdoc ISAFEEngine
+  /**
+   * @notice Transfer collateral between accounts
+   * @param _cType Collateral type transferred
+   * @param _source Collateral source
+   * @param _destination Collateral destination
+   * @param _wad Amount of collateral transferred
+   */
   function transferCollateral(
     bytes32 _cType,
     address _source,
@@ -121,7 +111,12 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
     emit TransferCollateral(_cType, _source, _destination, _wad);
   }
 
-  /// @inheritdoc ISAFEEngine
+  /**
+   * @notice Transfer internal coins (does not affect external balances from Coin.sol)
+   * @param  _source Coins source
+   * @param  _destination Coins destination
+   * @param  _rad Amount of coins transferred
+   */
   function transferInternalCoins(
     address _source,
     address _destination,
@@ -132,14 +127,26 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
     emit TransferInternalCoins(_source, _destination, _rad);
   }
 
-  /// @inheritdoc ISAFEEngine
+  /**
+   * @notice Join/exit collateral into and and out of the system
+   * @param _cType Collateral type to join/exit
+   * @param _account Account that gets credited/debited
+   * @param _wad Amount of collateral
+   */
   function modifyCollateralBalance(bytes32 _cType, address _account, int256 _wad) external isAuthorized {
     _modifyCollateralBalance(_cType, _account, _wad);
   }
 
   // --- SAFE Manipulation ---
-
-  /// @inheritdoc ISAFEEngine
+  /**
+   * @notice Add/remove collateral or put back/generate more debt in a SAFE
+   * @param _cType Type of collateral to withdraw/deposit in and from the SAFE
+   * @param _safe Target SAFE
+   * @param _collateralSource Account we take collateral from/put collateral into
+   * @param _debtDestination Account from which we credit/debit coins and debt
+   * @param _deltaCollateral Amount of collateral added/extract from the SAFE (wad)
+   * @param _deltaDebt Amount of debt to generate/repay (wad)
+   */
   function modifySAFECollateralization(
     bytes32 _cType,
     address _safe,
@@ -197,8 +204,14 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
   }
 
   // --- SAFE Fungibility ---
-
-  /// @inheritdoc ISAFEEngine
+  /**
+   * @notice Transfer collateral and/or debt between SAFEs
+   * @param _cType Collateral type transferred between SAFEs
+   * @param _src Source SAFE
+   * @param _dst Destination SAFE
+   * @param _deltaCollateral Amount of collateral to take/add into src and give/take from dst (wad)
+   * @param _deltaDebt Amount of debt to take/add into src and give/take from dst (wad)
+   */
   function transferSAFECollateralAndDebt(
     bytes32 _cType,
     address _src,
@@ -242,8 +255,16 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
   }
 
   // --- SAFE Confiscation ---
-
-  /// @inheritdoc ISAFEEngine
+  /**
+   * @notice Normally used by the LiquidationEngine in order to confiscate collateral and
+   *      debt from a SAFE and give them to someone else
+   * @param _cType Collateral type the SAFE has locked inside
+   * @param _safe Target SAFE
+   * @param _collateralSource Who we take/give collateral to
+   * @param _debtDestination Who we take/give debt to
+   * @param _deltaCollateral Amount of collateral taken/added into the SAFE (wad)
+   * @param _deltaDebt Amount of debt taken/added into the SAFE (wad)
+   */
   function confiscateSAFECollateralAndDebt(
     bytes32 _cType,
     address _safe,
@@ -271,8 +292,10 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
   }
 
   // --- Settlement ---
-
-  /// @inheritdoc ISAFEEngine
+  /**
+   * @notice Nullify an amount of coins with an equal amount of debt
+   * @param  _rad Amount of debt & coins to destroy
+   */
   function settleDebt(uint256 _rad) external {
     address _account = msg.sender;
     debtBalance[_account] -= _rad;
@@ -281,7 +304,13 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
     emit SettleDebt(_account, _rad);
   }
 
-  /// @inheritdoc ISAFEEngine
+  /**
+   * @notice Allows an authorized contract to create debt without collateral
+   * @param _debtDestination The account that will receive the newly created debt
+   * @param _coinDestination The account that will receive the newly created coins
+   * @param _rad Amount of debt to create
+   * @dev   Usually called by DebtAuctionHouse in order to terminate auctions prematurely post settlement
+   */
   function createUnbackedDebt(address _debtDestination, address _coinDestination, uint256 _rad) external isAuthorized {
     debtBalance[_debtDestination] += _rad;
     _modifyInternalCoins(_coinDestination, _rad.toInt());
@@ -290,8 +319,13 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
   }
 
   // --- Update ---
-
-  /// @inheritdoc ISAFEEngine
+  /**
+   * @notice Allows an authorized contract to accrue interest on a specific collateral type
+   * @param _cType Collateral type we accrue interest for
+   * @param _surplusDst Destination for the newly created surplus
+   * @param _rateMultiplier Multiplier applied to the debtAmount in order to calculate the surplus [ray]
+   * @dev   The rateMultiplier is usually calculated by the TaxCollector contract
+   */
   function updateAccumulatedRate(
     bytes32 _cType,
     address _surplusDst,
@@ -305,7 +339,6 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
     emit UpdateAccumulatedRate(_cType, _surplusDst, _rateMultiplier);
   }
 
-  /// @inheritdoc ISAFEEngine
   function updateCollateralPrice(
     bytes32 _cType,
     uint256 _safetyPrice,
@@ -317,15 +350,9 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
   }
 
   // --- Authorization ---
-
   /**
    * @notice Add auth to an account
-   * @param  _account Account to add auth to
-   */
-
-  /**
-   * @dev    This overriden method avoids adding new authorizations after the contract has been disabled
-   * @inheritdoc IAuthorizable
+   * @param _account Account to add auth to
    */
   function addAuthorization(address _account) external override(Authorizable, IAuthorizable) isAuthorized whenEnabled {
     _addAuthorization(_account);
@@ -333,7 +360,7 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
 
   /**
    * @notice Remove auth from an account
-   * @param  _account Account to remove auth from
+   * @param _account Account to remove auth from
    */
   function removeAuthorization(address _account)
     external
@@ -344,32 +371,37 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
     _removeAuthorization(_account);
   }
 
-  /// @inheritdoc ISAFEEngine
+  /**
+   * @notice Allow an address to modify your SAFE
+   * @param _account Account to give SAFE permissions to
+   */
   function approveSAFEModification(address _account) external {
     safeRights[msg.sender][_account] = 1;
     emit ApproveSAFEModification(msg.sender, _account);
   }
 
-  /// @inheritdoc ISAFEEngine
+  /**
+   * @notice Deny an address the rights to modify your SAFE
+   * @param _account Account that is denied SAFE permissions
+   */
   function denySAFEModification(address _account) external {
     safeRights[msg.sender][_account] = 0;
     emit DenySAFEModification(msg.sender, _account);
   }
 
-  /// @inheritdoc ISAFEEngine
+  /**
+   * @notice Checks whether msg.sender has the right to modify a SAFE
+   */
   function canModifySAFE(address _safe, address _account) public view returns (bool _canModifySafe) {
     return _safe == _account || safeRights[_safe][_account] == 1;
   }
 
   // --- Views ---
-
-  /// @inheritdoc ISAFEEngine
   function collateralList() external view returns (bytes32[] memory __collateralList) {
     return _collateralList.values();
   }
 
   // --- Internals ---
-
   function _modifyCollateralBalance(bytes32 _cType, address _account, int256 _wad) internal {
     tokenCollateral[_cType][_account] = tokenCollateral[_cType][_account].add(_wad);
     _emitTransferCollateral(_cType, address(0), _account, _wad);
@@ -405,9 +437,7 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
   }
 
   // --- Administration ---
-
-  /// @inheritdoc Modifiable
-  function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled {
     uint256 _uint256 = _data.toUint256();
 
     if (_param == 'globalDebtCeiling') _params.globalDebtCeiling = _uint256;
@@ -415,8 +445,7 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
     else revert UnrecognizedParam();
   }
 
-  /// @inheritdoc Modifiable
-  function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override {
+  function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override whenEnabled {
     uint256 _uint256 = _data.toUint256();
 
     if (!_collateralList.contains(_cType)) revert UnrecognizedCType();
@@ -426,7 +455,6 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
   }
 
   // --- Modifiers ---
-
   modifier isSAFEAllowed(address _safe, address _account) {
     if (!canModifySAFE(_safe, _account)) revert SAFEEng_NotSAFEAllowed();
     _;

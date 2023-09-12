@@ -11,26 +11,16 @@ import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
 import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
 
-/**
- * @title  DelayedOracleFactory
- * @notice This contract is used to deploy DelayedOracle contracts
- * @dev    The deployed contracts are DelayedOracleChild instances
- */
 contract DelayedOracleFactory is Authorizable, IDelayedOracleFactory {
   using EnumerableSet for EnumerableSet.AddressSet;
 
   // --- Data ---
-
-  /// @notice The enumerable set of deployed DelayedOracle contracts
   EnumerableSet.AddressSet internal _delayedOracles;
 
   // --- Init ---
-
   constructor() Authorizable(msg.sender) {}
 
   // --- Methods ---
-
-  /// @inheritdoc IDelayedOracleFactory
   function deployDelayedOracle(
     IBaseOracle _priceSource,
     uint256 _updateDelay
@@ -41,8 +31,6 @@ contract DelayedOracleFactory is Authorizable, IDelayedOracleFactory {
   }
 
   // --- Views ---
-
-  /// @inheritdoc IDelayedOracleFactory
   function delayedOraclesList() external view returns (address[] memory _delayedOraclesList) {
     return _delayedOracles.values();
   }

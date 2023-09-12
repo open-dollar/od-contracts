@@ -9,55 +9,58 @@ import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
 import {CollateralAuctionHouse, ICollateralAuctionHouse} from '@contracts/CollateralAuctionHouse.sol';
 
 import {AuthorizableChild, Authorizable} from '@contracts/factories/AuthorizableChild.sol';
-import {DisableableChild, Disableable} from '@contracts/factories/DisableableChild.sol';
 
 import {Math, RAY, WAD} from '@libraries/Math.sol';
 import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
 
 /**
  * @title  CollateralAuctionHouseChild
- * @notice This contract inherits all the functionality of CollateralAuctionHouse to be factory deployed
+ * @notice This contract inherits all the functionality of `CollateralAuctionHouse.sol` to be factory deployed
  */
-contract CollateralAuctionHouseChild is
-  DisableableChild,
-  AuthorizableChild,
-  CollateralAuctionHouse,
-  ICollateralAuctionHouseChild
-{
+contract CollateralAuctionHouseChild is AuthorizableChild, CollateralAuctionHouse, ICollateralAuctionHouseChild {
   using EnumerableSet for EnumerableSet.AddressSet;
   using Math for uint256;
 
   // --- Init ---
-
-  /**
-   * @param  _safeEngine Address of the SAFEEngine contract
-   * @param  _liquidationEngine Ignored parameter (read from factory)
-   * @param  _oracleRelayer Ignored parameter (read from factory)
-   * @param  _cType Bytes32 representation of the collateral type
-   * @param  _cahParams Initial valid CollateralAuctionHouse parameters struct
-   */
   constructor(
     address _safeEngine,
-    address _liquidationEngine,
     address _oracleRelayer,
+    address _liquidationEngine,
     bytes32 _cType,
-    CollateralAuctionHouseParams memory _cahParams
+    CollateralAuctionHouseSystemCoinParams memory _cahParams,
+    CollateralAuctionHouseParams memory _cahCParams
   )
     CollateralAuctionHouse(
       _safeEngine,
-      _liquidationEngine, // empty
       _oracleRelayer, // empty
+      _liquidationEngine, // empty
       _cType,
-      _cahParams
+      _cahParams, // empty
+      _cahCParams
     )
   {}
 
-  // --- Overrides ---
+  // NOTE: child implementation reads params from factory
+  function params()
+    public
+    view
+    override(CollateralAuctionHouse, ICollateralAuctionHouse)
+    returns (CollateralAuctionHouseSystemCoinParams memory _cahParams)
+  {
+    return ICollateralAuctionHouseFactory(factory).params();
+  }
 
-  /**
-   * @dev Overriding method reads liquidationEngine from factory
-   * @inheritdoc ICollateralAuctionHouse
-   */
+  // solhint-disable-next-line private-vars-leading-underscore
+  function _params()
+    public
+    view
+    override(CollateralAuctionHouse, ICollateralAuctionHouse)
+    returns (uint256 _minSystemCoinDeviation, uint256 _lowerSystemCoinDeviation, uint256 _upperSystemCoinDeviation)
+  {
+    return ICollateralAuctionHouseFactory(factory)._params();
+  }
+
+  // NOTE: child implementation reads liquidationEngine from factory
   function liquidationEngine()
     public
     view
@@ -67,10 +70,10 @@ contract CollateralAuctionHouseChild is
     return ILiquidationEngine(ICollateralAuctionHouseFactory(factory).liquidationEngine());
   }
 
-  /**
-   * @dev Overriding method reads oracleRelayer from factory
-   * @inheritdoc ICollateralAuctionHouse
-   */
+  // NOTE: avoids adding authorization to address(0) on constructor
+  function _setLiquidationEngine(address _newLiquidationEngine) internal override {}
+
+  // NOTE: child implementation reads oracleRelayer from factory
   function oracleRelayer()
     public
     view
@@ -80,21 +83,11 @@ contract CollateralAuctionHouseChild is
     return IOracleRelayer(ICollateralAuctionHouseFactory(factory).oracleRelayer());
   }
 
-  /**
-   * @dev    Modifying liquidationEngine's address results in a no-operation (is read from factory)
-   * @param  _newLiquidationEngine Ignored parameter (read from factory)
-   * @inheritdoc CollateralAuctionHouse
-   */
-  function _setLiquidationEngine(address _newLiquidationEngine) internal override {}
+  // NOTE: global parameters are stored/modified in the factory
+  function _modifyParameters(bytes32, bytes memory) internal pure override {
+    revert UnrecognizedParam();
+  }
 
-  /**
-   * @dev    Modifying oracleRelayer's address results in a no-operation (is read from factory)
-   * @param  _newOracleRelayer Ignored parameter (read from factory)
-   * @inheritdoc CollateralAuctionHouse
-   */
-  function _setOracleRelayer(address _newOracleRelayer) internal override {}
-
-  /// @inheritdoc AuthorizableChild
   function _isAuthorized(address _account)
     internal
     view
@@ -102,15 +95,5 @@ contract CollateralAuctionHouseChild is
     returns (bool _authorized)
   {
     return super._isAuthorized(_account);
-  }
-
-  /// @inheritdoc DisableableChild
-  function _isEnabled() internal view override(DisableableChild, Disableable) returns (bool _enabled) {
-    return super._isEnabled();
-  }
-
-  /// @inheritdoc DisableableChild
-  function _onContractDisable() internal override(DisableableChild, Disableable) {
-    super._onContractDisable();
   }
 }

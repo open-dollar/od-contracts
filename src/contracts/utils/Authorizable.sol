@@ -5,30 +5,18 @@ import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 
 import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
 
-/**
- * @title  Authorizable
- * @notice Implements authorization control for contracts
- * @dev    Authorization control is boolean and handled by `onlyAuthorized` modifier
- */
 abstract contract Authorizable is IAuthorizable {
   using EnumerableSet for EnumerableSet.AddressSet;
 
   // --- Data ---
-
-  /// @notice EnumerableSet of authorized accounts
   EnumerableSet.AddressSet internal _authorizedAccounts;
 
   // --- Init ---
-
-  /**
-   * @param  _account Initial account to add authorization to
-   */
   constructor(address _account) {
     _addAuthorization(_account);
   }
 
   // --- Views ---
-
   /**
    * @notice Checks whether an account is authorized
    * @return _authorized Whether the account is authorized or not
@@ -46,10 +34,9 @@ abstract contract Authorizable is IAuthorizable {
   }
 
   // --- Methods ---
-
   /**
    * @notice Add auth to an account
-   * @param  _account Account to add auth to
+   * @param _account Account to add auth to
    */
   function addAuthorization(address _account) external virtual isAuthorized {
     _addAuthorization(_account);
@@ -57,7 +44,7 @@ abstract contract Authorizable is IAuthorizable {
 
   /**
    * @notice Remove auth from an account
-   * @param  _account Account to remove auth from
+   * @param _account Account to remove auth from
    */
   function removeAuthorization(address _account) external virtual isAuthorized {
     _removeAuthorization(_account);
@@ -85,10 +72,8 @@ abstract contract Authorizable is IAuthorizable {
   }
 
   // --- Modifiers ---
-
   /**
    * @notice Checks whether msg.sender can call an authed function
-   * @dev    Will revert with `Unauthorized` if the sender is not authorized
    */
   modifier isAuthorized() {
     if (!_isAuthorized(msg.sender)) revert Unauthorized();

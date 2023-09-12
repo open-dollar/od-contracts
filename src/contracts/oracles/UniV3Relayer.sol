@@ -25,7 +25,6 @@ contract UniV3Relayer is IBaseOracle, IUniV3Relayer {
   address public quoteToken;
 
   // --- Data ---
-
   /// @inheritdoc IBaseOracle
   string public symbol;
 
@@ -36,14 +35,6 @@ contract UniV3Relayer is IBaseOracle, IUniV3Relayer {
   /// @inheritdoc IUniV3Relayer
   uint32 public quotePeriod;
 
-  // --- Init ---
-
-  /**
-   * @param  _baseToken Address of the base token used to consult the quote
-   * @param  _quoteToken Address of the token used as a quote reference
-   * @param  _feeTier Fee tier of the pool used to consult the quote
-   * @param  _quotePeriod Length in seconds of the TWAP used to consult the pool
-   */
   constructor(address _baseToken, address _quoteToken, uint24 _feeTier, uint32 _quotePeriod) {
     uniV3Pool = IUniswapV3Factory(_UNI_V3_FACTORY).getPool(_baseToken, _quoteToken, _feeTier);
     if (uniV3Pool == address(0)) revert UniV3Relayer_InvalidPool();
@@ -106,7 +97,6 @@ contract UniV3Relayer is IBaseOracle, IUniV3Relayer {
     _result = _parseResult(_quoteAmount);
   }
 
-  /// @notice Parses the result from the aggregator into 18 decimals format
   function _parseResult(uint256 _quoteResult) internal view returns (uint256 _result) {
     return _quoteResult * 10 ** multiplier;
   }

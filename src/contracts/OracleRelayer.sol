@@ -15,10 +15,6 @@ import {Assertions} from '@libraries/Assertions.sol';
 import {Math, RAY, WAD} from '@libraries/Math.sol';
 import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
 
-/**
- * @title  OracleRelayer
- * @notice Handles the collateral prices inside the system (SAFEEngine) and calculates the redemption price using the rate
- */
 contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer {
   using Encoding for bytes;
   using Math for uint256;
@@ -27,46 +23,33 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
   using EnumerableSet for EnumerableSet.Bytes32Set;
 
   // --- Registry ---
-
-  /// @inheritdoc IOracleRelayer
   ISAFEEngine public safeEngine;
-  /// @inheritdoc IOracleRelayer
   IBaseOracle public systemCoinOracle;
 
   // --- Params ---
-  /// @inheritdoc IOracleRelayer
   // solhint-disable-next-line private-vars-leading-underscore
   OracleRelayerParams public _params;
-  /// @inheritdoc IOracleRelayer
   // solhint-disable-next-line private-vars-leading-underscore
-  mapping(bytes32 _cType => OracleRelayerCollateralParams) public _cParams;
+  mapping(bytes32 => OracleRelayerCollateralParams) public _cParams;
 
-  /// @inheritdoc IOracleRelayer
   function params() external view override returns (OracleRelayerParams memory _oracleRelayerParams) {
     return _params;
   }
 
-  /// @inheritdoc IOracleRelayer
   function cParams(bytes32 _cType) external view returns (OracleRelayerCollateralParams memory _oracleRelayerCParams) {
     return _cParams[_cType];
   }
 
   EnumerableSet.Bytes32Set internal _collateralList;
 
-  /// @dev Virtual redemption price (not the most updated value) [ray]
-  uint256 internal /* RAY */ _redemptionPrice;
-  /// @inheritdoc IOracleRelayer
-  uint256 public /* RAY */ redemptionRate;
-  /// @inheritdoc IOracleRelayer
-  uint256 public redemptionPriceUpdateTime;
+  // Virtual redemption price (not the most updated value)
+  uint256 internal _redemptionPrice; // [ray]
+  // The force that changes the system users' incentives by changing the redemption price
+  uint256 public redemptionRate; // [ray]
+  // Last time when the redemption price was changed
+  uint256 public redemptionPriceUpdateTime; // [unix epoch time]
 
   // --- Init ---
-
-  /**
-   * @param  _safeEngine Address of the SAFEEngine
-   * @param  _systemCoinOracle Address of the system coin oracle
-   * @param  _oracleRelayerParams Initial OracleRelayer valid parameters struct
-   */
   constructor(
     address _safeEngine,
     IBaseOracle _systemCoinOracle,
@@ -80,23 +63,26 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
     _params = _oracleRelayerParams;
   }
 
-  /// @inheritdoc IOracleRelayer
+  /**
+   * @notice Fetch the market price from the system coin oracle
+   */
   function marketPrice() external view returns (uint256 _marketPrice) {
     (uint256 _priceFeedValue, bool _hasValidValue) = systemCoinOracle.getResultWithValidity();
     if (_hasValidValue) return _priceFeedValue;
   }
 
   /**
-   * @dev To be used within view functions, not to be used in transactions, use `redemptionPrice` instead
-   * @inheritdoc IOracleRelayer
+   * @notice Fetch the last recorded redemptionPrice
+   * @dev To be used when having the absolute latest redemptionPrice is irrelevant
    */
-  function calcRedemptionPrice() external view returns (uint256 _virtualRedemptionPrice) {
-    return redemptionRate.rpow(block.timestamp - redemptionPriceUpdateTime).rmul(_redemptionPrice);
+  function lastRedemptionPrice() external view returns (uint256 _lastRedemptionPrice) {
+    return _redemptionPrice;
   }
 
   // --- Redemption Price Update ---
-
-  /// @notice Calculates and updates the redemption price using the current redemption rate
+  /**
+   * @notice Update the redemption price using the current redemption rate
+   */
   function _updateRedemptionPrice() internal virtual returns (uint256 _updatedPrice) {
     // Update redemption price
     _updatedPrice = redemptionRate.rpow(block.timestamp - redemptionPriceUpdateTime).rmul(_redemptionPrice);
@@ -106,36 +92,40 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
     emit UpdateRedemptionPrice(_updatedPrice);
   }
 
-  /// @inheritdoc IOracleRelayer
+  /**
+   * @notice Fetch the latest redemption price by first updating it
+   */
   function redemptionPrice() external returns (uint256 _updatedPrice) {
     return _getRedemptionPrice();
   }
 
-  /// @dev Avoids reupdating the redemptionPrice if no seconds have passed since last update
   function _getRedemptionPrice() internal virtual returns (uint256 _updatedPrice) {
     if (block.timestamp > redemptionPriceUpdateTime) return _updateRedemptionPrice();
     return _redemptionPrice;
   }
 
   // --- Update value ---
-
-  /// @inheritdoc IOracleRelayer
+  /**
+   * @notice Update the collateral price inside the system (inside SAFEEngine)
+   * @param  _cType The collateral we want to update prices (safety and liquidation prices) for
+   */
   function updateCollateralPrice(bytes32 _cType) external whenEnabled {
     (uint256 _priceFeedValue, bool _hasValidValue) = _cParams[_cType].oracle.getResultWithValidity();
     uint256 _updatedRedemptionPrice = _getRedemptionPrice();
 
-    uint256 _safetyPrice =
-      _hasValidValue ? (_priceFeedValue * 1e9).rdiv(_updatedRedemptionPrice).rdiv(_cParams[_cType].safetyCRatio) : 0;
-
+    uint256 _safetyPrice = _hasValidValue
+      ? (uint256(_priceFeedValue) * uint256(10 ** 9)).rdiv(_updatedRedemptionPrice).rdiv(_cParams[_cType].safetyCRatio)
+      : 0;
     uint256 _liquidationPrice = _hasValidValue
-      ? (_priceFeedValue * 1e9).rdiv(_updatedRedemptionPrice).rdiv(_cParams[_cType].liquidationCRatio)
+      ? (uint256(_priceFeedValue) * uint256(10 ** 9)).rdiv(_updatedRedemptionPrice).rdiv(
+        _cParams[_cType].liquidationCRatio
+      )
       : 0;
 
     safeEngine.updateCollateralPrice(_cType, _safetyPrice, _liquidationPrice);
     emit UpdateCollateralPrice(_cType, _priceFeedValue, _safetyPrice, _liquidationPrice);
   }
 
-  /// @inheritdoc IOracleRelayer
   function updateRedemptionRate(uint256 _redemptionRate) external isAuthorized whenEnabled {
     if (block.timestamp != redemptionPriceUpdateTime) revert OracleRelayer_RedemptionPriceNotUpdated();
 
@@ -147,7 +137,6 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
     redemptionRate = _redemptionRate;
   }
 
-  /// @inheritdoc IOracleRelayer
   function initializeCollateralType(
     bytes32 _cType,
     OracleRelayerCollateralParams memory _oracleRelayerCParams
@@ -159,22 +148,18 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
 
   // --- Shutdown ---
   /**
-   * @dev Sets the redemption rate to 1 (no change in the redemption price)
-   * @inheritdoc Disableable
+   * @notice Disable this contract (normally called by GlobalSettlement)
    */
   function _onContractDisable() internal override {
     redemptionRate = RAY;
   }
 
   // --- Views ---
-  /// @inheritdoc IOracleRelayer
   function collateralList() external view returns (bytes32[] memory __collateralList) {
     return _collateralList.values();
   }
 
   // --- Administration ---
-
-  /// @inheritdoc Modifiable
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled {
     uint256 _uint256 = _data.toUint256();
 
@@ -184,7 +169,6 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
     else revert UnrecognizedParam();
   }
 
-  /// @inheritdoc Modifiable
   function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override whenEnabled {
     uint256 _uint256 = _data.toUint256();
     OracleRelayerCollateralParams storage __cParams = _cParams[_cType];
@@ -196,21 +180,18 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
     else revert UnrecognizedParam();
   }
 
-  /// @dev Validates the address is IDelayedOracle compliant and returns it
   function _validateDelayedOracle(address _oracle) internal view returns (IDelayedOracle _delayedOracle) {
     // Checks if the delayed oracle priceSource is implemented
     _delayedOracle = IDelayedOracle(_oracle.assertNonNull());
     _delayedOracle.priceSource();
   }
 
-  /// @inheritdoc Modifiable
   function _validateParameters() internal view override {
     _params.redemptionRateUpperBound.assertGt(RAY);
     _params.redemptionRateLowerBound.assertGt(0).assertLt(RAY);
     address(systemCoinOracle).assertNonNull();
   }
 
-  /// @inheritdoc Modifiable
   function _validateCParameters(bytes32 _cType) internal view override {
     OracleRelayerCollateralParams memory __cParams = _cParams[_cType];
     __cParams.safetyCRatio.assertGtEq(__cParams.liquidationCRatio);

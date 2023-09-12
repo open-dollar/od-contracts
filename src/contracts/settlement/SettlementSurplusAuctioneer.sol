@@ -13,34 +13,20 @@ import {Math} from '@libraries/Math.sol';
 import {Encoding} from '@libraries/Encoding.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 
-/**
- * @title  SettlementSurplusAuctioneer
- * @notice This contract receives post-settlement surplus coins from the AccountingEngine and starts auctions for them
- */
 contract SettlementSurplusAuctioneer is Authorizable, Modifiable, ISettlementSurplusAuctioneer {
   using Encoding for bytes;
   using Assertions for address;
 
   // --- Data ---
-
-  /// @inheritdoc ISettlementSurplusAuctioneer
+  // Last time when this contract triggered a surplus auction
   uint256 public lastSurplusTime;
 
   // --- Registry ---
-
-  /// @inheritdoc ISettlementSurplusAuctioneer
   IAccountingEngine public accountingEngine;
-  /// @inheritdoc ISettlementSurplusAuctioneer
   ISurplusAuctionHouse public surplusAuctionHouse;
-  /// @inheritdoc ISettlementSurplusAuctioneer
   ISAFEEngine public safeEngine;
 
   // --- Init ---
-
-  /**
-   * @param  _accountingEngine Address of the AccountingEngine
-   * @param  _surplusAuctionHouse Address of the SurplusAuctionHouse
-   */
   constructor(address _accountingEngine, address _surplusAuctionHouse) Authorizable(msg.sender) validParams {
     accountingEngine = IAccountingEngine(_accountingEngine.assertNonNull());
     surplusAuctionHouse = ISurplusAuctionHouse(_surplusAuctionHouse.assertNonNull());
@@ -49,8 +35,11 @@ contract SettlementSurplusAuctioneer is Authorizable, Modifiable, ISettlementSur
   }
 
   // --- Core Logic ---
-
-  /// @inheritdoc ISettlementSurplusAuctioneer
+  /**
+   * @notice Auction surplus. The process is very similar to the one in the AccountingEngine.
+   * @dev The contract reads surplus auction parameters from the AccountingEngine and uses them to
+   *      start a new auction.
+   */
   function auctionSurplus() external returns (uint256 _id) {
     if (accountingEngine.contractEnabled()) revert SSA_AccountingEngineStillEnabled();
     IAccountingEngine.AccountingEngineParams memory _accEngineParams = accountingEngine.params();
@@ -66,7 +55,6 @@ contract SettlementSurplusAuctioneer is Authorizable, Modifiable, ISettlementSur
 
   // --- Administration ---
 
-  /// @inheritdoc Modifiable
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     address _address = _data.toAddress();
 
@@ -75,7 +63,6 @@ contract SettlementSurplusAuctioneer is Authorizable, Modifiable, ISettlementSur
     else revert UnrecognizedParam();
   }
 
-  /// @notice Sets the SurplusAuctionHouse, revoking the previous one permissions and approving the new one
   function _setSurplusAuctionHouse(address _address) internal {
     safeEngine.denySAFEModification(address(surplusAuctionHouse));
     surplusAuctionHouse = ISurplusAuctionHouse(_address);

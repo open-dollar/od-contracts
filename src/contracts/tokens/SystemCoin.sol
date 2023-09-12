@@ -6,32 +6,17 @@ import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
 import {ISystemCoin} from '@interfaces/tokens/ISystemCoin.sol';
 
-/**
- * @title  SystemCoin
- * @notice This contract represents the system coin ERC20 token to be used outside the system
- */
 contract SystemCoin is ERC20, Authorizable, ISystemCoin {
-  // --- Init ---
-
-  /**
-   * @param  _name String with the name of the token
-   * @param  _symbol String with the symbol of the token
-   */
   constructor(string memory _name, string memory _symbol) ERC20(_name, _symbol) Authorizable(msg.sender) {}
 
-  // --- Methods ---
-
-  /// @inheritdoc ISystemCoin
   function mint(address _dst, uint256 _wad) external isAuthorized {
     _mint(_dst, _wad);
   }
 
-  /// @inheritdoc ISystemCoin
   function burn(uint256 _wad) external {
     _burn(msg.sender, _wad);
   }
 
-  /// @inheritdoc ISystemCoin
   function burn(address _usr, uint256 _wad) external isAuthorized {
     _burn(_usr, _wad);
   }

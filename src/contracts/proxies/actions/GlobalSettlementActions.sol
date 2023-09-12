@@ -7,18 +7,14 @@ import {CommonActions} from '@contracts/proxies/actions/CommonActions.sol';
 import {IGlobalSettlement} from '@interfaces/settlement/IGlobalSettlement.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ICollateralJoin} from '@interfaces/utils/ICollateralJoin.sol';
-import {IGlobalSettlementActions} from '@interfaces/proxies/actions/IGlobalSettlementActions.sol';
 
 import {RAY} from '@libraries/Math.sol';
 
 /**
- * @title  GlobalSettlementActions
+ * @title GlobalSettlementActions
  * @notice All methods here are executed as delegatecalls from the user's proxy
  */
-contract GlobalSettlementActions is CommonActions, IGlobalSettlementActions {
-  // --- Methods ---
-
-  /// @inheritdoc IGlobalSettlementActions
+contract GlobalSettlementActions is CommonActions {
   function freeCollateral(
     address _manager,
     address _globalSettlement,
@@ -52,7 +48,6 @@ contract GlobalSettlementActions is CommonActions, IGlobalSettlementActions {
     _exitCollateral(_collateralJoin, _collateralAmount);
   }
 
-  /// @inheritdoc IGlobalSettlementActions
   function prepareCoinsForRedeeming(
     address _globalSettlement,
     address _coinJoin,
@@ -72,7 +67,6 @@ contract GlobalSettlementActions is CommonActions, IGlobalSettlementActions {
     IGlobalSettlement(_globalSettlement).prepareCoinsForRedeeming(_coinAmount);
   }
 
-  /// @inheritdoc IGlobalSettlementActions
   function redeemCollateral(
     address _globalSettlement,
     address _collateralJoin

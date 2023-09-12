@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {ISurplusAuctionHouse, ICommonSurplusAuctionHouse} from '@interfaces/ISurplusAuctionHouse.sol';
+import {ISurplusAuctionHouse} from '@interfaces/ISurplusAuctionHouse.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IProtocolToken} from '@interfaces/tokens/IProtocolToken.sol';
 
@@ -14,59 +14,43 @@ import {Encoding} from '@libraries/Encoding.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 import {Math, WAD} from '@libraries/Math.sol';
 
-/**
- * @title  SurplusAuctionHouse
- * @notice This contract enables the sell of system coins in exchange for protocol tokens
- * @dev    A percentage of the protocol tokens raised in the auction are sent to a receiver, the rest is burnt
- */
+// This thing lets you auction surplus for protocol tokens. 50% of the protocol tokens are sent to another address and the rest are burned
 contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusAuctionHouse {
   using Math for uint256;
   using Encoding for bytes;
   using Assertions for address;
   using SafeERC20 for IProtocolToken;
 
-  /// @inheritdoc ICommonSurplusAuctionHouse
   bytes32 public constant AUCTION_HOUSE_TYPE = bytes32('SURPLUS');
+  bytes32 public constant SURPLUS_AUCTION_TYPE = bytes32('MIXED-STRAT');
 
   // --- Data ---
-
-  /// @inheritdoc ICommonSurplusAuctionHouse
+  // Data for each separate auction
   // solhint-disable-next-line private-vars-leading-underscore
-  mapping(uint256 _auctionId => Auction) public _auctions;
+  mapping(uint256 => Auction) public _auctions;
 
-  /// @inheritdoc ICommonSurplusAuctionHouse
   function auctions(uint256 _id) external view returns (Auction memory _auction) {
     return _auctions[_id];
   }
 
-  /// @inheritdoc ICommonSurplusAuctionHouse
+  // Number of auctions started up until now
   uint256 public auctionsStarted;
 
   // --- Registry ---
-
-  /// @inheritdoc ICommonSurplusAuctionHouse
+  // SAFE database
   ISAFEEngine public safeEngine;
-  /// @inheritdoc ICommonSurplusAuctionHouse
+  // Protocol token address
   IProtocolToken public protocolToken;
 
   // --- Params ---
-
-  /// @inheritdoc ISurplusAuctionHouse
   // solhint-disable-next-line private-vars-leading-underscore
   SurplusAuctionHouseParams public _params;
 
-  /// @inheritdoc ISurplusAuctionHouse
   function params() external view returns (SurplusAuctionHouseParams memory _sahParams) {
     return _params;
   }
 
   // --- Init ---
-
-  /**
-   * @param  _safeEngine Address of the SAFEEngine contract
-   * @param  _protocolToken Address of the protocol governance token
-   * @param  _sahParams Initial valid SurplusAuctionHouse parameters struct
-   */
   constructor(
     address _safeEngine,
     address _protocolToken,
@@ -81,8 +65,7 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
   // --- Shutdown ---
 
   /**
-   * @dev Transfer all system coins back to the caller's address (usually the AccountingEngine)
-   * @inheritdoc Disableable
+   * @notice Disable the auction house (usually called by AccountingEngine)
    */
   function _onContractDisable() internal override {
     uint256 _coinBalance = safeEngine.coinBalance(address(this));
@@ -90,8 +73,11 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
   }
 
   // --- Auction ---
-
-  /// @inheritdoc ICommonSurplusAuctionHouse
+  /**
+   * @notice Start a new surplus auction
+   * @param _amountToSell Total amount of system coins to sell (rad)
+   * @param _initialBid Initial protocol token bid (wad)
+   */
   function startAuction(
     uint256 _amountToSell,
     uint256 _initialBid
@@ -111,7 +97,6 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
 
     emit StartAuction({
       _id: _id,
-      _auctioneer: msg.sender,
       _blockTimestamp: block.timestamp,
       _amountToSell: _amountToSell,
       _amountToRaise: _initialBid,
@@ -119,7 +104,10 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
     });
   }
 
-  /// @inheritdoc ICommonSurplusAuctionHouse
+  /**
+   * @notice Restart an auction if no bids were submitted for it
+   * @param _id ID of the auction to restart
+   */
   function restartAuction(uint256 _id) external {
     if (_id == 0 || _id > auctionsStarted) revert SAH_AuctionNeverStarted();
     Auction storage _auction = _auctions[_id];
@@ -130,7 +118,12 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
     emit RestartAuction({_id: _id, _blockTimestamp: block.timestamp, _auctionDeadline: _auction.auctionDeadline});
   }
 
-  /// @inheritdoc ICommonSurplusAuctionHouse
+  /**
+   * @notice Submit a higher protocol token bid for the same amount of system coins
+   * @param _id ID of the auction you want to submit the bid for
+   * @param _amountToBuy Amount of system coins to buy (rad)
+   * @param _bid New bid submitted (wad)
+   */
   function increaseBidSize(uint256 _id, uint256 _amountToBuy, uint256 _bid) external whenEnabled {
     Auction storage _auction = _auctions[_id];
     if (_auction.highBidder == address(0)) revert SAH_HighBidderNotSet();
@@ -159,7 +152,10 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
     });
   }
 
-  /// @inheritdoc ICommonSurplusAuctionHouse
+  /**
+   * @notice Settle/finish an auction
+   * @param _id ID of the auction to settle
+   */
   function settleAuction(uint256 _id) external whenEnabled {
     Auction memory _auction = _auctions[_id];
     if (_auction.bidExpiry == 0 || (_auction.bidExpiry > block.timestamp && _auction.auctionDeadline > block.timestamp))
@@ -189,7 +185,10 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
     delete _auctions[_id];
   }
 
-  /// @inheritdoc ISurplusAuctionHouse
+  /**
+   * @notice Terminate an auction prematurely.
+   * @param _id ID of the auction to settle/terminate
+   */
   function terminateAuctionPrematurely(uint256 _id) external whenDisabled {
     Auction memory _auction = _auctions[_id];
     if (_auction.highBidder == address(0)) revert SAH_HighBidderNotSet();
@@ -208,7 +207,6 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
 
   // --- Administration ---
 
-  /// @inheritdoc Modifiable
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     address _address = _data.toAddress();
     uint256 _uint256 = _data.toUint256();
@@ -222,7 +220,6 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
     else revert UnrecognizedParam();
   }
 
-  /// @inheritdoc Modifiable
   function _validateParameters() internal view override {
     address(protocolToken).assertNonNull();
     _params.bidReceiver.assertNonNull();

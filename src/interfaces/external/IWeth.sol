@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
-
-interface IWeth is IERC20 {
+interface IWeth {
   function deposit() external payable;
   function withdraw(uint256 _amount) external;
 }
