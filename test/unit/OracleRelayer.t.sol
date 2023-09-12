@@ -14,8 +14,8 @@ import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {HaiTest} from '@test/utils/HaiTest.t.sol';
 import {OracleRelayer} from '@contracts/OracleRelayer.sol';
 import {SAFEEngine} from '@contracts/SAFEEngine.sol';
-import {OracleForTest} from '@contracts/for-test/OracleForTest.sol';
-import {OracleRelayerForTest, OracleRelayerForInternalCallsTest} from '@contracts/for-test/OracleRelayerForTest.sol';
+import {OracleForTest} from '@test/mocks/OracleForTest.sol';
+import {OracleRelayerForTest, OracleRelayerForInternalCallsTest} from '@test/mocks/OracleRelayerForTest.sol';
 
 import {Math, RAY, WAD} from '@libraries/Math.sol';
 import {Assertions} from '@libraries/Assertions.sol';

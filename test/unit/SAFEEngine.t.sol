@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {SAFEEngineForTest, ISAFEEngine} from '@contracts/for-test/SAFEEngineForTest.sol';
+import {SAFEEngineForTest, ISAFEEngine} from '@test/mocks/SAFEEngineForTest.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
@@ -682,7 +682,7 @@ contract Unit_SAFEEngine_UpdateAccumulatedRate is Base {
     safeEngine.updateAccumulatedRate(collateralType, surplusDst, _rateMultiplier);
   }
 
-  function test_Revert_ContractNotEnabled(int256 _rateMultiplier) public authorized {
+  function test_Revert_ContractIsDisabled(int256 _rateMultiplier) public authorized {
     _mockContractEnabled(false);
 
     vm.expectRevert(IDisableable.ContractIsDisabled.selector);
@@ -881,7 +881,7 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
     );
   }
 
-  function test_Revert_ContractNotEnabled() public {
+  function test_Revert_ContractIsDisabled() public {
     _mockContractEnabled(false);
 
     vm.expectRevert(IDisableable.ContractIsDisabled.selector);
@@ -1641,6 +1641,18 @@ contract Unit_SAFEEngine_InitializeCollateralType is Base {
     _mockCollateralList(_cType);
 
     vm.expectRevert(ISAFEEngine.SAFEEng_CollateralTypeAlreadyExists.selector);
+
+    safeEngine.initializeCollateralType(_cType, _safeEngineCParams);
+  }
+
+  function test_Revert_ContractIsDisabled(
+    bytes32 _cType,
+    ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCParams
+  ) public authorized {
+    _mockCollateralList(_cType);
+    _mockContractEnabled(false);
+
+    vm.expectRevert(IDisableable.ContractIsDisabled.selector);
 
     safeEngine.initializeCollateralType(_cType, _safeEngineCParams);
   }

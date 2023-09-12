@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {OracleJobForTest, IOracleJob} from '@contracts/for-test/OracleJobForTest.sol';
+import {OracleJobForTest, IOracleJob} from '@test/mocks/OracleJobForTest.sol';
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
 import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
 import {IPIDRateSetter} from '@interfaces/IPIDRateSetter.sol';

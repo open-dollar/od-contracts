@@ -13,10 +13,9 @@ contract CollateralAuctionHouseFactoryForTest is CollateralAuctionHouseFactory {
 
   constructor(
     address _safeEngine,
-    address _oracleRelayer,
     address _liquidationEngine,
-    ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams memory _cahParams
-  ) CollateralAuctionHouseFactory(_safeEngine, _oracleRelayer, _liquidationEngine, _cahParams) {}
+    address _oracleRelayer
+  ) CollateralAuctionHouseFactory(_safeEngine, _liquidationEngine, _oracleRelayer) {}
 
   function addToCollateralList(bytes32 _cType) external {
     _collateralList.add(_cType);

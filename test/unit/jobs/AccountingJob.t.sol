@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {AccountingJobForTest, IAccountingJob} from '@contracts/for-test/AccountingJobForTest.sol';
+import {AccountingJobForTest, IAccountingJob} from '@test/mocks/AccountingJobForTest.sol';
 import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
 import {IStabilityFeeTreasury} from '@interfaces/IStabilityFeeTreasury.sol';
 import {IJob} from '@interfaces/jobs/IJob.sol';

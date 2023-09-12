@@ -4,7 +4,7 @@ pragma solidity 0.8.19;
 import {IPIDController, PIDController} from '@contracts/PIDController.sol';
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 import {InternalCallsWatcher, InternalCallsExtension} from '@test/utils/InternalCallsWatcher.sol';
-import {PIDControllerForTest, MockPIDController} from '@contracts/for-test/PIDControllerForTest.sol';
+import {PIDControllerForTest, MockPIDController} from '@test/mocks/PIDControllerForTest.sol';
 
 import '@script/Params.s.sol';
 

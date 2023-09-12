@@ -12,6 +12,7 @@ import {MainnetParams} from '@script/MainnetParams.s.sol';
 
 abstract contract Deploy is Common, Script {
   function setupEnvironment() public virtual {}
+  function setupPostEnvironment() public virtual {}
 
   function run() public {
     deployer = vm.addr(_deployerPk);
@@ -66,6 +67,8 @@ abstract contract Deploy is Common, Script {
 
     mintAirdrop(t);
     deployGovernor(address(protocolToken), t, H);
+    // Deploy and setup contracts that rely on deployed environment
+    setupPostEnvironment();
 
     if (delegate == address(0)) {
       _revokeAllTo(governor);
@@ -109,6 +112,8 @@ contract DeployMainnet is MainnetParams, Deploy {
     collateralTypes.push(WETH);
     collateralTypes.push(WSTETH);
   }
+
+  function setupPostEnvironment() public virtual override updateParams {}
 }
 
 contract DeployGoerli is GoerliParams, Deploy {
@@ -137,10 +142,11 @@ contract DeployGoerli is GoerliParams, Deploy {
     });
 
     // Test tokens
-    collateral[WBTC] = new ERC20ForTestnet('Wrapped BTC', 'wBTC', 8);
-    collateral[STONES] = new ERC20ForTestnet('Stones', 'STN', 3);
-    collateral[TOTEM] = new ERC20ForTestnet('Totem', 'TTM', 0);
+    collateral[WBTC] = new MintableERC20('Wrapped BTC', 'wBTC', 8);
+    collateral[STONES] = new MintableERC20('Stones', 'STN', 3);
+    collateral[TOTEM] = new MintableERC20('Totem', 'TTM', 0);
 
+    // BTC: live feed
     IBaseOracle _wbtcUsdOracle =
       chainlinkRelayerFactory.deployChainlinkRelayer(ARB_GOERLI_CHAINLINK_BTC_USD_FEED, ORACLE_INTERVAL_TEST); // live feed
 
@@ -164,5 +170,16 @@ contract DeployGoerli is GoerliParams, Deploy {
     collateralTypes.push(WBTC);
     collateralTypes.push(STONES);
     collateralTypes.push(TOTEM);
+  }
+
+  function setupPostEnvironment() public virtual override updateParams {
+    // Setup deviated oracle
+    systemCoinOracle = new DeviatedOracle({
+      _symbol: 'HAI/USD',
+      _oracleRelayer: address(oracleRelayer),
+      _deviation: OP_GOERLI_HAI_PRICE_DEVIATION
+    });
+
+    oracleRelayer.modifyParameters('systemCoinOracle', abi.encode(systemCoinOracle));
   }
 }

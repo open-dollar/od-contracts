@@ -33,22 +33,16 @@ abstract contract GoerliParams is Contracts, Params {
     _debtAuctionHouseParams = IDebtAuctionHouse.DebtAuctionHouseParams({
       bidDecrease: 1.05e18, // - 5%
       amountSoldIncrease: 1.05e18, // + 5%
-      bidDuration: 900,
-      totalAuctionLength: 1800
+      bidDuration: 900, // 15 minutes
+      totalAuctionLength: 1800 // 30 minutes
     });
 
     _surplusAuctionHouseParams = ISurplusAuctionHouse.SurplusAuctionHouseParams({
       bidIncrease: 1.01e18, // +1 %
-      bidDuration: 900,
-      totalAuctionLength: 1800,
+      bidDuration: 900, // 15 minutes
+      totalAuctionLength: 1800, // 30 minutes
       bidReceiver: governor,
       recyclingPercentage: 50 // 100% - recyclingPercentage is burned
-    });
-
-    _collateralAuctionHouseSystemCoinParams = ICollateralAuctionHouse.CollateralAuctionHouseSystemCoinParams({
-      lowerSystemCoinDeviation: WAD, // 0% deviation
-      upperSystemCoinDeviation: WAD, // 0% deviation
-      minSystemCoinDeviation: WAD // 0% deviation
     });
 
     _liquidationEngineParams = ILiquidationEngine.LiquidationEngineParams({
@@ -100,8 +94,8 @@ abstract contract GoerliParams is Contracts, Params {
     _globalSettlementParams = IGlobalSettlement.GlobalSettlementParams({shutdownCooldown: 3 days});
     _postSettlementSAHParams = IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams({
       bidIncrease: 1.01e18, // +1 %
-      bidDuration: 900,
-      totalAuctionLength: 1800
+      bidDuration: 900, // 15 minutes
+      totalAuctionLength: 1800 // 30 minutes
     });
 
     // --- Collateral Default Params ---
@@ -130,13 +124,11 @@ abstract contract GoerliParams is Contracts, Params {
         liquidationQuantity: 1000 * RAD // 1000 COINs
       });
 
-      _collateralAuctionHouseCParams[_cType] = ICollateralAuctionHouse.CollateralAuctionHouseParams({
+      _collateralAuctionHouseParams[_cType] = ICollateralAuctionHouse.CollateralAuctionHouseParams({
         minimumBid: WAD, // 1 COINs
         minDiscount: WAD, // no discount
         maxDiscount: 0.9e18, // -10%
-        perSecondDiscountUpdateRate: MINUS_0_5_PERCENT_PER_HOUR, // RAY
-        lowerCollateralDeviation: 0.99e18, // -1%
-        upperCollateralDeviation: 0.99e18 // +1%
+        perSecondDiscountUpdateRate: MINUS_0_5_PERCENT_PER_HOUR // RAY
       });
     }
 
