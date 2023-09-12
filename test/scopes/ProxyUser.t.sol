@@ -27,7 +27,7 @@ import {BaseUser} from '@test/scopes/BaseUser.t.sol';
 abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
   mapping(address => ODProxy) proxy;
   mapping(address => mapping(bytes32 => uint256)) safe;
-  mapping(address => mapping(bytes32 => address)) safeHandler;
+  mapping(address => mapping(bytes32 => address)) safeHandlerMap;
 
   function _getSafeStatus(
     bytes32 _cType,
@@ -53,7 +53,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
   }
 
   function _getInternalCoinBalance(address _user) internal override returns (uint256 _rad) {
-    HaiProxy _proxy = _getProxy(_user);
+    ODProxy _proxy = _getProxy(_user);
     _rad = safeEngine.coinBalance(address(_proxy));
   }
 
@@ -203,10 +203,10 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
 
       // store safeId and safeHandler in local storage
       safe[_user][_cType] = _safeId;
-      safeHandler[_user][_cType] = _safeHandler;
+      safeHandlerMap[_user][_cType] = _safeHandler;
     }
 
-    return (safe[_user][_cType], safeHandler[_user][_cType]);
+    return (safe[_user][_cType], safeHandlerMap[_user][_cType]);
   }
 
   // --- Bidding actions ---
@@ -279,7 +279,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     vm.stopPrank();
   }
 
-  function _settleAuction(address _user, uint256 _auctionId) internal override {
+  function _settleAuction(address _user, uint256 _auctionId) internal {
     ODProxy _proxy = _getProxy(_user);
 
     bytes memory _callData = abi.encodeWithSelector(
@@ -305,7 +305,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
   // --- Global Settlement actions ---
 
   function _increasePostSettlementBidSize(address _user, uint256 _auctionId, uint256 _bidAmount) internal override {
-    HaiProxy _proxy = _getProxy(_user);
+    ODProxy _proxy = _getProxy(_user);
 
     vm.startPrank(_user);
     protocolToken.approve(address(_proxy), _bidAmount);
@@ -319,7 +319,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
   }
 
   function _settlePostSettlementSurplusAuction(address _user, uint256 _auctionId) internal override {
-    HaiProxy _proxy = _getProxy(_user);
+    ODProxy _proxy = _getProxy(_user);
 
     bytes memory _callData = abi.encodeWithSelector(
       SurplusBidActions.settleAuction.selector,
@@ -333,7 +333,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
   }
 
   function _freeCollateral(address _user, bytes32 _cType) internal override returns (uint256 _remainderCollateral) {
-    HaiProxy _proxy = _getProxy(_user);
+    ODProxy _proxy = _getProxy(_user);
     (uint256 _safeId,) = _getSafe(_user, _cType);
 
     bytes memory _callData = abi.encodeWithSelector(
@@ -346,7 +346,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
   }
 
   function _prepareCoinsForRedeeming(address _user, uint256 _amount) internal override {
-    HaiProxy _proxy = _getProxy(_user);
+    ODProxy _proxy = _getProxy(_user);
 
     bytes memory _callData = abi.encodeWithSelector(
       GlobalSettlementActions.prepareCoinsForRedeeming.selector, globalSettlement, coinJoin, _amount
@@ -363,7 +363,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     bytes32 _cType,
     uint256 _coinsAmount
   ) internal override returns (uint256 _collateralAmount) {
-    HaiProxy _proxy = _getProxy(_user);
+    ODProxy _proxy = _getProxy(_user);
 
     // NOTE: proxy implementation uses all available coins in bag
     bytes memory _callData = abi.encodeWithSelector(

@@ -6,6 +6,9 @@ import {GoerliContracts} from '@script/GoerliContracts.s.sol';
 import {CollateralJoinFactory} from '@contracts/factories/CollateralJoinFactory.sol';
 import {CollateralAuctionHouseFactory} from '@contracts/factories/CollateralAuctionHouseFactory.sol';
 import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
+import {WAD, RAY, RAD} from '@libraries/Math.sol';
+
+uint256 constant MINUS_0_5_PERCENT_PER_HOUR = 999_998_607_628_240_588_157_433_861;
 
 /**
  * @dev add to env
@@ -26,11 +29,9 @@ contract CTypeBase is GoerliContracts, Script {
    */
   ICollateralAuctionHouse.CollateralAuctionHouseParams _cahCParams = ICollateralAuctionHouse
     .CollateralAuctionHouseParams({
-    minimumBid: 1,
-    minDiscount: 1,
-    maxDiscount: 1,
-    perSecondDiscountUpdateRate: 1,
-    lowerCollateralDeviation: 1,
-    upperCollateralDeviation: 1
+    minimumBid: WAD, // 1 COINs
+    minDiscount: WAD, // no discount
+    maxDiscount: 0.9e18, // -10%
+    perSecondDiscountUpdateRate: MINUS_0_5_PERCENT_PER_HOUR
   });
 }

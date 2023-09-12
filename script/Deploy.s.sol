@@ -20,9 +20,9 @@ abstract contract Deploy is Common, Script {
 
     //print the commit hash
     string[] memory inputs = new string[](3);
-    inputs[0] = "git";
-    inputs[1] = "rev-parse";
-    inputs[2] = "HEAD";
+    inputs[0] = 'git';
+    inputs[1] = 'rev-parse';
+    inputs[2] = 'HEAD';
 
     bytes memory res = vm.ffi(inputs);
 
@@ -177,7 +177,7 @@ contract DeployGoerli is GoerliParams, Deploy {
     systemCoinOracle = new DeviatedOracle({
       _symbol: 'HAI/USD',
       _oracleRelayer: address(oracleRelayer),
-      _deviation: OP_GOERLI_HAI_PRICE_DEVIATION
+      _deviation: ARB_GOERLI_FTRG_PRICE_DEVIATION
     });
 
     oracleRelayer.modifyParameters('systemCoinOracle', abi.encode(systemCoinOracle));

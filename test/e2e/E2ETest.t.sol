@@ -268,10 +268,10 @@ abstract contract E2ETest is BaseUser, Base_CType, Common {
 
 // contract E2ETestProxyUserETH is ProxyUser, ETH_CType, E2ETest {}
 
-contract E2ETestDirectUserTKN is DirectUser, TKN_CType, E2ETest {}
+abstract contract E2ETestDirectUserTKN is DirectUser, TKN_CType, E2ETest {}
 
-contract E2ETestProxyUserTKN is ProxyUser, TKN_CType, E2ETest {}
+abstract contract E2ETestProxyUserTKN is ProxyUser, TKN_CType, E2ETest {}
 
-contract E2ETestDirectUserTKN8D is DirectUser, TKN_8D_CType, E2ETest {}
+abstract contract E2ETestDirectUserTKN8D is DirectUser, TKN_8D_CType, E2ETest {}
 
-contract E2ETestProxyUserTKN8D is ProxyUser, TKN_8D_CType, E2ETest {}
+abstract contract E2ETestProxyUserTKN8D is ProxyUser, TKN_8D_CType, E2ETest {}

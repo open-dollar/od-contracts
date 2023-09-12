@@ -5,7 +5,8 @@ import '@script/Params.s.sol';
 
 abstract contract GoerliParams is Contracts, Params {
   // --- Testnet Params ---
-  uint256 constant ARB_GOERLI_FTRG_ETH_PRICE_FEED = 0.001e18;
+  uint256 constant ARB_GOERLI_FTRG_ETH_PRICE_FEED = 0.001e18; // 1000 OP = 1 ETH
+  uint256 constant ARB_GOERLI_FTRG_PRICE_DEVIATION = 0.995e18; // -0.5%
 
   function _getEnvironmentParams() internal override {
     governor = 0x37c5B029f9c3691B3d47cb024f84E5E257aEb0BB; // cannot be the deployer
@@ -139,6 +140,6 @@ abstract contract GoerliParams is Contracts, Params {
     _safeEngineCParams[WETH].debtCeiling = 100_000_000 * RAD; // 100M COINs
 
     _liquidationEngineCParams[FTRG].liquidationPenalty = 1.2e18; // 20%
-    _collateralAuctionHouseCParams[FTRG].maxDiscount = 0.5e18; // -50%
+    _collateralAuctionHouseParams[FTRG].maxDiscount = 0.5e18; // -50%
   }
 }

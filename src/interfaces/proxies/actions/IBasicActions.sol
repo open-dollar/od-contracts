@@ -8,7 +8,7 @@ interface IBasicActions is ICommonActions {
 
   /**
    * @notice Opens a brand new SAFE
-   * @param  _manager Address of the HaiSafeManager contract
+   * @param  _manager Address of the ODSafeManager contract
    * @param  _cType Bytes32 representing the collateral type
    * @param  _usr Address of the SAFE owner
    * @return _safeId Id of the created SAFE
@@ -17,7 +17,7 @@ interface IBasicActions is ICommonActions {
 
   /**
    * @notice Generates debt and sends COIN amount to msg.sender
-   * @param  _manager Address of the HaiSafeManager contract
+   * @param  _manager Address of the ODSafeManager contract
    * @param  _taxCollector Address of the TaxCollector contract
    * @param  _coinJoin Address of the CoinJoin contract
    * @param  _safeId Id of the SAFE
@@ -33,7 +33,7 @@ interface IBasicActions is ICommonActions {
 
   /**
    * @notice Repays an amount of debt
-   * @param  _manager Address of the HaiSafeManager contract
+   * @param  _manager Address of the ODSafeManager contract
    * @param  _taxCollector Address of the TaxCollector contract
    * @param  _coinJoin Address of the CoinJoin contract
    * @param  _safeId Id of the SAFE
@@ -49,7 +49,7 @@ interface IBasicActions is ICommonActions {
 
   /**
    * @notice Locks a collateral token amount in the SAFE
-   * @param  _manager Address of the HaiSafeManager contract
+   * @param  _manager Address of the ODSafeManager contract
    * @param  _collateralJoin Address of the CollateralJoin contract
    * @param  _safeId Id of the SAFE
    * @param  _deltaWad Amount of collateral to collateralize [wad]
@@ -58,7 +58,7 @@ interface IBasicActions is ICommonActions {
 
   /**
    * @notice Unlocks a collateral token amount from the SAFE, and transfers the ERC20 collateral to the user's address
-   * @param  _manager Address of the HaiSafeManager contract
+   * @param  _manager Address of the ODSafeManager contract
    * @param  _collateralJoin Address of the CollateralJoin contract
    * @param  _safeId Id of the SAFE
    * @param  _deltaWad Amount of collateral to free [wad]
@@ -67,7 +67,7 @@ interface IBasicActions is ICommonActions {
 
   /**
    * @notice Repays the total amount of debt of a SAFE
-   * @param  _manager Address of the HaiSafeManager contract
+   * @param  _manager Address of the ODSafeManager contract
    * @param  _taxCollector Address of the TaxCollector contract
    * @param  _coinJoin Address of the CoinJoin contract
    * @param  _safeId Id of the SAFE
@@ -77,7 +77,7 @@ interface IBasicActions is ICommonActions {
 
   /**
    * @notice Locks a collateral token amount in the SAFE and generates debt
-   * @param  _manager Address of the HaiSafeManager contract
+   * @param  _manager Address of the ODSafeManager contract
    * @param  _taxCollector Address of the TaxCollector contract
    * @param  _collateralJoin Address of the CollateralJoin contract
    * @param  _coinJoin Address of the CoinJoin contract
@@ -97,7 +97,7 @@ interface IBasicActions is ICommonActions {
 
   /**
    * @notice Creates a SAFE, locks a collateral token amount in it and generates debt
-   * @param  _manager Address of the HaiSafeManager contract
+   * @param  _manager Address of the ODSafeManager contract
    * @param  _taxCollector Address of the TaxCollector contract
    * @param  _collateralJoin Address of the CollateralJoin contract
    * @param  _coinJoin Address of the CoinJoin contract
@@ -118,7 +118,7 @@ interface IBasicActions is ICommonActions {
 
   /**
    * @notice Repays debt and unlocks a collateral token amount from the SAFE
-   * @param  _manager Address of the HaiSafeManager contract
+   * @param  _manager Address of the ODSafeManager contract
    * @param  _taxCollector Address of the TaxCollector contract
    * @param  _collateralJoin Address of the CollateralJoin contract
    * @param  _coinJoin Address of the CoinJoin contract
@@ -138,7 +138,7 @@ interface IBasicActions is ICommonActions {
 
   /**
    * @notice Repays all debt and unlocks collateral from the SAFE
-   * @param  _manager Address of the HaiSafeManager contract
+   * @param  _manager Address of the ODSafeManager contract
    * @param  _taxCollector Address of the TaxCollector contract
    * @param  _collateralJoin Address of the CollateralJoin contract
    * @param  _coinJoin Address of the CoinJoin contract

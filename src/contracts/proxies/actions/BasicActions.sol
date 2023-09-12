@@ -138,23 +138,23 @@ contract BasicActions is CommonActions, IBasicActions {
     );
   }
 
-  /// @notice Routes the openSAFE call to the HaiSafeManager contract
+  /// @notice Routes the openSAFE call to the ODSafeManager contract
   function _openSAFE(address _manager, bytes32 _cType, address _usr) internal returns (uint256 _safeId) {
     _safeId = ODSafeManager(_manager).openSAFE(_cType, _usr);
   }
 
-  /// @notice Routes the transferCollateral call to the HaiSafeManager contract
+  /// @notice Routes the transferCollateral call to the ODSafeManager contract
   function _transferCollateral(address _manager, uint256 _safeId, address _dst, uint256 _deltaWad) internal {
     if (_deltaWad == 0) return;
     ODSafeManager(_manager).transferCollateral(_safeId, _dst, _deltaWad);
   }
 
-  /// @notice Routes the transferInternalCoins call to the HaiSafeManager contract
+  /// @notice Routes the transferInternalCoins call to the ODSafeManager contract
   function _transferInternalCoins(address _manager, uint256 _safeId, address _dst, uint256 _rad) internal {
     ODSafeManager(_manager).transferInternalCoins(_safeId, _dst, _rad);
   }
 
-  /// @notice Routes the modifySAFECollateralization call to the HaiSafeManager contract
+  /// @notice Routes the modifySAFECollateralization call to the ODSafeManager contract
   function _modifySAFECollateralization(
     address _manager,
     uint256 _safeId,
@@ -256,7 +256,7 @@ contract BasicActions is CommonActions, IBasicActions {
     uint256 _safeId,
     uint256 _deltaWad
   ) external delegateCall {
-    HaiSafeManager.SAFEData memory _safeInfo = HaiSafeManager(_manager).safeData(_safeId);
+    ODSafeManager.SAFEData memory _safeInfo = ODSafeManager(_manager).safeData(_safeId);
 
     // Takes token amount from user's wallet and joins into the safeEngine
     _joinCollateral(_collateralJoin, _safeInfo.safeHandler, _deltaWad);
