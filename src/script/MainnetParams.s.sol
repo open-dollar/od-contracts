@@ -12,7 +12,7 @@ abstract contract MainnetParams is Contracts, Params {
     });
 
     _accountingEngineParams = IAccountingEngine.AccountingEngineParams({
-      surplusIsTransferred: 0, // surplus is auctioned
+      surplusIsTransferred: 0, // percent of surplus that is transfered
       surplusDelay: 1 days,
       popDebtDelay: 1 days,
       disableCooldown: 3 days,

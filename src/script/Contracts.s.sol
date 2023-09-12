@@ -33,6 +33,7 @@ import {DelayedOracle, IDelayedOracle} from '@contracts/oracles/DelayedOracle.so
 import {DenominatedOracle} from '@contracts/oracles/DenominatedOracle.sol';
 import {ChainlinkRelayer} from '@contracts/oracles/ChainlinkRelayer.sol';
 import {UniV3Relayer} from '@contracts/oracles/UniV3Relayer.sol';
+import {CamelotRelayer} from '@contracts/oracles/CamelotRelayer.sol';
 
 // --- Tokens ---
 import {ERC20ForTest, ERC20} from '@contracts/for-test/ERC20ForTest.sol';
@@ -54,6 +55,7 @@ import {
 } from '@contracts/factories/CollateralAuctionHouseFactory.sol';
 import {ChainlinkRelayerFactory, IChainlinkRelayerFactory} from '@contracts/factories/ChainlinkRelayerFactory.sol';
 import {UniV3RelayerFactory, IUniV3RelayerFactory} from '@contracts/factories/UniV3RelayerFactory.sol';
+import {CamelotRelayerFactory, ICamelotRelayerFactory} from '@contracts/factories/CamelotRelayerFactory.sol';
 import {DenominatedOracleFactory, IDenominatedOracleFactory} from '@contracts/factories/DenominatedOracleFactory.sol';
 import {DelayedOracleFactory, IDelayedOracleFactory} from '@contracts/factories/DelayedOracleFactory.sol';
 
@@ -73,9 +75,15 @@ import {DebtBidActions} from '@contracts/proxies/actions/DebtBidActions.sol';
 import {SurplusBidActions} from '@contracts/proxies/actions/SurplusBidActions.sol';
 import {CollateralBidActions} from '@contracts/proxies/actions/CollateralBidActions.sol';
 import {RewardedActions} from '@contracts/proxies/actions/RewardedActions.sol';
+import {GlobalSettlementActions} from '@contracts/proxies/actions/GlobalSettlementActions.sol';
+import {PostSettlementSurplusBidActions} from '@contracts/proxies/actions/PostSettlementSurplusBidActions.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 import {ODSafeManager} from '@contracts/proxies/ODSafeManager.sol';
 import {Vault721} from '@contracts/proxies/Vault721.sol';
+
+// --- Governance Contracts ---
+import {TimelockController} from '@openzeppelin/governance/TimelockController.sol';
+import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 
 /**
  * @title  Contracts
@@ -124,6 +132,7 @@ abstract contract Contracts {
 
   IChainlinkRelayerFactory public chainlinkRelayerFactory;
   IUniV3RelayerFactory public uniV3RelayerFactory;
+  ICamelotRelayerFactory public camelotRelayerFactory;
   IDenominatedOracleFactory public denominatedOracleFactory;
   IDelayedOracleFactory public delayedOracleFactory;
 
@@ -146,4 +155,10 @@ abstract contract Contracts {
   SurplusBidActions public surplusBidActions;
   CollateralBidActions public collateralBidActions;
   RewardedActions public rewardedActions;
+  GlobalSettlementActions public globalSettlementActions;
+  PostSettlementSurplusBidActions public postSettlementSurplusBidActions;
+
+  // --- Governance Contracts ---
+  TimelockController public timelockController;
+  ODGovernor public odGovernor;
 }

@@ -84,6 +84,7 @@ abstract contract Common is Contracts, Params {
     // factories or children
     _revoke(chainlinkRelayerFactory, _governor);
     _revoke(uniV3RelayerFactory, _governor);
+    _revoke(camelotRelayerFactory, _governor);
     _revoke(denominatedOracleFactory, _governor);
     _revoke(delayedOracleFactory, _governor);
 
@@ -134,6 +135,7 @@ abstract contract Common is Contracts, Params {
 
     _delegate(chainlinkRelayerFactory, __delegate);
     _delegate(uniV3RelayerFactory, __delegate);
+    _delegate(camelotRelayerFactory, __delegate);
     _delegate(denominatedOracleFactory, __delegate);
     _delegate(delayedOracleFactory, __delegate);
 
@@ -165,8 +167,8 @@ abstract contract Common is Contracts, Params {
 
   function deployContracts() public updateParams {
     // deploy Tokens
-    systemCoin = new SystemCoin('HAI Index Token', 'HAI');
-    protocolToken = new ProtocolToken('Protocol Token', 'KITE');
+    systemCoin = new SystemCoin('Open Dollar', 'OD');
+    protocolToken = new ProtocolToken('Open Dollar Governance', 'ODG');
 
     // deploy Base contracts
     safeEngine = new SAFEEngine(_safeEngineParams);
@@ -260,6 +262,7 @@ abstract contract Common is Contracts, Params {
   function deployOracleFactories() public updateParams {
     chainlinkRelayerFactory = new ChainlinkRelayerFactory();
     uniV3RelayerFactory = new UniV3RelayerFactory();
+    camelotRelayerFactory = new CamelotRelayerFactory();
     denominatedOracleFactory = new DenominatedOracleFactory();
     delayedOracleFactory = new DelayedOracleFactory();
   }
@@ -302,7 +305,7 @@ abstract contract Common is Contracts, Params {
   }
 
   function deployProxyContracts(address _safeEngine) public updateParams {
-    vault721 = new Vault721(0x37c5B029f9c3691B3d47cb024f84E5E257aEb0BB);
+    vault721 = new Vault721(GOVERNOR_DAO, oracleRelayer, taxCollector, collateralJoinFactory);
     safeManager = new ODSafeManager(_safeEngine, address(vault721));
     _deployProxyActions();
   }
@@ -313,6 +316,20 @@ abstract contract Common is Contracts, Params {
     surplusBidActions = new SurplusBidActions();
     collateralBidActions = new CollateralBidActions();
     rewardedActions = new RewardedActions();
+    globalSettlementActions = new GlobalSettlementActions();
+    postSettlementSurplusBidActions = new PostSettlementSurplusBidActions();
+  }
+
+  function mintAirdrop(address[] memory members) public {
+    uint256 wad = 1e18;
+    for (uint256 i = 0; i < members.length; i++) {
+      protocolToken.mint(members[i], 1000 * wad);
+    }
+  }
+
+  function deployGovernor(address govToken, address[] memory members, address admin) public {
+    timelockController = new TimelockController(1 minutes, members, members, admin);
+    odGovernor = new ODGovernor(govToken, timelockController);
   }
 
   modifier updateParams() {

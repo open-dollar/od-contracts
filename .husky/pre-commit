@@ -1,7 +1,0 @@
-#!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
-
-# Run linters on staged files
-npx lint-staged
-# Run quick tests
-yarn test:local

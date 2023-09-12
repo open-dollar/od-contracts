@@ -17,6 +17,14 @@ abstract contract Deploy is Common, Script {
     deployer = vm.addr(_deployerPk);
     vm.startBroadcast(deployer);
 
+    //print the commit hash
+    string[] memory inputs = new string[](3);
+    inputs[0] = "git";
+    inputs[1] = "rev-parse";
+    inputs[2] = "HEAD";
+
+    bytes memory res = vm.ffi(inputs);
+
     // Deploy oracle factories used to setup the environment
     deployOracleFactories();
 
@@ -51,6 +59,14 @@ abstract contract Deploy is Common, Script {
     // Deploy contracts related to the SafeManager usecase
     deployProxyContracts(address(safeEngine));
 
+    address[] memory t = new address[](3);
+    t[0] = H;
+    t[1] = J;
+    t[2] = P;
+
+    mintAirdrop(t);
+    deployGovernor(address(protocolToken), t, H);
+
     if (delegate == address(0)) {
       _revokeAllTo(governor);
     } else if (delegate == deployer) {
@@ -72,9 +88,10 @@ contract DeployMainnet is MainnetParams, Deploy {
 
   function setupEnvironment() public virtual override updateParams {
     // Setup oracle feeds
-    IBaseOracle _ethUSDPriceFeed = chainlinkRelayerFactory.deployChainlinkRelayer(ARB_CHAINLINK_ETH_USD_FEED, 1 hours);
+    IBaseOracle _ethUSDPriceFeed =
+      chainlinkRelayerFactory.deployChainlinkRelayer(ARB_CHAINLINK_ETH_USD_FEED, ORACLE_INTERVAL_PROD);
     IBaseOracle _wstethETHPriceFeed =
-      chainlinkRelayerFactory.deployChainlinkRelayer(ARB_CHAINLINK_WSTETH_ETH_FEED, 1 hours);
+      chainlinkRelayerFactory.deployChainlinkRelayer(ARB_CHAINLINK_WSTETH_ETH_FEED, ORACLE_INTERVAL_PROD);
 
     IBaseOracle _wstethUSDPriceFeed = denominatedOracleFactory.deployDenominatedOracle({
       _priceSource: _wstethETHPriceFeed,
@@ -82,9 +99,9 @@ contract DeployMainnet is MainnetParams, Deploy {
       _inverted: false
     });
 
-    systemCoinOracle = new OracleForTest(HAI_INITIAL_PRICE); // 1 HAI = 1 USD
-    delayedOracle[WETH] = delayedOracleFactory.deployDelayedOracle(_ethUSDPriceFeed, 1 hours);
-    delayedOracle[WSTETH] = delayedOracleFactory.deployDelayedOracle(_wstethUSDPriceFeed, 1 hours);
+    systemCoinOracle = new OracleForTest(OD_INITIAL_PRICE); // 1 OD = 1 USD
+    delayedOracle[WETH] = delayedOracleFactory.deployDelayedOracle(_ethUSDPriceFeed, ORACLE_INTERVAL_PROD);
+    delayedOracle[WSTETH] = delayedOracleFactory.deployDelayedOracle(_wstethUSDPriceFeed, ORACLE_INTERVAL_PROD);
 
     collateral[WETH] = IERC20Metadata(ARB_WETH);
     collateral[WSTETH] = IERC20Metadata(ARB_WSTETH);
@@ -103,12 +120,12 @@ contract DeployGoerli is GoerliParams, Deploy {
   function setupEnvironment() public virtual override updateParams {
     // Setup oracle feeds
 
-    systemCoinOracle = new OracleForTestnet(HAI_INITIAL_PRICE); // 1 HAI = 1 USD
+    systemCoinOracle = new OracleForTestnet(OD_INITIAL_PRICE); // 1 OD = 1 USD
 
     // WETH
     collateral[WETH] = IERC20Metadata(ARB_GOERLI_WETH);
     IBaseOracle _ethUSDPriceFeed =
-      chainlinkRelayerFactory.deployChainlinkRelayer(ARB_GOERLI_CHAINLINK_ETH_USD_FEED, 1 hours); // live feed
+      chainlinkRelayerFactory.deployChainlinkRelayer(ARB_GOERLI_CHAINLINK_ETH_USD_FEED, ORACLE_INTERVAL_TEST); // live feed
 
     // OP
     collateral[FTRG] = IERC20Metadata(ARB_GOERLI_GOV_TOKEN);
@@ -125,17 +142,21 @@ contract DeployGoerli is GoerliParams, Deploy {
     collateral[TOTEM] = new ERC20ForTestnet('Totem', 'TTM', 0);
 
     IBaseOracle _wbtcUsdOracle =
-      chainlinkRelayerFactory.deployChainlinkRelayer(ARB_GOERLI_CHAINLINK_BTC_USD_FEED, 1 hours); // live feed
+      chainlinkRelayerFactory.deployChainlinkRelayer(ARB_GOERLI_CHAINLINK_BTC_USD_FEED, ORACLE_INTERVAL_TEST); // live feed
+
     IBaseOracle _stonesWbtcOracle = new OracleForTestnet(0.001e18); // denominated feed
     IBaseOracle _stonesOracle =
       denominatedOracleFactory.deployDenominatedOracle(_stonesWbtcOracle, _wbtcUsdOracle, false);
-    IBaseOracle _totemOracle = new OracleForTestnet(1e18); // hardcoded feed
 
-    delayedOracle[WETH] = delayedOracleFactory.deployDelayedOracle(_ethUSDPriceFeed, 1 hours);
-    delayedOracle[FTRG] = delayedOracleFactory.deployDelayedOracle(_opUSDPriceFeed, 1 hours);
-    delayedOracle[WBTC] = delayedOracleFactory.deployDelayedOracle(_wbtcUsdOracle, 1 hours);
-    delayedOracle[STONES] = delayedOracleFactory.deployDelayedOracle(_stonesOracle, 1 hours);
-    delayedOracle[TOTEM] = delayedOracleFactory.deployDelayedOracle(_totemOracle, 1 hours);
+    IBaseOracle _totemWethOracle = new OracleForTestnet(1e18); // hardcoded feed
+    IBaseOracle _totemOracle =
+      denominatedOracleFactory.deployDenominatedOracle(_totemWethOracle, _ethUSDPriceFeed, false);
+
+    delayedOracle[WETH] = delayedOracleFactory.deployDelayedOracle(_ethUSDPriceFeed, ORACLE_INTERVAL_TEST);
+    delayedOracle[FTRG] = delayedOracleFactory.deployDelayedOracle(_opUSDPriceFeed, ORACLE_INTERVAL_TEST);
+    delayedOracle[WBTC] = delayedOracleFactory.deployDelayedOracle(_wbtcUsdOracle, ORACLE_INTERVAL_TEST);
+    delayedOracle[STONES] = delayedOracleFactory.deployDelayedOracle(_stonesOracle, ORACLE_INTERVAL_TEST);
+    delayedOracle[TOTEM] = delayedOracleFactory.deployDelayedOracle(_totemOracle, ORACLE_INTERVAL_TEST);
 
     // Setup collateral types
     collateralTypes.push(WETH);

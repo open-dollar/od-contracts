@@ -5,7 +5,7 @@ import {Common, COLLAT, DEBT, TEST_ETH_PRICE_DROP} from './Common.t.sol';
 import {Math} from '@libraries/Math.sol';
 import {OracleForTest} from '@contracts/for-test/OracleForTest.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
-import {ETH_A, HAI_INITIAL_PRICE} from '@script/Params.s.sol';
+import {ETH_A, OD_INITIAL_PRICE} from '@script/Params.s.sol';
 import {RAY, YEAR} from '@libraries/Math.sol';
 
 import {BaseUser} from '@test/scopes/BaseUser.t.sol';
@@ -27,7 +27,7 @@ abstract contract E2EGlobalSettlementTest is BaseUser, Common {
   function test_global_settlement_multicollateral() public {
     _multiCollateralSetup();
 
-    assertEq(oracleRelayer.redemptionPrice(), HAI_INITIAL_PRICE * 1e9);
+    assertEq(oracleRelayer.redemptionPrice(), OD_INITIAL_PRICE * 1e9);
 
     // NOTE: all collaterals have COLLATERAL_PRICE
     // alice has a 20% LTV

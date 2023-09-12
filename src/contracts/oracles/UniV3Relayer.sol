@@ -6,6 +6,7 @@ import {IUniV3Relayer} from '@interfaces/oracles/IUniV3Relayer.sol';
 import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
 import {IUniswapV3Factory} from '@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol';
 import {OracleLibrary, IUniswapV3Pool} from '@uniswap/v3-periphery/contracts/libraries/OracleLibrary.sol';
+import {UNISWAP_V3_FACTORY, GOERLI_UNISWAP_V3_FACTORY} from '@script/Registry.s.sol';
 
 /**
  * @title  UniV3Relayer
@@ -14,7 +15,7 @@ import {OracleLibrary, IUniswapV3Pool} from '@uniswap/v3-periphery/contracts/lib
  */
 contract UniV3Relayer is IBaseOracle, IUniV3Relayer {
   // --- Registry ---
-  address internal constant _UNI_V3_FACTORY = address(0x1F98431c8aD98523631AE4a59f267346ea31F984);
+  address internal constant _UNI_V3_FACTORY = GOERLI_UNISWAP_V3_FACTORY;
 
   /// @inheritdoc IUniV3Relayer
   address public uniV3Pool;

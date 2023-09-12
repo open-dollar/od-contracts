@@ -1,13 +1,24 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {Ownable} from '@contracts/utils/Ownable.sol';
-
-contract ODProxy is Ownable {
+contract ODProxy {
   error TargetAddressRequired();
   error TargetCallFailed(bytes _response);
+  error OnlyOwner();
 
-  constructor(address _owner) Ownable(_owner) {}
+  address public immutable OWNER;
+
+  constructor(address _owner) {
+    OWNER = _owner;
+  }
+
+  /**
+   * @notice Checks whether msg.sender can call an owned function
+   */
+  modifier onlyOwner() {
+    if (msg.sender != OWNER) revert OnlyOwner();
+    _;
+  }
 
   function execute(address _target, bytes memory _data) external payable onlyOwner returns (bytes memory _response) {
     if (_target == address(0)) revert TargetAddressRequired();

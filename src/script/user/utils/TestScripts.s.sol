@@ -1,7 +1,7 @@
   // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import {Deployment} from '@script/test/utils/Deployment.s.sol';
+import {Deployment} from '@script/user/utils/Deployment.s.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 
 // TODO update these scritps to work with the NFT-mods / new contracts
@@ -22,12 +22,6 @@ contract TestScripts is Deployment {
    * use the `deployProxy` script to bypass the ProxyRegistry
    */
   function deployOrFind(address owner) public returns (address payable) {
-    // ODProxy proxy = vault721.getProxy(owner);
-    // if (proxy == ODProxy(payable(address(0))) || proxy.owner() != owner) {
-    //   return vault721.build(owner);
-    // } else {
-    //   return payable(address(proxy));
-    // }
     address proxy = vault721.getProxy(owner);
     if (proxy == address(0)) {
       return vault721.build(owner);

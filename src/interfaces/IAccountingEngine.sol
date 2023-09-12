@@ -34,7 +34,7 @@ interface IAccountingEngine is IAuthorizable, IDisableable, IModifiable {
 
   // --- Structs ---
   struct AccountingEngineParams {
-    // Whether the system transfers surplus instead of auctioning it
+    // percent of the Surplus the system transfers instead of auctioning [0/100]
     uint256 surplusIsTransferred;
     // Delay between surplus actions
     uint256 surplusDelay;
