@@ -14,35 +14,18 @@ import {Modifiable} from '@contracts/utils/Modifiable.sol';
 
 import {Encoding} from '@libraries/Encoding.sol';
 
-/**
- * @title  OracleJob
- * @notice This contract contains rewarded methods to handle the oracle relayer and the PID rate setter updates
- */
 contract OracleJob is Job, Authorizable, Modifiable, IOracleJob {
   using Encoding for bytes;
 
   // --- Data ---
-
-  /// @inheritdoc IOracleJob
   bool public shouldWorkUpdateCollateralPrice;
-  /// @inheritdoc IOracleJob
   bool public shouldWorkUpdateRate;
 
   // --- Registry ---
-
-  /// @inheritdoc IOracleJob
   IOracleRelayer public oracleRelayer;
-  /// @inheritdoc IOracleJob
   IPIDRateSetter public pidRateSetter;
 
   // --- Init ---
-
-  /**
-   * @param  _oracleRelayer Address of the OracleRelayer contract
-   * @param  _pidRateSetter Address of the PIDRateSetter contract
-   * @param  _stabilityFeeTreasury Address of the StabilityFeeTreasury contract
-   * @param  _rewardAmount Amount of tokens to reward per job transaction [wad]
-   */
   constructor(
     address _oracleRelayer,
     address _pidRateSetter,
@@ -57,8 +40,6 @@ contract OracleJob is Job, Authorizable, Modifiable, IOracleJob {
   }
 
   // --- Job ---
-
-  /// @inheritdoc IOracleJob
   function workUpdateCollateralPrice(bytes32 _cType) external reward {
     if (!shouldWorkUpdateCollateralPrice) revert NotWorkable();
 
@@ -68,7 +49,6 @@ contract OracleJob is Job, Authorizable, Modifiable, IOracleJob {
     oracleRelayer.updateCollateralPrice(_cType);
   }
 
-  /// @inheritdoc IOracleJob
   function workUpdateRate() external reward {
     if (!shouldWorkUpdateRate) revert NotWorkable();
     pidRateSetter.updateRate();
@@ -76,7 +56,6 @@ contract OracleJob is Job, Authorizable, Modifiable, IOracleJob {
 
   // --- Administration ---
 
-  /// @inheritdoc Modifiable
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     address _address = _data.toAddress();
     bool _bool = _data.toBool();

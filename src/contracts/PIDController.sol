@@ -11,7 +11,7 @@ import {Assertions} from '@libraries/Assertions.sol';
 import {Math, WAD, RAY} from '@libraries/Math.sol';
 
 /**
- * @title  PIDController
+ * @title PIDController
  * @notice Redemption Rate Feedback Mechanism (RRFM) controller that implements a PI controller
  */
 contract PIDController is Authorizable, Modifiable, IPIDController {
@@ -22,36 +22,21 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
   using Assertions for int256;
   using Assertions for address;
 
-  /**
-   * @notice The lower (when negative) bound for the redemption rate
-   * @dev    Represents a rate of -99.999% per second (as -100% is not allowed) in RAY precision
-   */
   uint256 internal constant _NEGATIVE_RATE_LIMIT = RAY - 1;
-
-  /**
-   * @notice The upper bound for the redemption rate
-   * @dev    Maximum possible value that can be safely casted to int256
-   */
   uint256 internal constant _POSITIVE_RATE_LIMIT = uint256(type(int256).max);
 
   // --- Registry ---
-
   /// @inheritdoc IPIDController
   address public seedProposer;
 
   // --- Data ---
-
-  /// @inheritdoc IPIDController
   // solhint-disable-next-line private-vars-leading-underscore
   PIDControllerParams public _params;
 
-  /// @inheritdoc IPIDController
   function params() external view returns (PIDControllerParams memory _pidParams) {
     return _params;
   }
 
-  /// @inheritdoc IPIDController
-  /// @dev The last deviation observation, containing latest timestamp, proportional and integral terms
   // solhint-disable-next-line private-vars-leading-underscore
   DeviationObservation public _deviationObservation;
 
@@ -61,8 +46,6 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
   }
 
   // -- Static & Default Variables ---
-
-  /// @inheritdoc IPIDController
   // solhint-disable-next-line private-vars-leading-underscore
   ControllerGains public _controllerGains;
 
@@ -71,11 +54,6 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
     return _controllerGains;
   }
 
-  /**
-   * @param  _cGains Initial valid controller gains settings struct
-   * @param  _pidParams Initial valid PID controller parameters struct
-   * @param  _importedState Imported initial state of the controller (optional)
-   */
   constructor(
     ControllerGains memory _cGains,
     PIDControllerParams memory _pidParams,
@@ -98,7 +76,6 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
     return _getBoundedRedemptionRate(_piOutput);
   }
 
-  /// @dev Computes the new redemption rate by taking into account the feedbackOutputUpperBound and feedbackOutputLowerBound
   function _getBoundedRedemptionRate(int256 _piOutput) internal view virtual returns (uint256 _newRedemptionRate) {
     int256 _boundedPIOutput = _getBoundedPIOutput(_piOutput);
 
@@ -110,7 +87,6 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
     return _newRedemptionRate;
   }
 
-  /// @dev Computes the pi output by taking into account the feedbackOutputUpperBound and feedbackOutputLowerBound
   function _getBoundedPIOutput(int256 _piOutput) internal view virtual returns (int256 _boundedPIOutput) {
     _boundedPIOutput = _piOutput;
     if (_piOutput < _params.feedbackOutputLowerBound) {
@@ -146,7 +122,6 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
     }
   }
 
-  /// @dev Computes the proportional term using the scaled difference between market price and redemption price
   function _getProportionalTerm(
     uint256 _marketPrice,
     uint256 _redemptionPrice
@@ -165,7 +140,6 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
     return _breaksNoiseBarrier(_piSum, _redemptionPrice);
   }
 
-  /// @dev Returns whether the P + I sum exceeds the noise barrier
   function _breaksNoiseBarrier(uint256 _piSum, uint256 _redemptionPrice) internal view virtual returns (bool _breaksNb) {
     if (_piSum == 0) return false;
     uint256 _deltaNoise = 2 * WAD - _params.noiseBarrier;
@@ -180,7 +154,6 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
     return _getGainAdjustedPIOutput(_proportionalTerm, _integralTerm);
   }
 
-  /// @dev Computes the gain adjusted PI output by multiplying P by Kp and I by Ki and then sum P & I
   function _getGainAdjustedPIOutput(
     int256 _proportionalTerm,
     int256 _integralTerm
@@ -189,7 +162,6 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
     return (_adjustedProportional + _adjustedIntegral);
   }
 
-  /// @dev Computes the gain adjusted terms by multiplying P by Kp and I by Ki
   function _getGainAdjustedTerms(
     int256 _proportionalTerm,
     int256 _integralTerm
@@ -230,7 +202,6 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
     return _getNextDeviationCumulative(_proportionalTerm, _accumulatedLeak);
   }
 
-  /// @dev Computes the new priceDeviationCumulative (integral term)
   function _getNextDeviationCumulative(
     int256 _proportionalTerm,
     uint256 _accumulatedLeak
@@ -244,7 +215,7 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
   }
 
   /**
-   * @dev    This method is used to provide a view of the next redemption rate without updating the state of the controller
+   * @dev   This method is used to provide a view of the next redemption rate without updating the state of the controller
    * @inheritdoc IPIDController
    */
   function getNextRedemptionRate(
@@ -274,7 +245,6 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
 
   // --- Administration ---
 
-  /// @inheritdoc Modifiable
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     uint256 _uint256 = _data.toUint256();
     int256 _int256 = _data.toInt256();
@@ -304,7 +274,6 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
     }
   }
 
-  /// @inheritdoc Modifiable
   function _validateParameters() internal view override {
     _params.integralPeriodSize.assertNonNull();
     _params.noiseBarrier.assertNonNull().assertLtEq(WAD);

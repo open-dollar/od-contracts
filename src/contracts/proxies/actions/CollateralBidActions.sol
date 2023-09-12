@@ -5,20 +5,16 @@ import {ICollateralJoin} from '@interfaces/utils/ICollateralJoin.sol';
 import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ICoinJoin} from '@interfaces/utils/ICoinJoin.sol';
-import {ICollateralBidActions} from '@interfaces/proxies/actions/ICollateralBidActions.sol';
 
 import {CommonActions} from '@contracts/proxies/actions/CommonActions.sol';
 
 import {RAY} from '@libraries/Math.sol';
 
 /**
- * @title  CollateralBidActions
+ * @title CollateralBidActions
  * @notice All methods here are executed as delegatecalls from the user's proxy
  */
-contract CollateralBidActions is CommonActions, ICollateralBidActions {
-  // --- Methods ---
-
-  /// @inheritdoc ICollateralBidActions
+contract CollateralBidActions is CommonActions {
   function buyCollateral(
     address _coinJoin,
     address _collateralJoin,
@@ -39,10 +35,12 @@ contract CollateralBidActions is CommonActions, ICollateralBidActions {
       _safeEngine.approveSAFEModification(address(_collateralAuctionHouse));
     }
 
-    (uint256 _boughtAmount, uint256 _adjustedBid) =
-      ICollateralAuctionHouse(_collateralAuctionHouse).buyCollateral(_auctionId, _bidAmount);
+    bytes32 _cType = ICollateralAuctionHouse(_collateralAuctionHouse).collateralType();
+    uint256 _initialCollateralBalance = _safeEngine.tokenCollateral(_cType, address(this));
+    ICollateralAuctionHouse(_collateralAuctionHouse).buyCollateral(_auctionId, _bidAmount);
+    uint256 _finalCollateralBalance = _safeEngine.tokenCollateral(_cType, address(this));
 
-    require(_adjustedBid <= _bidAmount, 'Invalid adjusted bid');
+    uint256 _boughtAmount = _finalCollateralBalance - _initialCollateralBalance;
     require(_boughtAmount >= _minCollateralAmount, 'Invalid bought amount');
 
     // exit collateral

@@ -18,7 +18,4 @@ broadcast/**/run-*.json
 lcov.info
 .vscode/
 
-# Docs build files
-docs/book
-docs/src/src/
-docs/src/static
+docs/

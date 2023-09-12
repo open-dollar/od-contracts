@@ -7,24 +7,23 @@ import {IDenominatedOracle} from '@interfaces/oracles/IDenominatedOracle.sol';
 import {Math, WAD} from '@libraries/Math.sol';
 
 /**
- * @title  DenominatedOracle
- * @notice Transforms two price feeds with a shared token into a new denominated price feed between the other two tokens of the feeds
+ * @title DenominatedOracle
+ * @notice Transforms a price feed between two tokens into a price feed denominated by a third token
  * @dev    Requires an external base price feed with a shared token between the price source and the denomination price source
  */
 contract DenominatedOracle is IBaseOracle, IDenominatedOracle {
   using Math for uint256;
 
   // --- Registry ---
-
   /// @inheritdoc IDenominatedOracle
   IBaseOracle public priceSource;
   /// @inheritdoc IDenominatedOracle
   IBaseOracle public denominationPriceSource;
 
   // --- Data ---
-
   /**
-   * @notice Concatenated symbols of the two price sources used for quoting (e.g. '(WBTC / ETH) * (ETH / USD)')
+   * @notice Concatenated symbols of the two price sources used for quoting
+   *         (e.g. '(WBTC / ETH) * (ETH / USD)')
    * @dev    The order of the symbols must follow a continuous chain of tokens
    * @inheritdoc IBaseOracle
    */
@@ -33,14 +32,6 @@ contract DenominatedOracle is IBaseOracle, IDenominatedOracle {
   /// @inheritdoc IDenominatedOracle
   bool public inverted;
 
-  // --- Init ---
-
-  /**
-   *
-   * @param  _priceSource Address of the base price source that is used to calculate the price
-   * @param  _denominationPriceSource Address of the denomination price source that is used to calculate price
-   * @param  _inverted Flag that indicates whether the price source quote should be inverted or not
-   */
   constructor(IBaseOracle _priceSource, IBaseOracle _denominationPriceSource, bool _inverted) {
     if (address(_priceSource) == address(0)) revert DenominatedOracle_NullPriceSource();
     if (address(_denominationPriceSource) == address(0)) revert DenominatedOracle_NullPriceSource();

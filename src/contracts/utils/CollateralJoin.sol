@@ -25,14 +25,12 @@ contract CollateralJoin is Disableable, ICollateralJoin {
   using Assertions for address;
 
   // --- Registry ---
-
   /// @inheritdoc ICollateralJoin
   ISAFEEngine public safeEngine;
   /// @inheritdoc ICollateralJoin
   IERC20Metadata public collateral;
 
   // --- Data ---
-
   /// @inheritdoc ICollateralJoin
   bytes32 public collateralType;
   /// @inheritdoc ICollateralJoin
@@ -41,13 +39,6 @@ contract CollateralJoin is Disableable, ICollateralJoin {
   uint256 public multiplier;
 
   // --- Init ---
-
-  /**
-   *
-   * @param  _safeEngine Address of the SAFEEngine contract
-   * @param  _cType Bytes32 representation of the collateral type
-   * @param  _collateral Address of the ERC20 collateral token
-   */
   constructor(address _safeEngine, bytes32 _cType, address _collateral) Authorizable(msg.sender) {
     safeEngine = ISAFEEngine(_safeEngine.assertNonNull());
     collateralType = _cType;
@@ -58,7 +49,6 @@ contract CollateralJoin is Disableable, ICollateralJoin {
   }
 
   // --- Methods ---
-
   /**
    * @dev This function locks collateral in the adapter and creates a representation of
    *      the locked collateral inside the system. The representation uses 18 decimals.

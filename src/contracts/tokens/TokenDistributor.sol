@@ -10,38 +10,20 @@ import {MerkleProof} from '@openzeppelin/utils/cryptography/MerkleProof.sol';
 
 import {SafeERC20} from '@openzeppelin/token/ERC20/utils/SafeERC20.sol';
 
-/**
- * @title  TokenDistributor
- * @notice This contract allows users to claim tokens from a merkle tree proof
- */
 contract TokenDistributor is Authorizable, ITokenDistributor {
-  using SafeERC20 for ERC20Votes;
   using Assertions for address;
   using Assertions for uint256;
 
-  // --- Data ---
-
-  /// @inheritdoc ITokenDistributor
   bytes32 public root;
-  /// @inheritdoc ITokenDistributor
   ERC20Votes public token;
-  /// @inheritdoc ITokenDistributor
   uint256 public totalClaimable;
-  /// @inheritdoc ITokenDistributor
   uint256 public claimPeriodStart;
-  /// @inheritdoc ITokenDistributor
   uint256 public claimPeriodEnd;
-  /// @inheritdoc ITokenDistributor
-  mapping(address _user => bool _hasClaimed) public claimed;
 
-  /**
-   * @param  _root Bytes32 representation of the merkle root
-   * @param  _token Address of the ERC20 token to be distributed
-   * @param  _totalClaimable Total amount of tokens to be distributed
-   * @param  _claimPeriodStart Timestamp when the claim period starts
-   * @param  _claimPeriodEnd Timestamp when the claim period ends
-   * @param  _delegateTo Address to delegate the token votes to before they are claimed
-   */
+  mapping(address => bool) public claimed;
+
+  using SafeERC20 for ERC20Votes;
+
   constructor(
     bytes32 _root,
     ERC20Votes _token,
@@ -59,17 +41,14 @@ contract TokenDistributor is Authorizable, ITokenDistributor {
     token.delegate(_delegateTo.assertNonNull());
   }
 
-  /// @inheritdoc ITokenDistributor
   function canClaim(bytes32[] calldata _proof, address _user, uint256 _amount) external view returns (bool _claimable) {
     return _canClaim(_proof, _user, _amount);
   }
 
-  /// @inheritdoc ITokenDistributor
   function claim(bytes32[] calldata _proof, uint256 _amount) external {
     _claim(_proof, _amount);
   }
 
-  /// @inheritdoc ITokenDistributor
   function claimAndDelegate(
     bytes32[] calldata _proof,
     uint256 _amount,
@@ -83,7 +62,6 @@ contract TokenDistributor is Authorizable, ITokenDistributor {
     token.delegateBySig(_delegatee, 0, _expiry, _v, _r, _s); // using 0 nonce
   }
 
-  /// @inheritdoc ITokenDistributor
   function sweep(address _sweepReceiver) external override isAuthorized {
     if (block.timestamp <= claimPeriodEnd) revert TokenDistributor_ClaimPeriodNotEnded();
     uint256 _balance = token.balanceOf(address(this)).assertGt(0);
@@ -93,7 +71,6 @@ contract TokenDistributor is Authorizable, ITokenDistributor {
     emit Swept({_sweepReceiver: _sweepReceiver, _amount: _balance});
   }
 
-  /// @inheritdoc ITokenDistributor
   function withdraw(address _to, uint256 _amount) external override isAuthorized {
     token.safeTransfer(_to, _amount);
 

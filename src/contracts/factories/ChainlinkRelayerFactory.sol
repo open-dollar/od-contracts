@@ -10,26 +10,16 @@ import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
 import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
 
-/**
- * @title  ChainlinkRelayerFactory
- * @notice This contract is used to deploy ChainlinkRelayer contracts
- * @dev    The deployed contracts are ChainlinkRelayerChild instances
- */
 contract ChainlinkRelayerFactory is Authorizable, IChainlinkRelayerFactory {
   using EnumerableSet for EnumerableSet.AddressSet;
 
   // --- Data ---
-
-  /// @notice The enumerable set of deployed ChainlinkRelayer contracts
   EnumerableSet.AddressSet internal _chainlinkRelayers;
 
   // --- Init ---
-
   constructor() Authorizable(msg.sender) {}
 
   // --- Methods ---
-
-  /// @inheritdoc IChainlinkRelayerFactory
   function deployChainlinkRelayer(
     address _aggregator,
     uint256 _staleThreshold
@@ -40,8 +30,6 @@ contract ChainlinkRelayerFactory is Authorizable, IChainlinkRelayerFactory {
   }
 
   // --- Views ---
-
-  /// @inheritdoc IChainlinkRelayerFactory
   function chainlinkRelayersList() external view returns (address[] memory _chainlinkRelayersList) {
     return _chainlinkRelayers.values();
   }

@@ -5,8 +5,6 @@ import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 
 interface IDenominatedOracle is IBaseOracle {
   // --- Errors ---
-
-  /// @notice Throws if either the provided price source or denominated price source are null
   error DenominatedOracle_NullPriceSource();
 
   /**

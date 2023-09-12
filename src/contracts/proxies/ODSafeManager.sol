@@ -15,11 +15,16 @@ contract ODSafeManager {
   using EnumerableSet for EnumerableSet.UintSet;
   using Assertions for address;
 
+  struct SAFEData {
+    address owner;
+    address safeHandler;
+    bytes32 collateralType;
+  }
+
   // --- DAO Governance ---
   address public immutable GOVERNOR;
-  // --- Registry ---
 
-  /// @inheritdoc IHaiSafeManager
+  // --- Registry ---
   address public safeEngine;
 
   // --- ERC721 ---
@@ -27,32 +32,38 @@ contract ODSafeManager {
 
   uint256 internal _safeId; // Auto incremental
   mapping(address _safeOwner => EnumerableSet.UintSet) private _usrSafes;
-  /// @notice Mapping of user addresses to their enumerable set of safes per collateral type
   mapping(address _safeOwner => mapping(bytes32 _cType => EnumerableSet.UintSet)) private _usrSafesPerCollat;
-  /// @notice Mapping of safe ids to their data
   mapping(uint256 _safeId => SAFEData) internal _safeData;
-
-  /// @inheritdoc IHaiSafeManager
   mapping(address _owner => mapping(uint256 _safeId => mapping(address _caller => uint256 _ok))) public safeCan;
-  /// @inheritdoc IHaiSafeManager
   mapping(address _safeHandler => mapping(address _caller => uint256 _ok)) public handlerCan;
 
-  // --- Modifiers ---
+  // --- Errors ---
+  error ZeroAddress();
+  error SafeNotAllowed();
+  error HandlerNotAllowed();
+  error AlreadySafeOwner();
+  error CollateralTypesMismatch();
 
-  /**
-   * @notice Checks if the sender is the owner of the safe or the safe has permissions to call the function
-   * @param  _safe Id of the safe to check if msg.sender has permissions for
-   */
+  // --- Events ---
+  event AllowSAFE(address _sender, uint256 _safe, address _usr, uint256 _ok);
+  event AllowHandler(address _sender, address _usr, uint256 _ok);
+  event TransferSAFEOwnership(address _sender, uint256 _safe, address _dst);
+  event OpenSAFE(address indexed _sender, address indexed _own, uint256 indexed _safe);
+  event ModifySAFECollateralization(address _sender, uint256 _safe, int256 _deltaCollateral, int256 _deltaDebt);
+  event TransferCollateral(address _sender, uint256 _safe, address _dst, uint256 _wad);
+  event TransferCollateral(address _sender, bytes32 _cType, uint256 _safe, address _dst, uint256 _wad);
+  event TransferInternalCoins(address _sender, uint256 _safe, address _dst, uint256 _rad);
+  event QuitSystem(address _sender, uint256 _safe, address _dst);
+  event EnterSystem(address _sender, address _src, uint256 _safe);
+  event MoveSAFE(address _sender, uint256 _safeSrc, uint256 _safeDst);
+  event ProtectSAFE(address _sender, uint256 _safe, address _liquidationEngine, address _saviour);
+
   modifier safeAllowed(uint256 _safe) {
     address _owner = _safeData[_safe].owner;
     if (msg.sender != _owner && safeCan[_owner][_safe][msg.sender] == 0) revert SafeNotAllowed();
     _;
   }
 
-  /**
-   * @notice Checks if the sender is the safe handler has permissions to call the function
-   * @param  _handler Address of the handler to check if msg.sender has permissions for
-   */
   modifier handlerAllowed(address _handler) {
     if (msg.sender != _handler && handlerCan[_handler][msg.sender] == 0) revert HandlerNotAllowed();
     _;
@@ -66,18 +77,14 @@ contract ODSafeManager {
   }
 
   // --- Getters ---
-
-  /// @inheritdoc IHaiSafeManager
   function getSafes(address _usr) external view returns (uint256[] memory _safes) {
     _safes = _usrSafes[_usr].values();
   }
 
-  /// @inheritdoc IHaiSafeManager
   function getSafes(address _usr, bytes32 _cType) external view returns (uint256[] memory _safes) {
     _safes = _usrSafesPerCollat[_usr][_cType].values();
   }
 
-  /// @inheritdoc IHaiSafeManager
   function getSafesData(address _usr)
     external
     view
@@ -92,27 +99,26 @@ contract ODSafeManager {
     }
   }
 
-  /// @inheritdoc IHaiSafeManager
   function safeData(uint256 _safe) external view returns (SAFEData memory _sData) {
     _sData = _safeData[_safe];
   }
 
-  // --- Methods ---
+  // --- SAFE Manipulation ---
 
-  /// @inheritdoc IHaiSafeManager
+  // Allow/disallow a usr address to manage the safe
   function allowSAFE(uint256 _safe, address _usr, uint256 _ok) external safeAllowed(_safe) {
     address _owner = _safeData[_safe].owner;
     safeCan[_owner][_safe][_usr] = _ok;
     emit AllowSAFE(msg.sender, _safe, _usr, _ok);
   }
 
-  /// @inheritdoc IHaiSafeManager
+  // Allow/disallow a usr address to quit to the sender handler
   function allowHandler(address _usr, uint256 _ok) external {
     handlerCan[msg.sender][_usr] = _ok;
     emit AllowHandler(msg.sender, _usr, _ok);
   }
 
-  /// @inheritdoc IHaiSafeManager
+  // Open a new safe for a given usr address.
   function openSAFE(bytes32 _cType, address _usr) external returns (uint256 _id) {
     if (_usr == address(0)) revert ZeroAddress();
 
@@ -149,7 +155,7 @@ contract ODSafeManager {
     emit TransferSAFEOwnership(msg.sender, _safe, _dst);
   }
 
-  /// @inheritdoc IHaiSafeManager
+  // Modify a SAFE's collateralization ratio while keeping the generated COIN or collateral freed in the SAFE handler address.
   function modifySAFECollateralization(
     uint256 _safe,
     int256 _deltaCollateral,
@@ -162,28 +168,29 @@ contract ODSafeManager {
     emit ModifySAFECollateralization(msg.sender, _safe, _deltaCollateral, _deltaDebt);
   }
 
-  /// @inheritdoc IHaiSafeManager
+  // Transfer wad amount of safe collateral from the safe address to a dst address.
   function transferCollateral(uint256 _safe, address _dst, uint256 _wad) external safeAllowed(_safe) {
     SAFEData memory _sData = _safeData[_safe];
     ISAFEEngine(safeEngine).transferCollateral(_sData.collateralType, _sData.safeHandler, _dst, _wad);
     emit TransferCollateral(msg.sender, _safe, _dst, _wad);
   }
 
-  /// @inheritdoc IHaiSafeManager
+  // Transfer wad amount of any type of collateral (collateralType) from the safe address to a dst address.
+  // This function has the purpose to take away collateral from the system that doesn't correspond to the safe but was sent there wrongly.
   function transferCollateral(bytes32 _cType, uint256 _safe, address _dst, uint256 _wad) external safeAllowed(_safe) {
     SAFEData memory _sData = _safeData[_safe];
     ISAFEEngine(safeEngine).transferCollateral(_cType, _sData.safeHandler, _dst, _wad);
     emit TransferCollateral(msg.sender, _cType, _safe, _dst, _wad);
   }
 
-  /// @inheritdoc IHaiSafeManager
+  // Transfer rad amount of COIN from the safe address to a dst address.
   function transferInternalCoins(uint256 _safe, address _dst, uint256 _rad) external safeAllowed(_safe) {
     SAFEData memory _sData = _safeData[_safe];
     ISAFEEngine(safeEngine).transferInternalCoins(_sData.safeHandler, _dst, _rad);
     emit TransferInternalCoins(msg.sender, _safe, _dst, _rad);
   }
 
-  /// @inheritdoc IHaiSafeManager
+  // Quit the system, migrating the safe (lockedCollateral, generatedDebt) to a different dst handler
   function quitSystem(uint256 _safe, address _dst) external safeAllowed(_safe) handlerAllowed(_dst) {
     SAFEData memory _sData = _safeData[_safe];
     ISAFEEngine.SAFE memory _safeInfo = ISAFEEngine(safeEngine).safes(_sData.collateralType, _sData.safeHandler);
@@ -199,7 +206,7 @@ contract ODSafeManager {
     emit QuitSystem(msg.sender, _safe, _dst);
   }
 
-  /// @inheritdoc IHaiSafeManager
+  // Import a position from src handler to the handler owned by safe
   function enterSystem(address _src, uint256 _safe) external handlerAllowed(_src) safeAllowed(_safe) {
     SAFEData memory _sData = _safeData[_safe];
     ISAFEEngine.SAFE memory _safeInfo = ISAFEEngine(safeEngine).safes(_sData.collateralType, _sData.safeHandler);
@@ -211,7 +218,7 @@ contract ODSafeManager {
     emit EnterSystem(msg.sender, _src, _safe);
   }
 
-  /// @inheritdoc IHaiSafeManager
+  // Move a position from safeSrc handler to the safeDst handler
   function moveSAFE(uint256 _safeSrc, uint256 _safeDst) external safeAllowed(_safeSrc) safeAllowed(_safeDst) {
     SAFEData memory _srcData = _safeData[_safeSrc];
     SAFEData memory _dstData = _safeData[_safeDst];
@@ -229,21 +236,21 @@ contract ODSafeManager {
     emit MoveSAFE(msg.sender, _safeSrc, _safeDst);
   }
 
-  /// @inheritdoc IHaiSafeManager
+  // Add a safe to the user's list of safes (doesn't set safe ownership)
   function addSAFE(uint256 _safe) external {
     SAFEData memory _sData = _safeData[_safe];
     _usrSafes[msg.sender].add(_safe);
     _usrSafesPerCollat[msg.sender][_sData.collateralType].add(_safe);
   }
 
-  /// @inheritdoc IHaiSafeManager
+  // Remove a safe from the user's list of safes (doesn't erase safe ownership)
   function removeSAFE(uint256 _safe) external safeAllowed(_safe) {
     SAFEData memory _sData = _safeData[_safe];
     _usrSafes[_sData.owner].remove(_safe);
     _usrSafesPerCollat[_sData.owner][_sData.collateralType].remove(_safe);
   }
 
-  /// @inheritdoc IHaiSafeManager
+  // Choose a SAFE saviour inside LiquidationEngine for the SAFE with id 'safe'
   function protectSAFE(uint256 _safe, address _liquidationEngine, address _saviour) external safeAllowed(_safe) {
     SAFEData memory _sData = _safeData[_safe];
     ILiquidationEngine(_liquidationEngine).protectSAFE(_sData.collateralType, _sData.safeHandler, _saviour);

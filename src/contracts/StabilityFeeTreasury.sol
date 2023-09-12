@@ -14,69 +14,43 @@ import {Encoding} from '@libraries/Encoding.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 import {Math, RAY, HOUR} from '@libraries/Math.sol';
 
-/**
- * @title  Stability Fee Treasury
- * @notice This contract is in charge of distributing the accrued stability fees to allowed addresses
- */
 contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabilityFeeTreasury {
   using Encoding for bytes;
   using Assertions for uint256;
   using Assertions for address;
 
   // --- Registry ---
-
-  /// @inheritdoc IStabilityFeeTreasury
   ISAFEEngine public safeEngine;
-  /// @inheritdoc IStabilityFeeTreasury
   ISystemCoin public systemCoin;
-  /// @inheritdoc IStabilityFeeTreasury
   ICoinJoin public coinJoin;
-  /// @inheritdoc IStabilityFeeTreasury
   address public extraSurplusReceiver;
 
   // --- Params ---
-
-  /// @inheritdoc IStabilityFeeTreasury
   // solhint-disable-next-line private-vars-leading-underscore
   StabilityFeeTreasuryParams public _params;
 
-  /// @inheritdoc IStabilityFeeTreasury
   function params() external view returns (StabilityFeeTreasuryParams memory _sfTreasuryParams) {
     return _params;
   }
 
   // --- Data ---
-
-  /// @inheritdoc IStabilityFeeTreasury
+  // Mapping of total and per hour allowances
   // solhint-disable-next-line private-vars-leading-underscore
-  mapping(address _account => Allowance) public _allowance;
+  mapping(address => Allowance) public _allowance;
 
-  /// @inheritdoc IStabilityFeeTreasury
   function allowance(address _account) external view returns (Allowance memory __allowance) {
     return _allowance[_account];
   }
 
-  /// @inheritdoc IStabilityFeeTreasury
-  mapping(address _account => mapping(uint256 _blockHour => uint256 _rad)) public pulledPerHour;
-  /// @inheritdoc IStabilityFeeTreasury
-  uint256 public latestSurplusTransferTime;
+  // Mapping that keeps track of how much surplus an authorized address has pulled each hour
+  mapping(address => mapping(uint256 => uint256)) public pulledPerHour;
+  uint256 public latestSurplusTransferTime; // latest timestamp when transferSurplusFunds was called [seconds]
 
-  /**
-   * @notice Modifier to check if an account is not the treasury (this contract)
-   * @param  _account The account to check whether it's the treasury or not
-   * @dev    This modifier is used to prevent the treasury from giving funds to itself
-   */
   modifier accountNotTreasury(address _account) {
     if (_account == address(this)) revert SFTreasury_AccountCannotBeTreasury();
     _;
   }
 
-  /**
-   * @param  _safeEngine Address of the SAFEEngine contract
-   * @param  _extraSurplusReceiver Address that receives surplus funds when treasury exceeds capacity
-   * @param  _coinJoin Address of the CoinJoin contract
-   * @param  _sfTreasuryParams Initial valid StabilityFeeTreasury parameters struct
-   */
   constructor(
     address _safeEngine,
     address _extraSurplusReceiver,
@@ -97,7 +71,6 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
 
   /**
    * @notice Disable this contract (normally called by GlobalSettlement)
-   * @inheritdoc Disableable
    */
   function _onContractDisable() internal override {
     _joinAllCoins();
@@ -107,7 +80,6 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
 
   /**
    * @notice Join all ERC20 system coins that the treasury has inside the SAFEEngine
-   * @dev    Converts all ERC20 system coins to internal system coins
    */
   function _joinAllCoins() internal {
     uint256 _systemCoinBalance = systemCoin.balanceOf(address(this));
@@ -117,16 +89,13 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
     }
   }
 
-  /// @inheritdoc IStabilityFeeTreasury
+  /**
+   * @notice Settle as much bad debt as possible (if this contract has any)
+   */
   function settleDebt() external returns (uint256 _coinBalance, uint256 _debtBalance) {
     return _settleDebt();
   }
 
-  /**
-   * @notice Settle as much bad debt as possible (if this contract has any)
-   * @return _coinBalance Amount of internal system coins that this contract has after settling debt
-   * @return _debtBalance Amount of bad debt that this contract has after settling debt
-   */
   function _settleDebt() internal returns (uint256 _coinBalance, uint256 _debtBalance) {
     _coinBalance = safeEngine.coinBalance(address(this));
     _debtBalance = safeEngine.debtBalance(address(this));
@@ -140,22 +109,32 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
   }
 
   // --- SF Transfer Allowance ---
-
-  /// @inheritdoc IStabilityFeeTreasury
+  /**
+   * @notice Modify an address' total allowance in order to withdraw SF from the treasury
+   * @param  _account The approved address
+   * @param  _rad The total approved amount of SF to withdraw (number with 45 decimals)
+   */
   function setTotalAllowance(address _account, uint256 _rad) external isAuthorized accountNotTreasury(_account) {
     _allowance[_account.assertNonNull()].total = _rad;
     emit SetTotalAllowance(_account, _rad);
   }
 
-  /// @inheritdoc IStabilityFeeTreasury
+  /**
+   * @notice Modify an address' per hour allowance in order to withdraw SF from the treasury
+   * @param  _account The approved address
+   * @param  _rad The per hour approved amount of SF to withdraw (number with 45 decimals)
+   */
   function setPerHourAllowance(address _account, uint256 _rad) external isAuthorized accountNotTreasury(_account) {
     _allowance[_account.assertNonNull()].perHour = _rad;
     emit SetPerHourAllowance(_account, _rad);
   }
 
   // --- Stability Fee Transfer (Governance) ---
-
-  /// @inheritdoc IStabilityFeeTreasury
+  /**
+   * @notice Governance transfers SF to an address
+   * @param  _account Address to transfer SF to
+   * @param  _rad Amount of internal system coins to transfer (a number with 45 decimals)
+   */
   function giveFunds(address _account, uint256 _rad) external isAuthorized accountNotTreasury(_account) {
     _account.assertNonNull();
     _joinAllCoins();
@@ -168,15 +147,23 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
     emit GiveFunds(_account, _rad);
   }
 
-  /// @inheritdoc IStabilityFeeTreasury
+  /**
+   * @notice Governance takes funds from an address
+   * @param  _account Address to take system coins from
+   * @param  _rad Amount of internal system coins to take from the account (a number with 45 decimals)
+   */
   function takeFunds(address _account, uint256 _rad) external isAuthorized accountNotTreasury(_account) {
     safeEngine.transferInternalCoins(_account, address(this), _rad);
     emit TakeFunds(_account, _rad);
   }
 
   // --- Stability Fee Transfer (Approved Accounts) ---
-
-  /// @inheritdoc IStabilityFeeTreasury
+  /**
+   * @notice Pull stability fees from the treasury (if your allowance permits)
+   * @param  _dstAccount Address to transfer funds to
+   * @param  _wad Amount of system coins (SF) to transfer (expressed as an 18 decimal number but the contract will transfer
+   *             internal system coins that have 45 decimals)
+   */
   function pullFunds(address _dstAccount, uint256 _wad) external {
     if (_dstAccount.assertNonNull() == address(this)) return;
     if (_dstAccount == extraSurplusReceiver) revert SFTreasury_DstCannotBeAccounting();
@@ -207,8 +194,11 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
   }
 
   // --- Treasury Maintenance ---
-
-  /// @inheritdoc IStabilityFeeTreasury
+  /**
+   * @notice Transfer surplus stability fees to the extraSurplusReceiver. This is here to make sure that the treasury
+   *              doesn't accumulate fees that it doesn't even need in order to pay for allowances. It ensures
+   *              that there are enough funds left in the treasury to account for posterior expenses
+   */
   function transferSurplusFunds() external {
     if (block.timestamp < latestSurplusTransferTime + _params.surplusTransferDelay) {
       revert SFTreasury_TransferCooldownNotPassed();
@@ -235,8 +225,7 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
 
   // --- Administration ---
 
-  /// @inheritdoc Modifiable
-  function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled {
     uint256 _uint256 = _data.toUint256();
 
     if (_param == 'extraSurplusReceiver') extraSurplusReceiver = _data.toAddress();
@@ -246,7 +235,6 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
     else revert UnrecognizedParam();
   }
 
-  /// @inheritdoc Modifiable
   function _validateParameters() internal view override {
     extraSurplusReceiver.assertNonNull();
   }

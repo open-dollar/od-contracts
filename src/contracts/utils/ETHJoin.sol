@@ -10,7 +10,7 @@ import {Math} from '@libraries/Math.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 
 /**
- * @title  ETHJoin
+ * @title ETHJoin
  * @notice This contract allows to connect the SAFEEngine to native ETH collateral
  * @dev    All Join adapters need to implement two basic methods: `join` and `exit`
  */
@@ -18,39 +18,35 @@ contract ETHJoin is Authorizable, Disableable, IETHJoin {
   using Math for uint256;
   using Assertions for address;
 
-  // --- Registry ---
-
-  /// @inheritdoc IETHJoin
-  ISAFEEngine public safeEngine;
-  /// @inheritdoc IETHJoin
-  bytes32 public collateralType;
-
   // --- Data ---
-
-  /// @inheritdoc IETHJoin
+  // SAFE database
+  ISAFEEngine public safeEngine;
+  // Collateral type name
+  bytes32 public collateralType;
+  // Number of decimals ETH has
   uint256 public decimals;
 
   // --- Init ---
-
-  /**
-   * @param  _safeEngine Address of the SAFEEngine contract
-   * @param  _cType Bytes32 representation of the collateral type
-   */
   constructor(address _safeEngine, bytes32 _cType) Authorizable(msg.sender) {
     safeEngine = ISAFEEngine(_safeEngine.assertNonNull());
     collateralType = _cType;
     decimals = 18;
   }
 
-  // --- Methods ---
-
-  /// @inheritdoc IETHJoin
+  /**
+   * @notice Join ETH in the system
+   * @param _account Account that will receive the ETH representation inside the system
+   */
   function join(address _account) external payable whenEnabled {
     safeEngine.modifyCollateralBalance(collateralType, _account, msg.value.toInt());
     emit Join(msg.sender, _account, msg.value);
   }
 
-  /// @inheritdoc IETHJoin
+  /**
+   * @notice Exit ETH from the system
+   * @param _account Account that will receive the ETH representation inside the system
+   * @param _wei Amount of ETH to transfer to account (represented as a number with 18 decimals)
+   */
   function exit(address _account, uint256 _wei) external {
     safeEngine.modifyCollateralBalance(collateralType, msg.sender, -_wei.toInt());
     emit Exit(msg.sender, _account, _wei);

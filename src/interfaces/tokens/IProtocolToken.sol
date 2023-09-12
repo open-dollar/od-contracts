@@ -6,17 +6,6 @@ import {IVotes, IERC20Permit} from '@openzeppelin/token/ERC20/extensions/ERC20Vo
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 
 interface IProtocolToken is IVotes, IERC20Metadata, IERC20Permit, IAuthorizable {
-  /**
-   * @notice Mint an amount of tokens to an account
-   * @param _account Address of the account to mint tokens to
-   * @param _amount Amount of tokens to mint [wad]
-   * @dev   Only authorized addresses can mint tokens
-   */
   function mint(address _account, uint256 _amount) external;
-
-  /**
-   * @notice Burn an amount of tokens from the sender
-   * @param _amount Amount of tokens to burn [wad]
-   */
   function burn(uint256 _amount) external;
 }
