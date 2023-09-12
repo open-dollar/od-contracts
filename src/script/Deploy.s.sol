@@ -17,6 +17,14 @@ abstract contract Deploy is Common, Script {
     deployer = vm.addr(_deployerPk);
     vm.startBroadcast(deployer);
 
+    //print the commit hash
+    string[] memory inputs = new string[](3);
+    inputs[0] = "git";
+    inputs[1] = "rev-parse";
+    inputs[2] = "HEAD";
+
+    bytes memory res = vm.ffi(inputs);
+
     // Deploy oracle factories used to setup the environment
     deployOracleFactories();
 
@@ -50,6 +58,14 @@ abstract contract Deploy is Common, Script {
 
     // Deploy contracts related to the SafeManager usecase
     deployProxyContracts(address(safeEngine));
+
+    address[] memory t = new address[](3);
+    t[0] = H;
+    t[1] = J;
+    t[2] = P;
+
+    mintAirdrop(t);
+    deployGovernor(address(protocolToken), t, H);
 
     if (delegate == address(0)) {
       _revokeAllTo(governor);

@@ -320,6 +320,18 @@ abstract contract Common is Contracts, Params {
     postSettlementSurplusBidActions = new PostSettlementSurplusBidActions();
   }
 
+  function mintAirdrop(address[] memory members) public {
+    uint256 wad = 1e18;
+    for (uint256 i = 0; i < members.length; i++) {
+      protocolToken.mint(members[i], 1000 * wad);
+    }
+  }
+
+  function deployGovernor(address govToken, address[] memory members, address admin) public {
+    timelockController = new TimelockController(1 minutes, members, members, admin);
+    odGovernor = new ODGovernor(govToken, timelockController);
+  }
+
   modifier updateParams() {
     _;
     _getEnvironmentParams();
