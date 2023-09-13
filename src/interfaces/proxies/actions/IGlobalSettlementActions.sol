@@ -8,7 +8,7 @@ interface IGlobalSettlementActions is ICommonActions {
 
   /**
    * @notice Free remaining collateral from a SAFE after being processed by the global settlement
-   * @param  _manager Address of the HaiSafeManager contract
+   * @param  _manager Address of the ODSafeManager contract
    * @param  _globalSettlement Address of the GlobalSettlement contract
    * @param  _collateralJoin Address of the CollateralJoin contract
    * @param  _safeId Id of the SAFE to free collateral from

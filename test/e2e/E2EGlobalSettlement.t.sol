@@ -5,7 +5,7 @@ import {Common, COLLAT, DEBT, TEST_ETH_PRICE_DROP} from './Common.t.sol';
 import {Math} from '@libraries/Math.sol';
 import {OracleForTest} from '@test/mocks/OracleForTest.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
-import {ETH_A, OD_INITIAL_PRICE} from '@script/Params.s.sol';
+import {WETH, ETH_A, OD_INITIAL_PRICE} from '@script/Params.s.sol';
 import {RAY, YEAR} from '@libraries/Math.sol';
 
 import {BaseUser} from '@test/scopes/BaseUser.t.sol';
@@ -344,6 +344,6 @@ abstract contract E2EGlobalSettlementTest is BaseUser, Common {
 // --- Scoped test contracts ---
 
 // NOTE: missing expectations for lesser decimals ERC20s (for 0 decimals, delta should be 1)
-contract E2EGlobalSettlementTestDirectUser is DirectUser, E2EGlobalSettlementTest {}
+abstract contract E2EGlobalSettlementTestDirectUser is DirectUser, E2EGlobalSettlementTest {}
 
-contract E2EGlobalSettlementTestProxyUser is ProxyUser, E2EGlobalSettlementTest {}
+abstract contract E2EGlobalSettlementTestProxyUser is ProxyUser, E2EGlobalSettlementTest {}

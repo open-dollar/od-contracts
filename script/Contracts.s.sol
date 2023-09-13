@@ -85,6 +85,10 @@ import {Vault721} from '@contracts/proxies/Vault721.sol';
 import {TimelockController} from '@openzeppelin/governance/TimelockController.sol';
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 
+// --- ForTestnet ---
+import {OracleForTest} from '@contracts/for-test/OracleForTest.sol';
+import {OracleForTestnet} from '@contracts/for-test/OracleForTestnet.sol';
+
 /**
  * @title  Contracts
  * @notice This contract initializes all the contracts, so that they're inherited and available throughout scripts scopes.
@@ -154,8 +158,6 @@ abstract contract Contracts {
   DebtBidActions public debtBidActions;
   SurplusBidActions public surplusBidActions;
   CollateralBidActions public collateralBidActions;
-  PostSettlementSurplusBidActions public postSettlementSurplusBidActions;
-  GlobalSettlementActions public globalSettlementActions;
   RewardedActions public rewardedActions;
   GlobalSettlementActions public globalSettlementActions;
   PostSettlementSurplusBidActions public postSettlementSurplusBidActions;

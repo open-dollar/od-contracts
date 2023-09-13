@@ -6,7 +6,7 @@ import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 /**
  * @title  SAFEHandler
  * @notice This contract is spawned to provide a unique safe handler address for each user's SAFE
- * @dev    When a new SAFE is created inside HaiSafeManager, this contract is deployed and calls the SAFEEngine to add permissions to the SAFE manager
+ * @dev    When a new SAFE is created inside ODSafeManager this contract is deployed and calls the SAFEEngine to add permissions to the SAFE manager
  */
 contract SAFEHandler {
   /**

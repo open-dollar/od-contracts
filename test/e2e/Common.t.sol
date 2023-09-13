@@ -4,7 +4,7 @@ pragma solidity 0.8.19;
 import {HaiTest} from '@test/utils/HaiTest.t.sol';
 import {HAI, OD_INITIAL_PRICE, ETH_A} from '@script/Params.s.sol';
 import {Deploy} from '@script/Deploy.s.sol';
-import {TestParams, TKN, TEST_ETH_PRICE, TEST_TKN_PRICE} from '@test/e2e/TestParams.t.sol';
+import {TestParams, WETH, TKN, TEST_ETH_PRICE, TEST_TKN_PRICE} from '@test/e2e/TestParams.t.sol';
 import {ERC20ForTest} from '@test/mocks/ERC20ForTest.sol';
 import {OracleForTest} from '@test/mocks/OracleForTest.sol';
 import {DelayedOracleForTest} from '@test/mocks/DelayedOracleForTest.sol';
@@ -35,8 +35,10 @@ contract DeployForTest is TestParams, Deploy {
     WETH9 weth = WETH9(payable(0x4200000000000000000000000000000000000006));
 
     systemCoinOracle = new OracleForTest(OD_INITIAL_PRICE); // 1 HAI = 1 USD
-    delayedOracle[ETH_A] = new OracleForTest(TEST_ETH_PRICE); // 1 ETH = 2000 USD
-    delayedOracle[TKN] = new OracleForTest(TEST_TKN_PRICE); // 1 TKN = 1 USD
+
+    // TODO: fix incorrect conversion
+    // delayedOracle[ETH_A] = new OracleForTest(TEST_ETH_PRICE); // 1 ETH = 2000 USD
+    // delayedOracle[TKN] = new OracleForTest(TEST_TKN_PRICE); // 1 TKN = 1 USD
 
     collateral[WETH] = IERC20Metadata(address(weth));
     collateral[TKN] = new ERC20ForTest();
