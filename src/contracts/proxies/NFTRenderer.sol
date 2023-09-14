@@ -8,6 +8,7 @@ import {IVault721} from '@interfaces/proxies/IVault721.sol';
 import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
+import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
 import {ITaxCollector} from '@interfaces/ITaxCollector.sol';
 import {ICollateralJoinFactory} from '@interfaces/factories/ICollateralJoinFactory.sol';
 import {ICollateralJoin} from '@interfaces/utils/ICollateralJoin.sol';
@@ -98,34 +99,35 @@ contract NFTRenderer {
     bytes32 cType;
     // scoped to reduce call stack
     {
-      IODSafeManager.SAFEData memory sData = _safeManager.safeData(_safeId);
-      cType = sData.collateralType;
-      address safeHandler = sData.safeHandler;
+      address safeHandler;
+      IODSafeManager.SAFEData memory safeMangerData = _safeManager.safeData(_safeId);
+      (, safeHandler, cType) = safeMangerData;
 
-      ISAFEEngine.SAFE memory SafeData = _safeEngine.safes(cType, safeHandler);
-      uint256 collateral = SafeData.lockedCollateral;
-      uint256 debt = SafeData.generatedDebt;
+      ISAFEEngine.SAFE memory SafeEngineData = _safeEngine.safes(cType, safeHandler);
+      (uint256 collateral, uint256 debt) = SafeEngineData;
+
+      IOracleRelayer.OracleRelayerCollateralParams memory oracleParams = _oracleRelayer.cParams(cType);
+      (IDelayedOracle oracle,,) = oracleParams;
 
       uint256 ratio;
-      ISAFEEngine.SAFEEngineCollateralData memory cTypeData = _safeEngine.cData(cType);
       if (collateral != 0 && debt != 0) {
-        ratio = (collateral.wmul(cTypeData.liquidationPrice)).wdiv(debt.wmul(cTypeData.accumulatedRate)); // replace liqPrice w/ oraclePrice
+        ratio = (collateral.wmul(oracle.read())).wdiv(debt.wmul(_oracleRelayer.redemptionPrice()));
       } else {
         ratio = 0;
       }
-      (params.risk, params.color) = _calcRisk(ratio);
-      params.ratio = ratio.toString();
       params.collateral = collateral.toString();
       params.debt = debt.toString();
+      params.lastUpdate = oracle.lastUpdateTime().toString();
+      (params.risk, params.color) = _calcRisk(ratio);
+      params.ratio = ratio.toString();
     }
 
-    {
-      ITaxCollector.TaxCollectorCollateralParams memory tcParams = _taxCollector.cParams(cType);
-      IERC20Metadata token = ICollateralJoin(_collateralJoinFactory.collateralJoins(cType)).collateral();
+    ITaxCollector.TaxCollectorCollateralParams memory taxParams = _taxCollector.cParams(cType);
+    params.stabilityFee = taxParams.stabilityFee.toString();
 
-      params.stabilityFee = tcParams.stabilityFee.toString();
-      params.symbol = token.symbol();
-    }
+    IERC20Metadata token = ICollateralJoin(_collateralJoinFactory.collateralJoins(cType)).collateral();
+    params.symbol = token.symbol();
+
     return params;
   }
 
