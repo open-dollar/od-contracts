@@ -18,38 +18,14 @@ contract NFTRendererTest is GoerliForkSetup {
   NFTRenderer public nftRendererTester = NFTRenderer(0x2a004eA6266eA1A340D1a7D78F1e0F4e9Ae2e685);
 
   function testParams1() public {
-    nftRendererTester._renderParams(15);
+    nftRendererTester.renderParams(15);
   }
 
-  // function testParams2() public {
-  //   nftRendererTester._renderParams(0);
-  // }
+  function testParams2() public {
+    nftRendererTester.renderParams(1);
+  }
 
   function testParams3() public {
-    nftRendererTester._renderParams(1);
+    nftRendererTester.renderParams(3);
   }
-
-  function testParams4() public {
-    nftRendererTester._renderParams(3);
-  }
-
-  // function testNftImage() public {
-  //   (bytes32 cType, address safeHandler) = vault721._getCType(safeId);
-  //   (uint256 lockedCollat, uint256 genDebt) = vault721._getLockedCollatAndGenDebt(cType, safeHandler);
-  //   uint256 safetyCRatio = vault721._getCTypeRatio(cType);
-  //   uint256 stabilityFee = vault721._getStabilityFee(cType);
-  //   string memory symbol = vault721._getTokenSymbol(cType);
-
-  //   NFTRenderer2.VaultParams memory params = NFTRenderer2.VaultParams({
-  //     tokenId: safeId,
-  //     collat: lockedCollat,
-  //     debt: genDebt,
-  //     ratio: safetyCRatio,
-  //     fee: stabilityFee,
-  //     symbol: symbol
-  //   });
-
-  //   string memory uri = NFTRenderer2.render(params);
-  //   emit log_string(uri);
-  // }
 }

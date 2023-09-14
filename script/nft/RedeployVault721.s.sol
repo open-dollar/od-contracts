@@ -14,8 +14,6 @@ import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 // source .env && forge script RedeployVault721 --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_GOERLI_RPC
 
 contract RedeployVault721 is GoerliDeployment, Script {
-  // Vault721 public vault721;
-
   function run() public {
     vm.startBroadcast(vm.envUint('ARB_GOERLI_PK'));
     vault721 = new Vault721(GOVERNOR_DAO);

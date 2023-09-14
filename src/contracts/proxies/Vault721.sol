@@ -115,7 +115,7 @@ contract Vault721 is ERC721Enumerable {
   }
 
   /**
-   * @dev create URI
+   * @dev generate URI with updated vault information
    */
   function tokenURI(uint256 _safeId) public view override returns (string memory uri) {
     uri = nftRenderer.render(_safeId);

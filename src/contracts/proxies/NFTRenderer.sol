@@ -71,7 +71,7 @@ contract NFTRenderer {
    * @notice svg needs to be broken into separate functions to reduce call stack for compilation
    */
   function render(uint256 _safeId) external view returns (string memory uri) {
-    VaultParams memory params = _renderParams(_safeId);
+    VaultParams memory params = renderParams(_safeId);
     string memory desc = _renderDesc(params);
 
     string memory json = string.concat(
@@ -92,26 +92,28 @@ contract NFTRenderer {
     uri = string.concat('data:application/json;base64,', Base64.encode(bytes(json)));
   }
 
-  function _renderParams(uint256 _safeId) public view returns (VaultParams memory) {
+  function renderParams(uint256 _safeId) public view returns (VaultParams memory) {
     VaultParams memory params;
     params.vaultId = _safeId.toString();
 
     bytes32 cType;
     // scoped to reduce call stack
     {
-      address safeHandler;
       IODSafeManager.SAFEData memory safeMangerData = _safeManager.safeData(_safeId);
-      (, safeHandler, cType) = safeMangerData;
+      address safeHandler = safeMangerData.safeHandler;
+      cType = safeMangerData.collateralType;
 
       ISAFEEngine.SAFE memory SafeEngineData = _safeEngine.safes(cType, safeHandler);
-      (uint256 collateral, uint256 debt) = SafeEngineData;
+      uint256 collateral = SafeEngineData.lockedCollateral;
+      uint256 debt = SafeEngineData.generatedDebt;
 
       IOracleRelayer.OracleRelayerCollateralParams memory oracleParams = _oracleRelayer.cParams(cType);
-      (IDelayedOracle oracle,,) = oracleParams;
+      IDelayedOracle oracle = oracleParams.oracle;
 
       uint256 ratio;
       if (collateral != 0 && debt != 0) {
-        ratio = (collateral.wmul(oracle.read())).wdiv(debt.wmul(_oracleRelayer.redemptionPrice()));
+        ISAFEEngine.SAFEEngineCollateralData memory cTypeData = _safeEngine.cData(cType);
+        ratio = (collateral.wmul(oracle.read())).wdiv(debt.wmul(cTypeData.accumulatedRate));
       } else {
         ratio = 0;
       }
@@ -175,7 +177,7 @@ contract NFTRenderer {
   ) internal pure returns (string memory svg) {
     svg = string.concat(
       stabilityFee,
-      '</tspan></text><text opacity=".3" transform="rotate(90 -66.5 101.5)" fill="#fff" xml:space="preserve" font-size="10"><tspan x=".5" y="7.3">opendollar.com</tspan></text><text fill="#00587E" xml:space="preserve" font-weight="600"><tspan x="102" y="168.9">DEBT MINTED</tspan></text><text fill="#D0F1FF" xml:space="preserve" font-size="24"><tspan x="102" y="194">',
+      ' %</tspan></text><text opacity=".3" transform="rotate(90 -66.5 101.5)" fill="#fff" xml:space="preserve" font-size="10"><tspan x=".5" y="7.3">opendollar.com</tspan></text><text fill="#00587E" xml:space="preserve" font-weight="600"><tspan x="102" y="168.9">DEBT MINTED</tspan></text><text fill="#D0F1FF" xml:space="preserve" font-size="24"><tspan x="102" y="194">',
       debt,
       '</tspan></text><text fill="#00587E" xml:space="preserve" font-weight="600"><tspan x="102" y="229.9">COLLATERAL DEPOSITED</tspan></text><text fill="#D0F1FF" xml:space="preserve" font-size="24"><tspan x="102" y="255">',
       collateral,
@@ -199,7 +201,7 @@ contract NFTRenderer {
 
   function _renderBackground(string memory color) internal pure returns (string memory svg) {
     svg = string.concat(
-      '</tspan></text></g></g><defs><radialGradient id="gradient" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="rotate(-133.2 301 119) scale(368.295)"><stop stop-color="',
+      ' %</tspan></text></g></g><defs><radialGradient id="gradient" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="rotate(-133.2 301 119) scale(368.295)"><stop stop-color="',
       color,
       '" /><stop offset="1" stop-color="',
       color,
@@ -209,6 +211,7 @@ contract NFTRenderer {
 
   function _calcRisk(uint256 ratio) internal pure returns (string memory, string memory) {
     // 1e18 / 100 = 1e16
+    // TODO: check that math is correct
     if (ratio < 120e16) return (_L3, '#E45200');
     else if (ratio > 119e16 && ratio < 136e16) return (_L2, '#E45200');
     else if (ratio > 135e16 && ratio < 150e16) return (_L1, '#FCBF3B');
