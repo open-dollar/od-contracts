@@ -108,6 +108,27 @@ contract Vault721 is ERC721Enumerable {
   }
 
   /**
+   * @dev update meta data
+   */
+  function updateContractURI(string memory _metaData) external onlyGovernor {
+    contractMetaData = _metaData;
+  }
+
+  /**
+   * @dev create URI
+   */
+  function tokenURI(uint256 _safeId) public view override returns (string memory uri) {
+    uri = nftRenderer.render(_safeId);
+  }
+
+  /**
+   * @dev contract level meta data
+   */
+  function contractURI() public view returns (string memory) {
+    return string.concat('data:application/json;utf8,', contractMetaData);
+  }
+
+  /**
    * @dev allows DAO to update protocol implementation of NFTRenderer
    */
   function setNftRenderer(address _nftRenderer) public onlyGovernor {
@@ -149,26 +170,5 @@ contract Vault721 is ERC721Enumerable {
       }
       IODSafeManager(safeManager).transferSAFEOwnership(firstTokenId, address(proxy));
     }
-  }
-
-  /**
-   * @dev create URI
-   */
-  function tokenURI(uint256 _safeId) public view override returns (string memory uri) {
-    uri = nftRenderer.render(_safeId);
-  }
-
-  /**
-   * @dev contract level meta data
-   */
-  function contractURI() public view returns (string memory) {
-    return string.concat('data:application/json;utf8,', contractMetaData);
-  }
-
-  /**
-   * @dev update meta data
-   */
-  function updateContractURI(string memory _metaData) external onlyGovernor {
-    contractMetaData = _metaData;
   }
 }
