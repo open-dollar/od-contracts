@@ -87,6 +87,7 @@ abstract contract GoerliDeployment is Contracts, GoerliParams, GoerliContracts {
     // --- proxies ---
     vault721 = Vault721(vault721Addr);
     safeManager = ODSafeManager(odSafeManagerAddr);
+    nftRenderer = NFTRenderer(nftRendererAddr);
 
     basicActions = BasicActions(basicActionsAddr);
     debtBidActions = DebtBidActions(debtBidActionsAddr);

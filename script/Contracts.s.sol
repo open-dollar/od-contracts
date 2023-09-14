@@ -80,6 +80,7 @@ import {PostSettlementSurplusBidActions} from '@contracts/proxies/actions/PostSe
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 import {ODSafeManager} from '@contracts/proxies/ODSafeManager.sol';
 import {Vault721} from '@contracts/proxies/Vault721.sol';
+import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 
 // --- Governance Contracts ---
 import {TimelockController} from '@openzeppelin/governance/TimelockController.sol';
@@ -153,6 +154,7 @@ abstract contract Contracts {
   // --- Proxy contracts ---
   ODSafeManager public safeManager;
   Vault721 public vault721;
+  NFTRenderer public nftRenderer;
 
   BasicActions public basicActions;
   DebtBidActions public debtBidActions;

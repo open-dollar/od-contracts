@@ -69,8 +69,9 @@ abstract contract GoerliContracts {
   address public collateralJoinChild_TOTEMAddr = 0xD140D849D9f112111CD76Dbb7B90b4C6Fd713550;
   address public collateralAuctionHouseChild_TOTEMAddr = 0x52184505951C8608AA4e8Fc124d4cba9d51771ED;
 
-  address public vault721Addr = 0xd4A3c66C306CC1dC38D360ED2020Db3A2e77d13B;
+  address public vault721Addr = 0x1Db4B4AbcAb3C3c7d4b7a9FbCb75d0681966B5e6;
   address public odSafeManagerAddr = 0xe31cC068227e55c5AD15Cb22EbcBE1376a3C5b95;
+  address public nftRendererAddr = 0xD5167D7B52F5246680BD483750b85D121693ffc1;
 
   address public basicActionsAddr = 0x7667cFc5655Ee7AB2272A12a1A27F7362e3c1343;
   address public debtBidActionsAddr = 0xFf70D914a655d614cF8C20ab32f5c232a46A461F;
@@ -79,6 +80,4 @@ abstract contract GoerliContracts {
   address public rewardedActionsAddr = 0x40d783a881e57ea9e5d34e746D70E19E1Ff4D5Ce;
   address public globalSettlementActionsAddr = 0x2BE2eE171A647Eec0f69E89B9fa4BD30b6b8Ed98;
   address public postSettlementSurplusBidActionsAddr = 0x18B0256862Db77aBCdA85635f6b7667fD4a609B4;
-
-  address public nftRenderer2Addr = 0x9AE4ED276C90FC9523552642d208e5853035D33E;
 }
