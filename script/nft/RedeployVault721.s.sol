@@ -14,16 +14,16 @@ import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 // source .env && forge script RedeployVault721 --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_GOERLI_RPC
 
 contract RedeployVault721 is GoerliDeployment, Script {
-  Vault721 public postVault721;
+  // Vault721 public vault721;
 
   function run() public {
     vm.startBroadcast(vm.envUint('ARB_GOERLI_PK'));
-    postVault721 = new Vault721(GOVERNOR_DAO);
-    // safeManager.updateVault721(address(vault721));
-    // vault721.setSafeManager(address(safeManager));
-    // nftRenderer =
-    //   new NFTRenderer(address(vault721), address(oracleRelayer), address(taxCollector), address(collateralJoinFactory));
-    // vault721.setNftRenderer(address(nftRenderer));
+    vault721 = new Vault721(GOVERNOR_DAO);
+    safeManager.updateVault721(address(vault721));
+    vault721.setSafeManager(address(safeManager));
+    nftRenderer =
+      new NFTRenderer(address(vault721), address(oracleRelayer), address(taxCollector), address(collateralJoinFactory));
+    vault721.setNftRenderer(address(nftRenderer));
     vm.stopBroadcast();
   }
 }

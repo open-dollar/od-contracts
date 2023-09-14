@@ -60,11 +60,11 @@ contract NFTRenderer {
    * @dev render json object with NFT description and image
    * @notice html needs to be broken into separate functions to reduce call stack for compilation
    */
-  function render(uint256 _safeId) external view returns (string memory json) {
+  function render(uint256 _safeId) external view returns (string memory uri) {
     VaultParams memory params = _renderParams(_safeId);
     string memory desc = _renderDesc(params);
 
-    json = string.concat(
+    string memory json = string.concat(
       desc,
       Base64.encode(
         bytes(
@@ -78,6 +78,8 @@ contract NFTRenderer {
       ),
       '"}'
     );
+
+    uri = string.concat('data:application/json;base64,', Base64.encode(bytes(json)));
   }
 
   function _renderParams(uint256 _safeId) public view returns (VaultParams memory) {
