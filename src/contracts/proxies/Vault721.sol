@@ -4,16 +4,12 @@ pragma solidity 0.8.19;
 import {ERC721} from '@openzeppelin/token/ERC721/ERC721.sol';
 import {ERC721Enumerable} from '@openzeppelin/token/ERC721/extensions/ERC721Enumerable.sol';
 import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
-import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 
 contract Vault721 is ERC721Enumerable {
   error NotGovernor();
   error ProxyAlreadyExist();
-
-  //  TODO: remove this
-  uint256 constant x = 5; // forge verification error hack
 
   address public governor;
   IODSafeManager public safeManager;
@@ -50,6 +46,9 @@ contract Vault721 is ERC721Enumerable {
     safeManager = IODSafeManager(msg.sender);
   }
 
+  /**
+   * @dev get proxy by user address
+   */
   function getProxy(address _user) external view returns (address _proxy) {
     _proxy = _userRegistry[_user];
   }
@@ -153,7 +152,7 @@ contract Vault721 is ERC721Enumerable {
   }
 
   /**
-   * @dev creates URI
+   * @dev create URI
    */
   function tokenURI(uint256 _safeId) public view override returns (string memory uri) {
     uri = nftRenderer.render(_safeId);
@@ -166,6 +165,9 @@ contract Vault721 is ERC721Enumerable {
     return string.concat('data:application/json;utf8,', contractMetaData);
   }
 
+  /**
+   * @dev update meta data
+   */
   function updateContractURI(string memory _metaData) external onlyGovernor {
     contractMetaData = _metaData;
   }

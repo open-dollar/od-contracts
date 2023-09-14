@@ -23,11 +23,12 @@ contract NFTRenderer {
 
   IVault721 public immutable vault721;
 
-  IODSafeManager internal _safeManager;
-  ISAFEEngine internal _safeEngine;
-  IOracleRelayer internal _oracleRelayer;
-  ITaxCollector internal _taxCollector;
-  ICollateralJoinFactory internal _collateralJoinFactory;
+  // TODO make internal
+  IODSafeManager public _safeManager;
+  ISAFEEngine public _safeEngine;
+  IOracleRelayer public _oracleRelayer;
+  ITaxCollector public _taxCollector;
+  ICollateralJoinFactory public _collateralJoinFactory;
 
   constructor(address _vault721, address oracleRelayer, address taxCollector, address collateralJoinFactory) {
     vault721 = IVault721(_vault721);
@@ -47,6 +48,7 @@ contract NFTRenderer {
     string symbol;
     string risk;
     string color;
+    string lastUpdate;
   }
 
   function setImplementation(
@@ -77,7 +79,7 @@ contract NFTRenderer {
         bytes(
           string.concat(
             _renderVaultInfo(params.vaultId, params.color),
-            _renderCollatAndDebt(params.stabilityFee, params.debt, params.collateral),
+            _renderCollatAndDebt(params.stabilityFee, params.debt, params.collateral, params.lastUpdate),
             _renderRisk(params.risk, params.ratio),
             _renderBackground(params.color)
           )
@@ -96,29 +98,28 @@ contract NFTRenderer {
     bytes32 cType;
     // scoped to reduce call stack
     {
-      IODSafeManager.SAFEData memory smData = _safeManager.safeData(_safeId);
-      cType = smData.collateralType;
-      address safeHandler = smData.safeHandler;
+      IODSafeManager.SAFEData memory sData = _safeManager.safeData(_safeId);
+      cType = sData.collateralType;
+      address safeHandler = sData.safeHandler;
 
-      ISAFEEngine.SAFE memory seData = _safeEngine.safes(cType, safeHandler);
-      params.collateral = seData.lockedCollateral.toString();
-      params.debt = seData.generatedDebt.toString();
+      ISAFEEngine.SAFE memory SafeData = _safeEngine.safes(cType, safeHandler);
+      uint256 collateral = SafeData.lockedCollateral;
+      uint256 debt = SafeData.generatedDebt;
+
+      ISAFEEngine.SAFEEngineCollateralData memory cTypeData = _safeEngine.cData(cType);
+      uint256 ratio = (collateral * cTypeData.liquidationPrice) / (debt * cTypeData.accumulatedRate);
+      (params.risk, params.color) = _calcRisk(ratio);
+      params.ratio = ratio.toString();
+      params.collateral = collateral.toString();
+      params.debt = debt.toString();
     }
 
     {
-      // IOracleRelayer.OracleRelayerCollateralParams memory ocParams = _oracleRelayer.cParams(cType);
       ITaxCollector.TaxCollectorCollateralParams memory tcParams = _taxCollector.cParams(cType);
       IERC20Metadata token = ICollateralJoin(_collateralJoinFactory.collateralJoins(cType)).collateral();
 
-      // params.ratio = ocParams.safetyCRatio.toString();
       params.stabilityFee = tcParams.stabilityFee.toString();
       params.symbol = token.symbol();
-    }
-
-    {
-      uint256 ratio = _calcRatio();
-      (params.risk, params.color) = _calcRisk(ratio);
-      params.ratio = ratio.toString();
     }
     return params;
   }
@@ -162,7 +163,8 @@ contract NFTRenderer {
   function _renderCollatAndDebt(
     string memory stabilityFee,
     string memory debt,
-    string memory collateral
+    string memory collateral,
+    string memory lastUpdate
   ) internal pure returns (string memory svg) {
     svg = string.concat(
       stabilityFee,
@@ -171,9 +173,8 @@ contract NFTRenderer {
       '</tspan> </text> <text fill="#00587E" xml:space="preserve" font-weight="600"> <tspan x="102" y="229.9">COLLATERAL DEPOSITED</tspan> </text> <text fill="#D0F1FF" xml:space="preserve" font-size="24"> <tspan x="102" y="255">',
       collateral,
       '</tspan> </text> <text opacity=".3" transform="rotate(-90 326.5 -58.5)" fill="#fff" xml:space="preserve" font-size="10"> <tspan x="-10.3" y="7.3">Last updated ',
-      'TODO: lastUpdateTime'
+      lastUpdate
     );
-    // lastUpdateTime,
   }
 
   function _renderRisk(string memory risk, string memory ratio) internal pure returns (string memory svg) {
@@ -197,10 +198,7 @@ contract NFTRenderer {
     );
   }
 
-  function _calcRatio() internal view returns (uint256) {
-    // `${Math.round(collateralizationRatio * 100)}%`
-  }
-
+  // TODO fixed point arithmetic
   function _calcRisk(uint256 ratio) internal pure returns (string memory, string memory) {
     if (ratio < 120) return (_L3, '#E45200');
     else if (ratio > 119 && ratio < 136) return (_L2, '#E45200');

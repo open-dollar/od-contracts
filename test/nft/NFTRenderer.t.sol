@@ -15,15 +15,15 @@ import {NFTRenderer2} from '@libraries/NFTRenderer2.sol';
  */
 contract NFTRendererTest is GoerliForkSetup {
   uint256 public safeId = 3;
-  NFTRenderer public nftRendererTester = NFTRenderer(0x659f7Bae40A1770Ed4f810ee75f5d31CA9542Aa7);
+  NFTRenderer public nftRendererTester = NFTRenderer(0x859f83744ec9DdB39a9C89a71644156089d66Ae2);
 
-  // function testContractAddrs() public {
-  //   nftRendererTester._safeManager();
-  //   nftRendererTester._safeEngine();
-  //   nftRendererTester._oracleRelayer();
-  //   nftRendererTester._taxCollector();
-  //   nftRendererTester._collateralJoinFactory();
-  // }
+  function testContractAddrs() public {
+    nftRendererTester._safeManager();
+    nftRendererTester._safeEngine();
+    nftRendererTester._oracleRelayer();
+    nftRendererTester._taxCollector();
+    nftRendererTester._collateralJoinFactory();
+  }
 
   function testParams1() public {
     nftRendererTester._renderParams(15);
