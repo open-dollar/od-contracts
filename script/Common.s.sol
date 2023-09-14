@@ -345,9 +345,9 @@ abstract contract Common is Contracts, Params {
     stabilityFeeTreasury.setTotalAllowance(address(oracleJob), type(uint256).max);
   }
 
-  function deployProxyContracts(address _safeEngine) public updateParams {
+  function deployProxyContracts() public updateParams {
     vault721 = new Vault721(GOVERNOR_DAO);
-    safeManager = new ODSafeManager(_safeEngine, address(vault721));
+    safeManager = new ODSafeManager(address(safeEngine), address(vault721));
     nftRenderer =
       new NFTRenderer(address(vault721), address(oracleRelayer), address(taxCollector), address(collateralJoinFactory));
 

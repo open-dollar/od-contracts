@@ -58,7 +58,7 @@ abstract contract Deploy is Common, Script {
     }
 
     // Deploy contracts related to the SafeManager usecase
-    deployProxyContracts(address(safeEngine));
+    deployProxyContracts();
 
     address[] memory t = new address[](3);
     t[0] = H;
@@ -67,6 +67,7 @@ abstract contract Deploy is Common, Script {
 
     mintAirdrop(t);
     deployGovernor(address(protocolToken), t, H);
+
     // Deploy and setup contracts that rely on deployed environment
     setupPostEnvironment();
 
@@ -126,7 +127,7 @@ contract DeployGoerli is GoerliParams, Deploy {
     // Setup oracle feeds
 
     // OD
-    systemCoinOracle = new HardCodedOracle('OD / USD', OD_INITIAL_PRICE); // 1 OD = 1 USD
+    systemCoinOracle = new HardcodedOracle('OD / USD', OD_INITIAL_PRICE); // 1 OD = 1 USD
 
     // WETH
     collateral[WETH] = IERC20Metadata(ARB_GOERLI_WETH);
@@ -135,7 +136,7 @@ contract DeployGoerli is GoerliParams, Deploy {
 
     // FTRG
     collateral[FTRG] = IERC20Metadata(ARB_GOERLI_GOV_TOKEN);
-    OracleForTestnet _opETHPriceFeed = new HardCodedOracle('ARB / ETH', ARB_GOERLI_FTRG_ETH_PRICE_FEED); // denominated feed
+    HardcodedOracle _opETHPriceFeed = new HardcodedOracle('ARB / ETH', ARB_GOERLI_FTRG_ETH_PRICE_FEED); // denominated feed
     IBaseOracle _opUSDPriceFeed = denominatedOracleFactory.deployDenominatedOracle({
       _priceSource: _opETHPriceFeed,
       _denominationPriceSource: _ethUSDPriceFeed,
@@ -151,11 +152,11 @@ contract DeployGoerli is GoerliParams, Deploy {
     IBaseOracle _wbtcUsdOracle =
       chainlinkRelayerFactory.deployChainlinkRelayer(ARB_GOERLI_CHAINLINK_BTC_USD_FEED, ORACLE_INTERVAL_TEST); // live feed
 
-    IBaseOracle _stonesWbtcOracle = new HardCodedOracle('STN / BTC', 0.001e18); // denominated feed
+    IBaseOracle _stonesWbtcOracle = new HardcodedOracle('STN / BTC', 0.001e18); // denominated feed
     IBaseOracle _stonesOracle =
       denominatedOracleFactory.deployDenominatedOracle(_stonesWbtcOracle, _wbtcUsdOracle, false);
 
-    IBaseOracle _totemWethOracle = new HardCodedOracle('TTM', 1e18); // hardcoded feed
+    IBaseOracle _totemWethOracle = new HardcodedOracle('TTM', 1e18); // hardcoded feed
     IBaseOracle _totemOracle =
       denominatedOracleFactory.deployDenominatedOracle(_totemWethOracle, _ethUSDPriceFeed, false);
 
