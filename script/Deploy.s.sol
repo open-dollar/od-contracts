@@ -125,16 +125,17 @@ contract DeployGoerli is GoerliParams, Deploy {
   function setupEnvironment() public virtual override updateParams {
     // Setup oracle feeds
 
-    systemCoinOracle = new OracleForTestnet(OD_INITIAL_PRICE); // 1 OD = 1 USD
+    // OD
+    systemCoinOracle = new HardCodedOracle('OD / USD', OD_INITIAL_PRICE); // 1 OD = 1 USD
 
     // WETH
     collateral[WETH] = IERC20Metadata(ARB_GOERLI_WETH);
     IBaseOracle _ethUSDPriceFeed =
       chainlinkRelayerFactory.deployChainlinkRelayer(ARB_GOERLI_CHAINLINK_ETH_USD_FEED, ORACLE_INTERVAL_TEST); // live feed
 
-    // OP
+    // FTRG
     collateral[FTRG] = IERC20Metadata(ARB_GOERLI_GOV_TOKEN);
-    OracleForTestnet _opETHPriceFeed = new OracleForTestnet(ARB_GOERLI_FTRG_ETH_PRICE_FEED); // denominated feed
+    OracleForTestnet _opETHPriceFeed = new HardCodedOracle('ARB / ETH', ARB_GOERLI_FTRG_ETH_PRICE_FEED); // denominated feed
     IBaseOracle _opUSDPriceFeed = denominatedOracleFactory.deployDenominatedOracle({
       _priceSource: _opETHPriceFeed,
       _denominationPriceSource: _ethUSDPriceFeed,
@@ -150,11 +151,11 @@ contract DeployGoerli is GoerliParams, Deploy {
     IBaseOracle _wbtcUsdOracle =
       chainlinkRelayerFactory.deployChainlinkRelayer(ARB_GOERLI_CHAINLINK_BTC_USD_FEED, ORACLE_INTERVAL_TEST); // live feed
 
-    IBaseOracle _stonesWbtcOracle = new OracleForTestnet(0.001e18); // denominated feed
+    IBaseOracle _stonesWbtcOracle = new HardCodedOracle('STN / BTC', 0.001e18); // denominated feed
     IBaseOracle _stonesOracle =
       denominatedOracleFactory.deployDenominatedOracle(_stonesWbtcOracle, _wbtcUsdOracle, false);
 
-    IBaseOracle _totemWethOracle = new OracleForTestnet(1e18); // hardcoded feed
+    IBaseOracle _totemWethOracle = new HardCodedOracle('TTM', 1e18); // hardcoded feed
     IBaseOracle _totemOracle =
       denominatedOracleFactory.deployDenominatedOracle(_totemWethOracle, _ethUSDPriceFeed, false);
 
@@ -175,7 +176,7 @@ contract DeployGoerli is GoerliParams, Deploy {
   function setupPostEnvironment() public virtual override updateParams {
     // Setup deviated oracle
     systemCoinOracle = new DeviatedOracle({
-      _symbol: 'HAI/USD',
+      _symbol: 'OD/USD',
       _oracleRelayer: address(oracleRelayer),
       _deviation: ARB_GOERLI_FTRG_PRICE_DEVIATION
     });
