@@ -46,8 +46,8 @@ address public CoinJoin = 0x7C246D188D7DeFEda03C019d013c4fE0D0e92865;
 address public CollateralJoinFactory = 0xd53F3F46fBDF7B5b33dd43850db2eebB86142105;
 address public TaxCollector = 0x188d92c54f6Aa2917A5a09706A9f5D4ABB3d5bC3;
 address public StabilityFeeTreasury = 0xB18e7b8F9637d662faee4F45186378a6d99F276e;
-address public GlobalSettlement = 0x30c852abcA46fD285B085536B4472E4475941DAe;a
-address public PostSettlementSurplusAuctionHouse = 0x72421E76e1058764000Cc3B884504fc4b2e2C876;/
+address public GlobalSettlement = 0x30c852abcA46fD285B085536B4472E4475941DAe;
+address public PostSettlementSurplusAuctionHouse = 0x72421E76e1058764000Cc3B884504fc4b2e2C876;
 address public SettlementSurplusAuctioneer = 0x0bCd50e8E12C5780B67e9403A9F1b41C080a14c1;	
 
 address public PIDControllerAddr = 0x3938383a7708712841cB6d9771DFFB8099572638;
@@ -74,7 +74,6 @@ address public ODSafeManagerAddr = 0x46a197dF417691D367157fBD4793443db17cFc89;
 address public DebtBidActionsAddr = 0x173EA59a3B886bBb69E934247C2A922089179263;
 address public SurplusBidActionsAddr = 0x6E77bb046A155C08a29Ea85AA7d6e6256d227fBe;
 address public CollateralBidActionsAddr = 0xed70aA833154801a9312e22dF9Be6Bada21BF0d5;
-address public PostSettlementSurplusBidActionsAddr = 0x8b657341359F1D3A958d9a8735e65F08c5b60b4F;
 address public RewardedActionsAddr = 0x6A243AAb287D39F299994e87A38Ba4Bc882246C1;
 address public PostSettlementSurplusBidActionsAddr = 0xfee1cE339cAB37257DB110f98841A6B16CA31A91;
 
