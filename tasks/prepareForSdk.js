@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const filePath = path.join(__dirname, "../src/script/GoerliContracts.s.sol");
+const filePath = path.join(__dirname, "../script/GoerliContracts.s.sol");
 
 fs.readFile(filePath, "utf8", (err, data) => {
   if (err) {
@@ -32,75 +32,73 @@ fs.readFile(filePath, "utf8", (err, data) => {
   const final = {
     MULTICALL: "0xcA11bde05977b3631167028862bE2a173976CA11",
     ETH: ETH_ADDRESS,
-    GEB_SYSTEM_COIN: parsed.systemCoinAddr,
-    GEB_PROTOCOL_TOKEN: parsed.protocolTokenAddr,
-    GEB_SAFE_ENGINE: parsed.safeEngineAddr,
-    GEB_ORACLE_RELAYER: parsed.oracleRelayerAddr,
-    GEB_SURPLUS_AUCTION_HOUSE: parsed.surplusAuctionHouseAddr,
-    GEB_DEBT_AUCTION_HOUSE: parsed.debtAuctionHouseAddr,
-    GEB_COLLATERAL_AUCTION_HOUSE_FACTORY:
-      parsed.collateralAuctionHouseFactoryAddr,
-    GEB_ACCOUNTING_ENGINE: parsed.accountingEngineAddr,
-    GEB_LIQUIDATION_ENGINE: parsed.liquidationEngineAddr,
-    GEB_COIN_JOIN: parsed.coinJoinAddr,
-    GEB_COLLATERAL_JOIN_FACTORY: parsed.collateralJoinFactoryAddr,
-    GEB_TAX_COLLECTOR: parsed.taxCollectorAddr,
-    GEB_STABILITY_FEE_TREASURY: parsed.stabilityFeeTreasuryAddr,
-    GEB_GLOBAL_SETTLEMENT: parsed.globalSettlementAddr,
+    GEB_SYSTEM_COIN: parsed.SystemCoinAddr,
+    GEB_PROTOCOL_TOKEN: parsed.ProtocolTokenAddr,
+    GEB_SAFE_ENGINE: parsed.SAFEEngineAddr,
+    GEB_ORACLE_RELAYER: parsed.OracleRelayerAddr,
+    GEB_SURPLUS_AUCTION_HOUSE: parsed.SurplusAuctionHouseAddr,
+    GEB_DEBT_AUCTION_HOUSE: parsed.DebtAuctionHouseAddr,
+    GEB_COLLATERAL_AUCTION_HOUSE_FACTORY: parsed.CollateralAuctionHouseFactory,
+    GEB_ACCOUNTING_ENGINE: parsed.AccountingEngineAddr,
+    GEB_LIQUIDATION_ENGINE: parsed.LiquidationEngineAddr,
+    GEB_COIN_JOIN: parsed.CoinJoin,
+    GEB_COLLATERAL_JOIN_FACTORY: parsed.CollateralJoinFactory,
+    GEB_TAX_COLLECTOR: parsed.TaxCollector,
+    GEB_STABILITY_FEE_TREASURY: parsed.StabilityFeeTreasury,
+    GEB_GLOBAL_SETTLEMENT: parsed.GlobalSettlement,
     GEB_POST_SETTLEMENT_SURPLUS_AUCTION_HOUSE:
-      parsed.postSettlementSurplusAuctionHouseAddr,
-    GEB_POST_SETTLEMENT_SURPLUS_AUCTIONEER:
-      parsed.settlementSurplusAuctioneerAddr,
+      parsed.PostSettlementSurplusAuctionHouse,
+    GEB_POST_SETTLEMENT_SURPLUS_AUCTIONEER: parsed.SettlementSurplusAuctioneer,
     GEB_RRFM_SETTER: parsed.PIDRateSetterAddr,
     GEB_RRFM_CALCULATOR: parsed.PIDControllerAddr,
-    SAFE_MANAGER: parsed.odSafeManagerAddr,
-    GEB_GLOBAL_SETTLEMENT: parsed.globalSettlementAddr,
-    PROXY_FACTORY: parsed.vault721Addr,
-    PROXY_BASIC_ACTIONS: parsed.basicActionsAddr,
-    PROXY_REGISTRY: parsed.vault721Addr,
-    PROXY_DEBT_AUCTION_ACTIONS: parsed.debtBidActionsAddr,
-    PROXY_SURPLUS_AUCTION_ACTIONS: parsed.surplusBidActionsAddr,
-    PROXY_COLLATERAL_AUCTION_ACTIONS: parsed.collateralBidActionsAddr,
+    SAFE_MANAGER: parsed.ODSafeManagerAddr,
+    GEB_GLOBAL_SETTLEMENT: parsed.GlobalSettlement,
+    PROXY_FACTORY: parsed.Vault721Addr,
+    // PROXY_BASIC_ACTIONS: parsed.BasicActionsAddr,
+    PROXY_REGISTRY: parsed.Vault721Addr,
+    PROXY_DEBT_AUCTION_ACTIONS: parsed.DebtBidActionsAddr,
+    PROXY_SURPLUS_AUCTION_ACTIONS: parsed.SurplusBidActionsAddr,
+    PROXY_COLLATERAL_AUCTION_ACTIONS: parsed.CollateralBidActionsAddr,
     PROXY_POST_SETTLEMENT_SURPLUS_AUCTION_ACTIONS:
-      parsed.postSettlementSurplusBidActionsAddr,
-    PROXY_GLOBAL_SETTLEMENT_ACTIONS: parsed.globalSettlementActionsAddr,
-    PROXY_REWARDED_ACTIONS: parsed.rewardedActionsAddr,
-    JOB_ACCOUNTING: parsed.accountingJobAddr,
-    JOB_LIQUIDATION: parsed.liquidationJobAddr,
-    JOB_ORACLES: parsed.oracleJobAddr,
+      parsed.PostSettlementSurplusBidActionsAddr,
+    // PROXY_GLOBAL_SETTLEMENT_ACTIONS: parsed.GlobalSettlementActions,
+    PROXY_REWARDED_ACTIONS: parsed.RewardedActionsAddr,
+    JOB_ACCOUNTING: parsed.AccountingJobAddr,
+    JOB_LIQUIDATION: parsed.LiquidationJobAddr,
+    JOB_ORACLES: parsed.OracleJobAddr,
   };
 
   const collateral = {
     OD: {
-      address: parsed.systemCoinAddr,
+      address: parsed.SystemCoinAddr,
     },
     ODG: {
-      address: parsed.protocolTokenAddr,
+      address: parsed.ProtocolTokenAddr,
     },
     WETH: {
       address: ETH_ADDRESS,
-      collateralJoin: parsed.collateralJoinChild_WETHAddr,
-      collateralAuctionHouse: parsed.collateralAuctionHouseChild_WETHAddr,
+      collateralJoin: parsed.CollateralJoinChild_WETHAddr,
+      collateralAuctionHouse: parsed.CollateralAuctionHouseChild_WETHAddr,
     },
     WBTC: {
-      address: parsed.erc20ForTestnetWBTC,
-      collateralJoin: parsed.collateralJoinChild_WBTCAddr,
-      collateralAuctionHouse: parsed.collateralAuctionHouseChild_WBTCAddr,
+      address: parsed.MintableERC20WBTC,
+      collateralJoin: parsed.CollateralJoinChild_WBTCAddr,
+      collateralAuctionHouse: parsed.CollateralAuctionHouseChild_WBTCAddr,
     },
     FTRG: {
-      address: parsed.erc20ForTestnetFTRG,
-      collateralJoin: parsed.collateralJoinDelegatableChild_FTRGAddr,
-      collateralAuctionHouse: parsed.collateralAuctionHouseChild_FTRGAddr,
+      address: parsed.Erc20ForTestnetFTRG,
+      collateralJoin: parsed.CollateralJoinDelegatableChild_FTRGAddr,
+      collateralAuctionHouse: parsed.CollateralAuctionHouseChild_FTRGAddr,
     },
     STN: {
-      address: parsed.erc20ForTestnetSTONES,
-      collateralJoin: parsed.collateralJoinChild_STONESAddr,
-      collateralAuctionHouse: parsed.collateralAuctionHouseChild_STONESAddr,
+      address: parsed.MintableERC20STONES,
+      collateralJoin: parsed.CollateralJoinChild_STONESAddr,
+      collateralAuctionHouse: parsed.CollateralAuctionHouseChild_STONESAddr,
     },
     TOTEM: {
-      address: parsed.erc20ForTestnetTOTEM,
-      collateralJoin: parsed.collateralJoinChild_TOTEMAddr,
-      collateralAuctionHouse: parsed.collateralAuctionHouseChild_TOTEMAddr,
+      address: parsed.MintableERC20TOTEM,
+      collateralJoin: parsed.CollateralJoinChild_TOTEMAddr,
+      collateralAuctionHouse: parsed.CollateralAuctionHouseChild_TOTEMAddr,
     },
   };
   const validate = (obj) => {
@@ -113,7 +111,10 @@ fs.readFile(filePath, "utf8", (err, data) => {
     if (missing.length) throw `Missing values: ${missing.join(", ")}`;
   };
 
+  console.log("validating addresses...");
   validate(final);
+  console.log("validating collateral...");
+  Object.values(collateral).map((collat) => validate(collat));
 
   const outputPath = path.join(__dirname, "./output.js");
   const content = `// WARNING: You must verify the ETH address is still correct 
