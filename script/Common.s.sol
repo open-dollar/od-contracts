@@ -362,8 +362,6 @@ abstract contract Common is Contracts, Params {
     postSettlementSurplusBidActions = new PostSettlementSurplusBidActions();
     globalSettlementActions = new GlobalSettlementActions();
     rewardedActions = new RewardedActions();
-    globalSettlementActions = new GlobalSettlementActions();
-    postSettlementSurplusBidActions = new PostSettlementSurplusBidActions();
   }
 
   function mintAirdrop(address[] memory members) public {

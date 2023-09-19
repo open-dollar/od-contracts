@@ -28,9 +28,9 @@ abstract contract GoerliDeployment is Contracts, GoerliParams, GoerliContracts {
     // --- ERC20s ---
     collateral[WETH] = IERC20Metadata(ARB_GOERLI_WETH);
     collateral[FTRG] = IERC20Metadata(ARB_GOERLI_GOV_TOKEN);
-    collateral[WBTC] = IERC20Metadata(erc20ForTestnetWBTC);
-    collateral[STONES] = IERC20Metadata(erc20ForTestnetSTONES);
-    collateral[TOTEM] = IERC20Metadata(erc20ForTestnetTOTEM);
+    collateral[WBTC] = IERC20Metadata(erc20ForTestnetWBTCAddr);
+    collateral[STONES] = IERC20Metadata(erc20ForTestnetSTONESAddr);
+    collateral[TOTEM] = IERC20Metadata(erc20ForTestnetTOTEMAddr);
 
     systemCoin = SystemCoin(systemCoinAddr);
     protocolToken = ProtocolToken(protocolTokenAddr);
@@ -98,7 +98,7 @@ abstract contract GoerliDeployment is Contracts, GoerliParams, GoerliContracts {
     postSettlementSurplusBidActions = PostSettlementSurplusBidActions(postSettlementSurplusBidActionsAddr);
 
     // --- oracles ---
-    systemCoinOracle = IBaseOracle(address(0));
+    systemCoinOracle = IBaseOracle(denominatedOracleChildAddr_SYSCOIN);
     delayedOracle[WETH] = IDelayedOracle(delayedOracleChild1Addr);
     delayedOracle[FTRG] = IDelayedOracle(delayedOracleChild2Addr);
     delayedOracle[WBTC] = IDelayedOracle(delayedOracleChild3Addr);
