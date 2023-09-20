@@ -9,16 +9,37 @@ fs.readFile(filePath, "utf8", (err, data) => {
     return;
   }
   const dataObj = JSON.parse(data);
-  const contracts = dataObj.transactions.reduce((acc, curr) => {
+  const contracts = dataObj.transactions.reduce((acc, curr, index) => {
     const { contractAddress, contractName, transactionType } = curr;
     if (contractAddress && contractName && transactionType === "CREATE") {
-      acc[contractName] = contractAddress;
+      // Protocol contracts
+      let name = contractName;
+      if (contractName === "MintableERC20") {
+        name = name + "_" + index;
+      }
+      acc[name] = contractAddress;
     }
     if (curr.additionalContracts.length) {
-      console.log(curr.additionalContracts);
+      // Factory children
       curr.additionalContracts.forEach((contract) => {
         if (contract.address && contract.transactionType === "CREATE") {
-          const contractName = curr.contractName.replace("Factory", "Child");
+          let contractName = curr.contractName.replace("Factory", "Child");
+          if (
+            curr.contractName === "CollateralAuctionHouseFactory" ||
+            curr.contractName == "CollateralJoinFactory"
+          ) {
+            // Appends the collateral type
+            contractName = contractName + "_" + curr.arguments[0];
+          }
+
+          if (
+            curr.contractName === "DelayedOracleFactory" ||
+            curr.contractName === "DenominatedOracleFactory" ||
+            curr.contractName.includes("RelayerFactory")
+          ) {
+            contractName = contractName + "_" + index;
+          }
+
           acc[contractName] = contract.address;
         }
       });
@@ -33,7 +54,7 @@ fs.readFile(filePath, "utf8", (err, data) => {
 
 const createGoerliDeploymentsFile = (contracts) => {
   const addressText = Object.keys(contracts).reduce((acc, curr) => {
-    acc += `    address public ${curr} = ${contracts[curr]}\n`;
+    acc += `    address public ${curr} = ${contracts[curr]};\n`;
     return acc;
   }, "");
 
