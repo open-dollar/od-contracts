@@ -2,90 +2,44 @@
 pragma solidity 0.8.19;
 
 abstract contract GoerliContracts {
-  address public constant tokenFTRGAddr = 0x0Ed89D4655b2fE9f99EaDC3116b223527165452D;
-  address public constant tokenWETHAddr = 0xEe01c0CD76354C383B8c7B4e65EA88D00B06f36f;
+    address public ChainlinkRelayerFactory = 0x30951E52b32E380C690D84613E4603F866d2E104
+    address public UniV3RelayerFactory = 0x7390f597F63604Df8d0Ca43BAFc2bA994A0db3E9
+    address public CamelotRelayerFactory = 0x6D38DCE63fE77A0c5501f9D68e53E8BB783b1EFc
+    address public DenominatedOracleFactory = 0x533ED646218E330e29D473D8230A50f4e7B1b0db
+    address public DelayedOracleFactory = 0xB72A2799Ee246FD2445a6F33B577e21C6579E988
+    address public MintableERC20 = 0x7D26c8d67e683a2b57fE53B028dbA577dc134944
+    address public SystemCoin = 0xD578921C95240A01FEB96Fb6c92c06bb86d1aA64
+    address public ProtocolToken = 0xeCE206326B3429B7f7359d417d1B7c638341A28A
+    address public SAFEEngine = 0x7A53a75462e8818eC594c0bc8cA93dEA4960073e
+    address public OracleRelayer = 0x50D957722b912a1310Ec0434173598ec677dA854
+    address public SurplusAuctionHouse = 0x6EBaC41c6E91a2502B45ECB778a26767B12C3D00
+    address public DebtAuctionHouse = 0xCAb8F00dc5e23B4c913a72fB3a8550A92895511E
+    address public AccountingEngine = 0x59cdb635DB3CC082201D8A810326D87312DdEDb8
+    address public LiquidationEngine = 0xB977e30EC25Abf4023Cd49925e86719C00507bF4
+    address public CollateralAuctionHouseFactory = 0x200a000EC2F57a3190a67BB38131e154dD8E01B8
+    address public CoinJoin = 0xBC46ec43A84382Bbf4996E7206619Ba87bc96506
+    address public CollateralJoinFactory = 0x4C194DDcA4a2049B1F5F791D6FFaBc99d96a1f17
+    address public TaxCollector = 0x58571a80316e723A2d8D19E0Ad64F94205a9a61b
+    address public StabilityFeeTreasury = 0xB7Bf91DB447D23858d0d7eb8B84E73a2D43462A5
+    address public GlobalSettlement = 0xcDF9A3a54ab9226d3B526834f55BBced173fDfc9
+    address public PostSettlementSurplusAuctionHouse = 0xEDC5dAb89f5fA3b494214e8e45049909CaF22D44
+    address public SettlementSurplusAuctioneer = 0x484e5de96258e25704573654dbeF13Ff0747a578
+    address public PIDController = 0x0E46dD550e135144F48D2deBFd3DaFdeeaB3D8cc
+    address public PIDRateSetter = 0xA86C4EfF26cFbEFaeDd30B05eddE37B838796761
+    address public AccountingJob = 0x62e9b480820c0472591fab8b141600504997C2ac
+    address public LiquidationJob = 0x4857717aDF0A535fc117F2018128d2321a3dB0d7
+    address public OracleJob = 0xa2d98F347e19a45baBb23c4a5243a365dc7fb16A
+    address public Vault721 = 0xdbB05E2334EF998A841574C460C410fB357d9cC1
+    address public ODSafeManager = 0x6D466C9A07D397756921e06E1840Ba91cC63750e
+    address public NFTRenderer = 0x216F9d116E5490c01a990562f1aCa09e6E763cb3
+    address public BasicActions = 0x5CC553A0BC7BF76b5C424420CC8c5649b893656A
+    address public DebtBidActions = 0x12B35b6c3F5b5355717D2D0e18Bfab9bC0f1117b
+    address public SurplusBidActions = 0x9bb386eb654AB80eC8CB173d517659d5B0987183
+    address public CollateralBidActions = 0x6b2A3B669e1f5EfA147d2802a8d3abB662d3F305
+    address public PostSettlementSurplusBidActions = 0x6075F94908b2dd0076b7de6d4B1Ac06E57282E3E
+    address public GlobalSettlementActions = 0x1314fbe354Db75120CFFE6483Dd73CE50A0870F6
+    address public RewardedActions = 0x247B391046bF6bA62587EB0a748cf182Fe2f03DE
+    address public TimelockController = 0x43E888fB33481b3bC0dC917c47db3b456647A8eA
+    address public ODGovernor = 0x191600244f20E5139dE157e3F7dc6740e48b52F4
 
-  address public chainlinkRelayerFactoryAddr = 0x54E21c81B15C85aCA20a82dc7fDfDCc5627b555A;
-  address public uniV3RelayerFactoryAddr = 0x09f9C6fdD0f16163BE706aAD070Cd648f35553a9;
-  address public camelotRelayerFactoryAddr = 0x665112BAC0E8208F3e2C2cEbf7a90353C53455E7;
-  address public denominatedOracleFactoryAddr = 0x0E97683f5AE79DA8adDb37d7b5309046405d8888;
-  address public delayedOracleFactoryAddr = 0xe71b919881a1DCeCbC1d176830865dd892CC2B6F;
-
-  address public oracleForTestnet1Addr = 0x790fC3fb54aFF38A66C062B9A9B1C81c355f73DF;
-  address public oracleForTestnet2Addr = 0x7490e39ea822817e5d8e7d040Fa399879cb69AbC;
-  address public oracleForTestnet3Addr = 0x0f12Dbb82FD0F86F9CfdCa6201E3b6BA1D9c388b;
-  address public oracleForTestnet4Addr = 0x6f21dB20334e5B2B12DbDFEF570e60a772ff4670;
-
-  address public chainlinkRelayerChild1Addr = 0x1c100940b9e5FC3d63E4d985022C2945c31f4074;
-  address public chainlinkRelayerChild2Addr = 0xa52028365222B5c2Ae25e54CA9B8753Ff85BC82C;
-
-  address public erc20ForTestnetWBTCAddr = 0x701928a3063702B23E6798662d00F10Fd7116836;
-  address public erc20ForTestnetSTONESAddr = 0x33534E219A8B6647F2705Cf4026a39D7440fC198;
-  address public erc20ForTestnetTOTEMAddr = 0x1fACF79F3CC1cdf1209dd2d54D21342e047ACe44;
-
-  address public denominatedOracleChild1Addr = 0x84682910D7D3704471E0c4e7F1398590Bc0Bf6C1;
-  address public denominatedOracleChild2Addr = 0xe8Fee2c75380c8988Bf11bA6CA69a800a15000E8;
-  address public denominatedOracleChild3Addr = 0xFAF3FCbF9b516b558a6EE8dA110cddef46B6e1c1;
-
-  address public delayedOracleChild1Addr = 0x8291C8373bAA84Ae9111bE91f9D9Fa0A428e611c;
-  address public delayedOracleChild2Addr = 0x36F5dBd375d331861cFBF24cC38Fa592AB249247;
-  address public delayedOracleChild3Addr = 0x583100a6C0C74c5873A60bff92dCA764AFF0c689;
-  address public delayedOracleChild4Addr = 0x1DE8ed85f4401D7aC5523C93bBfFD2cda374d6a1;
-  address public delayedOracleChild5Addr = 0x8CBf77e0514b1ed1e6e04E0B8f87422B2FDcac7C;
-
-  address public systemCoinAddr = 0x08161Abd14EF3Ae0E81326dD8633B2e1E6403C2F;
-  address public protocolTokenAddr = 0x9adbc5c28BE1A58943774298448C32c290bEdB7b;
-
-  address public safeEngineAddr = 0xaA8884AA443b6502e6eb5c310c10722faa6A8085;
-
-  address public oracleRelayerAddr = 0xF64707EB9735D0A53b7Fb9d6817D54d38b85f541;
-  address public surplusAuctionHouseAddr = 0xB391103094C49be1bBD3feAcDEFECBb8D430B499;
-  address public debtAuctionHouseAddr = 0x72435262a034F542c6494891fE24b7D95b9DF506;
-  address public accountingEngineAddr = 0x32f6aC759de1d46DA5f06740c82B785254F6DE59;
-  address public liquidationEngineAddr = 0xE42ca384D18D00Cda403478CDE2EFcbbba92cAD7;
-
-  address public collateralAuctionHouseFactoryAddr = 0x3AA15f0025C677597Be103A9995356b6e44971C3;
-  address public coinJoinAddr = 0xe12078d30A3957b595c33159177fe694BC60a33e;
-  address public collateralJoinFactoryAddr = 0x71a444C23094aB2a507de89084c0C6BaA5b14Ccd;
-
-  address public taxCollectorAddr = 0x69e5596D8326cf9D76b0E2627EF48cC7226A7a0E;
-  address public stabilityFeeTreasuryAddr = 0x9983156c6B43ec0b0f12f1006C95C4d5AB4CeF57;
-  address public globalSettlementAddr = 0x5C95fd5EABcb2877Ae7189eEE6B37F03951D0E11;
-  address public postSettlementSurplusAuctionHouseAddr = 0xE070C49AC7B34e48411901DF19Fd0B87785e13E4;
-  address public settlementSurplusAuctioneerAddr = 0x794efd84EC84Aa8337f2549DcA4932e8828596bB;
-
-  address public PIDControllerAddr = 0xB5e730fF17252dF2deC5c3a9746e0489520d57b0;
-  address public PIDRateSetterAddr = 0x2BBA667853d7d843714542176536271c16DB09bA;
-
-  address public accountingJobAddr = 0x105F50851a7F978c7a46b8F43CA5241Ea9b7Fcd3;
-  address public liquidationJobAddr = 0x990B7f4b936afc61AD12b095EEDb06e9A7FCD433;
-  address public oracleJobAddr = 0x93A699b8985f2d3b1089f914989b97DBA31c0874;
-
-  address public collateralJoinChild_WETHAddr = 0x99Aa897a5476136EF09C5a1BAE5e7a40c3F4C9f8;
-  address public collateralAuctionHouseChild_WETHAddr = 0x280197607D23032be2F872db21e61f2fecb054C5;
-  address public collateralJoinDelegatableChild_FTRGAddr = 0xA4EC23CF73Bd226FAd3160EF69Da733F33766ac0;
-  address public collateralAuctionHouseChild_FTRGAddr = 0x648956A68819e0A17b986630c7671a427c8E909e;
-  address public collateralJoinChild_WBTCAddr = 0x7e4b18F64A0d2a2079f4DA62a447D6E70E950D50;
-  address public collateralAuctionHouseChild_WBTCAddr = 0x060Fa690fDd9e6245eF10b8440f01b1F5F299567;
-  address public collateralJoinChild_STONESAddr = 0x2342BeDE2e4adBb2e9c727EE1e2f803FC4E21731;
-  address public collateralAuctionHouseChild_STONESAddr = 0xAf7bCf642c0fB0835E4a5A659cc49beCEFe3bdA5;
-  address public collateralJoinChild_TOTEMAddr = 0x36Aced7C694dD58B84d4f36DB5947757455257F4;
-  address public collateralAuctionHouseChild_TOTEMAddr = 0x2658610472FeC58e9e7F6f2525E79bD69AF4E605;
-
-  address public vault721Addr = 0x8F1e9D071d695Cc1B8389F07e1bAb52Ef2b9DaB4;
-  address public odSafeManagerAddr = 0xC0D739C7E5CA5078C52C3A62282F2D8Db42eCE95;
-  address public nftRendererAddr = 0x3641fCFE1B3c2780561C4f2C7C80e77F5777f38F;
-
-  address public basicActionsAddr = 0x4ABbdAAE5AF35305f2d33a1Ad74474d2a2B8124d;
-  address public debtBidActionsAddr = 0x8E0b35234bde46963e8F9e63dDABC1e62f6BbE1c;
-  address public surplusBidActionsAddr = 0x206E6f3294b78ccFE8BAba6a1e8865edcabDd864;
-  address public collateralBidActionsAddr = 0x18ba620E7CD7A70dc917b8d0c365526DF27f0C3a;
-  address public postSettlementSurplusBidActionsAddr = 0xE972E192D88fd17617C7958E97FAAD478719Aabd;
-  address public globalSettlementActionsAddr = 0xC7ECB819FE8F6C2D33cecb55980972587ac4572C;
-  address public rewardedActionsAddr = 0x5442caC3b5aD95D0EE9eefFDD8b6576c5406DD97;
-
-  address public timelockControllerAddr = 0x6a2AE2Fbfc3D939B50d2D428e391F49293021dbD;
-  address public odGovernorAddr = 0xd9f4508b8906a294B83988BE466F0C6733e8Dd7e;
-
-  address public denominatedOracleChildAddr_SYSCOIN = 0x24370d25d2fc581CB37C52fdE18CE0c26ae2B1db; // (OD / WETH) * (ETH / USD)
 }
