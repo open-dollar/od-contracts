@@ -22,7 +22,6 @@ contract ODSafeManager is IODSafeManager {
   using EnumerableSet for EnumerableSet.UintSet;
   using Assertions for address;
 
-
   // --- DAO Governance ---
   address public immutable GOVERNOR;
 
@@ -70,7 +69,7 @@ contract ODSafeManager is IODSafeManager {
   constructor(address _safeEngine, address _vault721) {
     safeEngine = _safeEngine.assertNonNull();
     vault721 = IVault721(_vault721);
-    vault721.initialize(_safeEngine);
+    vault721.initialize();
     GOVERNOR = vault721.governor();
   }
 
