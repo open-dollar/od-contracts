@@ -11,7 +11,7 @@ abstract contract GoerliDeployment is Contracts, GoerliParams, GoerliContracts {
   uint256 constant GOERLI_DEPLOYMENT_BLOCK = 12_872_701;
 
   /**
-   * @notice All the esses that were deployed in the Goerli deployment, in order of creation
+   * @notice All the addresses that were deployed in the Goerli deployment, in order of creation
    * @dev    This is used to import the deployed contracts to the test scripts
    */
   constructor() {
