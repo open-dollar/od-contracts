@@ -7,7 +7,10 @@ abstract contract GoerliContracts {
     address public CamelotRelayerFactory = 0x6D38DCE63fE77A0c5501f9D68e53E8BB783b1EFc
     address public DenominatedOracleFactory = 0x533ED646218E330e29D473D8230A50f4e7B1b0db
     address public DelayedOracleFactory = 0xB72A2799Ee246FD2445a6F33B577e21C6579E988
+    address public ChainlinkRelayerChild = 0x5A6FC187129e1dd97BafFd17c0FB24f725C8870c
+    address public DenominatedOracleChild = 0xBd66381A999711d1Dcdd7947877C127c6A1769a1
     address public MintableERC20 = 0x7D26c8d67e683a2b57fE53B028dbA577dc134944
+    address public DelayedOracleChild = 0x720072D1D582f078117C954f58eB8Af46230d955
     address public SystemCoin = 0xD578921C95240A01FEB96Fb6c92c06bb86d1aA64
     address public ProtocolToken = 0xeCE206326B3429B7f7359d417d1B7c638341A28A
     address public SAFEEngine = 0x7A53a75462e8818eC594c0bc8cA93dEA4960073e
@@ -29,6 +32,8 @@ abstract contract GoerliContracts {
     address public AccountingJob = 0x62e9b480820c0472591fab8b141600504997C2ac
     address public LiquidationJob = 0x4857717aDF0A535fc117F2018128d2321a3dB0d7
     address public OracleJob = 0xa2d98F347e19a45baBb23c4a5243a365dc7fb16A
+    address public CollateralJoinChild = 0x3801c46554FEbA1dfe627A467333fbAD93D88d6A
+    address public CollateralAuctionHouseChild = 0x628147b13DDc5Ad4d47BCCb75e343237ad10996B
     address public Vault721 = 0xdbB05E2334EF998A841574C460C410fB357d9cC1
     address public ODSafeManager = 0x6D466C9A07D397756921e06E1840Ba91cC63750e
     address public NFTRenderer = 0x216F9d116E5490c01a990562f1aCa09e6E763cb3
@@ -41,5 +46,4 @@ abstract contract GoerliContracts {
     address public RewardedActions = 0x247B391046bF6bA62587EB0a748cf182Fe2f03DE
     address public TimelockController = 0x43E888fB33481b3bC0dC917c47db3b456647A8eA
     address public ODGovernor = 0x191600244f20E5139dE157e3F7dc6740e48b52F4
-
 }

@@ -14,6 +14,15 @@ fs.readFile(filePath, "utf8", (err, data) => {
     if (contractAddress && contractName && transactionType === "CREATE") {
       acc[contractName] = contractAddress;
     }
+    if (curr.additionalContracts.length) {
+      console.log(curr.additionalContracts);
+      curr.additionalContracts.forEach((contract) => {
+        if (contract.address && contract.transactionType === "CREATE") {
+          const contractName = curr.contractName.replace("Factory", "Child");
+          acc[contractName] = contract.address;
+        }
+      });
+    }
     return acc;
   }, {});
   console.log("Deployment file parsed successfully!");
