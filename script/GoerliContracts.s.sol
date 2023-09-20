@@ -2,7 +2,8 @@
 pragma solidity 0.8.19;
 
 abstract contract GoerliContracts {
-  address public constant FTRG = 0x0Ed89D4655b2fE9f99EaDC3116b223527165452D;
+  address public constant tokenFTRGAddr = 0x0Ed89D4655b2fE9f99EaDC3116b223527165452D;
+  address public constant tokenWETHAddr = 0xEe01c0CD76354C383B8c7B4e65EA88D00B06f36f;
 
   address public chainlinkRelayerFactoryAddr = 0x54E21c81B15C85aCA20a82dc7fDfDCc5627b555A;
   address public uniV3RelayerFactoryAddr = 0x09f9C6fdD0f16163BE706aAD070Cd648f35553a9;
