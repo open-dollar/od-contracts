@@ -54,7 +54,7 @@ fs.readFile(filePath, "utf8", (err, data) => {
 
 const createGoerliDeploymentsFile = (contracts) => {
   const addressText = Object.keys(contracts).reduce((acc, curr) => {
-    acc += `    address public ${curr} = ${contracts[curr]};\n`;
+    acc += `    address public ${curr}_Address = ${contracts[curr]};\n`;
     return acc;
   }, "");
 
