@@ -23,12 +23,12 @@ contract LiquidityBase is GoerliContracts, Script {
   IUniswapV3Factory public uniswapV3Factory = IUniswapV3Factory(GOERLI_UNISWAP_V3_FACTORY);
   ICamelotFactory public camelotV2Factory = ICamelotFactory(GOERLI_CAMELOT_V2_FACTORY);
   ICamelotV3Factory public camelotV3Factory = ICamelotV3Factory(GOERLI_CAMELOT_V3_FACTORY);
-  CamelotRelayerFactory public camelotRelayerFactory = CamelotRelayerFactory(camelotRelayerFactoryAddr);
-  UniV3RelayerFactory public uniV3RelayerFactory = UniV3RelayerFactory(uniV3RelayerFactoryAddr);
-  DenominatedOracleFactory public denominatedOracleFactory = DenominatedOracleFactory(denominatedOracleFactoryAddr);
+  CamelotRelayerFactory public camelotRelayerFactory = CamelotRelayerFactory(CamelotRelayerFactory_Address);
+  UniV3RelayerFactory public uniV3RelayerFactory = UniV3RelayerFactory(UniV3RelayerFactory_Address);
+  DenominatedOracleFactory public denominatedOracleFactory = DenominatedOracleFactory(DenominatedOracleFactory_Address);
 
-  address public OD_token = systemCoinAddr;
-  address public ODG_token = protocolTokenAddr;
+  address public OD_token = SystemCoin_Address;
+  address public ODG_token = ProtocolToken_Address;
   address public WETH_token = ARB_GOERLI_WETH;
 
   // TODO: change to .env variable

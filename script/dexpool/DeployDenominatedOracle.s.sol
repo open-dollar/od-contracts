@@ -14,7 +14,7 @@ contract DeployDenominatedOracle is LiquidityBase {
   function run() public {
     vm.startBroadcast(vm.envUint('ARB_GOERLI_PK'));
     denominatedOracleFactory.deployDenominatedOracle(
-      od_weth_CamelotRelayer, IBaseOracle(delayedOracleChild1Addr), false
+      od_weth_CamelotRelayer, IBaseOracle(DelayedOracleChild_WETH_Address), false
     );
     vm.stopBroadcast();
   }

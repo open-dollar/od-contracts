@@ -10,11 +10,11 @@ import {UniV3RelayerFactory} from '@contracts/factories/UniV3RelayerFactory.sol'
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 
 contract OracleBase is GoerliContracts, Script {
-  UniV3RelayerFactory public uniV3RelayerFactory = UniV3RelayerFactory(uniV3RelayerFactoryAddr);
-  DenominatedOracleFactory public denominatedOracleFactory = DenominatedOracleFactory(denominatedOracleFactoryAddr);
+  UniV3RelayerFactory public uniV3RelayerFactory = UniV3RelayerFactory(UniV3RelayerFactory_Address);
+  DenominatedOracleFactory public denominatedOracleFactory = DenominatedOracleFactory(DenominatedOracleFactory_Address);
 
-  address public OD_token = systemCoinAddr;
-  address public ODG_token = protocolTokenAddr;
+  address public OD_token = SystemCoin_Address;
+  address public ODG_token = ProtocolToken_Address;
   address public WETH_token = ARB_GOERLI_WETH;
 
   uint24 public fee = uint24(0xbb8);
