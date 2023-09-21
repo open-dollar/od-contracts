@@ -17,9 +17,9 @@ uint256 constant MINUS_0_5_PERCENT_PER_HOUR = 999_998_607_628_240_588_157_433_86
  */
 
 contract CTypeBase is GoerliContracts, Script {
-  CollateralJoinFactory public collateralJoinFactory = CollateralJoinFactory(collateralJoinFactoryAddr);
+  CollateralJoinFactory public collateralJoinFactory = CollateralJoinFactory(CollateralJoinFactory_Address);
   CollateralAuctionHouseFactory public collateralAuctionHouseFactory =
-    CollateralAuctionHouseFactory(collateralAuctionHouseFactoryAddr);
+    CollateralAuctionHouseFactory(CollateralAuctionHouseFactory_Address);
 
   bytes32 public cType = vm.envBytes32('CTYPE_SYM');
   address public cAddr = vm.envAddress('CTYPE_ADDR');

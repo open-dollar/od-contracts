@@ -53,19 +53,20 @@ contract Deployment is Contracts, GoerliContracts, Script {
   uint256 public DEBT = vm.envUint('DEBT'); // ex: DEBT=200000000000000000000 (200 ether)
 
   function setUp() public {
-    safeManager = ODSafeManager(odSafeManagerAddr);
-    vault721 = Vault721(vault721Addr);
-    basicActions = BasicActions(basicActionsAddr);
-    debtBidActions = DebtBidActions(debtBidActionsAddr);
-    surplusBidActions = SurplusBidActions(surplusBidActionsAddr);
-    collateralBidActions = CollateralBidActions(collateralBidActionsAddr);
-    rewardedActions = RewardedActions(rewardedActionsAddr);
+    safeManager = ODSafeManager(ODSafeManager_Address);
+    vault721 = Vault721(Vault721_Address);
+    basicActions = BasicActions(BasicActions_Address);
+    debtBidActions = DebtBidActions(DebtBidActions_Address);
+    surplusBidActions = SurplusBidActions(SurplusBidActions_Address);
+    collateralBidActions = CollateralBidActions(CollateralBidActions_Address);
+    rewardedActions = RewardedActions(RewardedActions_Address);
 
-    protocolToken = ProtocolToken(protocolTokenAddr); // OPEN
-    systemCoin = SystemCoin(systemCoinAddr); // HAI
+    protocolToken = ProtocolToken(ProtocolToken_Address); // OPEN
+    systemCoin = SystemCoin(SystemCoin_Address); // HAI
 
-    taxCollector = TaxCollector(taxCollectorAddr);
-    coinJoin = CoinJoin(coinJoinAddr);
-    collateralJoin[WETH] = CollateralJoin(collateralJoinChild_WETHAddr);
+    taxCollector = TaxCollector(TaxCollector_Address);
+    coinJoin = CoinJoin(CoinJoin_Address);
+    collateralJoin[WETH] =
+      CollateralJoin(CollateralJoinChild_0x5745544800000000000000000000000000000000000000000000000000000000_Address);
   }
 }

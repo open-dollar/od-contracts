@@ -22,7 +22,7 @@ contract DeployGovernor is GoerliContracts, Script {
     members[2] = P;
 
     TimelockController timelockController = new TimelockController(1 minutes, members, members, H);
-    ODGovernor odGovernor = new ODGovernor(protocolTokenAddr, timelockController);
+    ODGovernor odGovernor = new ODGovernor(ProtocolToken_Address, timelockController);
     vm.stopBroadcast();
   }
 }

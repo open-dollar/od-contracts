@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const filePath = path.join(__dirname, "../src/script/GoerliContracts.s.sol");
+const filePath = path.join(__dirname, "../script/GoerliContracts.s.sol");
 
 fs.readFile(filePath, "utf8", (err, data) => {
   if (err) {
@@ -83,22 +83,22 @@ fs.readFile(filePath, "utf8", (err, data) => {
       collateralAuctionHouse: parsed.collateralAuctionHouseChild_WETHAddr,
     },
     WBTC: {
-      address: parsed.erc20ForTestnetWBTC,
+      address: parsed.erc20ForTestnetWBTCAddr,
       collateralJoin: parsed.collateralJoinChild_WBTCAddr,
       collateralAuctionHouse: parsed.collateralAuctionHouseChild_WBTCAddr,
     },
     FTRG: {
-      address: parsed.erc20ForTestnetFTRG,
+      address: parsed.erc20ForTestnetFTRGAddr,
       collateralJoin: parsed.collateralJoinDelegatableChild_FTRGAddr,
       collateralAuctionHouse: parsed.collateralAuctionHouseChild_FTRGAddr,
     },
     STN: {
-      address: parsed.erc20ForTestnetSTONES,
+      address: parsed.erc20ForTestnetSTONESAddr,
       collateralJoin: parsed.collateralJoinChild_STONESAddr,
       collateralAuctionHouse: parsed.collateralAuctionHouseChild_STONESAddr,
     },
     TOTEM: {
-      address: parsed.erc20ForTestnetTOTEM,
+      address: parsed.erc20ForTestnetTOTEMAddr,
       collateralJoin: parsed.collateralJoinChild_TOTEMAddr,
       collateralAuctionHouse: parsed.collateralAuctionHouseChild_TOTEMAddr,
     },

@@ -345,9 +345,12 @@ abstract contract Common is Contracts, Params {
     stabilityFeeTreasury.setTotalAllowance(address(oracleJob), type(uint256).max);
   }
 
-  function deployProxyContracts(address _safeEngine) public updateParams {
-    vault721 = new Vault721(GOVERNOR_DAO, oracleRelayer, taxCollector, collateralJoinFactory);
-    safeManager = new ODSafeManager(_safeEngine, address(vault721));
+  function deployProxyContracts() public updateParams {
+    vault721 = new Vault721(GOVERNOR_DAO);
+    safeManager = new ODSafeManager(address(safeEngine), address(vault721));
+    nftRenderer =
+      new NFTRenderer(address(vault721), address(oracleRelayer), address(taxCollector), address(collateralJoinFactory));
+
     _deployProxyActions();
   }
 
@@ -359,8 +362,6 @@ abstract contract Common is Contracts, Params {
     postSettlementSurplusBidActions = new PostSettlementSurplusBidActions();
     globalSettlementActions = new GlobalSettlementActions();
     rewardedActions = new RewardedActions();
-    globalSettlementActions = new GlobalSettlementActions();
-    postSettlementSurplusBidActions = new PostSettlementSurplusBidActions();
   }
 
   function mintAirdrop(address[] memory members) public {
