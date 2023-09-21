@@ -33,6 +33,7 @@ contract NFTRenderer {
 
   constructor(address _vault721, address oracleRelayer, address taxCollector, address collateralJoinFactory) {
     vault721 = IVault721(_vault721);
+    vault721.initializeRenderer();
     _safeManager = IODSafeManager(vault721.safeManager());
     _safeEngine = ISAFEEngine(_safeManager.safeEngine());
     _oracleRelayer = IOracleRelayer(oracleRelayer);

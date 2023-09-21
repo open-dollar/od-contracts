@@ -10,6 +10,8 @@ import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 contract Vault721 is ERC721Enumerable {
   error NotGovernor();
   error ProxyAlreadyExist();
+  error ZeroAddress();
+  error Initialized();
 
   address public governor;
   IODSafeManager public safeManager;
@@ -39,11 +41,27 @@ contract Vault721 is ERC721Enumerable {
   }
 
   /**
+   * @dev enforce non-zero address params
+   */
+  modifier nonZero(address _addr) {
+    if (_addr == address(0)) revert ZeroAddress();
+    _;
+  }
+
+  /**
    * @dev initializes SafeManager contract
    */
-  function initialize() external {
-    require(address(safeManager) == address(0), 'Vault: initialized');
-    safeManager = IODSafeManager(msg.sender);
+  function initializeManager() external {
+    if (address(safeManager) != address(0)) revert Initialized();
+    _setSafeManager(msg.sender);
+  }
+
+  /**
+   * @dev initializes NFTRenderer contract
+   */
+  function initializeRenderer() external {
+    if (address(nftRenderer) != address(0)) revert Initialized();
+    _setNftRenderer(msg.sender);
   }
 
   /**
@@ -74,18 +92,10 @@ contract Vault721 is ERC721Enumerable {
    * enforces that only ODProxies call `openSafe` function by checking _proxyRegistry
    */
   function mint(address _proxy, uint256 _safeId) external {
-    require(msg.sender == address(safeManager), 'Vault: only safeManager');
-    require(_proxyRegistry[_proxy] != address(0), 'Vault: non-native proxy');
+    require(msg.sender == address(safeManager), 'V721: only safeManager');
+    require(_proxyRegistry[_proxy] != address(0), 'V721: non-native proxy');
     address _user = _proxyRegistry[_proxy];
     _safeMint(_user, _safeId);
-  }
-
-  /**
-   * @dev allows DAO to update protocol implementation of SafeManager
-   */
-  function setSafeManager(address _safeManager) external onlyGovernor {
-    require(_safeManager != address(0), 'Vault: ZeroAddr');
-    safeManager = IODSafeManager(_safeManager);
   }
 
   /**
@@ -96,14 +106,10 @@ contract Vault721 is ERC721Enumerable {
     address _oracleRelayer,
     address _taxCollector,
     address _collateralJoinFactory
-  ) external onlyGovernor {
+  ) external onlyGovernor nonZero(_oracleRelayer) nonZero(_taxCollector) nonZero(_collateralJoinFactory) {
     address _safeManager = address(safeManager);
-    require(
-      _safeManager != address(0) && _oracleRelayer != address(0) && _taxCollector != address(0)
-        && _collateralJoinFactory != address(0),
-      'Vault: ZeroAddr'
-    );
-    setNftRenderer(_nftRenderer);
+    require(_safeManager != address(0));
+    _setNftRenderer(_nftRenderer);
     nftRenderer.setImplementation(_safeManager, _oracleRelayer, _taxCollector, _collateralJoinFactory);
   }
 
@@ -112,6 +118,20 @@ contract Vault721 is ERC721Enumerable {
    */
   function updateContractURI(string memory _metaData) external onlyGovernor {
     contractMetaData = _metaData;
+  }
+
+  /**
+   * @dev allows DAO to update protocol implementation of SafeManager
+   */
+  function setSafeManager(address _safeManager) external onlyGovernor {
+    _setSafeManager(_safeManager);
+  }
+
+  /**
+   * @dev allows DAO to update protocol implementation of NFTRenderer
+   */
+  function setNftRenderer(address _nftRenderer) external onlyGovernor {
+    _setNftRenderer(_nftRenderer);
   }
 
   /**
@@ -124,16 +144,8 @@ contract Vault721 is ERC721Enumerable {
   /**
    * @dev contract level meta data
    */
-  function contractURI() public view returns (string memory) {
-    return string.concat('data:application/json;utf8,', contractMetaData);
-  }
-
-  /**
-   * @dev allows DAO to update protocol implementation of NFTRenderer
-   */
-  function setNftRenderer(address _nftRenderer) public onlyGovernor {
-    require(_nftRenderer != address(0), 'Vault: ZeroAddr');
-    nftRenderer = NFTRenderer(_nftRenderer);
+  function contractURI() public view returns (string memory uri) {
+    uri = string.concat('data:application/json;utf8,', contractMetaData);
   }
 
   /**
@@ -155,11 +167,25 @@ contract Vault721 is ERC721Enumerable {
   }
 
   /**
+   * @dev allows DAO to update protocol implementation of SafeManager
+   */
+  function _setSafeManager(address _safeManager) internal nonZero(_safeManager) {
+    safeManager = IODSafeManager(_safeManager);
+  }
+
+  /**
+   * @dev allows DAO to update protocol implementation of NFTRenderer
+   */
+  function _setNftRenderer(address _nftRenderer) internal nonZero(_nftRenderer) {
+    nftRenderer = NFTRenderer(_nftRenderer);
+  }
+
+  /**
    * @dev _transfer calls `transferSAFEOwnership` on SafeManager
    * enforces that ODProxy exists for transfer or it deploys a new ODProxy for receiver of vault/nft
    */
   function _afterTokenTransfer(address from, address to, uint256 firstTokenId, uint256 batchSize) internal override {
-    require(to != address(0), 'Vault: no burn');
+    require(to != address(0), 'V721: no burn');
     if (from != address(0)) {
       address payable proxy;
 
