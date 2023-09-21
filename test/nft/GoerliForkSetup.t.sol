@@ -9,20 +9,21 @@ import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 contract GoerliForkSetup is Test, GoerliDeployment {
   uint256 public currSafeId = 10;
 
+  bytes32 public cType = vm.envBytes32('CTYPE_SYM');
+  address public cAddr = vm.envAddress('CTYPE_ADDR');
+
   // TODO replace with Arbitrum addrs
   address public ARB_WBTC = address(0);
   address public ARB_STONES = address(0);
   address public ARB_TOTEM = address(0);
 
-  address public alice = 0x37c5B029f9c3691B3d47cb024f84E5E257aEb0BB;
-  address public bob = 0x23aD35FAab005a5E69615d275176e5C22b2ceb9E;
-  address public cobra = 0xD5d1bb95259Fe2c5a84da04D1Aa682C71A1B8C0E;
+  address public alice = vm.envAddress('ARB_GOERLI_PUBLIC1'); // 0x23
+  address public bob = vm.envAddress('ARB_GOERLI_PUBLIC2'); // 0x37
   address aliceProxy;
 
   function setUp() public {
     vm.label(alice, 'Alice');
     vm.label(bob, 'Bob');
-    vm.label(cobra, 'Cobra');
     aliceProxy = deployOrFind(alice);
     vm.label(aliceProxy, 'A-Proxy');
   }

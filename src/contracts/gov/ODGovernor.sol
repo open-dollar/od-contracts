@@ -23,11 +23,15 @@ contract ODGovernor is
   GovernorTimelockControl
 {
   /**
-   * @dev GovernorSettings unit of time:
-   * 1 = 12 second, 5 = 1 minute, 300 = 1 hour, 7200 = 1 day, 50400 = 1 week
    *
    * @param _token is protocolToken (Open Dollar Governance, ODG)
    * @param _timelock grace period to allow rage quit between proposal success and execution
+   *
+   * Governor(name)
+   * GovernorSettings(initialVotingDelay, initialVotingPeriod, initialProposalThreshold) measured in blocks
+   * GovernorVotes(protocolToken)
+   * GovernorVotesQuorumFraction(percentage-to-pass-quorum)
+   * GovernorTimelockControl(timelock-contract)
    */
   constructor(
     address _token,
