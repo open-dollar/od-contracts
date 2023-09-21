@@ -18,6 +18,10 @@ abstract contract Deploy is Common, Script {
     deployer = vm.addr(_deployerPk);
     vm.startBroadcast(deployer);
 
+    // set governor to deployer during deployment
+    governor = deployer;
+    delegate = address(0);
+
     //print the commit hash
     string[] memory inputs = new string[](3);
     inputs[0] = 'git';
@@ -60,16 +64,12 @@ abstract contract Deploy is Common, Script {
     // Deploy contracts related to the SafeManager usecase
     deployProxyContracts();
 
-    address[] memory t = new address[](3);
-    t[0] = H;
-    t[1] = J;
-    t[2] = P;
-
-    mintAirdrop(t);
-    deployGovernor(address(protocolToken), t, H);
-
     // Deploy and setup contracts that rely on deployed environment
     setupPostEnvironment();
+
+    // set governor to DAO
+    governor = vault721.governor();
+    delegate = address(0);
 
     if (delegate == address(0)) {
       _revokeAllTo(governor);
