@@ -87,7 +87,7 @@ const createOutputFile = (contracts) => {
         contracts.CollateralAuctionHouseChild_0x5745544800000000000000000000000000000000000000000000000000000000_Address,
     },
     FTRG: {
-      address: "0x36E91d510D492b87813Bb49704423b3b5885201F",
+      address: "0x0Ed89D4655b2fE9f99EaDC3116b223527165452D",
       collateralJoin:
         contracts.CollateralJoinChild_0x4654524700000000000000000000000000000000000000000000000000000000_Address,
       collateralAuctionHouse:
