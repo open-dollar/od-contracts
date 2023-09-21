@@ -77,6 +77,7 @@ contract Vault721 is ERC721Enumerable {
     require(msg.sender == address(safeManager), 'Vault: only safeManager');
     require(_proxyRegistry[_proxy] != address(0), 'Vault: non-native proxy');
     address _user = _proxyRegistry[_proxy];
+    require(_user != address(0));
     _safeMint(_user, _safeId);
   }
 

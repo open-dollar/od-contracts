@@ -128,4 +128,13 @@ contract NFTFunctionality is GoerliForkSetup {
     assertEq(_safes.length, 1);
     assertEq(_safes[0], currSafeId);
   }
+
+  function testFail_noMintToZeroAddress() public {
+    vm.startPrank(address(0));
+
+    address zeroProxy = deployOrFind(address(0));
+
+    //this should fail because proxy
+    uint256 safeId = openSafe(FTRG, zeroProxy);
+  }
 }
