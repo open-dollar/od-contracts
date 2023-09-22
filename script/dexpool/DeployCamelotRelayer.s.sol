@@ -12,7 +12,7 @@ import {LiquidityBase} from '@script/dexpool/base/LiquidityBase.s.sol';
 contract DeployCamelotRelayer is LiquidityBase {
   function run() public {
     vm.startBroadcast(vm.envUint('ARB_GOERLI_PK'));
-    od_weth_CamelotRelayer = camelotRelayerFactory.deployCamelotRelayer(OD_token, WETH_token, fee, period);
+    od_weth_CamelotRelayer = camelotRelayerFactory.deployCamelotRelayer(tokenA, tokenB, period);
     vm.stopBroadcast();
   }
 }

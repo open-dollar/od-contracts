@@ -79,4 +79,9 @@ abstract contract GoerliContracts {
   address public TimelockController_Address = 0xE9dD547a8297D07dAf803C46a5cC187bF274Cf81;
   address public ODGovernor_Address = 0xa45499121D029805b79B48761958Bc705053e474;
   address public DenominatedOracleChild_OD_Address = 0x8ED0E6d53cf08EE85EC5acc61AECB4A6e1da7421;
+
+  // post deployment
+  address public CamelotPool_Address = 0xc16763b670d5B8360fE1c7AB03C43BCE418431a5; // OD / WETH
+  address public CamelotRelayerChild_Address = 0x97eDe6FFaaA866a749bc230B2aDF7B86Ba7a9946; // OD / WETH
+  address public CamelotDenominatedOracleChild_Address = 0xCB0361b563efD1E7cC42308034b3D8BDAc24b7e8; // (OD / WETH) * (ETH / USD)
 }

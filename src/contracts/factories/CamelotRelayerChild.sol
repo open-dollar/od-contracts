@@ -16,7 +16,6 @@ contract CamelotRelayerChild is CamelotRelayer, FactoryChild, ICamelotRelayerChi
   constructor(
     address _baseToken,
     address _quoteToken,
-    uint24 _feeTier,
     uint32 _quotePeriod
-  ) CamelotRelayer(_baseToken, _quoteToken, _feeTier, _quotePeriod) {}
+  ) CamelotRelayer(_baseToken, _quoteToken, _quotePeriod) {}
 }

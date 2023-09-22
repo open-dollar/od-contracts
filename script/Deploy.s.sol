@@ -177,19 +177,17 @@ contract DeployGoerli is GoerliParams, Deploy {
   }
 
   function setupPostEnvironment() public virtual override updateParams {
-    // Setup deviated oracle
-    address uniV3PoolAddr = 0x020a79c27d1bC1fe577674921263152719451bB1; // OD / WETH UniSwap pool
-    address uniV3RelayerChildAddr = 0xFcD380C21f5ABa67ADF366213Bb5B7bB0Ee650F2; // OD / WETH
+    // deploy Camelot liquidity pool to create market price for OD
+    ICamelotV3Factory(GOERLI_CAMELOT_V3_FACTORY).createPool(address(systemCoin), ARB_GOERLI_WETH);
 
-    // systemCoinOracle = new DeviatedOracle({
-    //   _symbol: 'OD/USD',
-    //   _oracleRelayer: address(oracleRelayer),
-    //   _deviation: ARB_GOERLI_FTRG_PRICE_DEVIATION
-    // });
+    // TODO: how to set initial price of pool
 
-    systemCoinOracle = denominatedOracleFactory.deployDenominatedOracle(
-      IBaseOracle(uniV3RelayerChildAddr), IBaseOracle(chainlinkEthUSDPriceFeed), false
-    );
+    // deploy Camelot relayer to retrieve price from Camelot pool
+    IBaseOracle _odWethOracle =
+      camelotRelayerFactory.deployCamelotRelayer(address(systemCoin), ARB_GOERLI_WETH, uint32(ORACLE_INTERVAL_TEST));
+
+    // deploy denominated oracle of OD/WETH denominated against ETH/USD
+    systemCoinOracle = denominatedOracleFactory.deployDenominatedOracle(_odWethOracle, chainlinkEthUSDPriceFeed, false);
 
     oracleRelayer.modifyParameters('systemCoinOracle', abi.encode(systemCoinOracle));
   }
