@@ -7,14 +7,13 @@ import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 interface ICamelotRelayerFactory is IAuthorizable {
   // --- Events ---
   event NewCamelotRelayer(
-    address indexed _camelotRelayer, address _baseToken, address _quoteToken, uint24 _feeTier, uint32 _quotePeriod
+    address indexed _camelotRelayer, address _baseToken, address _quoteToken, uint32 _quotePeriod
   );
 
   // --- Methods ---
   function deployCamelotRelayer(
     address _baseToken,
     address _quoteToken,
-    uint24 _feeTier,
     uint32 _quotePeriod
   ) external returns (IBaseOracle _camelotRelayer);
 

@@ -5,12 +5,12 @@ import {OracleBase} from '@script/postdeployment/base/OracleBase.s.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 
 // BROADCAST
-// source .env && forge script DeployDenominatedOracle --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_GOERLI_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
+// source .env && forge script DeployDenominatedOracleUniswapV3 --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_GOERLI_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
 
 // SIMULATE
-// source .env && forge script DeployDenominatedOracle --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_GOERLI_RPC
+// source .env && forge script DeployDenominatedOracleUniswapV3 --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_GOERLI_RPC
 
-contract DeployDenominatedOracle is OracleBase {
+contract DeployDenominatedOracleUniswapV3 is OracleBase {
   function run() public {
     vm.startBroadcast(vm.envUint('ARB_GOERLI_PK'));
     weth_usd_denominatedOracle = denominatedOracleFactory.deployDenominatedOracle(

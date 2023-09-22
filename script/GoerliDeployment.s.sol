@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import '@script/Contracts.s.sol';
 import {GoerliParams, WETH, FTRG, WBTC, STONES, TOTEM} from '@script/GoerliParams.s.sol';
-import {ARB_GOERLI_WETH, ARB_GOERLI_GOV_TOKEN} from '@script/Registry.s.sol';
+import {ARB_GOERLI_WETH, ARB_GOERLI_GOV_TOKEN, GOERLI_CAMELOT_V3_FACTORY} from '@script/Registry.s.sol';
 import {GoerliContracts} from '@script/GoerliContracts.s.sol';
 
 abstract contract GoerliDeployment is Contracts, GoerliParams, GoerliContracts {
@@ -119,5 +119,7 @@ abstract contract GoerliDeployment is Contracts, GoerliParams, GoerliContracts {
     delayedOracle[WBTC] = IDelayedOracle(DelayedOracleChild_WBTC_Address);
     delayedOracle[STONES] = IDelayedOracle(DelayedOracleChild_STONES_Address);
     delayedOracle[TOTEM] = IDelayedOracle(DelayedOracleChild_TOTEM_Address);
+
+    camelotV3Factory = ICamelotV3Factory(GOERLI_CAMELOT_V3_FACTORY);
   }
 }

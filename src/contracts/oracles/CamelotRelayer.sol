@@ -37,7 +37,7 @@ contract CamelotRelayer is IBaseOracle, ICamelotRelayer {
   /// @inheritdoc ICamelotRelayer
   uint32 public quotePeriod;
 
-  constructor(address _baseToken, address _quoteToken, uint24 _feeTier, uint32 _quotePeriod) {
+  constructor(address _baseToken, address _quoteToken, uint32 _quotePeriod) {
     // camelotPair = ICamelotFactory(_CAMELOT_FACTORY).getPair(_baseToken, _quoteToken);
     camelotPair = IAlgebraFactory(_CAMELOT_FACTORY).poolByPair(_baseToken, _quoteToken);
     if (camelotPair == address(0)) revert CamelotRelayer_InvalidPool();
