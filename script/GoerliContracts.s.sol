@@ -66,9 +66,9 @@ abstract contract GoerliContracts {
   address public
     CollateralAuctionHouseChild_0x544f54454d000000000000000000000000000000000000000000000000000000_Address =
       0xa0702282666f361644fB74D9c1546Acbf27c35B3;
-  address public Vault721_Address = 0x7Cb0aAF82331Ea68555D3099Bb8EC00F2432E339;
+  address public Vault721_Address = 0xB2BB0b60E01Ed0d80B7764f86d3c2b30818C37cd;
   address public ODSafeManager_Address = 0x9Ca0Fbe890aBcC5e17CC88B4d21B82dCF095d99A;
-  address public NFTRenderer_Address = 0x9eF863DAC3AD24686900405A49b0a3d6831cd449;
+  address public NFTRenderer_Address = 0x4DAB63971143236352DE6C8076B2B60C55A430dd;
   address public BasicActions_Address = 0x92Df6791659aF5D45d8e6Ef2BFA4A428F476F105;
   address public DebtBidActions_Address = 0x45Fca9B81e5d72047fF5f11d5c25928A6518b4c4;
   address public SurplusBidActions_Address = 0x3C175007711169135B57E6C49aE841eF2d9955Bd;
