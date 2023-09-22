@@ -17,6 +17,11 @@ import {TaxCollector, ITaxCollector} from '@contracts/TaxCollector.sol';
 contract NFTRendererTest is GoerliForkSetup {
   using Strings for uint256;
 
+  /// @dev Uint256 representation of 1 RAY
+  uint256 constant RAY = 10 ** 27;
+  /// @dev Uint256 representation of 1 WAD
+  uint256 constant WAD = 10 ** 18;
+
   NFTRenderer public r;
 
   function setUp() public override {
@@ -25,21 +30,19 @@ contract NFTRendererTest is GoerliForkSetup {
     r = new NFTRenderer(Vault721_Address, OracleRelayer_Address, TaxCollector_Address, CollateralJoinFactory_Address);
   }
 
-  function testParams1() public {
+  function testArbitrary() public {
     NFTRenderer.VaultParams memory p = r.renderParams(1);
-    // uint256 c = p.collateral;
-    // uint256 d = p.debt;
-    uint256 c = 1_111_222_233_334_444_555_566;
 
-    uint256 lc = c / 1e18;
-    uint256 explc = lc * 1e18;
-    uint256 rc = c - explc;
-    uint256 redrc = rc / 1e10;
+    // IODSafeManager.SAFEData memory safeMangerData = IODSafeManager(ODSafeManager_Address).safeData(1);
+    // address safeHandler = safeMangerData.safeHandler;
+    // bytes32 cType = safeMangerData.collateralType;
 
-    emit log_uint(c);
-    emit log_uint(lc);
-    emit log_uint(explc);
-    emit log_uint(rc);
-    emit log_uint(redrc);
+    // ITaxCollector.TaxCollectorCollateralParams memory cParams = ITaxCollector(TaxCollector_Address).cParams(cType);
+    // uint256 stabilityFee1 = cParams.stabilityFee;
+    // emit log_uint(stabilityFee1 / RAY);
+
+    // ITaxCollector.TaxCollectorCollateralData memory cData = ITaxCollector(TaxCollector_Address).cData(cType);
+    // uint256 stabilityFee2 = cData.nextStabilityFee;
+    // emit log_uint(stabilityFee2 / RAY);
   }
 }

@@ -21,7 +21,6 @@ contract RedeployVault721 is GoerliDeployment, Script {
     vault721.setSafeManager(address(safeManager));
     nftRenderer =
       new NFTRenderer(address(vault721), address(oracleRelayer), address(taxCollector), address(collateralJoinFactory));
-    vault721.setNftRenderer(address(nftRenderer));
     vm.stopBroadcast();
   }
 }

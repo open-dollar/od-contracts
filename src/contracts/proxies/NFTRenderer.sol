@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
+import {DateTime} from '@libraries/DateTime.sol';
 import {Strings} from '@openzeppelin/utils/Strings.sol';
 import {Base64} from '@openzeppelin/utils/Base64.sol';
 import {Math} from '@libraries/Math.sol';
@@ -17,9 +18,14 @@ import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadat
 contract NFTRenderer {
   using Strings for uint256;
   using Math for uint256;
+  using DateTime for uint256;
+
+  uint256 internal constant _RAY = 10 ** 27;
+  uint256 internal constant _WAD = 10 ** 18;
 
   IVault721 public immutable vault721;
 
+  // protocol contracts
   IODSafeManager internal _safeManager;
   ISAFEEngine internal _safeEngine;
   IOracleRelayer internal _oracleRelayer;
@@ -39,6 +45,7 @@ contract NFTRenderer {
   struct VaultParams {
     uint256 collateral;
     uint256 debt;
+    uint256 lastUpdate;
     string vaultId;
     string ratio;
     string stabilityFee;
@@ -46,9 +53,11 @@ contract NFTRenderer {
     string risk;
     string color;
     string stroke;
-    string lastUpdate;
   }
 
+  /**
+   * @dev upgradeability permissioned to governor via Vault721
+   */
   function setImplementation(
     address safeManager,
     address oracleRelayer,
@@ -72,6 +81,7 @@ contract NFTRenderer {
     string memory desc = _renderDesc(params);
     string memory debt = _floatingPoint(params.debt);
     string memory collateral = _floatingPoint(params.collateral);
+    string memory dateTime = _formatDateTime(params.lastUpdate);
 
     string memory json = string.concat(
       desc,
@@ -79,7 +89,7 @@ contract NFTRenderer {
         bytes(
           string.concat(
             _renderVaultInfo(params.vaultId, params.color),
-            _renderCollatAndDebt(params.stabilityFee, debt, collateral, params.symbol, params.lastUpdate),
+            _renderCollatAndDebt(params.stabilityFee, debt, collateral, params.symbol, dateTime),
             _renderRisk(params.stroke, params.risk, params.ratio),
             _renderBackground(params.color)
           )
@@ -91,6 +101,9 @@ contract NFTRenderer {
     uri = string.concat('data:application/json;base64,', Base64.encode(bytes(json)));
   }
 
+  /**
+   * @dev reads from various protocol contracts to collect data about user vaults by vault id
+   */
   function renderParams(uint256 _safeId) public view returns (VaultParams memory) {
     VaultParams memory params;
     params.vaultId = _safeId.toString();
@@ -112,20 +125,20 @@ contract NFTRenderer {
       uint256 ratio;
       if (collateral != 0 && debt != 0) {
         ISAFEEngine.SAFEEngineCollateralData memory cTypeData = _safeEngine.cData(cType);
-        ratio = ((collateral.wmul(oracle.read())).wdiv(debt.wmul(cTypeData.accumulatedRate))) / 1e7; // RAY to WAD conversion
+        ratio = ((collateral.wmul(oracle.read())).wdiv(debt.wmul(cTypeData.accumulatedRate))) / 1e7; // _RAY to _WAD conversion
       } else {
         ratio = 0;
       }
       params.collateral = collateral;
       params.debt = debt;
-      params.lastUpdate = oracle.lastUpdateTime().toString();
+      params.lastUpdate = oracle.lastUpdateTime();
       (params.risk, params.color) = _calcRisk(ratio);
       params.stroke = _calcStroke(ratio);
       params.ratio = ratio.toString();
     }
 
-    ITaxCollector.TaxCollectorCollateralParams memory taxParams = _taxCollector.cParams(cType);
-    params.stabilityFee = taxParams.stabilityFee.toString();
+    ITaxCollector.TaxCollectorCollateralData memory taxData = _taxCollector.cData(cType);
+    params.stabilityFee = (taxData.nextStabilityFee / _RAY).toString();
 
     IERC20Metadata token = ICollateralJoin(_collateralJoinFactory.collateralJoins(cType)).collateral();
     params.symbol = token.symbol();
@@ -133,6 +146,9 @@ contract NFTRenderer {
     return params;
   }
 
+  /**
+   * @dev json description
+   */
   function _renderDesc(VaultParams memory params) internal pure returns (string memory desc) {
     desc = string.concat(
       '{"name":"Open Dollar Vault",',
@@ -155,6 +171,9 @@ contract NFTRenderer {
     );
   }
 
+  /**
+   * @dev svg vault/token id
+   */
   function _renderVaultInfo(string memory vaultId, string memory color) internal pure returns (string memory svg) {
     svg = string.concat(
       '<svg width="420" height="420" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><a target="_blank" href="https://app.dev.opendollar.com/#/vaults/',
@@ -169,6 +188,9 @@ contract NFTRenderer {
     );
   }
 
+  /**
+   * @dev svg collateral and debt data
+   */
   function _renderCollatAndDebt(
     string memory stabilityFee,
     string memory debt,
@@ -190,6 +212,9 @@ contract NFTRenderer {
     );
   }
 
+  /**
+   * @dev svg risk data
+   */
   function _renderRisk(
     string memory stroke,
     string memory risk,
@@ -205,6 +230,9 @@ contract NFTRenderer {
     );
   }
 
+  /**
+   * @dev svg background
+   */
   function _renderBackground(string memory color) internal pure returns (string memory svg) {
     svg = string.concat(
       ' %</tspan></text></g></g><defs><radialGradient id="gradient" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="rotate(-133.2 301 119) scale(368.295)"><stop stop-color="',
@@ -215,6 +243,9 @@ contract NFTRenderer {
     );
   }
 
+  /**
+   * @dev calculates liquidation risk
+   */
   function _calcRisk(uint256 ratio) internal pure returns (string memory, string memory) {
     if (ratio < 120) return ('LIQUIDATION', '#E45200');
     else if (ratio > 119 && ratio < 136) return ('HIGH', '#E45200');
@@ -222,17 +253,57 @@ contract NFTRenderer {
     else return ('LOW', '#459d00');
   }
 
+  /**
+   * @dev fills circular stroke by percentage of collateral over 100% up to 200%
+   */
   function _calcStroke(uint256 ratio) internal pure returns (string memory) {
     if (ratio <= 100 || ratio >= 200) return '100';
     else return (ratio - 100).toString();
   }
 
+  /**
+   * @dev converts uint from wei fixed-point to ether floating-point format
+   */
   function _floatingPoint(uint256 num) internal pure returns (string memory) {
-    uint256 left = num / 1e18;
-    uint256 expLeft = left * 1e18;
+    uint256 left = num / _WAD;
+    uint256 expLeft = left * _WAD;
     uint256 expRight = num - expLeft;
     uint256 right = expRight / 1e14;
 
     return string.concat(left.toString(), '.', right.toString());
+  }
+
+  /**
+   * @dev converts timestamp to human readable date and time format
+   */
+  function _formatDateTime(uint256 timestamp) internal pure returns (string memory) {
+    (uint256 year, uint256 month, uint256 day, uint256 hour, uint256 minute, uint256 second) =
+      timestamp.timestampToDateTime();
+
+    string memory _month;
+    if (month == 1) _month = 'Jan';
+    else if (month == 2) _month = 'Feb';
+    else if (month == 3) _month = 'Mar';
+    else if (month == 4) _month = 'Apr';
+    else if (month == 5) _month = 'May';
+    else if (month == 6) _month = 'Jun';
+    else if (month == 7) _month = 'Jul';
+    else if (month == 8) _month = 'Aug';
+    else if (month == 9) _month = 'Sep';
+    else if (month == 10) _month = 'Oct';
+    else if (month == 11) _month = 'Nov';
+    else _month = 'Dec';
+
+    return string.concat(
+      _month, ' ', day.toString(), ', ', year.toString(), ' ', _formatTime(hour), ':', _formatTime(minute), ' UTC'
+    );
+  }
+
+  /**
+   * @dev zero pads single digits
+   */
+  function _formatTime(uint256 time) internal pure returns (string memory) {
+    if (time < 10) return string.concat('0', time.toString());
+    else return time.toString();
   }
 }
