@@ -11,7 +11,6 @@ contract Vault721 is ERC721Enumerable {
   error NotGovernor();
   error ProxyAlreadyExist();
   error ZeroAddress();
-  error Initialized();
 
   address public governor;
   IODSafeManager public safeManager;
@@ -52,16 +51,14 @@ contract Vault721 is ERC721Enumerable {
    * @dev initializes SafeManager contract
    */
   function initializeManager() external {
-    if (address(safeManager) != address(0)) revert Initialized();
-    _setSafeManager(msg.sender);
+    if (address(safeManager) == address(0)) _setSafeManager(msg.sender);
   }
 
   /**
    * @dev initializes NFTRenderer contract
    */
   function initializeRenderer() external {
-    if (address(nftRenderer) != address(0)) revert Initialized();
-    _setNftRenderer(msg.sender);
+    if (address(nftRenderer) == address(0)) _setNftRenderer(msg.sender);
   }
 
   /**
