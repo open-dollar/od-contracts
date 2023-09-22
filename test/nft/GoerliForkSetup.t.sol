@@ -5,6 +5,7 @@ import 'forge-std/Test.sol';
 import {GoerliParams, WETH, FTRG, WBTC, STONES, TOTEM} from '@script/GoerliParams.s.sol';
 import {GoerliDeployment} from '@script/GoerliDeployment.s.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
+import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 
 contract GoerliForkSetup is Test, GoerliDeployment {
   uint256 public currSafeId = 10;
@@ -19,7 +20,7 @@ contract GoerliForkSetup is Test, GoerliDeployment {
   address public cobra = 0xD5d1bb95259Fe2c5a84da04D1Aa682C71A1B8C0E;
   address aliceProxy;
 
-  function setUp() public {
+  function setUp() public virtual {
     vm.label(alice, 'Alice');
     vm.label(bob, 'Bob');
     vm.label(cobra, 'Cobra');

@@ -18,11 +18,6 @@ contract NFTRenderer {
   using Strings for uint256;
   using Math for uint256;
 
-  string internal constant _L0 = 'LOW';
-  string internal constant _L1 = 'ELEVATED';
-  string internal constant _L2 = 'HIGH';
-  string internal constant _L3 = 'LIQUIDATION';
-
   IVault721 public immutable vault721;
 
   IODSafeManager internal _safeManager;
@@ -42,9 +37,9 @@ contract NFTRenderer {
   }
 
   struct VaultParams {
+    uint256 collateral;
+    uint256 debt;
     string vaultId;
-    string collateral;
-    string debt;
     string ratio;
     string stabilityFee;
     string symbol;
@@ -75,6 +70,8 @@ contract NFTRenderer {
   function render(uint256 _safeId) external view returns (string memory uri) {
     VaultParams memory params = renderParams(_safeId);
     string memory desc = _renderDesc(params);
+    string memory debt = _floatingPoint(params.debt);
+    string memory collateral = _floatingPoint(params.collateral);
 
     string memory json = string.concat(
       desc,
@@ -82,7 +79,7 @@ contract NFTRenderer {
         bytes(
           string.concat(
             _renderVaultInfo(params.vaultId, params.color),
-            _renderCollatAndDebt(params.stabilityFee, params.debt, params.collateral, params.lastUpdate),
+            _renderCollatAndDebt(params.stabilityFee, debt, collateral, params.symbol, params.lastUpdate),
             _renderRisk(params.stroke, params.risk, params.ratio),
             _renderBackground(params.color)
           )
@@ -115,12 +112,12 @@ contract NFTRenderer {
       uint256 ratio;
       if (collateral != 0 && debt != 0) {
         ISAFEEngine.SAFEEngineCollateralData memory cTypeData = _safeEngine.cData(cType);
-        ratio = (collateral.wmul(oracle.read())).wdiv(debt.wmul(cTypeData.accumulatedRate));
+        ratio = ((collateral.wmul(oracle.read())).wdiv(debt.wmul(cTypeData.accumulatedRate))) / 1e7; // RAY to WAD conversion
       } else {
         ratio = 0;
       }
-      params.collateral = collateral.toString();
-      params.debt = debt.toString();
+      params.collateral = collateral;
+      params.debt = debt;
       params.lastUpdate = oracle.lastUpdateTime().toString();
       (params.risk, params.color) = _calcRisk(ratio);
       params.stroke = _calcStroke(ratio);
@@ -142,11 +139,11 @@ contract NFTRenderer {
       '"description":"vaultId: ',
       params.vaultId,
       ' collateral: ',
-      params.collateral,
+      params.collateral.toString(),
       '-',
       params.symbol,
       ' debt: ',
-      params.debt,
+      params.debt.toString(),
       '-OD ratio: ',
       params.ratio,
       ' stabilityFee: ',
@@ -176,14 +173,18 @@ contract NFTRenderer {
     string memory stabilityFee,
     string memory debt,
     string memory collateral,
+    string memory symbol,
     string memory lastUpdate
   ) internal pure returns (string memory svg) {
     svg = string.concat(
       stabilityFee,
       ' %</tspan></text><text opacity=".3" transform="rotate(90 -66.5 101.5)" fill="#fff" xml:space="preserve" font-size="10"><tspan x=".5" y="7.3">opendollar.com</tspan></text><text fill="#00587E" xml:space="preserve" font-weight="600"><tspan x="102" y="168.9">DEBT MINTED</tspan></text><text fill="#D0F1FF" xml:space="preserve" font-size="24"><tspan x="102" y="194">',
       debt,
+      ' OD',
       '</tspan></text><text fill="#00587E" xml:space="preserve" font-weight="600"><tspan x="102" y="229.9">COLLATERAL DEPOSITED</tspan></text><text fill="#D0F1FF" xml:space="preserve" font-size="24"><tspan x="102" y="255">',
       collateral,
+      ' ',
+      symbol,
       '</tspan></text><text opacity=".3" transform="rotate(-90 326.5 -58.5)" fill="#fff" xml:space="preserve" font-size="10"><tspan x="-10.3" y="7.3">Last updated ',
       lastUpdate
     );
@@ -215,17 +216,23 @@ contract NFTRenderer {
   }
 
   function _calcRisk(uint256 ratio) internal pure returns (string memory, string memory) {
-    // 1e18 / 100 = 1e16
-    // TODO: check that math is correct
-    if (ratio < 120e16) return (_L3, '#E45200');
-    else if (ratio > 119e16 && ratio < 136e16) return (_L2, '#E45200');
-    else if (ratio > 135e16 && ratio < 150e16) return (_L1, '#FCBF3B');
-    else return (_L0, '#459d00');
+    if (ratio < 120) return ('LIQUIDATION', '#E45200');
+    else if (ratio > 119 && ratio < 136) return ('HIGH', '#E45200');
+    else if (ratio > 135 && ratio < 150) return ('ELEVATED', '#FCBF3B');
+    else return ('LOW', '#459d00');
   }
 
   function _calcStroke(uint256 ratio) internal pure returns (string memory) {
-    uint256 n = ratio.wdiv(1e16);
-    if (n <= 100 || n >= 200) return '100';
-    else return n.toString();
+    if (ratio <= 100 || ratio >= 200) return '100';
+    else return (ratio - 100).toString();
+  }
+
+  function _floatingPoint(uint256 num) internal pure returns (string memory) {
+    uint256 left = num / 1e18;
+    uint256 expLeft = left * 1e18;
+    uint256 expRight = num - expLeft;
+    uint256 right = expRight / 1e14;
+
+    return string.concat(left.toString(), '.', right.toString());
   }
 }
