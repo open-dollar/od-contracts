@@ -115,6 +115,18 @@ const createOutputFile = (contracts) => {
         contracts.CollateralAuctionHouseChild_0x544f54454d000000000000000000000000000000000000000000000000000000_Address,
     },
   };
+
+  const subgraph = {
+    collateralAuctionHouseFactory: {
+      address: contracts.CollateralAuctionHouseFactory_Address,
+    },
+    surplusAuctionHouse: {
+      address: contracts.SurplusAuctionHouse_Address,
+    },
+    debtAuctionHouse: {
+      address: contracts.DebtAuctionHouse_Address,
+    },
+  };
   const validate = (obj) => {
     const missing = Object.values(obj).reduce((acc, curr, i) => {
       if (!curr) {
@@ -134,8 +146,9 @@ const createOutputFile = (contracts) => {
 
 const addresses = ${JSON.stringify(final, null, 2)}
   
-const collateral = ${JSON.stringify(collateral, null, 2)}`;
+const collateral = ${JSON.stringify(collateral, null, 2)}
 
+const subgraph = ${JSON.stringify(subgraph, null, 2)}`;
   fs.writeFile(outputPath, content, (err) => {
     if (err) {
       console.error(err);
