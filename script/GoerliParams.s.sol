@@ -9,9 +9,6 @@ abstract contract GoerliParams is Contracts, Params {
   uint256 constant ARB_GOERLI_FTRG_PRICE_DEVIATION = 0.995e18; // -0.5%
 
   function _getEnvironmentParams() internal override {
-    governor = 0x37c5B029f9c3691B3d47cb024f84E5E257aEb0BB; // cannot be the deployer
-    delegate = 0xD5d1bb95259Fe2c5a84da04D1Aa682C71A1B8C0E;
-
     // Setup delegated collateral joins
     delegatee[FTRG] = governor;
 

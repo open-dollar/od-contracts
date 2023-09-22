@@ -21,7 +21,7 @@ contract DeployGovernor is GoerliContracts, Script {
     members[1] = J;
     members[2] = P;
 
-    TimelockController timelockController = new TimelockController(1 minutes, members, members, H);
+    TimelockController timelockController = new TimelockController(1 minutes, members, members, address(0));
     ODGovernor odGovernor = new ODGovernor(ProtocolToken_Address, timelockController);
     vm.stopBroadcast();
   }
