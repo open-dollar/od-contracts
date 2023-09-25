@@ -6,7 +6,7 @@ import {Math} from '@libraries/Math.sol';
 import {OracleForTest} from '@test/mocks/OracleForTest.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {WETH, HAI_INITIAL_PRICE} from '@script/Params.s.sol';
-import {RAY, YEAR} from '@libraries/Math.sol';
+import {RAY, YEAR, WAD} from '@libraries/Math.sol';
 
 import {BaseUser} from '@test/scopes/BaseUser.t.sol';
 import {DirectUser} from '@test/scopes/DirectUser.t.sol';
@@ -324,6 +324,47 @@ abstract contract E2EGlobalSettlementTest is BaseUser, Common {
     globalSettlement.setOutstandingCoinSupply();
 
     _prepareCoinsForRedeeming(address(this), _amountToSell / 1e27);
+  }
+
+  /// Tests that incrementing a bid while being the top bidder only pulls the increment
+  function test_post_settlement_surplus_auction_house_rebid() public {
+    _generateDebt(alice, address(collateralJoin[WETH]), int256(COLLAT), int256(DEBT));
+    _collectFees(WETH, 50 * YEAR);
+
+    vm.prank(deployer);
+    globalSettlement.shutdownSystem();
+
+    accountingEngine.transferPostSettlementSurplus();
+
+    uint256 _auctionId = settlementSurplusAuctioneer.auctionSurplus();
+    uint256 _amountToSell = postSettlementSurplusAuctionHouse.auctions(_auctionId).amountToSell;
+
+    uint256 _initialBid = accountingEngine.params().surplusAmount;
+    uint256 _bidIncrease = postSettlementSurplusAuctionHouse.params().bidIncrease;
+    uint256 _bid = _initialBid * _bidIncrease / WAD;
+    uint256 _rebid = _bid * _bidIncrease / WAD;
+
+    // mint protocol tokens to bid with
+    vm.prank(deployer);
+    protocolToken.mint(address(this), _rebid);
+
+    // Peform the initial bid
+    _increasePostSettlementBidSize(address(this), _auctionId, _bid);
+
+    // Increment the bid to check that only the increment is pulled
+    // If more than the increment is pulled this reverts due to only having `_rebid` amount of tokens
+    _increasePostSettlementBidSize(address(this), _auctionId, _rebid);
+
+    // advance time to settle auction
+    vm.warp(block.timestamp + postSettlementSurplusAuctionHouse.params().bidDuration);
+    _settlePostSettlementSurplusAuction(address(this), _auctionId);
+
+    assertEq(_getInternalCoinBalance(address(this)), _amountToSell);
+
+    vm.warp(block.timestamp + globalSettlement.params().shutdownCooldown);
+    globalSettlement.setOutstandingCoinSupply();
+
+    _prepareCoinsForRedeeming(address(this), _amountToSell / RAY);
   }
 
   function _multiCollateralSetup() internal {
