@@ -1,8 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
+// set this before mainnet deployment
+address constant DAO_SAFE = address(0);
+address constant TIMELOCK_ADMIN = address(0);
+uint256 constant AIRDROP_AMOUNT = 10_000e18;
+uint256 constant MIN_DELAY = 3 days;
+
 // for Goerli, add oracleForTestnet auth
-address constant GOVERNOR_DAO = 0x37c5B029f9c3691B3d47cb024f84E5E257aEb0BB;
+address constant MOCK_GOV = 0x37c5B029f9c3691B3d47cb024f84E5E257aEb0BB;
+uint256 constant MIN_DELAY_GOERLI = 1 minutes;
 
 address constant H = 0x37c5B029f9c3691B3d47cb024f84E5E257aEb0BB;
 address constant J = 0xcb81A76a565aC4870EDA5B0e32c5a0D2ec734174;

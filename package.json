@@ -25,6 +25,8 @@
     "deploy:goerli:ffi": "bash -c 'source .env && forge script DeployGoerli --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_GOERLI_RPC --private-key $ARB_GOERLI_DEPLOYER_PK --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY --ffi'",
     "simulate-deploy:goerli:ffi": "bash -c 'source .env && forge script DeployGoerli --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_GOERLI_RPC --private-key $ARB_GOERLI_DEPLOYER_PK --ffi'",
     "deploy:mainnet": "bash -c 'source .env && forge script DeployMainnet --rpc-url $ARB_MAINNET_RPC --broadcast --private-key $ARB_MAINNET_DEPLOYER_PK --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY'",
+    "deploy:mainnet:ffi": "bash -c 'source .env && forge script DeployMainnet --rpc-url $ARB_MAINNET_RPC --broadcast --private-key $ARB_MAINNET_DEPLOYER_PK --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY --ffi'",
+    "simulate-deploy:mainnet:ffi": "bash -c 'source .env && forge script DeployMainnet --rpc-url $ARB_MAINNET_RPC --private-key $ARB_MAINNET_DEPLOYER_PK --ffi'",
     "postinstall": "forge install",
     "lint:check": "yarn lint:sol && forge fmt check",
     "lint:fix": "sort-package-json && forge fmt && yarn lint:sol --fix",

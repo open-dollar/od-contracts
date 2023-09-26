@@ -13,6 +13,8 @@ import {MainnetParams} from '@script/MainnetParams.s.sol';
 abstract contract Deploy is Common, Script {
   function setupEnvironment() public virtual {}
   function setupPostEnvironment() public virtual {}
+  function mintAirdrop() public virtual {}
+  function deployGovernor() public virtual {}
 
   function run() public {
     deployer = vm.addr(_deployerPk);
@@ -61,6 +63,12 @@ abstract contract Deploy is Common, Script {
       _setupCollateral(_cType);
     }
 
+    // Mint initial ODG airdrop
+    mintAirdrop();
+
+    // Deploy DAO Governor
+    deployGovernor();
+
     // Deploy contracts related to the SafeManager usecase
     deployProxyContracts();
 
@@ -88,6 +96,20 @@ contract DeployMainnet is MainnetParams, Deploy {
   function setUp() public virtual {
     _deployerPk = uint256(vm.envBytes32('ARB_MAINNET_DEPLOYER_PK'));
     chainId = 42_161;
+  }
+
+  function mintAirdrop() public virtual override {
+    require(DAO_SAFE != address(0), 'DAO zeroAddress');
+    protocolToken.mint(DAO_SAFE, AIRDROP_AMOUNT);
+  }
+
+  function deployGovernor() public virtual override {
+    require(DAO_SAFE != address(0), 'DAO zeroAddress');
+    address[] memory members = new address[](1);
+    members[0] = DAO_SAFE;
+
+    timelockController = new TimelockController(MIN_DELAY, members, members, TIMELOCK_ADMIN);
+    odGovernor = new ODGovernor(address(protocolToken), timelockController);
   }
 
   function setupEnvironment() public virtual override updateParams {
@@ -123,6 +145,22 @@ contract DeployGoerli is GoerliParams, Deploy {
   function setUp() public virtual {
     _deployerPk = uint256(vm.envBytes32('ARB_GOERLI_DEPLOYER_PK'));
     chainId = 421_613;
+  }
+
+  function mintAirdrop() public virtual override {
+    protocolToken.mint(H, AIRDROP_AMOUNT / 3);
+    protocolToken.mint(J, AIRDROP_AMOUNT / 3);
+    protocolToken.mint(P, AIRDROP_AMOUNT / 3);
+  }
+
+  function deployGovernor() public virtual override {
+    address[] memory members = new address[](3);
+    members[0] = H;
+    members[1] = J;
+    members[2] = P;
+
+    timelockController = new TimelockController(MIN_DELAY_GOERLI, members, members, TIMELOCK_ADMIN);
+    odGovernor = new ODGovernor(address(protocolToken), timelockController);
   }
 
   function setupEnvironment() public virtual override updateParams {

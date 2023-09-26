@@ -99,6 +99,10 @@ abstract contract GoerliDeployment is Contracts, GoerliParams, GoerliContracts {
     liquidationJob = LiquidationJob(LiquidationJob_Address);
     oracleJob = OracleJob(OracleJob_Address);
 
+    // --- governor ---
+    timelockController = TimelockController(payable(TimelockController_Address));
+    odGovernor = ODGovernor(payable(ODGovernor_Address));
+
     // --- proxies ---
     vault721 = Vault721(Vault721_Address);
     safeManager = ODSafeManager(ODSafeManager_Address);
