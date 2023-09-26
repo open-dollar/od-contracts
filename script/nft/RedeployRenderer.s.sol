@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import {Script} from 'forge-std/Script.sol';
 import {GoerliDeployment} from '@script/GoerliDeployment.s.sol';
-import {GOVERNOR_DAO, ARB_GOERLI_WETH} from '@script/Registry.s.sol';
+import {MOCK_GOV, ARB_GOERLI_WETH} from '@script/Registry.s.sol';
 import {Vault721} from '@contracts/proxies/Vault721.sol';
 import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 

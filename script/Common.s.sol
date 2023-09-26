@@ -346,16 +346,7 @@ abstract contract Common is Contracts, Params {
   }
 
   function deployProxyContracts() public updateParams {
-    // initial DAO members to receive airdrop, proposal, and execute proposals
-    address[] memory members = new address[](3);
-    members[0] = H;
-    members[1] = J;
-    members[2] = P;
-
-    _mintAirdrop(members);
-    address daoGov = _deployGovernor(address(protocolToken), members);
-
-    vault721 = new Vault721(daoGov);
+    vault721 = new Vault721(address(odGovernor));
     safeManager = new ODSafeManager(address(safeEngine), address(vault721));
     nftRenderer =
       new NFTRenderer(address(vault721), address(oracleRelayer), address(taxCollector), address(collateralJoinFactory));
@@ -371,19 +362,6 @@ abstract contract Common is Contracts, Params {
     postSettlementSurplusBidActions = new PostSettlementSurplusBidActions();
     globalSettlementActions = new GlobalSettlementActions();
     rewardedActions = new RewardedActions();
-  }
-
-  function _mintAirdrop(address[] memory members) internal {
-    uint256 wad = 1e18;
-    for (uint256 i = 0; i < members.length; i++) {
-      protocolToken.mint(members[i], 1000 * wad);
-    }
-  }
-
-  function _deployGovernor(address govToken, address[] memory members) internal returns (address) {
-    timelockController = new TimelockController(1 minutes, members, members, address(0));
-    odGovernor = new ODGovernor(govToken, timelockController);
-    return address(odGovernor);
   }
 
   modifier updateParams() {
