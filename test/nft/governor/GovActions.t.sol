@@ -15,13 +15,13 @@ contract GovActions is GoerliForkSetup {
   /**
    * @dev params for testing, do not use for production
    */
-  ICollateralAuctionHouse.CollateralAuctionHouseParams _cahCParams = ICollateralAuctionHouse
-    .CollateralAuctionHouseParams({
-    minimumBid: WAD, // 1 COINs
-    minDiscount: WAD, // no discount
-    maxDiscount: 0.9e18, // -10%
-    perSecondDiscountUpdateRate: MINUS_0_5_PERCENT_PER_HOUR
-  });
+  ICollateralAuctionHouse.CollateralAuctionHouseParams _cahCParams =
+    ICollateralAuctionHouse.CollateralAuctionHouseParams({
+      minimumBid: WAD, // 1 COINs
+      minDiscount: WAD, // no discount
+      maxDiscount: 0.9e18, // -10%
+      perSecondDiscountUpdateRate: MINUS_0_5_PERCENT_PER_HOUR
+    });
 
   // test
   function testExecuteProp() public {
@@ -74,9 +74,15 @@ contract GovActions is GoerliForkSetup {
     values[0] = 0;
     values[1] = 0;
 
-    bytes memory calldata0 = abi.encodeWithSignature('deployCollateralJoin(bytes32,address)', cType, cAddr);
+    bytes memory calldata0 = abi.encodeWithSignature(
+      'deployCollateralJoin(bytes32,address)',
+      cType,
+      cAddr
+    );
     bytes memory calldata1 = abi.encodeWithSignature(
-      'deployCollateralAuctionHouse(bytes32,ICollateralAuctionHouse.CollateralAuctionHouseParams)', cType, _cahCParams
+      'deployCollateralAuctionHouse(bytes32,ICollateralAuctionHouse.CollateralAuctionHouseParams)',
+      cType,
+      _cahCParams
     );
 
     calldatas = new bytes[](2);

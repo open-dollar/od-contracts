@@ -60,7 +60,11 @@ contract TokenDistributor is Authorizable, ITokenDistributor {
   }
 
   /// @inheritdoc ITokenDistributor
-  function canClaim(bytes32[] calldata _proof, address _user, uint256 _amount) external view returns (bool _claimable) {
+  function canClaim(
+    bytes32[] calldata _proof,
+    address _user,
+    uint256 _amount
+  ) external view returns (bool _claimable) {
     return _canClaim(_proof, _user, _amount);
   }
 
@@ -100,8 +104,16 @@ contract TokenDistributor is Authorizable, ITokenDistributor {
     emit Withdrawn({_to: _to, _amount: _amount});
   }
 
-  function _canClaim(bytes32[] calldata _proof, address _user, uint256 _amount) internal view returns (bool _claimable) {
-    _claimable = _claimPeriodActive() && _amount > 0 && !claimed[_user] && _merkleVerified(_proof, _user, _amount);
+  function _canClaim(
+    bytes32[] calldata _proof,
+    address _user,
+    uint256 _amount
+  ) internal view returns (bool _claimable) {
+    _claimable =
+      _claimPeriodActive() &&
+      _amount > 0 &&
+      !claimed[_user] &&
+      _merkleVerified(_proof, _user, _amount);
   }
 
   function _claim(bytes32[] calldata _proof, uint256 _amount) internal {
@@ -120,7 +132,8 @@ contract TokenDistributor is Authorizable, ITokenDistributor {
     if (block.timestamp > claimPeriodEnd) revert TokenDistributor_ClaimPeriodEnded();
     if (_amount == 0) revert TokenDistributor_ZeroAmount();
     if (claimed[msg.sender]) revert TokenDistributor_AlreadyClaimed();
-    if (!_merkleVerified(_proof, msg.sender, _amount)) revert TokenDistributor_FailedMerkleProofVerify();
+    if (!_merkleVerified(_proof, msg.sender, _amount))
+      revert TokenDistributor_FailedMerkleProofVerify();
   }
 
   function _claimPeriodActive() internal view returns (bool _active) {
@@ -132,6 +145,10 @@ contract TokenDistributor is Authorizable, ITokenDistributor {
     address _user,
     uint256 _amount
   ) internal view returns (bool _valid) {
-    _valid = MerkleProof.verify(_proof, root, keccak256(bytes.concat(keccak256(abi.encode(_user, _amount)))));
+    _valid = MerkleProof.verify(
+      _proof,
+      root,
+      keccak256(bytes.concat(keccak256(abi.encode(_user, _amount))))
+    );
   }
 }

@@ -43,25 +43,45 @@ contract MockOracleRelayer {
       switch x
       case 0 {
         switch n
-        case 0 { z := base }
-        default { z := 0 }
+        case 0 {
+          z := base
+        }
+        default {
+          z := 0
+        }
       }
       default {
         switch mod(n, 2)
-        case 0 { z := base }
-        default { z := x }
+        case 0 {
+          z := base
+        }
+        default {
+          z := x
+        }
         let half := div(base, 2) // for rounding.
-        for { n := div(n, 2) } n { n := div(n, 2) } {
+        for {
+          n := div(n, 2)
+        } n {
+          n := div(n, 2)
+        } {
           let xx := mul(x, x)
-          if iszero(eq(div(xx, x), x)) { revert(0, 0) }
+          if iszero(eq(div(xx, x), x)) {
+            revert(0, 0)
+          }
           let xxRound := add(xx, half)
-          if lt(xxRound, xx) { revert(0, 0) }
+          if lt(xxRound, xx) {
+            revert(0, 0)
+          }
           x := div(xxRound, base)
           if mod(n, 2) {
             let zx := mul(z, x)
-            if and(iszero(iszero(x)), iszero(eq(div(zx, x), z))) { revert(0, 0) }
+            if and(iszero(iszero(x)), iszero(eq(div(zx, x), z))) {
+              revert(0, 0)
+            }
             let zxRound := add(zx, half)
-            if lt(zxRound, zx) { revert(0, 0) }
+            if lt(zxRound, zx) {
+              revert(0, 0)
+            }
             z := div(zxRound, base)
           }
         }
@@ -74,7 +94,10 @@ contract MockOracleRelayer {
     if (parameter == 'redemptionPrice') {
       _redemptionPrice = data;
     } else if (parameter == 'redemptionRate') {
-      require(block.timestamp == redemptionPriceUpdateTime, 'MockOracleRelayer/redemption-price-not-updated');
+      require(
+        block.timestamp == redemptionPriceUpdateTime,
+        'MockOracleRelayer/redemption-price-not-updated'
+      );
       uint256 adjustedRate = data;
       if (data > redemptionRateUpperBound) {
         adjustedRate = redemptionRateUpperBound;
@@ -97,8 +120,10 @@ contract MockOracleRelayer {
    */
   function updateRedemptionPrice() internal returns (uint256) {
     // Update redemption price
-    _redemptionPrice =
-      rmultiply(rpower(redemptionRate, subtract(block.timestamp, redemptionPriceUpdateTime), RAY), _redemptionPrice);
+    _redemptionPrice = rmultiply(
+      rpower(redemptionRate, subtract(block.timestamp, redemptionPriceUpdateTime), RAY),
+      _redemptionPrice
+    );
     if (_redemptionPrice == 0) _redemptionPrice = 1;
     redemptionPriceUpdateTime = block.timestamp;
     // Return updated redemption price

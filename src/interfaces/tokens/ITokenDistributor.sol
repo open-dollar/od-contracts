@@ -45,12 +45,16 @@ interface ITokenDistributor is IAuthorizable {
 
   /// @notice The merkle root of the token distribution
   function root() external view returns (bytes32 _root);
+
   /// @notice Address of the ERC20 token to be distributed
   function token() external view returns (ERC20Votes _token);
+
   /// @notice Total amount of tokens to be distributed
   function totalClaimable() external view returns (uint256 _totalClaimable);
+
   /// @notice Timestamp when the claim period starts
   function claimPeriodStart() external view returns (uint256 _claimPeriodStart);
+
   /// @notice Timestamp when the claim period ends
   function claimPeriodEnd() external view returns (uint256 _claimPeriodEnd);
 
@@ -61,7 +65,11 @@ interface ITokenDistributor is IAuthorizable {
    * @param  _amount Amount of tokens to check
    * @return _claimable Whether the user can claim the amount with the proof provided
    */
-  function canClaim(bytes32[] calldata _proof, address _user, uint256 _amount) external view returns (bool _claimable);
+  function canClaim(
+    bytes32[] calldata _proof,
+    address _user,
+    uint256 _amount
+  ) external view returns (bool _claimable);
 
   /**
    * @notice Claims tokens from the distributor

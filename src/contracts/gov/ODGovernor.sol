@@ -63,19 +63,18 @@ contract ODGovernor is
   /**
    * inherit: GovernorVotesQuorumFraction
    */
-  function quorum(uint256 blockNumber) public view override(IGovernor, GovernorVotesQuorumFraction) returns (uint256) {
+  function quorum(
+    uint256 blockNumber
+  ) public view override(IGovernor, GovernorVotesQuorumFraction) returns (uint256) {
     return super.quorum(blockNumber);
   }
 
   /**
    * inherit: Governor, GovernorTimelockControl
    */
-  function state(uint256 proposalId)
-    public
-    view
-    override(Governor, IGovernor, GovernorTimelockControl)
-    returns (ProposalState)
-  {
+  function state(
+    uint256 proposalId
+  ) public view override(Governor, IGovernor, GovernorTimelockControl) returns (ProposalState) {
     return super.state(proposalId);
   }
 
@@ -133,12 +132,9 @@ contract ODGovernor is
   /**
    * inherit: Governor, GovernorTimelockControl
    */
-  function supportsInterface(bytes4 interfaceId)
-    public
-    view
-    override(Governor, IERC165, GovernorTimelockControl)
-    returns (bool)
-  {
+  function supportsInterface(
+    bytes4 interfaceId
+  ) public view override(Governor, IERC165, GovernorTimelockControl) returns (bool) {
     return super.supportsInterface(interfaceId);
   }
 }

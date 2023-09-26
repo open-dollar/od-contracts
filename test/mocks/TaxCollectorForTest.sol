@@ -13,7 +13,12 @@ contract TaxCollectorForTest is TaxCollector {
     _splitTaxIncome(_cType, _debtAmount, _deltaRate);
   }
 
-  function distributeTax(bytes32 _cType, address _receiver, uint256 _debtAmount, int256 _deltaRate) external {
+  function distributeTax(
+    bytes32 _cType,
+    address _receiver,
+    uint256 _debtAmount,
+    int256 _deltaRate
+  ) external {
     _distributeTax(_cType, _receiver, _debtAmount, _deltaRate);
   }
 
@@ -23,7 +28,11 @@ contract TaxCollectorForTest is TaxCollector {
     bool _canTakeBackTax,
     uint256 _taxPercentage
   ) external {
-    _secondaryTaxReceivers[_cType][_receiver] = ITaxCollector.TaxReceiver(_receiver, _canTakeBackTax, _taxPercentage);
+    _secondaryTaxReceivers[_cType][_receiver] = ITaxCollector.TaxReceiver(
+      _receiver,
+      _canTakeBackTax,
+      _taxPercentage
+    );
     _secondaryReceiverRevenueSources[_receiver].add(_cType);
   }
 
@@ -43,11 +52,9 @@ contract TaxCollectorForTest is TaxCollector {
     return _secondaryReceivers.length();
   }
 
-  function secondaryReceiverRevenueSources(address _receiver)
-    external
-    view
-    returns (uint256 _secondaryReceiverRevenueSourcesAmount)
-  {
+  function secondaryReceiverRevenueSources(
+    address _receiver
+  ) external view returns (uint256 _secondaryReceiverRevenueSourcesAmount) {
     return _secondaryReceiverRevenueSources[_receiver].length();
   }
 }

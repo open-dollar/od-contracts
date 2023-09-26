@@ -83,7 +83,8 @@ contract OracleJob is Job, Authorizable, Modifiable, IOracleJob {
 
     if (_param == 'oracleRelayer') oracleRelayer = IOracleRelayer(_address);
     else if (_param == 'pidRateSetter') pidRateSetter = IPIDRateSetter(_address);
-    else if (_param == 'stabilityFeeTreasury') stabilityFeeTreasury = IStabilityFeeTreasury(_address);
+    else if (_param == 'stabilityFeeTreasury')
+      stabilityFeeTreasury = IStabilityFeeTreasury(_address);
     else if (_param == 'shouldWorkUpdateCollateralPrice') shouldWorkUpdateCollateralPrice = _bool;
     else if (_param == 'shouldWorkUpdateRate') shouldWorkUpdateRate = _bool;
     else if (_param == 'rewardAmount') rewardAmount = _data.toUint256();

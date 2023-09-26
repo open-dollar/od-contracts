@@ -65,7 +65,8 @@ contract PIDRateSetter is Authorizable, Modifiable, IPIDRateSetter {
   /// @inheritdoc IPIDRateSetter
   function updateRate() external {
     // Check delay between calls
-    if (block.timestamp - lastUpdateTime < _params.updateRateDelay) revert PIDRateSetter_RateSetterCooldown();
+    if (block.timestamp - lastUpdateTime < _params.updateRateDelay)
+      revert PIDRateSetter_RateSetterCooldown();
 
     // Get market price and check if it's non-zero
     uint256 _marketPrice = oracleRelayer.marketPrice();

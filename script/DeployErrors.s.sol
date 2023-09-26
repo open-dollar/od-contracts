@@ -17,8 +17,12 @@ contract DeployErrors is GoerliDeployment, Script {
   function run() public {
     vm.startBroadcast(vm.envUint('ARB_GOERLI_PK'));
     basicActions = new BasicActions();
-    nftRenderer =
-      new NFTRenderer(address(vault721), address(oracleRelayer), address(taxCollector), address(collateralJoinFactory));
+    nftRenderer = new NFTRenderer(
+      address(vault721),
+      address(oracleRelayer),
+      address(taxCollector),
+      address(collateralJoinFactory)
+    );
     globalSettlementActions = new GlobalSettlementActions();
     vm.stopBroadcast();
   }

@@ -3,23 +3,7 @@ pragma solidity 0.8.19;
 
 import {Contracts} from '@script/Contracts.s.sol';
 
-import {
-  IBaseOracle,
-  IAccountingEngine,
-  ICollateralAuctionHouse,
-  IDebtAuctionHouse,
-  ISurplusAuctionHouse,
-  IOracleRelayer,
-  ISAFEEngine,
-  ILiquidationEngine,
-  IStabilityFeeTreasury,
-  IPIDController,
-  IPIDRateSetter,
-  ITaxCollector,
-  IGlobalSettlement,
-  IPostSettlementSurplusAuctionHouse,
-  IModifiable
-} from '@script/Contracts.s.sol';
+import {IBaseOracle, IAccountingEngine, ICollateralAuctionHouse, IDebtAuctionHouse, ISurplusAuctionHouse, IOracleRelayer, ISAFEEngine, ILiquidationEngine, IStabilityFeeTreasury, IPIDController, IPIDRateSetter, ITaxCollector, IGlobalSettlement, IPostSettlementSurplusAuctionHouse, IModifiable} from '@script/Contracts.s.sol';
 
 import {WAD, RAY, RAD} from '@libraries/Math.sol';
 

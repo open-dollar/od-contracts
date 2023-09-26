@@ -13,7 +13,11 @@ interface IChainlinkRelayerFactory is IAuthorizable {
    * @param _aggregator Address of the aggregator to be used by the ChainlinkRelayer contract
    * @param _staleThreshold Stale threshold to be used by the ChainlinkRelayer contract
    */
-  event NewChainlinkRelayer(address indexed _chainlinkRelayer, address _aggregator, uint256 _staleThreshold);
+  event NewChainlinkRelayer(
+    address indexed _chainlinkRelayer,
+    address _aggregator,
+    uint256 _staleThreshold
+  );
 
   // --- Methods ---
 

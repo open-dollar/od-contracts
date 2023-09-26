@@ -17,7 +17,8 @@ abstract contract Base is HaiTest {
   address user = label('user');
 
   ILiquidationEngine mockLiquidationEngine = ILiquidationEngine(mockContract('LiquidationEngine'));
-  IStabilityFeeTreasury mockStabilityFeeTreasury = IStabilityFeeTreasury(mockContract('StabilityFeeTreasury'));
+  IStabilityFeeTreasury mockStabilityFeeTreasury =
+    IStabilityFeeTreasury(mockContract('StabilityFeeTreasury'));
 
   LiquidationJobForTest liquidationJob;
 
@@ -26,8 +27,11 @@ abstract contract Base is HaiTest {
   function setUp() public virtual {
     vm.startPrank(deployer);
 
-    liquidationJob =
-      new LiquidationJobForTest(address(mockLiquidationEngine), address(mockStabilityFeeTreasury), REWARD_AMOUNT);
+    liquidationJob = new LiquidationJobForTest(
+      address(mockLiquidationEngine),
+      address(mockStabilityFeeTreasury),
+      REWARD_AMOUNT
+    );
     label(address(liquidationJob), 'LiquidationJob');
 
     liquidationJob.addAuthorization(authorizedAccount);
@@ -44,7 +48,9 @@ abstract contract Base is HaiTest {
   }
 
   function _mockRewardAmount(uint256 _rewardAmount) internal {
-    stdstore.target(address(liquidationJob)).sig(IJob.rewardAmount.selector).checked_write(_rewardAmount);
+    stdstore.target(address(liquidationJob)).sig(IJob.rewardAmount.selector).checked_write(
+      _rewardAmount
+    );
   }
 
   function _mockShouldWork(bool _shouldWork) internal {
@@ -73,12 +79,19 @@ contract Unit_LiquidationJob_Constructor is Base {
     vm.expectEmit();
     emit AddAuthorization(user);
 
-    liquidationJob =
-      new LiquidationJobForTest(address(mockLiquidationEngine), address(mockStabilityFeeTreasury), REWARD_AMOUNT);
+    liquidationJob = new LiquidationJobForTest(
+      address(mockLiquidationEngine),
+      address(mockStabilityFeeTreasury),
+      REWARD_AMOUNT
+    );
   }
 
   function test_Set_LiquidationEngine(address _liquidationEngine) public happyPath {
-    liquidationJob = new LiquidationJobForTest(_liquidationEngine, address(mockStabilityFeeTreasury), REWARD_AMOUNT);
+    liquidationJob = new LiquidationJobForTest(
+      _liquidationEngine,
+      address(mockStabilityFeeTreasury),
+      REWARD_AMOUNT
+    );
 
     assertEq(address(liquidationJob.liquidationEngine()), _liquidationEngine);
   }

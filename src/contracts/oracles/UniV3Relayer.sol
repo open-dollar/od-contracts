@@ -64,7 +64,13 @@ contract UniV3Relayer is IBaseOracle, IUniV3Relayer {
     multiplier = 18 - IERC20Metadata(_quoteToken).decimals();
     quotePeriod = _quotePeriod;
 
-    symbol = string(abi.encodePacked(IERC20Metadata(_baseToken).symbol(), ' / ', IERC20Metadata(_quoteToken).symbol()));
+    symbol = string(
+      abi.encodePacked(
+        IERC20Metadata(_baseToken).symbol(),
+        ' / ',
+        IERC20Metadata(_quoteToken).symbol()
+      )
+    );
   }
 
   /**
@@ -77,7 +83,7 @@ contract UniV3Relayer is IBaseOracle, IUniV3Relayer {
       return (0, false);
     }
     // Consult the query with a TWAP period of quotePeriod
-    (int24 _arithmeticMeanTick,) = OracleLibrary.consult(uniV3Pool, quotePeriod);
+    (int24 _arithmeticMeanTick, ) = OracleLibrary.consult(uniV3Pool, quotePeriod);
     // Calculate the quote amount
     uint256 _quoteAmount = OracleLibrary.getQuoteAtTick({
       tick: _arithmeticMeanTick,
@@ -96,7 +102,7 @@ contract UniV3Relayer is IBaseOracle, IUniV3Relayer {
    */
   function read() external view returns (uint256 _result) {
     // This call may revert with 'OLD!' if the pool doesn't have enough cardinality or initialized history
-    (int24 _arithmeticMeanTick,) = OracleLibrary.consult(uniV3Pool, quotePeriod);
+    (int24 _arithmeticMeanTick, ) = OracleLibrary.consult(uniV3Pool, quotePeriod);
     uint256 _quoteAmount = OracleLibrary.getQuoteAtTick({
       tick: _arithmeticMeanTick,
       baseAmount: baseAmount,

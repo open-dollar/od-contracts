@@ -21,7 +21,10 @@ interface IAccountingJob is IJob, IAuthorizable, IModifiable {
   function shouldWorkAuctionSurplus() external view returns (bool _shouldWorkAuctionSurplus);
 
   /// @notice Whether the transfer extra surplus job should be worked
-  function shouldWorkTransferExtraSurplus() external view returns (bool _shouldWorkTransferExtraSurplus);
+  function shouldWorkTransferExtraSurplus()
+    external
+    view
+    returns (bool _shouldWorkTransferExtraSurplus);
 
   // --- Registry ---
 

@@ -22,7 +22,9 @@ abstract contract AuthorizableChild is Authorizable, FactoryChild, IAuthorizable
    * @return _authorized Whether the account is authorized either in contract or in factory
    * @inheritdoc Authorizable
    */
-  function _isAuthorized(address _account) internal view virtual override returns (bool _authorized) {
+  function _isAuthorized(
+    address _account
+  ) internal view virtual override returns (bool _authorized) {
     return super._isAuthorized(_account) || IAuthorizable(factory).authorizedAccounts(_account);
   }
 }

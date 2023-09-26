@@ -67,7 +67,12 @@ contract CollateralJoinFactory is Authorizable, Disableable, ICollateralJoinFact
   ) external isAuthorized whenEnabled returns (ICollateralJoin _collateralJoin) {
     if (!_collateralTypes.add(_cType)) revert CollateralJoinFactory_CollateralJoinExistent();
 
-    _collateralJoin = new CollateralJoinDelegatableChild(safeEngine, _cType, _collateral, _delegatee);
+    _collateralJoin = new CollateralJoinDelegatableChild(
+      safeEngine,
+      _cType,
+      _collateral,
+      _delegatee
+    );
     collateralJoins[_cType] = address(_collateralJoin);
     IAuthorizable(safeEngine).addAuthorization(address(_collateralJoin));
     emit DeployCollateralJoin(_cType, _collateral, address(_collateralJoin));

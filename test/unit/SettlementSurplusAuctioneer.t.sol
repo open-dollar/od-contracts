@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {
-  SettlementSurplusAuctioneer,
-  ISettlementSurplusAuctioneer
-} from '@contracts/settlement/SettlementSurplusAuctioneer.sol';
+import {SettlementSurplusAuctioneer, ISettlementSurplusAuctioneer} from '@contracts/settlement/SettlementSurplusAuctioneer.sol';
 import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ISurplusAuctionHouse} from '@interfaces/ISurplusAuctionHouse.sol';
@@ -22,7 +19,8 @@ abstract contract Base is HaiTest {
   address user = label('user');
 
   IAccountingEngine mockAccountingEngine = IAccountingEngine(mockContract('AccountingEngine'));
-  ISurplusAuctionHouse mockSurplusAuctionHouse = ISurplusAuctionHouse(mockContract('SurplusAuctionHouse'));
+  ISurplusAuctionHouse mockSurplusAuctionHouse =
+    ISurplusAuctionHouse(mockContract('SurplusAuctionHouse'));
   ISAFEEngine mockSafeEngine = ISAFEEngine(mockContract('SafeEngine'));
 
   SettlementSurplusAuctioneer settlementSurplusAuctioneer;
@@ -32,8 +30,10 @@ abstract contract Base is HaiTest {
 
     _mockSafeEngine(mockSafeEngine);
 
-    settlementSurplusAuctioneer =
-      new SettlementSurplusAuctioneer(address(mockAccountingEngine), address(mockSurplusAuctionHouse));
+    settlementSurplusAuctioneer = new SettlementSurplusAuctioneer(
+      address(mockAccountingEngine),
+      address(mockSurplusAuctionHouse)
+    );
     label(address(settlementSurplusAuctioneer), 'SettlementSurplusAuctioneer');
 
     settlementSurplusAuctioneer.addAuthorization(authorizedAccount);
@@ -51,7 +51,9 @@ abstract contract Base is HaiTest {
 
   function _mockSafeEngine(ISAFEEngine _safeEngine) internal {
     vm.mockCall(
-      address(mockAccountingEngine), abi.encodeCall(mockAccountingEngine.safeEngine, ()), abi.encode(_safeEngine)
+      address(mockAccountingEngine),
+      abi.encodeCall(mockAccountingEngine.safeEngine, ()),
+      abi.encode(_safeEngine)
     );
   }
 
@@ -91,12 +93,16 @@ abstract contract Base is HaiTest {
 
   function _mockCoinBalance(address _coinAddress, uint256 _coinBalance) internal {
     vm.mockCall(
-      address(mockSafeEngine), abi.encodeCall(mockSafeEngine.coinBalance, (_coinAddress)), abi.encode(_coinBalance)
+      address(mockSafeEngine),
+      abi.encodeCall(mockSafeEngine.coinBalance, (_coinAddress)),
+      abi.encode(_coinBalance)
     );
   }
 
   function _mockLastSurplusAuctionTime(uint256 _lastSurplusTime) internal {
-    stdstore.target(address(settlementSurplusAuctioneer)).sig(ISettlementSurplusAuctioneer.lastSurplusTime.selector)
+    stdstore
+      .target(address(settlementSurplusAuctioneer))
+      .sig(ISettlementSurplusAuctioneer.lastSurplusTime.selector)
       .checked_write(_lastSurplusTime);
   }
 }
@@ -113,16 +119,24 @@ contract Unit_SettlementSurplusAuctioneer_Constructor is Base {
     vm.expectEmit();
     emit AddAuthorization(user);
 
-    settlementSurplusAuctioneer =
-      new SettlementSurplusAuctioneer(address(mockAccountingEngine), address(mockSurplusAuctionHouse));
+    settlementSurplusAuctioneer = new SettlementSurplusAuctioneer(
+      address(mockAccountingEngine),
+      address(mockSurplusAuctionHouse)
+    );
   }
 
   function test_Set_AccountingEngine() public happyPath {
-    assertEq(address(settlementSurplusAuctioneer.accountingEngine()), address(mockAccountingEngine));
+    assertEq(
+      address(settlementSurplusAuctioneer.accountingEngine()),
+      address(mockAccountingEngine)
+    );
   }
 
   function test_Set_SurplusAuctionHouse() public happyPath {
-    assertEq(address(settlementSurplusAuctioneer.surplusAuctionHouse()), address(mockSurplusAuctionHouse));
+    assertEq(
+      address(settlementSurplusAuctioneer.surplusAuctionHouse()),
+      address(mockSurplusAuctionHouse)
+    );
   }
 
   function test_Set_SafeEngine() public happyPath {
@@ -136,8 +150,10 @@ contract Unit_SettlementSurplusAuctioneer_Constructor is Base {
       1
     );
 
-    settlementSurplusAuctioneer =
-      new SettlementSurplusAuctioneer(address(mockAccountingEngine), address(mockSurplusAuctionHouse));
+    settlementSurplusAuctioneer = new SettlementSurplusAuctioneer(
+      address(mockAccountingEngine),
+      address(mockSurplusAuctionHouse)
+    );
   }
 
   function test_Revert_Null_AccountingEngine() public {
@@ -198,7 +214,10 @@ contract Unit_SettlementSurplusAuctioneer_AuctionSurplus is Base {
     settlementSurplusAuctioneer.auctionSurplus();
   }
 
-  function test_Revert_SurplusAuctionDelayNotPassed(uint256 _lastSurplusTime, uint256 _surplusDelay) public {
+  function test_Revert_SurplusAuctionDelayNotPassed(
+    uint256 _lastSurplusTime,
+    uint256 _surplusDelay
+  ) public {
     vm.assume(notOverflowAdd(_lastSurplusTime, _surplusDelay));
     vm.assume(block.timestamp < _lastSurplusTime + _surplusDelay);
 
@@ -259,7 +278,8 @@ contract Unit_SettlementSurplusAuctioneer_AuctionSurplus is Base {
     uint256 _idB
   ) public happyPath(_lastSurplusTime, _surplusDelay, _surplusAmount, _coinBalance, _idA, _idB) {
     vm.assume(
-      _coinBalance < _surplusAmount && _coinBalance == 0 || _coinBalance >= _surplusAmount && _surplusAmount == 0
+      (_coinBalance < _surplusAmount && _coinBalance == 0) ||
+        (_coinBalance >= _surplusAmount && _surplusAmount == 0)
     );
 
     assertEq(settlementSurplusAuctioneer.auctionSurplus(), 0);
@@ -349,16 +369,23 @@ contract Unit_SettlementSurplusAuctioneer_ModifyParameters is Base {
   }
 
   function test_Set_SurplusAuctionHouse(address _surplusAuctionHouse) public happyPath {
-    address _previousSurplusAuctionHouse = address(settlementSurplusAuctioneer.surplusAuctionHouse());
-
-    vm.expectCall(
-      address(mockSafeEngine), abi.encodeCall(mockSafeEngine.denySAFEModification, (_previousSurplusAuctionHouse))
-    );
-    vm.expectCall(
-      address(mockSafeEngine), abi.encodeCall(mockSafeEngine.approveSAFEModification, (_surplusAuctionHouse))
+    address _previousSurplusAuctionHouse = address(
+      settlementSurplusAuctioneer.surplusAuctionHouse()
     );
 
-    settlementSurplusAuctioneer.modifyParameters('surplusAuctionHouse', abi.encode(_surplusAuctionHouse));
+    vm.expectCall(
+      address(mockSafeEngine),
+      abi.encodeCall(mockSafeEngine.denySAFEModification, (_previousSurplusAuctionHouse))
+    );
+    vm.expectCall(
+      address(mockSafeEngine),
+      abi.encodeCall(mockSafeEngine.approveSAFEModification, (_surplusAuctionHouse))
+    );
+
+    settlementSurplusAuctioneer.modifyParameters(
+      'surplusAuctionHouse',
+      abi.encode(_surplusAuctionHouse)
+    );
 
     assertEq(address(settlementSurplusAuctioneer.surplusAuctionHouse()), _surplusAuctionHouse);
   }

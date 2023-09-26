@@ -27,7 +27,11 @@ interface IGlobalSettlementActions is ICommonActions {
    * @param  _coinJoin Address of the CoinJoin contract
    * @param  _coinAmount Amount of coins to prepare for redeeming [wad]
    */
-  function prepareCoinsForRedeeming(address _globalSettlement, address _coinJoin, uint256 _coinAmount) external;
+  function prepareCoinsForRedeeming(
+    address _globalSettlement,
+    address _coinJoin,
+    uint256 _coinAmount
+  ) external;
 
   /**
    * @notice Redeem collateral tokens from the global settlement

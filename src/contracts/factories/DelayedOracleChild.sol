@@ -20,5 +20,8 @@ contract DelayedOracleChild is DelayedOracle, FactoryChild, IDelayedOracleChild 
    * @param  _priceSource Address of the price source
    * @param  _updateDelay Amount of seconds to be applied between the price source and the delayed oracle feeds
    */
-  constructor(IBaseOracle _priceSource, uint256 _updateDelay) DelayedOracle(_priceSource, _updateDelay) {}
+  constructor(
+    IBaseOracle _priceSource,
+    uint256 _updateDelay
+  ) DelayedOracle(_priceSource, _updateDelay) {}
 }

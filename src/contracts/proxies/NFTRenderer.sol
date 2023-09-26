@@ -32,7 +32,12 @@ contract NFTRenderer {
   ITaxCollector internal _taxCollector;
   ICollateralJoinFactory internal _collateralJoinFactory;
 
-  constructor(address _vault721, address oracleRelayer, address taxCollector, address collateralJoinFactory) {
+  constructor(
+    address _vault721,
+    address oracleRelayer,
+    address taxCollector,
+    address collateralJoinFactory
+  ) {
     vault721 = IVault721(_vault721);
     vault721.initializeRenderer();
     _safeManager = IODSafeManager(vault721.safeManager());
@@ -88,7 +93,13 @@ contract NFTRenderer {
         bytes(
           string.concat(
             _renderVaultInfo(params.vaultId, params.color),
-            _renderCollatAndDebt(params.stabilityFee, debt, collateral, params.symbol, params.lastUpdate),
+            _renderCollatAndDebt(
+              params.stabilityFee,
+              debt,
+              collateral,
+              params.symbol,
+              params.lastUpdate
+            ),
             _renderRisk(params.stroke, params.risk, params.ratio),
             _renderBackground(params.color)
           )
@@ -118,7 +129,9 @@ contract NFTRenderer {
       uint256 collateral = SafeEngineData.lockedCollateral;
       uint256 debt = SafeEngineData.generatedDebt;
 
-      IOracleRelayer.OracleRelayerCollateralParams memory oracleParams = _oracleRelayer.cParams(cType);
+      IOracleRelayer.OracleRelayerCollateralParams memory oracleParams = _oracleRelayer.cParams(
+        cType
+      );
       IDelayedOracle oracle = oracleParams.oracle;
 
       uint256 ratio;
@@ -139,7 +152,8 @@ contract NFTRenderer {
     ITaxCollector.TaxCollectorCollateralData memory taxData = _taxCollector.cData(cType);
     params.stabilityFee = (taxData.nextStabilityFee / _RAY).toString();
 
-    IERC20Metadata token = ICollateralJoin(_collateralJoinFactory.collateralJoins(cType)).collateral();
+    IERC20Metadata token = ICollateralJoin(_collateralJoinFactory.collateralJoins(cType))
+      .collateral();
     params.symbol = token.symbol();
 
     return params;
@@ -173,7 +187,10 @@ contract NFTRenderer {
   /**
    * @dev svg vault/token id
    */
-  function _renderVaultInfo(string memory vaultId, string memory color) internal pure returns (string memory svg) {
+  function _renderVaultInfo(
+    string memory vaultId,
+    string memory color
+  ) internal pure returns (string memory svg) {
     svg = string.concat(
       '<svg width="420" height="420" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><a target="_blank" href="https://app.dev.opendollar.com/#/vaults/',
       vaultId,
@@ -297,7 +314,11 @@ contract NFTRenderer {
   /**
    * @dev concats with comma
    */
-  function _concatWithComma(string memory base, uint256 part, bool isSet) internal pure returns (string memory) {
+  function _concatWithComma(
+    string memory base,
+    uint256 part,
+    bool isSet
+  ) internal pure returns (string memory) {
     string memory stringified = part.toString();
     string memory glue = ',';
 
@@ -309,8 +330,14 @@ contract NFTRenderer {
    * @dev converts timestamp to human readable date and time format
    */
   function _formatDateTime(uint256 timestamp) internal pure returns (string memory) {
-    (uint256 year, uint256 month, uint256 day, uint256 hour, uint256 minute, uint256 second) =
-      timestamp.timestampToDateTime();
+    (
+      uint256 year,
+      uint256 month,
+      uint256 day,
+      uint256 hour,
+      uint256 minute,
+      uint256 second
+    ) = timestamp.timestampToDateTime();
 
     string memory _month;
     if (month == 1) _month = 'Jan';
@@ -326,9 +353,19 @@ contract NFTRenderer {
     else if (month == 11) _month = 'Nov';
     else _month = 'Dec';
 
-    return string.concat(
-      _month, ' ', day.toString(), ', ', year.toString(), ' ', _formatTime(hour), ':', _formatTime(minute), ' UTC'
-    );
+    return
+      string.concat(
+        _month,
+        ' ',
+        day.toString(),
+        ', ',
+        year.toString(),
+        ' ',
+        _formatTime(hour),
+        ':',
+        _formatTime(minute),
+        ' UTC'
+      );
   }
 
   /**

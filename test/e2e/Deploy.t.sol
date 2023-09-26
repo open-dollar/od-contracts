@@ -80,7 +80,9 @@ abstract contract CommonDeploymentTest is HaiTest, Deploy {
     for (uint256 _i; _i < collateralTypes.length; _i++) {
       bytes32 _cType = collateralTypes[_i];
       ParamChecker._checkCParams(
-        address(collateralAuctionHouseFactory), _cType, abi.encode(_collateralAuctionHouseParams[_cType])
+        address(collateralAuctionHouseFactory),
+        _cType,
+        abi.encode(_collateralAuctionHouseParams[_cType])
       );
     }
   }

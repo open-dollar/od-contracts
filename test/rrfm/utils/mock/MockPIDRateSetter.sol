@@ -9,6 +9,7 @@ abstract contract OracleLike {
 
 abstract contract OracleRelayerLike {
   function redemptionPrice() external virtual returns (uint256);
+
   function updateRedemptionRate(uint256) external virtual;
 }
 
@@ -18,8 +19,11 @@ abstract contract SetterRelayer {
 
 abstract contract PIDCalculator {
   function computeRate(uint256, uint256) external virtual returns (uint256);
+
   function rt(uint256, uint256, uint256) external view virtual returns (uint256);
+
   function perSecondCumulativeLeak() external view virtual returns (uint256);
+
   function timeSinceLastUpdate() external view virtual returns (uint256);
 }
 
@@ -36,7 +40,12 @@ contract MockPIDRateSetter {
   // Calculator for the redemption rate
   PIDCalculator public pidCalculator;
 
-  constructor(address orcl_, address oracleRelayer_, address pidCalculator_, address setterRelayer_) {
+  constructor(
+    address orcl_,
+    address oracleRelayer_,
+    address pidCalculator_,
+    address setterRelayer_
+  ) {
     oracleRelayer = OracleRelayerLike(oracleRelayer_);
     orcl = OracleLike(orcl_);
     setterRelayer = SetterRelayer(setterRelayer_);

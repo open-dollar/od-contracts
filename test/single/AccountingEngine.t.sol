@@ -8,10 +8,7 @@ import {ISAFEEngine, SAFEEngine} from '@contracts/SAFEEngine.sol';
 import {IAccountingEngine, AccountingEngine} from '@contracts/AccountingEngine.sol';
 import {IDebtAuctionHouse, DebtAuctionHouse as DAH} from '@contracts/DebtAuctionHouse.sol';
 import {ISurplusAuctionHouse, SurplusAuctionHouse as SAH_ONE} from '@contracts/SurplusAuctionHouse.sol';
-import {
-  IPostSettlementSurplusAuctionHouse,
-  PostSettlementSurplusAuctionHouse as SAH_TWO
-} from '@contracts/settlement/PostSettlementSurplusAuctionHouse.sol';
+import {IPostSettlementSurplusAuctionHouse, PostSettlementSurplusAuctionHouse as SAH_TWO} from '@contracts/settlement/PostSettlementSurplusAuctionHouse.sol';
 import {SettlementSurplusAuctioneer} from '@contracts/settlement/SettlementSurplusAuctioneer.sol';
 import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
 
@@ -34,44 +31,56 @@ contract SingleAccountingEngineTest is DSTest {
     hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     hevm.warp(604_411_200);
 
-    ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
-      ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 0});
+    ISAFEEngine.SAFEEngineParams memory _safeEngineParams = ISAFEEngine.SAFEEngineParams({
+      safeDebtCeiling: type(uint256).max,
+      globalDebtCeiling: 0
+    });
     safeEngine = new SAFEEngine(_safeEngineParams);
 
     protocolToken = new ERC20ForTest();
 
-    IDebtAuctionHouse.DebtAuctionHouseParams memory _debtAuctionHouseParams = IDebtAuctionHouse.DebtAuctionHouseParams({
-      bidDecrease: 1.05e18,
-      amountSoldIncrease: 1.5e18,
-      bidDuration: 3 hours,
-      totalAuctionLength: 2 days
-    });
+    IDebtAuctionHouse.DebtAuctionHouseParams memory _debtAuctionHouseParams = IDebtAuctionHouse
+      .DebtAuctionHouseParams({
+        bidDecrease: 1.05e18,
+        amountSoldIncrease: 1.5e18,
+        bidDuration: 3 hours,
+        totalAuctionLength: 2 days
+      });
 
-    debtAuctionHouse = new DAH(address(safeEngine), address(protocolToken), _debtAuctionHouseParams);
-    ISurplusAuctionHouse.SurplusAuctionHouseParams memory _sahParams = ISurplusAuctionHouse.SurplusAuctionHouseParams({
-      bidIncrease: 1.05e18,
-      bidDuration: 3 hours,
-      totalAuctionLength: 2 days,
-      bidReceiver: address(0x123),
-      recyclingPercentage: 0
-    });
+    debtAuctionHouse = new DAH(
+      address(safeEngine),
+      address(protocolToken),
+      _debtAuctionHouseParams
+    );
+    ISurplusAuctionHouse.SurplusAuctionHouseParams memory _sahParams = ISurplusAuctionHouse
+      .SurplusAuctionHouseParams({
+        bidIncrease: 1.05e18,
+        bidDuration: 3 hours,
+        totalAuctionLength: 2 days,
+        bidReceiver: address(0x123),
+        recyclingPercentage: 0
+      });
 
     surplusAuctionHouseOne = new SAH_ONE(address(safeEngine), address(protocolToken), _sahParams);
 
-    IAccountingEngine.AccountingEngineParams memory _accountingEngineParams = IAccountingEngine.AccountingEngineParams({
-      surplusIsTransferred: 0,
-      surplusDelay: 0,
-      popDebtDelay: 0,
-      disableCooldown: 0,
-      surplusAmount: rad(100 ether),
-      surplusBuffer: 0,
-      debtAuctionMintedTokens: 200 ether,
-      debtAuctionBidSize: rad(100 ether)
-    });
+    IAccountingEngine.AccountingEngineParams memory _accountingEngineParams = IAccountingEngine
+      .AccountingEngineParams({
+        surplusIsTransferred: 0,
+        surplusDelay: 0,
+        popDebtDelay: 0,
+        disableCooldown: 0,
+        surplusAmount: rad(100 ether),
+        surplusBuffer: 0,
+        debtAuctionMintedTokens: 200 ether,
+        debtAuctionBidSize: rad(100 ether)
+      });
 
     accountingEngine = new AccountingEngine(
-          address(safeEngine), address(surplusAuctionHouseOne), address(debtAuctionHouse), _accountingEngineParams
-        );
+      address(safeEngine),
+      address(surplusAuctionHouseOne),
+      address(debtAuctionHouse),
+      _accountingEngineParams
+    );
     surplusAuctionHouseOne.addAuthorization(address(accountingEngine));
 
     debtAuctionHouse.addAuthorization(address(accountingEngine));
@@ -81,12 +90,16 @@ contract SingleAccountingEngineTest is DSTest {
 
   function _try_popDebtFromQueue(uint256 era) internal returns (bool ok) {
     string memory sig = 'popDebtFromQueue(uint256)';
-    (ok,) = address(accountingEngine).call(abi.encodeWithSignature(sig, era));
+    (ok, ) = address(accountingEngine).call(abi.encodeWithSignature(sig, era));
   }
 
-  function _try_decreaseSoldAmount(uint256 id, uint256 amountToBuy, uint256 bid) internal returns (bool ok) {
+  function _try_decreaseSoldAmount(
+    uint256 id,
+    uint256 amountToBuy,
+    uint256 bid
+  ) internal returns (bool ok) {
     string memory sig = 'decreaseSoldAmount(uint256,uint256,uint256)';
-    (ok,) = address(debtAuctionHouse).call(abi.encodeWithSignature(sig, id, amountToBuy, bid));
+    (ok, ) = address(debtAuctionHouse).call(abi.encodeWithSignature(sig, id, amountToBuy, bid));
   }
 
   function try_call(address addr, bytes calldata data) external returns (bool) {
@@ -104,7 +117,11 @@ contract SingleAccountingEngineTest is DSTest {
     string memory sig = 'auctionSurplus()';
     bytes memory data = abi.encodeWithSignature(sig);
 
-    bytes memory can_call = abi.encodeWithSignature('try_call(address,bytes)', accountingEngine, data);
+    bytes memory can_call = abi.encodeWithSignature(
+      'try_call(address,bytes)',
+      accountingEngine,
+      data
+    );
     (bool ok, bytes memory success) = address(this).call(can_call);
 
     ok = abi.decode(success, (bool));
@@ -115,7 +132,11 @@ contract SingleAccountingEngineTest is DSTest {
     string memory sig = 'transferExtraSurplus()';
     bytes memory data = abi.encodeWithSignature(sig);
 
-    bytes memory can_call = abi.encodeWithSignature('try_call(address,bytes)', accountingEngine, data);
+    bytes memory can_call = abi.encodeWithSignature(
+      'try_call(address,bytes)',
+      accountingEngine,
+      data
+    );
     (bool ok, bytes memory success) = address(this).call(can_call);
 
     ok = abi.decode(success, (bool));
@@ -126,7 +147,11 @@ contract SingleAccountingEngineTest is DSTest {
     string memory sig = 'auctionDebt()';
     bytes memory data = abi.encodeWithSignature(sig);
 
-    bytes memory can_call = abi.encodeWithSignature('try_call(address,bytes)', accountingEngine, data);
+    bytes memory can_call = abi.encodeWithSignature(
+      'try_call(address,bytes)',
+      accountingEngine,
+      data
+    );
     (bool ok, bytes memory success) = address(this).call(can_call);
 
     ok = abi.decode(success, (bool));
@@ -141,36 +166,42 @@ contract SingleAccountingEngineTest is DSTest {
 
   function _popDebtFromQueue(uint256 wad) internal {
     accountingEngine.pushDebtToQueue(rad(wad));
-    ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
-      ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: 0, debtFloor: 0});
+    ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams = ISAFEEngine
+      .SAFEEngineCollateralParams({debtCeiling: 0, debtFloor: 0});
     safeEngine.initializeCollateralType('', _safeEngineCollateralParams);
     safeEngine.createUnbackedDebt(address(accountingEngine), address(0), rad(wad));
     accountingEngine.popDebtFromQueue(block.timestamp);
   }
 
   function test_change_auction_houses() public {
-    ISurplusAuctionHouse.SurplusAuctionHouseParams memory _sahParams = ISurplusAuctionHouse.SurplusAuctionHouseParams({
-      bidIncrease: 1.05e18,
-      bidDuration: 3 hours,
-      totalAuctionLength: 2 days,
-      bidReceiver: address(0x123),
-      recyclingPercentage: 0
-    });
+    ISurplusAuctionHouse.SurplusAuctionHouseParams memory _sahParams = ISurplusAuctionHouse
+      .SurplusAuctionHouseParams({
+        bidIncrease: 1.05e18,
+        bidDuration: 3 hours,
+        totalAuctionLength: 2 days,
+        bidReceiver: address(0x123),
+        recyclingPercentage: 0
+      });
 
     SAH_ONE newSAH_ONE = new SAH_ONE(address(safeEngine), address(protocolToken), _sahParams);
 
-    DAH newDAH = new DAH(address(safeEngine), address(protocolToken), 
-    IDebtAuctionHouse.DebtAuctionHouseParams({
-      bidDecrease: 1.05e18,
-      amountSoldIncrease: 1.5e18,
-      bidDuration: 3 hours,
-      totalAuctionLength: 2 days
-    }));
+    DAH newDAH = new DAH(
+      address(safeEngine),
+      address(protocolToken),
+      IDebtAuctionHouse.DebtAuctionHouseParams({
+        bidDecrease: 1.05e18,
+        amountSoldIncrease: 1.5e18,
+        bidDuration: 3 hours,
+        totalAuctionLength: 2 days
+      })
+    );
 
     newSAH_ONE.addAuthorization(address(accountingEngine));
     newDAH.addAuthorization(address(accountingEngine));
 
-    assertTrue(safeEngine.canModifySAFE(address(accountingEngine), address(surplusAuctionHouseOne)));
+    assertTrue(
+      safeEngine.canModifySAFE(address(accountingEngine), address(surplusAuctionHouseOne))
+    );
     assertTrue(!safeEngine.canModifySAFE(address(accountingEngine), address(newSAH_ONE)));
 
     accountingEngine.modifyParameters('surplusAuctionHouse', abi.encode(newSAH_ONE));
@@ -179,7 +210,9 @@ contract SingleAccountingEngineTest is DSTest {
     assertEq(address(accountingEngine.surplusAuctionHouse()), address(newSAH_ONE));
     assertEq(address(accountingEngine.debtAuctionHouse()), address(newDAH));
 
-    assertTrue(!safeEngine.canModifySAFE(address(accountingEngine), address(surplusAuctionHouseOne)));
+    assertTrue(
+      !safeEngine.canModifySAFE(address(accountingEngine), address(surplusAuctionHouseOne))
+    );
     assertTrue(safeEngine.canModifySAFE(address(accountingEngine), address(newSAH_ONE)));
   }
 
@@ -307,12 +340,18 @@ contract SingleAccountingEngineTest is DSTest {
 
   function test_settlement_auction_surplus() public {
     // Post settlement auction house setup
-    IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams memory _pssahParams = IPostSettlementSurplusAuctionHouse
-      .PostSettlementSAHParams({bidIncrease: 1.05e18, bidDuration: 3 hours, totalAuctionLength: 2 days});
+    IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams
+      memory _pssahParams = IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams({
+        bidIncrease: 1.05e18,
+        bidDuration: 3 hours,
+        totalAuctionLength: 2 days
+      });
     surplusAuctionHouseTwo = new SAH_TWO(address(safeEngine), address(protocolToken), _pssahParams);
     // Auctioneer setup
-    postSettlementSurplusDrain =
-      new SettlementSurplusAuctioneer(address(accountingEngine), address(surplusAuctionHouseTwo));
+    postSettlementSurplusDrain = new SettlementSurplusAuctioneer(
+      address(accountingEngine),
+      address(surplusAuctionHouseTwo)
+    );
     surplusAuctionHouseTwo.addAuthorization(address(postSettlementSurplusDrain));
 
     safeEngine.createUnbackedDebt(address(0), address(postSettlementSurplusDrain), rad(100 ether));
@@ -323,15 +362,24 @@ contract SingleAccountingEngineTest is DSTest {
 
   function test_settlement_delay_transfer_surplus() public {
     // Post settlement auction house setup
-    IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams memory _pssahParams = IPostSettlementSurplusAuctionHouse
-      .PostSettlementSAHParams({bidIncrease: 1.05e18, bidDuration: 3 hours, totalAuctionLength: 2 days});
+    IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams
+      memory _pssahParams = IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams({
+        bidIncrease: 1.05e18,
+        bidDuration: 3 hours,
+        totalAuctionLength: 2 days
+      });
     surplusAuctionHouseTwo = new SAH_TWO(address(safeEngine), address(protocolToken), _pssahParams);
     // Auctioneer setup
-    postSettlementSurplusDrain =
-      new SettlementSurplusAuctioneer(address(accountingEngine), address(surplusAuctionHouseTwo));
+    postSettlementSurplusDrain = new SettlementSurplusAuctioneer(
+      address(accountingEngine),
+      address(surplusAuctionHouseTwo)
+    );
     surplusAuctionHouseTwo.addAuthorization(address(postSettlementSurplusDrain));
 
-    accountingEngine.modifyParameters('postSettlementSurplusDrain', abi.encode(postSettlementSurplusDrain));
+    accountingEngine.modifyParameters(
+      'postSettlementSurplusDrain',
+      abi.encode(postSettlementSurplusDrain)
+    );
     safeEngine.createUnbackedDebt(address(0), address(accountingEngine), rad(100 ether));
 
     accountingEngine.modifyParameters('disableCooldown', abi.encode(1));

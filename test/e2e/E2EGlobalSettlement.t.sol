@@ -172,17 +172,32 @@ abstract contract E2EGlobalSettlementTest is BaseUser, Common {
       uint256 _collatAPrice = RAY.rdiv(COLLATERAL_PRICE * 1e9);
       assertEq(globalSettlement.finalCoinPerCollateralPrice('TKN-A'), _collatAPrice);
       assertApproxEqAbs(
-        _collateralACashPrice, (_totalADebt * 1e9).rmul(_collatAPrice).rdiv(_totalCoins * 1e9), 0.001e18
+        _collateralACashPrice,
+        (_totalADebt * 1e9).rmul(_collatAPrice).rdiv(_totalCoins * 1e9),
+        0.001e18
       );
 
-      assertApproxEqAbs(_aliceRedeemedCollateral, uint256(_aliceCoins).rmul(_collateralACashPrice), 0.001e18);
-      assertApproxEqAbs(_bobRedeemedCollateral, uint256(_bobCoins).rmul(_collateralACashPrice), 0.001e18);
-      assertApproxEqAbs(_carolRedeemedCollateral, uint256(_carolCoins).rmul(_collateralACashPrice), 0.001e18);
+      assertApproxEqAbs(
+        _aliceRedeemedCollateral,
+        uint256(_aliceCoins).rmul(_collateralACashPrice),
+        0.001e18
+      );
+      assertApproxEqAbs(
+        _bobRedeemedCollateral,
+        uint256(_bobCoins).rmul(_collateralACashPrice),
+        0.001e18
+      );
+      assertApproxEqAbs(
+        _carolRedeemedCollateral,
+        uint256(_carolCoins).rmul(_collateralACashPrice),
+        0.001e18
+      );
 
       // NOTE: contract may have some dust left
       assertApproxEqAbs(
-        _getCollateralBalance(alice, 'TKN-A') + _getCollateralBalance(bob, 'TKN-A')
-          + _getCollateralBalance(carol, 'TKN-A'),
+        _getCollateralBalance(alice, 'TKN-A') +
+          _getCollateralBalance(bob, 'TKN-A') +
+          _getCollateralBalance(carol, 'TKN-A'),
         3 * COLLAT,
         0.001e18
       );
@@ -201,17 +216,32 @@ abstract contract E2EGlobalSettlementTest is BaseUser, Common {
       uint256 _collatBPrice = RAY.rdiv(COLLATERAL_B_DROP * 1e9);
       assertEq(globalSettlement.finalCoinPerCollateralPrice('TKN-B'), _collatBPrice);
       assertApproxEqAbs(
-        _collateralBCashPrice, (_totalBDebt * 1e9).rmul(_collatBPrice).rdiv(_totalCoins * 1e9), 0.001e18
+        _collateralBCashPrice,
+        (_totalBDebt * 1e9).rmul(_collatBPrice).rdiv(_totalCoins * 1e9),
+        0.001e18
       );
 
-      assertApproxEqAbs(_aliceRedeemedCollateral, uint256(_aliceCoins).rmul(_collateralBCashPrice), 0.001e18);
-      assertApproxEqAbs(_bobRedeemedCollateral, uint256(_bobCoins).rmul(_collateralBCashPrice), 0.001e18);
-      assertApproxEqAbs(_carolRedeemedCollateral, uint256(_carolCoins).rmul(_collateralBCashPrice), 0.001e18);
+      assertApproxEqAbs(
+        _aliceRedeemedCollateral,
+        uint256(_aliceCoins).rmul(_collateralBCashPrice),
+        0.001e18
+      );
+      assertApproxEqAbs(
+        _bobRedeemedCollateral,
+        uint256(_bobCoins).rmul(_collateralBCashPrice),
+        0.001e18
+      );
+      assertApproxEqAbs(
+        _carolRedeemedCollateral,
+        uint256(_carolCoins).rmul(_collateralBCashPrice),
+        0.001e18
+      );
 
       // NOTE: contract may have some dust left
       assertApproxEqAbs(
-        _getCollateralBalance(alice, 'TKN-B') + _getCollateralBalance(bob, 'TKN-B')
-          + _getCollateralBalance(carol, 'TKN-B'),
+        _getCollateralBalance(alice, 'TKN-B') +
+          _getCollateralBalance(bob, 'TKN-B') +
+          _getCollateralBalance(carol, 'TKN-B'),
         3 * COLLAT,
         0.001e18
       );
@@ -231,17 +261,32 @@ abstract contract E2EGlobalSettlementTest is BaseUser, Common {
       uint256 _collatCPrice = RAY.rdiv(COLLATERAL_C_DROP * 1e9);
       assertEq(globalSettlement.finalCoinPerCollateralPrice('TKN-C'), _collatCPrice);
       assertApproxEqAbs(
-        _collateralCCashPrice, ((_totalCDebt * 1e9).rmul(_collatCPrice) - 23e18 * 1e9).rdiv(_totalCoins * 1e9), 0.001e18
+        _collateralCCashPrice,
+        ((_totalCDebt * 1e9).rmul(_collatCPrice) - 23e18 * 1e9).rdiv(_totalCoins * 1e9),
+        0.001e18
       );
 
-      assertApproxEqAbs(_aliceRedeemedCollateral, uint256(_aliceCoins).rmul(_collateralCCashPrice), 0.001e18);
-      assertApproxEqAbs(_bobRedeemedCollateral, uint256(_bobCoins).rmul(_collateralCCashPrice), 0.001e18);
-      assertApproxEqAbs(_carolRedeemedCollateral, uint256(_carolCoins).rmul(_collateralCCashPrice), 0.001e18);
+      assertApproxEqAbs(
+        _aliceRedeemedCollateral,
+        uint256(_aliceCoins).rmul(_collateralCCashPrice),
+        0.001e18
+      );
+      assertApproxEqAbs(
+        _bobRedeemedCollateral,
+        uint256(_bobCoins).rmul(_collateralCCashPrice),
+        0.001e18
+      );
+      assertApproxEqAbs(
+        _carolRedeemedCollateral,
+        uint256(_carolCoins).rmul(_collateralCCashPrice),
+        0.001e18
+      );
 
       // NOTE: contract may have some dust left
       assertApproxEqAbs(
-        _getCollateralBalance(alice, 'TKN-C') + _getCollateralBalance(bob, 'TKN-C')
-          + _getCollateralBalance(carol, 'TKN-C'),
+        _getCollateralBalance(alice, 'TKN-C') +
+          _getCollateralBalance(bob, 'TKN-C') +
+          _getCollateralBalance(carol, 'TKN-C'),
         3 * COLLAT,
         0.001e18
       );
@@ -306,7 +351,7 @@ abstract contract E2EGlobalSettlementTest is BaseUser, Common {
 
     uint256 _initialBid = accountingEngine.params().surplusAmount;
     uint256 _bidIncrease = postSettlementSurplusAuctionHouse.params().bidIncrease;
-    uint256 _bid = _initialBid * _bidIncrease / 1e18;
+    uint256 _bid = (_initialBid * _bidIncrease) / 1e18;
 
     // mint protocol tokens to bid with
     vm.prank(deployer);
@@ -344,6 +389,8 @@ abstract contract E2EGlobalSettlementTest is BaseUser, Common {
 // --- Scoped test contracts ---
 
 // NOTE: missing expectations for lesser decimals ERC20s (for 0 decimals, delta should be 1)
-abstract contract E2EGlobalSettlementTestDirectUser is DirectUser, E2EGlobalSettlementTest {}
+abstract contract E2EGlobalSettlementTestDirectUser is DirectUser, E2EGlobalSettlementTest {
+
+}
 
 abstract contract E2EGlobalSettlementTestProxyUser is ProxyUser, E2EGlobalSettlementTest {}

@@ -10,12 +10,7 @@ import {IUniswapV3PoolDeployer} from '@uniswap/v3-core/contracts/interfaces/IUni
 import {UniV3RelayerFactory} from '@contracts/factories/UniV3RelayerFactory.sol';
 import {IPoolInitializer} from '@uniswap/v3-periphery/contracts/interfaces/IPoolInitializer.sol';
 import {DenominatedOracleFactory} from '@contracts/factories/DenominatedOracleFactory.sol';
-import {
-  ARB_GOERLI_WETH,
-  GOERLI_UNISWAP_V3_FACTORY,
-  GOERLI_CAMELOT_V2_FACTORY,
-  GOERLI_CAMELOT_V3_FACTORY
-} from '@script/Registry.s.sol';
+import {ARB_GOERLI_WETH, GOERLI_UNISWAP_V3_FACTORY, GOERLI_CAMELOT_V2_FACTORY, GOERLI_CAMELOT_V3_FACTORY} from '@script/Registry.s.sol';
 import {GoerliContracts} from '@script/GoerliContracts.s.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 
@@ -23,9 +18,11 @@ contract LiquidityBase is GoerliContracts, Script {
   IUniswapV3Factory public uniswapV3Factory = IUniswapV3Factory(GOERLI_UNISWAP_V3_FACTORY);
   ICamelotFactory public camelotV2Factory = ICamelotFactory(GOERLI_CAMELOT_V2_FACTORY);
   ICamelotV3Factory public camelotV3Factory = ICamelotV3Factory(GOERLI_CAMELOT_V3_FACTORY);
-  CamelotRelayerFactory public camelotRelayerFactory = CamelotRelayerFactory(CamelotRelayerFactory_Address);
+  CamelotRelayerFactory public camelotRelayerFactory =
+    CamelotRelayerFactory(CamelotRelayerFactory_Address);
   UniV3RelayerFactory public uniV3RelayerFactory = UniV3RelayerFactory(UniV3RelayerFactory_Address);
-  DenominatedOracleFactory public denominatedOracleFactory = DenominatedOracleFactory(DenominatedOracleFactory_Address);
+  DenominatedOracleFactory public denominatedOracleFactory =
+    DenominatedOracleFactory(DenominatedOracleFactory_Address);
 
   address public OD_token = SystemCoin_Address;
   address public ODG_token = ProtocolToken_Address;

@@ -15,14 +15,18 @@ contract MerkleTreeGenerator {
     }
 
     for (int256 i = int256(tree.length - 1 - leaves.length); i >= 0; i--) {
-      tree[uint256(i)] = hashPair(tree[leftChildIndex(uint256(i))], tree[rightChildIndex(uint256(i))]);
+      tree[uint256(i)] = hashPair(
+        tree[leftChildIndex(uint256(i))],
+        tree[rightChildIndex(uint256(i))]
+      );
     }
 
     return tree;
   }
 
   function hashPair(bytes32 left, bytes32 right) internal pure returns (bytes32) {
-    return left < right ? keccak256(bytes.concat(left, right)) : keccak256(bytes.concat(right, left));
+    return
+      left < right ? keccak256(bytes.concat(left, right)) : keccak256(bytes.concat(right, left));
   }
 
   function leftChildIndex(uint256 i) internal pure returns (uint256) {

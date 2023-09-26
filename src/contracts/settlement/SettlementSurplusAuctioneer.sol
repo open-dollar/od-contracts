@@ -41,7 +41,10 @@ contract SettlementSurplusAuctioneer is Authorizable, Modifiable, ISettlementSur
    * @param  _accountingEngine Address of the AccountingEngine
    * @param  _surplusAuctionHouse Address of the SurplusAuctionHouse
    */
-  constructor(address _accountingEngine, address _surplusAuctionHouse) Authorizable(msg.sender) validParams {
+  constructor(
+    address _accountingEngine,
+    address _surplusAuctionHouse
+  ) Authorizable(msg.sender) validParams {
     accountingEngine = IAccountingEngine(_accountingEngine.assertNonNull());
     surplusAuctionHouse = ISurplusAuctionHouse(_surplusAuctionHouse.assertNonNull());
     safeEngine = ISAFEEngine(address(accountingEngine.safeEngine()));
@@ -54,7 +57,8 @@ contract SettlementSurplusAuctioneer is Authorizable, Modifiable, ISettlementSur
   function auctionSurplus() external returns (uint256 _id) {
     if (accountingEngine.contractEnabled()) revert SSA_AccountingEngineStillEnabled();
     IAccountingEngine.AccountingEngineParams memory _accEngineParams = accountingEngine.params();
-    if (block.timestamp < lastSurplusTime + _accEngineParams.surplusDelay) revert SSA_SurplusAuctionDelayNotPassed();
+    if (block.timestamp < lastSurplusTime + _accEngineParams.surplusDelay)
+      revert SSA_SurplusAuctionDelayNotPassed();
     lastSurplusTime = block.timestamp;
     uint256 _coinBalance = safeEngine.coinBalance(address(this));
     uint256 _amountToSell = Math.min(_coinBalance, _accEngineParams.surplusAmount);

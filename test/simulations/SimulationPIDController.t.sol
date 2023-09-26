@@ -53,7 +53,11 @@ contract SimulationPIDController is TestParams, Deploy, HaiTest {
     _runSimulationWithImpulse();
   }
 
-  function test_no_gain_with_impulse() public setupPID(0, 0, 0) writeCSV('no_gain_with_impulse', _columns) {
+  function test_no_gain_with_impulse()
+    public
+    setupPID(0, 0, 0)
+    writeCSV('no_gain_with_impulse', _columns)
+  {
     _runSimulationWithImpulse();
   }
 
@@ -73,7 +77,11 @@ contract SimulationPIDController is TestParams, Deploy, HaiTest {
     _runSimulationWithImpulse();
   }
 
-  function test_decay_with_impulse() public setupPID(0, 0, _alphaDecay) writeCSV('decay_with_impulse', _columns) {
+  function test_decay_with_impulse()
+    public
+    setupPID(0, 0, _alphaDecay)
+    writeCSV('decay_with_impulse', _columns)
+  {
     _runSimulationWithImpulse();
   }
 
@@ -85,7 +93,11 @@ contract SimulationPIDController is TestParams, Deploy, HaiTest {
     _runSimulationWithStep();
   }
 
-  function test_no_gain_with_step() public setupPID(0, 0, 0) writeCSV('no_gain_with_step', _columns) {
+  function test_no_gain_with_step()
+    public
+    setupPID(0, 0, 0)
+    writeCSV('no_gain_with_step', _columns)
+  {
     _runSimulationWithStep();
   }
 
@@ -97,11 +109,19 @@ contract SimulationPIDController is TestParams, Deploy, HaiTest {
     _runSimulationWithStep();
   }
 
-  function test_integral_with_step() public setupPID(0, _integralGain, 0) writeCSV('integral_gain_with_step', _columns) {
+  function test_integral_with_step()
+    public
+    setupPID(0, _integralGain, 0)
+    writeCSV('integral_gain_with_step', _columns)
+  {
     _runSimulationWithStep();
   }
 
-  function test_decay_with_step() public setupPID(0, 0, _alphaDecay) writeCSV('decay_with_step', _columns) {
+  function test_decay_with_step()
+    public
+    setupPID(0, 0, _alphaDecay)
+    writeCSV('decay_with_step', _columns)
+  {
     _runSimulationWithStep();
   }
 
@@ -135,7 +155,11 @@ contract SimulationPIDController is TestParams, Deploy, HaiTest {
     }
   }
 
-  modifier setupPID(int256 _kp, int256 _ki, uint256 _pscl) {
+  modifier setupPID(
+    int256 _kp,
+    int256 _ki,
+    uint256 _pscl
+  ) {
     pidController.modifyParameters('kp', abi.encode(_kp));
     pidController.modifyParameters('ki', abi.encode(_ki));
     pidController.modifyParameters('perSecondCumulativeLeak', abi.encode(_pscl));
@@ -147,7 +171,8 @@ contract SimulationPIDController is TestParams, Deploy, HaiTest {
   // --- csv utils ---
 
   function _logLine(uint256 _day) internal {
-    IPIDController.DeviationObservation memory _deviationObservation = pidController.deviationObservation();
+    IPIDController.DeviationObservation memory _deviationObservation = pidController
+      .deviationObservation();
     _proportionalTerm = _deviationObservation.proportional;
     _integramTerm = _deviationObservation.integral;
     _redemptionPrice = oracleRelayer.redemptionPrice();

@@ -30,6 +30,7 @@ interface ICoinJoin is IAuthorizable, IDisableable {
 
   /// @notice Address of the SAFEEngine contract
   function safeEngine() external view returns (ISAFEEngine _safeEngine);
+
   /// @notice Address of the SystemCoin contract
   function systemCoin() external view returns (ISystemCoin _systemCoin);
 

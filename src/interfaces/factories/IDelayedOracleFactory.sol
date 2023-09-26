@@ -14,7 +14,11 @@ interface IDelayedOracleFactory is IAuthorizable {
    * @param _priceSource Address of the price source for the DelayedOracle contract
    * @param _updateDelay Delay in seconds to be applied between the price source and the delayed oracle feeds
    */
-  event NewDelayedOracle(address indexed _delayedOracle, address _priceSource, uint256 _updateDelay);
+  event NewDelayedOracle(
+    address indexed _delayedOracle,
+    address _priceSource,
+    uint256 _updateDelay
+  );
 
   // --- Methods ---
 

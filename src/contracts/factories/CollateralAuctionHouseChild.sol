@@ -95,17 +95,19 @@ contract CollateralAuctionHouseChild is
   function _setOracleRelayer(address _newOracleRelayer) internal override {}
 
   /// @inheritdoc AuthorizableChild
-  function _isAuthorized(address _account)
-    internal
-    view
-    override(AuthorizableChild, Authorizable)
-    returns (bool _authorized)
-  {
+  function _isAuthorized(
+    address _account
+  ) internal view override(AuthorizableChild, Authorizable) returns (bool _authorized) {
     return super._isAuthorized(_account);
   }
 
   /// @inheritdoc DisableableChild
-  function _isEnabled() internal view override(DisableableChild, Disableable) returns (bool _enabled) {
+  function _isEnabled()
+    internal
+    view
+    override(DisableableChild, Disableable)
+    returns (bool _enabled)
+  {
     return super._isEnabled();
   }
 

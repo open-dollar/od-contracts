@@ -44,8 +44,14 @@ contract DebtBidActions is CommonActions, IDebtBidActions {
   }
 
   /// @inheritdoc IDebtBidActions
-  function settleAuction(address _coinJoin, address _debtAuctionHouse, uint256 _auctionId) external delegateCall {
-    IDebtAuctionHouse.Auction memory _auction = IDebtAuctionHouse(_debtAuctionHouse).auctions(_auctionId);
+  function settleAuction(
+    address _coinJoin,
+    address _debtAuctionHouse,
+    uint256 _auctionId
+  ) external delegateCall {
+    IDebtAuctionHouse.Auction memory _auction = IDebtAuctionHouse(_debtAuctionHouse).auctions(
+      _auctionId
+    );
     IDebtAuctionHouse(_debtAuctionHouse).settleAuction(_auctionId);
 
     if (_auction.highBidder == address(this)) {

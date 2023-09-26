@@ -12,7 +12,11 @@ interface ISurplusBidActions is ICommonActions {
    * @param  _auctionId Id of the auction to bid on
    * @param  _bidAmount Amount of system coins to bid [wad]
    */
-  function increaseBidSize(address _surplusAuctionHouse, uint256 _auctionId, uint256 _bidAmount) external;
+  function increaseBidSize(
+    address _surplusAuctionHouse,
+    uint256 _auctionId,
+    uint256 _bidAmount
+  ) external;
 
   /**
    * @notice Settles an auction, collecting the system coins if the user is the highest bidder
@@ -21,5 +25,9 @@ interface ISurplusBidActions is ICommonActions {
    * @param  _auctionId Id of the auction to settle
    * @dev    This method will fail if the auction is not finished
    */
-  function settleAuction(address _coinJoin, address _surplusAuctionHouse, uint256 _auctionId) external;
+  function settleAuction(
+    address _coinJoin,
+    address _surplusAuctionHouse,
+    uint256 _auctionId
+  ) external;
 }

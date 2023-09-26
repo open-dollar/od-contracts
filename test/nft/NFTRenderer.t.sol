@@ -27,7 +27,12 @@ contract NFTRendererTest is GoerliForkSetup {
   function setUp() public override {
     super.setUp();
 
-    r = new NFTRenderer(Vault721_Address, OracleRelayer_Address, TaxCollector_Address, CollateralJoinFactory_Address);
+    r = new NFTRenderer(
+      Vault721_Address,
+      OracleRelayer_Address,
+      TaxCollector_Address,
+      CollateralJoinFactory_Address
+    );
   }
 
   function testArbitrary() public {

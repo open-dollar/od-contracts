@@ -8,9 +8,7 @@ import {TestParams, WETH, TKN, TEST_ETH_PRICE, TEST_TKN_PRICE} from '@test/e2e/T
 import {ERC20ForTest} from '@test/mocks/ERC20ForTest.sol';
 import {OracleForTest} from '@test/mocks/OracleForTest.sol';
 import {DelayedOracleForTest} from '@test/mocks/DelayedOracleForTest.sol';
-import {
-  Contracts, ICollateralJoin, MintableERC20, IERC20Metadata, IBaseOracle, ISAFEEngine
-} from '@script/Contracts.s.sol';
+import {Contracts, ICollateralJoin, MintableERC20, IERC20Metadata, IBaseOracle, ISAFEEngine} from '@script/Contracts.s.sol';
 import {WETH9} from '@test/mocks/WETH9.sol';
 import {Math, RAY} from '@libraries/Math.sol';
 
@@ -95,9 +93,15 @@ abstract contract Common is DeployForTest, HaiTest {
   function _setCollateralPrice(bytes32 _collateral, uint256 _price) internal {
     IBaseOracle _oracle = oracleRelayer.cParams(_collateral).oracle;
     vm.mockCall(
-      address(_oracle), abi.encodeWithSelector(IBaseOracle.getResultWithValidity.selector), abi.encode(_price, true)
+      address(_oracle),
+      abi.encodeWithSelector(IBaseOracle.getResultWithValidity.selector),
+      abi.encode(_price, true)
     );
-    vm.mockCall(address(_oracle), abi.encodeWithSelector(IBaseOracle.read.selector), abi.encode(_price));
+    vm.mockCall(
+      address(_oracle),
+      abi.encodeWithSelector(IBaseOracle.read.selector),
+      abi.encode(_price)
+    );
     oracleRelayer.updateCollateralPrice(_collateral);
   }
 

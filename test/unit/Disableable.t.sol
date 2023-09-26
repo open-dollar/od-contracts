@@ -26,7 +26,9 @@ abstract contract Base is HaiTest {
   }
 
   function _mockContractEnabled(bool _contractEnabled) internal {
-    stdstore.target(address(disableable)).sig(IDisableable.contractEnabled.selector).checked_write(_contractEnabled);
+    stdstore.target(address(disableable)).sig(IDisableable.contractEnabled.selector).checked_write(
+      _contractEnabled
+    );
   }
 }
 

@@ -17,7 +17,8 @@ uint256 constant MINUS_0_5_PERCENT_PER_HOUR = 999_998_607_628_240_588_157_433_86
  */
 
 contract CTypeBase is GoerliContracts, Script {
-  CollateralJoinFactory public collateralJoinFactory = CollateralJoinFactory(CollateralJoinFactory_Address);
+  CollateralJoinFactory public collateralJoinFactory =
+    CollateralJoinFactory(CollateralJoinFactory_Address);
   CollateralAuctionHouseFactory public collateralAuctionHouseFactory =
     CollateralAuctionHouseFactory(CollateralAuctionHouseFactory_Address);
 
@@ -27,11 +28,11 @@ contract CTypeBase is GoerliContracts, Script {
   /**
    * @dev params for testing, do not use for production
    */
-  ICollateralAuctionHouse.CollateralAuctionHouseParams _cahCParams = ICollateralAuctionHouse
-    .CollateralAuctionHouseParams({
-    minimumBid: WAD, // 1 COINs
-    minDiscount: WAD, // no discount
-    maxDiscount: 0.9e18, // -10%
-    perSecondDiscountUpdateRate: MINUS_0_5_PERCENT_PER_HOUR
-  });
+  ICollateralAuctionHouse.CollateralAuctionHouseParams _cahCParams =
+    ICollateralAuctionHouse.CollateralAuctionHouseParams({
+      minimumBid: WAD, // 1 COINs
+      minDiscount: WAD, // no discount
+      maxDiscount: 0.9e18, // -10%
+      perSecondDiscountUpdateRate: MINUS_0_5_PERCENT_PER_HOUR
+    });
 }

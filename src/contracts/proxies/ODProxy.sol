@@ -23,7 +23,10 @@ contract ODProxy {
     _;
   }
 
-  function execute(address _target, bytes memory _data) external payable onlyOwner returns (bytes memory _response) {
+  function execute(
+    address _target,
+    bytes memory _data
+  ) external payable onlyOwner returns (bytes memory _response) {
     if (_target == address(0)) revert TargetAddressRequired();
 
     bool _succeeded;

@@ -18,9 +18,13 @@ abstract contract Base is HaiTest {
   IBaseOracle mockDenominationPriceSource = IBaseOracle(mockContract('DenominationPriceSource'));
 
   DenominatedOracleFactory denominatedOracleFactory;
-  DenominatedOracleChild denominatedOracleChild = DenominatedOracleChild(
-    label(address(0x0000000000000000000000007f85e9e000597158aed9320b5a5e11ab8cc7329a), 'DenominatedOracleChild')
-  );
+  DenominatedOracleChild denominatedOracleChild =
+    DenominatedOracleChild(
+      label(
+        address(0x0000000000000000000000007f85e9e000597158aed9320b5a5e11ab8cc7329a),
+        'DenominatedOracleChild'
+      )
+    );
 
   function setUp() public virtual {
     vm.startPrank(deployer);
@@ -34,9 +38,15 @@ abstract contract Base is HaiTest {
   }
 
   function _mockSymbol(string memory _symbol) internal {
-    vm.mockCall(address(mockPriceSource), abi.encodeCall(mockPriceSource.symbol, ()), abi.encode(_symbol));
     vm.mockCall(
-      address(mockDenominationPriceSource), abi.encodeCall(mockDenominationPriceSource.symbol, ()), abi.encode(_symbol)
+      address(mockPriceSource),
+      abi.encodeCall(mockPriceSource.symbol, ()),
+      abi.encode(_symbol)
+    );
+    vm.mockCall(
+      address(mockDenominationPriceSource),
+      abi.encodeCall(mockDenominationPriceSource.symbol, ()),
+      abi.encode(_symbol)
     );
   }
 }
@@ -59,7 +69,10 @@ contract Unit_DenominatedOracleFactory_Constructor is Base {
 
 contract Unit_DenominatedOracleFactory_DeployDenominatedOracle is Base {
   event NewDenominatedOracle(
-    address indexed _denominatedOracle, address _priceSource, address _denominationPriceSource, bool _inverted
+    address indexed _denominatedOracle,
+    address _priceSource,
+    address _denominationPriceSource,
+    bool _inverted
   );
 
   modifier happyPath(string memory _symbol) {
@@ -76,38 +89,78 @@ contract Unit_DenominatedOracleFactory_DeployDenominatedOracle is Base {
   function test_Revert_Unauthorized(bool _inverted) public {
     vm.expectRevert(IAuthorizable.Unauthorized.selector);
 
-    denominatedOracleFactory.deployDenominatedOracle(mockPriceSource, mockDenominationPriceSource, _inverted);
+    denominatedOracleFactory.deployDenominatedOracle(
+      mockPriceSource,
+      mockDenominationPriceSource,
+      _inverted
+    );
   }
 
-  function test_Deploy_DenominatedOracleChild(bool _inverted, string memory _symbol) public happyPath(_symbol) {
-    denominatedOracleFactory.deployDenominatedOracle(mockPriceSource, mockDenominationPriceSource, _inverted);
+  function test_Deploy_DenominatedOracleChild(
+    bool _inverted,
+    string memory _symbol
+  ) public happyPath(_symbol) {
+    denominatedOracleFactory.deployDenominatedOracle(
+      mockPriceSource,
+      mockDenominationPriceSource,
+      _inverted
+    );
 
     assertEq(address(denominatedOracleChild).code, type(DenominatedOracleChild).runtimeCode);
 
     // params
     assertEq(address(denominatedOracleChild.priceSource()), address(mockPriceSource));
-    assertEq(address(denominatedOracleChild.denominationPriceSource()), address(mockDenominationPriceSource));
+    assertEq(
+      address(denominatedOracleChild.denominationPriceSource()),
+      address(mockDenominationPriceSource)
+    );
     assertEq(denominatedOracleChild.inverted(), _inverted);
   }
 
-  function test_Set_DenominatedOracles(bool _inverted, string memory _symbol) public happyPath(_symbol) {
-    denominatedOracleFactory.deployDenominatedOracle(mockPriceSource, mockDenominationPriceSource, _inverted);
+  function test_Set_DenominatedOracles(
+    bool _inverted,
+    string memory _symbol
+  ) public happyPath(_symbol) {
+    denominatedOracleFactory.deployDenominatedOracle(
+      mockPriceSource,
+      mockDenominationPriceSource,
+      _inverted
+    );
 
     assertEq(denominatedOracleFactory.denominatedOraclesList()[0], address(denominatedOracleChild));
   }
 
-  function test_Emit_NewDenominatedOracle(bool _inverted, string memory _symbol) public happyPath(_symbol) {
+  function test_Emit_NewDenominatedOracle(
+    bool _inverted,
+    string memory _symbol
+  ) public happyPath(_symbol) {
     vm.expectEmit();
     emit NewDenominatedOracle(
-      address(denominatedOracleChild), address(mockPriceSource), address(mockDenominationPriceSource), _inverted
+      address(denominatedOracleChild),
+      address(mockPriceSource),
+      address(mockDenominationPriceSource),
+      _inverted
     );
 
-    denominatedOracleFactory.deployDenominatedOracle(mockPriceSource, mockDenominationPriceSource, _inverted);
+    denominatedOracleFactory.deployDenominatedOracle(
+      mockPriceSource,
+      mockDenominationPriceSource,
+      _inverted
+    );
   }
 
-  function test_Return_DenominatedOracle(bool _inverted, string memory _symbol) public happyPath(_symbol) {
+  function test_Return_DenominatedOracle(
+    bool _inverted,
+    string memory _symbol
+  ) public happyPath(_symbol) {
     assertEq(
-      address(denominatedOracleFactory.deployDenominatedOracle(mockPriceSource, mockDenominationPriceSource, _inverted)),
+      address(
+        denominatedOracleFactory.deployDenominatedOracle(
+          mockPriceSource,
+          mockDenominationPriceSource,
+          _inverted
+        )
+      ),
       address(denominatedOracleChild)
     );
   }

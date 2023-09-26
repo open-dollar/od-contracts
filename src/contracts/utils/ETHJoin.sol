@@ -54,7 +54,7 @@ contract ETHJoin is Authorizable, Disableable, IETHJoin {
   function exit(address _account, uint256 _wei) external {
     safeEngine.modifyCollateralBalance(collateralType, msg.sender, -_wei.toInt());
     emit Exit(msg.sender, _account, _wei);
-    (bool _success,) = _account.call{value: _wei}('');
+    (bool _success, ) = _account.call{value: _wei}('');
     if (!_success) revert ETHJoin_FailedTransfer();
   }
 }

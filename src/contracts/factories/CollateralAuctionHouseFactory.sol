@@ -20,7 +20,12 @@ import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
  * @notice This contract is used to deploy CollateralAuctionHouse contracts
  * @dev    The deployed contracts are CollateralAuctionHouseChild instances
  */
-contract CollateralAuctionHouseFactory is Authorizable, Modifiable, Disableable, ICollateralAuctionHouseFactory {
+contract CollateralAuctionHouseFactory is
+  Authorizable,
+  Modifiable,
+  Disableable,
+  ICollateralAuctionHouseFactory
+{
   using Assertions for uint256;
   using Assertions for address;
   using Encoding for bytes;
@@ -38,20 +43,25 @@ contract CollateralAuctionHouseFactory is Authorizable, Modifiable, Disableable,
   // --- Data ---
 
   /// @inheritdoc ICollateralAuctionHouseFactory
-  function cParams(bytes32 _cType)
-    external
-    view
-    returns (ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahParams)
-  {
+  function cParams(
+    bytes32 _cType
+  ) external view returns (ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahParams) {
     return ICollateralAuctionHouse(collateralAuctionHouses[_cType]).params();
   }
 
   /// @inheritdoc ICollateralAuctionHouseFactory
   // solhint-disable-next-line private-vars-leading-underscore
-  function _cParams(bytes32 _cType)
+  function _cParams(
+    bytes32 _cType
+  )
     external
     view
-    returns (uint256 _minimumBid, uint256 _minDiscount, uint256 _maxDiscount, uint256 _perSecondDiscountUpdateRate)
+    returns (
+      uint256 _minimumBid,
+      uint256 _minDiscount,
+      uint256 _maxDiscount,
+      uint256 _perSecondDiscountUpdateRate
+    )
   {
     return ICollateralAuctionHouse(collateralAuctionHouses[_cType])._params();
   }
@@ -95,7 +105,7 @@ contract CollateralAuctionHouseFactory is Authorizable, Modifiable, Disableable,
       _oracleRelayer: address(0), // read from factory
       _cType: _cType,
       _cahParams: _cahParams
-      });
+    });
 
     collateralAuctionHouses[_cType] = address(_collateralAuctionHouse);
     emit DeployCollateralAuctionHouse(_cType, address(_collateralAuctionHouse));
@@ -109,7 +119,11 @@ contract CollateralAuctionHouseFactory is Authorizable, Modifiable, Disableable,
   }
 
   /// @inheritdoc ICollateralAuctionHouseFactory
-  function collateralAuctionHousesList() external view returns (address[] memory _collateralAuctionHousesList) {
+  function collateralAuctionHousesList()
+    external
+    view
+    returns (address[] memory _collateralAuctionHousesList)
+  {
     bytes32[] memory __collateralList = _collateralList.values();
     _collateralAuctionHousesList = new address[](__collateralList.length);
     for (uint256 _i; _i < __collateralList.length; ++_i) {

@@ -31,9 +31,17 @@ contract Guy {
     int256 deltaCollateral,
     int256 deltaDebt
   ) public returns (bool) {
-    string memory sig = 'modifySAFECollateralization(bytes32,address,address,address,int256,int256)';
+    string
+      memory sig = 'modifySAFECollateralization(bytes32,address,address,address,int256,int256)';
     bytes memory data = abi.encodeWithSignature(
-      sig, address(this), collateralType, safe, collateralSource, debtDestination, deltaCollateral, deltaDebt
+      sig,
+      address(this),
+      collateralType,
+      safe,
+      collateralSource,
+      debtDestination,
+      deltaCollateral,
+      deltaDebt
     );
 
     bytes memory can_call = abi.encodeWithSignature('try_call(address,bytes)', safeEngine, data);
@@ -51,7 +59,14 @@ contract Guy {
     int256 deltaDebt
   ) public returns (bool) {
     string memory sig = 'transferSAFECollateralAndDebt(bytes32,address,address,int256,int256)';
-    bytes memory data = abi.encodeWithSignature(sig, collateralType, src, dst, deltaCollateral, deltaDebt);
+    bytes memory data = abi.encodeWithSignature(
+      sig,
+      collateralType,
+      src,
+      dst,
+      deltaCollateral,
+      deltaDebt
+    );
 
     bytes memory can_call = abi.encodeWithSignature('try_call(address,bytes)', safeEngine, data);
     (bool ok, bytes memory success) = address(this).call(can_call);
@@ -69,7 +84,12 @@ contract Guy {
     int256 deltaDebt
   ) public {
     safeEngine.modifySAFECollateralization(
-      collateralType, safe, collateralSource, debtDestination, deltaCollateral, deltaDebt
+      collateralType,
+      safe,
+      collateralSource,
+      debtDestination,
+      deltaCollateral,
+      deltaDebt
     );
   }
 
@@ -106,16 +126,18 @@ contract SingleTransferSAFECollateralAndDebtTest is DSTest {
   }
 
   function setUp() public {
-    ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
-      ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: rad(1000 ether)});
+    ISAFEEngine.SAFEEngineParams memory _safeEngineParams = ISAFEEngine.SAFEEngineParams({
+      safeDebtCeiling: type(uint256).max,
+      globalDebtCeiling: rad(1000 ether)
+    });
     safeEngine = new SAFEEngine(_safeEngineParams);
     ali = new Guy(safeEngine);
     bob = new Guy(safeEngine);
     a = address(ali);
     b = address(bob);
 
-    ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
-      ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: rad(1000 ether), debtFloor: 0});
+    ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams = ISAFEEngine
+      .SAFEEngineCollateralParams({debtCeiling: rad(1000 ether), debtFloor: 0});
     safeEngine.initializeCollateralType('collateralTokens', _safeEngineCollateralParams);
     safeEngine.updateCollateralPrice('collateralTokens', ray(0.5 ether), ray(0.5 ether));
 
@@ -153,6 +175,8 @@ contract SingleTransferSAFECollateralAndDebtTest is DSTest {
     assertTrue(ali.can_transferSAFECollateralAndDebt('collateralTokens', a, b, 4 ether, 2 ether));
     safeEngine.modifyParameters('collateralTokens', 'debtFloor', abi.encode(rad(1 ether)));
     assertTrue(ali.can_transferSAFECollateralAndDebt('collateralTokens', a, b, 2 ether, 1 ether));
-    assertTrue(!ali.can_transferSAFECollateralAndDebt('collateralTokens', a, b, 1 ether, 0.5 ether));
+    assertTrue(
+      !ali.can_transferSAFECollateralAndDebt('collateralTokens', a, b, 1 ether, 0.5 ether)
+    );
   }
 }

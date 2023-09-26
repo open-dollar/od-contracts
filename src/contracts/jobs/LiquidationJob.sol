@@ -61,7 +61,8 @@ contract LiquidationJob is Job, Authorizable, Modifiable, ILiquidationJob {
     address _address = _data.toAddress();
 
     if (_param == 'liquidationEngine') liquidationEngine = ILiquidationEngine(_address);
-    else if (_param == 'stabilityFeeTreasury') stabilityFeeTreasury = IStabilityFeeTreasury(_address);
+    else if (_param == 'stabilityFeeTreasury')
+      stabilityFeeTreasury = IStabilityFeeTreasury(_address);
     else if (_param == 'shouldWork') shouldWork = _data.toBool();
     else if (_param == 'rewardAmount') rewardAmount = _data.toUint256();
     else revert UnrecognizedParam();

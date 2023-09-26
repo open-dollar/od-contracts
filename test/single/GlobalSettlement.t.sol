@@ -11,15 +11,8 @@ import {IStabilityFeeTreasury, StabilityFeeTreasury} from '@contracts/StabilityF
 import {ICollateralAuctionHouse, CollateralAuctionHouse} from '@contracts/CollateralAuctionHouse.sol';
 import {ISurplusAuctionHouse, SurplusAuctionHouse} from '@contracts/SurplusAuctionHouse.sol';
 import {IDebtAuctionHouse, DebtAuctionHouse} from '@contracts/DebtAuctionHouse.sol';
-import {
-  ICollateralJoinFactory,
-  ICollateralJoin,
-  CollateralJoinFactory
-} from '@contracts/factories/CollateralJoinFactory.sol';
-import {
-  ICollateralAuctionHouseFactory,
-  CollateralAuctionHouseFactory
-} from '@contracts/factories/CollateralAuctionHouseFactory.sol';
+import {ICollateralJoinFactory, ICollateralJoin, CollateralJoinFactory} from '@contracts/factories/CollateralJoinFactory.sol';
+import {ICollateralAuctionHouseFactory, CollateralAuctionHouseFactory} from '@contracts/factories/CollateralAuctionHouseFactory.sol';
 import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
 import {GlobalSettlement, IGlobalSettlement} from '@contracts/settlement/GlobalSettlement.sol';
 import {SettlementSurplusAuctioneer} from '@contracts/settlement/SettlementSurplusAuctioneer.sol';
@@ -34,6 +27,7 @@ import {Math, RAY, WAD} from '@libraries/Math.sol';
 
 abstract contract Hevm {
   function warp(uint256) public virtual;
+
   function prank(address) external virtual;
 }
 
@@ -55,7 +49,12 @@ contract Guy {
     int256 _deltaDebt
   ) public {
     safeEngine.modifySAFECollateralization(
-      _collateralType, _safe, _collateralSrc, _debtDst, _deltaCollateral, _deltaDebt
+      _collateralType,
+      _safe,
+      _collateralSrc,
+      _debtDst,
+      _deltaCollateral,
+      _deltaDebt
     );
   }
 
@@ -127,51 +126,58 @@ contract SingleGlobalSettlementTest is DSTest {
     return collateralTypes[_collateralType].collateral.balanceOf(_usr);
   }
 
-  function _init_collateral(string memory _name, bytes32 _encodedName) internal returns (CollateralType memory) {
+  function _init_collateral(
+    string memory _name,
+    bytes32 _encodedName
+  ) internal returns (CollateralType memory) {
     CoinForTest newCollateral = new CoinForTest(_name, _name);
     newCollateral.mint(20 ether);
 
     // initial collateral price of 5
     DelayedOracleForTest oracleFSM = new DelayedOracleForTest(5 * WAD, address(0));
 
-    IOracleRelayer.OracleRelayerCollateralParams memory _oracleRelayerCollateralParams = IOracleRelayer
-      .OracleRelayerCollateralParams({
-      oracle: IDelayedOracle(oracleFSM),
-      safetyCRatio: ray(1.5 ether),
-      liquidationCRatio: ray(1.5 ether)
-    });
+    IOracleRelayer.OracleRelayerCollateralParams
+      memory _oracleRelayerCollateralParams = IOracleRelayer.OracleRelayerCollateralParams({
+        oracle: IDelayedOracle(oracleFSM),
+        safetyCRatio: ray(1.5 ether),
+        liquidationCRatio: ray(1.5 ether)
+      });
     oracleRelayer.initializeCollateralType(_encodedName, _oracleRelayerCollateralParams);
 
-    ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
-      ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: rad(10_000_000 ether), debtFloor: 0});
+    ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams = ISAFEEngine
+      .SAFEEngineCollateralParams({debtCeiling: rad(10_000_000 ether), debtFloor: 0});
     safeEngine.initializeCollateralType(_encodedName, _safeEngineCollateralParams);
-    ICollateralJoin collateralJoin = collateralJoinFactory.deployCollateralJoin(_encodedName, address(newCollateral));
+    ICollateralJoin collateralJoin = collateralJoinFactory.deployCollateralJoin(
+      _encodedName,
+      address(newCollateral)
+    );
     newCollateral.approve(address(collateralJoin), type(uint256).max);
 
     safeEngine.updateCollateralPrice(_encodedName, ray(3 ether), ray(3 ether));
 
     ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahParams = ICollateralAuctionHouse
       .CollateralAuctionHouseParams({
-      minDiscount: 0.95e18, // 5% discount
-      maxDiscount: 0.95e18, // 5% discount
-      perSecondDiscountUpdateRate: RAY, // [ray]
-      minimumBid: 1e18 // 1 system coin
-    });
+        minDiscount: 0.95e18, // 5% discount
+        maxDiscount: 0.95e18, // 5% discount
+        perSecondDiscountUpdateRate: RAY, // [ray]
+        minimumBid: 1e18 // 1 system coin
+      });
 
-    ICollateralAuctionHouse _collateralAuctionHouse =
-      collateralAuctionHouseFactory.deployCollateralAuctionHouse(_encodedName, _cahParams);
+    ICollateralAuctionHouse _collateralAuctionHouse = collateralAuctionHouseFactory
+      .deployCollateralAuctionHouse(_encodedName, _cahParams);
 
     safeEngine.approveSAFEModification(address(_collateralAuctionHouse));
     _collateralAuctionHouse.addAuthorization(address(globalSettlement));
     oracleFSM.setPriceAndValidity(200 * WAD, true);
 
     // Start with English auction house
-    ILiquidationEngine.LiquidationEngineCollateralParams memory _liquidationEngineCollateralParams = ILiquidationEngine
-      .LiquidationEngineCollateralParams({
-      collateralAuctionHouse: address(_collateralAuctionHouse),
-      liquidationPenalty: 1 ether,
-      liquidationQuantity: uint256(int256(-1)) / ray(1 ether)
-    });
+    ILiquidationEngine.LiquidationEngineCollateralParams
+      memory _liquidationEngineCollateralParams = ILiquidationEngine
+        .LiquidationEngineCollateralParams({
+          collateralAuctionHouse: address(_collateralAuctionHouse),
+          liquidationPenalty: 1 ether,
+          liquidationQuantity: uint256(int256(-1)) / ray(1 ether)
+        });
     liquidationEngine.initializeCollateralType(_encodedName, _liquidationEngineCollateralParams);
 
     collateralTypes[_encodedName].oracleSecurityModule = oracleFSM;
@@ -188,8 +194,10 @@ contract SingleGlobalSettlementTest is DSTest {
 
     OracleForTest _mockSystemCoinOracle = new OracleForTest(1 ether);
 
-    ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
-      ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: rad(10_000_000 ether)});
+    ISAFEEngine.SAFEEngineParams memory _safeEngineParams = ISAFEEngine.SAFEEngineParams({
+      safeDebtCeiling: type(uint256).max,
+      globalDebtCeiling: rad(10_000_000 ether)
+    });
     safeEngine = new SAFEEngine(_safeEngineParams);
     protocolToken = new CoinForTest('GOV', 'GOV');
     systemCoin = new CoinForTest('Coin', 'Coin');
@@ -197,27 +205,37 @@ contract SingleGlobalSettlementTest is DSTest {
     collateralJoinFactory = new CollateralJoinFactory(address(safeEngine));
     safeEngine.addAuthorization(address(collateralJoinFactory));
 
-    ISurplusAuctionHouse.SurplusAuctionHouseParams memory _sahParams = ISurplusAuctionHouse.SurplusAuctionHouseParams({
-      bidIncrease: 1.05e18,
-      bidDuration: 3 hours,
-      totalAuctionLength: 2 days,
-      bidReceiver: address(0x123),
-      recyclingPercentage: 0
-    });
-    surplusAuctionHouseOne = new SurplusAuctionHouse(address(safeEngine), address(protocolToken), _sahParams);
+    ISurplusAuctionHouse.SurplusAuctionHouseParams memory _sahParams = ISurplusAuctionHouse
+      .SurplusAuctionHouseParams({
+        bidIncrease: 1.05e18,
+        bidDuration: 3 hours,
+        totalAuctionLength: 2 days,
+        bidReceiver: address(0x123),
+        recyclingPercentage: 0
+      });
+    surplusAuctionHouseOne = new SurplusAuctionHouse(
+      address(safeEngine),
+      address(protocolToken),
+      _sahParams
+    );
 
     safeEngine.approveSAFEModification(address(surplusAuctionHouseOne));
 
     protocolToken.addAuthorization(address(debtAuctionHouse));
 
-    IDebtAuctionHouse.DebtAuctionHouseParams memory _debtAuctionHouseParams = IDebtAuctionHouse.DebtAuctionHouseParams({
-      bidDecrease: 1.05e18,
-      amountSoldIncrease: 1.5e18,
-      bidDuration: 3 hours,
-      totalAuctionLength: 2 days
-    });
+    IDebtAuctionHouse.DebtAuctionHouseParams memory _debtAuctionHouseParams = IDebtAuctionHouse
+      .DebtAuctionHouseParams({
+        bidDecrease: 1.05e18,
+        amountSoldIncrease: 1.5e18,
+        bidDuration: 3 hours,
+        totalAuctionLength: 2 days
+      });
 
-    debtAuctionHouse = new DebtAuctionHouse(address(safeEngine), address(protocolToken), _debtAuctionHouseParams);
+    debtAuctionHouse = new DebtAuctionHouse(
+      address(safeEngine),
+      address(protocolToken),
+      _debtAuctionHouseParams
+    );
 
     safeEngine.addAuthorization(address(coinJoin));
     systemCoin.mint(address(this), 50 ether);
@@ -225,38 +243,53 @@ contract SingleGlobalSettlementTest is DSTest {
 
     protocolToken.mint(200 ether);
 
-    IAccountingEngine.AccountingEngineParams memory _accountingEngineParams = IAccountingEngine.AccountingEngineParams({
-      surplusIsTransferred: 0,
-      surplusDelay: 0,
-      popDebtDelay: 0,
-      disableCooldown: 0,
-      surplusAmount: 0,
-      surplusBuffer: 0,
-      debtAuctionMintedTokens: 0,
-      debtAuctionBidSize: 0
-    });
+    IAccountingEngine.AccountingEngineParams memory _accountingEngineParams = IAccountingEngine
+      .AccountingEngineParams({
+        surplusIsTransferred: 0,
+        surplusDelay: 0,
+        popDebtDelay: 0,
+        disableCooldown: 0,
+        surplusAmount: 0,
+        surplusBuffer: 0,
+        debtAuctionMintedTokens: 0,
+        debtAuctionBidSize: 0
+      });
 
-    accountingEngine =
-    new AccountingEngine(address(safeEngine), address(surplusAuctionHouseOne), address(debtAuctionHouse), _accountingEngineParams);
-    postSettlementSurplusDrain = new SettlementSurplusAuctioneer(address(accountingEngine), address(0x45));
+    accountingEngine = new AccountingEngine(
+      address(safeEngine),
+      address(surplusAuctionHouseOne),
+      address(debtAuctionHouse),
+      _accountingEngineParams
+    );
+    postSettlementSurplusDrain = new SettlementSurplusAuctioneer(
+      address(accountingEngine),
+      address(0x45)
+    );
     surplusAuctionHouseOne.addAuthorization(address(postSettlementSurplusDrain));
 
-    accountingEngine.modifyParameters('postSettlementSurplusDrain', abi.encode(postSettlementSurplusDrain));
+    accountingEngine.modifyParameters(
+      'postSettlementSurplusDrain',
+      abi.encode(postSettlementSurplusDrain)
+    );
     safeEngine.addAuthorization(address(accountingEngine));
 
-    ILiquidationEngine.LiquidationEngineParams memory _liquidationEngineParams =
-      ILiquidationEngine.LiquidationEngineParams({onAuctionSystemCoinLimit: type(uint256).max});
-    liquidationEngine = new LiquidationEngine(address(safeEngine), address(accountingEngine), _liquidationEngineParams);
+    ILiquidationEngine.LiquidationEngineParams memory _liquidationEngineParams = ILiquidationEngine
+      .LiquidationEngineParams({onAuctionSystemCoinLimit: type(uint256).max});
+    liquidationEngine = new LiquidationEngine(
+      address(safeEngine),
+      address(accountingEngine),
+      _liquidationEngineParams
+    );
     safeEngine.addAuthorization(address(liquidationEngine));
     accountingEngine.addAuthorization(address(liquidationEngine));
 
-    IOracleRelayer.OracleRelayerParams memory _oracleRelayerParams =
-      IOracleRelayer.OracleRelayerParams({redemptionRateUpperBound: RAY * WAD, redemptionRateLowerBound: 1});
+    IOracleRelayer.OracleRelayerParams memory _oracleRelayerParams = IOracleRelayer
+      .OracleRelayerParams({redemptionRateUpperBound: RAY * WAD, redemptionRateLowerBound: 1});
     oracleRelayer = new OracleRelayerForTest({
-      _safeEngine: address(safeEngine), 
-      _systemCoinOracle: IBaseOracle(address(_mockSystemCoinOracle)), 
+      _safeEngine: address(safeEngine),
+      _systemCoinOracle: IBaseOracle(address(_mockSystemCoinOracle)),
       _oracleRelayerParams: _oracleRelayerParams
-      });
+    });
     safeEngine.addAuthorization(address(oracleRelayer));
 
     collateralAuctionHouseFactory = new CollateralAuctionHouseFactory(
@@ -266,21 +299,29 @@ contract SingleGlobalSettlementTest is DSTest {
     );
     safeEngine.addAuthorization(address(collateralAuctionHouseFactory));
 
-    IStabilityFeeTreasury.StabilityFeeTreasuryParams memory _stabilityFeeTreasuryParams = IStabilityFeeTreasury
-      .StabilityFeeTreasuryParams({treasuryCapacity: 0, pullFundsMinThreshold: 0, surplusTransferDelay: 0});
-    stabilityFeeTreasury =
-    new StabilityFeeTreasury(address(safeEngine), address(accountingEngine), address(coinJoin), _stabilityFeeTreasuryParams);
+    IStabilityFeeTreasury.StabilityFeeTreasuryParams
+      memory _stabilityFeeTreasuryParams = IStabilityFeeTreasury.StabilityFeeTreasuryParams({
+        treasuryCapacity: 0,
+        pullFundsMinThreshold: 0,
+        surplusTransferDelay: 0
+      });
+    stabilityFeeTreasury = new StabilityFeeTreasury(
+      address(safeEngine),
+      address(accountingEngine),
+      address(coinJoin),
+      _stabilityFeeTreasuryParams
+    );
 
     globalSettlement = new GlobalSettlement(
-    address (safeEngine),
-    address (liquidationEngine),
-    address (oracleRelayer),
-    address (coinJoin),
-    address (collateralJoinFactory),
-    address (collateralAuctionHouseFactory),
-    address (stabilityFeeTreasury),
-    address (accountingEngine),
-    IGlobalSettlement.GlobalSettlementParams({shutdownCooldown: 1 hours})
+      address(safeEngine),
+      address(liquidationEngine),
+      address(oracleRelayer),
+      address(coinJoin),
+      address(collateralJoinFactory),
+      address(collateralAuctionHouseFactory),
+      address(stabilityFeeTreasury),
+      address(accountingEngine),
+      IGlobalSettlement.GlobalSettlementParams({shutdownCooldown: 1 hours})
     );
 
     safeEngine.addAuthorization(address(globalSettlement));
@@ -487,7 +528,10 @@ contract SingleGlobalSettlementTest is DSTest {
     safeEngine.approveSAFEModification(address(gold.collateralAuctionHouse));
     assertEq(safeEngine.coinBalance(_safe1), rad(10 ether));
 
-    (uint256 _collateralBought,) = gold.collateralAuctionHouse.getCollateralBought(auction, 5 ether);
+    (uint256 _collateralBought, ) = gold.collateralAuctionHouse.getCollateralBought(
+      auction,
+      5 ether
+    );
     gold.collateralAuctionHouse.buyCollateral(auction, uint256(5 ether)); // bid 5 coin
     assertEq(safeEngine.tokenCollateral('gold', address(this)), _collateralBought);
     assertEq(_collateralBought, 26_315_789_473_684_210); // ~0.02 ether
@@ -509,7 +553,10 @@ contract SingleGlobalSettlementTest is DSTest {
 
     // balance the accountingEngine
     accountingEngine.settleDebt(
-      Math.min(safeEngine.coinBalance(address(accountingEngine)), safeEngine.debtBalance(address(accountingEngine)))
+      Math.min(
+        safeEngine.coinBalance(address(accountingEngine)),
+        safeEngine.debtBalance(address(accountingEngine))
+      )
     );
     // global checks:
     assertEq(safeEngine.globalDebt(), rad(10 ether));
@@ -741,7 +788,11 @@ contract SingleGlobalSettlementTest is DSTest {
     _ali.exit(gold.collateralJoin, address(this), safeEngine.tokenCollateral('gold', _safe1));
 
     assertEq(safeEngine.tokenCollateral('gold', address(_charlie)), 230_769_230_769_230_769);
-    _charlie.exit(gold.collateralJoin, address(this), safeEngine.tokenCollateral('gold', address(_charlie)));
+    _charlie.exit(
+      gold.collateralJoin,
+      address(this),
+      safeEngine.tokenCollateral('gold', address(_charlie))
+    );
 
     assertEq(safeEngine.tokenCollateral('gold', address(globalSettlement)), 1);
     assertEq(_balanceOf('gold', address(gold.collateralJoin)), 1);
@@ -827,7 +878,11 @@ contract SingleGlobalSettlementTest is DSTest {
     _ali.exit(gold.collateralJoin, address(this), safeEngine.tokenCollateral('gold', _safe1));
 
     assertEq(safeEngine.tokenCollateral('gold', address(_charlie)), 923_076_923_076_923_076);
-    _charlie.exit(gold.collateralJoin, address(this), safeEngine.tokenCollateral('gold', address(_charlie)));
+    _charlie.exit(
+      gold.collateralJoin,
+      address(this),
+      safeEngine.tokenCollateral('gold', address(_charlie))
+    );
 
     assertEq(safeEngine.tokenCollateral('gold', address(globalSettlement)), 1);
     assertEq(_balanceOf('gold', address(gold.collateralJoin)), 1);
@@ -1032,7 +1087,14 @@ contract SingleGlobalSettlementTest is DSTest {
     address _safe1 = address(_ali);
     gold.collateral.mint(500_000_000 ether);
     gold.collateralJoin.join(_safe1, 500_000_000 ether);
-    _ali.modifySAFECollateralization('gold', _safe1, _safe1, _safe1, 500_000_000 ether, 10_000_000 ether);
+    _ali.modifySAFECollateralization(
+      'gold',
+      _safe1,
+      _safe1,
+      _safe1,
+      500_000_000 ether,
+      10_000_000 ether
+    );
     // _ali's urn has 500_000_000 collateral, 10^7 debt (and 10^7 system coins since rate == RAY)
 
     // global checks:

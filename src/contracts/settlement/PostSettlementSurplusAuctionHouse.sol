@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {
-  IPostSettlementSurplusAuctionHouse,
-  ICommonSurplusAuctionHouse
-} from '@interfaces/settlement/IPostSettlementSurplusAuctionHouse.sol';
+import {IPostSettlementSurplusAuctionHouse, ICommonSurplusAuctionHouse} from '@interfaces/settlement/IPostSettlementSurplusAuctionHouse.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IProtocolToken} from '@interfaces/tokens/IProtocolToken.sol';
 
@@ -21,7 +18,11 @@ import {Assertions} from '@libraries/Assertions.sol';
  * @notice This contract enables the sell of system coins in exchange for protocol tokens after Global Settlement is triggered
  * @dev    The reason to auction the post settlement surplus is to avoid incentives to trigger Global Settlement if the system has a surplus
  */
-contract PostSettlementSurplusAuctionHouse is Authorizable, Modifiable, IPostSettlementSurplusAuctionHouse {
+contract PostSettlementSurplusAuctionHouse is
+  Authorizable,
+  Modifiable,
+  IPostSettlementSurplusAuctionHouse
+{
   using Encoding for bytes;
   using SafeERC20 for IProtocolToken;
   using Assertions for address;
@@ -81,7 +82,10 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, Modifiable, IPostSet
   // --- Auction ---
 
   /// @inheritdoc ICommonSurplusAuctionHouse
-  function startAuction(uint256 _amountToSell, uint256 _initialBid) external isAuthorized returns (uint256 _id) {
+  function startAuction(
+    uint256 _amountToSell,
+    uint256 _initialBid
+  ) external isAuthorized returns (uint256 _id) {
     _id = ++auctionsStarted;
 
     _auctions[_id] = Auction({
@@ -118,7 +122,8 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, Modifiable, IPostSet
   function increaseBidSize(uint256 _id, uint256 _amountToBuy, uint256 _bid) external {
     Auction storage _auction = _auctions[_id];
     if (_auction.highBidder == address(0)) revert SAH_HighBidderNotSet();
-    if (_auction.bidExpiry <= block.timestamp && _auction.bidExpiry != 0) revert SAH_BidAlreadyExpired();
+    if (_auction.bidExpiry <= block.timestamp && _auction.bidExpiry != 0)
+      revert SAH_BidAlreadyExpired();
     if (_auction.auctionDeadline <= block.timestamp) revert SAH_AuctionAlreadyExpired();
     if (_amountToBuy != _auction.amountToSell) revert SAH_AmountsNotMatching();
     if (_bid <= _auction.bidAmount) revert SAH_BidNotHigher();
@@ -139,8 +144,10 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, Modifiable, IPostSet
   /// @inheritdoc ICommonSurplusAuctionHouse
   function settleAuction(uint256 _id) external {
     Auction memory _auction = _auctions[_id];
-    if (_auction.bidExpiry == 0 || (_auction.bidExpiry > block.timestamp && _auction.auctionDeadline > block.timestamp))
-    {
+    if (
+      _auction.bidExpiry == 0 ||
+      (_auction.bidExpiry > block.timestamp && _auction.auctionDeadline > block.timestamp)
+    ) {
       revert SAH_AuctionNotFinished();
     }
 

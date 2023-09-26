@@ -31,12 +31,14 @@ contract ODSafeManager is IODSafeManager {
   uint256 internal _safeId; // Auto incremental
   mapping(address _safeOwner => EnumerableSet.UintSet) private _usrSafes;
   /// @notice Mapping of user addresses to their enumerable set of safes per collateral type
-  mapping(address _safeOwner => mapping(bytes32 _cType => EnumerableSet.UintSet)) private _usrSafesPerCollat;
+  mapping(address _safeOwner => mapping(bytes32 _cType => EnumerableSet.UintSet))
+    private _usrSafesPerCollat;
   /// @notice Mapping of safe ids to their data
   mapping(uint256 _safeId => SAFEData) internal _safeData;
 
   /// @inheritdoc IODSafeManager
-  mapping(address _owner => mapping(uint256 _safeId => mapping(address _caller => uint256 _ok))) public safeCan;
+  mapping(address _owner => mapping(uint256 _safeId => mapping(address _caller => uint256 _ok)))
+    public safeCan;
   /// @inheritdoc IODSafeManager
   mapping(address _safeHandler => mapping(address _caller => uint256 _ok)) public handlerCan;
 
@@ -80,7 +82,9 @@ contract ODSafeManager is IODSafeManager {
   }
 
   /// @inheritdoc IODSafeManager
-  function getSafesData(address _usr)
+  function getSafesData(
+    address _usr
+  )
     external
     view
     returns (uint256[] memory _safes, address[] memory _safeHandlers, bytes32[] memory _cTypes)
@@ -159,40 +163,73 @@ contract ODSafeManager is IODSafeManager {
   ) external safeAllowed(_safe) {
     SAFEData memory _sData = _safeData[_safe];
     ISAFEEngine(safeEngine).modifySAFECollateralization(
-      _sData.collateralType, _sData.safeHandler, _sData.safeHandler, _sData.safeHandler, _deltaCollateral, _deltaDebt
+      _sData.collateralType,
+      _sData.safeHandler,
+      _sData.safeHandler,
+      _sData.safeHandler,
+      _deltaCollateral,
+      _deltaDebt
     );
     emit ModifySAFECollateralization(msg.sender, _safe, _deltaCollateral, _deltaDebt);
   }
 
   /// @inheritdoc IODSafeManager
-  function transferCollateral(uint256 _safe, address _dst, uint256 _wad) external safeAllowed(_safe) {
+  function transferCollateral(
+    uint256 _safe,
+    address _dst,
+    uint256 _wad
+  ) external safeAllowed(_safe) {
     SAFEData memory _sData = _safeData[_safe];
-    ISAFEEngine(safeEngine).transferCollateral(_sData.collateralType, _sData.safeHandler, _dst, _wad);
+    ISAFEEngine(safeEngine).transferCollateral(
+      _sData.collateralType,
+      _sData.safeHandler,
+      _dst,
+      _wad
+    );
     emit TransferCollateral(msg.sender, _safe, _dst, _wad);
   }
 
   /// @inheritdoc IODSafeManager
-  function transferCollateral(bytes32 _cType, uint256 _safe, address _dst, uint256 _wad) external safeAllowed(_safe) {
+  function transferCollateral(
+    bytes32 _cType,
+    uint256 _safe,
+    address _dst,
+    uint256 _wad
+  ) external safeAllowed(_safe) {
     SAFEData memory _sData = _safeData[_safe];
     ISAFEEngine(safeEngine).transferCollateral(_cType, _sData.safeHandler, _dst, _wad);
     emit TransferCollateral(msg.sender, _cType, _safe, _dst, _wad);
   }
 
   /// @inheritdoc IODSafeManager
-  function transferInternalCoins(uint256 _safe, address _dst, uint256 _rad) external safeAllowed(_safe) {
+  function transferInternalCoins(
+    uint256 _safe,
+    address _dst,
+    uint256 _rad
+  ) external safeAllowed(_safe) {
     SAFEData memory _sData = _safeData[_safe];
     ISAFEEngine(safeEngine).transferInternalCoins(_sData.safeHandler, _dst, _rad);
     emit TransferInternalCoins(msg.sender, _safe, _dst, _rad);
   }
 
   /// @inheritdoc IODSafeManager
-  function quitSystem(uint256 _safe, address _dst) external safeAllowed(_safe) handlerAllowed(_dst) {
+  function quitSystem(
+    uint256 _safe,
+    address _dst
+  ) external safeAllowed(_safe) handlerAllowed(_dst) {
     SAFEData memory _sData = _safeData[_safe];
-    ISAFEEngine.SAFE memory _safeInfo = ISAFEEngine(safeEngine).safes(_sData.collateralType, _sData.safeHandler);
+    ISAFEEngine.SAFE memory _safeInfo = ISAFEEngine(safeEngine).safes(
+      _sData.collateralType,
+      _sData.safeHandler
+    );
     int256 _deltaCollateral = _safeInfo.lockedCollateral.toInt();
     int256 _deltaDebt = _safeInfo.generatedDebt.toInt();
     ISAFEEngine(safeEngine).transferSAFECollateralAndDebt(
-      _sData.collateralType, _sData.safeHandler, _dst, _deltaCollateral, _deltaDebt
+      _sData.collateralType,
+      _sData.safeHandler,
+      _dst,
+      _deltaCollateral,
+      _deltaDebt
     );
 
     // Remove safe from owner's list (notice it doesn't erase safe ownership)
@@ -202,27 +239,47 @@ contract ODSafeManager is IODSafeManager {
   }
 
   /// @inheritdoc IODSafeManager
-  function enterSystem(address _src, uint256 _safe) external handlerAllowed(_src) safeAllowed(_safe) {
+  function enterSystem(
+    address _src,
+    uint256 _safe
+  ) external handlerAllowed(_src) safeAllowed(_safe) {
     SAFEData memory _sData = _safeData[_safe];
-    ISAFEEngine.SAFE memory _safeInfo = ISAFEEngine(safeEngine).safes(_sData.collateralType, _sData.safeHandler);
+    ISAFEEngine.SAFE memory _safeInfo = ISAFEEngine(safeEngine).safes(
+      _sData.collateralType,
+      _sData.safeHandler
+    );
     int256 _deltaCollateral = _safeInfo.lockedCollateral.toInt();
     int256 _deltaDebt = _safeInfo.generatedDebt.toInt();
     ISAFEEngine(safeEngine).transferSAFECollateralAndDebt(
-      _sData.collateralType, _src, _sData.safeHandler, _deltaCollateral, _deltaDebt
+      _sData.collateralType,
+      _src,
+      _sData.safeHandler,
+      _deltaCollateral,
+      _deltaDebt
     );
     emit EnterSystem(msg.sender, _src, _safe);
   }
 
   /// @inheritdoc IODSafeManager
-  function moveSAFE(uint256 _safeSrc, uint256 _safeDst) external safeAllowed(_safeSrc) safeAllowed(_safeDst) {
+  function moveSAFE(
+    uint256 _safeSrc,
+    uint256 _safeDst
+  ) external safeAllowed(_safeSrc) safeAllowed(_safeDst) {
     SAFEData memory _srcData = _safeData[_safeSrc];
     SAFEData memory _dstData = _safeData[_safeDst];
     if (_srcData.collateralType != _dstData.collateralType) revert CollateralTypesMismatch();
-    ISAFEEngine.SAFE memory _safeInfo = ISAFEEngine(safeEngine).safes(_srcData.collateralType, _srcData.safeHandler);
+    ISAFEEngine.SAFE memory _safeInfo = ISAFEEngine(safeEngine).safes(
+      _srcData.collateralType,
+      _srcData.safeHandler
+    );
     int256 _deltaCollateral = _safeInfo.lockedCollateral.toInt();
     int256 _deltaDebt = _safeInfo.generatedDebt.toInt();
     ISAFEEngine(safeEngine).transferSAFECollateralAndDebt(
-      _srcData.collateralType, _srcData.safeHandler, _dstData.safeHandler, _deltaCollateral, _deltaDebt
+      _srcData.collateralType,
+      _srcData.safeHandler,
+      _dstData.safeHandler,
+      _deltaCollateral,
+      _deltaDebt
     );
 
     // Remove safe from owner's list (notice it doesn't erase safe ownership)
@@ -246,9 +303,17 @@ contract ODSafeManager is IODSafeManager {
   }
 
   /// @inheritdoc IODSafeManager
-  function protectSAFE(uint256 _safe, address _liquidationEngine, address _saviour) external safeAllowed(_safe) {
+  function protectSAFE(
+    uint256 _safe,
+    address _liquidationEngine,
+    address _saviour
+  ) external safeAllowed(_safe) {
     SAFEData memory _sData = _safeData[_safe];
-    ILiquidationEngine(_liquidationEngine).protectSAFE(_sData.collateralType, _sData.safeHandler, _saviour);
+    ILiquidationEngine(_liquidationEngine).protectSAFE(
+      _sData.collateralType,
+      _sData.safeHandler,
+      _saviour
+    );
     emit ProtectSAFE(msg.sender, _safe, _liquidationEngine, _saviour);
   }
 }

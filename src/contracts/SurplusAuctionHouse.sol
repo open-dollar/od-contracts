@@ -96,7 +96,8 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
     uint256 _amountToSell,
     uint256 _initialBid
   ) external isAuthorized whenEnabled returns (uint256 _id) {
-    if (_params.bidReceiver == address(0) && _params.recyclingPercentage != 0) revert SAH_NullProtTokenReceiver();
+    if (_params.bidReceiver == address(0) && _params.recyclingPercentage != 0)
+      revert SAH_NullProtTokenReceiver();
     _id = ++auctionsStarted;
 
     _auctions[_id] = Auction({
@@ -127,14 +128,19 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
     if (_auction.bidExpiry != 0) revert SAH_BidAlreadyPlaced();
     _auction.auctionDeadline = block.timestamp + _params.totalAuctionLength;
 
-    emit RestartAuction({_id: _id, _blockTimestamp: block.timestamp, _auctionDeadline: _auction.auctionDeadline});
+    emit RestartAuction({
+      _id: _id,
+      _blockTimestamp: block.timestamp,
+      _auctionDeadline: _auction.auctionDeadline
+    });
   }
 
   /// @inheritdoc ICommonSurplusAuctionHouse
   function increaseBidSize(uint256 _id, uint256 _amountToBuy, uint256 _bid) external whenEnabled {
     Auction storage _auction = _auctions[_id];
     if (_auction.highBidder == address(0)) revert SAH_HighBidderNotSet();
-    if (_auction.bidExpiry <= block.timestamp && _auction.bidExpiry != 0) revert SAH_BidAlreadyExpired();
+    if (_auction.bidExpiry <= block.timestamp && _auction.bidExpiry != 0)
+      revert SAH_BidAlreadyExpired();
     if (_auction.auctionDeadline <= block.timestamp) revert SAH_AuctionAlreadyExpired();
     if (_amountToBuy != _auction.amountToSell) revert SAH_AmountsNotMatching();
     if (_bid <= _auction.bidAmount) revert SAH_BidNotHigher();
@@ -162,8 +168,10 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
   /// @inheritdoc ICommonSurplusAuctionHouse
   function settleAuction(uint256 _id) external whenEnabled {
     Auction memory _auction = _auctions[_id];
-    if (_auction.bidExpiry == 0 || (_auction.bidExpiry > block.timestamp && _auction.auctionDeadline > block.timestamp))
-    {
+    if (
+      _auction.bidExpiry == 0 ||
+      (_auction.bidExpiry > block.timestamp && _auction.auctionDeadline > block.timestamp)
+    ) {
       revert SAH_AuctionNotFinished();
     }
 

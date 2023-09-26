@@ -89,7 +89,8 @@ contract AccountingJob is Job, Authorizable, Modifiable, IAccountingJob {
     bool _bool = _data.toBool();
 
     if (_param == 'accountingEngine') accountingEngine = IAccountingEngine(_address);
-    else if (_param == 'stabilityFeeTreasury') stabilityFeeTreasury = IStabilityFeeTreasury(_address);
+    else if (_param == 'stabilityFeeTreasury')
+      stabilityFeeTreasury = IStabilityFeeTreasury(_address);
     else if (_param == 'shouldWorkPopDebtFromQueue') shouldWorkPopDebtFromQueue = _bool;
     else if (_param == 'shouldWorkAuctionDebt') shouldWorkAuctionDebt = _bool;
     else if (_param == 'shouldWorkAuctionSurplus') shouldWorkAuctionSurplus = _bool;

@@ -66,7 +66,8 @@ contract Deployment is Contracts, GoerliContracts, Script {
 
     taxCollector = TaxCollector(TaxCollector_Address);
     coinJoin = CoinJoin(CoinJoin_Address);
-    collateralJoin[WETH] =
-      CollateralJoin(CollateralJoinChild_0x5745544800000000000000000000000000000000000000000000000000000000_Address);
+    collateralJoin[WETH] = CollateralJoin(
+      CollateralJoinChild_0x5745544800000000000000000000000000000000000000000000000000000000_Address
+    );
   }
 }

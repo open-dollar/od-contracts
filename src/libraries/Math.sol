@@ -165,25 +165,45 @@ library Math {
       switch _x
       case 0 {
         switch _n
-        case 0 { _rpow := RAY }
-        default { _rpow := 0 }
+        case 0 {
+          _rpow := RAY
+        }
+        default {
+          _rpow := 0
+        }
       }
       default {
         switch mod(_n, 2)
-        case 0 { _rpow := RAY }
-        default { _rpow := _x }
+        case 0 {
+          _rpow := RAY
+        }
+        default {
+          _rpow := _x
+        }
         let half := div(RAY, 2) // for rounding.
-        for { _n := div(_n, 2) } _n { _n := div(_n, 2) } {
+        for {
+          _n := div(_n, 2)
+        } _n {
+          _n := div(_n, 2)
+        } {
           let _xx := mul(_x, _x)
-          if iszero(eq(div(_xx, _x), _x)) { revert(0, 0) }
+          if iszero(eq(div(_xx, _x), _x)) {
+            revert(0, 0)
+          }
           let _xxRound := add(_xx, half)
-          if lt(_xxRound, _xx) { revert(0, 0) }
+          if lt(_xxRound, _xx) {
+            revert(0, 0)
+          }
           _x := div(_xxRound, RAY)
           if mod(_n, 2) {
             let _zx := mul(_rpow, _x)
-            if and(iszero(iszero(_x)), iszero(eq(div(_zx, _x), _rpow))) { revert(0, 0) }
+            if and(iszero(iszero(_x)), iszero(eq(div(_zx, _x), _rpow))) {
+              revert(0, 0)
+            }
             let _zxRound := add(_zx, half)
-            if lt(_zxRound, _zx) { revert(0, 0) }
+            if lt(_zxRound, _zx) {
+              revert(0, 0)
+            }
             _rpow := div(_zxRound, RAY)
           }
         }

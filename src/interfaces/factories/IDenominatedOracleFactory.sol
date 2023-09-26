@@ -15,7 +15,10 @@ interface IDenominatedOracleFactory is IAuthorizable {
    * @param _inverted Boolean indicating if the denomination calculation quote should be inverted
    */
   event NewDenominatedOracle(
-    address indexed _denominatedOracle, address _priceSource, address _denominationPriceSource, bool _inverted
+    address indexed _denominatedOracle,
+    address _priceSource,
+    address _denominationPriceSource,
+    bool _inverted
   );
 
   // --- Methods ---
@@ -41,5 +44,8 @@ interface IDenominatedOracleFactory is IAuthorizable {
    * @notice Getter for the list of DenominatedOracle contracts
    * @return _denominatedOraclesList List of DenominatedOracle contracts
    */
-  function denominatedOraclesList() external view returns (address[] memory _denominatedOraclesList);
+  function denominatedOraclesList()
+    external
+    view
+    returns (address[] memory _denominatedOraclesList);
 }

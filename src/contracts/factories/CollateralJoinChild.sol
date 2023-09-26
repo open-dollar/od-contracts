@@ -28,7 +28,12 @@ contract CollateralJoinChild is CollateralJoin, DisableableChild, ICollateralJoi
   // --- Overrides ---
 
   /// @inheritdoc DisableableChild
-  function _isEnabled() internal view override(DisableableChild, Disableable) returns (bool _enabled) {
+  function _isEnabled()
+    internal
+    view
+    override(DisableableChild, Disableable)
+    returns (bool _enabled)
+  {
     return super._isEnabled();
   }
 

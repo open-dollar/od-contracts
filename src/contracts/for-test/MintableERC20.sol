@@ -22,7 +22,13 @@ contract MintableERC20 is IERC20Metadata, ERC20 {
   }
 
   /// @inheritdoc IERC20Metadata
-  function decimals() public view virtual override(ERC20, IERC20Metadata) returns (uint8 __decimals) {
+  function decimals()
+    public
+    view
+    virtual
+    override(ERC20, IERC20Metadata)
+    returns (uint8 __decimals)
+  {
     return _decimals;
   }
 

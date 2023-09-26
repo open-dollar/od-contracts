@@ -44,18 +44,40 @@ abstract contract Base is HaiTest {
   }
 
   function _mockTokenCollateral(bytes32 _cType, address _account, uint256 _wad) internal {
-    stdstore.target(address(safeEngine)).sig(ISAFEEngine.tokenCollateral.selector).with_key(_cType).with_key(_account)
+    stdstore
+      .target(address(safeEngine))
+      .sig(ISAFEEngine.tokenCollateral.selector)
+      .with_key(_cType)
+      .with_key(_account)
       .checked_write(_wad);
   }
 
   function _mockCoinBalance(address _account, uint256 _rad) internal {
-    stdstore.target(address(safeEngine)).sig(ISAFEEngine.coinBalance.selector).with_key(_account).checked_write(_rad);
+    stdstore
+      .target(address(safeEngine))
+      .sig(ISAFEEngine.coinBalance.selector)
+      .with_key(_account)
+      .checked_write(_rad);
   }
 
-  function _mockSafeData(bytes32 _cType, address _safe, ISAFEEngine.SAFE memory _safeData) internal {
-    stdstore.target(address(safeEngine)).sig(ISAFEEngine.safes.selector).with_key(_cType).with_key(_safe).depth(0)
+  function _mockSafeData(
+    bytes32 _cType,
+    address _safe,
+    ISAFEEngine.SAFE memory _safeData
+  ) internal {
+    stdstore
+      .target(address(safeEngine))
+      .sig(ISAFEEngine.safes.selector)
+      .with_key(_cType)
+      .with_key(_safe)
+      .depth(0)
       .checked_write(_safeData.lockedCollateral);
-    stdstore.target(address(safeEngine)).sig(ISAFEEngine.safes.selector).with_key(_cType).with_key(_safe).depth(1)
+    stdstore
+      .target(address(safeEngine))
+      .sig(ISAFEEngine.safes.selector)
+      .with_key(_cType)
+      .with_key(_safe)
+      .depth(1)
       .checked_write(_safeData.generatedDebt);
   }
 
@@ -63,41 +85,68 @@ abstract contract Base is HaiTest {
     SAFEEngineForTest(address(safeEngine)).addToCollateralList(_cType);
   }
 
-  function _mockCollateralType(bytes32 _cType, ISAFEEngine.SAFEEngineCollateralData memory _cData) internal {
+  function _mockCollateralType(
+    bytes32 _cType,
+    ISAFEEngine.SAFEEngineCollateralData memory _cData
+  ) internal {
     // cData
-    stdstore.target(address(safeEngine)).sig(ISAFEEngine.cData.selector).with_key(_cType).depth(0).checked_write(
-      _cData.debtAmount
-    );
-    stdstore.target(address(safeEngine)).sig(ISAFEEngine.cData.selector).with_key(_cType).depth(1).checked_write(
-      _cData.lockedAmount
-    );
-    stdstore.target(address(safeEngine)).sig(ISAFEEngine.cData.selector).with_key(_cType).depth(2).checked_write(
-      _cData.accumulatedRate
-    );
-    stdstore.target(address(safeEngine)).sig(ISAFEEngine.cData.selector).with_key(_cType).depth(3).checked_write(
-      _cData.safetyPrice
-    );
-    stdstore.target(address(safeEngine)).sig(ISAFEEngine.cData.selector).with_key(_cType).depth(4).checked_write(
-      _cData.liquidationPrice
-    );
+    stdstore
+      .target(address(safeEngine))
+      .sig(ISAFEEngine.cData.selector)
+      .with_key(_cType)
+      .depth(0)
+      .checked_write(_cData.debtAmount);
+    stdstore
+      .target(address(safeEngine))
+      .sig(ISAFEEngine.cData.selector)
+      .with_key(_cType)
+      .depth(1)
+      .checked_write(_cData.lockedAmount);
+    stdstore
+      .target(address(safeEngine))
+      .sig(ISAFEEngine.cData.selector)
+      .with_key(_cType)
+      .depth(2)
+      .checked_write(_cData.accumulatedRate);
+    stdstore
+      .target(address(safeEngine))
+      .sig(ISAFEEngine.cData.selector)
+      .with_key(_cType)
+      .depth(3)
+      .checked_write(_cData.safetyPrice);
+    stdstore
+      .target(address(safeEngine))
+      .sig(ISAFEEngine.cData.selector)
+      .with_key(_cType)
+      .depth(4)
+      .checked_write(_cData.liquidationPrice);
   }
 
-  function _mockCollateralParams(bytes32 _cType, ISAFEEngine.SAFEEngineCollateralParams memory _cParams) internal {
+  function _mockCollateralParams(
+    bytes32 _cType,
+    ISAFEEngine.SAFEEngineCollateralParams memory _cParams
+  ) internal {
     // cParams
     _mockDebtCeiling(_cType, _cParams.debtCeiling);
     _mockDebtFloor(_cType, _cParams.debtFloor);
   }
 
   function _mockDebtCeiling(bytes32 _cType, uint256 _debtCeiling) internal {
-    stdstore.target(address(safeEngine)).sig(ISAFEEngine.cParams.selector).with_key(_cType).depth(0).checked_write(
-      _debtCeiling
-    );
+    stdstore
+      .target(address(safeEngine))
+      .sig(ISAFEEngine.cParams.selector)
+      .with_key(_cType)
+      .depth(0)
+      .checked_write(_debtCeiling);
   }
 
   function _mockDebtFloor(bytes32 _cType, uint256 _debtFloor) internal {
-    stdstore.target(address(safeEngine)).sig(ISAFEEngine.cParams.selector).with_key(_cType).depth(1).checked_write(
-      _debtFloor
-    );
+    stdstore
+      .target(address(safeEngine))
+      .sig(ISAFEEngine.cParams.selector)
+      .with_key(_cType)
+      .depth(1)
+      .checked_write(_debtFloor);
   }
 
   function _mockParams(ISAFEEngine.SAFEEngineParams memory _params) internal {
@@ -106,31 +155,49 @@ abstract contract Base is HaiTest {
   }
 
   function _mockSafeDebtCeiling(uint256 _safeDebtCeiling) internal {
-    stdstore.target(address(safeEngine)).sig(ISAFEEngine.params.selector).depth(0).checked_write(_safeDebtCeiling);
+    stdstore.target(address(safeEngine)).sig(ISAFEEngine.params.selector).depth(0).checked_write(
+      _safeDebtCeiling
+    );
   }
 
   function _mockGlobalDebtCeiling(uint256 _globalDebtCeiling) internal {
-    stdstore.target(address(safeEngine)).sig(ISAFEEngine.params.selector).depth(1).checked_write(_globalDebtCeiling);
+    stdstore.target(address(safeEngine)).sig(ISAFEEngine.params.selector).depth(1).checked_write(
+      _globalDebtCeiling
+    );
   }
 
   function _mockGlobalUnbackedDebt(uint256 _globalUnbackedDebt) internal {
-    stdstore.target(address(safeEngine)).sig(ISAFEEngine.globalUnbackedDebt.selector).checked_write(_globalUnbackedDebt);
+    stdstore.target(address(safeEngine)).sig(ISAFEEngine.globalUnbackedDebt.selector).checked_write(
+      _globalUnbackedDebt
+    );
   }
 
   function _mockDebtBalance(address _account, uint256 _rad) internal {
-    stdstore.target(address(safeEngine)).sig(ISAFEEngine.debtBalance.selector).with_key(_account).checked_write(_rad);
+    stdstore
+      .target(address(safeEngine))
+      .sig(ISAFEEngine.debtBalance.selector)
+      .with_key(_account)
+      .checked_write(_rad);
   }
 
   function _mockGlobalDebt(uint256 _globalDebt) internal {
-    stdstore.target(address(safeEngine)).sig(ISAFEEngine.globalDebt.selector).checked_write(_globalDebt);
+    stdstore.target(address(safeEngine)).sig(ISAFEEngine.globalDebt.selector).checked_write(
+      _globalDebt
+    );
   }
 
   function _mockContractEnabled(bool _contractEnabled) internal {
-    stdstore.target(address(safeEngine)).sig(IDisableable.contractEnabled.selector).checked_write(_contractEnabled);
+    stdstore.target(address(safeEngine)).sig(IDisableable.contractEnabled.selector).checked_write(
+      _contractEnabled
+    );
   }
 
   function _mockCanModifySafe(address _safe, address _account, uint256 _canModifySafe) internal {
-    stdstore.target(address(safeEngine)).sig(ISAFEEngine.safeRights.selector).with_key(_safe).with_key(_account)
+    stdstore
+      .target(address(safeEngine))
+      .sig(ISAFEEngine.safeRights.selector)
+      .with_key(_safe)
+      .with_key(_account)
       .checked_write(_canModifySafe);
   }
 }
@@ -159,7 +226,9 @@ contract Unit_SAFEEngine_Constructor is Base {
     safeEngine = new SAFEEngineForTest(safeEngineParams);
   }
 
-  function test_Set_SAFEEngine_Params(ISAFEEngine.SAFEEngineParams memory _safeEngineParams) public {
+  function test_Set_SAFEEngine_Params(
+    ISAFEEngine.SAFEEngineParams memory _safeEngineParams
+  ) public {
     safeEngine = new SAFEEngineForTest(_safeEngineParams);
     assertEq(abi.encode(safeEngine.params()), abi.encode(_safeEngineParams));
   }
@@ -194,14 +263,18 @@ contract Unit_SAFEEngine_ModifyParameters is Base {
     safeEngine.modifyParameters('unrecognizedParam', abi.encode(0));
   }
 
-  function test_Revert_ModifyParameters_PerCollateral_UnrecognizedParam(bytes32 _cType) public authorized {
+  function test_Revert_ModifyParameters_PerCollateral_UnrecognizedParam(
+    bytes32 _cType
+  ) public authorized {
     _mockCollateralList(_cType);
 
     vm.expectRevert(IModifiable.UnrecognizedParam.selector);
     safeEngine.modifyParameters(_cType, 'unrecognizedParam', abi.encode(0));
   }
 
-  function test_Revert_ModifyParameters_PerCollateral_UnrecognizedCType(bytes32 _cType) public authorized {
+  function test_Revert_ModifyParameters_PerCollateral_UnrecognizedCType(
+    bytes32 _cType
+  ) public authorized {
     vm.expectRevert(IModifiable.UnrecognizedCType.selector);
     safeEngine.modifyParameters(_cType, '', abi.encode(0));
   }
@@ -210,14 +283,23 @@ contract Unit_SAFEEngine_ModifyParameters is Base {
 contract Unit_SAFEEngine_ModifyCollateralBalance is Base {
   using Math for uint256;
 
-  event TransferCollateral(bytes32 indexed _cType, address indexed _src, address indexed _dst, uint256 _wad);
+  event TransferCollateral(
+    bytes32 indexed _cType,
+    address indexed _src,
+    address indexed _dst,
+    uint256 _wad
+  );
 
   function _assumeHappyPath(uint256 _initialCollateral, int256 _wad) internal pure {
     if (_wad == 0) return;
     vm.assume(notUnderOrOverflowAdd(_initialCollateral, _wad));
   }
 
-  function test_Set_TokenCollateral(uint256 _intialCollateral, bytes32 _cType, int256 _wad) public authorized {
+  function test_Set_TokenCollateral(
+    uint256 _intialCollateral,
+    bytes32 _cType,
+    int256 _wad
+  ) public authorized {
     _assumeHappyPath(_intialCollateral, _wad);
     _mockTokenCollateral(_cType, account, _intialCollateral);
 
@@ -236,7 +318,10 @@ contract Unit_SAFEEngine_ModifyCollateralBalance is Base {
     safeEngine.modifyCollateralBalance(collateralType, account, 0);
   }
 
-  function test_Emit_TransferCollateral_Positive(uint256 _intialCollateral, int256 _wad) public authorized {
+  function test_Emit_TransferCollateral_Positive(
+    uint256 _intialCollateral,
+    int256 _wad
+  ) public authorized {
     vm.assume(_wad > 0);
     _assumeHappyPath(_intialCollateral, _wad);
     _mockTokenCollateral(collateralType, account, _intialCollateral);
@@ -247,7 +332,10 @@ contract Unit_SAFEEngine_ModifyCollateralBalance is Base {
     safeEngine.modifyCollateralBalance(collateralType, account, _wad);
   }
 
-  function test_Emit_TransferCollateral_Negative(uint256 _intialCollateral, int256 _wad) public authorized {
+  function test_Emit_TransferCollateral_Negative(
+    uint256 _intialCollateral,
+    int256 _wad
+  ) public authorized {
     vm.assume(_wad < 0);
     _assumeHappyPath(_intialCollateral, _wad);
     _mockTokenCollateral(collateralType, account, _intialCollateral);
@@ -265,9 +353,18 @@ contract Unit_SAFEEngine_ModifyCollateralBalance is Base {
 }
 
 contract Unit_SAFEEngine_TransferCollateral is Base {
-  event TransferCollateral(bytes32 indexed _cType, address indexed _src, address indexed _dst, uint256 _wad);
+  event TransferCollateral(
+    bytes32 indexed _cType,
+    address indexed _src,
+    address indexed _dst,
+    uint256 _wad
+  );
 
-  function _assumeHappyPath(uint256 _initialCollateralSrc, uint256 _initialCollateralDst, uint256 _wad) internal pure {
+  function _assumeHappyPath(
+    uint256 _initialCollateralSrc,
+    uint256 _initialCollateralDst,
+    uint256 _wad
+  ) internal pure {
     vm.assume(notUnderflow(_initialCollateralSrc, _wad));
     vm.assume(notOverflowAdd(_initialCollateralDst, _wad));
   }
@@ -331,7 +428,11 @@ contract Unit_SAFEEngine_TransferCollateral is Base {
 contract Unit_SAFEEngine_TransferInternalCoins is Base {
   event TransferInternalCoins(address indexed _src, address indexed _dst, uint256 _rad);
 
-  function _assumeHappyPath(uint256 _initialBalanceSrc, uint256 _initialBalanceDst, uint256 _rad) internal pure {
+  function _assumeHappyPath(
+    uint256 _initialBalanceSrc,
+    uint256 _initialBalanceDst,
+    uint256 _rad
+  ) internal pure {
     vm.assume(notUnderflow(_initialBalanceSrc, _rad));
     vm.assume(notOverflowAdd(_initialBalanceDst, _rad));
   }
@@ -341,7 +442,11 @@ contract Unit_SAFEEngine_TransferInternalCoins is Base {
     _mockCoinBalance(dst, _initialBalanceDst);
   }
 
-  function test_Set_CoinsBalanceSrc(uint256 _initialBalanceSrc, uint256 _initialBalanceDst, uint256 _rad) public {
+  function test_Set_CoinsBalanceSrc(
+    uint256 _initialBalanceSrc,
+    uint256 _initialBalanceDst,
+    uint256 _rad
+  ) public {
     _assumeHappyPath(_initialBalanceSrc, _initialBalanceDst, _rad);
     _mockValues(_initialBalanceSrc, _initialBalanceDst);
 
@@ -351,7 +456,11 @@ contract Unit_SAFEEngine_TransferInternalCoins is Base {
     assertEq(safeEngine.coinBalance(src), _initialBalanceSrc - _rad);
   }
 
-  function test_Set_CoinsBalanceDst(uint256 _initialBalanceSrc, uint256 _initialBalanceDst, uint256 _rad) public {
+  function test_Set_CoinsBalanceDst(
+    uint256 _initialBalanceSrc,
+    uint256 _initialBalanceDst,
+    uint256 _rad
+  ) public {
     _assumeHappyPath(_initialBalanceSrc, _initialBalanceDst, _rad);
     _mockValues(_initialBalanceSrc, _initialBalanceDst);
 
@@ -361,7 +470,11 @@ contract Unit_SAFEEngine_TransferInternalCoins is Base {
     assertEq(safeEngine.coinBalance(dst), _initialBalanceDst + _rad);
   }
 
-  function test_Emit_TransferInternalCoins(uint256 _initialBalanceSrc, uint256 _initialBalanceDst, uint256 _rad) public {
+  function test_Emit_TransferInternalCoins(
+    uint256 _initialBalanceSrc,
+    uint256 _initialBalanceDst,
+    uint256 _rad
+  ) public {
     _assumeHappyPath(_initialBalanceSrc, _initialBalanceDst, _rad);
     _mockValues(_initialBalanceSrc, _initialBalanceDst);
 
@@ -416,7 +529,13 @@ contract Unit_SAFEEngine_SettleDebt is Base {
     uint256 _globalDebt,
     uint256 _rad
   ) public {
-    _assumeHappyPath(_initialDebtBalance, _initialCoinBalance, _initialGlobalUnbackedDebt, _globalDebt, _rad);
+    _assumeHappyPath(
+      _initialDebtBalance,
+      _initialCoinBalance,
+      _initialGlobalUnbackedDebt,
+      _globalDebt,
+      _rad
+    );
     _mockValues(_initialDebtBalance, _initialCoinBalance, _initialGlobalUnbackedDebt, _globalDebt);
 
     vm.prank(account);
@@ -432,7 +551,13 @@ contract Unit_SAFEEngine_SettleDebt is Base {
     uint256 _globalDebt,
     uint256 _rad
   ) public {
-    _assumeHappyPath(_initialDebtBalance, _initialCoinBalance, _initialGlobalUnbackedDebt, _globalDebt, _rad);
+    _assumeHappyPath(
+      _initialDebtBalance,
+      _initialCoinBalance,
+      _initialGlobalUnbackedDebt,
+      _globalDebt,
+      _rad
+    );
     _mockValues(_initialDebtBalance, _initialCoinBalance, _initialGlobalUnbackedDebt, _globalDebt);
 
     vm.prank(account);
@@ -448,7 +573,13 @@ contract Unit_SAFEEngine_SettleDebt is Base {
     uint256 _globalDebt,
     uint256 _rad
   ) public {
-    _assumeHappyPath(_initialDebtBalance, _initialCoinBalance, _initialGlobalUnbackedDebt, _globalDebt, _rad);
+    _assumeHappyPath(
+      _initialDebtBalance,
+      _initialCoinBalance,
+      _initialGlobalUnbackedDebt,
+      _globalDebt,
+      _rad
+    );
     _mockValues(_initialDebtBalance, _initialCoinBalance, _initialGlobalUnbackedDebt, _globalDebt);
 
     vm.prank(account);
@@ -464,7 +595,13 @@ contract Unit_SAFEEngine_SettleDebt is Base {
     uint256 _globalDebt,
     uint256 _rad
   ) public {
-    _assumeHappyPath(_initialDebtBalance, _initialCoinBalance, _initialGlobalUnbackedDebt, _globalDebt, _rad);
+    _assumeHappyPath(
+      _initialDebtBalance,
+      _initialCoinBalance,
+      _initialGlobalUnbackedDebt,
+      _globalDebt,
+      _rad
+    );
     _mockValues(_initialDebtBalance, _initialCoinBalance, _initialGlobalUnbackedDebt, _globalDebt);
 
     vm.prank(account);
@@ -480,7 +617,13 @@ contract Unit_SAFEEngine_SettleDebt is Base {
     uint256 _globalDebt,
     uint256 _rad
   ) public {
-    _assumeHappyPath(_initialDebtBalance, _initialCoinBalance, _initialGlobalUnbackedDebt, _globalDebt, _rad);
+    _assumeHappyPath(
+      _initialDebtBalance,
+      _initialCoinBalance,
+      _initialGlobalUnbackedDebt,
+      _globalDebt,
+      _rad
+    );
     _mockValues(_initialDebtBalance, _initialCoinBalance, _initialGlobalUnbackedDebt, _globalDebt);
 
     vm.expectEmit();
@@ -492,7 +635,11 @@ contract Unit_SAFEEngine_SettleDebt is Base {
 }
 
 contract Unit_SAFEEngine_CreateUnbackedDebt is Base {
-  event CreateUnbackedDebt(address indexed _debtDestination, address indexed _coinDestination, uint256 _rad);
+  event CreateUnbackedDebt(
+    address indexed _debtDestination,
+    address indexed _coinDestination,
+    uint256 _rad
+  );
 
   function _mockValues(
     uint256 _initialDebtBalance,
@@ -527,7 +674,13 @@ contract Unit_SAFEEngine_CreateUnbackedDebt is Base {
     uint256 _globalDebt,
     uint256 _rad
   ) public authorized {
-    _assumeHappyPath(_initialDebtBalance, _initialCoinBalance, _initialGlobalUnbackedDebt, _globalDebt, _rad);
+    _assumeHappyPath(
+      _initialDebtBalance,
+      _initialCoinBalance,
+      _initialGlobalUnbackedDebt,
+      _globalDebt,
+      _rad
+    );
     _mockValues(_initialDebtBalance, _initialCoinBalance, _initialGlobalUnbackedDebt, _globalDebt);
 
     safeEngine.createUnbackedDebt(debtDestination, coinDestination, _rad);
@@ -542,7 +695,13 @@ contract Unit_SAFEEngine_CreateUnbackedDebt is Base {
     uint256 _globalDebt,
     uint256 _rad
   ) public authorized {
-    _assumeHappyPath(_initialDebtBalance, _initialCoinBalance, _initialGlobalUnbackedDebt, _globalDebt, _rad);
+    _assumeHappyPath(
+      _initialDebtBalance,
+      _initialCoinBalance,
+      _initialGlobalUnbackedDebt,
+      _globalDebt,
+      _rad
+    );
     _mockValues(_initialDebtBalance, _initialCoinBalance, _initialGlobalUnbackedDebt, _globalDebt);
 
     safeEngine.createUnbackedDebt(debtDestination, coinDestination, _rad);
@@ -557,7 +716,13 @@ contract Unit_SAFEEngine_CreateUnbackedDebt is Base {
     uint256 _globalDebt,
     uint256 _rad
   ) public authorized {
-    _assumeHappyPath(_initialDebtBalance, _initialCoinBalance, _initialGlobalUnbackedDebt, _globalDebt, _rad);
+    _assumeHappyPath(
+      _initialDebtBalance,
+      _initialCoinBalance,
+      _initialGlobalUnbackedDebt,
+      _globalDebt,
+      _rad
+    );
     _mockValues(_initialDebtBalance, _initialCoinBalance, _initialGlobalUnbackedDebt, _globalDebt);
 
     safeEngine.createUnbackedDebt(debtDestination, coinDestination, _rad);
@@ -572,7 +737,13 @@ contract Unit_SAFEEngine_CreateUnbackedDebt is Base {
     uint256 _globalDebt,
     uint256 _rad
   ) public authorized {
-    _assumeHappyPath(_initialDebtBalance, _initialCoinBalance, _initialGlobalUnbackedDebt, _globalDebt, _rad);
+    _assumeHappyPath(
+      _initialDebtBalance,
+      _initialCoinBalance,
+      _initialGlobalUnbackedDebt,
+      _globalDebt,
+      _rad
+    );
     _mockValues(_initialDebtBalance, _initialCoinBalance, _initialGlobalUnbackedDebt, _globalDebt);
 
     safeEngine.createUnbackedDebt(debtDestination, coinDestination, _rad);
@@ -587,7 +758,13 @@ contract Unit_SAFEEngine_CreateUnbackedDebt is Base {
     uint256 _globalDebt,
     uint256 _rad
   ) public authorized {
-    _assumeHappyPath(_initialDebtBalance, _initialCoinBalance, _initialGlobalUnbackedDebt, _globalDebt, _rad);
+    _assumeHappyPath(
+      _initialDebtBalance,
+      _initialCoinBalance,
+      _initialGlobalUnbackedDebt,
+      _globalDebt,
+      _rad
+    );
     _mockValues(_initialDebtBalance, _initialCoinBalance, _initialGlobalUnbackedDebt, _globalDebt);
 
     vm.expectEmit();
@@ -613,7 +790,9 @@ contract Unit_SAFEEngine_UpdateAccumulatedRate is Base {
   function _assumeHappyPath(UpdateAccumulatedRateScenario memory _scenario) internal pure {
     vm.assume(notUnderOrOverflowMul(_scenario.collateralTypeDebtAmount, _scenario.rateMultiplier));
     int256 _deltaSurplus = int256(_scenario.collateralTypeDebtAmount) * _scenario.rateMultiplier;
-    vm.assume(notUnderOrOverflowAdd(_scenario.collateralTypeAccumulatedRate, _scenario.rateMultiplier));
+    vm.assume(
+      notUnderOrOverflowAdd(_scenario.collateralTypeAccumulatedRate, _scenario.rateMultiplier)
+    );
     vm.assume(notUnderOrOverflowAdd(_scenario.initialGlobalDebt, _deltaSurplus));
     vm.assume(notUnderOrOverflowAdd(_scenario.surplusDstCoinBalance, _deltaSurplus));
   }
@@ -633,14 +812,19 @@ contract Unit_SAFEEngine_UpdateAccumulatedRate is Base {
     _mockGlobalDebt(_scenario.initialGlobalDebt);
   }
 
-  function test_Set_AccumulatedRate(UpdateAccumulatedRateScenario memory _scenario) public authorized {
+  function test_Set_AccumulatedRate(
+    UpdateAccumulatedRateScenario memory _scenario
+  ) public authorized {
     _assumeHappyPath(_scenario);
     _mockValues(_scenario);
 
     safeEngine.updateAccumulatedRate(collateralType, surplusDst, _scenario.rateMultiplier);
 
     uint256 _newAccumulatedRate = safeEngine.cData(collateralType).accumulatedRate;
-    assertEq(_newAccumulatedRate, _scenario.collateralTypeAccumulatedRate.add(_scenario.rateMultiplier));
+    assertEq(
+      _newAccumulatedRate,
+      _scenario.collateralTypeAccumulatedRate.add(_scenario.rateMultiplier)
+    );
   }
 
   function test_Set_CoinBalance(UpdateAccumulatedRateScenario memory _scenario) public authorized {
@@ -651,7 +835,9 @@ contract Unit_SAFEEngine_UpdateAccumulatedRate is Base {
 
     assertEq(
       safeEngine.coinBalance(surplusDst),
-      _scenario.surplusDstCoinBalance.add(_scenario.collateralTypeDebtAmount.mul(_scenario.rateMultiplier))
+      _scenario.surplusDstCoinBalance.add(
+        _scenario.collateralTypeDebtAmount.mul(_scenario.rateMultiplier)
+      )
     );
   }
 
@@ -663,11 +849,15 @@ contract Unit_SAFEEngine_UpdateAccumulatedRate is Base {
 
     assertEq(
       safeEngine.globalDebt(),
-      _scenario.initialGlobalDebt.add(_scenario.collateralTypeDebtAmount.mul(_scenario.rateMultiplier))
+      _scenario.initialGlobalDebt.add(
+        _scenario.collateralTypeDebtAmount.mul(_scenario.rateMultiplier)
+      )
     );
   }
 
-  function test_Emit_UpdateAccumulatedRate(UpdateAccumulatedRateScenario memory _scenario) public authorized {
+  function test_Emit_UpdateAccumulatedRate(
+    UpdateAccumulatedRateScenario memory _scenario
+  ) public authorized {
     _assumeHappyPath(_scenario);
     _mockValues(_scenario);
 
@@ -721,9 +911,13 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
     vm.assume(notUnderOrOverflowSub(_scenario.collateralBalance, _scenario.deltaCollateral));
 
     // modify safe collateralization
-    vm.assume(notUnderOrOverflowAdd(_scenario.safeData.lockedCollateral, _scenario.deltaCollateral));
+    vm.assume(
+      notUnderOrOverflowAdd(_scenario.safeData.lockedCollateral, _scenario.deltaCollateral)
+    );
     vm.assume(notUnderOrOverflowAdd(_scenario.safeData.generatedDebt, _scenario.deltaDebt));
-    uint256 _newLockedCollateral = _scenario.safeData.lockedCollateral.add(_scenario.deltaCollateral);
+    uint256 _newLockedCollateral = _scenario.safeData.lockedCollateral.add(
+      _scenario.deltaCollateral
+    );
     uint256 _newSafeDebt = _scenario.safeData.generatedDebt.add(_scenario.deltaDebt);
 
     // modify collateral debt
@@ -758,12 +952,16 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
   function _mockValues(ModifySAFECollateralizationScenario memory _scenario) internal {
     // NOTE: it mocks the system in the most permissive way possible (floors: 0 and ceilings: max)
     _mockParams(
-      ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: type(uint256).max})
+      ISAFEEngine.SAFEEngineParams({
+        safeDebtCeiling: type(uint256).max,
+        globalDebtCeiling: type(uint256).max
+      })
     );
     _mockSafeData(collateralType, safe, _scenario.safeData);
     _mockCollateralType(collateralType, _scenario.cData);
     _mockCollateralParams(
-      collateralType, ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: type(uint256).max, debtFloor: 0})
+      collateralType,
+      ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: type(uint256).max, debtFloor: 0})
     );
     _mockCoinBalance(debtDestination, _scenario.coinBalance);
     _mockTokenCollateral(collateralType, src, _scenario.collateralBalance);
@@ -778,39 +976,54 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
     _;
   }
 
-  function test_Set_SafeDataLockedCollateral(ModifySAFECollateralizationScenario memory _scenario)
-    public
-    happyPath(_scenario)
-  {
+  function test_Set_SafeDataLockedCollateral(
+    ModifySAFECollateralizationScenario memory _scenario
+  ) public happyPath(_scenario) {
     vm.prank(safe);
     safeEngine.modifySAFECollateralization(
-      collateralType, safe, src, debtDestination, _scenario.deltaCollateral, _scenario.deltaDebt
+      collateralType,
+      safe,
+      src,
+      debtDestination,
+      _scenario.deltaCollateral,
+      _scenario.deltaDebt
     );
 
     uint256 _newLockedCollateral = safeEngine.safes(collateralType, safe).lockedCollateral;
-    assertEq(_newLockedCollateral, _scenario.safeData.lockedCollateral.add(_scenario.deltaCollateral));
+    assertEq(
+      _newLockedCollateral,
+      _scenario.safeData.lockedCollateral.add(_scenario.deltaCollateral)
+    );
   }
 
-  function test_Set_SafeDataGeneratedDebt(ModifySAFECollateralizationScenario memory _scenario)
-    public
-    happyPath(_scenario)
-  {
+  function test_Set_SafeDataGeneratedDebt(
+    ModifySAFECollateralizationScenario memory _scenario
+  ) public happyPath(_scenario) {
     vm.prank(safe);
     safeEngine.modifySAFECollateralization(
-      collateralType, safe, src, debtDestination, _scenario.deltaCollateral, _scenario.deltaDebt
+      collateralType,
+      safe,
+      src,
+      debtDestination,
+      _scenario.deltaCollateral,
+      _scenario.deltaDebt
     );
 
     uint256 _newGeneratedDebt = safeEngine.safes(collateralType, safe).generatedDebt;
     assertEq(_newGeneratedDebt, _scenario.safeData.generatedDebt.add(_scenario.deltaDebt));
   }
 
-  function test_Set_CollateralTypeDataDebtAmount(ModifySAFECollateralizationScenario memory _scenario)
-    public
-    happyPath(_scenario)
-  {
+  function test_Set_CollateralTypeDataDebtAmount(
+    ModifySAFECollateralizationScenario memory _scenario
+  ) public happyPath(_scenario) {
     vm.prank(safe);
     safeEngine.modifySAFECollateralization(
-      collateralType, safe, src, debtDestination, _scenario.deltaCollateral, _scenario.deltaDebt
+      collateralType,
+      safe,
+      src,
+      debtDestination,
+      _scenario.deltaCollateral,
+      _scenario.deltaDebt
     );
 
     uint256 _newDebtAmount = safeEngine.cData(collateralType).debtAmount;
@@ -818,13 +1031,17 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
     assertEq(_newDebtAmount, _scenario.cData.debtAmount.add(_scenario.deltaDebt));
   }
 
-  function test_Set_CollateralTypeDataLockedAmount(ModifySAFECollateralizationScenario memory _scenario)
-    public
-    happyPath(_scenario)
-  {
+  function test_Set_CollateralTypeDataLockedAmount(
+    ModifySAFECollateralizationScenario memory _scenario
+  ) public happyPath(_scenario) {
     vm.prank(safe);
     safeEngine.modifySAFECollateralization(
-      collateralType, safe, src, debtDestination, _scenario.deltaCollateral, _scenario.deltaDebt
+      collateralType,
+      safe,
+      src,
+      debtDestination,
+      _scenario.deltaCollateral,
+      _scenario.deltaDebt
     );
 
     uint256 _newLockedAmount = safeEngine.cData(collateralType).lockedAmount;
@@ -832,32 +1049,55 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
     assertEq(_newLockedAmount, _scenario.cData.lockedAmount.add(_scenario.deltaCollateral));
   }
 
-  function test_Set_GlobalDebt(ModifySAFECollateralizationScenario memory _scenario) public happyPath(_scenario) {
+  function test_Set_GlobalDebt(
+    ModifySAFECollateralizationScenario memory _scenario
+  ) public happyPath(_scenario) {
     vm.prank(safe);
     safeEngine.modifySAFECollateralization(
-      collateralType, safe, src, debtDestination, _scenario.deltaCollateral, _scenario.deltaDebt
+      collateralType,
+      safe,
+      src,
+      debtDestination,
+      _scenario.deltaCollateral,
+      _scenario.deltaDebt
     );
 
     assertEq(
-      safeEngine.globalDebt(), _scenario.globalDebt.add(_scenario.cData.accumulatedRate.mul(_scenario.deltaDebt))
+      safeEngine.globalDebt(),
+      _scenario.globalDebt.add(_scenario.cData.accumulatedRate.mul(_scenario.deltaDebt))
     );
   }
 
-  function test_Set_TokenCollateral(ModifySAFECollateralizationScenario memory _scenario) public happyPath(_scenario) {
+  function test_Set_TokenCollateral(
+    ModifySAFECollateralizationScenario memory _scenario
+  ) public happyPath(_scenario) {
     vm.prank(safe);
     safeEngine.modifySAFECollateralization(
-      collateralType, safe, src, debtDestination, _scenario.deltaCollateral, _scenario.deltaDebt
+      collateralType,
+      safe,
+      src,
+      debtDestination,
+      _scenario.deltaCollateral,
+      _scenario.deltaDebt
     );
 
     assertEq(
-      safeEngine.tokenCollateral(collateralType, src), _scenario.collateralBalance.sub(_scenario.deltaCollateral)
+      safeEngine.tokenCollateral(collateralType, src),
+      _scenario.collateralBalance.sub(_scenario.deltaCollateral)
     );
   }
 
-  function test_Set_CoinBalance(ModifySAFECollateralizationScenario memory _scenario) public happyPath(_scenario) {
+  function test_Set_CoinBalance(
+    ModifySAFECollateralizationScenario memory _scenario
+  ) public happyPath(_scenario) {
     vm.prank(safe);
     safeEngine.modifySAFECollateralization(
-      collateralType, safe, src, debtDestination, _scenario.deltaCollateral, _scenario.deltaDebt
+      collateralType,
+      safe,
+      src,
+      debtDestination,
+      _scenario.deltaCollateral,
+      _scenario.deltaDebt
     );
 
     assertEq(
@@ -866,18 +1106,27 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
     );
   }
 
-  function test_Emit_ModifySAFECollateralization(ModifySAFECollateralizationScenario memory _scenario)
-    public
-    happyPath(_scenario)
-  {
+  function test_Emit_ModifySAFECollateralization(
+    ModifySAFECollateralizationScenario memory _scenario
+  ) public happyPath(_scenario) {
     vm.expectEmit();
     emit ModifySAFECollateralization(
-      collateralType, safe, src, debtDestination, _scenario.deltaCollateral, _scenario.deltaDebt
+      collateralType,
+      safe,
+      src,
+      debtDestination,
+      _scenario.deltaCollateral,
+      _scenario.deltaDebt
     );
 
     vm.prank(safe);
     safeEngine.modifySAFECollateralization(
-      collateralType, safe, src, debtDestination, _scenario.deltaCollateral, _scenario.deltaDebt
+      collateralType,
+      safe,
+      src,
+      debtDestination,
+      _scenario.deltaCollateral,
+      _scenario.deltaDebt
     );
   }
 
@@ -916,14 +1165,22 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
     _mockValues(_scenario);
     _globalDebtCeiling = _scenario.globalDebt.add(_deltaAdjustedDebt) - 1;
     _mockParams(
-      ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: _globalDebtCeiling})
+      ISAFEEngine.SAFEEngineParams({
+        safeDebtCeiling: type(uint256).max,
+        globalDebtCeiling: _globalDebtCeiling
+      })
     );
 
     vm.expectRevert(ISAFEEngine.SAFEEng_GlobalDebtCeilingHit.selector);
 
     vm.prank(safe);
     safeEngine.modifySAFECollateralization(
-      collateralType, safe, src, debtDestination, _scenario.deltaCollateral, _scenario.deltaDebt
+      collateralType,
+      safe,
+      src,
+      debtDestination,
+      _scenario.deltaCollateral,
+      _scenario.deltaDebt
     );
   }
 
@@ -933,17 +1190,26 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
   ) public {
     _assumeHappyPath(_scenario);
     vm.assume(_scenario.deltaDebt > 0);
-    _debtCeiling = _scenario.cData.accumulatedRate * _scenario.cData.debtAmount.add(_scenario.deltaDebt) - 1;
+    _debtCeiling =
+      _scenario.cData.accumulatedRate *
+      _scenario.cData.debtAmount.add(_scenario.deltaDebt) -
+      1;
     _mockValues(_scenario);
     _mockCollateralParams(
-      collateralType, ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: _debtCeiling, debtFloor: 0})
+      collateralType,
+      ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: _debtCeiling, debtFloor: 0})
     );
 
     vm.expectRevert(ISAFEEngine.SAFEEng_CollateralDebtCeilingHit.selector);
 
     vm.prank(safe);
     safeEngine.modifySAFECollateralization(
-      collateralType, safe, src, debtDestination, _scenario.deltaCollateral, _scenario.deltaDebt
+      collateralType,
+      safe,
+      src,
+      debtDestination,
+      _scenario.deltaCollateral,
+      _scenario.deltaDebt
     );
   }
 
@@ -963,11 +1229,18 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
 
     vm.prank(safe);
     safeEngine.modifySAFECollateralization(
-      collateralType, safe, src, debtDestination, _scenario.deltaCollateral, _scenario.deltaDebt
+      collateralType,
+      safe,
+      src,
+      debtDestination,
+      _scenario.deltaCollateral,
+      _scenario.deltaDebt
     );
   }
 
-  function test_Revert_NotAllowedToModifySafe(ModifySAFECollateralizationScenario memory _scenario) public {
+  function test_Revert_NotAllowedToModifySafe(
+    ModifySAFECollateralizationScenario memory _scenario
+  ) public {
     _assumeHappyPath(_scenario);
     _mockValues(_scenario);
     _mockCanModifySafe(debtDestination, address(this), 1);
@@ -977,11 +1250,18 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
     vm.expectRevert(ISAFEEngine.SAFEEng_NotSAFEAllowed.selector);
 
     safeEngine.modifySAFECollateralization(
-      collateralType, safe, src, debtDestination, _scenario.deltaCollateral, _scenario.deltaDebt
+      collateralType,
+      safe,
+      src,
+      debtDestination,
+      _scenario.deltaCollateral,
+      _scenario.deltaDebt
     );
   }
 
-  function test_Revert_NotAllowedCollateralSrc(ModifySAFECollateralizationScenario memory _scenario) public {
+  function test_Revert_NotAllowedCollateralSrc(
+    ModifySAFECollateralizationScenario memory _scenario
+  ) public {
     _assumeHappyPath(_scenario);
     _mockValues(_scenario);
     _mockCanModifySafe(src, safe, 0);
@@ -991,11 +1271,18 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
 
     vm.prank(safe);
     safeEngine.modifySAFECollateralization(
-      collateralType, safe, src, debtDestination, _scenario.deltaCollateral, _scenario.deltaDebt
+      collateralType,
+      safe,
+      src,
+      debtDestination,
+      _scenario.deltaCollateral,
+      _scenario.deltaDebt
     );
   }
 
-  function test_Revert_NotAllowedDebtDst(ModifySAFECollateralizationScenario memory _scenario) public {
+  function test_Revert_NotAllowedDebtDst(
+    ModifySAFECollateralizationScenario memory _scenario
+  ) public {
     _assumeHappyPath(_scenario);
     _mockValues(_scenario);
     _mockCanModifySafe(debtDestination, safe, 0);
@@ -1005,11 +1292,19 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
 
     vm.prank(safe);
     safeEngine.modifySAFECollateralization(
-      collateralType, safe, src, debtDestination, _scenario.deltaCollateral, _scenario.deltaDebt
+      collateralType,
+      safe,
+      src,
+      debtDestination,
+      _scenario.deltaCollateral,
+      _scenario.deltaDebt
     );
   }
 
-  function test_Revert_NoDebt(ModifySAFECollateralizationScenario memory _scenario, uint256 _debtFloor) public {
+  function test_Revert_NoDebt(
+    ModifySAFECollateralizationScenario memory _scenario,
+    uint256 _debtFloor
+  ) public {
     _assumeHappyPath(_scenario);
     uint256 _newSafeDebt = _scenario.safeData.generatedDebt.add(_scenario.deltaDebt);
     uint256 _totalDebtIssued = _scenario.cData.accumulatedRate * _newSafeDebt;
@@ -1018,14 +1313,23 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
     _debtFloor = _totalDebtIssued + 1;
     _mockValues(_scenario);
     _mockCollateralParams(
-      collateralType, ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: type(uint256).max, debtFloor: _debtFloor})
+      collateralType,
+      ISAFEEngine.SAFEEngineCollateralParams({
+        debtCeiling: type(uint256).max,
+        debtFloor: _debtFloor
+      })
     );
 
     vm.expectRevert(ISAFEEngine.SAFEEng_DustySAFE.selector);
 
     vm.prank(safe);
     safeEngine.modifySAFECollateralization(
-      collateralType, safe, src, debtDestination, _scenario.deltaCollateral, _scenario.deltaDebt
+      collateralType,
+      safe,
+      src,
+      debtDestination,
+      _scenario.deltaCollateral,
+      _scenario.deltaDebt
     );
   }
 
@@ -1039,13 +1343,23 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
     uint256 _newSafeDebt = _scenario.safeData.generatedDebt.add(_scenario.deltaDebt);
     _safeDebtCeiling = _newSafeDebt - 1;
     _mockValues(_scenario);
-    _mockParams(ISAFEEngine.SAFEEngineParams({safeDebtCeiling: _safeDebtCeiling, globalDebtCeiling: type(uint256).max}));
+    _mockParams(
+      ISAFEEngine.SAFEEngineParams({
+        safeDebtCeiling: _safeDebtCeiling,
+        globalDebtCeiling: type(uint256).max
+      })
+    );
 
     vm.expectRevert(ISAFEEngine.SAFEEng_SAFEDebtCeilingHit.selector);
 
     vm.prank(safe);
     safeEngine.modifySAFECollateralization(
-      collateralType, safe, src, debtDestination, _scenario.deltaCollateral, _scenario.deltaDebt
+      collateralType,
+      safe,
+      src,
+      debtDestination,
+      _scenario.deltaCollateral,
+      _scenario.deltaDebt
     );
   }
 }
@@ -1055,7 +1369,11 @@ contract Unit_SAFEEngine_TransferSafeCollateralAndDebt is Base {
   using stdStorage for StdStorage;
 
   event TransferSAFECollateralAndDebt(
-    bytes32 indexed _cType, address indexed _src, address indexed _dst, int256 _deltaCollateral, int256 _deltaDebt
+    bytes32 indexed _cType,
+    address indexed _src,
+    address indexed _dst,
+    int256 _deltaCollateral,
+    int256 _deltaDebt
   );
 
   struct TransferSAFECollateralAndDebtScenario {
@@ -1104,7 +1422,8 @@ contract Unit_SAFEEngine_TransferSafeCollateralAndDebt is Base {
 
     // NOTE: it mocks the system in the most permissive way possible (floors: 0 and ceilings: max)
     _mockCollateralParams(
-      collateralType, ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: type(uint256).max, debtFloor: 0})
+      collateralType,
+      ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: type(uint256).max, debtFloor: 0})
     );
 
     _mockCanModifySafe(src, account, 1);
@@ -1117,59 +1436,96 @@ contract Unit_SAFEEngine_TransferSafeCollateralAndDebt is Base {
     _;
   }
 
-  function test_Set_SrcSafeLockedCollateral(TransferSAFECollateralAndDebtScenario memory _scenario)
-    public
-    happyPath(_scenario)
-  {
+  function test_Set_SrcSafeLockedCollateral(
+    TransferSAFECollateralAndDebtScenario memory _scenario
+  ) public happyPath(_scenario) {
     vm.prank(account);
-    safeEngine.transferSAFECollateralAndDebt(collateralType, src, dst, _scenario.deltaCollateral, _scenario.deltaDebt);
+    safeEngine.transferSAFECollateralAndDebt(
+      collateralType,
+      src,
+      dst,
+      _scenario.deltaCollateral,
+      _scenario.deltaDebt
+    );
 
     uint256 _srcLockedCollateral = safeEngine.safes(collateralType, src).lockedCollateral;
-    assertEq(_srcLockedCollateral, _scenario.safeSrc.lockedCollateral.sub(_scenario.deltaCollateral));
+    assertEq(
+      _srcLockedCollateral,
+      _scenario.safeSrc.lockedCollateral.sub(_scenario.deltaCollateral)
+    );
   }
 
-  function test_Set_SrcSafeGeneratedDebt(TransferSAFECollateralAndDebtScenario memory _scenario)
-    public
-    happyPath(_scenario)
-  {
+  function test_Set_SrcSafeGeneratedDebt(
+    TransferSAFECollateralAndDebtScenario memory _scenario
+  ) public happyPath(_scenario) {
     vm.prank(account);
-    safeEngine.transferSAFECollateralAndDebt(collateralType, src, dst, _scenario.deltaCollateral, _scenario.deltaDebt);
+    safeEngine.transferSAFECollateralAndDebt(
+      collateralType,
+      src,
+      dst,
+      _scenario.deltaCollateral,
+      _scenario.deltaDebt
+    );
 
     uint256 _srcGeneratedDebt = safeEngine.safes(collateralType, src).generatedDebt;
     assertEq(_srcGeneratedDebt, _scenario.safeSrc.generatedDebt.sub(_scenario.deltaDebt));
   }
 
-  function test_Set_DstSafeLockedCollateral(TransferSAFECollateralAndDebtScenario memory _scenario)
-    public
-    happyPath(_scenario)
-  {
+  function test_Set_DstSafeLockedCollateral(
+    TransferSAFECollateralAndDebtScenario memory _scenario
+  ) public happyPath(_scenario) {
     vm.prank(account);
-    safeEngine.transferSAFECollateralAndDebt(collateralType, src, dst, _scenario.deltaCollateral, _scenario.deltaDebt);
+    safeEngine.transferSAFECollateralAndDebt(
+      collateralType,
+      src,
+      dst,
+      _scenario.deltaCollateral,
+      _scenario.deltaDebt
+    );
 
     uint256 _dstLockedCollateral = safeEngine.safes(collateralType, dst).lockedCollateral;
-    assertEq(_dstLockedCollateral, _scenario.safeDst.lockedCollateral.add(_scenario.deltaCollateral));
+    assertEq(
+      _dstLockedCollateral,
+      _scenario.safeDst.lockedCollateral.add(_scenario.deltaCollateral)
+    );
   }
 
-  function test_Set_DstSafeGeneratedDebt(TransferSAFECollateralAndDebtScenario memory _scenario)
-    public
-    happyPath(_scenario)
-  {
+  function test_Set_DstSafeGeneratedDebt(
+    TransferSAFECollateralAndDebtScenario memory _scenario
+  ) public happyPath(_scenario) {
     vm.prank(account);
-    safeEngine.transferSAFECollateralAndDebt(collateralType, src, dst, _scenario.deltaCollateral, _scenario.deltaDebt);
+    safeEngine.transferSAFECollateralAndDebt(
+      collateralType,
+      src,
+      dst,
+      _scenario.deltaCollateral,
+      _scenario.deltaDebt
+    );
 
     uint256 _dstGeneratedDebt = safeEngine.safes(collateralType, dst).generatedDebt;
     assertEq(_dstGeneratedDebt, _scenario.safeDst.generatedDebt.add(_scenario.deltaDebt));
   }
 
-  function test_Emit_TransferSAFECollateralAndDebt(TransferSAFECollateralAndDebtScenario memory _scenario)
-    public
-    happyPath(_scenario)
-  {
+  function test_Emit_TransferSAFECollateralAndDebt(
+    TransferSAFECollateralAndDebtScenario memory _scenario
+  ) public happyPath(_scenario) {
     vm.expectEmit();
-    emit TransferSAFECollateralAndDebt(collateralType, src, dst, _scenario.deltaCollateral, _scenario.deltaDebt);
+    emit TransferSAFECollateralAndDebt(
+      collateralType,
+      src,
+      dst,
+      _scenario.deltaCollateral,
+      _scenario.deltaDebt
+    );
 
     vm.prank(account);
-    safeEngine.transferSAFECollateralAndDebt(collateralType, src, dst, _scenario.deltaCollateral, _scenario.deltaDebt);
+    safeEngine.transferSAFECollateralAndDebt(
+      collateralType,
+      src,
+      dst,
+      _scenario.deltaCollateral,
+      _scenario.deltaDebt
+    );
   }
 
   function test_Revert_CannotModifySafe(
@@ -1187,7 +1543,13 @@ contract Unit_SAFEEngine_TransferSafeCollateralAndDebt is Base {
 
     vm.expectRevert(ISAFEEngine.SAFEEng_NotSAFEAllowed.selector);
     vm.prank(account);
-    safeEngine.transferSAFECollateralAndDebt(collateralType, src, dst, _scenario.deltaCollateral, _scenario.deltaDebt);
+    safeEngine.transferSAFECollateralAndDebt(
+      collateralType,
+      src,
+      dst,
+      _scenario.deltaCollateral,
+      _scenario.deltaDebt
+    );
   }
 
   function test_Revert_NotSafeSrc(
@@ -1201,12 +1563,20 @@ contract Unit_SAFEEngine_TransferSafeCollateralAndDebt is Base {
     uint256 _srcDebt = _scenario.safeSrc.generatedDebt.sub(_scenario.deltaDebt);
     uint256 _dstDebt = _scenario.safeDst.generatedDebt.add(_scenario.deltaDebt);
 
-    _accumulatedRate = bound(_accumulatedRate, 1, type(uint256).max / Math.max((Math.max(_srcDebt, _dstDebt)), 1));
+    _accumulatedRate = bound(
+      _accumulatedRate,
+      1,
+      type(uint256).max / Math.max((Math.max(_srcDebt, _dstDebt)), 1)
+    );
 
     uint256 _srcCollateral = _scenario.safeSrc.lockedCollateral.sub(_scenario.deltaCollateral);
     uint256 _dstCollateral = _scenario.safeDst.lockedCollateral.add(_scenario.deltaCollateral);
 
-    _safetyPrice = bound(_safetyPrice, 0, type(uint256).max / Math.max((Math.max(_srcCollateral, _dstCollateral)), 1));
+    _safetyPrice = bound(
+      _safetyPrice,
+      0,
+      type(uint256).max / Math.max((Math.max(_srcCollateral, _dstCollateral)), 1)
+    );
 
     // NOTE: source has to be safe to fail on destination
     vm.assume(_srcDebt * _accumulatedRate > _safetyPrice * _srcCollateral);
@@ -1224,7 +1594,13 @@ contract Unit_SAFEEngine_TransferSafeCollateralAndDebt is Base {
 
     vm.expectRevert(ISAFEEngine.SAFEEng_SAFENotSafe.selector);
     vm.prank(account);
-    safeEngine.transferSAFECollateralAndDebt(collateralType, src, dst, _scenario.deltaCollateral, _scenario.deltaDebt);
+    safeEngine.transferSAFECollateralAndDebt(
+      collateralType,
+      src,
+      dst,
+      _scenario.deltaCollateral,
+      _scenario.deltaDebt
+    );
   }
 
   function test_Revert_NotSafeDst(
@@ -1240,12 +1616,20 @@ contract Unit_SAFEEngine_TransferSafeCollateralAndDebt is Base {
     uint256 _srcDebt = _scenario.safeSrc.generatedDebt.sub(_scenario.deltaDebt);
     uint256 _dstDebt = _scenario.safeDst.generatedDebt.add(_scenario.deltaDebt);
 
-    _accumulatedRate = bound(_accumulatedRate, 1, type(uint256).max / Math.max((Math.max(_srcDebt, _dstDebt)), 1));
+    _accumulatedRate = bound(
+      _accumulatedRate,
+      1,
+      type(uint256).max / Math.max((Math.max(_srcDebt, _dstDebt)), 1)
+    );
 
     uint256 _srcCollateral = _scenario.safeSrc.lockedCollateral.sub(_scenario.deltaCollateral);
     uint256 _dstCollateral = _scenario.safeDst.lockedCollateral.add(_scenario.deltaCollateral);
 
-    _safetyPrice = bound(_safetyPrice, 0, type(uint256).max / Math.max((Math.max(_srcCollateral, _dstCollateral)), 1));
+    _safetyPrice = bound(
+      _safetyPrice,
+      0,
+      type(uint256).max / Math.max((Math.max(_srcCollateral, _dstCollateral)), 1)
+    );
 
     // NOTE: source has to be safe to fail on destination
     vm.assume(_srcDebt * _accumulatedRate <= _safetyPrice * _srcCollateral);
@@ -1264,7 +1648,13 @@ contract Unit_SAFEEngine_TransferSafeCollateralAndDebt is Base {
 
     vm.expectRevert(ISAFEEngine.SAFEEng_SAFENotSafe.selector);
     vm.prank(account);
-    safeEngine.transferSAFECollateralAndDebt(collateralType, src, dst, _scenario.deltaCollateral, _scenario.deltaDebt);
+    safeEngine.transferSAFECollateralAndDebt(
+      collateralType,
+      src,
+      dst,
+      _scenario.deltaCollateral,
+      _scenario.deltaDebt
+    );
   }
 
   function test_Revert_DebtCeilingHit(
@@ -1283,7 +1673,13 @@ contract Unit_SAFEEngine_TransferSafeCollateralAndDebt is Base {
     vm.expectRevert(ISAFEEngine.SAFEEng_SAFEDebtCeilingHit.selector);
 
     vm.prank(account);
-    safeEngine.transferSAFECollateralAndDebt(collateralType, src, dst, _scenario.deltaCollateral, _scenario.deltaDebt);
+    safeEngine.transferSAFECollateralAndDebt(
+      collateralType,
+      src,
+      dst,
+      _scenario.deltaCollateral,
+      _scenario.deltaDebt
+    );
   }
 
   function test_Revert_DustSrc(
@@ -1299,13 +1695,21 @@ contract Unit_SAFEEngine_TransferSafeCollateralAndDebt is Base {
     uint256 _dstDebt = _scenario.safeDst.generatedDebt.add(_scenario.deltaDebt);
     vm.assume(_srcDebt != 0);
 
-    _accumulatedRate = bound(_accumulatedRate, 1, type(uint256).max / Math.max((Math.max(_srcDebt, _dstDebt)), 1));
+    _accumulatedRate = bound(
+      _accumulatedRate,
+      1,
+      type(uint256).max / Math.max((Math.max(_srcDebt, _dstDebt)), 1)
+    );
 
     uint256 _srcCollateral = _scenario.safeSrc.lockedCollateral.sub(_scenario.deltaCollateral);
     uint256 _dstCollateral = _scenario.safeDst.lockedCollateral.add(_scenario.deltaCollateral);
 
     // NOTE: safety price has to be greater than 0, else safes debt needs to be 0 (non-dusty)
-    _safetyPrice = bound(_safetyPrice, 1, type(uint256).max / Math.max((Math.max(_srcCollateral, _dstCollateral)), 1));
+    _safetyPrice = bound(
+      _safetyPrice,
+      1,
+      type(uint256).max / Math.max((Math.max(_srcCollateral, _dstCollateral)), 1)
+    );
 
     // NOTE: safes have to be safe to be dusty
     vm.assume(_srcDebt * _accumulatedRate <= _safetyPrice * _srcCollateral);
@@ -1328,7 +1732,13 @@ contract Unit_SAFEEngine_TransferSafeCollateralAndDebt is Base {
     vm.expectRevert(ISAFEEngine.SAFEEng_DustySAFE.selector);
 
     vm.prank(account);
-    safeEngine.transferSAFECollateralAndDebt(collateralType, src, dst, _scenario.deltaCollateral, _scenario.deltaDebt);
+    safeEngine.transferSAFECollateralAndDebt(
+      collateralType,
+      src,
+      dst,
+      _scenario.deltaCollateral,
+      _scenario.deltaDebt
+    );
   }
 
   function test_Revert_DustDst(
@@ -1344,12 +1754,20 @@ contract Unit_SAFEEngine_TransferSafeCollateralAndDebt is Base {
     uint256 _dstDebt = _scenario.safeDst.generatedDebt.add(_scenario.deltaDebt);
     vm.assume(_dstDebt != 0);
 
-    _accumulatedRate = bound(_accumulatedRate, 1, type(uint256).max / Math.max((Math.max(_srcDebt, _dstDebt)), 1));
+    _accumulatedRate = bound(
+      _accumulatedRate,
+      1,
+      type(uint256).max / Math.max((Math.max(_srcDebt, _dstDebt)), 1)
+    );
 
     uint256 _srcCollateral = _scenario.safeSrc.lockedCollateral.sub(_scenario.deltaCollateral);
     uint256 _dstCollateral = _scenario.safeDst.lockedCollateral.add(_scenario.deltaCollateral);
 
-    _safetyPrice = bound(_safetyPrice, 1, type(uint256).max / Math.max((Math.max(_srcCollateral, _dstCollateral)), 1));
+    _safetyPrice = bound(
+      _safetyPrice,
+      1,
+      type(uint256).max / Math.max((Math.max(_srcCollateral, _dstCollateral)), 1)
+    );
 
     // NOTE: both safes have to be safe, and src safe has to be empty or non-dusty
     if (_srcDebt > 0) {
@@ -1376,7 +1794,13 @@ contract Unit_SAFEEngine_TransferSafeCollateralAndDebt is Base {
     vm.expectRevert(ISAFEEngine.SAFEEng_DustySAFE.selector);
 
     vm.prank(account);
-    safeEngine.transferSAFECollateralAndDebt(collateralType, src, dst, _scenario.deltaCollateral, _scenario.deltaDebt);
+    safeEngine.transferSAFECollateralAndDebt(
+      collateralType,
+      src,
+      dst,
+      _scenario.deltaCollateral,
+      _scenario.deltaDebt
+    );
   }
 }
 
@@ -1411,7 +1835,9 @@ contract Unit_SAFEEngine_ConfiscateSAFECollateralAndDebt is Base {
     vm.assume(notUnderOrOverflowMul(_scenario.accumulatedRate, _scenario.deltaDebt));
 
     vm.assume(notUnderOrOverflowSub(_scenario.collateralSourceBalance, _scenario.deltaCollateral));
-    vm.assume(notUnderOrOverflowAdd(_scenario.safeData.lockedCollateral, _scenario.deltaCollateral));
+    vm.assume(
+      notUnderOrOverflowAdd(_scenario.safeData.lockedCollateral, _scenario.deltaCollateral)
+    );
     vm.assume(notUnderOrOverflowAdd(_scenario.safeData.generatedDebt, _scenario.deltaDebt));
     vm.assume(notUnderOrOverflowAdd(_scenario.debtAmount, _scenario.deltaDebt));
     vm.assume(notUnderOrOverflowAdd(_scenario.lockedAmount, _scenario.deltaCollateral));
@@ -1447,63 +1873,115 @@ contract Unit_SAFEEngine_ConfiscateSAFECollateralAndDebt is Base {
     _;
   }
 
-  function test_Set_SafeLockedCollateral(ConfiscateSAFEScenario memory _scenario) public happyPath(_scenario) {
+  function test_Set_SafeLockedCollateral(
+    ConfiscateSAFEScenario memory _scenario
+  ) public happyPath(_scenario) {
     safeEngine.confiscateSAFECollateralAndDebt(
-      collateralType, safe, collateralSource, debtDestination, _scenario.deltaCollateral, _scenario.deltaDebt
+      collateralType,
+      safe,
+      collateralSource,
+      debtDestination,
+      _scenario.deltaCollateral,
+      _scenario.deltaDebt
     );
 
     uint256 _lockedCollateral = safeEngine.safes(collateralType, safe).lockedCollateral;
     assertEq(_lockedCollateral, _scenario.safeData.lockedCollateral.add(_scenario.deltaCollateral));
   }
 
-  function test_Set_GeneratedDebt(ConfiscateSAFEScenario memory _scenario) public happyPath(_scenario) {
+  function test_Set_GeneratedDebt(
+    ConfiscateSAFEScenario memory _scenario
+  ) public happyPath(_scenario) {
     safeEngine.confiscateSAFECollateralAndDebt(
-      collateralType, safe, collateralSource, debtDestination, _scenario.deltaCollateral, _scenario.deltaDebt
+      collateralType,
+      safe,
+      collateralSource,
+      debtDestination,
+      _scenario.deltaCollateral,
+      _scenario.deltaDebt
     );
 
     uint256 _generatedDebt = safeEngine.safes(collateralType, safe).generatedDebt;
     assertEq(_generatedDebt, _scenario.safeData.generatedDebt.add(_scenario.deltaDebt));
   }
 
-  function test_Set_DebtAmount(ConfiscateSAFEScenario memory _scenario) public happyPath(_scenario) {
+  function test_Set_DebtAmount(
+    ConfiscateSAFEScenario memory _scenario
+  ) public happyPath(_scenario) {
     safeEngine.confiscateSAFECollateralAndDebt(
-      collateralType, safe, collateralSource, debtDestination, _scenario.deltaCollateral, _scenario.deltaDebt
+      collateralType,
+      safe,
+      collateralSource,
+      debtDestination,
+      _scenario.deltaCollateral,
+      _scenario.deltaDebt
     );
 
     uint256 _debtAmount = safeEngine.cData(collateralType).debtAmount;
     assertEq(_debtAmount, _scenario.debtAmount.add(_scenario.deltaDebt));
   }
 
-  function test_Set_LockedAmount(ConfiscateSAFEScenario memory _scenario) public happyPath(_scenario) {
+  function test_Set_LockedAmount(
+    ConfiscateSAFEScenario memory _scenario
+  ) public happyPath(_scenario) {
     safeEngine.confiscateSAFECollateralAndDebt(
-      collateralType, safe, collateralSource, debtDestination, _scenario.deltaCollateral, _scenario.deltaDebt
+      collateralType,
+      safe,
+      collateralSource,
+      debtDestination,
+      _scenario.deltaCollateral,
+      _scenario.deltaDebt
     );
 
     uint256 _lockedAmount = safeEngine.cData(collateralType).lockedAmount;
     assertEq(_lockedAmount, _scenario.lockedAmount.add(_scenario.deltaCollateral));
   }
 
-  function test_Set_TokenCollateral(ConfiscateSAFEScenario memory _scenario) public happyPath(_scenario) {
+  function test_Set_TokenCollateral(
+    ConfiscateSAFEScenario memory _scenario
+  ) public happyPath(_scenario) {
     safeEngine.confiscateSAFECollateralAndDebt(
-      collateralType, safe, collateralSource, debtDestination, _scenario.deltaCollateral, _scenario.deltaDebt
+      collateralType,
+      safe,
+      collateralSource,
+      debtDestination,
+      _scenario.deltaCollateral,
+      _scenario.deltaDebt
     );
 
     uint256 _newTokenCollateral = safeEngine.tokenCollateral(collateralType, collateralSource);
     assertEq(_newTokenCollateral, _scenario.collateralSourceBalance.sub(_scenario.deltaCollateral));
   }
 
-  function test_Set_DebtBalance(ConfiscateSAFEScenario memory _scenario) public happyPath(_scenario) {
+  function test_Set_DebtBalance(
+    ConfiscateSAFEScenario memory _scenario
+  ) public happyPath(_scenario) {
     safeEngine.confiscateSAFECollateralAndDebt(
-      collateralType, safe, collateralSource, debtDestination, _scenario.deltaCollateral, _scenario.deltaDebt
+      collateralType,
+      safe,
+      collateralSource,
+      debtDestination,
+      _scenario.deltaCollateral,
+      _scenario.deltaDebt
     );
 
     uint256 _newDebtBalance = safeEngine.debtBalance(debtDestination);
-    assertEq(_newDebtBalance, _scenario.debtDestinationDebt.sub(_scenario.accumulatedRate.mul(_scenario.deltaDebt)));
+    assertEq(
+      _newDebtBalance,
+      _scenario.debtDestinationDebt.sub(_scenario.accumulatedRate.mul(_scenario.deltaDebt))
+    );
   }
 
-  function test_Set_GlobalUnbackedDebt(ConfiscateSAFEScenario memory _scenario) public happyPath(_scenario) {
+  function test_Set_GlobalUnbackedDebt(
+    ConfiscateSAFEScenario memory _scenario
+  ) public happyPath(_scenario) {
     safeEngine.confiscateSAFECollateralAndDebt(
-      collateralType, safe, collateralSource, debtDestination, _scenario.deltaCollateral, _scenario.deltaDebt
+      collateralType,
+      safe,
+      collateralSource,
+      debtDestination,
+      _scenario.deltaCollateral,
+      _scenario.deltaDebt
     );
 
     assertEq(
@@ -1512,17 +1990,26 @@ contract Unit_SAFEEngine_ConfiscateSAFECollateralAndDebt is Base {
     );
   }
 
-  function test_Emit_ConfiscateSAFECollateralAndDebt(ConfiscateSAFEScenario memory _scenario)
-    public
-    happyPath(_scenario)
-  {
+  function test_Emit_ConfiscateSAFECollateralAndDebt(
+    ConfiscateSAFEScenario memory _scenario
+  ) public happyPath(_scenario) {
     vm.expectEmit();
     emit ConfiscateSAFECollateralAndDebt(
-      collateralType, safe, collateralSource, debtDestination, _scenario.deltaCollateral, _scenario.deltaDebt
+      collateralType,
+      safe,
+      collateralSource,
+      debtDestination,
+      _scenario.deltaCollateral,
+      _scenario.deltaDebt
     );
 
     safeEngine.confiscateSAFECollateralAndDebt(
-      collateralType, safe, collateralSource, debtDestination, _scenario.deltaCollateral, _scenario.deltaDebt
+      collateralType,
+      safe,
+      collateralSource,
+      debtDestination,
+      _scenario.deltaCollateral,
+      _scenario.deltaDebt
     );
   }
 }

@@ -17,7 +17,8 @@ abstract contract Base is HaiTest {
   address user = label('user');
 
   IAccountingEngine mockAccountingEngine = IAccountingEngine(mockContract('AccountingEngine'));
-  IStabilityFeeTreasury mockStabilityFeeTreasury = IStabilityFeeTreasury(mockContract('StabilityFeeTreasury'));
+  IStabilityFeeTreasury mockStabilityFeeTreasury =
+    IStabilityFeeTreasury(mockContract('StabilityFeeTreasury'));
 
   AccountingJobForTest accountingJob;
 
@@ -26,8 +27,11 @@ abstract contract Base is HaiTest {
   function setUp() public virtual {
     vm.startPrank(deployer);
 
-    accountingJob =
-      new AccountingJobForTest(address(mockAccountingEngine), address(mockStabilityFeeTreasury), REWARD_AMOUNT);
+    accountingJob = new AccountingJobForTest(
+      address(mockAccountingEngine),
+      address(mockStabilityFeeTreasury),
+      REWARD_AMOUNT
+    );
     label(address(accountingJob), 'AccountingJob');
 
     accountingJob.addAuthorization(authorizedAccount);
@@ -36,15 +40,25 @@ abstract contract Base is HaiTest {
   }
 
   function _mockAuctionDebt(uint256 _id) internal {
-    vm.mockCall(address(mockAccountingEngine), abi.encodeCall(mockAccountingEngine.auctionDebt, ()), abi.encode(_id));
+    vm.mockCall(
+      address(mockAccountingEngine),
+      abi.encodeCall(mockAccountingEngine.auctionDebt, ()),
+      abi.encode(_id)
+    );
   }
 
   function _mockAuctionSurplus(uint256 _id) internal {
-    vm.mockCall(address(mockAccountingEngine), abi.encodeCall(mockAccountingEngine.auctionSurplus, ()), abi.encode(_id));
+    vm.mockCall(
+      address(mockAccountingEngine),
+      abi.encodeCall(mockAccountingEngine.auctionSurplus, ()),
+      abi.encode(_id)
+    );
   }
 
   function _mockRewardAmount(uint256 _rewardAmount) internal {
-    stdstore.target(address(accountingJob)).sig(IJob.rewardAmount.selector).checked_write(_rewardAmount);
+    stdstore.target(address(accountingJob)).sig(IJob.rewardAmount.selector).checked_write(
+      _rewardAmount
+    );
   }
 
   function _mockShouldWorkPopDebtFromQueue(bool _shouldWorkPopDebtFromQueue) internal {
@@ -88,12 +102,19 @@ contract Unit_AccountingJob_Constructor is Base {
     vm.expectEmit();
     emit AddAuthorization(user);
 
-    accountingJob =
-      new AccountingJobForTest(address(mockAccountingEngine), address(mockStabilityFeeTreasury), REWARD_AMOUNT);
+    accountingJob = new AccountingJobForTest(
+      address(mockAccountingEngine),
+      address(mockStabilityFeeTreasury),
+      REWARD_AMOUNT
+    );
   }
 
   function test_Set_AccountingEngine(address _accountingEngine) public happyPath {
-    accountingJob = new AccountingJobForTest(_accountingEngine, address(mockStabilityFeeTreasury), REWARD_AMOUNT);
+    accountingJob = new AccountingJobForTest(
+      _accountingEngine,
+      address(mockStabilityFeeTreasury),
+      REWARD_AMOUNT
+    );
 
     assertEq(address(accountingJob.accountingEngine()), _accountingEngine);
   }
@@ -137,9 +158,13 @@ contract Unit_AccountingJob_WorkPopDebtFromQueue is Base {
     accountingJob.workPopDebtFromQueue(_debtBlockTimestamp);
   }
 
-  function test_Call_AccountingEngine_PopDebtFromQueue(uint256 _debtBlockTimestamp) public happyPath {
+  function test_Call_AccountingEngine_PopDebtFromQueue(
+    uint256 _debtBlockTimestamp
+  ) public happyPath {
     vm.expectCall(
-      address(mockAccountingEngine), abi.encodeCall(mockAccountingEngine.popDebtFromQueue, (_debtBlockTimestamp)), 1
+      address(mockAccountingEngine),
+      abi.encodeCall(mockAccountingEngine.popDebtFromQueue, (_debtBlockTimestamp)),
+      1
     );
 
     accountingJob.workPopDebtFromQueue(_debtBlockTimestamp);
@@ -177,7 +202,11 @@ contract Unit_AccountingJob_WorkAuctionDebt is Base {
   }
 
   function test_Call_AccountingEngine_AuctionDebt(uint256 _id) public happyPath(_id) {
-    vm.expectCall(address(mockAccountingEngine), abi.encodeCall(mockAccountingEngine.auctionDebt, ()), 1);
+    vm.expectCall(
+      address(mockAccountingEngine),
+      abi.encodeCall(mockAccountingEngine.auctionDebt, ()),
+      1
+    );
 
     accountingJob.workAuctionDebt();
   }
@@ -214,7 +243,11 @@ contract Unit_AccountingJob_WorkAuctionSurplus is Base {
   }
 
   function test_Call_AccountingEngine_AuctionSurplus(uint256 _id) public happyPath(_id) {
-    vm.expectCall(address(mockAccountingEngine), abi.encodeCall(mockAccountingEngine.auctionSurplus, ()), 1);
+    vm.expectCall(
+      address(mockAccountingEngine),
+      abi.encodeCall(mockAccountingEngine.auctionSurplus, ()),
+      1
+    );
 
     accountingJob.workAuctionSurplus();
   }
@@ -250,7 +283,11 @@ contract Unit_AccountingJob_WorkTransferExtraSurplus is Base {
   }
 
   function test_Call_AccountingEngine_TransferExtraSurplus() public happyPath {
-    vm.expectCall(address(mockAccountingEngine), abi.encodeCall(mockAccountingEngine.transferExtraSurplus, ()), 1);
+    vm.expectCall(
+      address(mockAccountingEngine),
+      abi.encodeCall(mockAccountingEngine.transferExtraSurplus, ()),
+      1
+    );
 
     accountingJob.workTransferExtraSurplus();
   }
@@ -284,7 +321,10 @@ contract Unit_AccountingJob_ModifyParameters is Base {
   }
 
   function test_Set_ShouldWorkPopDebtFromQueue(bool _shouldWorkPopDebtFromQueue) public happyPath {
-    accountingJob.modifyParameters('shouldWorkPopDebtFromQueue', abi.encode(_shouldWorkPopDebtFromQueue));
+    accountingJob.modifyParameters(
+      'shouldWorkPopDebtFromQueue',
+      abi.encode(_shouldWorkPopDebtFromQueue)
+    );
 
     assertEq(accountingJob.shouldWorkPopDebtFromQueue(), _shouldWorkPopDebtFromQueue);
   }
@@ -296,13 +336,21 @@ contract Unit_AccountingJob_ModifyParameters is Base {
   }
 
   function test_Set_ShouldWorkAuctionSurplus(bool _shouldWorkAuctionSurplus) public happyPath {
-    accountingJob.modifyParameters('shouldWorkAuctionSurplus', abi.encode(_shouldWorkAuctionSurplus));
+    accountingJob.modifyParameters(
+      'shouldWorkAuctionSurplus',
+      abi.encode(_shouldWorkAuctionSurplus)
+    );
 
     assertEq(accountingJob.shouldWorkAuctionSurplus(), _shouldWorkAuctionSurplus);
   }
 
-  function test_Set_ShouldWorkTransferExtraSurplus(bool _shouldWorkTransferExtraSurplus) public happyPath {
-    accountingJob.modifyParameters('shouldWorkTransferExtraSurplus', abi.encode(_shouldWorkTransferExtraSurplus));
+  function test_Set_ShouldWorkTransferExtraSurplus(
+    bool _shouldWorkTransferExtraSurplus
+  ) public happyPath {
+    accountingJob.modifyParameters(
+      'shouldWorkTransferExtraSurplus',
+      abi.encode(_shouldWorkTransferExtraSurplus)
+    );
 
     assertEq(accountingJob.shouldWorkTransferExtraSurplus(), _shouldWorkTransferExtraSurplus);
   }

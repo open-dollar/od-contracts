@@ -106,11 +106,22 @@ contract Vault721 is ERC721Enumerable {
     address _oracleRelayer,
     address _taxCollector,
     address _collateralJoinFactory
-  ) external onlyGovernor nonZero(_oracleRelayer) nonZero(_taxCollector) nonZero(_collateralJoinFactory) {
+  )
+    external
+    onlyGovernor
+    nonZero(_oracleRelayer)
+    nonZero(_taxCollector)
+    nonZero(_collateralJoinFactory)
+  {
     address _safeManager = address(safeManager);
     require(_safeManager != address(0));
     _setNftRenderer(_nftRenderer);
-    nftRenderer.setImplementation(_safeManager, _oracleRelayer, _taxCollector, _collateralJoinFactory);
+    nftRenderer.setImplementation(
+      _safeManager,
+      _oracleRelayer,
+      _taxCollector,
+      _collateralJoinFactory
+    );
   }
 
   /**
@@ -184,7 +195,12 @@ contract Vault721 is ERC721Enumerable {
    * @dev _transfer calls `transferSAFEOwnership` on SafeManager
    * enforces that ODProxy exists for transfer or it deploys a new ODProxy for receiver of vault/nft
    */
-  function _afterTokenTransfer(address from, address to, uint256 firstTokenId, uint256 batchSize) internal override {
+  function _afterTokenTransfer(
+    address from,
+    address to,
+    uint256 firstTokenId,
+    uint256 batchSize
+  ) internal override {
     require(to != address(0), 'V721: no burn');
     if (from != address(0)) {
       address payable proxy;

@@ -60,6 +60,13 @@ contract CollateralAuctionHouseForTest is CollateralAuctionHouse {
     uint256 _adjustedBid,
     uint256 _customDiscount
   ) external pure returns (uint256 _boughtCollateral, uint256 _readjustedBid) {
-    return _getBoughtCollateral(_collateralPrice, _systemCoinPrice, _amountToSell, _adjustedBid, _customDiscount);
+    return
+      _getBoughtCollateral(
+        _collateralPrice,
+        _systemCoinPrice,
+        _amountToSell,
+        _adjustedBid,
+        _customDiscount
+      );
   }
 }

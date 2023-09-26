@@ -16,8 +16,12 @@ import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 contract RedeployRenderer is GoerliDeployment, Script {
   function run() public {
     vm.startBroadcast(vm.envUint('ARB_GOERLI_PK'));
-    nftRenderer =
-      new NFTRenderer(address(vault721), address(oracleRelayer), address(taxCollector), address(collateralJoinFactory));
+    nftRenderer = new NFTRenderer(
+      address(vault721),
+      address(oracleRelayer),
+      address(taxCollector),
+      address(collateralJoinFactory)
+    );
     vm.stopBroadcast();
   }
 }

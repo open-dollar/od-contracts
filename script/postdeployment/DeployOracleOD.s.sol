@@ -13,7 +13,12 @@ import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 contract DeployOracleOD is OracleBase {
   function run() public {
     vm.startBroadcast(vm.envUint('ARB_GOERLI_PK'));
-    od_weth_UniV3Relayer = uniV3RelayerFactory.deployUniV3Relayer(OD_token, WETH_token, fee, period);
+    od_weth_UniV3Relayer = uniV3RelayerFactory.deployUniV3Relayer(
+      OD_token,
+      WETH_token,
+      fee,
+      period
+    );
     vm.stopBroadcast();
   }
 }

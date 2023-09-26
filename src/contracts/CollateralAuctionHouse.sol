@@ -40,7 +40,12 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, Disableable, IColla
   IOracleRelayer internal _oracleRelayer;
 
   /// @inheritdoc ICollateralAuctionHouse
-  function liquidationEngine() public view virtual returns (ILiquidationEngine __liquidationEngine) {
+  function liquidationEngine()
+    public
+    view
+    virtual
+    returns (ILiquidationEngine __liquidationEngine)
+  {
     return _liquidationEngine;
   }
 
@@ -127,7 +132,7 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, Disableable, IColla
       return (_boughtCollateral, _adjustedBid);
     } else {
       // if calculated collateral amount exceeds the amount for sale, adjust it to the remaining amount
-      _readjustedBid = _adjustedBid * _amountToSell / _boughtCollateral;
+      _readjustedBid = (_adjustedBid * _amountToSell) / _boughtCollateral;
       return (_amountToSell, _readjustedBid);
     }
   }
@@ -155,7 +160,9 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, Disableable, IColla
     if (_auctionTimestamp == 0) return WAD; // auction is finished, return no discount
 
     uint256 _timeSinceCreation = block.timestamp - _auctionTimestamp;
-    _auctionDiscount = _params.perSecondDiscountUpdateRate.rpow(_timeSinceCreation).rmul(_params.minDiscount);
+    _auctionDiscount = _params.perSecondDiscountUpdateRate.rpow(_timeSinceCreation).rmul(
+      _params.minDiscount
+    );
 
     if (_auctionDiscount < _params.maxDiscount) return _params.maxDiscount;
   }
@@ -238,7 +245,11 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, Disableable, IColla
     if (_collateralPrice == 0) return (0, _adjustedBid);
 
     (_boughtCollateral, _adjustedBid) = _getBoughtCollateral(
-      _collateralPrice, _calcRedemptionPrice, _auctions[_id].amountToSell, _adjustedBid, _getAuctionDiscount(_id)
+      _collateralPrice,
+      _calcRedemptionPrice,
+      _auctions[_id].amountToSell,
+      _adjustedBid,
+      _getAuctionDiscount(_id)
     );
   }
 
@@ -264,7 +275,11 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, Disableable, IColla
 
     // Get and check the amount of collateral bought
     (_boughtCollateral, _adjustedBid) = _getBoughtCollateral(
-      _collateralPrice, _redemptionPrice, _auction.amountToSell, _adjustedBid, _getAuctionDiscount(_id)
+      _collateralPrice,
+      _redemptionPrice,
+      _auction.amountToSell,
+      _adjustedBid,
+      _getAuctionDiscount(_id)
     );
     if (_boughtCollateral == 0) revert CAH_NullBoughtAmount();
 
@@ -377,18 +392,21 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, Disableable, IColla
     // Registry
     // NOTE: in Child implementation registry is read from the factory, modifying it has no effect
     if (_param == 'liquidationEngine') _setLiquidationEngine(_address);
-    else if (_param == 'oracleRelayer') _setOracleRelayer(_address);
-    // CAH Params
+    else if (_param == 'oracleRelayer')
+      _setOracleRelayer(_address);
+      // CAH Params
     else if (_param == 'minimumBid') _params.minimumBid = _uint256;
     else if (_param == 'minDiscount') _params.minDiscount = _uint256;
     else if (_param == 'maxDiscount') _params.maxDiscount = _uint256;
-    else if (_param == 'perSecondDiscountUpdateRate') _params.perSecondDiscountUpdateRate = _uint256;
+    else if (_param == 'perSecondDiscountUpdateRate')
+      _params.perSecondDiscountUpdateRate = _uint256;
     else revert UnrecognizedParam();
   }
 
   /// @dev Sets the LiquidationEngine contract address, revoking the previous, and granting the new one authorization
   function _setLiquidationEngine(address _newLiquidationEngine) internal virtual {
-    if (address(_liquidationEngine) != address(0)) _removeAuthorization(address(_liquidationEngine));
+    if (address(_liquidationEngine) != address(0))
+      _removeAuthorization(address(_liquidationEngine));
     _liquidationEngine = ILiquidationEngine(_newLiquidationEngine);
     _addAuthorization(_newLiquidationEngine);
   }

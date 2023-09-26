@@ -50,17 +50,29 @@ contract DenominatedOracle is IBaseOracle, IDenominatedOracle {
     inverted = _inverted;
 
     if (_inverted) {
-      symbol = string(abi.encodePacked('(', priceSource.symbol(), ')^-1 / (', denominationPriceSource.symbol(), ')'));
+      symbol = string(
+        abi.encodePacked(
+          '(',
+          priceSource.symbol(),
+          ')^-1 / (',
+          denominationPriceSource.symbol(),
+          ')'
+        )
+      );
     } else {
-      symbol = string(abi.encodePacked('(', priceSource.symbol(), ') * (', denominationPriceSource.symbol(), ')'));
+      symbol = string(
+        abi.encodePacked('(', priceSource.symbol(), ') * (', denominationPriceSource.symbol(), ')')
+      );
     }
   }
 
   /// @inheritdoc IBaseOracle
   function getResultWithValidity() external view returns (uint256 _result, bool _validity) {
     (uint256 _priceSourceValue, bool _priceSourceValidity) = priceSource.getResultWithValidity();
-    (uint256 _denominationPriceSourceValue, bool _denominationPriceSourceValidity) =
-      denominationPriceSource.getResultWithValidity();
+    (
+      uint256 _denominationPriceSourceValue,
+      bool _denominationPriceSourceValidity
+    ) = denominationPriceSource.getResultWithValidity();
 
     _priceSourceValue = inverted ? WAD.wdiv(_priceSourceValue) : _priceSourceValue;
 

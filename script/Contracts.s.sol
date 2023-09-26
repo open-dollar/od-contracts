@@ -17,14 +17,8 @@ import {PIDRateSetter, IPIDRateSetter} from '@contracts/PIDRateSetter.sol';
 
 // --- Settlement ---
 import {GlobalSettlement, IGlobalSettlement} from '@contracts/settlement/GlobalSettlement.sol';
-import {
-  PostSettlementSurplusAuctionHouse,
-  IPostSettlementSurplusAuctionHouse
-} from '@contracts/settlement/PostSettlementSurplusAuctionHouse.sol';
-import {
-  SettlementSurplusAuctioneer,
-  ISettlementSurplusAuctioneer
-} from '@contracts/settlement/SettlementSurplusAuctioneer.sol';
+import {PostSettlementSurplusAuctionHouse, IPostSettlementSurplusAuctionHouse} from '@contracts/settlement/PostSettlementSurplusAuctionHouse.sol';
+import {SettlementSurplusAuctioneer, ISettlementSurplusAuctioneer} from '@contracts/settlement/SettlementSurplusAuctioneer.sol';
 
 // --- Oracles ---
 import {OracleRelayer, IOracleRelayer} from '@contracts/OracleRelayer.sol';
@@ -47,10 +41,7 @@ import {CollateralJoin, ICollateralJoin} from '@contracts/utils/CollateralJoin.s
 
 // --- Factories ---
 import {CollateralJoinFactory, ICollateralJoinFactory} from '@contracts/factories/CollateralJoinFactory.sol';
-import {
-  CollateralAuctionHouseFactory,
-  ICollateralAuctionHouseFactory
-} from '@contracts/factories/CollateralAuctionHouseFactory.sol';
+import {CollateralAuctionHouseFactory, ICollateralAuctionHouseFactory} from '@contracts/factories/CollateralAuctionHouseFactory.sol';
 import {ChainlinkRelayerFactory, IChainlinkRelayerFactory} from '@contracts/factories/ChainlinkRelayerFactory.sol';
 import {UniV3RelayerFactory, IUniV3RelayerFactory} from '@contracts/factories/UniV3RelayerFactory.sol';
 import {CamelotRelayerFactory, ICamelotRelayerFactory} from '@contracts/factories/CamelotRelayerFactory.sol';

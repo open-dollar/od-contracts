@@ -1,13 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {
-  CollateralAuctionHouseFactoryForTest,
-  ICollateralAuctionHouseFactory
-} from '@test/mocks/CollateralAuctionHouseFactoryForTest.sol';
-import {
-  CollateralAuctionHouseChild, ICollateralAuctionHouse
-} from '@contracts/factories/CollateralAuctionHouseChild.sol';
+import {CollateralAuctionHouseFactoryForTest, ICollateralAuctionHouseFactory} from '@test/mocks/CollateralAuctionHouseFactoryForTest.sol';
+import {CollateralAuctionHouseChild, ICollateralAuctionHouse} from '@contracts/factories/CollateralAuctionHouseChild.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
@@ -30,9 +25,13 @@ abstract contract Base is HaiTest {
   address mockCollateralAuctionHouse = mockContract('CollateralAuctionHouse');
 
   CollateralAuctionHouseFactoryForTest collateralAuctionHouseFactory;
-  CollateralAuctionHouseChild collateralAuctionHouseChild = CollateralAuctionHouseChild(
-    label(address(0x0000000000000000000000007f85e9e000597158aed9320b5a5e11ab8cc7329a), 'CollateralAuctionHouseChild')
-  );
+  CollateralAuctionHouseChild collateralAuctionHouseChild =
+    CollateralAuctionHouseChild(
+      label(
+        address(0x0000000000000000000000007f85e9e000597158aed9320b5a5e11ab8cc7329a),
+        'CollateralAuctionHouseChild'
+      )
+    );
 
   ICollateralAuctionHouse.CollateralAuctionHouseParams cahParams;
 
@@ -47,8 +46,11 @@ abstract contract Base is HaiTest {
       perSecondDiscountUpdateRate: 1
     });
 
-    collateralAuctionHouseFactory =
-    new CollateralAuctionHouseFactoryForTest(address(mockSafeEngine), address(mockLiquidationEngine), address(mockOracleRelayer));
+    collateralAuctionHouseFactory = new CollateralAuctionHouseFactoryForTest(
+      address(mockSafeEngine),
+      address(mockLiquidationEngine),
+      address(mockOracleRelayer)
+    );
     label(address(collateralAuctionHouseFactory), 'CollateralAuctionHouseFactory');
 
     collateralAuctionHouseFactory.addAuthorization(authorizedAccount);
@@ -57,15 +59,18 @@ abstract contract Base is HaiTest {
   }
 
   function _mockLiquidationEngine(address _liquidationEngine) internal {
-    stdstore.target(address(collateralAuctionHouseFactory)).sig(
-      ICollateralAuctionHouseFactory.liquidationEngine.selector
-    ).checked_write(_liquidationEngine);
+    stdstore
+      .target(address(collateralAuctionHouseFactory))
+      .sig(ICollateralAuctionHouseFactory.liquidationEngine.selector)
+      .checked_write(_liquidationEngine);
   }
 
   function _mockCollateralAuctionHouse(bytes32 _cType, address _collateralAuctionHouse) internal {
-    stdstore.target(address(collateralAuctionHouseFactory)).sig(
-      ICollateralAuctionHouseFactory.collateralAuctionHouses.selector
-    ).with_key(_cType).checked_write(_collateralAuctionHouse);
+    stdstore
+      .target(address(collateralAuctionHouseFactory))
+      .sig(ICollateralAuctionHouseFactory.collateralAuctionHouses.selector)
+      .with_key(_cType)
+      .checked_write(_collateralAuctionHouse);
   }
 
   function _mockCollateralList(bytes32 _cType) internal {
@@ -88,27 +93,42 @@ contract Unit_CollateralAuctionHouseFactory_Constructor is Base {
   function test_Revert_Null_SafeEngine() public happyPath {
     vm.expectRevert(Assertions.NullAddress.selector);
 
-    new CollateralAuctionHouseFactoryForTest(address(0), address(mockLiquidationEngine), address(mockOracleRelayer));
+    new CollateralAuctionHouseFactoryForTest(
+      address(0),
+      address(mockLiquidationEngine),
+      address(mockOracleRelayer)
+    );
   }
 
   function test_Revert_Null_LiquidationEngine() public happyPath {
     vm.expectRevert(Assertions.NullAddress.selector);
 
-    new CollateralAuctionHouseFactoryForTest(address(mockSafeEngine), address(0), address(mockOracleRelayer));
+    new CollateralAuctionHouseFactoryForTest(
+      address(mockSafeEngine),
+      address(0),
+      address(mockOracleRelayer)
+    );
   }
 
   function test_Revert_Null_OracleRelayer() public happyPath {
     vm.expectRevert(Assertions.NullAddress.selector);
 
-    new CollateralAuctionHouseFactoryForTest(address(mockSafeEngine), address(mockLiquidationEngine), address(0));
+    new CollateralAuctionHouseFactoryForTest(
+      address(mockSafeEngine),
+      address(mockLiquidationEngine),
+      address(0)
+    );
   }
 
   function test_Emit_AddAuthorization() public happyPath {
     vm.expectEmit();
     emit AddAuthorization(user);
 
-    collateralAuctionHouseFactory =
-    new CollateralAuctionHouseFactoryForTest(address(mockSafeEngine), address(mockLiquidationEngine), address(mockOracleRelayer));
+    collateralAuctionHouseFactory = new CollateralAuctionHouseFactoryForTest(
+      address(mockSafeEngine),
+      address(mockLiquidationEngine),
+      address(mockOracleRelayer)
+    );
   }
 
   function test_Set_ContractEnabled() public happyPath {
@@ -117,7 +137,10 @@ contract Unit_CollateralAuctionHouseFactory_Constructor is Base {
 }
 
 contract Unit_CollateralAuctionHouseFactory_DeployCollateralAuctionHouse is Base {
-  event DeployCollateralAuctionHouse(bytes32 indexed _cType, address indexed _collateralAuctionHouse);
+  event DeployCollateralAuctionHouse(
+    bytes32 indexed _cType,
+    address indexed _collateralAuctionHouse
+  );
 
   modifier happyPath() {
     vm.startPrank(authorizedAccount);
@@ -151,11 +174,17 @@ contract Unit_CollateralAuctionHouseFactory_DeployCollateralAuctionHouse is Base
   function test_Deploy_CollateralAuctionHouseChild(bytes32 _cType) public happyPath {
     collateralAuctionHouseFactory.deployCollateralAuctionHouse(_cType, cahParams);
 
-    assertEq(address(collateralAuctionHouseChild).code, type(CollateralAuctionHouseChild).runtimeCode);
+    assertEq(
+      address(collateralAuctionHouseChild).code,
+      type(CollateralAuctionHouseChild).runtimeCode
+    );
 
     // params
     assertEq(address(collateralAuctionHouseChild.safeEngine()), address(mockSafeEngine));
-    assertEq(address(collateralAuctionHouseChild.liquidationEngine()), address(mockLiquidationEngine));
+    assertEq(
+      address(collateralAuctionHouseChild.liquidationEngine()),
+      address(mockLiquidationEngine)
+    );
     assertEq(address(collateralAuctionHouseChild.oracleRelayer()), address(mockOracleRelayer));
     assertEq(collateralAuctionHouseChild.collateralType(), _cType);
     assertEq(abi.encode(collateralAuctionHouseChild.params()), abi.encode(cahParams));
@@ -171,7 +200,10 @@ contract Unit_CollateralAuctionHouseFactory_DeployCollateralAuctionHouse is Base
   function test_Set_CollateralAuctionHouses(bytes32 _cType) public happyPath {
     collateralAuctionHouseFactory.deployCollateralAuctionHouse(_cType, cahParams);
 
-    assertEq(collateralAuctionHouseFactory.collateralAuctionHousesList()[0], address(collateralAuctionHouseChild));
+    assertEq(
+      collateralAuctionHouseFactory.collateralAuctionHousesList()[0],
+      address(collateralAuctionHouseChild)
+    );
   }
 
   function test_Emit_DeployCollateralAuctionHouse(bytes32 _cType) public happyPath {
@@ -203,7 +235,10 @@ contract Unit_CollateralAuctionHouseFactory_ModifyParameters is Base {
     vm.assume(_liquidationEngine != deployer);
     vm.assume(_liquidationEngine != authorizedAccount);
 
-    collateralAuctionHouseFactory.modifyParameters('liquidationEngine', abi.encode(_liquidationEngine));
+    collateralAuctionHouseFactory.modifyParameters(
+      'liquidationEngine',
+      abi.encode(_liquidationEngine)
+    );
 
     assertEq(collateralAuctionHouseFactory.liquidationEngine(), _liquidationEngine);
   }
@@ -229,7 +264,10 @@ contract Unit_CollateralAuctionHouseFactory_ModifyParameters is Base {
     vm.expectEmit();
     emit AddAuthorization(_newLiquidationEngine);
 
-    collateralAuctionHouseFactory.modifyParameters('liquidationEngine', abi.encode(_newLiquidationEngine));
+    collateralAuctionHouseFactory.modifyParameters(
+      'liquidationEngine',
+      abi.encode(_newLiquidationEngine)
+    );
   }
 
   function test_Set_OracleRelayer(address _oracleRelayer) public happyPath {
@@ -278,7 +316,11 @@ contract Unit_CollateralAuctionHouseFactory_ModifyParametersPerCollateral is Bas
     _mockCollateralList(_cType);
   }
 
-  function test_Revert_UnrecognizedCType(bytes32 _cType, bytes32 _param, bytes memory _data) public {
+  function test_Revert_UnrecognizedCType(
+    bytes32 _cType,
+    bytes32 _param,
+    bytes memory _data
+  ) public {
     vm.startPrank(authorizedAccount);
 
     vm.expectRevert(IModifiable.UnrecognizedCType.selector);
@@ -292,7 +334,9 @@ contract Unit_CollateralAuctionHouseFactory_ModifyParametersPerCollateral is Bas
     bytes memory _data
   ) public happyPath(_cType) {
     vm.expectCall(
-      address(mockCollateralAuctionHouse), abi.encodeWithSignature('modifyParameters(bytes32,bytes)', _param, _data), 1
+      address(mockCollateralAuctionHouse),
+      abi.encodeWithSignature('modifyParameters(bytes32,bytes)', _param, _data),
+      1
     );
 
     collateralAuctionHouseFactory.modifyParameters(_cType, _param, _data);

@@ -15,7 +15,7 @@ contract GetSafes is TestScripts {
     address proxy = address(deployOrFind(USER2));
     uint256[] memory _safes = safeManager.getSafes(proxy);
 
-    for (uint256 i = 0; i < _safes.length;) {
+    for (uint256 i = 0; i < _safes.length; ) {
       safeManager.safeData(_safes[i]);
       ++i;
     }

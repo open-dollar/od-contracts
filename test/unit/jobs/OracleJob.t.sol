@@ -21,7 +21,8 @@ abstract contract Base is HaiTest {
   IOracleRelayer mockOracleRelayer = IOracleRelayer(mockContract('OracleRelayer'));
   IDelayedOracle mockDelayedOracle = IDelayedOracle(mockContract('DelayedOracle'));
   IPIDRateSetter mockPIDRateSetter = IPIDRateSetter(mockContract('PIDRateSetter'));
-  IStabilityFeeTreasury mockStabilityFeeTreasury = IStabilityFeeTreasury(mockContract('StabilityFeeTreasury'));
+  IStabilityFeeTreasury mockStabilityFeeTreasury =
+    IStabilityFeeTreasury(mockContract('StabilityFeeTreasury'));
 
   OracleJobForTest oracleJob;
 
@@ -30,8 +31,12 @@ abstract contract Base is HaiTest {
   function setUp() public virtual {
     vm.startPrank(deployer);
 
-    oracleJob =
-    new OracleJobForTest(address(mockOracleRelayer), address(mockPIDRateSetter), address(mockStabilityFeeTreasury), REWARD_AMOUNT);
+    oracleJob = new OracleJobForTest(
+      address(mockOracleRelayer),
+      address(mockPIDRateSetter),
+      address(mockStabilityFeeTreasury),
+      REWARD_AMOUNT
+    );
     label(address(oracleJob), 'OracleJob');
 
     oracleJob.addAuthorization(authorizedAccount);
@@ -53,11 +58,17 @@ abstract contract Base is HaiTest {
   }
 
   function _mockUpdateResult(bool _success) internal {
-    vm.mockCall(address(mockDelayedOracle), abi.encodeCall(mockDelayedOracle.updateResult, ()), abi.encode(_success));
+    vm.mockCall(
+      address(mockDelayedOracle),
+      abi.encodeCall(mockDelayedOracle.updateResult, ()),
+      abi.encode(_success)
+    );
   }
 
   function _mockRewardAmount(uint256 _rewardAmount) internal {
-    stdstore.target(address(oracleJob)).sig(IJob.rewardAmount.selector).checked_write(_rewardAmount);
+    stdstore.target(address(oracleJob)).sig(IJob.rewardAmount.selector).checked_write(
+      _rewardAmount
+    );
   }
 
   function _mockShouldWorkUpdateCollateralPrice(bool _shouldWorkUpdateCollateralPrice) internal {
@@ -91,20 +102,32 @@ contract Unit_OracleJob_Constructor is Base {
     vm.expectEmit();
     emit AddAuthorization(user);
 
-    oracleJob =
-    new OracleJobForTest(address(mockOracleRelayer), address(mockPIDRateSetter), address(mockStabilityFeeTreasury), REWARD_AMOUNT);
+    oracleJob = new OracleJobForTest(
+      address(mockOracleRelayer),
+      address(mockPIDRateSetter),
+      address(mockStabilityFeeTreasury),
+      REWARD_AMOUNT
+    );
   }
 
   function test_Set_OracleRelayer(address _oracleRelayer) public happyPath {
-    oracleJob =
-      new OracleJobForTest(_oracleRelayer, address(mockPIDRateSetter), address(mockStabilityFeeTreasury), REWARD_AMOUNT);
+    oracleJob = new OracleJobForTest(
+      _oracleRelayer,
+      address(mockPIDRateSetter),
+      address(mockStabilityFeeTreasury),
+      REWARD_AMOUNT
+    );
 
     assertEq(address(oracleJob.oracleRelayer()), _oracleRelayer);
   }
 
   function test_Set_PIDRateSetter(address _pidRateSetter) public happyPath {
-    oracleJob =
-      new OracleJobForTest(address(mockOracleRelayer), _pidRateSetter, address(mockStabilityFeeTreasury), REWARD_AMOUNT);
+    oracleJob = new OracleJobForTest(
+      address(mockOracleRelayer),
+      _pidRateSetter,
+      address(mockStabilityFeeTreasury),
+      REWARD_AMOUNT
+    );
 
     assertEq(address(oracleJob.pidRateSetter()), _pidRateSetter);
   }
@@ -128,7 +151,11 @@ contract Unit_OracleJob_WorkUpdateCollateralPrice is Base {
     _;
   }
 
-  function _mockValues(bytes32 _cType, bool _shouldWorkUpdateCollateralPrice, bool _updateResult) internal {
+  function _mockValues(
+    bytes32 _cType,
+    bool _shouldWorkUpdateCollateralPrice,
+    bool _updateResult
+  ) internal {
     _mockShouldWorkUpdateCollateralPrice(_shouldWorkUpdateCollateralPrice);
     _mockOracleRelayerCollateralParams(_cType, address(mockDelayedOracle), 0, 0);
     _mockUpdateResult(_updateResult);
@@ -151,7 +178,11 @@ contract Unit_OracleJob_WorkUpdateCollateralPrice is Base {
   }
 
   function test_Call_OracleRelayer_UpdateCollateralPrice(bytes32 _cType) public happyPath(_cType) {
-    vm.expectCall(address(mockOracleRelayer), abi.encodeCall(mockOracleRelayer.updateCollateralPrice, (_cType)), 1);
+    vm.expectCall(
+      address(mockOracleRelayer),
+      abi.encodeCall(mockOracleRelayer.updateCollateralPrice, (_cType)),
+      1
+    );
 
     oracleJob.workUpdateCollateralPrice(_cType);
   }
@@ -226,8 +257,13 @@ contract Unit_OracleJob_ModifyParameters is Base {
     assertEq(address(oracleJob.stabilityFeeTreasury()), _stabilityFeeTreasury);
   }
 
-  function test_Set_ShouldWorkUpdateCollateralPrice(bool _shouldWorkUpdateCollateralPrice) public happyPath {
-    oracleJob.modifyParameters('shouldWorkUpdateCollateralPrice', abi.encode(_shouldWorkUpdateCollateralPrice));
+  function test_Set_ShouldWorkUpdateCollateralPrice(
+    bool _shouldWorkUpdateCollateralPrice
+  ) public happyPath {
+    oracleJob.modifyParameters(
+      'shouldWorkUpdateCollateralPrice',
+      abi.encode(_shouldWorkUpdateCollateralPrice)
+    );
 
     assertEq(oracleJob.shouldWorkUpdateCollateralPrice(), _shouldWorkUpdateCollateralPrice);
   }

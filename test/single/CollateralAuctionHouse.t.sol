@@ -5,10 +5,7 @@ import {HaiTest} from '@test/utils/HaiTest.t.sol';
 
 import {ISAFEEngine, SAFEEngine} from '@contracts/SAFEEngine.sol';
 import {CollateralAuctionHouse, ICollateralAuctionHouse} from '@contracts/CollateralAuctionHouse.sol';
-import {
-  ICollateralAuctionHouseFactory,
-  CollateralAuctionHouseFactory
-} from '@contracts/factories/CollateralAuctionHouseFactory.sol';
+import {ICollateralAuctionHouseFactory, CollateralAuctionHouseFactory} from '@contracts/factories/CollateralAuctionHouseFactory.sol';
 import {IOracleRelayer, OracleRelayerForTest} from '@test/mocks/OracleRelayerForTest.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
@@ -36,12 +33,12 @@ contract Guy {
 
   function try_buyCollateral(uint256 id, uint256 wad) public returns (bool ok) {
     string memory sig = 'buyCollateral(uint256,uint256)';
-    (ok,) = address(collateralAuctionHouse).call(abi.encodeWithSignature(sig, id, wad));
+    (ok, ) = address(collateralAuctionHouse).call(abi.encodeWithSignature(sig, id, wad));
   }
 
   function try_terminateAuctionPrematurely(uint256 id) public returns (bool ok) {
     string memory sig = 'terminateAuctionPrematurely(uint256)';
-    (ok,) = address(collateralAuctionHouse).call(abi.encodeWithSignature(sig, id));
+    (ok, ) = address(collateralAuctionHouse).call(abi.encodeWithSignature(sig, id));
   }
 }
 
@@ -92,44 +89,49 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
 
   // --- Virtual methods ---
 
-  function _deployCollateralAuctionHouse(ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahParams)
-    internal
-    virtual
-    returns (ICollateralAuctionHouse _collateralAuctionHouse);
+  function _deployCollateralAuctionHouse(
+    ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahParams
+  ) internal virtual returns (ICollateralAuctionHouse _collateralAuctionHouse);
 
   function _modifyParameters(bytes32 _param, bytes memory _data) internal virtual;
+
   function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal virtual;
 
   function setUp() public {
     vm.warp(604_411_200);
 
-    ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
-      ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 0});
+    ISAFEEngine.SAFEEngineParams memory _safeEngineParams = ISAFEEngine.SAFEEngineParams({
+      safeDebtCeiling: type(uint256).max,
+      globalDebtCeiling: 0
+    });
     safeEngine = new SAFEEngine(_safeEngineParams);
 
-    ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
-      ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: 0, debtFloor: 0});
+    ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams = ISAFEEngine
+      .SAFEEngineCollateralParams({debtCeiling: 0, debtFloor: 0});
     safeEngine.initializeCollateralType('collateralType', _safeEngineCollateralParams);
 
     liquidationEngine = new DummyLiquidationEngine(rad(1000 ether));
 
     ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahParams = ICollateralAuctionHouse
       .CollateralAuctionHouseParams({
-      minDiscount: 0.95e18, // 5% discount
-      maxDiscount: 0.95e18, // 5% discount
-      perSecondDiscountUpdateRate: RAY, // [ray]
-      minimumBid: 1e18 // 1 system coin
-    });
+        minDiscount: 0.95e18, // 5% discount
+        maxDiscount: 0.95e18, // 5% discount
+        perSecondDiscountUpdateRate: RAY, // [ray]
+        minimumBid: 1e18 // 1 system coin
+      });
 
     systemCoinMedian = new OracleForTest(uint256(0));
     collateralMedian = new OracleForTest(uint256(0));
     collateralFSM = new DelayedOracleForTest(uint256(0), address(collateralMedian));
 
     // deploy oracle relayer
-    IOracleRelayer.OracleRelayerParams memory _oracleRelayerParams =
-      IOracleRelayer.OracleRelayerParams({redemptionRateUpperBound: RAY * WAD, redemptionRateLowerBound: 1});
-    oracleRelayer =
-      new OracleRelayerForTest(address(safeEngine), IBaseOracle(address(systemCoinMedian)), _oracleRelayerParams);
+    IOracleRelayer.OracleRelayerParams memory _oracleRelayerParams = IOracleRelayer
+      .OracleRelayerParams({redemptionRateUpperBound: RAY * WAD, redemptionRateLowerBound: 1});
+    oracleRelayer = new OracleRelayerForTest(
+      address(safeEngine),
+      IBaseOracle(address(systemCoinMedian)),
+      _oracleRelayerParams
+    );
     oracleRelayer.setRedemptionPrice(5 * RAY);
 
     collateralAuctionHouse = _deployCollateralAuctionHouse(_cahParams);
@@ -137,10 +139,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     // initialize cType
     IOracleRelayer.OracleRelayerCollateralParams memory _oracleRelayerCParams = IOracleRelayer
       .OracleRelayerCollateralParams({
-      oracle: IDelayedOracle(address(collateralFSM)),
-      safetyCRatio: 1e27,
-      liquidationCRatio: 1e27
-    });
+        oracle: IDelayedOracle(address(collateralFSM)),
+        safetyCRatio: 1e27,
+        liquidationCRatio: 1e27
+      });
     oracleRelayer.initializeCollateralType('collateralType', _oracleRelayerCParams);
 
     // setup oracleRelayer
@@ -171,7 +173,8 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     _modifyParameters('collateralType', 'minimumBid', abi.encode(100 * WAD));
     _modifyParameters('collateralType', 'perSecondDiscountUpdateRate', abi.encode(RAY - 100));
 
-    ICollateralAuctionHouse.CollateralAuctionHouseParams memory _params = collateralAuctionHouse.params();
+    ICollateralAuctionHouse.CollateralAuctionHouseParams memory _params = collateralAuctionHouse
+      .params();
 
     assertEq(_params.minDiscount, 0.91e18);
     assertEq(_params.maxDiscount, 0.9e18);
@@ -180,8 +183,15 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
   }
 
   function testFail_set_partially_implemented_collateralFSM() public {
-    PartiallyImplementedFeed partiallyImplementedCollateralFSM = new PartiallyImplementedFeed(bytes32(uint256(0)), true);
-    oracleRelayer.modifyParameters('collateralType', 'oracle', abi.encode(partiallyImplementedCollateralFSM));
+    PartiallyImplementedFeed partiallyImplementedCollateralFSM = new PartiallyImplementedFeed(
+      bytes32(uint256(0)),
+      true
+    );
+    oracleRelayer.modifyParameters(
+      'collateralType',
+      'oracle',
+      abi.encode(partiallyImplementedCollateralFSM)
+    );
   }
 
   function test_no_min_discount() public {
@@ -232,7 +242,8 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
       _initialBidder: auctionIncomeRecipient
     });
 
-    (uint256 collateralBoughtView, uint256 adjustedBidView) = collateralAuctionHouse.getCollateralBought(id, 25 * WAD);
+    (uint256 collateralBoughtView, uint256 adjustedBidView) = collateralAuctionHouse
+      .getCollateralBought(id, 25 * WAD);
     (uint256 collateralBought, uint256 adjustedBid) = Guy(ali).buyCollateral(id, 25 * WAD);
     assertEq(collateralBoughtView, collateralBought);
     assertEq(adjustedBidView, adjustedBid);
@@ -243,7 +254,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
 
     assertEq(_auction.amountToRaise, 25 * RAD);
     assertEq(_auction.amountToSell, 1 ether - 131_578_947_368_421_052);
-    assertEq(collateralAuctionHouse.getAuctionDiscount(id), collateralAuctionHouse.params().minDiscount);
+    assertEq(
+      collateralAuctionHouse.getAuctionDiscount(id),
+      collateralAuctionHouse.params().minDiscount
+    );
     assertEq(_auction.forgoneCollateralReceiver, address(safeAuctioned));
     assertEq(_auction.auctionIncomeRecipient, auctionIncomeRecipient);
 
@@ -251,10 +265,12 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     assertEq(adjustedBid, 25 * WAD);
     assertEq(safeEngine.coinBalance(_auction.auctionIncomeRecipient), 25 * RAD);
     assertEq(
-      safeEngine.tokenCollateral('collateralType', address(collateralAuctionHouse)), 1 ether - 131_578_947_368_421_052
+      safeEngine.tokenCollateral('collateralType', address(collateralAuctionHouse)),
+      1 ether - 131_578_947_368_421_052
     );
     assertEq(
-      safeEngine.tokenCollateral('collateralType', address(ali)) - collateralAmountPreBid, 131_578_947_368_421_052
+      safeEngine.tokenCollateral('collateralType', address(ali)) - collateralAmountPreBid,
+      131_578_947_368_421_052
     );
   }
 
@@ -276,7 +292,8 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
       _initialBidder: auctionIncomeRecipient
     });
 
-    (uint256 collateralBoughtView, uint256 adjustedBidView) = collateralAuctionHouse.getCollateralBought(id, 180 * WAD);
+    (uint256 collateralBoughtView, uint256 adjustedBidView) = collateralAuctionHouse
+      .getCollateralBought(id, 180 * WAD);
     (uint256 collateralBought, uint256 adjustedBid) = Guy(ali).buyCollateral(id, 180 * WAD);
     assertEq(collateralBought, collateralBoughtView);
     assertEq(adjustedBid, adjustedBidView);
@@ -288,8 +305,8 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     assertEq(_auction.amountToRaise, 120 * RAD);
 
     // NOTE: this tx could try to be the 1st one, but get frontrunned and end up overbidding
-    (uint256 newCollateralBoughtView, uint256 newAdjustedBidView) =
-      collateralAuctionHouse.getCollateralBought(id, 120 * WAD);
+    (uint256 newCollateralBoughtView, uint256 newAdjustedBidView) = collateralAuctionHouse
+      .getCollateralBought(id, 120 * WAD);
     (uint256 newCollateralBought, uint256 newAdjustedBid) = Guy(ali).buyCollateral(id, 120 * WAD);
     assertEq(newCollateralBought, newCollateralBoughtView);
     assertEq(newAdjustedBid, newAdjustedBidView);
@@ -322,11 +339,13 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
       _initialBidder: auctionIncomeRecipient
     });
 
-    uint256 _discountedCollateralPrice = (200 ether * RAY / oracleRelayer.redemptionPrice()) * 0.95e18 / WAD;
+    uint256 _discountedCollateralPrice = (((200 ether * RAY) / oracleRelayer.redemptionPrice()) *
+      0.95e18) / WAD;
 
     assertEq(_discountedCollateralPrice, 95 ether);
 
-    (uint256 collateralBoughtView, uint256 adjustedBidView) = collateralAuctionHouse.getCollateralBought(id, 50 * WAD);
+    (uint256 collateralBoughtView, uint256 adjustedBidView) = collateralAuctionHouse
+      .getCollateralBought(id, 50 * WAD);
     (uint256 collateralBought, uint256 adjustedBid) = Guy(ali).buyCollateral(id, 50 * WAD);
     assertEq(collateralBoughtView, collateralBought);
     assertEq(adjustedBidView, adjustedBid);
@@ -343,9 +362,13 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     assertEq(safeEngine.coinBalance(auctionIncomeRecipient), 50 * RAD);
     assertEq(safeEngine.tokenCollateral('collateralType', address(collateralAuctionHouse)), 0);
     assertEq(
-      safeEngine.tokenCollateral('collateralType', address(ali)) - collateralAmountPreBid, 526_315_789_473_684_210
+      safeEngine.tokenCollateral('collateralType', address(ali)) - collateralAmountPreBid,
+      526_315_789_473_684_210
     );
-    assertEq(safeEngine.tokenCollateral('collateralType', address(safeAuctioned)), 1 ether - 526_315_789_473_684_210);
+    assertEq(
+      safeEngine.tokenCollateral('collateralType', address(safeAuctioned)),
+      1 ether - 526_315_789_473_684_210
+    );
   }
 
   function testFail_start_tiny_collateral_auction() public {
@@ -390,7 +413,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     // collateral auction house has no collateral tokens
     assertEq(safeEngine.tokenCollateral('collateralType', address(collateralAuctionHouse)), 0);
     // bidder has all initially offered collateral tokens
-    assertEq(safeEngine.tokenCollateral('collateralType', address(ali)) - collateralAmountPreBid, 1 ether);
+    assertEq(
+      safeEngine.tokenCollateral('collateralType', address(ali)) - collateralAmountPreBid,
+      1 ether
+    );
     // safe receives no collateral tokens back
     assertEq(safeEngine.tokenCollateral('collateralType', address(safeAuctioned)), 0);
   }
@@ -420,9 +446,13 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     assertEq(safeEngine.coinBalance(auctionIncomeRecipient), 50 * RAD);
     assertEq(safeEngine.tokenCollateral('collateralType', address(collateralAuctionHouse)), 0);
     assertEq(
-      safeEngine.tokenCollateral('collateralType', address(ali)) - collateralAmountPreBid, 252_525_252_525_252_525
+      safeEngine.tokenCollateral('collateralType', address(ali)) - collateralAmountPreBid,
+      252_525_252_525_252_525
     );
-    assertEq(safeEngine.tokenCollateral('collateralType', address(safeAuctioned)), 1 ether - 252_525_252_525_252_525);
+    assertEq(
+      safeEngine.tokenCollateral('collateralType', address(safeAuctioned)),
+      1 ether - 252_525_252_525_252_525
+    );
   }
 
   function test_consecutive_small_auctions() public {
@@ -456,7 +486,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
       safeEngine.tokenCollateral('collateralType', address(ali)) - collateralAmountPreBid,
       1 ether - 736_842_105_263_157_900
     );
-    assertEq(safeEngine.tokenCollateral('collateralType', address(safeAuctioned)), 1 ether - 263_157_894_736_842_100);
+    assertEq(
+      safeEngine.tokenCollateral('collateralType', address(safeAuctioned)),
+      1 ether - 263_157_894_736_842_100
+    );
   }
 
   function test_settle_auction() public {
@@ -482,8 +515,14 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     assertEq(_auction.amountToRaise, 50 * RAD);
 
     assertEq(safeEngine.coinBalance(auctionIncomeRecipient), 0);
-    assertEq(safeEngine.tokenCollateral('collateralType', address(collateralAuctionHouse)), 1 ether);
-    assertEq(safeEngine.tokenCollateral('collateralType', address(ali)) - collateralAmountPreBid, 0);
+    assertEq(
+      safeEngine.tokenCollateral('collateralType', address(collateralAuctionHouse)),
+      1 ether
+    );
+    assertEq(
+      safeEngine.tokenCollateral('collateralType', address(ali)) - collateralAmountPreBid,
+      0
+    );
     assertEq(safeEngine.tokenCollateral('collateralType', address(safeAuctioned)), 0);
   }
 
@@ -517,17 +556,25 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
 
     assertEq(safeEngine.coinBalance(auctionIncomeRecipient), 25 * RAD);
     assertEq(safeEngine.tokenCollateral('collateralType', address(collateralAuctionHouse)), 0);
-    assertEq(safeEngine.tokenCollateral('collateralType', address(this)), 999_736_842_105_263_157_895);
+    assertEq(
+      safeEngine.tokenCollateral('collateralType', address(this)),
+      999_736_842_105_263_157_895
+    );
     assertEq(uint256(999_736_842_105_263_157_895).add(263_157_894_736_842_105), 1000 ether);
     assertEq(
-      safeEngine.tokenCollateral('collateralType', address(ali)) - collateralAmountPreBid, 263_157_894_736_842_105
+      safeEngine.tokenCollateral('collateralType', address(ali)) - collateralAmountPreBid,
+      263_157_894_736_842_105
     );
     assertEq(safeEngine.tokenCollateral('collateralType', address(safeAuctioned)), 0);
   }
 
   // Custom tests for the increasing discount implementation
   function test_small_discount_change_rate_auction_right_away() public {
-    _modifyParameters('collateralType', 'perSecondDiscountUpdateRate', abi.encode(999_998_607_628_240_588_157_433_861)); // -0.5% per hour
+    _modifyParameters(
+      'collateralType',
+      'perSecondDiscountUpdateRate',
+      abi.encode(999_998_607_628_240_588_157_433_861)
+    ); // -0.5% per hour
     _modifyParameters('collateralType', 'maxDiscount', abi.encode(0.93e18));
 
     oracleRelayer.setRedemptionPrice(RAY);
@@ -549,10 +596,16 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);
     assertEq(_auction.amountToSell, 742_105_263_157_894_737);
     assertEq(_auction.amountToRaise, RAY * WAD);
-    assertEq(collateralAuctionHouse.getAuctionDiscount(id), collateralAuctionHouse.params().minDiscount);
+    assertEq(
+      collateralAuctionHouse.getAuctionDiscount(id),
+      collateralAuctionHouse.params().minDiscount
+    );
 
     assertEq(safeEngine.coinBalance(auctionIncomeRecipient), 49 * RAD);
-    assertEq(safeEngine.tokenCollateral('collateralType', address(collateralAuctionHouse)), 742_105_263_157_894_737);
+    assertEq(
+      safeEngine.tokenCollateral('collateralType', address(collateralAuctionHouse)),
+      742_105_263_157_894_737
+    );
     assertEq(
       safeEngine.tokenCollateral('collateralType', address(ali)) - collateralAmountPreBid,
       1 ether - 742_105_263_157_894_737
@@ -561,7 +614,11 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
   }
 
   function test_small_discount_change_rate_auction_after_short_timeline() public {
-    _modifyParameters('collateralType', 'perSecondDiscountUpdateRate', abi.encode(999_998_607_628_240_588_157_433_861)); // -0.5% per hour
+    _modifyParameters(
+      'collateralType',
+      'perSecondDiscountUpdateRate',
+      abi.encode(999_998_607_628_240_588_157_433_861)
+    ); // -0.5% per hour
     _modifyParameters('collateralType', 'maxDiscount', abi.encode(0.93e18));
 
     oracleRelayer.setRedemptionPrice(RAY);
@@ -587,7 +644,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     assertEq(collateralAuctionHouse.getAuctionDiscount(id), 947_622_023_804_850_158);
 
     assertEq(safeEngine.coinBalance(auctionIncomeRecipient), 49 * RAD);
-    assertEq(safeEngine.tokenCollateral('collateralType', address(collateralAuctionHouse)), 741_458_098_434_345_369);
+    assertEq(
+      safeEngine.tokenCollateral('collateralType', address(collateralAuctionHouse)),
+      741_458_098_434_345_369
+    );
     assertEq(
       safeEngine.tokenCollateral('collateralType', address(ali)) - collateralAmountPreBid,
       1 ether - 741_458_098_434_345_369
@@ -600,7 +660,11 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
    * rateTimeline was supposed to jump to maxDiscount in 1 hour, but since deprecated, we use a rate that simulates the behaviour
    */
   function test_small_discount_change_rate_bid_end_rate_timeline() public {
-    _modifyParameters('collateralType', 'perSecondDiscountUpdateRate', abi.encode(999_979_841_677_394_287_735_580_746)); // -7% per hour
+    _modifyParameters(
+      'collateralType',
+      'perSecondDiscountUpdateRate',
+      abi.encode(999_979_841_677_394_287_735_580_746)
+    ); // -7% per hour
     _modifyParameters('collateralType', 'maxDiscount', abi.encode(0.93e18));
 
     oracleRelayer.setRedemptionPrice(RAY);
@@ -626,7 +690,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     assertEq(collateralAuctionHouse.getAuctionDiscount(id), 930_000_000_000_000_000);
 
     assertEq(safeEngine.coinBalance(auctionIncomeRecipient), 49 * RAD);
-    assertEq(safeEngine.tokenCollateral('collateralType', address(collateralAuctionHouse)), 736_559_139_784_946_237);
+    assertEq(
+      safeEngine.tokenCollateral('collateralType', address(collateralAuctionHouse)),
+      736_559_139_784_946_237
+    );
     assertEq(
       safeEngine.tokenCollateral('collateralType', address(ali)) - collateralAmountPreBid,
       1 ether - 736_559_139_784_946_237
@@ -635,7 +702,11 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
   }
 
   function test_small_discount_change_rate_auction_long_after_long_timeline() public {
-    _modifyParameters('collateralType', 'perSecondDiscountUpdateRate', abi.encode(999_998_607_628_240_588_157_433_861)); // -0.5% per hour
+    _modifyParameters(
+      'collateralType',
+      'perSecondDiscountUpdateRate',
+      abi.encode(999_998_607_628_240_588_157_433_861)
+    ); // -0.5% per hour
     _modifyParameters('collateralType', 'maxDiscount', abi.encode(0.93e18));
 
     oracleRelayer.setRedemptionPrice(RAY);
@@ -661,7 +732,10 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     assertEq(collateralAuctionHouse.getAuctionDiscount(id), 930_000_000_000_000_000);
 
     assertEq(safeEngine.coinBalance(auctionIncomeRecipient), 49 * RAD);
-    assertEq(safeEngine.tokenCollateral('collateralType', address(collateralAuctionHouse)), 736_559_139_784_946_237);
+    assertEq(
+      safeEngine.tokenCollateral('collateralType', address(collateralAuctionHouse)),
+      736_559_139_784_946_237
+    );
     assertEq(
       safeEngine.tokenCollateral('collateralType', address(ali)) - collateralAmountPreBid,
       1 ether - 736_559_139_784_946_237
@@ -670,7 +744,11 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
   }
 
   function test_auction_multi_times_at_different_timestamps() public {
-    _modifyParameters('collateralType', 'perSecondDiscountUpdateRate', abi.encode(999_998_607_628_240_588_157_433_861)); // -0.5% per hour
+    _modifyParameters(
+      'collateralType',
+      'perSecondDiscountUpdateRate',
+      abi.encode(999_998_607_628_240_588_157_433_861)
+    ); // -0.5% per hour
     _modifyParameters('collateralType', 'maxDiscount', abi.encode(0.93e18));
 
     oracleRelayer.setRedemptionPrice(RAY);
@@ -705,19 +783,24 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
       safeEngine.tokenCollateral('collateralType', address(ali)) - collateralAmountPreBid,
       1 ether - 736_721_153_320_545_015
     );
-    assertEq(safeEngine.tokenCollateral('collateralType', address(safeAuctioned)), 736_721_153_320_545_015);
+    assertEq(
+      safeEngine.tokenCollateral('collateralType', address(safeAuctioned)),
+      736_721_153_320_545_015
+    );
   }
 }
 
 contract FactorySingleCollateralAuctionHouseTest is SingleCollateralAuctionHouseTest {
   ICollateralAuctionHouseFactory factory;
 
-  function _deployCollateralAuctionHouse(ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahParams)
-    internal
-    override
-    returns (ICollateralAuctionHouse _collateralAuctionHouse)
-  {
-    factory = new CollateralAuctionHouseFactory(address(safeEngine), address(liquidationEngine), address(oracleRelayer));
+  function _deployCollateralAuctionHouse(
+    ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahParams
+  ) internal override returns (ICollateralAuctionHouse _collateralAuctionHouse) {
+    factory = new CollateralAuctionHouseFactory(
+      address(safeEngine),
+      address(liquidationEngine),
+      address(oracleRelayer)
+    );
 
     return factory.deployCollateralAuctionHouse('collateralType', _cahParams);
   }
@@ -726,20 +809,27 @@ contract FactorySingleCollateralAuctionHouseTest is SingleCollateralAuctionHouse
     factory.modifyParameters(_parameter, _data);
   }
 
-  function _modifyParameters(bytes32 _cType, bytes32 _parameter, bytes memory _data) internal override {
+  function _modifyParameters(
+    bytes32 _cType,
+    bytes32 _parameter,
+    bytes memory _data
+  ) internal override {
     factory.modifyParameters(_cType, _parameter, _data);
   }
 }
 
 contract OrphanSingleCollateralAuctionHouseTest is SingleCollateralAuctionHouseTest {
-  function _deployCollateralAuctionHouse(ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahParams)
-    internal
-    override
-    returns (ICollateralAuctionHouse _collateralAuctionHouse)
-  {
+  function _deployCollateralAuctionHouse(
+    ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahParams
+  ) internal override returns (ICollateralAuctionHouse _collateralAuctionHouse) {
     return
-    new CollateralAuctionHouse(address(safeEngine), address(liquidationEngine), address(oracleRelayer), 'collateralType',
-         _cahParams);
+      new CollateralAuctionHouse(
+        address(safeEngine),
+        address(liquidationEngine),
+        address(oracleRelayer),
+        'collateralType',
+        _cahParams
+      );
   }
 
   function _modifyParameters(bytes32 _parameter, bytes memory _data) internal override {

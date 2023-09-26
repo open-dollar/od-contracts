@@ -102,7 +102,11 @@ contract Unit_Modifiable_ModifyParametersPerCollateral is Base {
     modifiable.modifyParameters(_cType, _param, _data);
   }
 
-  function test_Revert_UnrecognizedParam(bytes32 _cType, bytes32 _param, bytes memory _data) public {
+  function test_Revert_UnrecognizedParam(
+    bytes32 _cType,
+    bytes32 _param,
+    bytes memory _data
+  ) public {
     vm.startPrank(authorizedAccount);
 
     vm.expectRevert(IModifiable.UnrecognizedParam.selector);
@@ -110,7 +114,11 @@ contract Unit_Modifiable_ModifyParametersPerCollateral is Base {
     modifiable.modifyParameters(_cType, _param, _data);
   }
 
-  function test_Emit_ModifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) public happyPath {
+  function test_Emit_ModifyParameters(
+    bytes32 _cType,
+    bytes32 _param,
+    bytes memory _data
+  ) public happyPath {
     vm.expectEmit();
     emit ModifyParameters(_param, _cType, _data);
 

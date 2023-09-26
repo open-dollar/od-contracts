@@ -17,9 +17,13 @@ abstract contract Base is HaiTest {
   IBaseOracle mockPriceSource = IBaseOracle(mockContract('PriceSource'));
 
   DelayedOracleFactory delayedOracleFactory;
-  DelayedOracleChild delayedOracleChild = DelayedOracleChild(
-    label(address(0x0000000000000000000000007f85e9e000597158aed9320b5a5e11ab8cc7329a), 'DelayedOracleChild')
-  );
+  DelayedOracleChild delayedOracleChild =
+    DelayedOracleChild(
+      label(
+        address(0x0000000000000000000000007f85e9e000597158aed9320b5a5e11ab8cc7329a),
+        'DelayedOracleChild'
+      )
+    );
 
   function setUp() public virtual {
     vm.startPrank(deployer);
@@ -33,7 +37,11 @@ abstract contract Base is HaiTest {
   }
 
   function _mockSymbol(string memory _symbol) internal {
-    vm.mockCall(address(mockPriceSource), abi.encodeCall(mockPriceSource.symbol, ()), abi.encode(_symbol));
+    vm.mockCall(
+      address(mockPriceSource),
+      abi.encodeCall(mockPriceSource.symbol, ()),
+      abi.encode(_symbol)
+    );
   }
 
   function _mockGetResultWithValidity(uint256 _result, bool _validity) internal {
@@ -62,9 +70,18 @@ contract Unit_DelayedOracleFactory_Constructor is Base {
 }
 
 contract Unit_DelayedOracleFactory_DeployDelayedOracle is Base {
-  event NewDelayedOracle(address indexed _delayedOracle, address _priceSource, uint256 _updateDelay);
+  event NewDelayedOracle(
+    address indexed _delayedOracle,
+    address _priceSource,
+    uint256 _updateDelay
+  );
 
-  modifier happyPath(uint256 _updateDelay, string memory _symbol, uint256 _result, bool _validity) {
+  modifier happyPath(
+    uint256 _updateDelay,
+    string memory _symbol,
+    uint256 _result,
+    bool _validity
+  ) {
     vm.startPrank(authorizedAccount);
 
     _assumeHappyPath(_updateDelay);
@@ -132,7 +149,8 @@ contract Unit_DelayedOracleFactory_DeployDelayedOracle is Base {
     bool _validity
   ) public happyPath(_updateDelay, _symbol, _result, _validity) {
     assertEq(
-      address(delayedOracleFactory.deployDelayedOracle(mockPriceSource, _updateDelay)), address(delayedOracleChild)
+      address(delayedOracleFactory.deployDelayedOracle(mockPriceSource, _updateDelay)),
+      address(delayedOracleChild)
     );
   }
 }

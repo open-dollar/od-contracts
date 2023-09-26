@@ -1,12 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {
-  IGlobalSettlement,
-  ISAFEEngine,
-  ILiquidationEngine,
-  IOracleRelayer
-} from '@interfaces/settlement/IGlobalSettlement.sol';
+import {IGlobalSettlement, ISAFEEngine, ILiquidationEngine, IOracleRelayer} from '@interfaces/settlement/IGlobalSettlement.sol';
 
 import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
@@ -229,8 +224,9 @@ contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettl
   function fastTrackAuction(bytes32 _cType, uint256 _auctionId) external {
     if (finalCoinPerCollateralPrice[_cType] == 0) revert GS_FinalCollateralPriceNotDefined();
 
-    ICollateralAuctionHouse _collateralAuctionHouse =
-      ICollateralAuctionHouse(liquidationEngine.cParams(_cType).collateralAuctionHouse);
+    ICollateralAuctionHouse _collateralAuctionHouse = ICollateralAuctionHouse(
+      liquidationEngine.cParams(_cType).collateralAuctionHouse
+    );
     uint256 _accumulatedRate = safeEngine.cData(_cType).accumulatedRate;
 
     ICollateralAuctionHouse.Auction memory _auction = _collateralAuctionHouse.auctions(_auctionId);
@@ -267,7 +263,9 @@ contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettl
 
     ISAFEEngine.SAFE memory _safeData = safeEngine.safes(_cType, _safe);
     uint256 _accumulatedRate = safeEngine.cData(_cType).accumulatedRate;
-    uint256 _amountOwed = _safeData.generatedDebt.rmul(_accumulatedRate).rmul(finalCoinPerCollateralPrice[_cType]);
+    uint256 _amountOwed = _safeData.generatedDebt.rmul(_accumulatedRate).rmul(
+      finalCoinPerCollateralPrice[_cType]
+    );
     uint256 _minCollateral = Math.min(_safeData.lockedCollateral, _amountOwed);
 
     // If the SAFE is undercollateralized, add the difference to the collateral shortfall
@@ -306,7 +304,8 @@ contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettl
   function setOutstandingCoinSupply() external whenDisabled {
     if (outstandingCoinSupply != 0) revert GS_OutstandingCoinSupplyNotZero();
     if (safeEngine.coinBalance(address(accountingEngine)) != 0) revert GS_SurplusNotZero();
-    if (block.timestamp < shutdownTime + _params.shutdownCooldown) revert GS_ShutdownCooldownNotFinished();
+    if (block.timestamp < shutdownTime + _params.shutdownCooldown)
+      revert GS_ShutdownCooldownNotFinished();
 
     outstandingCoinSupply = safeEngine.globalDebt();
 
@@ -319,11 +318,13 @@ contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettl
     if (collateralCashPrice[_cType] != 0) revert GS_CollateralCashPriceAlreadyDefined();
 
     uint256 _accumulatedRate = safeEngine.cData(_cType).accumulatedRate;
-    uint256 _redemptionAdjustedDebt =
-      collateralTotalDebt[_cType].rmul(_accumulatedRate).rmul(finalCoinPerCollateralPrice[_cType]);
+    uint256 _redemptionAdjustedDebt = collateralTotalDebt[_cType].rmul(_accumulatedRate).rmul(
+      finalCoinPerCollateralPrice[_cType]
+    );
 
-    collateralCashPrice[_cType] =
-      (_redemptionAdjustedDebt - collateralShortfall[_cType]).rdiv(outstandingCoinSupply / RAY);
+    collateralCashPrice[_cType] = (_redemptionAdjustedDebt - collateralShortfall[_cType]).rdiv(
+      outstandingCoinSupply / RAY
+    );
 
     emit CalculateCashPrice(_cType, collateralCashPrice[_cType]);
   }
@@ -353,7 +354,8 @@ contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettl
 
     coinsUsedToRedeem[_cType][msg.sender] += _coinsAmount;
 
-    if (coinsUsedToRedeem[_cType][msg.sender] > coinBag[msg.sender]) revert GS_InsufficientBagBalance();
+    if (coinsUsedToRedeem[_cType][msg.sender] > coinBag[msg.sender])
+      revert GS_InsufficientBagBalance();
     emit RedeemCollateral(_cType, msg.sender, _coinsAmount, _collateralAmount);
   }
 
@@ -367,7 +369,8 @@ contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettl
     else if (_param == 'liquidationEngine') liquidationEngine = ILiquidationEngine(_address);
     else if (_param == 'coinJoin') coinJoin = IDisableable(_address);
     else if (_param == 'collateralJoinFactory') collateralJoinFactory = IDisableable(_address);
-    else if (_param == 'collateralAuctionHouseFactory') collateralAuctionHouseFactory = IDisableable(_address);
+    else if (_param == 'collateralAuctionHouseFactory')
+      collateralAuctionHouseFactory = IDisableable(_address);
     else if (_param == 'stabilityFeeTreasury') stabilityFeeTreasury = IDisableable(_address);
     else if (_param == 'accountingEngine') accountingEngine = IDisableable(_address);
     else if (_param == 'shutdownCooldown') _params.shutdownCooldown = _data.toUint256();

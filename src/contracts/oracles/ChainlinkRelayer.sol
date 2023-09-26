@@ -46,7 +46,8 @@ contract ChainlinkRelayer is IBaseOracle, IChainlinkRelayer {
   /// @inheritdoc IBaseOracle
   function getResultWithValidity() external view returns (uint256 _result, bool _validity) {
     // Fetch values from Chainlink
-    (, int256 _aggregatorResult,, uint256 _aggregatorTimestamp,) = chainlinkFeed.latestRoundData();
+    (, int256 _aggregatorResult, , uint256 _aggregatorTimestamp, ) = chainlinkFeed
+      .latestRoundData();
 
     // Parse the quote into 18 decimals format
     _result = _parseResult(_aggregatorResult);
@@ -58,7 +59,8 @@ contract ChainlinkRelayer is IBaseOracle, IChainlinkRelayer {
   /// @inheritdoc IBaseOracle
   function read() external view returns (uint256 _result) {
     // Fetch values from Chainlink
-    (, int256 _aggregatorResult,, uint256 _aggregatorTimestamp,) = chainlinkFeed.latestRoundData();
+    (, int256 _aggregatorResult, , uint256 _aggregatorTimestamp, ) = chainlinkFeed
+      .latestRoundData();
 
     // Revert if price is invalid
     if (_aggregatorResult == 0 || !_isValidFeed(_aggregatorTimestamp)) revert InvalidPriceFeed();

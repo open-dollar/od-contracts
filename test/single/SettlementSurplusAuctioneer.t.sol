@@ -4,10 +4,7 @@ pragma solidity 0.8.19;
 import 'ds-test/test.sol';
 import {CoinForTest} from '@test/mocks/CoinForTest.sol';
 import {DisableableForTest} from '@test/mocks/DisableableForTest.sol';
-import {
-  IPostSettlementSurplusAuctionHouse,
-  PostSettlementSurplusAuctionHouse
-} from '@contracts/settlement/PostSettlementSurplusAuctionHouse.sol';
+import {IPostSettlementSurplusAuctionHouse, PostSettlementSurplusAuctionHouse} from '@contracts/settlement/PostSettlementSurplusAuctionHouse.sol';
 import {SettlementSurplusAuctioneer} from '@contracts/settlement/SettlementSurplusAuctioneer.sol';
 import {ISAFEEngine, SAFEEngine} from '@contracts/SAFEEngine.sol';
 import {IAccountingEngine, AccountingEngine} from '@contracts/AccountingEngine.sol';
@@ -38,34 +35,51 @@ contract SingleSettlementSurplusAuctioneerTest is DSTest {
     DisableableForTest disableable1 = new DisableableForTest();
     DisableableForTest disableable2 = new DisableableForTest();
 
-    ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
-      ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 0});
+    ISAFEEngine.SAFEEngineParams memory _safeEngineParams = ISAFEEngine.SAFEEngineParams({
+      safeDebtCeiling: type(uint256).max,
+      globalDebtCeiling: 0
+    });
 
     safeEngine = new SAFEEngine(_safeEngineParams);
 
-    IAccountingEngine.AccountingEngineParams memory _accountingEngineParams = IAccountingEngine.AccountingEngineParams({
-      surplusIsTransferred: 0,
-      surplusDelay: 3600,
-      popDebtDelay: 0,
-      disableCooldown: 0,
-      surplusAmount: 100 ether * 10 ** 9,
-      surplusBuffer: 0,
-      debtAuctionMintedTokens: 0,
-      debtAuctionBidSize: 0
-    });
+    IAccountingEngine.AccountingEngineParams memory _accountingEngineParams = IAccountingEngine
+      .AccountingEngineParams({
+        surplusIsTransferred: 0,
+        surplusDelay: 3600,
+        popDebtDelay: 0,
+        disableCooldown: 0,
+        surplusAmount: 100 ether * 10 ** 9,
+        surplusBuffer: 0,
+        debtAuctionMintedTokens: 0,
+        debtAuctionBidSize: 0
+      });
 
-    accountingEngine =
-      new AccountingEngine(address(safeEngine), address(disableable1), address(disableable2), _accountingEngineParams);
+    accountingEngine = new AccountingEngine(
+      address(safeEngine),
+      address(disableable1),
+      address(disableable2),
+      _accountingEngineParams
+    );
     protocolToken = new CoinForTest('', '');
 
     disableable1.addAuthorization(address(accountingEngine));
     disableable2.addAuthorization(address(accountingEngine));
 
-    IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams memory _pssahParams = IPostSettlementSurplusAuctionHouse
-      .PostSettlementSAHParams({bidIncrease: 1.05e18, bidDuration: 3 hours, totalAuctionLength: 2 days});
-    surplusAuctionHouse =
-      new PostSettlementSurplusAuctionHouse(address(safeEngine), address(protocolToken), _pssahParams);
-    surplusAuctioneer = new SettlementSurplusAuctioneer(address(accountingEngine), address(surplusAuctionHouse));
+    IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams
+      memory _pssahParams = IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams({
+        bidIncrease: 1.05e18,
+        bidDuration: 3 hours,
+        totalAuctionLength: 2 days
+      });
+    surplusAuctionHouse = new PostSettlementSurplusAuctionHouse(
+      address(safeEngine),
+      address(protocolToken),
+      _pssahParams
+    );
+    surplusAuctioneer = new SettlementSurplusAuctioneer(
+      address(accountingEngine),
+      address(surplusAuctionHouse)
+    );
     surplusAuctionHouse.addAuthorization(address(surplusAuctioneer));
 
     safeEngine.approveSAFEModification(address(surplusAuctionHouse));

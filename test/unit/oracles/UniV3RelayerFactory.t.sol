@@ -23,9 +23,13 @@ abstract contract Base is HaiTest {
   IERC20Metadata mockQuoteToken = IERC20Metadata(mockContract('QuoteToken'));
 
   UniV3RelayerFactory uniV3RelayerFactory;
-  UniV3RelayerChild uniV3RelayerChild = UniV3RelayerChild(
-    label(address(0x0000000000000000000000007f85e9e000597158aed9320b5a5e11ab8cc7329a), 'UniV3RelayerChild')
-  );
+  UniV3RelayerChild uniV3RelayerChild =
+    UniV3RelayerChild(
+      label(
+        address(0x0000000000000000000000007f85e9e000597158aed9320b5a5e11ab8cc7329a),
+        'UniV3RelayerChild'
+      )
+    );
 
   function setUp() public virtual {
     vm.startPrank(deployer);
@@ -38,7 +42,12 @@ abstract contract Base is HaiTest {
     vm.stopPrank();
   }
 
-  function _mockGetPool(address _baseToken, address _quoteToken, uint24 _feeTier, address _uniV3Pool) internal {
+  function _mockGetPool(
+    address _baseToken,
+    address _quoteToken,
+    uint24 _feeTier,
+    address _uniV3Pool
+  ) internal {
     vm.mockCall(
       address(mockUniV3Factory),
       abi.encodeCall(mockUniV3Factory.getPool, (_baseToken, _quoteToken, _feeTier)),
@@ -47,21 +56,45 @@ abstract contract Base is HaiTest {
   }
 
   function _mockToken0(address _token0) internal {
-    vm.mockCall(address(mockUniV3Pool), abi.encodeCall(mockUniV3Pool.token0, ()), abi.encode(_token0));
+    vm.mockCall(
+      address(mockUniV3Pool),
+      abi.encodeCall(mockUniV3Pool.token0, ()),
+      abi.encode(_token0)
+    );
   }
 
   function _mockToken1(address _token1) internal {
-    vm.mockCall(address(mockUniV3Pool), abi.encodeCall(mockUniV3Pool.token1, ()), abi.encode(_token1));
+    vm.mockCall(
+      address(mockUniV3Pool),
+      abi.encodeCall(mockUniV3Pool.token1, ()),
+      abi.encode(_token1)
+    );
   }
 
   function _mockSymbol(string memory _symbol) internal {
-    vm.mockCall(address(mockBaseToken), abi.encodeCall(mockBaseToken.symbol, ()), abi.encode(_symbol));
-    vm.mockCall(address(mockQuoteToken), abi.encodeCall(mockQuoteToken.symbol, ()), abi.encode(_symbol));
+    vm.mockCall(
+      address(mockBaseToken),
+      abi.encodeCall(mockBaseToken.symbol, ()),
+      abi.encode(_symbol)
+    );
+    vm.mockCall(
+      address(mockQuoteToken),
+      abi.encodeCall(mockQuoteToken.symbol, ()),
+      abi.encode(_symbol)
+    );
   }
 
   function _mockDecimals(uint8 _decimals) internal {
-    vm.mockCall(address(mockBaseToken), abi.encodeCall(mockBaseToken.decimals, ()), abi.encode(_decimals));
-    vm.mockCall(address(mockQuoteToken), abi.encodeCall(mockQuoteToken.decimals, ()), abi.encode(_decimals));
+    vm.mockCall(
+      address(mockBaseToken),
+      abi.encodeCall(mockBaseToken.decimals, ()),
+      abi.encode(_decimals)
+    );
+    vm.mockCall(
+      address(mockQuoteToken),
+      abi.encodeCall(mockQuoteToken.decimals, ()),
+      abi.encode(_decimals)
+    );
   }
 }
 
@@ -83,10 +116,18 @@ contract Unit_UniV3RelayerFactory_Constructor is Base {
 
 contract Unit_UniV3RelayerFactory_DeployUniV3Relayer is Base {
   event NewUniV3Relayer(
-    address indexed _uniV3Relayer, address _baseToken, address _quoteToken, uint24 _feeTier, uint32 _quotePeriod
+    address indexed _uniV3Relayer,
+    address _baseToken,
+    address _quoteToken,
+    uint24 _feeTier,
+    uint32 _quotePeriod
   );
 
-  modifier happyPath(uint24 _feeTier, string memory _symbol, uint8 _decimals) {
+  modifier happyPath(
+    uint24 _feeTier,
+    string memory _symbol,
+    uint8 _decimals
+  ) {
     vm.startPrank(authorizedAccount);
 
     _assumeHappyPath(_decimals);
@@ -109,7 +150,12 @@ contract Unit_UniV3RelayerFactory_DeployUniV3Relayer is Base {
   function test_Revert_Unauthorized(uint24 _feeTier, uint32 _quotePeriod) public {
     vm.expectRevert(IAuthorizable.Unauthorized.selector);
 
-    uniV3RelayerFactory.deployUniV3Relayer(address(mockBaseToken), address(mockQuoteToken), _feeTier, _quotePeriod);
+    uniV3RelayerFactory.deployUniV3Relayer(
+      address(mockBaseToken),
+      address(mockQuoteToken),
+      _feeTier,
+      _quotePeriod
+    );
   }
 
   function test_Deploy_UniV3RelayerChild(
@@ -118,7 +164,12 @@ contract Unit_UniV3RelayerFactory_DeployUniV3Relayer is Base {
     string memory _symbol,
     uint8 _decimals
   ) public happyPath(_feeTier, _symbol, _decimals) {
-    uniV3RelayerFactory.deployUniV3Relayer(address(mockBaseToken), address(mockQuoteToken), _feeTier, _quotePeriod);
+    uniV3RelayerFactory.deployUniV3Relayer(
+      address(mockBaseToken),
+      address(mockQuoteToken),
+      _feeTier,
+      _quotePeriod
+    );
 
     assertEq(address(uniV3RelayerChild).code, type(UniV3RelayerChild).runtimeCode);
 
@@ -134,7 +185,12 @@ contract Unit_UniV3RelayerFactory_DeployUniV3Relayer is Base {
     string memory _symbol,
     uint8 _decimals
   ) public happyPath(_feeTier, _symbol, _decimals) {
-    uniV3RelayerFactory.deployUniV3Relayer(address(mockBaseToken), address(mockQuoteToken), _feeTier, _quotePeriod);
+    uniV3RelayerFactory.deployUniV3Relayer(
+      address(mockBaseToken),
+      address(mockQuoteToken),
+      _feeTier,
+      _quotePeriod
+    );
 
     assertEq(uniV3RelayerFactory.uniV3RelayersList()[0], address(uniV3RelayerChild));
   }
@@ -147,10 +203,19 @@ contract Unit_UniV3RelayerFactory_DeployUniV3Relayer is Base {
   ) public happyPath(_feeTier, _symbol, _decimals) {
     vm.expectEmit();
     emit NewUniV3Relayer(
-      address(uniV3RelayerChild), address(mockBaseToken), address(mockQuoteToken), _feeTier, _quotePeriod
+      address(uniV3RelayerChild),
+      address(mockBaseToken),
+      address(mockQuoteToken),
+      _feeTier,
+      _quotePeriod
     );
 
-    uniV3RelayerFactory.deployUniV3Relayer(address(mockBaseToken), address(mockQuoteToken), _feeTier, _quotePeriod);
+    uniV3RelayerFactory.deployUniV3Relayer(
+      address(mockBaseToken),
+      address(mockQuoteToken),
+      _feeTier,
+      _quotePeriod
+    );
   }
 
   function test_Return_UniV3Relayer(
@@ -161,7 +226,12 @@ contract Unit_UniV3RelayerFactory_DeployUniV3Relayer is Base {
   ) public happyPath(_feeTier, _symbol, _decimals) {
     assertEq(
       address(
-        uniV3RelayerFactory.deployUniV3Relayer(address(mockBaseToken), address(mockQuoteToken), _feeTier, _quotePeriod)
+        uniV3RelayerFactory.deployUniV3Relayer(
+          address(mockBaseToken),
+          address(mockQuoteToken),
+          _feeTier,
+          _quotePeriod
+        )
       ),
       address(uniV3RelayerChild)
     );

@@ -41,7 +41,12 @@ contract GoerliForkSetup is Test, GoerliDeployment {
   }
 
   function openSafe(bytes32 _cType, address _proxy) public returns (uint256 _safeId) {
-    bytes memory payload = abi.encodeWithSelector(basicActions.openSAFE.selector, address(safeManager), _cType, _proxy);
+    bytes memory payload = abi.encodeWithSelector(
+      basicActions.openSAFE.selector,
+      address(safeManager),
+      _cType,
+      _proxy
+    );
     bytes memory safeData = ODProxy(_proxy).execute(address(basicActions), payload);
     _safeId = abi.decode(safeData, (uint256));
   }

@@ -26,8 +26,11 @@ contract Base is HaiTest {
 
   function _createDefaulPIDRateSetter() internal returns (PIDRateSetter _pidRateSetter) {
     vm.prank(deployer);
-    _pidRateSetter =
-    new PIDRateSetter(address(mockOracleRelayer), address(mockPIDController), IPIDRateSetter.PIDRateSetterParams(periodSize));
+    _pidRateSetter = new PIDRateSetter(
+      address(mockOracleRelayer),
+      address(mockPIDController),
+      IPIDRateSetter.PIDRateSetterParams(periodSize)
+    );
   }
 
   function setUp() public virtual {
@@ -41,7 +44,9 @@ contract Base is HaiTest {
 
   function _mockOracleRelayerMarketPrice(uint256 _result) internal {
     vm.mockCall(
-      address(mockOracleRelayer), abi.encodeWithSelector(IOracleRelayer.marketPrice.selector), abi.encode(_result)
+      address(mockOracleRelayer),
+      abi.encodeWithSelector(IOracleRelayer.marketPrice.selector),
+      abi.encode(_result)
     );
   }
 
@@ -55,16 +60,25 @@ contract Base is HaiTest {
 
   function _mockOracleRelayerUpdateRedemptionRate() internal {
     vm.mockCall(
-      address(mockOracleRelayer), abi.encodeWithSelector(IOracleRelayer.updateRedemptionRate.selector), abi.encode()
+      address(mockOracleRelayer),
+      abi.encodeWithSelector(IOracleRelayer.updateRedemptionRate.selector),
+      abi.encode()
     );
   }
 
   function _mockLastUpdateTime(uint256 _lastUpdateTime) internal {
-    stdstore.target(address(pidRateSetter)).sig(IPIDRateSetter.lastUpdateTime.selector).checked_write(_lastUpdateTime);
+    stdstore
+      .target(address(pidRateSetter))
+      .sig(IPIDRateSetter.lastUpdateTime.selector)
+      .checked_write(_lastUpdateTime);
   }
 
   function _mockUpdateRateDelay(uint256 _updateRateDelay) internal {
-    stdstore.target(address(pidRateSetter)).sig(IPIDRateSetter.params.selector).depth(0).checked_write(_updateRateDelay);
+    stdstore
+      .target(address(pidRateSetter))
+      .sig(IPIDRateSetter.params.selector)
+      .depth(0)
+      .checked_write(_updateRateDelay);
   }
 
   function _mockPIDControllerComputeRate(
@@ -99,17 +113,27 @@ contract Unit_PIDRateSetter_Constructor is Base {
 
   function test_Revert_NullOracleRelayerAddress() public {
     vm.expectRevert(Assertions.NullAddress.selector);
-    new PIDRateSetter(address(0), address(mockPIDController), IPIDRateSetter.PIDRateSetterParams(periodSize));
+    new PIDRateSetter(
+      address(0),
+      address(mockPIDController),
+      IPIDRateSetter.PIDRateSetterParams(periodSize)
+    );
   }
 
   function test_Revert_NullCalculator() public {
     vm.expectRevert(Assertions.NullAddress.selector);
-    new PIDRateSetter(address(mockOracleRelayer), address(0), IPIDRateSetter.PIDRateSetterParams(periodSize));
+    new PIDRateSetter(
+      address(mockOracleRelayer),
+      address(0),
+      IPIDRateSetter.PIDRateSetterParams(periodSize)
+    );
   }
 }
 
 contract Unit_PIDRateSetter_ModifyParameters is Base {
-  function test_ModifyParameters(IPIDRateSetter.PIDRateSetterParams memory _fuzz) public authorized {
+  function test_ModifyParameters(
+    IPIDRateSetter.PIDRateSetterParams memory _fuzz
+  ) public authorized {
     vm.assume(_fuzz.updateRateDelay > 0);
     pidRateSetter.modifyParameters('updateRateDelay', abi.encode(_fuzz.updateRateDelay));
 
@@ -167,45 +191,74 @@ contract Unit_PIDRateSetter_UpdateRate is Base {
     _mockOracleRelayerMarketPrice(_scenario.marketPrice);
     _mockOracleRelayerRedemptionPrice(_scenario.redemptionPrice);
     _mockOracleRelayerUpdateRedemptionRate();
-    _mockPIDControllerComputeRate(_scenario.marketPrice, _scenario.redemptionPrice, _scenario.computedRate);
+    _mockPIDControllerComputeRate(
+      _scenario.marketPrice,
+      _scenario.redemptionPrice,
+      _scenario.computedRate
+    );
   }
 
-  function test_Set_LastUpdateTime(UpdateRateScenario memory _scenario) public happyPath(_scenario) {
+  function test_Set_LastUpdateTime(
+    UpdateRateScenario memory _scenario
+  ) public happyPath(_scenario) {
     pidRateSetter.updateRate();
 
     assertEq(pidRateSetter.lastUpdateTime(), block.timestamp);
   }
 
-  function test_Call_OracleRelayer_MarketPrice(UpdateRateScenario memory _scenario) public happyPath(_scenario) {
-    vm.expectCall(address(mockOracleRelayer), abi.encodeWithSelector(IOracleRelayer.marketPrice.selector));
+  function test_Call_OracleRelayer_MarketPrice(
+    UpdateRateScenario memory _scenario
+  ) public happyPath(_scenario) {
+    vm.expectCall(
+      address(mockOracleRelayer),
+      abi.encodeWithSelector(IOracleRelayer.marketPrice.selector)
+    );
 
     pidRateSetter.updateRate();
   }
 
-  function test_Call_OracleRelayer_GetRedemptionPrice(UpdateRateScenario memory _scenario) public happyPath(_scenario) {
-    vm.expectCall(address(mockOracleRelayer), abi.encodeWithSelector(IOracleRelayer.redemptionPrice.selector));
+  function test_Call_OracleRelayer_GetRedemptionPrice(
+    UpdateRateScenario memory _scenario
+  ) public happyPath(_scenario) {
+    vm.expectCall(
+      address(mockOracleRelayer),
+      abi.encodeWithSelector(IOracleRelayer.redemptionPrice.selector)
+    );
 
     pidRateSetter.updateRate();
   }
 
-  function test_Call_PIDController_ComputeRate(UpdateRateScenario memory _scenario) public happyPath(_scenario) {
+  function test_Call_PIDController_ComputeRate(
+    UpdateRateScenario memory _scenario
+  ) public happyPath(_scenario) {
     vm.expectCall(
       address(mockPIDController),
-      abi.encodeWithSelector(IPIDController.computeRate.selector, _scenario.marketPrice, _scenario.redemptionPrice)
+      abi.encodeWithSelector(
+        IPIDController.computeRate.selector,
+        _scenario.marketPrice,
+        _scenario.redemptionPrice
+      )
     );
 
     pidRateSetter.updateRate();
   }
 
-  function test_Call_OracleRelayer_UpdateRate(UpdateRateScenario memory _scenario) public happyPath(_scenario) {
+  function test_Call_OracleRelayer_UpdateRate(
+    UpdateRateScenario memory _scenario
+  ) public happyPath(_scenario) {
     vm.expectCall(
-      address(mockOracleRelayer), abi.encodeCall(IOracleRelayer.updateRedemptionRate, (_scenario.computedRate))
+      address(mockOracleRelayer),
+      abi.encodeCall(IOracleRelayer.updateRedemptionRate, (_scenario.computedRate))
     );
 
     pidRateSetter.updateRate();
   }
 
-  function test_Revert_RateSetterCooldown(uint256 _timeStamp, uint256 _lastUpdateTime, uint256 _updateRateDelay) public {
+  function test_Revert_RateSetterCooldown(
+    uint256 _timeStamp,
+    uint256 _lastUpdateTime,
+    uint256 _updateRateDelay
+  ) public {
     vm.assume(!_updateRateDelayPassed(_timeStamp, _lastUpdateTime, _updateRateDelay));
     vm.warp(_timeStamp);
     _mockLastUpdateTime(_lastUpdateTime);

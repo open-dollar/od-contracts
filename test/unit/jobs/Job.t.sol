@@ -11,7 +11,8 @@ abstract contract Base is HaiTest {
   address deployer = label('deployer');
   address user = label('user');
 
-  IStabilityFeeTreasury mockStabilityFeeTreasury = IStabilityFeeTreasury(mockContract('StabilityFeeTreasury'));
+  IStabilityFeeTreasury mockStabilityFeeTreasury =
+    IStabilityFeeTreasury(mockContract('StabilityFeeTreasury'));
 
   JobForTest job;
 
@@ -56,9 +57,13 @@ contract Unit_Job_Reward is Base {
     _mockRewardAmount(_rewardAmount);
   }
 
-  function test_Call_StabilityFeeTreasury_PullFunds(uint256 _rewardAmount) public happyPath(_rewardAmount) {
+  function test_Call_StabilityFeeTreasury_PullFunds(
+    uint256 _rewardAmount
+  ) public happyPath(_rewardAmount) {
     vm.expectCall(
-      address(mockStabilityFeeTreasury), abi.encodeCall(mockStabilityFeeTreasury.pullFunds, (user, _rewardAmount)), 1
+      address(mockStabilityFeeTreasury),
+      abi.encodeCall(mockStabilityFeeTreasury.pullFunds, (user, _rewardAmount)),
+      1
     );
 
     job.rewardModifier();

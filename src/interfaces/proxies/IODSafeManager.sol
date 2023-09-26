@@ -14,14 +14,33 @@ interface IODSafeManager {
   event OpenSAFE(address indexed _sender, address indexed _own, uint256 indexed _safe);
   /// @notice Emitted when calling modifySAFECollateralization with the sender address and the method arguments
   event ModifySAFECollateralization(
-    address indexed _sender, uint256 indexed _safe, int256 _deltaCollateral, int256 _deltaDebt
+    address indexed _sender,
+    uint256 indexed _safe,
+    int256 _deltaCollateral,
+    int256 _deltaDebt
   );
   /// @notice Emitted when calling transferCollateral with the sender address and the method arguments
-  event TransferCollateral(address indexed _sender, uint256 indexed _safe, address _dst, uint256 _wad);
+  event TransferCollateral(
+    address indexed _sender,
+    uint256 indexed _safe,
+    address _dst,
+    uint256 _wad
+  );
   /// @notice Emitted when calling transferCollateral (specifying cType) with the sender address and the method arguments
-  event TransferCollateral(address indexed _sender, bytes32 _cType, uint256 indexed _safe, address _dst, uint256 _wad);
+  event TransferCollateral(
+    address indexed _sender,
+    bytes32 _cType,
+    uint256 indexed _safe,
+    address _dst,
+    uint256 _wad
+  );
   /// @notice Emitted when calling transferInternalCoins with the sender address and the method arguments
-  event TransferInternalCoins(address indexed _sender, uint256 indexed _safe, address _dst, uint256 _rad);
+  event TransferInternalCoins(
+    address indexed _sender,
+    uint256 indexed _safe,
+    address _dst,
+    uint256 _rad
+  );
   /// @notice Emitted when calling quitSystem with the sender address and the method arguments
   event QuitSystem(address indexed _sender, uint256 indexed _safe, address _dst);
   /// @notice Emitted when calling enterSystem with the sender address and the method arguments
@@ -29,7 +48,12 @@ interface IODSafeManager {
   /// @notice Emitted when calling moveSAFE with the sender address and the method arguments
   event MoveSAFE(address indexed _sender, uint256 indexed _safeSrc, uint256 indexed _safeDst);
   /// @notice Emitted when calling protectSAFE with the sender address and the method arguments
-  event ProtectSAFE(address indexed _sender, uint256 indexed _safe, address _liquidationEngine, address _saviour);
+  event ProtectSAFE(
+    address indexed _sender,
+    uint256 indexed _safe,
+    address _liquidationEngine,
+    address _saviour
+  );
 
   // --- Errors ---
 
@@ -61,7 +85,11 @@ interface IODSafeManager {
   function safeEngine() external view returns (address _safeEngine);
 
   /// @notice Mapping of owner and safe permissions to a caller permissions
-  function safeCan(address _owner, uint256 _safeId, address _caller) external view returns (uint256 _ok);
+  function safeCan(
+    address _owner,
+    uint256 _safeId,
+    address _caller
+  ) external view returns (uint256 _ok);
 
   /// @notice Mapping of handler to a caller permissions
   function handlerCan(address _safeHandler, address _caller) external view returns (uint256 _ok);
@@ -90,7 +118,9 @@ interface IODSafeManager {
    * @return _safeHandlers List of safe handlers addresses owned by the user
    * @return _cTypes List of collateral types of the safes owned by the user
    */
-  function getSafesData(address _usr)
+  function getSafesData(
+    address _usr
+  )
     external
     view
     returns (uint256[] memory _safes, address[] memory _safeHandlers, bytes32[] memory _cTypes);
@@ -140,7 +170,11 @@ interface IODSafeManager {
    * @param  _deltaCollateral Delta of collateral to add/remove [wad]
    * @param  _deltaDebt Delta of debt to add/remove [wad]
    */
-  function modifySAFECollateralization(uint256 _safe, int256 _deltaCollateral, int256 _deltaDebt) external;
+  function modifySAFECollateralization(
+    uint256 _safe,
+    int256 _deltaCollateral,
+    int256 _deltaDebt
+  ) external;
 
   /**
    * @notice Transfer wad amount of safe collateral from the safe address to a dst address

@@ -17,7 +17,10 @@ contract SystemCoin is ERC20, Authorizable, ISystemCoin {
    * @param  _name String with the name of the token
    * @param  _symbol String with the symbol of the token
    */
-  constructor(string memory _name, string memory _symbol) ERC20(_name, _symbol) Authorizable(msg.sender) {}
+  constructor(
+    string memory _name,
+    string memory _symbol
+  ) ERC20(_name, _symbol) Authorizable(msg.sender) {}
 
   // --- Methods ---
 

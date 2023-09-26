@@ -28,7 +28,9 @@ contract BasicRawPIDController is RawPIDController {
     return true;
   }
 
-  function _getBoundedPIOutput(int256 _piOutput) internal pure override returns (int256 _boundedPIOutput) {
+  function _getBoundedPIOutput(
+    int256 _piOutput
+  ) internal pure override returns (int256 _boundedPIOutput) {
     return _piOutput;
   }
 }

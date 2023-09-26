@@ -14,7 +14,11 @@ interface ICollateralJoinFactory is IAuthorizable, IDisableable {
    * @param _collateral Address of the ERC20 collateral token
    * @param _collateralJoin Address of the deployed CollateralJoin contract
    */
-  event DeployCollateralJoin(bytes32 indexed _cType, address indexed _collateral, address indexed _collateralJoin);
+  event DeployCollateralJoin(
+    bytes32 indexed _cType,
+    address indexed _collateral,
+    address indexed _collateralJoin
+  );
 
   /**
    * @notice Emitted when a CollateralJoin contract is disabled
@@ -63,7 +67,10 @@ interface ICollateralJoinFactory is IAuthorizable, IDisableable {
    * @param  _collateral Address of the ERC20 collateral token
    * @return _collateralJoin Address of the deployed CollateralJoinChild contract
    */
-  function deployCollateralJoin(bytes32 _cType, address _collateral) external returns (ICollateralJoin _collateralJoin);
+  function deployCollateralJoin(
+    bytes32 _cType,
+    address _collateral
+  ) external returns (ICollateralJoin _collateralJoin);
 
   /**
    * @notice Deploys a CollateralJoinDelegatableChild contract

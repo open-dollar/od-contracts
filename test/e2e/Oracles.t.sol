@@ -137,7 +137,9 @@ contract OracleSetup is HaiTest {
 
   function test_DenominatedOracleSymbol() public {
     // assertEq(wstethUsdPriceSource.symbol(), '(WSTETH / ETH) * (ETH / USD)');
-    emit log_string('(wstETH-stETH Exchange Rate) * (ETH / USD) => should be: (WSTETH / ETH) * (ETH / USD)');
+    emit log_string(
+      '(wstETH-stETH Exchange Rate) * (ETH / USD) => should be: (WSTETH / ETH) * (ETH / USD)'
+    );
   }
 
   /**
@@ -145,13 +147,21 @@ contract OracleSetup is HaiTest {
    *       Using inverted = true, the resulting symbols are USD/ETH - ETH/USD
    */
   function test_DenominatedOracleInverted() public {
-    IDenominatedOracle usdPriceSource = new DenominatedOracle(wethUsdPriceSource, wethUsdPriceSource, true);
+    IDenominatedOracle usdPriceSource = new DenominatedOracle(
+      wethUsdPriceSource,
+      wethUsdPriceSource,
+      true
+    );
 
     assertApproxEqAbs(usdPriceSource.read(), WAD, 1e9); // 1 USD = 1 USD (with 18 decimals)
   }
 
   function test_DenominatedOracleInvertedSymbol() public {
-    IDenominatedOracle usdPriceSource = new DenominatedOracle(wethUsdPriceSource, wethUsdPriceSource, true);
+    IDenominatedOracle usdPriceSource = new DenominatedOracle(
+      wethUsdPriceSource,
+      wethUsdPriceSource,
+      true
+    );
 
     assertEq(usdPriceSource.symbol(), '(ETH / USD)^-1 / (ETH / USD)');
   }
@@ -183,16 +193,16 @@ contract OracleSetup is HaiTest {
     vm.warp(block.timestamp + 1 hours);
     wethUsdDelayedOracle.updateResult();
 
-    (uint256 _result,) = wethUsdDelayedOracle.getResultWithValidity();
+    (uint256 _result, ) = wethUsdDelayedOracle.getResultWithValidity();
     assertEq(_result, CHAINLINK_ETH_USD_PRICE_18_DECIMALS);
 
-    (uint256 _nextResult,) = wethUsdDelayedOracle.getNextResultWithValidity();
+    (uint256 _nextResult, ) = wethUsdDelayedOracle.getNextResultWithValidity();
     assertEq(_nextResult, NEW_ETH_USD_PRICE_18_DECIMALS);
 
     vm.warp(block.timestamp + 1 hours);
     wethUsdDelayedOracle.updateResult();
 
-    (_result,) = wethUsdDelayedOracle.getResultWithValidity();
+    (_result, ) = wethUsdDelayedOracle.getResultWithValidity();
     assertEq(_result, NEW_ETH_USD_PRICE_18_DECIMALS);
   }
 

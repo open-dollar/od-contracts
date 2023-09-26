@@ -7,16 +7,21 @@ import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 interface IVault721 {
   // public variables
   function governor() external returns (address);
+
   function safeManager() external returns (IODSafeManager);
+
   function nftRenderer() external returns (NFTRenderer);
 
   // initializers
   function initializeManager() external;
+
   function initializeRenderer() external;
 
   // external
   function getProxy(address _user) external view returns (address);
+
   function build() external returns (address payable);
+
   function build(address _user) external returns (address payable);
 
   // external: only SafeManager
@@ -29,11 +34,15 @@ interface IVault721 {
     address _taxCollector,
     address _collateralJoinFactory
   ) external;
+
   function updateContractURI(string memory _metaData) external;
+
   function setSafeManager(address _safeManager) external;
+
   function setNftRenderer(address _nftRenderer) external;
 
   // public
   function tokenURI(uint256 _safeId) external returns (string memory);
+
   function contractURI() external returns (string memory);
 }

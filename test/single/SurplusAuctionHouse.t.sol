@@ -4,10 +4,7 @@ pragma solidity 0.8.19;
 import 'ds-test/test.sol';
 
 import {ISurplusAuctionHouse, SurplusAuctionHouse} from '@contracts/SurplusAuctionHouse.sol';
-import {
-  IPostSettlementSurplusAuctionHouse,
-  PostSettlementSurplusAuctionHouse
-} from '@contracts/settlement/PostSettlementSurplusAuctionHouse.sol';
+import {IPostSettlementSurplusAuctionHouse, PostSettlementSurplusAuctionHouse} from '@contracts/settlement/PostSettlementSurplusAuctionHouse.sol';
 import {ISAFEEngine, SAFEEngine} from '@contracts/SAFEEngine.sol';
 
 import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
@@ -35,19 +32,23 @@ contract GuyBurningSurplusAuction {
     surplusAuctionHouse.settleAuction(id);
   }
 
-  function try_increaseBidSize(uint256 id, uint256 amountToBuy, uint256 bid) public returns (bool ok) {
+  function try_increaseBidSize(
+    uint256 id,
+    uint256 amountToBuy,
+    uint256 bid
+  ) public returns (bool ok) {
     string memory sig = 'increaseBidSize(uint256,uint256,uint256)';
-    (ok,) = address(surplusAuctionHouse).call(abi.encodeWithSignature(sig, id, amountToBuy, bid));
+    (ok, ) = address(surplusAuctionHouse).call(abi.encodeWithSignature(sig, id, amountToBuy, bid));
   }
 
   function try_settleAuction(uint256 id) public returns (bool ok) {
     string memory sig = 'settleAuction(uint256)';
-    (ok,) = address(surplusAuctionHouse).call(abi.encodeWithSignature(sig, id));
+    (ok, ) = address(surplusAuctionHouse).call(abi.encodeWithSignature(sig, id));
   }
 
   function try_restartAuction(uint256 id) public returns (bool ok) {
     string memory sig = 'restartAuction(uint256)';
-    (ok,) = address(surplusAuctionHouse).call(abi.encodeWithSignature(sig, id));
+    (ok, ) = address(surplusAuctionHouse).call(abi.encodeWithSignature(sig, id));
   }
 }
 
@@ -68,19 +69,23 @@ contract GuyRecyclingSurplusAuction {
     surplusAuctionHouse.settleAuction(id);
   }
 
-  function try_increaseBidSize(uint256 id, uint256 amountToBuy, uint256 bid) public returns (bool ok) {
+  function try_increaseBidSize(
+    uint256 id,
+    uint256 amountToBuy,
+    uint256 bid
+  ) public returns (bool ok) {
     string memory sig = 'increaseBidSize(uint256,uint256,uint256)';
-    (ok,) = address(surplusAuctionHouse).call(abi.encodeWithSignature(sig, id, amountToBuy, bid));
+    (ok, ) = address(surplusAuctionHouse).call(abi.encodeWithSignature(sig, id, amountToBuy, bid));
   }
 
   function try_settleAuction(uint256 id) public returns (bool ok) {
     string memory sig = 'settleAuction(uint256)';
-    (ok,) = address(surplusAuctionHouse).call(abi.encodeWithSignature(sig, id));
+    (ok, ) = address(surplusAuctionHouse).call(abi.encodeWithSignature(sig, id));
   }
 
   function try_restartAuction(uint256 id) public returns (bool ok) {
     string memory sig = 'restartAuction(uint256)';
-    (ok,) = address(surplusAuctionHouse).call(abi.encodeWithSignature(sig, id));
+    (ok, ) = address(surplusAuctionHouse).call(abi.encodeWithSignature(sig, id));
   }
 }
 
@@ -101,19 +106,23 @@ contract GuyPostSurplusAuction {
     surplusAuctionHouse.settleAuction(id);
   }
 
-  function try_increaseBidSize(uint256 id, uint256 amountToBuy, uint256 bid) public returns (bool ok) {
+  function try_increaseBidSize(
+    uint256 id,
+    uint256 amountToBuy,
+    uint256 bid
+  ) public returns (bool ok) {
     string memory sig = 'increaseBidSize(uint256,uint256,uint256)';
-    (ok,) = address(surplusAuctionHouse).call(abi.encodeWithSignature(sig, id, amountToBuy, bid));
+    (ok, ) = address(surplusAuctionHouse).call(abi.encodeWithSignature(sig, id, amountToBuy, bid));
   }
 
   function try_settleAuction(uint256 id) public returns (bool ok) {
     string memory sig = 'settleAuction(uint256)';
-    (ok,) = address(surplusAuctionHouse).call(abi.encodeWithSignature(sig, id));
+    (ok, ) = address(surplusAuctionHouse).call(abi.encodeWithSignature(sig, id));
   }
 
   function try_restartAuction(uint256 id) public returns (bool ok) {
     string memory sig = 'restartAuction(uint256)';
-    (ok,) = address(surplusAuctionHouse).call(abi.encodeWithSignature(sig, id));
+    (ok, ) = address(surplusAuctionHouse).call(abi.encodeWithSignature(sig, id));
   }
 }
 
@@ -131,19 +140,26 @@ contract SingleBurningSurplusAuctionHouseTest is DSTest {
     hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     hevm.warp(604_411_200);
 
-    ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
-      ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 0});
+    ISAFEEngine.SAFEEngineParams memory _safeEngineParams = ISAFEEngine.SAFEEngineParams({
+      safeDebtCeiling: type(uint256).max,
+      globalDebtCeiling: 0
+    });
     safeEngine = new SAFEEngine(_safeEngineParams);
     protocolToken = new ProtocolToken('', '');
 
-    ISurplusAuctionHouse.SurplusAuctionHouseParams memory _sahParams = ISurplusAuctionHouse.SurplusAuctionHouseParams({
-      bidIncrease: 1.05e18,
-      bidDuration: 3 hours,
-      totalAuctionLength: 2 days,
-      bidReceiver: address(0x123),
-      recyclingPercentage: 0
-    });
-    surplusAuctionHouse = new SurplusAuctionHouse(address(safeEngine), address(protocolToken), _sahParams);
+    ISurplusAuctionHouse.SurplusAuctionHouseParams memory _sahParams = ISurplusAuctionHouse
+      .SurplusAuctionHouseParams({
+        bidIncrease: 1.05e18,
+        bidDuration: 3 hours,
+        totalAuctionLength: 2 days,
+        bidReceiver: address(0x123),
+        recyclingPercentage: 0
+      });
+    surplusAuctionHouse = new SurplusAuctionHouse(
+      address(safeEngine),
+      address(protocolToken),
+      _sahParams
+    );
 
     ali = address(new GuyBurningSurplusAuction(surplusAuctionHouse));
     bob = address(new GuyBurningSurplusAuction(surplusAuctionHouse));
@@ -259,19 +275,26 @@ contract SingleRecyclingSurplusAuctionHouseTest is DSTest {
     hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     hevm.warp(604_411_200);
 
-    ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
-      ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 0});
+    ISAFEEngine.SAFEEngineParams memory _safeEngineParams = ISAFEEngine.SAFEEngineParams({
+      safeDebtCeiling: type(uint256).max,
+      globalDebtCeiling: 0
+    });
     safeEngine = new SAFEEngine(_safeEngineParams);
     protocolToken = new ProtocolToken('', '');
 
-    ISurplusAuctionHouse.SurplusAuctionHouseParams memory _sahParams = ISurplusAuctionHouse.SurplusAuctionHouseParams({
-      bidIncrease: 1.05e18,
-      bidDuration: 3 hours,
-      totalAuctionLength: 2 days,
-      bidReceiver: address(0x123),
-      recyclingPercentage: 1e18
-    });
-    surplusAuctionHouse = new SurplusAuctionHouse(address(safeEngine), address(protocolToken), _sahParams);
+    ISurplusAuctionHouse.SurplusAuctionHouseParams memory _sahParams = ISurplusAuctionHouse
+      .SurplusAuctionHouseParams({
+        bidIncrease: 1.05e18,
+        bidDuration: 3 hours,
+        totalAuctionLength: 2 days,
+        bidReceiver: address(0x123),
+        recyclingPercentage: 1e18
+      });
+    surplusAuctionHouse = new SurplusAuctionHouse(
+      address(safeEngine),
+      address(protocolToken),
+      _sahParams
+    );
 
     ali = address(new GuyRecyclingSurplusAuction(surplusAuctionHouse));
     bob = address(new GuyRecyclingSurplusAuction(surplusAuctionHouse));
@@ -394,19 +417,26 @@ contract SingleMixedStratSurplusAuctionHouseTest is DSTest {
     hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     hevm.warp(604_411_200);
 
-    ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
-      ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 0});
+    ISAFEEngine.SAFEEngineParams memory _safeEngineParams = ISAFEEngine.SAFEEngineParams({
+      safeDebtCeiling: type(uint256).max,
+      globalDebtCeiling: 0
+    });
     safeEngine = new SAFEEngine(_safeEngineParams);
     protocolToken = new ProtocolToken('', '');
 
-    ISurplusAuctionHouse.SurplusAuctionHouseParams memory _sahParams = ISurplusAuctionHouse.SurplusAuctionHouseParams({
-      bidIncrease: 1.05e18,
-      bidDuration: 3 hours,
-      totalAuctionLength: 2 days,
-      bidReceiver: address(0x123),
-      recyclingPercentage: 0.5e18
-    });
-    surplusAuctionHouse = new SurplusAuctionHouse(address(safeEngine), address(protocolToken), _sahParams);
+    ISurplusAuctionHouse.SurplusAuctionHouseParams memory _sahParams = ISurplusAuctionHouse
+      .SurplusAuctionHouseParams({
+        bidIncrease: 1.05e18,
+        bidDuration: 3 hours,
+        totalAuctionLength: 2 days,
+        bidReceiver: address(0x123),
+        recyclingPercentage: 0.5e18
+      });
+    surplusAuctionHouse = new SurplusAuctionHouse(
+      address(safeEngine),
+      address(protocolToken),
+      _sahParams
+    );
 
     ali = address(new GuyRecyclingSurplusAuction(surplusAuctionHouse));
     bob = address(new GuyRecyclingSurplusAuction(surplusAuctionHouse));
@@ -532,15 +562,24 @@ contract SinglePostSettlementSurplusAuctionHouseTest is DSTest {
     hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     hevm.warp(604_411_200);
 
-    ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
-      ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 0});
+    ISAFEEngine.SAFEEngineParams memory _safeEngineParams = ISAFEEngine.SAFEEngineParams({
+      safeDebtCeiling: type(uint256).max,
+      globalDebtCeiling: 0
+    });
     safeEngine = new SAFEEngine(_safeEngineParams);
     protocolToken = new ProtocolToken('', '');
 
-    IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams memory _pssahParams = IPostSettlementSurplusAuctionHouse
-      .PostSettlementSAHParams({bidIncrease: 1.05e18, bidDuration: 3 hours, totalAuctionLength: 2 days});
-    surplusAuctionHouse =
-      new PostSettlementSurplusAuctionHouse(address(safeEngine), address(protocolToken), _pssahParams);
+    IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams
+      memory _pssahParams = IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams({
+        bidIncrease: 1.05e18,
+        bidDuration: 3 hours,
+        totalAuctionLength: 2 days
+      });
+    surplusAuctionHouse = new PostSettlementSurplusAuctionHouse(
+      address(safeEngine),
+      address(protocolToken),
+      _pssahParams
+    );
 
     ali = address(new GuyPostSurplusAuction(surplusAuctionHouse));
     bob = address(new GuyPostSurplusAuction(surplusAuctionHouse));

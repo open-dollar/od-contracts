@@ -68,18 +68,28 @@ contract SingleStabilityFeeTreasuryTest is DSTest {
 
     usr = new Usr();
 
-    ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
-      ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 0});
+    ISAFEEngine.SAFEEngineParams memory _safeEngineParams = ISAFEEngine.SAFEEngineParams({
+      safeDebtCeiling: type(uint256).max,
+      globalDebtCeiling: 0
+    });
 
     safeEngine = new SAFEEngine(_safeEngineParams);
     systemCoin = new SystemCoin('Coin', 'COIN');
     systemCoinA = new CoinJoin(address(safeEngine), address(systemCoin));
 
-    IStabilityFeeTreasury.StabilityFeeTreasuryParams memory _stabilityFeeTreasuryParams = IStabilityFeeTreasury
-      .StabilityFeeTreasuryParams({treasuryCapacity: 0, pullFundsMinThreshold: 0, surplusTransferDelay: 0});
+    IStabilityFeeTreasury.StabilityFeeTreasuryParams
+      memory _stabilityFeeTreasuryParams = IStabilityFeeTreasury.StabilityFeeTreasuryParams({
+        treasuryCapacity: 0,
+        pullFundsMinThreshold: 0,
+        surplusTransferDelay: 0
+      });
 
-    stabilityFeeTreasury =
-      new StabilityFeeTreasury(address(safeEngine), alice, address(systemCoinA), _stabilityFeeTreasuryParams);
+    stabilityFeeTreasury = new StabilityFeeTreasury(
+      address(safeEngine),
+      alice,
+      address(systemCoinA),
+      _stabilityFeeTreasuryParams
+    );
 
     systemCoin.addAuthorization(address(systemCoinA));
     stabilityFeeTreasury.addAuthorization(address(systemCoinA));
@@ -172,7 +182,9 @@ contract SingleStabilityFeeTreasuryTest is DSTest {
 
   function testFail_give_more_debt_than_coin() public {
     safeEngine.createUnbackedDebt(
-      address(stabilityFeeTreasury), address(this), safeEngine.coinBalance(address(stabilityFeeTreasury)) + 1
+      address(stabilityFeeTreasury),
+      address(this),
+      safeEngine.coinBalance(address(stabilityFeeTreasury)) + 1
     );
 
     assertEq(safeEngine.coinBalance(address(usr)), 0);
@@ -235,7 +247,10 @@ contract SingleStabilityFeeTreasuryTest is DSTest {
     stabilityFeeTreasury.setTotalAllowance(address(usr), rad(10 ether));
     usr.pullFunds(address(stabilityFeeTreasury), address(usr), 0.9 ether);
     assertEq(stabilityFeeTreasury.allowance(address(usr)).total, rad(9.1 ether));
-    assertEq(stabilityFeeTreasury.pulledPerHour(address(usr), block.timestamp / HOUR), rad(0.9 ether));
+    assertEq(
+      stabilityFeeTreasury.pulledPerHour(address(usr), block.timestamp / HOUR),
+      rad(0.9 ether)
+    );
     assertEq(systemCoin.balanceOf(address(usr)), 0);
     assertEq(systemCoin.balanceOf(address(stabilityFeeTreasury)), 0);
     assertEq(safeEngine.coinBalance(address(usr)), rad(0.9 ether));
@@ -244,7 +259,8 @@ contract SingleStabilityFeeTreasuryTest is DSTest {
 
   function testFail_pull_funds_when_funds_below_pull_threshold() public {
     stabilityFeeTreasury.modifyParameters(
-      'pullFundsMinThreshold', abi.encode(safeEngine.coinBalance(address(stabilityFeeTreasury)) + 1)
+      'pullFundsMinThreshold',
+      abi.encode(safeEngine.coinBalance(address(stabilityFeeTreasury)) + 1)
     );
     stabilityFeeTreasury.setPerHourAllowance(address(usr), rad(1 ether));
     stabilityFeeTreasury.setTotalAllowance(address(usr), rad(10 ether));
@@ -255,7 +271,9 @@ contract SingleStabilityFeeTreasuryTest is DSTest {
     stabilityFeeTreasury.setPerHourAllowance(address(usr), rad(1 ether));
     stabilityFeeTreasury.setTotalAllowance(address(usr), rad(10 ether));
     safeEngine.createUnbackedDebt(
-      address(stabilityFeeTreasury), address(this), safeEngine.coinBalance(address(stabilityFeeTreasury)) + 1
+      address(stabilityFeeTreasury),
+      address(this),
+      safeEngine.coinBalance(address(stabilityFeeTreasury)) + 1
     );
     usr.pullFunds(address(stabilityFeeTreasury), address(usr), 0.9 ether);
   }
@@ -276,12 +294,17 @@ contract SingleStabilityFeeTreasuryTest is DSTest {
     stabilityFeeTreasury.setPerHourAllowance(address(usr), rad(1 ether));
     stabilityFeeTreasury.setTotalAllowance(address(usr), rad(10 ether));
     safeEngine.createUnbackedDebt(
-      address(stabilityFeeTreasury), address(this), safeEngine.coinBalance(address(stabilityFeeTreasury)) - rad(1 ether)
+      address(stabilityFeeTreasury),
+      address(this),
+      safeEngine.coinBalance(address(stabilityFeeTreasury)) - rad(1 ether)
     );
     usr.pullFunds(address(stabilityFeeTreasury), address(usr), 0.9 ether);
 
     assertEq(stabilityFeeTreasury.allowance(address(usr)).total, rad(9.1 ether));
-    assertEq(stabilityFeeTreasury.pulledPerHour(address(usr), block.timestamp / HOUR), rad(0.9 ether));
+    assertEq(
+      stabilityFeeTreasury.pulledPerHour(address(usr), block.timestamp / HOUR),
+      rad(0.9 ether)
+    );
     assertEq(systemCoin.balanceOf(address(usr)), 0);
     assertEq(systemCoin.balanceOf(address(stabilityFeeTreasury)), 0);
     assertEq(safeEngine.coinBalance(address(usr)), rad(0.9 ether));
@@ -293,12 +316,17 @@ contract SingleStabilityFeeTreasuryTest is DSTest {
     stabilityFeeTreasury.setPerHourAllowance(address(usr), rad(1 ether));
     stabilityFeeTreasury.setTotalAllowance(address(usr), rad(10 ether));
     safeEngine.createUnbackedDebt(
-      address(stabilityFeeTreasury), address(this), safeEngine.coinBalance(address(stabilityFeeTreasury)) - rad(1 ether)
+      address(stabilityFeeTreasury),
+      address(this),
+      safeEngine.coinBalance(address(stabilityFeeTreasury)) - rad(1 ether)
     );
     usr.pullFunds(address(stabilityFeeTreasury), address(usr), 0.9 ether);
 
     assertEq(stabilityFeeTreasury.allowance(address(usr)).total, rad(9.1 ether));
-    assertEq(stabilityFeeTreasury.pulledPerHour(address(usr), block.timestamp / HOUR), rad(0.9 ether));
+    assertEq(
+      stabilityFeeTreasury.pulledPerHour(address(usr), block.timestamp / HOUR),
+      rad(0.9 ether)
+    );
     assertEq(systemCoin.balanceOf(address(usr)), 0);
     assertEq(systemCoin.balanceOf(address(stabilityFeeTreasury)), 0);
     assertEq(safeEngine.coinBalance(address(usr)), rad(0.9 ether));

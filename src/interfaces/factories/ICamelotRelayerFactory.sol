@@ -7,7 +7,10 @@ import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 interface ICamelotRelayerFactory is IAuthorizable {
   // --- Events ---
   event NewCamelotRelayer(
-    address indexed _camelotRelayer, address _baseToken, address _quoteToken, uint32 _quotePeriod
+    address indexed _camelotRelayer,
+    address _baseToken,
+    address _quoteToken,
+    uint32 _quotePeriod
   );
 
   // --- Methods ---

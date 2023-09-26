@@ -32,16 +32,26 @@ contract Base is HaiTest {
 
   StabilityFeeTreasuryForTest stabilityFeeTreasury;
 
-  IStabilityFeeTreasury.StabilityFeeTreasuryParams stabilityFeeTreasuryParams = IStabilityFeeTreasury
-    .StabilityFeeTreasuryParams({treasuryCapacity: 0, pullFundsMinThreshold: 0, surplusTransferDelay: 0});
+  IStabilityFeeTreasury.StabilityFeeTreasuryParams stabilityFeeTreasuryParams =
+    IStabilityFeeTreasury.StabilityFeeTreasuryParams({
+      treasuryCapacity: 0,
+      pullFundsMinThreshold: 0,
+      surplusTransferDelay: 0
+    });
 
   function _mockCoinJoinSystemCoin(address _systemCoin) internal {
-    vm.mockCall(address(mockCoinJoin), abi.encodeWithSelector(ICoinJoin.systemCoin.selector), abi.encode(_systemCoin));
+    vm.mockCall(
+      address(mockCoinJoin),
+      abi.encodeWithSelector(ICoinJoin.systemCoin.selector),
+      abi.encode(_systemCoin)
+    );
   }
 
   function _mockSystemCoinApprove(address _account, uint256 _amount, bool _success) internal {
     vm.mockCall(
-      address(mockSystemCoin), abi.encodeWithSelector(IERC20.approve.selector, _account, _amount), abi.encode(_success)
+      address(mockSystemCoin),
+      abi.encodeWithSelector(IERC20.approve.selector, _account, _amount),
+      abi.encode(_success)
     );
   }
 
@@ -70,46 +80,69 @@ contract Base is HaiTest {
   }
 
   function _mockContractEnabled(bool _enabled) internal {
-    stdstore.target(address(stabilityFeeTreasury)).sig(IDisableable.contractEnabled.selector).checked_write(_enabled);
+    stdstore
+      .target(address(stabilityFeeTreasury))
+      .sig(IDisableable.contractEnabled.selector)
+      .checked_write(_enabled);
   }
 
   function _mockTotalAllowance(address _account, uint256 _rad) internal {
-    stdstore.target(address(stabilityFeeTreasury)).sig(IStabilityFeeTreasury.allowance.selector).with_key(_account)
-      .depth(0).checked_write(_rad);
+    stdstore
+      .target(address(stabilityFeeTreasury))
+      .sig(IStabilityFeeTreasury.allowance.selector)
+      .with_key(_account)
+      .depth(0)
+      .checked_write(_rad);
   }
 
   function _mockPerHourAllowance(address _account, uint256 _rad) internal {
-    stdstore.target(address(stabilityFeeTreasury)).sig(IStabilityFeeTreasury.allowance.selector).with_key(_account)
-      .depth(1).checked_write(_rad);
+    stdstore
+      .target(address(stabilityFeeTreasury))
+      .sig(IStabilityFeeTreasury.allowance.selector)
+      .with_key(_account)
+      .depth(1)
+      .checked_write(_rad);
   }
 
   function _mockPulledPerHour(address _account, uint256 _blockHour, uint256 _value) internal {
-    stdstore.target(address(stabilityFeeTreasury)).sig(IStabilityFeeTreasury.pulledPerHour.selector).with_key(_account)
-      .with_key(_blockHour).checked_write(_value);
+    stdstore
+      .target(address(stabilityFeeTreasury))
+      .sig(IStabilityFeeTreasury.pulledPerHour.selector)
+      .with_key(_account)
+      .with_key(_blockHour)
+      .checked_write(_value);
   }
 
   function _mockLatestSurplusTransferTime(uint256 _latestSurplusTransferTime) internal {
-    stdstore.target(address(stabilityFeeTreasury)).sig(IStabilityFeeTreasury.latestSurplusTransferTime.selector)
+    stdstore
+      .target(address(stabilityFeeTreasury))
+      .sig(IStabilityFeeTreasury.latestSurplusTransferTime.selector)
       .checked_write(_latestSurplusTransferTime);
   }
 
   // params
   function _mockTreasuryCapacity(uint256 _capacity) internal {
-    stdstore.target(address(stabilityFeeTreasury)).sig(IStabilityFeeTreasury.params.selector).depth(0).checked_write(
-      _capacity
-    );
+    stdstore
+      .target(address(stabilityFeeTreasury))
+      .sig(IStabilityFeeTreasury.params.selector)
+      .depth(0)
+      .checked_write(_capacity);
   }
 
   function _mockPullFundsMinThreshold(uint256 _value) internal {
-    stdstore.target(address(stabilityFeeTreasury)).sig(IStabilityFeeTreasury.params.selector).depth(1).checked_write(
-      _value
-    );
+    stdstore
+      .target(address(stabilityFeeTreasury))
+      .sig(IStabilityFeeTreasury.params.selector)
+      .depth(1)
+      .checked_write(_value);
   }
 
   function _mockSurplusTransferDelay(uint256 _surplusTransferDelay) internal {
-    stdstore.target(address(stabilityFeeTreasury)).sig(IStabilityFeeTreasury.params.selector).depth(2).checked_write(
-      _surplusTransferDelay
-    );
+    stdstore
+      .target(address(stabilityFeeTreasury))
+      .sig(IStabilityFeeTreasury.params.selector)
+      .depth(2)
+      .checked_write(_surplusTransferDelay);
   }
 
   function setUp() public virtual {
@@ -118,8 +151,12 @@ contract Base is HaiTest {
     _mockCoinJoinSystemCoin(address(mockSystemCoin));
     _mockSystemCoinApprove(address(mockCoinJoin), type(uint256).max, true);
 
-    stabilityFeeTreasury =
-    new StabilityFeeTreasuryForTest(address(mockSafeEngine), mockExtraSurplusReceiver, address(mockCoinJoin), stabilityFeeTreasuryParams);
+    stabilityFeeTreasury = new StabilityFeeTreasuryForTest(
+      address(mockSafeEngine),
+      mockExtraSurplusReceiver,
+      address(mockCoinJoin),
+      stabilityFeeTreasuryParams
+    );
     label(address(stabilityFeeTreasury), 'StabilityFeeTreasury');
 
     stabilityFeeTreasury.addAuthorization(authorizedAccount);
@@ -141,7 +178,12 @@ contract Unit_StabilityFeeTreasury_Constructor is Base {
     emit AddAuthorization(user);
 
     vm.prank(user);
-    new StabilityFeeTreasuryForTest(address(mockSafeEngine), mockExtraSurplusReceiver, address(mockCoinJoin), stabilityFeeTreasuryParams);
+    new StabilityFeeTreasuryForTest(
+      address(mockSafeEngine),
+      mockExtraSurplusReceiver,
+      address(mockCoinJoin),
+      stabilityFeeTreasuryParams
+    );
   }
 
   function test_Set_ContractEnabled() public {
@@ -171,24 +213,39 @@ contract Unit_StabilityFeeTreasury_Constructor is Base {
   function test_Set_StabilityFeeTreasury_Params(
     IStabilityFeeTreasury.StabilityFeeTreasuryParams memory _stabilityFeeTreasuryParams
   ) public {
-    stabilityFeeTreasury =
-    new StabilityFeeTreasuryForTest(address(mockSafeEngine), mockExtraSurplusReceiver, address(mockCoinJoin), _stabilityFeeTreasuryParams);
+    stabilityFeeTreasury = new StabilityFeeTreasuryForTest(
+      address(mockSafeEngine),
+      mockExtraSurplusReceiver,
+      address(mockCoinJoin),
+      _stabilityFeeTreasuryParams
+    );
 
     assertEq(abi.encode(stabilityFeeTreasury.params()), abi.encode(_stabilityFeeTreasuryParams));
   }
 
   function test_Call_SystemCoin_Approve() public {
     vm.expectCall(
-      address(mockSystemCoin), abi.encodeWithSelector(IERC20.approve.selector, address(mockCoinJoin), type(uint256).max)
+      address(mockSystemCoin),
+      abi.encodeWithSelector(IERC20.approve.selector, address(mockCoinJoin), type(uint256).max)
     );
 
-    new StabilityFeeTreasuryForTest(address(mockSafeEngine), mockExtraSurplusReceiver, address(mockCoinJoin), stabilityFeeTreasuryParams);
+    new StabilityFeeTreasuryForTest(
+      address(mockSafeEngine),
+      mockExtraSurplusReceiver,
+      address(mockCoinJoin),
+      stabilityFeeTreasuryParams
+    );
   }
 
   function test_Revert_NullAddress_SafeEngine() public {
     vm.expectRevert(Assertions.NullAddress.selector);
 
-    new StabilityFeeTreasuryForTest(address(0), mockExtraSurplusReceiver, address(mockCoinJoin), stabilityFeeTreasuryParams);
+    new StabilityFeeTreasuryForTest(
+      address(0),
+      mockExtraSurplusReceiver,
+      address(mockCoinJoin),
+      stabilityFeeTreasuryParams
+    );
   }
 
   function test_Revert_NullAddress_SystemCoin() public {
@@ -196,32 +253,55 @@ contract Unit_StabilityFeeTreasury_Constructor is Base {
 
     vm.expectRevert(Assertions.NullAddress.selector);
 
-    new StabilityFeeTreasuryForTest(address(mockSafeEngine), mockExtraSurplusReceiver, address(mockCoinJoin), stabilityFeeTreasuryParams);
+    new StabilityFeeTreasuryForTest(
+      address(mockSafeEngine),
+      mockExtraSurplusReceiver,
+      address(mockCoinJoin),
+      stabilityFeeTreasuryParams
+    );
   }
 
   function test_Revert_NullAddress_ExtraSurplusReceiver() public {
     vm.expectRevert(Assertions.NullAddress.selector);
 
-    new StabilityFeeTreasuryForTest(address(mockSafeEngine), address(0), address(mockCoinJoin), stabilityFeeTreasuryParams);
+    new StabilityFeeTreasuryForTest(
+      address(mockSafeEngine),
+      address(0),
+      address(mockCoinJoin),
+      stabilityFeeTreasuryParams
+    );
   }
 }
 
 contract Unit_StabilityFeeTreasury_ModifyParameters is Base {
-  function test_ModifyParameters(IStabilityFeeTreasury.StabilityFeeTreasuryParams memory _fuzz) public authorized {
+  function test_ModifyParameters(
+    IStabilityFeeTreasury.StabilityFeeTreasuryParams memory _fuzz
+  ) public authorized {
     stabilityFeeTreasury.modifyParameters('treasuryCapacity', abi.encode(_fuzz.treasuryCapacity));
-    stabilityFeeTreasury.modifyParameters('pullFundsMinThreshold', abi.encode(_fuzz.pullFundsMinThreshold));
-    stabilityFeeTreasury.modifyParameters('surplusTransferDelay', abi.encode(_fuzz.surplusTransferDelay));
+    stabilityFeeTreasury.modifyParameters(
+      'pullFundsMinThreshold',
+      abi.encode(_fuzz.pullFundsMinThreshold)
+    );
+    stabilityFeeTreasury.modifyParameters(
+      'surplusTransferDelay',
+      abi.encode(_fuzz.surplusTransferDelay)
+    );
 
     IStabilityFeeTreasury.StabilityFeeTreasuryParams memory _params = stabilityFeeTreasury.params();
 
     assertEq(abi.encode(_params), abi.encode(_fuzz));
   }
 
-  function test_ModifyParameters_ExtraSurplusReceiver(address _extraSurplusReceiver) public authorized {
+  function test_ModifyParameters_ExtraSurplusReceiver(
+    address _extraSurplusReceiver
+  ) public authorized {
     vm.assume(_extraSurplusReceiver != address(0));
     vm.assume(_extraSurplusReceiver != address(stabilityFeeTreasury));
 
-    stabilityFeeTreasury.modifyParameters('extraSurplusReceiver', abi.encode(_extraSurplusReceiver));
+    stabilityFeeTreasury.modifyParameters(
+      'extraSurplusReceiver',
+      abi.encode(_extraSurplusReceiver)
+    );
 
     assertEq(_extraSurplusReceiver, stabilityFeeTreasury.extraSurplusReceiver());
   }
@@ -248,7 +328,9 @@ contract Unit_StabilityFeeTreasury_DisableContract is Base {
     uint256 safeEngineCoinBalance;
   }
 
-  function _joinCoins(DisableContractScenario memory _disableContractScenario) internal pure returns (bool) {
+  function _joinCoins(
+    DisableContractScenario memory _disableContractScenario
+  ) internal pure returns (bool) {
     return _disableContractScenario.systemCoinBalance > 0;
   }
 
@@ -263,10 +345,9 @@ contract Unit_StabilityFeeTreasury_DisableContract is Base {
     _;
   }
 
-  function test_Emit_JoinCoins(DisableContractScenario memory _disableContractScenario)
-    public
-    happyPath(_disableContractScenario)
-  {
+  function test_Emit_JoinCoins(
+    DisableContractScenario memory _disableContractScenario
+  ) public happyPath(_disableContractScenario) {
     vm.assume(_joinCoins(_disableContractScenario));
 
     vm.expectEmit();
@@ -275,15 +356,18 @@ contract Unit_StabilityFeeTreasury_DisableContract is Base {
     stabilityFeeTreasury.disableContract();
   }
 
-  function test_Call_SafeEngine_TransferInternalCoins(DisableContractScenario memory _disableContractScenario)
-    public
-    happyPath(_disableContractScenario)
-  {
+  function test_Call_SafeEngine_TransferInternalCoins(
+    DisableContractScenario memory _disableContractScenario
+  ) public happyPath(_disableContractScenario) {
     vm.expectCall(
       address(mockSafeEngine),
       abi.encodeCall(
         mockSafeEngine.transferInternalCoins,
-        (address(stabilityFeeTreasury), mockExtraSurplusReceiver, _disableContractScenario.safeEngineCoinBalance)
+        (
+          address(stabilityFeeTreasury),
+          mockExtraSurplusReceiver,
+          _disableContractScenario.safeEngineCoinBalance
+        )
       ),
       1
     );
@@ -304,11 +388,15 @@ contract Unit_StabilityFeeTreasury_JoinAllCoins is Base {
     _;
   }
 
-  function test_Call_CoinJoin_Join(uint256 _systemCoinBalance) public happyPath(_systemCoinBalance) {
+  function test_Call_CoinJoin_Join(
+    uint256 _systemCoinBalance
+  ) public happyPath(_systemCoinBalance) {
     vm.assume(_joinCoins(_systemCoinBalance));
 
     vm.expectCall(
-      address(mockCoinJoin), abi.encodeCall(mockCoinJoin.join, (address(stabilityFeeTreasury), _systemCoinBalance)), 1
+      address(mockCoinJoin),
+      abi.encodeCall(mockCoinJoin.join, (address(stabilityFeeTreasury), _systemCoinBalance)),
+      1
     );
 
     stabilityFeeTreasury.joinAllCoins();
@@ -323,7 +411,9 @@ contract Unit_StabilityFeeTreasury_JoinAllCoins is Base {
     stabilityFeeTreasury.joinAllCoins();
   }
 
-  function testFail_Emit_JoinCoins(uint256 _systemCoinBalance) public happyPath(_systemCoinBalance) {
+  function testFail_Emit_JoinCoins(
+    uint256 _systemCoinBalance
+  ) public happyPath(_systemCoinBalance) {
     vm.assume(!_joinCoins(_systemCoinBalance));
 
     vm.expectEmit(false, false, false, false);
@@ -355,25 +445,34 @@ contract Unit_StabilityFeeTreasury_SettleDebt is Base {
     _;
   }
 
-  function test_Call_SafeEngine_SettleDebt(SettleDebtScenario memory _settleDebtScenario)
-    public
-    happyPath(_settleDebtScenario)
-  {
+  function test_Call_SafeEngine_SettleDebt(
+    SettleDebtScenario memory _settleDebtScenario
+  ) public happyPath(_settleDebtScenario) {
     vm.assume(_settleDebt(_settleDebtScenario));
 
-    uint256 _debtToSettle =
-      Math.min(_settleDebtScenario.safeEngineCoinBalance, _settleDebtScenario.safeEngineDebtBalance);
+    uint256 _debtToSettle = Math.min(
+      _settleDebtScenario.safeEngineCoinBalance,
+      _settleDebtScenario.safeEngineDebtBalance
+    );
 
-    vm.expectCall(address(mockSafeEngine), abi.encodeCall(mockSafeEngine.settleDebt, (_debtToSettle)), 1);
+    vm.expectCall(
+      address(mockSafeEngine),
+      abi.encodeCall(mockSafeEngine.settleDebt, (_debtToSettle)),
+      1
+    );
 
     stabilityFeeTreasury.settleDebt();
   }
 
-  function test_Emit_SettleDebt(SettleDebtScenario memory _settleDebtScenario) public happyPath(_settleDebtScenario) {
+  function test_Emit_SettleDebt(
+    SettleDebtScenario memory _settleDebtScenario
+  ) public happyPath(_settleDebtScenario) {
     vm.assume(_settleDebt(_settleDebtScenario));
 
-    uint256 _debtToSettle =
-      Math.min(_settleDebtScenario.safeEngineCoinBalance, _settleDebtScenario.safeEngineDebtBalance);
+    uint256 _debtToSettle = Math.min(
+      _settleDebtScenario.safeEngineCoinBalance,
+      _settleDebtScenario.safeEngineDebtBalance
+    );
 
     vm.expectEmit();
     emit SettleDebt(_debtToSettle);
@@ -381,14 +480,15 @@ contract Unit_StabilityFeeTreasury_SettleDebt is Base {
     stabilityFeeTreasury.settleDebt();
   }
 
-  function test_Return_SafeEngineBalances_SettleDebt(SettleDebtScenario memory _settleDebtScenario)
-    public
-    happyPath(_settleDebtScenario)
-  {
+  function test_Return_SafeEngineBalances_SettleDebt(
+    SettleDebtScenario memory _settleDebtScenario
+  ) public happyPath(_settleDebtScenario) {
     vm.assume(_settleDebt(_settleDebtScenario));
 
-    uint256 _debtToSettle =
-      Math.min(_settleDebtScenario.safeEngineCoinBalance, _settleDebtScenario.safeEngineDebtBalance);
+    uint256 _debtToSettle = Math.min(
+      _settleDebtScenario.safeEngineCoinBalance,
+      _settleDebtScenario.safeEngineDebtBalance
+    );
 
     (uint256 _coinBalance, uint256 _debtBalance) = stabilityFeeTreasury.settleDebt();
 
@@ -396,10 +496,9 @@ contract Unit_StabilityFeeTreasury_SettleDebt is Base {
     assertEq(_debtBalance, _settleDebtScenario.safeEngineDebtBalance - _debtToSettle);
   }
 
-  function test_Return_SafeEngineBalances_NoDebt(SettleDebtScenario memory _settleDebtScenario)
-    public
-    happyPath(_settleDebtScenario)
-  {
+  function test_Return_SafeEngineBalances_NoDebt(
+    SettleDebtScenario memory _settleDebtScenario
+  ) public happyPath(_settleDebtScenario) {
     vm.assume(!_settleDebt(_settleDebtScenario));
 
     (uint256 _coinBalance, uint256 _debtBalance) = stabilityFeeTreasury.settleDebt();
@@ -491,7 +590,10 @@ contract Unit_StabilityFeeTreasury_SetPerHourAllowance is Base {
     assertEq(stabilityFeeTreasury.allowance(_account).perHour, _rad);
   }
 
-  function test_Emit_SetPerHourAllowance(address _account, uint256 _rad) public happyPath(_account) {
+  function test_Emit_SetPerHourAllowance(
+    address _account,
+    uint256 _rad
+  ) public happyPath(_account) {
     vm.expectEmit();
     emit SetPerHourAllowance(_account, _rad);
 
@@ -534,7 +636,9 @@ contract Unit_StabilityFeeTreasury_GiveFunds is Base {
     return _giveFundsScenario.account != address(0);
   }
 
-  function _notStabilityFeeTreasuryAcc(GiveFundsScenario memory _giveFundsScenario) internal view returns (bool) {
+  function _notStabilityFeeTreasuryAcc(
+    GiveFundsScenario memory _giveFundsScenario
+  ) internal view returns (bool) {
     return _giveFundsScenario.account != address(stabilityFeeTreasury);
   }
 
@@ -551,7 +655,9 @@ contract Unit_StabilityFeeTreasury_GiveFunds is Base {
   }
 
   function _enoughFunds(GiveFundsScenario memory _giveFundsScenario) internal pure returns (bool) {
-    return _giveFundsScenario.safeEngineCoinBalance - _giveFundsScenario.safeEngineDebtBalance >= _giveFundsScenario.rad;
+    return
+      _giveFundsScenario.safeEngineCoinBalance - _giveFundsScenario.safeEngineDebtBalance >=
+      _giveFundsScenario.rad;
   }
 
   function _assumeHappyPath(GiveFundsScenario memory _giveFundsScenario) internal view {
@@ -573,11 +679,9 @@ contract Unit_StabilityFeeTreasury_GiveFunds is Base {
     _;
   }
 
-  function test_Emit_JoinCoins(GiveFundsScenario memory _giveFundsScenario)
-    public
-    authorized
-    happyPath(_giveFundsScenario)
-  {
+  function test_Emit_JoinCoins(
+    GiveFundsScenario memory _giveFundsScenario
+  ) public authorized happyPath(_giveFundsScenario) {
     vm.assume(_joinCoins(_giveFundsScenario));
 
     vm.expectEmit();
@@ -586,11 +690,9 @@ contract Unit_StabilityFeeTreasury_GiveFunds is Base {
     stabilityFeeTreasury.giveFunds(_giveFundsScenario.account, _giveFundsScenario.rad);
   }
 
-  function test_Emit_SettleDebt(GiveFundsScenario memory _giveFundsScenario)
-    public
-    authorized
-    happyPath(_giveFundsScenario)
-  {
+  function test_Emit_SettleDebt(
+    GiveFundsScenario memory _giveFundsScenario
+  ) public authorized happyPath(_giveFundsScenario) {
     vm.assume(_settleDebt(_giveFundsScenario));
 
     vm.expectEmit();
@@ -599,11 +701,9 @@ contract Unit_StabilityFeeTreasury_GiveFunds is Base {
     stabilityFeeTreasury.giveFunds(_giveFundsScenario.account, _giveFundsScenario.rad);
   }
 
-  function test_Call_SafeEngine_TransferInternalCoins(GiveFundsScenario memory _giveFundsScenario)
-    public
-    authorized
-    happyPath(_giveFundsScenario)
-  {
+  function test_Call_SafeEngine_TransferInternalCoins(
+    GiveFundsScenario memory _giveFundsScenario
+  ) public authorized happyPath(_giveFundsScenario) {
     vm.expectCall(
       address(mockSafeEngine),
       abi.encodeCall(
@@ -616,11 +716,9 @@ contract Unit_StabilityFeeTreasury_GiveFunds is Base {
     stabilityFeeTreasury.giveFunds(_giveFundsScenario.account, _giveFundsScenario.rad);
   }
 
-  function test_Emit_GiveFunds(GiveFundsScenario memory _giveFundsScenario)
-    public
-    authorized
-    happyPath(_giveFundsScenario)
-  {
+  function test_Emit_GiveFunds(
+    GiveFundsScenario memory _giveFundsScenario
+  ) public authorized happyPath(_giveFundsScenario) {
     vm.expectEmit();
     emit GiveFunds(_giveFundsScenario.account, _giveFundsScenario.rad);
 
@@ -641,7 +739,9 @@ contract Unit_StabilityFeeTreasury_GiveFunds is Base {
     stabilityFeeTreasury.giveFunds(_giveFundsScenario.account, _giveFundsScenario.rad);
   }
 
-  function test_Revert_AccountCannotBeTreasury(GiveFundsScenario memory _giveFundsScenario) public authorized {
+  function test_Revert_AccountCannotBeTreasury(
+    GiveFundsScenario memory _giveFundsScenario
+  ) public authorized {
     _giveFundsScenario.account = address(stabilityFeeTreasury);
 
     vm.expectRevert(IStabilityFeeTreasury.SFTreasury_AccountCannotBeTreasury.selector);
@@ -649,7 +749,9 @@ contract Unit_StabilityFeeTreasury_GiveFunds is Base {
     stabilityFeeTreasury.giveFunds(_giveFundsScenario.account, _giveFundsScenario.rad);
   }
 
-  function test_Revert_OutstandingBadDebt(GiveFundsScenario memory _giveFundsScenario) public authorized {
+  function test_Revert_OutstandingBadDebt(
+    GiveFundsScenario memory _giveFundsScenario
+  ) public authorized {
     vm.assume(_notNullAcc(_giveFundsScenario));
     vm.assume(_notStabilityFeeTreasuryAcc(_giveFundsScenario));
 
@@ -661,7 +763,9 @@ contract Unit_StabilityFeeTreasury_GiveFunds is Base {
     stabilityFeeTreasury.giveFunds(_giveFundsScenario.account, _giveFundsScenario.rad);
   }
 
-  function test_Revert_NotEnoughFunds(GiveFundsScenario memory _giveFundsScenario) public authorized {
+  function test_Revert_NotEnoughFunds(
+    GiveFundsScenario memory _giveFundsScenario
+  ) public authorized {
     vm.assume(_notNullAcc(_giveFundsScenario));
     vm.assume(_notStabilityFeeTreasuryAcc(_giveFundsScenario));
     vm.assume(_nullDebt(_giveFundsScenario));
@@ -692,10 +796,16 @@ contract Unit_StabilityFeeTreasury_TakeFunds is Base {
     _;
   }
 
-  function test_Call_SafeEngine_TransferInternalCoins(address _account, uint256 _rad) public happyPath(_account) {
+  function test_Call_SafeEngine_TransferInternalCoins(
+    address _account,
+    uint256 _rad
+  ) public happyPath(_account) {
     vm.expectCall(
       address(mockSafeEngine),
-      abi.encodeCall(mockSafeEngine.transferInternalCoins, (_account, address(stabilityFeeTreasury), _rad)),
+      abi.encodeCall(
+        mockSafeEngine.transferInternalCoins,
+        (_account, address(stabilityFeeTreasury), _rad)
+      ),
       1
     );
 
@@ -739,19 +849,27 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     uint256 pullFundsMinThreshold;
   }
 
-  function _notNullDstAcc(PullFundsScenario memory _pullFundsScenario) internal pure returns (bool) {
+  function _notNullDstAcc(
+    PullFundsScenario memory _pullFundsScenario
+  ) internal pure returns (bool) {
     return _pullFundsScenario.dstAccount != address(0); // avoid null dst-acc error
   }
 
-  function _notStabilityFeeTreasuryDstAcc(PullFundsScenario memory _pullFundsScenario) internal view returns (bool) {
+  function _notStabilityFeeTreasuryDstAcc(
+    PullFundsScenario memory _pullFundsScenario
+  ) internal view returns (bool) {
     return _pullFundsScenario.dstAccount != address(stabilityFeeTreasury);
   }
 
-  function _notAccountingDstAcc(PullFundsScenario memory _pullFundsScenario) internal view returns (bool) {
+  function _notAccountingDstAcc(
+    PullFundsScenario memory _pullFundsScenario
+  ) internal view returns (bool) {
     return _pullFundsScenario.dstAccount != address(mockExtraSurplusReceiver);
   }
 
-  function _notNullTransferAmount(PullFundsScenario memory _pullFundsScenario) internal pure returns (bool) {
+  function _notNullTransferAmount(
+    PullFundsScenario memory _pullFundsScenario
+  ) internal pure returns (bool) {
     return _pullFundsScenario.wad > 0; // avoid null transfer amount error
   }
 
@@ -760,14 +878,21 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     return _pullFundsScenario.totalAllowance >= _pullFundsScenario.wad * RAY; // avoid not allowed error
   }
 
-  function _allowancePerHourNotZero(PullFundsScenario memory _pullFundsScenario) internal pure returns (bool) {
+  function _allowancePerHourNotZero(
+    PullFundsScenario memory _pullFundsScenario
+  ) internal pure returns (bool) {
     return _pullFundsScenario.allowancePerHour > 0; // enter if statement for require
   }
 
-  function _notPerHourLimitExceeded(PullFundsScenario memory _pullFundsScenario) internal pure returns (bool) {
-    vm.assume(notOverflowAdd(_pullFundsScenario.initialPulledPerHour, _pullFundsScenario.wad * RAY));
+  function _notPerHourLimitExceeded(
+    PullFundsScenario memory _pullFundsScenario
+  ) internal pure returns (bool) {
+    vm.assume(
+      notOverflowAdd(_pullFundsScenario.initialPulledPerHour, _pullFundsScenario.wad * RAY)
+    );
     return
-      _pullFundsScenario.initialPulledPerHour + (_pullFundsScenario.wad * RAY) <= _pullFundsScenario.allowancePerHour; // avoid StabilityFeeTreasury/per-hour-limit-exceeded
+      _pullFundsScenario.initialPulledPerHour + (_pullFundsScenario.wad * RAY) <=
+      _pullFundsScenario.allowancePerHour; // avoid StabilityFeeTreasury/per-hour-limit-exceeded
   }
 
   function _joinCoins(PullFundsScenario memory _pullFundsScenario) internal pure returns (bool) {
@@ -783,13 +908,17 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
   }
 
   function _enoughFunds(PullFundsScenario memory _pullFundsScenario) internal pure returns (bool) {
-    return _pullFundsScenario.safeEngineCoinBalance - _pullFundsScenario.safeEngineDebtBalance
-      >= _pullFundsScenario.wad * RAY; // avoid StabilityFeeTreasury/not-enough-funds
+    return
+      _pullFundsScenario.safeEngineCoinBalance - _pullFundsScenario.safeEngineDebtBalance >=
+      _pullFundsScenario.wad * RAY; // avoid StabilityFeeTreasury/not-enough-funds
   }
 
-  function _notBelowPullFundsMinThreshold(PullFundsScenario memory _pullFundsScenario) internal pure returns (bool) {
-    return _pullFundsScenario.safeEngineCoinBalance - _pullFundsScenario.safeEngineDebtBalance
-      >= _pullFundsScenario.pullFundsMinThreshold; // avoid StabilityFeeTreasury/below-pullFunds-min-threshold
+  function _notBelowPullFundsMinThreshold(
+    PullFundsScenario memory _pullFundsScenario
+  ) internal pure returns (bool) {
+    return
+      _pullFundsScenario.safeEngineCoinBalance - _pullFundsScenario.safeEngineDebtBalance >=
+      _pullFundsScenario.pullFundsMinThreshold; // avoid StabilityFeeTreasury/below-pullFunds-min-threshold
   }
 
   function _assumeHappyPath(PullFundsScenario memory _pullFundsScenario) internal view {
@@ -822,7 +951,9 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     _;
   }
 
-  function test_Set_PulledPerHour(PullFundsScenario memory _pullFundsScenario) public happyPath(_pullFundsScenario) {
+  function test_Set_PulledPerHour(
+    PullFundsScenario memory _pullFundsScenario
+  ) public happyPath(_pullFundsScenario) {
     stabilityFeeTreasury.pullFunds(_pullFundsScenario.dstAccount, _pullFundsScenario.wad);
 
     assertEq(
@@ -831,7 +962,9 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     );
   }
 
-  function test_Emit_JoinCoins(PullFundsScenario memory _pullFundsScenario) public happyPath(_pullFundsScenario) {
+  function test_Emit_JoinCoins(
+    PullFundsScenario memory _pullFundsScenario
+  ) public happyPath(_pullFundsScenario) {
     vm.assume(_joinCoins(_pullFundsScenario));
 
     vm.expectEmit();
@@ -840,7 +973,9 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     stabilityFeeTreasury.pullFunds(_pullFundsScenario.dstAccount, _pullFundsScenario.wad);
   }
 
-  function test_Emit_SettleDebt(PullFundsScenario memory _pullFundsScenario) public happyPath(_pullFundsScenario) {
+  function test_Emit_SettleDebt(
+    PullFundsScenario memory _pullFundsScenario
+  ) public happyPath(_pullFundsScenario) {
     vm.assume(_settleDebt(_pullFundsScenario));
 
     vm.expectEmit();
@@ -849,18 +984,20 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     stabilityFeeTreasury.pullFunds(_pullFundsScenario.dstAccount, _pullFundsScenario.wad);
   }
 
-  function test_Set_Allowance(PullFundsScenario memory _pullFundsScenario) public happyPath(_pullFundsScenario) {
+  function test_Set_Allowance(
+    PullFundsScenario memory _pullFundsScenario
+  ) public happyPath(_pullFundsScenario) {
     stabilityFeeTreasury.pullFunds(_pullFundsScenario.dstAccount, _pullFundsScenario.wad);
 
     assertEq(
-      stabilityFeeTreasury.allowance(user).total, _pullFundsScenario.totalAllowance - (_pullFundsScenario.wad * RAY)
+      stabilityFeeTreasury.allowance(user).total,
+      _pullFundsScenario.totalAllowance - (_pullFundsScenario.wad * RAY)
     );
   }
 
-  function test_Call_SafeEngine_TransferInternalCoins(PullFundsScenario memory _pullFundsScenario)
-    public
-    happyPath(_pullFundsScenario)
-  {
+  function test_Call_SafeEngine_TransferInternalCoins(
+    PullFundsScenario memory _pullFundsScenario
+  ) public happyPath(_pullFundsScenario) {
     vm.expectCall(
       address(mockSafeEngine),
       abi.encodeCall(
@@ -873,7 +1010,9 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     stabilityFeeTreasury.pullFunds(_pullFundsScenario.dstAccount, _pullFundsScenario.wad);
   }
 
-  function test_Emit_PullFunds(PullFundsScenario memory _pullFundsScenario) public happyPath(_pullFundsScenario) {
+  function test_Emit_PullFunds(
+    PullFundsScenario memory _pullFundsScenario
+  ) public happyPath(_pullFundsScenario) {
     vm.expectEmit();
     emit PullFunds(user, _pullFundsScenario.dstAccount, _pullFundsScenario.wad * RAY);
 
@@ -888,7 +1027,9 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     stabilityFeeTreasury.pullFunds(_pullFundsScenario.dstAccount, _pullFundsScenario.wad);
   }
 
-  function testFail_Emit_PullFunds_DstAccIsStabilityFeeTreasury(PullFundsScenario memory _pullFundsScenario) public {
+  function testFail_Emit_PullFunds_DstAccIsStabilityFeeTreasury(
+    PullFundsScenario memory _pullFundsScenario
+  ) public {
     _pullFundsScenario.dstAccount = address(stabilityFeeTreasury);
 
     vm.expectEmit(false, false, false, false);
@@ -986,7 +1127,9 @@ contract Unit_StabilityFeeTreasury_PullFunds is Base {
     stabilityFeeTreasury.pullFunds(_pullFundsScenario.dstAccount, _pullFundsScenario.wad);
   }
 
-  function test_Revert_BelowPullFundsMinThreshold(PullFundsScenario memory _pullFundsScenario) public {
+  function test_Revert_BelowPullFundsMinThreshold(
+    PullFundsScenario memory _pullFundsScenario
+  ) public {
     vm.assume(_notNullDstAcc(_pullFundsScenario));
     vm.assume(_notStabilityFeeTreasuryDstAcc(_pullFundsScenario));
     vm.assume(_notAccountingDstAcc(_pullFundsScenario));
@@ -1019,28 +1162,38 @@ contract Unit_StabilityFeeTreasury_TransferSurplusFunds is Base {
     uint256 safeEngineDebtBalance;
   }
 
-  function _joinCoins(TransferSurplusFundsScenario memory _transferSurplusFundsScenario) internal pure returns (bool) {
+  function _joinCoins(
+    TransferSurplusFundsScenario memory _transferSurplusFundsScenario
+  ) internal pure returns (bool) {
     return _transferSurplusFundsScenario.systemCoinBalance > 0;
   }
 
-  function _settleDebt(TransferSurplusFundsScenario memory _transferSurplusFundsScenario) internal pure returns (bool) {
+  function _settleDebt(
+    TransferSurplusFundsScenario memory _transferSurplusFundsScenario
+  ) internal pure returns (bool) {
     return _transferSurplusFundsScenario.safeEngineDebtBalance > 0;
   }
 
-  function _nullDebt(TransferSurplusFundsScenario memory _transferSurplusFundsScenario) internal pure returns (bool) {
-    return _transferSurplusFundsScenario.safeEngineCoinBalance >= _transferSurplusFundsScenario.safeEngineDebtBalance;
+  function _nullDebt(
+    TransferSurplusFundsScenario memory _transferSurplusFundsScenario
+  ) internal pure returns (bool) {
+    return
+      _transferSurplusFundsScenario.safeEngineCoinBalance >=
+      _transferSurplusFundsScenario.safeEngineDebtBalance;
   }
 
-  function _enoughSurplus(TransferSurplusFundsScenario memory _transferSurplusFundsScenario)
-    internal
-    pure
-    returns (bool)
-  {
-    return _transferSurplusFundsScenario.safeEngineCoinBalance - _transferSurplusFundsScenario.safeEngineDebtBalance
-      > _transferSurplusFundsScenario.treasuryCapacity;
+  function _enoughSurplus(
+    TransferSurplusFundsScenario memory _transferSurplusFundsScenario
+  ) internal pure returns (bool) {
+    return
+      _transferSurplusFundsScenario.safeEngineCoinBalance -
+        _transferSurplusFundsScenario.safeEngineDebtBalance >
+      _transferSurplusFundsScenario.treasuryCapacity;
   }
 
-  function _assumeHappyPath(TransferSurplusFundsScenario memory _transferSurplusFundsScenario) internal pure {
+  function _assumeHappyPath(
+    TransferSurplusFundsScenario memory _transferSurplusFundsScenario
+  ) internal pure {
     vm.assume(_nullDebt(_transferSurplusFundsScenario));
     vm.assume(_enoughSurplus(_transferSurplusFundsScenario));
   }
@@ -1058,10 +1211,9 @@ contract Unit_StabilityFeeTreasury_TransferSurplusFunds is Base {
     _;
   }
 
-  function test_Emit_JoinCoins(TransferSurplusFundsScenario memory _transferSurplusFundsScenario)
-    public
-    happyPath(_transferSurplusFundsScenario)
-  {
+  function test_Emit_JoinCoins(
+    TransferSurplusFundsScenario memory _transferSurplusFundsScenario
+  ) public happyPath(_transferSurplusFundsScenario) {
     vm.assume(_joinCoins(_transferSurplusFundsScenario));
 
     vm.expectEmit();
@@ -1070,10 +1222,9 @@ contract Unit_StabilityFeeTreasury_TransferSurplusFunds is Base {
     stabilityFeeTreasury.transferSurplusFunds();
   }
 
-  function test_Emit_SettleDebt(TransferSurplusFundsScenario memory _transferSurplusFundsScenario)
-    public
-    happyPath(_transferSurplusFundsScenario)
-  {
+  function test_Emit_SettleDebt(
+    TransferSurplusFundsScenario memory _transferSurplusFundsScenario
+  ) public happyPath(_transferSurplusFundsScenario) {
     vm.assume(_settleDebt(_transferSurplusFundsScenario));
 
     vm.expectEmit();
@@ -1094,10 +1245,9 @@ contract Unit_StabilityFeeTreasury_TransferSurplusFunds is Base {
     assertEq(stabilityFeeTreasury.latestSurplusTransferTime(), block.timestamp);
   }
 
-  function test_Call_SafeEngine_TransferInternalCoins(TransferSurplusFundsScenario memory _transferSurplusFundsScenario)
-    public
-    happyPath(_transferSurplusFundsScenario)
-  {
+  function test_Call_SafeEngine_TransferInternalCoins(
+    TransferSurplusFundsScenario memory _transferSurplusFundsScenario
+  ) public happyPath(_transferSurplusFundsScenario) {
     vm.expectCall(
       address(mockSafeEngine),
       abi.encodeCall(
@@ -1105,8 +1255,9 @@ contract Unit_StabilityFeeTreasury_TransferSurplusFunds is Base {
         (
           address(stabilityFeeTreasury),
           mockExtraSurplusReceiver,
-          (_transferSurplusFundsScenario.safeEngineCoinBalance - _transferSurplusFundsScenario.safeEngineDebtBalance)
-            - _transferSurplusFundsScenario.treasuryCapacity
+          (_transferSurplusFundsScenario.safeEngineCoinBalance -
+            _transferSurplusFundsScenario.safeEngineDebtBalance) -
+            _transferSurplusFundsScenario.treasuryCapacity
         )
       ),
       1
@@ -1115,15 +1266,15 @@ contract Unit_StabilityFeeTreasury_TransferSurplusFunds is Base {
     stabilityFeeTreasury.transferSurplusFunds();
   }
 
-  function test_Emit_TransferSurplusFunds(TransferSurplusFundsScenario memory _transferSurplusFundsScenario)
-    public
-    happyPath(_transferSurplusFundsScenario)
-  {
+  function test_Emit_TransferSurplusFunds(
+    TransferSurplusFundsScenario memory _transferSurplusFundsScenario
+  ) public happyPath(_transferSurplusFundsScenario) {
     vm.expectEmit();
     emit TransferSurplusFunds(
       mockExtraSurplusReceiver,
-      (_transferSurplusFundsScenario.safeEngineCoinBalance - _transferSurplusFundsScenario.safeEngineDebtBalance)
-        - _transferSurplusFundsScenario.treasuryCapacity
+      (_transferSurplusFundsScenario.safeEngineCoinBalance -
+        _transferSurplusFundsScenario.safeEngineDebtBalance) -
+        _transferSurplusFundsScenario.treasuryCapacity
     );
 
     stabilityFeeTreasury.transferSurplusFunds();
@@ -1139,7 +1290,9 @@ contract Unit_StabilityFeeTreasury_TransferSurplusFunds is Base {
     stabilityFeeTreasury.transferSurplusFunds();
   }
 
-  function test_Revert_OutstandingBadDebt(TransferSurplusFundsScenario memory _transferSurplusFundsScenario) public {
+  function test_Revert_OutstandingBadDebt(
+    TransferSurplusFundsScenario memory _transferSurplusFundsScenario
+  ) public {
     vm.assume(!_nullDebt(_transferSurplusFundsScenario));
     _mockValues(_transferSurplusFundsScenario);
 
@@ -1148,7 +1301,9 @@ contract Unit_StabilityFeeTreasury_TransferSurplusFunds is Base {
     stabilityFeeTreasury.transferSurplusFunds();
   }
 
-  function test_Revert_NotEnoughSurplus(TransferSurplusFundsScenario memory _transferSurplusFundsScenario) public {
+  function test_Revert_NotEnoughSurplus(
+    TransferSurplusFundsScenario memory _transferSurplusFundsScenario
+  ) public {
     vm.assume(_nullDebt(_transferSurplusFundsScenario));
 
     vm.assume(!_enoughSurplus(_transferSurplusFundsScenario));

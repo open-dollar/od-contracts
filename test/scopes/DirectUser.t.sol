@@ -3,14 +3,7 @@ pragma solidity 0.8.19;
 
 import {ScriptBase} from 'forge-std/Script.sol';
 import {ETH_A} from '@script/Params.s.sol';
-import {
-  Contracts,
-  ICollateralJoin,
-  MintableERC20,
-  IERC20Metadata,
-  ISAFEEngine,
-  ICollateralAuctionHouse
-} from '@script/Contracts.s.sol';
+import {Contracts, ICollateralJoin, MintableERC20, IERC20Metadata, ISAFEEngine, ICollateralAuctionHouse} from '@script/Contracts.s.sol';
 import {IWeth} from '@interfaces/external/IWeth.sol';
 import {OP_WETH} from '@script/Registry.s.sol';
 import {BaseUser} from '@test/scopes/BaseUser.t.sol';
@@ -25,11 +18,17 @@ abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
     _lockedCollateral = _safe.lockedCollateral;
   }
 
-  function _getSafeHandler(bytes32, address _user) internal pure override returns (address _safeHandler) {
+  function _getSafeHandler(
+    bytes32,
+    address _user
+  ) internal pure override returns (address _safeHandler) {
     return _user;
   }
 
-  function _getCollateralBalance(address _user, bytes32 _cType) internal view override returns (uint256 _wad) {
+  function _getCollateralBalance(
+    address _user,
+    bytes32 _cType
+  ) internal view override returns (uint256 _wad) {
     IERC20Metadata _collateral = collateral[_cType];
     uint256 _decimals = _collateral.decimals();
     uint256 _wei = _collateral.balanceOf(_user);
@@ -66,7 +65,11 @@ abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
     vm.stopPrank();
   }
 
-  function _exitCollateral(address _user, address _collateralJoin, uint256 _amount) internal override {
+  function _exitCollateral(
+    address _user,
+    address _collateralJoin,
+    uint256 _amount
+  ) internal override {
     uint256 _decimals = ICollateralJoin(_collateralJoin).decimals();
     uint256 _wei = _amount / 10 ** (18 - _decimals);
 
@@ -185,7 +188,11 @@ abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
     debtAuctionHouse.settleAuction(_auctionId);
   }
 
-  function _increaseBidSize(address _user, uint256 _auctionId, uint256 _bidAmount) internal override {
+  function _increaseBidSize(
+    address _user,
+    uint256 _auctionId,
+    uint256 _bidAmount
+  ) internal override {
     uint256 _amountToSell = surplusAuctionHouse.auctions(_auctionId).amountToSell;
 
     vm.startPrank(_user);
@@ -208,7 +215,11 @@ abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
 
   // --- Global Settlement actions ---
 
-  function _increasePostSettlementBidSize(address _user, uint256 _auctionId, uint256 _bidAmount) internal override {
+  function _increasePostSettlementBidSize(
+    address _user,
+    uint256 _auctionId,
+    uint256 _bidAmount
+  ) internal override {
     uint256 _amountToSell = postSettlementSurplusAuctionHouse.auctions(_auctionId).amountToSell;
 
     vm.startPrank(_user);
@@ -217,11 +228,17 @@ abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
     vm.stopPrank();
   }
 
-  function _settlePostSettlementSurplusAuction(address _user, uint256 _auctionId) internal override {
+  function _settlePostSettlementSurplusAuction(
+    address _user,
+    uint256 _auctionId
+  ) internal override {
     postSettlementSurplusAuctionHouse.settleAuction(_auctionId);
   }
 
-  function _freeCollateral(address _user, bytes32 _cType) internal override returns (uint256 _remainderCollateral) {
+  function _freeCollateral(
+    address _user,
+    bytes32 _cType
+  ) internal override returns (uint256 _remainderCollateral) {
     globalSettlement.processSAFE(_cType, _user);
 
     _remainderCollateral = safeEngine.safes(_cType, _user).lockedCollateral;

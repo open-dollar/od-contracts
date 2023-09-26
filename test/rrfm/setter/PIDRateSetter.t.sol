@@ -34,16 +34,16 @@ contract PIDRateSetterTest is DSTest {
 
     orcl = new OracleForTest(1 ether);
 
-    IOracleRelayer.OracleRelayerParams memory _oracleRelayerParams =
-      IOracleRelayer.OracleRelayerParams({redemptionRateUpperBound: RAY * WAD, redemptionRateLowerBound: 1});
+    IOracleRelayer.OracleRelayerParams memory _oracleRelayerParams = IOracleRelayer
+      .OracleRelayerParams({redemptionRateUpperBound: RAY * WAD, redemptionRateLowerBound: 1});
     oracleRelayer = new MockOracleRelayer(address(69), orcl, _oracleRelayerParams);
 
     calculator = new MockPIDCalculator();
     rateSetter = new PIDRateSetter(
-          address(oracleRelayer),
-          address(calculator),
-          IPIDRateSetter.PIDRateSetterParams(periodSize)
-        );
+      address(oracleRelayer),
+      address(calculator),
+      IPIDRateSetter.PIDRateSetterParams(periodSize)
+    );
     oracleRelayer.addAuthorization(address(rateSetter));
   }
 
@@ -106,7 +106,10 @@ contract PIDRateSetterTest is DSTest {
     rateSetter.updateRate();
 
     hevm.warp(block.timestamp + periodSize * 100_000 + 1);
-    assertEq(block.timestamp - rateSetter.lastUpdateTime() - rateSetter.params().updateRateDelay, 359_996_401);
+    assertEq(
+      block.timestamp - rateSetter.lastUpdateTime() - rateSetter.params().updateRateDelay,
+      359_996_401
+    );
 
     rateSetter.updateRate();
   }

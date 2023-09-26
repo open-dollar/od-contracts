@@ -52,7 +52,9 @@ abstract contract Base is HaiTest {
     airdropAmounts[4] = airdropAmount;
 
     for (uint256 i = 0; i < airdropRecipients.length; i++) {
-      leaves.push(keccak256(bytes.concat(keccak256(abi.encode(airdropRecipients[i], airdropAmounts[i])))));
+      leaves.push(
+        keccak256(bytes.concat(keccak256(abi.encode(airdropRecipients[i], airdropAmounts[i]))))
+      );
     }
 
     vm.prank(deployer);
@@ -64,8 +66,14 @@ abstract contract Base is HaiTest {
 
     _mockERC20VotesDelegate(deployer);
     vm.prank(deployer);
-    tokenDistributor =
-      new TokenDistributor(merkleRoot, token, totalClaimable, claimPeriodStart, claimPeriodEnd, deployer);
+    tokenDistributor = new TokenDistributor(
+      merkleRoot,
+      token,
+      totalClaimable,
+      claimPeriodStart,
+      claimPeriodEnd,
+      deployer
+    );
 
     uint256 _index = merkleTreeGenerator.getIndex(merkleTree, leaves[4]);
     validEveProofs = merkleTreeGenerator.getProof(merkleTree, _index);
@@ -96,14 +104,18 @@ abstract contract Base is HaiTest {
     bytes32 _s
   ) internal {
     vm.mockCall(
-      address(token), abi.encodeCall(token.delegateBySig, (_delegatee, _nonce, _expiry, _v, _r, _s)), abi.encode(0)
+      address(token),
+      abi.encodeCall(token.delegateBySig, (_delegatee, _nonce, _expiry, _v, _r, _s)),
+      abi.encode(0)
     );
   }
 
   function _mockClaimed(address _user, bool _claimed) internal {
-    stdstore.target(address(tokenDistributor)).sig(ITokenDistributor.claimed.selector).with_key(_user).checked_write(
-      _claimed
-    );
+    stdstore
+      .target(address(tokenDistributor))
+      .sig(ITokenDistributor.claimed.selector)
+      .with_key(_user)
+      .checked_write(_claimed);
   }
 
   modifier authorized() {
@@ -138,13 +150,27 @@ contract Unit_TokenDistributor_Constructor is Base {
 
     vm.expectCall(address(token), abi.encodeWithSelector(ERC20Votes.delegate.selector, _delegate));
 
-    new TokenDistributor(merkleRoot, token, totalClaimable, claimPeriodStart, claimPeriodEnd, _delegate);
+    new TokenDistributor(
+      merkleRoot,
+      token,
+      totalClaimable,
+      claimPeriodStart,
+      claimPeriodEnd,
+      _delegate
+    );
   }
 
   function test_Revert_Token_IsNull() public {
     vm.expectRevert(Assertions.NullAddress.selector);
 
-    new TokenDistributor(merkleRoot, ERC20Votes(address(0)), totalClaimable, claimPeriodStart, claimPeriodEnd, deployer);
+    new TokenDistributor(
+      merkleRoot,
+      ERC20Votes(address(0)),
+      totalClaimable,
+      claimPeriodStart,
+      claimPeriodEnd,
+      deployer
+    );
   }
 
   function test_Revert_TotalClaimable_IsNull() public {
@@ -156,18 +182,39 @@ contract Unit_TokenDistributor_Constructor is Base {
   function test_Revert_ClaimPeriodStart_LtEqTimeStamp(uint256 _claimPeriodStart) public {
     vm.assume(_claimPeriodStart <= block.timestamp);
 
-    vm.expectRevert(abi.encodeWithSelector(Assertions.NotGreaterThan.selector, _claimPeriodStart, block.timestamp));
+    vm.expectRevert(
+      abi.encodeWithSelector(Assertions.NotGreaterThan.selector, _claimPeriodStart, block.timestamp)
+    );
 
-    new TokenDistributor(merkleRoot, token, totalClaimable, _claimPeriodStart, claimPeriodEnd, deployer);
+    new TokenDistributor(
+      merkleRoot,
+      token,
+      totalClaimable,
+      _claimPeriodStart,
+      claimPeriodEnd,
+      deployer
+    );
   }
 
-  function test_Revert_ClaimPeriodEnd_LtEqClaimPeriodStart(uint256 _claimPeriodStart, uint256 _claimPeriodEnd) public {
+  function test_Revert_ClaimPeriodEnd_LtEqClaimPeriodStart(
+    uint256 _claimPeriodStart,
+    uint256 _claimPeriodEnd
+  ) public {
     vm.assume(_claimPeriodStart > block.timestamp);
     vm.assume(_claimPeriodEnd <= _claimPeriodStart);
 
-    vm.expectRevert(abi.encodeWithSelector(Assertions.NotGreaterThan.selector, _claimPeriodEnd, _claimPeriodStart));
+    vm.expectRevert(
+      abi.encodeWithSelector(Assertions.NotGreaterThan.selector, _claimPeriodEnd, _claimPeriodStart)
+    );
 
-    new TokenDistributor(merkleRoot, token, totalClaimable, _claimPeriodStart, _claimPeriodEnd, deployer);
+    new TokenDistributor(
+      merkleRoot,
+      token,
+      totalClaimable,
+      _claimPeriodStart,
+      _claimPeriodEnd,
+      deployer
+    );
   }
 }
 
@@ -254,7 +301,14 @@ contract Unit_CanClaim_ExternalScript is Base {
   function setUp() public override {
     super.setUp();
     bytes32 _root = 0x30e48fd8bee18a1728bfd9f536125c5a352b778d5b07a92de684b14cb7bb92ad; // Root generated with OZ js library
-    tokenDistributor = new TokenDistributor(_root, token, totalClaimable, claimPeriodStart, claimPeriodEnd, deployer);
+    tokenDistributor = new TokenDistributor(
+      _root,
+      token,
+      totalClaimable,
+      claimPeriodStart,
+      claimPeriodEnd,
+      deployer
+    );
     vm.warp(claimPeriodStart); // going ahead in time for claim period start
   }
 
@@ -302,7 +356,10 @@ contract Unit_TokenDistributor_Claim is Base {
   }
 
   function test_Call_ERC20Votes_Transfer() public {
-    vm.expectCall(address(token), abi.encodeCall(token.transfer, (airdropRecipients[4], airdropAmounts[4])));
+    vm.expectCall(
+      address(token),
+      abi.encodeCall(token.transfer, (airdropRecipients[4], airdropAmounts[4]))
+    );
 
     tokenDistributor.claim(validEveProofs, airdropAmounts[4]);
   }
@@ -382,14 +439,30 @@ contract Unit_TokenDistributor_ClaimAndDelegate is Base {
 
   function test_Set_Claimed(uint256 _expiry, uint8 _v, bytes32 _r, bytes32 _s) public {
     _mockERC20VotesDelegateBySig(delegatee, 0, _expiry, _v, _r, _s);
-    tokenDistributor.claimAndDelegate(validEveProofs, airdropAmounts[4], delegatee, _expiry, _v, _r, _s);
+    tokenDistributor.claimAndDelegate(
+      validEveProofs,
+      airdropAmounts[4],
+      delegatee,
+      _expiry,
+      _v,
+      _r,
+      _s
+    );
 
     assertTrue(tokenDistributor.claimed(airdropRecipients[4]));
   }
 
   function test_Set_TotalClaimable(uint256 _expiry, uint8 _v, bytes32 _r, bytes32 _s) public {
     _mockERC20VotesDelegateBySig(delegatee, 0, _expiry, _v, _r, _s);
-    tokenDistributor.claimAndDelegate(validEveProofs, airdropAmounts[4], delegatee, _expiry, _v, _r, _s);
+    tokenDistributor.claimAndDelegate(
+      validEveProofs,
+      airdropAmounts[4],
+      delegatee,
+      _expiry,
+      _v,
+      _r,
+      _s
+    );
 
     assertEq(tokenDistributor.totalClaimable(), totalClaimable - airdropAmounts[4]);
   }
@@ -397,14 +470,41 @@ contract Unit_TokenDistributor_ClaimAndDelegate is Base {
   function test_Call_ERC20Votes_Transfer(uint256 _expiry, uint8 _v, bytes32 _r, bytes32 _s) public {
     _mockERC20VotesDelegateBySig(delegatee, 0, _expiry, _v, _r, _s);
 
-    vm.expectCall(address(token), abi.encodeCall(token.transfer, (airdropRecipients[4], airdropAmounts[4])));
-    tokenDistributor.claimAndDelegate(validEveProofs, airdropAmounts[4], delegatee, _expiry, _v, _r, _s);
+    vm.expectCall(
+      address(token),
+      abi.encodeCall(token.transfer, (airdropRecipients[4], airdropAmounts[4]))
+    );
+    tokenDistributor.claimAndDelegate(
+      validEveProofs,
+      airdropAmounts[4],
+      delegatee,
+      _expiry,
+      _v,
+      _r,
+      _s
+    );
   }
 
-  function test_Call_ERC20Votes_DelegateBySig(uint256 _expiry, uint8 _v, bytes32 _r, bytes32 _s) public {
-    vm.expectCall(address(token), abi.encodeCall(token.delegateBySig, (delegatee, 0, _expiry, _v, _r, _s)));
+  function test_Call_ERC20Votes_DelegateBySig(
+    uint256 _expiry,
+    uint8 _v,
+    bytes32 _r,
+    bytes32 _s
+  ) public {
+    vm.expectCall(
+      address(token),
+      abi.encodeCall(token.delegateBySig, (delegatee, 0, _expiry, _v, _r, _s))
+    );
 
-    tokenDistributor.claimAndDelegate(validEveProofs, airdropAmounts[4], delegatee, _expiry, _v, _r, _s);
+    tokenDistributor.claimAndDelegate(
+      validEveProofs,
+      airdropAmounts[4],
+      delegatee,
+      _expiry,
+      _v,
+      _r,
+      _s
+    );
   }
 
   function test_Emit_Claimed(uint256 _expiry, uint8 _v, bytes32 _r, bytes32 _s) public {
@@ -413,21 +513,50 @@ contract Unit_TokenDistributor_ClaimAndDelegate is Base {
     vm.expectEmit();
     emit Claimed(airdropRecipients[4], airdropAmounts[4]);
 
-    tokenDistributor.claimAndDelegate(validEveProofs, airdropAmounts[4], delegatee, _expiry, _v, _r, _s);
+    tokenDistributor.claimAndDelegate(
+      validEveProofs,
+      airdropAmounts[4],
+      delegatee,
+      _expiry,
+      _v,
+      _r,
+      _s
+    );
   }
 
-  function test_Revert_ClaimPeriodNotStarted(uint256 _expiry, uint8 _v, bytes32 _r, bytes32 _s) public {
+  function test_Revert_ClaimPeriodNotStarted(
+    uint256 _expiry,
+    uint8 _v,
+    bytes32 _r,
+    bytes32 _s
+  ) public {
     vm.warp(claimPeriodStart - 1); // going back in time for claim period start
     vm.expectRevert(ITokenDistributor.TokenDistributor_ClaimPeriodNotStarted.selector);
 
-    tokenDistributor.claimAndDelegate(validEveProofs, airdropAmounts[4], delegatee, _expiry, _v, _r, _s);
+    tokenDistributor.claimAndDelegate(
+      validEveProofs,
+      airdropAmounts[4],
+      delegatee,
+      _expiry,
+      _v,
+      _r,
+      _s
+    );
   }
 
   function test_Revert_ClaimPeriodEnded(uint256 _expiry, uint8 _v, bytes32 _r, bytes32 _s) public {
     vm.warp(claimPeriodEnd + 1); // going ahead in time period ended
     vm.expectRevert(ITokenDistributor.TokenDistributor_ClaimPeriodEnded.selector);
 
-    tokenDistributor.claimAndDelegate(validEveProofs, airdropAmounts[4], delegatee, _expiry, _v, _r, _s);
+    tokenDistributor.claimAndDelegate(
+      validEveProofs,
+      airdropAmounts[4],
+      delegatee,
+      _expiry,
+      _v,
+      _r,
+      _s
+    );
   }
 
   function test_Revert_ZeroAmount(uint256 _expiry, uint8 _v, bytes32 _r, bytes32 _s) public {
@@ -440,19 +569,45 @@ contract Unit_TokenDistributor_ClaimAndDelegate is Base {
     _mockClaimed(airdropRecipients[4], true);
 
     vm.expectRevert(ITokenDistributor.TokenDistributor_AlreadyClaimed.selector);
-    tokenDistributor.claimAndDelegate(validEveProofs, airdropAmounts[4], delegatee, _expiry, _v, _r, _s);
+    tokenDistributor.claimAndDelegate(
+      validEveProofs,
+      airdropAmounts[4],
+      delegatee,
+      _expiry,
+      _v,
+      _r,
+      _s
+    );
   }
 
-  function test_Revert_FailedMerkleProofVerify_InvalidClaimer(uint256 _expiry, uint8 _v, bytes32 _r, bytes32 _s) public {
+  function test_Revert_FailedMerkleProofVerify_InvalidClaimer(
+    uint256 _expiry,
+    uint8 _v,
+    bytes32 _r,
+    bytes32 _s
+  ) public {
     vm.stopPrank();
     vm.startPrank(newAddress());
 
     vm.expectRevert(ITokenDistributor.TokenDistributor_FailedMerkleProofVerify.selector);
 
-    tokenDistributor.claimAndDelegate(validEveProofs, airdropAmounts[4], delegatee, _expiry, _v, _r, _s);
+    tokenDistributor.claimAndDelegate(
+      validEveProofs,
+      airdropAmounts[4],
+      delegatee,
+      _expiry,
+      _v,
+      _r,
+      _s
+    );
   }
 
-  function test_Revert_FailedMerkleProofVerify_InvalidProof(uint256 _expiry, uint8 _v, bytes32 _r, bytes32 _s) public {
+  function test_Revert_FailedMerkleProofVerify_InvalidProof(
+    uint256 _expiry,
+    uint8 _v,
+    bytes32 _r,
+    bytes32 _s
+  ) public {
     bytes32[] memory _proofs = new bytes32[](3);
     _proofs[0] = bytes32(0xcf9633789ba0907ad3a73ab3be992a886fa3502e11375044250fc340ae0a0613);
     _proofs[1] = bytes32(0xa0246557dc9e869dd36d0dcede531af0ab5a4bddda571c276a4519029b69affa);
@@ -463,15 +618,33 @@ contract Unit_TokenDistributor_ClaimAndDelegate is Base {
     tokenDistributor.claimAndDelegate(_proofs, airdropAmounts[4], delegatee, _expiry, _v, _r, _s);
   }
 
-  function test_Revert_FailedMerkleProofVerify_InvalidAmount(uint256 _expiry, uint8 _v, bytes32 _r, bytes32 _s) public {
+  function test_Revert_FailedMerkleProofVerify_InvalidAmount(
+    uint256 _expiry,
+    uint8 _v,
+    bytes32 _r,
+    bytes32 _s
+  ) public {
     vm.expectRevert(ITokenDistributor.TokenDistributor_FailedMerkleProofVerify.selector);
     tokenDistributor.claimAndDelegate(validEveProofs, 499_999, delegatee, _expiry, _v, _r, _s);
   }
 
-  function testFail_ERC20Votes_Transfer(uint256 _expiry, uint8 _v, bytes32 _r, bytes32 _s) public authorized {
+  function testFail_ERC20Votes_Transfer(
+    uint256 _expiry,
+    uint8 _v,
+    bytes32 _r,
+    bytes32 _s
+  ) public authorized {
     _mockERC20VotesTransferFail(airdropRecipients[4], airdropAmounts[4]);
 
-    tokenDistributor.claimAndDelegate(validEveProofs, airdropAmounts[4], delegatee, _expiry, _v, _r, _s);
+    tokenDistributor.claimAndDelegate(
+      validEveProofs,
+      airdropAmounts[4],
+      delegatee,
+      _expiry,
+      _v,
+      _r,
+      _s
+    );
   }
 }
 

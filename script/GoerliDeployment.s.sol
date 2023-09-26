@@ -50,7 +50,9 @@ abstract contract GoerliDeployment is Contracts, GoerliParams, GoerliContracts {
 
     // --- global settlement ---
     globalSettlement = GlobalSettlement(GlobalSettlement_Address);
-    postSettlementSurplusAuctionHouse = PostSettlementSurplusAuctionHouse(PostSettlementSurplusAuctionHouse_Address);
+    postSettlementSurplusAuctionHouse = PostSettlementSurplusAuctionHouse(
+      PostSettlementSurplusAuctionHouse_Address
+    );
     settlementSurplusAuctioneer = SettlementSurplusAuctioneer(SettlementSurplusAuctioneer_Address);
 
     // --- factories ---
@@ -61,35 +63,42 @@ abstract contract GoerliDeployment is Contracts, GoerliParams, GoerliContracts {
     delayedOracleFactory = DelayedOracleFactory(DelayedOracleFactory_Address);
 
     collateralJoinFactory = CollateralJoinFactory(CollateralJoinFactory_Address);
-    collateralAuctionHouseFactory = CollateralAuctionHouseFactory(CollateralAuctionHouseFactory_Address);
+    collateralAuctionHouseFactory = CollateralAuctionHouseFactory(
+      CollateralAuctionHouseFactory_Address
+    );
 
     // --- per token contracts ---
-    collateralJoin[WETH] =
-      CollateralJoin(CollateralJoinChild_0x5745544800000000000000000000000000000000000000000000000000000000_Address);
+    collateralJoin[WETH] = CollateralJoin(
+      CollateralJoinChild_0x5745544800000000000000000000000000000000000000000000000000000000_Address
+    );
     collateralAuctionHouse[WETH] = CollateralAuctionHouse(
       CollateralAuctionHouseChild_0x5745544800000000000000000000000000000000000000000000000000000000_Address
     );
 
-    collateralJoin[FTRG] =
-      CollateralJoin(CollateralJoinChild_0x4654524700000000000000000000000000000000000000000000000000000000_Address);
+    collateralJoin[FTRG] = CollateralJoin(
+      CollateralJoinChild_0x4654524700000000000000000000000000000000000000000000000000000000_Address
+    );
     collateralAuctionHouse[FTRG] = CollateralAuctionHouse(
       CollateralAuctionHouseChild_0x4654524700000000000000000000000000000000000000000000000000000000_Address
     );
 
-    collateralJoin[WBTC] =
-      CollateralJoin(CollateralJoinChild_0x5742544300000000000000000000000000000000000000000000000000000000_Address);
+    collateralJoin[WBTC] = CollateralJoin(
+      CollateralJoinChild_0x5742544300000000000000000000000000000000000000000000000000000000_Address
+    );
     collateralAuctionHouse[WBTC] = CollateralAuctionHouse(
       CollateralAuctionHouseChild_0x5742544300000000000000000000000000000000000000000000000000000000_Address
     );
 
-    collateralJoin[STONES] =
-      CollateralJoin(CollateralJoinChild_0x53544f4e45530000000000000000000000000000000000000000000000000000_Address);
+    collateralJoin[STONES] = CollateralJoin(
+      CollateralJoinChild_0x53544f4e45530000000000000000000000000000000000000000000000000000_Address
+    );
     collateralAuctionHouse[STONES] = CollateralAuctionHouse(
       CollateralAuctionHouseChild_0x53544f4e45530000000000000000000000000000000000000000000000000000_Address
     );
 
-    collateralJoin[TOTEM] =
-      CollateralJoin(CollateralJoinChild_0x544f54454d000000000000000000000000000000000000000000000000000000_Address);
+    collateralJoin[TOTEM] = CollateralJoin(
+      CollateralJoinChild_0x544f54454d000000000000000000000000000000000000000000000000000000_Address
+    );
     collateralAuctionHouse[TOTEM] = CollateralAuctionHouse(
       CollateralAuctionHouseChild_0x544f54454d000000000000000000000000000000000000000000000000000000_Address
     );
@@ -114,7 +123,9 @@ abstract contract GoerliDeployment is Contracts, GoerliParams, GoerliContracts {
     collateralBidActions = CollateralBidActions(CollateralBidActions_Address);
     rewardedActions = RewardedActions(RewardedActions_Address);
     globalSettlementActions = GlobalSettlementActions(GlobalSettlementActions_Address);
-    postSettlementSurplusBidActions = PostSettlementSurplusBidActions(PostSettlementSurplusBidActions_Address);
+    postSettlementSurplusBidActions = PostSettlementSurplusBidActions(
+      PostSettlementSurplusBidActions_Address
+    );
 
     // --- oracles ---
     systemCoinOracle = IBaseOracle(DenominatedOracleChild_OD_Address);

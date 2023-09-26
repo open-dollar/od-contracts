@@ -11,7 +11,8 @@ import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 
 contract OracleBase is GoerliContracts, Script {
   UniV3RelayerFactory public uniV3RelayerFactory = UniV3RelayerFactory(UniV3RelayerFactory_Address);
-  DenominatedOracleFactory public denominatedOracleFactory = DenominatedOracleFactory(DenominatedOracleFactory_Address);
+  DenominatedOracleFactory public denominatedOracleFactory =
+    DenominatedOracleFactory(DenominatedOracleFactory_Address);
 
   address public OD_token = SystemCoin_Address;
   address public ODG_token = ProtocolToken_Address;

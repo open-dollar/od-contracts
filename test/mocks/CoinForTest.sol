@@ -5,7 +5,10 @@ import {ERC20, IERC20} from '@openzeppelin/token/ERC20/ERC20.sol';
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
 contract CoinForTest is ERC20, Authorizable {
-  constructor(string memory _name, string memory _symbol) ERC20(_name, _symbol) Authorizable(msg.sender) {}
+  constructor(
+    string memory _name,
+    string memory _symbol
+  ) ERC20(_name, _symbol) Authorizable(msg.sender) {}
 
   function mint(uint256 _wad) external isAuthorized {
     _mint(msg.sender, _wad);

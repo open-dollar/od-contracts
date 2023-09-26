@@ -13,5 +13,9 @@ contract ModifiableForTestB is Modifiable {
 
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override {}
 
-  function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override {}
+  function _modifyParameters(
+    bytes32 _cType,
+    bytes32 _param,
+    bytes memory _data
+  ) internal override {}
 }

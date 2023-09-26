@@ -26,7 +26,11 @@ interface IRewardedActions is ICommonActions {
    * @param  _coinJoin Address of the CoinJoin contract
    * @param  _debtTimestamp Timestamp of the debt to pop from the queue
    */
-  function popDebtFromQueue(address _accountingJob, address _coinJoin, uint256 _debtTimestamp) external;
+  function popDebtFromQueue(
+    address _accountingJob,
+    address _coinJoin,
+    uint256 _debtTimestamp
+  ) external;
 
   /**
    * @notice Transfers surplus from accounting engine and transfers the reward to the user
@@ -44,7 +48,12 @@ interface IRewardedActions is ICommonActions {
    * @param  _cType Bytes32 representation of the collateral type
    * @param  _safe Address of the SAFE to liquidate
    */
-  function liquidateSAFE(address _liquidationJob, address _coinJoin, bytes32 _cType, address _safe) external;
+  function liquidateSAFE(
+    address _liquidationJob,
+    address _coinJoin,
+    bytes32 _cType,
+    address _safe
+  ) external;
 
   // --- OracleJob ---
 

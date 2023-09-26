@@ -33,7 +33,11 @@ contract RewardedActions is CommonActions, IRewardedActions {
   }
 
   /// @inheritdoc IRewardedActions
-  function popDebtFromQueue(address _accountingJob, address _coinJoin, uint256 _debtTimestamp) external delegateCall {
+  function popDebtFromQueue(
+    address _accountingJob,
+    address _coinJoin,
+    uint256 _debtTimestamp
+  ) external delegateCall {
     IAccountingJob(_accountingJob).workPopDebtFromQueue(_debtTimestamp);
     _exitReward(_accountingJob, _coinJoin);
   }
@@ -60,7 +64,11 @@ contract RewardedActions is CommonActions, IRewardedActions {
   // --- OracleJob ---
 
   /// @inheritdoc IRewardedActions
-  function updateCollateralPrice(address _oracleJob, address _coinJoin, bytes32 _cType) external delegateCall {
+  function updateCollateralPrice(
+    address _oracleJob,
+    address _coinJoin,
+    bytes32 _cType
+  ) external delegateCall {
     IOracleJob(_oracleJob).workUpdateCollateralPrice(_cType);
     _exitReward(_oracleJob, _coinJoin);
   }

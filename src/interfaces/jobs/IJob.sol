@@ -26,5 +26,8 @@ interface IJob {
   // --- Registry ---
 
   /// @notice Address of the StabilityFeeTreasury contract
-  function stabilityFeeTreasury() external view returns (IStabilityFeeTreasury _stabilityFeeTreasury);
+  function stabilityFeeTreasury()
+    external
+    view
+    returns (IStabilityFeeTreasury _stabilityFeeTreasury);
 }

@@ -35,8 +35,10 @@ interface ISettlementSurplusAuctioneer is IAuthorizable, IModifiable {
 
   /// @notice The address of the AccountingEngine
   function accountingEngine() external view returns (IAccountingEngine _accountingEngine);
+
   /// @notice The address of the SurplusAuctionHouse
   function surplusAuctionHouse() external view returns (ISurplusAuctionHouse _surplusAuctionHouse);
+
   /// @notice The address of the SAFEEngine
   function safeEngine() external view returns (ISAFEEngine _safeEngine);
 

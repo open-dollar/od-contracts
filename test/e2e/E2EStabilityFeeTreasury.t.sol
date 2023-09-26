@@ -165,4 +165,6 @@ abstract contract E2EStabilityFeeTreasuryTest is BaseUser, Common {
 
 // --- Scoped test contracts ---
 
-contract E2EStabilityFeeTreasuryTestDirectUser is DirectUser, E2EStabilityFeeTreasuryTest {}
+contract E2EStabilityFeeTreasuryTestDirectUser is DirectUser, E2EStabilityFeeTreasuryTest {
+
+}

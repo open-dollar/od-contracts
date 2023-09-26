@@ -1,11 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {
-  CollateralAuctionHouseFactory,
-  ICollateralAuctionHouseFactory,
-  EnumerableSet
-} from '@contracts/factories/CollateralAuctionHouseFactory.sol';
+import {CollateralAuctionHouseFactory, ICollateralAuctionHouseFactory, EnumerableSet} from '@contracts/factories/CollateralAuctionHouseFactory.sol';
 import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
 
 contract CollateralAuctionHouseFactoryForTest is CollateralAuctionHouseFactory {

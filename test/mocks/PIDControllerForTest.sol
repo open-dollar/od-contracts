@@ -17,7 +17,9 @@ contract PIDControllerForTest is PIDController, InternalCallsExtension {
     mockPIDController = _mockPIDController;
   }
 
-  function _getBoundedPIOutput(int256 _piOutput) internal view virtual override returns (int256 _boundedPIOutput) {
+  function _getBoundedPIOutput(
+    int256 _piOutput
+  ) internal view virtual override returns (int256 _boundedPIOutput) {
     watcher.calledInternal(abi.encodeWithSignature('_getBoundedPIOutput(int256)', _piOutput));
     if (callSuper) {
       return super._getBoundedPIOutput(_piOutput);
@@ -26,7 +28,9 @@ contract PIDControllerForTest is PIDController, InternalCallsExtension {
     }
   }
 
-  function call_getBoundedPIOutput(int256 _piOutput) external view returns (int256 _boundedPIOutput) {
+  function call_getBoundedPIOutput(
+    int256 _piOutput
+  ) external view returns (int256 _boundedPIOutput) {
     return super._getBoundedPIOutput(_piOutput);
   }
 
@@ -35,7 +39,11 @@ contract PIDControllerForTest is PIDController, InternalCallsExtension {
     uint256 _redemptionPrice
   ) internal view virtual override returns (int256 _proportionalTerm) {
     watcher.calledInternal(
-      abi.encodeWithSignature('_getProportionalTerm(uint256,uint256)', _marketPrice, _redemptionPrice)
+      abi.encodeWithSignature(
+        '_getProportionalTerm(uint256,uint256)',
+        _marketPrice,
+        _redemptionPrice
+      )
     );
     if (callSuper) {
       return super._getProportionalTerm(_marketPrice, _redemptionPrice);
@@ -61,7 +69,11 @@ contract PIDControllerForTest is PIDController, InternalCallsExtension {
     returns (int256 _leakedPlusNewTimeAdjustedDeviation, int256 _newTimeAdjustedDeviation)
   {
     watcher.calledInternal(
-      abi.encodeWithSignature('_getNextDeviationCumulative(int256,uint256)', _proportionalTerm, _accumulatedLeak)
+      abi.encodeWithSignature(
+        '_getNextDeviationCumulative(int256,uint256)',
+        _proportionalTerm,
+        _accumulatedLeak
+      )
     );
     if (callSuper || callSupper_getNextDeviationCumulative) {
       return super._getNextDeviationCumulative(_proportionalTerm, _accumulatedLeak);
@@ -81,7 +93,11 @@ contract PIDControllerForTest is PIDController, InternalCallsExtension {
     int256 _integralTerm
   ) internal view virtual override returns (int256 _gainAdjustedPIOutput) {
     watcher.calledInternal(
-      abi.encodeWithSignature('_getGainAdjustedPIOutput(int256,int256)', _proportionalTerm, _integralTerm)
+      abi.encodeWithSignature(
+        '_getGainAdjustedPIOutput(int256,int256)',
+        _proportionalTerm,
+        _integralTerm
+      )
     );
     if (callSuper || callSupper_getGainAdjustedPIOutput) {
       return super._getGainAdjustedPIOutput(_proportionalTerm, _integralTerm);
@@ -94,7 +110,9 @@ contract PIDControllerForTest is PIDController, InternalCallsExtension {
     uint256 _piSum,
     uint256 _redemptionPrice
   ) internal view virtual override returns (bool _breaks) {
-    watcher.calledInternal(abi.encodeWithSignature('_breaksNoiseBarrier(uint256,uint256)', _piSum, _redemptionPrice));
+    watcher.calledInternal(
+      abi.encodeWithSignature('_breaksNoiseBarrier(uint256,uint256)', _piSum, _redemptionPrice)
+    );
     if (callSuper) {
       return super._breaksNoiseBarrier(_piSum, _redemptionPrice);
     } else {
@@ -105,9 +123,19 @@ contract PIDControllerForTest is PIDController, InternalCallsExtension {
   function _getGainAdjustedTerms(
     int256 _proportionalTerm,
     int256 _integralTerm
-  ) internal view virtual override returns (int256 _ajustedProportionalTerm, int256 _adjustedIntegralTerm) {
+  )
+    internal
+    view
+    virtual
+    override
+    returns (int256 _ajustedProportionalTerm, int256 _adjustedIntegralTerm)
+  {
     watcher.calledInternal(
-      abi.encodeWithSignature('_getGainAdjustedTerms(int256,int256)', _proportionalTerm, _integralTerm)
+      abi.encodeWithSignature(
+        '_getGainAdjustedTerms(int256,int256)',
+        _proportionalTerm,
+        _integralTerm
+      )
     );
     if (callSuper) {
       return super._getGainAdjustedTerms(_proportionalTerm, _integralTerm);
@@ -122,7 +150,9 @@ contract PIDControllerForTest is PIDController, InternalCallsExtension {
     callSupper_getBoundedRedemptionRate = _callSuper;
   }
 
-  function _getBoundedRedemptionRate(int256 _piOutput) internal view virtual override returns (uint256) {
+  function _getBoundedRedemptionRate(
+    int256 _piOutput
+  ) internal view virtual override returns (uint256) {
     watcher.calledInternal(abi.encodeWithSignature('_getBoundedRedemptionRate(int256)', _piOutput));
     if (callSuper || callSupper_getBoundedRedemptionRate) {
       return super._getBoundedRedemptionRate(_piOutput);
@@ -158,7 +188,10 @@ contract PIDControllerForTest is PIDController, InternalCallsExtension {
     return super._getProportionalTerm(_marketPrice, _redemptionPrice);
   }
 
-  function call_updateDeviation(int256 _proportionalTerm, uint256 _accumulatedLeak) external virtual {
+  function call_updateDeviation(
+    int256 _proportionalTerm,
+    uint256 _accumulatedLeak
+  ) external virtual {
     super._updateDeviation(_proportionalTerm, _accumulatedLeak);
   }
 
@@ -169,7 +202,9 @@ contract PIDControllerForTest is PIDController, InternalCallsExtension {
 }
 
 contract MockPIDController {
-  function mock_getBoundedPIOutput(int256 _piOutput) external view returns (int256 _boundedPIOutput) {}
+  function mock_getBoundedPIOutput(
+    int256 _piOutput
+  ) external view returns (int256 _boundedPIOutput) {}
 
   function mock_getProportionalTerm(
     uint256 marketPrice,
@@ -191,7 +226,9 @@ contract MockPIDController {
     uint256 _redemptionPrice
   ) external view virtual returns (bool _breaks) {}
 
-  function mock_getBoundedRedemptionRate(int256 _piOutput) external view virtual returns (uint256) {}
+  function mock_getBoundedRedemptionRate(
+    int256 _piOutput
+  ) external view virtual returns (uint256) {}
 
   function mock_getGainAdjustedTerms(
     int256 proportionalTerm,

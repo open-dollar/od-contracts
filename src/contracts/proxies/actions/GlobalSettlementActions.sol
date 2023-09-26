@@ -29,7 +29,10 @@ contract GlobalSettlementActions is CommonActions, IGlobalSettlementActions {
     ODSafeManager __manager = ODSafeManager(_manager);
     ODSafeManager.SAFEData memory _safeData = __manager.safeData(_safeId);
     ISAFEEngine _safeEngine = ISAFEEngine(__manager.safeEngine());
-    ISAFEEngine.SAFE memory _safe = _safeEngine.safes(_safeData.collateralType, _safeData.safeHandler);
+    ISAFEEngine.SAFE memory _safe = _safeEngine.safes(
+      _safeData.collateralType,
+      _safeData.safeHandler
+    );
 
     // check for debt and process safe if needed
     if (_safe.generatedDebt > 0) {
@@ -81,8 +84,8 @@ contract GlobalSettlementActions is CommonActions, IGlobalSettlementActions {
     ISAFEEngine __safeEngine = __globalSettlement.safeEngine();
 
     bytes32 _cType = ICollateralJoin(_collateralJoin).collateralType();
-    uint256 _coinAmount =
-      __globalSettlement.coinBag(address(this)) - __globalSettlement.coinsUsedToRedeem(_cType, address(this));
+    uint256 _coinAmount = __globalSettlement.coinBag(address(this)) -
+      __globalSettlement.coinsUsedToRedeem(_cType, address(this));
 
     __globalSettlement.redeemCollateral(_cType, _coinAmount);
 

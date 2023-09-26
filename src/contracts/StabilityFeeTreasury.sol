@@ -142,13 +142,19 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
   // --- SF Transfer Allowance ---
 
   /// @inheritdoc IStabilityFeeTreasury
-  function setTotalAllowance(address _account, uint256 _rad) external isAuthorized accountNotTreasury(_account) {
+  function setTotalAllowance(
+    address _account,
+    uint256 _rad
+  ) external isAuthorized accountNotTreasury(_account) {
     _allowance[_account.assertNonNull()].total = _rad;
     emit SetTotalAllowance(_account, _rad);
   }
 
   /// @inheritdoc IStabilityFeeTreasury
-  function setPerHourAllowance(address _account, uint256 _rad) external isAuthorized accountNotTreasury(_account) {
+  function setPerHourAllowance(
+    address _account,
+    uint256 _rad
+  ) external isAuthorized accountNotTreasury(_account) {
     _allowance[_account.assertNonNull()].perHour = _rad;
     emit SetPerHourAllowance(_account, _rad);
   }
@@ -156,7 +162,10 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
   // --- Stability Fee Transfer (Governance) ---
 
   /// @inheritdoc IStabilityFeeTreasury
-  function giveFunds(address _account, uint256 _rad) external isAuthorized accountNotTreasury(_account) {
+  function giveFunds(
+    address _account,
+    uint256 _rad
+  ) external isAuthorized accountNotTreasury(_account) {
     _account.assertNonNull();
     _joinAllCoins();
     (uint256 _coinBalance, uint256 _debtBalance) = _settleDebt();
@@ -169,7 +178,10 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
   }
 
   /// @inheritdoc IStabilityFeeTreasury
-  function takeFunds(address _account, uint256 _rad) external isAuthorized accountNotTreasury(_account) {
+  function takeFunds(
+    address _account,
+    uint256 _rad
+  ) external isAuthorized accountNotTreasury(_account) {
     safeEngine.transferInternalCoins(_account, address(this), _rad);
     emit TakeFunds(_account, _rad);
   }
@@ -183,7 +195,10 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
     if (_wad == 0) revert SFTreasury_NullTransferAmount();
     if (_allowance[msg.sender].total < _wad * RAY) revert SFTreasury_NotAllowed();
     if (_allowance[msg.sender].perHour > 0) {
-      if (_allowance[msg.sender].perHour < pulledPerHour[msg.sender][block.timestamp / HOUR] + (_wad * RAY)) {
+      if (
+        _allowance[msg.sender].perHour <
+        pulledPerHour[msg.sender][block.timestamp / HOUR] + (_wad * RAY)
+      ) {
         revert SFTreasury_PerHourLimitExceeded();
       }
     }
@@ -195,7 +210,8 @@ contract StabilityFeeTreasury is Authorizable, Modifiable, Disableable, IStabili
 
     if (_debtBalance != 0) revert SFTreasury_OutstandingBadDebt();
     if (_coinBalance < _wad * RAY) revert SFTreasury_NotEnoughFunds();
-    if (_coinBalance < _params.pullFundsMinThreshold) revert SFTreasury_BelowPullFundsMinThreshold();
+    if (_coinBalance < _params.pullFundsMinThreshold)
+      revert SFTreasury_BelowPullFundsMinThreshold();
 
     // Update allowance
     _allowance[msg.sender].total -= (_wad * RAY);

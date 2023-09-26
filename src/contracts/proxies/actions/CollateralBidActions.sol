@@ -39,8 +39,8 @@ contract CollateralBidActions is CommonActions, ICollateralBidActions {
       _safeEngine.approveSAFEModification(address(_collateralAuctionHouse));
     }
 
-    (uint256 _boughtAmount, uint256 _adjustedBid) =
-      ICollateralAuctionHouse(_collateralAuctionHouse).buyCollateral(_auctionId, _bidAmount);
+    (uint256 _boughtAmount, uint256 _adjustedBid) = ICollateralAuctionHouse(_collateralAuctionHouse)
+      .buyCollateral(_auctionId, _bidAmount);
 
     require(_adjustedBid <= _bidAmount, 'Invalid adjusted bid');
     require(_boughtAmount >= _minCollateralAmount, 'Invalid bought amount');

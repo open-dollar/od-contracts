@@ -16,7 +16,11 @@ interface IUniV3RelayerFactory is IAuthorizable {
    * @param _quotePeriod Length of the period used to calculate the TWAP quote for the UniV3Relayer contract
    */
   event NewUniV3Relayer(
-    address indexed _uniV3Relayer, address _baseToken, address _quoteToken, uint24 _feeTier, uint32 _quotePeriod
+    address indexed _uniV3Relayer,
+    address _baseToken,
+    address _quoteToken,
+    uint24 _feeTier,
+    uint32 _quotePeriod
   );
 
   // --- Methods ---

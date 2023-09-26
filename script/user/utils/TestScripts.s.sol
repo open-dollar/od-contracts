@@ -1,4 +1,4 @@
-  // SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
 import {Deployment} from '@script/user/utils/Deployment.s.sol';
@@ -34,7 +34,12 @@ contract TestScripts is Deployment {
    * @dev open new safe
    */
   function openSafe(bytes32 _cType, address _proxy) public returns (uint256 _safeId) {
-    bytes memory payload = abi.encodeWithSelector(basicActions.openSAFE.selector, address(safeManager), _cType, _proxy);
+    bytes memory payload = abi.encodeWithSelector(
+      basicActions.openSAFE.selector,
+      address(safeManager),
+      _cType,
+      _proxy
+    );
     bytes memory safeData = ODProxy(_proxy).execute(address(basicActions), payload);
     _safeId = abi.decode(safeData, (uint256));
   }
@@ -67,7 +72,12 @@ contract TestScripts is Deployment {
    * @dev this function has a bug
    * in order to lockCollateral, use the lockCollatAndGenDebt script, with deltaWad (debt to generate) set to zero
    */
-  function depositCollat(bytes32 _cType, uint256 _safeId, uint256 _collatAmount, address _proxy) public {
+  function depositCollat(
+    bytes32 _cType,
+    uint256 _safeId,
+    uint256 _collatAmount,
+    address _proxy
+  ) public {
     bytes memory payload = abi.encodeWithSelector(
       basicActions.lockTokenCollateral.selector,
       address(safeManager),

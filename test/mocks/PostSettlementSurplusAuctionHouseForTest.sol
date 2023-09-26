@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {
-  PostSettlementSurplusAuctionHouse,
-  IPostSettlementSurplusAuctionHouse
-} from '@contracts/settlement/PostSettlementSurplusAuctionHouse.sol';
+import {PostSettlementSurplusAuctionHouse, IPostSettlementSurplusAuctionHouse} from '@contracts/settlement/PostSettlementSurplusAuctionHouse.sol';
 
 contract PostSettlementSurplusAuctionHouseForTest is PostSettlementSurplusAuctionHouse {
   constructor(

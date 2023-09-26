@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {
-  CollateralJoinFactory, ICollateralJoinFactory, EnumerableSet
-} from '@contracts/factories/CollateralJoinFactory.sol';
+import {CollateralJoinFactory, ICollateralJoinFactory, EnumerableSet} from '@contracts/factories/CollateralJoinFactory.sol';
 
 contract CollateralJoinFactoryForTest is CollateralJoinFactory {
   using EnumerableSet for EnumerableSet.Bytes32Set;

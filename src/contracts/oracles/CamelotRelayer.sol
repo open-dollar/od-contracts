@@ -58,7 +58,13 @@ contract CamelotRelayer is IBaseOracle, ICamelotRelayer {
     multiplier = 18 - IERC20Metadata(_quoteToken).decimals();
     quotePeriod = _quotePeriod;
 
-    symbol = string(abi.encodePacked(IERC20Metadata(_baseToken).symbol(), ' / ', IERC20Metadata(_quoteToken).symbol()));
+    symbol = string(
+      abi.encodePacked(
+        IERC20Metadata(_baseToken).symbol(),
+        ' / ',
+        IERC20Metadata(_quoteToken).symbol()
+      )
+    );
   }
 
   /**
@@ -71,7 +77,7 @@ contract CamelotRelayer is IBaseOracle, ICamelotRelayer {
       return (0, false);
     }
     // Consult the query with a TWAP period of quotePeriod
-    (int24 _arithmeticMeanTick,) = OracleLibrary.consult(camelotPair, quotePeriod);
+    (int24 _arithmeticMeanTick, ) = OracleLibrary.consult(camelotPair, quotePeriod);
     // Calculate the quote amount
     uint256 _quoteAmount = OracleLibrary.getQuoteAtTick({
       tick: _arithmeticMeanTick,
@@ -90,7 +96,7 @@ contract CamelotRelayer is IBaseOracle, ICamelotRelayer {
    */
   function read() external view returns (uint256 _result) {
     // This call may revert with 'OLD!' if the pool doesn't have enough cardinality or initialized history
-    (int24 _arithmeticMeanTick,) = OracleLibrary.consult(camelotPair, quotePeriod);
+    (int24 _arithmeticMeanTick, ) = OracleLibrary.consult(camelotPair, quotePeriod);
     uint256 _quoteAmount = OracleLibrary.getQuoteAtTick({
       tick: _arithmeticMeanTick,
       baseAmount: baseAmount,

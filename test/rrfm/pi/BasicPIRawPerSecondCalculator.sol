@@ -43,17 +43,24 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
     oracleRelayer = new MockOracleRelayer();
     orcl = new OracleForTest(1 ether);
 
-    IPIDController.ControllerGains memory _pidControllerGains = IPIDController.ControllerGains({kp: Kp, ki: Ki});
+    IPIDController.ControllerGains memory _pidControllerGains = IPIDController.ControllerGains({
+      kp: Kp,
+      ki: Ki
+    });
 
     calculator = new BasicPIRawPerSecondCalculator(
-        _pidControllerGains,
-        perSecondCumulativeLeak,
-        integralPeriodSize,
-        importedState
-      );
+      _pidControllerGains,
+      perSecondCumulativeLeak,
+      integralPeriodSize,
+      importedState
+    );
 
-    rateSetter =
-      new MockPIDRateSetter(address(orcl), address(oracleRelayer), address(calculator), address(setterRelayer));
+    rateSetter = new MockPIDRateSetter(
+      address(orcl),
+      address(oracleRelayer),
+      address(calculator),
+      address(setterRelayer)
+    );
     calculator.modifyParameters('seedProposer', abi.encode(rateSetter));
 
     self = address(this);
@@ -70,25 +77,45 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
       switch x
       case 0 {
         switch n
-        case 0 { z := base }
-        default { z := 0 }
+        case 0 {
+          z := base
+        }
+        default {
+          z := 0
+        }
       }
       default {
         switch mod(n, 2)
-        case 0 { z := base }
-        default { z := x }
+        case 0 {
+          z := base
+        }
+        default {
+          z := x
+        }
         let half := div(base, 2) // for rounding.
-        for { n := div(n, 2) } n { n := div(n, 2) } {
+        for {
+          n := div(n, 2)
+        } n {
+          n := div(n, 2)
+        } {
           let xx := mul(x, x)
-          if iszero(eq(div(xx, x), x)) { revert(0, 0) }
+          if iszero(eq(div(xx, x), x)) {
+            revert(0, 0)
+          }
           let xxRound := add(xx, half)
-          if lt(xxRound, xx) { revert(0, 0) }
+          if lt(xxRound, xx) {
+            revert(0, 0)
+          }
           x := div(xxRound, base)
           if mod(n, 2) {
             let zx := mul(z, x)
-            if and(iszero(iszero(x)), iszero(eq(div(zx, x), z))) { revert(0, 0) }
+            if and(iszero(iszero(x)), iszero(eq(div(zx, x), z))) {
+              revert(0, 0)
+            }
             let zxRound := add(zx, half)
-            if lt(zxRound, zx) { revert(0, 0) }
+            if lt(zxRound, zx) {
+              revert(0, 0)
+            }
             z := div(zxRound, base)
           }
         }
@@ -131,7 +158,10 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
     calculator.modifyParameters('integralPeriodSize', abi.encode(uint256(2)));
     calculator.modifyParameters('kp', abi.encode(int256(1)));
     calculator.modifyParameters('ki', abi.encode(int256(1)));
-    calculator.modifyParameters('perSecondCumulativeLeak', abi.encode(uint256(TWENTY_SEVEN_DECIMAL_NUMBER - 5)));
+    calculator.modifyParameters(
+      'perSecondCumulativeLeak',
+      abi.encode(uint256(TWENTY_SEVEN_DECIMAL_NUMBER - 5))
+    );
 
     assertEq(calculator.params().integralPeriodSize, uint256(2));
     assertEq(calculator.params().perSecondCumulativeLeak, TWENTY_SEVEN_DECIMAL_NUMBER - 5);
@@ -141,10 +171,15 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
   }
 
   function test_get_new_rate_no_proportional_no_integral() public {
-    uint256 _iapcr = (calculator.params().perSecondCumulativeLeak).rpow(calculator.timeSinceLastUpdate());
+    uint256 _iapcr = (calculator.params().perSecondCumulativeLeak).rpow(
+      calculator.timeSinceLastUpdate()
+    );
 
-    (uint256 newRedemptionRate, int256 pTerm, int256 iTerm) =
-      calculator.getNextRedemptionRate(EIGHTEEN_DECIMAL_NUMBER, TWENTY_SEVEN_DECIMAL_NUMBER, _iapcr);
+    (uint256 newRedemptionRate, int256 pTerm, int256 iTerm) = calculator.getNextRedemptionRate(
+      EIGHTEEN_DECIMAL_NUMBER,
+      TWENTY_SEVEN_DECIMAL_NUMBER,
+      _iapcr
+    );
     assertEq(newRedemptionRate, TWENTY_SEVEN_DECIMAL_NUMBER);
     assertEq(pTerm, 0);
     assertEq(iTerm, 0);
@@ -171,7 +206,7 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
     assertEq(oracleRelayer.redemptionPrice(), TWENTY_SEVEN_DECIMAL_NUMBER);
     assertEq(oracleRelayer.redemptionRate(), TWENTY_SEVEN_DECIMAL_NUMBER);
 
-    (IPIDController.DeviationObservation memory _deviation) = calculator.deviationObservation();
+    IPIDController.DeviationObservation memory _deviation = calculator.deviationObservation();
 
     assertEq(_deviation.timestamp, block.timestamp);
     assertEq(_deviation.proportional, 0);
@@ -201,17 +236,26 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
   function test_get_new_rate_no_warp_zero_current_integral() public {
     orcl.setPriceAndValidity(1.05e18, true); // 5% deviation
 
-    uint256 _iapcr = (calculator.params().perSecondCumulativeLeak).rpow(calculator.timeSinceLastUpdate());
+    uint256 _iapcr = (calculator.params().perSecondCumulativeLeak).rpow(
+      calculator.timeSinceLastUpdate()
+    );
 
-    (uint256 newRedemptionRate, int256 pTerm, int256 iTerm) =
-      calculator.getNextRedemptionRate(1.05e18, TWENTY_SEVEN_DECIMAL_NUMBER, _iapcr);
+    (uint256 newRedemptionRate, int256 pTerm, int256 iTerm) = calculator.getNextRedemptionRate(
+      1.05e18,
+      TWENTY_SEVEN_DECIMAL_NUMBER,
+      _iapcr
+    );
     assertEq(newRedemptionRate, 950_000_000_000_000_000_000_000_000);
     assertEq(pTerm, -0.05e27);
     assertEq(iTerm, 0);
 
     orcl.setPriceAndValidity(0.995e18, true); // -0.5% deviation
 
-    (newRedemptionRate, pTerm, iTerm) = calculator.getNextRedemptionRate(0.995e18, TWENTY_SEVEN_DECIMAL_NUMBER, _iapcr);
+    (newRedemptionRate, pTerm, iTerm) = calculator.getNextRedemptionRate(
+      0.995e18,
+      TWENTY_SEVEN_DECIMAL_NUMBER,
+      _iapcr
+    );
     assertEq(newRedemptionRate, 1_005_000_000_000_000_000_000_000_000);
     assertEq(pTerm, 0.005e27);
     assertEq(iTerm, 0);
@@ -223,10 +267,15 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
     hevm.warp(block.timestamp + calculator.params().integralPeriodSize);
     orcl.setPriceAndValidity(1.05e18, true);
 
-    uint256 _iapcr = (calculator.params().perSecondCumulativeLeak).rpow(calculator.timeSinceLastUpdate());
+    uint256 _iapcr = (calculator.params().perSecondCumulativeLeak).rpow(
+      calculator.timeSinceLastUpdate()
+    );
 
-    (uint256 newRedemptionRate, int256 pTerm, int256 iTerm) =
-      calculator.getNextRedemptionRate(1.05e18, TWENTY_SEVEN_DECIMAL_NUMBER, _iapcr);
+    (uint256 newRedemptionRate, int256 pTerm, int256 iTerm) = calculator.getNextRedemptionRate(
+      1.05e18,
+      TWENTY_SEVEN_DECIMAL_NUMBER,
+      _iapcr
+    );
     assertEq(newRedemptionRate, 0.95e27);
     assertEq(pTerm, -0.05e27);
     assertEq(iTerm, 0);
@@ -238,7 +287,7 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
     assertEq(oracleRelayer.redemptionPrice(), TWENTY_SEVEN_DECIMAL_NUMBER);
     assertEq(oracleRelayer.redemptionRate(), 0.95e27);
 
-    (IPIDController.DeviationObservation memory _deviation) = calculator.deviationObservation();
+    IPIDController.DeviationObservation memory _deviation = calculator.deviationObservation();
 
     assertEq(_deviation.timestamp, block.timestamp);
     assertEq(_deviation.proportional, -0.05e27);
@@ -252,10 +301,15 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
 
     orcl.setPriceAndValidity(0.95e18, true);
 
-    uint256 _iapcr = (calculator.params().perSecondCumulativeLeak).rpow(calculator.timeSinceLastUpdate());
+    uint256 _iapcr = (calculator.params().perSecondCumulativeLeak).rpow(
+      calculator.timeSinceLastUpdate()
+    );
 
-    (uint256 newRedemptionRate, int256 pTerm, int256 iTerm) =
-      calculator.getNextRedemptionRate(0.95e18, TWENTY_SEVEN_DECIMAL_NUMBER, _iapcr);
+    (uint256 newRedemptionRate, int256 pTerm, int256 iTerm) = calculator.getNextRedemptionRate(
+      0.95e18,
+      TWENTY_SEVEN_DECIMAL_NUMBER,
+      _iapcr
+    );
     assertEq(newRedemptionRate, 1.05e27);
     assertEq(pTerm, 0.05e27);
     assertEq(iTerm, 0);
@@ -272,7 +326,10 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
     assertEq(uint256(calculator.deviationObservation().integral), 0);
 
     calculator.modifyParameters('ki', abi.encode(int256(1000)));
-    calculator.modifyParameters('perSecondCumulativeLeak', abi.encode(uint256(998_721_603_904_830_360_273_103_599))); // -99% per hour
+    calculator.modifyParameters(
+      'perSecondCumulativeLeak',
+      abi.encode(uint256(998_721_603_904_830_360_273_103_599))
+    ); // -99% per hour
 
     // First update
     hevm.warp(block.timestamp + calculator.params().integralPeriodSize);
@@ -304,10 +361,15 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
     // Final update
     hevm.warp(block.timestamp + calculator.params().integralPeriodSize * 100);
 
-    uint256 _iapcr = (calculator.params().perSecondCumulativeLeak).rpow(calculator.timeSinceLastUpdate());
+    uint256 _iapcr = (calculator.params().perSecondCumulativeLeak).rpow(
+      calculator.timeSinceLastUpdate()
+    );
 
-    (uint256 newRedemptionRate, int256 pTerm, int256 iTerm) =
-      calculator.getNextRedemptionRate(1 ether, oracleRelayer.redemptionPrice(), _iapcr);
+    (uint256 newRedemptionRate, int256 pTerm, int256 iTerm) = calculator.getNextRedemptionRate(
+      1 ether,
+      oracleRelayer.redemptionPrice(),
+      _iapcr
+    );
     assertEq(newRedemptionRate, 1e27);
     assertEq(pTerm, 0);
     assertEq(iTerm, 0);
@@ -327,10 +389,15 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
     hevm.warp(block.timestamp + calculator.params().integralPeriodSize);
     assertEq(oracleRelayer.redemptionPrice(), 1);
 
-    uint256 _iapcr = (calculator.params().perSecondCumulativeLeak).rpow(calculator.timeSinceLastUpdate());
+    uint256 _iapcr = (calculator.params().perSecondCumulativeLeak).rpow(
+      calculator.timeSinceLastUpdate()
+    );
 
-    (uint256 newRedemptionRate, int256 pTerm, int256 iTerm) =
-      calculator.getNextRedemptionRate(1.05e18, oracleRelayer.redemptionPrice(), _iapcr);
+    (uint256 newRedemptionRate, int256 pTerm, int256 iTerm) = calculator.getNextRedemptionRate(
+      1.05e18,
+      oracleRelayer.redemptionPrice(),
+      _iapcr
+    );
     assertEq(newRedemptionRate, 999_999_999_999_999_999_999_999_999);
     assertEq(pTerm, -1_049_999_999_999_999_999_999_999_999);
     assertEq(iTerm, -1_979_999_999_999_999_999_999_999_996_400);
@@ -338,7 +405,10 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
     rateSetter.updateRate(address(this));
 
     assertEq(uint256(calculator.deviationObservation().timestamp), block.timestamp);
-    assertEq(calculator.deviationObservation().integral, -1_979_999_999_999_999_999_999_999_996_400);
+    assertEq(
+      calculator.deviationObservation().integral,
+      -1_979_999_999_999_999_999_999_999_996_400
+    );
     assertEq(oracleRelayer.redemptionPrice(), 1);
     assertEq(oracleRelayer.redemptionRate(), 999_999_999_999_999_999_999_999_999);
   }
@@ -353,10 +423,15 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
 
     hevm.warp(block.timestamp + calculator.params().integralPeriodSize * 10); // 10 hours
 
-    uint256 _iapcr = (calculator.params().perSecondCumulativeLeak).rpow(calculator.timeSinceLastUpdate());
+    uint256 _iapcr = (calculator.params().perSecondCumulativeLeak).rpow(
+      calculator.timeSinceLastUpdate()
+    );
 
-    (uint256 newRedemptionRate, int256 pTerm, int256 iTerm) =
-      calculator.getNextRedemptionRate(1.05e18, oracleRelayer.redemptionPrice(), _iapcr);
+    (uint256 newRedemptionRate, int256 pTerm, int256 iTerm) = calculator.getNextRedemptionRate(
+      1.05e18,
+      oracleRelayer.redemptionPrice(),
+      _iapcr
+    );
     assertEq(newRedemptionRate, 999_999_999_999_999_999_999_999_999);
     assertEq(pTerm, -1_049_999_999_999_999_999_999_999_999);
     assertEq(iTerm, -19_799_999_999_999_999_999_999_999_964_000);
@@ -370,10 +445,15 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
     hevm.warp(block.timestamp + calculator.params().integralPeriodSize);
     orcl.setPriceAndValidity(0.95e18, true);
 
-    uint256 _iapcr = (calculator.params().perSecondCumulativeLeak).rpow(calculator.timeSinceLastUpdate());
+    uint256 _iapcr = (calculator.params().perSecondCumulativeLeak).rpow(
+      calculator.timeSinceLastUpdate()
+    );
 
-    (uint256 newRedemptionRate, int256 pTerm, int256 iTerm) =
-      calculator.getNextRedemptionRate(0.95e18, TWENTY_SEVEN_DECIMAL_NUMBER, _iapcr);
+    (uint256 newRedemptionRate, int256 pTerm, int256 iTerm) = calculator.getNextRedemptionRate(
+      0.95e18,
+      TWENTY_SEVEN_DECIMAL_NUMBER,
+      _iapcr
+    );
     assertEq(newRedemptionRate, 1.05e27);
     assertEq(pTerm, 0.05e27);
     assertEq(iTerm, 0);
@@ -387,11 +467,18 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
     calculator.modifyParameters('kp', abi.encode(Kp));
     calculator.modifyParameters('ki', abi.encode(Ki));
 
-    (int256 gainAdjustedP, int256 gainAdjustedI) = calculator.getGainAdjustedTerms(int256(0.05e27), int256(0));
+    (int256 gainAdjustedP, int256 gainAdjustedI) = calculator.getGainAdjustedTerms(
+      int256(0.05e27),
+      int256(0)
+    );
     assertEq(gainAdjustedP, 144_675_925_925_900_000_000);
     assertEq(gainAdjustedI, 0);
 
-    (newRedemptionRate, pTerm, iTerm) = calculator.getNextRedemptionRate(0.95e18, TWENTY_SEVEN_DECIMAL_NUMBER, _iapcr);
+    (newRedemptionRate, pTerm, iTerm) = calculator.getNextRedemptionRate(
+      0.95e18,
+      TWENTY_SEVEN_DECIMAL_NUMBER,
+      _iapcr
+    );
     assertEq(newRedemptionRate, 1_000_000_144_675_925_925_900_000_000);
     assertEq(pTerm, 0.05e27);
     assertEq(iTerm, 0);
@@ -399,8 +486,11 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
     rateSetter.updateRate(address(this));
     hevm.warp(block.timestamp + calculator.params().integralPeriodSize);
 
-    (newRedemptionRate, pTerm, iTerm) =
-      calculator.getNextRedemptionRate(0.95e18, oracleRelayer.redemptionPrice(), _iapcr);
+    (newRedemptionRate, pTerm, iTerm) = calculator.getNextRedemptionRate(
+      0.95e18,
+      oracleRelayer.redemptionPrice(),
+      _iapcr
+    );
     assertEq(newRedemptionRate, 1_000_000_291_613_001_814_917_161_083);
     assertEq(pTerm, 50_520_968_952_868_729_114_836_237);
     assertEq(iTerm, 180_937_744_115_163_712_406_705_224_800);
@@ -409,7 +499,10 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
   function testFail_redemption_way_higher_than_market() public {
     assertEq(uint256(calculator.deviationObservation().integral), 0);
 
-    oracleRelayer.modifyParameters('redemptionPrice', FORTY_FIVE_DECIMAL_NUMBER * EIGHTEEN_DECIMAL_NUMBER);
+    oracleRelayer.modifyParameters(
+      'redemptionPrice',
+      FORTY_FIVE_DECIMAL_NUMBER * EIGHTEEN_DECIMAL_NUMBER
+    );
 
     rateSetter.updateRate(address(this));
   }
@@ -421,10 +514,15 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
     oracleRelayer.modifyParameters('redemptionPrice', 2e27);
     hevm.warp(block.timestamp + calculator.params().integralPeriodSize);
 
-    uint256 _iapcr = (calculator.params().perSecondCumulativeLeak).rpow(calculator.timeSinceLastUpdate());
+    uint256 _iapcr = (calculator.params().perSecondCumulativeLeak).rpow(
+      calculator.timeSinceLastUpdate()
+    );
 
-    (uint256 newRedemptionRate, int256 pTerm, int256 iTerm) =
-      calculator.getNextRedemptionRate(2.05e18, oracleRelayer.redemptionPrice(), _iapcr);
+    (uint256 newRedemptionRate, int256 pTerm, int256 iTerm) = calculator.getNextRedemptionRate(
+      2.05e18,
+      oracleRelayer.redemptionPrice(),
+      _iapcr
+    );
     assertEq(newRedemptionRate, 0.95e27);
     assertEq(pTerm, -0.05e27);
     assertEq(iTerm, 0);
@@ -439,26 +537,32 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
     calculator.modifyParameters('kp', abi.encode(Kp));
     calculator.modifyParameters('ki', abi.encode(Ki));
 
-    (newRedemptionRate, pTerm, iTerm) =
-      calculator.getNextRedemptionRate(2.05e18, oracleRelayer.redemptionPrice(), _iapcr);
+    (newRedemptionRate, pTerm, iTerm) = calculator.getNextRedemptionRate(
+      2.05e18,
+      oracleRelayer.redemptionPrice(),
+      _iapcr
+    );
     assertEq(newRedemptionRate, 999_999_963_831_018_518_550_000_000);
     assertEq(pTerm, -0.05e27);
     assertEq(iTerm, 0);
 
-    (int256 gainAdjustedP,) = calculator.getGainAdjustedTerms(-int256(0.05e27), int256(0));
+    (int256 gainAdjustedP, ) = calculator.getGainAdjustedTerms(-int256(0.05e27), int256(0));
     assertEq(gainAdjustedP, -36_168_981_481_450_000_000);
     assertEq(
       gainAdjustedP * int256(96) * int256(calculator.params().integralPeriodSize) * int256(4),
       -49_999_999_999_956_480_000_000_000
     );
 
-    (newRedemptionRate, pTerm, iTerm) =
-      calculator.getNextRedemptionRate(1.95e18, oracleRelayer.redemptionPrice(), _iapcr);
+    (newRedemptionRate, pTerm, iTerm) = calculator.getNextRedemptionRate(
+      1.95e18,
+      oracleRelayer.redemptionPrice(),
+      _iapcr
+    );
     assertEq(newRedemptionRate, 1_000_000_036_168_981_481_450_000_000);
     assertEq(pTerm, 0.05e27);
     assertEq(iTerm, 0);
 
-    (gainAdjustedP,) = calculator.getGainAdjustedTerms(int256(0.05e27), int256(0));
+    (gainAdjustedP, ) = calculator.getGainAdjustedTerms(int256(0.05e27), int256(0));
     assertEq(gainAdjustedP, 36_168_981_481_450_000_000);
     assertEq(
       gainAdjustedP * int256(96) * int256(calculator.params().integralPeriodSize) * int256(4),
@@ -472,10 +576,15 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
 
     assertEq(uint256(calculator.deviationObservation().integral), 0);
 
-    uint256 _iapcr = (calculator.params().perSecondCumulativeLeak).rpow(calculator.timeSinceLastUpdate());
+    uint256 _iapcr = (calculator.params().perSecondCumulativeLeak).rpow(
+      calculator.timeSinceLastUpdate()
+    );
 
-    (uint256 newRedemptionRate, int256 pTerm, int256 iTerm) =
-      calculator.getNextRedemptionRate(1.05e18, oracleRelayer.redemptionPrice(), _iapcr);
+    (uint256 newRedemptionRate, int256 pTerm, int256 iTerm) = calculator.getNextRedemptionRate(
+      1.05e18,
+      oracleRelayer.redemptionPrice(),
+      _iapcr
+    );
     assertEq(newRedemptionRate, 1e27);
     assertEq(pTerm, -0.05e27);
     assertEq(iTerm, 0);

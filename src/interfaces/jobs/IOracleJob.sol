@@ -19,7 +19,11 @@ interface IOracleJob is IJob, IAuthorizable, IModifiable {
   // --- Data ---
 
   /// @notice Whether the update collateral price job should be worked
-  function shouldWorkUpdateCollateralPrice() external view returns (bool _shouldWorkUpdateCollateralPrice);
+  function shouldWorkUpdateCollateralPrice()
+    external
+    view
+    returns (bool _shouldWorkUpdateCollateralPrice);
+
   /// @notice Whether the update rate job should be worked
   function shouldWorkUpdateRate() external view returns (bool _shouldWorkUpdateRate);
 
@@ -27,6 +31,7 @@ interface IOracleJob is IJob, IAuthorizable, IModifiable {
 
   /// @notice Address of the OracleRelayer contract
   function oracleRelayer() external view returns (IOracleRelayer _oracleRelayer);
+
   /// @notice Address of the PIDRateSetter contract
   function pidRateSetter() external view returns (IPIDRateSetter _pidRateSetter);
 

@@ -20,8 +20,14 @@ contract SurplusBidActions is ISurplusBidActions, CommonActions {
   // --- Methods ---
 
   /// @inheritdoc ISurplusBidActions
-  function increaseBidSize(address _surplusAuctionHouse, uint256 _auctionId, uint256 _bidAmount) external delegateCall {
-    uint256 _amountToSell = ISurplusAuctionHouse(_surplusAuctionHouse).auctions(_auctionId).amountToSell;
+  function increaseBidSize(
+    address _surplusAuctionHouse,
+    uint256 _auctionId,
+    uint256 _bidAmount
+  ) external delegateCall {
+    uint256 _amountToSell = ISurplusAuctionHouse(_surplusAuctionHouse)
+      .auctions(_auctionId)
+      .amountToSell;
 
     // prepare protocol token spending
     IERC20Metadata _protocolToken = ISurplusAuctionHouse(_surplusAuctionHouse).protocolToken();
@@ -29,12 +35,22 @@ contract SurplusBidActions is ISurplusBidActions, CommonActions {
     _protocolToken.approve(address(_surplusAuctionHouse), _bidAmount);
 
     // proxy needs to be approved for protocol token spending
-    ISurplusAuctionHouse(_surplusAuctionHouse).increaseBidSize(_auctionId, _amountToSell, _bidAmount);
+    ISurplusAuctionHouse(_surplusAuctionHouse).increaseBidSize(
+      _auctionId,
+      _amountToSell,
+      _bidAmount
+    );
   }
 
   /// @inheritdoc ISurplusBidActions
-  function settleAuction(address _coinJoin, address _surplusAuctionHouse, uint256 _auctionId) external delegateCall {
-    uint256 _amountToSell = ISurplusAuctionHouse(_surplusAuctionHouse).auctions(_auctionId).amountToSell;
+  function settleAuction(
+    address _coinJoin,
+    address _surplusAuctionHouse,
+    uint256 _auctionId
+  ) external delegateCall {
+    uint256 _amountToSell = ISurplusAuctionHouse(_surplusAuctionHouse)
+      .auctions(_auctionId)
+      .amountToSell;
     ISurplusAuctionHouse(_surplusAuctionHouse).settleAuction(_auctionId);
 
     _exitSystemCoins(_coinJoin, _amountToSell);
