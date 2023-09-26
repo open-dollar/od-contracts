@@ -34,7 +34,6 @@ contract GlobalSettlementActions is CommonActions, IGlobalSettlementActions {
     // check for debt and process safe if needed
     if (_safe.generatedDebt > 0) {
       __globalSettlement.processSAFE(_safeData.collateralType, _safeData.safeHandler);
-      _safe = _safeEngine.safes(_safeData.collateralType, _safeData.safeHandler);
     }
 
     // quit system to proxy address

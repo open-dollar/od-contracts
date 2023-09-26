@@ -126,13 +126,14 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
   /// @inheritdoc IPIDController
   function computeRate(uint256 _marketPrice, uint256 _redemptionPrice) external returns (uint256 _newRedemptionRate) {
     if (msg.sender != seedProposer) revert PIDController_OnlySeedProposer();
+    uint256 __timeSinceLastUpdate = _timeSinceLastUpdate();
     // Ensure that at least integralPeriodSize seconds passed since the last update or that this is the first update
-    if (_timeSinceLastUpdate() < _params.integralPeriodSize && _deviationObservation.timestamp != 0) {
+    if (__timeSinceLastUpdate < _params.integralPeriodSize && _deviationObservation.timestamp != 0) {
       revert PIDController_ComputeRateCooldown();
     }
     int256 _proportionalTerm = _getProportionalTerm(_marketPrice, _redemptionPrice);
     // Update the integral term by passing the proportional (current deviation) and the total leak that will be applied to the integral
-    uint256 _accumulatedLeak = _params.perSecondCumulativeLeak.rpow(_timeSinceLastUpdate());
+    uint256 _accumulatedLeak = _params.perSecondCumulativeLeak.rpow(__timeSinceLastUpdate);
     int256 _integralTerm = _updateDeviation(_proportionalTerm, _accumulatedLeak);
     // Multiply P by Kp and I by Ki and then sum P & I in order to return the result
     int256 _piOutput = _getGainAdjustedPIOutput(_proportionalTerm, _integralTerm);

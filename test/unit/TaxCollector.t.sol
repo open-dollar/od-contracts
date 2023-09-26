@@ -674,6 +674,7 @@ contract Unit_TaxCollector_TaxSingle is Base {
 
   function test_Set_NextStabilityFee(uint256 _globalStabilityFee, uint256 _stabilityFee, uint256 _updateTime) public {
     vm.assume(notOverflowMul(_globalStabilityFee, _stabilityFee));
+    vm.assume(_updateTime <= block.timestamp);
     _mockGlobalStabilityFee(_globalStabilityFee);
     _mockStabilityFee(collateralTypeA, _stabilityFee);
     _mockUpdateTime(collateralTypeA, _updateTime);
@@ -717,14 +718,14 @@ contract Unit_TaxCollector_TaxSingle is Base {
   }
 
   function test_Return_LatestAccumulatedRate(uint256 _updateTime) public {
+    vm.assume(_updateTime <= block.timestamp);
     _mockUpdateTime(collateralTypeA, _updateTime);
 
     assertEq(taxCollector.taxSingle(collateralTypeA), lastAccumulatedRate);
   }
 
-  function testFail_AlreadyLatestAccumulatedRate(uint256 _updateTime) public {
-    vm.assume(block.timestamp <= _updateTime);
-    _mockUpdateTime(collateralTypeA, _updateTime);
+  function testFail_AlreadyLatestAccumulatedRate() public {
+    _mockUpdateTime(collateralTypeA, block.timestamp);
 
     (, int256 _deltaRate) = taxCollector.taxSingleOutcome(collateralTypeA);
 

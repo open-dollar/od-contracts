@@ -471,7 +471,6 @@ contract Unit_LiquidationEngine_ProtectSafe is Base {
   }
 
   function test_Call_SAFEEngine_CanModifySafe(bytes32 _cType, address _safe, address _saviour) public {
-    vm.assume(_saviour != address(0));
     _mockValues({_safe: _safe, _canModifySafe: true, _saviour: _saviour, _canSave: 1});
     vm.prank(account);
 
@@ -491,7 +490,6 @@ contract Unit_LiquidationEngine_ProtectSafe is Base {
   }
 
   function test_Revert_CannotModifySafe(bytes32 _cType, address _safe, address _saviour) public {
-    vm.assume(_saviour != address(0));
     _mockValues({_safe: _safe, _canModifySafe: false, _saviour: _saviour, _canSave: 1});
 
     vm.expectRevert(ILiquidationEngine.LiqEng_CannotModifySAFE.selector);
