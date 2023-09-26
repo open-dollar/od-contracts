@@ -207,7 +207,7 @@ contract NFTRenderer {
       collateral,
       ' ',
       symbol,
-      '</tspan></text><text opacity=".3" transform="rotate(-90 326.5 -58.5)" fill="#fff" xml:space="preserve" font-size="10"><tspan x="-10.3" y="7.3">Last updated ',
+      '</tspan></text><text opacity=".3" transform="rotate(-90 326.5 -58.5)" fill="#fff" xml:space="preserve" font-size="10"><tspan x="-10.3" y="7.3">Updated ',
       lastUpdate
     );
   }
