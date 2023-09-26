@@ -15,6 +15,3 @@
 [submodule "lib/core"]
 	path = lib/core
 	url = https://github.com/CamelotLabs/core
-[submodule "lib/solidity-stringutils"]
-	path = lib/solidity-stringutils
-	url = https://github.com/Arachnid/solidity-stringutils
