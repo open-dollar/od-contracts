@@ -229,6 +229,11 @@ contract Unit_CollateralJoinFactory_DeployDelegatableCollateralJoin is Base {
     assertEq(collateralJoinChild.collateralType(), _cType);
   }
 
+  function test_Revert_NullDelegatee(bytes32 _cType, uint8 _decimals) public happyPath(_decimals) {
+    vm.expectRevert(Assertions.NullAddress.selector);
+    collateralJoinFactory.deployDelegatableCollateralJoin(_cType, address(mockCollateral), address(0));
+  }
+
   function test_Set_CollateralTypes(bytes32 _cType, uint8 _decimals) public happyPath(_decimals) {
     collateralJoinFactory.deployDelegatableCollateralJoin(_cType, address(mockCollateral), delegatee);
 
