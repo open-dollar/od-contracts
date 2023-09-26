@@ -45,7 +45,6 @@ contract NFTRenderer {
   struct VaultParams {
     uint256 collateral;
     uint256 debt;
-    uint256 lastUpdate;
     string vaultId;
     string ratio;
     string stabilityFee;
@@ -53,6 +52,7 @@ contract NFTRenderer {
     string risk;
     string color;
     string stroke;
+    string lastUpdate;
   }
 
   /**
@@ -81,7 +81,6 @@ contract NFTRenderer {
     string memory desc = _renderDesc(params);
     string memory debt = _floatingPoint(params.debt);
     string memory collateral = _floatingPoint(params.collateral);
-    string memory dateTime = _formatDateTime(params.lastUpdate);
 
     string memory json = string.concat(
       desc,
@@ -89,7 +88,7 @@ contract NFTRenderer {
         bytes(
           string.concat(
             _renderVaultInfo(params.vaultId, params.color),
-            _renderCollatAndDebt(params.stabilityFee, debt, collateral, params.symbol, dateTime),
+            _renderCollatAndDebt(params.stabilityFee, debt, collateral, params.symbol, params.lastUpdate),
             _renderRisk(params.stroke, params.risk, params.ratio),
             _renderBackground(params.color)
           )
@@ -131,7 +130,7 @@ contract NFTRenderer {
       }
       params.collateral = collateral;
       params.debt = debt;
-      params.lastUpdate = oracle.lastUpdateTime();
+      params.lastUpdate = _formatDateTime(oracle.lastUpdateTime());
       (params.risk, params.color) = _calcRisk(ratio);
       params.stroke = _calcStroke(ratio);
       params.ratio = ratio.toString();
@@ -151,23 +150,23 @@ contract NFTRenderer {
    */
   function _renderDesc(VaultParams memory params) internal pure returns (string memory desc) {
     desc = string.concat(
-      '{"name":"Open Dollar Vault",',
-      '"description":"vaultId: ',
+      '{"Name":"Open Dollar Vault","ID":"',
       params.vaultId,
-      ' collateral: ',
-      params.collateral.toString(),
-      '-',
-      params.symbol,
-      ' debt: ',
+      '","Debt":"',
       params.debt.toString(),
-      '-OD ratio: ',
-      params.ratio,
-      ' stabilityFee: ',
+      '","Collateral Amount":"',
+      params.collateral.toString(),
+      '","Collateral Type":"',
+      params.symbol,
+      '","Stability Fee":"',
       params.stabilityFee,
-      ' risk: ',
+      '","Risk":"',
       params.risk,
-      '",',
-      '"image":"data:image/svg+xml;base64,'
+      '","Collateral Ratio":"',
+      params.ratio,
+      '","Last Updated":"',
+      params.lastUpdate,
+      '","Image":"data:image/svg+xml;base64,'
     );
   }
 
