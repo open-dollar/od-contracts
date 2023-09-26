@@ -21,13 +21,6 @@ interface ITokenDistributor is IAuthorizable {
    */
   event Swept(address _sweepReceiver, uint256 _amount);
 
-  /**
-   * @notice Emitted when tokens are withdrawn from the distributor
-   * @param  _to Address that received the withdrawn tokens
-   * @param  _amount Amount of tokens withdrawn
-   */
-  event Withdrawn(address _to, uint256 _amount);
-
   // --- Errors ---
 
   /// @notice Throws when trying to claim before the claim period has started
@@ -102,11 +95,4 @@ interface ITokenDistributor is IAuthorizable {
    * @param  _sweepReceiver Address to send the tokens to
    */
   function sweep(address _sweepReceiver) external;
-
-  /**
-   * @notice Withdraws tokens from the distributor to a given address
-   * @param  _to Address to send the tokens to
-   * @param  _amount Amount of tokens to send
-   */
-  function withdraw(address _to, uint256 _amount) external;
 }
