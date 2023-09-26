@@ -269,8 +269,41 @@ contract NFTRenderer {
     uint256 expLeft = left * _WAD;
     uint256 expRight = num - expLeft;
     uint256 right = expRight / 1e14;
+    if (left > 0) {
+      return string.concat(_commaFormat(left), '.', right.toString());
+    } else {
+      return string.concat('0.', right.toString());
+    }
+  }
 
-    return string.concat(left.toString(), '.', right.toString());
+  /**
+   * @dev adds commas every 3 digits
+   */
+  function _commaFormat(uint256 source) internal pure returns (string memory) {
+    string memory result = '';
+    uint128 index;
+
+    while (source > 0) {
+      uint256 part = source % 10; // get each digit
+      bool isSet = index != 0 && index % 3 == 0; // request set glue for every additional 3 digits
+
+      result = _concatWithComma(result, part, isSet);
+      source = source / 10;
+      index += 1;
+    }
+
+    return result;
+  }
+
+  /**
+   * @dev concats with comma
+   */
+  function _concatWithComma(string memory base, uint256 part, bool isSet) internal pure returns (string memory) {
+    string memory stringified = part.toString();
+    string memory glue = ',';
+
+    if (!isSet) glue = '';
+    return string(abi.encodePacked(stringified, glue, base));
   }
 
   /**
@@ -306,6 +339,4 @@ contract NFTRenderer {
     if (time < 10) return string.concat('0', time.toString());
     else return time.toString();
   }
-
-  // function _commaFormat(string)
 }
