@@ -306,4 +306,6 @@ contract NFTRenderer {
     if (time < 10) return string.concat('0', time.toString());
     else return time.toString();
   }
+
+  // function _commaFormat(string)
 }
