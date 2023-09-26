@@ -5,7 +5,7 @@ import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadat
 import {IVotes, IERC20Permit} from '@openzeppelin/token/ERC20/extensions/ERC20Votes.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 
-interface IProtocolToken is IVotes, IERC20Metadata, IERC20Permit, IAuthorizable {
+interface IProtocolToken is IERC20Metadata, IERC20Permit, IVotes, IAuthorizable {
   /**
    * @notice Mint an amount of tokens to an account
    * @param _account Address of the account to mint tokens to

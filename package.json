@@ -42,7 +42,7 @@
   },
   "dependencies": {
     "@defi-wonderland/solidity-utils": "0.0.0-4298c6c6",
-    "@openzeppelin/contracts": "4.8.2",
+    "@openzeppelin/contracts": "4.9.3",
     "@uniswap/v3-periphery": "https://github.com/Uniswap/v3-periphery.git#0.8",
     "forge-std": "https://github.com/foundry-rs/forge-std.git#e8a047e3f40f13fa37af6fe14e6e06283d9a060e"
   },
