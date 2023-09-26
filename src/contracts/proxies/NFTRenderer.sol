@@ -164,7 +164,7 @@ contract NFTRenderer {
       params.risk,
       '","Collateral Ratio":"',
       params.ratio,
-      '","Last Updated Time":"',
+      '","Last Updated":"',
       params.lastUpdate,
       '","Image":"data:image/svg+xml;base64,'
     );
