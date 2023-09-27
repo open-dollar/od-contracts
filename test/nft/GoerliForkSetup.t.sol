@@ -13,13 +13,8 @@ contract GoerliForkSetup is Test, GoerliDeployment {
   bytes32 public cType = vm.envBytes32('CTYPE_SYM');
   address public cAddr = vm.envAddress('CTYPE_ADDR');
 
-  // TODO replace with Arbitrum addrs
-  address public ARB_WBTC = address(0);
-  address public ARB_STONES = address(0);
-  address public ARB_TOTEM = address(0);
-
-  address public alice = vm.envAddress('ARB_GOERLI_PUBLIC1'); // 0x23
-  address public bob = vm.envAddress('ARB_GOERLI_PUBLIC2'); // 0x37
+  address public alice = vm.envAddress('GOERLI_PUBLIC1'); // 0x23
+  address public bob = vm.envAddress('GOERLI_PUBLIC2'); // 0x37
   address aliceProxy;
 
   function setUp() public virtual {

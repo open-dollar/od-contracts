@@ -10,7 +10,7 @@ import {UniV3Relayer} from '@contracts/oracles/UniV3Relayer.sol';
 import {DenominatedOracle, IDenominatedOracle} from '@contracts/oracles/DenominatedOracle.sol';
 import {DelayedOracle, IDelayedOracle} from '@contracts/oracles/DelayedOracle.sol';
 
-import {ARB_CHAINLINK_ETH_USD_FEED, ARB_CHAINLINK_WSTETH_ETH_FEED, ARB_WBTC, ARB_WETH} from '@script/Registry.s.sol';
+import {CHAINLINK_ETH_USD_FEED, CHAINLINK_WSTETH_ETH_FEED, WBTC, WETH} from '@script/Registry.s.sol';
 
 import {Math, WAD} from '@libraries/Math.sol';
 
@@ -59,11 +59,11 @@ contract OracleSetup is HaiTest {
     vm.rollFork(FORK_BLOCK);
 
     // --- Chainlink ---
-    wethUsdPriceSource = new ChainlinkRelayer(ARB_CHAINLINK_ETH_USD_FEED, 1 days);
-    wstethEthPriceSource = new ChainlinkRelayer(ARB_CHAINLINK_WSTETH_ETH_FEED, 1 days);
+    wethUsdPriceSource = new ChainlinkRelayer(CHAINLINK_ETH_USD_FEED, 1 days);
+    wstethEthPriceSource = new ChainlinkRelayer(CHAINLINK_WSTETH_ETH_FEED, 1 days);
 
     // --- UniV3 ---
-    wbtcWethPriceSource = new UniV3Relayer(ARB_WBTC, ARB_WETH, FEE_TIER, 1 days);
+    wbtcWethPriceSource = new UniV3Relayer(WBTC, WETH, FEE_TIER, 1 days);
 
     // --- Denominated ---
     wstethUsdPriceSource = new DenominatedOracle(wstethEthPriceSource, wethUsdPriceSource, false);
@@ -81,7 +81,7 @@ contract OracleSetup is HaiTest {
   // --- Chainlink ---
 
   function test_ChainlinkOracle() public {
-    int256 price = IChainlinkOracle(ARB_CHAINLINK_ETH_USD_FEED).latestAnswer();
+    int256 price = IChainlinkOracle(CHAINLINK_ETH_USD_FEED).latestAnswer();
     assertTrue(price >= ETH_USD_PRICE_L && price <= ETH_USD_PRICE_H);
   }
 
@@ -172,7 +172,7 @@ contract OracleSetup is HaiTest {
 
   function test_DelayedOracleUpdateResult() public {
     vm.mockCall(
-      ARB_CHAINLINK_ETH_USD_FEED,
+      CHAINLINK_ETH_USD_FEED,
       abi.encodeWithSelector(IChainlinkOracle.latestRoundData.selector),
       abi.encode(uint80(0), int256(NEW_ETH_USD_PRICE), uint256(0), block.timestamp, uint80(0))
     );

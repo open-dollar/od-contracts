@@ -22,7 +22,7 @@ import {TKN_CType} from '@test/scopes/TKN_CType.t.sol';
 import {TKN_8D_CType} from '@test/scopes/TKN_8D_CType.t.sol';
 
 uint256 constant COLLATERAL_AMOUNT = 1e18; // 1
-uint256 constant DEBT_AMOUNT = 500e18; // 500 HAI
+uint256 constant DEBT_AMOUNT = 500e18; // 500 OD
 uint256 constant STABILITY_FEE = RAY + 1.54713e18; // 5%/yr
 uint256 constant STABILITY_FEE_APR = 1.05e18; // 5%/yr
 uint256 constant LIQUIDATION_C_RATIO = 1.35e27; // 135%

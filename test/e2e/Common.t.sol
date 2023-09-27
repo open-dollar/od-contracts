@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import {HaiTest} from '@test/utils/HaiTest.t.sol';
-import {HAI, OD_INITIAL_PRICE, ETH_A} from '@script/Params.s.sol';
+import {OD, OD_INITIAL_PRICE, ETH_A} from '@script/Params.s.sol';
 import {Deploy} from '@script/Deploy.s.sol';
 import {TestParams, WSTETH, TKN, TEST_ETH_PRICE, TEST_TKN_PRICE} from '@test/e2e/TestParams.t.sol';
 import {ERC20ForTest} from '@test/mocks/ERC20ForTest.sol';
@@ -19,7 +19,7 @@ uint256 constant COLLATERAL_PRICE = 100e18;
 
 uint256 constant COLLAT = 1e18;
 uint256 constant DEBT = 500e18; // LVT 50%
-uint256 constant TEST_ETH_PRICE_DROP = 100e18; // 1 ETH = 100 HAI
+uint256 constant TEST_ETH_PRICE_DROP = 100e18; // 1 ETH = 100 OD
 
 /**
  * @title  DeployForTest
@@ -34,7 +34,7 @@ contract DeployForTest is TestParams, Deploy {
   function setupEnvironment() public virtual override {
     WETH9 weth = WETH9(payable(0x4200000000000000000000000000000000000006));
 
-    systemCoinOracle = new OracleForTest(OD_INITIAL_PRICE); // 1 HAI = 1 USD
+    systemCoinOracle = new OracleForTest(OD_INITIAL_PRICE); // 1 OD = 1 USD
 
     // TODO: fix incorrect conversion
     // delayedOracle[ETH_A] = new OracleForTest(TEST_ETH_PRICE); // 1 ETH = 2000 USD

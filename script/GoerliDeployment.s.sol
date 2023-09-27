@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import '@script/Contracts.s.sol';
 import {GoerliParams, WSTETH, ARB, CBETH, RETH, MAGIC} from '@script/GoerliParams.s.sol';
-import {ARB_GOERLI_WETH, ARB_GOERLI_GOV_TOKEN, GOERLI_CAMELOT_V3_FACTORY} from '@script/Registry.s.sol';
+import {GOERLI_CAMELOT_V3_FACTORY} from '@script/Registry.s.sol';
 import {GoerliContracts} from '@script/GoerliContracts.s.sol';
 
 abstract contract GoerliDeployment is Contracts, GoerliParams, GoerliContracts {
@@ -26,11 +26,11 @@ abstract contract GoerliDeployment is Contracts, GoerliParams, GoerliContracts {
     delegatee[ARB] = governor;
 
     // --- ERC20s ---
-    collateral[WSTETH] = IERC20Metadata(ARB_GOERLI_WETH);
-    collateral[ARB] = IERC20Metadata(ARB_GOERLI_GOV_TOKEN);
-    collateral[CBETH] = IERC20Metadata(MintableERC20_WBTC_Address);
-    collateral[RETH] = IERC20Metadata(MintableERC20_STONES_Address);
-    collateral[MAGIC] = IERC20Metadata(MintableERC20_TOTEM_Address);
+    collateral[WSTETH] = IERC20Metadata(MintableERC20_WSTETH_Address);
+    collateral[ARB] = IERC20Metadata(MintableVoteERC20_ARB_Address);
+    collateral[CBETH] = IERC20Metadata(MintableERC20_CBETH_Address);
+    collateral[RETH] = IERC20Metadata(MintableERC20_RETH_Address);
+    collateral[MAGIC] = IERC20Metadata(MintableERC20_MAGIC_Address);
 
     systemCoin = SystemCoin(SystemCoin_Address);
     protocolToken = ProtocolToken(ProtocolToken_Address);
@@ -119,7 +119,7 @@ abstract contract GoerliDeployment is Contracts, GoerliParams, GoerliContracts {
     // --- oracles ---
     systemCoinOracle = IBaseOracle(DenominatedOracleChild_OD_Address);
     delayedOracle[WSTETH] = IDelayedOracle(DelayedOracleChild_WETH_Address);
-    delayedOracle[ARB] = IDelayedOracle(DelayedOracleChild_FTRG_Address);
+    delayedOracle[ARB] = IDelayedOracle(DelayedOracleChild_ARB_Address);
     delayedOracle[CBETH] = IDelayedOracle(DelayedOracleChild_WBTC_Address);
     delayedOracle[RETH] = IDelayedOracle(DelayedOracleChild_STONES_Address);
     delayedOracle[MAGIC] = IDelayedOracle(DelayedOracleChild_TOTEM_Address);

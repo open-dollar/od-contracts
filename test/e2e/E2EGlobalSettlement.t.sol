@@ -77,8 +77,8 @@ abstract contract E2EGlobalSettlementTest is BaseUser, Common {
 
     {
       /**
-       * alice debt = 20 HAI
-       * alice collateral = 1 TKN-B = 75 HAI
+       * alice debt = 20 OD
+       * alice collateral = 1 TKN-B = 75 OD
        * alice pays debt with (20/75) = 0.266 TKN-B
        * alice has 0.733 TKN-B left
        * alice can take 73% of TKN-B collateral
@@ -101,8 +101,8 @@ abstract contract E2EGlobalSettlementTest is BaseUser, Common {
     globalSettlement.freezeCollateralType('TKN-C');
 
     /**
-     * alice debt = 20 HAI
-     * alice collateral = 1 TKN-C = 5 HAI
+     * alice debt = 20 OD
+     * alice collateral = 1 TKN-C = 5 OD
      * alice must pay debt with (20/5) = 4 TKN-C
      * alice is short 3 TKN-C
      */
@@ -111,8 +111,8 @@ abstract contract E2EGlobalSettlementTest is BaseUser, Common {
     assertApproxEqAbs(globalSettlement.collateralShortfall('TKN-C'), 3e18, 0.001e18);
 
     /**
-     * bob debt = 50 HAI
-     * bob collateral = 1 TKN-C = 5 HAI
+     * bob debt = 50 OD
+     * bob collateral = 1 TKN-C = 5 OD
      * bob must pay debt with (50/5) = 10 TKN-C
      * bob is short 9 TKN-C
      */
@@ -121,8 +121,8 @@ abstract contract E2EGlobalSettlementTest is BaseUser, Common {
     assertApproxEqAbs(globalSettlement.collateralShortfall('TKN-C'), 3e18 + 9e18, 0.001e18);
 
     /**
-     * carol debt = 60 HAI
-     * carol collateral = 1 TKN-C = 5 HAI
+     * carol debt = 60 OD
+     * carol collateral = 1 TKN-C = 5 OD
      * carol must pay debt with (60/5) = 12 TKN-C
      * carol is short 11 TKN-C
      */
@@ -132,8 +132,8 @@ abstract contract E2EGlobalSettlementTest is BaseUser, Common {
 
     {
       /**
-       * alice debt = 20 HAI
-       * alice collateral = 1 TKN-C = 5 HAI
+       * alice debt = 20 OD
+       * alice collateral = 1 TKN-C = 5 OD
        * alice must pay debt with (20/5) = 4 TKN-C
        * alice has 0 TKN-C left
        * bob has 0 TKN-C left (higher debt)
@@ -149,7 +149,7 @@ abstract contract E2EGlobalSettlementTest is BaseUser, Common {
     globalSettlement.calculateCashPrice('TKN-B');
     globalSettlement.calculateCashPrice('TKN-C');
 
-    // alice bob and carol redeem their HAI
+    // alice bob and carol redeem their OD
     uint256 _aliceCoins = ALICE_DEBT + ALICE_DEBT + ALICE_DEBT;
     uint256 _bobCoins = BOB_DEBT + BOB_DEBT + BOB_DEBT;
     uint256 _carolCoins = CAROL_DEBT + CAROL_DEBT + CAROL_DEBT;
@@ -258,7 +258,7 @@ abstract contract E2EGlobalSettlementTest is BaseUser, Common {
     _generateDebt(bob, address(collateralJoin[WSTETH]), int256(COLLAT), int256(DEBT));
     _generateDebt(carol, address(collateralJoin[WSTETH]), int256(COLLAT), int256(DEBT));
 
-    _setCollateralPrice(WSTETH, TEST_ETH_PRICE_DROP); // price 1 ETH = 100 HAI
+    _setCollateralPrice(WSTETH, TEST_ETH_PRICE_DROP); // price 1 ETH = 100 OD
     _liquidateSAFE(WSTETH, alice);
     accountingEngine.popDebtFromQueue(block.timestamp);
     accountingEngine.auctionDebt(); // active debt auction

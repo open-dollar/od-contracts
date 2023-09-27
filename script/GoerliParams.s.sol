@@ -5,8 +5,8 @@ import '@script/Params.s.sol';
 
 abstract contract GoerliParams is Contracts, Params {
   // --- Testnet Params ---
-  uint256 constant ARB_GOERLI_FTRG_ETH_PRICE_FEED = 0.001e18; // 1000 OP = 1 ETH
-  uint256 constant ARB_GOERLI_FTRG_PRICE_DEVIATION = 0.995e18; // -0.5%
+  uint256 constant GOERLI_ARB_ETH_PRICE_FEED = 0.001e18; // 1000 OP = 1 ETH
+  uint256 constant GOERLI_ARB_PRICE_DEVIATION = 0.995e18; // -0.5%
 
   function _getEnvironmentParams() internal override {
     // Setup delegated collateral joins

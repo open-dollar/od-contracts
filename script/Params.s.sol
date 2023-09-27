@@ -28,9 +28,9 @@ import {WAD, RAY, RAD} from '@libraries/Math.sol';
 // to replace OP voting token
 bytes32 constant ARB = bytes32('ARB'); // 0x4f50000000000000000000000000000000000000000000000000000000000000
 
-// HAI Params
-bytes32 constant HAI = bytes32('HAI'); // 0x4841490000000000000000000000000000000000000000000000000000000000
-uint256 constant OD_INITIAL_PRICE = 1e18; // 1 HAI = 1 USD
+// OD Params
+bytes32 constant OD = bytes32('OD'); // 0x4841490000000000000000000000000000000000000000000000000000000000
+uint256 constant OD_INITIAL_PRICE = 1e18; // 1 OD = 1 USD
 
 // Collateral Names
 bytes32 constant ETH_A = bytes32('ETH-A'); // 0x4554482d41000000000000000000000000000000000000000000000000000000
@@ -48,7 +48,7 @@ uint256 constant PROPORTIONAL_GAIN = 222_002_205_862;
 uint256 constant INTEGRAL_GAIN = 16_442;
 
 // Job Params
-uint256 constant JOB_REWARD = 5e18; // 5 HAI
+uint256 constant JOB_REWARD = 5e18; // 5 OD
 
 /**
  * @title Params

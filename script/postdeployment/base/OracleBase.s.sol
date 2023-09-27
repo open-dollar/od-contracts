@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import {Script} from 'forge-std/Script.sol';
 import {GoerliContracts} from '@script/GoerliContracts.s.sol';
-import {ARB_GOERLI_WETH} from '@script/Registry.s.sol';
+import {GOERLI_WETH} from '@script/Registry.s.sol';
 
 import {DenominatedOracleFactory} from '@contracts/factories/DenominatedOracleFactory.sol';
 import {UniV3RelayerFactory} from '@contracts/factories/UniV3RelayerFactory.sol';
@@ -15,7 +15,7 @@ contract OracleBase is GoerliContracts, Script {
 
   address public OD_token = SystemCoin_Address;
   address public ODG_token = ProtocolToken_Address;
-  address public WETH_token = ARB_GOERLI_WETH;
+  address public WETH_token = GOERLI_WETH;
 
   uint24 public fee = uint24(0xbb8);
   uint32 public period = uint32(1 days);

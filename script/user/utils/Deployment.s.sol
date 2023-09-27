@@ -6,7 +6,7 @@ import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
 
 import {GoerliContracts} from '@script/GoerliContracts.s.sol';
 import {Contracts} from '@script/Contracts.s.sol';
-import {ARB_GOERLI_WETH} from '@script/Registry.s.sol';
+import {GOERLI_WETH} from '@script/Registry.s.sol';
 
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 import {ODSafeManager} from '@contracts/proxies/ODSafeManager.sol';
@@ -35,11 +35,11 @@ contract Deployment is Contracts, GoerliContracts, Script {
   bytes32 public constant WSTETH = bytes32('WSTETH'); // 0x5745544800000000000000000000000000000000000000000000000000000000
   bytes32 public constant ARB = bytes32('ARB');
 
-  IERC20 public constant WETH_TOKEN = IERC20(ARB_GOERLI_WETH);
+  IERC20 public constant WETH_TOKEN = IERC20(GOERLI_WETH);
 
   // User wallet address
-  address public USER1 = vm.envAddress('ARB_GOERLI_PUBLIC1');
-  address public USER2 = vm.envAddress('ARB_GOERLI_PUBLIC2');
+  address public USER1 = vm.envAddress('GOERLI_PUBLIC1');
+  address public USER2 = vm.envAddress('GOERLI_PUBLIC2');
 
   // Safe id
   uint256 public SAFE = vm.envUint('SAFE');
@@ -58,7 +58,7 @@ contract Deployment is Contracts, GoerliContracts, Script {
     rewardedActions = RewardedActions(RewardedActions_Address);
 
     protocolToken = ProtocolToken(ProtocolToken_Address); // OPEN
-    systemCoin = SystemCoin(SystemCoin_Address); // HAI
+    systemCoin = SystemCoin(SystemCoin_Address); // OD
 
     taxCollector = TaxCollector(TaxCollector_Address);
     coinJoin = CoinJoin(CoinJoin_Address);
