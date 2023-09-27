@@ -39,7 +39,8 @@
     "test:local": "FOUNDRY_FUZZ_RUNS=32 FOUNDRY_FUZZ_MAX_TEST_REJECTS=1000000 forge test -vvv",
     "test:simulation": "forge test --match-contract Simulation --ffi",
     "test:unit": "FOUNDRY_FUZZ_RUNS=128 FOUNDRY_FUZZ_MAX_TEST_REJECTS=1000000 forge test --match-contract Unit -vvv",
-    "test:unit:deep": "FOUNDRY_FUZZ_RUNS=1024 FOUNDRY_FUZZ_MAX_TEST_REJECTS=10000000 forge test --match-contract Unit -vvvvv"
+    "test:unit:deep": "FOUNDRY_FUZZ_RUNS=1024 FOUNDRY_FUZZ_MAX_TEST_REJECTS=10000000 forge test --match-contract Unit -vvvvv",
+    "prettier-script": "prettier --write --plugin=prettier-plugin-solidity 'src/contracts/proxies/**/*.sol'"
   },
   "dependencies": {
     "@defi-wonderland/solidity-utils": "0.0.0-4298c6c6",
@@ -52,6 +53,8 @@
     "@commitlint/config-conventional": "17.0.3",
     "cross-env": "7.0.3",
     "husky": ">=8",
+    "prettier": "^3.0.3",
+    "prettier-plugin-solidity": "^1.1.3",
     "solhint": "3.4.1",
     "solhint-plugin-defi-wonderland": "1.1.0",
     "sort-package-json": "1.53.1"
