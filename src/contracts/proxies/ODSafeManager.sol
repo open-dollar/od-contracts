@@ -80,11 +80,9 @@ contract ODSafeManager is IODSafeManager {
   }
 
   /// @inheritdoc IODSafeManager
-  function getSafesData(address _usr)
-    external
-    view
-    returns (uint256[] memory _safes, address[] memory _safeHandlers, bytes32[] memory _cTypes)
-  {
+  function getSafesData(
+    address _usr
+  ) external view returns (uint256[] memory _safes, address[] memory _safeHandlers, bytes32[] memory _cTypes) {
     _safes = _usrSafes[_usr].values();
     _safeHandlers = new address[](_safes.length);
     _cTypes = new bytes32[](_safes.length);
@@ -159,7 +157,12 @@ contract ODSafeManager is IODSafeManager {
   ) external safeAllowed(_safe) {
     SAFEData memory _sData = _safeData[_safe];
     ISAFEEngine(safeEngine).modifySAFECollateralization(
-      _sData.collateralType, _sData.safeHandler, _sData.safeHandler, _sData.safeHandler, _deltaCollateral, _deltaDebt
+      _sData.collateralType,
+      _sData.safeHandler,
+      _sData.safeHandler,
+      _sData.safeHandler,
+      _deltaCollateral,
+      _deltaDebt
     );
     emit ModifySAFECollateralization(msg.sender, _safe, _deltaCollateral, _deltaDebt);
   }
@@ -192,7 +195,11 @@ contract ODSafeManager is IODSafeManager {
     int256 _deltaCollateral = _safeInfo.lockedCollateral.toInt();
     int256 _deltaDebt = _safeInfo.generatedDebt.toInt();
     ISAFEEngine(safeEngine).transferSAFECollateralAndDebt(
-      _sData.collateralType, _sData.safeHandler, _dst, _deltaCollateral, _deltaDebt
+      _sData.collateralType,
+      _sData.safeHandler,
+      _dst,
+      _deltaCollateral,
+      _deltaDebt
     );
 
     // Remove safe from owner's list (notice it doesn't erase safe ownership)
@@ -208,7 +215,11 @@ contract ODSafeManager is IODSafeManager {
     int256 _deltaCollateral = _safeInfo.lockedCollateral.toInt();
     int256 _deltaDebt = _safeInfo.generatedDebt.toInt();
     ISAFEEngine(safeEngine).transferSAFECollateralAndDebt(
-      _sData.collateralType, _src, _sData.safeHandler, _deltaCollateral, _deltaDebt
+      _sData.collateralType,
+      _src,
+      _sData.safeHandler,
+      _deltaCollateral,
+      _deltaDebt
     );
     emit EnterSystem(msg.sender, _src, _safe);
   }
@@ -222,7 +233,11 @@ contract ODSafeManager is IODSafeManager {
     int256 _deltaCollateral = _safeInfo.lockedCollateral.toInt();
     int256 _deltaDebt = _safeInfo.generatedDebt.toInt();
     ISAFEEngine(safeEngine).transferSAFECollateralAndDebt(
-      _srcData.collateralType, _srcData.safeHandler, _dstData.safeHandler, _deltaCollateral, _deltaDebt
+      _srcData.collateralType,
+      _srcData.safeHandler,
+      _dstData.safeHandler,
+      _deltaCollateral,
+      _deltaDebt
     );
 
     // Remove safe from owner's list (notice it doesn't erase safe ownership)
