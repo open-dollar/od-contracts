@@ -112,7 +112,7 @@ contract OracleSetup is HaiTest {
   }
 
   function test_UniV3RelayerSymbol() public {
-    assertEq(wbtcWethPriceSource.symbol(), 'WBTC / WETH');
+    assertEq(wbtcWethPriceSource.symbol(), 'CBETH / WSTETH');
   }
 
   // --- Denominated ---

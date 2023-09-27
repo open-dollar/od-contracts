@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import 'forge-std/Test.sol';
-import {GoerliParams, WETH, FTRG, WBTC, STONES, TOTEM} from '@script/GoerliParams.s.sol';
+import {GoerliParams, WSTETH, ARB, CBETH, RETH, MAGIC} from '@script/GoerliParams.s.sol';
 import {GoerliDeployment} from '@script/GoerliDeployment.s.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';

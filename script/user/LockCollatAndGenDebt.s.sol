@@ -15,7 +15,7 @@ contract LockCollAndGenDebt is TestScripts {
     address proxy = address(deployOrFind(USER2));
     WETH_TOKEN.approve(address(proxy), type(uint256).max);
 
-    depositCollatAndGenDebt(WETH, SAFE, COLLATERAL, DEBT, proxy);
+    depositCollatAndGenDebt(WSTETH, SAFE, COLLATERAL, DEBT, proxy);
     vm.stopBroadcast();
   }
 }

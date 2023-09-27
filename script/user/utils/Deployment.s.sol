@@ -25,10 +25,6 @@ import {CollateralJoin} from '@contracts/utils/CollateralJoin.sol';
 import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
 import {TaxCollector} from '@contracts/TaxCollector.sol';
 
-/**
- * @dev Deployment2 refers to HAI contracts
- */
-
 contract Deployment is Contracts, GoerliContracts, Script {
   // Wad
   uint256 public constant WAD = 1 ether;
@@ -36,8 +32,8 @@ contract Deployment is Contracts, GoerliContracts, Script {
 
   // Collateral
   bytes32 public constant ETH_A = bytes32('ETH-A'); // 0x4554482d41000000000000000000000000000000000000000000000000000000
-  bytes32 public constant WETH = bytes32('WETH'); // 0x5745544800000000000000000000000000000000000000000000000000000000
-  bytes32 public constant FTRG = bytes32('FTRG');
+  bytes32 public constant WSTETH = bytes32('WSTETH'); // 0x5745544800000000000000000000000000000000000000000000000000000000
+  bytes32 public constant ARB = bytes32('ARB');
 
   IERC20 public constant WETH_TOKEN = IERC20(ARB_GOERLI_WETH);
 
@@ -66,7 +62,7 @@ contract Deployment is Contracts, GoerliContracts, Script {
 
     taxCollector = TaxCollector(TaxCollector_Address);
     coinJoin = CoinJoin(CoinJoin_Address);
-    collateralJoin[WETH] =
+    collateralJoin[WSTETH] =
       CollateralJoin(CollateralJoinChild_0x5745544800000000000000000000000000000000000000000000000000000000_Address);
   }
 }

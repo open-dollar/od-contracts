@@ -13,7 +13,7 @@ contract OpenSafe is TestScripts {
   function run() public {
     vm.startBroadcast(vm.envUint('ARB_GOERLI_PK'));
     address proxy = address(deployOrFind(USER2));
-    openSafe(WETH, proxy);
+    openSafe(WSTETH, proxy);
     vm.stopBroadcast();
   }
 }

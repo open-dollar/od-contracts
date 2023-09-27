@@ -5,7 +5,7 @@ import {Common, COLLAT, DEBT, TEST_ETH_PRICE_DROP} from './Common.t.sol';
 import {Math} from '@libraries/Math.sol';
 import {OracleForTest} from '@test/mocks/OracleForTest.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
-import {WETH, ETH_A, OD_INITIAL_PRICE} from '@script/Params.s.sol';
+import {WSTETH, ETH_A, OD_INITIAL_PRICE} from '@script/Params.s.sol';
 import {RAY, YEAR} from '@libraries/Math.sol';
 
 import {BaseUser} from '@test/scopes/BaseUser.t.sol';
@@ -254,47 +254,47 @@ abstract contract E2EGlobalSettlementTest is BaseUser, Common {
     // carol has a safe that provides surplus (active surplus auction)
     // dave has a healthy active safe
 
-    _generateDebt(alice, address(collateralJoin[WETH]), int256(COLLAT), int256(DEBT));
-    _generateDebt(bob, address(collateralJoin[WETH]), int256(COLLAT), int256(DEBT));
-    _generateDebt(carol, address(collateralJoin[WETH]), int256(COLLAT), int256(DEBT));
+    _generateDebt(alice, address(collateralJoin[WSTETH]), int256(COLLAT), int256(DEBT));
+    _generateDebt(bob, address(collateralJoin[WSTETH]), int256(COLLAT), int256(DEBT));
+    _generateDebt(carol, address(collateralJoin[WSTETH]), int256(COLLAT), int256(DEBT));
 
-    _setCollateralPrice(WETH, TEST_ETH_PRICE_DROP); // price 1 ETH = 100 HAI
-    _liquidateSAFE(WETH, alice);
+    _setCollateralPrice(WSTETH, TEST_ETH_PRICE_DROP); // price 1 ETH = 100 HAI
+    _liquidateSAFE(WSTETH, alice);
     accountingEngine.popDebtFromQueue(block.timestamp);
     accountingEngine.auctionDebt(); // active debt auction
 
-    _liquidateSAFE(WETH, bob); // active collateral auction
+    _liquidateSAFE(WSTETH, bob); // active collateral auction
     uint256 _collateralAuction = 1;
 
-    _collectFees(WETH, 50 * YEAR);
+    _collectFees(WSTETH, 50 * YEAR);
     accountingEngine.auctionSurplus(); // active surplus auction
 
     // NOTE: why DEBT/10 not-safe? (price dropped to 1/10)
-    _generateDebt(dave, address(collateralJoin[WETH]), int256(COLLAT), int256(DEBT / 100)); // active healthy safe
+    _generateDebt(dave, address(collateralJoin[WSTETH]), int256(COLLAT), int256(DEBT / 100)); // active healthy safe
 
     vm.prank(deployer);
     globalSettlement.shutdownSystem();
-    globalSettlement.freezeCollateralType(WETH);
+    globalSettlement.freezeCollateralType(WSTETH);
 
-    globalSettlement.fastTrackAuction(WETH, _collateralAuction);
+    globalSettlement.fastTrackAuction(WSTETH, _collateralAuction);
 
-    _freeCollateral(alice, WETH);
-    _freeCollateral(bob, WETH);
-    _freeCollateral(carol, WETH);
-    _freeCollateral(dave, WETH);
+    _freeCollateral(alice, WSTETH);
+    _freeCollateral(bob, WSTETH);
+    _freeCollateral(carol, WSTETH);
+    _freeCollateral(dave, WSTETH);
 
     accountingEngine.settleDebt(safeEngine.coinBalance(address(accountingEngine)));
     vm.warp(block.timestamp + globalSettlement.params().shutdownCooldown);
     globalSettlement.setOutstandingCoinSupply();
-    globalSettlement.calculateCashPrice(WETH);
+    globalSettlement.calculateCashPrice(WSTETH);
 
     _prepareCoinsForRedeeming(dave, DEBT / 100);
-    _redeemCollateral(dave, WETH, DEBT / 100);
+    _redeemCollateral(dave, WSTETH, DEBT / 100);
   }
 
   function test_post_settlement_surplus_auction_house() public {
-    _generateDebt(alice, address(collateralJoin[WETH]), int256(COLLAT), int256(DEBT));
-    _collectFees(WETH, 50 * YEAR);
+    _generateDebt(alice, address(collateralJoin[WSTETH]), int256(COLLAT), int256(DEBT));
+    _collectFees(WSTETH, 50 * YEAR);
 
     vm.prank(deployer);
     globalSettlement.shutdownSystem();

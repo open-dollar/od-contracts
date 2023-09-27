@@ -10,7 +10,7 @@ abstract contract GoerliParams is Contracts, Params {
 
   function _getEnvironmentParams() internal override {
     // Setup delegated collateral joins
-    delegatee[FTRG] = governor;
+    delegatee[ARB] = governor;
 
     _safeEngineParams = ISAFEEngine.SAFEEngineParams({
       safeDebtCeiling: 2_000_000 * WAD, // 2M COINs
@@ -131,12 +131,12 @@ abstract contract GoerliParams is Contracts, Params {
     }
 
     // --- Collateral Specific Params ---
-    _oracleRelayerCParams[WETH].safetyCRatio = 1.35e27; // 135%
-    _oracleRelayerCParams[WETH].liquidationCRatio = 1.35e27; // 135%
-    _taxCollectorCParams[WETH].stabilityFee = RAY + 1.54713e18; // + 5%/yr
-    _safeEngineCParams[WETH].debtCeiling = 100_000_000 * RAD; // 100M COINs
+    _oracleRelayerCParams[WSTETH].safetyCRatio = 1.35e27; // 135%
+    _oracleRelayerCParams[WSTETH].liquidationCRatio = 1.35e27; // 135%
+    _taxCollectorCParams[WSTETH].stabilityFee = RAY + 1.54713e18; // + 5%/yr
+    _safeEngineCParams[WSTETH].debtCeiling = 100_000_000 * RAD; // 100M COINs
 
-    _liquidationEngineCParams[FTRG].liquidationPenalty = 1.2e18; // 20%
-    _collateralAuctionHouseParams[FTRG].maxDiscount = 0.5e18; // -50%
+    _liquidationEngineCParams[ARB].liquidationPenalty = 1.2e18; // 20%
+    _collateralAuctionHouseParams[ARB].maxDiscount = 0.5e18; // -50%
   }
 }

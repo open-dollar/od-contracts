@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import '@script/Contracts.s.sol';
-import {GoerliParams, WETH, FTRG, WBTC, STONES, TOTEM} from '@script/GoerliParams.s.sol';
+import {GoerliParams, WSTETH, ARB, CBETH, RETH, MAGIC} from '@script/GoerliParams.s.sol';
 import {ARB_GOERLI_WETH, ARB_GOERLI_GOV_TOKEN, GOERLI_CAMELOT_V3_FACTORY} from '@script/Registry.s.sol';
 import {GoerliContracts} from '@script/GoerliContracts.s.sol';
 
@@ -16,21 +16,21 @@ abstract contract GoerliDeployment is Contracts, GoerliParams, GoerliContracts {
    */
   constructor() {
     // --- collateral types ---
-    collateralTypes.push(WETH);
-    collateralTypes.push(FTRG);
-    collateralTypes.push(WBTC);
-    collateralTypes.push(STONES);
-    collateralTypes.push(TOTEM);
+    collateralTypes.push(WSTETH);
+    collateralTypes.push(ARB);
+    collateralTypes.push(CBETH);
+    collateralTypes.push(RETH);
+    collateralTypes.push(MAGIC);
 
     // --- utils ---
-    delegatee[FTRG] = governor;
+    delegatee[ARB] = governor;
 
     // --- ERC20s ---
-    collateral[WETH] = IERC20Metadata(ARB_GOERLI_WETH);
-    collateral[FTRG] = IERC20Metadata(ARB_GOERLI_GOV_TOKEN);
-    collateral[WBTC] = IERC20Metadata(MintableERC20_WBTC_Address);
-    collateral[STONES] = IERC20Metadata(MintableERC20_STONES_Address);
-    collateral[TOTEM] = IERC20Metadata(MintableERC20_TOTEM_Address);
+    collateral[WSTETH] = IERC20Metadata(ARB_GOERLI_WETH);
+    collateral[ARB] = IERC20Metadata(ARB_GOERLI_GOV_TOKEN);
+    collateral[CBETH] = IERC20Metadata(MintableERC20_WBTC_Address);
+    collateral[RETH] = IERC20Metadata(MintableERC20_STONES_Address);
+    collateral[MAGIC] = IERC20Metadata(MintableERC20_TOTEM_Address);
 
     systemCoin = SystemCoin(SystemCoin_Address);
     protocolToken = ProtocolToken(ProtocolToken_Address);
@@ -64,33 +64,33 @@ abstract contract GoerliDeployment is Contracts, GoerliParams, GoerliContracts {
     collateralAuctionHouseFactory = CollateralAuctionHouseFactory(CollateralAuctionHouseFactory_Address);
 
     // --- per token contracts ---
-    collateralJoin[WETH] =
+    collateralJoin[WSTETH] =
       CollateralJoin(CollateralJoinChild_0x5745544800000000000000000000000000000000000000000000000000000000_Address);
-    collateralAuctionHouse[WETH] = CollateralAuctionHouse(
+    collateralAuctionHouse[WSTETH] = CollateralAuctionHouse(
       CollateralAuctionHouseChild_0x5745544800000000000000000000000000000000000000000000000000000000_Address
     );
 
-    collateralJoin[FTRG] =
+    collateralJoin[ARB] =
       CollateralJoin(CollateralJoinChild_0x4654524700000000000000000000000000000000000000000000000000000000_Address);
-    collateralAuctionHouse[FTRG] = CollateralAuctionHouse(
+    collateralAuctionHouse[ARB] = CollateralAuctionHouse(
       CollateralAuctionHouseChild_0x4654524700000000000000000000000000000000000000000000000000000000_Address
     );
 
-    collateralJoin[WBTC] =
+    collateralJoin[CBETH] =
       CollateralJoin(CollateralJoinChild_0x5742544300000000000000000000000000000000000000000000000000000000_Address);
-    collateralAuctionHouse[WBTC] = CollateralAuctionHouse(
+    collateralAuctionHouse[CBETH] = CollateralAuctionHouse(
       CollateralAuctionHouseChild_0x5742544300000000000000000000000000000000000000000000000000000000_Address
     );
 
-    collateralJoin[STONES] =
+    collateralJoin[RETH] =
       CollateralJoin(CollateralJoinChild_0x53544f4e45530000000000000000000000000000000000000000000000000000_Address);
-    collateralAuctionHouse[STONES] = CollateralAuctionHouse(
+    collateralAuctionHouse[RETH] = CollateralAuctionHouse(
       CollateralAuctionHouseChild_0x53544f4e45530000000000000000000000000000000000000000000000000000_Address
     );
 
-    collateralJoin[TOTEM] =
+    collateralJoin[MAGIC] =
       CollateralJoin(CollateralJoinChild_0x544f54454d000000000000000000000000000000000000000000000000000000_Address);
-    collateralAuctionHouse[TOTEM] = CollateralAuctionHouse(
+    collateralAuctionHouse[MAGIC] = CollateralAuctionHouse(
       CollateralAuctionHouseChild_0x544f54454d000000000000000000000000000000000000000000000000000000_Address
     );
 
@@ -118,11 +118,11 @@ abstract contract GoerliDeployment is Contracts, GoerliParams, GoerliContracts {
 
     // --- oracles ---
     systemCoinOracle = IBaseOracle(DenominatedOracleChild_OD_Address);
-    delayedOracle[WETH] = IDelayedOracle(DelayedOracleChild_WETH_Address);
-    delayedOracle[FTRG] = IDelayedOracle(DelayedOracleChild_FTRG_Address);
-    delayedOracle[WBTC] = IDelayedOracle(DelayedOracleChild_WBTC_Address);
-    delayedOracle[STONES] = IDelayedOracle(DelayedOracleChild_STONES_Address);
-    delayedOracle[TOTEM] = IDelayedOracle(DelayedOracleChild_TOTEM_Address);
+    delayedOracle[WSTETH] = IDelayedOracle(DelayedOracleChild_WETH_Address);
+    delayedOracle[ARB] = IDelayedOracle(DelayedOracleChild_FTRG_Address);
+    delayedOracle[CBETH] = IDelayedOracle(DelayedOracleChild_WBTC_Address);
+    delayedOracle[RETH] = IDelayedOracle(DelayedOracleChild_STONES_Address);
+    delayedOracle[MAGIC] = IDelayedOracle(DelayedOracleChild_TOTEM_Address);
 
     camelotV3Factory = ICamelotV3Factory(GOERLI_CAMELOT_V3_FACTORY);
   }
