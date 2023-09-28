@@ -146,20 +146,20 @@ contract DeployMainnet is MainnetParams, Deploy {
 
     systemCoinOracle = new OracleForTest(OD_INITIAL_PRICE); // 1 OD = 1 USD
 
-    delayedOracle[WSTETH] = delayedOracleFactory.deployDelayedOracle(_wstethUSDPriceFeed, ORACLE_INTERVAL_PROD);
     delayedOracle[ARB] = delayedOracleFactory.deployDelayedOracle(_arbUSDPriceFeed, ORACLE_INTERVAL_PROD);
+    delayedOracle[WSTETH] = delayedOracleFactory.deployDelayedOracle(_wstethUSDPriceFeed, ORACLE_INTERVAL_PROD);
     delayedOracle[CBETH] = delayedOracleFactory.deployDelayedOracle(_cbethUSDPriceFeed, ORACLE_INTERVAL_PROD);
     delayedOracle[RETH] = delayedOracleFactory.deployDelayedOracle(_rethUSDPriceFeed, ORACLE_INTERVAL_PROD);
     delayedOracle[MAGIC] = delayedOracleFactory.deployDelayedOracle(_magicUSDPriceFeed, ORACLE_INTERVAL_PROD);
 
-    collateral[WSTETH] = IERC20Metadata(ARBITRUM_WSTETH);
     collateral[ARB] = IERC20Metadata(ARBITRUM_ARB);
+    collateral[WSTETH] = IERC20Metadata(ARBITRUM_WSTETH);
     collateral[CBETH] = IERC20Metadata(ARBITRUM_CBETH);
     collateral[RETH] = IERC20Metadata(ARBITRUM_RETH);
     collateral[MAGIC] = IERC20Metadata(ARBITRUM_MAGIC);
 
-    collateralTypes.push(WSTETH);
     collateralTypes.push(ARB);
+    collateralTypes.push(WSTETH);
     collateralTypes.push(CBETH);
     collateralTypes.push(RETH);
     collateralTypes.push(MAGIC);
@@ -200,8 +200,8 @@ contract DeployGoerli is DeployTestnet {
     systemCoinOracle = new OracleForTestnet(OD_INITIAL_PRICE); // 1 OD = 1 USD 'OD / USD'
 
     // Test tokens (various decimals for testing)
-    collateral[WSTETH] = new MintableERC20('Wrapped liquid staked Ether 2.0', 'wstETH', 8);
     collateral[ARB] = new MintableVoteERC20('Arbitrum', 'ARB', 18);
+    collateral[WSTETH] = new MintableERC20('Wrapped liquid staked Ether 2.0', 'wstETH', 8);
     collateral[CBETH] = new MintableERC20('Coinbase Wrapped Staked ETH', 'cbETH', 8);
     collateral[RETH] = new MintableERC20('Rocket Pool ETH', 'rETH', 3);
     collateral[MAGIC] = new MintableERC20('Magic', 'MAGIC', 0);
@@ -225,22 +225,22 @@ contract DeployGoerli is DeployTestnet {
     IBaseOracle _magicOracle =
       denominatedOracleFactory.deployDenominatedOracle(_magicETHOracle, chainlinkEthUSDPriceFeed, false);
 
-    delayedOracle[WSTETH] = delayedOracleFactory.deployDelayedOracle(chainlinkEthUSDPriceFeed, ORACLE_INTERVAL_TEST);
     delayedOracle[ARB] = delayedOracleFactory.deployDelayedOracle(_arbUSDPriceFeed, ORACLE_INTERVAL_TEST);
+    delayedOracle[WSTETH] = delayedOracleFactory.deployDelayedOracle(chainlinkEthUSDPriceFeed, ORACLE_INTERVAL_TEST);
     delayedOracle[CBETH] = delayedOracleFactory.deployDelayedOracle(chainlinkEthUSDPriceFeed, ORACLE_INTERVAL_TEST);
     delayedOracle[RETH] = delayedOracleFactory.deployDelayedOracle(_rethOracle, ORACLE_INTERVAL_TEST);
     delayedOracle[MAGIC] = delayedOracleFactory.deployDelayedOracle(_magicOracle, ORACLE_INTERVAL_TEST);
 
     // Setup collateral types
-    collateralTypes.push(WSTETH);
     collateralTypes.push(ARB);
+    collateralTypes.push(WSTETH);
     collateralTypes.push(CBETH);
     collateralTypes.push(RETH);
     collateralTypes.push(MAGIC);
   }
 
   function setupPostEnvironment() public virtual override updateParams {
-    // deploy Camelot liquidity pool to create market price for OD
+    // deploy Camelot liquidity pool to create market price for OD (using WSTETH for testnet, WETH for mainnet)
     ICamelotV3Factory(GOERLI_CAMELOT_V3_FACTORY).createPool(address(systemCoin), address(collateral[WSTETH]));
 
     // TODO: how to set initial price of pool
@@ -269,8 +269,8 @@ contract DeployAnvil is DeployTestnet {
     systemCoinOracle = new OracleForTestnet(OD_INITIAL_PRICE); // 1 OD = 1 USD 'OD / USD'
 
     // Test tokens
-    collateral[WSTETH] = new MintableERC20('Wrapped liquid staked Ether 2.0', 'wstETH', 18);
     collateral[ARB] = new MintableVoteERC20('Arbitrum', 'ARB', 18);
+    collateral[WSTETH] = new MintableERC20('Wrapped liquid staked Ether 2.0', 'wstETH', 18);
     collateral[CBETH] = new MintableERC20('Coinbase Wrapped Staked ETH', 'cbETH', 18);
     collateral[RETH] = new MintableERC20('Rocket Pool ETH', 'rETH', 18);
     collateral[MAGIC] = new MintableERC20('Magic', 'MAGIC', 18);
@@ -278,15 +278,15 @@ contract DeployAnvil is DeployTestnet {
     // WSTETH
     IBaseOracle _wstethUSDPriceFeed = new OracleForTestnet(1_500e18);
 
-    // CBETH
-    IBaseOracle _cbethETHPriceFeed = new OracleForTestnet(1e18);
-    IBaseOracle _cbethOracle =
-      denominatedOracleFactory.deployDenominatedOracle(_cbethETHPriceFeed, _wstethUSDPriceFeed, false);
-
     // ARB
     OracleForTestnet _arbETHPriceFeed = new OracleForTestnet(0.00055e18);
     IBaseOracle _arbOracle =
       denominatedOracleFactory.deployDenominatedOracle(_arbETHPriceFeed, _wstethUSDPriceFeed, false);
+
+    // CBETH
+    IBaseOracle _cbethETHPriceFeed = new OracleForTestnet(1e18);
+    IBaseOracle _cbethOracle =
+      denominatedOracleFactory.deployDenominatedOracle(_cbethETHPriceFeed, _wstethUSDPriceFeed, false);
 
     // RETH
     IBaseOracle _rethETHOracle = new OracleForTestnet(0.98e18);
@@ -298,15 +298,15 @@ contract DeployAnvil is DeployTestnet {
     IBaseOracle _magicOracle =
       denominatedOracleFactory.deployDenominatedOracle(_magicETHOracle, _wstethUSDPriceFeed, false);
 
-    delayedOracle[WSTETH] = delayedOracleFactory.deployDelayedOracle(_wstethUSDPriceFeed, ORACLE_INTERVAL_TEST);
     delayedOracle[ARB] = delayedOracleFactory.deployDelayedOracle(_arbOracle, ORACLE_INTERVAL_TEST);
+    delayedOracle[WSTETH] = delayedOracleFactory.deployDelayedOracle(_wstethUSDPriceFeed, ORACLE_INTERVAL_TEST);
     delayedOracle[CBETH] = delayedOracleFactory.deployDelayedOracle(_cbethOracle, ORACLE_INTERVAL_TEST);
     delayedOracle[RETH] = delayedOracleFactory.deployDelayedOracle(_rethOracle, ORACLE_INTERVAL_TEST);
     delayedOracle[MAGIC] = delayedOracleFactory.deployDelayedOracle(_magicOracle, ORACLE_INTERVAL_TEST);
 
     // Setup collateral types
-    collateralTypes.push(WSTETH);
     collateralTypes.push(ARB);
+    collateralTypes.push(WSTETH);
     collateralTypes.push(CBETH);
     collateralTypes.push(RETH);
     collateralTypes.push(MAGIC);
