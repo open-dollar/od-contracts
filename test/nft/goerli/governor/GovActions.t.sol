@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {GoerliForkSetup} from '@test/nft/GoerliForkSetup.t.sol';
+import {GoerliFork} from '@test/nft/goerli/GoerliFork.t.sol';
 import {Vault721} from '@contracts/proxies/Vault721.sol';
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
@@ -9,7 +9,7 @@ import {WAD, RAY, RAD} from '@libraries/Math.sol';
 
 // forge t --fork-url $URL --match-contract GovActions -vvvvv
 
-contract GovActions is GoerliForkSetup {
+contract GovActions is GoerliFork {
   uint256 constant MINUS_0_5_PERCENT_PER_HOUR = 999_998_607_628_240_588_157_433_861;
 
   /**
@@ -26,7 +26,9 @@ contract GovActions is GoerliForkSetup {
   // test
   function testExecuteProp() public {
     uint256 startBlock = block.number;
+    uint256 startTime = block.timestamp;
     emit log_named_uint('Block', startBlock);
+    emit log_named_uint('Time', startTime);
     ODGovernor dao = ODGovernor(payable(ODGovernor_Address));
     (
       address[] memory targets,
@@ -43,15 +45,24 @@ contract GovActions is GoerliForkSetup {
     emit log_named_uint('Voting Period:', dao.votingPeriod());
 
     vm.roll(startBlock + 2);
+    vm.warp(startTime + 30 seconds);
     emit log_named_uint('Block', block.number);
+    emit log_named_uint('Time', block.timestamp);
+
+    vm.startPrank(alice);
+    dao.castVote(propId, 1);
+    vm.stopPrank();
 
     vm.startPrank(bob);
     dao.castVote(propId, 1);
     vm.stopPrank();
 
     vm.roll(startBlock + 17);
+    vm.warp(startTime + 255 seconds);
     emit log_named_uint('Block', block.number);
+    emit log_named_uint('Time', block.timestamp);
 
+    // TODO: pass `execute`
     dao.execute(targets, values, calldatas, descriptionHash);
   }
 

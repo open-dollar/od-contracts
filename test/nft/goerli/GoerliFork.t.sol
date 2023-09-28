@@ -7,7 +7,12 @@ import {GoerliDeployment} from '@script/GoerliDeployment.s.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 
-contract GoerliForkSetup is Test, GoerliDeployment {
+contract GoerliFork is Test, GoerliDeployment {
+  /// @dev Uint256 representation of 1 RAY
+  uint256 constant RAY = 10 ** 27;
+  /// @dev Uint256 representation of 1 WAD
+  uint256 constant WAD = 10 ** 18;
+
   uint256 public currSafeId = 10;
 
   bytes32 public cType = vm.envBytes32('CTYPE_SYM');

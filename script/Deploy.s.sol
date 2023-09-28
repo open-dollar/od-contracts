@@ -243,7 +243,7 @@ contract DeployGoerli is DeployTestnet {
     // deploy Camelot liquidity pool to create market price for OD (using WSTETH for testnet, WETH for mainnet)
     ICamelotV3Factory(GOERLI_CAMELOT_V3_FACTORY).createPool(address(systemCoin), address(collateral[WSTETH]));
 
-    // TODO: how to set initial price of pool
+    // TODO: how to set initial price of pool => call `initialize` on pool contract
 
     // deploy Camelot relayer to retrieve price from Camelot pool
     IBaseOracle _odWethOracle = camelotRelayerFactory.deployCamelotRelayer(

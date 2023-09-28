@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {GoerliForkSetup} from '@test/nft/GoerliForkSetup.t.sol';
+import {GoerliFork} from '@test/nft/goerli/GoerliFork.t.sol';
 import {GoerliParams, WSTETH, ARB, CBETH, RETH, MAGIC} from '@script/GoerliParams.s.sol';
 import {GOERLI_WETH, GOERLI_GOV_TOKEN} from '@script/Registry.s.sol';
 import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
 import {SafeERC20} from '@openzeppelin/token/ERC20/utils/SafeERC20.sol';
 import {Vault721} from '@contracts/proxies/Vault721.sol';
 
-// forge t --fork-url $URL --match-contract NFTFunctionality -vvv
+// forge t --fork-url $URL --match-contract NFTGoerli -vvv
 
-contract NFTFunctionality is GoerliForkSetup {
+contract NFTGoerli is GoerliFork {
   using SafeERC20 for IERC20;
 
   function test_openSafe_WETH() public {
