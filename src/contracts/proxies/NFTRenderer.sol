@@ -309,8 +309,8 @@ contract NFTRenderer {
    * @dev converts timestamp to human readable date and time format
    */
   function _formatDateTime(uint256 timestamp) internal pure returns (string memory) {
-    (uint256 year, uint256 month, uint256 day, uint256 hour, uint256 minute, uint256 second) = timestamp
-      .timestampToDateTime();
+    (uint256 year, uint256 month, uint256 day, uint256 hour, uint256 minute, uint256 second) =
+      timestamp.timestampToDateTime();
 
     string memory _month;
     if (month == 1) _month = 'Jan';
@@ -326,19 +326,9 @@ contract NFTRenderer {
     else if (month == 11) _month = 'Nov';
     else _month = 'Dec';
 
-    return
-      string.concat(
-        _month,
-        ' ',
-        day.toString(),
-        ', ',
-        year.toString(),
-        ' ',
-        _formatTime(hour),
-        ':',
-        _formatTime(minute),
-        ' UTC'
-      );
+    return string.concat(
+      _month, ' ', day.toString(), ', ', year.toString(), ' ', _formatTime(hour), ':', _formatTime(minute), ' UTC'
+    );
   }
 
   /**
