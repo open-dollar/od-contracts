@@ -75,7 +75,7 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
   // --- Init ---
 
   /**
-   * @param  _safeEngine Address of the  SAFEEngine
+   * @param  _safeEngine Address of the SAFEEngine
    * @param  _surplusAuctionHouse Address of the SurplusAuctionHouse
    * @param  _debtAuctionHouse Address of the DebtAuctionHouse
    * @param  _accEngineParams Initial valid AccountingEngine parameters struct
