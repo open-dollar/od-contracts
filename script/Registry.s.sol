@@ -1,61 +1,70 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-// set this before mainnet deployment
-address constant DAO_SAFE = address(0);
-address constant TIMELOCK_ADMIN = address(0);
-uint256 constant AIRDROP_AMOUNT = 10_000e18;
-uint256 constant MIN_DELAY = 3 days;
+// --- ARB Goerli ---
 
-// for Goerli, add oracleForTestnet auth
-address constant MOCK_GOV = 0x37c5B029f9c3691B3d47cb024f84E5E257aEb0BB;
+// Deployment params
 uint256 constant MIN_DELAY_GOERLI = 1 minutes;
+uint256 constant ORACLE_INTERVAL_TEST = 1 minutes;
 
+// Token contracts
+address constant GOERLI_WETH = 0xEe01c0CD76354C383B8c7B4e65EA88D00B06f36f;
+address constant GOERLI_GOV_TOKEN = 0x0Ed89D4655b2fE9f99EaDC3116b223527165452D;
+
+// Members for governance
 address constant H = 0x37c5B029f9c3691B3d47cb024f84E5E257aEb0BB;
 address constant J = 0xcb81A76a565aC4870EDA5B0e32c5a0D2ec734174;
 address constant P = 0xC295763Eed507d4A0f8B77241c03dd3354781a15;
 
-uint256 constant ORACLE_INTERVAL_TEST = 1 minutes;
-uint256 constant ORACLE_INTERVAL_PROD = 1 hours;
+// Chainlink feeds
+address constant GOERLI_CHAINLINK_ETH_USD_FEED = 0x62CAe0FA2da220f43a51F86Db2EDb36DcA9A5A08;
+address constant GOERLI_CHAINLINK_ARB_USD_FEED = 0x2eE9BFB2D319B31A573EA15774B755715988E99D;
 
-address constant UNISWAP_V3_FACTORY = 0x1F98431c8aD98523631AE4a59f267346ea31F984;
+// Liquidity pools
 address constant GOERLI_UNISWAP_V3_FACTORY = 0x4893376342d5D7b3e31d4184c08b265e5aB2A3f6;
-
-address constant CAMELOT_V2_FACTORY = 0x6EcCab422D763aC031210895C81787E87B43A652;
-address constant CAMELOT_V3_FACTORY = 0x1a3c9B1d2F0529D97f2afC5136Cc23e58f1FD35B;
-
 address constant GOERLI_CAMELOT_V2_FACTORY = 0x659fd9F4536f540bd051c2739Fc8b8e9355E5042;
-
 address constant GOERLI_CAMELOT_V3_FACTORY = 0x5Cd40c7E21A15E7FC2503Fffd77cF70c60628F6C; // AlgebraFactory
 address constant GOERLI_CAMELOT_V3_POOLDEPLOYER = 0xe0e840C629402AB33433D00937Fe065634b1B1Af; // AlgebraPoolDeployer
 
-// --- ARB Goerli ---
-address constant ARB_GOERLI_CHAINLINK_ETH_USD_FEED = 0x62CAe0FA2da220f43a51F86Db2EDb36DcA9A5A08; // ETH to USD
-address constant ARB_GOERLI_CHAINLINK_FTRG_USD_FEED = 0x2eE9BFB2D319B31A573EA15774B755715988E99D; // ARB to USD
-address constant ARB_GOERLI_CHAINLINK_BTC_USD_FEED = 0x6550bc2301936011c1334555e62A87705A81C12C; // ARB to USD
-
-address constant ARB_GOERLI_WETH = 0xEe01c0CD76354C383B8c7B4e65EA88D00B06f36f;
-address constant ARB_GOERLI_GOV_TOKEN = 0x0Ed89D4655b2fE9f99EaDC3116b223527165452D;
-
 // --- ARB Mainnet ---
-address constant ARB_GOV = 0x912CE59144191C1204E64559FE8253a0e49E6548;
-address constant ARB_WETH = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
-address constant ARB_WSTETH = 0x5979D7b546E38E414F7E9822514be443A4800529;
-address constant ARB_WBTC = 0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f;
-address constant ARB_RETH = 0xB766039cc6DB368759C1E56B79AFfE831d0Cc507;
 
+// Deployment params
+address constant DAO_SAFE = address(0); // set this before mainnet deployment
+address constant TIMELOCK_ADMIN = address(0); // should be zero
+uint256 constant AIRDROP_AMOUNT = 10_000e18; // 10k tokens
+uint256 constant MIN_DELAY = 3 days; // timelock for governor
+uint256 constant ORACLE_INTERVAL_PROD = 1 hours;
+
+// Token contracts (all 18 decimals)
+address constant ARBITRUM_WSTETH = 0x5979D7b546E38E414F7E9822514be443A4800529;
+address constant ARBITRUM_ARB = 0x912CE59144191C1204E64559FE8253a0e49E6548;
+address constant ARBITRUM_CBETH = 0x1DEBd73E752bEaF79865Fd6446b0c970EaE7732f;
+address constant ARBITRUM_RETH = 0xEC70Dcb4A1EFa46b8F2D97C310C9c4790ba5ffA8;
+address constant ARBITRUM_MAGIC = 0x539bdE0d7Dbd336b79148AA742883198BBF60342;
+
+// Chainlink feeds w/ rating
 // to USD
-address constant ARB_CHAINLINK_ARB_USD_FEED = 0xb2A824043730FE05F3DA2efaFa1CBbe83fa548D6;
-address constant ARB_CHAINLINK_ETH_USD_FEED = 0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612;
-address constant ARB_CHAINLINK_WBTC_USD_FEED = 0xd0C7101eACbB49F3deCcCc166d238410D6D46d57;
-
+address constant CHAINLINK_ARB_USD_FEED = 0xb2A824043730FE05F3DA2efaFa1CBbe83fa548D6; // green
+address constant CHAINLINK_ETH_USD_FEED = 0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612; // green
+address constant CHAINLINK_MAGIC_USD_FEED = 0x47E55cCec6582838E173f252D08Afd8116c2202d; // yellow
 // to ETH
-address constant ARB_CHAINLINK_WSTETH_ETH_FEED = 0xB1552C5e96B312d0Bf8b554186F846C40614a540;
-address constant ARB_CHAINLINK_RETH_ETH_FEED = 0xF3272CAfe65b190e76caAF483db13424a3e23dD2; // blue rating; not for general use
+address constant CHAINLINK_WSTETH_ETH_FEED = 0xb523AE262D20A936BC152e6023996e46FDC2A95D; // green
+address constant CHAINLINK_CBETH_ETH_FEED = 0xa668682974E3f121185a3cD94f00322beC674275; // green
+address constant CHAINLINK_RETH_ETH_FEED = 0xF3272CAfe65b190e76caAF483db13424a3e23dD2; // blue
+
+// Liquidity pools
+address constant UNISWAP_V3_FACTORY = 0x1F98431c8aD98523631AE4a59f267346ea31F984;
+address constant CAMELOT_V2_FACTORY = 0x6EcCab422D763aC031210895C81787E87B43A652;
+address constant CAMELOT_V3_FACTORY = 0x1a3c9B1d2F0529D97f2afC5136Cc23e58f1FD35B;
+
+// for oracle test
+address constant WETH = address(0);
+address constant WBTC = address(0);
+
+// --- OP Mainnet ---
 
 // TODO: Remove & update oracle tests
 // KEEP TO PASS ORACLE TESTS UNTIL NOT NEEDED
-// --- OP Mainnet ---
 address constant OP_WETH = 0x4200000000000000000000000000000000000006;
 address constant OP_OPTIMISM = 0x4200000000000000000000000000000000000042;
 address constant OP_WSTETH = 0x1F32b1c2345538c0c6f582fCB022739c4A194Ebb;

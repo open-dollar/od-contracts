@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import '@script/Contracts.s.sol';
-import {Params, ParamChecker, HAI, ETH_A, JOB_REWARD} from '@script/Params.s.sol';
+import {Params, ParamChecker, OD, ETH_A, JOB_REWARD} from '@script/Params.s.sol';
 import '@script/Registry.s.sol';
 
 abstract contract Common is Contracts, Params {

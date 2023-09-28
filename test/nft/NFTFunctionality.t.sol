@@ -2,8 +2,8 @@
 pragma solidity 0.8.19;
 
 import {GoerliForkSetup} from '@test/nft/GoerliForkSetup.t.sol';
-import {GoerliParams, WETH, FTRG, WBTC, STONES, TOTEM} from '@script/GoerliParams.s.sol';
-import {ARB_GOERLI_WETH, ARB_GOERLI_GOV_TOKEN} from '@script/Registry.s.sol';
+import {GoerliParams, WSTETH, ARB, CBETH, RETH, MAGIC} from '@script/GoerliParams.s.sol';
+import {GOERLI_WETH, GOERLI_GOV_TOKEN} from '@script/Registry.s.sol';
 import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
 import {SafeERC20} from '@openzeppelin/token/ERC20/utils/SafeERC20.sol';
 import {Vault721} from '@contracts/proxies/Vault721.sol';
@@ -16,7 +16,7 @@ contract NFTFunctionality is GoerliForkSetup {
   function test_openSafe_WETH() public {
     vm.startPrank(alice);
 
-    uint256 safeId = openSafe(WETH, aliceProxy);
+    uint256 safeId = openSafe(WSTETH, aliceProxy);
     assertEq(safeId, currSafeId);
 
     address ownerOfToken = Vault721(vault721).ownerOf(safeId);
@@ -24,10 +24,10 @@ contract NFTFunctionality is GoerliForkSetup {
     vm.stopPrank();
   }
 
-  function test_openSafe_FTRG() public {
+  function test_openSafe_ARB() public {
     vm.startPrank(alice);
 
-    uint256 safeId = openSafe(FTRG, aliceProxy);
+    uint256 safeId = openSafe(ARB, aliceProxy);
     assertEq(safeId, currSafeId);
 
     address ownerOfToken = Vault721(vault721).ownerOf(safeId);
@@ -38,55 +38,55 @@ contract NFTFunctionality is GoerliForkSetup {
   function test_openSafe_lockCollateral_WETH() public {
     vm.startPrank(alice);
 
-    uint256 safeId = openSafe(WETH, aliceProxy);
+    uint256 safeId = openSafe(WSTETH, aliceProxy);
     assertEq(safeId, currSafeId);
 
-    IERC20(ARB_GOERLI_WETH).approve(aliceProxy, type(uint256).max);
-    depositCollatAndGenDebt(WETH, currSafeId, 0.0001 ether, 0, aliceProxy);
+    IERC20(GOERLI_WETH).approve(aliceProxy, type(uint256).max);
+    depositCollatAndGenDebt(WSTETH, currSafeId, 0.0001 ether, 0, aliceProxy);
     vm.stopPrank();
   }
 
-  function test_openSafe_lockCollateral_FTRG() public {
+  function test_openSafe_lockCollateral_ARB() public {
     vm.startPrank(alice);
 
-    uint256 safeId = openSafe(FTRG, aliceProxy);
+    uint256 safeId = openSafe(ARB, aliceProxy);
     assertEq(safeId, currSafeId);
 
-    IERC20(ARB_GOERLI_GOV_TOKEN).approve(aliceProxy, type(uint256).max);
-    depositCollatAndGenDebt(FTRG, currSafeId, 1 ether, 0, aliceProxy);
+    IERC20(GOERLI_GOV_TOKEN).approve(aliceProxy, type(uint256).max);
+    depositCollatAndGenDebt(ARB, currSafeId, 1 ether, 0, aliceProxy);
     vm.stopPrank();
   }
 
   function test_openSafe_lockCollateral_generateDebt_WETH() public {
     vm.startPrank(alice);
 
-    uint256 safeId = openSafe(WETH, aliceProxy);
+    uint256 safeId = openSafe(WSTETH, aliceProxy);
     assertEq(safeId, currSafeId);
 
-    IERC20(ARB_GOERLI_WETH).approve(aliceProxy, type(uint256).max);
-    depositCollatAndGenDebt(WETH, currSafeId, 0.3 ether, 150 ether, aliceProxy);
+    IERC20(GOERLI_WETH).approve(aliceProxy, type(uint256).max);
+    depositCollatAndGenDebt(WSTETH, currSafeId, 0.3 ether, 150 ether, aliceProxy);
     vm.stopPrank();
   }
 
-  function test_openSafe_lockCollateral_generateDebt_FTRG() public {
+  function test_openSafe_lockCollateral_generateDebt_ARB() public {
     vm.startPrank(alice);
 
-    uint256 safeId = openSafe(FTRG, aliceProxy);
+    uint256 safeId = openSafe(ARB, aliceProxy);
     assertEq(safeId, currSafeId);
 
-    IERC20(ARB_GOERLI_GOV_TOKEN).approve(aliceProxy, type(uint256).max);
-    depositCollatAndGenDebt(FTRG, currSafeId, 125 ether, 75 ether, aliceProxy);
+    IERC20(GOERLI_GOV_TOKEN).approve(aliceProxy, type(uint256).max);
+    depositCollatAndGenDebt(ARB, currSafeId, 125 ether, 75 ether, aliceProxy);
     vm.stopPrank();
   }
 
   function test_openSafe_lockCollateral_transfer_WETH() public {
     vm.startPrank(alice);
 
-    uint256 safeId = openSafe(WETH, aliceProxy);
+    uint256 safeId = openSafe(WSTETH, aliceProxy);
     assertEq(safeId, currSafeId);
 
-    IERC20(ARB_GOERLI_WETH).approve(aliceProxy, type(uint256).max);
-    depositCollatAndGenDebt(WETH, currSafeId, 0.0001 ether, 0, aliceProxy);
+    IERC20(GOERLI_WETH).approve(aliceProxy, type(uint256).max);
+    depositCollatAndGenDebt(WSTETH, currSafeId, 0.0001 ether, 0, aliceProxy);
 
     uint256 nftBalAliceBefore = Vault721(vault721).balanceOf(alice);
     assertEq(nftBalAliceBefore, 2);
@@ -104,14 +104,14 @@ contract NFTFunctionality is GoerliForkSetup {
     assertEq(_safes[0], currSafeId);
   }
 
-  function test_openSafe_lockCollateral_generateDebt_transfer_FTRG() public {
+  function test_openSafe_lockCollateral_generateDebt_transfer_ARB() public {
     vm.startPrank(alice);
 
-    uint256 safeId = openSafe(FTRG, aliceProxy);
+    uint256 safeId = openSafe(ARB, aliceProxy);
     assertEq(safeId, currSafeId);
 
-    IERC20(ARB_GOERLI_GOV_TOKEN).approve(aliceProxy, type(uint256).max);
-    depositCollatAndGenDebt(FTRG, currSafeId, 125 ether, 75 ether, aliceProxy);
+    IERC20(GOERLI_GOV_TOKEN).approve(aliceProxy, type(uint256).max);
+    depositCollatAndGenDebt(ARB, currSafeId, 125 ether, 75 ether, aliceProxy);
 
     uint256 nftBalAliceBefore = Vault721(vault721).balanceOf(alice);
     assertEq(nftBalAliceBefore, 2);

@@ -8,14 +8,14 @@ import {TimelockController} from '@openzeppelin/governance/TimelockController.so
 import {H, J, P} from '@script/Registry.s.sol';
 
 // BROADCAST
-// source .env && forge script DeployGovernor --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_GOERLI_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
+// source .env && forge script DeployGovernor --with-gas-price 2000000000 -vvvvv --rpc-url $GOERLI_RPC --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY
 
 // SIMULATE
-// source .env && forge script DeployGovernor --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_GOERLI_RPC
+// source .env && forge script DeployGovernor --with-gas-price 2000000000 -vvvvv --rpc-url $GOERLI_RPC
 
 contract DeployGovernor is GoerliContracts, Script {
   function run() public {
-    vm.startBroadcast(vm.envUint('ARB_GOERLI_PK'));
+    vm.startBroadcast(vm.envUint('GOERLI_PK'));
     address[] memory members = new address[](3);
     members[0] = H;
     members[1] = J;

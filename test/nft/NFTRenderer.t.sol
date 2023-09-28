@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import {Strings} from '@openzeppelin/utils/Strings.sol';
 import {GoerliForkSetup} from '@test/nft/GoerliForkSetup.t.sol';
-import {ARB_GOERLI_WETH, ARB_GOERLI_GOV_TOKEN} from '@script/Registry.s.sol';
+import {GOERLI_WETH, GOERLI_GOV_TOKEN} from '@script/Registry.s.sol';
 import {Vault721} from '@contracts/proxies/Vault721.sol';
 import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';

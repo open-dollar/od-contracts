@@ -37,6 +37,7 @@ import {CamelotRelayer} from '@contracts/oracles/CamelotRelayer.sol';
 
 // --- Testnet contracts ---
 import {MintableERC20} from '@contracts/for-test/MintableERC20.sol';
+import {MintableVoteERC20} from '@contracts/for-test/MintableVoteERC20.sol';
 import {DeviatedOracle} from '@contracts/for-test/DeviatedOracle.sol';
 import {HardcodedOracle} from '@contracts/for-test/HardcodedOracle.sol';
 

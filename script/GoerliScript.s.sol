@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import '@script/Contracts.s.sol';
 import {Script, console} from 'forge-std/Script.sol';
-import {Params, ParamChecker, WETH, FTRG} from '@script/Params.s.sol';
+import {Params, ParamChecker, WSTETH, ARB} from '@script/Params.s.sol';
 import {Common} from '@script/Common.s.sol';
 import {GoerliDeployment} from '@script/GoerliDeployment.s.sol';
 import '@script/Registry.s.sol';
@@ -16,7 +16,7 @@ import '@script/Registry.s.sol';
  */
 contract GoerliScript is GoerliDeployment, Common, Script {
   function setUp() public virtual {
-    _governorPK = uint256(vm.envBytes32('ARB_GOERLI_GOVERNOR_PK'));
+    _governorPK = uint256(vm.envBytes32('GOERLI_GOVERNOR_PK'));
     chainId = 421_613;
   }
 
@@ -39,7 +39,7 @@ contract GoerliScript is GoerliDeployment, Common, Script {
 
 contract GoerliDelegate is GoerliDeployment, Common, Script {
   function setUp() public virtual {
-    _governorPK = uint256(vm.envBytes32('ARB_GOERLI_GOVERNOR_PK'));
+    _governorPK = uint256(vm.envBytes32('GOERLI_GOVERNOR_PK'));
     chainId = 421_613;
   }
 

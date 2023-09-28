@@ -2,9 +2,9 @@
 pragma solidity 0.8.19;
 
 import {HaiTest} from '@test/utils/HaiTest.t.sol';
-import {HAI, OD_INITIAL_PRICE, ETH_A} from '@script/Params.s.sol';
+import {OD, OD_INITIAL_PRICE, ETH_A} from '@script/Params.s.sol';
 import {Deploy} from '@script/Deploy.s.sol';
-import {TestParams, WETH, TKN, TEST_ETH_PRICE, TEST_TKN_PRICE} from '@test/e2e/TestParams.t.sol';
+import {TestParams, WSTETH, TKN, TEST_ETH_PRICE, TEST_TKN_PRICE} from '@test/e2e/TestParams.t.sol';
 import {ERC20ForTest} from '@test/mocks/ERC20ForTest.sol';
 import {OracleForTest} from '@test/mocks/OracleForTest.sol';
 import {DelayedOracleForTest} from '@test/mocks/DelayedOracleForTest.sol';
@@ -19,7 +19,7 @@ uint256 constant COLLATERAL_PRICE = 100e18;
 
 uint256 constant COLLAT = 1e18;
 uint256 constant DEBT = 500e18; // LVT 50%
-uint256 constant TEST_ETH_PRICE_DROP = 100e18; // 1 ETH = 100 HAI
+uint256 constant TEST_ETH_PRICE_DROP = 100e18; // 1 ETH = 100 OD
 
 /**
  * @title  DeployForTest
@@ -27,20 +27,20 @@ uint256 constant TEST_ETH_PRICE_DROP = 100e18; // 1 ETH = 100 HAI
  */
 contract DeployForTest is TestParams, Deploy {
   constructor() {
-    // NOTE: creates fork in order to have WETH at 0x4200000000000000000000000000000000000006
+    // NOTE: creates fork in order to have WSTETH at 0x4200000000000000000000000000000000000006
     vm.createSelectFork(vm.rpcUrl('mainnet'));
   }
 
   function setupEnvironment() public virtual override {
     WETH9 weth = WETH9(payable(0x4200000000000000000000000000000000000006));
 
-    systemCoinOracle = new OracleForTest(OD_INITIAL_PRICE); // 1 HAI = 1 USD
+    systemCoinOracle = new OracleForTest(OD_INITIAL_PRICE); // 1 OD = 1 USD
 
     // TODO: fix incorrect conversion
     // delayedOracle[ETH_A] = new OracleForTest(TEST_ETH_PRICE); // 1 ETH = 2000 USD
     // delayedOracle[TKN] = new OracleForTest(TEST_TKN_PRICE); // 1 TKN = 1 USD
 
-    collateral[WETH] = IERC20Metadata(address(weth));
+    collateral[WSTETH] = IERC20Metadata(address(weth));
     collateral[TKN] = new ERC20ForTest();
 
     delayedOracle['TKN-A'] = new DelayedOracleForTest(COLLATERAL_PRICE, address(0));
@@ -53,7 +53,7 @@ contract DeployForTest is TestParams, Deploy {
     collateral['TKN-C'] = new ERC20ForTest();
     collateral['TKN-8D'] = new MintableERC20('8 Decimals TKN', 'TKN', 8);
 
-    collateralTypes.push(WETH);
+    collateralTypes.push(WSTETH);
     collateralTypes.push(TKN);
     collateralTypes.push('TKN-A');
     collateralTypes.push('TKN-B');
