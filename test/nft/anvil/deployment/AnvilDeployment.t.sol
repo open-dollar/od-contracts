@@ -4,6 +4,7 @@ pragma solidity 0.8.19;
 import '@script/Contracts.s.sol';
 import {GoerliParams, WSTETH, ARB, CBETH, RETH, MAGIC} from '@script/GoerliParams.s.sol';
 import {AnvilContracts} from '@test/nft/anvil/deployment/AnvilContracts.t.sol';
+import {MintableERC20} from '@contracts/for-test/MintableERC20.sol';
 
 abstract contract AnvilDeployment is Contracts, GoerliParams, AnvilContracts {
   /**
@@ -27,6 +28,12 @@ abstract contract AnvilDeployment is Contracts, GoerliParams, AnvilContracts {
     collateral[CBETH] = IERC20Metadata(MintableERC20_8_Address);
     collateral[RETH] = IERC20Metadata(MintableERC20_9_Address);
     collateral[MAGIC] = IERC20Metadata(MintableERC20_10_Address);
+
+    erc20[ARB] = MintableERC20(MintableVoteERC20_Address);
+    erc20[WSTETH] = MintableERC20(MintableERC20_7_Address);
+    erc20[CBETH] = MintableERC20(MintableERC20_8_Address);
+    erc20[RETH] = MintableERC20(MintableERC20_9_Address);
+    erc20[MAGIC] = MintableERC20(MintableERC20_10_Address);
 
     systemCoin = SystemCoin(SystemCoin_Address);
     protocolToken = ProtocolToken(ProtocolToken_Address);
@@ -118,5 +125,7 @@ abstract contract AnvilDeployment is Contracts, GoerliParams, AnvilContracts {
     delayedOracle[CBETH] = IDelayedOracle(DelayedOracleChild_22_Address);
     delayedOracle[RETH] = IDelayedOracle(DelayedOracleChild_23_Address);
     delayedOracle[MAGIC] = IDelayedOracle(DelayedOracleChild_24_Address);
+
+    // --- tokens ---
   }
 }

@@ -3,6 +3,7 @@ pragma solidity 0.8.19;
 
 import 'forge-std/Test.sol';
 import {AnvilDeployment} from '@test/nft/anvil/deployment/AnvilDeployment.t.sol';
+import {WSTETH, ARB, CBETH, RETH, MAGIC} from '@script/GoerliParams.s.sol';
 
 // --- Proxy Contracts ---
 import {BasicActions, CommonActions} from '@contracts/proxies/actions/BasicActions.sol';
@@ -39,36 +40,76 @@ contract AnvilFork is AnvilDeployment, Test {
   address public constant BOB = 0x70997970C51812dc3A010C7d01b50e0d17dc79C8;
   address public constant CASSY = 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC;
 
+  uint256 public constant MINT_AMOUNT = 1_000_000_000 * 1 ether;
+
   address public aProxy;
   address public bProxy;
   address public cProxy;
 
-  mapping(address publicKey => uint256 privateKey) public keyPairs;
-
   function setUp() public virtual {
-    labelConst();
     deployProxies();
-    labelProxies();
+    labelVars();
+    mintCollateral();
+    createSafes();
   }
 
-  function labelConst() public {
-    vm.label(ALICE, 'Alice');
-    vm.label(BOB, 'Bob');
-    vm.label(CASSY, 'Cassy');
-  }
-
+  // setup functions
   function deployProxies() public {
     aProxy = deployOrFind(ALICE);
     bProxy = deployOrFind(BOB);
     cProxy = deployOrFind(CASSY);
   }
 
-  function labelProxies() public {
+  function labelVars() public {
+    vm.label(ALICE, 'Alice');
+    vm.label(BOB, 'Bob');
+    vm.label(CASSY, 'Cassy');
     vm.label(aProxy, 'A-proxy');
     vm.label(bProxy, 'B-proxy');
     vm.label(cProxy, 'C-proxy');
   }
 
+  function createSafes() public {
+    vm.startPrank(ALICE);
+    uint256 aSafe = openSafe(WSTETH, aProxy);
+    vm.stopPrank();
+    vm.startPrank(BOB);
+    uint256 bSafe = openSafe(WSTETH, bProxy);
+    vm.stopPrank();
+    vm.startPrank(CASSY);
+    uint256 cSafe = openSafe(WSTETH, cProxy);
+    vm.stopPrank();
+
+    assertEq(aSafe, 1);
+    assertEq(bSafe, 2);
+    assertEq(cSafe, 3);
+  }
+
+  function mintCollateral() public {
+    address[] memory users = new address[](3);
+    users[0] = ALICE;
+    users[1] = BOB;
+    users[2] = CASSY;
+
+    for (uint256 i = 0; i < users.length; i++) {
+      address proxy = vault721.getProxy(users[i]);
+      erc20[ARB].mint(users[i], MINT_AMOUNT);
+      erc20[WSTETH].mint(users[i], MINT_AMOUNT);
+      erc20[CBETH].mint(users[i], MINT_AMOUNT);
+      erc20[RETH].mint(users[i], MINT_AMOUNT);
+      erc20[MAGIC].mint(users[i], MINT_AMOUNT);
+
+      vm.startPrank(users[i]);
+      erc20[ARB].approve(proxy, MINT_AMOUNT);
+      erc20[WSTETH].approve(proxy, MINT_AMOUNT);
+      erc20[CBETH].approve(proxy, MINT_AMOUNT);
+      erc20[RETH].approve(proxy, MINT_AMOUNT);
+      erc20[MAGIC].approve(proxy, MINT_AMOUNT);
+      vm.stopPrank();
+    }
+  }
+
+  // helper functions
   function deployOrFind(address owner) public returns (address) {
     address proxy = vault721.getProxy(owner);
     if (proxy == address(0)) {
@@ -82,5 +123,25 @@ contract AnvilFork is AnvilDeployment, Test {
     bytes memory payload = abi.encodeWithSelector(basicActions.openSAFE.selector, address(safeManager), _cType, _proxy);
     bytes memory safeData = ODProxy(_proxy).execute(address(basicActions), payload);
     _safeId = abi.decode(safeData, (uint256));
+  }
+
+  function depositCollatAndGenDebt(
+    bytes32 _cType,
+    uint256 _safeId,
+    uint256 _collatAmount,
+    uint256 _deltaWad,
+    address _proxy
+  ) public {
+    bytes memory payload = abi.encodeWithSelector(
+      basicActions.lockTokenCollateralAndGenerateDebt.selector,
+      address(safeManager),
+      address(taxCollector),
+      address(collateralJoin[_cType]),
+      address(coinJoin),
+      _safeId,
+      _collatAmount,
+      _deltaWad
+    );
+    ODProxy(_proxy).execute(address(basicActions), payload);
   }
 }

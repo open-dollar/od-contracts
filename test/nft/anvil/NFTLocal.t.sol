@@ -12,14 +12,20 @@ import {Vault721} from '@contracts/proxies/Vault721.sol';
 contract NFTAnvil is AnvilFork {
   using SafeERC20 for IERC20;
 
-  function test_openSafe_WETH() public {
+  // fuzz tests set to 256 runs
+  function test_depositCollateral(uint256 amount) public {
+    vm.assume(amount <= MINT_AMOUNT);
+
     vm.startPrank(ALICE);
+    depositCollatAndGenDebt(WSTETH, 1, amount, 0, aProxy);
+    vm.stopPrank();
 
-    uint256 safeId = openSafe(WSTETH, aProxy);
-    assertEq(safeId, 1);
+    vm.startPrank(BOB);
+    depositCollatAndGenDebt(WSTETH, 2, amount, 0, bProxy);
+    vm.stopPrank();
 
-    address ownerOfToken = Vault721(vault721).ownerOf(safeId);
-    assertEq(ownerOfToken, ALICE);
+    vm.startPrank(CASSY);
+    depositCollatAndGenDebt(WSTETH, 3, amount, 0, cProxy);
     vm.stopPrank();
   }
 }
