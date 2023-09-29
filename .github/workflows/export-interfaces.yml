@@ -32,22 +32,19 @@ jobs:
       - name: Build project and generate out directory
         run: yarn build
 
-      - name: Add typechain to install dependencies
-        run: yarn add typechain @typechain/web3-v1 @typechain/ethers-v6
-
       - name: Run Interface Exporter Action
         uses: defi-wonderland/interface-exporter-action@v1.1.1
         with:
           out_dir: 'out'
-          typing_type: 'ethers-v6'
-          package_name: '@hai-on-op/abis'
-          destination_dir: 'abis-package'
+          typing_type: 'contracts'
+          package_name: '@hai-on-op/interfaces'
+          destination_dir: 'interfaces-package'
 
       - name: Generate canary tag
         if: github.ref_name != 'main'
-        run: cd abis-package && yarn version --new-version "0.0.0-${GITHUB_SHA::8}" --no-git-tag-version
+        run: cd interfaces-package && yarn version --new-version "0.0.0-${GITHUB_SHA::8}" --no-git-tag-version
       
       - name: Publish
-        run: cd abis-package && npm publish --access public
+        run: cd interfaces-package && npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
