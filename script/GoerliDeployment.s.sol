@@ -120,9 +120,9 @@ abstract contract GoerliDeployment is Contracts, GoerliParams, GoerliContracts {
     systemCoinOracle = IBaseOracle(DenominatedOracleChild_OD_Address);
     delayedOracle[ARB] = IDelayedOracle(DelayedOracleChild_ARB_Address);
     delayedOracle[WSTETH] = IDelayedOracle(DelayedOracleChild_WSTETH_Address);
-    delayedOracle[CBETH] = IDelayedOracle(DelayedOracleChild_WBTC_Address);
-    delayedOracle[RETH] = IDelayedOracle(DelayedOracleChild_STONES_Address);
-    delayedOracle[MAGIC] = IDelayedOracle(DelayedOracleChild_TOTEM_Address);
+    delayedOracle[CBETH] = IDelayedOracle(DelayedOracleChild_CBETH_Address);
+    delayedOracle[RETH] = IDelayedOracle(DelayedOracleChild_RETH_Address);
+    delayedOracle[MAGIC] = IDelayedOracle(DelayedOracleChild_MAGIC_Address);
 
     camelotV3Factory = ICamelotV3Factory(GOERLI_CAMELOT_V3_FACTORY);
   }
