@@ -5,6 +5,10 @@ import 'forge-std/Test.sol';
 import {AnvilDeployment} from '@test/nft/anvil/deployment/AnvilDeployment.t.sol';
 import {WSTETH, ARB, CBETH, RETH, MAGIC} from '@script/GoerliParams.s.sol';
 
+// --- Core Contracts ---
+import {SAFEEngine} from '@contracts/SAFEEngine.sol';
+import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
+
 // --- Proxy Contracts ---
 import {BasicActions, CommonActions} from '@contracts/proxies/actions/BasicActions.sol';
 import {DebtBidActions} from '@contracts/proxies/actions/DebtBidActions.sol';
@@ -35,78 +39,83 @@ import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
  */
 
 contract AnvilFork is AnvilDeployment, Test {
+  uint256 public constant MINT_AMOUNT = 1_000_000 * 1 ether;
+
   // Anvil wallets w/ 10_000 ether
   address public constant ALICE = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266; // deployer
   address public constant BOB = 0x70997970C51812dc3A010C7d01b50e0d17dc79C8;
   address public constant CASSY = 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC;
+  address public constant DAN = 0x90F79bf6EB2c4f870365E785982E1f101E93b906;
+  address public constant ERICA = 0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65;
 
-  uint256 public constant MINT_AMOUNT = 1_000_000_000 * 1 ether;
+  uint256 public totalVaults;
+  uint256 public debtCeiling;
 
-  address public aProxy;
-  address public bProxy;
-  address public cProxy;
+  mapping(address proxy => mapping(bytes32 cType => uint256 id)) public vaultIds;
+
+  address[3] public users;
+  address[2] public newUsers;
+  address[3] public proxies;
+  bytes32[5] public cTypes;
 
   function setUp() public virtual {
+    users[0] = ALICE;
+    users[1] = BOB;
+    users[2] = CASSY;
+
+    newUsers[0] = DAN;
+    newUsers[1] = ERICA;
+
+    cTypes[0] = ARB;
+    cTypes[1] = WSTETH;
+    cTypes[2] = CBETH;
+    cTypes[3] = RETH;
+    cTypes[4] = MAGIC;
+
     deployProxies();
     labelVars();
-    mintCollateral();
-    createSafes();
+    mintCollateralAndOpenSafes();
+
+    debtCeiling = setDebtCeiling();
   }
 
   // setup functions
   function deployProxies() public {
-    aProxy = deployOrFind(ALICE);
-    bProxy = deployOrFind(BOB);
-    cProxy = deployOrFind(CASSY);
+    proxies[0] = deployOrFind(ALICE);
+    proxies[1] = deployOrFind(BOB);
+    proxies[2] = deployOrFind(CASSY);
   }
 
   function labelVars() public {
     vm.label(ALICE, 'Alice');
     vm.label(BOB, 'Bob');
     vm.label(CASSY, 'Cassy');
-    vm.label(aProxy, 'A-proxy');
-    vm.label(bProxy, 'B-proxy');
-    vm.label(cProxy, 'C-proxy');
+    vm.label(proxies[0], 'A-proxy');
+    vm.label(proxies[1], 'B-proxy');
+    vm.label(proxies[2], 'C-proxy');
   }
 
-  function createSafes() public {
-    vm.startPrank(ALICE);
-    uint256 aSafe = openSafe(WSTETH, aProxy);
-    vm.stopPrank();
-    vm.startPrank(BOB);
-    uint256 bSafe = openSafe(WSTETH, bProxy);
-    vm.stopPrank();
-    vm.startPrank(CASSY);
-    uint256 cSafe = openSafe(WSTETH, cProxy);
-    vm.stopPrank();
-
-    assertEq(aSafe, 1);
-    assertEq(bSafe, 2);
-    assertEq(cSafe, 3);
-  }
-
-  function mintCollateral() public {
-    address[] memory users = new address[](3);
-    users[0] = ALICE;
-    users[1] = BOB;
-    users[2] = CASSY;
-
+  function mintCollateralAndOpenSafes() public {
     for (uint256 i = 0; i < users.length; i++) {
-      address proxy = vault721.getProxy(users[i]);
-      erc20[ARB].mint(users[i], MINT_AMOUNT);
-      erc20[WSTETH].mint(users[i], MINT_AMOUNT);
-      erc20[CBETH].mint(users[i], MINT_AMOUNT);
-      erc20[RETH].mint(users[i], MINT_AMOUNT);
-      erc20[MAGIC].mint(users[i], MINT_AMOUNT);
+      address user = users[i];
+      address proxy = vault721.getProxy(user);
 
-      vm.startPrank(users[i]);
-      erc20[ARB].approve(proxy, MINT_AMOUNT);
-      erc20[WSTETH].approve(proxy, MINT_AMOUNT);
-      erc20[CBETH].approve(proxy, MINT_AMOUNT);
-      erc20[RETH].approve(proxy, MINT_AMOUNT);
-      erc20[MAGIC].approve(proxy, MINT_AMOUNT);
-      vm.stopPrank();
+      for (uint256 j = 0; j < cTypes.length; j++) {
+        bytes32 cType = cTypes[j];
+        totalVaults++;
+
+        vm.startPrank(user);
+        erc20[cType].mint(MINT_AMOUNT);
+        erc20[cType].approve(proxy, MINT_AMOUNT);
+        vaultIds[proxy][cType] = openSafe(cType, proxy);
+        vm.stopPrank();
+      }
     }
+  }
+
+  function setDebtCeiling() public view returns (uint256 _debtCeiling) {
+    ISAFEEngine.SAFEEngineParams memory params = safeEngine.params();
+    _debtCeiling = params.safeDebtCeiling;
   }
 
   // helper functions
@@ -140,6 +149,18 @@ contract AnvilFork is AnvilDeployment, Test {
       address(coinJoin),
       _safeId,
       _collatAmount,
+      _deltaWad
+    );
+    ODProxy(_proxy).execute(address(basicActions), payload);
+  }
+
+  function genDebt(uint256 _safeId, uint256 _deltaWad, address _proxy) public {
+    bytes memory payload = abi.encodeWithSelector(
+      basicActions.generateDebt.selector,
+      address(safeManager),
+      address(taxCollector),
+      address(coinJoin),
+      _safeId,
       _deltaWad
     );
     ODProxy(_proxy).execute(address(basicActions), payload);
