@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 contract WETH9 {
   string public name = 'Wrapped Ether';
-  string public symbol = 'WETH';
+  string public symbol = 'WSTETH';
   uint8 public decimals = 18;
 
   event Approval(address indexed _owner, address indexed _spender, uint256 _wad);
