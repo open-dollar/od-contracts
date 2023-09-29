@@ -10,7 +10,7 @@ abstract contract GoerliContracts {
   address public ChainlinkRelayerChild_6_Address = 0xbD6348deCF3313a8265E2990Dd7939E18535E6fD;
   address public DenominatedOracleChild_8_Address = 0xcf70A50af55AAeEAEf38dB7137Bb6Fb6868af612;
   address public MintableERC20_WSTETH_Address = 0xEe01c0CD76354C383B8c7B4e65EA88D00B06f36f;
-  address public MintableVoteERC20_ARB_Address = 0x0Ed89D4655b2fE9f99EaDC3116b223527165452D;
+  address public MintableVoteERC20_Address = 0x0Ed89D4655b2fE9f99EaDC3116b223527165452D;
   address public MintableERC20_CBETH_Address = 0x422d6eB01C86DAEcaa9BEd0b57Dc04294EeB2991;
   address public MintableERC20_RETH_Address = 0xeAe382e8cC9B6687683d4Ad59de30730a9D53803;
   address public MintableERC20_MAGIC_Address = 0x9485de7A78097398Aec74C930c82A67eee5c496b;

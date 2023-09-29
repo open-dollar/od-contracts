@@ -120,6 +120,7 @@ abstract contract Contracts {
   // --- Token contracts ---
   IProtocolToken public protocolToken;
   ISystemCoin public systemCoin;
+  mapping(bytes32 => MintableERC20) public erc20;
   mapping(bytes32 => IERC20Metadata) public collateral;
   ICoinJoin public coinJoin;
   IETHJoin public ethJoin;
