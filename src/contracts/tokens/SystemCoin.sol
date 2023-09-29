@@ -30,9 +30,4 @@ contract SystemCoin is ERC20, Authorizable, ISystemCoin {
   function burn(uint256 _wad) external {
     _burn(msg.sender, _wad);
   }
-
-  /// @inheritdoc ISystemCoin
-  function burn(address _usr, uint256 _wad) external isAuthorized {
-    _burn(_usr, _wad);
-  }
 }

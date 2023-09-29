@@ -8,6 +8,7 @@ import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 
+import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
 import {RAY} from '@libraries/Math.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 
@@ -104,6 +105,14 @@ contract Unit_CoinJoin_Join is Base {
     vm.assume(notOverflowMul(RAY, _wad));
   }
 
+  function _mockSystemCoinTransferFrom(address _from, address _to, uint256 _amount) internal {
+    vm.mockCall(
+      address(mockSystemCoin),
+      abi.encodeWithSelector(IERC20.transferFrom.selector, _from, _to, _amount),
+      abi.encode(true)
+    );
+  }
+
   function test_Revert_Overflow(address _account, uint256 _wad) public {
     vm.assume(!notOverflowMul(RAY, _wad));
 
@@ -113,6 +122,7 @@ contract Unit_CoinJoin_Join is Base {
   }
 
   function test_Call_SafeEngine_TransferInternalCoins(address _account, uint256 _wad) public happyPath(_wad) {
+    _mockSystemCoinTransferFrom(user, address(coinJoin), _wad);
     vm.expectCall(
       address(mockSafeEngine),
       abi.encodeCall(mockSafeEngine.transferInternalCoins, (address(coinJoin), _account, RAY * _wad)),
@@ -123,12 +133,14 @@ contract Unit_CoinJoin_Join is Base {
   }
 
   function test_Call_SystemCoin_Burn(address _account, uint256 _wad) public happyPath(_wad) {
-    vm.expectCall(address(mockSystemCoin), abi.encodeWithSignature('burn(address,uint256)', user, _wad), 1);
-
+    _mockSystemCoinTransferFrom(user, address(coinJoin), _wad);
+    vm.expectCall(address(mockSystemCoin), abi.encodeWithSignature('burn(uint256)', _wad));
     coinJoin.join(_account, _wad);
   }
 
   function test_Emit_Join(address _account, uint256 _wad) public happyPath(_wad) {
+    _mockSystemCoinTransferFrom(user, address(coinJoin), _wad);
+
     vm.expectEmit();
     emit Join(user, _account, _wad);
 

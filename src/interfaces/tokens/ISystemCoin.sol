@@ -14,14 +14,6 @@ interface ISystemCoin is IERC20Metadata, IAuthorizable {
   function mint(address _account, uint256 _amount) external;
 
   /**
-   * @notice Burn an amount of tokens from an account
-   * @param _account Address of the account to burn tokens from
-   * @param _amount Amount of tokens to burn [wad]
-   * @dev   Only authorized addresses can burn tokens from an account
-   */
-  function burn(address _account, uint256 _amount) external;
-
-  /**
    * @notice Burn an amount of tokens from the sender
    * @param _amount Amount of tokens to burn [wad]
    */
