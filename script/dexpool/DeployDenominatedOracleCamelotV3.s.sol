@@ -14,7 +14,7 @@ contract DeployDenominatedOracleCamelotV3 is LiquidityBase {
   function run() public {
     vm.startBroadcast(vm.envUint('GOERLI_PK'));
     denominatedOracleFactory.deployDenominatedOracle(
-      IBaseOracle(0x97eDe6FFaaA866a749bc230B2aDF7B86Ba7a9946), IBaseOracle(DelayedOracleChild_WETH_Address), false
+      IBaseOracle(0x97eDe6FFaaA866a749bc230B2aDF7B86Ba7a9946), IBaseOracle(DelayedOracleChild_WSTETH_Address), false
     );
     vm.stopBroadcast();
   }
