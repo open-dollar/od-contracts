@@ -1089,7 +1089,7 @@ contract SingleLiquidationTest is DSTest {
     assertEq(accountingEngine.unqueuedUnauctionedDebt(), rad(90 ether));
     assertEq(safeEngine.coinBalance(address(accountingEngine)), rad(0 ether));
     assertEq(accountingEngine.totalOnAuctionDebt(), rad(10 ether));
-    debtAuctionHouse.decreaseSoldAmount(f1, 1000 ether, rad(10 ether));
+    debtAuctionHouse.decreaseSoldAmount(f1, 1000 ether);
     assertEq(accountingEngine.unqueuedUnauctionedDebt(), rad(90 ether));
     assertEq(safeEngine.coinBalance(address(accountingEngine)), rad(0 ether));
     assertEq(accountingEngine.totalOnAuctionDebt(), rad(0 ether));
@@ -1116,9 +1116,9 @@ contract SingleLiquidationTest is DSTest {
     assertEq(accountingEngine.totalOnAuctionDebt(), 0 ether);
     uint256 id = accountingEngine.auctionSurplus();
 
-    assertEq(safeEngine.coinBalance(mockExtraSurplusReceiver), 0 ether);
-    assertEq(protocolToken.balanceOf(mockExtraSurplusReceiver), 100 ether);
-    surplusAuctionHouse.increaseBidSize(id, rad(100 ether), 10 ether);
+    assertEq(safeEngine.coinBalance(address(this)), 0 ether);
+    assertEq(protocolToken.balanceOf(address(this)), 100 ether);
+    surplusAuctionHouse.increaseBidSize(id, 10 ether);
     hevm.warp(block.timestamp + 4 hours);
 
     surplusAuctionHouse.settleAuction(id);
