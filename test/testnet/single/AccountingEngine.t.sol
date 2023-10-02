@@ -132,7 +132,7 @@ contract SingleAccountingEngineTest is DSTest {
     accountingEngine.pushDebtToQueue(rad(wad));
     ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
       ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: 0, debtFloor: 0});
-    safeEngine.initializeCollateralType('', _safeEngineCollateralParams);
+    safeEngine.initializeCollateralType('', abi.encode(_safeEngineCollateralParams));
     safeEngine.createUnbackedDebt(address(accountingEngine), address(0), rad(wad));
     accountingEngine.popDebtFromQueue(block.timestamp);
   }

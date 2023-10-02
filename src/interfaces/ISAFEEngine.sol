@@ -3,9 +3,10 @@ pragma solidity 0.8.19;
 
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
+import {IModifiablePerCollateral} from '@interfaces/utils/IModifiablePerCollateral.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 
-interface ISAFEEngine is IAuthorizable, IModifiable, IDisableable {
+interface ISAFEEngine is IAuthorizable, IDisableable, IModifiable, IModifiablePerCollateral {
   // --- Events ---
 
   /**
@@ -21,12 +22,6 @@ interface ISAFEEngine is IAuthorizable, IModifiable, IDisableable {
    * @param _account Address that is denied to modify the SAFE
    */
   event DenySAFEModification(address _sender, address _account);
-
-  /**
-   * @notice Emitted when a new collateral type is registered
-   * @param _cType Bytes32 representation of the collateral type
-   */
-  event InitializeCollateralType(bytes32 _cType);
 
   /**
    * @notice Emitted when collateral is transferred between accounts
@@ -127,8 +122,6 @@ interface ISAFEEngine is IAuthorizable, IModifiable, IDisableable {
 
   // --- Errors ---
 
-  /// @notice Throws when trying to initialize a collateral type that already exists
-  error SAFEEng_CollateralTypeAlreadyExists();
   /// @notice Throws when trying to modify parameters of an uninitialized collateral type
   error SAFEEng_CollateralTypeNotInitialized();
   /// @notice Throws when trying to modify a SAFE into an unsafe state
@@ -311,13 +304,6 @@ interface ISAFEEngine is IAuthorizable, IModifiable, IDisableable {
 
   // --- Init ---
 
-  /**
-   * @notice Register a new collateral type in the SAFEEngine
-   * @param _cType Collateral type to register
-   * @param _collateralParams Collateral parameters
-   */
-  function initializeCollateralType(bytes32 _cType, SAFEEngineCollateralParams memory _collateralParams) external;
-
   // --- Fungibility ---
 
   /**
@@ -459,11 +445,4 @@ interface ISAFEEngine is IAuthorizable, IModifiable, IDisableable {
    * @notice Checks whether msg.sender has the right to modify a SAFE
    */
   function canModifySAFE(address _safe, address _account) external view returns (bool _allowed);
-
-  // --- Views ---
-
-  /**
-   * @notice List all collateral types registered in the SAFEEngine
-   */
-  function collateralList() external view returns (bytes32[] memory __collateralList);
 }

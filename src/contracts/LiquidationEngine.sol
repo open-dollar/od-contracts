@@ -9,6 +9,7 @@ import {ILiquidationEngine} from '@interfaces/ILiquidationEngine.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {Modifiable} from '@contracts/utils/Modifiable.sol';
+import {IModifiablePerCollateral, ModifiablePerCollateral} from '@contracts/utils/ModifiablePerCollateral.sol';
 import {Disableable} from '@contracts/utils/Disableable.sol';
 
 import {ReentrancyGuard} from '@openzeppelin/security/ReentrancyGuard.sol';
@@ -21,7 +22,14 @@ import {Math, RAY, WAD, MAX_RAD} from '@libraries/Math.sol';
  * @title  LiquidationEngine
  * @notice Handles the liquidations of SAFEs if the accumulated debt is higher than the collateral liquidation value
  */
-contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyGuard, ILiquidationEngine {
+contract LiquidationEngine is
+  Authorizable,
+  Disableable,
+  Modifiable,
+  ModifiablePerCollateral,
+  ReentrancyGuard,
+  ILiquidationEngine
+{
   using Math for uint256;
   using Encoding for bytes;
   using Assertions for uint256;
@@ -66,8 +74,6 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
   function cParams(bytes32 _cType) external view returns (LiquidationEngineCollateralParams memory _liqEngineCParams) {
     return _cParams[_cType];
   }
-
-  EnumerableSet.Bytes32Set internal _collateralList;
 
   // --- Init ---
 
@@ -224,16 +230,6 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
   }
 
   /// @inheritdoc ILiquidationEngine
-  function initializeCollateralType(
-    bytes32 _cType,
-    LiquidationEngineCollateralParams memory _liqEngineCParams
-  ) external isAuthorized whenEnabled validCParams(_cType) {
-    if (!_collateralList.add(_cType)) revert LiqEng_CollateralTypeAlreadyInitialized();
-    _setCollateralAuctionHouse(_cType, _liqEngineCParams.collateralAuctionHouse);
-    _cParams[_cType] = _liqEngineCParams;
-  }
-
-  /// @inheritdoc ILiquidationEngine
   function removeCoinsFromAuction(uint256 _rad) public isAuthorized {
     currentOnAuctionSystemCoins -= _rad;
     emit UpdateCurrentOnAuctionSystemCoins(currentOnAuctionSystemCoins);
@@ -258,14 +254,15 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
     );
   }
 
-  // --- Views ---
-
-  /// @inheritdoc ILiquidationEngine
-  function collateralList() external view returns (bytes32[] memory __collateralList) {
-    return _collateralList.values();
-  }
-
   // --- Administration ---
+
+  /// @inheritdoc ModifiablePerCollateral
+  function _initializeCollateralType(bytes32 _cType, bytes memory _collateralParams) internal override whenEnabled {
+    (LiquidationEngineCollateralParams memory _liqEngineCParams) =
+      abi.decode(_collateralParams, (LiquidationEngineCollateralParams));
+    _setCollateralAuctionHouse(_cType, _liqEngineCParams.collateralAuctionHouse);
+    _cParams[_cType] = _liqEngineCParams;
+  }
 
   /// @inheritdoc Modifiable
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
@@ -274,7 +271,7 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
     else revert UnrecognizedParam();
   }
 
-  /// @inheritdoc Modifiable
+  /// @inheritdoc ModifiablePerCollateral
   function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override {
     uint256 _uint256 = _data.toUint256();
 
@@ -290,7 +287,7 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
     address(accountingEngine).assertNonNull();
   }
 
-  /// @inheritdoc Modifiable
+  /// @inheritdoc ModifiablePerCollateral
   function _validateCParameters(bytes32 _cType) internal view override {
     LiquidationEngineCollateralParams memory __cParams = _cParams[_cType];
     address(__cParams.collateralAuctionHouse).assertNonNull();

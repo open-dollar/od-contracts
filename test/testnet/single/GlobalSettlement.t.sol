@@ -140,11 +140,11 @@ contract SingleGlobalSettlementTest is DSTest {
       safetyCRatio: ray(1.5 ether),
       liquidationCRatio: ray(1.5 ether)
     });
-    oracleRelayer.initializeCollateralType(_encodedName, _oracleRelayerCollateralParams);
+    oracleRelayer.initializeCollateralType(_encodedName, abi.encode(_oracleRelayerCollateralParams));
 
     ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
       ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: rad(10_000_000 ether), debtFloor: 0});
-    safeEngine.initializeCollateralType(_encodedName, _safeEngineCollateralParams);
+    safeEngine.initializeCollateralType(_encodedName, abi.encode(_safeEngineCollateralParams));
     ICollateralJoin collateralJoin = collateralJoinFactory.deployCollateralJoin(_encodedName, address(newCollateral));
     newCollateral.approve(address(collateralJoin), type(uint256).max);
 
@@ -158,8 +158,10 @@ contract SingleGlobalSettlementTest is DSTest {
       minimumBid: 1e18 // 1 system coin
     });
 
+    collateralAuctionHouseFactory.initializeCollateralType(_encodedName, abi.encode(_cahParams));
+
     ICollateralAuctionHouse _collateralAuctionHouse =
-      collateralAuctionHouseFactory.deployCollateralAuctionHouse(_encodedName, _cahParams);
+      ICollateralAuctionHouse(collateralAuctionHouseFactory.collateralAuctionHouses(_encodedName));
 
     safeEngine.approveSAFEModification(address(_collateralAuctionHouse));
     _collateralAuctionHouse.addAuthorization(address(globalSettlement));
@@ -172,7 +174,7 @@ contract SingleGlobalSettlementTest is DSTest {
       liquidationPenalty: 1 ether,
       liquidationQuantity: uint256(int256(-1)) / ray(1 ether)
     });
-    liquidationEngine.initializeCollateralType(_encodedName, _liquidationEngineCollateralParams);
+    liquidationEngine.initializeCollateralType(_encodedName, abi.encode(_liquidationEngineCollateralParams));
 
     collateralTypes[_encodedName].oracleSecurityModule = oracleFSM;
     collateralTypes[_encodedName].collateral = newCollateral;
