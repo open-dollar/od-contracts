@@ -65,8 +65,8 @@ debtToAuction = debtToCover * liquidationPenalty
 
 The quantity of collateral and debt seized from a SAFE during liquidation is decided based on the following criteria:
 
-- If the SAFE's debt is smaller than `liquidationVolume`, the SAFE undergoes full liquidation.
-- If the SAFE's debt surpasses `liquidationVolume`, the SAFE is only partially liquidated, and residual debt remains.
+- If the SAFE's debt is smaller than `liquidationQuantity`, the SAFE undergoes full liquidation.
+- If the SAFE's debt surpasses `liquidationQuantity`, the SAFE is only partially liquidated, and residual debt remains.
 - If the SAFE's outstanding debt crosses the `onAuctionSystemCoinLimit`, partial liquidation occurs, and any remaining debt stays in the SAFE.
 - In cases of partial liquidation, a corresponding slice of collateral is seized, leaving the remaining collateral intact within the SAFE.
 

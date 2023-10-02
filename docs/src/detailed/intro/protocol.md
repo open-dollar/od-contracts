@@ -5,7 +5,7 @@
 ### What is HAI?
 
 - **Low-Cost**: The HAI protocol is deployed on the Optimism network, offering significantly low gas fees for transactions.
-- **Dollar-Denominated**: Both the system coin and the collaterals are pegged to the US Dollar.
+- **Dollar-Denominated**: Both the system coin and the collaterals are denominated in US Dollar.
 - **Collateral-Backed**: A diverse basket of collateral types backs the minting of the system coin.
 - **Control-Pegged**: A PID controller dynamically adjusts the funding rate to balance value transfer between minters (debtors) and holders (creditors).
 - **Settleable**: The system can undergo a Global Settlement, during which all debts are squared and HAI holders can redeem tokens for a share of the collateral pool, regardless of whether they have outstanding debts.

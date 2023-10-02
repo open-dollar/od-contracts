@@ -11,12 +11,13 @@ This abstract contract introduces a fundamental disable mechanism for contracts.
 ### Key Methods:
 
 **Authorized**
-
 - `disableContract`: Disables the contract.
-  **Internal**
+
+**Internal**
 - `_onContractDisable`: Hook to be called when the contract is disabled.
 - `_isEnabled`: Checks if the contract is enabled.
-  **Modifiers**
+  
+**Modifiers**
 - `whenEnabled`: Restricts access to the method to when the contract is enabled.
 - `whenDisabled`: Restricts access to the method to when the contract is disabled.
 
