@@ -834,8 +834,8 @@ contract SingleLiquidationTest is DSTest {
     taxCollector.initializeCollateralType('gold', _taxCollectorCollateralParams);
     safeEngine.addAuthorization(address(taxCollector));
 
-    ILiquidationEngine.LiquidationEngineParams memory _liquidationEngineParams =
-      ILiquidationEngine.LiquidationEngineParams({onAuctionSystemCoinLimit: type(uint256).max});
+    ILiquidationEngine.LiquidationEngineParams memory _liquidationEngineParams = ILiquidationEngine
+      .LiquidationEngineParams({onAuctionSystemCoinLimit: type(uint256).max, saviourGasLimit: 10_000_000});
     liquidationEngine = new LiquidationEngine(address(safeEngine), address(accountingEngine), _liquidationEngineParams);
 
     safeEngine.addAuthorization(address(liquidationEngine));
