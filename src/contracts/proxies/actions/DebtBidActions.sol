@@ -42,7 +42,7 @@ contract DebtBidActions is CommonActions, IDebtBidActions {
       _safeEngine.approveSAFEModification(address(_debtAuctionHouse));
     }
 
-    IDebtAuctionHouse(_debtAuctionHouse).decreaseSoldAmount(_auctionId, _soldAmount, _bidAmount);
+    IDebtAuctionHouse(_debtAuctionHouse).decreaseSoldAmount(_auctionId, _soldAmount);
   }
 
   /// @inheritdoc IDebtBidActions

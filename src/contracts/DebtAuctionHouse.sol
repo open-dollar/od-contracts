@@ -132,16 +132,16 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
   }
 
   /// @inheritdoc IDebtAuctionHouse
-  function decreaseSoldAmount(uint256 _id, uint256 _amountToBuy, uint256 _bid) external whenEnabled {
+  function decreaseSoldAmount(uint256 _id, uint256 _amountToBuy) external whenEnabled {
     Auction storage _auction = _auctions[_id];
     if (_auction.highBidder == address(0)) revert DAH_HighBidderNotSet();
     if (_auction.bidExpiry <= block.timestamp && _auction.bidExpiry != 0) revert DAH_BidAlreadyExpired();
     if (_auction.auctionDeadline <= block.timestamp) revert DAH_AuctionAlreadyExpired();
 
-    if (_bid != _auction.bidAmount) revert DAH_NotMatchingBid();
     if (_amountToBuy >= _auction.amountToSell) revert DAH_AmountBoughtNotLower();
     if (_params.bidDecrease * _amountToBuy > _auction.amountToSell * WAD) revert DAH_InsufficientDecrease();
 
+    uint256 _bid = _auction.bidAmount;
     safeEngine.transferInternalCoins(msg.sender, _auction.highBidder, _bid);
 
     // on first bid submitted, clear as much totalOnAuctionDebt as possible

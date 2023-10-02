@@ -177,7 +177,7 @@ abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
     systemCoin.approve(address(coinJoin), _amountToBid / 1e27);
     coinJoin.join(_user, _amountToBid / 1e27);
     safeEngine.approveSAFEModification(address(debtAuctionHouse));
-    debtAuctionHouse.decreaseSoldAmount(_auctionId, _amountToBuy, _amountToBid);
+    debtAuctionHouse.decreaseSoldAmount(_auctionId, _amountToBuy);
     vm.stopPrank();
   }
 
@@ -186,11 +186,9 @@ abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
   }
 
   function _increaseBidSize(address _user, uint256 _auctionId, uint256 _bidAmount) internal override {
-    uint256 _amountToSell = surplusAuctionHouse.auctions(_auctionId).amountToSell;
-
     vm.startPrank(_user);
     protocolToken.approve(address(surplusAuctionHouse), _bidAmount);
-    surplusAuctionHouse.increaseBidSize(_auctionId, _amountToSell, _bidAmount);
+    surplusAuctionHouse.increaseBidSize(_auctionId, _bidAmount);
     vm.stopPrank();
   }
 
@@ -209,11 +207,9 @@ abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
   // --- Global Settlement actions ---
 
   function _increasePostSettlementBidSize(address _user, uint256 _auctionId, uint256 _bidAmount) internal override {
-    uint256 _amountToSell = postSettlementSurplusAuctionHouse.auctions(_auctionId).amountToSell;
-
     vm.startPrank(_user);
     protocolToken.approve(address(postSettlementSurplusAuctionHouse), _bidAmount);
-    postSettlementSurplusAuctionHouse.increaseBidSize(_auctionId, _amountToSell, _bidAmount);
+    postSettlementSurplusAuctionHouse.increaseBidSize(_auctionId, _bidAmount);
     vm.stopPrank();
   }
 
