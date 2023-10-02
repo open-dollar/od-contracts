@@ -344,7 +344,6 @@ abstract contract Common is Contracts, Params {
 
   function deployProxyContracts(address _safeEngine) public updateParams {
     proxyFactory = new HaiProxyFactory();
-    proxyRegistry = new HaiProxyRegistry(address(proxyFactory));
     safeManager = new HaiSafeManager(_safeEngine);
     _deployProxyActions();
   }

@@ -11,6 +11,8 @@ import {IOracleRelayer, OracleRelayer as MockOracleRelayer} from '@contracts/Ora
 
 abstract contract Hevm {
   function warp(uint256) public virtual;
+
+  function etch(address, bytes memory) public virtual;
 }
 
 contract PIDRateSetterTest is DSTest {
@@ -34,6 +36,8 @@ contract PIDRateSetterTest is DSTest {
 
     orcl = new OracleForTest(1 ether);
 
+    hevm.etch(address(69), '0xF');
+
     IOracleRelayer.OracleRelayerParams memory _oracleRelayerParams =
       IOracleRelayer.OracleRelayerParams({redemptionRateUpperBound: RAY * WAD, redemptionRateLowerBound: 1});
     oracleRelayer = new MockOracleRelayer(address(69), orcl, _oracleRelayerParams);
@@ -53,14 +57,17 @@ contract PIDRateSetterTest is DSTest {
   }
 
   function test_modify_parameters() public {
+    address _newAddress = address(0x10000);
+    hevm.etch(_newAddress, '0xF');
+
     // Modify
-    rateSetter.modifyParameters('oracleRelayer', abi.encode(0x12));
-    rateSetter.modifyParameters('pidCalculator', abi.encode(0x12));
+    rateSetter.modifyParameters('oracleRelayer', abi.encode(_newAddress));
+    rateSetter.modifyParameters('pidCalculator', abi.encode(_newAddress));
     rateSetter.modifyParameters('updateRateDelay', abi.encode(1));
 
     // Check
-    assertTrue(address(rateSetter.oracleRelayer()) == address(0x12));
-    assertTrue(address(rateSetter.pidCalculator()) == address(0x12));
+    assertTrue(address(rateSetter.oracleRelayer()) == address(_newAddress));
+    assertTrue(address(rateSetter.pidCalculator()) == address(_newAddress));
 
     assertEq(rateSetter.params().updateRateDelay, 1);
   }

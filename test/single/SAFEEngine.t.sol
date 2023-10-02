@@ -1059,7 +1059,6 @@ contract SingleLiquidationTest is DSTest {
     assertEq(accountingEngine.debtQueue(block.timestamp), rad(100 ether));
 
     hevm.warp(block.timestamp + 4 hours);
-    collateralAuctionHouse.settleAuction(auction);
     assertEq(safeEngine.coinBalance(address(accountingEngine)), rad(95 ether) + ray(5 ether));
   }
 
@@ -1172,7 +1171,6 @@ contract SingleLiquidationTest is DSTest {
     assertEq(accountingEngine.debtQueue(block.timestamp), rad(75 ether));
 
     hevm.warp(block.timestamp + 4 hours);
-    collateralAuctionHouse.settleAuction(auction); // no effect
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), 0);
     assertEq(safeEngine.tokenCollateral('gold', address(this)), 950 ether);
     assertEq(safeEngine.coinBalance(address(this)), rad(145 ether) - rad(_adjustedBid));
@@ -1257,7 +1255,6 @@ contract SingleLiquidationTest is DSTest {
     // have to settle an auction and then liquidate again
 
     hevm.warp(block.timestamp + 4 hours);
-    collateralAuctionHouse.settleAuction(auction);
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), 0);
     assertEq(safeEngine.tokenCollateral('gold', address(this)), 950 ether);
     assertEq(safeEngine.coinBalance(address(this)), _newCoinBalance);
@@ -1289,7 +1286,6 @@ contract SingleLiquidationTest is DSTest {
     assertEq(accountingEngine.debtQueue(block.timestamp), rad(75 ether));
 
     hevm.warp(block.timestamp + 4 hours);
-    collateralAuctionHouse.settleAuction(auction);
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), 0);
     assertEq(safeEngine.tokenCollateral('gold', address(this)), 1000 ether);
     assertEq(safeEngine.coinBalance(address(this)), _newCoinBalance);

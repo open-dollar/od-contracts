@@ -7,6 +7,7 @@ import {ICoinJoin} from '@interfaces/utils/ICoinJoin.sol';
 import {ICollateralJoin} from '@interfaces/utils/ICollateralJoin.sol';
 import {ICommonActions} from '@interfaces/proxies/actions/ICommonActions.sol';
 
+import {SafeERC20} from '@openzeppelin/token/ERC20/utils/SafeERC20.sol';
 import {RAY} from '@libraries/Math.sol';
 
 /**
@@ -14,6 +15,8 @@ import {RAY} from '@libraries/Math.sol';
  * @notice This abstract contract defines common actions to be used by the proxy actions contracts
  */
 abstract contract CommonActions is ICommonActions {
+  using SafeERC20 for IERC20Metadata;
+
   /// @notice Address of the inheriting contract, used to check if the call is being made through a delegate call
   // solhint-disable-next-line var-name-mixedcase
   address internal immutable _THIS = address(this);
@@ -21,23 +24,23 @@ abstract contract CommonActions is ICommonActions {
   // --- Methods ---
 
   /// @inheritdoc ICommonActions
-  function joinSystemCoins(address _coinJoin, address _dst, uint256 _wad) external delegateCall {
+  function joinSystemCoins(address _coinJoin, address _dst, uint256 _wad) external onlyDelegateCall {
     _joinSystemCoins(_coinJoin, _dst, _wad);
   }
 
   /// @inheritdoc ICommonActions
-  function exitSystemCoins(address _coinJoin, uint256 _coinsToExit) external delegateCall {
+  function exitSystemCoins(address _coinJoin, uint256 _coinsToExit) external onlyDelegateCall {
     _exitSystemCoins(_coinJoin, _coinsToExit);
   }
 
   /// @inheritdoc ICommonActions
-  function exitAllSystemCoins(address _coinJoin) external delegateCall {
+  function exitAllSystemCoins(address _coinJoin) external onlyDelegateCall {
     uint256 _coinsToExit = ICoinJoin(_coinJoin).safeEngine().coinBalance(address(this));
     _exitSystemCoins(_coinJoin, _coinsToExit);
   }
 
   /// @inheritdoc ICommonActions
-  function exitCollateral(address _collateralJoin, uint256 _wad) external delegateCall {
+  function exitCollateral(address _collateralJoin, uint256 _wad) external onlyDelegateCall {
     _exitCollateral(_collateralJoin, _wad);
   }
 
@@ -53,9 +56,9 @@ abstract contract CommonActions is ICommonActions {
     // NOTE: assumes systemCoin uses 18 decimals
     IERC20Metadata _systemCoin = ICoinJoin(_coinJoin).systemCoin();
     // Transfers coins from the user to the proxy
-    _systemCoin.transferFrom(msg.sender, address(this), _wad);
+    _systemCoin.safeTransferFrom(msg.sender, address(this), _wad);
     // Approves adapter to take the COIN amount
-    _systemCoin.approve(_coinJoin, _wad);
+    _systemCoin.forceApprove(_coinJoin, _wad);
     // Joins COIN into the safeEngine
     ICoinJoin(_coinJoin).join(_dst, _wad);
   }
@@ -92,9 +95,9 @@ abstract contract CommonActions is ICommonActions {
     if (_wei == 0) return;
 
     // Gets token from the user's wallet
-    _token.transferFrom(msg.sender, address(this), _wei);
+    _token.safeTransferFrom(msg.sender, address(this), _wei);
     // Approves adapter to take the token amount
-    _token.approve(_collateralJoin, _wei);
+    _token.forceApprove(_collateralJoin, _wei);
     // Joins token collateral into the safeEngine
     __collateralJoin.join(_safe, _wei);
   }
@@ -122,7 +125,7 @@ abstract contract CommonActions is ICommonActions {
   // --- Modifiers ---
 
   /// @notice Checks if the call is being made through a delegate call
-  modifier delegateCall() {
+  modifier onlyDelegateCall() {
     if (address(this) == _THIS) revert OnlyDelegateCalls();
     _;
   }

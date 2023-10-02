@@ -24,7 +24,7 @@ contract GlobalSettlementActions is CommonActions, IGlobalSettlementActions {
     address _globalSettlement,
     address _collateralJoin,
     uint256 _safeId
-  ) external delegateCall returns (uint256 _collateralAmount) {
+  ) external onlyDelegateCall returns (uint256 _collateralAmount) {
     IGlobalSettlement __globalSettlement = IGlobalSettlement(_globalSettlement);
     HaiSafeManager __manager = HaiSafeManager(_manager);
     HaiSafeManager.SAFEData memory _safeData = __manager.safeData(_safeId);
@@ -56,7 +56,7 @@ contract GlobalSettlementActions is CommonActions, IGlobalSettlementActions {
     address _globalSettlement,
     address _coinJoin,
     uint256 _coinAmount
-  ) external delegateCall {
+  ) external onlyDelegateCall {
     IGlobalSettlement __globalSettlement = IGlobalSettlement(_globalSettlement);
     ISAFEEngine __safeEngine = __globalSettlement.safeEngine();
 
@@ -75,7 +75,7 @@ contract GlobalSettlementActions is CommonActions, IGlobalSettlementActions {
   function redeemCollateral(
     address _globalSettlement,
     address _collateralJoin
-  ) external delegateCall returns (uint256 _collateralAmount) {
+  ) external onlyDelegateCall returns (uint256 _collateralAmount) {
     IGlobalSettlement __globalSettlement = IGlobalSettlement(_globalSettlement);
     ISAFEEngine __safeEngine = __globalSettlement.safeEngine();
 

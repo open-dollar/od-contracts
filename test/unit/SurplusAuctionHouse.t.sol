@@ -148,7 +148,9 @@ contract Unit_SurplusAuctionHouse_Constructor is Base {
   }
 
   function test_Set_ProtocolToken(address _protocolToken) public happyPath {
-    vm.assume(_protocolToken != address(0));
+    vm.assume(uint160(_protocolToken) > 20);
+    vm.etch(_protocolToken, '0xF');
+
     surplusAuctionHouse = new SurplusAuctionHouseForTest(address(mockSafeEngine), _protocolToken, sahParams);
 
     assertEq(address(surplusAuctionHouse.protocolToken()), _protocolToken);
@@ -169,7 +171,7 @@ contract Unit_SurplusAuctionHouse_Constructor is Base {
   }
 
   function test_Revert_Null_ProtocolToken() public {
-    vm.expectRevert(Assertions.NullAddress.selector);
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
 
     new SurplusAuctionHouseForTest(address(mockSafeEngine), address(0), sahParams);
   }
@@ -587,11 +589,15 @@ contract Unit_SurplusAuctionHouse_IncreaseBidSize is Base {
     uint256 _bidIncrease,
     uint256 _bidDuration
   ) public happyPath(_auction, _bid, _bidIncrease, _bidDuration) {
-    vm.expectCall(
-      address(mockProtocolToken),
-      abi.encodeCall(mockProtocolToken.transferFrom, (user, _auction.highBidder, _auction.bidAmount)),
-      1
-    );
+    // If there was no initial bidAmount then this would transfer 0 tokens, so its not called
+    if (_auction.bidAmount != 0) {
+      vm.expectCall(
+        address(mockProtocolToken),
+        abi.encodeCall(mockProtocolToken.transferFrom, (user, _auction.highBidder, _auction.bidAmount)),
+        1
+      );
+    }
+
     vm.expectCall(
       address(mockProtocolToken),
       abi.encodeCall(mockProtocolToken.transferFrom, (user, address(surplusAuctionHouse), _bid - _auction.bidAmount)),
@@ -903,7 +909,9 @@ contract Unit_SurplusAuctionHouse_ModifyParameters is Base {
   }
 
   function test_Set_ProtocolToken(address _protocolToken) public happyPath {
-    vm.assume(_protocolToken != address(0));
+    vm.assume(uint160(_protocolToken) > 20);
+    vm.etch(_protocolToken, '0xF');
+
     surplusAuctionHouse.modifyParameters('protocolToken', abi.encode(_protocolToken));
 
     assertEq(address(surplusAuctionHouse.protocolToken()), _protocolToken);
@@ -911,7 +919,7 @@ contract Unit_SurplusAuctionHouse_ModifyParameters is Base {
 
   function test_Revert_ProtocolToken_NullAddress() public {
     vm.startPrank(authorizedAccount);
-    vm.expectRevert(Assertions.NullAddress.selector);
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
 
     surplusAuctionHouse.modifyParameters('protocolToken', abi.encode(0));
   }

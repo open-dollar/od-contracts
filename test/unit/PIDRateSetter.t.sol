@@ -98,12 +98,12 @@ contract Unit_PIDRateSetter_Constructor is Base {
   }
 
   function test_Revert_NullOracleRelayerAddress() public {
-    vm.expectRevert(Assertions.NullAddress.selector);
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
     new PIDRateSetter(address(0), address(mockPIDController), IPIDRateSetter.PIDRateSetterParams(periodSize));
   }
 
   function test_Revert_NullCalculator() public {
-    vm.expectRevert(Assertions.NullAddress.selector);
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
     new PIDRateSetter(address(mockOracleRelayer), address(0), IPIDRateSetter.PIDRateSetterParams(periodSize));
   }
 }
@@ -119,14 +119,16 @@ contract Unit_PIDRateSetter_ModifyParameters is Base {
   }
 
   function test_ModifyParameters_Set_OracleRelayer(address _oracleRelayer) public authorized {
-    vm.assume(_oracleRelayer != address(0));
+    vm.assume(uint160(_oracleRelayer) > 20);
+    vm.etch(_oracleRelayer, '0xF');
     pidRateSetter.modifyParameters('oracleRelayer', abi.encode(_oracleRelayer));
 
     assertEq(address(pidRateSetter.oracleRelayer()), _oracleRelayer);
   }
 
   function test_ModifyParameters_Set_PIDCalculator(address _pidCalculator) public authorized {
-    vm.assume(_pidCalculator != address(0));
+    vm.assume(uint160(_pidCalculator) > 20);
+    vm.etch(_pidCalculator, '0xF');
     pidRateSetter.modifyParameters('pidCalculator', abi.encode(_pidCalculator));
 
     assertEq(address(pidRateSetter.pidCalculator()), _pidCalculator);

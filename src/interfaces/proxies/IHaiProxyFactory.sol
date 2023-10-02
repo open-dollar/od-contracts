@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
+import {IHaiProxy} from '@interfaces/proxies/IHaiProxy.sol';
+
 interface IHaiProxyFactory {
   // --- Events ---
 
@@ -12,10 +14,21 @@ interface IHaiProxyFactory {
    */
   event Created(address indexed _sender, address indexed _owner, address _proxy);
 
+  // --- Errors ---
+
+  /// @notice Throws if the user already has a proxy and remains being the owner
+  error AlreadyHasProxy(address _owner, IHaiProxy _proxy);
+
   // --- Data ---
 
   /// @notice Mapping of proxy addresses to boolean state
   function isProxy(address _proxyAddress) external view returns (bool _exists);
+
+  /// @notice Mapping of user addresses to proxy instances
+  function proxies(address _owner) external view returns (IHaiProxy _proxy);
+
+  /// @notice Mapping of the next nonce to be used for the specified owner
+  function nonces(address _owner) external view returns (uint256 _nonce);
 
   // --- Methods ---
 

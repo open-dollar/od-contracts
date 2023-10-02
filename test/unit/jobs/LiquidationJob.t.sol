@@ -131,13 +131,17 @@ contract Unit_LiquidationJob_ModifyParameters is Base {
     _;
   }
 
-  function test_Set_LiquidationEngine(address _liquidationEngine) public happyPath {
+  function test_Set_LiquidationEngine(address _liquidationEngine) public happyPath mockAsContract(_liquidationEngine) {
     liquidationJob.modifyParameters('liquidationEngine', abi.encode(_liquidationEngine));
 
     assertEq(address(liquidationJob.liquidationEngine()), _liquidationEngine);
   }
 
-  function test_Set_StabilityFeeTreasury(address _stabilityFeeTreasury) public happyPath {
+  function test_Set_StabilityFeeTreasury(address _stabilityFeeTreasury)
+    public
+    happyPath
+    mockAsContract(_stabilityFeeTreasury)
+  {
     liquidationJob.modifyParameters('stabilityFeeTreasury', abi.encode(_stabilityFeeTreasury));
 
     assertEq(address(liquidationJob.stabilityFeeTreasury()), _stabilityFeeTreasury);

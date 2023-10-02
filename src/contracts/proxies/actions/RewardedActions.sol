@@ -21,25 +21,29 @@ contract RewardedActions is CommonActions, IRewardedActions {
   // --- AccountingJob ---
 
   /// @inheritdoc IRewardedActions
-  function startDebtAuction(address _accountingJob, address _coinJoin) external delegateCall {
+  function startDebtAuction(address _accountingJob, address _coinJoin) external onlyDelegateCall {
     IAccountingJob(_accountingJob).workAuctionDebt();
     _exitReward(_accountingJob, _coinJoin);
   }
 
   /// @inheritdoc IRewardedActions
-  function startSurplusAuction(address _accountingJob, address _coinJoin) external delegateCall {
+  function startSurplusAuction(address _accountingJob, address _coinJoin) external onlyDelegateCall {
     IAccountingJob(_accountingJob).workAuctionSurplus();
     _exitReward(_accountingJob, _coinJoin);
   }
 
   /// @inheritdoc IRewardedActions
-  function popDebtFromQueue(address _accountingJob, address _coinJoin, uint256 _debtTimestamp) external delegateCall {
+  function popDebtFromQueue(
+    address _accountingJob,
+    address _coinJoin,
+    uint256 _debtTimestamp
+  ) external onlyDelegateCall {
     IAccountingJob(_accountingJob).workPopDebtFromQueue(_debtTimestamp);
     _exitReward(_accountingJob, _coinJoin);
   }
 
   /// @inheritdoc IRewardedActions
-  function transferExtraSurplus(address _accountingJob, address _coinJoin) external delegateCall {
+  function transferExtraSurplus(address _accountingJob, address _coinJoin) external onlyDelegateCall {
     IAccountingJob(_accountingJob).workTransferExtraSurplus();
     _exitReward(_accountingJob, _coinJoin);
   }
@@ -52,7 +56,7 @@ contract RewardedActions is CommonActions, IRewardedActions {
     address _coinJoin,
     bytes32 _cType,
     address _safe
-  ) external delegateCall {
+  ) external onlyDelegateCall {
     ILiquidationJob(_liquidationJob).workLiquidation(_cType, _safe);
     _exitReward(_liquidationJob, _coinJoin);
   }
@@ -60,13 +64,13 @@ contract RewardedActions is CommonActions, IRewardedActions {
   // --- OracleJob ---
 
   /// @inheritdoc IRewardedActions
-  function updateCollateralPrice(address _oracleJob, address _coinJoin, bytes32 _cType) external delegateCall {
+  function updateCollateralPrice(address _oracleJob, address _coinJoin, bytes32 _cType) external onlyDelegateCall {
     IOracleJob(_oracleJob).workUpdateCollateralPrice(_cType);
     _exitReward(_oracleJob, _coinJoin);
   }
 
   /// @inheritdoc IRewardedActions
-  function updateRedemptionRate(address _oracleJob, address _coinJoin) external delegateCall {
+  function updateRedemptionRate(address _oracleJob, address _coinJoin) external onlyDelegateCall {
     IOracleJob(_oracleJob).workUpdateRate();
     _exitReward(_oracleJob, _coinJoin);
   }

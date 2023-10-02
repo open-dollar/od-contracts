@@ -474,7 +474,6 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     });
 
     vm.warp(block.timestamp + 1);
-    collateralAuctionHouse.settleAuction(id);
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), rad(1000 ether));
 
     ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse.auctions(id);

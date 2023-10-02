@@ -148,15 +148,13 @@ contract Unit_DebtAuctionHouse_Constructor is Base {
     assertEq(debtAuctionHouse.contractEnabled(), true);
   }
 
-  function test_Set_SafeEngine(address _safeEngine) public happyPath {
-    vm.assume(_safeEngine != address(0));
+  function test_Set_SafeEngine(address _safeEngine) public happyPath mockAsContract(_safeEngine) {
     debtAuctionHouse = new DebtAuctionHouseForTest(_safeEngine, address(mockProtocolToken), dahParams);
 
     assertEq(address(debtAuctionHouse.safeEngine()), _safeEngine);
   }
 
-  function test_Set_ProtocolToken(address _protocolToken) public happyPath {
-    vm.assume(_protocolToken != address(0));
+  function test_Set_ProtocolToken(address _protocolToken) public happyPath mockAsContract(_protocolToken) {
     debtAuctionHouse = new DebtAuctionHouseForTest(address(mockSafeEngine), _protocolToken, dahParams);
 
     assertEq(address(debtAuctionHouse.protocolToken()), _protocolToken);
@@ -175,7 +173,7 @@ contract Unit_DebtAuctionHouse_Constructor is Base {
   }
 
   function test_Revert_Null_ProtocolToken() public {
-    vm.expectRevert(Assertions.NullAddress.selector);
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
 
     new DebtAuctionHouseForTest(address(mockSafeEngine), address(0), dahParams);
   }
@@ -914,8 +912,7 @@ contract Unit_DebtAuctionHouse_ModifyParameters is Base {
     assertEq(abi.encode(_params), abi.encode(_fuzz));
   }
 
-  function test_Set_ProtocolToken(address _protocolToken) public happyPath {
-    vm.assume(_protocolToken != address(0));
+  function test_Set_ProtocolToken(address _protocolToken) public happyPath mockAsContract(_protocolToken) {
     debtAuctionHouse.modifyParameters('protocolToken', abi.encode(_protocolToken));
 
     assertEq(address(debtAuctionHouse.protocolToken()), _protocolToken);
@@ -923,7 +920,7 @@ contract Unit_DebtAuctionHouse_ModifyParameters is Base {
 
   function test_Revert_ProtocolToken_NullAddress() public {
     vm.startPrank(authorizedAccount);
-    vm.expectRevert(Assertions.NullAddress.selector);
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
 
     debtAuctionHouse.modifyParameters('protocolToken', abi.encode(0));
   }

@@ -131,4 +131,16 @@ contract OverflowChecker {
   }
 }
 
-abstract contract HaiTest is DSTestPlus, OverflowChecker {}
+abstract contract HaiTest is DSTestPlus, OverflowChecker {
+  modifier mockAsContract(address _address) {
+    // It should not be a precompile
+    vm.assume(uint160(_address) > 20);
+
+    // It should not be an deployed contract
+    vm.assume(_address.code.length == 0);
+
+    // Give it bytecode to make it a contract
+    vm.etch(_address, '0xF');
+    _;
+  }
+}

@@ -9,6 +9,7 @@ import {ICoinJoin} from '@interfaces/utils/ICoinJoin.sol';
 import {IDebtBidActions} from '@interfaces/proxies/actions/IDebtBidActions.sol';
 
 import {CommonActions} from '@contracts/proxies/actions/CommonActions.sol';
+import {SafeERC20} from '@openzeppelin/token/ERC20/utils/SafeERC20.sol';
 
 import {RAY} from '@libraries/Math.sol';
 
@@ -17,6 +18,8 @@ import {RAY} from '@libraries/Math.sol';
  * @notice All methods here are executed as delegatecalls from the user's proxy
  */
 contract DebtBidActions is CommonActions, IDebtBidActions {
+  using SafeERC20 for IERC20Metadata;
+
   // --- Methods ---
 
   /// @inheritdoc IDebtBidActions
@@ -25,7 +28,7 @@ contract DebtBidActions is CommonActions, IDebtBidActions {
     address _debtAuctionHouse,
     uint256 _auctionId,
     uint256 _soldAmount
-  ) external delegateCall {
+  ) external onlyDelegateCall {
     uint256 _bidAmount = IDebtAuctionHouse(_debtAuctionHouse).auctions(_auctionId).bidAmount;
 
     ISAFEEngine _safeEngine = ICoinJoin(_coinJoin).safeEngine();
@@ -46,14 +49,14 @@ contract DebtBidActions is CommonActions, IDebtBidActions {
   }
 
   /// @inheritdoc IDebtBidActions
-  function settleAuction(address _coinJoin, address _debtAuctionHouse, uint256 _auctionId) external delegateCall {
+  function settleAuction(address _coinJoin, address _debtAuctionHouse, uint256 _auctionId) external onlyDelegateCall {
     IDebtAuctionHouse.Auction memory _auction = IDebtAuctionHouse(_debtAuctionHouse).auctions(_auctionId);
     IDebtAuctionHouse(_debtAuctionHouse).settleAuction(_auctionId);
 
     if (_auction.highBidder == address(this)) {
       // get the amount of protocol tokens that were sold
       IERC20Metadata _protocolToken = IDebtAuctionHouse(_debtAuctionHouse).protocolToken();
-      _protocolToken.transfer(msg.sender, _auction.amountToSell);
+      _protocolToken.safeTransfer(msg.sender, _auction.amountToSell);
     }
 
     // exit all system coins from the coinJoin
@@ -65,9 +68,9 @@ contract DebtBidActions is CommonActions, IDebtBidActions {
   }
 
   /// @inheritdoc IDebtBidActions
-  function collectProtocolTokens(address _protocolToken) external delegateCall {
+  function collectProtocolTokens(address _protocolToken) external onlyDelegateCall {
     // get the amount of protocol tokens that the proxy has
     uint256 _coinsToCollect = IERC20Metadata(_protocolToken).balanceOf(address(this));
-    IERC20Metadata(_protocolToken).transfer(msg.sender, _coinsToCollect);
+    IERC20Metadata(_protocolToken).safeTransfer(msg.sender, _coinsToCollect);
   }
 }

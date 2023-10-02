@@ -2,7 +2,6 @@
 pragma solidity 0.8.19;
 
 import {HaiSafeManager} from '@contracts/proxies/HaiSafeManager.sol';
-import {HaiProxyRegistry} from '@contracts/proxies/HaiProxyRegistry.sol';
 import {HaiProxy} from '@contracts/proxies/HaiProxy.sol';
 
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
@@ -224,7 +223,7 @@ contract BasicActions is CommonActions, IBasicActions {
   // --- Methods ---
 
   /// @inheritdoc IBasicActions
-  function openSAFE(address _manager, bytes32 _cType, address _usr) external delegateCall returns (uint256 _safeId) {
+  function openSAFE(address _manager, bytes32 _cType, address _usr) external onlyDelegateCall returns (uint256 _safeId) {
     return _openSAFE(_manager, _cType, _usr);
   }
 
@@ -235,7 +234,7 @@ contract BasicActions is CommonActions, IBasicActions {
     address _coinJoin,
     uint256 _safeId,
     uint256 _deltaWad
-  ) external delegateCall {
+  ) external onlyDelegateCall {
     _generateDebt(_manager, _taxCollector, _coinJoin, _safeId, _deltaWad);
   }
 
@@ -246,7 +245,7 @@ contract BasicActions is CommonActions, IBasicActions {
     address _coinJoin,
     uint256 _safeId,
     uint256 _deltaWad
-  ) external delegateCall {
+  ) external onlyDelegateCall {
     _repayDebt(_manager, _taxCollector, _coinJoin, _safeId, _deltaWad);
   }
 
@@ -256,7 +255,7 @@ contract BasicActions is CommonActions, IBasicActions {
     address _collateralJoin,
     uint256 _safeId,
     uint256 _deltaWad
-  ) external delegateCall {
+  ) external onlyDelegateCall {
     HaiSafeManager.SAFEData memory _safeInfo = HaiSafeManager(_manager).safeData(_safeId);
 
     // Takes token amount from user's wallet and joins into the safeEngine
@@ -272,7 +271,7 @@ contract BasicActions is CommonActions, IBasicActions {
     address _collateralJoin,
     uint256 _safeId,
     uint256 _deltaWad
-  ) external delegateCall {
+  ) external onlyDelegateCall {
     // Unlocks token amount from the SAFE
     _modifySAFECollateralization(_manager, _safeId, -_deltaWad.toInt(), 0);
     // Transfers token amount to the user's address
@@ -285,7 +284,7 @@ contract BasicActions is CommonActions, IBasicActions {
     address _taxCollector,
     address _coinJoin,
     uint256 _safeId
-  ) external delegateCall {
+  ) external onlyDelegateCall {
     address _safeEngine = HaiSafeManager(_manager).safeEngine();
     HaiSafeManager.SAFEData memory _safeInfo = HaiSafeManager(_manager).safeData(_safeId);
     ITaxCollector(_taxCollector).taxSingle(_safeInfo.collateralType);
@@ -306,7 +305,7 @@ contract BasicActions is CommonActions, IBasicActions {
       _collateralSource: address(this),
       _debtDestination: address(this),
       _deltaCollateral: 0,
-      _deltaDebt: -int256(_safeData.generatedDebt)
+      _deltaDebt: -_safeData.generatedDebt.toInt()
     });
   }
 
@@ -319,7 +318,7 @@ contract BasicActions is CommonActions, IBasicActions {
     uint256 _safe,
     uint256 _collateralAmount,
     uint256 _deltaWad
-  ) external delegateCall {
+  ) external onlyDelegateCall {
     _lockTokenCollateralAndGenerateDebt(
       _manager, _taxCollector, _collateralJoin, _coinJoin, _safe, _collateralAmount, _deltaWad
     );
@@ -334,7 +333,7 @@ contract BasicActions is CommonActions, IBasicActions {
     bytes32 _cType,
     uint256 _collateralAmount,
     uint256 _deltaWad
-  ) external delegateCall returns (uint256 _safe) {
+  ) external onlyDelegateCall returns (uint256 _safe) {
     _safe = _openSAFE(_manager, _cType, address(this));
 
     _lockTokenCollateralAndGenerateDebt(
@@ -351,7 +350,7 @@ contract BasicActions is CommonActions, IBasicActions {
     uint256 _safeId,
     uint256 _collateralWad,
     uint256 _debtWad
-  ) external delegateCall {
+  ) external onlyDelegateCall {
     address _safeEngine = HaiSafeManager(_manager).safeEngine();
     HaiSafeManager.SAFEData memory _safeInfo = HaiSafeManager(_manager).safeData(_safeId);
     ITaxCollector(_taxCollector).taxSingle(_safeInfo.collateralType);
@@ -379,7 +378,7 @@ contract BasicActions is CommonActions, IBasicActions {
     address _coinJoin,
     uint256 _safeId,
     uint256 _collateralWad
-  ) external delegateCall {
+  ) external onlyDelegateCall {
     address _safeEngine = HaiSafeManager(_manager).safeEngine();
     HaiSafeManager.SAFEData memory _safeInfo = HaiSafeManager(_manager).safeData(_safeId);
     ITaxCollector(_taxCollector).taxSingle(_safeInfo.collateralType);

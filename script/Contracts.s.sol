@@ -74,7 +74,6 @@ import {PostSettlementSurplusBidActions} from '@contracts/proxies/actions/PostSe
 import {GlobalSettlementActions} from '@contracts/proxies/actions/GlobalSettlementActions.sol';
 import {RewardedActions} from '@contracts/proxies/actions/RewardedActions.sol';
 import {HaiProxy} from '@contracts/proxies/HaiProxy.sol';
-import {HaiProxyRegistry} from '@contracts/proxies/HaiProxyRegistry.sol';
 import {HaiProxyFactory} from '@contracts/proxies/HaiProxyFactory.sol';
 import {HaiSafeManager} from '@contracts/proxies/HaiSafeManager.sol';
 
@@ -139,7 +138,6 @@ abstract contract Contracts {
   IOracleJob public oracleJob;
 
   // --- Proxy contracts ---
-  HaiProxyRegistry public proxyRegistry;
   HaiProxyFactory public proxyFactory;
   HaiSafeManager public safeManager;
 

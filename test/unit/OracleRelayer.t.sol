@@ -145,7 +145,7 @@ contract Unit_OracleRelayer_Constructor is Base {
   }
 
   function test_Revert_Null_SystemCoinOracle() public {
-    vm.expectRevert(Assertions.NullAddress.selector);
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
 
     new OracleRelayer(address(mockSafeEngine), IBaseOracle(address(0)), oracleRelayerParams);
   }
@@ -159,7 +159,7 @@ contract Unit_OracleRelayer_ModifyParameters is Base {
   }
 
   modifier previousValidCTypeParams(bytes32 _cType) {
-    OracleRelayerForTest(address(oracleRelayer)).setCTypeOracle(_cType, newAddress());
+    OracleRelayerForTest(address(oracleRelayer)).setCTypeOracle(_cType, mockContract(newAddress(), 'NewCTypeOracle'));
     _mockCTypeSafetyCRatio(_cType, type(uint256).max);
     _mockCTypeLiquidationCRatio(_cType, 0);
     _mockCollateralList(_cType);
@@ -173,7 +173,7 @@ contract Unit_OracleRelayer_ModifyParameters is Base {
   {
     return (
       _fuzz.liquidationCRatio >= 1e27 && _fuzz.safetyCRatio >= _fuzz.liquidationCRatio
-        && address(_fuzz.oracle) != address(vm) && address(_fuzz.oracle) != address(0)
+        && address(_fuzz.oracle) != address(vm) && uint160(address(_fuzz.oracle)) > 20
     );
   }
 
@@ -190,7 +190,13 @@ contract Unit_OracleRelayer_ModifyParameters is Base {
     bytes32 _cType,
     IOracleRelayer.OracleRelayerCollateralParams memory _fuzz,
     address _fuzzPriceSource
-  ) public authorized previousValidCTypeParams(_cType) {
+  )
+    public
+    authorized
+    previousValidCTypeParams(_cType)
+    mockAsContract(address(_fuzz.oracle))
+    mockAsContract(_fuzzPriceSource)
+  {
     vm.assume(_validOracleRelayerCollateralParams(_fuzz));
     // NOTE: needs to have a valid liqCRatio to pass the `modifyParameters` check
     _mockCTypeLiquidationCRatio(_cType, 1e27);
@@ -294,7 +300,7 @@ contract Unit_OracleRelayer_ModifyParameters is Base {
     authorized
     previousValidCTypeParams(_cType)
   {
-    vm.expectRevert(Assertions.NullAddress.selector);
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
 
     oracleRelayer.modifyParameters(_cType, 'oracle', abi.encode(address(0)));
   }
@@ -859,7 +865,7 @@ contract Unit_OracleRelayer_InitializeCollateralType is Base {
   ) public authorized {
     _oracleRelayerCParams.oracle = IDelayedOracle(address(0));
 
-    vm.expectRevert(Assertions.NullAddress.selector);
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
 
     oracleRelayer.initializeCollateralType(_cType, _oracleRelayerCParams);
   }

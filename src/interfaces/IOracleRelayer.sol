@@ -72,14 +72,14 @@ interface IOracleRelayer is IAuthorizable, IModifiable, IDisableable {
 
   /**
    * @notice Getter for the contract parameters struct
-   * @dev    Returns a OracleRelayerParams struct
+   * @return _oracleRelayerParams a OracleRelayerParams struct
    */
   function params() external view returns (OracleRelayerParams memory _oracleRelayerParams);
 
   /**
    * @notice Getter for the unpacked contract parameters struct
-   * @param _redemptionRateUpperBound Upper bound for the per-second redemption rate [ray]
-   * @param _redemptionRateLowerBound Lower bound for the per-second redemption rate [ray]
+   * @return _redemptionRateUpperBound Upper bound for the per-second redemption rate [ray]
+   * @return _redemptionRateLowerBound Lower bound for the per-second redemption rate [ray]
    */
   // solhint-disable-next-line private-vars-leading-underscore
   function _params() external view returns (uint256 _redemptionRateUpperBound, uint256 _redemptionRateLowerBound);
@@ -87,16 +87,16 @@ interface IOracleRelayer is IAuthorizable, IModifiable, IDisableable {
   /**
    * @notice Getter for the collateral parameters struct
    * @param  _cType Bytes32 representation of the collateral type
-   * @dev    Returns a OracleRelayerCollateralParams struct
+   * @return _oracleRelayerCParams a OracleRelayerCollateralParams struct
    */
   function cParams(bytes32 _cType) external view returns (OracleRelayerCollateralParams memory _oracleRelayerCParams);
 
   /**
    * @notice Getter for the unpacked collateral parameters struct
    * @param  _cType Bytes32 representation of the collateral type
-   * @param  _oracle Usually a DelayedOracle that enforces delays to fresh price feeds
-   * @param  _safetyCRatio CRatio used to compute the 'safePrice' - the price used when generating debt in SAFEEngine [ray]
-   * @param  _liquidationCRatio CRatio used to compute the 'liquidationPrice' - the price used when liquidating SAFEs [ray]
+   * @return  _oracle Usually a DelayedOracle that enforces delays to fresh price feeds
+   * @return  _safetyCRatio CRatio used to compute the 'safePrice' - the price used when generating debt in SAFEEngine [ray]
+   * @return  _liquidationCRatio CRatio used to compute the 'liquidationPrice' - the price used when liquidating SAFEs [ray]
    */
   // solhint-disable-next-line private-vars-leading-underscore
   function _cParams(bytes32 _cType)

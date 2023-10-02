@@ -167,13 +167,16 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
   /// @inheritdoc IDebtAuctionHouse
   function settleAuction(uint256 _id) external whenEnabled {
     Auction memory _auction = _auctions[_id];
+
     if (_auction.bidExpiry == 0 || (_auction.bidExpiry > block.timestamp && _auction.auctionDeadline > block.timestamp))
     {
       revert DAH_AuctionNotFinished();
     }
 
-    protocolToken.mint(_auction.highBidder, _auction.amountToSell);
+    delete _auctions[_id];
     --activeDebtAuctions;
+
+    protocolToken.mint(_auction.highBidder, _auction.amountToSell);
 
     emit SettleAuction({
       _id: _id,
@@ -181,13 +184,13 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
       _highBidder: _auction.highBidder,
       _raisedAmount: _auction.bidAmount
     });
-
-    delete _auctions[_id];
   }
 
   /// @inheritdoc IDebtAuctionHouse
   function terminateAuctionPrematurely(uint256 _id) external whenDisabled {
     Auction memory _auction = _auctions[_id];
+    delete _auctions[_id];
+
     if (_auction.highBidder == address(0)) revert DAH_HighBidderNotSet();
 
     safeEngine.createUnbackedDebt({
@@ -202,8 +205,6 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
       _highBidder: _auction.highBidder,
       _raisedAmount: _auction.bidAmount
     });
-
-    delete _auctions[_id];
   }
 
   // --- Administration ---
@@ -223,6 +224,6 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
 
   /// @inheritdoc Modifiable
   function _validateParameters() internal view override {
-    address(protocolToken).assertNonNull();
+    address(protocolToken).assertHasCode();
   }
 }

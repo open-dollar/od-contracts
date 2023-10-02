@@ -184,7 +184,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
 
   function _getProxy(address _user) internal returns (HaiProxy) {
     if (proxy[_user] == HaiProxy(address(0))) {
-      proxy[_user] = HaiProxy(proxyRegistry.build(_user));
+      proxy[_user] = HaiProxy(proxyFactory.build(_user));
     }
     return proxy[_user];
   }

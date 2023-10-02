@@ -304,13 +304,13 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
 
   /// @inheritdoc Modifiable
   function _validateParameters() internal view override {
-    address(accountingEngine).assertNonNull();
+    address(accountingEngine).assertHasCode();
   }
 
   /// @inheritdoc Modifiable
   function _validateCParameters(bytes32 _cType) internal view override {
     LiquidationEngineCollateralParams memory __cParams = _cParams[_cType];
-    address(__cParams.collateralAuctionHouse).assertNonNull();
+    address(__cParams.collateralAuctionHouse).assertHasCode();
     __cParams.liquidationQuantity.assertLtEq(MAX_RAD);
   }
 

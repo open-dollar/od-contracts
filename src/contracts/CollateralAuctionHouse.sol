@@ -268,18 +268,11 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, Disableable, IColla
     );
     if (_boughtCollateral == 0) revert CAH_NullBoughtAmount();
 
-    // Transfer the bid to the income recipient and the collateral to the bidder
+    // Transfer the bid to the income recipient
     safeEngine.transferInternalCoins({
       _source: msg.sender,
       _destination: _auction.auctionIncomeRecipient,
       _rad: _adjustedBid * RAY
-    });
-
-    safeEngine.transferCollateral({
-      _cType: collateralType,
-      _source: address(this),
-      _destination: msg.sender,
-      _wad: _boughtCollateral
     });
 
     if (_adjustedBid * RAY < _auction.amountToRaise && _auction.amountToSell > _boughtCollateral) {
@@ -328,6 +321,14 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, Disableable, IColla
       delete _auctions[_id];
     }
 
+    // Transfer the collateral to the bidder
+    safeEngine.transferCollateral({
+      _cType: collateralType,
+      _source: address(this),
+      _destination: msg.sender,
+      _wad: _boughtCollateral
+    });
+
     // Emit the buy event
     emit BuyCollateral({
       _id: _id,
@@ -339,13 +340,9 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, Disableable, IColla
   }
 
   /// @inheritdoc ICollateralAuctionHouse
-  function settleAuction(uint256) external pure {
-    return;
-  }
-
-  /// @inheritdoc ICollateralAuctionHouse
   function terminateAuctionPrematurely(uint256 _id) external isAuthorized {
     Auction memory _auction = _auctions[_id];
+    delete _auctions[_id];
 
     if (_auction.amountToSell == 0 || _auction.amountToRaise == 0) revert CAH_InexistentAuction();
     liquidationEngine().removeCoinsFromAuction(_auction.amountToRaise);
@@ -363,8 +360,6 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, Disableable, IColla
       _leftoverReceiver: _auction.forgoneCollateralReceiver,
       _leftoverCollateral: _auction.amountToSell
     });
-
-    delete _auctions[_id];
   }
 
   // --- Administration ---
@@ -401,8 +396,8 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, Disableable, IColla
   /// @inheritdoc Modifiable
   function _validateParameters() internal view override {
     // Registry
-    address(liquidationEngine()).assertNonNull();
-    address(oracleRelayer()).assertNonNull();
+    address(liquidationEngine()).assertHasCode();
+    address(oracleRelayer()).assertHasCode();
     // CAH Params
     _params.minDiscount.assertGtEq(_params.maxDiscount).assertLtEq(WAD);
     _params.maxDiscount.assertGt(0);

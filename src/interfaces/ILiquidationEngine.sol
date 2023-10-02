@@ -126,6 +126,7 @@ interface ILiquidationEngine is IAuthorizable, IModifiable, IDisableable {
 
   /**
    * @notice The AccountingEngine is used to push the debt into the system, and set as the first bidder on the collateral auctions
+   * @return _accountingEngine Address of the AccountingEngine
    */
   function accountingEngine() external view returns (IAccountingEngine _accountingEngine);
 

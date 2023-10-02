@@ -178,7 +178,7 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled {
     uint256 _uint256 = _data.toUint256();
 
-    if (_param == 'systemCoinOracle') systemCoinOracle = IBaseOracle(_data.toAddress().assertNonNull());
+    if (_param == 'systemCoinOracle') systemCoinOracle = IBaseOracle(_data.toAddress().assertHasCode());
     else if (_param == 'redemptionRateUpperBound') _params.redemptionRateUpperBound = _uint256;
     else if (_param == 'redemptionRateLowerBound') _params.redemptionRateLowerBound = _uint256;
     else revert UnrecognizedParam();
@@ -199,7 +199,7 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
   /// @dev Validates the address is IDelayedOracle compliant and returns it
   function _validateDelayedOracle(address _oracle) internal view returns (IDelayedOracle _delayedOracle) {
     // Checks if the delayed oracle priceSource is implemented
-    _delayedOracle = IDelayedOracle(_oracle.assertNonNull());
+    _delayedOracle = IDelayedOracle(_oracle.assertHasCode());
     _delayedOracle.priceSource();
   }
 
@@ -207,7 +207,7 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
   function _validateParameters() internal view override {
     _params.redemptionRateUpperBound.assertGt(RAY);
     _params.redemptionRateLowerBound.assertGt(0).assertLt(RAY);
-    address(systemCoinOracle).assertNonNull();
+    address(systemCoinOracle).assertHasCode();
   }
 
   /// @inheritdoc Modifiable
@@ -215,6 +215,6 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
     OracleRelayerCollateralParams memory __cParams = _cParams[_cType];
     __cParams.safetyCRatio.assertGtEq(__cParams.liquidationCRatio);
     __cParams.liquidationCRatio.assertGtEq(RAY);
-    address(__cParams.oracle).assertNonNull();
+    address(__cParams.oracle).assertHasCode();
   }
 }

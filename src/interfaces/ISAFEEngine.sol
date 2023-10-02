@@ -188,7 +188,7 @@ interface ISAFEEngine is IAuthorizable, IModifiable, IDisableable {
 
   /**
    * @notice Getter for the contract parameters struct
-   * @dev    Returns a SAFEEngineParams struct
+   * @return _safeEngineParams the active SAFEEngineParams
    */
   function params() external view returns (SAFEEngineParams memory _safeEngineParams);
 
@@ -203,7 +203,7 @@ interface ISAFEEngine is IAuthorizable, IModifiable, IDisableable {
   /**
    * @notice Getter for the collateral parameters struct
    * @param  _cType Bytes32 representation of the collateral type
-   * @dev    Returns a SAFEEngineCollateralParams struct
+   * @return  _safeEngineCParams SAFEEngineCollateralParams for the collateral type
    */
   function cParams(bytes32 _cType) external view returns (SAFEEngineCollateralParams memory _safeEngineCParams);
 
@@ -219,7 +219,7 @@ interface ISAFEEngine is IAuthorizable, IModifiable, IDisableable {
   /**
    * @notice Getter for the collateral data struct
    * @param  _cType Bytes32 representation of the collateral type
-   * @dev    Returns a SAFEEngineCollateralData struct
+   * @return  _safeEngineCData SAFEEngineCollateralData for the collateral type
    */
   function cData(bytes32 _cType) external view returns (SAFEEngineCollateralData memory _safeEngineCData);
 
@@ -248,7 +248,7 @@ interface ISAFEEngine is IAuthorizable, IModifiable, IDisableable {
    * @notice Data about each SAFE
    * @param  _cType Bytes32 representation of the collateral type
    * @param  _safeAddress Address of the SAFE
-   * @dev    Returns a SAFE struct
+   * @return _safeData SAFE data for the specified collateral type of the specified safe.
    */
   function safes(bytes32 _cType, address _safeAddress) external view returns (SAFE memory _safeData);
 
@@ -299,13 +299,13 @@ interface ISAFEEngine is IAuthorizable, IModifiable, IDisableable {
 
   /**
    * @notice Total amount of debt (coins) currently issued
-   * @dev    Returns the global debt [rad]
+   * @return _globalDebt Global debt [rad]
    */
   function globalDebt() external returns (uint256 _globalDebt);
 
   /**
    * @notice 'Bad' debt that's not covered by collateral
-   * @dev    Returns the global unbacked debt [rad]
+   * @return _globalUnbackedDebt Global unbacked debt [rad]
    */
   function globalUnbackedDebt() external view returns (uint256 _globalUnbackedDebt);
 
@@ -456,7 +456,10 @@ interface ISAFEEngine is IAuthorizable, IModifiable, IDisableable {
   function denySAFEModification(address _account) external;
 
   /**
-   * @notice Checks whether msg.sender has the right to modify a SAFE
+   * @notice Checks whether an account has the right to modify a SAFE
+   * @param _safe the safe to check
+   * @param _account the account to check
+   * @return _allowed Whether the account can modify the safe
    */
   function canModifySAFE(address _safe, address _account) external view returns (bool _allowed);
 
