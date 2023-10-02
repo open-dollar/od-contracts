@@ -7,9 +7,10 @@ import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
+import {IModifiablePerCollateral} from '@interfaces/utils/IModifiablePerCollateral.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 
-interface IOracleRelayer is IAuthorizable, IModifiable, IDisableable {
+interface IOracleRelayer is IAuthorizable, IDisableable, IModifiable, IModifiablePerCollateral {
   // --- Events ---
 
   /**
@@ -154,19 +155,4 @@ interface IOracleRelayer is IAuthorizable, IModifiable, IDisableable {
    * @param  _redemptionRate The newly calculated redemption rate [ray]
    */
   function updateRedemptionRate(uint256 _redemptionRate) external;
-
-  /**
-   * @notice Register a new collateral type in the OracleRelayer
-   * @param  _cType Bytes32 representation of the collateral type
-   * @param  _collateralParams OracleRelayerCollateralParams valid struct containing the collateral parameters
-   */
-  function initializeCollateralType(bytes32 _cType, OracleRelayerCollateralParams memory _collateralParams) external;
-
-  // --- Views ---
-
-  /**
-   * @notice List of all the collateral types registered in the OracleRelayer
-   * @return __collateralList Array of all the collateral types registered
-   */
-  function collateralList() external view returns (bytes32[] memory __collateralList);
 }

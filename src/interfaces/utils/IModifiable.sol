@@ -19,12 +19,4 @@ interface IModifiable is IAuthorizable {
    * @param _data Encoded data to modify the parameter
    */
   function modifyParameters(bytes32 _param, bytes memory _data) external;
-
-  /**
-   * @notice Set a new value for a collateral specific parameter
-   * @param _cType String identifier of the collateral to modify
-   * @param _param String identifier of the parameter to modify
-   * @param _data Encoded data to modify the parameter
-   */
-  function modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) external;
 }

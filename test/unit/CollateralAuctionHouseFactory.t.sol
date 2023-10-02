@@ -11,6 +11,7 @@ import {
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
+import {IModifiablePerCollateral} from '@interfaces/utils/IModifiablePerCollateral.sol';
 import {IFactoryChild} from '@interfaces/factories/IFactoryChild.sol';
 import {WAD} from '@libraries/Math.sol';
 import {Assertions} from '@libraries/Assertions.sol';
@@ -127,7 +128,7 @@ contract Unit_CollateralAuctionHouseFactory_DeployCollateralAuctionHouse is Base
   function test_Revert_Unauthorized(bytes32 _cType) public {
     vm.expectRevert(IAuthorizable.Unauthorized.selector);
 
-    collateralAuctionHouseFactory.deployCollateralAuctionHouse(_cType, cahParams);
+    collateralAuctionHouseFactory.initializeCollateralType(_cType, abi.encode(cahParams));
   }
 
   function test_Revert_ContractIsDisabled(bytes32 _cType) public {
@@ -137,19 +138,19 @@ contract Unit_CollateralAuctionHouseFactory_DeployCollateralAuctionHouse is Base
 
     vm.expectRevert(IDisableable.ContractIsDisabled.selector);
 
-    collateralAuctionHouseFactory.deployCollateralAuctionHouse(_cType, cahParams);
+    collateralAuctionHouseFactory.initializeCollateralType(_cType, abi.encode(cahParams));
   }
 
   function test_Revert_CAHExists(bytes32 _cType) public happyPath {
-    collateralAuctionHouseFactory.deployCollateralAuctionHouse(_cType, cahParams);
+    collateralAuctionHouseFactory.initializeCollateralType(_cType, abi.encode(cahParams));
 
-    vm.expectRevert(ICollateralAuctionHouseFactory.CAHFactory_CAHExists.selector);
+    vm.expectRevert(IModifiablePerCollateral.CollateralTypeAlreadyInitialized.selector);
 
-    collateralAuctionHouseFactory.deployCollateralAuctionHouse(_cType, cahParams);
+    collateralAuctionHouseFactory.initializeCollateralType(_cType, abi.encode(cahParams));
   }
 
   function test_Deploy_CollateralAuctionHouseChild(bytes32 _cType) public happyPath {
-    collateralAuctionHouseFactory.deployCollateralAuctionHouse(_cType, cahParams);
+    collateralAuctionHouseFactory.initializeCollateralType(_cType, abi.encode(cahParams));
 
     assertEq(address(collateralAuctionHouseChild).code, type(CollateralAuctionHouseChild).runtimeCode);
 
@@ -163,13 +164,13 @@ contract Unit_CollateralAuctionHouseFactory_DeployCollateralAuctionHouse is Base
   }
 
   function test_Set_CollateralList(bytes32 _cType) public happyPath {
-    collateralAuctionHouseFactory.deployCollateralAuctionHouse(_cType, cahParams);
+    collateralAuctionHouseFactory.initializeCollateralType(_cType, abi.encode(cahParams));
 
     assertEq(collateralAuctionHouseFactory.collateralList()[0], _cType);
   }
 
   function test_Set_CollateralAuctionHouses(bytes32 _cType) public happyPath {
-    collateralAuctionHouseFactory.deployCollateralAuctionHouse(_cType, cahParams);
+    collateralAuctionHouseFactory.initializeCollateralType(_cType, abi.encode(cahParams));
 
     assertEq(collateralAuctionHouseFactory.collateralAuctionHousesList()[0], address(collateralAuctionHouseChild));
   }
@@ -178,13 +179,13 @@ contract Unit_CollateralAuctionHouseFactory_DeployCollateralAuctionHouse is Base
     vm.expectEmit();
     emit DeployCollateralAuctionHouse(_cType, address(collateralAuctionHouseChild));
 
-    collateralAuctionHouseFactory.deployCollateralAuctionHouse(_cType, cahParams);
+    collateralAuctionHouseFactory.initializeCollateralType(_cType, abi.encode(cahParams));
   }
 
   function test_Return_CollateralAuctionHouse(bytes32 _cType) public happyPath {
+    collateralAuctionHouseFactory.initializeCollateralType(_cType, abi.encode(cahParams));
     assertEq(
-      address(collateralAuctionHouseFactory.deployCollateralAuctionHouse(_cType, cahParams)),
-      address(collateralAuctionHouseChild)
+      address(collateralAuctionHouseFactory.collateralAuctionHouses(_cType)), address(collateralAuctionHouseChild)
     );
   }
 }

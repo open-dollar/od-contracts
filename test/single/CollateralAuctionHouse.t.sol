@@ -109,7 +109,7 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
 
     ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
       ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: 0, debtFloor: 0});
-    safeEngine.initializeCollateralType('collateralType', _safeEngineCollateralParams);
+    safeEngine.initializeCollateralType('collateralType', abi.encode(_safeEngineCollateralParams));
 
     liquidationEngine = new DummyLiquidationEngine(rad(1000 ether));
 
@@ -141,7 +141,7 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
       safetyCRatio: 1e27,
       liquidationCRatio: 1e27
     });
-    oracleRelayer.initializeCollateralType('collateralType', _oracleRelayerCParams);
+    oracleRelayer.initializeCollateralType('collateralType', abi.encode(_oracleRelayerCParams));
 
     // setup oracleRelayer
     _modifyParameters('oracleRelayer', abi.encode(oracleRelayer));
@@ -717,8 +717,9 @@ contract FactorySingleCollateralAuctionHouseTest is SingleCollateralAuctionHouse
     returns (ICollateralAuctionHouse _collateralAuctionHouse)
   {
     factory = new CollateralAuctionHouseFactory(address(safeEngine), address(liquidationEngine), address(oracleRelayer));
+    factory.initializeCollateralType('collateralType', abi.encode(_cahParams));
 
-    return factory.deployCollateralAuctionHouse('collateralType', _cahParams);
+    return ICollateralAuctionHouse(ICollateralAuctionHouse(factory.collateralAuctionHouses('collateralType')));
   }
 
   function _modifyParameters(bytes32 _parameter, bytes memory _data) internal override {

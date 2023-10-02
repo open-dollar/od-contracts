@@ -5,7 +5,7 @@ import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
 import {ISAFESaviour} from '@interfaces/external/ISAFESaviour.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
-import {ILiquidationEngine, IDisableable} from '@interfaces/ILiquidationEngine.sol';
+import {ILiquidationEngine, IDisableable, IModifiablePerCollateral} from '@interfaces/ILiquidationEngine.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
@@ -1812,7 +1812,7 @@ contract Unit_LiquidationEngine_InitializeCollateralType is Base {
     bytes32 _cType,
     ILiquidationEngine.LiquidationEngineCollateralParams memory _liqEngineCParams
   ) public authorized happyPath(_liqEngineCParams) mockAsContract(_liqEngineCParams.collateralAuctionHouse) {
-    liquidationEngine.initializeCollateralType(_cType, _liqEngineCParams);
+    liquidationEngine.initializeCollateralType(_cType, abi.encode(_liqEngineCParams));
 
     assertEq(abi.encode(liquidationEngine.cParams(_cType)), abi.encode(_liqEngineCParams));
   }
@@ -1826,7 +1826,7 @@ contract Unit_LiquidationEngine_InitializeCollateralType is Base {
       abi.encodeCall(mockSafeEngine.approveSAFEModification, (_liqEngineCParams.collateralAuctionHouse))
     );
 
-    liquidationEngine.initializeCollateralType(_cType, _liqEngineCParams);
+    liquidationEngine.initializeCollateralType(_cType, abi.encode(_liqEngineCParams));
   }
 
   function test_Emit_AddAuthorization(
@@ -1836,7 +1836,7 @@ contract Unit_LiquidationEngine_InitializeCollateralType is Base {
     vm.expectEmit();
     emit AddAuthorization(_liqEngineCParams.collateralAuctionHouse);
 
-    liquidationEngine.initializeCollateralType(_cType, _liqEngineCParams);
+    liquidationEngine.initializeCollateralType(_cType, abi.encode(_liqEngineCParams));
   }
 
   function test_Revert_CollateralAuctionHouse_NullAddress(
@@ -1847,7 +1847,7 @@ contract Unit_LiquidationEngine_InitializeCollateralType is Base {
 
     vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
 
-    liquidationEngine.initializeCollateralType(_cType, _liqEngineCParams);
+    liquidationEngine.initializeCollateralType(_cType, abi.encode(_liqEngineCParams));
   }
 
   function test_Revert_LiquidationQuantity_NotLesserOrEqualThan(
@@ -1861,7 +1861,7 @@ contract Unit_LiquidationEngine_InitializeCollateralType is Base {
       abi.encodeWithSelector(Assertions.NotLesserOrEqualThan.selector, _liqEngineCParams.liquidationQuantity, MAX_RAD)
     );
 
-    liquidationEngine.initializeCollateralType(_cType, _liqEngineCParams);
+    liquidationEngine.initializeCollateralType(_cType, abi.encode(_liqEngineCParams));
   }
 
   function test_Revert_NotAuthorized(
@@ -1870,7 +1870,7 @@ contract Unit_LiquidationEngine_InitializeCollateralType is Base {
   ) public {
     vm.expectRevert(IAuthorizable.Unauthorized.selector);
 
-    liquidationEngine.initializeCollateralType(_cType, _liqEngineCParams);
+    liquidationEngine.initializeCollateralType(_cType, abi.encode(_liqEngineCParams));
   }
 
   function test_Revert_CollateralTypeAlreadyInitialized(
@@ -1879,9 +1879,9 @@ contract Unit_LiquidationEngine_InitializeCollateralType is Base {
   ) public authorized {
     _mockCollateralList(_cType);
 
-    vm.expectRevert(ILiquidationEngine.LiqEng_CollateralTypeAlreadyInitialized.selector);
+    vm.expectRevert(IModifiablePerCollateral.CollateralTypeAlreadyInitialized.selector);
 
-    liquidationEngine.initializeCollateralType(_cType, _liqEngineCParams);
+    liquidationEngine.initializeCollateralType(_cType, abi.encode(_liqEngineCParams));
   }
 
   function test_Revert_ContractIsDisabled(
@@ -1892,6 +1892,6 @@ contract Unit_LiquidationEngine_InitializeCollateralType is Base {
     _mockContractEnabled(false);
 
     vm.expectRevert();
-    liquidationEngine.initializeCollateralType(_cType, _liqEngineCParams);
+    liquidationEngine.initializeCollateralType(_cType, abi.encode(_liqEngineCParams));
   }
 }

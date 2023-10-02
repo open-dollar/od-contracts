@@ -6,9 +6,10 @@ import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
 
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
+import {IModifiablePerCollateral} from '@interfaces/utils/IModifiablePerCollateral.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 
-interface ILiquidationEngine is IAuthorizable, IModifiable, IDisableable {
+interface ILiquidationEngine is IAuthorizable, IDisableable, IModifiable, IModifiablePerCollateral {
   // --- Events ---
 
   /**
@@ -93,8 +94,6 @@ interface ILiquidationEngine is IAuthorizable, IModifiable, IDisableable {
   error LiqEng_DustySAFE();
   /// @notice Throws when trying to liquidate a SAFE with a null amount of collateral to sell
   error LiqEng_NullCollateralToSell();
-  /// @notice Throws when trying to initialize a collateral type that is already initialized
-  error LiqEng_CollateralTypeAlreadyInitialized();
   /// @notice Throws when trying to call a function only the liquidator is allowed to call
   error LiqEng_OnlyLiqEng();
 
@@ -234,22 +233,4 @@ interface ILiquidationEngine is IAuthorizable, IModifiable, IDisableable {
    * @param  _saviour SAFE saviour contract to be removed
    */
   function disconnectSAFESaviour(address _saviour) external;
-
-  /**
-   * @notice Authed function to initialize a brand new collateral type
-   * @param  _cType Bytes32 representation of the collateral type
-   * @param  _collateralParams Initial collateral parameters struct to initialize the collateral type
-   */
-  function initializeCollateralType(
-    bytes32 _cType,
-    LiquidationEngineCollateralParams memory _collateralParams
-  ) external;
-
-  // --- Views ---
-
-  /**
-   * @notice List of all collateral types initialized in the LiquidationEngine
-   * @return __collateralList Array of collateral types
-   */
-  function collateralList() external view returns (bytes32[] memory __collateralList);
 }

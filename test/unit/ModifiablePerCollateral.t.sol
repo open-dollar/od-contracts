@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {ModifiableForTest, IModifiable} from '@test/mocks/ModifiableForTest.sol';
+import {
+  ModifiablePerCollateralForTest, IModifiablePerCollateral
+} from '@test/mocks/ModifiablePerCollateralForTest.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 
@@ -12,12 +14,12 @@ abstract contract Base is HaiTest {
   address authorizedAccount = label('authorizedAccount');
   address user = label('user');
 
-  ModifiableForTest modifiable;
+  ModifiablePerCollateralForTest modifiable;
 
   function setUp() public virtual {
     vm.startPrank(deployer);
 
-    modifiable = new ModifiableForTest();
+    modifiable = new ModifiablePerCollateralForTest();
     label(address(modifiable), 'Modifiable');
 
     modifiable.addAuthorization(authorizedAccount);
@@ -26,7 +28,7 @@ abstract contract Base is HaiTest {
   }
 }
 
-contract Unit_Modifiable_Constructor is Base {
+contract Unit_ModifiablePerCollateral_Constructor is Base {
   event AddAuthorization(address _account);
 
   modifier happyPath() {
@@ -38,17 +40,17 @@ contract Unit_Modifiable_Constructor is Base {
     vm.expectEmit();
     emit AddAuthorization(user);
 
-    modifiable = new ModifiableForTest();
+    modifiable = new ModifiablePerCollateralForTest();
   }
 }
 
-contract Unit_Modifiable_ModifyParameters is Base {
+contract Unit_Modifiable_ModifyParametersPerCollateral is Base {
   event ModifyParameters(bytes32 indexed _param, bytes32 indexed _cType, bytes _data);
 
   modifier happyPath() {
     vm.startPrank(deployer);
 
-    modifiable = ModifiableForTest(address(new ModifiableForTest()));
+    modifiable = ModifiablePerCollateralForTest(address(new ModifiablePerCollateralForTest()));
     label(address(modifiable), 'Modifiable');
 
     modifiable.addAuthorization(authorizedAccount);
@@ -58,16 +60,16 @@ contract Unit_Modifiable_ModifyParameters is Base {
     _;
   }
 
-  function test_Revert_Unauthorized(bytes32 _param, bytes memory _data) public {
+  function test_Revert_Unauthorized(bytes32 _cType, bytes32 _param, bytes memory _data) public {
     vm.expectRevert(IAuthorizable.Unauthorized.selector);
 
-    modifiable.modifyParameters(_param, _data);
+    modifiable.modifyParameters(_cType, _param, _data);
   }
 
-  function test_Emit_ModifyParameters(bytes32 _param, bytes memory _data) public happyPath {
+  function test_Emit_ModifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) public happyPath {
     vm.expectEmit();
-    emit ModifyParameters(_param, bytes32(0), _data);
+    emit ModifyParameters(_param, _cType, _data);
 
-    modifiable.modifyParameters(_param, _data);
+    modifiable.modifyParameters(_cType, _param, _data);
   }
 }
