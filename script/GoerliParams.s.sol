@@ -47,7 +47,8 @@ abstract contract GoerliParams is Contracts, Params {
     });
 
     _liquidationEngineParams = ILiquidationEngine.LiquidationEngineParams({
-      onAuctionSystemCoinLimit: 500_000 * RAD // 500k COINs
+      onAuctionSystemCoinLimit: 500_000 * RAD, // 500k COINs
+      saviourGasLimit: 10_000_000 // 10M gas
     });
 
     _stabilityFeeTreasuryParams = IStabilityFeeTreasury.StabilityFeeTreasuryParams({

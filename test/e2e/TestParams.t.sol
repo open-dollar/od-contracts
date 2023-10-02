@@ -49,7 +49,8 @@ abstract contract TestParams is Contracts, Params {
     });
 
     _liquidationEngineParams = ILiquidationEngine.LiquidationEngineParams({
-      onAuctionSystemCoinLimit: 10_000 * RAD // 10_000 COINs
+      onAuctionSystemCoinLimit: 10_000 * RAD, // 10_000 COINs
+      saviourGasLimit: 10_000_000 // 10M gas
     });
 
     _stabilityFeeTreasuryParams = IStabilityFeeTreasury.StabilityFeeTreasuryParams({
