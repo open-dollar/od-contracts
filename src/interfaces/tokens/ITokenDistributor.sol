@@ -23,18 +23,10 @@ interface ITokenDistributor is IAuthorizable {
 
   // --- Errors ---
 
-  /// @notice Throws when trying to claim before the claim period has started
-  error TokenDistributor_ClaimPeriodNotStarted();
-  /// @notice Throws when trying to claim after the claim period has ended
-  error TokenDistributor_ClaimPeriodEnded();
-  /// @notice Throws when a user that already claimed tries to claim again
-  error TokenDistributor_AlreadyClaimed();
-  /// @notice Throws when trying to claim a null amount of tokens
-  error TokenDistributor_ZeroAmount();
-  /// @notice Throws when the merkle proof provided to claim is invalid
-  error TokenDistributor_FailedMerkleProofVerify();
   /// @notice Throws when trying to sweep before the claim period has ended
   error TokenDistributor_ClaimPeriodNotEnded();
+  /// @notice Throws when trying to claim but the claim is not valid
+  error TokenDistributor_ClaimInvalid();
 
   /// @notice The merkle root of the token distribution
   function root() external view returns (bytes32 _root);
