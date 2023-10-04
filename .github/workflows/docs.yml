@@ -8,7 +8,7 @@ on:
 
 jobs:
   deploy-docs:
-    if: github.repository == 'hai-on-op/hai'
+    if: github.repository == 'open-dollar/od-contracts'
     name: Deploy docs
     runs-on: ubuntu-latest
     environment:
@@ -35,7 +35,7 @@ jobs:
           version: nightly
 
       - name: Build Docs
-        run: yarn docs:build
+        run: ./build-docs.sh
 
       - name: Create book folder
         run: mdbook build docs
