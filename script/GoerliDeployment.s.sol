@@ -65,33 +65,33 @@ abstract contract GoerliDeployment is Contracts, GoerliParams, GoerliContracts {
 
     // --- per token contracts ---
     collateralJoin[ARB] =
-      CollateralJoin(CollateralJoinChild_0x4654524700000000000000000000000000000000000000000000000000000000_Address);
+      CollateralJoin(CollateralJoinChild_0x4152420000000000000000000000000000000000000000000000000000000000_Address);
     collateralAuctionHouse[ARB] = CollateralAuctionHouse(
-      CollateralAuctionHouseChild_0x4654524700000000000000000000000000000000000000000000000000000000_Address
+      CollateralAuctionHouseChild_0x4152420000000000000000000000000000000000000000000000000000000000_Address
     );
 
     collateralJoin[WSTETH] =
-      CollateralJoin(CollateralJoinChild_0x5745544800000000000000000000000000000000000000000000000000000000_Address);
+      CollateralJoin(CollateralJoinChild_0x5753544554480000000000000000000000000000000000000000000000000000_Address);
     collateralAuctionHouse[WSTETH] = CollateralAuctionHouse(
-      CollateralAuctionHouseChild_0x5745544800000000000000000000000000000000000000000000000000000000_Address
+      CollateralAuctionHouseChild_0x5753544554480000000000000000000000000000000000000000000000000000_Address
     );
 
     collateralJoin[CBETH] =
-      CollateralJoin(CollateralJoinChild_0x5742544300000000000000000000000000000000000000000000000000000000_Address);
+      CollateralJoin(CollateralJoinChild_0x4342455448000000000000000000000000000000000000000000000000000000_Address);
     collateralAuctionHouse[CBETH] = CollateralAuctionHouse(
-      CollateralAuctionHouseChild_0x5742544300000000000000000000000000000000000000000000000000000000_Address
+      CollateralAuctionHouseChild_0x4342455448000000000000000000000000000000000000000000000000000000_Address
     );
 
     collateralJoin[RETH] =
-      CollateralJoin(CollateralJoinChild_0x53544f4e45530000000000000000000000000000000000000000000000000000_Address);
+      CollateralJoin(CollateralJoinChild_0x5245544800000000000000000000000000000000000000000000000000000000_Address);
     collateralAuctionHouse[RETH] = CollateralAuctionHouse(
-      CollateralAuctionHouseChild_0x53544f4e45530000000000000000000000000000000000000000000000000000_Address
+      CollateralAuctionHouseChild_0x5245544800000000000000000000000000000000000000000000000000000000_Address
     );
 
     collateralJoin[MAGIC] =
-      CollateralJoin(CollateralJoinChild_0x544f54454d000000000000000000000000000000000000000000000000000000_Address);
+      CollateralJoin(CollateralJoinChild_0x4d41474943000000000000000000000000000000000000000000000000000000_Address);
     collateralAuctionHouse[MAGIC] = CollateralAuctionHouse(
-      CollateralAuctionHouseChild_0x544f54454d000000000000000000000000000000000000000000000000000000_Address
+      CollateralAuctionHouseChild_0x4d41474943000000000000000000000000000000000000000000000000000000_Address
     );
 
     // --- jobs ---
@@ -119,10 +119,10 @@ abstract contract GoerliDeployment is Contracts, GoerliParams, GoerliContracts {
     // --- oracles ---
     systemCoinOracle = IBaseOracle(DenominatedOracleChild_OD_Address);
     delayedOracle[ARB] = IDelayedOracle(DelayedOracleChild_ARB_Address);
-    delayedOracle[WSTETH] = IDelayedOracle(DelayedOracleChild_WETH_Address);
-    delayedOracle[CBETH] = IDelayedOracle(DelayedOracleChild_WBTC_Address);
-    delayedOracle[RETH] = IDelayedOracle(DelayedOracleChild_STONES_Address);
-    delayedOracle[MAGIC] = IDelayedOracle(DelayedOracleChild_TOTEM_Address);
+    delayedOracle[WSTETH] = IDelayedOracle(DelayedOracleChild_WSTETH_Address);
+    delayedOracle[CBETH] = IDelayedOracle(DelayedOracleChild_CBETH_Address);
+    delayedOracle[RETH] = IDelayedOracle(DelayedOracleChild_RETH_Address);
+    delayedOracle[MAGIC] = IDelayedOracle(DelayedOracleChild_MAGIC_Address);
 
     camelotV3Factory = ICamelotV3Factory(GOERLI_CAMELOT_V3_FACTORY);
   }
