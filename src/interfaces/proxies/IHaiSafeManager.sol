@@ -5,9 +5,9 @@ interface IHaiSafeManager {
   // --- Events ---
 
   /// @notice Emitted when calling allowSAFE with the sender address and the method arguments
-  event AllowSAFE(address indexed _sender, uint256 indexed _safe, address _usr, uint256 _ok);
+  event AllowSAFE(address indexed _sender, uint256 indexed _safe, address _usr, bool _ok);
   /// @notice Emitted when calling allowHandler with the sender address and the method arguments
-  event AllowHandler(address indexed _sender, address _usr, uint256 _ok);
+  event AllowHandler(address indexed _sender, address _usr, bool _ok);
   /// @notice Emitted when calling transferSAFEOwnership with the sender address and the method arguments
   event TransferSAFEOwnership(address indexed _sender, uint256 indexed _safe, address _dst);
   /// @notice Emitted when calling openSAFE with the sender address and the method arguments
@@ -61,10 +61,10 @@ interface IHaiSafeManager {
   function safeEngine() external view returns (address _safeEngine);
 
   /// @notice Mapping of owner and safe permissions to a caller permissions
-  function safeCan(address _owner, uint256 _safeId, address _caller) external view returns (uint256 _ok);
+  function safeCan(address _owner, uint256 _safeId, address _caller) external view returns (bool _ok);
 
   /// @notice Mapping of handler to a caller permissions
-  function handlerCan(address _safeHandler, address _caller) external view returns (uint256 _ok);
+  function handlerCan(address _safeHandler, address _caller) external view returns (bool _ok);
 
   // --- Getters ---
 
@@ -110,14 +110,14 @@ interface IHaiSafeManager {
    * @param  _usr Address of the user to allow/disallow
    * @param  _ok Boolean state to allow/disallow
    */
-  function allowSAFE(uint256 _safe, address _usr, uint256 _ok) external;
+  function allowSAFE(uint256 _safe, address _usr, bool _ok) external;
 
   /**
    * @notice Allow/disallow a handler address to manage the safe
    * @param  _usr Address of the user to allow/disallow
    * @param  _ok Boolean state to allow/disallow
    */
-  function allowHandler(address _usr, uint256 _ok) external;
+  function allowHandler(address _usr, bool _ok) external;
 
   /**
    * @notice Open a new safe for a user address

@@ -80,8 +80,8 @@ contract SingleSettlementSurplusAuctioneerTest is DSTest {
     surplusAuctioneer.modifyParameters('accountingEngine', abi.encode(0x1234));
     surplusAuctioneer.modifyParameters('surplusAuctionHouse', abi.encode(0x1234));
 
-    assertEq(safeEngine.safeRights(address(surplusAuctioneer), address(surplusAuctionHouse)), 0);
-    assertEq(safeEngine.safeRights(address(surplusAuctioneer), address(0x1234)), 1);
+    assert(safeEngine.safeRights(address(surplusAuctioneer), address(surplusAuctionHouse)) == false);
+    assert(safeEngine.safeRights(address(surplusAuctioneer), address(0x1234)) == true);
 
     assertTrue(address(surplusAuctioneer.accountingEngine()) == address(0x1234));
     assertTrue(address(surplusAuctioneer.surplusAuctionHouse()) == address(0x1234));

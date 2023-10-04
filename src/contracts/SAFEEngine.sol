@@ -51,7 +51,7 @@ contract SAFEEngine is Authorizable, Disableable, Modifiable, ModifiablePerColla
   // solhint-disable-next-line private-vars-leading-underscore
   mapping(bytes32 _cType => mapping(address _safe => SAFE)) public _safes;
   /// @inheritdoc ISAFEEngine
-  mapping(address _caller => mapping(address _account => uint256 _isAllowed)) public safeRights;
+  mapping(address _caller => mapping(address _account => bool _isAllowed)) public safeRights;
 
   /// @inheritdoc ISAFEEngine
   function params() external view returns (SAFEEngineParams memory _safeEngineParams) {
@@ -334,19 +334,19 @@ contract SAFEEngine is Authorizable, Disableable, Modifiable, ModifiablePerColla
 
   /// @inheritdoc ISAFEEngine
   function approveSAFEModification(address _account) external {
-    safeRights[msg.sender][_account] = 1;
+    safeRights[msg.sender][_account] = true;
     emit ApproveSAFEModification(msg.sender, _account);
   }
 
   /// @inheritdoc ISAFEEngine
   function denySAFEModification(address _account) external {
-    safeRights[msg.sender][_account] = 0;
+    safeRights[msg.sender][_account] = false;
     emit DenySAFEModification(msg.sender, _account);
   }
 
   /// @inheritdoc ISAFEEngine
   function canModifySAFE(address _safe, address _account) public view returns (bool _canModifySafe) {
-    return _safe == _account || safeRights[_safe][_account] == 1;
+    return _safe == _account || safeRights[_safe][_account];
   }
 
   // --- Internals ---

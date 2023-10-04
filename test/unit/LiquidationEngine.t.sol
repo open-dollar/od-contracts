@@ -528,7 +528,7 @@ contract Unit_LiquidationEngine_ConnectSAFESaviour is Base {
 
     liquidationEngine.connectSAFESaviour(mockSaviour);
 
-    assertEq(liquidationEngine.safeSaviours(mockSaviour), 1);
+    assertEq(liquidationEngine.safeSaviours(mockSaviour), true);
   }
 
   function test_Emit_ConnectSAFESaviour() public authorized {
@@ -586,7 +586,7 @@ contract Unit_LiquidationEngine_DisconnectSAFESaviour is Base {
   function test_Set_SafeSaviours() public authorized {
     liquidationEngine.disconnectSAFESaviour(mockSaviour);
 
-    assertEq(liquidationEngine.safeSaviours(mockSaviour), 0);
+    assertEq(liquidationEngine.safeSaviours(mockSaviour), false);
   }
 
   function test_Emit_DisconnectSAFESaviour() public authorized {

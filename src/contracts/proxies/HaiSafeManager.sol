@@ -38,9 +38,9 @@ contract HaiSafeManager is IHaiSafeManager {
   mapping(uint256 _safeId => SAFEData) internal _safeData;
 
   /// @inheritdoc IHaiSafeManager
-  mapping(address _owner => mapping(uint256 _safeId => mapping(address _caller => uint256 _ok))) public safeCan;
+  mapping(address _owner => mapping(uint256 _safeId => mapping(address _caller => bool _ok))) public safeCan;
   /// @inheritdoc IHaiSafeManager
-  mapping(address _safeHandler => mapping(address _caller => uint256 _ok)) public handlerCan;
+  mapping(address _safeHandler => mapping(address _caller => bool _ok)) public handlerCan;
 
   // --- Modifiers ---
 
@@ -50,7 +50,7 @@ contract HaiSafeManager is IHaiSafeManager {
    */
   modifier safeAllowed(uint256 _safe) {
     address _owner = _safeData[_safe].owner;
-    if (msg.sender != _owner && safeCan[_owner][_safe][msg.sender] == 0) revert SafeNotAllowed();
+    if (msg.sender != _owner && !safeCan[_owner][_safe][msg.sender]) revert SafeNotAllowed();
     _;
   }
 
@@ -59,7 +59,7 @@ contract HaiSafeManager is IHaiSafeManager {
    * @param  _handler Address of the handler to check if msg.sender has permissions for
    */
   modifier handlerAllowed(address _handler) {
-    if (msg.sender != _handler && handlerCan[_handler][msg.sender] == 0) revert HandlerNotAllowed();
+    if (msg.sender != _handler && !handlerCan[_handler][msg.sender]) revert HandlerNotAllowed();
     _;
   }
 
@@ -107,14 +107,14 @@ contract HaiSafeManager is IHaiSafeManager {
   // --- Methods ---
 
   /// @inheritdoc IHaiSafeManager
-  function allowSAFE(uint256 _safe, address _usr, uint256 _ok) external safeAllowed(_safe) {
+  function allowSAFE(uint256 _safe, address _usr, bool _ok) external safeAllowed(_safe) {
     address _owner = _safeData[_safe].owner;
     safeCan[_owner][_safe][_usr] = _ok;
     emit AllowSAFE(msg.sender, _safe, _usr, _ok);
   }
 
   /// @inheritdoc IHaiSafeManager
-  function allowHandler(address _usr, uint256 _ok) external {
+  function allowHandler(address _usr, bool _ok) external {
     handlerCan[msg.sender][_usr] = _ok;
     emit AllowHandler(msg.sender, _usr, _ok);
   }

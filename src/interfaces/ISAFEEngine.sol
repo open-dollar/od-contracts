@@ -262,9 +262,9 @@ interface ISAFEEngine is IAuthorizable, IDisableable, IModifiable, IModifiablePe
    * @notice Who can transfer collateral & debt in/out of a SAFE
    * @param  _caller Address to check for SAFE permissions for
    * @param  _account Account to check if caller has permissions for
-   * @return _safeRights Numerical representation of the SAFE rights (0/1)
+   * @return _safeRights Boolean representation of the SAFE rights (0/1)
    */
-  function safeRights(address _caller, address _account) external view returns (uint256 _safeRights);
+  function safeRights(address _caller, address _account) external view returns (bool _safeRights);
 
   // --- Balances ---
 

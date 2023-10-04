@@ -39,7 +39,7 @@ contract LiquidationEngine is
   // --- SAFE Saviours ---
 
   /// @inheritdoc ILiquidationEngine
-  mapping(address _saviour => uint256 _allowed) public safeSaviours;
+  mapping(address _saviour => bool _allowed) public safeSaviours;
 
   /// @inheritdoc ILiquidationEngine
   mapping(bytes32 _cType => mapping(address _safe => address _saviour)) public chosenSAFESaviour;
@@ -99,13 +99,13 @@ contract LiquidationEngine is
       ISAFESaviour(_saviour).saveSAFE(address(this), '', address(0));
     if (!_ok) revert LiqEng_SaviourNotOk();
     if (_collateralAdded != type(uint256).max || _liquidatorReward != type(uint256).max) revert LiqEng_InvalidAmounts();
-    safeSaviours[_saviour] = 1;
+    safeSaviours[_saviour] = true;
     emit ConnectSAFESaviour(_saviour);
   }
 
   /// @inheritdoc ILiquidationEngine
   function disconnectSAFESaviour(address _saviour) external isAuthorized {
-    safeSaviours[_saviour] = 0;
+    safeSaviours[_saviour] = false;
     emit DisconnectSAFESaviour(_saviour);
   }
 
@@ -114,7 +114,7 @@ contract LiquidationEngine is
   /// @inheritdoc ILiquidationEngine
   function protectSAFE(bytes32 _cType, address _safe, address _saviour) external {
     if (!safeEngine.canModifySAFE(_safe, msg.sender)) revert LiqEng_CannotModifySAFE();
-    if (_saviour != address(0) && safeSaviours[_saviour] == 0) revert LiqEng_SaviourNotAuthorized();
+    if (_saviour != address(0) && !safeSaviours[_saviour]) revert LiqEng_SaviourNotAuthorized();
 
     chosenSAFESaviour[_cType][_safe] = _saviour;
     emit ProtectSAFE(_cType, _safe, _saviour);
@@ -141,7 +141,7 @@ contract LiquidationEngine is
     }
 
     // If an approved saviour is set for this safe we give it a chance to safe the save.
-    if (chosenSAFESaviour[_cType][_safe] != address(0) && safeSaviours[chosenSAFESaviour[_cType][_safe]] == 1) {
+    if (chosenSAFESaviour[_cType][_safe] != address(0) && safeSaviours[chosenSAFESaviour[_cType][_safe]]) {
       try this.attemptSave{gas: _params.saviourGasLimit}(_cType, _safe, msg.sender, _safeData) returns (
         ISAFEEngine.SAFE memory _newSafeData
       ) {

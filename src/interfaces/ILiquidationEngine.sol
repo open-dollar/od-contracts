@@ -184,7 +184,7 @@ interface ILiquidationEngine is IAuthorizable, IDisableable, IModifiable, IModif
    * @param  _saviour The SAFE saviour contract to check
    * @return _canSave Whether the contract can save SAFEs or not
    */
-  function safeSaviours(address _saviour) external view returns (uint256 _canSave);
+  function safeSaviours(address _saviour) external view returns (bool _canSave);
 
   /**
    * @notice Saviour contract chosen for each SAFE by its owner
