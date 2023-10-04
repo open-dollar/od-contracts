@@ -6,24 +6,12 @@ temp_folder="technical-docs"
 
 FOUNDRY_PROFILE=docs forge doc --out "$temp_folder"
 
-# edit generated summary not to have container pages
-# - [jobs](src/interfaces/jobs/README.md)
-# should become
-# - [jobs]()
-# TODO
-
-# edit generated summary titles to start with an uppercase letter
-# - [jobs]()
-# should become
-# - [Jobs]()
-# TODO
-
 # edit the SUMMARY after the Interfaces section
 # https://stackoverflow.com/questions/67086574/no-such-file-or-directory-when-using-sed-in-combination-with-find
 if [[ "$OSTYPE" == "darwin"* ]]; then
-  sed -i '' -e '/\Technical Documentation/q' docs/src/SUMMARY.md
+  sed -i '' -e '/\src/q' docs/src/SUMMARY.md
 else
-  sed -i -e '/\Technical Documentation/q' docs/src/SUMMARY.md
+  sed -i -e '/\src/q' docs/src/SUMMARY.md
 fi
 # copy the generated SUMMARY, from the tmp directory, without the first 5 lines
 # and paste them after the Interfaces section on the original SUMMARY
@@ -55,4 +43,4 @@ replace_text() {
 base_folder="docs/src/$root_path"
 
 # calling the function to fix the paths
-replace_text "$base_folder"
+# replace_text "$base_folder"
