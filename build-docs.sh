@@ -43,4 +43,4 @@ replace_text() {
 base_folder="docs/src/$root_path"
 
 # calling the function to fix the paths
-# replace_text "$base_folder"
+replace_text "$base_folder"
