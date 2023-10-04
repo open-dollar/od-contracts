@@ -40,23 +40,19 @@ contract TokenDistributor is Authorizable, ITokenDistributor {
    * @param  _totalClaimable Total amount of tokens to be distributed
    * @param  _claimPeriodStart Timestamp when the claim period starts
    * @param  _claimPeriodEnd Timestamp when the claim period ends
-   * @param  _delegateTo Address to delegate the token votes to before they are claimed
    */
   constructor(
     bytes32 _root,
     ERC20Votes _token,
     uint256 _totalClaimable,
     uint256 _claimPeriodStart,
-    uint256 _claimPeriodEnd,
-    address _delegateTo
+    uint256 _claimPeriodEnd
   ) Authorizable(msg.sender) {
     root = _root;
     token = ERC20Votes(address(_token).assertNonNull());
     totalClaimable = _totalClaimable.assertNonNull();
     claimPeriodStart = _claimPeriodStart.assertGt(block.timestamp);
     claimPeriodEnd = _claimPeriodEnd.assertGt(claimPeriodStart);
-
-    token.delegate(_delegateTo.assertNonNull());
   }
 
   /// @inheritdoc ITokenDistributor
