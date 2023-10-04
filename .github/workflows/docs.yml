@@ -31,9 +31,6 @@ jobs:
         with:
           version: nightly
 
-      # - name: Install dependencies
-      #   run: yarn --frozen-lockfile --network-concurrency 1
-
       - name: Build Docs
         run: ./build-docs.sh
 
