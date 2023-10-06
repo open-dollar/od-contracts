@@ -79,7 +79,9 @@ contract AnvilFork is AnvilDeployment, Test {
     debtCeiling = setDebtCeiling();
   }
 
-  // setup functions
+  /**
+   * @dev setup functions
+   */
   function deployProxies() public {
     proxies[0] = deployOrFind(ALICE);
     proxies[1] = deployOrFind(BOB);
@@ -118,7 +120,9 @@ contract AnvilFork is AnvilDeployment, Test {
     _debtCeiling = params.safeDebtCeiling;
   }
 
-  // helper functions
+  /**
+   * @dev public helper functions
+   */
   function deployOrFind(address owner) public returns (address) {
     address proxy = vault721.getProxy(owner);
     if (proxy == address(0)) {
@@ -164,5 +168,30 @@ contract AnvilFork is AnvilDeployment, Test {
       _deltaWad
     );
     ODProxy(_proxy).execute(address(basicActions), payload);
+  }
+
+  /**
+   * @dev internal helper functions
+   */
+  function checkProxyAddress() public {
+    for (uint256 i = 0; i < users.length; i++) {
+      assertEq(proxies[i], vault721.getProxy(users[i]));
+    }
+  }
+
+  function checkVaultIds() public {
+    uint256 vaultId = 1;
+
+    for (uint256 i = 0; i < users.length; i++) {
+      address user = users[i];
+      address proxy = vault721.getProxy(user);
+      assertEq(totalVaults / 3, vault721.balanceOf(user));
+
+      for (uint256 j = 0; j < cTypes.length; j++) {
+        assertEq(vaultId, vaultIds[proxy][cTypes[j]]);
+        assertEq(user, vault721.ownerOf(vaultId));
+        vaultId++;
+      }
+    }
   }
 }
