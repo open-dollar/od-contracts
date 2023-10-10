@@ -150,23 +150,25 @@ contract NFTRenderer {
    */
   function _renderDesc(VaultParams memory params) internal pure returns (string memory desc) {
     desc = string.concat(
-      '{"Name":"Open Dollar Vault","ID":"',
+      '{"name":"Open Dollar Vault"',
+      '"attributes":[{"trait_type":"ID","value":"',
       params.vaultId,
-      '","Debt":"',
+      '"},{"trait_type":"Debt","value":"',
       params.debt.toString(),
-      '","Collateral Amount":"',
+      '"},{"trait_type":"Collateral","value":"',
       params.collateral.toString(),
-      '","Collateral Type":"',
+      '"},{"trait_type":"Collateral Type","value":"',
       params.symbol,
-      '","Stability Fee":"',
+      '"},{"trait_type":"Stability Fee","value":"',
       params.stabilityFee,
-      '","Risk":"',
+      '"},{"trait_type":"Risk","value":"',
       params.risk,
-      '","Collateral Ratio":"',
+      '"},{"trait_type":"Collateral Ratio","value":"',
       params.ratio,
-      '","Last Updated":"',
+      '"},{"trait_type":"Last Updated","value":"',
       params.lastUpdate,
-      '","Image":"data:image/svg+xml;base64,'
+      '"}]',
+      '","image":"data:image/svg+xml;base64,'
     );
   }
 
