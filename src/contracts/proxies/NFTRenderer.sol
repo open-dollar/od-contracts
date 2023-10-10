@@ -87,7 +87,7 @@ contract NFTRenderer {
       params.vaultId,
       desc,
       params.lastUpdate,
-      '"}]","image":"data:image/svg+xml;base64,',
+      '"}],"image":"data:image/svg+xml;base64,',
       Base64.encode(
         bytes(
           string.concat(
