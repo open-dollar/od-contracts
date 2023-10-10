@@ -23,7 +23,7 @@ html.light .sidebar {
   border-right: 2px solid var(--border);
 }
 .sidebar .sidebar-scrollbox {
-  padding: 1.5em 1em;
+  padding: 4em 1em;
 }
 .sidebar .logo {
   width: 80%;
