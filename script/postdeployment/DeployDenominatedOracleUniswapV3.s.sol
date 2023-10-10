@@ -14,7 +14,7 @@ contract DeployDenominatedOracleUniswapV3 is OracleBase {
   function run() public {
     vm.startBroadcast(vm.envUint('GOERLI_PK'));
     weth_usd_denominatedOracle = denominatedOracleFactory.deployDenominatedOracle(
-      od_weth_UniV3Relayer, IBaseOracle(DelayedOracleChild_WETH_Address), false
+      od_weth_UniV3Relayer, IBaseOracle(DelayedOracleChild_WSTETH_Address), false
     );
     vm.stopBroadcast();
   }

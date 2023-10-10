@@ -86,33 +86,40 @@ const createOutputFile = (contracts) => {
       collateralAuctionHouse:
         contracts.CollateralAuctionHouseChild_0x5745544800000000000000000000000000000000000000000000000000000000_Address,
     },
-    FTRG: {
-      address: "0x0Ed89D4655b2fE9f99EaDC3116b223527165452D",
+    ARB: {
+      address: contracts.MintableVoteERC20_Address,
       collateralJoin:
-        contracts.CollateralJoinChild_0x4654524700000000000000000000000000000000000000000000000000000000_Address,
+        contracts.CollateralJoinChild_0x4152420000000000000000000000000000000000000000000000000000000000_Address,
       collateralAuctionHouse:
-        contracts.CollateralAuctionHouseChild_0x4654524700000000000000000000000000000000000000000000000000000000_Address,
+        contracts.CollateralAuctionHouseChild_0x4152420000000000000000000000000000000000000000000000000000000000_Address,
     },
-    WBTC: {
-      address: contracts.MintableERC20_WBTC_Address,
+    WSTETH: {
+      address: contracts.MintableERC20_WSTETH_Address,
       collateralJoin:
-        contracts.CollateralJoinChild_0x5742544300000000000000000000000000000000000000000000000000000000_Address,
+        contracts.CollateralJoinChild_0x5753544554480000000000000000000000000000000000000000000000000000_Address,
       collateralAuctionHouse:
-        contracts.CollateralAuctionHouseChild_0x5742544300000000000000000000000000000000000000000000000000000000_Address,
+        contracts.CollateralAuctionHouseChild_0x5753544554480000000000000000000000000000000000000000000000000000_Address,
     },
-    STN: {
-      address: contracts.MintableERC20_STONES_Address,
+    CBETH: {
+      address: contracts.MintableERC20_CBETH_Address,
       collateralJoin:
-        contracts.CollateralJoinChild_0x53544f4e45530000000000000000000000000000000000000000000000000000_Address,
+        contracts.CollateralJoinChild_0x4342455448000000000000000000000000000000000000000000000000000000_Address,
       collateralAuctionHouse:
-        contracts.CollateralAuctionHouseChild_0x53544f4e45530000000000000000000000000000000000000000000000000000_Address,
+        contracts.CollateralAuctionHouseChild_0x4342455448000000000000000000000000000000000000000000000000000000_Address,
     },
-    TOTEM: {
-      address: contracts.MintableERC20_TOTEM_Address,
+    RETH: {
+      address: contracts.MintableERC20_RETH_Address,
       collateralJoin:
-        contracts.CollateralJoinChild_0x544f54454d000000000000000000000000000000000000000000000000000000_Address,
+        contracts.CollateralJoinChild_0x5245544800000000000000000000000000000000000000000000000000000000_Address,
       collateralAuctionHouse:
-        contracts.CollateralAuctionHouseChild_0x544f54454d000000000000000000000000000000000000000000000000000000_Address,
+        contracts.CollateralAuctionHouseChild_0x5245544800000000000000000000000000000000000000000000000000000000_Address,
+    },
+    MAGIC: {
+      address: contracts.MintableERC20_MAGIC_Address,
+      collateralJoin:
+        contracts.CollateralJoinChild_0x4d41474943000000000000000000000000000000000000000000000000000000_Address,
+      collateralAuctionHouse:
+        contracts.CollateralAuctionHouseChild_0x4d41474943000000000000000000000000000000000000000000000000000000_Address,
     },
   };
 

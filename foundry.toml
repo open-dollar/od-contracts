@@ -9,8 +9,8 @@ number_underscore = 'thousands'
 wrap_comments = false
 
 [profile.docs]
-title = 'HAI docs'
-src ='src' # root_path variable in build-docs.sh
+title = 'Open Dollar Docs'
+src = 'src/'               # root_path variable in build-docs.sh
 
 [profile.default]
 solc = '0.8.19'
@@ -21,7 +21,7 @@ libs = ['lib']
 fuzz_runs = 1000
 optimizer_runs = 10_000
 block_timestamp = 1675855961
-fs_permissions = [{ access = "write", path = "./test/simulations"}]
+fs_permissions = [{ access = "write", path = "./test/simulations" }]
 
 [profile.optimized]
 via_ir = true

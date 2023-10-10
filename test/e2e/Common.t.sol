@@ -27,12 +27,12 @@ uint256 constant TEST_ETH_PRICE_DROP = 100e18; // 1 ETH = 100 OD
  */
 contract DeployForTest is TestParams, Deploy {
   constructor() {
-    // NOTE: creates fork in order to have WSTETH at 0x4200000000000000000000000000000000000006
+    // NOTE: creates fork in order to have WSTETH at 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1
     vm.createSelectFork(vm.rpcUrl('mainnet'));
   }
 
   function setupEnvironment() public virtual override {
-    WETH9 weth = WETH9(payable(0x4200000000000000000000000000000000000006));
+    WETH9 weth = WETH9(payable(0x82aF49447D8a07e3bd95BD0d56f35241523fBab1));
 
     systemCoinOracle = new OracleForTest(OD_INITIAL_PRICE); // 1 OD = 1 USD
 

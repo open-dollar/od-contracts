@@ -3,16 +3,13 @@ pragma solidity 0.8.19;
 
 import '@script/Contracts.s.sol';
 import {GoerliParams, WSTETH, ARB, CBETH, RETH, MAGIC} from '@script/GoerliParams.s.sol';
-import {GOERLI_CAMELOT_V3_FACTORY} from '@script/Registry.s.sol';
-import {GoerliContracts} from '@script/GoerliContracts.s.sol';
+import {AnvilContracts} from '@test/nft/anvil/deployment/AnvilContracts.t.sol';
+import {MintableERC20} from '@contracts/for-test/MintableERC20.sol';
 
-abstract contract GoerliDeployment is Contracts, GoerliParams, GoerliContracts {
-  // NOTE: The last significant change in the Goerli deployment, to be used in the test scenarios
-  uint256 constant GOERLI_DEPLOYMENT_BLOCK = 12_872_701;
-
+abstract contract AnvilDeployment is Contracts, GoerliParams, AnvilContracts {
   /**
-   * @notice All the addresses that were deployed in the Goerli deployment, in order of creation
-   * @dev    This is used to import the deployed contracts to the test scripts
+   * @notice All the addresses that were deployed in the Anvil deployment, in order of creation
+   * @dev    This is used to import the deployed contracts to the anvil test scripts
    */
   constructor() {
     // --- collateral types ---
@@ -27,10 +24,16 @@ abstract contract GoerliDeployment is Contracts, GoerliParams, GoerliContracts {
 
     // --- ERC20s ---
     collateral[ARB] = IERC20Metadata(MintableVoteERC20_Address);
-    collateral[WSTETH] = IERC20Metadata(MintableERC20_WSTETH_Address);
-    collateral[CBETH] = IERC20Metadata(MintableERC20_CBETH_Address);
-    collateral[RETH] = IERC20Metadata(MintableERC20_RETH_Address);
-    collateral[MAGIC] = IERC20Metadata(MintableERC20_MAGIC_Address);
+    collateral[WSTETH] = IERC20Metadata(MintableERC20_7_Address);
+    collateral[CBETH] = IERC20Metadata(MintableERC20_8_Address);
+    collateral[RETH] = IERC20Metadata(MintableERC20_9_Address);
+    collateral[MAGIC] = IERC20Metadata(MintableERC20_10_Address);
+
+    erc20[ARB] = MintableERC20(MintableVoteERC20_Address);
+    erc20[WSTETH] = MintableERC20(MintableERC20_7_Address);
+    erc20[CBETH] = MintableERC20(MintableERC20_8_Address);
+    erc20[RETH] = MintableERC20(MintableERC20_9_Address);
+    erc20[MAGIC] = MintableERC20(MintableERC20_10_Address);
 
     systemCoin = SystemCoin(SystemCoin_Address);
     protocolToken = ProtocolToken(ProtocolToken_Address);
@@ -117,13 +120,12 @@ abstract contract GoerliDeployment is Contracts, GoerliParams, GoerliContracts {
     postSettlementSurplusBidActions = PostSettlementSurplusBidActions(PostSettlementSurplusBidActions_Address);
 
     // --- oracles ---
-    systemCoinOracle = IBaseOracle(DenominatedOracleChild_OD_Address);
-    delayedOracle[ARB] = IDelayedOracle(DelayedOracleChild_ARB_Address);
-    delayedOracle[WSTETH] = IDelayedOracle(DelayedOracleChild_WSTETH_Address);
-    delayedOracle[CBETH] = IDelayedOracle(DelayedOracleChild_CBETH_Address);
-    delayedOracle[RETH] = IDelayedOracle(DelayedOracleChild_RETH_Address);
-    delayedOracle[MAGIC] = IDelayedOracle(DelayedOracleChild_MAGIC_Address);
+    delayedOracle[ARB] = IDelayedOracle(DelayedOracleChild_20_Address);
+    delayedOracle[WSTETH] = IDelayedOracle(DelayedOracleChild_21_Address);
+    delayedOracle[CBETH] = IDelayedOracle(DelayedOracleChild_22_Address);
+    delayedOracle[RETH] = IDelayedOracle(DelayedOracleChild_23_Address);
+    delayedOracle[MAGIC] = IDelayedOracle(DelayedOracleChild_24_Address);
 
-    camelotV3Factory = ICamelotV3Factory(GOERLI_CAMELOT_V3_FACTORY);
+    // --- tokens ---
   }
 }

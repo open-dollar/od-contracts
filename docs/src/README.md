@@ -1,3 +1,8 @@
-# HAI
+# Home
 
-This repository contains the core smart contract code for HAI, a GEB fork. GEB is the abbreviation of [Gödel, Escher and Bach](https://en.wikipedia.org/wiki/G%C3%B6del,_Escher,_Bach) as well as the name of an [Egyptian god](https://en.wikipedia.org/wiki/Geb).
+### @open-dollar/contracts `v1.5.4`
+
+This site was generated from our contracts using the Forge doc generator. 
+
+- Main documentation - [https://docs.opendollar.com](https://docs.opendollar.com)
+- Contracts - [https://github.com/open-dollar/od-contracts/](https://github.com/open-dollar/od-contracts/)
