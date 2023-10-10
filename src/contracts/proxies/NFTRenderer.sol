@@ -83,7 +83,11 @@ contract NFTRenderer {
     string memory collateral = _floatingPoint(params.collateral);
 
     string memory json = string.concat(
+      '{"name":"Open Dollar Vault","attributes":[{"trait_type":"ID","value":"',
+      params.vaultId,
       desc,
+      params.lastUpdate,
+      '"}]","image":"data:image/svg+xml;base64,',
       Base64.encode(
         bytes(
           string.concat(
@@ -149,10 +153,8 @@ contract NFTRenderer {
    * @dev json description
    */
   function _renderDesc(VaultParams memory params) internal pure returns (string memory desc) {
+    // stack at 16 slot max w/ 32-byte+ strings
     desc = string.concat(
-      '{"name":"Open Dollar Vault"',
-      '"attributes":[{"trait_type":"ID","value":"',
-      params.vaultId,
       '"},{"trait_type":"Debt","value":"',
       params.debt.toString(),
       '"},{"trait_type":"Collateral","value":"',
@@ -165,10 +167,7 @@ contract NFTRenderer {
       params.risk,
       '"},{"trait_type":"Collateral Ratio","value":"',
       params.ratio,
-      '"},{"trait_type":"Last Updated","value":"',
-      params.lastUpdate,
-      '"}]',
-      '","image":"data:image/svg+xml;base64,'
+      '"},{"trait_type":"Last Updated","value":"'
     );
   }
 
