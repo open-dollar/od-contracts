@@ -210,14 +210,12 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
     // auction surplus percentage
     if (_params.surplusTransferPercentage < ONE_HUNDRED_WAD) {
       _id = surplusAuctionHouse.startAuction({
-        _amountToSell: _params.surplusAmount * (ONE_HUNDRED_WAD - _params.surplusTransferPercentage) / ONE_HUNDRED_WAD,
+        _amountToSell: _params.surplusAmount.wmul(ONE_HUNDRED_WAD - _params.surplusTransferPercentage),
         _initialBid: 0
       });
 
       lastSurplusTime = block.timestamp;
-      emit AuctionSurplus(
-        _id, 0, _params.surplusAmount * (ONE_HUNDRED_WAD - _params.surplusTransferPercentage) / ONE_HUNDRED_WAD
-      );
+      emit AuctionSurplus(_id, 0, _params.surplusAmount.wmul(ONE_HUNDRED_WAD - _params.surplusTransferPercentage));
     }
 
     // transfer surplus percentage
@@ -227,13 +225,11 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
       safeEngine.transferInternalCoins({
         _source: address(this),
         _destination: extraSurplusReceiver,
-        _rad: _params.surplusAmount * _params.surplusTransferPercentage / ONE_HUNDRED_WAD
+        _rad: _params.surplusAmount.wmul(_params.surplusTransferPercentage)
       });
 
       lastSurplusTime = block.timestamp;
-      emit TransferSurplus(
-        extraSurplusReceiver, _params.surplusAmount * _params.surplusTransferPercentage / ONE_HUNDRED_WAD
-      );
+      emit TransferSurplus(extraSurplusReceiver, _params.surplusAmount.wmul(_params.surplusTransferPercentage));
     }
   }
 
