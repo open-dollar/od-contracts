@@ -67,7 +67,7 @@ abstract contract E2EJobsTest is BaseUser, Common {
     vm.stopPrank();
 
     uint256 _initialBalance = systemCoin.balanceOf(address(this));
-    _workTransferExtraSurplus(address(this));
+    _workAuctionSurplus(address(this));
 
     assertEq(systemCoin.balanceOf(address(this)) - _initialBalance, JOB_REWARD);
   }

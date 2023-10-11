@@ -249,21 +249,13 @@ interface IAccountingEngine is IAuthorizable, IDisableable, IModifiable {
   function auctionDebt() external returns (uint256 _id);
 
   /**
-   * @notice Start a surplus auction (sell surplus stability fees for protocol tokens)
+   * @notice Start a surplus auction (sell surplus stability fees for protocol tokens) and send percentage of surplus to extraSurplusReciever
    * @dev    It can only auction surplus if `surplusTransferPercentage` is set to false
    * @dev    It can only auction surplus if `surplusDelay` seconds have elapsed since the last surplus auction/transfer was triggered
    * @dev    It can only auction surplus if enough surplus remains in the buffer and if there is no more debt left to settle
    * @return _id Id of the surplus auction that was started
    */
   function auctionSurplus() external returns (uint256 _id);
-
-  /**
-   * @notice Transfer surplus to an address as an alternative to surplus auctions
-   * @dev    It can only transfer surplus if `surplusTransferPercentage` is set to true
-   * @dev    It can only transfer surplus if `surplusDelay` seconds have elapsed since the last surplus auction/transfer was triggered
-   * @dev    It can only transfer surplus if enough surplus remains in the buffer and if there is no more debt left to settle
-   */
-  function transferExtraSurplus() external;
 
   /**
    * @notice Transfer any remaining surplus after the disable cooldown has passed. Meant to be a backup in case GlobalSettlement.processSAFE

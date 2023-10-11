@@ -33,7 +33,7 @@ interface IRewardedActions is ICommonActions {
    * @param  _accountingJob Address of the AccountingJob contract
    * @param  _coinJoin Address of the CoinJoin contract
    */
-  function transferExtraSurplus(address _accountingJob, address _coinJoin) external;
+  function auctionSurplus(address _accountingJob, address _coinJoin) external;
 
   // --- LiquidationJob ---
 
