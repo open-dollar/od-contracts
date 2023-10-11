@@ -2,6 +2,7 @@
 @openzeppelin/=node_modules/@openzeppelin/contracts/
 @uniswap/=node_modules/@uniswap/
 @camelot/=lib/core/contracts/
+@isolmate/=lib/isolmate/src/
 
 @contracts/=src/contracts/
 @interfaces/=src/interfaces/
