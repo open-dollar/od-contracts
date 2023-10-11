@@ -62,7 +62,9 @@ const createAnvilDeploymentsFile = (contracts) => {
 pragma solidity 0.8.19;
 
 abstract contract AnvilContracts {
+  // forgefmt: disable-start
 ${addressText}
+  // forgefmt: disable-end
 }`;
 
   fs.writeFile(outputPath, content, (err) => {
