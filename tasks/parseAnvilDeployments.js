@@ -57,15 +57,18 @@ const createAnvilDeploymentsFile = (contracts) => {
     return acc;
   }, "");
 
-  const outputPath = path.join(__dirname, "../test/nft/anvil/deployment/AnvilContracts.t.sol");
+  const outputPath = path.join(
+    __dirname,
+    "../test/nft/anvil/deployment/AnvilContracts.t.sol"
+  );
   const content = `// SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
+// forgefmt: disable-start
 abstract contract AnvilContracts {
-  // forgefmt: disable-start
 ${addressText}
-  // forgefmt: disable-end
-}`;
+}
+// forgefmt: disable-end`;
 
   fs.writeFile(outputPath, content, (err) => {
     if (err) {
@@ -73,6 +76,6 @@ ${addressText}
       return;
     }
 
-    console.log("AnvilContracts.s.sol written to file successfully!");
+    console.log("AnvilContracts.t.sol written to file successfully!");
   });
 };
