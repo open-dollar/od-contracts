@@ -25,7 +25,7 @@ abstract contract Base is HaiTest {
   IAccountingEngine accountingEngine;
 
   IAccountingEngine.AccountingEngineParams accountingEngineParams = IAccountingEngine.AccountingEngineParams({
-    surplusIsTransferred: 0,
+    surplusTransferPercentage: 0,
     surplusDelay: 0,
     popDebtDelay: 0,
     disableCooldown: 0,
@@ -146,9 +146,9 @@ abstract contract Base is HaiTest {
 
   // --- Params ---
 
-  function _mockSurplusIsTransferred(uint256 _surplusIsTransferred) internal {
+  function _mocksurplusTransferPercentage(uint256 _surplusTransferPercentage) internal {
     stdstore.target(address(accountingEngine)).sig(IAccountingEngine.params.selector).depth(0).checked_write(
-      _surplusIsTransferred
+      _surplusTransferPercentage
     );
   }
 
@@ -228,7 +228,7 @@ contract Unit_AccountingEngine_Constructor is Base {
 
 contract Unit_AccountingEngine_ModifyParameters is Base {
   function test_ModifyParameters(IAccountingEngine.AccountingEngineParams memory _fuzz) public authorized {
-    accountingEngine.modifyParameters('surplusIsTransferred', abi.encode(_fuzz.surplusIsTransferred));
+    accountingEngine.modifyParameters('surplusTransferPercentage', abi.encode(_fuzz.surplusTransferPercentage));
     accountingEngine.modifyParameters('surplusDelay', abi.encode(_fuzz.surplusDelay));
     accountingEngine.modifyParameters('popDebtDelay', abi.encode(_fuzz.popDebtDelay));
     accountingEngine.modifyParameters('disableCooldown', abi.encode(_fuzz.disableCooldown));
@@ -774,7 +774,7 @@ contract Unit_AccountingEngine_AuctionSurplus is Base {
 
     _mockCoinAndDebtBalance(5, 0);
     uint256 _amountToSell = 1;
-    _mockSurplusIsTransferred(0);
+    _mocksurplusTransferPercentage(0);
     _mockSurplusAmount(_amountToSell);
     _mockSurplusBuffer(0);
     _mockTotalQueuedDebt(0);
@@ -790,11 +790,11 @@ contract Unit_AccountingEngine_AuctionSurplus is Base {
   }
 
   function _mockValues(
-    uint256 _surplusIsTransferred,
+    uint256 _surplusTransferPercentage,
     uint256 _debtBalance,
     AuctionSurplusScenario memory _scenario
   ) internal {
-    _mockSurplusIsTransferred(_surplusIsTransferred);
+    _mocksurplusTransferPercentage(_surplusTransferPercentage);
     _mockSurplusAmount(_scenario.surplusAmount);
     _mockSurplusBuffer(_scenario.surplusBuffer);
     _mockCoinAndDebtBalance(_scenario.coinBalance, _debtBalance);
@@ -857,8 +857,8 @@ contract Unit_AccountingEngine_AuctionSurplus is Base {
     accountingEngine.auctionSurplus();
   }
 
-  function test_Revert_SurplusIsTransferredIs1() public {
-    _mockSurplusIsTransferred(1);
+  function test_Revert_surplusTransferPercentageIs1() public {
+    _mocksurplusTransferPercentage(1);
 
     vm.expectRevert(IAccountingEngine.AccEng_SurplusAuctionDisabled.selector);
     accountingEngine.auctionSurplus();
@@ -912,7 +912,7 @@ contract Unit_AccountingEngine_TransferExtraSurplus is Base {
   function setUp() public virtual override {
     super.setUp();
 
-    _mockSurplusIsTransferred(1);
+    _mocksurplusTransferPercentage(1);
     _mockExtraSurplusReceiver(extraSurplusReceiver);
   }
 
@@ -989,10 +989,10 @@ contract Unit_AccountingEngine_TransferExtraSurplus is Base {
     accountingEngine.transferExtraSurplus();
   }
 
-  function test_RevertIfExtraSurplusIsNot1(uint256 _surplusIsTransferred) public {
-    vm.assume(_surplusIsTransferred != 1);
+  function test_RevertIfExtraSurplusIsNot1(uint256 _surplusTransferPercentage) public {
+    vm.assume(_surplusTransferPercentage != 1);
 
-    _mockSurplusIsTransferred(_surplusIsTransferred);
+    _mocksurplusTransferPercentage(_surplusTransferPercentage);
 
     vm.expectRevert(IAccountingEngine.AccEng_SurplusTransferDisabled.selector);
 

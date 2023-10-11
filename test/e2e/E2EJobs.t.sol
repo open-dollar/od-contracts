@@ -62,7 +62,7 @@ abstract contract E2EJobsTest is BaseUser, Common {
 
   function test_work_transfer_extra_surplus() public {
     vm.startPrank(deployer);
-    accountingEngine.modifyParameters('surplusIsTransferred', abi.encode(1));
+    accountingEngine.modifyParameters('surplusTransferPercentage', abi.encode(1));
     accountingEngine.modifyParameters('extraSurplusReceiver', abi.encode(address(0x420)));
     vm.stopPrank();
 
