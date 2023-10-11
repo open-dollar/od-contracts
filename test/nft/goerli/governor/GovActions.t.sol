@@ -6,11 +6,13 @@ import {Vault721} from '@contracts/proxies/Vault721.sol';
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
 import {WAD, RAY, RAD} from '@libraries/Math.sol';
+import {IGovernor} from '@openzeppelin/governance/IGovernor.sol';
 
 // forge t --fork-url $URL --match-contract GovActions -vvvvv
 
 contract GovActions is GoerliFork {
   uint256 constant MINUS_0_5_PERCENT_PER_HOUR = 999_998_607_628_240_588_157_433_861;
+  IGovernor.ProposalState public propState;
 
   /**
    * @dev params for testing, do not use for production
@@ -41,7 +43,7 @@ contract GovActions is GoerliFork {
     uint256 propId = dao.propose(targets, values, calldatas, description);
     assertEq(propId, dao.hashProposal(targets, values, calldatas, descriptionHash));
 
-    // ODGovernor.ProposalState memory propState = dao.state();
+    propState = dao.state(propId);
 
     emit log_named_uint('Voting Delay:', dao.votingDelay());
     emit log_named_uint('Voting Period:', dao.votingPeriod());
@@ -51,20 +53,28 @@ contract GovActions is GoerliFork {
     emit log_named_uint('Block', block.number);
     emit log_named_uint('Time', block.timestamp);
 
+    propState = dao.state(propId);
+
     vm.startPrank(alice);
     // alice holds no governance tokens, so should not effect outcome
     dao.castVote(propId, 0);
     vm.stopPrank();
+
+    propState = dao.state(propId);
 
     vm.startPrank(bob);
     // bob holds 33% of governance tokens
     dao.castVote(propId, 1);
     vm.stopPrank();
 
+    propState = dao.state(propId);
+
     vm.roll(startBlock + 17);
     vm.warp(startTime + 255 seconds);
     emit log_named_uint('Block', block.number);
     emit log_named_uint('Time', block.timestamp);
+
+    propState = dao.state(propId);
 
     // TODO: pass `execute`
     dao.execute(targets, values, calldatas, descriptionHash);
