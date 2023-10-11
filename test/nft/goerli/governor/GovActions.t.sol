@@ -12,6 +12,17 @@ import {IGovernor} from '@openzeppelin/governance/IGovernor.sol';
 
 contract GovActions is GoerliFork {
   uint256 constant MINUS_0_5_PERCENT_PER_HOUR = 999_998_607_628_240_588_157_433_861;
+  /**
+   * @notice ProposalState:
+   * Pending = 0
+   * Active = 1
+   * Canceled = 2
+   * Defeated = 3
+   * Succeeded = 4
+   * Queued = 5
+   * Expired = 6
+   * Executed = 7
+   */
   IGovernor.ProposalState public propState;
 
   /**
@@ -43,7 +54,7 @@ contract GovActions is GoerliFork {
     uint256 propId = dao.propose(targets, values, calldatas, description);
     assertEq(propId, dao.hashProposal(targets, values, calldatas, descriptionHash));
 
-    propState = dao.state(propId);
+    propState = dao.state(propId); // returns 0 (pending)
 
     emit log_named_uint('Voting Delay:', dao.votingDelay());
     emit log_named_uint('Voting Period:', dao.votingPeriod());
@@ -60,21 +71,21 @@ contract GovActions is GoerliFork {
     dao.castVote(propId, 0);
     vm.stopPrank();
 
-    propState = dao.state(propId);
+    propState = dao.state(propId); // returns 1 (active)
 
     vm.startPrank(bob);
-    // bob holds 33% of governance tokens
+    // bob holds 33% of governance tokens (@bug showing weight at 0)
     dao.castVote(propId, 1);
     vm.stopPrank();
 
-    propState = dao.state(propId);
+    propState = dao.state(propId); // returns 1 (active)
 
     vm.roll(startBlock + 17);
     vm.warp(startTime + 255 seconds);
     emit log_named_uint('Block', block.number);
     emit log_named_uint('Time', block.timestamp);
 
-    propState = dao.state(propId);
+    propState = dao.state(propId); // returns 3 (defeated)
 
     // TODO: pass `execute`
     dao.execute(targets, values, calldatas, descriptionHash);
