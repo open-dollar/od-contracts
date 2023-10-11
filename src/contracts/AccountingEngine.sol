@@ -23,6 +23,7 @@ import {Assertions} from '@libraries/Assertions.sol';
 contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingEngine {
   using Encoding for bytes;
   using Assertions for address;
+  using Math for uint256;
 
   uint256 internal constant ONE_HUNDRED_WAD = 100 * WAD;
 
