@@ -226,7 +226,7 @@ contract SingleGlobalSettlementTest is DSTest {
     protocolToken.mint(200 ether);
 
     IAccountingEngine.AccountingEngineParams memory _accountingEngineParams = IAccountingEngine.AccountingEngineParams({
-      surplusIsTransferred: 0,
+      surplusTransferPercentage: 0,
       surplusDelay: 0,
       popDebtDelay: 0,
       disableCooldown: 0,

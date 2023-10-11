@@ -196,7 +196,7 @@ contract SingleSaveSAFETest is DSTest {
     debtAuctionHouse = new DebtAuctionHouse(address(safeEngine), address(protocolToken), _debtAuctionHouseParams);
 
     IAccountingEngine.AccountingEngineParams memory _accountingEngineParams = IAccountingEngine.AccountingEngineParams({
-      surplusIsTransferred: 0,
+      surplusTransferPercentage: 0,
       surplusDelay: 0,
       popDebtDelay: 0,
       disableCooldown: 0,
