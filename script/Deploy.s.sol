@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
+import 'forge-std/console2.sol';
+
 import '@script/Contracts.s.sol';
 import '@script/Registry.s.sol';
 import '@script/Params.s.sol';
@@ -266,6 +268,9 @@ contract DeployGoerli is DeployTestnet {
 
     // sqrtPriceX96 = sqrt(P) * 2^96
     uint256 sqrtPriceX96 = FixedPointMathLib.sqrt(price * WAD) * (2 ** 96);
+
+    // log math
+    console2.logUint((sqrtPriceX96 / (2 ** 96)) ** 2);
 
     // initialize pool
     IAlgebraPool(pool).initialize(uint160(sqrtPriceX96));
