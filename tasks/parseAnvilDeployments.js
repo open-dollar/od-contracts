@@ -61,9 +61,11 @@ const createAnvilDeploymentsFile = (contracts) => {
   const content = `// SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
+// forgefmt: disable-start
 abstract contract AnvilContracts {
 ${addressText}
-}`;
+}
+// forgefmt: disable-end`;
 
   fs.writeFile(outputPath, content, (err) => {
     if (err) {
@@ -71,6 +73,6 @@ ${addressText}
       return;
     }
 
-    console.log("AnvilContracts.s.sol written to file successfully!");
+    console.log("AnvilContracts.t.sol written to file successfully!");
   });
 };

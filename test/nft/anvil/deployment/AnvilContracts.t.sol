@@ -2,6 +2,7 @@
 pragma solidity 0.8.19;
 
 abstract contract AnvilContracts {
+  // forgefmt: disable-start
     address public ChainlinkRelayerFactory_Address = 0x5FbDB2315678afecb367f032d93F642f64180aa3;
     address public UniV3RelayerFactory_Address = 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512;
     address public CamelotRelayerFactory_Address = 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0;
@@ -64,5 +65,5 @@ abstract contract AnvilContracts {
     address public PostSettlementSurplusBidActions_Address = 0x525C7063E7C20997BaaE9bDa922159152D0e8417;
     address public GlobalSettlementActions_Address = 0x38a024C0b412B9d1db8BC398140D00F5Af3093D4;
     address public RewardedActions_Address = 0x5fc748f1FEb28d7b76fa1c6B07D8ba2d5535177c;
-
+    // forgefmt: disable-end
 }
