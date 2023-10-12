@@ -3,6 +3,7 @@
 @uniswap/=node_modules/@uniswap/
 @camelot/=lib/core/contracts/
 @isolmate/=lib/isolmate/src/
+@console2/=forge-std/console2.sol;
 
 @contracts/=src/contracts/
 @interfaces/=src/interfaces/

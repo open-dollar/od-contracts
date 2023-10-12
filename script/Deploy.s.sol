@@ -5,10 +5,13 @@ import '@script/Contracts.s.sol';
 import '@script/Registry.s.sol';
 import '@script/Params.s.sol';
 
+import {FixedPointMathLib} from '@isolmate/utils/FixedPointMathLib.sol';
+import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
 import {Script} from 'forge-std/Script.sol';
 import {Common} from '@script/Common.s.sol';
 import {GoerliParams} from '@script/GoerliParams.s.sol';
 import {MainnetParams} from '@script/MainnetParams.s.sol';
+import {IAlgebraPool} from '@interfaces/oracles/IAlgebraPool.sol';
 
 abstract contract Deploy is Common, Script {
   function setupEnvironment() public virtual {}
@@ -187,6 +190,8 @@ abstract contract DeployTestnet is GoerliParams, Deploy {
 }
 
 contract DeployGoerli is DeployTestnet {
+  using FixedPointMathLib for uint256;
+
   IBaseOracle public chainlinkEthUSDPriceFeed;
 
   function setUp() public virtual {
@@ -241,9 +246,29 @@ contract DeployGoerli is DeployTestnet {
 
   function setupPostEnvironment() public virtual override updateParams {
     // deploy Camelot liquidity pool to create market price for OD (using WSTETH for testnet, WETH for mainnet)
-    ICamelotV3Factory(GOERLI_CAMELOT_V3_FACTORY).createPool(address(systemCoin), address(collateral[WSTETH]));
+    ICamelotV3Factory(GOERLI_CAMELOT_V3_FACTORY).createPool(address(systemCoin), address(GOERLI_WETH));
 
-    // TODO: how to set initial price of pool => call `initialize` on pool contract
+    // confirm correct setup of pool
+    address pool = camelotV3Factory.poolByPair(address(systemCoin), address(GOERLI_WETH));
+
+    IERC20Metadata token0 = IERC20Metadata(IAlgebraPool(pool).token0());
+    IERC20Metadata token1 = IERC20Metadata(IAlgebraPool(pool).token1());
+
+    require(keccak256(abi.encodePacked('OD')) == keccak256(abi.encodePacked(token0.symbol())), '!OD');
+    require(keccak256(abi.encodePacked('WETH')) == keccak256(abi.encodePacked(token1.symbol())), '!WETH');
+
+    // initial price of each token in WAD
+    uint256 initWethAmount = 1 ether;
+    uint256 initODAmount = 1656.62 ether;
+
+    // P = amount1 / amount0
+    uint256 price = initWethAmount.divWadDown(initODAmount);
+
+    // sqrtPriceX96 = sqrt(P) * 2^96
+    uint256 sqrtPriceX96 = FixedPointMathLib.sqrt(price * WAD) * (2 ** 96);
+
+    // initialize pool
+    IAlgebraPool(pool).initialize(uint160(sqrtPriceX96));
 
     // deploy Camelot relayer to retrieve price from Camelot pool
     IBaseOracle _odWethOracle = camelotRelayerFactory.deployCamelotRelayer(
