@@ -13,7 +13,23 @@ import {Vault721} from '@contracts/proxies/Vault721.sol';
 contract NFTGoerli is GoerliFork {
   using SafeERC20 for IERC20;
 
-  function test_openSafe_WETH() public {
+  /**
+   * @dev tests are grouped into 1 function to avoid being run general test
+   * change `X_all` to `test_all` to run tests in this contract
+   */
+
+  function X_all() public {
+    t_openSafe_WETH();
+    t_openSafe_ARB();
+    t_openSafe_lockCollateral_WETH();
+    t_openSafe_lockCollateral_ARB();
+    t_openSafe_lockCollateral_generateDebt_WETH();
+    t_openSafe_lockCollateral_generateDebt_ARB();
+    t_openSafe_lockCollateral_transfer_WETH();
+    t_openSafe_lockCollateral_generateDebt_transfer_ARB();
+  }
+
+  function t_openSafe_WETH() public {
     vm.startPrank(alice);
 
     uint256 safeId = openSafe(WSTETH, aliceProxy);
@@ -24,7 +40,7 @@ contract NFTGoerli is GoerliFork {
     vm.stopPrank();
   }
 
-  function test_openSafe_ARB() public {
+  function t_openSafe_ARB() public {
     vm.startPrank(alice);
 
     uint256 safeId = openSafe(ARB, aliceProxy);
@@ -35,7 +51,7 @@ contract NFTGoerli is GoerliFork {
     vm.stopPrank();
   }
 
-  function test_openSafe_lockCollateral_WETH() public {
+  function t_openSafe_lockCollateral_WETH() public {
     vm.startPrank(alice);
 
     uint256 safeId = openSafe(WSTETH, aliceProxy);
@@ -46,7 +62,7 @@ contract NFTGoerli is GoerliFork {
     vm.stopPrank();
   }
 
-  function test_openSafe_lockCollateral_ARB() public {
+  function t_openSafe_lockCollateral_ARB() public {
     vm.startPrank(alice);
 
     uint256 safeId = openSafe(ARB, aliceProxy);
@@ -57,7 +73,7 @@ contract NFTGoerli is GoerliFork {
     vm.stopPrank();
   }
 
-  function test_openSafe_lockCollateral_generateDebt_WETH() public {
+  function t_openSafe_lockCollateral_generateDebt_WETH() public {
     vm.startPrank(alice);
 
     uint256 safeId = openSafe(WSTETH, aliceProxy);
@@ -68,7 +84,7 @@ contract NFTGoerli is GoerliFork {
     vm.stopPrank();
   }
 
-  function test_openSafe_lockCollateral_generateDebt_ARB() public {
+  function t_openSafe_lockCollateral_generateDebt_ARB() public {
     vm.startPrank(alice);
 
     uint256 safeId = openSafe(ARB, aliceProxy);
@@ -79,7 +95,7 @@ contract NFTGoerli is GoerliFork {
     vm.stopPrank();
   }
 
-  function test_openSafe_lockCollateral_transfer_WETH() public {
+  function t_openSafe_lockCollateral_transfer_WETH() public {
     vm.startPrank(alice);
 
     uint256 safeId = openSafe(WSTETH, aliceProxy);
@@ -104,7 +120,7 @@ contract NFTGoerli is GoerliFork {
     assertEq(_safes[0], currSafeId);
   }
 
-  function test_openSafe_lockCollateral_generateDebt_transfer_ARB() public {
+  function t_openSafe_lockCollateral_generateDebt_transfer_ARB() public {
     vm.startPrank(alice);
 
     uint256 safeId = openSafe(ARB, aliceProxy);

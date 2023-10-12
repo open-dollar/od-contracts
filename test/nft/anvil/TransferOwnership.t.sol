@@ -11,13 +11,18 @@ import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 
 // forge t --fork-url $URL --match-contract TransferOwnershipAnvil -vvvvv
 
+/**
+ * @dev keyword `test` changed to `X` to avoid being run general test
+ * change `X_` to `test_` to run tests in this contract
+ */
+
 contract TransferOwnershipAnvil is AnvilFork {
   using SafeERC20 for IERC20;
 
   /**
    * @dev enfore correct setup
    */
-  function test_setup() public {
+  function X_setup() public {
     assertEq(totalVaults, vault721.totalSupply());
     checkProxyAddress();
     checkVaultIds();
@@ -26,7 +31,7 @@ contract TransferOwnershipAnvil is AnvilFork {
   /**
    * @dev unit tests
    */
-  function test_unit_transferVault() public {
+  function X_unit_transferVault() public {
     uint256 vaultId = 1;
     address owner = vault721.ownerOf(vaultId);
     address proxy = vault721.getProxy(owner);
@@ -65,7 +70,7 @@ contract TransferOwnershipAnvil is AnvilFork {
     assertEq(1, vault721.balanceOf(reciever));
   }
 
-  function test_unit_transferVault_toZero_Fail() public {
+  function X_unit_transferVault_toZero_Fail() public {
     uint256 vaultId = 1;
     address owner = vault721.ownerOf(vaultId);
     uint256 initBal = vault721.balanceOf(owner);
@@ -96,7 +101,7 @@ contract TransferOwnershipAnvil is AnvilFork {
   /**
    * @dev fuzz tests
    */
-  function test_fuzz_transferVault(uint256 vaultId) public {
+  function X_fuzz_transferVault(uint256 vaultId) public {
     vaultId = bound(vaultId, 1, totalVaults - 1);
     address owner = vault721.ownerOf(vaultId);
     address proxy = vault721.getProxy(owner);
@@ -133,7 +138,7 @@ contract TransferOwnershipAnvil is AnvilFork {
     assertEq(1, vault721.balanceOf(reciever));
   }
 
-  function test_fuzz_transferVault_toZero_Fail(uint256 vaultId) public {
+  function X_fuzz_transferVault_toZero_Fail(uint256 vaultId) public {
     vaultId = bound(vaultId, 1, totalVaults - 1);
     address owner = vault721.ownerOf(vaultId);
     uint256 initBal = vault721.balanceOf(owner);

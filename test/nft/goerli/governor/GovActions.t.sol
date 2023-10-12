@@ -23,8 +23,16 @@ contract GovActions is GoerliFork {
     perSecondDiscountUpdateRate: MINUS_0_5_PERCENT_PER_HOUR
   });
 
-  // test
-  function testExecuteProp() public {
+  /**
+   * @dev tests are grouped into 1 function to avoid being run general test
+   * change `X_all` to `test_all` to run tests in this contract
+   */
+  function X_all() public {
+    t_executeProp();
+  }
+
+  // tests
+  function t_executeProp() public {
     uint256 startBlock = block.number;
     uint256 startTime = block.timestamp;
     emit log_named_uint('Block', startBlock);

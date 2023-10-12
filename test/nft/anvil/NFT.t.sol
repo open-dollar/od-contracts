@@ -11,13 +11,18 @@ import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 
 // forge t --fork-url $URL --match-contract NFTAnvil -vvvvv
 
+/**
+ * @dev keyword `test` changed to `X` to avoid being run general test
+ * change `X_` to `test_` to run tests in this contract
+ */
+
 contract NFTAnvil is AnvilFork {
   using SafeERC20 for IERC20;
 
   /**
    * @dev enfore correct setup
    */
-  function test_setup() public {
+  function X_setup() public {
     assertEq(totalVaults, vault721.totalSupply());
     checkProxyAddress();
     checkVaultIds();
@@ -41,7 +46,7 @@ contract NFTAnvil is AnvilFork {
    * @dev fuzz tests set to 256 runs each
    * test locking collateral
    */
-  function test_depositCollateral(uint256 collateral, uint256 cTypeIndex) public maxLock(collateral) {
+  function X_depositCollateral(uint256 collateral, uint256 cTypeIndex) public maxLock(collateral) {
     cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
 
     for (uint256 i = 0; i < proxies.length; i++) {
@@ -63,7 +68,7 @@ contract NFTAnvil is AnvilFork {
   /**
    * @dev test generating debt after locking collateral
    */
-  function test_generateDebt(uint256 debt, uint256 collateral, uint256 cTypeIndex) public debtRange(debt) {
+  function X_generateDebt(uint256 debt, uint256 collateral, uint256 cTypeIndex) public debtRange(debt) {
     collateral = bound(collateral, debt / 975, MINT_AMOUNT); // ETH price ~ 1500 (debt / 975 > 150% collateralization)
     cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 2); // range: WSTETH, CBETH, RETH
 
@@ -87,7 +92,7 @@ contract NFTAnvil is AnvilFork {
   /**
    * @dev test generating debt and locking collateral in single tx
    */
-  function test_depositCollateral_generateDebt(
+  function X_depositCollateral_generateDebt(
     uint256 debt,
     uint256 collateral,
     uint256 cTypeIndex
@@ -114,7 +119,7 @@ contract NFTAnvil is AnvilFork {
   /**
    * @dev test transfering vault to outside user
    */
-  function test_transferVault(uint256 vaultId) public {
+  function X_transferVault(uint256 vaultId) public {
     vaultId = bound(vaultId, 1, totalVaults - 1);
     address owner = vault721.ownerOf(vaultId);
     uint256 initBal = vault721.balanceOf(owner);
@@ -133,7 +138,7 @@ contract NFTAnvil is AnvilFork {
   /**
    * @dev verify no burn
    */
-  function test_transferVault_toZero_Fail(uint256 vaultId) public {
+  function X_transferVault_toZero_Fail(uint256 vaultId) public {
     vaultId = bound(vaultId, 1, totalVaults - 1);
     address owner = vault721.ownerOf(vaultId);
     uint256 initBal = vault721.balanceOf(owner);
