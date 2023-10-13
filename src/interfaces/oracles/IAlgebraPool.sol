@@ -18,4 +18,5 @@ interface IAlgebraPool {
       uint8 communityFeeToken1,
       bool unlocked
     );
+  function dataStorageOperator() external returns (address);
 }
