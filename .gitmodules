@@ -14,4 +14,4 @@
 	    branch = 0.5.5
 [submodule "lib/core"]
 	path = lib/core
-	url = https://github.com/CamelotLabs/core
+	url = https://github.com/@cryptoalgebra/core
