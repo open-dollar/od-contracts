@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
+// TODO: delete this, replace with AlgebraV1 forge lib import
+
 interface IDataStorageOperator {
   /**
    * @notice Returns data belonging to a certain timepoint

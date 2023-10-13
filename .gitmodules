@@ -15,6 +15,3 @@
 [submodule "lib/core"]
 	path = lib/core
 	url = https://github.com/CamelotLabs/core
-[submodule "lib/AlgebraV1"]
-	path = lib/AlgebraV1
-	url = https://github.com/cryptoalgebra/AlgebraV1
