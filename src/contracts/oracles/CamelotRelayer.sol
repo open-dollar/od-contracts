@@ -71,7 +71,7 @@ contract CamelotRelayer is IBaseOracle, ICamelotRelayer {
     // }
 
     // Consult the query with a TWAP period of quotePeriod
-    (int24 _arithmeticMeanTick,) = IDataStorageOperator.consult(camelotPool, quotePeriod);
+    int24 _arithmeticMeanTick = _consult(camelotPool, quotePeriod);
     // Calculate the quote amount
     uint256 _quoteAmount = IDataStorageOperator.getQuoteAtTick({
       tick: _arithmeticMeanTick,

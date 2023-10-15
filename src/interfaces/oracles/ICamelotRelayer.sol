@@ -8,9 +8,9 @@ interface ICamelotRelayer is IBaseOracle {
   error CamelotRelayer_InvalidPool();
 
   /**
-   * @notice Address of the CamelotPair used to consult the TWAP
+   * @notice Address of the camelotPool used to consult the TWAP
    */
-  function camelotPair() external view returns (address _uniV3Pool);
+  function camelotPool() external view returns (address _uniV3Pool);
 
   /**
    * @notice Address of the base token used to consult the quote
