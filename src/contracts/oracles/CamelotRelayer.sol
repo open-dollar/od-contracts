@@ -6,7 +6,8 @@ import {ICamelotRelayer} from '@interfaces/oracles/ICamelotRelayer.sol';
 import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
 import {IAlgebraFactory} from '@cryptoalgebra-i-core/IAlgebraFactory.sol';
 import {IAlgebraPool} from '@cryptoalgebra-i-core/IAlgebraPool.sol';
-import {IDataStorageOperator} from '@cryptoalgebra-i-core/IDataStorageOperator.sol';
+import {IDataStorageOperator} from 'lib/Algebra/src/core/contracts/interfaces/IDataStorageOperator.sol';
+import {DataStorageLibrary} from 'lib/Algebra/src/periphery/contracts/libraries/DataStorageLibrary.sol';
 import {CAMELOT_V3_FACTORY, GOERLI_CAMELOT_V3_FACTORY} from '@script/Registry.s.sol';
 
 /**
@@ -71,9 +72,9 @@ contract CamelotRelayer is IBaseOracle, ICamelotRelayer {
     // }
 
     // Consult the query with a TWAP period of quotePeriod
-    int24 _arithmeticMeanTick = _consult(camelotPool, quotePeriod);
+    int24 _arithmeticMeanTick = DataStorageLibrary.consult(camelotPool, quotePeriod);
     // Calculate the quote amount
-    uint256 _quoteAmount = IDataStorageOperator.getQuoteAtTick({
+    uint256 _quoteAmount = DataStorageLibrary.getQuoteAtTick({
       tick: _arithmeticMeanTick,
       baseAmount: baseAmount,
       baseToken: baseToken,
@@ -90,8 +91,8 @@ contract CamelotRelayer is IBaseOracle, ICamelotRelayer {
    */
   function read() external view returns (uint256 _result) {
     // This call may revert with 'OLD!' if the pool doesn't have enough cardinality or initialized history
-    (int24 _arithmeticMeanTick,) = IDataStorageOperator.consult(camelotPool, quotePeriod);
-    uint256 _quoteAmount = IDataStorageOperator.getQuoteAtTick({
+    int24 _arithmeticMeanTick = DataStorageLibrary.consult(camelotPool, quotePeriod);
+    uint256 _quoteAmount = DataStorageLibrary.getQuoteAtTick({
       tick: _arithmeticMeanTick,
       baseAmount: baseAmount,
       baseToken: baseToken,
