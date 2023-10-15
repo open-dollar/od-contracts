@@ -4,6 +4,13 @@
 @camelot/=lib/core/contracts/
 @isolmate/=lib/isolmate/src/
 @console2/=forge-std/console2.sol;
+@cryptoalgebra-core/=node_modules/@cryptoalgebra/core/contracts/
+@cryptoalgebra-periphery/=node_modules/@cryptoalgebra/periphery/contracts/
+@cryptoalgebra-i-core/=node_modules/@cryptoalgebra/solidity-interfaces/contracts/core/
+@cryptoalgebra-i-periphery/=node_modules/@cryptoalgebra/solidity-interfaces/contracts/periphery/
+
+
+
 
 @contracts/=src/contracts/
 @interfaces/=src/interfaces/

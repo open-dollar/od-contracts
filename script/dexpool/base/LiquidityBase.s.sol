@@ -2,8 +2,7 @@
 pragma solidity 0.8.19;
 
 import {Script} from 'forge-std/Script.sol';
-import {ICamelotFactory} from '@camelot/interfaces/ICamelotFactory.sol';
-import {IAlgebraFactory as ICamelotV3Factory} from '@interfaces/factories/IAlgebraFactory.sol';
+import {IAlgebraFactory} from '@cryptoalgebra-i-core/IAlgebraFactory.sol';
 import {CamelotRelayerFactory} from '@contracts/factories/CamelotRelayerFactory.sol';
 import {IUniswapV3Factory} from '@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol';
 import {IUniswapV3PoolDeployer} from '@uniswap/v3-core/contracts/interfaces/IUniswapV3PoolDeployer.sol';
@@ -20,11 +19,8 @@ import {GoerliContracts} from '@script/GoerliContracts.s.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 
 contract LiquidityBase is GoerliContracts, Script {
-  IUniswapV3Factory public uniswapV3Factory = IUniswapV3Factory(GOERLI_UNISWAP_V3_FACTORY);
-  ICamelotFactory public camelotV2Factory = ICamelotFactory(GOERLI_CAMELOT_V2_FACTORY);
-  ICamelotV3Factory public camelotV3Factory = ICamelotV3Factory(GOERLI_CAMELOT_V3_FACTORY);
+  IAlgebraFactory public camelotV3Factory = IAlgebraFactory(GOERLI_CAMELOT_V3_FACTORY);
   CamelotRelayerFactory public camelotRelayerFactory = CamelotRelayerFactory(CamelotRelayerFactory_Address);
-  UniV3RelayerFactory public uniV3RelayerFactory = UniV3RelayerFactory(UniV3RelayerFactory_Address);
   DenominatedOracleFactory public denominatedOracleFactory = DenominatedOracleFactory(DenominatedOracleFactory_Address);
 
   address public OD_token = SystemCoin_Address;

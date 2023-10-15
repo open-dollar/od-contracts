@@ -4,8 +4,7 @@ pragma solidity 0.8.19;
 import {LiquidityBase} from '@script/dexpool/base/LiquidityBase.s.sol';
 import {FixedPointMathLib} from '@isolmate/utils/FixedPointMathLib.sol';
 import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
-import {IAlgebraPool} from '@interfaces/oracles/IAlgebraPool.sol';
-// import {IAlgebraPool} from '@algebra/core/interfaces/IAlgebraPool.sol';
+import {IAlgebraPool} from '@cryptoalgebra-i-core/IAlgebraPool.sol';
 import 'forge-std/console2.sol';
 
 // BROADCAST

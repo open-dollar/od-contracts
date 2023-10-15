@@ -4,10 +4,9 @@ pragma solidity 0.8.19;
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {ICamelotRelayer} from '@interfaces/oracles/ICamelotRelayer.sol';
 import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
-// import {ICamelotFactory} from '@camelot/interfaces/ICamelotFactory.sol';
-import {IAlgebraFactory} from '@interfaces/factories/IAlgebraFactory.sol';
-import {ICamelotPair} from '@camelot/interfaces/ICamelotPair.sol';
-import {OracleLibrary} from '@uniswap/v3-periphery/contracts/libraries/OracleLibrary.sol';
+import {IAlgebraFactory} from '@cryptoalgebra-i-core/IAlgebraFactory.sol';
+import {IAlgebraPool} from '@cryptoalgebra-i-core/IAlgebraPool.sol';
+import {IDataStorageOperator} from '@cryptoalgebra-i-core/IDataStorageOperator.sol';
 import {CAMELOT_V3_FACTORY, GOERLI_CAMELOT_V3_FACTORY} from '@script/Registry.s.sol';
 
 /**
@@ -20,7 +19,7 @@ contract CamelotRelayer is IBaseOracle, ICamelotRelayer {
   address internal constant _CAMELOT_FACTORY = GOERLI_CAMELOT_V3_FACTORY;
 
   /// @inheritdoc ICamelotRelayer
-  address public camelotPair;
+  address public camelotPool;
   /// @inheritdoc ICamelotRelayer
   address public baseToken;
   /// @inheritdoc ICamelotRelayer
@@ -38,12 +37,12 @@ contract CamelotRelayer is IBaseOracle, ICamelotRelayer {
   uint32 public quotePeriod;
 
   constructor(address _baseToken, address _quoteToken, uint32 _quotePeriod) {
-    // camelotPair = ICamelotFactory(_CAMELOT_FACTORY).getPair(_baseToken, _quoteToken);
-    camelotPair = IAlgebraFactory(_CAMELOT_FACTORY).poolByPair(_baseToken, _quoteToken);
-    if (camelotPair == address(0)) revert CamelotRelayer_InvalidPool();
+    // camelotPool = ICamelotFactory(_CAMELOT_FACTORY).getPair(_baseToken, _quoteToken);
+    camelotPool = IAlgebraFactory(_CAMELOT_FACTORY).poolByPair(_baseToken, _quoteToken);
+    if (camelotPool == address(0)) revert CamelotRelayer_InvalidPool();
 
-    address _token0 = ICamelotPair(camelotPair).token0();
-    address _token1 = ICamelotPair(camelotPair).token1();
+    address _token0 = IAlgebraPool(camelotPool).token0();
+    address _token1 = IAlgebraPool(camelotPool).token1();
 
     // The factory validates that both token0 and token1 are desired baseToken and quoteTokens
     if (_token0 == _baseToken) {
@@ -67,13 +66,14 @@ contract CamelotRelayer is IBaseOracle, ICamelotRelayer {
    */
   function getResultWithValidity() external view returns (uint256 _result, bool _validity) {
     // If the pool doesn't have enough history return false
-    if (OracleLibrary.getOldestObservationSecondsAgo(camelotPair) < quotePeriod) {
-      return (0, false);
-    }
+    // if (OracleLibrary.getOldestObservationSecondsAgo(camelotPool) < quotePeriod) {
+    //   return (0, false);
+    // }
+
     // Consult the query with a TWAP period of quotePeriod
-    (int24 _arithmeticMeanTick,) = OracleLibrary.consult(camelotPair, quotePeriod);
+    (int24 _arithmeticMeanTick,) = IDataStorageOperator.consult(camelotPool, quotePeriod);
     // Calculate the quote amount
-    uint256 _quoteAmount = OracleLibrary.getQuoteAtTick({
+    uint256 _quoteAmount = IDataStorageOperator.getQuoteAtTick({
       tick: _arithmeticMeanTick,
       baseAmount: baseAmount,
       baseToken: baseToken,
@@ -90,8 +90,8 @@ contract CamelotRelayer is IBaseOracle, ICamelotRelayer {
    */
   function read() external view returns (uint256 _result) {
     // This call may revert with 'OLD!' if the pool doesn't have enough cardinality or initialized history
-    (int24 _arithmeticMeanTick,) = OracleLibrary.consult(camelotPair, quotePeriod);
-    uint256 _quoteAmount = OracleLibrary.getQuoteAtTick({
+    (int24 _arithmeticMeanTick,) = IDataStorageOperator.consult(camelotPool, quotePeriod);
+    uint256 _quoteAmount = IDataStorageOperator.getQuoteAtTick({
       tick: _arithmeticMeanTick,
       baseAmount: baseAmount,
       baseToken: baseToken,
