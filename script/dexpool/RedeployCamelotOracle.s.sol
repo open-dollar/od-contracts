@@ -22,6 +22,7 @@ import '@script/GoerliDeployment.s.sol';
 contract ReDeployCamelotOracle is GoerliDeployment, Script {
   function run() public {
     vm.startBroadcast(vm.envUint('GOERLI_PK'));
+    uint256 oracleInterval = 1 seconds;
 
     // authorization work-around + update camelotRelayer contract in factory
     ChainlinkRelayerFactory chainlinkRelayerFactory2 = new ChainlinkRelayerFactory();
@@ -29,7 +30,7 @@ contract ReDeployCamelotOracle is GoerliDeployment, Script {
     DenominatedOracleFactory denominatedOracleFactory2 = new DenominatedOracleFactory();
 
     IBaseOracle chainlinkEthUSDPriceFeed =
-      chainlinkRelayerFactory2.deployChainlinkRelayer(GOERLI_CHAINLINK_ETH_USD_FEED, ORACLE_INTERVAL_TEST);
+      chainlinkRelayerFactory2.deployChainlinkRelayer(GOERLI_CHAINLINK_ETH_USD_FEED, oracleInterval);
 
     // create pool: done
 
@@ -44,8 +45,9 @@ contract ReDeployCamelotOracle is GoerliDeployment, Script {
     // calculate `sqrtPriceX96` and initialize pool: done
 
     // deploy Camelot relayer to retrieve price from Camelot pool
-    IBaseOracle _odWethOracle =
-      camelotRelayerFactory2.deployCamelotRelayer(address(systemCoin), address(collateral[WSTETH]), uint32(1 seconds));
+    IBaseOracle _odWethOracle = camelotRelayerFactory2.deployCamelotRelayer(
+      address(systemCoin), address(collateral[WSTETH]), uint32(oracleInterval)
+    );
 
     // deploy denominated oracle of OD/WSTETH denominated against ETH/USD
     systemCoinOracle = denominatedOracleFactory2.deployDenominatedOracle(_odWethOracle, chainlinkEthUSDPriceFeed, false);
@@ -66,7 +68,7 @@ contract TestResultWithValidity is Script {
   // new script to make time break btw runs
   function run() public {
     vm.startBroadcast(vm.envUint('GOERLI_PK'));
-    address _odWethOracle = 0x53d7c08460Bb49b5d06A55F8f966a5eC0f4aFA4b;
+    address _odWethOracle = 0x68a16339e061493d67305D1f73701241Df23B931;
 
     // test getResultWithValidity
     // TODO: error = revert on `getTimepoints` in DataStorage library
