@@ -203,8 +203,11 @@ contract DeployGoerli is DeployTestnet {
 
   // Setup oracle feeds
   function setupEnvironment() public virtual override updateParams {
-    // OD
+    // oracle will be converted to denominated w/ camelotRelayer price source
     systemCoinOracle = new OracleForTestnet(OD_INITIAL_PRICE); // 1 OD = 1 USD 'OD / USD'
+
+    // oracle will remain as test oracle in case camelotRelayer fails
+    systemCoinOracleBackup = new OracleForTestnet(OD_INITIAL_PRICE); // 1 OD = 1 USD 'OD / USD'
 
     // Test tokens (various decimals for testing)
     collateral[ARB] = new MintableVoteERC20('Arbitrum', 'ARB', 18);

@@ -130,6 +130,9 @@ abstract contract Contracts {
   IBaseOracle public systemCoinOracle;
   mapping(bytes32 => IDelayedOracle) public delayedOracle;
 
+  // for testing
+  IBaseOracle public systemCoinOracleBackup
+
   // --- PID contracts ---
   IPIDController public pidController;
   IPIDRateSetter public pidRateSetter;
