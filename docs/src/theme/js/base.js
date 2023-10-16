@@ -12,7 +12,7 @@
   });
   document.addEventListener('DOMContentLoaded', function () {
     const sidebar = document.getElementById('sidebar');
-    if (sidebar) {
+    if (sidebar && window?.innerWidth < 1280) {
       sidebar.classList.add('hidden');
     }
   });
