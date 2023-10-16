@@ -4,7 +4,7 @@ pragma solidity 0.8.19;
 import {LiquidityBase} from '@script/dexpool/base/LiquidityBase.s.sol';
 import {FixedPointMathLib} from '@isolmate/utils/FixedPointMathLib.sol';
 import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
-import {IAlgebraPool} from '@cryptoalgebra-i-core/IAlgebraPool.sol';
+import {IAlgebraPool} from '@cryptoalgebra-core/interfaces/IAlgebraPool.sol';
 import 'forge-std/console2.sol';
 
 // BROADCAST
@@ -55,19 +55,18 @@ contract InitCamelotPool is LiquidityBase {
 
     IAlgebraPool(pool).initialize(uint160(sqrtPriceX96));
 
-    // returns variables, but reverts
-    // (
-    //   uint160 price,
-    //   int24 tick,
-    //   uint16 feeZto,
-    //   uint16 feeOtz,
-    //   uint16 timepointIndex,
-    //   uint8 communityFeeToken0,
-    //   uint8 communityFeeToken1,
-    //   bool unlocked
-    // ) = IAlgebraPool(pool).globalState();
+    // return variables
+    (
+      uint160 price,
+      int24 tick,
+      int24 prevInitializedTick,
+      uint16 fee,
+      uint16 timepointIndex,
+      uint8 communityFee,
+      bool unlocked
+    ) = IAlgebraPool(pool).globalState();
 
-    // console2.logUint((uint256(price)));
+    console2.logUint((uint256(price)));
     vm.stopBroadcast();
   }
 }

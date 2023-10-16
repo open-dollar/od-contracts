@@ -3,8 +3,9 @@ pragma solidity 0.8.19;
 
 import {LiquidityBase} from '@script/dexpool/base/LiquidityBase.s.sol';
 import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
-import {IAlgebraPool} from '@cryptoalgebra-i-core/IAlgebraPool.sol';
-import {IDataStorageOperator} from '@cryptoalgebra-i-core/IDataStorageOperator.sol';
+import {IAlgebraPool} from '@cryptoalgebra-core/interfaces/IAlgebraPool.sol';
+import {IAlgebraPoolState} from '@cryptoalgebra-core/interfaces/pool/IAlgebraPoolState.sol';
+import {IDataStorageOperator} from '@cryptoalgebra-core/interfaces/IDataStorageOperator.sol';
 import 'forge-std/console2.sol';
 
 // BROADCAST
@@ -31,7 +32,17 @@ contract GetDataStorage is LiquidityBase {
 
     IDataStorageOperator operator = IDataStorageOperator(IAlgebraPool(pool).dataStorageOperator());
 
-    // console2.logUint();
+    (
+      uint160 price,
+      int24 tick,
+      int24 prevInitializedTick,
+      uint16 fee,
+      uint16 timepointIndex,
+      uint8 communityFee,
+      bool unlocked
+    ) = IAlgebraPool(pool).globalState();
+
+    console2.logUint((uint256(price)));
     vm.stopBroadcast();
   }
 }

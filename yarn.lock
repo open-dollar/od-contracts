@@ -184,13 +184,6 @@
   dependencies:
     chalk "^4.1.0"
 
-"@cryptoalgebra/solidity-interfaces@^2.0.0":
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/@cryptoalgebra/solidity-interfaces/-/solidity-interfaces-2.0.0.tgz#cf5937d9f4549f172b778ebf658e42ddd413402c"
-  integrity sha512-n1nSEBqcTRD101f51d37tc8G3m+LZafhvQXjUFwaZIfg5a++vhQCRzPZM+Bf9ZNNEQlKxZU+97O1y3D2Zbo7JQ==
-  dependencies:
-    "@openzeppelin/contracts" "^3.4.1-solc-0.7-2"
-
 "@cspotcode/source-map-support@^0.8.0":
   version "0.8.1"
   resolved "https://registry.yarnpkg.com/@cspotcode/source-map-support/-/source-map-support-0.8.1.tgz#00629c35a688e05a88b1cda684fb9d5e73f000a1"
@@ -260,11 +253,6 @@
   version "4.8.2"
   resolved "https://registry.yarnpkg.com/@openzeppelin/contracts/-/contracts-4.8.2.tgz#d815ade0027b50beb9bcca67143c6bcc3e3923d6"
   integrity sha512-kEUOgPQszC0fSYWpbh2kT94ltOJwj1qfT2DWo+zVttmGmf97JZ99LspePNaeeaLhCImaHVeBbjaQFZQn7+Zc5g==
-
-"@openzeppelin/contracts@^3.4.1-solc-0.7-2":
-  version "3.4.2"
-  resolved "https://registry.yarnpkg.com/@openzeppelin/contracts/-/contracts-3.4.2.tgz#d81f786fda2871d1eb8a8c5a73e455753ba53527"
-  integrity sha512-z0zMCjyhhp4y7XKAcDAi3Vgms4T2PstwBdahiO0+9NaGICQKjynK3wduSRplTgk4LXmoO1yfDGO5RbjKYxtuxA==
 
 "@solidity-parser/parser@^0.14.1":
   version "0.14.5"

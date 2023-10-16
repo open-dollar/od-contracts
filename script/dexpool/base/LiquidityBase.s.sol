@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import {Script} from 'forge-std/Script.sol';
-import {IAlgebraFactory} from '@cryptoalgebra-i-core/IAlgebraFactory.sol';
+import {IAlgebraFactory} from '@cryptoalgebra-core/interfaces/IAlgebraFactory.sol';
 import {CamelotRelayerFactory} from '@contracts/factories/CamelotRelayerFactory.sol';
 import {IUniswapV3Factory} from '@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol';
 import {IUniswapV3PoolDeployer} from '@uniswap/v3-core/contracts/interfaces/IUniswapV3PoolDeployer.sol';
@@ -17,9 +17,11 @@ import {
 } from '@script/Registry.s.sol';
 import {GoerliContracts} from '@script/GoerliContracts.s.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
+import {ChainlinkRelayerFactory, IChainlinkRelayerFactory} from '@contracts/factories/ChainlinkRelayerFactory.sol';
 
 contract LiquidityBase is GoerliContracts, Script {
   IAlgebraFactory public camelotV3Factory = IAlgebraFactory(GOERLI_CAMELOT_V3_FACTORY);
+  ChainlinkRelayerFactory public chainlinkRelayerFactory = ChainlinkRelayerFactory(ChainlinkRelayerFactory_Address);
   CamelotRelayerFactory public camelotRelayerFactory = CamelotRelayerFactory(CamelotRelayerFactory_Address);
   DenominatedOracleFactory public denominatedOracleFactory = DenominatedOracleFactory(DenominatedOracleFactory_Address);
 

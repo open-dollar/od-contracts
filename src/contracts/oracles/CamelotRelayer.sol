@@ -4,8 +4,8 @@ pragma solidity 0.8.19;
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {ICamelotRelayer} from '@interfaces/oracles/ICamelotRelayer.sol';
 import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
-import {IAlgebraFactory} from '@cryptoalgebra-i-core/IAlgebraFactory.sol';
-import {IAlgebraPool} from '@cryptoalgebra-i-core/IAlgebraPool.sol';
+import {IAlgebraFactory} from '@cryptoalgebra-core/interfaces/IAlgebraFactory.sol';
+import {IAlgebraPool} from '@cryptoalgebra-core/interfaces/IAlgebraPool.sol';
 import {IDataStorageOperator} from 'lib/Algebra/src/core/contracts/interfaces/IDataStorageOperator.sol';
 import {DataStorageLibrary} from 'lib/Algebra/src/periphery/contracts/libraries/DataStorageLibrary.sol';
 import {CAMELOT_V3_FACTORY, GOERLI_CAMELOT_V3_FACTORY} from '@script/Registry.s.sol';
@@ -66,10 +66,7 @@ contract CamelotRelayer is IBaseOracle, ICamelotRelayer {
    * @inheritdoc IBaseOracle
    */
   function getResultWithValidity() external view returns (uint256 _result, bool _validity) {
-    // If the pool doesn't have enough history return false
-    // if (OracleLibrary.getOldestObservationSecondsAgo(camelotPool) < quotePeriod) {
-    //   return (0, false);
-    // }
+    // TODO: add catch if the pool doesn't have enough history - return false
 
     // Consult the query with a TWAP period of quotePeriod
     int24 _arithmeticMeanTick = DataStorageLibrary.consult(camelotPool, quotePeriod);

@@ -5,10 +5,9 @@
 @isolmate/=lib/isolmate/src/
 @console2/=forge-std/console2.sol;
 @cryptoalgebra/=lib/Algebra/src/
-@cryptoalgebra-i-core/=node_modules/@cryptoalgebra/solidity-interfaces/contracts/core/
-@cryptoalgebra-i-periphery/=node_modules/@cryptoalgebra/solidity-interfaces/contracts/periphery/
-
-
+@cryptoalgebra-core/=lib/Algebra/src/core/contracts/
+@cryptoalgebra-periphery/=lib/Algebra/src/periphery/contracts/
+@cryptoalgebra-tokenomics/=lib/Algebra/src/tokenomics/contracts/
 
 
 @contracts/=src/contracts/

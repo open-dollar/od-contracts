@@ -13,7 +13,7 @@ import {Script} from 'forge-std/Script.sol';
 import {Common} from '@script/Common.s.sol';
 import {GoerliParams} from '@script/GoerliParams.s.sol';
 import {MainnetParams} from '@script/MainnetParams.s.sol';
-import {IAlgebraPool} from '@cryptoalgebra-i-core/IAlgebraPool.sol';
+import {IAlgebraPool} from '@cryptoalgebra-core/interfaces/IAlgebraPool.sol';
 
 abstract contract Deploy is Common, Script {
   function setupEnvironment() public virtual {}
