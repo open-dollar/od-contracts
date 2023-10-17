@@ -1,7 +1,9 @@
-@media screen and (max-width: 1280px) {
-  .sidebar {
-    display: none;
-  }
+code {
+  z-index: 1;
+}
+
+.sidebar {
+  z-index: 2;
 }
 
 @media screen and (min-width: 1280px) {
