@@ -105,7 +105,10 @@ abstract contract Deploy is Common, Script {
       _delegateAllTo(P);
       _delegateAllTo(governor);
     } else {
-      revert();
+      // anvil
+      _delegateAllTo(H);
+      _delegateAllTo(P);
+      _delegateAllTo(governor);
     }
 
     vm.stopBroadcast();
