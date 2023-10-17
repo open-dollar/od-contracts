@@ -19,8 +19,8 @@ contract NFTAnvil is AnvilFork {
    */
   function test_setup() public {
     assertEq(totalVaults, vault721.totalSupply());
-    _checkProxyAddress();
-    _checkVaultIds();
+    checkProxyAddress();
+    checkVaultIds();
   }
 
   /**
@@ -146,30 +146,5 @@ contract NFTAnvil is AnvilFork {
     vm.stopPrank();
 
     assertEq(initBal, vault721.balanceOf(owner));
-  }
-
-  /**
-   * @dev internal helper functions
-   */
-  function _checkProxyAddress() internal {
-    for (uint256 i = 0; i < users.length; i++) {
-      assertEq(proxies[i], vault721.getProxy(users[i]));
-    }
-  }
-
-  function _checkVaultIds() internal {
-    uint256 vaultId = 1;
-
-    for (uint256 i = 0; i < users.length; i++) {
-      address user = users[i];
-      address proxy = vault721.getProxy(user);
-      assertEq(totalVaults / 3, vault721.balanceOf(user));
-
-      for (uint256 j = 0; j < cTypes.length; j++) {
-        assertEq(vaultId, vaultIds[proxy][cTypes[j]]);
-        assertEq(user, vault721.ownerOf(vaultId));
-        vaultId++;
-      }
-    }
   }
 }

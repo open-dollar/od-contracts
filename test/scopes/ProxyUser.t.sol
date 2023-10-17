@@ -408,16 +408,6 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     _proxy.execute(address(rewardedActions), _callData);
   }
 
-  function _workTransferExtraSurplus(address _user) internal override {
-    ODProxy _proxy = _getProxy(_user);
-
-    bytes memory _callData =
-      abi.encodeWithSelector(RewardedActions.transferExtraSurplus.selector, address(accountingJob), address(coinJoin));
-
-    vm.prank(_user);
-    _proxy.execute(address(rewardedActions), _callData);
-  }
-
   function _workLiquidation(address _user, bytes32 _cType, address _safe) internal override {
     ODProxy _proxy = _getProxy(_user);
 

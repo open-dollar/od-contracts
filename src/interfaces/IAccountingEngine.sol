@@ -87,12 +87,14 @@ interface IAccountingEngine is IAuthorizable, IDisableable, IModifiable {
   error AccEng_PopDebtCooldown();
   /// @notice Throws when trying to transfer post-settlement surplus before the disable cooldown has passed
   error AccEng_PostSettlementCooldown();
+  /// @notice Throws when surplus surplusTransferPercentage is great than WAD (100%)
+  error AccEng_surplusTransferPercentOverLimit();
 
   // --- Structs ---
 
   struct AccountingEngineParams {
     // percent of the Surplus the system transfers instead of auctioning [0/100]
-    uint256 surplusIsTransferred;
+    uint256 surplusTransferPercentage;
     // Delay between surplus actions
     uint256 surplusDelay;
     // Delay after which debt can be popped from debtQueue
@@ -143,7 +145,7 @@ interface IAccountingEngine is IAuthorizable, IDisableable, IModifiable {
 
   /**
    * @notice Getter for the unpacked contract parameters struct
-   * @return _surplusIsTransferred Whether the system transfers surplus instead of auctioning it [0/1]
+   * @return _surplusTransferPercentage Whether the system transfers surplus instead of auctioning it [0/1]
    * @return _surplusDelay Amount of seconds between surplus actions
    * @return _popDebtDelay Amount of seconds after which debt can be popped from debtQueue
    * @return _disableCooldown Amount of seconds to wait (post settlement) until surplus can be drained
@@ -157,7 +159,7 @@ interface IAccountingEngine is IAuthorizable, IDisableable, IModifiable {
     external
     view
     returns (
-      uint256 _surplusIsTransferred,
+      uint256 _surplusTransferPercentage,
       uint256 _surplusDelay,
       uint256 _popDebtDelay,
       uint256 _disableCooldown,
@@ -249,21 +251,13 @@ interface IAccountingEngine is IAuthorizable, IDisableable, IModifiable {
   function auctionDebt() external returns (uint256 _id);
 
   /**
-   * @notice Start a surplus auction (sell surplus stability fees for protocol tokens)
-   * @dev    It can only auction surplus if `surplusIsTransferred` is set to false
+   * @notice Start a surplus auction (sell surplus stability fees for protocol tokens) and send percentage of surplus to extraSurplusReciever
+   * @dev    It can only auction surplus if `surplusTransferPercentage` is set to greater than 0
    * @dev    It can only auction surplus if `surplusDelay` seconds have elapsed since the last surplus auction/transfer was triggered
    * @dev    It can only auction surplus if enough surplus remains in the buffer and if there is no more debt left to settle
    * @return _id Id of the surplus auction that was started
    */
   function auctionSurplus() external returns (uint256 _id);
-
-  /**
-   * @notice Transfer surplus to an address as an alternative to surplus auctions
-   * @dev    It can only transfer surplus if `surplusIsTransferred` is set to true
-   * @dev    It can only transfer surplus if `surplusDelay` seconds have elapsed since the last surplus auction/transfer was triggered
-   * @dev    It can only transfer surplus if enough surplus remains in the buffer and if there is no more debt left to settle
-   */
-  function transferExtraSurplus() external;
 
   /**
    * @notice Transfer any remaining surplus after the disable cooldown has passed. Meant to be a backup in case GlobalSettlement.processSAFE

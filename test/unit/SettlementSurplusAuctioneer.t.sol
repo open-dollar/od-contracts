@@ -56,7 +56,7 @@ abstract contract Base is HaiTest {
   }
 
   function _mockAccountingEngineParams(
-    uint256 _surplusIsTransferred,
+    uint256 _surplusTransferPercentage,
     uint256 _surplusDelay,
     uint256 _popDebtDelay,
     uint256 _disableCooldown,
@@ -69,7 +69,7 @@ abstract contract Base is HaiTest {
       address(mockAccountingEngine),
       abi.encodeCall(mockAccountingEngine.params, ()),
       abi.encode(
-        _surplusIsTransferred,
+        _surplusTransferPercentage,
         _surplusDelay,
         _popDebtDelay,
         _disableCooldown,

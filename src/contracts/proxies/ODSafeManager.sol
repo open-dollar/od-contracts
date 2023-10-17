@@ -141,10 +141,10 @@ contract ODSafeManager is IODSafeManager {
     if (_dst == _sData.owner) revert AlreadySafeOwner();
 
     _usrSafes[_sData.owner].remove(_safe);
-    _usrSafesPerCollat[_sData.owner][_sData.collateralType].remove(_safeId);
+    _usrSafesPerCollat[_sData.owner][_sData.collateralType].remove(_safe);
 
     _usrSafes[_dst].add(_safe);
-    _usrSafesPerCollat[_dst][_sData.collateralType].add(_safeId);
+    _usrSafesPerCollat[_dst][_sData.collateralType].add(_safe);
 
     _safeData[_safe].owner = _dst;
 
