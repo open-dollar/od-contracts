@@ -89,7 +89,7 @@ contract GovActionsGoerli is GoerliFork {
     propState = dao.state(propId); // returns 1 (active)
 
     vm.startPrank(bob);
-    // bob holds 33% of governance tokens (@bug showing weight at 0)
+    // bob holds 33% of governance tokens
     dao.castVote(propId, 1);
     vm.stopPrank();
 
