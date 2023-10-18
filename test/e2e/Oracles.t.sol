@@ -24,7 +24,8 @@ contract OracleSetup is HaiTest {
 
   // July 14 2022 7:33 AM - 3:33PM (8h window)
   // - wierd workaround due to Arbitrum block.number refering to L1
-  uint256 FORK_BLOCK = 17_603_828;
+  // uint256 FORK_BLOCK = 17_603_828;
+  uint256 FORK_BLOCK = 141_542_579;
   uint256 FORK_CHANGE = 15_139_375;
 
   uint256 CHAINLINK_ETH_USD_PRICE_18_DECIMALS = 1_097_858_600_000_000_000_000;
@@ -48,9 +49,8 @@ contract OracleSetup is HaiTest {
 
   IDelayedOracle public wethUsdDelayedOracle;
 
+  // TODO: Uniswap relayers need to be deployed and addresses used in this test
   function setUp() public {
-    // vm.createSelectFork(vm.rpcUrl('mainnet'), FORK_BLOCK);
-
     /**
      * @dev Arbitrum block.number returns L1; createSelectFork does not work
      */
