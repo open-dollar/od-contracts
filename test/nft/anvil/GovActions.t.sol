@@ -1,17 +1,16 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {IVotes} from '@openzeppelin/governance/utils/IVotes.sol';
-import {GoerliFork} from '@test/nft/goerli/GoerliFork.t.sol';
+import {AnvilFork} from '@test/nft/anvil/AnvilFork.t.sol';
 import {Vault721} from '@contracts/proxies/Vault721.sol';
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
 import {WAD, RAY, RAD} from '@libraries/Math.sol';
 import {IGovernor} from '@openzeppelin/governance/IGovernor.sol';
 
-// forge t --fork-url $URL --match-contract GovActionsGoerli -vvvvv
+// forge t --fork-url $URL --match-contract GovActionsAnvil -vvvvv
 
-contract GovActionsGoerli is GoerliFork {
+contract GovActionsAnvil is AnvilFork {
   uint256 constant MINUS_0_5_PERCENT_PER_HOUR = 999_998_607_628_240_588_157_433_861;
   /**
    * @notice ProposalState:
@@ -39,13 +38,13 @@ contract GovActionsGoerli is GoerliFork {
 
   // test
   function testExecuteProp() public {
-    IVotes protocolVotes = IVotes(address(protocolToken));
-
     uint256 startBlock = block.number;
     uint256 startTime = block.timestamp;
     emit log_named_uint('Block', startBlock);
     emit log_named_uint('Time', startTime);
-    ODGovernor dao = ODGovernor(payable(ODGovernor_Address));
+    // ODGovernor dao = ODGovernor(payable(ODGovernor_Address));
+    ODGovernor dao = odGovernor;
+
     (
       address[] memory targets,
       uint256[] memory values,
@@ -54,25 +53,16 @@ contract GovActionsGoerli is GoerliFork {
       bytes32 descriptionHash
     ) = generateParams();
 
+    vm.startPrank(ALICE);
     uint256 propId = dao.propose(targets, values, calldatas, description);
+    vm.stopPrank();
+
     assertEq(propId, dao.hashProposal(targets, values, calldatas, descriptionHash));
 
     propState = dao.state(propId); // returns 0 (pending)
 
     emit log_named_uint('Voting Delay:', dao.votingDelay());
     emit log_named_uint('Voting Period:', dao.votingPeriod());
-
-    assertEq(0, protocolToken.balanceOf(alice));
-    assertEq(3_333_333_333_333_333_333_333, protocolToken.balanceOf(bob));
-    assertEq(0, protocolVotes.getVotes(alice));
-    assertEq(0, protocolVotes.getVotes(bob));
-
-    vm.startPrank(bob);
-    protocolVotes.delegate(bob);
-    vm.stopPrank();
-
-    assertEq(0, protocolVotes.getVotes(alice));
-    assertEq(3_333_333_333_333_333_333_333, protocolVotes.getVotes(bob));
 
     vm.roll(startBlock + 2);
     vm.warp(startTime + 30 seconds);
@@ -81,15 +71,15 @@ contract GovActionsGoerli is GoerliFork {
 
     propState = dao.state(propId);
 
-    vm.startPrank(alice);
-    // alice holds no governance tokens, so should not effect outcome
+    vm.startPrank(ALICE);
+    // ALICE holds no governance tokens, so should not effect outcome
     dao.castVote(propId, 0);
     vm.stopPrank();
 
     propState = dao.state(propId); // returns 1 (active)
 
-    vm.startPrank(bob);
-    // bob holds 33% of governance tokens (@bug showing weight at 0)
+    vm.startPrank(BOB);
+    // BOB holds 33% of governance tokens (@bug showing weight at 0)
     dao.castVote(propId, 1);
     vm.stopPrank();
 
@@ -125,9 +115,11 @@ contract GovActionsGoerli is GoerliFork {
     values[0] = 0;
     values[1] = 0;
 
-    bytes memory calldata0 = abi.encodeWithSignature('deployCollateralJoin(bytes32,address)', cType, cAddr);
+    bytes memory calldata0 = abi.encodeWithSignature('deployCollateralJoin(bytes32,address)', newCType, newCAddress);
     bytes memory calldata1 = abi.encodeWithSignature(
-      'deployCollateralAuctionHouse(bytes32,ICollateralAuctionHouse.CollateralAuctionHouseParams)', cType, _cahCParams
+      'deployCollateralAuctionHouse(bytes32,ICollateralAuctionHouse.CollateralAuctionHouseParams)',
+      newCType,
+      _cahCParams
     );
 
     calldatas = new bytes[](2);

@@ -5,6 +5,9 @@ import 'forge-std/Test.sol';
 import {AnvilDeployment} from '@test/nft/anvil/deployment/AnvilDeployment.t.sol';
 import {WSTETH, ARB, CBETH, RETH, MAGIC} from '@script/GoerliParams.s.sol';
 
+// --- Collateral ERC20 ---
+import {MintableVoteERC20} from '@contracts/for-test/MintableVoteERC20.sol';
+
 // --- Core Contracts ---
 import {SAFEEngine} from '@contracts/SAFEEngine.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
@@ -41,6 +44,9 @@ import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 contract AnvilFork is AnvilDeployment, Test {
   uint256 public constant MINT_AMOUNT = 1_000_000 * 1 ether;
 
+  bytes32 constant newCType = bytes32('NC');
+  address public newCAddress;
+
   // Anvil wallets w/ 10_000 ether
   address public constant ALICE = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266; // deployer
   address public constant BOB = 0x70997970C51812dc3A010C7d01b50e0d17dc79C8;
@@ -76,7 +82,9 @@ contract AnvilFork is AnvilDeployment, Test {
     labelVars();
     mintCollateralAndOpenSafes();
 
-    debtCeiling = setDebtCeiling();
+    // debtCeiling = setDebtCeiling();
+
+    newCAddress = address(new MintableVoteERC20('NewCoin', 'NC', 18));
   }
 
   /**

@@ -170,7 +170,8 @@ abstract contract Common is Contracts, Params {
     uint256 chainId = getChainId();
     // deploy Governor
     if (chainId == 42_161) _deployMainnetGovernor();
-    else _deployTestnetGovernor();
+    else if (chainId == 421_613) _deployGoerliGovernor();
+    else _deployAnvilGovernor();
 
     // deploy Base contracts
     safeEngine = new SAFEEngine(_safeEngineParams);
@@ -222,11 +223,21 @@ abstract contract Common is Contracts, Params {
     odGovernor = new ODGovernor(address(protocolToken), timelockController);
   }
 
-  function _deployTestnetGovernor() internal {
+  function _deployGoerliGovernor() internal {
     address[] memory members = new address[](3);
     members[0] = H;
     members[1] = J;
     members[2] = P;
+
+    timelockController = new TimelockController(MIN_DELAY_GOERLI, members, members, TIMELOCK_ADMIN);
+    odGovernor = new ODGovernor(address(protocolToken), timelockController);
+  }
+
+  function _deployAnvilGovernor() internal {
+    address[] memory members = new address[](3);
+    members[0] = ALICE;
+    members[1] = BOB;
+    members[2] = CASSY;
 
     timelockController = new TimelockController(MIN_DELAY_GOERLI, members, members, TIMELOCK_ADMIN);
     odGovernor = new ODGovernor(address(protocolToken), timelockController);
