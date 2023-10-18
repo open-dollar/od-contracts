@@ -86,27 +86,12 @@ abstract contract Deploy is Common, Script {
     uint256 chainId = getChainId();
 
     if (chainId == 42_161) {
-      // mainnet
-      if (delegate == address(0)) {
-        // if !delegate: revoke deployer && authorize governor
-        _revokeAllTo(governor);
-      } else if (delegate == deployer) {
-        // if delegate == deployer, maintain deployer auth && authorize governor
-        _delegateAllTo(governor);
-      } else {
-        // if delegate != deployer, authorize delegate && governor
-        _delegateAllTo(delegate);
-        _revokeAllTo(governor);
-      }
-    } else if (chainId == 421_613) {
-      // goerli - keep deployer auth, add H, J, P, and governor
+      // mainnet: revoke deployer authorization, authorize governor
+      _revokeAllTo(governor);
+    } else {
+      // goerli || anvil: no revoke, authorize [H, J, P, governor]
       _delegateAllTo(H);
       _delegateAllTo(J);
-      _delegateAllTo(P);
-      _delegateAllTo(governor);
-    } else {
-      // anvil
-      _delegateAllTo(H);
       _delegateAllTo(P);
       _delegateAllTo(governor);
     }
@@ -267,7 +252,8 @@ contract DeployGoerli is DeployTestnet {
   function setupPostEnvironment() public virtual override updateParams {}
 
   /**
-   * @dev use default OracleForTestnet as systemCoinOracle
+   * @dev use default OracleForTestnet as systemCoinOracle (hence this is commented out)
+   *
    * function setupPostEnvironment() public virtual override updateParams {
    *   // deploy Camelot liquidity pool to create market price for OD (using WSTETH for testnet, WETH for mainnet)
    *   ICamelotV3Factory(GOERLI_CAMELOT_V3_FACTORY).createPool(address(systemCoin), address(GOERLI_WETH));
