@@ -43,6 +43,7 @@ abstract contract Deploy is Common, Script {
     setupEnvironment();
 
     // Common deployment routine for all networks
+    deployTokenGovernance();
     deployContracts();
     deployTaxModule();
     _setupContracts();
@@ -76,13 +77,9 @@ abstract contract Deploy is Common, Script {
     // Deploy and setup contracts that rely on deployed environment
     setupPostEnvironment();
 
-    // set governor to DAO
-    governor = vault721.governor();
-
-    uint256 chainId = getChainId();
-
-    if (chainId == 42_161) {
+    if (getChainId() == 42_161) {
       // mainnet: revoke deployer authorization, authorize governor
+      require(governor == vault721.governor(), 'Vault721: Governor fail');
       _revokeAllTo(governor);
     } else {
       // goerli || anvil: no revoke, authorize [H, J, P, governor]

@@ -162,7 +162,7 @@ abstract contract Common is Contracts, Params {
     return governor != deployer && governor != address(0);
   }
 
-  function deployContracts() public updateParams {
+  function deployTokenGovernance() public updateParams {
     // deploy Tokens
     systemCoin = new SystemCoin('Open Dollar', 'OD');
     protocolToken = new ProtocolToken('Open Dollar Governance', 'ODG');
@@ -172,6 +172,12 @@ abstract contract Common is Contracts, Params {
     if (chainId == 42_161) _deployMainnetGovernor();
     else if (chainId == 421_613) _deployGoerliGovernor();
     else _deployAnvilGovernor();
+    require(address(odGovernor) != address(0), 'ODGovernor deploy fail');
+    governor = address(odGovernor);
+  }
+
+  function deployContracts() public updateParams {
+    require(governor == address(odGovernor), 'Governor not set');
 
     // deploy Base contracts
     safeEngine = new SAFEEngine(_safeEngineParams);
