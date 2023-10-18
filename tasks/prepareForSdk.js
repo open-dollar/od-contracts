@@ -57,7 +57,6 @@ const createOutputFile = (contracts) => {
     GEB_RRFM_CALCULATOR: contracts.PIDController_Address,
     SAFE_MANAGER: contracts.ODSafeManager_Address,
     GEB_GLOBAL_SETTLEMENT: contracts.GlobalSettlement_Address,
-    PROXY_FACTORY: contracts.Vault721_Address,
     PROXY_BASIC_ACTIONS: contracts.BasicActions_Address,
     PROXY_REGISTRY: contracts.Vault721_Address,
     PROXY_DEBT_AUCTION_ACTIONS: contracts.DebtBidActions_Address,

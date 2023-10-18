@@ -95,8 +95,6 @@ abstract contract BaseUser {
 
   function _workAuctionSurplus(address _user) internal virtual;
 
-  function _workTransferExtraSurplus(address _user) internal virtual;
-
   function _workLiquidation(address _user, bytes32 _cType, address _safe) internal virtual;
 
   function _workUpdateCollateralPrice(address _user, bytes32 _cType) internal virtual;

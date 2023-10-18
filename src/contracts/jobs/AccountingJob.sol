@@ -75,12 +75,6 @@ contract AccountingJob is Job, Authorizable, Modifiable, IAccountingJob {
     accountingEngine.auctionSurplus();
   }
 
-  /// @inheritdoc IAccountingJob
-  function workTransferExtraSurplus() external reward {
-    if (!shouldWorkTransferExtraSurplus) revert NotWorkable();
-    accountingEngine.transferExtraSurplus();
-  }
-
   // --- Administration ---
 
   /// @inheritdoc Modifiable
