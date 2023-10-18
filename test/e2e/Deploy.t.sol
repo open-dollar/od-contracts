@@ -157,10 +157,6 @@ contract E2EDeploymentMainnetTest is DeployMainnet, CommonDeploymentTest {
   function mintAirdrop() public override(DeployMainnet, Deploy) {
     super.mintAirdrop();
   }
-
-  function deployGovernor() public override(DeployMainnet, Deploy) {
-    super.deployGovernor();
-  }
 }
 
 contract E2EDeploymentGoerliTest is DeployGoerli, CommonDeploymentTest {
@@ -188,10 +184,6 @@ contract E2EDeploymentGoerliTest is DeployGoerli, CommonDeploymentTest {
 
   function mintAirdrop() public override(Deploy, DeployTestnet) {
     super.mintAirdrop();
-  }
-
-  function deployGovernor() public override(Deploy, DeployTestnet) {
-    super.deployGovernor();
   }
 }
 

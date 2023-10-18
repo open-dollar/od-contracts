@@ -9,6 +9,14 @@ abstract contract Common is Contracts, Params {
   uint256 internal _deployerPk = 69; // for tests
   uint256 internal _governorPK;
 
+  function getChainId() public view returns (uint256) {
+    uint256 id;
+    assembly {
+      id := chainid()
+    }
+    return id;
+  }
+
   function deployEthCollateralContracts() public updateParams {
     // deploy ETHJoin and CollateralAuctionHouse
     ethJoin = new ETHJoin(address(safeEngine), ETH_A);
@@ -159,6 +167,11 @@ abstract contract Common is Contracts, Params {
     systemCoin = new SystemCoin('Open Dollar', 'OD');
     protocolToken = new ProtocolToken('Open Dollar Governance', 'ODG');
 
+    uint256 chainId = getChainId();
+    // deploy Governor
+    if (chainId == 42_161) _deployMainnetGovernor();
+    else _deployTestnetGovernor();
+
     // deploy Base contracts
     safeEngine = new SAFEEngine(_safeEngineParams);
 
@@ -198,6 +211,25 @@ abstract contract Common is Contracts, Params {
     // deploy Token adapters
     coinJoin = new CoinJoin(address(safeEngine), address(systemCoin));
     collateralJoinFactory = new CollateralJoinFactory(address(safeEngine));
+  }
+
+  function _deployMainnetGovernor() internal {
+    require(DAO_SAFE != address(0), 'DAO zeroAddress');
+    address[] memory members = new address[](1);
+    members[0] = DAO_SAFE;
+
+    timelockController = new TimelockController(MIN_DELAY, members, members, TIMELOCK_ADMIN);
+    odGovernor = new ODGovernor(address(protocolToken), timelockController);
+  }
+
+  function _deployTestnetGovernor() internal {
+    address[] memory members = new address[](3);
+    members[0] = H;
+    members[1] = J;
+    members[2] = P;
+
+    timelockController = new TimelockController(MIN_DELAY_GOERLI, members, members, TIMELOCK_ADMIN);
+    odGovernor = new ODGovernor(address(protocolToken), timelockController);
   }
 
   function deployTaxModule() public updateParams {
