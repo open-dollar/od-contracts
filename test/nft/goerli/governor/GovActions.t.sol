@@ -102,6 +102,15 @@ contract GovActionsGoerli is GoerliFork {
 
     propState = dao.state(propId); // returns 4 (Succeeded)
 
+    bytes32 PROPOSER_ROLE = keccak256('PROPOSER_ROLE');
+    bytes32 EXECUTOR_ROLE = keccak256('EXECUTOR_ROLE');
+
+    assertEq(false, timelockController.hasRole(PROPOSER_ROLE, alice));
+    assertEq(false, timelockController.hasRole(EXECUTOR_ROLE, alice));
+
+    assertEq(true, timelockController.hasRole(PROPOSER_ROLE, bob));
+    assertEq(true, timelockController.hasRole(EXECUTOR_ROLE, bob));
+
     // TODO: queue before execution
     vm.startPrank(bob);
     dao.queue(targets, values, calldatas, descriptionHash);

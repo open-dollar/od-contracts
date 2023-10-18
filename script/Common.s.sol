@@ -6,7 +6,7 @@ import {Params, ParamChecker, OD, ETH_A, JOB_REWARD} from '@script/Params.s.sol'
 import '@script/Registry.s.sol';
 
 abstract contract Common is Contracts, Params {
-  uint256 internal _deployerPk = 69; // for tests
+  uint256 internal _deployerPk = 69; // for tests - from HAI
   uint256 internal _governorPK;
 
   function getChainId() public view returns (uint256) {
@@ -167,17 +167,26 @@ abstract contract Common is Contracts, Params {
     systemCoin = new SystemCoin('Open Dollar', 'OD');
     protocolToken = new ProtocolToken('Open Dollar Governance', 'ODG');
 
-    uint256 chainId = getChainId();
-    // deploy Governor
-    if (chainId == 42_161) _deployMainnetGovernor();
-    else if (chainId == 421_613) _deployGoerliGovernor();
-    else _deployAnvilGovernor();
-    require(address(odGovernor) != address(0), 'ODGovernor deploy fail');
+    address[] memory members = new address[](0);
+
+    // deploy governance contracts
+    timelockController = new TimelockController(MIN_DELAY_GOERLI, members, members, deployer);
+    odGovernor = new ODGovernor(address(protocolToken), timelockController);
+
+    // set governor and feeReceiver
+    feeReceiver = address(timelockController);
     governor = address(odGovernor);
+
+    // set odGovernor as PROPOSER_ROLE and EXECUTOR_ROLE
+    timelockController.grantRole(timelockController.PROPOSER_ROLE(), governor);
+    timelockController.grantRole(timelockController.EXECUTOR_ROLE(), governor);
+
+    // revoke deployer from TIMELOCK_ADMIN_ROLE
+    timelockController.renounceRole(timelockController.TIMELOCK_ADMIN_ROLE(), deployer);
   }
 
   function deployContracts() public updateParams {
-    require(governor == address(odGovernor), 'Governor not set');
+    require(feeReceiver == address(timelockController), 'receiver not set');
 
     // deploy Base contracts
     safeEngine = new SAFEEngine(_safeEngineParams);
@@ -218,35 +227,6 @@ abstract contract Common is Contracts, Params {
     // deploy Token adapters
     coinJoin = new CoinJoin(address(safeEngine), address(systemCoin));
     collateralJoinFactory = new CollateralJoinFactory(address(safeEngine));
-  }
-
-  function _deployMainnetGovernor() internal {
-    require(DAO_SAFE != address(0), 'DAO zeroAddress');
-    address[] memory members = new address[](1);
-    members[0] = DAO_SAFE;
-
-    timelockController = new TimelockController(MIN_DELAY, members, members, TIMELOCK_ADMIN);
-    odGovernor = new ODGovernor(address(protocolToken), timelockController);
-  }
-
-  function _deployGoerliGovernor() internal {
-    address[] memory members = new address[](3);
-    members[0] = H;
-    members[1] = J;
-    members[2] = P;
-
-    timelockController = new TimelockController(MIN_DELAY_GOERLI, members, members, TIMELOCK_ADMIN);
-    odGovernor = new ODGovernor(address(protocolToken), timelockController);
-  }
-
-  function _deployAnvilGovernor() internal {
-    address[] memory members = new address[](3);
-    members[0] = ALICE;
-    members[1] = BOB;
-    members[2] = CASSY;
-
-    timelockController = new TimelockController(MIN_DELAY_GOERLI, members, members, TIMELOCK_ADMIN);
-    odGovernor = new ODGovernor(address(protocolToken), timelockController);
   }
 
   function deployTaxModule() public updateParams {

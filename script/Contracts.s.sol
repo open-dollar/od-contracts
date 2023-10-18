@@ -102,6 +102,7 @@ abstract contract Contracts {
   uint256 public chainId;
   address public deployer;
   address public governor;
+  address public feeReceiver;
   address public delegate;
   bytes32[] public collateralTypes;
   mapping(bytes32 => address) public delegatee;
