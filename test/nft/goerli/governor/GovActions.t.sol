@@ -100,10 +100,13 @@ contract GovActionsGoerli is GoerliFork {
     emit log_named_uint('Block', block.number);
     emit log_named_uint('Time', block.timestamp);
 
-    propState = dao.state(propId); // returns 3 (defeated)
+    propState = dao.state(propId); // returns 4 (Succeeded)
 
-    // TODO: pass `execute`
+    // TODO: queue before execution
+    vm.startPrank(bob);
+    dao.queue(targets, values, calldatas, descriptionHash);
     dao.execute(targets, values, calldatas, descriptionHash);
+    vm.stopPrank();
   }
 
   // helpers
