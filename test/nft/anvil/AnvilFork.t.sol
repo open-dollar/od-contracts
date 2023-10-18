@@ -37,6 +37,7 @@ import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
  * URL=http://127.0.0.1:8545
  * anvil
  * yarn deploy:anvil
+ * move deployment json to the deployments folder
  * node tasks/parseAnvilDeployments.js
  * forge t --fork-url $URL --match-contract ContractToTest -vvvvv
  */

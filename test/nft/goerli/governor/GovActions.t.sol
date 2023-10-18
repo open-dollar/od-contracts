@@ -57,7 +57,7 @@ contract GovActionsGoerli is GoerliFork {
     uint256 propId = dao.propose(targets, values, calldatas, description);
     assertEq(propId, dao.hashProposal(targets, values, calldatas, descriptionHash));
 
-    propState = dao.state(propId); // returns 0 (pending)
+    propState = dao.state(propId); // returns 0 (Pending)
 
     emit log_named_uint('Voting Delay:', dao.votingDelay());
     emit log_named_uint('Voting Period:', dao.votingPeriod());
@@ -86,14 +86,14 @@ contract GovActionsGoerli is GoerliFork {
     dao.castVote(propId, 0);
     vm.stopPrank();
 
-    propState = dao.state(propId); // returns 1 (active)
+    propState = dao.state(propId); // returns 1 (Active)
 
     vm.startPrank(bob);
     // bob holds 33% of governance tokens
     dao.castVote(propId, 1);
     vm.stopPrank();
 
-    propState = dao.state(propId); // returns 1 (active)
+    propState = dao.state(propId); // returns 1 (Active)
 
     vm.roll(startBlock + 17);
     vm.warp(startTime + 255 seconds);
@@ -108,13 +108,20 @@ contract GovActionsGoerli is GoerliFork {
     assertEq(false, timelockController.hasRole(PROPOSER_ROLE, alice));
     assertEq(false, timelockController.hasRole(EXECUTOR_ROLE, alice));
 
-    assertEq(true, timelockController.hasRole(PROPOSER_ROLE, bob));
-    assertEq(true, timelockController.hasRole(EXECUTOR_ROLE, bob));
+    assertEq(false, timelockController.hasRole(PROPOSER_ROLE, bob));
+    assertEq(false, timelockController.hasRole(EXECUTOR_ROLE, bob));
 
-    // TODO: queue before execution
     vm.startPrank(bob);
     dao.queue(targets, values, calldatas, descriptionHash);
+
+    propState = dao.state(propId); // returns 5 (Queued)
+
+    vm.roll(startBlock + 1);
+    vm.warp(startTime + 315 seconds);
+
     dao.execute(targets, values, calldatas, descriptionHash);
+
+    propState = dao.state(propId); // returns # ()
     vm.stopPrank();
   }
 
