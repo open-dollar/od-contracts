@@ -117,7 +117,7 @@ abstract contract GoerliDeployment is Contracts, GoerliParams, GoerliContracts {
     postSettlementSurplusBidActions = PostSettlementSurplusBidActions(PostSettlementSurplusBidActions_Address);
 
     // --- oracles ---
-    systemCoinOracle = IBaseOracle(DenominatedOracleChild_OD_Address);
+    systemCoinOracle = IBaseOracle(address(0));
     delayedOracle[ARB] = IDelayedOracle(DelayedOracleChild_ARB_Address);
     delayedOracle[WSTETH] = IDelayedOracle(DelayedOracleChild_WSTETH_Address);
     delayedOracle[CBETH] = IDelayedOracle(DelayedOracleChild_CBETH_Address);

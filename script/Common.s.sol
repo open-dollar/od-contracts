@@ -9,6 +9,14 @@ abstract contract Common is Contracts, Params {
   uint256 internal _deployerPk = 69; // for tests
   uint256 internal _governorPK;
 
+  function getChainId() public view returns (uint256) {
+    uint256 id;
+    assembly {
+      id := chainid()
+    }
+    return id;
+  }
+
   function deployEthCollateralContracts() public updateParams {
     // deploy ETHJoin and CollateralAuctionHouse
     ethJoin = new ETHJoin(address(safeEngine), ETH_A);
