@@ -78,15 +78,13 @@ abstract contract Deploy is Common, Script {
     setupPostEnvironment();
 
     if (getChainId() == 42_161) {
-      // mainnet: revoke deployer authorization, authorize governor
-      require(governor == vault721.governor(), 'Vault721: Governor fail');
+      // mainnet: revoke deployer, authorize governor
       _revokeAllTo(governor);
     } else {
-      // goerli || anvil: no revoke, authorize [H, J, P, governor]
+      // goerli || anvil: revoke deployer, authorize [H, P, governor]
       _delegateAllTo(H);
-      _delegateAllTo(J);
       _delegateAllTo(P);
-      _delegateAllTo(governor);
+      _revokeAllTo(governor);
     }
 
     vm.stopBroadcast();
