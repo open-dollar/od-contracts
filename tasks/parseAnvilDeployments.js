@@ -63,8 +63,7 @@ pragma solidity 0.8.19;
 
 // forgefmt: disable-start
 abstract contract AnvilContracts {
-${addressText}
-}
+${addressText}}
 // forgefmt: disable-end`;
 
   fs.writeFile(outputPath, content, (err) => {
