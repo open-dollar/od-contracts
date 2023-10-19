@@ -9,9 +9,9 @@ import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
 import {WAD, RAY, RAD} from '@libraries/Math.sol';
 import {IGovernor} from '@openzeppelin/governance/IGovernor.sol';
 
-// forge t --fork-url $URL --match-contract GovActionsGoerli -vvvvv
+// forge t --fork-url $URL --match-contract AddCollateralGoerli -vvvvv
 
-contract GovActionsGoerli is GoerliFork {
+contract AddCollateralGoerli is GoerliFork {
   uint256 constant MINUS_0_5_PERCENT_PER_HOUR = 999_998_607_628_240_588_157_433_861;
   /**
    * @notice ProposalState:
@@ -37,7 +37,21 @@ contract GovActionsGoerli is GoerliFork {
     perSecondDiscountUpdateRate: MINUS_0_5_PERCENT_PER_HOUR
   });
 
-  // test
+  // test access control
+  function testAddCollateral() public {
+    vm.startPrank(address(timelockController));
+    bytes32[] memory _collateralTypesList = collateralJoinFactory.collateralTypesList();
+    collateralJoinFactory.deployCollateralJoin(bytes32('WETH'), 0xEe01c0CD76354C383B8c7B4e65EA88D00B06f36f);
+    vm.stopPrank();
+  }
+
+  function testDeployCollateralAuctionHouse() public {
+    vm.startPrank(address(timelockController));
+    collateralAuctionHouseFactory.deployCollateralAuctionHouse(bytes32('WETH'), _cahCParams);
+    vm.stopPrank();
+  }
+
+  // test governance process
   function testExecuteProp() public {
     IVotes protocolVotes = IVotes(address(protocolToken));
 
@@ -148,7 +162,9 @@ contract GovActionsGoerli is GoerliFork {
       'deployCollateralJoin(bytes32,address)', bytes32('WETH'), 0xEe01c0CD76354C383B8c7B4e65EA88D00B06f36f
     );
     bytes memory calldata1 = abi.encodeWithSignature(
-      'deployCollateralAuctionHouse(bytes32,ICollateralAuctionHouse.CollateralAuctionHouseParams)', cType, _cahCParams
+      'deployCollateralAuctionHouse(bytes32,ICollateralAuctionHouse.CollateralAuctionHouseParams)',
+      bytes32('WETH'),
+      _cahCParams
     );
 
     calldatas = new bytes[](2);

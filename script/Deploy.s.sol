@@ -160,15 +160,7 @@ contract DeployMainnet is MainnetParams, Deploy {
   function setupPostEnvironment() public virtual override updateParams {}
 }
 
-abstract contract DeployTestnet is GoerliParams, Deploy {
-  function mintAirdrop() public virtual override {
-    protocolToken.mint(H, AIRDROP_AMOUNT / 3);
-    protocolToken.mint(J, AIRDROP_AMOUNT / 3);
-    protocolToken.mint(P, AIRDROP_AMOUNT / 3);
-  }
-}
-
-contract DeployGoerli is DeployTestnet {
+contract DeployGoerli is GoerliParams, Deploy {
   using FixedPointMathLib for uint256;
 
   IBaseOracle public chainlinkEthUSDPriceFeed;
@@ -176,6 +168,12 @@ contract DeployGoerli is DeployTestnet {
   function setUp() public virtual {
     _deployerPk = uint256(vm.envBytes32('GOERLI_DEPLOYER_PK'));
     chainId = 421_613;
+  }
+
+  function mintAirdrop() public virtual override {
+    protocolToken.mint(H, AIRDROP_AMOUNT / 3);
+    protocolToken.mint(J, AIRDROP_AMOUNT / 3);
+    protocolToken.mint(P, AIRDROP_AMOUNT / 3);
   }
 
   // Setup oracle feeds
@@ -270,10 +268,16 @@ contract DeployGoerli is DeployTestnet {
    */
 }
 
-contract DeployAnvil is DeployTestnet {
+contract DeployAnvil is GoerliParams, Deploy {
   function setUp() public virtual {
     _deployerPk = uint256(vm.envBytes32('ANVIL_ONE'));
     chainId = 31_337;
+  }
+
+  function mintAirdrop() public virtual override {
+    protocolToken.mint(ALICE, AIRDROP_AMOUNT / 3);
+    protocolToken.mint(BOB, AIRDROP_AMOUNT / 3);
+    protocolToken.mint(CASSY, AIRDROP_AMOUNT / 3);
   }
 
   // Setup oracle feeds

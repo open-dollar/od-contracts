@@ -177,8 +177,8 @@ abstract contract Common is Contracts, Params {
     governor = address(timelockController);
 
     // set odGovernor as PROPOSER_ROLE and EXECUTOR_ROLE
-    timelockController.grantRole(timelockController.PROPOSER_ROLE(), governor);
-    timelockController.grantRole(timelockController.EXECUTOR_ROLE(), governor);
+    timelockController.grantRole(timelockController.PROPOSER_ROLE(), address(odGovernor));
+    timelockController.grantRole(timelockController.EXECUTOR_ROLE(), address(odGovernor));
 
     // revoke deployer from TIMELOCK_ADMIN_ROLE
     timelockController.renounceRole(timelockController.TIMELOCK_ADMIN_ROLE(), deployer);

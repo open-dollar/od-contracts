@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import {HaiTest} from '@test/utils/HaiTest.t.sol';
-import {Deploy, DeployMainnet, DeployTestnet, DeployGoerli} from '@script/Deploy.s.sol';
+import {Deploy, DeployMainnet, DeployGoerli} from '@script/Deploy.s.sol';
 
 import {ParamChecker, WSTETH, ARB} from '@script/Params.s.sol';
 import {GOERLI_GOV_TOKEN} from '@script/Registry.s.sol';
@@ -182,7 +182,7 @@ contract E2EDeploymentGoerliTest is DeployGoerli, CommonDeploymentTest {
     super.setupPostEnvironment();
   }
 
-  function mintAirdrop() public override(Deploy, DeployTestnet) {
+  function mintAirdrop() public override(DeployGoerli, Deploy) {
     super.mintAirdrop();
   }
 }
