@@ -15,7 +15,7 @@ contract Vault721 is ERC721Enumerable {
   error ProxyAlreadyExist();
   error ZeroAddress();
 
-  address public governor;
+  address public timelockController;
   IODSafeManager public safeManager;
   NFTRenderer public nftRenderer;
 
@@ -28,17 +28,17 @@ contract Vault721 is ERC721Enumerable {
   event CreateProxy(address indexed _user, address _proxy);
 
   /**
-   * @dev initializes DAO governor contract
+   * @dev initializes DAO timelockController contract
    */
-  constructor(address _governor) ERC721('OpenDollar Vault', 'ODV') {
-    governor = _governor;
+  constructor(address _timelockController) ERC721('OpenDollar Vault', 'ODV') {
+    timelockController = _timelockController;
   }
 
   /**
-   * @dev control access for DAO governor
+   * @dev control access for DAO timelockController
    */
-  modifier onlyGovernor() {
-    if (msg.sender != governor) revert NotGovernor();
+  modifier onlyGovernance() {
+    if (msg.sender != timelockController) revert NotGovernor();
     _;
   }
 
@@ -106,7 +106,7 @@ contract Vault721 is ERC721Enumerable {
     address _oracleRelayer,
     address _taxCollector,
     address _collateralJoinFactory
-  ) external onlyGovernor nonZero(_oracleRelayer) nonZero(_taxCollector) nonZero(_collateralJoinFactory) {
+  ) external onlyGovernance nonZero(_oracleRelayer) nonZero(_taxCollector) nonZero(_collateralJoinFactory) {
     address _safeManager = address(safeManager);
     require(_safeManager != address(0));
     _setNftRenderer(_nftRenderer);
@@ -116,21 +116,21 @@ contract Vault721 is ERC721Enumerable {
   /**
    * @dev update meta data
    */
-  function updateContractURI(string memory _metaData) external onlyGovernor {
+  function updateContractURI(string memory _metaData) external onlyGovernance {
     contractMetaData = _metaData;
   }
 
   /**
    * @dev allows DAO to update protocol implementation of SafeManager
    */
-  function setSafeManager(address _safeManager) external onlyGovernor {
+  function setSafeManager(address _safeManager) external onlyGovernance {
     _setSafeManager(_safeManager);
   }
 
   /**
    * @dev allows DAO to update protocol implementation of NFTRenderer
    */
-  function setNftRenderer(address _nftRenderer) external onlyGovernor {
+  function setNftRenderer(address _nftRenderer) external onlyGovernance {
     _setNftRenderer(_nftRenderer);
   }
 

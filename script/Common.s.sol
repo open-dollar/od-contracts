@@ -374,7 +374,7 @@ abstract contract Common is Contracts, Params {
   }
 
   function deployProxyContracts() public updateParams {
-    vault721 = new Vault721(address(odGovernor));
+    vault721 = new Vault721(address(timelockController));
     safeManager = new ODSafeManager(address(safeEngine), address(vault721));
     nftRenderer =
       new NFTRenderer(address(vault721), address(oracleRelayer), address(taxCollector), address(collateralJoinFactory));
