@@ -173,9 +173,8 @@ abstract contract Common is Contracts, Params {
     timelockController = new TimelockController(MIN_DELAY_GOERLI, members, members, deployer);
     odGovernor = new ODGovernor(address(protocolToken), timelockController);
 
-    // set governor and feeReceiver
-    feeReceiver = address(timelockController);
-    governor = address(odGovernor);
+    // set governor
+    governor = address(timelockController);
 
     // set odGovernor as PROPOSER_ROLE and EXECUTOR_ROLE
     timelockController.grantRole(timelockController.PROPOSER_ROLE(), governor);
@@ -186,7 +185,7 @@ abstract contract Common is Contracts, Params {
   }
 
   function deployContracts() public updateParams {
-    require(feeReceiver == address(timelockController), 'receiver not set');
+    require(governor == address(timelockController), 'governor not set');
 
     // deploy Base contracts
     safeEngine = new SAFEEngine(_safeEngineParams);

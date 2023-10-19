@@ -39,7 +39,7 @@ abstract contract GoerliParams is Contracts, Params {
       bidIncrease: 1.01e18, // +1 %
       bidDuration: 900, // 15 minutes
       totalAuctionLength: 1800, // 30 minutes
-      bidReceiver: feeReceiver,
+      bidReceiver: governor,
       recyclingPercentage: 50 // 100% - recyclingPercentage is burned
     });
 

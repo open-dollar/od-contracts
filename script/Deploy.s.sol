@@ -25,7 +25,7 @@ abstract contract Deploy is Common, Script {
     vm.startBroadcast(deployer);
 
     // set governor to deployer during deployment
-    governor = deployer;
+    governor = address(0);
     delegate = address(0);
 
     //print the commit hash
