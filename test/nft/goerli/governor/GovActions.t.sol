@@ -144,7 +144,9 @@ contract GovActionsGoerli is GoerliFork {
     values[0] = 0;
     values[1] = 0;
 
-    bytes memory calldata0 = abi.encodeWithSignature('deployCollateralJoin(bytes32,address)', cType, cAddr);
+    bytes memory calldata0 = abi.encodeWithSignature(
+      'deployCollateralJoin(bytes32,address)', bytes32('WETH'), 0xEe01c0CD76354C383B8c7B4e65EA88D00B06f36f
+    );
     bytes memory calldata1 = abi.encodeWithSignature(
       'deployCollateralAuctionHouse(bytes32,ICollateralAuctionHouse.CollateralAuctionHouseParams)', cType, _cahCParams
     );
