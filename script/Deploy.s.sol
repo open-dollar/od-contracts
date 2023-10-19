@@ -19,14 +19,13 @@ abstract contract Deploy is Common, Script {
   function setupEnvironment() public virtual {}
   function setupPostEnvironment() public virtual {}
   function mintAirdrop() public virtual {}
-  function deployGovernor() public virtual {}
 
   function run() public {
     deployer = vm.addr(_deployerPk); // GOERLI_DEPLOYER_PK
     vm.startBroadcast(deployer);
 
     // set governor to deployer during deployment
-    governor = deployer;
+    governor = address(0);
     delegate = address(0);
 
     //print the commit hash
@@ -44,6 +43,7 @@ abstract contract Deploy is Common, Script {
     setupEnvironment();
 
     // Common deployment routine for all networks
+    deployTokenGovernance();
     deployContracts();
     deployTaxModule();
     _setupContracts();
@@ -71,29 +71,20 @@ abstract contract Deploy is Common, Script {
     // Mint initial ODG airdrop
     mintAirdrop();
 
-    // Deploy DAO Governor
-    deployGovernor();
-
     // Deploy contracts related to the SafeManager usecase
     deployProxyContracts();
 
     // Deploy and setup contracts that rely on deployed environment
     setupPostEnvironment();
 
-    // set governor to DAO
-    governor = vault721.governor();
-
-    uint256 chainId = getChainId();
-
-    if (chainId == 42_161) {
-      // mainnet: revoke deployer authorization, authorize governor
+    if (getChainId() == 42_161) {
+      // mainnet: revoke deployer, authorize governor
       _revokeAllTo(governor);
     } else {
-      // goerli || anvil: no revoke, authorize [H, J, P, governor]
+      // goerli || anvil: revoke deployer, authorize [H, P, governor]
       _delegateAllTo(H);
-      _delegateAllTo(J);
       _delegateAllTo(P);
-      _delegateAllTo(governor);
+      _revokeAllTo(governor);
     }
 
     vm.stopBroadcast();
@@ -109,15 +100,6 @@ contract DeployMainnet is MainnetParams, Deploy {
   function mintAirdrop() public virtual override {
     require(DAO_SAFE != address(0), 'DAO zeroAddress');
     protocolToken.mint(DAO_SAFE, AIRDROP_AMOUNT);
-  }
-
-  function deployGovernor() public virtual override {
-    require(DAO_SAFE != address(0), 'DAO zeroAddress');
-    address[] memory members = new address[](1);
-    members[0] = DAO_SAFE;
-
-    timelockController = new TimelockController(MIN_DELAY, members, members, TIMELOCK_ADMIN);
-    odGovernor = new ODGovernor(address(protocolToken), timelockController);
   }
 
   // Setup oracle feeds
@@ -176,25 +158,7 @@ contract DeployMainnet is MainnetParams, Deploy {
   function setupPostEnvironment() public virtual override updateParams {}
 }
 
-abstract contract DeployTestnet is GoerliParams, Deploy {
-  function mintAirdrop() public virtual override {
-    protocolToken.mint(H, AIRDROP_AMOUNT / 3);
-    protocolToken.mint(J, AIRDROP_AMOUNT / 3);
-    protocolToken.mint(P, AIRDROP_AMOUNT / 3);
-  }
-
-  function deployGovernor() public virtual override {
-    address[] memory members = new address[](3);
-    members[0] = H;
-    members[1] = J;
-    members[2] = P;
-
-    timelockController = new TimelockController(MIN_DELAY_GOERLI, members, members, TIMELOCK_ADMIN);
-    odGovernor = new ODGovernor(address(protocolToken), timelockController);
-  }
-}
-
-contract DeployGoerli is DeployTestnet {
+contract DeployGoerli is GoerliParams, Deploy {
   using FixedPointMathLib for uint256;
 
   IBaseOracle public chainlinkEthUSDPriceFeed;
@@ -202,6 +166,12 @@ contract DeployGoerli is DeployTestnet {
   function setUp() public virtual {
     _deployerPk = uint256(vm.envBytes32('GOERLI_DEPLOYER_PK'));
     chainId = 421_613;
+  }
+
+  function mintAirdrop() public virtual override {
+    protocolToken.mint(H, AIRDROP_AMOUNT / 3);
+    protocolToken.mint(J, AIRDROP_AMOUNT / 3);
+    protocolToken.mint(P, AIRDROP_AMOUNT / 3);
   }
 
   // Setup oracle feeds
@@ -299,10 +269,16 @@ contract DeployGoerli is DeployTestnet {
    */
 }
 
-contract DeployAnvil is DeployTestnet {
+contract DeployAnvil is GoerliParams, Deploy {
   function setUp() public virtual {
     _deployerPk = uint256(vm.envBytes32('ANVIL_ONE'));
     chainId = 31_337;
+  }
+
+  function mintAirdrop() public virtual override {
+    protocolToken.mint(ALICE, AIRDROP_AMOUNT / 3);
+    protocolToken.mint(BOB, AIRDROP_AMOUNT / 3);
+    protocolToken.mint(CASSY, AIRDROP_AMOUNT / 3);
   }
 
   // Setup oracle feeds
