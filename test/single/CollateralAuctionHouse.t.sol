@@ -45,21 +45,6 @@ contract Guy {
   }
 }
 
-// NOTE: only used to check that OracleRelayer doesn't accept partially implemented feeds
-contract PartiallyImplementedFeed {
-  uint256 public priceFeedValue;
-  bool public hasValidValue;
-
-  constructor(bytes32 initPrice, bool initHas) {
-    priceFeedValue = uint256(initPrice);
-    hasValidValue = initHas;
-  }
-
-  function getResultWithValidity() external view returns (uint256, bool) {
-    return (priceFeedValue, hasValidValue);
-  }
-}
-
 contract DummyLiquidationEngine {
   uint256 public currentOnAuctionSystemCoins;
 
@@ -177,11 +162,6 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
     assertEq(_params.maxDiscount, 0.9e18);
     assertEq(_params.perSecondDiscountUpdateRate, RAY - 100);
     assertEq(_params.minimumBid, 100 * WAD);
-  }
-
-  function testFail_set_partially_implemented_collateralFSM() public {
-    PartiallyImplementedFeed partiallyImplementedCollateralFSM = new PartiallyImplementedFeed(bytes32(uint256(0)), true);
-    oracleRelayer.modifyParameters('collateralType', 'oracle', abi.encode(partiallyImplementedCollateralFSM));
   }
 
   function test_no_min_discount() public {

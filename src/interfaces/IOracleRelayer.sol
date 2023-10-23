@@ -2,7 +2,6 @@
 pragma solidity 0.8.19;
 
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
-import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
@@ -48,7 +47,7 @@ interface IOracleRelayer is IAuthorizable, IDisableable, IModifiable, IModifiabl
 
   struct OracleRelayerCollateralParams {
     // Usually a DelayedOracle that enforces delays to fresh price feeds
-    IDelayedOracle /* */ oracle;
+    IBaseOracle /* */ oracle;
     // CRatio used to compute the 'safePrice' - the price used when generating debt in SAFEEngine
     uint256 /* RAY    */ safetyCRatio;
     // CRatio used to compute the 'liquidationPrice' - the price used when liquidating SAFEs
@@ -103,7 +102,7 @@ interface IOracleRelayer is IAuthorizable, IDisableable, IModifiable, IModifiabl
   function _cParams(bytes32 _cType)
     external
     view
-    returns (IDelayedOracle _oracle, uint256 _safetyCRatio, uint256 _liquidationCRatio);
+    returns (IBaseOracle _oracle, uint256 _safetyCRatio, uint256 _liquidationCRatio);
 
   // --- Data ---
 

@@ -3,7 +3,6 @@ pragma solidity 0.8.19;
 
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
-import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
@@ -161,7 +160,7 @@ contract OracleRelayer is Authorizable, Disableable, Modifiable, ModifiablePerCo
   function _initializeCollateralType(bytes32 _cType, bytes memory _collateralParams) internal override {
     (OracleRelayerCollateralParams memory _oracleRelayerCParams) =
       abi.decode(_collateralParams, (OracleRelayerCollateralParams));
-    _validateDelayedOracle(address(_oracleRelayerCParams.oracle));
+    address(_oracleRelayerCParams.oracle).assertHasCode();
     _cParams[_cType] = _oracleRelayerCParams;
   }
 
@@ -183,15 +182,8 @@ contract OracleRelayer is Authorizable, Disableable, Modifiable, ModifiablePerCo
     if (!_collateralList.contains(_cType)) revert UnrecognizedCType();
     if (_param == 'safetyCRatio') __cParams.safetyCRatio = _uint256;
     else if (_param == 'liquidationCRatio') __cParams.liquidationCRatio = _uint256;
-    else if (_param == 'oracle') __cParams.oracle = _validateDelayedOracle(_data.toAddress());
+    else if (_param == 'oracle') __cParams.oracle = IBaseOracle(_data.toAddress().assertHasCode());
     else revert UnrecognizedParam();
-  }
-
-  /// @dev Validates the address is IDelayedOracle compliant and returns it
-  function _validateDelayedOracle(address _oracle) internal view returns (IDelayedOracle _delayedOracle) {
-    // Checks if the delayed oracle priceSource is implemented
-    _delayedOracle = IDelayedOracle(_oracle.assertHasCode());
-    _delayedOracle.priceSource();
   }
 
   /// @inheritdoc Modifiable
