@@ -119,7 +119,7 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, Disableable, IColla
     uint256 _customDiscount
   ) internal pure returns (uint256 _boughtCollateral, uint256 _readjustedBid) {
     // calculate the collateral price in relation to the latest system coin price and apply the discount
-    uint256 _discountedPrice = _collateralPrice.rdiv(_systemCoinPrice).wmul(_customDiscount);
+    uint256 _discountedPrice = _collateralPrice.wmul(_customDiscount).rdiv(_systemCoinPrice);
     // calculate the amount of collateral bought
     _boughtCollateral = _adjustedBid.wdiv(_discountedPrice);
 

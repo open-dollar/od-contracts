@@ -548,19 +548,12 @@ contract Unit_CollateralAuctionHouse_GetCollateralBought is Base {
     vm.assume(notOverflowMul(_getCollateralBoughtScenario.bid, RAY));
     uint256 _adjustedBid = _computeAdjustedBid(_getCollateralBoughtScenario);
 
-    vm.assume(_getCollateralBoughtScenario.calcRedemptionPrice > 0);
-
     vm.assume(block.timestamp >= _getCollateralBoughtScenario.auction.initialTimestamp);
     uint256 _auctionDiscount = _computeAuctionDiscount(_getCollateralBoughtScenario);
 
-    vm.assume(notOverflowMul(_getCollateralBoughtScenario.collateralPrice, RAY));
+    vm.assume(notOverflowMul(_getCollateralBoughtScenario.collateralPrice, _auctionDiscount));
+    vm.assume(notOverflowMul(_getCollateralBoughtScenario.collateralPrice.wmul(_auctionDiscount), RAY));
     vm.assume(_getCollateralBoughtScenario.calcRedemptionPrice > 0);
-    vm.assume(
-      notOverflowMul(
-        _getCollateralBoughtScenario.collateralPrice.rdiv(_getCollateralBoughtScenario.calcRedemptionPrice),
-        _auctionDiscount
-      )
-    );
     uint256 _discountedPrice = _computeDiscountedPrice(_getCollateralBoughtScenario, _auctionDiscount);
 
     vm.assume(notOverflowMul(_adjustedBid, WAD));
@@ -621,9 +614,9 @@ contract Unit_CollateralAuctionHouse_GetCollateralBought is Base {
     GetCollateralBoughtScenario memory _getCollateralBoughtScenario,
     uint256 _auctionDiscount
   ) internal pure returns (uint256 _discountedPrice) {
-    _discountedPrice = _getCollateralBoughtScenario.collateralPrice.rdiv(
+    _discountedPrice = _getCollateralBoughtScenario.collateralPrice.wmul(_auctionDiscount).rdiv(
       _getCollateralBoughtScenario.calcRedemptionPrice
-    ).wmul(_auctionDiscount);
+    );
   }
 
   function _computeBoughtCollateral(
@@ -828,17 +821,16 @@ contract Unit_CollateralAuctionHouse_GetBoughtCollateral is Base {
     pure
     returns (uint256 _boughtCollateral)
   {
-    vm.assume(notOverflowMul(_getBoughtCollateralScenario.collateralPrice, RAY));
-    vm.assume(_getBoughtCollateralScenario.systemCoinPrice > 0);
+    vm.assume(notOverflowMul(_getBoughtCollateralScenario.collateralPrice, _getBoughtCollateralScenario.customDiscount));
     vm.assume(
       notOverflowMul(
-        _getBoughtCollateralScenario.collateralPrice.rdiv(_getBoughtCollateralScenario.systemCoinPrice),
-        _getBoughtCollateralScenario.customDiscount
+        _getBoughtCollateralScenario.collateralPrice.wmul(_getBoughtCollateralScenario.customDiscount), RAY
       )
     );
-    uint256 _discountedPrice = _getBoughtCollateralScenario.collateralPrice.rdiv(
-      _getBoughtCollateralScenario.systemCoinPrice
-    ).wmul(_getBoughtCollateralScenario.customDiscount);
+    vm.assume(_getBoughtCollateralScenario.systemCoinPrice > 0);
+    uint256 _discountedPrice = _getBoughtCollateralScenario.collateralPrice.wmul(
+      _getBoughtCollateralScenario.customDiscount
+    ).rdiv(_getBoughtCollateralScenario.systemCoinPrice);
 
     vm.assume(notOverflowMul(_getBoughtCollateralScenario.adjustedBid, WAD));
     vm.assume(_discountedPrice > 0);
@@ -981,7 +973,7 @@ contract Unit_CollateralAuctionHouse_BuyCollateral is Base {
     uint256 _auctionDiscount
   ) internal pure returns (uint256 _discountedPrice) {
     _discountedPrice =
-      _buyCollateralScenario.collateralPrice.rdiv(_buyCollateralScenario.redemptionPrice).wmul(_auctionDiscount);
+      _buyCollateralScenario.collateralPrice.wmul(_auctionDiscount).rdiv(_buyCollateralScenario.redemptionPrice);
   }
 
   function _computeBoughtCollateral(
@@ -1111,12 +1103,8 @@ contract Unit_CollateralAuctionHouse_BuyCollateral is Base {
     uint256 _adjustedBid = _computeAdjustedBid(_buyCollateralScenario);
     vm.assume(block.timestamp >= _buyCollateralScenario.auction.initialTimestamp);
     uint256 _auctionDiscount = _computeAuctionDiscount(_buyCollateralScenario);
-    vm.assume(notOverflowMul(_buyCollateralScenario.collateralPrice, RAY));
-    vm.assume(
-      notOverflowMul(
-        _buyCollateralScenario.collateralPrice.rdiv(_buyCollateralScenario.redemptionPrice), _auctionDiscount
-      )
-    );
+    vm.assume(notOverflowMul(_buyCollateralScenario.collateralPrice, _auctionDiscount));
+    vm.assume(notOverflowMul(_buyCollateralScenario.collateralPrice.wmul(_auctionDiscount), RAY));
     uint256 _discountedPrice = _computeDiscountedPrice(_buyCollateralScenario, _auctionDiscount);
     vm.assume(_discountedPrice > 0);
     vm.assume(notOverflowMul(_adjustedBid, _buyCollateralScenario.auction.amountToSell));
