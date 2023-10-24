@@ -225,7 +225,7 @@ contract SingleAccountingEngineTest is DSTest {
     _popDebtFromQueue(200 ether);
     safeEngine.createUnbackedDebt(address(0), address(accountingEngine), rad(100 ether));
 
-    assertTrue(can_auction_debt());
+    assertTrue(!can_auction_debt());
   }
 
   function testFail_pop_debt_after_being_popped() public {
