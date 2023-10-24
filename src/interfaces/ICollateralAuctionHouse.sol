@@ -223,14 +223,14 @@ interface ICollateralAuctionHouse is IAuthorizable, IModifiable, IDisableable {
   /**
    * @notice Starts a new collateral auction
    * @param  _forgoneCollateralReceiver Who receives leftover collateral that is not sold in the auction (usually the liquidated SAFE)
-   * @param  _initialBidder Who will be the first bidder in the auction
+   * @param  _auctionIncomeRecipient Who receives the coins raised by the auction (usually the AccountingEngine)
    * @param  _amountToRaise Total/max amount of coins to raise [rad]
    * @param  _collateralToSell How much collateral is sold in an auction [wad]
    * @return _id Id of the started auction
    */
   function startAuction(
     address _forgoneCollateralReceiver,
-    address _initialBidder,
+    address _auctionIncomeRecipient,
     uint256 _amountToRaise,
     uint256 _collateralToSell
   ) external returns (uint256 _id);
