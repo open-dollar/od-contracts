@@ -75,12 +75,6 @@ contract AccountingJob is Job, Authorizable, Modifiable, IAccountingJob {
     accountingEngine.auctionSurplus();
   }
 
-  /// @inheritdoc IAccountingJob
-  function workTransferExtraSurplus() external reward {
-    if (!shouldWorkTransferExtraSurplus) revert NotWorkable();
-    accountingEngine.transferExtraSurplus();
-  }
-
   /**
    * @notice Method to pop debt from the AccountingEngine's queue without a reward
    * @param _debtBlockTimestamp Timestamp of the debt block to pop
@@ -100,12 +94,6 @@ contract AccountingJob is Job, Authorizable, Modifiable, IAccountingJob {
   function workAuctionSurplusWithoutReward() external {
     if (!shouldWorkAuctionSurplus) revert NotWorkable();
     accountingEngine.auctionSurplus();
-  }
-
-  /// @notice Transfer surplus from the AccountingEngine without a reward
-  function workTransferExtraSurplusWithoutReward() external {
-    if (!shouldWorkTransferExtraSurplus) revert NotWorkable();
-    accountingEngine.transferExtraSurplus();
   }
 
   // --- Administration ---

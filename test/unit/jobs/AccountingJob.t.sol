@@ -258,33 +258,6 @@ contract Unit_AccountingJob_WorkTransferExtraSurplus is Base {
   function _mockValues(bool _shouldWorkTransferExtraSurplus) internal {
     _mockShouldWorkTransferExtraSurplus(_shouldWorkTransferExtraSurplus);
   }
-
-  function test_Revert_NotWorkable() public {
-    _mockValues(false);
-
-    vm.expectRevert(IJob.NotWorkable.selector);
-
-    accountingJob.workTransferExtraSurplus();
-  }
-
-  function test_Call_AccountingEngine_TransferExtraSurplus() public happyPath {
-    vm.expectCall(address(mockAccountingEngine), abi.encodeCall(mockAccountingEngine.transferExtraSurplus, ()), 1);
-
-    accountingJob.workTransferExtraSurplus();
-  }
-
-  function test_Emit_Rewarded() public happyPath {
-    vm.expectEmit(address(accountingJob));
-    emit Rewarded(user, REWARD_AMOUNT);
-
-    accountingJob.workTransferExtraSurplus();
-  }
-
-  function test_No_Reward() public happyPath() {
-    vm.recordLogs();
-    accountingJob.workTransferExtraSurplusWithoutReward();
-    assertEq(vm.getRecordedLogs().length, 0);
-  }
 }
 
 contract Unit_AccountingJob_ModifyParameters is Base {
