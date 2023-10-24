@@ -177,7 +177,7 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
       _collateralToSell: 100 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _initialBidder: auctionIncomeRecipient
+      _auctionIncomeRecipient: auctionIncomeRecipient
     });
   }
 
@@ -191,7 +191,7 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
       _collateralToSell: 100 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _initialBidder: auctionIncomeRecipient
+      _auctionIncomeRecipient: auctionIncomeRecipient
     });
     // can't buy collateral on non-existent
     collateralAuctionHouse.buyCollateral(1, 0);
@@ -209,7 +209,7 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
       _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _initialBidder: auctionIncomeRecipient
+      _auctionIncomeRecipient: auctionIncomeRecipient
     });
 
     (uint256 collateralBoughtView, uint256 adjustedBidView) = collateralAuctionHouse.getCollateralBought(id, 25 * WAD);
@@ -253,7 +253,7 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
       _collateralToSell: 1 ether,
       _amountToRaise: 300 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _initialBidder: auctionIncomeRecipient
+      _auctionIncomeRecipient: auctionIncomeRecipient
     });
 
     (uint256 collateralBoughtView, uint256 adjustedBidView) = collateralAuctionHouse.getCollateralBought(id, 180 * WAD);
@@ -299,7 +299,7 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
       _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _initialBidder: auctionIncomeRecipient
+      _auctionIncomeRecipient: auctionIncomeRecipient
     });
 
     uint256 _discountedCollateralPrice = (200 ether * RAY / oracleRelayer.redemptionPrice()) * 0.95e18 / WAD;
@@ -337,7 +337,7 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
       _collateralToSell: 100,
       _amountToRaise: 50,
       _forgoneCollateralReceiver: safeAuctioned,
-      _initialBidder: auctionIncomeRecipient
+      _auctionIncomeRecipient: auctionIncomeRecipient
     });
   }
 
@@ -354,7 +354,7 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
       _collateralToSell: 1 ether, // $200 @(90% discount) => $20
       _amountToRaise: 50 * RAD, // $50
       _forgoneCollateralReceiver: safeAuctioned,
-      _initialBidder: auctionIncomeRecipient
+      _auctionIncomeRecipient: auctionIncomeRecipient
     });
 
     // tries to buy all collateral, but gets capped to collateral amount ($20)
@@ -388,7 +388,7 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
       _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _initialBidder: auctionIncomeRecipient
+      _auctionIncomeRecipient: auctionIncomeRecipient
     });
     Guy(ali).buyCollateral(id, 50 * WAD);
 
@@ -416,7 +416,7 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
       _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _initialBidder: auctionIncomeRecipient
+      _auctionIncomeRecipient: auctionIncomeRecipient
     });
 
     for (uint256 i = 0; i < 10; i++) {
@@ -450,7 +450,7 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
       _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _initialBidder: auctionIncomeRecipient
+      _auctionIncomeRecipient: auctionIncomeRecipient
     });
 
     vm.warp(block.timestamp + 1);
@@ -481,7 +481,7 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
       _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _initialBidder: auctionIncomeRecipient
+      _auctionIncomeRecipient: auctionIncomeRecipient
     });
 
     Guy(ali).buyCollateral(id, 25 * WAD);
@@ -519,7 +519,7 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
       _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _initialBidder: auctionIncomeRecipient
+      _auctionIncomeRecipient: auctionIncomeRecipient
     });
 
     Guy(ali).buyCollateral(id, 49 * WAD);
@@ -553,7 +553,7 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
       _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _initialBidder: auctionIncomeRecipient
+      _auctionIncomeRecipient: auctionIncomeRecipient
     });
 
     vm.warp(block.timestamp + 30 minutes);
@@ -592,7 +592,7 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
       _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _initialBidder: auctionIncomeRecipient
+      _auctionIncomeRecipient: auctionIncomeRecipient
     });
 
     vm.warp(block.timestamp + 1 hours);
@@ -627,7 +627,7 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
       _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _initialBidder: auctionIncomeRecipient
+      _auctionIncomeRecipient: auctionIncomeRecipient
     });
 
     vm.warp(block.timestamp + 3650 days);
@@ -662,7 +662,7 @@ abstract contract SingleCollateralAuctionHouseTest is HaiTest {
       _collateralToSell: 1 ether,
       _amountToRaise: 50 * RAD,
       _forgoneCollateralReceiver: safeAuctioned,
-      _initialBidder: auctionIncomeRecipient
+      _auctionIncomeRecipient: auctionIncomeRecipient
     });
 
     for (uint256 i = 0; i < 10; i++) {

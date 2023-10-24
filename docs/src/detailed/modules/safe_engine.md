@@ -72,6 +72,8 @@ Users have the ability to alter the status of their SAFEs via the SAFE Engine, p
 - `liquidationPrice`: The price of the collateral type (vs HAI) at which the SAFE is considered liquidatable.
 
 > A user action should never be able to modify the SAFE collateralization resulting in an unsafe state. When an update the `safetyPrice` leaves the SAFE in an unsafe state, the user may only add collateral and/or repay debt in order to restore the SAFE's collateralization to a safe state.
+>
+> **Notice**: The `lockedAmount` is a storage variable used to visibilize the total amount of collateral that backs the `debtAmount`. However, this value can be artificially increased, by creating a SAFE without debt and locking collateral in it: on the event of Global Settlement, this user would be allowed to withdraw all of his collateral and it would not be accounted for the redemptions.
 
 ## 3. Key Mechanisms & Concepts
 
