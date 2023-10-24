@@ -41,7 +41,6 @@ import {HardcodedOracle} from '@contracts/for-test/HardcodedOracle.sol';
 
 // --- Token adapters ---
 import {CoinJoin, ICoinJoin} from '@contracts/utils/CoinJoin.sol';
-import {ETHJoin, IETHJoin} from '@contracts/utils/ETHJoin.sol';
 import {CollateralJoin, ICollateralJoin} from '@contracts/utils/CollateralJoin.sol';
 
 // --- Factories ---
@@ -107,7 +106,6 @@ abstract contract Contracts {
   ISystemCoin public systemCoin;
   mapping(bytes32 => IERC20Metadata) public collateral;
   ICoinJoin public coinJoin;
-  IETHJoin public ethJoin;
   mapping(bytes32 => ICollateralJoin) public collateralJoin;
 
   // --- Oracle contracts ---

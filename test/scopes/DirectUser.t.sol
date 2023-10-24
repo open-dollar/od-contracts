@@ -42,12 +42,6 @@ abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
 
   // --- SAFE actions ---
 
-  function _lockETH(address _user, uint256 _amount) internal override {
-    vm.prank(_user);
-    vm.deal(_user, _amount);
-    ethJoin.join{value: _amount}(_user);
-  }
-
   function _joinTKN(address _user, address _collateralJoin, uint256 _amount) internal override {
     IERC20Metadata _collateral = ICollateralJoin(_collateralJoin).collateral();
     uint256 _decimals = _collateral.decimals();
@@ -101,8 +95,7 @@ abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
     ICollateralJoin __collateralJoin = ICollateralJoin(_collateralJoin);
     bytes32 _cType = __collateralJoin.collateralType();
 
-    if (_cType == ETH_A) _lockETH(_user, uint256(_deltaCollat));
-    else _joinTKN(_user, _collateralJoin, uint256(_deltaCollat));
+    _joinTKN(_user, _collateralJoin, uint256(_deltaCollat));
 
     vm.startPrank(_user);
     safeEngine.approveSAFEModification(_collateralJoin);

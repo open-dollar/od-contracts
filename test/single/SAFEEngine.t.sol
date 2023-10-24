@@ -9,7 +9,6 @@ import {ILiquidationEngine, LiquidationEngine} from '@contracts/LiquidationEngin
 import {IAccountingEngine, AccountingEngine} from '@contracts/AccountingEngine.sol';
 import {ITaxCollector, TaxCollector} from '@contracts/TaxCollector.sol';
 import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
-import {ETHJoin} from '@contracts/utils/ETHJoin.sol';
 import {
   ICollateralJoinFactory,
   ICollateralJoin,
@@ -568,7 +567,6 @@ contract SingleJoinTest is DSTest {
   CoinForTest collateral;
   ICollateralJoinFactory collateralJoinFactory;
   ICollateralJoin collateralA;
-  ETHJoin ethA;
   CoinJoin coinA;
   CoinForTest coin;
   address me;
@@ -588,9 +586,6 @@ contract SingleJoinTest is DSTest {
     collateralJoinFactory = new CollateralJoinFactory(address(safeEngine));
     safeEngine.addAuthorization(address(collateralJoinFactory));
     collateralA = collateralJoinFactory.deployCollateralJoin('collateral', address(collateral));
-
-    ethA = new ETHJoin(address(safeEngine), 'ETH');
-    safeEngine.addAuthorization(address(ethA));
 
     coin = new CoinForTest('Coin', 'Coin');
     coinA = new CoinJoin(address(safeEngine), address(coin));
@@ -615,11 +610,6 @@ contract SingleJoinTest is DSTest {
     (ok,) = address(collateralA).call(abi.encodeWithSignature(_sig, usr, wad));
   }
 
-  function try_join_eth(address usr) public payable returns (bool ok) {
-    string memory _sig = 'join(address)';
-    (ok,) = address(ethA).call{value: msg.value}(abi.encodeWithSignature(_sig, usr));
-  }
-
   function try_exit_coin(address usr, uint256 wad) public returns (bool ok) {
     string memory _sig = 'exit(address,uint256)';
     (ok,) = address(coinA).call(abi.encodeWithSignature(_sig, usr, wad));
@@ -635,21 +625,6 @@ contract SingleJoinTest is DSTest {
     assertTrue(try_disable_collateralJoin(bytes32('collateral')));
     assertTrue(!try_join_tokenCollateral(address(this), 10 ether));
     assertEq(safeEngine.tokenCollateral('collateral', me), 10 ether);
-  }
-
-  function test_eth_join() public {
-    assertTrue(this.try_join_eth{value: 10 ether}(address(this)));
-    assertEq(safeEngine.tokenCollateral('ETH', me), 10 ether);
-    assertTrue(try_disable_contract(address(ethA)));
-    assertTrue(!this.try_join_eth{value: 10 ether}(address(this)));
-    assertEq(safeEngine.tokenCollateral('ETH', me), 10 ether);
-  }
-
-  function test_eth_exit() public {
-    address payable _safe = payable(address(this));
-    ethA.join{value: 50 ether}(_safe);
-    ethA.exit(_safe, 10 ether);
-    assertEq(safeEngine.tokenCollateral('ETH', me), 40 ether);
   }
 
   function rad(uint256 wad) internal pure returns (uint256) {
@@ -680,21 +655,9 @@ contract SingleJoinTest is DSTest {
     assertEq(safeEngine.coinBalance(me), rad(70 ether));
   }
 
-  function test_fallback_reverts() public {
-    (bool ok,) = address(ethA).call('invalid calldata');
-    assertTrue(!ok);
-  }
-
-  function test_nonzero_fallback_reverts() public {
-    (bool ok,) = address(ethA).call{value: 10}('invalid calldata');
-    assertTrue(!ok);
-  }
-
   function test_disable_contract_no_access() public {
     collateralJoinFactory.removeAuthorization(address(this));
     assertTrue(!try_disable_collateralJoin(bytes32('collateral')));
-    ethA.removeAuthorization(address(this));
-    assertTrue(!try_disable_contract(address(ethA)));
     coinA.removeAuthorization(address(this));
     assertTrue(!try_disable_contract(address(coinA)));
   }

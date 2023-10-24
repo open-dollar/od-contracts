@@ -9,7 +9,6 @@ import {ILiquidationEngine, LiquidationEngine} from '@contracts/LiquidationEngin
 import {IAccountingEngine, AccountingEngine} from '@contracts/AccountingEngine.sol';
 import {ITaxCollector, TaxCollector} from '@contracts/TaxCollector.sol';
 import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
-import {ETHJoin} from '@contracts/utils/ETHJoin.sol';
 import {
   ICollateralJoinFactory,
   ICollateralJoin,

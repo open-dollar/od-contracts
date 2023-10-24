@@ -20,8 +20,6 @@ abstract contract BaseUser {
 
   // --- SAFE actions ---
 
-  function _lockETH(address _user, uint256 _amount) internal virtual;
-
   function _joinTKN(address _user, address _collateralJoin, uint256 _amount) internal virtual;
 
   function _exitCollateral(address _user, address _collateralJoin, uint256 _amount) internal virtual;

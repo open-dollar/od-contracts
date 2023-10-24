@@ -9,17 +9,6 @@ abstract contract Common is Contracts, Params {
   uint256 internal _deployerPk = 69; // for tests
   uint256 internal _governorPK;
 
-  function deployEthCollateralContracts() public updateParams {
-    // deploy ETHJoin and CollateralAuctionHouse
-    ethJoin = new ETHJoin(address(safeEngine), ETH_A);
-
-    collateralAuctionHouseFactory.initializeCollateralType(ETH_A, abi.encode(_collateralAuctionHouseParams[ETH_A]));
-    collateralAuctionHouse[ETH_A] =
-      ICollateralAuctionHouse(collateralAuctionHouseFactory.collateralAuctionHouses(ETH_A));
-    collateralJoin[ETH_A] = CollateralJoin(address(ethJoin));
-    safeEngine.addAuthorization(address(ethJoin));
-  }
-
   function deployCollateralContracts(bytes32 _cType) public updateParams {
     // deploy CollateralJoin and CollateralAuctionHouse
     address _delegatee = delegatee[_cType];
@@ -66,10 +55,6 @@ abstract contract Common is Contracts, Params {
 
     // token adapters
     _revoke(coinJoin, _governor);
-
-    if (address(ethJoin) != address(0)) {
-      _revoke(ethJoin, _governor);
-    }
 
     // factories or children
     _revoke(chainlinkRelayerFactory, _governor);
@@ -129,10 +114,6 @@ abstract contract Common is Contracts, Params {
 
     _delegate(collateralJoinFactory, __delegate);
     _delegate(collateralAuctionHouseFactory, __delegate);
-
-    if (address(ethJoin) != address(0)) {
-      _delegate(ethJoin, __delegate);
-    }
 
     // global settlement
     _delegate(globalSettlement, __delegate);
