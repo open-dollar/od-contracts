@@ -146,10 +146,16 @@ contract Unit_AccountingJob_WorkPopDebtFromQueue is Base {
   }
 
   function test_Emit_Rewarded(uint256 _debtBlockTimestamp) public happyPath {
-    vm.expectEmit();
+    vm.expectEmit(address(accountingJob));
     emit Rewarded(user, REWARD_AMOUNT);
 
     accountingJob.workPopDebtFromQueue(_debtBlockTimestamp);
+  }
+
+  function test_No_Reward(uint256 _debtBlockTimestamp) public happyPath {
+    vm.recordLogs();
+    accountingJob.workPopDebtFromQueueWithoutReward(_debtBlockTimestamp);
+    assertEq(vm.getRecordedLogs().length, 0);
   }
 }
 
@@ -183,10 +189,16 @@ contract Unit_AccountingJob_WorkAuctionDebt is Base {
   }
 
   function test_Emit_Rewarded(uint256 _id) public happyPath(_id) {
-    vm.expectEmit();
+    vm.expectEmit(address(accountingJob));
     emit Rewarded(user, REWARD_AMOUNT);
 
     accountingJob.workAuctionDebt();
+  }
+
+  function test_No_Reward(uint256 _id) public happyPath(_id) {
+    vm.recordLogs();
+    accountingJob.workAuctionDebtWithoutReward();
+    assertEq(vm.getRecordedLogs().length, 0);
   }
 }
 
@@ -220,10 +232,16 @@ contract Unit_AccountingJob_WorkAuctionSurplus is Base {
   }
 
   function test_Emit_Rewarded(uint256 _id) public happyPath(_id) {
-    vm.expectEmit();
+    vm.expectEmit(address(accountingJob));
     emit Rewarded(user, REWARD_AMOUNT);
 
     accountingJob.workAuctionSurplus();
+  }
+
+  function test_No_Reward(uint256 _id) public happyPath(_id) {
+    vm.recordLogs();
+    accountingJob.workAuctionSurplusWithoutReward();
+    assertEq(vm.getRecordedLogs().length, 0);
   }
 }
 
@@ -256,10 +274,16 @@ contract Unit_AccountingJob_WorkTransferExtraSurplus is Base {
   }
 
   function test_Emit_Rewarded() public happyPath {
-    vm.expectEmit();
+    vm.expectEmit(address(accountingJob));
     emit Rewarded(user, REWARD_AMOUNT);
 
     accountingJob.workTransferExtraSurplus();
+  }
+
+  function test_No_Reward() public happyPath() {
+    vm.recordLogs();
+    accountingJob.workTransferExtraSurplusWithoutReward();
+    assertEq(vm.getRecordedLogs().length, 0);
   }
 }
 
