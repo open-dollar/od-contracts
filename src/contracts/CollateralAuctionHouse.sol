@@ -357,7 +357,7 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, Disableable, IColla
     emit TerminateAuctionPrematurely({
       _id: _id,
       _blockTimestamp: block.timestamp,
-      _leftoverReceiver: _auction.forgoneCollateralReceiver,
+      _leftoverReceiver: msg.sender,
       _leftoverCollateral: _auction.amountToSell
     });
   }

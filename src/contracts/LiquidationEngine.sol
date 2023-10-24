@@ -203,15 +203,15 @@ contract LiquidationEngine is
 
       emit UpdateCurrentOnAuctionSystemCoins(currentOnAuctionSystemCoins);
 
-      emit Liquidate(
-        _cType,
-        _safe,
-        _collateralToSell,
-        _limitAdjustedDebt,
-        _limitAdjustedDebt * _safeEngCData.accumulatedRate,
-        __cParams.collateralAuctionHouse,
-        _auctionId
-      );
+      emit Liquidate({
+        _cType: _cType,
+        _safe: _safe,
+        _collateralAmount: _collateralToSell,
+        _debtAmount: _limitAdjustedDebt,
+        _amountToRaise: _amountToRaise,
+        _collateralAuctioneer: __cParams.collateralAuctionHouse,
+        _auctionId: _auctionId
+      });
     }
   }
 

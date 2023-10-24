@@ -1520,9 +1520,7 @@ contract Unit_CollateralAuctionHouse_TerminateAuctionPrematurely is Base {
 
   function test_Emit_TerminateAuctionPrematurely(CollateralAuction memory _auction) public happyPath(_auction) {
     vm.expectEmit();
-    emit TerminateAuctionPrematurely(
-      _auction.id, block.timestamp, _auction.forgoneCollateralReceiver, _auction.amountToSell
-    );
+    emit TerminateAuctionPrematurely(_auction.id, block.timestamp, authorizedAccount, _auction.amountToSell);
 
     collateralAuctionHouse.terminateAuctionPrematurely(_auction.id);
   }
