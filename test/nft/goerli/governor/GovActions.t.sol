@@ -41,6 +41,8 @@ contract GovActions is GoerliFork {
     uint256 propId = dao.propose(targets, values, calldatas, description);
     assertEq(propId, dao.hashProposal(targets, values, calldatas, descriptionHash));
 
+    // ODGovernor.ProposalState memory propState = dao.state();
+
     emit log_named_uint('Voting Delay:', dao.votingDelay());
     emit log_named_uint('Voting Period:', dao.votingPeriod());
 
@@ -50,10 +52,12 @@ contract GovActions is GoerliFork {
     emit log_named_uint('Time', block.timestamp);
 
     vm.startPrank(alice);
-    dao.castVote(propId, 1);
+    // alice holds no governance tokens, so should not effect outcome
+    dao.castVote(propId, 0);
     vm.stopPrank();
 
     vm.startPrank(bob);
+    // bob holds 33% of governance tokens
     dao.castVote(propId, 1);
     vm.stopPrank();
 

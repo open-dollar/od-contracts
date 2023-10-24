@@ -23,7 +23,7 @@ abstract contract TestParams is Contracts, Params {
     });
 
     _accountingEngineParams = IAccountingEngine.AccountingEngineParams({
-      surplusIsTransferred: 0, // surplus is auctioned
+      surplusTransferPercentage: 0, // surplus is auctioned
       surplusDelay: 0, // no delay
       popDebtDelay: 0, // no delay
       disableCooldown: 0, // no cooldown

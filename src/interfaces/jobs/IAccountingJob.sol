@@ -41,7 +41,4 @@ interface IAccountingJob is IJob, IAuthorizable, IModifiable {
 
   /// @notice Rewarded method to auction surplus from the AccountingEngine
   function workAuctionSurplus() external;
-
-  /// @notice Rewarded method to transfer surplus from the AccountingEngine
-  function workTransferExtraSurplus() external;
 }

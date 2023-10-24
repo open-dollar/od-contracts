@@ -278,13 +278,6 @@ abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
     _collectSystemCoins(_user);
   }
 
-  function _workTransferExtraSurplus(address _user) internal override {
-    vm.prank(_user);
-    accountingJob.workTransferExtraSurplus();
-
-    _collectSystemCoins(_user);
-  }
-
   function _workLiquidation(address _user, bytes32 _cType, address _safe) internal override {
     vm.prank(_user);
     liquidationJob.workLiquidation(_cType, _safe);

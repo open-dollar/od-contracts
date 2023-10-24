@@ -8,7 +8,7 @@ import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 
 // Open Dollar
-// Version 1.5.4
+// Version 1.5.6
 
 contract Vault721 is ERC721Enumerable {
   error NotGovernor();

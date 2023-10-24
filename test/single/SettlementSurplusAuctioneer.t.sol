@@ -44,7 +44,7 @@ contract SingleSettlementSurplusAuctioneerTest is DSTest {
     safeEngine = new SAFEEngine(_safeEngineParams);
 
     IAccountingEngine.AccountingEngineParams memory _accountingEngineParams = IAccountingEngine.AccountingEngineParams({
-      surplusIsTransferred: 0,
+      surplusTransferPercentage: 0,
       surplusDelay: 3600,
       popDebtDelay: 0,
       disableCooldown: 0,
