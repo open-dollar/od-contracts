@@ -1323,14 +1323,15 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
   }
 
   function test_Emit_Liquidate(Liquidation memory _liquidation) public happyPathFullLiquidation(_liquidation) {
-    uint256 acRateMulLimitAdDebt = _liquidation.safeDebt * _liquidation.accumulatedRate;
+    uint256 _amountToRaise =
+      _liquidation.safeDebt * _liquidation.accumulatedRate * _liquidation.liquidationPenalty / WAD;
     vm.expectEmit();
     emit Liquidate(
       collateralType,
       safe,
       _liquidation.safeCollateral,
       _liquidation.safeDebt,
-      acRateMulLimitAdDebt,
+      _amountToRaise,
       address(collateralAuctionHouseForTest),
       auctionId
     );
@@ -1344,7 +1345,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
   {
     uint256 _limitAdjustedDebt =
       _liquidation.liquidationQuantity * WAD / _liquidation.liquidationPenalty / _liquidation.accumulatedRate;
-    uint256 acRateMulLimitAdDebt = _limitAdjustedDebt * _liquidation.accumulatedRate;
+    uint256 _amountToRaise = _limitAdjustedDebt * _liquidation.accumulatedRate * _liquidation.liquidationPenalty / WAD;
     uint256 _collateralToSell = _liquidation.safeCollateral * _limitAdjustedDebt / _liquidation.safeDebt;
     vm.expectEmit();
     emit Liquidate(
@@ -1352,7 +1353,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
       safe,
       _collateralToSell,
       _limitAdjustedDebt,
-      acRateMulLimitAdDebt,
+      _amountToRaise,
       address(collateralAuctionHouseForTest),
       auctionId
     );
@@ -1366,16 +1367,15 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
   {
     uint256 _limitAdjustedDebt = (_liquidation.onAuctionSystemCoinLimit - _liquidation.currentOnAuctionSystemCoins)
       * WAD / _liquidation.liquidationPenalty / _liquidation.accumulatedRate;
-    uint256 acRateMulLimitAdDebt = _limitAdjustedDebt * _liquidation.accumulatedRate;
+    uint256 _amountToRaise = _limitAdjustedDebt * _liquidation.accumulatedRate * _liquidation.liquidationPenalty / WAD;
     uint256 _collateralToSell = _liquidation.safeCollateral * _limitAdjustedDebt / _liquidation.safeDebt;
-
     vm.expectEmit();
     emit Liquidate(
       collateralType,
       safe,
       _collateralToSell,
       _limitAdjustedDebt,
-      acRateMulLimitAdDebt,
+      _amountToRaise,
       address(collateralAuctionHouseForTest),
       auctionId
     );
