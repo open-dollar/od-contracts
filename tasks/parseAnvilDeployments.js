@@ -62,8 +62,7 @@ const createAnvilDeploymentsFile = (contracts) => {
 pragma solidity 0.8.19;
 
 abstract contract AnvilContracts {
-${addressText}
-}`;
+${addressText}}`;
 
   fs.writeFile(outputPath, content, (err) => {
     if (err) {

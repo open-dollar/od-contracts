@@ -62,8 +62,7 @@ const createGoerliDeploymentsFile = (contracts) => {
 pragma solidity 0.8.19;
 
 abstract contract GoerliContracts {
-${addressText}
-}`;
+${addressText}}`;
 
   fs.writeFile(outputPath, content, (err) => {
     if (err) {
