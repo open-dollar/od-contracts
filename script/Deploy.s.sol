@@ -158,11 +158,53 @@ contract DeployMainnet is MainnetParams, Deploy {
   function setupPostEnvironment() public virtual override updateParams {}
 }
 
-contract DeployGoerli is GoerliParams, Deploy {
+contract DeployTestnet is GoerliParams, Deploy {
   using FixedPointMathLib for uint256;
 
   IBaseOracle public chainlinkEthUSDPriceFeed;
 
+  function setupPostEnvironment() public virtual override updateParams {
+    // deploy Camelot liquidity pool to create market price for OD (using WSTETH for testnet, WETH for mainnet)
+    IAlgebraFactory(GOERLI_ALGEBRA_FACTORY).createPool(address(systemCoin), address(GOERLI_WETH));
+
+    // confirm correct setup of pool
+    address pool = algebraFactory.poolByPair(address(systemCoin), address(GOERLI_WETH));
+
+    IERC20Metadata token0 = IERC20Metadata(IAlgebraPool(pool).token0());
+    IERC20Metadata token1 = IERC20Metadata(IAlgebraPool(pool).token1());
+
+    require(keccak256(abi.encodePacked('OD')) == keccak256(abi.encodePacked(token0.symbol())), '!OD');
+    require(keccak256(abi.encodePacked('WETH')) == keccak256(abi.encodePacked(token1.symbol())), '!WETH');
+
+    // initial price of each token in WAD
+    uint256 initWethAmount = 1 ether;
+    uint256 initODAmount = 1656.62 ether;
+
+    // P = amount1 / amount0
+    uint256 price = initWethAmount.divWadDown(initODAmount);
+
+    // sqrtPriceX96 = sqrt(P) * 2^96
+    uint256 sqrtPriceX96 = FixedPointMathLib.sqrt(price * WAD) * (2 ** 96);
+
+    // log math
+    console2.logUint((sqrtPriceX96 / (2 ** 96)) ** 2);
+
+    // initialize pool
+    IAlgebraPool(pool).initialize(uint160(sqrtPriceX96));
+
+    // deploy Camelot relayer to retrieve price from Camelot pool
+    IBaseOracle _odWethOracle = camelotRelayerFactory.deployCamelotRelayer(
+      address(systemCoin), address(collateral[WSTETH]), uint32(ORACLE_INTERVAL_TEST)
+    );
+
+    // deploy denominated oracle of OD/WSTETH denominated against ETH/USD
+    systemCoinOracle = denominatedOracleFactory.deployDenominatedOracle(_odWethOracle, chainlinkEthUSDPriceFeed, false);
+
+    oracleRelayer.modifyParameters('systemCoinOracle', abi.encode(systemCoinOracle));
+  }
+}
+
+contract DeployGoerli is DeployTestnet {
   function setUp() public virtual {
     _deployerPk = uint256(vm.envBytes32('GOERLI_DEPLOYER_PK'));
     chainId = 421_613;
@@ -178,9 +220,6 @@ contract DeployGoerli is GoerliParams, Deploy {
   function setupEnvironment() public virtual override updateParams {
     // oracle will be converted to denominated w/ camelotRelayer price source
     systemCoinOracle = new OracleForTestnet(OD_INITIAL_PRICE); // 1 OD = 1 USD 'OD / USD'
-
-    // oracle will remain as test oracle in case camelotRelayer fails
-    systemCoinOracleBackup = new OracleForTestnet(OD_INITIAL_PRICE); // 1 OD = 1 USD 'OD / USD'
 
     // Test tokens (various decimals for testing)
     collateral[ARB] = new MintableVoteERC20('Arbitrum', 'ARB', 18);
@@ -223,53 +262,9 @@ contract DeployGoerli is GoerliParams, Deploy {
   }
 
   function setupPostEnvironment() public virtual override updateParams {}
-
-  /**
-   * @dev use default OracleForTestnet as systemCoinOracle (hence this is commented out)
-   *
-   * function setupPostEnvironment() public virtual override updateParams {
-   *   // deploy Camelot liquidity pool to create market price for OD (using WSTETH for testnet, WETH for mainnet)
-   *   ICamelotV3Factory(GOERLI_CAMELOT_V3_FACTORY).createPool(address(systemCoin), address(GOERLI_WETH));
-   *
-   *   // confirm correct setup of pool
-   *   address pool = camelotV3Factory.poolByPair(address(systemCoin), address(GOERLI_WETH));
-   *
-   *   IERC20Metadata token0 = IERC20Metadata(IAlgebraPool(pool).token0());
-   *   IERC20Metadata token1 = IERC20Metadata(IAlgebraPool(pool).token1());
-   *
-   *   require(keccak256(abi.encodePacked('OD')) == keccak256(abi.encodePacked(token0.symbol())), '!OD');
-   *   require(keccak256(abi.encodePacked('WETH')) == keccak256(abi.encodePacked(token1.symbol())), '!WETH');
-   *
-   *   // initial price of each token in WAD
-   *   uint256 initWethAmount = 1 ether;
-   *   uint256 initODAmount = 1656.62 ether;
-   *
-   *   // P = amount1 / amount0
-   *   uint256 price = initWethAmount.divWadDown(initODAmount);
-   *
-   *   // sqrtPriceX96 = sqrt(P) * 2^96
-   *   uint256 sqrtPriceX96 = FixedPointMathLib.sqrt(price * WAD) * (2 ** 96);
-   *
-   *   // log math
-   *   console2.logUint((sqrtPriceX96 / (2 ** 96)) ** 2);
-   *
-   *   // initialize pool
-   *   IAlgebraPool(pool).initialize(uint160(sqrtPriceX96));
-   *
-   *   // deploy Camelot relayer to retrieve price from Camelot pool
-   *   IBaseOracle _odWethOracle = camelotRelayerFactory.deployCamelotRelayer(
-   *     address(systemCoin), address(collateral[WSTETH]), uint32(ORACLE_INTERVAL_TEST)
-   *   );
-   *
-   *   // deploy denominated oracle of OD/WSTETH denominated against ETH/USD
-   *   systemCoinOracle = denominatedOracleFactory.deployDenominatedOracle(_odWethOracle, chainlinkEthUSDPriceFeed, false);
-   *
-   *   oracleRelayer.modifyParameters('systemCoinOracle', abi.encode(systemCoinOracle));
-   * }
-   */
 }
 
-contract DeployAnvil is GoerliParams, Deploy {
+contract DeployAnvil is DeployTestnet {
   function setUp() public virtual {
     _deployerPk = uint256(vm.envBytes32('ANVIL_ONE'));
     chainId = 31_337;
@@ -283,6 +278,9 @@ contract DeployAnvil is GoerliParams, Deploy {
 
   // Setup oracle feeds
   function setupEnvironment() public virtual override updateParams {
+    // mock chainlink oracle USD/ETH
+    chainlinkEthUSDPriceFeed = new OracleForTestnet(1_500e18);
+
     // OD
     systemCoinOracle = new OracleForTestnet(OD_INITIAL_PRICE); // 1 OD = 1 USD 'OD / USD'
 

@@ -14,7 +14,7 @@ contract GetcamelotPool is LiquidityBase {
 
   function run() public {
     vm.startBroadcast(vm.envUint('GOERLI_PK'));
-    pair = camelotV3Factory.poolByPair(tokenA, tokenB);
+    pair = algebraFactory.poolByPair(tokenA, tokenB);
     vm.stopBroadcast();
   }
 }

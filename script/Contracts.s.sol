@@ -55,7 +55,7 @@ import {
 import {ChainlinkRelayerFactory, IChainlinkRelayerFactory} from '@contracts/factories/ChainlinkRelayerFactory.sol';
 import {UniV3RelayerFactory, IUniV3RelayerFactory} from '@contracts/factories/UniV3RelayerFactory.sol';
 import {CamelotRelayerFactory, ICamelotRelayerFactory} from '@contracts/factories/CamelotRelayerFactory.sol';
-import {IAlgebraFactory as ICamelotV3Factory} from '@interfaces/factories/IAlgebraFactory.sol';
+import {IAlgebraFactory} from '@interfaces/factories/IAlgebraFactory.sol';
 import {DenominatedOracleFactory, IDenominatedOracleFactory} from '@contracts/factories/DenominatedOracleFactory.sol';
 import {DelayedOracleFactory, IDelayedOracleFactory} from '@contracts/factories/DelayedOracleFactory.sol';
 
@@ -147,7 +147,7 @@ abstract contract Contracts {
   IDenominatedOracleFactory public denominatedOracleFactory;
   IDelayedOracleFactory public delayedOracleFactory;
 
-  ICamelotV3Factory public camelotV3Factory;
+  IAlgebraFactory public algebraFactory;
 
   // --- Settlement contracts ---
   IGlobalSettlement public globalSettlement;

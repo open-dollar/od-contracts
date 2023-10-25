@@ -24,16 +24,16 @@ abstract contract AnvilDeployment is Contracts, GoerliParams, AnvilContracts {
 
     // --- ERC20s ---
     collateral[ARB] = IERC20Metadata(MintableVoteERC20_Address);
-    collateral[WSTETH] = IERC20Metadata(MintableERC20_7_Address);
-    collateral[CBETH] = IERC20Metadata(MintableERC20_8_Address);
-    collateral[RETH] = IERC20Metadata(MintableERC20_9_Address);
-    collateral[MAGIC] = IERC20Metadata(MintableERC20_10_Address);
+    collateral[WSTETH] = IERC20Metadata(MintableERC20_8_Address);
+    collateral[CBETH] = IERC20Metadata(MintableERC20_9_Address);
+    collateral[RETH] = IERC20Metadata(MintableERC20_10_Address);
+    collateral[MAGIC] = IERC20Metadata(MintableERC20_11_Address);
 
     erc20[ARB] = MintableERC20(MintableVoteERC20_Address);
-    erc20[WSTETH] = MintableERC20(MintableERC20_7_Address);
-    erc20[CBETH] = MintableERC20(MintableERC20_8_Address);
-    erc20[RETH] = MintableERC20(MintableERC20_9_Address);
-    erc20[MAGIC] = MintableERC20(MintableERC20_10_Address);
+    erc20[WSTETH] = MintableERC20(MintableERC20_8_Address);
+    erc20[CBETH] = MintableERC20(MintableERC20_9_Address);
+    erc20[RETH] = MintableERC20(MintableERC20_10_Address);
+    erc20[MAGIC] = MintableERC20(MintableERC20_11_Address);
 
     systemCoin = SystemCoin(SystemCoin_Address);
     protocolToken = ProtocolToken(ProtocolToken_Address);
@@ -120,11 +120,11 @@ abstract contract AnvilDeployment is Contracts, GoerliParams, AnvilContracts {
     postSettlementSurplusBidActions = PostSettlementSurplusBidActions(PostSettlementSurplusBidActions_Address);
 
     // --- oracles ---
-    delayedOracle[ARB] = IDelayedOracle(DelayedOracleChild_20_Address);
-    delayedOracle[WSTETH] = IDelayedOracle(DelayedOracleChild_21_Address);
-    delayedOracle[CBETH] = IDelayedOracle(DelayedOracleChild_22_Address);
-    delayedOracle[RETH] = IDelayedOracle(DelayedOracleChild_23_Address);
-    delayedOracle[MAGIC] = IDelayedOracle(DelayedOracleChild_24_Address);
+    delayedOracle[ARB] = IDelayedOracle(DelayedOracleChild_21_Address);
+    delayedOracle[WSTETH] = IDelayedOracle(DelayedOracleChild_22_Address);
+    delayedOracle[CBETH] = IDelayedOracle(DelayedOracleChild_23_Address);
+    delayedOracle[RETH] = IDelayedOracle(DelayedOracleChild_24_Address);
+    delayedOracle[MAGIC] = IDelayedOracle(DelayedOracleChild_25_Address);
 
     // --- tokens ---
   }

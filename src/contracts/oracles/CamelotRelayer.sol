@@ -8,7 +8,7 @@ import {IAlgebraFactory} from '@cryptoalgebra-core/interfaces/IAlgebraFactory.so
 import {IAlgebraPool} from '@cryptoalgebra-core/interfaces/IAlgebraPool.sol';
 import {IDataStorageOperator} from 'lib/Algebra/src/core/contracts/interfaces/IDataStorageOperator.sol';
 import {DataStorageLibrary} from 'lib/Algebra/src/periphery/contracts/libraries/DataStorageLibrary.sol';
-import {CAMELOT_V3_FACTORY, GOERLI_CAMELOT_V3_FACTORY} from '@script/Registry.s.sol';
+import {CAMELOT_V3_FACTORY, GOERLI_ALGEBRA_FACTORY} from '@script/Registry.s.sol';
 
 /**
  * @title  CamelotRelayer
@@ -17,7 +17,7 @@ import {CAMELOT_V3_FACTORY, GOERLI_CAMELOT_V3_FACTORY} from '@script/Registry.s.
  */
 contract CamelotRelayer is IBaseOracle, ICamelotRelayer {
   // --- Registry ---
-  address internal constant _CAMELOT_FACTORY = GOERLI_CAMELOT_V3_FACTORY;
+  address internal constant _CAMELOT_FACTORY = GOERLI_ALGEBRA_FACTORY;
 
   /// @inheritdoc ICamelotRelayer
   address public camelotPool;

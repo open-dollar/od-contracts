@@ -34,7 +34,7 @@ contract ReDeployCamelotOracle is GoerliDeployment, Script {
 
     // create pool: done
 
-    address pool = camelotV3Factory.poolByPair(address(systemCoin), address(collateral[WSTETH]));
+    address pool = algebraFactory.poolByPair(address(systemCoin), address(collateral[WSTETH]));
 
     IERC20Metadata token0 = IERC20Metadata(IAlgebraPool(pool).token0());
     IERC20Metadata token1 = IERC20Metadata(IAlgebraPool(pool).token1());

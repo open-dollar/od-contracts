@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import '@script/Contracts.s.sol';
 import {GoerliParams, WSTETH, ARB, CBETH, RETH, MAGIC} from '@script/GoerliParams.s.sol';
-import {GOERLI_CAMELOT_V3_FACTORY} from '@script/Registry.s.sol';
+import {GOERLI_ALGEBRA_FACTORY} from '@script/Registry.s.sol';
 import {GoerliContracts} from '@script/GoerliContracts.s.sol';
 
 abstract contract GoerliDeployment is Contracts, GoerliParams, GoerliContracts {
@@ -124,6 +124,6 @@ abstract contract GoerliDeployment is Contracts, GoerliParams, GoerliContracts {
     delayedOracle[RETH] = IDelayedOracle(DelayedOracleChild_RETH_Address);
     delayedOracle[MAGIC] = IDelayedOracle(DelayedOracleChild_MAGIC_Address);
 
-    camelotV3Factory = ICamelotV3Factory(GOERLI_CAMELOT_V3_FACTORY);
+    algebraFactory = IAlgebraFactory(GOERLI_ALGEBRA_FACTORY);
   }
 }

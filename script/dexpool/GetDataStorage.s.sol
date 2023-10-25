@@ -20,7 +20,7 @@ contract GetDataStorage is LiquidityBase {
 
   function run() public {
     vm.startBroadcast(vm.envUint('GOERLI_PK'));
-    pool = camelotV3Factory.poolByPair(tokenA, 0xb1C411460D37a6655f12370B17268b276b876176);
+    pool = algebraFactory.poolByPair(tokenA, tokenB);
 
     IERC20Metadata token0 = IERC20Metadata(IAlgebraPool(pool).token0());
     IERC20Metadata token1 = IERC20Metadata(IAlgebraPool(pool).token1());
