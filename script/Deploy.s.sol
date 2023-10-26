@@ -222,7 +222,7 @@ contract DeployGoerli is DeployTestnet {
     systemCoinOracle = new OracleForTestnet(OD_INITIAL_PRICE); // 1 OD = 1 USD 'OD / USD'
 
     // Test tokens (various decimals for testing)
-    collateral[ARB] = new MintableVoteERC20('Arbitrum', 'ARB', 18);
+    collateral[ARB] = MintableERC20(address(new MintableVoteERC20('Arbitrum', 'ARB', 18)));
     collateral[WSTETH] = new MintableERC20('Wrapped liquid staked Ether 2.0', 'wstETH', 8);
     collateral[CBETH] = new MintableERC20('Coinbase Wrapped Staked ETH', 'cbETH', 8);
     collateral[RETH] = new MintableERC20('Rocket Pool ETH', 'rETH', 3);
@@ -273,7 +273,7 @@ contract DeployAnvil is DeployTestnet {
   function mintAirdrop() public virtual override {
     protocolToken.mint(ALICE, AIRDROP_AMOUNT / 3);
     protocolToken.mint(BOB, AIRDROP_AMOUNT / 3);
-    protocolToken.mint(CASSY, AIRDROP_AMOUNT / 3);
+    protocolToken.mint(CHARLOTTE, AIRDROP_AMOUNT / 3);
   }
 
   // Setup oracle feeds
