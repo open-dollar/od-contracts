@@ -29,7 +29,7 @@ contract DeployBase is IAlgebraMintCallback, Script {
   // Constants
   uint256 private constant WAD = 1e18;
   uint256 private constant MINT_AMOUNT = 1_000_000 ether;
-  uint32 private constant period = uint32(15 seconds);
+  uint256 private constant ORACLE_PERIOD = 1 seconds;
 
   // Pool & Relayer Factories
   IAlgebraFactory public algebraFactory = IAlgebraFactory(GOERLI_ALGEBRA_FACTORY);
@@ -58,7 +58,7 @@ contract DeployBase is IAlgebraMintCallback, Script {
 
     // deploy chainlink oracle
     chainlinkEthUSDPriceFeed =
-      chainlinkRelayerFactory.deployChainlinkRelayer(GOERLI_CHAINLINK_ETH_USD_FEED, ORACLE_INTERVAL_TEST);
+      chainlinkRelayerFactory.deployChainlinkRelayer(GOERLI_CHAINLINK_ETH_USD_FEED, ORACLE_PERIOD);
 
     deployPool();
 
@@ -73,17 +73,15 @@ contract DeployBase is IAlgebraMintCallback, Script {
     // check balance after
     (bal0, bal1) = getPoolBal(pool);
 
-    // create pool relayer
-    camelotRelayer = camelotRelayerFactory.deployCamelotRelayer(tokenA, tokenB, period);
+    // // create pool relayer
+    // camelotRelayer = camelotRelayerFactory.deployCamelotRelayer(tokenA, tokenB, uint32(ORACLE_PERIOD));
 
-    // create denominated oracle
-    denominatedOracle =
-      denominatedOracleFactory.deployDenominatedOracle(chainlinkEthUSDPriceFeed, camelotRelayer, false);
+    // // create denominated oracle
+    // denominatedOracle =
+    //   denominatedOracleFactory.deployDenominatedOracle(chainlinkEthUSDPriceFeed, camelotRelayer, false);
   }
 
-  function run() public {
-    ICamelotRelayer(address(camelotRelayer)).getResultWithValidity();
-  }
+  function run() public {}
 
   /**
    * @dev setup functions
