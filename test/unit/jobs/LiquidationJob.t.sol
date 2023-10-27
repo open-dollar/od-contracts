@@ -9,6 +9,8 @@ import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 
+import {Assertions} from '@libraries/Assertions.sol';
+
 abstract contract Base is HaiTest {
   using stdStorage for StdStorage;
 
@@ -61,6 +63,13 @@ contract Unit_LiquidationJob_Constructor is Base {
     _;
   }
 
+  function test_Emit_AddAuthorization() public happyPath {
+    vm.expectEmit();
+    emit AddAuthorization(user);
+
+    new LiquidationJobForTest(address(mockLiquidationEngine), address(mockStabilityFeeTreasury), REWARD_AMOUNT);
+  }
+
   function test_Set_StabilityFeeTreasury() public happyPath {
     assertEq(address(liquidationJob.stabilityFeeTreasury()), address(mockStabilityFeeTreasury));
   }
@@ -69,15 +78,7 @@ contract Unit_LiquidationJob_Constructor is Base {
     assertEq(liquidationJob.rewardAmount(), REWARD_AMOUNT);
   }
 
-  function test_Emit_AddAuthorization() public happyPath {
-    vm.expectEmit();
-    emit AddAuthorization(user);
-
-    liquidationJob =
-      new LiquidationJobForTest(address(mockLiquidationEngine), address(mockStabilityFeeTreasury), REWARD_AMOUNT);
-  }
-
-  function test_Set_LiquidationEngine(address _liquidationEngine) public happyPath {
+  function test_Set_LiquidationEngine(address _liquidationEngine) public happyPath mockAsContract(_liquidationEngine) {
     liquidationJob = new LiquidationJobForTest(_liquidationEngine, address(mockStabilityFeeTreasury), REWARD_AMOUNT);
 
     assertEq(address(liquidationJob.liquidationEngine()), _liquidationEngine);
@@ -85,6 +86,24 @@ contract Unit_LiquidationJob_Constructor is Base {
 
   function test_Set_ShouldWork() public happyPath {
     assertEq(liquidationJob.shouldWork(), true);
+  }
+
+  function test_Revert_Null_LiquidationEngine() public {
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
+
+    new LiquidationJobForTest(address(0), address(mockStabilityFeeTreasury), REWARD_AMOUNT);
+  }
+
+  function test_Revert_Null_StabilityFeeTreasury() public {
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
+
+    new LiquidationJobForTest(address(mockLiquidationEngine), address(0), REWARD_AMOUNT);
+  }
+
+  function test_Revert_Null_RewardAmount() public {
+    vm.expectRevert(Assertions.NullAmount.selector);
+
+    new LiquidationJobForTest(address(mockLiquidationEngine), address(mockStabilityFeeTreasury), 0);
   }
 }
 
@@ -124,8 +143,6 @@ contract Unit_LiquidationJob_WorkLiquidation is Base {
 }
 
 contract Unit_LiquidationJob_ModifyParameters is Base {
-  event ModifyParameters(bytes32 indexed _param, bytes32 indexed _cType, bytes _data);
-
   modifier happyPath() {
     vm.startPrank(authorizedAccount);
     _;
@@ -154,9 +171,35 @@ contract Unit_LiquidationJob_ModifyParameters is Base {
   }
 
   function test_Set_RewardAmount(uint256 _rewardAmount) public happyPath {
+    vm.assume(_rewardAmount != 0);
+
     liquidationJob.modifyParameters('rewardAmount', abi.encode(_rewardAmount));
 
     assertEq(liquidationJob.rewardAmount(), _rewardAmount);
+  }
+
+  function test_Revert_Null_LiquidationEngine() public {
+    vm.startPrank(authorizedAccount);
+
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
+
+    liquidationJob.modifyParameters('liquidationEngine', abi.encode(address(0)));
+  }
+
+  function test_Revert_Null_StabilityFeeTreasury() public {
+    vm.startPrank(authorizedAccount);
+
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
+
+    liquidationJob.modifyParameters('stabilityFeeTreasury', abi.encode(address(0)));
+  }
+
+  function test_Revert_Null_RewardAmount() public {
+    vm.startPrank(authorizedAccount);
+
+    vm.expectRevert(Assertions.NullAmount.selector);
+
+    liquidationJob.modifyParameters('rewardAmount', abi.encode(0));
   }
 
   function test_Revert_UnrecognizedParam(bytes memory _data) public {

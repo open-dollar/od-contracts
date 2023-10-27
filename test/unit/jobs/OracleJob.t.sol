@@ -11,6 +11,8 @@ import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 
+import {Assertions} from '@libraries/Assertions.sol';
+
 abstract contract Base is HaiTest {
   using stdStorage for StdStorage;
 
@@ -79,6 +81,13 @@ contract Unit_OracleJob_Constructor is Base {
     _;
   }
 
+  function test_Emit_AddAuthorization() public happyPath {
+    vm.expectEmit();
+    emit AddAuthorization(user);
+
+    new OracleJobForTest(address(mockOracleRelayer), address(mockPIDRateSetter), address(mockStabilityFeeTreasury), REWARD_AMOUNT);
+  }
+
   function test_Set_StabilityFeeTreasury() public happyPath {
     assertEq(address(oracleJob.stabilityFeeTreasury()), address(mockStabilityFeeTreasury));
   }
@@ -87,22 +96,14 @@ contract Unit_OracleJob_Constructor is Base {
     assertEq(oracleJob.rewardAmount(), REWARD_AMOUNT);
   }
 
-  function test_Emit_AddAuthorization() public happyPath {
-    vm.expectEmit();
-    emit AddAuthorization(user);
-
-    oracleJob =
-    new OracleJobForTest(address(mockOracleRelayer), address(mockPIDRateSetter), address(mockStabilityFeeTreasury), REWARD_AMOUNT);
-  }
-
-  function test_Set_OracleRelayer(address _oracleRelayer) public happyPath {
+  function test_Set_OracleRelayer(address _oracleRelayer) public happyPath mockAsContract(_oracleRelayer) {
     oracleJob =
       new OracleJobForTest(_oracleRelayer, address(mockPIDRateSetter), address(mockStabilityFeeTreasury), REWARD_AMOUNT);
 
     assertEq(address(oracleJob.oracleRelayer()), _oracleRelayer);
   }
 
-  function test_Set_PIDRateSetter(address _pidRateSetter) public happyPath {
+  function test_Set_PIDRateSetter(address _pidRateSetter) public happyPath mockAsContract(_pidRateSetter) {
     oracleJob =
       new OracleJobForTest(address(mockOracleRelayer), _pidRateSetter, address(mockStabilityFeeTreasury), REWARD_AMOUNT);
 
@@ -115,6 +116,30 @@ contract Unit_OracleJob_Constructor is Base {
 
   function test_Set_ShouldWorkUpdateRate() public happyPath {
     assertEq(oracleJob.shouldWorkUpdateRate(), true);
+  }
+
+  function test_Revert_Null_OracleRelayer() public {
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
+
+    new OracleJobForTest(address(0), address(mockPIDRateSetter), address(mockStabilityFeeTreasury), REWARD_AMOUNT);
+  }
+
+  function test_Revert_Null_PIDRateSetter() public {
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
+
+    new OracleJobForTest(address(mockOracleRelayer), address(0), address(mockStabilityFeeTreasury), REWARD_AMOUNT);
+  }
+
+  function test_Revert_Null_StabilityFeeTreasury() public {
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
+
+    new OracleJobForTest(address(mockOracleRelayer), address(mockPIDRateSetter), address(0), REWARD_AMOUNT);
+  }
+
+  function test_Revert_Null_RewardAmount() public {
+    vm.expectRevert(Assertions.NullAmount.selector);
+
+    new OracleJobForTest(address(mockOracleRelayer), address(mockPIDRateSetter), address(mockStabilityFeeTreasury), 0);
   }
 }
 
@@ -201,26 +226,28 @@ contract Unit_OracleJob_WorkUpdateRate is Base {
 }
 
 contract Unit_OracleJob_ModifyParameters is Base {
-  event ModifyParameters(bytes32 indexed _param, bytes32 indexed _cType, bytes _data);
-
   modifier happyPath() {
     vm.startPrank(authorizedAccount);
     _;
   }
 
-  function test_Set_OracleRelayer(address _oracleRelayer) public happyPath {
+  function test_Set_OracleRelayer(address _oracleRelayer) public happyPath mockAsContract(_oracleRelayer) {
     oracleJob.modifyParameters('oracleRelayer', abi.encode(_oracleRelayer));
 
     assertEq(address(oracleJob.oracleRelayer()), _oracleRelayer);
   }
 
-  function test_Set_PIDRateSetter(address _pidRateSetter) public happyPath {
+  function test_Set_PIDRateSetter(address _pidRateSetter) public happyPath mockAsContract(_pidRateSetter) {
     oracleJob.modifyParameters('pidRateSetter', abi.encode(_pidRateSetter));
 
     assertEq(address(oracleJob.pidRateSetter()), _pidRateSetter);
   }
 
-  function test_Set_StabilityFeeTreasury(address _stabilityFeeTreasury) public happyPath {
+  function test_Set_StabilityFeeTreasury(address _stabilityFeeTreasury)
+    public
+    happyPath
+    mockAsContract(_stabilityFeeTreasury)
+  {
     oracleJob.modifyParameters('stabilityFeeTreasury', abi.encode(_stabilityFeeTreasury));
 
     assertEq(address(oracleJob.stabilityFeeTreasury()), _stabilityFeeTreasury);
@@ -239,9 +266,43 @@ contract Unit_OracleJob_ModifyParameters is Base {
   }
 
   function test_Set_RewardAmount(uint256 _rewardAmount) public happyPath {
+    vm.assume(_rewardAmount != 0);
+
     oracleJob.modifyParameters('rewardAmount', abi.encode(_rewardAmount));
 
     assertEq(oracleJob.rewardAmount(), _rewardAmount);
+  }
+
+  function test_Revert_Null_OracleRelayer() public {
+    vm.startPrank(authorizedAccount);
+
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
+
+    oracleJob.modifyParameters('oracleRelayer', abi.encode(address(0)));
+  }
+
+  function test_Revert_Null_PIDRateSetter() public {
+    vm.startPrank(authorizedAccount);
+
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
+
+    oracleJob.modifyParameters('pidRateSetter', abi.encode(address(0)));
+  }
+
+  function test_Revert_Null_StabilityFeeTreasury() public {
+    vm.startPrank(authorizedAccount);
+
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
+
+    oracleJob.modifyParameters('stabilityFeeTreasury', abi.encode(address(0)));
+  }
+
+  function test_Revert_Null_RewardAmount() public {
+    vm.startPrank(authorizedAccount);
+
+    vm.expectRevert(Assertions.NullAmount.selector);
+
+    oracleJob.modifyParameters('rewardAmount', abi.encode(0));
   }
 
   function test_Revert_UnrecognizedParam(bytes memory _data) public {
