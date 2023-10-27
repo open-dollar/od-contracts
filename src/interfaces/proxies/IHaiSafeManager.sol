@@ -8,6 +8,8 @@ interface IHaiSafeManager {
   event AllowSAFE(address indexed _sender, uint256 indexed _safe, address _usr, bool _ok);
   /// @notice Emitted when calling allowHandler with the sender address and the method arguments
   event AllowHandler(address indexed _sender, address _usr, bool _ok);
+  /// @notice Emitted when calling initiateTransferSAFEOwnership with the sender address and the method arguments
+  event InitiateTransferSAFEOwnership(address indexed _sender, uint256 indexed _safe, address _dst);
   /// @notice Emitted when calling transferSAFEOwnership with the sender address and the method arguments
   event TransferSAFEOwnership(address indexed _sender, uint256 indexed _safe, address _dst);
   /// @notice Emitted when calling openSAFE with the sender address and the method arguments
@@ -49,6 +51,8 @@ interface IHaiSafeManager {
   struct SAFEData {
     // Address of the safe owner
     address owner;
+    // Address of the safe owner pending to be set
+    address pendingOwner;
     // Address of the safe handler
     address safeHandler;
     // Collateral type of the safe
@@ -128,11 +132,17 @@ interface IHaiSafeManager {
   function openSAFE(bytes32 _cType, address _usr) external returns (uint256 _id);
 
   /**
-   * @notice Transfer the ownership of a safe to a dst address
+   * @notice Initiate the transfer of the ownership of a safe to a dst address
    * @param  _safe Id of the SAFE
    * @param  _dst Address of the dst address
    */
   function transferSAFEOwnership(uint256 _safe, address _dst) external;
+
+  /**
+   * @notice Accept the transfer of the ownership of a safe
+   * @param  _safe Id of the SAFE
+   */
+  function acceptSAFEOwnership(uint256 _safe) external;
 
   /**
    * @notice Modify a SAFE's collateralization ratio while keeping the generated COIN or collateral freed in the safe handler address

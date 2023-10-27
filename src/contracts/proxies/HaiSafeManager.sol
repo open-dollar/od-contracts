@@ -31,9 +31,9 @@ contract HaiSafeManager is IHaiSafeManager {
   /// @notice Nonce used to generate safe ids (autoincremental)
   uint256 internal _safeId;
   /// @notice Mapping of user addresses to their enumerable set of safes
-  mapping(address _safeOwner => EnumerableSet.UintSet) private _usrSafes;
+  mapping(address _safeOwner => EnumerableSet.UintSet) internal _usrSafes;
   /// @notice Mapping of user addresses to their enumerable set of safes per collateral type
-  mapping(address _safeOwner => mapping(bytes32 _cType => EnumerableSet.UintSet)) private _usrSafesPerCollat;
+  mapping(address _safeOwner => mapping(bytes32 _cType => EnumerableSet.UintSet)) internal _usrSafesPerCollat;
   /// @notice Mapping of safe ids to their data
   mapping(uint256 _safeId => SAFEData) internal _safeData;
 
@@ -126,7 +126,8 @@ contract HaiSafeManager is IHaiSafeManager {
     ++_safeId;
     address _safeHandler = address(new SAFEHandler(safeEngine));
 
-    _safeData[_safeId] = SAFEData({owner: _usr, safeHandler: _safeHandler, collateralType: _cType});
+    _safeData[_safeId] =
+      SAFEData({owner: _usr, pendingOwner: address(0), safeHandler: _safeHandler, collateralType: _cType});
 
     _usrSafes[_usr].add(_safeId);
     _usrSafesPerCollat[_usr][_cType].add(_safeId);
@@ -137,19 +138,31 @@ contract HaiSafeManager is IHaiSafeManager {
 
   /// @inheritdoc IHaiSafeManager
   function transferSAFEOwnership(uint256 _safe, address _dst) external safeAllowed(_safe) {
-    if (_dst == address(0)) revert ZeroAddress();
     SAFEData memory _sData = _safeData[_safe];
     if (_dst == _sData.owner) revert AlreadySafeOwner();
 
-    _usrSafes[_sData.owner].remove(_safe);
-    _usrSafesPerCollat[_sData.owner][_sData.collateralType].remove(_safe);
+    _safeData[_safe].pendingOwner = _dst;
+    emit InitiateTransferSAFEOwnership(msg.sender, _safe, _dst);
+  }
 
-    _usrSafes[_dst].add(_safe);
-    _usrSafesPerCollat[_dst][_sData.collateralType].add(_safe);
+  /// @inheritdoc IHaiSafeManager
+  function acceptSAFEOwnership(uint256 _safe) external {
+    SAFEData memory _sData = _safeData[_safe];
+    address _newOwner = _sData.pendingOwner;
+    address _prevOwner = _sData.owner;
 
-    _safeData[_safe].owner = _dst;
+    if (msg.sender != _newOwner) revert SafeNotAllowed();
 
-    emit TransferSAFEOwnership(msg.sender, _safe, _dst);
+    _usrSafes[_prevOwner].remove(_safe);
+    _usrSafesPerCollat[_prevOwner][_sData.collateralType].remove(_safe);
+
+    _usrSafes[_newOwner].add(_safe);
+    _usrSafesPerCollat[_newOwner][_sData.collateralType].add(_safe);
+
+    _safeData[_safe].owner = _newOwner;
+    _safeData[_safe].pendingOwner = address(0);
+
+    emit TransferSAFEOwnership(_prevOwner, _safe, _newOwner);
   }
 
   /// @inheritdoc IHaiSafeManager
