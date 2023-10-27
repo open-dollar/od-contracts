@@ -31,6 +31,8 @@ contract CallResult is Script {
   ICamelotRelayer public camelotRelayer = ICamelotRelayer(0xb0b8c7cCc64be9aa9B5712BBEc5a5BD0a3213059);
 
   function run() public {
+    vm.startBroadcast(vm.envUint('GOERLI_PK'));
     camelotRelayer.getResultWithValidity();
+    vm.stopBroadcast();
   }
 }

@@ -49,12 +49,13 @@ contract DeployBase is IAlgebraMintCallback, Script {
   // Liquidity Pool
   IAlgebraPool public pool;
 
-  function setUp() public {
+  function run() public {
+    vm.startBroadcast(vm.envUint('GOERLI_PK'));
     deployFactories();
 
     deployTestTokens();
-    MintableERC20(tokenA).mint(MINT_AMOUNT);
-    MintableERC20(tokenB).mint(MINT_AMOUNT);
+    MintableERC20(tokenA).mint(H, MINT_AMOUNT);
+    MintableERC20(tokenB).mint(H, MINT_AMOUNT);
 
     // deploy chainlink oracle
     chainlinkEthUSDPriceFeed =
@@ -68,20 +69,20 @@ contract DeployBase is IAlgebraMintCallback, Script {
     // add liquidity
     (int24 bottomTick, int24 topTick) = generateTickParams();
     (uint256 amount0, uint256 amount1, uint128 liquidityActual) =
-      IAlgebraPool(pool).mint(address(this), address(pool), bottomTick, topTick, 100, '');
+      IAlgebraPool(pool).mint(H, address(pool), bottomTick, topTick, 100, '');
 
     // check balance after
     (bal0, bal1) = getPoolBal(pool);
 
-    // // create pool relayer
-    // camelotRelayer = camelotRelayerFactory.deployCamelotRelayer(tokenA, tokenB, uint32(ORACLE_PERIOD));
+    // create pool relayer
+    camelotRelayer = camelotRelayerFactory.deployCamelotRelayer(tokenA, tokenB, uint32(ORACLE_PERIOD));
 
-    // // create denominated oracle
-    // denominatedOracle =
-    //   denominatedOracleFactory.deployDenominatedOracle(chainlinkEthUSDPriceFeed, camelotRelayer, false);
+    // create denominated oracle
+    denominatedOracle =
+      denominatedOracleFactory.deployDenominatedOracle(chainlinkEthUSDPriceFeed, camelotRelayer, false);
+
+    vm.stopBroadcast();
   }
-
-  function run() public {}
 
   /**
    * @dev setup functions
