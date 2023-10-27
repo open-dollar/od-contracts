@@ -3,7 +3,10 @@ pragma solidity 0.8.19;
 
 import {IStabilityFeeTreasury} from '@interfaces/IStabilityFeeTreasury.sol';
 
-interface IJob {
+import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
+import {IModifiable} from '@interfaces/utils/IModifiable.sol';
+
+interface IJob is IAuthorizable, IModifiable {
   // --- Events ---
 
   /**
