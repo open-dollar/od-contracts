@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {IOwnable} from '@interfaces/utils/IOwnable.sol';
+import {IHaiOwnable2Step} from '@interfaces/utils/IHaiOwnable2Step.sol';
 
-interface IHaiProxy is IOwnable {
+interface IHaiProxy is IHaiOwnable2Step {
   // --- Errors ---
 
   /// @notice Throws if the target address is null

@@ -72,7 +72,7 @@ interface IOracleRelayer is IAuthorizable, IDisableable, IModifiable, IModifiabl
 
   /**
    * @notice Getter for the contract parameters struct
-   * @return _oracleRelayerParams a OracleRelayerParams struct
+   * @return _oracleRelayerParams An OracleRelayerParams struct
    */
   function params() external view returns (OracleRelayerParams memory _oracleRelayerParams);
 
@@ -87,7 +87,7 @@ interface IOracleRelayer is IAuthorizable, IDisableable, IModifiable, IModifiabl
   /**
    * @notice Getter for the collateral parameters struct
    * @param  _cType Bytes32 representation of the collateral type
-   * @return _oracleRelayerCParams a OracleRelayerCollateralParams struct
+   * @return _oracleRelayerCParams An OracleRelayerCollateralParams struct
    */
   function cParams(bytes32 _cType) external view returns (OracleRelayerCollateralParams memory _oracleRelayerCParams);
 

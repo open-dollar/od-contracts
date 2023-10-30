@@ -181,7 +181,7 @@ interface ISAFEEngine is IAuthorizable, IDisableable, IModifiable, IModifiablePe
 
   /**
    * @notice Getter for the contract parameters struct
-   * @return _safeEngineParams the active SAFEEngineParams
+   * @return _safeEngineParams The active SAFEEngineParams
    */
   function params() external view returns (SAFEEngineParams memory _safeEngineParams);
 
@@ -443,8 +443,8 @@ interface ISAFEEngine is IAuthorizable, IDisableable, IModifiable, IModifiablePe
 
   /**
    * @notice Checks whether an account has the right to modify a SAFE
-   * @param _safe the safe to check
-   * @param _account the account to check
+   * @param _safe The safe to check
+   * @param _account The account to check
    * @return _allowed Whether the account can modify the safe
    */
   function canModifySAFE(address _safe, address _account) external view returns (bool _allowed);
