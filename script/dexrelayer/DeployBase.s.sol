@@ -17,13 +17,15 @@ import {MintableVoteERC20} from '@contracts/for-test/MintableVoteERC20.sol';
 import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
 import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
 
+import {Router} from '@script/dexrelayer/Router.sol';
+
 // BROADCAST
 // source .env && forge script DeployBase --with-gas-price 2000000000 -vvvvv --rpc-url $GOERLI_RPC --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY
 
 // SIMULATE
 // source .env && forge script DeployBase --with-gas-price 2000000000 -vvvvv --rpc-url $GOERLI_RPC
 
-contract DeployBase is IAlgebraMintCallback, Script {
+contract DeployBase is Script {
   using FixedPointMathLib for uint256;
 
   // Constants
@@ -33,14 +35,6 @@ contract DeployBase is IAlgebraMintCallback, Script {
 
   // Pool & Relayer Factories
   IAlgebraFactory public algebraFactory = IAlgebraFactory(GOERLI_ALGEBRA_FACTORY);
-  ChainlinkRelayerFactory public chainlinkRelayerFactory;
-  CamelotRelayerFactory public camelotRelayerFactory;
-  DenominatedOracleFactory public denominatedOracleFactory;
-
-  // oracles
-  IBaseOracle public chainlinkEthUSDPriceFeed;
-  IBaseOracle public camelotRelayer;
-  IBaseOracle public denominatedOracle;
 
   // Tokens
   address public tokenA;
@@ -49,37 +43,29 @@ contract DeployBase is IAlgebraMintCallback, Script {
   // Liquidity Pool
   IAlgebraPool public pool;
 
+  // Router
+  Router public router;
+
   function run() public {
     vm.startBroadcast(vm.envUint('GOERLI_PK'));
-    deployFactories();
 
     deployTestTokens();
-    MintableERC20(tokenA).mint(H, MINT_AMOUNT);
-    MintableERC20(tokenB).mint(H, MINT_AMOUNT);
-
-    // deploy chainlink oracle
-    chainlinkEthUSDPriceFeed =
-      chainlinkRelayerFactory.deployChainlinkRelayer(GOERLI_CHAINLINK_ETH_USD_FEED, ORACLE_PERIOD);
-
     deployPool();
 
     // check balance before
     (uint256 bal0, uint256 bal1) = getPoolBal(pool);
 
+    // deploy router and approve it to handle funds
+    router = new Router(pool, H);
+    IERC20(tokenA).approve(address(router), MINT_AMOUNT);
+    IERC20(tokenB).approve(address(router), MINT_AMOUNT);
+
     // add liquidity
     (int24 bottomTick, int24 topTick) = generateTickParams();
-    (uint256 amount0, uint256 amount1, uint128 liquidityActual) =
-      IAlgebraPool(pool).mint(H, address(pool), bottomTick, topTick, 100, '');
+    router.addLiquidity(bottomTick, topTick, uint128(100));
 
     // check balance after
     (bal0, bal1) = getPoolBal(pool);
-
-    // create pool relayer
-    camelotRelayer = camelotRelayerFactory.deployCamelotRelayer(tokenA, tokenB, uint32(ORACLE_PERIOD));
-
-    // create denominated oracle
-    denominatedOracle =
-      denominatedOracleFactory.deployDenominatedOracle(chainlinkEthUSDPriceFeed, camelotRelayer, false);
 
     vm.stopBroadcast();
   }
@@ -87,16 +73,11 @@ contract DeployBase is IAlgebraMintCallback, Script {
   /**
    * @dev setup functions
    */
-  function deployFactories() public {
-    chainlinkRelayerFactory = new ChainlinkRelayerFactory();
-    camelotRelayerFactory = new CamelotRelayerFactory();
-    denominatedOracleFactory = new DenominatedOracleFactory();
-  }
-
-  function deployTestTokens() public returns (address, address) {
+  function deployTestTokens() public {
     MintableERC20 token0 = new MintableERC20('LST Test1', 'LST1', 18);
     MintableERC20 token1 = new MintableERC20('LST Test2', 'LST2', 18);
-
+    token0.mint(H, MINT_AMOUNT);
+    token1.mint(H, MINT_AMOUNT);
     tokenA = address(token0);
     tokenB = address(token1);
   }
@@ -116,8 +97,8 @@ contract DeployBase is IAlgebraMintCallback, Script {
 
   function getPoolBal(IAlgebraPool _pool) public view returns (uint256, uint256) {
     (address t0, address t1) = getPoolPair(_pool);
-    address pool = address(_pool);
-    return (IERC20(t0).balanceOf(pool), IERC20(t1).balanceOf(pool));
+    address poolAddress = address(_pool);
+    return (IERC20(t0).balanceOf(poolAddress), IERC20(t1).balanceOf(poolAddress));
   }
 
   function getPoolPair(IAlgebraPool _pool) public view returns (address, address) {
@@ -130,7 +111,7 @@ contract DeployBase is IAlgebraMintCallback, Script {
     return uint160(sqrtPriceX96);
   }
 
-  function getGlobalState(IAlgebraPool pool)
+  function getGlobalState(IAlgebraPool _pool)
     public
     view
     returns (
@@ -143,11 +124,6 @@ contract DeployBase is IAlgebraMintCallback, Script {
       bool unlocked
     )
   {
-    (price, tick, prevInitializedTick, fee, timepointIndex, communityFee, unlocked) = pool.globalState();
-  }
-
-  function algebraMintCallback(uint256 amount0Owed, uint256 amount1Owed, bytes calldata data) external {
-    IERC20(tokenA).transfer(msg.sender, amount0Owed);
-    IERC20(tokenB).transfer(msg.sender, amount1Owed);
+    (price, tick, prevInitializedTick, fee, timepointIndex, communityFee, unlocked) = _pool.globalState();
   }
 }

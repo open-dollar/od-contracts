@@ -28,7 +28,7 @@ contract CallResult is Script {
   uint256 private constant MINT_AMOUNT = 1_000_000 ether;
   uint256 private constant ORACLE_PERIOD = 1 seconds;
 
-  ICamelotRelayer public camelotRelayer = ICamelotRelayer(0xb0b8c7cCc64be9aa9B5712BBEc5a5BD0a3213059);
+  ICamelotRelayer public camelotRelayer = ICamelotRelayer(0x27F8839C1dfe338DA95f956eFaB0a4bcd6aab568);
 
   function run() public {
     vm.startBroadcast(vm.envUint('GOERLI_PK'));
