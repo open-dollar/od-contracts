@@ -275,7 +275,7 @@ contract DeployAnvil is GoerliParams, Deploy {
   function mintAirdrop() public virtual override {
     protocolToken.mint(ALICE, AIRDROP_AMOUNT / 3);
     protocolToken.mint(BOB, AIRDROP_AMOUNT / 3);
-    protocolToken.mint(CASSY, AIRDROP_AMOUNT / 3);
+    protocolToken.mint(CHARLOTTE, AIRDROP_AMOUNT / 3);
   }
 
   // Setup oracle feeds
