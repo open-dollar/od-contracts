@@ -133,6 +133,14 @@ contract OverflowChecker {
 
 abstract contract HaiTest is DSTestPlus, OverflowChecker {
   modifier mockAsContract(address _address) {
+    // Foundry fuzzer sometimes gives us the next deployment address
+    // this results in very unexpected reverts as any contract deploy will revert
+    // we check here to make sure its not the next deployment address for the (pranked) msg.sender
+    (, address _msgSender,) = vm.readCallers();
+    address _nextDeploymentAddr = computeCreateAddress(address(_msgSender), vm.getNonce(_msgSender));
+
+    vm.assume(_address != _nextDeploymentAddr);
+
     // It should not be a precompile
     vm.assume(uint160(_address) > 20);
 

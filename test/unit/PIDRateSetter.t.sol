@@ -118,17 +118,21 @@ contract Unit_PIDRateSetter_ModifyParameters is Base {
     assertEq(abi.encode(_fuzz), abi.encode(_params));
   }
 
-  function test_ModifyParameters_Set_OracleRelayer(address _oracleRelayer) public authorized {
-    vm.assume(uint160(_oracleRelayer) > 20);
-    vm.etch(_oracleRelayer, '0xF');
+  function test_ModifyParameters_Set_OracleRelayer(address _oracleRelayer)
+    public
+    authorized
+    mockAsContract(_oracleRelayer)
+  {
     pidRateSetter.modifyParameters('oracleRelayer', abi.encode(_oracleRelayer));
 
     assertEq(address(pidRateSetter.oracleRelayer()), _oracleRelayer);
   }
 
-  function test_ModifyParameters_Set_PIDCalculator(address _pidCalculator) public authorized {
-    vm.assume(uint160(_pidCalculator) > 20);
-    vm.etch(_pidCalculator, '0xF');
+  function test_ModifyParameters_Set_PIDCalculator(address _pidCalculator)
+    public
+    authorized
+    mockAsContract(_pidCalculator)
+  {
     pidRateSetter.modifyParameters('pidCalculator', abi.encode(_pidCalculator));
 
     assertEq(address(pidRateSetter.pidCalculator()), _pidCalculator);

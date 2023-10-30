@@ -242,10 +242,11 @@ contract Unit_AccountingEngine_ModifyParameters is Base {
     assertEq(abi.encode(_fuzz), abi.encode(_params));
   }
 
-  function test_ModifyParameters_SurplusAuctionHouse(address _surplusAuctionHouse) public authorized {
-    vm.assume(uint160(_surplusAuctionHouse) > 20);
-    vm.etch(_surplusAuctionHouse, '0xF');
-
+  function test_ModifyParameters_SurplusAuctionHouse(address _surplusAuctionHouse)
+    public
+    authorized
+    mockAsContract(_surplusAuctionHouse)
+  {
     address _previousSurplusAuctionHouse = address(accountingEngine.surplusAuctionHouse());
     if (_previousSurplusAuctionHouse != address(0)) {
       vm.expectCall(
@@ -263,10 +264,11 @@ contract Unit_AccountingEngine_ModifyParameters is Base {
     assertEq(_surplusAuctionHouse, address(accountingEngine.surplusAuctionHouse()));
   }
 
-  function test_ModifyParameters_DebtAuctionHouse(address _debtAuctionHouse) public authorized {
-    vm.assume(uint160(_debtAuctionHouse) > 20);
-    vm.etch(_debtAuctionHouse, '0xF');
-
+  function test_ModifyParameters_DebtAuctionHouse(address _debtAuctionHouse)
+    public
+    authorized
+    mockAsContract(_debtAuctionHouse)
+  {
     accountingEngine.modifyParameters('debtAuctionHouse', abi.encode(_debtAuctionHouse));
 
     assertEq(_debtAuctionHouse, address(accountingEngine.debtAuctionHouse()));

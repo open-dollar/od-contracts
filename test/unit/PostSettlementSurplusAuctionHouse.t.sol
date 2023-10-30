@@ -114,9 +114,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_Constructor is Base {
     assertEq(address(postSettlementSurplusAuctionHouse.safeEngine()), _safeEngine);
   }
 
-  function test_Set_ProtocolToken(address _protocolToken) public happyPath {
-    vm.assume(uint160(_protocolToken) > 20);
-    vm.etch(_protocolToken, '0xF');
+  function test_Set_ProtocolToken(address _protocolToken) public happyPath mockAsContract(_protocolToken) {
     postSettlementSurplusAuctionHouse =
       new PostSettlementSurplusAuctionHouseForTest(address(mockSafeEngine), _protocolToken, pssahParams);
 
@@ -667,10 +665,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_ModifyParameters is Base {
     assertEq(abi.encode(_params), abi.encode(_fuzz));
   }
 
-  function test_Set_ProtocolToken(address _protocolToken) public happyPath {
-    vm.assume(uint160(_protocolToken) > 20);
-    vm.etch(_protocolToken, '0xF');
-
+  function test_Set_ProtocolToken(address _protocolToken) public happyPath mockAsContract(_protocolToken) {
     postSettlementSurplusAuctionHouse.modifyParameters('protocolToken', abi.encode(_protocolToken));
 
     assertEq(address(postSettlementSurplusAuctionHouse.protocolToken()), _protocolToken);

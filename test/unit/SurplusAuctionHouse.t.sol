@@ -147,10 +147,7 @@ contract Unit_SurplusAuctionHouse_Constructor is Base {
     assertEq(address(surplusAuctionHouse.safeEngine()), _safeEngine);
   }
 
-  function test_Set_ProtocolToken(address _protocolToken) public happyPath {
-    vm.assume(uint160(_protocolToken) > 20);
-    vm.etch(_protocolToken, '0xF');
-
+  function test_Set_ProtocolToken(address _protocolToken) public happyPath mockAsContract(_protocolToken) {
     surplusAuctionHouse = new SurplusAuctionHouseForTest(address(mockSafeEngine), _protocolToken, sahParams);
 
     assertEq(address(surplusAuctionHouse.protocolToken()), _protocolToken);
@@ -908,10 +905,7 @@ contract Unit_SurplusAuctionHouse_ModifyParameters is Base {
     assertEq(abi.encode(_params), abi.encode(_fuzz));
   }
 
-  function test_Set_ProtocolToken(address _protocolToken) public happyPath {
-    vm.assume(uint160(_protocolToken) > 20);
-    vm.etch(_protocolToken, '0xF');
-
+  function test_Set_ProtocolToken(address _protocolToken) public happyPath mockAsContract(_protocolToken) {
     surplusAuctionHouse.modifyParameters('protocolToken', abi.encode(_protocolToken));
 
     assertEq(address(surplusAuctionHouse.protocolToken()), _protocolToken);
