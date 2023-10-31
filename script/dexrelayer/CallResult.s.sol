@@ -28,11 +28,40 @@ contract CallResult is Script {
   uint256 private constant MINT_AMOUNT = 1_000_000 ether;
   uint256 private constant ORACLE_PERIOD = 1 seconds;
 
-  ICamelotRelayer public camelotRelayer = ICamelotRelayer(0x27F8839C1dfe338DA95f956eFaB0a4bcd6aab568);
+  ICamelotRelayer public camelotRelayer = ICamelotRelayer(0x14C9aBBE9e521E50CBB04D1584755102B2ed5CD7);
 
   function run() public {
     vm.startBroadcast(vm.envUint('GOERLI_PK'));
+    (
+      uint160 price,
+      int24 tick,
+      int24 prevInitializedTick,
+      uint16 fee,
+      uint16 timepointIndex,
+      uint8 communityFee,
+      bool unlocked
+    ) = getGlobalState(IAlgebraPool(camelotRelayer.camelotPool()));
+
     camelotRelayer.getResultWithValidity();
     vm.stopBroadcast();
+  }
+
+  /**
+   * @dev helper functions
+   */
+  function getGlobalState(IAlgebraPool _pool)
+    public
+    view
+    returns (
+      uint160 price,
+      int24 tick,
+      int24 prevInitializedTick,
+      uint16 fee,
+      uint16 timepointIndex,
+      uint8 communityFee,
+      bool unlocked
+    )
+  {
+    (price, tick, prevInitializedTick, fee, timepointIndex, communityFee, unlocked) = _pool.globalState();
   }
 }

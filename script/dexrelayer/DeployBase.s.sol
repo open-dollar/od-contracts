@@ -110,20 +110,4 @@ contract DeployBase is Script {
     uint256 sqrtPriceX96 = FixedPointMathLib.sqrt(price * WAD) * (2 ** 96);
     return uint160(sqrtPriceX96);
   }
-
-  function getGlobalState(IAlgebraPool _pool)
-    public
-    view
-    returns (
-      uint160 price,
-      int24 tick,
-      int24 prevInitializedTick,
-      uint16 fee,
-      uint16 timepointIndex,
-      uint8 communityFee,
-      bool unlocked
-    )
-  {
-    (price, tick, prevInitializedTick, fee, timepointIndex, communityFee, unlocked) = _pool.globalState();
-  }
 }
