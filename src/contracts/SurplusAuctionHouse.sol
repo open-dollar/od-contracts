@@ -139,14 +139,29 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
     if (_bid <= _auction.bidAmount) revert SAH_BidNotHigher();
     if (_bid * WAD < _params.bidIncrease * _auction.bidAmount) revert SAH_InsufficientIncrease();
 
-    if (msg.sender != _auction.highBidder) {
-      protocolToken.safeTransferFrom(msg.sender, _auction.highBidder, _auction.bidAmount);
+    // The amount that will be transferred to the auction house
+    uint256 _deltaBidAmount = _bid;
+
+    // Check if this is the first bid or not
+    if (_auction.bidExpiry != 0) {
+      // Since this is not the first bid, it might be that we need to repay the previous bidder
+      if (msg.sender != _auction.highBidder) {
+        protocolToken.safeTransferFrom(msg.sender, _auction.highBidder, _auction.bidAmount);
+
+        _auction.highBidder = msg.sender;
+      }
+      // Either we just repaid the previous bidder,
+      // or this user is also the previous bidder and is incrementing his bid
+      _deltaBidAmount -= _auction.bidAmount;
+    } else {
+      // This is the first bid
       _auction.highBidder = msg.sender;
     }
-    protocolToken.safeTransferFrom(msg.sender, address(this), _bid - _auction.bidAmount);
 
     _auction.bidAmount = _bid;
     _auction.bidExpiry = block.timestamp + _params.bidDuration;
+
+    protocolToken.safeTransferFrom(msg.sender, address(this), _deltaBidAmount);
 
     emit IncreaseBidSize({
       _id: _id,
