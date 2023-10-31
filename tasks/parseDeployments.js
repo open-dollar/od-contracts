@@ -53,7 +53,7 @@ fs.readFile(filePath, "utf8", (err, data) => {
 
 const createGoerliDeploymentsFile = (contracts) => {
   const addressText = Object.keys(contracts).reduce((acc, curr) => {
-    acc += `    address public ${curr}_Address = ${contracts[curr]};\n`;
+    acc += `  address public ${curr}_Address = ${contracts[curr]};\n`;
     return acc;
   }, "");
 
@@ -62,7 +62,8 @@ const createGoerliDeploymentsFile = (contracts) => {
 pragma solidity 0.8.19;
 
 abstract contract GoerliContracts {
-${addressText}}`;
+${addressText}}
+`;
 
   fs.writeFile(outputPath, content, (err) => {
     if (err) {

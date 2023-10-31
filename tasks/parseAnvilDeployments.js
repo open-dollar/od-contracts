@@ -53,7 +53,7 @@ fs.readFile(filePath, "utf8", (err, data) => {
 
 const createAnvilDeploymentsFile = (contracts) => {
   const addressText = Object.keys(contracts).reduce((acc, curr) => {
-    acc += `    address public ${curr}_Address = ${contracts[curr]};\n`;
+    acc += `  address public ${curr}_Address = ${contracts[curr]};\n`;
     return acc;
   }, "");
 
@@ -62,7 +62,8 @@ const createAnvilDeploymentsFile = (contracts) => {
 pragma solidity 0.8.19;
 
 abstract contract AnvilContracts {
-${addressText}}`;
+${addressText}}
+`;
 
   fs.writeFile(outputPath, content, (err) => {
     if (err) {
