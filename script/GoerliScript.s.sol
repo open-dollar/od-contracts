@@ -17,12 +17,12 @@ import '@script/Registry.s.sol';
 contract GoerliScript is GoerliDeployment, Common, Script {
   function setUp() public virtual {
     _governorPK = uint256(vm.envBytes32('GOERLI_GOVERNOR_PK'));
-    chainId = 421_613;
+    chainId = 421_614;
   }
 
   /**
    * @notice This script is left as an example on how to use GoerliScript contract
-   * @dev    This script is executed with `yarn script:goerli` command
+   * @dev    This script is executed with `yarn script:sepolia` command
    */
   function run() public {
     _getEnvironmentParams();
@@ -40,7 +40,7 @@ contract GoerliScript is GoerliDeployment, Common, Script {
 contract GoerliDelegate is GoerliDeployment, Common, Script {
   function setUp() public virtual {
     _governorPK = uint256(vm.envBytes32('GOERLI_GOVERNOR_PK'));
-    chainId = 421_613;
+    chainId = 421_614;
   }
 
   function run() public {
