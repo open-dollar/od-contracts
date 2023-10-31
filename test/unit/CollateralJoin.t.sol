@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {CollateralJoinForTest, ICollateralJoin} from '@test/mocks/CollateralJoinForTest.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IERC20Metadata, IERC20} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
+import {SafeERC20} from '@openzeppelin/token/ERC20/utils/SafeERC20.sol';
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 
 import {Math} from '@libraries/Math.sol';
@@ -185,7 +186,7 @@ contract Unit_CollateralJoin_Join is Base {
 
     _mockValues(_wei, _decimals, false);
 
-    vm.expectRevert('SafeERC20: ERC20 operation did not succeed');
+    vm.expectRevert(abi.encodeWithSelector(SafeERC20.SafeERC20FailedOperation.selector, address(mockCollateral)));
 
     collateralJoin.join(_account, _wei);
   }
@@ -265,7 +266,7 @@ contract Unit_CollateralJoin_Exit is Base {
 
     _mockValues(_account, _wei, _decimals, false);
 
-    vm.expectRevert('SafeERC20: ERC20 operation did not succeed');
+    vm.expectRevert(abi.encodeWithSelector(SafeERC20.SafeERC20FailedOperation.selector, address(mockCollateral)));
 
     collateralJoin.exit(_account, _wei);
   }

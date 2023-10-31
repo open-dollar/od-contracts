@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {CollateralJoinFactoryForTest, ICollateralJoinFactory} from '@test/mocks/CollateralJoinFactoryForTest.sol';
 import {CollateralJoinChild} from '@contracts/factories/CollateralJoinChild.sol';
@@ -7,7 +7,7 @@ import {CollateralJoinDelegatableChild} from '@contracts/factories/CollateralJoi
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ICollateralJoin} from '@interfaces/utils/ICollateralJoin.sol';
 import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
-import {ERC20Votes} from '@openzeppelin/token/ERC20/extensions/ERC20Votes.sol';
+import {ERC20Votes, Votes} from '@openzeppelin/token/ERC20/extensions/ERC20Votes.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IFactoryChild} from '@interfaces/factories/IFactoryChild.sol';
@@ -267,7 +267,7 @@ contract Unit_CollateralJoinFactory_DeployDelegatableCollateralJoin is Base {
   }
 
   function test_Call_ERC20Votes_Delegate() public happyPath(18) {
-    vm.expectCall(address(mockCollateral), abi.encodeCall(ERC20Votes.delegate, (delegatee)));
+    vm.expectCall(address(mockCollateral), abi.encodeCall(Votes.delegate, (delegatee)));
 
     collateralJoinFactory.deployDelegatableCollateralJoin(collateralType, address(mockCollateral), delegatee);
   }

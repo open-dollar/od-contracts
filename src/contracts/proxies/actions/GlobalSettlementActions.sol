@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {HaiSafeManager} from '@contracts/proxies/HaiSafeManager.sol';
 import {CommonActions} from '@contracts/proxies/actions/CommonActions.sol';

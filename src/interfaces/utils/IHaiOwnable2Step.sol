@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 interface IHaiOwnable2Step {
   // --- Events ---
@@ -34,7 +34,7 @@ interface IHaiOwnable2Step {
    * @dev Can only be called by the current owner
    */
   function renounceOwnership() external;
-  
+
   /**
    * @notice Starts the ownership transfer of the contract to a new account
    * @dev Replaces the pending transfer if there is one

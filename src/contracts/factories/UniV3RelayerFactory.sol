@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {IUniV3RelayerFactory} from '@interfaces/factories/IUniV3RelayerFactory.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';

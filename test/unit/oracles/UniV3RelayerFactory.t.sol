@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {UniV3RelayerFactory} from '@contracts/factories/UniV3RelayerFactory.sol';
 import {UniV3RelayerChild} from '@contracts/factories/UniV3RelayerChild.sol';

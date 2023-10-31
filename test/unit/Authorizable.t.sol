@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {AuthorizableForTest, IAuthorizable} from '@test/mocks/AuthorizableForTest.sol';
 import {HaiTest} from '@test/utils/HaiTest.t.sol';

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {IHaiProxy} from '@interfaces/proxies/IHaiProxy.sol';
 
-import {HaiOwnable2Step, IHaiOwnable2Step} from '@contracts/utils/HaiOwnable2Step.sol';
+import {HaiOwnable2Step, Ownable, IHaiOwnable2Step} from '@contracts/utils/HaiOwnable2Step.sol';
 
 /**
  * @title  HaiProxy
@@ -16,9 +16,7 @@ contract HaiProxy is HaiOwnable2Step, IHaiProxy {
   /**
    * @param  _owner The owner of the proxy contract
    */
-  constructor(address _owner) {
-    _transferOwnership(_owner);
-  }
+  constructor(address _owner) Ownable(_owner) {}
 
   // --- Methods ---
 

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {ModifiableForTest, IModifiable} from '@test/mocks/ModifiableForTest.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';

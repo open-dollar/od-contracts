@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 import {MerkleTreeGenerator} from '@test/utils/MerkleTreeGenerator.sol';

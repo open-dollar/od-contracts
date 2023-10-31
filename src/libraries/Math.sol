@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 /// @dev Max uint256 value that a RAD can represent without overflowing
 uint256 constant MAX_RAD = type(uint256).max / RAY;
