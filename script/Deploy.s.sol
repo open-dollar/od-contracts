@@ -81,7 +81,7 @@ abstract contract Deploy is Common, Script {
       // mainnet: revoke deployer, authorize governor
       _revokeAllTo(governor);
     } else {
-      // goerli || anvil: revoke deployer, authorize [H, P, governor]
+      // sepolia || anvil: revoke deployer, authorize [H, P, governor]
       _delegateAllTo(H);
       _delegateAllTo(P);
       _revokeAllTo(governor);
@@ -165,7 +165,7 @@ contract DeployGoerli is GoerliParams, Deploy {
 
   function setUp() public virtual {
     _deployerPk = uint256(vm.envBytes32('GOERLI_DEPLOYER_PK'));
-    chainId = 421_613;
+    chainId = 421_614;
   }
 
   function mintAirdrop() public virtual override {
@@ -186,9 +186,10 @@ contract DeployGoerli is GoerliParams, Deploy {
     collateral[RETH] = new MintableERC20('Rocket Pool ETH', 'rETH', 3);
     collateral[MAGIC] = new MintableERC20('Magic', 'MAGIC', 0);
 
-    // to USD
-    chainlinkEthUSDPriceFeed =
-      chainlinkRelayerFactory.deployChainlinkRelayer(GOERLI_CHAINLINK_ETH_USD_FEED, ORACLE_INTERVAL_TEST);
+    // to USD - Sepolia does not have Chainlink feeds now
+    // chainlinkEthUSDPriceFeed =
+    //   chainlinkRelayerFactory.deployChainlinkRelayer(GOERLI_CHAINLINK_ETH_USD_FEED, ORACLE_INTERVAL_TEST);
+    chainlinkEthUSDPriceFeed = new OracleForTestnet(1815e18);
 
     // to ETH
     OracleForTestnet _arbETHPriceFeed = new OracleForTestnet(GOERLI_ARB_ETH_PRICE_FEED);

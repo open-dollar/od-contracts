@@ -163,8 +163,8 @@ contract E2EDeploymentGoerliTest is DeployGoerli, CommonDeploymentTest {
   uint256 FORK_BLOCK = 10_000_000;
 
   function setUp() public override {
-    // vm.createSelectFork(vm.rpcUrl('goerli'), FORK_BLOCK);
-    uint256 forkId = vm.createFork(vm.rpcUrl('goerli'));
+    // vm.createSelectFork(vm.rpcUrl('sepolia'), FORK_BLOCK);
+    uint256 forkId = vm.createFork(vm.rpcUrl('sepolia'));
     vm.selectFork(forkId);
 
     // governor = address(69);
@@ -189,8 +189,8 @@ contract E2EDeploymentGoerliTest is DeployGoerli, CommonDeploymentTest {
 
 contract GoerliDeploymentTest is GoerliDeployment, CommonDeploymentTest {
   function setUp() public {
-    // vm.createSelectFork(vm.rpcUrl('goerli'), GOERLI_DEPLOYMENT_BLOCK);
-    uint256 forkId = vm.createFork(vm.rpcUrl('goerli'));
+    // vm.createSelectFork(vm.rpcUrl('sepolia'), GOERLI_DEPLOYMENT_BLOCK);
+    uint256 forkId = vm.createFork(vm.rpcUrl('sepolia'));
     vm.selectFork(forkId);
 
     _getEnvironmentParams();
