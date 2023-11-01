@@ -186,9 +186,10 @@ contract DeployGoerli is GoerliParams, Deploy {
     collateral[RETH] = new MintableERC20('Rocket Pool ETH', 'rETH', 3);
     collateral[MAGIC] = new MintableERC20('Magic', 'MAGIC', 0);
 
-    // to USD
-    chainlinkEthUSDPriceFeed =
-      chainlinkRelayerFactory.deployChainlinkRelayer(GOERLI_CHAINLINK_ETH_USD_FEED, ORACLE_INTERVAL_TEST);
+    // to USD - Sepolia does not have Chainlink feeds now
+    // chainlinkEthUSDPriceFeed =
+    //   chainlinkRelayerFactory.deployChainlinkRelayer(GOERLI_CHAINLINK_ETH_USD_FEED, ORACLE_INTERVAL_TEST);
+    chainlinkEthUSDPriceFeed = new OracleForTestnet(1815e18);
 
     // to ETH
     OracleForTestnet _arbETHPriceFeed = new OracleForTestnet(GOERLI_ARB_ETH_PRICE_FEED);
