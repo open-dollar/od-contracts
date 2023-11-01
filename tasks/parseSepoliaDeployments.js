@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const filePath = path.join(__dirname, "../deployments/run-latest.json");
+const filePath = path.join(__dirname, "../deployments/sepolia_421614/run-latest.json");
 
 fs.readFile(filePath, "utf8", (err, data) => {
   if (err) {
