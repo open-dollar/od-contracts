@@ -8,10 +8,10 @@ import {IAlgebraPool} from '@interfaces/oracles/IAlgebraPool.sol';
 import 'forge-std/console2.sol';
 
 // BROADCAST
-// source .env && forge script InitCamelotPool --with-gas-price 2000000000 -vvvvv --rpc-url $GOERLI_RPC --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY
+// source .env && forge script InitCamelotPool --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
 
 // SIMULATE
-// source .env && forge script InitCamelotPool --with-gas-price 2000000000 -vvvvv --rpc-url $GOERLI_RPC
+// source .env && forge script InitCamelotPool --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC
 
 contract InitCamelotPool is LiquidityBase {
   using FixedPointMathLib for uint256;
@@ -20,7 +20,7 @@ contract InitCamelotPool is LiquidityBase {
   address public pool;
 
   function run() public {
-    vm.startBroadcast(vm.envUint('GOERLI_PK'));
+    vm.startBroadcast(vm.envUint('ARB_SEPOLIA_PK'));
     // camelotV3Factory.createPool(tokenA, tokenB);
 
     // tokenA = OD w/ 18 decimal, tokenB = WETH w/ 18 decimal

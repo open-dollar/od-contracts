@@ -21,7 +21,7 @@ abstract contract Deploy is Common, Script {
   function mintAirdrop() public virtual {}
 
   function run() public {
-    deployer = vm.addr(_deployerPk); // GOERLI_DEPLOYER_PK
+    deployer = vm.addr(_deployerPk); // ARB_SEPOLIA_DEPLOYER_PK
     vm.startBroadcast(deployer);
 
     // set governor to deployer during deployment
@@ -164,7 +164,7 @@ contract DeployGoerli is GoerliParams, Deploy {
   IBaseOracle public chainlinkEthUSDPriceFeed;
 
   function setUp() public virtual {
-    _deployerPk = uint256(vm.envBytes32('GOERLI_DEPLOYER_PK'));
+    _deployerPk = uint256(vm.envBytes32('ARB_SEPOLIA_DEPLOYER_PK'));
     chainId = 421_614;
   }
 
