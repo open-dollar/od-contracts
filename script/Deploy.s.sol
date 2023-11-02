@@ -34,7 +34,7 @@ abstract contract Deploy is Common, Script {
     inputs[1] = 'rev-parse';
     inputs[2] = 'HEAD';
 
-    bytes memory res = vm.ffi(inputs);
+    // bytes memory res = vm.ffi(inputs);
 
     // Deploy oracle factories used to setup the environment
     deployOracleFactories();

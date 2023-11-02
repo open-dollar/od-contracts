@@ -1,6 +1,6 @@
 {
   "name": "@opendollar/contracts",
-  "version": "1.5.7",
+  "version": "1.5.8",
   "private": true,
   "description": "Multicollateral ETH backed stablecoin",
   "homepage": "https://www.opendollar.com/",
@@ -24,8 +24,8 @@
     "deploy:anvil": "bash -c 'source .env && forge script DeployAnvil --with-gas-price 2000000000 -vvvvv --rpc-url $ANVIL_RPC --private-key $ANVIL_ONE --broadcast --ffi'",
     "deploy:mainnet": "bash -c 'source .env && forge script DeployMainnet --rpc-url $MAINNET_RPC --broadcast --private-key $MAINNET_DEPLOYER_PK --verify --etherscan-api-key $ETHERSCAN_API_KEY'",
     "deploy:mainnet:ffi": "bash -c 'source .env && forge script DeployMainnet --rpc-url $MAINNET_RPC --broadcast --private-key $MAINNET_DEPLOYER_PK --verify --etherscan-api-key $ETHERSCAN_API_KEY --ffi'",
-    "deploy:sepolia": "bash -c 'source .env && forge script DeployGoerli --with-gas-price 2000000000 -vvvvv --rpc-url $SEPOLIA_RPC --private-key $GOERLI_DEPLOYER_PK --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY'",
-    "deploy:sepolia:ffi": "bash -c 'source .env && forge script DeployGoerli --with-gas-price 2000000000 -vvvvv --rpc-url $SEPOLIA_RPC --private-key $GOERLI_DEPLOYER_PK --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY --ffi'",
+    "deploy:sepolia": "bash -c 'source .env && forge script DeployGoerli --with-gas-price 2000000000 -vvvvv --chain-id 461614 --rpc-url $SEPOLIA_RPC --private-key $GOERLI_DEPLOYER_PK --broadcast --verifier etherscan --verifier-url $SEPOLIA_API --verify --etherscan-api-key $ETHERSCAN_API_KEY'",
+    "deploy:sepolia:ffi": "bash -c 'source .env && forge script DeployGoerli --with-gas-price 2000000000 -vvvvv --chain-id 461614 --rpc-url $SEPOLIA_RPC --private-key $GOERLI_DEPLOYER_PK --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY --ffi'",
     "postinstall": "forge install",
     "lint:check": "yarn lint:sol && forge fmt --check",
     "lint:fix": "sort-package-json && forge fmt && yarn lint:sol --fix",

@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 // Open Dollar
-// Version 1.5.7
+// Version 1.5.8
 
 contract ODProxy {
   error TargetAddressRequired();
