@@ -38,8 +38,8 @@ contract Deployment is Contracts, GoerliContracts, Script {
   IERC20 public constant WETH_TOKEN = IERC20(GOERLI_WETH);
 
   // User wallet address
-  address public USER1 = vm.envAddress('GOERLI_PUBLIC1');
-  address public USER2 = vm.envAddress('GOERLI_PUBLIC2');
+  address public USER1 = vm.envAddress('ARB_SEPOLIA_PUBLIC1');
+  address public USER2 = vm.envAddress('ARB_SEPOLIA_PUBLIC2');
 
   // Safe id
   uint256 public SAFE = vm.envUint('SAFE');
