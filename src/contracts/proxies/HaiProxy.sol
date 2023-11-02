@@ -3,7 +3,10 @@ pragma solidity 0.8.20;
 
 import {IHaiProxy} from '@interfaces/proxies/IHaiProxy.sol';
 
-import {HaiOwnable2Step, Ownable, IHaiOwnable2Step} from '@contracts/utils/HaiOwnable2Step.sol';
+import {HaiOwnable2Step, IHaiOwnable2Step} from '@contracts/utils/HaiOwnable2Step.sol';
+
+import {Ownable} from '@openzeppelin/access/Ownable.sol';
+import {Address} from '@openzeppelin/utils/Address.sol';
 
 /**
  * @title  HaiProxy
@@ -11,6 +14,8 @@ import {HaiOwnable2Step, Ownable, IHaiOwnable2Step} from '@contracts/utils/HaiOw
  * @dev    The proxy executes a delegate call to an Actions contract, which have the logic to execute the batched transactions
  */
 contract HaiProxy is HaiOwnable2Step, IHaiProxy {
+  using Address for address;
+
   // --- Init ---
 
   /**
@@ -23,13 +28,7 @@ contract HaiProxy is HaiOwnable2Step, IHaiProxy {
   /// @inheritdoc IHaiProxy
   function execute(address _target, bytes memory _data) external payable onlyOwner returns (bytes memory _response) {
     if (_target == address(0)) revert TargetAddressRequired();
-
-    bool _succeeded;
-    (_succeeded, _response) = _target.delegatecall(_data);
-
-    if (!_succeeded) {
-      revert TargetCallFailed(_response);
-    }
+    _response = _target.functionDelegateCall(_data);
   }
 
   // --- Overrides ---

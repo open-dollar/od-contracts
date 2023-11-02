@@ -23,7 +23,7 @@ abstract contract Base is HaiTest {
   }
 }
 
-contract Unit_InitiateTransferOwnership is Base {
+contract Unit_HaiSafeManager_TransferSAFEOwnership is Base {
   event InitiateTransferSAFEOwnership(address indexed _sender, uint256 indexed _safe, address _dst);
 
   modifier happyPath(uint256 _safe, IHaiSafeManager.SAFEData memory _safeData, address _recipient) {
@@ -86,7 +86,7 @@ contract Unit_InitiateTransferOwnership is Base {
     safeManager.transferSAFEOwnership(_safe, _recipient);
   }
 
-  function test_revert_AlreadySafeOwner(
+  function test_Revert_AlreadySafeOwner(
     uint256 _safe,
     IHaiSafeManager.SAFEData memory _safeData,
     address _recipient
@@ -98,7 +98,7 @@ contract Unit_InitiateTransferOwnership is Base {
   }
 }
 
-contract Unit_AcceptTransferOwnership is Base {
+contract Unit_HaiSafeManager_AcceptSAFEOwnership is Base {
   event TransferSAFEOwnership(address indexed _sender, uint256 indexed _safe, address _dst);
 
   function test_AcceptTransferOwnership(uint256 _safe, IHaiSafeManager.SAFEData memory _safeData) external {
