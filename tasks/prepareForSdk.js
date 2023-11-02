@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const filePath = path.join(__dirname, "../script/GoerliContracts.s.sol");
+const filePath = path.join(__dirname, "../script/SepoliaContracts.s.sol");
 
 fs.readFile(filePath, "utf8", (err, data) => {
   if (err) {
