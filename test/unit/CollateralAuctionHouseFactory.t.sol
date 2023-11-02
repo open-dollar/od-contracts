@@ -87,19 +87,19 @@ contract Unit_CollateralAuctionHouseFactory_Constructor is Base {
   }
 
   function test_Revert_Null_SafeEngine() public happyPath {
-    vm.expectRevert(Assertions.NullAddress.selector);
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
 
     new CollateralAuctionHouseFactoryForTest(address(0), address(mockLiquidationEngine), address(mockOracleRelayer));
   }
 
   function test_Revert_Null_LiquidationEngine() public happyPath {
-    vm.expectRevert(Assertions.NullAddress.selector);
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
 
     new CollateralAuctionHouseFactoryForTest(address(mockSafeEngine), address(0), address(mockOracleRelayer));
   }
 
   function test_Revert_Null_OracleRelayer() public happyPath {
-    vm.expectRevert(Assertions.NullAddress.selector);
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
 
     new CollateralAuctionHouseFactoryForTest(address(mockSafeEngine), address(mockLiquidationEngine), address(0));
   }
@@ -199,7 +199,7 @@ contract Unit_CollateralAuctionHouseFactory_ModifyParameters is Base {
     _;
   }
 
-  function test_Set_LiquidationEngine(address _liquidationEngine) public happyPath {
+  function test_Set_LiquidationEngine(address _liquidationEngine) public happyPath mockAsContract(_liquidationEngine) {
     vm.assume(_liquidationEngine != address(0));
     vm.assume(_liquidationEngine != deployer);
     vm.assume(_liquidationEngine != authorizedAccount);
@@ -212,7 +212,7 @@ contract Unit_CollateralAuctionHouseFactory_ModifyParameters is Base {
   function test_Emit_Authorization_LiquidationEngine(
     address _oldLiquidationEngine,
     address _newLiquidationEngine
-  ) public happyPath {
+  ) public happyPath mockAsContract(_newLiquidationEngine) {
     vm.assume(_newLiquidationEngine != address(0));
     vm.assume(_newLiquidationEngine != deployer);
     vm.assume(_newLiquidationEngine != authorizedAccount);
@@ -233,7 +233,7 @@ contract Unit_CollateralAuctionHouseFactory_ModifyParameters is Base {
     collateralAuctionHouseFactory.modifyParameters('liquidationEngine', abi.encode(_newLiquidationEngine));
   }
 
-  function test_Set_OracleRelayer(address _oracleRelayer) public happyPath {
+  function test_Set_OracleRelayer(address _oracleRelayer) public happyPath mockAsContract(_oracleRelayer) {
     vm.assume(_oracleRelayer != address(0));
 
     collateralAuctionHouseFactory.modifyParameters('oracleRelayer', abi.encode(_oracleRelayer));
@@ -241,18 +241,18 @@ contract Unit_CollateralAuctionHouseFactory_ModifyParameters is Base {
     assertEq(collateralAuctionHouseFactory.oracleRelayer(), _oracleRelayer);
   }
 
-  function test_Revert_LiquidationEngine_NullAddress() public {
+  function test_Revert_LiquidationEngine_Null() public {
     vm.startPrank(authorizedAccount);
 
-    vm.expectRevert(Assertions.NullAddress.selector);
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
 
     collateralAuctionHouseFactory.modifyParameters('liquidationEngine', abi.encode(0));
   }
 
-  function test_Revert_OracleRelayer_NullAddress() public {
+  function test_Revert_OracleRelayer_Null() public {
     vm.startPrank(authorizedAccount);
 
-    vm.expectRevert(Assertions.NullAddress.selector);
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
 
     collateralAuctionHouseFactory.modifyParameters('oracleRelayer', abi.encode(0));
   }

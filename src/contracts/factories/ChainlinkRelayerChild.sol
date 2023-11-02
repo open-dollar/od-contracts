@@ -15,8 +15,13 @@ contract ChainlinkRelayerChild is ChainlinkRelayer, FactoryChild, IChainlinkRela
   // --- Init ---
 
   /**
-   * @param  _aggregator The address of the aggregator to relay
+   * @param  _priceFeed The address of the price feed to relay
+   * @param  _sequencerUptimeFeed The address of the sequencer uptime feed to relay
    * @param  _staleThreshold The threshold in seconds to consider the aggregator stale
    */
-  constructor(address _aggregator, uint256 _staleThreshold) ChainlinkRelayer(_aggregator, _staleThreshold) {}
+  constructor(
+    address _priceFeed,
+    address _sequencerUptimeFeed,
+    uint256 _staleThreshold
+  ) ChainlinkRelayer(_priceFeed, _sequencerUptimeFeed, _staleThreshold) {}
 }

@@ -267,13 +267,6 @@ abstract contract Common is Contracts, Params {
     oracleRelayer.updateCollateralPrice(_cType);
   }
 
-  function deployOracleFactories() public updateParams {
-    chainlinkRelayerFactory = new ChainlinkRelayerFactory();
-    uniV3RelayerFactory = new UniV3RelayerFactory();
-    denominatedOracleFactory = new DenominatedOracleFactory();
-    delayedOracleFactory = new DelayedOracleFactory();
-  }
-
   function deployPIDController() public updateParams {
     pidController = new PIDController({
             _cGains: _pidControllerGains,

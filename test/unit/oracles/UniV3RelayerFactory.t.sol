@@ -77,7 +77,7 @@ contract Unit_UniV3RelayerFactory_Constructor is Base {
     vm.expectEmit();
     emit AddAuthorization(user);
 
-    uniV3RelayerFactory = new UniV3RelayerFactory();
+    new UniV3RelayerFactory();
   }
 }
 

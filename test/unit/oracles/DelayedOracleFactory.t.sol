@@ -57,7 +57,7 @@ contract Unit_DelayedOracleFactory_Constructor is Base {
     vm.expectEmit();
     emit AddAuthorization(user);
 
-    delayedOracleFactory = new DelayedOracleFactory();
+    new DelayedOracleFactory();
   }
 }
 

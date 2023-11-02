@@ -53,7 +53,7 @@ contract Unit_DenominatedOracleFactory_Constructor is Base {
     vm.expectEmit();
     emit AddAuthorization(user);
 
-    denominatedOracleFactory = new DenominatedOracleFactory();
+    new DenominatedOracleFactory();
   }
 }
 
