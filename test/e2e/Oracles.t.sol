@@ -172,6 +172,40 @@ contract OracleSetup is HaiTest {
     assertEq(_result, NEW_ETH_USD_PRICE_18_DECIMALS);
   }
 
+  function test_DelayedOracleUpdateInvalidResult() public {
+    // The next update returns an invalid result (for the first 10 minutes)
+    vm.mockCall(
+      OP_CHAINLINK_ETH_USD_FEED,
+      abi.encodeWithSelector(IChainlinkOracle.latestRoundData.selector),
+      abi.encode(uint80(0), int256(NEW_ETH_USD_PRICE), uint256(0), block.timestamp + 1 hours + 10 minutes, uint80(0))
+    );
+
+    bool _valid;
+    vm.warp(block.timestamp + 1 hours);
+    wethUsdDelayedOracle.updateResult();
+
+    // The 'next' feed is now the current feed, which will be valid
+    (, _valid) = wethUsdDelayedOracle.getResultWithValidity();
+    assertEq(_valid, true);
+    // The upcoming feed however is invalid
+    (, _valid) = wethUsdDelayedOracle.getNextResultWithValidity();
+    assertEq(_valid, false);
+
+    // After 10 minutes this result becomes valid and it's updated to reflect this
+    vm.warp(block.timestamp + 10 minutes);
+    wethUsdDelayedOracle.updateResult();
+
+    // The current feed should stay valid
+    (, _valid) = wethUsdDelayedOracle.getResultWithValidity();
+    assertEq(_valid, true);
+    // Check that the next feed now has also become valid
+    (, _valid) = wethUsdDelayedOracle.getNextResultWithValidity();
+    assertEq(_valid, true);
+
+    vm.warp(block.timestamp + 1 hours);
+    wethUsdDelayedOracle.updateResult();
+  }
+
   function test_DelayedOracleSymbol() public {
     assertEq(wethUsdDelayedOracle.symbol(), 'ETH / USD');
   }
