@@ -5,6 +5,8 @@ import 'forge-std/Script.sol';
 import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
 
 import {GoerliContracts} from '@script/GoerliContracts.s.sol';
+import {SepoliaContracts} from '@script/SepoliaContracts.s.sol';
+
 import {Contracts} from '@script/Contracts.s.sol';
 import {MintableERC20} from '@contracts/for-test/MintableERC20.sol';
 import {MintableVoteERC20} from '@contracts/for-test/MintableVoteERC20.sol';
@@ -26,7 +28,7 @@ import {CollateralJoin} from '@contracts/utils/CollateralJoin.sol';
 import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
 import {TaxCollector} from '@contracts/TaxCollector.sol';
 
-contract Deployment is Contracts, GoerliContracts, Script {
+contract Deployment is Contracts, SepoliaContracts, Script {
   // Wad
   uint256 public constant WAD = 1 ether;
   uint256 public constant ZERO_DEBT = 0;
