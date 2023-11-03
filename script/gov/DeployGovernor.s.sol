@@ -8,14 +8,18 @@ import {TimelockController} from '@openzeppelin/governance/TimelockController.so
 import {H, J, P} from '@script/Registry.s.sol';
 
 // BROADCAST
-// source .env && forge script DeployGovernor --with-gas-price 2000000000 -vvvvv --rpc-url $GOERLI_RPC --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY
+// source .env && forge script DeployGovernor --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
+
+// source .env && forge script DeployGovernor --with-gas-price 2000000000 -vvvvv --chain-id 461614 --rpc-url $ARB_SEPOLIA_RPC --broadcast --verify --verifier-url $SEPOLIA_API --etherscan-api-key $ARB_ETHERSCAN_API_KEY --watch
+
+// source .env && forge verify-contract 0xDb21D9e5616AEc3fA365879eCf3A5765C96bb62b ODGovernor --chain-id 461614 --watch --etherscan-api-key MQNZSPKCBZ9R4JEAW7FFFJ43DY9IVTAE7D
 
 // SIMULATE
-// source .env && forge script DeployGovernor --with-gas-price 2000000000 -vvvvv --rpc-url $GOERLI_RPC
+// source .env && forge script DeployGovernor --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC
 
 contract DeployGovernor is GoerliContracts, Script {
   function run() public {
-    vm.startBroadcast(vm.envUint('GOERLI_PK'));
+    vm.startBroadcast(vm.envUint('ARB_SEPOLIA_PK'));
     address[] memory members = new address[](3);
     members[0] = H;
     members[1] = J;

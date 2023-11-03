@@ -80,7 +80,6 @@ abstract contract Common is Contracts, Params {
 
     // factories or children
     _revoke(chainlinkRelayerFactory, _governor);
-    _revoke(uniV3RelayerFactory, _governor);
     _revoke(camelotRelayerFactory, _governor);
     _revoke(denominatedOracleFactory, _governor);
     _revoke(delayedOracleFactory, _governor);
@@ -131,7 +130,6 @@ abstract contract Common is Contracts, Params {
     _delegate(coinJoin, __delegate);
 
     _delegate(chainlinkRelayerFactory, __delegate);
-    _delegate(uniV3RelayerFactory, __delegate);
     _delegate(camelotRelayerFactory, __delegate);
     _delegate(denominatedOracleFactory, __delegate);
     _delegate(delayedOracleFactory, __delegate);
@@ -180,7 +178,7 @@ abstract contract Common is Contracts, Params {
     timelockController.grantRole(timelockController.PROPOSER_ROLE(), address(odGovernor));
     timelockController.grantRole(timelockController.EXECUTOR_ROLE(), address(odGovernor));
 
-    // revoke deployer from TIMELOCK_ADMIN_ROLE
+    // // revoke deployer from TIMELOCK_ADMIN_ROLE
     timelockController.renounceRole(timelockController.TIMELOCK_ADMIN_ROLE(), deployer);
   }
 
@@ -317,7 +315,6 @@ abstract contract Common is Contracts, Params {
 
   function deployOracleFactories() public updateParams {
     chainlinkRelayerFactory = new ChainlinkRelayerFactory();
-    uniV3RelayerFactory = new UniV3RelayerFactory();
     camelotRelayerFactory = new CamelotRelayerFactory();
     denominatedOracleFactory = new DenominatedOracleFactory();
     delayedOracleFactory = new DelayedOracleFactory();

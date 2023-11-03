@@ -35,6 +35,5 @@ fuzz_runs = 5000
 src = 'test'
 
 [rpc_endpoints]
-mainnet = "${MAINNET_RPC}"
-goerli = "${GOERLI_RPC}"
-sepolia = "${SEPOLIA_RPC}"
+mainnet = "${ARB_MAINNET_RPC}"
+sepolia = "${ARB_SEPOLIA_RPC}"

@@ -48,20 +48,20 @@ fs.readFile(filePath, "utf8", (err, data) => {
   }, {});
   console.log("Deployment file parsed successfully!");
 
-  createGoerliDeploymentsFile(contracts);
+  createSepoliaDeploymentsFile(contracts);
 });
 
-const createGoerliDeploymentsFile = (contracts) => {
+const createSepoliaDeploymentsFile = (contracts) => {
   const addressText = Object.keys(contracts).reduce((acc, curr) => {
     acc += `  address public ${curr}_Address = ${contracts[curr]};\n`;
     return acc;
   }, "");
 
-  const outputPath = path.join(__dirname, "../script/GoerliContracts.s.sol");
+  const outputPath = path.join(__dirname, "../script/SepoliaContracts.s.sol");
   const content = `// SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-abstract contract GoerliContracts {
+abstract contract SepoliaContracts {
 ${addressText}}
 `;
 
@@ -71,6 +71,6 @@ ${addressText}}
       return;
     }
 
-    console.log("GoerliContracts.s.sol written to file successfully!");
+    console.log("SepoliaContracts.s.sol written to file successfully!");
   });
 };
