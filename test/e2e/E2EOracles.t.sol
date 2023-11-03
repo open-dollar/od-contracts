@@ -20,7 +20,7 @@ import {
 
 import {Math, WAD} from '@libraries/Math.sol';
 
-contract OracleSetup is HaiTest {
+contract E2EOracleSetup is HaiTest {
   using Math for uint256;
 
   uint256 FORK_BLOCK = 99_000_000;
@@ -180,11 +180,11 @@ contract OracleSetup is HaiTest {
   }
 
   function test_DelayedOracleUpdateInvalidResult() public {
-    // The next update returns an invalid result (for the first 10 minutes)
+    // The next update returns an invalid result
     vm.mockCall(
       OP_CHAINLINK_ETH_USD_FEED,
       abi.encodeWithSelector(IChainlinkOracle.latestRoundData.selector),
-      abi.encode(uint80(0), int256(NEW_ETH_USD_PRICE), uint256(0), block.timestamp + 1 hours + 10 minutes, uint80(0))
+      abi.encode(uint80(0), int256(NEW_ETH_USD_PRICE), uint256(0), block.timestamp - 1 days, uint80(0))
     );
 
     bool _valid;
@@ -198,7 +198,13 @@ contract OracleSetup is HaiTest {
     (, _valid) = wethUsdDelayedOracle.getNextResultWithValidity();
     assertEq(_valid, false);
 
-    // After 10 minutes this result becomes valid and it's updated to reflect this
+    // The next update returns a valid result
+    vm.mockCall(
+      OP_CHAINLINK_ETH_USD_FEED,
+      abi.encodeWithSelector(IChainlinkOracle.latestRoundData.selector),
+      abi.encode(uint80(0), int256(NEW_ETH_USD_PRICE), uint256(0), block.timestamp, uint80(0))
+    );
+
     vm.warp(block.timestamp + 10 minutes);
     wethUsdDelayedOracle.updateResult();
 

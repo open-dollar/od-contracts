@@ -2,6 +2,7 @@
 pragma solidity 0.8.20;
 
 import {IChainlinkRelayerChild} from '@interfaces/factories/IChainlinkRelayerChild.sol';
+import {IChainlinkOracle} from '@interfaces/oracles/IChainlinkOracle.sol';
 
 import {ChainlinkRelayer} from '@contracts/oracles/ChainlinkRelayer.sol';
 
@@ -24,4 +25,12 @@ contract ChainlinkRelayerChild is ChainlinkRelayer, FactoryChild, IChainlinkRela
     address _sequencerUptimeFeed,
     uint256 _staleThreshold
   ) ChainlinkRelayer(_priceFeed, _sequencerUptimeFeed, _staleThreshold) {}
+
+  /**
+   * @dev Overriding method bypasses the null address check, already performed by the factory
+   * @inheritdoc ChainlinkRelayer
+   */
+  function _setSequencerUptimeFeed(address _sequencerUptimeFeed) internal override {
+    sequencerUptimeFeed = IChainlinkOracle(_sequencerUptimeFeed);
+  }
 }

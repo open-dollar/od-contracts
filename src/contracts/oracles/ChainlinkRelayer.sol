@@ -37,11 +37,10 @@ contract ChainlinkRelayer is IBaseOracle, IChainlinkRelayer {
    */
   constructor(address _priceFeed, address _sequencerUptimeFeed, uint256 _staleThreshold) {
     if (_priceFeed == address(0)) revert ChainlinkRelayer_NullPriceFeed();
-    if (_sequencerUptimeFeed == address(0)) revert ChainlinkRelayer_NullSequencerUptimeFeed();
     if (_staleThreshold == 0) revert ChainlinkRelayer_NullStaleThreshold();
 
+    _setSequencerUptimeFeed(_sequencerUptimeFeed);
     priceFeed = IChainlinkOracle(_priceFeed);
-    sequencerUptimeFeed = IChainlinkOracle(_sequencerUptimeFeed);
     staleThreshold = _staleThreshold;
 
     multiplier = 18 - priceFeed.decimals();
@@ -90,5 +89,11 @@ contract ChainlinkRelayer is IBaseOracle, IChainlinkRelayer {
     // Make sure the staleThreshold has not passed after the feed timestamp
     uint256 _timeSinceFeed = block.timestamp - _feedTimestamp;
     return _timeSinceFeed <= staleThreshold;
+  }
+
+  /// @notice Sets the Chainlink sequencer uptime feed contract address
+  function _setSequencerUptimeFeed(address _sequencerUptimeFeed) internal virtual {
+    if (_sequencerUptimeFeed == address(0)) revert ChainlinkRelayer_NullSequencerUptimeFeed();
+    sequencerUptimeFeed = IChainlinkOracle(_sequencerUptimeFeed);
   }
 }

@@ -59,6 +59,7 @@ contract ChainlinkRelayerFactory is Authorizable, IChainlinkRelayerFactory {
 
   // --- Administration ---
 
+  /// @inheritdoc IChainlinkRelayerFactory
   function setSequencerUptimeFeed(address _sequencerUptimeFeed) external isAuthorized {
     _setSequencerUptimeFeed(_sequencerUptimeFeed);
   }
