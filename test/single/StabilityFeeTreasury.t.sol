@@ -72,7 +72,8 @@ contract SingleStabilityFeeTreasuryTest is DSTest {
       ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 0});
 
     safeEngine = new SAFEEngine(_safeEngineParams);
-    systemCoin = new SystemCoin('Coin', 'COIN');
+    systemCoin = new SystemCoin();
+    systemCoin.initialize('Coin', 'COIN');
     systemCoinA = new CoinJoin(address(safeEngine), address(systemCoin));
 
     IStabilityFeeTreasury.StabilityFeeTreasuryParams memory _stabilityFeeTreasuryParams = IStabilityFeeTreasury

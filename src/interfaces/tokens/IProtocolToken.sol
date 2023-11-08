@@ -9,6 +9,8 @@ import {
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 
 interface IProtocolToken is IVotesUpgradeable, IERC20MetadataUpgradeable, IERC20PermitUpgradeable, IAuthorizable {
+  function initialize(string memory _name, string memory _symbol) external;
+
   /**
    * @notice Mint an amount of tokens to an account
    * @param _account Address of the account to mint tokens to

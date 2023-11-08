@@ -162,8 +162,12 @@ abstract contract Common is Contracts, Params {
 
   function deployTokenGovernance() public updateParams {
     // deploy Tokens
-    systemCoin = new SystemCoin('Open Dollar', 'OD');
-    protocolToken = new ProtocolToken('Open Dollar Governance', 'ODG');
+    // systemCoin = new SystemCoin('Open Dollar', 'OD');
+    // protocolToken = new ProtocolToken('Open Dollar Governance', 'ODG');
+    systemCoin = new SystemCoin();
+    protocolToken = new ProtocolToken();
+    systemCoin.initialize('Open Dollar', 'OD');
+    protocolToken.initialize('Open Dollar Governance', 'ODG');
 
     address[] memory members = new address[](0);
 
@@ -371,7 +375,10 @@ abstract contract Common is Contracts, Params {
   }
 
   function deployProxyContracts() public updateParams {
-    vault721 = new Vault721(address(timelockController));
+    // vault721 = new Vault721(address(timelockController));
+    vault721 = new Vault721();
+    vault721.initialize(address(timelockController));
+
     safeManager = new ODSafeManager(address(safeEngine), address(vault721));
     nftRenderer =
       new NFTRenderer(address(vault721), address(oracleRelayer), address(taxCollector), address(collateralJoinFactory));

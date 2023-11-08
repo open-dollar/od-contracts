@@ -5,6 +5,8 @@ import {IERC20MetadataUpgradeable} from '@openzeppelin-upgradeable/token/ERC20/e
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 
 interface ISystemCoin is IERC20MetadataUpgradeable, IAuthorizable {
+  function initialize(string memory _name, string memory _symbol) external;
+
   /**
    * @notice Mint an amount of tokens to an account
    * @param _account Address of the account to mint tokens to
