@@ -5,8 +5,8 @@ import {IHaiProxy} from '@interfaces/proxies/IHaiProxy.sol';
 
 import {HaiOwnable2Step, IHaiOwnable2Step} from '@contracts/utils/HaiOwnable2Step.sol';
 
-import {Ownable} from '@openzeppelin/access/Ownable.sol';
-import {Address} from '@openzeppelin/utils/Address.sol';
+import {Ownable} from '@openzeppelin/contracts/access/Ownable.sol';
+import {Address} from '@openzeppelin/contracts/utils/Address.sol';
 
 /**
  * @title  HaiProxy

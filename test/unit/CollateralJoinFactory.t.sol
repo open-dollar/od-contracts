@@ -6,8 +6,8 @@ import {CollateralJoinChild} from '@contracts/factories/CollateralJoinChild.sol'
 import {CollateralJoinDelegatableChild} from '@contracts/factories/CollateralJoinDelegatableChild.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ICollateralJoin} from '@interfaces/utils/ICollateralJoin.sol';
-import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
-import {ERC20Votes, Votes} from '@openzeppelin/token/ERC20/extensions/ERC20Votes.sol';
+import {IERC20Metadata} from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
+import {IVotes} from '@openzeppelin/contracts/governance/utils/IVotes.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IFactoryChild} from '@interfaces/factories/IFactoryChild.sol';
@@ -267,7 +267,7 @@ contract Unit_CollateralJoinFactory_DeployDelegatableCollateralJoin is Base {
   }
 
   function test_Call_ERC20Votes_Delegate() public happyPath(18) {
-    vm.expectCall(address(mockCollateral), abi.encodeCall(Votes.delegate, (delegatee)));
+    vm.expectCall(address(mockCollateral), abi.encodeCall(IVotes.delegate, (delegatee)));
 
     collateralJoinFactory.deployDelegatableCollateralJoin(collateralType, address(mockCollateral), delegatee);
   }

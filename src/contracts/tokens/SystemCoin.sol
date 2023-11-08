@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.20;
 
-import {ERC20Permit, ERC20} from '@openzeppelin/token/ERC20/extensions/ERC20Permit.sol';
+import {ERC20Permit, ERC20} from '@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol';
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
 import {ISystemCoin} from '@interfaces/tokens/ISystemCoin.sol';

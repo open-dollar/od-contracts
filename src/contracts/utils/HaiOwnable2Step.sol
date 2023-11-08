@@ -3,7 +3,7 @@ pragma solidity 0.8.20;
 
 import {IHaiOwnable2Step} from '@interfaces/utils/IHaiOwnable2Step.sol';
 
-import {Ownable2Step, Ownable} from '@openzeppelin/access/Ownable2Step.sol';
+import {Ownable2Step, Ownable} from '@openzeppelin/contracts/access/Ownable2Step.sol';
 
 /**
  * @title  HaiOwnable2Step

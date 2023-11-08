@@ -4,7 +4,7 @@ pragma solidity 0.8.20;
 import {LiquidationEngine} from '@contracts/LiquidationEngine.sol';
 import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
 
-import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
+import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 contract LiquidationEngineForTest is LiquidationEngine {
   using EnumerableSet for EnumerableSet.AddressSet;

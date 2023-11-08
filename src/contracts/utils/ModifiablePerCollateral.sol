@@ -5,7 +5,7 @@ import {IModifiablePerCollateral} from '@interfaces/utils/IModifiablePerCollater
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
-import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
+import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 /**
  * @title  ModifiablePerCollateral

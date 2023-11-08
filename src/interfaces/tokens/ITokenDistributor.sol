@@ -2,7 +2,7 @@
 pragma solidity 0.8.20;
 
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
-import {ERC20Votes} from '@openzeppelin/token/ERC20/extensions/ERC20Votes.sol';
+import {ERC20Votes} from '@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol';
 
 interface ITokenDistributor is IAuthorizable {
   // --- Events ---

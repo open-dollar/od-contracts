@@ -3,7 +3,7 @@ pragma solidity 0.8.20;
 
 import {HaiProxy, IHaiProxy} from '@contracts/proxies/HaiProxy.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
-import {Address} from '@openzeppelin/utils/Address.sol';
+import {Address} from '@openzeppelin/contracts/utils/Address.sol';
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 
 abstract contract Base is HaiTest {

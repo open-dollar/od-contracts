@@ -9,7 +9,7 @@ import {DelayedOracleChild} from '@contracts/factories/DelayedOracleChild.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
-import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
+import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 /**
  * @title  DelayedOracleFactory

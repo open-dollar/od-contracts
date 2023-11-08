@@ -6,9 +6,9 @@ import {Deploy, DeployMainnet, DeployGoerli} from '@script/Deploy.s.sol';
 
 import {ParamChecker, WETH, WSTETH, OP} from '@script/Params.s.sol';
 import {OP_OPTIMISM} from '@script/Registry.s.sol';
-import {ERC20Votes} from '@openzeppelin/token/ERC20/extensions/ERC20Votes.sol';
+import {ERC20Votes} from '@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol';
 
-import {Contracts} from '@script/Contracts.s.sol';
+import {Contracts, IPIDRateSetter, IUniV3Relayer} from '@script/Contracts.s.sol';
 import {GoerliDeployment} from '@script/GoerliDeployment.s.sol';
 
 abstract contract CommonDeploymentTest is HaiTest, Deploy {
@@ -146,6 +146,24 @@ contract E2EDeploymentMainnetTest is DeployMainnet, CommonDeploymentTest {
 
   function setupPostEnvironment() public override(DeployMainnet, Deploy) {
     super.setupPostEnvironment();
+  }
+
+  function test_pid_update_rate() public {
+    vm.expectRevert(IPIDRateSetter.PIDRateSetter_InvalidPriceFeed.selector);
+    pidRateSetter.updateRate();
+
+    uint256 _quotePeriod = IUniV3Relayer(address(systemCoinOracle)).quotePeriod();
+    skip(_quotePeriod);
+
+    pidRateSetter.updateRate();
+
+    vm.expectRevert(IPIDRateSetter.PIDRateSetter_RateSetterCooldown.selector);
+    pidRateSetter.updateRate();
+
+    uint256 _updateRateDelay = pidRateSetter.params().updateRateDelay;
+    skip(_updateRateDelay);
+
+    pidRateSetter.updateRate();
   }
 }
 

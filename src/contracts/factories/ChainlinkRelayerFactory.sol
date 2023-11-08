@@ -9,7 +9,7 @@ import {ChainlinkRelayerChild} from '@contracts/factories/ChainlinkRelayerChild.
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
-import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
+import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 /**
  * @title  ChainlinkRelayerFactory

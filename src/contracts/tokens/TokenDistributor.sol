@@ -5,10 +5,10 @@ import {ITokenDistributor} from '@interfaces/tokens/ITokenDistributor.sol';
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 
-import {ERC20Votes} from '@openzeppelin/token/ERC20/extensions/ERC20Votes.sol';
-import {MerkleProof} from '@openzeppelin/utils/cryptography/MerkleProof.sol';
+import {ERC20Votes} from '@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol';
+import {MerkleProof} from '@openzeppelin/contracts/utils/cryptography/MerkleProof.sol';
 
-import {SafeERC20} from '@openzeppelin/token/ERC20/utils/SafeERC20.sol';
+import {SafeERC20} from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 /**
  * @title  TokenDistributor

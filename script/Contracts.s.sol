@@ -32,7 +32,7 @@ import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {DelayedOracle, IDelayedOracle} from '@contracts/oracles/DelayedOracle.sol';
 import {DenominatedOracle} from '@contracts/oracles/DenominatedOracle.sol';
 import {ChainlinkRelayer} from '@contracts/oracles/ChainlinkRelayer.sol';
-import {UniV3Relayer} from '@contracts/oracles/UniV3Relayer.sol';
+import {UniV3Relayer, IUniV3Relayer} from '@contracts/oracles/UniV3Relayer.sol';
 
 // --- Testnet contracts ---
 import {MintableERC20} from '@contracts/for-test/MintableERC20.sol';
@@ -60,7 +60,9 @@ import {LiquidationJob, ILiquidationJob} from '@contracts/jobs/LiquidationJob.so
 import {OracleJob, IOracleJob} from '@contracts/jobs/OracleJob.sol';
 
 // --- Interfaces ---
-import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
+import {IERC20Metadata} from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
+import {IUniswapV3Factory} from '@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol';
+import {IUniswapV3Pool} from '@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 

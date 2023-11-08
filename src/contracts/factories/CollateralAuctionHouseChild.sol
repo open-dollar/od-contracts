@@ -12,7 +12,7 @@ import {AuthorizableChild, Authorizable} from '@contracts/factories/Authorizable
 import {DisableableChild, Disableable} from '@contracts/factories/DisableableChild.sol';
 
 import {Math, RAY, WAD} from '@libraries/Math.sol';
-import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
+import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 /**
  * @title  CollateralAuctionHouseChild

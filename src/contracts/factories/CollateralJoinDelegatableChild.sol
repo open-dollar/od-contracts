@@ -2,7 +2,7 @@
 pragma solidity 0.8.20;
 
 import {ICollateralJoinChild} from '@interfaces/factories/ICollateralJoinChild.sol';
-import {ERC20Votes} from '@openzeppelin/token/ERC20/extensions/ERC20Votes.sol';
+import {ERC20Votes} from '@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol';
 import {CollateralJoinChild} from '@contracts/factories/CollateralJoinChild.sol';
 import {ICollateralJoinDelegatableChild} from '@interfaces/factories/ICollateralJoinDelegatableChild.sol';
 import {Assertions} from '@libraries/Assertions.sol';

@@ -5,7 +5,7 @@ import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 import {MerkleTreeGenerator} from '@test/utils/MerkleTreeGenerator.sol';
 import {ITokenDistributor, TokenDistributor} from '@contracts/tokens/TokenDistributor.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
-import {ERC20Votes} from '@openzeppelin/token/ERC20/extensions/ERC20Votes.sol';
+import {ERC20Votes} from '@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 
 abstract contract Base is HaiTest {

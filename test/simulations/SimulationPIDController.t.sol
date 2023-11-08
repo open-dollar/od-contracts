@@ -27,6 +27,7 @@ contract SimulationPIDController is TestParams, Deploy, HaiTest {
     systemCoinOracle = IBaseOracle(marketOracle);
     _getEnvironmentParams();
     run();
+    pidRateSetter.updateRate();
     vm.startPrank(deployer);
   }
 

@@ -8,7 +8,7 @@ import {UniV3RelayerChild} from '@contracts/factories/UniV3RelayerChild.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
-import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
+import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 /**
  * @title  UniV3RelayerFactory

@@ -11,7 +11,7 @@ import {Authorizable, IAuthorizable} from '@contracts/utils/Authorizable.sol';
 import {Disableable, IDisableable} from '@contracts/utils/Disableable.sol';
 
 import {Assertions} from '@libraries/Assertions.sol';
-import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
+import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 /**
  * @title  CollateralJoinFactory

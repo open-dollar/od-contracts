@@ -8,7 +8,7 @@ import {DenominatedOracleChild} from '@contracts/factories/DenominatedOracleChil
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
-import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
+import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 /**
  * @title  DenominatedOracleFactory

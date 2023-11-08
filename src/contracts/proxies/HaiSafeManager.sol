@@ -6,7 +6,7 @@ import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ILiquidationEngine} from '@interfaces/ILiquidationEngine.sol';
 
 import {Math} from '@libraries/Math.sol';
-import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
+import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 
 import {IHaiSafeManager} from '@interfaces/proxies/IHaiSafeManager.sol';
