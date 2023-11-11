@@ -90,8 +90,6 @@ interface ILiquidationEngine is IAuthorizable, IDisableable, IModifiable, IModif
   error LiqEng_InvalidSAFESaviourOperation();
   /// @notice Throws when trying to liquidate a SAFE with a null amount of debt
   error LiqEng_NullAuction();
-  /// @notice Throws when trying to liquidate a SAFE that would leave it in a dusty state
-  error LiqEng_DustySAFE();
   /// @notice Throws when trying to liquidate a SAFE with a null amount of collateral to sell
   error LiqEng_NullCollateralToSell();
   /// @notice Throws when trying to call a function only the liquidator is allowed to call
