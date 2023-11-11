@@ -11,13 +11,15 @@ The SAFE Manager Contract serves as an interface for interacting with the SAFE E
 ### Key Methods:
 
 - `openSAFE`: Deploys a new SAFE Handler contract and registers it in the SAFE Manager.
-- `transferSAFEOwnership`: Transfers ownership of a SAFE to another address.
+- `transferSAFEOwnership`: Initiates the ownership transfer of a SAFE to another address (doesn't reset SAFE protection).
+- `acceptSAFEOwnership`: Commits to the ownership transfer of a SAFE to another address (needs to be called by the new SAFE owner).
 - `modifySAFECollateralization`: Modifies the collateralization ratio of a SAFE (lock/free collateral and/or generate/repay debt).
 - `transferCollateral`: Transfers collateral from one account to another.
 - `transferInternalCoins`: Transfers internal coins from one account to another.
 - `quitSystem`: Closes a SAFE and transfers all remaining collateral and debt to the user's address.
 - `enterSystem`: Migrates collateral and debt from a source SAFE Handler to a destination SAFE.
 - `moveSAFE`: Migrates a SAFE from one SAFE to another.
+- `protectSAFE`: Protects a SAFE from being liquidated, using a SafeSaviour position to improve the SAFE health when it falls below the liquidation ratio.
 
 ## 3. Key Mechanisms & Concepts
 
@@ -38,6 +40,12 @@ The SAFE Manager Contract allows users to specify which addresses are authorized
 One unique feature is the ability to transfer ownership of a SAFE to another address. This facilitates a range of possibilities, including the sale of debt positions or the use of SAFEs in more complex financial products.
 
 By providing a more accessible interface to the underlying SAFE Engine, the SAFE Manager Contract is an essential tool for anyone looking to interact with SAFEs in the HAI ecosystem.
+
+### SAFE Protection
+
+SAFE owners can choose to connect a SafeSaviour position in order to improve the SAFE health and protect it from liquidation. When the SAFE is on the process of being liquidated, the SafeSaviour contract will unwind the user's position, in order to either reduce the SAFE debt, or increase its collateral, to improve the SAFE health and try to prevent liquidation.
+
+SAFE owners need to account that the SafeSaviour position is connected to the SAFE id, so when transferring ownership to another account, it is responsibility of the previous owner to disconnect any liquidity deposited in the SafeSaviour contract.
 
 ## 4. Gotchas
 
