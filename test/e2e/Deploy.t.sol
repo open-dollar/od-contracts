@@ -194,6 +194,8 @@ contract GoerliDeploymentTest is GoerliDeployment, CommonDeploymentTest {
     vm.selectFork(forkId);
 
     _getEnvironmentParams();
+    
+    run();
   }
 
   function test_Delegated_OP() public {
