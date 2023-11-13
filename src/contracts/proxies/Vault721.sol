@@ -11,6 +11,9 @@ import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 // Open Dollar
 // Version 1.5.8
 
+/**
+ * @notice Upgradeable contract used as singleton, but is not upgradeable
+ */
 contract Vault721 is ERC721EnumerableUpgradeable {
   error NotGovernor();
   error ProxyAlreadyExist();

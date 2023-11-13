@@ -10,6 +10,7 @@ import {Initializable} from '@openzeppelin-upgradeable/proxy/utils/Initializable
 /**
  * @title  Authorizable
  * @notice Implements authorization control for contracts
+ * @notice Upgradeable contract used as singleton, but is not upgradeable
  * @dev    Authorization control is boolean and handled by `onlyAuthorized` modifier
  */
 abstract contract AuthorizableUpgradeable is Initializable, IAuthorizable {
