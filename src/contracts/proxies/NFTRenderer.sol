@@ -78,15 +78,13 @@ contract NFTRenderer {
    */
   function render(uint256 _safeId) external view returns (string memory uri) {
     VaultParams memory params = renderParams(_safeId);
-    string memory desc = _renderDesc(params);
+    string memory text = _renderText(params);
     string memory debt = _floatingPoint(params.debt);
     string memory collateral = _floatingPoint(params.collateral);
 
     string memory json = string.concat(
-      '{"name":"Open Dollar Vault","attributes":[{"trait_type":"ID","value":"',
-      params.vaultId,
-      desc,
-      params.lastUpdate,
+      '{"name":"Open Dollar Vault"',
+      text,
       '"}],"image":"data:image/svg+xml;base64,',
       Base64.encode(
         bytes(
@@ -150,11 +148,33 @@ contract NFTRenderer {
   }
 
   /**
+   * @dev json text
+   */
+  function _renderText(VaultParams memory params) internal pure returns (string memory text) {
+    string memory desc = _renderDesc(params.vaultId);
+    string memory traits = _renderTraits(params);
+    text = string.concat(
+      '"description":', desc, '"attributes":[{"trait_type":"ID","value":"', params.vaultId, traits, params.lastUpdate
+    );
+  }
+
+  /**
    * @dev json description
    */
-  function _renderDesc(VaultParams memory params) internal pure returns (string memory desc) {
-    // stack at 16 slot max w/ 32-byte+ strings
+  function _renderDesc(string memory _safeId) internal pure returns (string memory desc) {
     desc = string.concat(
+      'Non-Fungible Vault #',
+      _safeId,
+      ' Caution! Trading this NFV gives the recipient full ownership of your Vault, including all collateral & debt obligations. This act is irreversible.'
+    );
+  }
+
+  /**
+   * @dev json attributes
+   */
+  function _renderTraits(VaultParams memory params) internal pure returns (string memory traits) {
+    // stack at 16 slot max w/ 32-byte+ strings
+    traits = string.concat(
       '"},{"trait_type":"Debt","value":"',
       params.debt.toString(),
       '"},{"trait_type":"Collateral","value":"',
