@@ -21,7 +21,6 @@ contract NFTRenderer {
   using DateTime for uint256;
 
   uint256 internal constant _RAY = 10 ** 27;
-  uint256 internal constant _WAD = 10 ** 18;
 
   IVault721 public immutable vault721;
 
@@ -43,6 +42,7 @@ contract NFTRenderer {
   }
 
   struct VaultParams {
+    uint256 decimals;
     string collateral;
     string debt;
     string metaCollateral;
@@ -131,13 +131,18 @@ contract NFTRenderer {
         ratio = 0;
       }
 
+      IERC20Metadata token = ICollateralJoin(_collateralJoinFactory.collateralJoins(cType)).collateral();
+      params.symbol = token.symbol();
+      uint256 decimals = token.decimals();
+      params.decimals = decimals;
+
       {
-        (uint256 left, uint256 right) = _floatingPoint(debt);
+        (uint256 left, uint256 right) = _floatingPoint(debt, decimals);
         params.debt = _parseNumberWithComma(left, right);
         params.metaDebt = _parseNumber(left, right);
       }
       {
-        (uint256 left, uint256 right) = _floatingPoint(collateral);
+        (uint256 left, uint256 right) = _floatingPoint(collateral, decimals);
         params.collateral = _parseNumberWithComma(left, right);
         params.metaCollateral = _parseNumber(left, right);
       }
@@ -151,9 +156,6 @@ contract NFTRenderer {
     ITaxCollector.TaxCollectorCollateralData memory taxData = _taxCollector.cData(cType);
     params.stabilityFee = (taxData.nextStabilityFee / _RAY).toString();
 
-    IERC20Metadata token = ICollateralJoin(_collateralJoinFactory.collateralJoins(cType)).collateral();
-    params.symbol = token.symbol();
-
     return params;
   }
 
@@ -164,7 +166,14 @@ contract NFTRenderer {
     string memory desc = _renderDesc(params.vaultId);
     string memory traits = _renderTraits(params);
     text = string.concat(
-      '"description":', desc, '"attributes":[{"trait_type":"ID","value":"', params.vaultId, traits, params.lastUpdate
+      '"description":',
+      desc,
+      '"attributes":[{"trait_type":"ID","value":"',
+      params.vaultId,
+      traits,
+      params.lastUpdate,
+      '"},{"trait_type":"Decimals","value":"',
+      params.decimals.toString()
     );
   }
 
@@ -294,11 +303,15 @@ contract NFTRenderer {
   /**
    * @dev converts uint from wei fixed-point to ether floating-point format
    */
-  function _floatingPoint(uint256 num) internal pure returns (uint256 left, uint256 right) {
-    left = num / _WAD;
-    uint256 expLeft = left * _WAD;
+  function _floatingPoint(uint256 num, uint256 decimals) internal pure returns (uint256 left, uint256 right) {
+    uint256 _pwr = 10 ** decimals;
+    uint256 _slice;
+    if (decimals > 4) _slice = 10 ** (decimals - 4);
+    else _slice = _pwr;
+    left = num / _pwr;
+    uint256 expLeft = left * _pwr;
     uint256 expRight = num - expLeft;
-    right = expRight / 1e14;
+    right = expRight / _slice; // format to 4 decimal places
   }
 
   /**
