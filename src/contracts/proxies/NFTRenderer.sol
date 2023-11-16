@@ -21,7 +21,6 @@ contract NFTRenderer {
   using DateTime for uint256;
 
   uint256 internal constant _RAY = 10 ** 27;
-  uint256 internal constant _WAD = 10 ** 18;
 
   IVault721 public immutable vault721;
 
@@ -43,8 +42,10 @@ contract NFTRenderer {
   }
 
   struct VaultParams {
-    uint256 collateral;
-    uint256 debt;
+    string collateral;
+    string debt;
+    string metaCollateral;
+    string metaDebt;
     string vaultId;
     string ratio;
     string stabilityFee;
@@ -78,21 +79,17 @@ contract NFTRenderer {
    */
   function render(uint256 _safeId) external view returns (string memory uri) {
     VaultParams memory params = renderParams(_safeId);
-    string memory desc = _renderDesc(params);
-    string memory debt = _floatingPoint(params.debt);
-    string memory collateral = _floatingPoint(params.collateral);
+    string memory text = _renderText(params);
 
     string memory json = string.concat(
-      '{"name":"Open Dollar Vault","attributes":[{"trait_type":"ID","value":"',
-      params.vaultId,
-      desc,
-      params.lastUpdate,
+      '{"name":"OD NFV #',
+      text,
       '"}],"image":"data:image/svg+xml;base64,',
       Base64.encode(
         bytes(
           string.concat(
             _renderVaultInfo(params.vaultId, params.color),
-            _renderCollatAndDebt(params.stabilityFee, debt, collateral, params.symbol, params.lastUpdate),
+            _renderCollatAndDebt(params.stabilityFee, params.debt, params.collateral, params.symbol, params.lastUpdate),
             _renderRisk(params.stroke, params.risk, params.ratio),
             _renderBackground(params.color)
           )
@@ -132,8 +129,21 @@ contract NFTRenderer {
       } else {
         ratio = 0;
       }
-      params.collateral = collateral;
-      params.debt = debt;
+
+      IERC20Metadata token = ICollateralJoin(_collateralJoinFactory.collateralJoins(cType)).collateral();
+      params.symbol = token.symbol();
+
+      {
+        (uint256 left, uint256 right) = _floatingPoint(debt);
+        params.debt = _parseNumberWithComma(left, right);
+        params.metaDebt = _parseNumber(left, right);
+      }
+      {
+        (uint256 left, uint256 right) = _floatingPoint(collateral);
+        params.collateral = _parseNumberWithComma(left, right);
+        params.metaCollateral = _parseNumber(left, right);
+      }
+
       params.lastUpdate = _formatDateTime(oracle.lastUpdateTime());
       (params.risk, params.color) = _calcRisk(ratio);
       params.stroke = _calcStroke(ratio);
@@ -143,22 +153,47 @@ contract NFTRenderer {
     ITaxCollector.TaxCollectorCollateralData memory taxData = _taxCollector.cData(cType);
     params.stabilityFee = (taxData.nextStabilityFee / _RAY).toString();
 
-    IERC20Metadata token = ICollateralJoin(_collateralJoinFactory.collateralJoins(cType)).collateral();
-    params.symbol = token.symbol();
-
     return params;
+  }
+
+  /**
+   * @dev json text
+   */
+  function _renderText(VaultParams memory params) internal pure returns (string memory text) {
+    string memory desc = _renderDesc(params.vaultId);
+    string memory traits = _renderTraits(params);
+    text = string.concat(
+      params.vaultId,
+      '","description":',
+      desc,
+      '"attributes":[{"trait_type":"ID","value":"',
+      params.vaultId,
+      traits,
+      params.lastUpdate
+    );
   }
 
   /**
    * @dev json description
    */
-  function _renderDesc(VaultParams memory params) internal pure returns (string memory desc) {
-    // stack at 16 slot max w/ 32-byte+ strings
+  function _renderDesc(string memory _safeId) internal pure returns (string memory desc) {
     desc = string.concat(
+      '"Non-Fungible Vault #',
+      _safeId,
+      ' Caution! Trading this NFV gives the recipient full ownership of your Vault, including all collateral & debt obligations. This act is irreversible.",'
+    );
+  }
+
+  /**
+   * @dev json attributes
+   */
+  function _renderTraits(VaultParams memory params) internal pure returns (string memory traits) {
+    // stack at 16 slot max w/ 32-byte+ strings
+    traits = string.concat(
       '"},{"trait_type":"Debt","value":"',
-      params.debt.toString(),
+      params.metaDebt,
       '"},{"trait_type":"Collateral","value":"',
-      params.collateral.toString(),
+      params.metaCollateral,
       '"},{"trait_type":"Collateral Type","value":"',
       params.symbol,
       '"},{"trait_type":"Stability Fee","value":"',
@@ -264,11 +299,28 @@ contract NFTRenderer {
   /**
    * @dev converts uint from wei fixed-point to ether floating-point format
    */
-  function _floatingPoint(uint256 num) internal pure returns (string memory) {
-    uint256 left = num / _WAD;
-    uint256 expLeft = left * _WAD;
+  function _floatingPoint(uint256 num) internal pure returns (uint256 left, uint256 right) {
+    left = num / 1e18;
+    uint256 expLeft = left * 1e18;
     uint256 expRight = num - expLeft;
-    uint256 right = expRight / 1e14;
+    right = expRight / 1e14; // format to 4 decimal places
+  }
+
+  /**
+   * @dev parses number
+   */
+  function _parseNumber(uint256 left, uint256 right) internal pure returns (string memory) {
+    if (left > 0) {
+      return string.concat(left.toString(), '.', right.toString());
+    } else {
+      return string.concat('0.', right.toString());
+    }
+  }
+
+  /**
+   * @dev parses comma-separeted number
+   */
+  function _parseNumberWithComma(uint256 left, uint256 right) internal pure returns (string memory) {
     if (left > 0) {
       return string.concat(_commaFormat(left), '.', right.toString());
     } else {
