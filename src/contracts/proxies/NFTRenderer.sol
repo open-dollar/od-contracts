@@ -121,6 +121,8 @@ contract NFTRenderer {
 
       IOracleRelayer.OracleRelayerCollateralParams memory oracleParams = _oracleRelayer.cParams(cType);
       IDelayedOracle oracle = oracleParams.oracle;
+      uint256 safetyCRatio = oracleParams.safetyCRatio / 10e24;
+      uint256 liquidationCRatio = oracleParams.liquidationCRatio / 10e24;
 
       uint256 ratio;
       if (collateral != 0 && debt != 0) {
@@ -145,7 +147,7 @@ contract NFTRenderer {
       }
 
       params.lastUpdate = _formatDateTime(oracle.lastUpdateTime());
-      (params.risk, params.color) = _calcRisk(ratio);
+      (params.risk, params.color) = _calcRisk(ratio, liquidationCRatio, safetyCRatio);
       params.stroke = _calcStroke(ratio);
       params.ratio = ratio.toString();
     }
@@ -281,10 +283,15 @@ contract NFTRenderer {
   /**
    * @dev calculates liquidation risk
    */
-  function _calcRisk(uint256 ratio) internal pure returns (string memory, string memory) {
-    if (ratio < 120) return ('LIQUIDATION', '#E45200');
-    else if (ratio > 119 && ratio < 136) return ('HIGH', '#E45200');
-    else if (ratio > 135 && ratio < 150) return ('ELEVATED', '#FCBF3B');
+  function _calcRisk(
+    uint256 ratio,
+    uint256 liquidationRatio,
+    uint256 safetyRatio
+  ) internal pure returns (string memory, string memory) {
+    if (ratio == 0) return ('LOW', '#459d00');
+    if (ratio <= liquidationRatio) return ('LIQUIDATION', '#E45200');
+    else if (ratio > liquidationRatio && ratio <= safetyRatio) return ('HIGH', '#E45200');
+    else if (ratio > safetyRatio && ratio < (safetyRatio * 120 / 100)) return ('ELEVATED', '#FCBF3B');
     else return ('LOW', '#459d00');
   }
 
