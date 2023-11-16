@@ -133,16 +133,15 @@ contract NFTRenderer {
 
       IERC20Metadata token = ICollateralJoin(_collateralJoinFactory.collateralJoins(cType)).collateral();
       params.symbol = token.symbol();
-      uint256 decimals = token.decimals();
-      params.decimals = decimals;
+      params.decimals = token.decimals();
 
       {
-        (uint256 left, uint256 right) = _floatingPoint(debt, decimals);
+        (uint256 left, uint256 right) = _floatingPoint(debt);
         params.debt = _parseNumberWithComma(left, right);
         params.metaDebt = _parseNumber(left, right);
       }
       {
-        (uint256 left, uint256 right) = _floatingPoint(collateral, decimals);
+        (uint256 left, uint256 right) = _floatingPoint(collateral);
         params.collateral = _parseNumberWithComma(left, right);
         params.metaCollateral = _parseNumber(left, right);
       }
@@ -303,15 +302,11 @@ contract NFTRenderer {
   /**
    * @dev converts uint from wei fixed-point to ether floating-point format
    */
-  function _floatingPoint(uint256 num, uint256 decimals) internal pure returns (uint256 left, uint256 right) {
-    uint256 _pwr = 10 ** decimals;
-    uint256 _slice;
-    if (decimals > 4) _slice = 10 ** (decimals - 4);
-    else _slice = _pwr;
-    left = num / _pwr;
-    uint256 expLeft = left * _pwr;
+  function _floatingPoint(uint256 num) internal pure returns (uint256 left, uint256 right) {
+    left = num / 10e18;
+    uint256 expLeft = left * 10e18;
     uint256 expRight = num - expLeft;
-    right = expRight / _slice; // format to 4 decimal places
+    right = expRight / 10e14; // format to 4 decimal places
   }
 
   /**
