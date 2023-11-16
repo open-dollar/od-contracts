@@ -163,13 +163,7 @@ contract NFTRenderer {
     string memory desc = _renderDesc(params.vaultId);
     string memory traits = _renderTraits(params);
     text = string.concat(
-      '"description":',
-      desc,
-      '"attributes":[{"trait_type":"ID","value":"',
-      params.vaultId,
-      traits,
-      params.lastUpdate,
-      '"}'
+      '"description":', desc, '"attributes":[{"trait_type":"ID","value":"', params.vaultId, traits, params.lastUpdate
     );
   }
 
@@ -300,10 +294,10 @@ contract NFTRenderer {
    * @dev converts uint from wei fixed-point to ether floating-point format
    */
   function _floatingPoint(uint256 num) internal pure returns (uint256 left, uint256 right) {
-    left = num / 10e18;
-    uint256 expLeft = left * 10e18;
+    left = num / 1e18;
+    uint256 expLeft = left * 1e18;
     uint256 expRight = num - expLeft;
-    right = expRight / 10e14; // format to 4 decimal places
+    right = expRight / 1e14; // format to 4 decimal places
   }
 
   /**
