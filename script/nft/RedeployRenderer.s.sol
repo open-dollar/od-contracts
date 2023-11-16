@@ -7,7 +7,7 @@ import {Vault721} from '@contracts/proxies/Vault721.sol';
 import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 
 // BROADCAST
-// source .env && forge script RedeployRenderer --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
+// source .env && forge script RedeployRenderer --skip-simulation --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
 
 // SIMULATE
 // source .env && forge script RedeployRenderer --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC

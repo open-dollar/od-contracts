@@ -82,7 +82,7 @@ contract NFTRenderer {
     string memory text = _renderText(params);
 
     string memory json = string.concat(
-      '{"name":"Open Dollar Vault",',
+      '{"name":"OD NFV #',
       text,
       '"}],"image":"data:image/svg+xml;base64,',
       Base64.encode(
@@ -163,7 +163,13 @@ contract NFTRenderer {
     string memory desc = _renderDesc(params.vaultId);
     string memory traits = _renderTraits(params);
     text = string.concat(
-      '"description":', desc, '"attributes":[{"trait_type":"ID","value":"', params.vaultId, traits, params.lastUpdate
+      params.vaultId,
+      '","description":',
+      desc,
+      '"attributes":[{"trait_type":"ID","value":"',
+      params.vaultId,
+      traits,
+      params.lastUpdate
     );
   }
 
