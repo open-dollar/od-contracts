@@ -42,7 +42,6 @@ contract NFTRenderer {
   }
 
   struct VaultParams {
-    uint256 decimals;
     string collateral;
     string debt;
     string metaCollateral;
@@ -133,7 +132,6 @@ contract NFTRenderer {
 
       IERC20Metadata token = ICollateralJoin(_collateralJoinFactory.collateralJoins(cType)).collateral();
       params.symbol = token.symbol();
-      params.decimals = token.decimals();
 
       {
         (uint256 left, uint256 right) = _floatingPoint(debt);
@@ -171,8 +169,7 @@ contract NFTRenderer {
       params.vaultId,
       traits,
       params.lastUpdate,
-      '"},{"trait_type":"Decimals","value":"',
-      params.decimals.toString()
+      '"}'
     );
   }
 
