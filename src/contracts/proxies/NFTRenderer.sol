@@ -288,7 +288,7 @@ contract NFTRenderer {
     uint256 liquidationRatio,
     uint256 safetyRatio
   ) internal pure returns (string memory, string memory) {
-    if (ratio == 0) return ('LOW', '#459d00');
+    if (ratio == 0) return ('NO', '#459d00');
     if (ratio <= liquidationRatio) return ('LIQUIDATION', '#E45200');
     else if (ratio > liquidationRatio && ratio <= safetyRatio) return ('HIGH', '#E45200');
     else if (ratio > safetyRatio && ratio < (safetyRatio * 120 / 100)) return ('ELEVATED', '#FCBF3B');
@@ -299,6 +299,7 @@ contract NFTRenderer {
    * @dev fills circular stroke by percentage of collateral over 100% up to 200%
    */
   function _calcStroke(uint256 ratio) internal pure returns (string memory) {
+    if (ratio == 0) return '0';
     if (ratio <= 100 || ratio >= 200) return '100';
     else return (ratio - 100).toString();
   }
