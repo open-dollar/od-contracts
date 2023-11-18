@@ -68,7 +68,7 @@ interface IODSafeManager {
   /// @notice Mapping of handler to a caller permissions
   function handlerCan(address _safeHandler, address _caller) external view returns (uint256 _ok);
 
-  /// @notice Mapping of handler to whether it exists 
+  /// @notice Mapping of handler to whether it exists
   function handlerExists(address _safeHandler) external view returns (bool _exists);
 
   // --- Getters ---

@@ -183,13 +183,13 @@ contract NFTAnvil is AnvilFork {
     );
 
     vm.startPrank(aliceProxy);
-    // TODO: when we deposit collateral, it is locked, how do we move it from locked to tokenCollateral so 
+    // TODO: when we deposit collateral, it is locked, how do we move it from locked to tokenCollateral so
     // we can transfer it? this will fail if we try to transfer non-zero value
     safeManager.transferCollateral(aliceVaultId, bobSafeHandler, 0);
     vm.stopPrank();
     assertEq(
       safeEngine.tokenCollateral(cType, bobSafeHandler),
-      0, 
+      0,
       'test_transferCollateralToSafeHandler: collateral is not equal'
     );
   }

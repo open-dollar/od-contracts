@@ -124,7 +124,7 @@ contract ODSafeManager is IODSafeManager {
     address _safeHandler = address(new SAFEHandler(safeEngine));
 
     _safeData[_safeId] = SAFEData({owner: _usr, safeHandler: _safeHandler, collateralType: _cType});
-    
+
     // Save the address of the safeHandler
     handlerExists[_safeHandler] = true;
 
