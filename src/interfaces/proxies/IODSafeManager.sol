@@ -43,6 +43,8 @@ interface IODSafeManager {
   error AlreadySafeOwner();
   /// @notice Throws when trying to move a safe to another one with different collateral type
   error CollateralTypesMismatch();
+  /// @notice Throws when trying to transfer collateral to an address that isn't a SAFEHandler
+  error HandlerDoesNotExist();
 
   // --- Structs ---
 
@@ -65,6 +67,9 @@ interface IODSafeManager {
 
   /// @notice Mapping of handler to a caller permissions
   function handlerCan(address _safeHandler, address _caller) external view returns (uint256 _ok);
+
+  /// @notice Mapping of handler to whether it exists 
+  function handlerExists(address _safeHandler) external view returns (bool _exists);
 
   // --- Getters ---
 

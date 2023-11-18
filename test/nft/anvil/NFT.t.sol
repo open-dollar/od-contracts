@@ -119,15 +119,15 @@ contract NFTAnvil is AnvilFork {
     address owner = vault721.ownerOf(vaultId);
     uint256 initBal = vault721.balanceOf(owner);
 
-    address reciever = newUsers[0];
+    address receiver = newUsers[0];
 
     vm.startPrank(owner);
-    vault721.transferFrom(owner, reciever, vaultId);
+    vault721.transferFrom(owner, receiver, vaultId);
     vm.stopPrank();
 
-    assertEq(reciever, vault721.ownerOf(vaultId));
+    assertEq(receiver, vault721.ownerOf(vaultId));
     assertEq(initBal - 1, vault721.balanceOf(owner));
-    assertEq(1, vault721.balanceOf(reciever));
+    assertEq(1, vault721.balanceOf(receiver));
   }
 
   /**
@@ -138,13 +138,56 @@ contract NFTAnvil is AnvilFork {
     address owner = vault721.ownerOf(vaultId);
     uint256 initBal = vault721.balanceOf(owner);
 
-    address reciever = address(0);
+    address receiver = address(0);
 
     vm.startPrank(owner);
     vm.expectRevert('ERC721: transfer to the zero address');
-    vault721.transferFrom(owner, reciever, vaultId);
+    vault721.transferFrom(owner, receiver, vaultId);
     vm.stopPrank();
 
     assertEq(initBal, vault721.balanceOf(owner));
+  }
+
+  /**
+   * @dev Test transfering collateral to an address
+   * that isn't a safeHandler reverts.
+   */
+  function test_transferCollateral_Fail(uint256 cTypeIndex) public {
+    address owner = users[0];
+    cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 2);
+    // @note TODO I believe this is a naive way of opening a safe
+    // and transferring collateral, but is still tests the new code
+    vm.startPrank(owner);
+    uint256 id = safeManager.openSAFE(cTypes[cTypeIndex], owner);
+    vm.expectRevert(IODSafeManager.HandlerDoesNotExist.selector);
+    safeManager.transferCollateral(id, owner, 1 ether);
+    vm.stopPrank();
+  }
+
+  /**
+   * @dev Test transfering collateral to an address that is a safeHandler
+   * succeeds
+   */
+  function test_transferCollateralToSafeHandler(uint256 cTypeIndex) public {
+    address alice = users[0];
+    address bob = users[1];
+    cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 2);
+    vm.startPrank(alice);
+    uint256 aliceSafeId = safeManager.openSAFE(cTypes[cTypeIndex], alice);
+    // TODO I need to figure out how to deposit collateral otherwise
+    // the transfer collateral below fails
+    vm.stopPrank();
+
+    vm.startPrank(bob);
+    uint256 bobSafeId = safeManager.openSAFE(cTypes[cTypeIndex], alice);
+    vm.stopPrank();
+
+    SAFEData memory bobSafeData = safeManager.safeData(bobSafeId);
+
+    vm.startPrank(alice);
+    safeManager.transferCollateral(aliceSafeId, bobSafeData.safeHandler, 0);
+    // TODO I need to figure out a different way of calling 
+    // transferCollateral, as the isSAFEAllowed modifier will fail in SAFEEngine.sol
+    vm.stopPrank();
   }
 }
