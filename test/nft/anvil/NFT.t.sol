@@ -182,7 +182,7 @@ contract NFTAnvil is AnvilFork {
     uint256 bobSafeId = safeManager.openSAFE(cTypes[cTypeIndex], alice);
     vm.stopPrank();
 
-    SAFEData memory bobSafeData = safeManager.safeData(bobSafeId);
+    IODSafeManager.SAFEData memory bobSafeData = safeManager.safeData(bobSafeId);
 
     vm.startPrank(alice);
     safeManager.transferCollateral(aliceSafeId, bobSafeData.safeHandler, 0);
