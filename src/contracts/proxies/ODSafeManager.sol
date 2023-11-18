@@ -172,7 +172,7 @@ contract ODSafeManager is IODSafeManager {
   /// @inheritdoc IODSafeManager
   function transferCollateral(uint256 _safe, address _dst, uint256 _wad) external safeAllowed(_safe) {
     SAFEData memory _sData = _safeData[_safe];
-    if (!handlerExists[_sData.safeHandler]) revert HandlerDoesNotExist();
+    if (!handlerExists[_dst]) revert HandlerDoesNotExist();
 
     ISAFEEngine(safeEngine).transferCollateral(_sData.collateralType, _sData.safeHandler, _dst, _wad);
     emit TransferCollateral(msg.sender, _safe, _dst, _wad);
