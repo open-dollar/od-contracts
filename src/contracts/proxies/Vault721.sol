@@ -20,7 +20,7 @@ contract Vault721 is ERC721Enumerable {
   NFTRenderer public nftRenderer;
 
   string public contractMetaData =
-    '{"name": "Open Dollar Vaults","description": "Tradable Vaults for the Open Dollar stablecoin protocol. Caution! Trading this NFT means trading the ownership of your Vault in the Open Dollar protocol and all of the assets/collateral inside each Vault.","image": "https://app.opendollar.com/collectionImage.png","external_link": "https://opendollar.com"}';
+    '{"name": "Open Dollar Vaults","description": "Open Dollar is a DeFi lending protocol that enables borrowing against liquid staking tokens while earning staking rewards and enabling liquidity via Non-Fungible Vaults (NFVs).","image": "https://app.opendollar.com/collectionImage.png","external_link": "https://opendollar.com"}';
 
   mapping(address proxy => address user) internal _proxyRegistry;
   mapping(address user => address proxy) internal _userRegistry;

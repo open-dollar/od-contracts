@@ -4,9 +4,9 @@ pragma solidity 0.8.19;
 import '@script/Contracts.s.sol';
 import {GoerliParams, WSTETH, ARB, CBETH, RETH, MAGIC} from '@script/GoerliParams.s.sol';
 import {GOERLI_CAMELOT_V3_FACTORY} from '@script/Registry.s.sol';
-import {GoerliContracts} from '@script/GoerliContracts.s.sol';
+import {SepoliaContracts} from '@script/SepoliaContracts.s.sol';
 
-abstract contract GoerliDeployment is Contracts, GoerliParams, GoerliContracts {
+abstract contract GoerliDeployment is Contracts, GoerliParams, SepoliaContracts {
   // NOTE: The last significant change in the Goerli deployment, to be used in the test scenarios
   uint256 constant GOERLI_DEPLOYMENT_BLOCK = 12_872_701;
 
@@ -55,7 +55,6 @@ abstract contract GoerliDeployment is Contracts, GoerliParams, GoerliContracts {
 
     // --- factories ---
     chainlinkRelayerFactory = ChainlinkRelayerFactory(ChainlinkRelayerFactory_Address);
-    uniV3RelayerFactory = UniV3RelayerFactory(UniV3RelayerFactory_Address);
     camelotRelayerFactory = CamelotRelayerFactory(CamelotRelayerFactory_Address);
     denominatedOracleFactory = DenominatedOracleFactory(DenominatedOracleFactory_Address);
     delayedOracleFactory = DelayedOracleFactory(DelayedOracleFactory_Address);
@@ -124,6 +123,6 @@ abstract contract GoerliDeployment is Contracts, GoerliParams, GoerliContracts {
     delayedOracle[RETH] = IDelayedOracle(DelayedOracleChild_RETH_Address);
     delayedOracle[MAGIC] = IDelayedOracle(DelayedOracleChild_MAGIC_Address);
 
-    camelotV3Factory = ICamelotV3Factory(GOERLI_CAMELOT_V3_FACTORY);
+    camelotV3Factory = ICamelotV3Factory(address(0));
   }
 }
