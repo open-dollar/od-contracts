@@ -9,4 +9,6 @@
 @interfaces/=src/interfaces/
 @libraries/=src/libraries/
 @script/=script/
-@test/=test/
+@testnet/=test/testnet/
+@testlocal/=test/testlocal/
+
