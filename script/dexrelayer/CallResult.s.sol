@@ -18,7 +18,7 @@ import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadat
 import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
 
 // BROADCAST
-// source .env && forge script CallResult --with-gas-price 2000000000 -vvvvv --rpc-url $GOERLI_RPC --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY
+// source .env && forge script CallResult --skip-simulation --with-gas-price 2000000000 -vvvvv --rpc-url $GOERLI_RPC --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY
 
 // SIMULATE
 // source .env && forge script CallResult --with-gas-price 2000000000 -vvvvv --rpc-url $GOERLI_RPC
@@ -28,7 +28,7 @@ contract CallResult is Script {
   uint256 private constant MINT_AMOUNT = 1_000_000 ether;
   uint256 private constant ORACLE_PERIOD = 1 seconds;
 
-  ICamelotRelayer public camelotRelayer = ICamelotRelayer(0x14C9aBBE9e521E50CBB04D1584755102B2ed5CD7);
+  ICamelotRelayer public camelotRelayer = ICamelotRelayer(0x05d4a78755400f26D4f889Fc2618bAB884a07e0a);
 
   function run() public {
     vm.startBroadcast(vm.envUint('GOERLI_PK'));
