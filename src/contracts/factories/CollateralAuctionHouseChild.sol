@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {ICollateralAuctionHouseChild} from '@interfaces/factories/ICollateralAuctionHouseChild.sol';
 import {ICollateralAuctionHouseFactory} from '@interfaces/factories/ICollateralAuctionHouseFactory.sol';
@@ -12,7 +12,7 @@ import {AuthorizableChild, Authorizable} from '@contracts/factories/Authorizable
 import {DisableableChild, Disableable} from '@contracts/factories/DisableableChild.sol';
 
 import {Math, RAY, WAD} from '@libraries/Math.sol';
-import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
+import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 /**
  * @title  CollateralAuctionHouseChild

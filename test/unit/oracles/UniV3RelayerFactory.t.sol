@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {UniV3RelayerFactory} from '@contracts/factories/UniV3RelayerFactory.sol';
 import {UniV3RelayerChild} from '@contracts/factories/UniV3RelayerChild.sol';
 import {IUniswapV3Factory} from '@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol';
 import {IUniswapV3Pool} from '@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol';
-import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
+import {IERC20Metadata} from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 
@@ -77,7 +77,7 @@ contract Unit_UniV3RelayerFactory_Constructor is Base {
     vm.expectEmit();
     emit AddAuthorization(user);
 
-    uniV3RelayerFactory = new UniV3RelayerFactory();
+    new UniV3RelayerFactory();
   }
 }
 

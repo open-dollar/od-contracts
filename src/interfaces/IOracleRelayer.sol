@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
-import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
+import {IModifiablePerCollateral} from '@interfaces/utils/IModifiablePerCollateral.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 
-interface IOracleRelayer is IAuthorizable, IModifiable, IDisableable {
+interface IOracleRelayer is IAuthorizable, IDisableable, IModifiable, IModifiablePerCollateral {
   // --- Events ---
 
   /**
@@ -47,7 +47,7 @@ interface IOracleRelayer is IAuthorizable, IModifiable, IDisableable {
 
   struct OracleRelayerCollateralParams {
     // Usually a DelayedOracle that enforces delays to fresh price feeds
-    IDelayedOracle /* */ oracle;
+    IBaseOracle /* */ oracle;
     // CRatio used to compute the 'safePrice' - the price used when generating debt in SAFEEngine
     uint256 /* RAY    */ safetyCRatio;
     // CRatio used to compute the 'liquidationPrice' - the price used when liquidating SAFEs
@@ -72,14 +72,14 @@ interface IOracleRelayer is IAuthorizable, IModifiable, IDisableable {
 
   /**
    * @notice Getter for the contract parameters struct
-   * @dev    Returns a OracleRelayerParams struct
+   * @return _oracleRelayerParams An OracleRelayerParams struct
    */
   function params() external view returns (OracleRelayerParams memory _oracleRelayerParams);
 
   /**
    * @notice Getter for the unpacked contract parameters struct
-   * @param _redemptionRateUpperBound Upper bound for the per-second redemption rate [ray]
-   * @param _redemptionRateLowerBound Lower bound for the per-second redemption rate [ray]
+   * @return _redemptionRateUpperBound Upper bound for the per-second redemption rate [ray]
+   * @return _redemptionRateLowerBound Lower bound for the per-second redemption rate [ray]
    */
   // solhint-disable-next-line private-vars-leading-underscore
   function _params() external view returns (uint256 _redemptionRateUpperBound, uint256 _redemptionRateLowerBound);
@@ -87,22 +87,22 @@ interface IOracleRelayer is IAuthorizable, IModifiable, IDisableable {
   /**
    * @notice Getter for the collateral parameters struct
    * @param  _cType Bytes32 representation of the collateral type
-   * @dev    Returns a OracleRelayerCollateralParams struct
+   * @return _oracleRelayerCParams An OracleRelayerCollateralParams struct
    */
   function cParams(bytes32 _cType) external view returns (OracleRelayerCollateralParams memory _oracleRelayerCParams);
 
   /**
    * @notice Getter for the unpacked collateral parameters struct
    * @param  _cType Bytes32 representation of the collateral type
-   * @param  _oracle Usually a DelayedOracle that enforces delays to fresh price feeds
-   * @param  _safetyCRatio CRatio used to compute the 'safePrice' - the price used when generating debt in SAFEEngine [ray]
-   * @param  _liquidationCRatio CRatio used to compute the 'liquidationPrice' - the price used when liquidating SAFEs [ray]
+   * @return  _oracle Usually a DelayedOracle that enforces delays to fresh price feeds
+   * @return  _safetyCRatio CRatio used to compute the 'safePrice' - the price used when generating debt in SAFEEngine [ray]
+   * @return  _liquidationCRatio CRatio used to compute the 'liquidationPrice' - the price used when liquidating SAFEs [ray]
    */
   // solhint-disable-next-line private-vars-leading-underscore
   function _cParams(bytes32 _cType)
     external
     view
-    returns (IDelayedOracle _oracle, uint256 _safetyCRatio, uint256 _liquidationCRatio);
+    returns (IBaseOracle _oracle, uint256 _safetyCRatio, uint256 _liquidationCRatio);
 
   // --- Data ---
 
@@ -154,19 +154,4 @@ interface IOracleRelayer is IAuthorizable, IModifiable, IDisableable {
    * @param  _redemptionRate The newly calculated redemption rate [ray]
    */
   function updateRedemptionRate(uint256 _redemptionRate) external;
-
-  /**
-   * @notice Register a new collateral type in the OracleRelayer
-   * @param  _cType Bytes32 representation of the collateral type
-   * @param  _collateralParams OracleRelayerCollateralParams valid struct containing the collateral parameters
-   */
-  function initializeCollateralType(bytes32 _cType, OracleRelayerCollateralParams memory _collateralParams) external;
-
-  // --- Views ---
-
-  /**
-   * @notice List of all the collateral types registered in the OracleRelayer
-   * @return __collateralList Array of all the collateral types registered
-   */
-  function collateralList() external view returns (bytes32[] memory __collateralList);
 }

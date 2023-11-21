@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 /**
  * @title  BaseUser
@@ -19,8 +19,6 @@ abstract contract BaseUser {
   function _getInternalCoinBalance(address _user) internal virtual returns (uint256 _rad);
 
   // --- SAFE actions ---
-
-  function _lockETH(address _user, uint256 _amount) internal virtual;
 
   function _joinTKN(address _user, address _collateralJoin, uint256 _amount) internal virtual;
 

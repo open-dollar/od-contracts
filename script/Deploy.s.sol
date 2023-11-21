@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import '@script/Contracts.s.sol';
-import '@script/Registry.s.sol';
 import '@script/Params.s.sol';
+import '@script/Registry.s.sol';
 
 import {Script} from 'forge-std/Script.sol';
 import {Common} from '@script/Common.s.sol';
@@ -18,8 +18,8 @@ abstract contract Deploy is Common, Script {
     deployer = vm.addr(_deployerPk);
     vm.startBroadcast(deployer);
 
-    // Deploy oracle factories used to setup the environment
-    deployOracleFactories();
+    // Deploy tokens used to setup the environment
+    deployTokens();
 
     // Environment may be different for each network
     setupEnvironment();
@@ -44,8 +44,7 @@ abstract contract Deploy is Common, Script {
     for (uint256 _i; _i < collateralTypes.length; _i++) {
       bytes32 _cType = collateralTypes[_i];
 
-      if (_cType == ETH_A) deployEthCollateralContracts();
-      else deployCollateralContracts(_cType);
+      deployCollateralContracts(_cType);
       _setupCollateral(_cType);
     }
 
@@ -75,6 +74,12 @@ contract DeployMainnet is MainnetParams, Deploy {
   }
 
   function setupEnvironment() public virtual override updateParams {
+    // Deploy oracle factories
+    chainlinkRelayerFactory = new ChainlinkRelayerFactory(OP_CHAINLINK_SEQUENCER_UPTIME_FEED);
+    uniV3RelayerFactory = new UniV3RelayerFactory();
+    denominatedOracleFactory = new DenominatedOracleFactory();
+    delayedOracleFactory = new DelayedOracleFactory();
+
     // Setup oracle feeds
     IBaseOracle _ethUSDPriceFeed = chainlinkRelayerFactory.deployChainlinkRelayer(OP_CHAINLINK_ETH_USD_FEED, 1 hours);
     IBaseOracle _wstethETHPriceFeed =
@@ -86,7 +91,6 @@ contract DeployMainnet is MainnetParams, Deploy {
       _inverted: false
     });
 
-    systemCoinOracle = new HardcodedOracle('HAI / USD', HAI_INITIAL_PRICE); // 1 HAI = 1 USD
     delayedOracle[WETH] = delayedOracleFactory.deployDelayedOracle(_ethUSDPriceFeed, 1 hours);
     delayedOracle[WSTETH] = delayedOracleFactory.deployDelayedOracle(_wstethUSDPriceFeed, 1 hours);
 
@@ -95,6 +99,17 @@ contract DeployMainnet is MainnetParams, Deploy {
 
     collateralTypes.push(WETH);
     collateralTypes.push(WSTETH);
+
+    // Deploy HAI/WETH UniV3 pool
+    _deployUniV3Pool();
+
+    // Setup HAI oracle feed
+    systemCoinOracle = uniV3RelayerFactory.deployUniV3Relayer({
+      _baseToken: address(systemCoin),
+      _quoteToken: address(collateral[WETH]),
+      _feeTier: HAI_POOL_FEE_TIER,
+      _quotePeriod: 1 days
+    });
   }
 
   function setupPostEnvironment() public virtual override updateParams {}
@@ -107,6 +122,12 @@ contract DeployGoerli is GoerliParams, Deploy {
   }
 
   function setupEnvironment() public virtual override updateParams {
+    // Deploy oracle factories
+    chainlinkRelayerFactory = new ChainlinkRelayerFactory(OP_GOERLI_CHAINLINK_SEQUENCER_UPTIME_FEED);
+    uniV3RelayerFactory = new UniV3RelayerFactory();
+    denominatedOracleFactory = new DenominatedOracleFactory();
+    delayedOracleFactory = new DelayedOracleFactory();
+
     // Setup oracle feeds
 
     // HAI

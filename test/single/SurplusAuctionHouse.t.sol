@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import 'ds-test/test.sol';
 
@@ -27,17 +27,17 @@ contract GuyBurningSurplusAuction {
     surplusAuctionHouse.protocolToken().approve(address(surplusAuctionHouse), type(uint256).max);
   }
 
-  function increaseBidSize(uint256 id, uint256 amountToBuy, uint256 bid) public {
-    surplusAuctionHouse.increaseBidSize(id, amountToBuy, bid);
+  function increaseBidSize(uint256 id, uint256 bid) public {
+    surplusAuctionHouse.increaseBidSize(id, bid);
   }
 
   function settleAuction(uint256 id) public {
     surplusAuctionHouse.settleAuction(id);
   }
 
-  function try_increaseBidSize(uint256 id, uint256 amountToBuy, uint256 bid) public returns (bool ok) {
-    string memory sig = 'increaseBidSize(uint256,uint256,uint256)';
-    (ok,) = address(surplusAuctionHouse).call(abi.encodeWithSignature(sig, id, amountToBuy, bid));
+  function try_increaseBidSize(uint256 id, uint256 bid) public returns (bool ok) {
+    string memory sig = 'increaseBidSize(uint256,uint256)';
+    (ok,) = address(surplusAuctionHouse).call(abi.encodeWithSignature(sig, id, bid));
   }
 
   function try_settleAuction(uint256 id) public returns (bool ok) {
@@ -60,17 +60,17 @@ contract GuyRecyclingSurplusAuction {
     surplusAuctionHouse.protocolToken().approve(address(surplusAuctionHouse), type(uint256).max);
   }
 
-  function increaseBidSize(uint256 id, uint256 amountToBuy, uint256 bid) public {
-    surplusAuctionHouse.increaseBidSize(id, amountToBuy, bid);
+  function increaseBidSize(uint256 id, uint256 bid) public {
+    surplusAuctionHouse.increaseBidSize(id, bid);
   }
 
   function settleAuction(uint256 id) public {
     surplusAuctionHouse.settleAuction(id);
   }
 
-  function try_increaseBidSize(uint256 id, uint256 amountToBuy, uint256 bid) public returns (bool ok) {
-    string memory sig = 'increaseBidSize(uint256,uint256,uint256)';
-    (ok,) = address(surplusAuctionHouse).call(abi.encodeWithSignature(sig, id, amountToBuy, bid));
+  function try_increaseBidSize(uint256 id, uint256 bid) public returns (bool ok) {
+    string memory sig = 'increaseBidSize(uint256,uint256)';
+    (ok,) = address(surplusAuctionHouse).call(abi.encodeWithSignature(sig, id, bid));
   }
 
   function try_settleAuction(uint256 id) public returns (bool ok) {
@@ -93,17 +93,17 @@ contract GuyPostSurplusAuction {
     surplusAuctionHouse.protocolToken().approve(address(surplusAuctionHouse), type(uint256).max);
   }
 
-  function increaseBidSize(uint256 id, uint256 amountToBuy, uint256 bid) public {
-    surplusAuctionHouse.increaseBidSize(id, amountToBuy, bid);
+  function increaseBidSize(uint256 id, uint256 bid) public {
+    surplusAuctionHouse.increaseBidSize(id, bid);
   }
 
   function settleAuction(uint256 id) public {
     surplusAuctionHouse.settleAuction(id);
   }
 
-  function try_increaseBidSize(uint256 id, uint256 amountToBuy, uint256 bid) public returns (bool ok) {
-    string memory sig = 'increaseBidSize(uint256,uint256,uint256)';
-    (ok,) = address(surplusAuctionHouse).call(abi.encodeWithSignature(sig, id, amountToBuy, bid));
+  function try_increaseBidSize(uint256 id, uint256 bid) public returns (bool ok) {
+    string memory sig = 'increaseBidSize(uint256,uint256)';
+    (ok,) = address(surplusAuctionHouse).call(abi.encodeWithSignature(sig, id, bid));
   }
 
   function try_settleAuction(uint256 id) public returns (bool ok) {
@@ -167,10 +167,41 @@ contract SingleBurningSurplusAuctionHouseTest is DSTest {
 
   function test_increase_bid_same_bidder() public {
     uint256 id = surplusAuctionHouse.startAuction({_amountToSell: 100 ether, _initialBid: 0});
-    GuyBurningSurplusAuction(ali).increaseBidSize(id, 100 ether, 190 ether);
+    GuyBurningSurplusAuction(ali).increaseBidSize(id, 190 ether);
     assertEq(protocolToken.balanceOf(ali), 10 ether);
-    GuyBurningSurplusAuction(ali).increaseBidSize(id, 100 ether, 200 ether);
+    GuyBurningSurplusAuction(ali).increaseBidSize(id, 200 ether);
     assertEq(protocolToken.balanceOf(ali), 0);
+  }
+
+  function test_increase_bid_with_initial_bid() public {
+    uint256 _initialBid = 0.1 ether;
+    protocolToken.approve(address(surplusAuctionHouse), _initialBid);
+
+    uint256 id = surplusAuctionHouse.startAuction({_amountToSell: 100 ether, _initialBid: _initialBid});
+    // amount to buy taken from creator
+    assertEq(safeEngine.coinBalance(address(this)), 900 ether);
+
+    GuyBurningSurplusAuction(ali).increaseBidSize(id, 1 ether);
+    // bid taken from bidder
+    assertEq(protocolToken.balanceOf(ali), 199 ether);
+    // payment remains in auction
+    assertEq(protocolToken.balanceOf(address(surplusAuctionHouse)), 1 ether);
+
+    GuyBurningSurplusAuction(bob).increaseBidSize(id, 2 ether);
+    // bid taken from bidder
+    assertEq(protocolToken.balanceOf(bob), 198 ether);
+    // prev bidder refunded
+    assertEq(protocolToken.balanceOf(ali), 200 ether);
+    // excess remains in auction
+    assertEq(protocolToken.balanceOf(address(surplusAuctionHouse)), 2 ether);
+
+    hevm.warp(block.timestamp + 5 weeks);
+    GuyBurningSurplusAuction(bob).settleAuction(id);
+    // high bidder gets the amount sold
+    assertEq(safeEngine.coinBalance(address(surplusAuctionHouse)), 0 ether);
+    assertEq(safeEngine.coinBalance(bob), 100 ether);
+    // income is burned
+    assertEq(protocolToken.balanceOf(address(surplusAuctionHouse)), 0 ether);
   }
 
   function test_increaseBidSize() public {
@@ -178,13 +209,13 @@ contract SingleBurningSurplusAuctionHouseTest is DSTest {
     // amount to buy taken from creator
     assertEq(safeEngine.coinBalance(address(this)), 900 ether);
 
-    GuyBurningSurplusAuction(ali).increaseBidSize(id, 100 ether, 1 ether);
+    GuyBurningSurplusAuction(ali).increaseBidSize(id, 1 ether);
     // bid taken from bidder
     assertEq(protocolToken.balanceOf(ali), 199 ether);
     // payment remains in auction
     assertEq(protocolToken.balanceOf(address(surplusAuctionHouse)), 1 ether);
 
-    GuyBurningSurplusAuction(bob).increaseBidSize(id, 100 ether, 2 ether);
+    GuyBurningSurplusAuction(bob).increaseBidSize(id, 2 ether);
     // bid taken from bidder
     assertEq(protocolToken.balanceOf(bob), 198 ether);
     // prev bidder refunded
@@ -203,11 +234,11 @@ contract SingleBurningSurplusAuctionHouseTest is DSTest {
 
   function test_bid_increase() public {
     uint256 id = surplusAuctionHouse.startAuction({_amountToSell: 100 ether, _initialBid: 0});
-    assertTrue(GuyBurningSurplusAuction(ali).try_increaseBidSize(id, 100 ether, 1.0 ether));
-    assertTrue(!GuyBurningSurplusAuction(bob).try_increaseBidSize(id, 100 ether, 1.01 ether));
+    assertTrue(GuyBurningSurplusAuction(ali).try_increaseBidSize(id, 1.0 ether));
+    assertTrue(!GuyBurningSurplusAuction(bob).try_increaseBidSize(id, 1.01 ether));
     // high bidder is subject to beg
-    assertTrue(!GuyBurningSurplusAuction(ali).try_increaseBidSize(id, 100 ether, 1.01 ether));
-    assertTrue(GuyBurningSurplusAuction(bob).try_increaseBidSize(id, 100 ether, 1.07 ether));
+    assertTrue(!GuyBurningSurplusAuction(ali).try_increaseBidSize(id, 1.01 ether));
+    assertTrue(GuyBurningSurplusAuction(bob).try_increaseBidSize(id, 1.07 ether));
   }
 
   function test_restart_auction() public {
@@ -218,10 +249,10 @@ contract SingleBurningSurplusAuctionHouseTest is DSTest {
     // run past the end
     hevm.warp(block.timestamp + 2 weeks);
     // check not biddable
-    assertTrue(!GuyBurningSurplusAuction(ali).try_increaseBidSize(id, 100 ether, 1 ether));
+    assertTrue(!GuyBurningSurplusAuction(ali).try_increaseBidSize(id, 1 ether));
     assertTrue(GuyBurningSurplusAuction(ali).try_restartAuction(id));
     // check biddable
-    assertTrue(GuyBurningSurplusAuction(ali).try_increaseBidSize(id, 100 ether, 1 ether));
+    assertTrue(GuyBurningSurplusAuction(ali).try_increaseBidSize(id, 1 ether));
   }
 
   function testFail_terminate_prematurely() public {
@@ -229,7 +260,7 @@ contract SingleBurningSurplusAuctionHouseTest is DSTest {
     // amount to buy taken from creator
     assertEq(safeEngine.coinBalance(address(this)), 900 ether);
 
-    GuyBurningSurplusAuction(ali).increaseBidSize(id, 100 ether, 1 ether);
+    GuyBurningSurplusAuction(ali).increaseBidSize(id, 1 ether);
     surplusAuctionHouse.terminateAuctionPrematurely(id);
   }
 
@@ -238,7 +269,7 @@ contract SingleBurningSurplusAuctionHouseTest is DSTest {
     // amount to buy taken from creator
     assertEq(safeEngine.coinBalance(address(this)), 900 ether);
 
-    GuyBurningSurplusAuction(ali).increaseBidSize(id, 100 ether, 1 ether);
+    GuyBurningSurplusAuction(ali).increaseBidSize(id, 1 ether);
     // Shutdown
     surplusAuctionHouse.disableContract();
     surplusAuctionHouse.terminateAuctionPrematurely(id);
@@ -301,9 +332,9 @@ contract SingleRecyclingSurplusAuctionHouseTest is DSTest {
 
   function test_increase_bid_same_bidder() public {
     uint256 id = surplusAuctionHouse.startAuction({_amountToSell: 100 ether, _initialBid: 0});
-    GuyRecyclingSurplusAuction(ali).increaseBidSize(id, 100 ether, 190 ether);
+    GuyRecyclingSurplusAuction(ali).increaseBidSize(id, 190 ether);
     assertEq(protocolToken.balanceOf(ali), 10 ether);
-    GuyRecyclingSurplusAuction(ali).increaseBidSize(id, 100 ether, 200 ether);
+    GuyRecyclingSurplusAuction(ali).increaseBidSize(id, 200 ether);
     assertEq(protocolToken.balanceOf(ali), 0);
   }
 
@@ -312,13 +343,13 @@ contract SingleRecyclingSurplusAuctionHouseTest is DSTest {
     // amount to buy taken from creator
     assertEq(safeEngine.coinBalance(address(this)), 900 ether);
 
-    GuyRecyclingSurplusAuction(ali).increaseBidSize(id, 100 ether, 1 ether);
+    GuyRecyclingSurplusAuction(ali).increaseBidSize(id, 1 ether);
     // bid taken from bidder
     assertEq(protocolToken.balanceOf(ali), 199 ether);
     // payment remains in auction
     assertEq(protocolToken.balanceOf(address(surplusAuctionHouse)), 1 ether);
 
-    GuyRecyclingSurplusAuction(bob).increaseBidSize(id, 100 ether, 2 ether);
+    GuyRecyclingSurplusAuction(bob).increaseBidSize(id, 2 ether);
     // bid taken from bidder
     assertEq(protocolToken.balanceOf(bob), 198 ether);
     // prev bidder refunded
@@ -338,11 +369,11 @@ contract SingleRecyclingSurplusAuctionHouseTest is DSTest {
 
   function test_bid_increase() public {
     uint256 id = surplusAuctionHouse.startAuction({_amountToSell: 100 ether, _initialBid: 0});
-    assertTrue(GuyRecyclingSurplusAuction(ali).try_increaseBidSize(id, 100 ether, 1.0 ether));
-    assertTrue(!GuyRecyclingSurplusAuction(bob).try_increaseBidSize(id, 100 ether, 1.01 ether));
+    assertTrue(GuyRecyclingSurplusAuction(ali).try_increaseBidSize(id, 1.0 ether));
+    assertTrue(!GuyRecyclingSurplusAuction(bob).try_increaseBidSize(id, 1.01 ether));
     // high bidder is subject to beg
-    assertTrue(!GuyRecyclingSurplusAuction(ali).try_increaseBidSize(id, 100 ether, 1.01 ether));
-    assertTrue(GuyRecyclingSurplusAuction(bob).try_increaseBidSize(id, 100 ether, 1.07 ether));
+    assertTrue(!GuyRecyclingSurplusAuction(ali).try_increaseBidSize(id, 1.01 ether));
+    assertTrue(GuyRecyclingSurplusAuction(bob).try_increaseBidSize(id, 1.07 ether));
   }
 
   function test_restart_auction() public {
@@ -353,10 +384,10 @@ contract SingleRecyclingSurplusAuctionHouseTest is DSTest {
     // run past the end
     hevm.warp(block.timestamp + 2 weeks);
     // check not biddable
-    assertTrue(!GuyRecyclingSurplusAuction(ali).try_increaseBidSize(id, 100 ether, 1 ether));
+    assertTrue(!GuyRecyclingSurplusAuction(ali).try_increaseBidSize(id, 1 ether));
     assertTrue(GuyRecyclingSurplusAuction(ali).try_restartAuction(id));
     // check biddable
-    assertTrue(GuyRecyclingSurplusAuction(ali).try_increaseBidSize(id, 100 ether, 1 ether));
+    assertTrue(GuyRecyclingSurplusAuction(ali).try_increaseBidSize(id, 1 ether));
   }
 
   function testFail_terminate_prematurely() public {
@@ -364,7 +395,7 @@ contract SingleRecyclingSurplusAuctionHouseTest is DSTest {
     // amount to buy taken from creator
     assertEq(safeEngine.coinBalance(address(this)), 900 ether);
 
-    GuyRecyclingSurplusAuction(ali).increaseBidSize(id, 100 ether, 1 ether);
+    GuyRecyclingSurplusAuction(ali).increaseBidSize(id, 1 ether);
     surplusAuctionHouse.terminateAuctionPrematurely(id);
   }
 
@@ -373,7 +404,7 @@ contract SingleRecyclingSurplusAuctionHouseTest is DSTest {
     // amount to buy taken from creator
     assertEq(safeEngine.coinBalance(address(this)), 900 ether);
 
-    GuyRecyclingSurplusAuction(ali).increaseBidSize(id, 100 ether, 1 ether);
+    GuyRecyclingSurplusAuction(ali).increaseBidSize(id, 1 ether);
     // Shutdown
     surplusAuctionHouse.disableContract();
     surplusAuctionHouse.terminateAuctionPrematurely(id);
@@ -436,9 +467,9 @@ contract SingleMixedStratSurplusAuctionHouseTest is DSTest {
 
   function test_increase_bid_same_bidder() public {
     uint256 id = surplusAuctionHouse.startAuction({_amountToSell: 100 ether, _initialBid: 0});
-    GuyRecyclingSurplusAuction(ali).increaseBidSize(id, 100 ether, 190 ether);
+    GuyRecyclingSurplusAuction(ali).increaseBidSize(id, 190 ether);
     assertEq(protocolToken.balanceOf(ali), 10 ether);
-    GuyRecyclingSurplusAuction(ali).increaseBidSize(id, 100 ether, 200 ether);
+    GuyRecyclingSurplusAuction(ali).increaseBidSize(id, 200 ether);
     assertEq(protocolToken.balanceOf(ali), 0);
   }
 
@@ -447,13 +478,13 @@ contract SingleMixedStratSurplusAuctionHouseTest is DSTest {
     // amount to buy taken from creator
     assertEq(safeEngine.coinBalance(address(this)), 900 ether);
 
-    GuyRecyclingSurplusAuction(ali).increaseBidSize(id, 100 ether, 1 ether);
+    GuyRecyclingSurplusAuction(ali).increaseBidSize(id, 1 ether);
     // bid taken from bidder
     assertEq(protocolToken.balanceOf(ali), 199 ether);
     // payment remains in auction
     assertEq(protocolToken.balanceOf(address(surplusAuctionHouse)), 1 ether);
 
-    GuyRecyclingSurplusAuction(bob).increaseBidSize(id, 100 ether, 2 ether);
+    GuyRecyclingSurplusAuction(bob).increaseBidSize(id, 2 ether);
     // bid taken from bidder
     assertEq(protocolToken.balanceOf(bob), 198 ether);
     // prev bidder refunded
@@ -476,11 +507,11 @@ contract SingleMixedStratSurplusAuctionHouseTest is DSTest {
 
   function test_bid_increase() public {
     uint256 id = surplusAuctionHouse.startAuction({_amountToSell: 100 ether, _initialBid: 0});
-    assertTrue(GuyRecyclingSurplusAuction(ali).try_increaseBidSize(id, 100 ether, 1.0 ether));
-    assertTrue(!GuyRecyclingSurplusAuction(bob).try_increaseBidSize(id, 100 ether, 1.01 ether));
+    assertTrue(GuyRecyclingSurplusAuction(ali).try_increaseBidSize(id, 1.0 ether));
+    assertTrue(!GuyRecyclingSurplusAuction(bob).try_increaseBidSize(id, 1.01 ether));
     // high bidder is subject to beg
-    assertTrue(!GuyRecyclingSurplusAuction(ali).try_increaseBidSize(id, 100 ether, 1.01 ether));
-    assertTrue(GuyRecyclingSurplusAuction(bob).try_increaseBidSize(id, 100 ether, 1.07 ether));
+    assertTrue(!GuyRecyclingSurplusAuction(ali).try_increaseBidSize(id, 1.01 ether));
+    assertTrue(GuyRecyclingSurplusAuction(bob).try_increaseBidSize(id, 1.07 ether));
   }
 
   function test_restart_auction() public {
@@ -491,10 +522,10 @@ contract SingleMixedStratSurplusAuctionHouseTest is DSTest {
     // run past the end
     hevm.warp(block.timestamp + 2 weeks);
     // check not biddable
-    assertTrue(!GuyRecyclingSurplusAuction(ali).try_increaseBidSize(id, 100 ether, 1 ether));
+    assertTrue(!GuyRecyclingSurplusAuction(ali).try_increaseBidSize(id, 1 ether));
     assertTrue(GuyRecyclingSurplusAuction(ali).try_restartAuction(id));
     // check biddable
-    assertTrue(GuyRecyclingSurplusAuction(ali).try_increaseBidSize(id, 100 ether, 1 ether));
+    assertTrue(GuyRecyclingSurplusAuction(ali).try_increaseBidSize(id, 1 ether));
   }
 
   function testFail_terminate_prematurely() public {
@@ -502,7 +533,7 @@ contract SingleMixedStratSurplusAuctionHouseTest is DSTest {
     // amount to buy taken from creator
     assertEq(safeEngine.coinBalance(address(this)), 900 ether);
 
-    GuyRecyclingSurplusAuction(ali).increaseBidSize(id, 100 ether, 1 ether);
+    GuyRecyclingSurplusAuction(ali).increaseBidSize(id, 1 ether);
     surplusAuctionHouse.terminateAuctionPrematurely(id);
   }
 
@@ -511,7 +542,7 @@ contract SingleMixedStratSurplusAuctionHouseTest is DSTest {
     // amount to buy taken from creator
     assertEq(safeEngine.coinBalance(address(this)), 900 ether);
 
-    GuyRecyclingSurplusAuction(ali).increaseBidSize(id, 100 ether, 1 ether);
+    GuyRecyclingSurplusAuction(ali).increaseBidSize(id, 1 ether);
     // Shutdown
     surplusAuctionHouse.disableContract();
     surplusAuctionHouse.terminateAuctionPrematurely(id);
@@ -565,9 +596,9 @@ contract SinglePostSettlementSurplusAuctionHouseTest is DSTest {
 
   function test_increase_bid_same_bidder() public {
     uint256 id = surplusAuctionHouse.startAuction({_amountToSell: 100 ether, _initialBid: 0});
-    GuyPostSurplusAuction(ali).increaseBidSize(id, 100 ether, 190 ether);
+    GuyPostSurplusAuction(ali).increaseBidSize(id, 190 ether);
     assertEq(protocolToken.balanceOf(ali), 10 ether);
-    GuyPostSurplusAuction(ali).increaseBidSize(id, 100 ether, 200 ether);
+    GuyPostSurplusAuction(ali).increaseBidSize(id, 200 ether);
     assertEq(protocolToken.balanceOf(ali), 0);
   }
 
@@ -576,13 +607,13 @@ contract SinglePostSettlementSurplusAuctionHouseTest is DSTest {
     // amount to buy taken from creator
     assertEq(safeEngine.coinBalance(address(this)), 900 ether);
 
-    GuyPostSurplusAuction(ali).increaseBidSize(id, 100 ether, 1 ether);
+    GuyPostSurplusAuction(ali).increaseBidSize(id, 1 ether);
     // bid taken from bidder
     assertEq(protocolToken.balanceOf(ali), 199 ether);
     // payment remains in auction
     assertEq(protocolToken.balanceOf(address(surplusAuctionHouse)), 1 ether);
 
-    GuyPostSurplusAuction(bob).increaseBidSize(id, 100 ether, 2 ether);
+    GuyPostSurplusAuction(bob).increaseBidSize(id, 2 ether);
     // bid taken from bidder
     assertEq(protocolToken.balanceOf(bob), 198 ether);
     // prev bidder refunded
@@ -601,11 +632,11 @@ contract SinglePostSettlementSurplusAuctionHouseTest is DSTest {
 
   function test_bid_increase() public {
     uint256 id = surplusAuctionHouse.startAuction({_amountToSell: 100 ether, _initialBid: 0});
-    assertTrue(GuyPostSurplusAuction(ali).try_increaseBidSize(id, 100 ether, 1.0 ether));
-    assertTrue(!GuyPostSurplusAuction(bob).try_increaseBidSize(id, 100 ether, 1.01 ether));
+    assertTrue(GuyPostSurplusAuction(ali).try_increaseBidSize(id, 1.0 ether));
+    assertTrue(!GuyPostSurplusAuction(bob).try_increaseBidSize(id, 1.01 ether));
     // high bidder is subject to beg
-    assertTrue(!GuyPostSurplusAuction(ali).try_increaseBidSize(id, 100 ether, 1.01 ether));
-    assertTrue(GuyPostSurplusAuction(bob).try_increaseBidSize(id, 100 ether, 1.07 ether));
+    assertTrue(!GuyPostSurplusAuction(ali).try_increaseBidSize(id, 1.01 ether));
+    assertTrue(GuyPostSurplusAuction(bob).try_increaseBidSize(id, 1.07 ether));
   }
 
   function test_restart_auction() public {
@@ -616,9 +647,9 @@ contract SinglePostSettlementSurplusAuctionHouseTest is DSTest {
     // run past the end
     hevm.warp(block.timestamp + 2 weeks);
     // check not biddable
-    assertTrue(!GuyPostSurplusAuction(ali).try_increaseBidSize(id, 100 ether, 1 ether));
+    assertTrue(!GuyPostSurplusAuction(ali).try_increaseBidSize(id, 1 ether));
     assertTrue(GuyPostSurplusAuction(ali).try_restartAuction(id));
     // check biddable
-    assertTrue(GuyPostSurplusAuction(ali).try_increaseBidSize(id, 100 ether, 1 ether));
+    assertTrue(GuyPostSurplusAuction(ali).try_increaseBidSize(id, 1 ether));
   }
 }

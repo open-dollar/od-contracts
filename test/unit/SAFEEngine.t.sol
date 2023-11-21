@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {SAFEEngineForTest, ISAFEEngine} from '@test/mocks/SAFEEngineForTest.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
+import {IModifiablePerCollateral} from '@interfaces/utils/IModifiablePerCollateral.sol';
 import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 
 import {Math, RAY, WAD} from '@libraries/Math.sol';
@@ -129,7 +130,7 @@ abstract contract Base is HaiTest {
     stdstore.target(address(safeEngine)).sig(IDisableable.contractEnabled.selector).checked_write(_contractEnabled);
   }
 
-  function _mockCanModifySafe(address _safe, address _account, uint256 _canModifySafe) internal {
+  function _mockCanModifySafe(address _safe, address _account, bool _canModifySafe) internal {
     stdstore.target(address(safeEngine)).sig(ISAFEEngine.safeRights.selector).with_key(_safe).with_key(_account)
       .checked_write(_canModifySafe);
   }
@@ -768,8 +769,8 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
     _mockCoinBalance(debtDestination, _scenario.coinBalance);
     _mockTokenCollateral(collateralType, src, _scenario.collateralBalance);
     _mockGlobalDebt(_scenario.globalDebt);
-    _mockCanModifySafe(src, safe, 1);
-    _mockCanModifySafe(debtDestination, safe, 1);
+    _mockCanModifySafe(src, safe, true);
+    _mockCanModifySafe(debtDestination, safe, true);
   }
 
   modifier happyPath(ModifySAFECollateralizationScenario memory _scenario) {
@@ -970,8 +971,8 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
   function test_Revert_NotAllowedToModifySafe(ModifySAFECollateralizationScenario memory _scenario) public {
     _assumeHappyPath(_scenario);
     _mockValues(_scenario);
-    _mockCanModifySafe(debtDestination, address(this), 1);
-    _mockCanModifySafe(safe, address(this), 0);
+    _mockCanModifySafe(debtDestination, address(this), true);
+    _mockCanModifySafe(safe, address(this), false);
     vm.assume(_scenario.deltaDebt > 0 || _scenario.deltaCollateral < 0);
 
     vm.expectRevert(ISAFEEngine.SAFEEng_NotSAFEAllowed.selector);
@@ -984,7 +985,7 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
   function test_Revert_NotAllowedCollateralSrc(ModifySAFECollateralizationScenario memory _scenario) public {
     _assumeHappyPath(_scenario);
     _mockValues(_scenario);
-    _mockCanModifySafe(src, safe, 0);
+    _mockCanModifySafe(src, safe, false);
     vm.assume(_scenario.deltaCollateral > 0);
 
     vm.expectRevert(ISAFEEngine.SAFEEng_NotCollateralSrcAllowed.selector);
@@ -998,7 +999,7 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
   function test_Revert_NotAllowedDebtDst(ModifySAFECollateralizationScenario memory _scenario) public {
     _assumeHappyPath(_scenario);
     _mockValues(_scenario);
-    _mockCanModifySafe(debtDestination, safe, 0);
+    _mockCanModifySafe(debtDestination, safe, false);
     vm.assume(_scenario.deltaDebt < 0);
 
     vm.expectRevert(ISAFEEngine.SAFEEng_NotDebtDstAllowed.selector);
@@ -1107,8 +1108,8 @@ contract Unit_SAFEEngine_TransferSafeCollateralAndDebt is Base {
       collateralType, ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: type(uint256).max, debtFloor: 0})
     );
 
-    _mockCanModifySafe(src, account, 1);
-    _mockCanModifySafe(dst, account, 1);
+    _mockCanModifySafe(src, account, true);
+    _mockCanModifySafe(dst, account, true);
   }
 
   modifier happyPath(TransferSAFECollateralAndDebtScenario memory _scenario) {
@@ -1174,10 +1175,10 @@ contract Unit_SAFEEngine_TransferSafeCollateralAndDebt is Base {
 
   function test_Revert_CannotModifySafe(
     TransferSAFECollateralAndDebtScenario memory _scenario,
-    uint256 _canModifySrcSafe,
-    uint256 _canModifyDstSafe
+    bool _canModifySrcSafe,
+    bool _canModifyDstSafe
   ) public {
-    vm.assume(_canModifySrcSafe != 1 || _canModifyDstSafe != 1);
+    vm.assume(!_canModifySrcSafe || !_canModifyDstSafe);
 
     _assumeHappyPath(_scenario);
     _mockValues(_scenario);
@@ -1535,7 +1536,7 @@ contract Unit_SAFEEngine_ApproveSAFEModification is Base {
 
     safeEngine.approveSAFEModification(_account);
 
-    assertEq(safeEngine.safeRights(_sender, _account), 1);
+    assertEq(safeEngine.safeRights(_sender, _account), true);
   }
 
   function test_Emit_ApproveSAFEModification(address _sender, address _account) public {
@@ -1552,16 +1553,16 @@ contract Unit_SAFEEngine_DenySAFEModification is Base {
   event DenySAFEModification(address _sender, address _account);
 
   function test_Set_SafeRights(address _sender, address _account) public {
-    _mockCanModifySafe(_sender, _account, 1);
+    _mockCanModifySafe(_sender, _account, true);
 
     vm.prank(_sender);
     safeEngine.denySAFEModification(_account);
 
-    assertEq(safeEngine.safeRights(_sender, _account), 0);
+    assertEq(safeEngine.safeRights(_sender, _account), false);
   }
 
   function test_Emit_DenySAFEModification(address _sender, address _account) public {
-    _mockCanModifySafe(_sender, _account, 1);
+    _mockCanModifySafe(_sender, _account, true);
 
     vm.expectEmit();
     emit DenySAFEModification(_sender, _account);
@@ -1574,20 +1575,20 @@ contract Unit_SAFEEngine_DenySAFEModification is Base {
 contract Unit_SAFEEngine_CanModifySafe is Base {
   function test_Return_SameAccountCanModify(address _account) public {
     // Even though we deny it, because it is the same account it should be able to modify
-    _mockCanModifySafe(_account, _account, 0);
+    _mockCanModifySafe(_account, _account, false);
 
     assertEq(safeEngine.canModifySAFE(_account, _account), true);
   }
 
   function test_Return_CanModify(address _sender, address _account) public {
-    _mockCanModifySafe(_sender, _account, 1);
+    _mockCanModifySafe(_sender, _account, true);
 
     assertEq(safeEngine.canModifySAFE(_account, _account), true);
   }
 
   function test_Return_CannotModify(address _sender, address _account) public {
     vm.assume(_sender != _account);
-    _mockCanModifySafe(_sender, _account, 0);
+    _mockCanModifySafe(_sender, _account, false);
 
     assertEq(safeEngine.canModifySAFE(_account, _account), true);
   }
@@ -1600,7 +1601,7 @@ contract Unit_SAFEEngine_InitializeCollateralType is Base {
     bytes32 _cType,
     ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCParams
   ) public authorized {
-    safeEngine.initializeCollateralType(_cType, _safeEngineCParams);
+    safeEngine.initializeCollateralType(_cType, abi.encode(_safeEngineCParams));
 
     uint256 _accumulatedRate = safeEngine.cData(_cType).accumulatedRate;
     assertEq(_accumulatedRate, RAY);
@@ -1610,7 +1611,7 @@ contract Unit_SAFEEngine_InitializeCollateralType is Base {
     bytes32 _cType,
     ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCParams
   ) public authorized {
-    safeEngine.initializeCollateralType(_cType, _safeEngineCParams);
+    safeEngine.initializeCollateralType(_cType, abi.encode(_safeEngineCParams));
 
     assertEq(abi.encode(safeEngine.cParams(_cType)), abi.encode(_safeEngineCParams));
   }
@@ -1622,7 +1623,7 @@ contract Unit_SAFEEngine_InitializeCollateralType is Base {
     vm.expectEmit();
     emit InitializeCollateralType(_cType);
 
-    safeEngine.initializeCollateralType(_cType, _safeEngineCParams);
+    safeEngine.initializeCollateralType(_cType, abi.encode(_safeEngineCParams));
   }
 
   function test_Revert_NotAuthorized(
@@ -1631,7 +1632,7 @@ contract Unit_SAFEEngine_InitializeCollateralType is Base {
   ) public {
     vm.expectRevert(IAuthorizable.Unauthorized.selector);
 
-    safeEngine.initializeCollateralType(_cType, _safeEngineCParams);
+    safeEngine.initializeCollateralType(_cType, abi.encode(_safeEngineCParams));
   }
 
   function test_Revert_CollateralTypeAlreadyExists(
@@ -1640,20 +1641,19 @@ contract Unit_SAFEEngine_InitializeCollateralType is Base {
   ) public authorized {
     _mockCollateralList(_cType);
 
-    vm.expectRevert(ISAFEEngine.SAFEEng_CollateralTypeAlreadyExists.selector);
+    vm.expectRevert(IModifiablePerCollateral.CollateralTypeAlreadyInitialized.selector);
 
-    safeEngine.initializeCollateralType(_cType, _safeEngineCParams);
+    safeEngine.initializeCollateralType(_cType, abi.encode(_safeEngineCParams));
   }
 
   function test_Revert_ContractIsDisabled(
     bytes32 _cType,
     ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCParams
   ) public authorized {
-    _mockCollateralList(_cType);
     _mockContractEnabled(false);
 
     vm.expectRevert(IDisableable.ContractIsDisabled.selector);
 
-    safeEngine.initializeCollateralType(_cType, _safeEngineCParams);
+    safeEngine.initializeCollateralType(_cType, abi.encode(_safeEngineCParams));
   }
 }

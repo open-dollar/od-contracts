@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
 
-import {IJob, IStabilityFeeTreasury} from '@interfaces/jobs/IJob.sol';
+import {IJob} from '@interfaces/jobs/IJob.sol';
 
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
-interface IAccountingJob is IJob, IAuthorizable, IModifiable {
+interface IAccountingJob is IAuthorizable, IModifiable, IJob {
   // --- Data ---
 
   /// @notice Whether the pop debt from queue job should be worked

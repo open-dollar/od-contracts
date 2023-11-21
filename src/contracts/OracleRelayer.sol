@@ -1,25 +1,25 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
-import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {Modifiable} from '@contracts/utils/Modifiable.sol';
+import {ModifiablePerCollateral} from '@contracts/utils/ModifiablePerCollateral.sol';
 import {Disableable} from '@contracts/utils/Disableable.sol';
 
 import {Encoding} from '@libraries/Encoding.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 import {Math, RAY, WAD} from '@libraries/Math.sol';
-import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
+import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 /**
  * @title  OracleRelayer
  * @notice Handles the collateral prices inside the system (SAFEEngine) and calculates the redemption price using the rate
  */
-contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer {
+contract OracleRelayer is Authorizable, Disableable, Modifiable, ModifiablePerCollateral, IOracleRelayer {
   using Encoding for bytes;
   using Math for uint256;
   using Assertions for uint256;
@@ -50,8 +50,6 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
   function cParams(bytes32 _cType) external view returns (OracleRelayerCollateralParams memory _oracleRelayerCParams) {
     return _cParams[_cType];
   }
-
-  EnumerableSet.Bytes32Set internal _collateralList;
 
   /// @dev Virtual redemption price (not the most updated value) [ray]
   uint256 internal /* RAY */ _redemptionPrice;
@@ -147,16 +145,6 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
     redemptionRate = _redemptionRate;
   }
 
-  /// @inheritdoc IOracleRelayer
-  function initializeCollateralType(
-    bytes32 _cType,
-    OracleRelayerCollateralParams memory _oracleRelayerCParams
-  ) external isAuthorized validCParams(_cType) {
-    if (!_collateralList.add(_cType)) revert OracleRelayer_CollateralTypeAlreadyInitialized();
-    _validateDelayedOracle(address(_oracleRelayerCParams.oracle));
-    _cParams[_cType] = _oracleRelayerCParams;
-  }
-
   // --- Shutdown ---
   /**
    * @dev Sets the redemption rate to 1 (no change in the redemption price)
@@ -166,25 +154,27 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
     redemptionRate = RAY;
   }
 
-  // --- Views ---
-  /// @inheritdoc IOracleRelayer
-  function collateralList() external view returns (bytes32[] memory __collateralList) {
-    return _collateralList.values();
-  }
-
   // --- Administration ---
+
+  /// @inheritdoc ModifiablePerCollateral
+  function _initializeCollateralType(bytes32 _cType, bytes memory _collateralParams) internal override {
+    (OracleRelayerCollateralParams memory _oracleRelayerCParams) =
+      abi.decode(_collateralParams, (OracleRelayerCollateralParams));
+    address(_oracleRelayerCParams.oracle).assertHasCode();
+    _cParams[_cType] = _oracleRelayerCParams;
+  }
 
   /// @inheritdoc Modifiable
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled {
     uint256 _uint256 = _data.toUint256();
 
-    if (_param == 'systemCoinOracle') systemCoinOracle = IBaseOracle(_data.toAddress().assertNonNull());
+    if (_param == 'systemCoinOracle') systemCoinOracle = IBaseOracle(_data.toAddress().assertHasCode());
     else if (_param == 'redemptionRateUpperBound') _params.redemptionRateUpperBound = _uint256;
     else if (_param == 'redemptionRateLowerBound') _params.redemptionRateLowerBound = _uint256;
     else revert UnrecognizedParam();
   }
 
-  /// @inheritdoc Modifiable
+  /// @inheritdoc ModifiablePerCollateral
   function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override whenEnabled {
     uint256 _uint256 = _data.toUint256();
     OracleRelayerCollateralParams storage __cParams = _cParams[_cType];
@@ -192,29 +182,22 @@ contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer 
     if (!_collateralList.contains(_cType)) revert UnrecognizedCType();
     if (_param == 'safetyCRatio') __cParams.safetyCRatio = _uint256;
     else if (_param == 'liquidationCRatio') __cParams.liquidationCRatio = _uint256;
-    else if (_param == 'oracle') __cParams.oracle = _validateDelayedOracle(_data.toAddress());
+    else if (_param == 'oracle') __cParams.oracle = IBaseOracle(_data.toAddress().assertHasCode());
     else revert UnrecognizedParam();
-  }
-
-  /// @dev Validates the address is IDelayedOracle compliant and returns it
-  function _validateDelayedOracle(address _oracle) internal view returns (IDelayedOracle _delayedOracle) {
-    // Checks if the delayed oracle priceSource is implemented
-    _delayedOracle = IDelayedOracle(_oracle.assertNonNull());
-    _delayedOracle.priceSource();
   }
 
   /// @inheritdoc Modifiable
   function _validateParameters() internal view override {
     _params.redemptionRateUpperBound.assertGt(RAY);
     _params.redemptionRateLowerBound.assertGt(0).assertLt(RAY);
-    address(systemCoinOracle).assertNonNull();
+    address(systemCoinOracle).assertHasCode();
   }
 
-  /// @inheritdoc Modifiable
+  /// @inheritdoc ModifiablePerCollateral
   function _validateCParameters(bytes32 _cType) internal view override {
     OracleRelayerCollateralParams memory __cParams = _cParams[_cType];
     __cParams.safetyCRatio.assertGtEq(__cParams.liquidationCRatio);
     __cParams.liquidationCRatio.assertGtEq(RAY);
-    address(__cParams.oracle).assertNonNull();
+    address(__cParams.oracle).assertHasCode();
   }
 }

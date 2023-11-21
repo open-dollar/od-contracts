@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 
-import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
+import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 /**
  * @title  Authorizable
  * @notice Implements authorization control for contracts
- * @dev    Authorization control is boolean and handled by `onlyAuthorized` modifier
+ * @dev    Authorization control is boolean and handled by `isAuthorized` modifier
  */
 abstract contract Authorizable is IAuthorizable {
   using EnumerableSet for EnumerableSet.AddressSet;

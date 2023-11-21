@@ -4,7 +4,6 @@
 [submodule "lib/forge-std"]
 		path = lib/forge-std
 		url = https://github.com/brockelmore/forge-std
-		branch = chore/v1.5.4
 [submodule "lib/isolmate"]
 		path = lib/isolmate
 		url = https://github.com/defi-wonderland/isolmate

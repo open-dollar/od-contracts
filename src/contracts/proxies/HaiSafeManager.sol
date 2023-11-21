@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {SAFEHandler} from '@contracts/proxies/SAFEHandler.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ILiquidationEngine} from '@interfaces/ILiquidationEngine.sol';
 
 import {Math} from '@libraries/Math.sol';
-import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
+import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 
 import {IHaiSafeManager} from '@interfaces/proxies/IHaiSafeManager.sol';
@@ -31,16 +31,16 @@ contract HaiSafeManager is IHaiSafeManager {
   /// @notice Nonce used to generate safe ids (autoincremental)
   uint256 internal _safeId;
   /// @notice Mapping of user addresses to their enumerable set of safes
-  mapping(address _safeOwner => EnumerableSet.UintSet) private _usrSafes;
+  mapping(address _safeOwner => EnumerableSet.UintSet) internal _usrSafes;
   /// @notice Mapping of user addresses to their enumerable set of safes per collateral type
-  mapping(address _safeOwner => mapping(bytes32 _cType => EnumerableSet.UintSet)) private _usrSafesPerCollat;
+  mapping(address _safeOwner => mapping(bytes32 _cType => EnumerableSet.UintSet)) internal _usrSafesPerCollat;
   /// @notice Mapping of safe ids to their data
   mapping(uint256 _safeId => SAFEData) internal _safeData;
 
   /// @inheritdoc IHaiSafeManager
-  mapping(address _owner => mapping(uint256 _safeId => mapping(address _caller => uint256 _ok))) public safeCan;
+  mapping(address _owner => mapping(uint256 _safeId => mapping(address _caller => bool _ok))) public safeCan;
   /// @inheritdoc IHaiSafeManager
-  mapping(address _safeHandler => mapping(address _caller => uint256 _ok)) public handlerCan;
+  mapping(address _safeHandler => mapping(address _caller => bool _ok)) public handlerCan;
 
   // --- Modifiers ---
 
@@ -50,7 +50,7 @@ contract HaiSafeManager is IHaiSafeManager {
    */
   modifier safeAllowed(uint256 _safe) {
     address _owner = _safeData[_safe].owner;
-    if (msg.sender != _owner && safeCan[_owner][_safe][msg.sender] == 0) revert SafeNotAllowed();
+    if (msg.sender != _owner && !safeCan[_owner][_safe][msg.sender]) revert SafeNotAllowed();
     _;
   }
 
@@ -59,7 +59,7 @@ contract HaiSafeManager is IHaiSafeManager {
    * @param  _handler Address of the handler to check if msg.sender has permissions for
    */
   modifier handlerAllowed(address _handler) {
-    if (msg.sender != _handler && handlerCan[_handler][msg.sender] == 0) revert HandlerNotAllowed();
+    if (msg.sender != _handler && !handlerCan[_handler][msg.sender]) revert HandlerNotAllowed();
     _;
   }
 
@@ -107,14 +107,14 @@ contract HaiSafeManager is IHaiSafeManager {
   // --- Methods ---
 
   /// @inheritdoc IHaiSafeManager
-  function allowSAFE(uint256 _safe, address _usr, uint256 _ok) external safeAllowed(_safe) {
+  function allowSAFE(uint256 _safe, address _usr, bool _ok) external safeAllowed(_safe) {
     address _owner = _safeData[_safe].owner;
     safeCan[_owner][_safe][_usr] = _ok;
     emit AllowSAFE(msg.sender, _safe, _usr, _ok);
   }
 
   /// @inheritdoc IHaiSafeManager
-  function allowHandler(address _usr, uint256 _ok) external {
+  function allowHandler(address _usr, bool _ok) external {
     handlerCan[msg.sender][_usr] = _ok;
     emit AllowHandler(msg.sender, _usr, _ok);
   }
@@ -126,7 +126,8 @@ contract HaiSafeManager is IHaiSafeManager {
     ++_safeId;
     address _safeHandler = address(new SAFEHandler(safeEngine));
 
-    _safeData[_safeId] = SAFEData({owner: _usr, safeHandler: _safeHandler, collateralType: _cType});
+    _safeData[_safeId] =
+      SAFEData({owner: _usr, pendingOwner: address(0), safeHandler: _safeHandler, collateralType: _cType});
 
     _usrSafes[_usr].add(_safeId);
     _usrSafesPerCollat[_usr][_cType].add(_safeId);
@@ -137,19 +138,31 @@ contract HaiSafeManager is IHaiSafeManager {
 
   /// @inheritdoc IHaiSafeManager
   function transferSAFEOwnership(uint256 _safe, address _dst) external safeAllowed(_safe) {
-    if (_dst == address(0)) revert ZeroAddress();
     SAFEData memory _sData = _safeData[_safe];
     if (_dst == _sData.owner) revert AlreadySafeOwner();
 
-    _usrSafes[_sData.owner].remove(_safe);
-    _usrSafesPerCollat[_sData.owner][_sData.collateralType].remove(_safeId);
+    _safeData[_safe].pendingOwner = _dst;
+    emit InitiateTransferSAFEOwnership(msg.sender, _safe, _dst);
+  }
 
-    _usrSafes[_dst].add(_safe);
-    _usrSafesPerCollat[_dst][_sData.collateralType].add(_safeId);
+  /// @inheritdoc IHaiSafeManager
+  function acceptSAFEOwnership(uint256 _safe) external {
+    SAFEData memory _sData = _safeData[_safe];
+    address _newOwner = _sData.pendingOwner;
+    address _prevOwner = _sData.owner;
 
-    _safeData[_safe].owner = _dst;
+    if (msg.sender != _newOwner) revert SafeNotAllowed();
 
-    emit TransferSAFEOwnership(msg.sender, _safe, _dst);
+    _usrSafes[_prevOwner].remove(_safe);
+    _usrSafesPerCollat[_prevOwner][_sData.collateralType].remove(_safe);
+
+    _usrSafes[_newOwner].add(_safe);
+    _usrSafesPerCollat[_newOwner][_sData.collateralType].add(_safe);
+
+    _safeData[_safe].owner = _newOwner;
+    _safeData[_safe].pendingOwner = address(0);
+
+    emit TransferSAFEOwnership(_prevOwner, _safe, _newOwner);
   }
 
   /// @inheritdoc IHaiSafeManager

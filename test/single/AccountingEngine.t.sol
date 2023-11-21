@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import 'ds-test/test.sol';
 import {ERC20ForTest} from '@test/mocks/ERC20ForTest.sol';
@@ -84,9 +84,9 @@ contract SingleAccountingEngineTest is DSTest {
     (ok,) = address(accountingEngine).call(abi.encodeWithSignature(sig, era));
   }
 
-  function _try_decreaseSoldAmount(uint256 id, uint256 amountToBuy, uint256 bid) internal returns (bool ok) {
-    string memory sig = 'decreaseSoldAmount(uint256,uint256,uint256)';
-    (ok,) = address(debtAuctionHouse).call(abi.encodeWithSignature(sig, id, amountToBuy, bid));
+  function _try_decreaseSoldAmount(uint256 id, uint256 amountToBuy) internal returns (bool ok) {
+    string memory sig = 'decreaseSoldAmount(uint256,uint256)';
+    (ok,) = address(debtAuctionHouse).call(abi.encodeWithSignature(sig, id, amountToBuy));
   }
 
   function try_call(address addr, bytes calldata data) external returns (bool) {
@@ -143,7 +143,7 @@ contract SingleAccountingEngineTest is DSTest {
     accountingEngine.pushDebtToQueue(rad(wad));
     ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
       ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: 0, debtFloor: 0});
-    safeEngine.initializeCollateralType('', _safeEngineCollateralParams);
+    safeEngine.initializeCollateralType('', abi.encode(_safeEngineCollateralParams));
     safeEngine.createUnbackedDebt(address(accountingEngine), address(0), rad(wad));
     accountingEngine.popDebtFromQueue(block.timestamp);
   }
@@ -225,7 +225,7 @@ contract SingleAccountingEngineTest is DSTest {
     _popDebtFromQueue(200 ether);
     safeEngine.createUnbackedDebt(address(0), address(accountingEngine), rad(100 ether));
 
-    assertTrue(can_auction_debt());
+    assertTrue(!can_auction_debt());
   }
 
   function testFail_pop_debt_after_being_popped() public {
@@ -412,7 +412,7 @@ contract SingleAccountingEngineTest is DSTest {
     uint256 id = accountingEngine.auctionDebt();
 
     safeEngine.createUnbackedDebt(address(0), address(this), rad(100 ether));
-    debtAuctionHouse.decreaseSoldAmount(id, 0 ether, rad(100 ether));
+    debtAuctionHouse.decreaseSoldAmount(id, 0 ether);
 
     assertTrue(!can_auctionSurplus());
   }
@@ -425,7 +425,7 @@ contract SingleAccountingEngineTest is DSTest {
     uint256 id = accountingEngine.auctionDebt();
 
     safeEngine.createUnbackedDebt(address(0), address(this), rad(100 ether));
-    debtAuctionHouse.decreaseSoldAmount(id, 0 ether, rad(100 ether));
+    debtAuctionHouse.decreaseSoldAmount(id, 0 ether);
 
     assertTrue(!can_TransferSurplus());
   }
@@ -435,7 +435,7 @@ contract SingleAccountingEngineTest is DSTest {
     uint256 id = accountingEngine.auctionDebt();
     safeEngine.createUnbackedDebt(address(0), address(this), rad(100 ether));
 
-    debtAuctionHouse.decreaseSoldAmount(id, 0 ether, rad(100 ether)); // debt auction succeeds..
+    debtAuctionHouse.decreaseSoldAmount(id, 0 ether); // debt auction succeeds..
 
     assertTrue(!can_auctionSurplus());
   }
@@ -448,7 +448,7 @@ contract SingleAccountingEngineTest is DSTest {
     uint256 id = accountingEngine.auctionDebt();
     safeEngine.createUnbackedDebt(address(0), address(this), rad(100 ether));
 
-    debtAuctionHouse.decreaseSoldAmount(id, 0 ether, rad(100 ether)); // debt auction succeeds..
+    debtAuctionHouse.decreaseSoldAmount(id, 0 ether); // debt auction succeeds..
 
     assertTrue(!can_TransferSurplus());
   }
@@ -458,9 +458,9 @@ contract SingleAccountingEngineTest is DSTest {
     uint256 id = accountingEngine.auctionDebt();
 
     safeEngine.createUnbackedDebt(address(0), address(this), rad(100 ether));
-    assertTrue(_try_decreaseSoldAmount(id, 2 ether, rad(100 ether)));
+    assertTrue(_try_decreaseSoldAmount(id, 2 ether));
 
     safeEngine.createUnbackedDebt(address(0), address(this), rad(100 ether));
-    assertTrue(_try_decreaseSoldAmount(id, 1 ether, rad(100 ether)));
+    assertTrue(_try_decreaseSoldAmount(id, 1 ether));
   }
 }

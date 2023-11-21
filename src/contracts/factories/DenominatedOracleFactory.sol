@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {IDenominatedOracleFactory} from '@interfaces/factories/IDenominatedOracleFactory.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
@@ -8,7 +8,7 @@ import {DenominatedOracleChild} from '@contracts/factories/DenominatedOracleChil
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
-import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
+import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 /**
  * @title  DenominatedOracleFactory

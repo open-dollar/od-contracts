@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {ISurplusAuctionHouse, ICommonSurplusAuctionHouse} from '@interfaces/ISurplusAuctionHouse.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
@@ -9,7 +9,7 @@ import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {Modifiable} from '@contracts/utils/Modifiable.sol';
 import {Disableable} from '@contracts/utils/Disableable.sol';
 
-import {SafeERC20} from '@openzeppelin/token/ERC20/utils/SafeERC20.sol';
+import {SafeERC20} from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import {Encoding} from '@libraries/Encoding.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 import {Math, WAD} from '@libraries/Math.sol';
@@ -131,30 +131,44 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
   }
 
   /// @inheritdoc ICommonSurplusAuctionHouse
-  function increaseBidSize(uint256 _id, uint256 _amountToBuy, uint256 _bid) external whenEnabled {
+  function increaseBidSize(uint256 _id, uint256 _bid) external whenEnabled {
     Auction storage _auction = _auctions[_id];
     if (_auction.highBidder == address(0)) revert SAH_HighBidderNotSet();
     if (_auction.bidExpiry <= block.timestamp && _auction.bidExpiry != 0) revert SAH_BidAlreadyExpired();
     if (_auction.auctionDeadline <= block.timestamp) revert SAH_AuctionAlreadyExpired();
-    if (_amountToBuy != _auction.amountToSell) revert SAH_AmountsNotMatching();
     if (_bid <= _auction.bidAmount) revert SAH_BidNotHigher();
     if (_bid * WAD < _params.bidIncrease * _auction.bidAmount) revert SAH_InsufficientIncrease();
 
-    if (msg.sender != _auction.highBidder) {
-      protocolToken.safeTransferFrom(msg.sender, _auction.highBidder, _auction.bidAmount);
+    // The amount that will be transferred to the auction house
+    uint256 _deltaBidAmount = _bid;
+
+    // Check if this is the first bid or not
+    if (_auction.bidExpiry != 0) {
+      // Since this is not the first bid, it might be that we need to repay the previous bidder
+      if (msg.sender != _auction.highBidder) {
+        protocolToken.safeTransferFrom(msg.sender, _auction.highBidder, _auction.bidAmount);
+
+        _auction.highBidder = msg.sender;
+      }
+      // Either we just repaid the previous bidder,
+      // or this user is also the previous bidder and is incrementing his bid
+      _deltaBidAmount -= _auction.bidAmount;
+    } else {
+      // This is the first bid
       _auction.highBidder = msg.sender;
     }
-    protocolToken.safeTransferFrom(msg.sender, address(this), _bid - _auction.bidAmount);
 
     _auction.bidAmount = _bid;
     _auction.bidExpiry = block.timestamp + _params.bidDuration;
+
+    protocolToken.safeTransferFrom(msg.sender, address(this), _deltaBidAmount);
 
     emit IncreaseBidSize({
       _id: _id,
       _bidder: msg.sender,
       _blockTimestamp: block.timestamp,
       _raisedAmount: _bid,
-      _soldAmount: _amountToBuy,
+      _soldAmount: _auction.amountToSell,
       _bidExpiry: _auction.bidExpiry
     });
   }
@@ -162,6 +176,8 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
   /// @inheritdoc ICommonSurplusAuctionHouse
   function settleAuction(uint256 _id) external whenEnabled {
     Auction memory _auction = _auctions[_id];
+    delete _auctions[_id];
+
     if (_auction.bidExpiry == 0 || (_auction.bidExpiry > block.timestamp && _auction.auctionDeadline > block.timestamp))
     {
       revert SAH_AuctionNotFinished();
@@ -185,13 +201,13 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
       _highBidder: _auction.highBidder,
       _raisedAmount: _auction.bidAmount
     });
-
-    delete _auctions[_id];
   }
 
   /// @inheritdoc ISurplusAuctionHouse
   function terminateAuctionPrematurely(uint256 _id) external whenDisabled {
     Auction memory _auction = _auctions[_id];
+    delete _auctions[_id];
+
     if (_auction.highBidder == address(0)) revert SAH_HighBidderNotSet();
 
     protocolToken.safeTransfer(_auction.highBidder, _auction.bidAmount);
@@ -202,8 +218,6 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
       _highBidder: _auction.highBidder,
       _raisedAmount: _auction.bidAmount
     });
-
-    delete _auctions[_id];
   }
 
   // --- Administration ---
@@ -224,7 +238,7 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
 
   /// @inheritdoc Modifiable
   function _validateParameters() internal view override {
-    address(protocolToken).assertNonNull();
+    address(protocolToken).assertHasCode();
     _params.bidReceiver.assertNonNull();
   }
 }

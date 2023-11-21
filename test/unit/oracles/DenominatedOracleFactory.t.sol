@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {DenominatedOracleFactory} from '@contracts/factories/DenominatedOracleFactory.sol';
 import {DenominatedOracleChild} from '@contracts/factories/DenominatedOracleChild.sol';
@@ -53,7 +53,7 @@ contract Unit_DenominatedOracleFactory_Constructor is Base {
     vm.expectEmit();
     emit AddAuthorization(user);
 
-    denominatedOracleFactory = new DenominatedOracleFactory();
+    new DenominatedOracleFactory();
   }
 }
 

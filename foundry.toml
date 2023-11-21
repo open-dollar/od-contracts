@@ -13,7 +13,8 @@ title = 'HAI docs'
 src ='src' # root_path variable in build-docs.sh
 
 [profile.default]
-solc = '0.8.19'
+solc = '0.8.20'
+evm_version = 'paris'
 src = 'src'
 test = 'test'
 out = 'out'

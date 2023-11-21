@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {IDenominatedOracle} from '@interfaces/oracles/IDenominatedOracle.sol';
@@ -62,7 +62,10 @@ contract DenominatedOracle is IBaseOracle, IDenominatedOracle {
     (uint256 _denominationPriceSourceValue, bool _denominationPriceSourceValidity) =
       denominationPriceSource.getResultWithValidity();
 
-    _priceSourceValue = inverted ? WAD.wdiv(_priceSourceValue) : _priceSourceValue;
+    if (inverted) {
+      if (_priceSourceValue == 0) return (0, false);
+      _priceSourceValue = WAD.wdiv(_priceSourceValue);
+    }
 
     _result = _priceSourceValue.wmul(_denominationPriceSourceValue);
     _validity = _priceSourceValidity && _denominationPriceSourceValidity;
@@ -73,7 +76,10 @@ contract DenominatedOracle is IBaseOracle, IDenominatedOracle {
     uint256 _priceSourceValue = priceSource.read();
     uint256 _denominationPriceSourceValue = denominationPriceSource.read();
 
-    _priceSourceValue = inverted ? WAD.wdiv(_priceSourceValue) : _priceSourceValue;
+    if (inverted) {
+      if (_priceSourceValue == 0) revert InvalidPriceFeed();
+      _priceSourceValue = WAD.wdiv(_priceSourceValue);
+    }
 
     return _priceSourceValue.wmul(_denominationPriceSourceValue);
   }

@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
+import {IModifiablePerCollateral} from '@interfaces/utils/IModifiablePerCollateral.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 
-interface ISAFEEngine is IAuthorizable, IModifiable, IDisableable {
+interface ISAFEEngine is IAuthorizable, IDisableable, IModifiable, IModifiablePerCollateral {
   // --- Events ---
 
   /**
@@ -21,12 +22,6 @@ interface ISAFEEngine is IAuthorizable, IModifiable, IDisableable {
    * @param _account Address that is denied to modify the SAFE
    */
   event DenySAFEModification(address _sender, address _account);
-
-  /**
-   * @notice Emitted when a new collateral type is registered
-   * @param _cType Bytes32 representation of the collateral type
-   */
-  event InitializeCollateralType(bytes32 _cType);
 
   /**
    * @notice Emitted when collateral is transferred between accounts
@@ -127,8 +122,6 @@ interface ISAFEEngine is IAuthorizable, IModifiable, IDisableable {
 
   // --- Errors ---
 
-  /// @notice Throws when trying to initialize a collateral type that already exists
-  error SAFEEng_CollateralTypeAlreadyExists();
   /// @notice Throws when trying to modify parameters of an uninitialized collateral type
   error SAFEEng_CollateralTypeNotInitialized();
   /// @notice Throws when trying to modify a SAFE into an unsafe state
@@ -188,7 +181,7 @@ interface ISAFEEngine is IAuthorizable, IModifiable, IDisableable {
 
   /**
    * @notice Getter for the contract parameters struct
-   * @dev    Returns a SAFEEngineParams struct
+   * @return _safeEngineParams The active SAFEEngineParams
    */
   function params() external view returns (SAFEEngineParams memory _safeEngineParams);
 
@@ -203,7 +196,7 @@ interface ISAFEEngine is IAuthorizable, IModifiable, IDisableable {
   /**
    * @notice Getter for the collateral parameters struct
    * @param  _cType Bytes32 representation of the collateral type
-   * @dev    Returns a SAFEEngineCollateralParams struct
+   * @return  _safeEngineCParams SAFEEngineCollateralParams for the collateral type
    */
   function cParams(bytes32 _cType) external view returns (SAFEEngineCollateralParams memory _safeEngineCParams);
 
@@ -219,7 +212,7 @@ interface ISAFEEngine is IAuthorizable, IModifiable, IDisableable {
   /**
    * @notice Getter for the collateral data struct
    * @param  _cType Bytes32 representation of the collateral type
-   * @dev    Returns a SAFEEngineCollateralData struct
+   * @return  _safeEngineCData SAFEEngineCollateralData for the collateral type
    */
   function cData(bytes32 _cType) external view returns (SAFEEngineCollateralData memory _safeEngineCData);
 
@@ -227,7 +220,7 @@ interface ISAFEEngine is IAuthorizable, IModifiable, IDisableable {
    * @notice Getter for the unpacked collateral data struct
    * @param  _cType Bytes32 representation of the collateral type
    * @return _debtAmount Total amount of debt issued by a collateral type [wad]
-   * @return _lockedAmount Total amount of collateral locked in a SAFE [wad]
+   * @return _lockedAmount Total amount of collateral locked in all SAFEs of the collateral type [wad]
    * @return _accumulatedRate Accumulated rate of a collateral type [ray]
    * @return _safetyPrice Floor price at which a SAFE is allowed to generate debt [ray]
    * @return _liquidationPrice Price at which a SAFE gets liquidated [ray]
@@ -248,7 +241,7 @@ interface ISAFEEngine is IAuthorizable, IModifiable, IDisableable {
    * @notice Data about each SAFE
    * @param  _cType Bytes32 representation of the collateral type
    * @param  _safeAddress Address of the SAFE
-   * @dev    Returns a SAFE struct
+   * @return _safeData SAFE data for the specified collateral type of the specified safe.
    */
   function safes(bytes32 _cType, address _safeAddress) external view returns (SAFE memory _safeData);
 
@@ -269,9 +262,9 @@ interface ISAFEEngine is IAuthorizable, IModifiable, IDisableable {
    * @notice Who can transfer collateral & debt in/out of a SAFE
    * @param  _caller Address to check for SAFE permissions for
    * @param  _account Account to check if caller has permissions for
-   * @return _safeRights Numerical representation of the SAFE rights (0/1)
+   * @return _safeRights Boolean representation of the SAFE rights (0/1)
    */
-  function safeRights(address _caller, address _account) external view returns (uint256 _safeRights);
+  function safeRights(address _caller, address _account) external view returns (bool _safeRights);
 
   // --- Balances ---
 
@@ -299,24 +292,17 @@ interface ISAFEEngine is IAuthorizable, IModifiable, IDisableable {
 
   /**
    * @notice Total amount of debt (coins) currently issued
-   * @dev    Returns the global debt [rad]
+   * @return _globalDebt Global debt [rad]
    */
   function globalDebt() external returns (uint256 _globalDebt);
 
   /**
    * @notice 'Bad' debt that's not covered by collateral
-   * @dev    Returns the global unbacked debt [rad]
+   * @return _globalUnbackedDebt Global unbacked debt [rad]
    */
   function globalUnbackedDebt() external view returns (uint256 _globalUnbackedDebt);
 
   // --- Init ---
-
-  /**
-   * @notice Register a new collateral type in the SAFEEngine
-   * @param _cType Collateral type to register
-   * @param _collateralParams Collateral parameters
-   */
-  function initializeCollateralType(bytes32 _cType, SAFEEngineCollateralParams memory _collateralParams) external;
 
   // --- Fungibility ---
 
@@ -456,14 +442,10 @@ interface ISAFEEngine is IAuthorizable, IModifiable, IDisableable {
   function denySAFEModification(address _account) external;
 
   /**
-   * @notice Checks whether msg.sender has the right to modify a SAFE
+   * @notice Checks whether an account has the right to modify a SAFE
+   * @param _safe The safe to check
+   * @param _account The account to check
+   * @return _allowed Whether the account can modify the safe
    */
   function canModifySAFE(address _safe, address _account) external view returns (bool _allowed);
-
-  // --- Views ---
-
-  /**
-   * @notice List all collateral types registered in the SAFEEngine
-   */
-  function collateralList() external view returns (bytes32[] memory __collateralList);
 }

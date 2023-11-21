@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {ScriptBase} from 'forge-std/Script.sol';
 import {ETH_A} from '@script/Params.s.sol';
@@ -59,27 +59,6 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
 
   // --- SAFE actions ---
 
-  function _lockETH(address _user, uint256 _collatAmount) internal override {
-    HaiProxy _proxy = _getProxy(_user);
-    (uint256 _safeId,) = _getSafe(_user, ETH_A);
-
-    vm.startPrank(_user);
-    IWeth(address(collateral[ETH_A])).deposit{value: _collatAmount}();
-    collateral[ETH_A].approve(address(_proxy), _collatAmount);
-
-    // NOTE: missing for ETH implementation (should add value to msg)
-    // bytes memory _callData = abi.encodeWithSelector(
-    //   BasicActions.lockTokenCollateral.selector,
-    //   address(safeManager),
-    //   address(collateralJoin[ETH_A]),
-    //   _safeId,
-    //   _collatAmount,
-    //   true
-    // );
-    // _proxy.execute(address(basicActions), _callData);
-    vm.stopPrank();
-  }
-
   function _joinTKN(address _user, address _collateralJoin, uint256 _amount) internal override {
     // NOTE: proxy implementation only needs approval for operating with the collateral
     HaiProxy _proxy = _getProxy(_user);
@@ -136,8 +115,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     bytes32 _cType = ICollateralJoin(_collateralJoin).collateralType();
     (uint256 _safeId,) = _getSafe(_user, _cType);
 
-    if (_cType == ETH_A) _lockETH(_user, uint256(_collatAmount));
-    else _joinTKN(_user, _collateralJoin, uint256(_collatAmount));
+    _joinTKN(_user, _collateralJoin, uint256(_collatAmount));
 
     bytes memory _callData = abi.encodeWithSelector(
       BasicActions.lockTokenCollateralAndGenerateDebt.selector,
@@ -184,7 +162,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
 
   function _getProxy(address _user) internal returns (HaiProxy) {
     if (proxy[_user] == HaiProxy(address(0))) {
-      proxy[_user] = HaiProxy(proxyRegistry.build(_user));
+      proxy[_user] = HaiProxy(proxyFactory.build(_user));
     }
     return proxy[_user];
   }

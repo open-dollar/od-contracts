@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
@@ -44,7 +44,7 @@ contract DelayedOracle is IBaseOracle, IDelayedOracle {
 
     (uint256 _priceFeedValue, bool _hasValidValue) = _getPriceSourceResult();
     if (_hasValidValue) {
-      _nextFeed = Feed(_priceFeedValue, true);
+      _nextFeed = Feed(_priceFeedValue, _hasValidValue);
       _currentFeed = _nextFeed;
       lastUpdateTime = block.timestamp;
 
@@ -56,19 +56,35 @@ contract DelayedOracle is IBaseOracle, IDelayedOracle {
 
   /// @inheritdoc IDelayedOracle
   function updateResult() external returns (bool _success) {
-    // Check if the delay passed
-    if (!_delayHasElapsed()) revert DelayedOracle_DelayHasNotElapsed();
     // Read the price from the median
     (uint256 _priceFeedValue, bool _hasValidValue) = _getPriceSourceResult();
-    // If the value is valid, update storage
-    if (_hasValidValue) {
-      // Update state
-      _currentFeed = _nextFeed;
-      _nextFeed = Feed(_priceFeedValue, true);
-      lastUpdateTime = block.timestamp;
-      // Emit event
-      emit UpdateResult(_currentFeed.value, lastUpdateTime);
+
+    // Check if the delay to set the new feed passed
+    if (!_delayHasElapsed()) {
+      // If it hasn't passed, check if the upcoming feed is valid
+      // in the case that it is not valid we check if we can fetch a new valid feed to replace it.
+      if (!_nextFeed.isValid) {
+        // Check if the newly fetched feed is valid
+        if (_hasValidValue) {
+          // Store the new next Feed
+          _nextFeed = Feed(_priceFeedValue, _hasValidValue);
+          lastUpdateTime = block.timestamp;
+        }
+
+        return _hasValidValue;
+      }
+
+      revert DelayedOracle_DelayHasNotElapsed();
     }
+
+    // Update state
+    _currentFeed = _nextFeed;
+    _nextFeed = Feed(_priceFeedValue, _hasValidValue);
+    lastUpdateTime = block.timestamp;
+
+    // Emit event
+    emit UpdateResult(_currentFeed.value, lastUpdateTime);
+
     return _hasValidValue;
   }
 
@@ -87,7 +103,7 @@ contract DelayedOracle is IBaseOracle, IDelayedOracle {
 
   /// @inheritdoc IDelayedOracle
   function shouldUpdate() external view returns (bool _ok) {
-    return _delayHasElapsed();
+    return _delayHasElapsed() || !_nextFeed.isValid;
   }
 
   /// @inheritdoc IDelayedOracle

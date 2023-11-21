@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {
   IPostSettlementSurplusAuctionHouse,
@@ -11,7 +11,7 @@ import {IProtocolToken} from '@interfaces/tokens/IProtocolToken.sol';
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {Modifiable} from '@contracts/utils/Modifiable.sol';
 
-import {SafeERC20} from '@openzeppelin/token/ERC20/utils/SafeERC20.sol';
+import {SafeERC20} from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import {Encoding} from '@libraries/Encoding.sol';
 import {WAD} from '@libraries/Math.sol';
 import {Assertions} from '@libraries/Assertions.sol';
@@ -115,25 +115,46 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, Modifiable, IPostSet
   }
 
   /// @inheritdoc ICommonSurplusAuctionHouse
-  function increaseBidSize(uint256 _id, uint256 _amountToBuy, uint256 _bid) external {
+  function increaseBidSize(uint256 _id, uint256 _bid) external {
     Auction storage _auction = _auctions[_id];
     if (_auction.highBidder == address(0)) revert SAH_HighBidderNotSet();
     if (_auction.bidExpiry <= block.timestamp && _auction.bidExpiry != 0) revert SAH_BidAlreadyExpired();
     if (_auction.auctionDeadline <= block.timestamp) revert SAH_AuctionAlreadyExpired();
-    if (_amountToBuy != _auction.amountToSell) revert SAH_AmountsNotMatching();
     if (_bid <= _auction.bidAmount) revert SAH_BidNotHigher();
     if (_bid * WAD < _params.bidIncrease * _auction.bidAmount) revert SAH_InsufficientIncrease();
 
-    if (msg.sender != _auction.highBidder) {
-      protocolToken.safeTransferFrom(msg.sender, _auction.highBidder, _auction.bidAmount);
+    // The amount that will be transferred to the auction house
+    uint256 _deltaBidAmount = _bid;
+
+    // Check if this is the first bid or not
+    if (_auction.bidExpiry != 0) {
+      // Since this is not the first bid, it might be that we need to repay the previous bidder
+      if (msg.sender != _auction.highBidder) {
+        protocolToken.safeTransferFrom(msg.sender, _auction.highBidder, _auction.bidAmount);
+
+        _auction.highBidder = msg.sender;
+      }
+      // Either we just repaid the previous bidder,
+      // or this user is also the previous bidder and is incrementing his bid
+      _deltaBidAmount -= _auction.bidAmount;
+    } else {
+      // This is the first bid
       _auction.highBidder = msg.sender;
     }
-    protocolToken.safeTransferFrom(msg.sender, address(this), _bid - _auction.bidAmount);
 
     _auction.bidAmount = _bid;
     _auction.bidExpiry = block.timestamp + _params.bidDuration;
 
-    emit IncreaseBidSize(_id, msg.sender, block.timestamp, _bid, _amountToBuy, _auction.bidExpiry);
+    protocolToken.safeTransferFrom(msg.sender, address(this), _deltaBidAmount);
+
+    emit IncreaseBidSize({
+      _id: _id,
+      _bidder: msg.sender,
+      _blockTimestamp: block.timestamp,
+      _raisedAmount: _bid,
+      _soldAmount: _auction.amountToSell,
+      _bidExpiry: _auction.bidExpiry
+    });
   }
 
   /// @inheritdoc ICommonSurplusAuctionHouse
@@ -167,6 +188,6 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, Modifiable, IPostSet
 
   /// @inheritdoc Modifiable
   function _validateParameters() internal view override {
-    address(protocolToken).assertNonNull();
+    address(protocolToken).assertHasCode();
   }
 }

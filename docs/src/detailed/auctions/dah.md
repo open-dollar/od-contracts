@@ -16,14 +16,14 @@ This system ensures that bad debts are efficiently cleared from the protocol, wh
 
 **Public**
 
+- `restartAuction`: Allows for the resumption of an expired auction that has received no bids. This restarts the auction and increases the initial quantity of protocol tokens to be minted as an incentive for participation.
 - `decreaseSoldAmount`: Enables users to participate in the auction by bidding. System coins are transferred during this operation.
 - `settleAuction`: Finalizes an auction, distributing the protocol tokens to the winning bidder.
+- `terminateAuctionPrematurely`: Ends an auction before its scheduled completion. This method creates an unbacked debt entry in the Accounting Engine and returns the system coins to the highest bidder. Note that this action can only be performed when the contract is disabled.
 
 **Authorized**
 
-- `restartAuction`: Allows for the resumption of an expired auction that has received no bids. This restarts the auction and increases the initial quantity of protocol tokens to be minted as an incentive for participation.
-
-- `terminateAuctionPrematurely`: Ends an auction before its scheduled completion. This method creates an unbacked debt entry in the Accounting Engine and returns the system coins to the highest bidder. Note that this action can only be performed when the contract is disabled.
+- `startAuction`: Initiates a new debt auction.
 
 ### Contract Parameters:
 

@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
 
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
+import {IModifiablePerCollateral} from '@interfaces/utils/IModifiablePerCollateral.sol';
 
-interface ICollateralAuctionHouseFactory is IAuthorizable, IModifiable {
+interface ICollateralAuctionHouseFactory is IAuthorizable, IModifiable, IModifiablePerCollateral {
   // --- Events ---
 
   /**
@@ -17,9 +18,6 @@ interface ICollateralAuctionHouseFactory is IAuthorizable, IModifiable {
   event DeployCollateralAuctionHouse(bytes32 indexed _cType, address indexed _collateralAuctionHouse);
 
   // --- Errors ---
-
-  /// @notice Throws when trying to deploy a CollateralAuctionHouse contract for an existent collateral type
-  error CAHFactory_CAHExists();
 
   /**
    * @notice Getter for the collateral parameters struct
@@ -64,27 +62,8 @@ interface ICollateralAuctionHouseFactory is IAuthorizable, IModifiable {
   function collateralAuctionHouses(bytes32 _cType) external view returns (address _collateralAuctionHouse);
 
   /**
-   * @notice Getter for the list of collateral types
-   * @return __collateralList List of collateral types
-   */
-  function collateralList() external view returns (bytes32[] memory __collateralList);
-
-  /**
    * @notice Getter for the list of CollateralAuctionHouse contracts
    * @return _collateralAuctionHouses List of CollateralAuctionHouse contracts
    */
   function collateralAuctionHousesList() external view returns (address[] memory _collateralAuctionHouses);
-
-  // --- Methods ---
-
-  /**
-   * @notice Deploys a CollateralAuctionHouse contract
-   * @param _cType Bytes32 representation of the collateral type
-   * @param _cahParams Initial valid CollateralAuctionHouse parameters
-   * @return _collateralAuctionHouse Address of the deployed CollateralAuctionHouse contract
-   */
-  function deployCollateralAuctionHouse(
-    bytes32 _cType,
-    ICollateralAuctionHouse.CollateralAuctionHouseParams calldata _cahParams
-  ) external returns (ICollateralAuctionHouse _collateralAuctionHouse);
 }

@@ -17,7 +17,9 @@ The Accounting Engine serves as the system's financial management hub, overseein
 
 **Public**
 
+- `popDebtFromQueue`: Removes a certain amount of debt from the time-sensitive queue after the `popDebtDelay` duration has elapsed, for either settlement or auction.
 - `settleDebt`: Utilizes coin balance to settle debt.
+- `cancelAuctionedDebtWithSurplus`: Utilizes coins to settle debt that's in the queue.
 - `auctionDebt`: Triggers an auction to liquidate portions of unsettled debt.
 - `auctionSurplus`: Triggers an auction to liquidate surplus once all debt has been settled.
 - `transferExtraSurplus`: Allocates (instead of auctioning it) excess surplus following debt settlement.
@@ -26,8 +28,6 @@ The Accounting Engine serves as the system's financial management hub, overseein
 **Authorized**
 
 - `pushDebtToQueue`: Adds a specified amount of debt to a time-sensitive queue.
-- `popDebtFromQueue`: Removes a certain amount of debt from the time-sensitive queue after the `popDebtDelay` duration has elapsed, for either settlement or auction.
-- `cancelAuctionedDebtWithSurplus`: Utilizes coins to settle debt that's in the queue.
 - `disableContract`: Deactivates both Debt and Surplus Auction Houses, clears as much debt as possible, and transfers (after `disableCooldown` delay) any leftover surplus to a designated drain address.
 
 ### Required Authorities:

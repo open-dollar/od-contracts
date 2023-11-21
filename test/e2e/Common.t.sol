@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {HaiTest} from '@test/utils/HaiTest.t.sol';
 import {HAI, HAI_INITIAL_PRICE, WETH} from '@script/Params.s.sol';
@@ -31,14 +31,14 @@ contract DeployForTest is TestParams, Deploy {
     vm.createSelectFork(vm.rpcUrl('mainnet'));
   }
 
-  function setupEnvironment() public virtual override {
-    WETH9 weth = WETH9(payable(0x4200000000000000000000000000000000000006));
+  function setupEnvironment() public virtual override updateParams {
+    WETH9 _weth = WETH9(payable(0x4200000000000000000000000000000000000006));
 
     systemCoinOracle = new OracleForTest(HAI_INITIAL_PRICE); // 1 HAI = 1 USD
     delayedOracle[WETH] = new DelayedOracleForTest(TEST_ETH_PRICE, address(0)); // 1 ETH = 2000 USD
     delayedOracle[TKN] = new DelayedOracleForTest(TEST_TKN_PRICE, address(0)); // 1 TKN = 1 USD
 
-    collateral[WETH] = IERC20Metadata(address(weth));
+    collateral[WETH] = IERC20Metadata(address(_weth));
     collateral[TKN] = new ERC20ForTest();
 
     delayedOracle['TKN-A'] = new DelayedOracleForTest(COLLATERAL_PRICE, address(0));
@@ -57,8 +57,6 @@ contract DeployForTest is TestParams, Deploy {
     collateralTypes.push('TKN-B');
     collateralTypes.push('TKN-C');
     collateralTypes.push('TKN-8D');
-
-    _getEnvironmentParams();
   }
 }
 

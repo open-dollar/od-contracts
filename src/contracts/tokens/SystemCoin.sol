@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
-import {ERC20, IERC20} from '@openzeppelin/token/ERC20/ERC20.sol';
+import {ERC20Permit, ERC20} from '@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol';
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
 import {ISystemCoin} from '@interfaces/tokens/ISystemCoin.sol';
@@ -10,14 +10,17 @@ import {ISystemCoin} from '@interfaces/tokens/ISystemCoin.sol';
  * @title  SystemCoin
  * @notice This contract represents the system coin ERC20 token to be used outside the system
  */
-contract SystemCoin is ERC20, Authorizable, ISystemCoin {
+contract SystemCoin is ERC20Permit, Authorizable, ISystemCoin {
   // --- Init ---
 
   /**
    * @param  _name String with the name of the token
    * @param  _symbol String with the symbol of the token
    */
-  constructor(string memory _name, string memory _symbol) ERC20(_name, _symbol) Authorizable(msg.sender) {}
+  constructor(
+    string memory _name,
+    string memory _symbol
+  ) ERC20Permit(_name) ERC20(_name, _symbol) Authorizable(msg.sender) {}
 
   // --- Methods ---
 
@@ -29,10 +32,5 @@ contract SystemCoin is ERC20, Authorizable, ISystemCoin {
   /// @inheritdoc ISystemCoin
   function burn(uint256 _wad) external {
     _burn(msg.sender, _wad);
-  }
-
-  /// @inheritdoc ISystemCoin
-  function burn(address _usr, uint256 _wad) external isAuthorized {
-    _burn(_usr, _wad);
   }
 }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {ICollateralJoin} from '@interfaces/utils/ICollateralJoin.sol';
 import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
@@ -26,7 +26,7 @@ contract CollateralBidActions is CommonActions, ICollateralBidActions {
     uint256 _auctionId,
     uint256 _minCollateralAmount,
     uint256 _bidAmount
-  ) external delegateCall {
+  ) external onlyDelegateCall {
     ISAFEEngine _safeEngine = ICoinJoin(_coinJoin).safeEngine();
     // checks coin balance and joins more if needed
     uint256 _coinBalance = _safeEngine.coinBalance(address(this)) / RAY;
@@ -42,8 +42,13 @@ contract CollateralBidActions is CommonActions, ICollateralBidActions {
     (uint256 _boughtAmount, uint256 _adjustedBid) =
       ICollateralAuctionHouse(_collateralAuctionHouse).buyCollateral(_auctionId, _bidAmount);
 
-    require(_adjustedBid <= _bidAmount, 'Invalid adjusted bid');
-    require(_boughtAmount >= _minCollateralAmount, 'Invalid bought amount');
+    if (_adjustedBid > _bidAmount) {
+      revert ColActions_InvalidAdjustedBid();
+    }
+
+    if (_boughtAmount < _minCollateralAmount) {
+      revert ColActions_InsufficientCollateralReceived(_minCollateralAmount, _boughtAmount);
+    }
 
     // exit collateral
     _exitCollateral(_collateralJoin, _boughtAmount);

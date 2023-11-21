@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - dev
+  workflow_dispatch:
 
 jobs:
   generate_interfaces:
@@ -43,7 +44,7 @@ jobs:
           destination_dir: 'abis-package'
 
       - name: Generate canary tag
-        if: github.ref_name == 'dev'
+        if: github.ref_name != 'main'
         run: cd abis-package && yarn version --new-version "0.0.0-${GITHUB_SHA::8}" --no-git-tag-version
       
       - name: Publish

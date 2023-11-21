@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
 
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
+import {IModifiablePerCollateral} from '@interfaces/utils/IModifiablePerCollateral.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 
-interface ILiquidationEngine is IAuthorizable, IModifiable, IDisableable {
+interface ILiquidationEngine is IAuthorizable, IDisableable, IModifiable, IModifiablePerCollateral {
   // --- Events ---
 
   /**
@@ -89,18 +90,18 @@ interface ILiquidationEngine is IAuthorizable, IModifiable, IDisableable {
   error LiqEng_InvalidSAFESaviourOperation();
   /// @notice Throws when trying to liquidate a SAFE with a null amount of debt
   error LiqEng_NullAuction();
-  /// @notice Throws when trying to liquidate a SAFE that would leave it in a dusty state
-  error LiqEng_DustySAFE();
   /// @notice Throws when trying to liquidate a SAFE with a null amount of collateral to sell
   error LiqEng_NullCollateralToSell();
-  /// @notice Throws when trying to initialize a collateral type that is already initialized
-  error LiqEng_CollateralTypeAlreadyInitialized();
+  /// @notice Throws when trying to call a function only the liquidator is allowed to call
+  error LiqEng_OnlyLiqEng();
 
   // --- Structs ---
 
   struct LiquidationEngineParams {
     // Max amount of system coins to be auctioned at the same time
     uint256 /* RAD */ onAuctionSystemCoinLimit;
+    // The gas limit for the saviour call
+    uint256 /*       */ saviourGasLimit;
   }
 
   struct LiquidationEngineCollateralParams {
@@ -122,6 +123,7 @@ interface ILiquidationEngine is IAuthorizable, IModifiable, IDisableable {
 
   /**
    * @notice The AccountingEngine is used to push the debt into the system, and set as the first bidder on the collateral auctions
+   * @return _accountingEngine Address of the AccountingEngine
    */
   function accountingEngine() external view returns (IAccountingEngine _accountingEngine);
 
@@ -138,7 +140,7 @@ interface ILiquidationEngine is IAuthorizable, IModifiable, IDisableable {
    * @return _onAuctionSystemCoinLimit Max amount of system coins to be auctioned at the same time [rad]
    */
   // solhint-disable-next-line private-vars-leading-underscore
-  function _params() external view returns (uint256 _onAuctionSystemCoinLimit);
+  function _params() external view returns (uint256 _onAuctionSystemCoinLimit, uint256 _saviourGasLimit);
 
   /**
    * @notice Getter for the collateral parameters struct
@@ -180,7 +182,7 @@ interface ILiquidationEngine is IAuthorizable, IModifiable, IDisableable {
    * @param  _saviour The SAFE saviour contract to check
    * @return _canSave Whether the contract can save SAFEs or not
    */
-  function safeSaviours(address _saviour) external view returns (uint256 _canSave);
+  function safeSaviours(address _saviour) external view returns (bool _canSave);
 
   /**
    * @notice Saviour contract chosen for each SAFE by its owner
@@ -229,22 +231,4 @@ interface ILiquidationEngine is IAuthorizable, IModifiable, IDisableable {
    * @param  _saviour SAFE saviour contract to be removed
    */
   function disconnectSAFESaviour(address _saviour) external;
-
-  /**
-   * @notice Authed function to initialize a brand new collateral type
-   * @param  _cType Bytes32 representation of the collateral type
-   * @param  _collateralParams Initial collateral parameters struct to initialize the collateral type
-   */
-  function initializeCollateralType(
-    bytes32 _cType,
-    LiquidationEngineCollateralParams memory _collateralParams
-  ) external;
-
-  // --- Views ---
-
-  /**
-   * @notice List of all collateral types initialized in the LiquidationEngine
-   * @return __collateralList Array of collateral types
-   */
-  function collateralList() external view returns (bytes32[] memory __collateralList);
 }

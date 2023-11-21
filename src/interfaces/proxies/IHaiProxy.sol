@@ -1,19 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
-import {IOwnable} from '@interfaces/utils/IOwnable.sol';
+import {IHaiOwnable2Step} from '@interfaces/utils/IHaiOwnable2Step.sol';
 
-interface IHaiProxy is IOwnable {
+interface IHaiProxy is IHaiOwnable2Step {
   // --- Errors ---
 
   /// @notice Throws if the target address is null
   error TargetAddressRequired();
-
-  /**
-   * @notice Throws if the target call fails
-   * @param  _response The error response log of the target call
-   */
-  error TargetCallFailed(bytes _response);
 
   // --- Methods ---
 

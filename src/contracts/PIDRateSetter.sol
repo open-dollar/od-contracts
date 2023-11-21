@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {IPIDRateSetter} from '@interfaces/IPIDRateSetter.sol';
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
@@ -101,7 +101,7 @@ contract PIDRateSetter is Authorizable, Modifiable, IPIDRateSetter {
   function _validateParameters() internal view override {
     _params.updateRateDelay.assertGt(0);
 
-    address(oracleRelayer).assertNonNull();
-    address(pidCalculator).assertNonNull();
+    address(oracleRelayer).assertHasCode();
+    address(pidCalculator).assertHasCode();
   }
 }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import '@script/Contracts.s.sol';
 import {GoerliParams, WETH, OP, WBTC, STONES, TOTEM} from '@script/GoerliParams.s.sol';
@@ -84,7 +84,6 @@ abstract contract GoerliDeployment is Contracts, GoerliParams {
 
     // --- proxies ---
     proxyFactory = HaiProxyFactory(0x129ed50D28B4A85F3862B25413142FE24eEd185c);
-    proxyRegistry = HaiProxyRegistry(0xC33265Bd031D1B57b3555f31B36dB60A8A766Bfa);
     safeManager = HaiSafeManager(0x033Fa671B4743f343b3CA685845e48a412EC0302);
 
     basicActions = BasicActions(0xD34D69b9063A641F62F2a39CADd2996B54AC1C0b);

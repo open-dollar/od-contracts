@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
@@ -13,7 +13,7 @@ import {StabilityFeeTreasuryForTest} from '@test/mocks/StabilityFeeTreasuryForTe
 import {HaiTest} from '@test/utils/HaiTest.t.sol';
 import {StdStorage, stdStorage} from 'forge-std/StdStorage.sol';
 
-import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
+import {IERC20} from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
 import {Math, RAY, WAD, HOUR} from '@libraries/Math.sol';
 import {Assertions} from '@libraries/Assertions.sol';

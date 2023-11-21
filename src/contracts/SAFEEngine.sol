@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 /*
 
@@ -20,17 +20,18 @@ import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 
 import {Authorizable, IAuthorizable} from '@contracts/utils/Authorizable.sol';
 import {Modifiable} from '@contracts/utils/Modifiable.sol';
+import {IModifiablePerCollateral, ModifiablePerCollateral} from '@contracts/utils/ModifiablePerCollateral.sol';
 import {Disableable} from '@contracts/utils/Disableable.sol';
 
 import {Encoding} from '@libraries/Encoding.sol';
 import {Math, RAY} from '@libraries/Math.sol';
-import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
+import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 /**
  * @title  SAFEEngine
  * @notice Core contract that manages the state of the SAFE system
  */
-contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
+contract SAFEEngine is Authorizable, Disableable, Modifiable, ModifiablePerCollateral, ISAFEEngine {
   using Math for uint256;
   using Encoding for bytes;
   using EnumerableSet for EnumerableSet.Bytes32Set;
@@ -50,7 +51,7 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
   // solhint-disable-next-line private-vars-leading-underscore
   mapping(bytes32 _cType => mapping(address _safe => SAFE)) public _safes;
   /// @inheritdoc ISAFEEngine
-  mapping(address _caller => mapping(address _account => uint256 _isAllowed)) public safeRights;
+  mapping(address _caller => mapping(address _account => bool _isAllowed)) public safeRights;
 
   /// @inheritdoc ISAFEEngine
   function params() external view returns (SAFEEngineParams memory _safeEngineParams) {
@@ -72,8 +73,6 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
     return _safes[_cType][_safe];
   }
 
-  EnumerableSet.Bytes32Set internal _collateralList;
-
   // --- Balances ---
 
   /// @inheritdoc ISAFEEngine
@@ -94,17 +93,6 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
    */
   constructor(SAFEEngineParams memory _safeEngineParams) Authorizable(msg.sender) validParams {
     _params = _safeEngineParams;
-  }
-
-  /// @inheritdoc ISAFEEngine
-  function initializeCollateralType(
-    bytes32 _cType,
-    SAFEEngineCollateralParams memory _safeEngineCParams
-  ) external isAuthorized whenEnabled {
-    if (!_collateralList.add(_cType)) revert SAFEEng_CollateralTypeAlreadyExists();
-    _cData[_cType].accumulatedRate = RAY;
-    _cParams[_cType] = _safeEngineCParams;
-    emit InitializeCollateralType(_cType);
   }
 
   // --- Fungibility ---
@@ -346,26 +334,19 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
 
   /// @inheritdoc ISAFEEngine
   function approveSAFEModification(address _account) external {
-    safeRights[msg.sender][_account] = 1;
+    safeRights[msg.sender][_account] = true;
     emit ApproveSAFEModification(msg.sender, _account);
   }
 
   /// @inheritdoc ISAFEEngine
   function denySAFEModification(address _account) external {
-    safeRights[msg.sender][_account] = 0;
+    safeRights[msg.sender][_account] = false;
     emit DenySAFEModification(msg.sender, _account);
   }
 
   /// @inheritdoc ISAFEEngine
   function canModifySAFE(address _safe, address _account) public view returns (bool _canModifySafe) {
-    return _safe == _account || safeRights[_safe][_account] == 1;
-  }
-
-  // --- Views ---
-
-  /// @inheritdoc ISAFEEngine
-  function collateralList() external view returns (bytes32[] memory __collateralList) {
-    return _collateralList.values();
+    return _safe == _account || safeRights[_safe][_account];
   }
 
   // --- Internals ---
@@ -406,6 +387,13 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
 
   // --- Administration ---
 
+  /// @inheritdoc ModifiablePerCollateral
+  function _initializeCollateralType(bytes32 _cType, bytes memory _collateralParams) internal override whenEnabled {
+    (SAFEEngineCollateralParams memory _safeEngineCParams) = abi.decode(_collateralParams, (SAFEEngineCollateralParams));
+    _cData[_cType].accumulatedRate = RAY;
+    _cParams[_cType] = _safeEngineCParams;
+  }
+
   /// @inheritdoc Modifiable
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     uint256 _uint256 = _data.toUint256();
@@ -415,7 +403,7 @@ contract SAFEEngine is Authorizable, Modifiable, Disableable, ISAFEEngine {
     else revert UnrecognizedParam();
   }
 
-  /// @inheritdoc Modifiable
+  /// @inheritdoc ModifiablePerCollateral
   function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override {
     uint256 _uint256 = _data.toUint256();
 

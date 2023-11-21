@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {CollateralAuctionHouseForTest, ICollateralAuctionHouse} from '@test/mocks/CollateralAuctionHouseForTest.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
@@ -207,13 +207,13 @@ contract Unit_CollateralAuctionHouse_Constructor is Base {
   }
 
   function test_Revert_NullAddress_LiquidationEngine() public {
-    vm.expectRevert(Assertions.NullAddress.selector);
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
 
     new CollateralAuctionHouseForTest(address(mockSafeEngine), address(0), address(mockOracleRelayer), collateralType, cahParams);
   }
 
   function test_Revert_NullAddress_OracleRelayer() public {
-    vm.expectRevert(Assertions.NullAddress.selector);
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
 
     new CollateralAuctionHouseForTest(address(mockSafeEngine), address(mockLiquidationEngine), address(0), collateralType, cahParams);
   }
@@ -548,19 +548,12 @@ contract Unit_CollateralAuctionHouse_GetCollateralBought is Base {
     vm.assume(notOverflowMul(_getCollateralBoughtScenario.bid, RAY));
     uint256 _adjustedBid = _computeAdjustedBid(_getCollateralBoughtScenario);
 
-    vm.assume(_getCollateralBoughtScenario.calcRedemptionPrice > 0);
-
     vm.assume(block.timestamp >= _getCollateralBoughtScenario.auction.initialTimestamp);
     uint256 _auctionDiscount = _computeAuctionDiscount(_getCollateralBoughtScenario);
 
-    vm.assume(notOverflowMul(_getCollateralBoughtScenario.collateralPrice, RAY));
+    vm.assume(notOverflowMul(_getCollateralBoughtScenario.collateralPrice, _auctionDiscount));
+    vm.assume(notOverflowMul(_getCollateralBoughtScenario.collateralPrice.wmul(_auctionDiscount), RAY));
     vm.assume(_getCollateralBoughtScenario.calcRedemptionPrice > 0);
-    vm.assume(
-      notOverflowMul(
-        _getCollateralBoughtScenario.collateralPrice.rdiv(_getCollateralBoughtScenario.calcRedemptionPrice),
-        _auctionDiscount
-      )
-    );
     uint256 _discountedPrice = _computeDiscountedPrice(_getCollateralBoughtScenario, _auctionDiscount);
 
     vm.assume(notOverflowMul(_adjustedBid, WAD));
@@ -621,9 +614,9 @@ contract Unit_CollateralAuctionHouse_GetCollateralBought is Base {
     GetCollateralBoughtScenario memory _getCollateralBoughtScenario,
     uint256 _auctionDiscount
   ) internal pure returns (uint256 _discountedPrice) {
-    _discountedPrice = _getCollateralBoughtScenario.collateralPrice.rdiv(
+    _discountedPrice = _getCollateralBoughtScenario.collateralPrice.wmul(_auctionDiscount).rdiv(
       _getCollateralBoughtScenario.calcRedemptionPrice
-    ).wmul(_auctionDiscount);
+    );
   }
 
   function _computeBoughtCollateral(
@@ -828,17 +821,16 @@ contract Unit_CollateralAuctionHouse_GetBoughtCollateral is Base {
     pure
     returns (uint256 _boughtCollateral)
   {
-    vm.assume(notOverflowMul(_getBoughtCollateralScenario.collateralPrice, RAY));
-    vm.assume(_getBoughtCollateralScenario.systemCoinPrice > 0);
+    vm.assume(notOverflowMul(_getBoughtCollateralScenario.collateralPrice, _getBoughtCollateralScenario.customDiscount));
     vm.assume(
       notOverflowMul(
-        _getBoughtCollateralScenario.collateralPrice.rdiv(_getBoughtCollateralScenario.systemCoinPrice),
-        _getBoughtCollateralScenario.customDiscount
+        _getBoughtCollateralScenario.collateralPrice.wmul(_getBoughtCollateralScenario.customDiscount), RAY
       )
     );
-    uint256 _discountedPrice = _getBoughtCollateralScenario.collateralPrice.rdiv(
-      _getBoughtCollateralScenario.systemCoinPrice
-    ).wmul(_getBoughtCollateralScenario.customDiscount);
+    vm.assume(_getBoughtCollateralScenario.systemCoinPrice > 0);
+    uint256 _discountedPrice = _getBoughtCollateralScenario.collateralPrice.wmul(
+      _getBoughtCollateralScenario.customDiscount
+    ).rdiv(_getBoughtCollateralScenario.systemCoinPrice);
 
     vm.assume(notOverflowMul(_getBoughtCollateralScenario.adjustedBid, WAD));
     vm.assume(_discountedPrice > 0);
@@ -981,7 +973,7 @@ contract Unit_CollateralAuctionHouse_BuyCollateral is Base {
     uint256 _auctionDiscount
   ) internal pure returns (uint256 _discountedPrice) {
     _discountedPrice =
-      _buyCollateralScenario.collateralPrice.rdiv(_buyCollateralScenario.redemptionPrice).wmul(_auctionDiscount);
+      _buyCollateralScenario.collateralPrice.wmul(_auctionDiscount).rdiv(_buyCollateralScenario.redemptionPrice);
   }
 
   function _computeBoughtCollateral(
@@ -1111,12 +1103,8 @@ contract Unit_CollateralAuctionHouse_BuyCollateral is Base {
     uint256 _adjustedBid = _computeAdjustedBid(_buyCollateralScenario);
     vm.assume(block.timestamp >= _buyCollateralScenario.auction.initialTimestamp);
     uint256 _auctionDiscount = _computeAuctionDiscount(_buyCollateralScenario);
-    vm.assume(notOverflowMul(_buyCollateralScenario.collateralPrice, RAY));
-    vm.assume(
-      notOverflowMul(
-        _buyCollateralScenario.collateralPrice.rdiv(_buyCollateralScenario.redemptionPrice), _auctionDiscount
-      )
-    );
+    vm.assume(notOverflowMul(_buyCollateralScenario.collateralPrice, _auctionDiscount));
+    vm.assume(notOverflowMul(_buyCollateralScenario.collateralPrice.wmul(_auctionDiscount), RAY));
     uint256 _discountedPrice = _computeDiscountedPrice(_buyCollateralScenario, _auctionDiscount);
     vm.assume(_discountedPrice > 0);
     vm.assume(notOverflowMul(_adjustedBid, _buyCollateralScenario.auction.amountToSell));
@@ -1532,9 +1520,7 @@ contract Unit_CollateralAuctionHouse_TerminateAuctionPrematurely is Base {
 
   function test_Emit_TerminateAuctionPrematurely(CollateralAuction memory _auction) public happyPath(_auction) {
     vm.expectEmit();
-    emit TerminateAuctionPrematurely(
-      _auction.id, block.timestamp, _auction.forgoneCollateralReceiver, _auction.amountToSell
-    );
+    emit TerminateAuctionPrematurely(_auction.id, block.timestamp, authorizedAccount, _auction.amountToSell);
 
     collateralAuctionHouse.terminateAuctionPrematurely(_auction.id);
   }
@@ -1578,7 +1564,7 @@ contract Unit_CollateralAuctionHouse_ModifyParameters is Base {
     assertEq(abi.encode(_params), abi.encode(_fuzz));
   }
 
-  function test_Set_LiquidationEngine(address _liquidationEngine) public happyPath {
+  function test_Set_LiquidationEngine(address _liquidationEngine) public happyPath mockAsContract(_liquidationEngine) {
     vm.assume(_liquidationEngine != address(0));
     vm.assume(_liquidationEngine != deployer);
     vm.assume(_liquidationEngine != authorizedAccount);
@@ -1591,8 +1577,7 @@ contract Unit_CollateralAuctionHouse_ModifyParameters is Base {
   function test_Emit_Authorization_LiquidationEngine(
     address _oldLiquidationEngine,
     address _newLiquidationEngine
-  ) public happyPath {
-    vm.assume(_newLiquidationEngine != address(0));
+  ) public happyPath mockAsContract(_newLiquidationEngine) {
     vm.assume(_newLiquidationEngine != deployer);
     vm.assume(_newLiquidationEngine != authorizedAccount);
     vm.assume(_oldLiquidationEngine != deployer);
@@ -1612,7 +1597,7 @@ contract Unit_CollateralAuctionHouse_ModifyParameters is Base {
     collateralAuctionHouse.modifyParameters('liquidationEngine', abi.encode(_newLiquidationEngine));
   }
 
-  function test_Set_OracleRelayer(address _oracleRelayer) public happyPath {
+  function test_Set_OracleRelayer(address _oracleRelayer) public happyPath mockAsContract(_oracleRelayer) {
     vm.assume(_oracleRelayer != address(0));
 
     collateralAuctionHouse.modifyParameters('oracleRelayer', abi.encode(_oracleRelayer));
@@ -1623,7 +1608,7 @@ contract Unit_CollateralAuctionHouse_ModifyParameters is Base {
   function test_Revert_NullAddress_LiquidationEngine() public {
     vm.startPrank(authorizedAccount);
 
-    vm.expectRevert(Assertions.NullAddress.selector);
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
 
     collateralAuctionHouse.modifyParameters('liquidationEngine', abi.encode(0));
   }
@@ -1631,7 +1616,7 @@ contract Unit_CollateralAuctionHouse_ModifyParameters is Base {
   function test_Revert_NullAddress_OracleRelayer() public {
     vm.startPrank(authorizedAccount);
 
-    vm.expectRevert(Assertions.NullAddress.selector);
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
 
     collateralAuctionHouse.modifyParameters('oracleRelayer', abi.encode(0));
   }

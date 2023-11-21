@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
 import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
 import {IPIDRateSetter} from '@interfaces/IPIDRateSetter.sol';
 
-import {IJob, IStabilityFeeTreasury} from '@interfaces/jobs/IJob.sol';
+import {IJob} from '@interfaces/jobs/IJob.sol';
 
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
-interface IOracleJob is IJob, IAuthorizable, IModifiable {
+interface IOracleJob is IAuthorizable, IModifiable, IJob {
   // --- Errors ---
 
   /// @notice Throws when trying to update an invalid collateral price

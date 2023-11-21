@@ -1,24 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import '@script/Contracts.s.sol';
-import {Params, ParamChecker, HAI, ETH_A, JOB_REWARD} from '@script/Params.s.sol';
+import '@script/Params.s.sol';
 import '@script/Registry.s.sol';
 
 abstract contract Common is Contracts, Params {
   uint256 internal _deployerPk = 69; // for tests
   uint256 internal _governorPK;
-
-  function deployEthCollateralContracts() public updateParams {
-    // deploy ETHJoin and CollateralAuctionHouse
-    ethJoin = new ETHJoin(address(safeEngine), ETH_A);
-
-    collateralAuctionHouse[ETH_A] =
-      collateralAuctionHouseFactory.deployCollateralAuctionHouse(ETH_A, _collateralAuctionHouseParams[ETH_A]);
-
-    collateralJoin[ETH_A] = CollateralJoin(address(ethJoin));
-    safeEngine.addAuthorization(address(ethJoin));
-  }
 
   function deployCollateralContracts(bytes32 _cType) public updateParams {
     // deploy CollateralJoin and CollateralAuctionHouse
@@ -34,8 +23,9 @@ abstract contract Common is Contracts, Params {
       });
     }
 
+    collateralAuctionHouseFactory.initializeCollateralType(_cType, abi.encode(_collateralAuctionHouseParams[_cType]));
     collateralAuctionHouse[_cType] =
-      collateralAuctionHouseFactory.deployCollateralAuctionHouse(_cType, _collateralAuctionHouseParams[_cType]);
+      ICollateralAuctionHouse(collateralAuctionHouseFactory.collateralAuctionHouses(_cType));
   }
 
   function _revokeAllTo(address _governor) internal {
@@ -65,10 +55,6 @@ abstract contract Common is Contracts, Params {
 
     // token adapters
     _revoke(coinJoin, _governor);
-
-    if (address(ethJoin) != address(0)) {
-      _revoke(ethJoin, _governor);
-    }
 
     // factories or children
     _revoke(chainlinkRelayerFactory, _governor);
@@ -129,10 +115,6 @@ abstract contract Common is Contracts, Params {
     _delegate(collateralJoinFactory, __delegate);
     _delegate(collateralAuctionHouseFactory, __delegate);
 
-    if (address(ethJoin) != address(0)) {
-      _delegate(ethJoin, __delegate);
-    }
-
     // global settlement
     _delegate(globalSettlement, __delegate);
     _delegate(postSettlementSurplusAuctionHouse, __delegate);
@@ -152,11 +134,12 @@ abstract contract Common is Contracts, Params {
     return governor != deployer && governor != address(0);
   }
 
-  function deployContracts() public updateParams {
-    // deploy Tokens
+  function deployTokens() public updateParams {
     systemCoin = new SystemCoin('HAI Index Token', 'HAI');
     protocolToken = new ProtocolToken('Protocol Token', 'KITE');
+  }
 
+  function deployContracts() public updateParams {
     // deploy Base contracts
     safeEngine = new SAFEEngine(_safeEngineParams);
 
@@ -272,24 +255,17 @@ abstract contract Common is Contracts, Params {
   }
 
   function _setupCollateral(bytes32 _cType) internal {
-    safeEngine.initializeCollateralType(_cType, _safeEngineCParams[_cType]);
-    oracleRelayer.initializeCollateralType(_cType, _oracleRelayerCParams[_cType]);
-    liquidationEngine.initializeCollateralType(_cType, _liquidationEngineCParams[_cType]);
+    safeEngine.initializeCollateralType(_cType, abi.encode(_safeEngineCParams[_cType]));
+    oracleRelayer.initializeCollateralType(_cType, abi.encode(_oracleRelayerCParams[_cType]));
+    liquidationEngine.initializeCollateralType(_cType, abi.encode(_liquidationEngineCParams[_cType]));
 
-    taxCollector.initializeCollateralType(_cType, _taxCollectorCParams[_cType]);
+    taxCollector.initializeCollateralType(_cType, abi.encode(_taxCollectorCParams[_cType]));
     if (_taxCollectorSecondaryTaxReceiver.receiver != address(0)) {
       taxCollector.modifyParameters(_cType, 'secondaryTaxReceiver', abi.encode(_taxCollectorSecondaryTaxReceiver));
     }
 
     // setup initial price
     oracleRelayer.updateCollateralPrice(_cType);
-  }
-
-  function deployOracleFactories() public updateParams {
-    chainlinkRelayerFactory = new ChainlinkRelayerFactory();
-    uniV3RelayerFactory = new UniV3RelayerFactory();
-    denominatedOracleFactory = new DenominatedOracleFactory();
-    delayedOracleFactory = new DelayedOracleFactory();
   }
 
   function deployPIDController() public updateParams {
@@ -312,9 +288,6 @@ abstract contract Common is Contracts, Params {
 
     // auth
     oracleRelayer.addAuthorization(address(pidRateSetter));
-
-    // initialize
-    pidRateSetter.updateRate();
   }
 
   function deployJobContracts() public updateParams {
@@ -344,7 +317,6 @@ abstract contract Common is Contracts, Params {
 
   function deployProxyContracts(address _safeEngine) public updateParams {
     proxyFactory = new HaiProxyFactory();
-    proxyRegistry = new HaiProxyRegistry(address(proxyFactory));
     safeManager = new HaiSafeManager(_safeEngine);
     _deployProxyActions();
   }
@@ -357,6 +329,25 @@ abstract contract Common is Contracts, Params {
     postSettlementSurplusBidActions = new PostSettlementSurplusBidActions();
     globalSettlementActions = new GlobalSettlementActions();
     rewardedActions = new RewardedActions();
+  }
+
+  function _deployUniV3Pool() internal {
+    address _uniV3Pool = IUniswapV3Factory(UNISWAP_V3_FACTORY).createPool({
+      tokenA: address(systemCoin),
+      tokenB: address(collateral[WETH]),
+      fee: HAI_POOL_FEE_TIER
+    });
+
+    address _token0 = IUniswapV3Pool(_uniV3Pool).token0();
+    uint160 _sqrtPriceX96 =
+      _token0 == address(systemCoin) ? HAI_INITIAL_SQRT_PRICE_X96 : HAI_INITIAL_SQRT_PRICE_X96_INVERSE;
+
+    IUniswapV3Pool(_uniV3Pool).initialize(_sqrtPriceX96);
+
+    for (uint256 _i; _i < HAI_POOL_OBSERVATION_CARDINALITY;) {
+      IUniswapV3Pool(_uniV3Pool).increaseObservationCardinalityNext(500);
+      _i += 500;
+    }
   }
 
   modifier updateParams() {

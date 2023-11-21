@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ILiquidationEngine} from '@interfaces/ILiquidationEngine.sol';
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
-import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
+import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 
-import {Disableable} from '@contracts/utils/Disableable.sol';
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
+import {Disableable} from '@contracts/utils/Disableable.sol';
 import {Modifiable} from '@contracts/utils/Modifiable.sol';
 
 import {Assertions} from '@libraries/Assertions.sol';
@@ -119,7 +119,7 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, Disableable, IColla
     uint256 _customDiscount
   ) internal pure returns (uint256 _boughtCollateral, uint256 _readjustedBid) {
     // calculate the collateral price in relation to the latest system coin price and apply the discount
-    uint256 _discountedPrice = _collateralPrice.rdiv(_systemCoinPrice).wmul(_customDiscount);
+    uint256 _discountedPrice = _collateralPrice.wmul(_customDiscount).rdiv(_systemCoinPrice);
     // calculate the amount of collateral bought
     _boughtCollateral = _adjustedBid.wdiv(_discountedPrice);
 
@@ -137,9 +137,9 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, Disableable, IColla
    * @return _collateralPrice The collateral price if valid [wad]
    */
   function _getCollateralPrice() internal view returns (uint256 _collateralPrice) {
-    IDelayedOracle _delayedOracle = oracleRelayer().cParams(collateralType).oracle;
+    IBaseOracle _oracle = oracleRelayer().cParams(collateralType).oracle;
     bool _hasValidValue;
-    (_collateralPrice, _hasValidValue) = _delayedOracle.getResultWithValidity();
+    (_collateralPrice, _hasValidValue) = _oracle.getResultWithValidity();
     if (!_hasValidValue) return 0;
 
     return _collateralPrice;
@@ -268,18 +268,11 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, Disableable, IColla
     );
     if (_boughtCollateral == 0) revert CAH_NullBoughtAmount();
 
-    // Transfer the bid to the income recipient and the collateral to the bidder
+    // Transfer the bid to the income recipient
     safeEngine.transferInternalCoins({
       _source: msg.sender,
       _destination: _auction.auctionIncomeRecipient,
       _rad: _adjustedBid * RAY
-    });
-
-    safeEngine.transferCollateral({
-      _cType: collateralType,
-      _source: address(this),
-      _destination: msg.sender,
-      _wad: _boughtCollateral
     });
 
     if (_adjustedBid * RAY < _auction.amountToRaise && _auction.amountToSell > _boughtCollateral) {
@@ -328,6 +321,14 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, Disableable, IColla
       delete _auctions[_id];
     }
 
+    // Transfer the collateral to the bidder
+    safeEngine.transferCollateral({
+      _cType: collateralType,
+      _source: address(this),
+      _destination: msg.sender,
+      _wad: _boughtCollateral
+    });
+
     // Emit the buy event
     emit BuyCollateral({
       _id: _id,
@@ -339,13 +340,9 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, Disableable, IColla
   }
 
   /// @inheritdoc ICollateralAuctionHouse
-  function settleAuction(uint256) external pure {
-    return;
-  }
-
-  /// @inheritdoc ICollateralAuctionHouse
   function terminateAuctionPrematurely(uint256 _id) external isAuthorized {
     Auction memory _auction = _auctions[_id];
+    delete _auctions[_id];
 
     if (_auction.amountToSell == 0 || _auction.amountToRaise == 0) revert CAH_InexistentAuction();
     liquidationEngine().removeCoinsFromAuction(_auction.amountToRaise);
@@ -360,11 +357,9 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, Disableable, IColla
     emit TerminateAuctionPrematurely({
       _id: _id,
       _blockTimestamp: block.timestamp,
-      _leftoverReceiver: _auction.forgoneCollateralReceiver,
+      _leftoverReceiver: msg.sender,
       _leftoverCollateral: _auction.amountToSell
     });
-
-    delete _auctions[_id];
   }
 
   // --- Administration ---
@@ -401,8 +396,8 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, Disableable, IColla
   /// @inheritdoc Modifiable
   function _validateParameters() internal view override {
     // Registry
-    address(liquidationEngine()).assertNonNull();
-    address(oracleRelayer()).assertNonNull();
+    address(liquidationEngine()).assertHasCode();
+    address(oracleRelayer()).assertHasCode();
     // CAH Params
     _params.minDiscount.assertGtEq(_params.maxDiscount).assertLtEq(WAD);
     _params.maxDiscount.assertGt(0);

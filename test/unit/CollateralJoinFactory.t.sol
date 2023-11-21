@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {CollateralJoinFactoryForTest, ICollateralJoinFactory} from '@test/mocks/CollateralJoinFactoryForTest.sol';
 import {CollateralJoinChild} from '@contracts/factories/CollateralJoinChild.sol';
 import {CollateralJoinDelegatableChild} from '@contracts/factories/CollateralJoinDelegatableChild.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ICollateralJoin} from '@interfaces/utils/ICollateralJoin.sol';
-import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
-import {ERC20Votes} from '@openzeppelin/token/ERC20/extensions/ERC20Votes.sol';
+import {IERC20Metadata} from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
+import {IVotes} from '@openzeppelin/contracts/governance/utils/IVotes.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IFactoryChild} from '@interfaces/factories/IFactoryChild.sol';
@@ -229,6 +229,11 @@ contract Unit_CollateralJoinFactory_DeployDelegatableCollateralJoin is Base {
     assertEq(collateralJoinChild.collateralType(), _cType);
   }
 
+  function test_Revert_NullDelegatee(bytes32 _cType, uint8 _decimals) public happyPath(_decimals) {
+    vm.expectRevert(Assertions.NullAddress.selector);
+    collateralJoinFactory.deployDelegatableCollateralJoin(_cType, address(mockCollateral), address(0));
+  }
+
   function test_Set_CollateralTypes(bytes32 _cType, uint8 _decimals) public happyPath(_decimals) {
     collateralJoinFactory.deployDelegatableCollateralJoin(_cType, address(mockCollateral), delegatee);
 
@@ -262,7 +267,7 @@ contract Unit_CollateralJoinFactory_DeployDelegatableCollateralJoin is Base {
   }
 
   function test_Call_ERC20Votes_Delegate() public happyPath(18) {
-    vm.expectCall(address(mockCollateral), abi.encodeCall(ERC20Votes.delegate, (delegatee)));
+    vm.expectCall(address(mockCollateral), abi.encodeCall(IVotes.delegate, (delegatee)));
 
     collateralJoinFactory.deployDelegatableCollateralJoin(collateralType, address(mockCollateral), delegatee);
   }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {
   IGlobalSettlement,
@@ -376,12 +376,12 @@ contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettl
 
   /// @inheritdoc Modifiable
   function _validateParameters() internal view override {
-    address(liquidationEngine).assertNonNull();
-    address(oracleRelayer).assertNonNull();
-    address(coinJoin).assertNonNull();
-    address(collateralJoinFactory).assertNonNull();
-    address(collateralAuctionHouseFactory).assertNonNull();
-    address(stabilityFeeTreasury).assertNonNull();
-    address(accountingEngine).assertNonNull();
+    address(liquidationEngine).assertHasCode();
+    address(oracleRelayer).assertHasCode();
+    address(coinJoin).assertHasCode();
+    address(collateralJoinFactory).assertHasCode();
+    address(collateralAuctionHouseFactory).assertHasCode();
+    address(stabilityFeeTreasury).assertHasCode();
+    address(accountingEngine).assertHasCode();
   }
 }

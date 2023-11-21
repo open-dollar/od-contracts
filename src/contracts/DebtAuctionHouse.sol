@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {IDebtAuctionHouse} from '@interfaces/IDebtAuctionHouse.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
@@ -132,16 +132,16 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
   }
 
   /// @inheritdoc IDebtAuctionHouse
-  function decreaseSoldAmount(uint256 _id, uint256 _amountToBuy, uint256 _bid) external whenEnabled {
+  function decreaseSoldAmount(uint256 _id, uint256 _amountToBuy) external whenEnabled {
     Auction storage _auction = _auctions[_id];
     if (_auction.highBidder == address(0)) revert DAH_HighBidderNotSet();
     if (_auction.bidExpiry <= block.timestamp && _auction.bidExpiry != 0) revert DAH_BidAlreadyExpired();
     if (_auction.auctionDeadline <= block.timestamp) revert DAH_AuctionAlreadyExpired();
 
-    if (_bid != _auction.bidAmount) revert DAH_NotMatchingBid();
     if (_amountToBuy >= _auction.amountToSell) revert DAH_AmountBoughtNotLower();
     if (_params.bidDecrease * _amountToBuy > _auction.amountToSell * WAD) revert DAH_InsufficientDecrease();
 
+    uint256 _bid = _auction.bidAmount;
     safeEngine.transferInternalCoins(msg.sender, _auction.highBidder, _bid);
 
     // on first bid submitted, clear as much totalOnAuctionDebt as possible
@@ -167,13 +167,16 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
   /// @inheritdoc IDebtAuctionHouse
   function settleAuction(uint256 _id) external whenEnabled {
     Auction memory _auction = _auctions[_id];
+
     if (_auction.bidExpiry == 0 || (_auction.bidExpiry > block.timestamp && _auction.auctionDeadline > block.timestamp))
     {
       revert DAH_AuctionNotFinished();
     }
 
-    protocolToken.mint(_auction.highBidder, _auction.amountToSell);
+    delete _auctions[_id];
     --activeDebtAuctions;
+
+    protocolToken.mint(_auction.highBidder, _auction.amountToSell);
 
     emit SettleAuction({
       _id: _id,
@@ -181,13 +184,13 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
       _highBidder: _auction.highBidder,
       _raisedAmount: _auction.bidAmount
     });
-
-    delete _auctions[_id];
   }
 
   /// @inheritdoc IDebtAuctionHouse
   function terminateAuctionPrematurely(uint256 _id) external whenDisabled {
     Auction memory _auction = _auctions[_id];
+    delete _auctions[_id];
+
     if (_auction.highBidder == address(0)) revert DAH_HighBidderNotSet();
 
     safeEngine.createUnbackedDebt({
@@ -202,8 +205,6 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
       _highBidder: _auction.highBidder,
       _raisedAmount: _auction.bidAmount
     });
-
-    delete _auctions[_id];
   }
 
   // --- Administration ---
@@ -223,6 +224,6 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
 
   /// @inheritdoc Modifiable
   function _validateParameters() internal view override {
-    address(protocolToken).assertNonNull();
+    address(protocolToken).assertHasCode();
   }
 }

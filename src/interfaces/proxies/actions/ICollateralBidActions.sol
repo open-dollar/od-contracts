@@ -1,9 +1,16 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {ICommonActions} from '@interfaces/proxies/actions/ICommonActions.sol';
 
 interface ICollateralBidActions is ICommonActions {
+  // --- Errors ---
+
+  /// @notice Throws if the adjusted bid is invalid
+  error ColActions_InvalidAdjustedBid();
+  /// @notice Throws if the received collateral is less than the minimum
+  error ColActions_InsufficientCollateralReceived(uint256 _minCollateralAmount, uint256 _received);
+
   // --- Methods ---
 
   /**

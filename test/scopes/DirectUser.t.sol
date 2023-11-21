@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {ScriptBase} from 'forge-std/Script.sol';
 import {ETH_A} from '@script/Params.s.sol';
@@ -41,12 +41,6 @@ abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
   }
 
   // --- SAFE actions ---
-
-  function _lockETH(address _user, uint256 _amount) internal override {
-    vm.prank(_user);
-    vm.deal(_user, _amount);
-    ethJoin.join{value: _amount}(_user);
-  }
 
   function _joinTKN(address _user, address _collateralJoin, uint256 _amount) internal override {
     IERC20Metadata _collateral = ICollateralJoin(_collateralJoin).collateral();
@@ -101,8 +95,7 @@ abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
     ICollateralJoin __collateralJoin = ICollateralJoin(_collateralJoin);
     bytes32 _cType = __collateralJoin.collateralType();
 
-    if (_cType == ETH_A) _lockETH(_user, uint256(_deltaCollat));
-    else _joinTKN(_user, _collateralJoin, uint256(_deltaCollat));
+    _joinTKN(_user, _collateralJoin, uint256(_deltaCollat));
 
     vm.startPrank(_user);
     safeEngine.approveSAFEModification(_collateralJoin);
@@ -177,7 +170,7 @@ abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
     systemCoin.approve(address(coinJoin), _amountToBid / 1e27);
     coinJoin.join(_user, _amountToBid / 1e27);
     safeEngine.approveSAFEModification(address(debtAuctionHouse));
-    debtAuctionHouse.decreaseSoldAmount(_auctionId, _amountToBuy, _amountToBid);
+    debtAuctionHouse.decreaseSoldAmount(_auctionId, _amountToBuy);
     vm.stopPrank();
   }
 
@@ -186,11 +179,9 @@ abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
   }
 
   function _increaseBidSize(address _user, uint256 _auctionId, uint256 _bidAmount) internal override {
-    uint256 _amountToSell = surplusAuctionHouse.auctions(_auctionId).amountToSell;
-
     vm.startPrank(_user);
     protocolToken.approve(address(surplusAuctionHouse), _bidAmount);
-    surplusAuctionHouse.increaseBidSize(_auctionId, _amountToSell, _bidAmount);
+    surplusAuctionHouse.increaseBidSize(_auctionId, _bidAmount);
     vm.stopPrank();
   }
 
@@ -209,11 +200,9 @@ abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
   // --- Global Settlement actions ---
 
   function _increasePostSettlementBidSize(address _user, uint256 _auctionId, uint256 _bidAmount) internal override {
-    uint256 _amountToSell = postSettlementSurplusAuctionHouse.auctions(_auctionId).amountToSell;
-
     vm.startPrank(_user);
     protocolToken.approve(address(postSettlementSurplusAuctionHouse), _bidAmount);
-    postSettlementSurplusAuctionHouse.increaseBidSize(_auctionId, _amountToSell, _bidAmount);
+    postSettlementSurplusAuctionHouse.increaseBidSize(_auctionId, _bidAmount);
     vm.stopPrank();
   }
 

@@ -1,19 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
+import {IModifiablePerCollateral} from '@interfaces/utils/IModifiablePerCollateral.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
-interface ITaxCollector is IAuthorizable, IModifiable {
+interface ITaxCollector is IAuthorizable, IModifiable, IModifiablePerCollateral {
   // --- Events ---
-
-  /**
-   * @notice Emitted when a new collateral type is initialized
-   * @param  _cType Bytes32 representation of the collateral type
-   */
-  event InitializeCollateralType(bytes32 _cType);
 
   /**
    * @notice Emitted when a new primary tax receiver is set
@@ -53,8 +48,6 @@ interface ITaxCollector is IAuthorizable, IModifiable {
 
   // --- Errors ---
 
-  /// @notice Throws when trying to initialize a collateral type that is already initialized
-  error TaxCollector_CollateralTypeAlreadyInitialized();
   /// @notice Throws when inputting an invalid index for the collateral type list
   error TaxCollector_InvalidIndexes();
   /// @notice Throws when trying to add a null address as a tax receiver
@@ -198,13 +191,6 @@ interface ITaxCollector is IAuthorizable, IModifiable {
 
   // --- Administration ---
 
-  /**
-   * @notice Initialize a brand new collateral type
-   * @param  _cType Bytes32 representation of the collateral type
-   * @param  _collateralParams Collateral type parameters struct
-   */
-  function initializeCollateralType(bytes32 _cType, TaxCollectorCollateralParams memory _collateralParams) external;
-
   // --- Tax Collection Utils ---
 
   /**
@@ -253,9 +239,6 @@ interface ITaxCollector is IAuthorizable, IModifiable {
   function isSecondaryReceiver(address _receiver) external view returns (bool _isSecondaryReceiver);
 
   // --- Views ---
-
-  /// @notice Get the list of all initialized collateral types
-  function collateralList() external view returns (bytes32[] memory _collateralList);
 
   /// @notice Get the list of all secondary tax receivers
   function secondaryReceiversList() external view returns (address[] memory _secondaryReceiversList);

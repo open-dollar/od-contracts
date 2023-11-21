@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 // --- Base Contracts ---
 import {SystemCoin, ISystemCoin} from '@contracts/tokens/SystemCoin.sol';
@@ -32,7 +32,7 @@ import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {DelayedOracle, IDelayedOracle} from '@contracts/oracles/DelayedOracle.sol';
 import {DenominatedOracle} from '@contracts/oracles/DenominatedOracle.sol';
 import {ChainlinkRelayer} from '@contracts/oracles/ChainlinkRelayer.sol';
-import {UniV3Relayer} from '@contracts/oracles/UniV3Relayer.sol';
+import {UniV3Relayer, IUniV3Relayer} from '@contracts/oracles/UniV3Relayer.sol';
 
 // --- Testnet contracts ---
 import {MintableERC20} from '@contracts/for-test/MintableERC20.sol';
@@ -41,7 +41,6 @@ import {HardcodedOracle} from '@contracts/for-test/HardcodedOracle.sol';
 
 // --- Token adapters ---
 import {CoinJoin, ICoinJoin} from '@contracts/utils/CoinJoin.sol';
-import {ETHJoin, IETHJoin} from '@contracts/utils/ETHJoin.sol';
 import {CollateralJoin, ICollateralJoin} from '@contracts/utils/CollateralJoin.sol';
 
 // --- Factories ---
@@ -61,7 +60,9 @@ import {LiquidationJob, ILiquidationJob} from '@contracts/jobs/LiquidationJob.so
 import {OracleJob, IOracleJob} from '@contracts/jobs/OracleJob.sol';
 
 // --- Interfaces ---
-import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
+import {IERC20Metadata} from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
+import {IUniswapV3Factory} from '@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol';
+import {IUniswapV3Pool} from '@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 
@@ -74,7 +75,6 @@ import {PostSettlementSurplusBidActions} from '@contracts/proxies/actions/PostSe
 import {GlobalSettlementActions} from '@contracts/proxies/actions/GlobalSettlementActions.sol';
 import {RewardedActions} from '@contracts/proxies/actions/RewardedActions.sol';
 import {HaiProxy} from '@contracts/proxies/HaiProxy.sol';
-import {HaiProxyRegistry} from '@contracts/proxies/HaiProxyRegistry.sol';
 import {HaiProxyFactory} from '@contracts/proxies/HaiProxyFactory.sol';
 import {HaiSafeManager} from '@contracts/proxies/HaiSafeManager.sol';
 
@@ -108,7 +108,6 @@ abstract contract Contracts {
   ISystemCoin public systemCoin;
   mapping(bytes32 => IERC20Metadata) public collateral;
   ICoinJoin public coinJoin;
-  IETHJoin public ethJoin;
   mapping(bytes32 => ICollateralJoin) public collateralJoin;
 
   // --- Oracle contracts ---
@@ -139,7 +138,6 @@ abstract contract Contracts {
   IOracleJob public oracleJob;
 
   // --- Proxy contracts ---
-  HaiProxyRegistry public proxyRegistry;
   HaiProxyFactory public proxyFactory;
   HaiSafeManager public safeManager;
 

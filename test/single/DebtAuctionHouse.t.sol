@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {DSTest} from 'ds-test/test.sol';
 import {ProtocolToken} from '@contracts/tokens/ProtocolToken.sol';
@@ -21,17 +21,17 @@ contract Guy {
     debtAuctionHouse.protocolToken().approve(address(debtAuctionHouse), type(uint256).max);
   }
 
-  function decreaseSoldAmount(uint256 id, uint256 amountToBuy, uint256 bid) public {
-    debtAuctionHouse.decreaseSoldAmount(id, amountToBuy, bid);
+  function decreaseSoldAmount(uint256 id, uint256 amountToBuy) public {
+    debtAuctionHouse.decreaseSoldAmount(id, amountToBuy);
   }
 
   function settleAuction(uint256 id) public {
     debtAuctionHouse.settleAuction(id);
   }
 
-  function try_decreaseSoldAmount(uint256 id, uint256 amountToBuy, uint256 bid) public returns (bool ok) {
-    string memory sig = 'decreaseSoldAmount(uint256,uint256,uint256)';
-    (ok,) = address(debtAuctionHouse).call(abi.encodeWithSignature(sig, id, amountToBuy, bid));
+  function try_decreaseSoldAmount(uint256 id, uint256 amountToBuy) public returns (bool ok) {
+    string memory sig = 'decreaseSoldAmount(uint256,uint256)';
+    (ok,) = address(debtAuctionHouse).call(abi.encodeWithSignature(sig, id, amountToBuy));
   }
 
   function try_settleAuction(uint256 id) public returns (bool ok) {
@@ -137,14 +137,14 @@ contract SingleDebtAuctionHouseTest is DSTest {
   function test_decreaseSoldAmount() public {
     uint256 id = accountingEngine.startAuction(debtAuctionHouse, /*amountToSell*/ 200 ether, /*bid*/ 10 ether);
 
-    Guy(ali).decreaseSoldAmount(id, 100 ether, 10 ether);
+    Guy(ali).decreaseSoldAmount(id, 100 ether);
     // bid taken from bidder
     assertEq(safeEngine.coinBalance(ali), 190 ether);
     // accountingEngine receives payment
     assertEq(safeEngine.coinBalance(address(accountingEngine)), 10 ether);
     assertEq(accountingEngine.totalOnAuctionDebt(), 0 ether);
 
-    Guy(bob).decreaseSoldAmount(id, 80 ether, 10 ether);
+    Guy(bob).decreaseSoldAmount(id, 80 ether);
     // bid taken from bidder
     assertEq(safeEngine.coinBalance(bob), 190 ether);
     // prev bidder refunded
@@ -170,14 +170,14 @@ contract SingleDebtAuctionHouseTest is DSTest {
     accountingEngine.cancelAuctionedDebtWithSurplus(1 ether);
     assertEq(accountingEngine.totalOnAuctionDebt(), 9 ether);
 
-    Guy(ali).decreaseSoldAmount(id, 100 ether, 10 ether);
+    Guy(ali).decreaseSoldAmount(id, 100 ether);
     // bid taken from bidder
     assertEq(safeEngine.coinBalance(ali), 190 ether);
     // accountingEngine receives payment
     assertEq(safeEngine.coinBalance(address(accountingEngine)), 10 ether);
     assertEq(accountingEngine.totalOnAuctionDebt(), 0 ether);
 
-    Guy(bob).decreaseSoldAmount(id, 80 ether, 10 ether);
+    Guy(bob).decreaseSoldAmount(id, 80 ether);
     // bid taken from bidder
     assertEq(safeEngine.coinBalance(bob), 190 ether);
     // prev bidder refunded
@@ -204,7 +204,7 @@ contract SingleDebtAuctionHouseTest is DSTest {
     // run past the end
     hevm.warp(block.timestamp + 2 weeks);
     // check not biddable
-    assertTrue(!Guy(ali).try_decreaseSoldAmount(id, 100 ether, 10 ether));
+    assertTrue(!Guy(ali).try_decreaseSoldAmount(id, 100 ether));
     assertTrue(Guy(ali).try_restart_auction(id));
     // left auction in the accounting engine
     assertEq(debtAuctionHouse.activeDebtAuctions(), id);
@@ -212,7 +212,7 @@ contract SingleDebtAuctionHouseTest is DSTest {
     uint256 _amountToSell = debtAuctionHouse.auctions(id).amountToSell;
     // restart should increase the amountToSell by pad (50%) and restart the auction
     assertEq(_amountToSell, 300 ether);
-    assertTrue(Guy(ali).try_decreaseSoldAmount(id, 100 ether, 10 ether));
+    assertTrue(Guy(ali).try_decreaseSoldAmount(id, 100 ether));
   }
 
   function test_no_deal_after_settlement() public {
@@ -240,8 +240,8 @@ contract SingleDebtAuctionHouseTest is DSTest {
     assertEq(safeEngine.coinBalance(address(accountingEngine)), 0);
     assertEq(safeEngine.debtBalance(address(accountingEngine)), 0);
 
-    Guy(ali).decreaseSoldAmount(id, 100 ether, 10 ether);
-    Guy(bob).decreaseSoldAmount(id, 80 ether, 10 ether);
+    Guy(ali).decreaseSoldAmount(id, 100 ether);
+    Guy(bob).decreaseSoldAmount(id, 80 ether);
 
     // confirm the proper state updates have occurred
     assertEq(safeEngine.coinBalance(ali), 200 ether); // ali's coin balance is unchanged

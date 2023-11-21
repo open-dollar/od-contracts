@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 /**
  * @title Assertions
@@ -28,6 +28,8 @@ library Assertions {
   error NullAmount();
   /// @dev Throws if checked address is null
   error NullAddress();
+  /// @dev Throws if checked address contains no code
+  error NoCode(address _contract);
 
   // --- Assertions ---
 
@@ -88,6 +90,12 @@ library Assertions {
   /// @dev Asserts that `_address` is not null and returns `_address`
   function assertNonNull(address _address) internal pure returns (address __address) {
     if (_address == address(0)) revert NullAddress();
+    return _address;
+  }
+
+  /// @dev Asserts that `_address` contains code and returns `_address`
+  function assertHasCode(address _address) internal view returns (address __address) {
+    if (_address.code.length == 0) revert NoCode(_address);
     return _address;
   }
 }

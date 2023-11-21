@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
-import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
+import {IERC20Metadata} from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 
 interface ISystemCoin is IERC20Metadata, IAuthorizable {
@@ -12,14 +12,6 @@ interface ISystemCoin is IERC20Metadata, IAuthorizable {
    * @dev   Only authorized addresses can mint tokens
    */
   function mint(address _account, uint256 _amount) external;
-
-  /**
-   * @notice Burn an amount of tokens from an account
-   * @param _account Address of the account to burn tokens from
-   * @param _amount Amount of tokens to burn [wad]
-   * @dev   Only authorized addresses can burn tokens from an account
-   */
-  function burn(address _account, uint256 _amount) external;
 
   /**
    * @notice Burn an amount of tokens from the sender

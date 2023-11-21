@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {GlobalSettlement, IGlobalSettlement} from '@contracts/settlement/GlobalSettlement.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
@@ -226,8 +226,7 @@ contract Unit_GlobalSettlement_Constructor is Base {
     assertEq(globalSettlement.contractEnabled(), true);
   }
 
-  function test_Set_SafeEngine(address _safeEngine) public happyPath {
-    vm.assume(address(_safeEngine) != address(0));
+  function test_Set_SafeEngine(address _safeEngine) public happyPath mockAsContract(_safeEngine) {
     globalSettlement = new GlobalSettlement(
       _safeEngine,
       address(mockLiquidationEngine),
@@ -242,8 +241,7 @@ contract Unit_GlobalSettlement_Constructor is Base {
     assertEq(address(globalSettlement.safeEngine()), _safeEngine);
   }
 
-  function test_Set_LiquidationEngine(address _liquidationEngine) public happyPath {
-    vm.assume(address(_liquidationEngine) != address(0));
+  function test_Set_LiquidationEngine(address _liquidationEngine) public happyPath mockAsContract(_liquidationEngine) {
     globalSettlement = new GlobalSettlement(
       address(mockSafeEngine),
       address(_liquidationEngine),
@@ -258,8 +256,7 @@ contract Unit_GlobalSettlement_Constructor is Base {
     assertEq(address(globalSettlement.liquidationEngine()), _liquidationEngine);
   }
 
-  function test_Set_OracleRelayer(address _oracleRelayer) public happyPath {
-    vm.assume(address(_oracleRelayer) != address(0));
+  function test_Set_OracleRelayer(address _oracleRelayer) public happyPath mockAsContract(_oracleRelayer) {
     globalSettlement = new GlobalSettlement(
       address(mockSafeEngine),
       address(mockLiquidationEngine),
@@ -274,8 +271,7 @@ contract Unit_GlobalSettlement_Constructor is Base {
     assertEq(address(globalSettlement.oracleRelayer()), _oracleRelayer);
   }
 
-  function test_Set_CoinJoin(address _coinJoin) public happyPath {
-    vm.assume(address(_coinJoin) != address(0));
+  function test_Set_CoinJoin(address _coinJoin) public happyPath mockAsContract(_coinJoin) {
     globalSettlement = new GlobalSettlement(
       address(mockSafeEngine),
       address(mockLiquidationEngine),
@@ -290,8 +286,11 @@ contract Unit_GlobalSettlement_Constructor is Base {
     assertEq(address(globalSettlement.coinJoin()), _coinJoin);
   }
 
-  function test_Set_CollateralJoinFactory(address _collateralJoinFactory) public happyPath {
-    vm.assume(address(_collateralJoinFactory) != address(0));
+  function test_Set_CollateralJoinFactory(address _collateralJoinFactory)
+    public
+    happyPath
+    mockAsContract(_collateralJoinFactory)
+  {
     globalSettlement = new GlobalSettlement(
       address(mockSafeEngine),
       address(mockLiquidationEngine),
@@ -306,8 +305,11 @@ contract Unit_GlobalSettlement_Constructor is Base {
     assertEq(address(globalSettlement.collateralJoinFactory()), _collateralJoinFactory);
   }
 
-  function test_Set_CollateralAuctionHouseFactory(address _collateralAuctionHouseFactory) public happyPath {
-    vm.assume(address(_collateralAuctionHouseFactory) != address(0));
+  function test_Set_CollateralAuctionHouseFactory(address _collateralAuctionHouseFactory)
+    public
+    happyPath
+    mockAsContract(_collateralAuctionHouseFactory)
+  {
     globalSettlement = new GlobalSettlement(
       address(mockSafeEngine),
       address(mockLiquidationEngine),
@@ -322,8 +324,7 @@ contract Unit_GlobalSettlement_Constructor is Base {
     assertEq(address(globalSettlement.collateralAuctionHouseFactory()), _collateralAuctionHouseFactory);
   }
 
-  function test_Set_StabilityFeeTreasury(address _sfTreasury) public happyPath {
-    vm.assume(address(_sfTreasury) != address(0));
+  function test_Set_StabilityFeeTreasury(address _sfTreasury) public happyPath mockAsContract(_sfTreasury) {
     globalSettlement = new GlobalSettlement(
       address(mockSafeEngine),
       address(mockLiquidationEngine),
@@ -338,8 +339,7 @@ contract Unit_GlobalSettlement_Constructor is Base {
     assertEq(address(globalSettlement.stabilityFeeTreasury()), _sfTreasury);
   }
 
-  function test_Set_AccountingEngine(address _accountingEngine) public happyPath {
-    vm.assume(address(_accountingEngine) != address(0));
+  function test_Set_AccountingEngine(address _accountingEngine) public happyPath mockAsContract(_accountingEngine) {
     globalSettlement = new GlobalSettlement(
       address(mockSafeEngine),
       address(mockLiquidationEngine),
@@ -1280,43 +1280,45 @@ contract Unit_GlobalSettlement_ModifyParameters is Base {
     globalSettlement.modifyParameters(_param, _data);
   }
 
-  function test_Set_LiquidationEngine(address _liquidationEngine) public happyPath {
-    vm.assume(_liquidationEngine != address(0));
+  function test_Set_LiquidationEngine(address _liquidationEngine) public happyPath mockAsContract(_liquidationEngine) {
     globalSettlement.modifyParameters('liquidationEngine', abi.encode(_liquidationEngine));
 
     assertEq(address(globalSettlement.liquidationEngine()), _liquidationEngine);
   }
 
-  function test_Set_AccountingEngine(address _accountingEngine) public happyPath {
-    vm.assume(_accountingEngine != address(0));
+  function test_Set_AccountingEngine(address _accountingEngine) public happyPath mockAsContract(_accountingEngine) {
     globalSettlement.modifyParameters('accountingEngine', abi.encode(_accountingEngine));
 
     assertEq(address(globalSettlement.accountingEngine()), _accountingEngine);
   }
 
-  function test_Set_OracleRelayer(address _oracleRelayer) public happyPath {
-    vm.assume(_oracleRelayer != address(0));
+  function test_Set_OracleRelayer(address _oracleRelayer) public happyPath mockAsContract(_oracleRelayer) {
     globalSettlement.modifyParameters('oracleRelayer', abi.encode(_oracleRelayer));
 
     assertEq(address(globalSettlement.oracleRelayer()), _oracleRelayer);
   }
 
-  function test_Set_CoinJoin(address _coinJoin) public happyPath {
-    vm.assume(_coinJoin != address(0));
+  function test_Set_CoinJoin(address _coinJoin) public happyPath mockAsContract(_coinJoin) {
     globalSettlement.modifyParameters('coinJoin', abi.encode(_coinJoin));
 
     assertEq(address(globalSettlement.coinJoin()), _coinJoin);
   }
 
-  function test_Set_CollateralJoinFactory(address _collateralJoinFactory) public happyPath {
-    vm.assume(_collateralJoinFactory != address(0));
+  function test_Set_CollateralJoinFactory(address _collateralJoinFactory)
+    public
+    happyPath
+    mockAsContract(_collateralJoinFactory)
+  {
     globalSettlement.modifyParameters('collateralJoinFactory', abi.encode(_collateralJoinFactory));
 
     assertEq(address(globalSettlement.collateralJoinFactory()), _collateralJoinFactory);
   }
 
-  function test_Set_StabilityFeeTreasury(address _stabilityFeeTreasury) public happyPath {
-    vm.assume(_stabilityFeeTreasury != address(0));
+  function test_Set_StabilityFeeTreasury(address _stabilityFeeTreasury)
+    public
+    happyPath
+    mockAsContract(_stabilityFeeTreasury)
+  {
     globalSettlement.modifyParameters('stabilityFeeTreasury', abi.encode(_stabilityFeeTreasury));
 
     assertEq(address(globalSettlement.stabilityFeeTreasury()), _stabilityFeeTreasury);

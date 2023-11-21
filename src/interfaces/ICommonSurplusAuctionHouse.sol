@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IProtocolToken} from '@interfaces/tokens/IProtocolToken.sol';
@@ -161,10 +161,9 @@ interface ICommonSurplusAuctionHouse {
   /**
    * @notice Submit a higher protocol token bid for the same amount of system coins
    * @param  _id ID of the auction you want to submit the bid for
-   * @param  _amountToBuy Amount of system coins to buy [rad]
    * @param  _bid New bid submitted [wad]
    */
-  function increaseBidSize(uint256 _id, uint256 _amountToBuy, uint256 _bid) external;
+  function increaseBidSize(uint256 _id, uint256 _bid) external;
 
   /**
    * @notice Settle/finish an auction

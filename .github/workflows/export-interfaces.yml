@@ -1,0 +1,50 @@
+name: Interface Exporter Action
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  workflow_dispatch:
+
+jobs:
+  generate_interfaces:
+    if: github.repository == 'hai-on-op/hai'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: yarn --frozen-lockfile --network-concurrency 1
+
+      - name: Build project and generate out directory
+        run: yarn build
+
+      - name: Run Interface Exporter Action
+        uses: defi-wonderland/interface-exporter-action@v1.1.1
+        with:
+          out_dir: 'out'
+          typing_type: 'contracts'
+          package_name: '@hai-on-op/interfaces'
+          destination_dir: 'interfaces-package'
+
+      - name: Generate canary tag
+        if: github.ref_name != 'main'
+        run: cd interfaces-package && yarn version --new-version "0.0.0-${GITHUB_SHA::8}" --no-git-tag-version
+      
+      - name: Publish
+        run: cd interfaces-package && npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
@@ -9,7 +9,7 @@ import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 
-interface IDebtAuctionHouse is IAuthorizable, IModifiable, IDisableable {
+interface IDebtAuctionHouse is IAuthorizable, IDisableable, IModifiable {
   // --- Events ---
 
   /**
@@ -222,9 +222,8 @@ interface IDebtAuctionHouse is IAuthorizable, IModifiable, IDisableable {
    *         exchange for providing the same amount of system coins being raised by the auction
    * @param  _id ID of the auction for which you want to submit a new bid
    * @param  _amountToBuy Amount of protocol tokens to buy (must be smaller than the previous proposed amount) [wad]
-   * @param  _bid New system coin bid (must always equal the total amount raised by the auction) [rad]
    */
-  function decreaseSoldAmount(uint256 _id, uint256 _amountToBuy, uint256 _bid) external;
+  function decreaseSoldAmount(uint256 _id, uint256 _amountToBuy) external;
 
   /**
    * @notice Settle an auction

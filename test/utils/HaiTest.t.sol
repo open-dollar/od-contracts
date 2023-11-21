@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {Math} from '@libraries/Math.sol';
 import {DSTestPlus, stdStorage, StdStorage} from '@defi-wonderland/solidity-utils/test/DSTestPlus.sol';
@@ -131,4 +131,24 @@ contract OverflowChecker {
   }
 }
 
-abstract contract HaiTest is DSTestPlus, OverflowChecker {}
+abstract contract HaiTest is DSTestPlus, OverflowChecker {
+  modifier mockAsContract(address _address) {
+    // Foundry fuzzer sometimes gives us the next deployment address
+    // this results in very unexpected reverts as any contract deploy will revert
+    // we check here to make sure it's not the next deployment address for the (pranked) msg.sender
+    (, address _msgSender,) = vm.readCallers();
+    address _nextDeploymentAddr = computeCreateAddress(address(_msgSender), vm.getNonce(_msgSender));
+
+    vm.assume(_address != _nextDeploymentAddr);
+
+    // It should not be a precompile
+    vm.assume(uint160(_address) > 20);
+
+    // It should not be a deployed contract
+    vm.assume(_address.code.length == 0);
+
+    // Give it bytecode to make it a contract
+    vm.etch(_address, '0xF');
+    _;
+  }
+}
