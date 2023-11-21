@@ -22,3 +22,6 @@ lcov.info
 docs/book
 docs/src/src/
 docs/src/static
+
+
+lib/core/
