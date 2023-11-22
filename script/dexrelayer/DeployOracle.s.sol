@@ -36,8 +36,8 @@ contract DeployOracle is Script {
   CamelotRelayerFactory public camelotRelayerFactory;
   DenominatedOracleFactory public denominatedOracleFactory;
 
-  address public tokenA = 0xb6489419f68c589F6616442524DE5D8c797EF061;
-  address public tokenB = 0xAbF90C1E29B0E194e514e0C4c7aD84a9e43dbd91;
+  address public tokenA = 0xEEB6187f4efAE5f513Dbf2873041CE7a3a375373;
+  address public tokenB = 0x1F17CB9B80192E5C6E9BbEdAcc5F722a4e93f16e;
 
   function run() public {
     vm.startBroadcast(vm.envUint('GOERLI_PK'));
