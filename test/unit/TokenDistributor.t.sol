@@ -5,7 +5,7 @@ import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
 import {MerkleTreeGenerator} from '@test/utils/MerkleTreeGenerator.sol';
 import {ITokenDistributor, TokenDistributor} from '@contracts/tokens/TokenDistributor.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
-import {ERC20Votes} from '@openzeppelin/token/ERC20/extensions/ERC20Votes.sol';
+import {ERC20VotesUpgradeable} from '@openzeppelin-upgradeable/token/ERC20/extensions/ERC20VotesUpgradeable.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 
 abstract contract Base is HaiTest {
@@ -29,7 +29,7 @@ abstract contract Base is HaiTest {
   uint256 claimPeriodStart = block.timestamp + 10 days;
   uint256 claimPeriodEnd = block.timestamp + 20 days;
 
-  ERC20Votes token = ERC20Votes(label('ERC20Votes'));
+  ERC20VotesUpgradeable token = ERC20VotesUpgradeable(label('ERC20VotesUpgradeable'));
 
   address deployer = label('deployer');
   address delegatee;
@@ -136,7 +136,7 @@ contract Unit_TokenDistributor_Constructor is Base {
   function test_Call_ERC20Votes_Delegate(address _delegate) public {
     vm.assume(_delegate != address(0));
 
-    vm.expectCall(address(token), abi.encodeWithSelector(ERC20Votes.delegate.selector, _delegate));
+    vm.expectCall(address(token), abi.encodeWithSelector(ERC20VotesUpgradeable.delegate.selector, _delegate));
 
     new TokenDistributor(merkleRoot, token, totalClaimable, claimPeriodStart, claimPeriodEnd, _delegate);
   }
@@ -144,7 +144,7 @@ contract Unit_TokenDistributor_Constructor is Base {
   function test_Revert_Token_IsNull() public {
     vm.expectRevert(Assertions.NullAddress.selector);
 
-    new TokenDistributor(merkleRoot, ERC20Votes(address(0)), totalClaimable, claimPeriodStart, claimPeriodEnd, deployer);
+    new TokenDistributor(merkleRoot, ERC20VotesUpgradeable(address(0)), totalClaimable, claimPeriodStart, claimPeriodEnd, deployer);
   }
 
   function test_Revert_TotalClaimable_IsNull() public {
