@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
+import {IERC20MetadataUpgradeable} from '@openzeppelin-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol';
 import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
 import {ISurplusAuctionHouse} from '@interfaces/ISurplusAuctionHouse.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
@@ -24,7 +24,7 @@ contract SurplusBidActions is ISurplusBidActions, CommonActions {
     uint256 _amountToSell = ISurplusAuctionHouse(_surplusAuctionHouse).auctions(_auctionId).amountToSell;
 
     // prepare protocol token spending
-    IERC20Metadata _protocolToken = ISurplusAuctionHouse(_surplusAuctionHouse).protocolToken();
+    IERC20MetadataUpgradeable _protocolToken = ISurplusAuctionHouse(_surplusAuctionHouse).protocolToken();
     _protocolToken.transferFrom(msg.sender, address(this), _bidAmount);
     _protocolToken.approve(address(_surplusAuctionHouse), _bidAmount);
 

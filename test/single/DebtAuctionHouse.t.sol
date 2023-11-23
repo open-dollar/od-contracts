@@ -87,7 +87,7 @@ contract SingleDebtAuctionHouseTest is DSTest {
     ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
       ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 0});
     safeEngine = new SAFEEngine(_safeEngineParams);
-    protocolToken = new ProtocolToken('', '');
+    protocolToken = new ProtocolToken();
 
     IDebtAuctionHouse.DebtAuctionHouseParams memory _debtAuctionHouseParams = IDebtAuctionHouse.DebtAuctionHouseParams({
       bidDecrease: 1.05e18,

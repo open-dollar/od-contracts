@@ -3,6 +3,7 @@ pragma solidity 0.8.19;
 
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
+import {IERC20MetadataUpgradeable} from '@openzeppelin-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol';
 import {ICoinJoin} from '@interfaces/utils/ICoinJoin.sol';
 import {ICollateralJoin} from '@interfaces/utils/ICollateralJoin.sol';
 import {ICommonActions} from '@interfaces/proxies/actions/ICommonActions.sol';
@@ -51,7 +52,7 @@ abstract contract CommonActions is ICommonActions {
     if (_wad == 0) return;
 
     // NOTE: assumes systemCoin uses 18 decimals
-    IERC20Metadata _systemCoin = ICoinJoin(_coinJoin).systemCoin();
+    IERC20MetadataUpgradeable _systemCoin = ICoinJoin(_coinJoin).systemCoin();
     // Transfers coins from the user to the proxy
     _systemCoin.transferFrom(msg.sender, address(this), _wad);
     // Approves adapter to take the COIN amount

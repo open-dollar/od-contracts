@@ -14,6 +14,7 @@ import {Common} from '@script/Common.s.sol';
 import {GoerliParams} from '@script/GoerliParams.s.sol';
 import {MainnetParams} from '@script/MainnetParams.s.sol';
 import {IAlgebraPool} from '@interfaces/oracles/IAlgebraPool.sol';
+import {Create2Factory} from '@contracts/utils/Create2Factory.sol';
 
 abstract contract Deploy is Common, Script {
   function setupEnvironment() public virtual {}
@@ -95,6 +96,10 @@ contract DeployMainnet is MainnetParams, Deploy {
   function setUp() public virtual {
     _deployerPk = uint256(vm.envBytes32('MAINNET_DEPLOYER_PK'));
     chainId = 42_161;
+    _create2Factory = Create2Factory(MAINNET_CREATE2_FACTORY);
+    salt1 = MAINNET_SALT_SYSTEMCOIN;
+    salt2 = MAINNET_SALT_PROTOCOLTOKEN;
+    salt3 = MAINNET_SALT_VAULT721;
   }
 
   function mintAirdrop() public virtual override {
@@ -166,6 +171,10 @@ contract DeployGoerli is GoerliParams, Deploy {
   function setUp() public virtual {
     _deployerPk = uint256(vm.envBytes32('ARB_SEPOLIA_DEPLOYER_PK'));
     chainId = 421_614;
+    _create2Factory = Create2Factory(SEPOLIA_CREATE2_FACTORY);
+    salt1 = SEPOLIA_SALT_SYSTEMCOIN;
+    salt2 = SEPOLIA_SALT_PROTOCOLTOKEN;
+    salt3 = SEPOLIA_SALT_VAULT721;
   }
 
   function mintAirdrop() public virtual override {
