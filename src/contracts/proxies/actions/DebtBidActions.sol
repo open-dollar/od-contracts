@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
+import {IERC20MetadataUpgradeable} from '@openzeppelin-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol';
 import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
 import {IDebtAuctionHouse} from '@interfaces/IDebtAuctionHouse.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
@@ -50,7 +50,7 @@ contract DebtBidActions is CommonActions, IDebtBidActions {
 
     if (_auction.highBidder == address(this)) {
       // get the amount of protocol tokens that were sold
-      IERC20Metadata _protocolToken = IDebtAuctionHouse(_debtAuctionHouse).protocolToken();
+      IERC20MetadataUpgradeable _protocolToken = IDebtAuctionHouse(_debtAuctionHouse).protocolToken();
       _protocolToken.transfer(msg.sender, _auction.amountToSell);
     }
 
@@ -65,7 +65,7 @@ contract DebtBidActions is CommonActions, IDebtBidActions {
   /// @inheritdoc IDebtBidActions
   function collectProtocolTokens(address _protocolToken) external delegateCall {
     // get the amount of protocol tokens that the proxy has
-    uint256 _coinsToCollect = IERC20Metadata(_protocolToken).balanceOf(address(this));
-    IERC20Metadata(_protocolToken).transfer(msg.sender, _coinsToCollect);
+    uint256 _coinsToCollect = IERC20MetadataUpgradeable(_protocolToken).balanceOf(address(this));
+    IERC20MetadataUpgradeable(_protocolToken).transfer(msg.sender, _coinsToCollect);
   }
 }
