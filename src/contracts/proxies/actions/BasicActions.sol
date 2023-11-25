@@ -2,13 +2,8 @@
 pragma solidity 0.8.19;
 
 import {ODSafeManager} from '@contracts/proxies/ODSafeManager.sol';
-import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
-import {ICoinJoin} from '@interfaces/utils/ICoinJoin.sol';
-import {ITaxCollector} from '@interfaces/ITaxCollector.sol';
-import {ICollateralJoin} from '@interfaces/utils/ICollateralJoin.sol';
-import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
 import {IBasicActions} from '@interfaces/proxies/actions/IBasicActions.sol';
 
 import {Math, WAD, RAY, RAD} from '@libraries/Math.sol';
