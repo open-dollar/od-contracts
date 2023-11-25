@@ -175,6 +175,11 @@ abstract contract Common is Contracts, Params {
     systemCoin = ISystemCoin(systemCoinAddress);
     protocolToken = IProtocolToken(protocolTokenAddress);
 
+    // @note inside the constructor of SystemCoin and ProtocolToken we call _disableInitializers();
+    // this is called once we deploy the tokens in _create2Factory.deployTokens which will not allow
+    // any further initialization and will always break and will not actually initialize with the correct params
+    // if we want this to be upgradeable as well, we will need to deploy proxy contracts for the tokens
+    // or am I missing something here?
     systemCoin.initialize('Open Dollar', 'OD');
     protocolToken.initialize('Open Dollar Governance', 'ODG');
 
@@ -388,7 +393,8 @@ abstract contract Common is Contracts, Params {
     // vault721 = new Vault721(address(timelockController));
     address vault721Address = _create2Factory.deployVault721(salt3);
     vault721 = Vault721(vault721Address);
-    vault721.initialize(address(timelockController));
+    // this also breaks because of the _disableInitializers() call in the constructor
+    // vault721.initialize(address(timelockController));
 
     safeManager = new ODSafeManager(address(safeEngine), address(vault721));
     nftRenderer =

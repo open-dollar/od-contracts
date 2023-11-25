@@ -279,6 +279,8 @@ contract DeployGoerli is GoerliParams, Deploy {
 contract DeployAnvil is GoerliParams, Deploy {
   function setUp() public virtual {
     _deployerPk = uint256(vm.envBytes32('ANVIL_ONE'));
+    _create2Factory = new Create2Factory();
+    _create2Factory.addAdmin(vm.addr(_deployerPk));
     chainId = 31_337;
   }
 
