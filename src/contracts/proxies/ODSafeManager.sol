@@ -161,7 +161,7 @@ contract ODSafeManager is IODSafeManager {
   ) external safeAllowed(_safe) {
     SAFEData memory _sData = _safeData[_safe];
     // @note TODO note that taxCollector can be an arbitrary address
-    // so if the tax collector can be multiple addresses, we should either check it is 
+    // so if the tax collector can be multiple addresses, we should either check it is
     // a valid taxCollector OR if there is only one and we can discover it,
     // we should just use that one instead of taking it as a param and remove this
     // param in all places to reduce calldata gas costs.

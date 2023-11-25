@@ -141,7 +141,12 @@ interface IODSafeManager {
    * @param  _deltaCollateral Delta of collateral to add/remove [wad]
    * @param  _deltaDebt Delta of debt to add/remove [wad]
    */
-  function modifySAFECollateralization(address _taxCollector, uint256 _safe, int256 _deltaCollateral, int256 _deltaDebt) external;
+  function modifySAFECollateralization(
+    address _taxCollector,
+    uint256 _safe,
+    int256 _deltaCollateral,
+    int256 _deltaDebt
+  ) external;
 
   /**
    * @notice Transfer wad amount of safe collateral from the safe address to a dst address
