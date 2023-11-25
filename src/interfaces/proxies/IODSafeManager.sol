@@ -136,11 +136,12 @@ interface IODSafeManager {
 
   /**
    * @notice Modify a SAFE's collateralization ratio while keeping the generated COIN or collateral freed in the safe handler address
+   * @param  _taxCollector the address of the tax collector
    * @param  _safe Id of the SAFE
    * @param  _deltaCollateral Delta of collateral to add/remove [wad]
    * @param  _deltaDebt Delta of debt to add/remove [wad]
    */
-  function modifySAFECollateralization(uint256 _safe, int256 _deltaCollateral, int256 _deltaDebt) external;
+  function modifySAFECollateralization(address _taxCollector, uint256 _safe, int256 _deltaCollateral, int256 _deltaDebt) external;
 
   /**
    * @notice Transfer wad amount of safe collateral from the safe address to a dst address

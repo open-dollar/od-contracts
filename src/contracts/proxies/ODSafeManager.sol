@@ -5,6 +5,7 @@ import {SAFEHandler} from '@contracts/proxies/SAFEHandler.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ILiquidationEngine} from '@interfaces/ILiquidationEngine.sol';
 import {IVault721} from '@interfaces/proxies/IVault721.sol';
+import {ITaxCollector} from '@interfaces/ITaxCollector.sol';
 
 import {Math} from '@libraries/Math.sol';
 import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
@@ -153,11 +154,18 @@ contract ODSafeManager is IODSafeManager {
 
   /// @inheritdoc IODSafeManager
   function modifySAFECollateralization(
+    address _taxCollector,
     uint256 _safe,
     int256 _deltaCollateral,
     int256 _deltaDebt
   ) external safeAllowed(_safe) {
     SAFEData memory _sData = _safeData[_safe];
+    // @note TODO note that taxCollector can be an arbitrary address
+    // so if the tax collector can be multiple addresses, we should either check it is 
+    // a valid taxCollector OR if there is only one and we can discover it,
+    // we should just use that one instead of taking it as a param and remove this
+    // param in all places to reduce calldata gas costs.
+    ITaxCollector(_taxCollector).taxSingle(_sData.collateralType);
     ISAFEEngine(safeEngine).modifySAFECollateralization(
       _sData.collateralType, _sData.safeHandler, _sData.safeHandler, _sData.safeHandler, _deltaCollateral, _deltaDebt
     );
