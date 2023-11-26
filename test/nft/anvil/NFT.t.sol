@@ -147,4 +147,148 @@ contract NFTAnvil is AnvilFork {
 
     assertEq(initBal, vault721.balanceOf(owner));
   }
+
+  /**
+   * @dev fuzz tests set to 256 runs each
+   * test locking collateral
+   */
+  function test_allowSAFE(uint256 cTypeIndex, uint8 ok) public {
+    vm.assume(ok < 2);
+    cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
+    uint256 i = 0;
+    address proxy = proxies[i];
+    bytes32 cType = cTypes[cTypeIndex];
+    uint256 vaultId = vaultIds[proxy][cType];
+    vm.startPrank(users[i]);
+    allowSafe(proxy, vaultId, users[i], ok);
+    vm.stopPrank();
+
+    IODSafeManager.SAFEData memory sData = safeManager.safeData(vaultId);
+
+    assertEq(safeManager.safeCan(sData.owner, vaultId, users[i]), ok, 'test_allowSAFE: safeCan not set correctly');
+  }
+
+  function test_allowHandler(uint256 cTypeIndex, uint8 ok) public {
+    vm.assume(ok < 2);
+    cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
+    uint256 i = 0;
+    address proxy = proxies[i];
+    bytes32 cType = cTypes[cTypeIndex];
+    uint256 vaultId = vaultIds[proxy][cType];
+    vm.startPrank(users[i]);
+    allowHandler(proxy, users[i], ok);
+    vm.stopPrank();
+
+    IODSafeManager.SAFEData memory sData = safeManager.safeData(vaultId);
+
+    assertEq(safeManager.handlerCan(proxy, users[i]), ok, 'test_allowHandler: handlerCan not set correctly');
+  }
+
+  // function test_modifySAFECollateralization(
+  //   uint256 cTypeIndex,
+  //   uint256 collateral,
+  //   int256 deltaDebt
+  // ) public maxLock(collateral) {
+  //   cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
+  //   uint256 i = 0;
+  //   address proxy = proxies[i];
+  //   bytes32 cType = cTypes[cTypeIndex];
+  //   uint256 vaultId = vaultIds[proxy][cType];
+  //   vm.startPrank(users[i]);
+  //   modifySAFECollateralization(proxy, vaultId, int256(collateral), deltaDebt);
+  //   vm.stopPrank();
+  // }
+
+  // function test_transferCollateral(uint256 cTypeIndex, uint256 collateral) public maxLock(collateral) {
+  //   cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
+  //   uint256 i = 0;
+  //   address proxy = proxies[i];
+  //   bytes32 cType = cTypes[cTypeIndex];
+  //   uint256 vaultId = vaultIds[proxy][cType];
+  //   uint256 destId = vaultIds[proxies[1]][cType];
+  //   IODSafeManager.SAFEData memory sData = safeManager.safeData(destId);
+  //   vm.startPrank(users[i]);
+  //   transferCollateral(proxy, vaultId, sData.safeHandler, collateral);
+  //   vm.stopPrank();
+  // }
+
+  // function test_transferInternalCoins(uint256 cTypeIndex, address _dst, uint256 _rad) public {
+  //   cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
+  //   uint256 i = 0;
+  //   address proxy = proxies[i];
+  //   bytes32 cType = cTypes[cTypeIndex];
+  //   uint256 vaultId = vaultIds[proxy][cType];
+  //   vm.startPrank(users[i]);
+  //   transferInternalCoins(proxy, vaultId, _dst, _rad);
+  //   vm.stopPrank();
+  // }
+
+  // function test_quitSystem(uint256 cTypeIndex, address _dst) public {
+  //   cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
+  //   uint256 i = 0;
+  //   address proxy = proxies[i];
+  //   bytes32 cType = cTypes[cTypeIndex];
+  //   uint256 vaultId = vaultIds[proxy][cType];
+  //   vm.startPrank(users[i]);
+  //   quitSystem(proxy, vaultId, _dst);
+  //   vm.stopPrank();
+  // }
+
+  // function test_enterSystem(uint256 cTypeIndex, address _src) public {
+  //   cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
+  //   uint256 i = 0;
+  //   address proxy = proxies[i];
+  //   bytes32 cType = cTypes[cTypeIndex];
+  //   uint256 vaultId = vaultIds[proxies[1]][cType];
+  //   vm.startPrank(users[i]);
+  //   enterSystem(proxy, _src, vaultId);
+  //   vm.stopPrank();
+  // }
+
+  // function test_moveSAFE(uint256 cTypeIndex) public {
+  //   cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
+  //   uint256 i = 0;
+  //   address proxy = proxies[i];
+  //   bytes32 cType = cTypes[cTypeIndex];
+  //   uint256 vaultId = vaultIds[proxy][cType];
+  //   uint256 anotherVaultId = vaultIds[proxies[1]][cType];
+  //   vm.startPrank(users[i]);
+  //   moveSAFE(proxy, vaultId, anotherVaultId);
+  //   vm.stopPrank();
+  // }
+
+  function test_addSAFE(uint256 cTypeIndex) public {
+    cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
+    uint256 i = 0;
+    address proxy = proxies[i];
+    bytes32 cType = cTypes[cTypeIndex];
+    uint256 vaultId = vaultIds[proxy][cType];
+    uint256 anotherVaultId = vaultIds[proxies[1]][cType];
+    vm.startPrank(users[i]);
+    addSAFE(proxy, anotherVaultId);
+    vm.stopPrank();
+  }
+
+  function test_removeSAFE(uint256 cTypeIndex) public {
+    cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
+    uint256 i = 0;
+    address proxy = proxies[i];
+    bytes32 cType = cTypes[cTypeIndex];
+    uint256 vaultId = vaultIds[proxy][cType];
+    vm.startPrank(users[i]);
+    removeSAFE(proxy, vaultId);
+    vm.stopPrank();
+  }
+
+  // function test_protectSAFE(uint256 cTypeIndex) public {
+  //   cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
+  //   uint256 i = 0;
+  //   address saviour = address(0x420);
+  //   address proxy = proxies[i];
+  //   bytes32 cType = cTypes[cTypeIndex];
+  //   uint256 vaultId = vaultIds[proxy][cType];
+  //   vm.startPrank(users[i]);
+  //   protectSAFE(proxy, vaultId, address(liquidationEngine), saviour);
+  //   vm.stopPrank();
+  // }
 }
