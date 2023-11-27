@@ -39,6 +39,8 @@ contract ODSafeManager is IODSafeManager {
   mapping(address _owner => mapping(uint256 _safeId => mapping(address _caller => uint256 _ok))) public safeCan;
   /// @inheritdoc IODSafeManager
   mapping(address _safeHandler => mapping(address _caller => uint256 _ok)) public handlerCan;
+  /// @inheritdoc IODSafeManager
+  mapping(address _safeHandler => bool _exists) public handlerExists;
 
   // --- Modifiers ---
 
@@ -123,6 +125,9 @@ contract ODSafeManager is IODSafeManager {
 
     _safeData[_safeId] = SAFEData({owner: _usr, safeHandler: _safeHandler, collateralType: _cType});
 
+    // Save the address of the safeHandler
+    handlerExists[_safeHandler] = true;
+
     _usrSafes[_usr].add(_safeId);
     _usrSafesPerCollat[_usr][_cType].add(_safeId);
 
@@ -167,6 +172,8 @@ contract ODSafeManager is IODSafeManager {
   /// @inheritdoc IODSafeManager
   function transferCollateral(uint256 _safe, address _dst, uint256 _wad) external safeAllowed(_safe) {
     SAFEData memory _sData = _safeData[_safe];
+    if (!handlerExists[_dst]) revert HandlerDoesNotExist();
+
     ISAFEEngine(safeEngine).transferCollateral(_sData.collateralType, _sData.safeHandler, _dst, _wad);
     emit TransferCollateral(msg.sender, _safe, _dst, _wad);
   }
