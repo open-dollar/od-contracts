@@ -181,6 +181,9 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
     if (_params.debtAuctionBidSize > _unqueuedUnauctionedDebt(_debtBalance)) revert AccEng_InsufficientDebt();
 
     (_coinBalance, _debtBalance) = _settleDebt(_coinBalance, _debtBalance, _coinBalance);
+
+    if (_params.debtAuctionBidSize > _unqueuedUnauctionedDebt(_debtBalance)) revert AccEng_InsufficientDebt();
+
     totalOnAuctionDebt += _params.debtAuctionBidSize;
 
     _id = debtAuctionHouse.startAuction({
