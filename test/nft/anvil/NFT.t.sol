@@ -168,7 +168,7 @@ contract NFTAnvil is AnvilFork {
     address alice = users[0];
     address aliceProxy = proxies[0]; // alice's proxy
     bytes32 cType = cTypes[cTypeIndex];
-    uint256 aliceVaultId = _helperDepositCollateralAndGenerateDebt(alice, aliceProxy, cType, 100, 0);
+    uint256 aliceVaultId = _helperDepositCollateralAndGenerateDebt(alice, aliceProxy, cType, collateral, 0);
 
     address bob = users[1];
     address bobProxy = proxies[1]; // bob's proxy
@@ -183,7 +183,7 @@ contract NFTAnvil is AnvilFork {
     );
 
     vm.startPrank(aliceProxy);
-    // @note when we deposit collateral, it is locked, how do we move it from locked to tokenCollateral so
+    // @note TODO when we deposit collateral, it is locked, how do we move it from locked to tokenCollateral so
     // we can transfer it? this will fail if we try to transfer non-zero value
     safeManager.transferCollateral(aliceVaultId, bobSafeHandler, 0);
     vm.stopPrank();
