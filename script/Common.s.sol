@@ -4,10 +4,15 @@ pragma solidity 0.8.19;
 import '@script/Contracts.s.sol';
 import {Params, ParamChecker, OD, ETH_A, JOB_REWARD} from '@script/Params.s.sol';
 import '@script/Registry.s.sol';
+import {Create2Factory} from '@contracts/utils/Create2Factory.sol';
 
 abstract contract Common is Contracts, Params {
   uint256 internal _deployerPk = 69; // for tests - from HAI
   uint256 internal _governorPK;
+  Create2Factory internal _create2Factory;
+  uint256 internal salt1;
+  uint256 internal salt2;
+  uint256 internal salt3;
 
   function getChainId() public view returns (uint256) {
     uint256 id;
@@ -164,8 +169,14 @@ abstract contract Common is Contracts, Params {
 
   function deployTokenGovernance() public updateParams {
     // deploy Tokens
-    systemCoin = new SystemCoin('Open Dollar', 'OD');
-    protocolToken = new ProtocolToken('Open Dollar Governance', 'ODG');
+    // systemCoin = new SystemCoin('Open Dollar', 'OD');
+    // protocolToken = new ProtocolToken('Open Dollar Governance', 'ODG');
+    (address systemCoinAddress, address protocolTokenAddress) = _create2Factory.deployTokens(salt1, salt2);
+    systemCoin = ISystemCoin(systemCoinAddress);
+    protocolToken = IProtocolToken(protocolTokenAddress);
+
+    systemCoin.initialize('Open Dollar', 'OD');
+    protocolToken.initialize('Open Dollar Governance', 'ODG');
 
     address[] memory members = new address[](0);
 
@@ -374,7 +385,11 @@ abstract contract Common is Contracts, Params {
   }
 
   function deployProxyContracts() public updateParams {
-    vault721 = new Vault721(address(timelockController));
+    // vault721 = new Vault721(address(timelockController));
+    address vault721Address = _create2Factory.deployVault721(salt3);
+    vault721 = Vault721(vault721Address);
+    vault721.initialize(address(timelockController));
+
     safeManager = new ODSafeManager(address(safeEngine), address(vault721));
     nftRenderer =
       new NFTRenderer(address(vault721), address(oracleRelayer), address(taxCollector), address(collateralJoinFactory));

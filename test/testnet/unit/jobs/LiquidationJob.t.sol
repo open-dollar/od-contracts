@@ -115,11 +115,20 @@ contract Unit_LiquidationJob_WorkLiquidation is Base {
   function test_Emit_Rewarded(bytes32 _cType, address _safe) public {
     _mockValues(true, _cType, _safe);
 
-    vm.expectEmit();
+    vm.expectEmit(address(liquidationJob));
     emit Rewarded(user, REWARD_AMOUNT);
 
     vm.prank(user);
     liquidationJob.workLiquidation(_cType, _safe);
+  }
+
+  function test_No_Reward(bytes32 _cType, address _safe) public {
+    _mockValues(true, _cType, _safe);
+
+    vm.recordLogs();
+    vm.prank(user);
+    liquidationJob.workLiquidationWithoutReward(_cType, _safe);
+    assertEq(vm.getRecordedLogs().length, 0);
   }
 }
 

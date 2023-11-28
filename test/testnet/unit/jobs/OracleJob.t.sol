@@ -157,10 +157,16 @@ contract Unit_OracleJob_WorkUpdateCollateralPrice is Base {
   }
 
   function test_Emit_Rewarded(bytes32 _cType) public happyPath(_cType) {
-    vm.expectEmit();
+    vm.expectEmit(address(oracleJob));
     emit Rewarded(user, REWARD_AMOUNT);
 
     oracleJob.workUpdateCollateralPrice(_cType);
+  }
+
+  function test_No_Reward(bytes32 _cType) public happyPath(_cType) {
+    vm.recordLogs();
+    oracleJob.workUpdateCollateralPriceWithoutReward(_cType);
+    assertEq(vm.getRecordedLogs().length, 0);
   }
 }
 
@@ -193,10 +199,16 @@ contract Unit_OracleJob_WorkUpdateRate is Base {
   }
 
   function test_Emit_Rewarded() public happyPath {
-    vm.expectEmit();
+    vm.expectEmit(address(oracleJob));
     emit Rewarded(user, REWARD_AMOUNT);
 
     oracleJob.workUpdateRate();
+  }
+
+  function test_No_Reward() public happyPath {
+    vm.recordLogs();
+    oracleJob.workUpdateRateWithoutReward();
+    assertEq(vm.getRecordedLogs().length, 0);
   }
 }
 

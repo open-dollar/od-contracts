@@ -1,30 +1,41 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-// --- Anvil ---
+// --- Anvil Local Testnet ---
+
+// Members for governance
 address constant ALICE = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266; // deployer
 address constant BOB = 0x70997970C51812dc3A010C7d01b50e0d17dc79C8;
 address constant CHARLOTTE = 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC;
 
-// --- ARB Goerli ---
+// --- ARB Sepolia Testnet ---
 
 // Deployment params
 uint256 constant MIN_DELAY_GOERLI = 1 minutes;
 uint256 constant ORACLE_INTERVAL_TEST = 1 minutes;
-
-// Token contracts
-address constant GOERLI_WETH = 0xEe01c0CD76354C383B8c7B4e65EA88D00B06f36f;
-address constant GOERLI_GOV_TOKEN = 0x0Ed89D4655b2fE9f99EaDC3116b223527165452D;
 
 // Members for governance
 address constant H = 0x37c5B029f9c3691B3d47cb024f84E5E257aEb0BB;
 address constant J = 0xcb81A76a565aC4870EDA5B0e32c5a0D2ec734174;
 address constant P = 0xC295763Eed507d4A0f8B77241c03dd3354781a15;
 
+// Vanity address params - use `cast create2` to find salt
+uint256 constant SEPOLIA_SALT_SYSTEMCOIN =
+  112_897_861_258_990_387_098_776_944_447_239_821_066_355_482_563_138_389_422_987_534_236_459_546_050_026;
+uint256 constant SEPOLIA_SALT_PROTOCOLTOKEN =
+  33_909_640_905_358_342_898_143_724_624_030_133_083_920_609_190_925_545_591_963_391_866_995_498_083_907;
+uint256 constant SEPOLIA_SALT_VAULT721 =
+  53_108_215_892_343_944_041_352_961_460_150_983_644_958_469_624_782_417_283_725_833_369_029_472_088_009;
+address constant SEPOLIA_CREATE2_FACTORY = 0x196eFA212f88C2Dd7f0a74E747168B3A37F335c0;
+
+// --- ARB Goerli Testnet ---
+
+// Token contracts
+address constant GOERLI_WETH = 0xEe01c0CD76354C383B8c7B4e65EA88D00B06f36f;
+address constant GOERLI_GOV_TOKEN = 0x0Ed89D4655b2fE9f99EaDC3116b223527165452D;
 // Chainlink feeds
 address constant GOERLI_CHAINLINK_ETH_USD_FEED = 0x62CAe0FA2da220f43a51F86Db2EDb36DcA9A5A08;
 address constant GOERLI_CHAINLINK_ARB_USD_FEED = 0x2eE9BFB2D319B31A573EA15774B755715988E99D;
-
 // Liquidity pools
 address constant GOERLI_UNISWAP_V3_FACTORY = 0x4893376342d5D7b3e31d4184c08b265e5aB2A3f6;
 address constant GOERLI_CAMELOT_V2_FACTORY = 0x659fd9F4536f540bd051c2739Fc8b8e9355E5042;
@@ -38,6 +49,12 @@ address constant DAO_SAFE = address(1); // set this before mainnet deployment
 uint256 constant AIRDROP_AMOUNT = 10_000e18; // 10k tokens
 uint256 constant MIN_DELAY = 3 days; // timelock for governor
 uint256 constant ORACLE_INTERVAL_PROD = 1 hours;
+
+// Vanity address params - use `cast create2` to find salt
+uint256 constant MAINNET_SALT_SYSTEMCOIN = 0;
+uint256 constant MAINNET_SALT_PROTOCOLTOKEN = 0;
+uint256 constant MAINNET_SALT_VAULT721 = 0;
+address constant MAINNET_CREATE2_FACTORY = address(0);
 
 // Token contracts (all 18 decimals)
 address constant ARBITRUM_WSTETH = 0x5979D7b546E38E414F7E9822514be443A4800529;
