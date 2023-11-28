@@ -9,7 +9,7 @@ import {Vault721} from '@contracts/proxies/Vault721.sol';
 import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 
-// forge t --fork-url $URL --match-contract NFTAnvil -vvvvv
+// forge t --fork-url http://127.0.0.1:8545 --match-contract NFTAnvil -vvvvv
 
 contract NFTAnvil is AnvilFork {
   using SafeERC20 for IERC20;

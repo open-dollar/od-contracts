@@ -280,10 +280,6 @@ contract DeployAnvil is GoerliParams, Deploy {
   function setUp() public virtual {
     _deployerPk = uint256(vm.envBytes32('ANVIL_ONE'));
     chainId = 31_337;
-    _create2Factory = Create2Factory(ANVIL_CREATE2_FACTORY);
-    salt1 = 1_523_452_345_234_234_999;
-    salt2 = 2_345_456_345_234_234_999;
-    salt3 = 3_436_345_634_234_234_999;
   }
 
   function mintAirdrop() public virtual override {
@@ -305,7 +301,7 @@ contract DeployAnvil is GoerliParams, Deploy {
     collateral[MAGIC] = new MintableERC20('Magic', 'MAGIC', 18);
 
     // WSTETH
-    IBaseOracle _wstethUSDPriceFeed = new OracleForTestnet(1_500e18);
+    IBaseOracle _wstethUSDPriceFeed = new OracleForTestnet(1500e18);
 
     // ARB
     OracleForTestnet _arbETHPriceFeed = new OracleForTestnet(0.00055e18);
