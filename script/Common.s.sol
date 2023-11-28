@@ -169,8 +169,6 @@ abstract contract Common is Contracts, Params {
 
   function deployTokenGovernance() public updateParams {
     // deploy Tokens
-    // systemCoin = new SystemCoin('Open Dollar', 'OD');
-    // protocolToken = new ProtocolToken('Open Dollar Governance', 'ODG');
     (address systemCoinAddress, address protocolTokenAddress) = _create2Factory.deployTokens(salt1, salt2);
     systemCoin = ISystemCoin(systemCoinAddress);
     protocolToken = IProtocolToken(protocolTokenAddress);
@@ -385,7 +383,6 @@ abstract contract Common is Contracts, Params {
   }
 
   function deployProxyContracts() public updateParams {
-    // vault721 = new Vault721(address(timelockController));
     address vault721Address = _create2Factory.deployVault721(salt3);
     vault721 = Vault721(vault721Address);
     vault721.initialize(address(timelockController));

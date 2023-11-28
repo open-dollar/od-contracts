@@ -22,11 +22,6 @@ abstract contract AuthorizableUpgradeable is Initializable, IAuthorizable {
   EnumerableSet.AddressSet internal _authorizedAccounts;
 
   // --- Init ---
-
-  constructor() {
-    _disableInitializers();
-  }
-
   /**
    * @param  _account Initial account to add authorization to
    */

@@ -18,11 +18,7 @@ contract Create2Factory {
 
   event Deployed(address _addr, uint256 _salt);
 
-  error AdminOnly();
-
   constructor() {
-    approved[msg.sender] = true;
-
     _systemCoin = type(SystemCoin).creationCode;
     _protocolToken = type(ProtocolToken).creationCode;
     _vault721 = type(Vault721).creationCode;
@@ -32,24 +28,12 @@ contract Create2Factory {
     vault721Hash = keccak256(_vault721);
   }
 
-  modifier onlyAdmin() {
-    if (approved[msg.sender] == false) revert AdminOnly();
-    _;
-  }
-
-  function addAdmin(address _admin) external onlyAdmin {
-    approved[_admin] = true;
-  }
-
-  function deployTokens(
-    uint256 _salt1,
-    uint256 _salt2
-  ) external onlyAdmin returns (address _deployment1, address _deployment2) {
+  function deployTokens(uint256 _salt1, uint256 _salt2) external returns (address _deployment1, address _deployment2) {
     _deployment1 = _deploy(_salt1, _systemCoin);
     _deployment2 = _deploy(_salt2, _protocolToken);
   }
 
-  function deployVault721(uint256 _salt) external onlyAdmin returns (address _deployment) {
+  function deployVault721(uint256 _salt) external returns (address _deployment) {
     _deployment = _deploy(_salt, _vault721);
   }
 
