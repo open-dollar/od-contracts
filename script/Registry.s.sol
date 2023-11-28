@@ -3,6 +3,8 @@ pragma solidity 0.8.19;
 
 // --- Anvil Local Testnet ---
 
+address constant ANVIL_CREATE2_FACTORY = address(1);
+
 // Members for governance
 address constant ALICE = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266; // deployer
 address constant BOB = 0x70997970C51812dc3A010C7d01b50e0d17dc79C8;
