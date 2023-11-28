@@ -19,10 +19,10 @@ address constant H = 0x37c5B029f9c3691B3d47cb024f84E5E257aEb0BB;
 address constant J = 0xcb81A76a565aC4870EDA5B0e32c5a0D2ec734174;
 address constant P = 0xC295763Eed507d4A0f8B77241c03dd3354781a15;
 
-// Vanity address params - use `cast create2` to find salt
-uint256 constant SEPOLIA_SALT_SYSTEMCOIN = 1;
-uint256 constant SEPOLIA_SALT_PROTOCOLTOKEN = 1;
-uint256 constant SEPOLIA_SALT_VAULT721 = 1;
+// Vanity address params - use `cast create2` to find salt (salt must change for each deployment)
+uint256 constant SEPOLIA_SALT_SYSTEMCOIN = 3;
+uint256 constant SEPOLIA_SALT_PROTOCOLTOKEN = 3;
+uint256 constant SEPOLIA_SALT_VAULT721 = 3;
 address constant SEPOLIA_CREATE2_FACTORY = 0xb9d4cbCcF0152040c3269D9701EE68426196e42a;
 
 // --- ARB Goerli Testnet ---
