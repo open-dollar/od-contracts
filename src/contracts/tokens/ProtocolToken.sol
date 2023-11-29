@@ -1,8 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {ERC20Votes, ERC20Permit, ERC20} from '@openzeppelin/token/ERC20/extensions/ERC20Votes.sol';
-import {Authorizable} from '@contracts/utils/Authorizable.sol';
+import {
+  ERC20VotesUpgradeable,
+  ERC20PermitUpgradeable,
+  ERC20Upgradeable
+} from '@openzeppelin-upgradeable/token/ERC20/extensions/ERC20VotesUpgradeable.sol';
+import {AuthorizableUpgradeable} from '@contracts/utils/AuthorizableUpgradeable.sol';
 
 import {IProtocolToken} from '@interfaces/tokens/IProtocolToken.sol';
 
@@ -10,17 +14,22 @@ import {IProtocolToken} from '@interfaces/tokens/IProtocolToken.sol';
  * @title  ProtocolToken
  * @notice This contract represents the protocol ERC20Votes token to be used for governance purposes
  */
-contract ProtocolToken is ERC20Votes, Authorizable, IProtocolToken {
+contract ProtocolToken is ERC20VotesUpgradeable, AuthorizableUpgradeable, IProtocolToken {
   // --- Init ---
+
+  constructor() {
+    _disableInitializers();
+  }
 
   /**
    * @param  _name String with the name of the token
    * @param  _symbol String with the symbol of the token
    */
-  constructor(
-    string memory _name,
-    string memory _symbol
-  ) ERC20(_name, _symbol) ERC20Permit(_name) Authorizable(msg.sender) {}
+  function initialize(string memory _name, string memory _symbol) external initializer {
+    __ERC20_init(_name, _symbol);
+    __ERC20Permit_init(_name);
+    __authorizable_init(msg.sender);
+  }
 
   // --- Methods ---
 

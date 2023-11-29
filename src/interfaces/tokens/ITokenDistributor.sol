@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
-import {ERC20Votes} from '@openzeppelin/token/ERC20/extensions/ERC20Votes.sol';
+import {ERC20VotesUpgradeable} from '@openzeppelin-upgradeable/token/ERC20/extensions/ERC20VotesUpgradeable.sol';
 
 interface ITokenDistributor is IAuthorizable {
   // --- Events ---
@@ -46,7 +46,7 @@ interface ITokenDistributor is IAuthorizable {
   /// @notice The merkle root of the token distribution
   function root() external view returns (bytes32 _root);
   /// @notice Address of the ERC20 token to be distributed
-  function token() external view returns (ERC20Votes _token);
+  function token() external view returns (ERC20VotesUpgradeable _token);
   /// @notice Total amount of tokens to be distributed
   function totalClaimable() external view returns (uint256 _totalClaimable);
   /// @notice Timestamp when the claim period starts
