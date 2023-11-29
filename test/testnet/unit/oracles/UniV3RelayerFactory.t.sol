@@ -8,6 +8,7 @@ import {IUniswapV3Pool} from '@uniswap/v3-core/contracts/interfaces/IUniswapV3Po
 import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {HaiTest, stdStorage, StdStorage} from '@testnet/utils/HaiTest.t.sol';
+import {GOERLI_UNISWAP_V3_FACTORY} from '@script/Registry.s.sol';
 
 abstract contract Base is HaiTest {
   using stdStorage for StdStorage;
@@ -109,7 +110,9 @@ contract Unit_UniV3RelayerFactory_DeployUniV3Relayer is Base {
   function test_Revert_Unauthorized(uint24 _feeTier, uint32 _quotePeriod) public {
     vm.expectRevert(IAuthorizable.Unauthorized.selector);
 
-    uniV3RelayerFactory.deployUniV3Relayer(address(mockBaseToken), address(mockQuoteToken), _feeTier, _quotePeriod);
+    uniV3RelayerFactory.deployUniV3Relayer(
+      GOERLI_UNISWAP_V3_FACTORY, address(mockBaseToken), address(mockQuoteToken), _feeTier, _quotePeriod
+    );
   }
 
   function test_Deploy_UniV3RelayerChild(
@@ -118,7 +121,9 @@ contract Unit_UniV3RelayerFactory_DeployUniV3Relayer is Base {
     string memory _symbol,
     uint8 _decimals
   ) public happyPath(_feeTier, _symbol, _decimals) {
-    uniV3RelayerFactory.deployUniV3Relayer(address(mockBaseToken), address(mockQuoteToken), _feeTier, _quotePeriod);
+    uniV3RelayerFactory.deployUniV3Relayer(
+      GOERLI_UNISWAP_V3_FACTORY, address(mockBaseToken), address(mockQuoteToken), _feeTier, _quotePeriod
+    );
 
     assertEq(address(uniV3RelayerChild).code, type(UniV3RelayerChild).runtimeCode);
 
@@ -134,7 +139,9 @@ contract Unit_UniV3RelayerFactory_DeployUniV3Relayer is Base {
     string memory _symbol,
     uint8 _decimals
   ) public happyPath(_feeTier, _symbol, _decimals) {
-    uniV3RelayerFactory.deployUniV3Relayer(address(mockBaseToken), address(mockQuoteToken), _feeTier, _quotePeriod);
+    uniV3RelayerFactory.deployUniV3Relayer(
+      GOERLI_UNISWAP_V3_FACTORY, address(mockBaseToken), address(mockQuoteToken), _feeTier, _quotePeriod
+    );
 
     assertEq(uniV3RelayerFactory.uniV3RelayersList()[0], address(uniV3RelayerChild));
   }
@@ -150,7 +157,9 @@ contract Unit_UniV3RelayerFactory_DeployUniV3Relayer is Base {
       address(uniV3RelayerChild), address(mockBaseToken), address(mockQuoteToken), _feeTier, _quotePeriod
     );
 
-    uniV3RelayerFactory.deployUniV3Relayer(address(mockBaseToken), address(mockQuoteToken), _feeTier, _quotePeriod);
+    uniV3RelayerFactory.deployUniV3Relayer(
+      GOERLI_UNISWAP_V3_FACTORY, address(mockBaseToken), address(mockQuoteToken), _feeTier, _quotePeriod
+    );
   }
 
   function test_Return_UniV3Relayer(
@@ -161,7 +170,9 @@ contract Unit_UniV3RelayerFactory_DeployUniV3Relayer is Base {
   ) public happyPath(_feeTier, _symbol, _decimals) {
     assertEq(
       address(
-        uniV3RelayerFactory.deployUniV3Relayer(address(mockBaseToken), address(mockQuoteToken), _feeTier, _quotePeriod)
+        uniV3RelayerFactory.deployUniV3Relayer(
+          GOERLI_UNISWAP_V3_FACTORY, address(mockBaseToken), address(mockQuoteToken), _feeTier, _quotePeriod
+        )
       ),
       address(uniV3RelayerChild)
     );

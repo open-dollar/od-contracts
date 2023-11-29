@@ -21,11 +21,12 @@ contract CamelotRelayerFactory is Authorizable, ICamelotRelayerFactory {
 
   // --- Methods ---
   function deployCamelotRelayer(
+    address _algebraV3Factory,
     address _baseToken,
     address _quoteToken,
     uint32 _quotePeriod
   ) external isAuthorized returns (IBaseOracle _camelotRelayer) {
-    _camelotRelayer = new CamelotRelayerChild(_baseToken, _quoteToken, _quotePeriod);
+    _camelotRelayer = new CamelotRelayerChild(_algebraV3Factory, _baseToken, _quoteToken, _quotePeriod);
     _camelotRelayers.add(address(_camelotRelayer));
     emit NewCamelotRelayer(address(_camelotRelayer), _baseToken, _quoteToken, _quotePeriod);
   }
