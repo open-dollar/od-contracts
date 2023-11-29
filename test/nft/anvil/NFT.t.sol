@@ -63,7 +63,8 @@ contract NFTAnvil is AnvilFork {
   /**
    * @dev test generating debt after locking collateral
    */
-  function test_generateDebt(uint256 debt, uint256 collateral, uint256 cTypeIndex) public debtRange(debt) {
+  function test_generateDebt(uint256 debt, uint256 collateral, uint256 cTypeIndex) public {
+    debt = bound(debt, 1 ether, debtCeiling);
     collateral = bound(collateral, debt / 975, MINT_AMOUNT); // ETH price ~ 1500 (debt / 975 > 150% collateralization)
     cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 2); // range: WSTETH, CBETH, RETH
 
@@ -146,5 +147,39 @@ contract NFTAnvil is AnvilFork {
     vm.stopPrank();
 
     assertEq(initBal, vault721.balanceOf(owner));
+  }
+
+  /**
+   * @dev test generating debt and repaying it
+   */
+  function test_generateDebtAndRepay(uint256 debt, uint256 collateral, uint256 cTypeIndex) public {
+    debt = bound(debt, 1 ether, debtCeiling);
+    collateral = bound(collateral, debt / 975, MINT_AMOUNT); // ETH price ~ 1500 (debt / 975 > 150% collateralization)
+    cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 2); // range: WSTETH, CBETH, RETH
+
+    for (uint256 i = 0; i < proxies.length; i++) {
+      address proxy = proxies[i];
+      bytes32 cType = cTypes[cTypeIndex];
+      uint256 vaultId = vaultIds[proxy][cType];
+      vm.startPrank(users[i]);
+      depositCollatAndGenDebt(cType, vaultId, collateral, 0, proxy);
+      genDebt(vaultId, debt, proxy);
+      vm.stopPrank();
+
+      IODSafeManager.SAFEData memory sData = safeManager.safeData(vaultId);
+      address safeHandler = sData.safeHandler;
+      ISAFEEngine.SAFE memory SafeEngineData = safeEngine.safes(cType, safeHandler);
+      assertEq(collateral, SafeEngineData.lockedCollateral);
+      assertEq(debt, SafeEngineData.generatedDebt);
+
+      vm.startPrank(users[i]);
+      systemCoin.approve(address(proxy), debt);
+      repayDebt(vaultId, debt, proxy);
+      vm.stopPrank();
+
+      // debt should be paid off and no longer exist
+      SafeEngineData = safeEngine.safes(cType, safeHandler);
+      assertEq(SafeEngineData.generatedDebt, 0);
+    }
   }
 }

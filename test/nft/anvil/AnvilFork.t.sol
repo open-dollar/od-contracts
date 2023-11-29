@@ -83,7 +83,7 @@ contract AnvilFork is AnvilDeployment, Test {
     labelVars();
     mintCollateralAndOpenSafes();
 
-    // debtCeiling = setDebtCeiling();
+    debtCeiling = setDebtCeiling();
 
     newCAddress = address(new MintableVoteERC20('NewCoin', 'NC', 18));
   }
@@ -177,6 +177,18 @@ contract AnvilFork is AnvilDeployment, Test {
       _deltaWad
     );
     ODProxy(_proxy).execute(address(basicActions), payload);
+  }
+
+  function repayDebt(uint256 _safeId, uint256 _deltaWad, address proxy) public {
+    bytes memory payload = abi.encodeWithSelector(
+      basicActions.repayDebt.selector,
+      address(safeManager),
+      address(taxCollector),
+      address(coinJoin),
+      _safeId,
+      _deltaWad
+    );
+    ODProxy(proxy).execute(address(basicActions), payload);
   }
 
   /**
