@@ -13,7 +13,7 @@ title = 'Open Dollar Docs'
 src = 'src/'               # root_path variable in build-docs.sh
 
 [profile.default]
-solc = '0.8.19'
+auto_detect_solc = true
 src = 'src'
 test = 'test'
 out = 'out'
