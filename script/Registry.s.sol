@@ -42,7 +42,7 @@ address constant GOERLI_CAMELOT_V3_POOLDEPLOYER = 0xe0e840C629402AB33433D00937Fe
 // --- ARB Mainnet ---
 
 // Deployment params
-address constant DAO_SAFE = address(0); // set this before mainnet deployment
+address constant DAO_SAFE = address(1); // set this before mainnet deployment
 uint256 constant AIRDROP_AMOUNT = 10_000e18; // 10k tokens
 uint256 constant MIN_DELAY = 3 days; // timelock for governor
 uint256 constant ORACLE_INTERVAL_PROD = 1 hours;
