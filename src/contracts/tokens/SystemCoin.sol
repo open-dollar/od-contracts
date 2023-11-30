@@ -13,10 +13,6 @@ import {ISystemCoin} from '@interfaces/tokens/ISystemCoin.sol';
 contract SystemCoin is ERC20Upgradeable, AuthorizableUpgradeable, ISystemCoin {
   // --- Init ---
 
-  constructor() {
-    _disableInitializers();
-  }
-
   /**
    * @param  _name String with the name of the token
    * @param  _symbol String with the symbol of the token

@@ -301,7 +301,7 @@ contract DeployAnvil is GoerliParams, Deploy {
     collateral[MAGIC] = new MintableERC20('Magic', 'MAGIC', 18);
 
     // WSTETH
-    IBaseOracle _wstethUSDPriceFeed = new OracleForTestnet(1_500e18);
+    IBaseOracle _wstethUSDPriceFeed = new OracleForTestnet(1500e18);
 
     // ARB
     OracleForTestnet _arbETHPriceFeed = new OracleForTestnet(0.00055e18);
