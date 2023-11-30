@@ -9,7 +9,7 @@ import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
 import {WAD, RAY, RAD} from '@libraries/Math.sol';
 import {IGovernor} from '@openzeppelin/governance/IGovernor.sol';
 
-// forge t --fork-url $URL --match-contract AddCollateralAnvil -vvvvv
+// forge t --fork-url http://127.0.0.1:8545 --match-contract AddCollateralAnvil -vvvvv
 
 contract AddCollateralAnvil is AnvilFork {
   uint256 constant MINUS_0_5_PERCENT_PER_HOUR = 999_998_607_628_240_588_157_433_861;
