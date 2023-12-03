@@ -37,9 +37,11 @@ contract ODSafeManager is IODSafeManager {
   mapping(uint256 _safeId => SAFEData) internal _safeData;
 
   /// @inheritdoc IODSafeManager
-  mapping(address _owner => mapping(uint256 _safeId => mapping(address _caller => uint256 _ok))) public safeCan;
+  mapping(address _owner => mapping(uint256 _safeId => mapping(address _caller => bool _ok))) public safeCan;
   /// @inheritdoc IODSafeManager
-  mapping(address _safeHandler => mapping(address _caller => uint256 _ok)) public handlerCan;
+  mapping(address _safeHandler => mapping(address _caller => bool _ok)) public handlerCan;
+  /// @inheritdoc IODSafeManager
+  mapping(address _safeHandler => bool _exists) public handlerExists;
 
   // --- Modifiers ---
 
@@ -49,7 +51,7 @@ contract ODSafeManager is IODSafeManager {
    */
   modifier safeAllowed(uint256 _safe) {
     address _owner = _safeData[_safe].owner;
-    if (msg.sender != _owner && safeCan[_owner][_safe][msg.sender] == 0) revert SafeNotAllowed();
+    if (msg.sender != _owner && !safeCan[_owner][_safe][msg.sender]) revert SafeNotAllowed();
     _;
   }
 
@@ -58,7 +60,7 @@ contract ODSafeManager is IODSafeManager {
    * @param  _handler Address of the handler to check if msg.sender has permissions for
    */
   modifier handlerAllowed(address _handler) {
-    if (msg.sender != _handler && handlerCan[_handler][msg.sender] == 0) revert HandlerNotAllowed();
+    if (msg.sender != _handler && !handlerCan[_handler][msg.sender]) revert HandlerNotAllowed();
     _;
   }
 
@@ -103,14 +105,14 @@ contract ODSafeManager is IODSafeManager {
   // --- Methods ---
 
   /// @inheritdoc IODSafeManager
-  function allowSAFE(uint256 _safe, address _usr, uint256 _ok) external safeAllowed(_safe) {
+  function allowSAFE(uint256 _safe, address _usr, bool _ok) external safeAllowed(_safe) {
     address _owner = _safeData[_safe].owner;
     safeCan[_owner][_safe][_usr] = _ok;
     emit AllowSAFE(msg.sender, _safe, _usr, _ok);
   }
 
   /// @inheritdoc IODSafeManager
-  function allowHandler(address _usr, uint256 _ok) external {
+  function allowHandler(address _usr, bool _ok) external {
     handlerCan[msg.sender][_usr] = _ok;
     emit AllowHandler(msg.sender, _usr, _ok);
   }
@@ -123,6 +125,9 @@ contract ODSafeManager is IODSafeManager {
     address _safeHandler = address(new SAFEHandler(safeEngine));
 
     _safeData[_safeId] = SAFEData({owner: _usr, safeHandler: _safeHandler, collateralType: _cType});
+
+    // Save the address of the safeHandler
+    handlerExists[_safeHandler] = true;
 
     _usrSafes[_usr].add(_safeId);
     _usrSafesPerCollat[_usr][_cType].add(_safeId);
@@ -172,6 +177,8 @@ contract ODSafeManager is IODSafeManager {
   /// @inheritdoc IODSafeManager
   function transferCollateral(uint256 _safe, address _dst, uint256 _wad) external safeAllowed(_safe) {
     SAFEData memory _sData = _safeData[_safe];
+    if (!handlerExists[_dst]) revert HandlerDoesNotExist();
+
     ISAFEEngine(safeEngine).transferCollateral(_sData.collateralType, _sData.safeHandler, _dst, _wad);
     emit TransferCollateral(msg.sender, _safe, _dst, _wad);
   }

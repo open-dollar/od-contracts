@@ -4,6 +4,7 @@ pragma solidity 0.8.19;
 import {ODSafeManager} from '@contracts/proxies/ODSafeManager.sol';
 
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
+import {SafeCast} from '@openzeppelin/utils/math/SafeCast.sol';
 import {IBasicActions} from '@interfaces/proxies/actions/IBasicActions.sol';
 
 import {Math, WAD, RAY, RAD} from '@libraries/Math.sol';
@@ -16,6 +17,7 @@ import {CommonActions} from '@contracts/proxies/actions/CommonActions.sol';
  */
 contract BasicActions is CommonActions, IBasicActions {
   using Math for uint256;
+  using SafeCast for int256;
 
   // --- Internal functions ---
 
@@ -96,17 +98,20 @@ contract BasicActions is CommonActions, IBasicActions {
     address _safeEngine = ODSafeManager(_manager).safeEngine();
     ODSafeManager.SAFEData memory _safeInfo = ODSafeManager(_manager).safeData(_safeId);
 
+    int256 deltaDebt = _getGeneratedDeltaDebt(_safeEngine, _safeInfo.collateralType, _safeInfo.safeHandler, _deltaWad);
+
     // Generates debt in the SAFE
     _modifySAFECollateralization(
       _manager,
       _taxCollector,
       _safeId,
       0,
-      _getGeneratedDeltaDebt(_safeEngine, _safeInfo.collateralType, _safeInfo.safeHandler, _deltaWad)
+      deltaDebt
     );
 
     // Moves the COIN amount to user's address
-    _collectAndExitCoins(_manager, _coinJoin, _safeId, _deltaWad);
+    // deltaDebt should always be positive, but we use SafeCast as an extra guard
+    _collectAndExitCoins(_manager, _coinJoin, _safeId, deltaDebt.toUint256());
   }
 
   /**
@@ -181,17 +186,20 @@ contract BasicActions is CommonActions, IBasicActions {
     // Takes token amount from user's wallet and joins into the safeEngine
     _joinCollateral(_collateralJoin, _safeInfo.safeHandler, _collateralAmount);
 
+    int256 deltaDebt = _getGeneratedDeltaDebt(_safeEngine, _safeInfo.collateralType, _safeInfo.safeHandler, _deltaWad);
+
     // Locks token amount into the SAFE and generates debt
     _modifySAFECollateralization(
       _manager,
       _taxCollector,
       _safeId,
       _collateralAmount.toInt(),
-      _getGeneratedDeltaDebt(_safeEngine, _safeInfo.collateralType, _safeInfo.safeHandler, _deltaWad)
+      deltaDebt
     );
 
     // Exits and transfers COIN amount to the user's address
-    _collectAndExitCoins(_manager, _coinJoin, _safeId, _deltaWad);
+    // deltaDebt should always be positive, but we use SafeCast as an extra guard
+    _collectAndExitCoins(_manager, _coinJoin, _safeId, deltaDebt.toUint256());
   }
 
   /**

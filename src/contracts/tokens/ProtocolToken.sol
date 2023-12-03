@@ -17,10 +17,6 @@ import {IProtocolToken} from '@interfaces/tokens/IProtocolToken.sol';
 contract ProtocolToken is ERC20VotesUpgradeable, AuthorizableUpgradeable, IProtocolToken {
   // --- Init ---
 
-  constructor() {
-    _disableInitializers();
-  }
-
   /**
    * @param  _name String with the name of the token
    * @param  _symbol String with the symbol of the token

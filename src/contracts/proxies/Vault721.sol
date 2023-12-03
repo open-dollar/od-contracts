@@ -32,13 +32,6 @@ contract Vault721 is ERC721EnumerableUpgradeable {
   event CreateProxy(address indexed _user, address _proxy);
 
   /**
-   * @dev initializer preferred for CREATE2 deployment
-   */
-  constructor() {
-    _disableInitializers();
-  }
-
-  /**
    * @dev initializes DAO timelockController contract
    */
   function initialize(address _timelockController) external initializer {

@@ -94,7 +94,7 @@ abstract contract Deploy is Common, Script {
 
 contract DeployMainnet is MainnetParams, Deploy {
   function setUp() public virtual {
-    _deployerPk = uint256(vm.envBytes32('MAINNET_DEPLOYER_PK'));
+    _deployerPk = uint256(vm.envBytes32('ARB_MAINNET_DEPLOYER_PK'));
     chainId = 42_161;
     _create2Factory = Create2Factory(MAINNET_CREATE2_FACTORY);
     salt1 = MAINNET_SALT_SYSTEMCOIN;
@@ -301,7 +301,7 @@ contract DeployAnvil is GoerliParams, Deploy {
     collateral[MAGIC] = new MintableERC20('Magic', 'MAGIC', 18);
 
     // WSTETH
-    IBaseOracle _wstethUSDPriceFeed = new OracleForTestnet(1_500e18);
+    IBaseOracle _wstethUSDPriceFeed = new OracleForTestnet(1500e18);
 
     // ARB
     OracleForTestnet _arbETHPriceFeed = new OracleForTestnet(0.00055e18);
