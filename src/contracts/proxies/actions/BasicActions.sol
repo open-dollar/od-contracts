@@ -98,8 +98,8 @@ contract BasicActions is CommonActions, IBasicActions {
 
     // Generates debt in the SAFE
     _modifySAFECollateralization(
-      _taxCollector,
       _manager,
+      _taxCollector,
       _safeId,
       0,
       _getGeneratedDeltaDebt(_safeEngine, _safeInfo.collateralType, _safeInfo.safeHandler, _deltaWad)
@@ -128,8 +128,8 @@ contract BasicActions is CommonActions, IBasicActions {
 
     // Paybacks debt to the SAFE
     _modifySAFECollateralization(
-      _taxCollector,
       _manager,
+      _taxCollector,
       _safeId,
       0,
       _getRepaidDeltaDebt(_safeEngine, _safeInfo.collateralType, _safeInfo.safeHandler)
@@ -183,8 +183,8 @@ contract BasicActions is CommonActions, IBasicActions {
 
     // Locks token amount into the SAFE and generates debt
     _modifySAFECollateralization(
-      _taxCollector,
       _manager,
+      _taxCollector,
       _safeId,
       _collateralAmount.toInt(),
       _getGeneratedDeltaDebt(_safeEngine, _safeInfo.collateralType, _safeInfo.safeHandler, _deltaWad)
@@ -255,21 +255,13 @@ contract BasicActions is CommonActions, IBasicActions {
     uint256 _safeId,
     uint256 _deltaWad
   ) external delegateCall {
-    address _safeEngine = ODSafeManager(_manager).safeEngine();
     ODSafeManager.SAFEData memory _safeInfo = ODSafeManager(_manager).safeData(_safeId);
 
     // Takes token amount from user's wallet and joins into the safeEngine
     _joinCollateral(_collateralJoin, _safeInfo.safeHandler, _deltaWad);
 
     // Locks token amount in the safe
-    ISAFEEngine(_safeEngine).modifySAFECollateralization({
-      _cType: _safeInfo.collateralType,
-      _safe: _safeInfo.safeHandler,
-      _collateralSource: _safeInfo.safeHandler,
-      _debtDestination: _safeInfo.safeHandler,
-      _deltaCollateral: _deltaWad.toInt(),
-      _deltaDebt: 0
-    });
+    _modifySAFECollateralization(_manager, address(0), _safeId, _deltaWad.toInt(), 0);
   }
 
   /// @inheritdoc IBasicActions
@@ -279,18 +271,10 @@ contract BasicActions is CommonActions, IBasicActions {
     uint256 _safeId,
     uint256 _deltaWad
   ) external delegateCall {
-    address _safeEngine = ODSafeManager(_manager).safeEngine();
     // Unlocks token amount from the SAFE
     ODSafeManager.SAFEData memory _safeInfo = ODSafeManager(_manager).safeData(_safeId);
 
-    ISAFEEngine(_safeEngine).modifySAFECollateralization({
-      _cType: _safeInfo.collateralType,
-      _safe: _safeInfo.safeHandler,
-      _collateralSource: _safeInfo.safeHandler,
-      _debtDestination: _safeInfo.safeHandler,
-      _deltaCollateral: -_deltaWad.toInt(),
-      _deltaDebt: 0
-    });
+    _modifySAFECollateralization(_manager, address(0), _safeId, -_deltaWad.toInt(), 0);
     // Transfers token amount to the user's address
     _collectAndExitCollateral(_manager, _collateralJoin, _safeId, _deltaWad);
   }
@@ -313,19 +297,9 @@ contract BasicActions is CommonActions, IBasicActions {
       address(this),
       _getRepaidDebt(_safeEngine, address(this), _safeInfo.collateralType, _safeInfo.safeHandler)
     );
-    // @note TODO is address(this) correct here because this will be called via delegatecall?
-    // that is, is it okay if we assume the address(this) is the safe handler or in
-    // other words the safe handler is the executor of this function via a delegatecall
-    _modifySAFECollateralization(_taxCollector, _manager, _safeId, 0, -_safeData.generatedDebt.toInt());
+
     // Paybacks debt to the SAFE (allowed because reducing debt of the SAFE)
-    // ISAFEEngine(_safeEngine).modifySAFECollateralization({
-    //   _cType: _safeInfo.collateralType,
-    //   _safe: _safeInfo.safeHandler,
-    //   _collateralSource: address(this),
-    //   _debtDestination: address(this),
-    //   _deltaCollateral: 0,
-    //   _deltaDebt: -int256(_safeData.generatedDebt)
-    // });
+    _modifySAFECollateralization(_manager, _taxCollector, _safeId, 0, -_safeData.generatedDebt.toInt());
   }
 
   /// @inheritdoc IBasicActions
@@ -378,8 +352,8 @@ contract BasicActions is CommonActions, IBasicActions {
 
     // Paybacks debt to the SAFE and unlocks token amount from it
     _modifySAFECollateralization(
-      _taxCollector,
       _manager,
+      _taxCollector,
       _safeId,
       -_collateralWad.toInt(),
       _getRepaidDeltaDebt(_safeEngine, _safeInfo.collateralType, _safeInfo.safeHandler)
@@ -412,7 +386,7 @@ contract BasicActions is CommonActions, IBasicActions {
 
     // Paybacks debt to the SAFE and unlocks token amount from it
     _modifySAFECollateralization(
-      _taxCollector, _manager, _safeId, -_collateralWad.toInt(), -_safeData.generatedDebt.toInt()
+      _manager, _taxCollector, _safeId, -_collateralWad.toInt(), -_safeData.generatedDebt.toInt()
     );
 
     // Transfers token amount to the user's address

