@@ -33,6 +33,9 @@ address constant SEPOLIA_CREATE2_FACTORY = 0xb9d4cbCcF0152040c3269D9701EE6842619
 // Pre-deployed Camelot Relayer
 address constant SEPOLIA_CAMELOT_RELAYER_FACTORY = address(0);
 
+// Algebra protocol
+address constant ALGEBRA_FACTORY = 0x21852176141b8D139EC5D3A1041cdC31F0F20b94;
+
 // --- ARB Goerli Testnet ---
 
 // Token contracts

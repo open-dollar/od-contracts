@@ -260,7 +260,7 @@ contract DeployGoerli is GoerliParams, Deploy {
 
     // deploy Camelot relayer to retrieve price from Camelot pool
     IBaseOracle _odWethOracle = camelotRelayerFactory.deployCamelotRelayer(
-      address(systemCoin), address(collateral[WSTETH]), uint32(ORACLE_INTERVAL_TEST)
+      ALGEBRA_FACTORY, address(systemCoin), address(collateral[WSTETH]), uint32(ORACLE_INTERVAL_TEST)
     );
 
     // deploy denominated oracle of OD/WSTETH denominated against ETH/USD
