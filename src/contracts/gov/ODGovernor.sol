@@ -34,11 +34,14 @@ contract ODGovernor is
    * GovernorTimelockControl(timelock-contract)
    */
   constructor(
+    uint256 initialVotingDelay,
+    uint256 initialVotingPeriod,
+    uint256 initialProposalThreshold,
     address _token,
     TimelockController _timelock
   )
     Governor('ODGovernor')
-    GovernorSettings(1, 15, 0)
+    GovernorSettings(initialVotingDelay, initialVotingPeriod, initialProposalThreshold)
     GovernorVotes(IVotes(_token))
     GovernorVotesQuorumFraction(3)
     GovernorTimelockControl(_timelock)

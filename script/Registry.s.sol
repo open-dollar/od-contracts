@@ -8,6 +8,11 @@ address constant ALICE = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266; // deployer
 address constant BOB = 0x70997970C51812dc3A010C7d01b50e0d17dc79C8;
 address constant CHARLOTTE = 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC;
 
+// Governance Settings
+uint256 constant TEST_INIT_VOTING_DELAY = 1;
+uint256 constant TEST_INIT_VOTING_PERIOD = 15;
+uint256 constant TEST_INIT_PROP_THRESHOLD = 0;
+
 // --- ARB Sepolia Testnet ---
 
 // Deployment params
@@ -40,6 +45,11 @@ address constant GOERLI_CAMELOT_V3_FACTORY = 0x5Cd40c7E21A15E7FC2503Fffd77cF70c6
 address constant GOERLI_CAMELOT_V3_POOLDEPLOYER = 0xe0e840C629402AB33433D00937Fe065634b1B1Af; // AlgebraPoolDeployer
 
 // --- ARB Mainnet ---
+
+// Governance Settings
+uint256 constant MAINNET_INIT_VOTING_DELAY = 332_308;
+uint256 constant MAINNET_INIT_VOTING_PERIOD = 2_326_156;
+uint256 constant MAINNET_INIT_PROP_THRESHOLD = 0;
 
 // Deployment params
 address constant DAO_SAFE = address(1); // set this before mainnet deployment
