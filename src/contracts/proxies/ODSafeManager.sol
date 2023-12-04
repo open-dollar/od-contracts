@@ -66,6 +66,7 @@ contract ODSafeManager is IODSafeManager {
   constructor(address _safeEngine, address _vault721) {
     safeEngine = _safeEngine.assertNonNull();
     vault721 = IVault721(_vault721);
+    _safeId = vault721.totalSafes();
     vault721.initializeManager();
   }
 

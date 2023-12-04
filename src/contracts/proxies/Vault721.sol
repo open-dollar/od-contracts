@@ -23,6 +23,8 @@ contract Vault721 is ERC721EnumerableUpgradeable {
   IODSafeManager public safeManager;
   NFTRenderer public nftRenderer;
 
+  uint256 public totalSafes;
+
   string public contractMetaData =
     '{"name": "Open Dollar Vaults","description": "Open Dollar is a DeFi lending protocol that enables borrowing against liquid staking tokens while earning staking rewards and enabling liquidity via Non-Fungible Vaults (NFVs).","image": "https://app.opendollar.com/collectionImage.png","external_link": "https://opendollar.com"}';
 
@@ -99,6 +101,8 @@ contract Vault721 is ERC721EnumerableUpgradeable {
   function mint(address _proxy, uint256 _safeId) external {
     require(msg.sender == address(safeManager), 'V721: only safeManager');
     require(_proxyRegistry[_proxy] != address(0), 'V721: non-native proxy');
+    require(totalSafes + 1 == _safeId, 'V721: invalid safeId');
+    totalSafes += 1;
     address _user = _proxyRegistry[_proxy];
     _safeMint(_user, _safeId);
   }

@@ -36,4 +36,5 @@ interface IVault721 {
   // public
   function tokenURI(uint256 _safeId) external returns (string memory);
   function contractURI() external returns (string memory);
+  function totalSafes() external returns (uint256);
 }
