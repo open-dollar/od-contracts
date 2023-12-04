@@ -9,6 +9,7 @@ import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {Authorizable, IAuthorizable} from '@contracts/utils/Authorizable.sol';
 import {Disableable} from '@contracts/utils/Disableable.sol';
 import {Modifiable} from '@contracts/utils/Modifiable.sol';
+import {PrecisionHelper} from '@contracts/utils/PrecisionHelper.sol';
 
 import {Encoding} from '@libraries/Encoding.sol';
 import {Math, WAD} from '@libraries/Math.sol';
@@ -20,7 +21,7 @@ import {Assertions} from '@libraries/Assertions.sol';
  * @notice It allows the system to auction surplus and debt, as well as transfer surplus
  * @dev    This is a system contract, therefore it is not meant to be used by users directly
  */
-contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingEngine {
+contract AccountingEngine is Authorizable, PrecisionHelper, Modifiable, Disableable, IAccountingEngine {
   using Encoding for bytes;
   using Assertions for address;
   using Math for uint256;
@@ -213,12 +214,12 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
     // auction surplus percentage
     if (_params.surplusTransferPercentage < ONE_HUNDRED_WAD) {
       _id = surplusAuctionHouse.startAuction({
-        _amountToSell: _params.surplusAmount.wmul(ONE_HUNDRED_WAD - _params.surplusTransferPercentage),
+        _amountToSell: wadToRad(_params.surplusAmount.wmul(ONE_HUNDRED_WAD - _params.surplusTransferPercentage)),
         _initialBid: 0
       });
 
       lastSurplusTime = block.timestamp;
-      emit AuctionSurplus(_id, 0, _params.surplusAmount.wmul(ONE_HUNDRED_WAD - _params.surplusTransferPercentage));
+      emit AuctionSurplus(_id, 0, wadToRad(_params.surplusAmount.wmul(ONE_HUNDRED_WAD - _params.surplusTransferPercentage)));
     }
 
     // transfer surplus percentage
@@ -228,11 +229,11 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
       safeEngine.transferInternalCoins({
         _source: address(this),
         _destination: extraSurplusReceiver,
-        _rad: _params.surplusAmount.wmul(_params.surplusTransferPercentage)
+        _rad: wadToRad(_params.surplusAmount.wmul(_params.surplusTransferPercentage))
       });
 
       lastSurplusTime = block.timestamp;
-      emit TransferSurplus(extraSurplusReceiver, _params.surplusAmount.wmul(_params.surplusTransferPercentage));
+      emit TransferSurplus(extraSurplusReceiver, wadToRad(_params.surplusAmount.wmul(_params.surplusTransferPercentage)));
     }
   }
 
