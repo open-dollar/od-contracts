@@ -45,6 +45,8 @@ interface IODSafeManager {
   error CollateralTypesMismatch();
   /// @notice Throws when trying to transfer collateral to an address that isn't a SAFEHandler
   error HandlerDoesNotExist();
+  /// @notice Throws if anyone except the safe owner tries to call a function
+  error OnlySafeOwner();
 
   // --- Structs ---
 
