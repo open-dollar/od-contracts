@@ -122,7 +122,5 @@ abstract contract GoerliDeployment is Contracts, GoerliParams, SepoliaContracts 
     delayedOracle[CBETH] = IDelayedOracle(DelayedOracleChild_CBETH_Address);
     delayedOracle[RETH] = IDelayedOracle(DelayedOracleChild_RETH_Address);
     delayedOracle[MAGIC] = IDelayedOracle(DelayedOracleChild_MAGIC_Address);
-
-    camelotV3Factory = ICamelotV3Factory(address(0));
   }
 }

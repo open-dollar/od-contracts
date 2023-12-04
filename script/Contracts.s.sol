@@ -143,8 +143,6 @@ abstract contract Contracts {
   IDenominatedOracleFactory public denominatedOracleFactory;
   IDelayedOracleFactory public delayedOracleFactory;
 
-  ICamelotV3Factory public camelotV3Factory;
-
   // --- Settlement contracts ---
   IGlobalSettlement public globalSettlement;
   IPostSettlementSurplusAuctionHouse public postSettlementSurplusAuctionHouse;
