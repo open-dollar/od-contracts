@@ -30,6 +30,7 @@ interface IUniV3RelayerFactory is IAuthorizable {
    * @return _uniV3Relayer Address of the deployed UniV3Relayer contract
    */
   function deployUniV3Relayer(
+    address _uniV3Factory,
     address _baseToken,
     address _quoteToken,
     uint24 _feeTier,
