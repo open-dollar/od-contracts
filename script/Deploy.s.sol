@@ -231,49 +231,47 @@ contract DeployGoerli is GoerliParams, Deploy {
 
   function setupPostEnvironment() public virtual override updateParams {}
 
-  /**
-   * @dev use default OracleForTestnet as systemCoinOracle (hence this is commented out)
-   *
-   * function setupPostEnvironment() public virtual override updateParams {
-   *   // deploy Camelot liquidity pool to create market price for OD (using WSTETH for testnet, WETH for mainnet)
-   *   ICamelotV3Factory(GOERLI_CAMELOT_V3_FACTORY).createPool(address(systemCoin), address(GOERLI_WETH));
-   *
-   *   // confirm correct setup of pool
-   *   address pool = camelotV3Factory.poolByPair(address(systemCoin), address(GOERLI_WETH));
-   *
-   *   IERC20Metadata token0 = IERC20Metadata(IAlgebraPool(pool).token0());
-   *   IERC20Metadata token1 = IERC20Metadata(IAlgebraPool(pool).token1());
-   *
-   *   require(keccak256(abi.encodePacked('OD')) == keccak256(abi.encodePacked(token0.symbol())), '!OD');
-   *   require(keccak256(abi.encodePacked('WETH')) == keccak256(abi.encodePacked(token1.symbol())), '!WETH');
-   *
-   *   // initial price of each token in WAD
-   *   uint256 initWethAmount = 1 ether;
-   *   uint256 initODAmount = 1656.62 ether;
-   *
-   *   // P = amount1 / amount0
-   *   uint256 price = initWethAmount.divWadDown(initODAmount);
-   *
-   *   // sqrtPriceX96 = sqrt(P) * 2^96
-   *   uint256 sqrtPriceX96 = FixedPointMathLib.sqrt(price * WAD) * (2 ** 96);
-   *
-   *   // log math
-   *   console2.logUint((sqrtPriceX96 / (2 ** 96)) ** 2);
-   *
-   *   // initialize pool
-   *   IAlgebraPool(pool).initialize(uint160(sqrtPriceX96));
-   *
-   *   // deploy Camelot relayer to retrieve price from Camelot pool
-   *   IBaseOracle _odWethOracle = camelotRelayerFactory.deployCamelotRelayer(
-   *     address(systemCoin), address(collateral[WSTETH]), uint32(ORACLE_INTERVAL_TEST)
-   *   );
-   *
-   *   // deploy denominated oracle of OD/WSTETH denominated against ETH/USD
-   *   systemCoinOracle = denominatedOracleFactory.deployDenominatedOracle(_odWethOracle, chainlinkEthUSDPriceFeed, false);
-   *
-   *   oracleRelayer.modifyParameters('systemCoinOracle', abi.encode(systemCoinOracle));
-   * }
-   */
+  //  @dev use default OracleForTestnet as systemCoinOracle (hence this is commented out)
+
+  function setupPostEnvironment() public virtual override updateParams {
+    // deploy Camelot liquidity pool to create market price for OD
+    ICamelotV3Factory(GOERLI_CAMELOT_V3_FACTORY).createPool(address(systemCoin), address(GOERLI_WETH));
+
+    // confirm correct setup of pool
+    address pool = camelotV3Factory.poolByPair(address(systemCoin), address(GOERLI_WETH));
+
+    IERC20Metadata token0 = IERC20Metadata(IAlgebraPool(pool).token0());
+    IERC20Metadata token1 = IERC20Metadata(IAlgebraPool(pool).token1());
+
+    require(keccak256(abi.encodePacked('OD')) == keccak256(abi.encodePacked(token0.symbol())), '!OD');
+    require(keccak256(abi.encodePacked('WETH')) == keccak256(abi.encodePacked(token1.symbol())), '!WETH');
+
+    // initial price of each token in WAD
+    uint256 initWethAmount = 1 ether;
+    uint256 initODAmount = 1656.62 ether;
+
+    // P = amount1 / amount0
+    uint256 price = initWethAmount.divWadDown(initODAmount);
+
+    // sqrtPriceX96 = sqrt(P) * 2^96
+    uint256 sqrtPriceX96 = FixedPointMathLib.sqrt(price * WAD) * (2 ** 96);
+
+    // log math
+    console2.logUint((sqrtPriceX96 / (2 ** 96)) ** 2);
+
+    // initialize pool
+    IAlgebraPool(pool).initialize(uint160(sqrtPriceX96));
+
+    // deploy Camelot relayer to retrieve price from Camelot pool
+    IBaseOracle _odWethOracle = camelotRelayerFactory.deployCamelotRelayer(
+      address(systemCoin), address(collateral[WSTETH]), uint32(ORACLE_INTERVAL_TEST)
+    );
+
+    // deploy denominated oracle of OD/WSTETH denominated against ETH/USD
+    systemCoinOracle = denominatedOracleFactory.deployDenominatedOracle(_odWethOracle, chainlinkEthUSDPriceFeed, false);
+
+    oracleRelayer.modifyParameters('systemCoinOracle', abi.encode(systemCoinOracle));
+  }
 }
 
 contract DeployAnvil is GoerliParams, Deploy {
