@@ -319,7 +319,6 @@ abstract contract Common is Contracts, Params {
   function deployOracleFactories() public updateParams {
     chainlinkRelayerFactory = new ChainlinkRelayerFactory();
     uniV3RelayerFactory = new UniV3RelayerFactory();
-    camelotRelayerFactory = new CamelotRelayerFactory();
     denominatedOracleFactory = new DenominatedOracleFactory();
     delayedOracleFactory = new DelayedOracleFactory();
   }

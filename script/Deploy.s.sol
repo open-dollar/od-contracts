@@ -229,10 +229,6 @@ contract DeployGoerli is GoerliParams, Deploy {
     collateralTypes.push(MAGIC);
   }
 
-  function setupPostEnvironment() public virtual override updateParams {}
-
-  //  @dev use default OracleForTestnet as systemCoinOracle (hence this is commented out)
-
   function setupPostEnvironment() public virtual override updateParams {
     // deploy Camelot liquidity pool to create market price for OD
     ICamelotV3Factory(GOERLI_CAMELOT_V3_FACTORY).createPool(address(systemCoin), address(GOERLI_WETH));

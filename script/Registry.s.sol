@@ -30,6 +30,9 @@ uint256 constant SEPOLIA_SALT_PROTOCOLTOKEN = 3;
 uint256 constant SEPOLIA_SALT_VAULT721 = 3;
 address constant SEPOLIA_CREATE2_FACTORY = 0xb9d4cbCcF0152040c3269D9701EE68426196e42a;
 
+// Pre-deployed Camelot Relayer
+address constant SEPOLIA_CAMELOT_RELAYER_FACTORY = address(0);
+
 // --- ARB Goerli Testnet ---
 
 // Token contracts
