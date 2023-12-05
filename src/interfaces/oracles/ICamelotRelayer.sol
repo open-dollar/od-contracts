@@ -30,7 +30,7 @@ interface ICamelotRelayer is IBaseOracle {
   /**
    * @notice The multiplier used to convert the quote into an 18 decimals format
    */
-  function multiplier() external view returns (uint256 _multiplier);
+  function multiplier() external view returns (int256 _multiplier);
 
   /**
    * @notice The length of the TWAP used to consult the pool

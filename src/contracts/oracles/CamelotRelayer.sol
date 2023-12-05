@@ -33,7 +33,7 @@ contract CamelotRelayer is IBaseOracle, ICamelotRelayer {
   /// @inheritdoc ICamelotRelayer
   uint128 public baseAmount;
   /// @inheritdoc ICamelotRelayer
-  uint256 public multiplier;
+  int256 public multiplier;
   /// @inheritdoc ICamelotRelayer
   uint32 public quotePeriod;
 
@@ -55,7 +55,7 @@ contract CamelotRelayer is IBaseOracle, ICamelotRelayer {
     }
 
     baseAmount = uint128(10 ** IERC20Metadata(_baseToken).decimals());
-    multiplier = 18 - IERC20Metadata(_quoteToken).decimals();
+    multiplier = int256(18) - int256(uint256(IERC20Metadata(_quoteToken).decimals()));
     quotePeriod = _quotePeriod;
 
     symbol = string(abi.encodePacked(IERC20Metadata(_baseToken).symbol(), ' / ', IERC20Metadata(_quoteToken).symbol()));
@@ -101,6 +101,19 @@ contract CamelotRelayer is IBaseOracle, ICamelotRelayer {
   }
 
   function _parseResult(uint256 _quoteResult) internal view returns (uint256 _result) {
-    return _quoteResult * 10 ** multiplier;
+    if (multiplier > 0) {
+      return _quoteResult * (10 ** uint256(multiplier));
+    }
+    else if (multiplier < 0) {
+      return _quoteResult / (10 ** abs(multiplier));
+    }
+    else return _quoteResult;
   }
+
+  // @notice Return the absolute value of a signed integer as an unsigned integer
+  function abs(int256 x) internal pure returns (uint256) {
+    x >= 0 ? x : -x;
+    return uint256(x);
+  }
+
 }

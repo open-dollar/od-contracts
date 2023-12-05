@@ -26,7 +26,7 @@ interface IUniV3Relayer is IBaseOracle {
   function baseAmount() external view returns (uint128 _baseAmount);
 
   /// @notice The multiplier used to convert the quote into an 18 decimals format
-  function multiplier() external view returns (uint256 _multiplier);
+  function multiplier() external view returns (int256 _multiplier);
 
   /// @notice The length of the TWAP used to consult the pool
   function quotePeriod() external view returns (uint32 _quotePeriod);
