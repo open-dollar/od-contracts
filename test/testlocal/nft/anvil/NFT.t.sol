@@ -9,7 +9,7 @@ import {Vault721} from '@contracts/proxies/Vault721.sol';
 import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
-import {FakeBasicActions} from '@test/nft/anvil/FakeBasicActions.sol';
+import {FakeBasicActions} from '@testlocal/nft/anvil/FakeBasicActions.sol';
 
 // forge t --fork-url http://127.0.0.1:8545 --match-contract NFTAnvil -vvvvv
 

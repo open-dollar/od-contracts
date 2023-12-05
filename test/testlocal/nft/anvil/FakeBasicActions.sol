@@ -20,7 +20,6 @@ contract FakeBasicActions {
 
   function lockTokenCollateralAndGenerateDebt(
     address _manager,
-    address _taxCollector,
     address _collateralJoin,
     address _coinJoin,
     uint256 _safeId,
@@ -35,7 +34,6 @@ contract FakeBasicActions {
 
     // Locks token amount into the SAFE and generates debt
     _modifySAFECollateralization(
-      _taxCollector,
       _manager,
       _safeId,
       _collateralAmount.toInt(),
@@ -46,19 +44,12 @@ contract FakeBasicActions {
     _collectAndExitCoins(_manager, _coinJoin, _safeId, _deltaWad);
   }
 
-  function generateDebt(
-    address _manager,
-    address _taxCollector,
-    address _coinJoin,
-    uint256 _safeId,
-    uint256 _deltaWad
-  ) public {
+  function generateDebt(address _manager, address _coinJoin, uint256 _safeId, uint256 _deltaWad) public {
     address _safeEngine = ODSafeManager(_manager).safeEngine();
     ODSafeManager.SAFEData memory _safeInfo = ODSafeManager(_manager).safeData(_safeId);
 
     // Generates debt in the SAFE
     _modifySAFECollateralization(
-      _taxCollector,
       _manager,
       _safeId,
       0,
@@ -70,13 +61,12 @@ contract FakeBasicActions {
   }
 
   function _modifySAFECollateralization(
-    address _taxCollector,
     address _manager,
     uint256 _safeId,
     int256 _deltaCollateral,
     int256 _deltaDebt
   ) internal {
-    ODSafeManager(_manager).modifySAFECollateralization(_taxCollector, _safeId, _deltaCollateral, _deltaDebt);
+    ODSafeManager(_manager).modifySAFECollateralization(_safeId, _deltaCollateral, _deltaDebt);
   }
 
   function _getGeneratedDeltaDebt(
