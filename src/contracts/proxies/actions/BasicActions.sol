@@ -95,7 +95,7 @@ contract BasicActions is CommonActions, IBasicActions {
     int256 deltaDebt = _getGeneratedDeltaDebt(_safeEngine, _safeInfo.collateralType, _safeInfo.safeHandler, _deltaWad);
 
     // Generates debt in the SAFE
-    _modifySAFECollateralization(_manager, _safeId, 0, deltaDebt);
+    _modifySAFECollateralization(_manager, _safeId, 0, deltaDebt, true);
 
     // Moves the COIN amount to user's address
     // deltaDebt should always be positive, but we use SafeCast as an extra guard
@@ -115,7 +115,7 @@ contract BasicActions is CommonActions, IBasicActions {
 
     // Paybacks debt to the SAFE
     _modifySAFECollateralization(
-      _manager, _safeId, 0, _getRepaidDeltaDebt(_safeEngine, _safeInfo.collateralType, _safeInfo.safeHandler)
+      _manager, _safeId, 0, _getRepaidDeltaDebt(_safeEngine, _safeInfo.collateralType, _safeInfo.safeHandler), true
     );
   }
 
@@ -140,9 +140,10 @@ contract BasicActions is CommonActions, IBasicActions {
     address _manager,
     uint256 _safeId,
     int256 _deltaCollateral,
-    int256 _deltaDebt
+    int256 _deltaDebt,
+    bool _useSafeHandlerAddress
   ) internal {
-    ODSafeManager(_manager).modifySAFECollateralization(_safeId, _deltaCollateral, _deltaDebt);
+    ODSafeManager(_manager).modifySAFECollateralization(_safeId, _deltaCollateral, _deltaDebt, _useSafeHandlerAddress);
   }
 
   /**
@@ -165,7 +166,7 @@ contract BasicActions is CommonActions, IBasicActions {
     int256 deltaDebt = _getGeneratedDeltaDebt(_safeEngine, _safeInfo.collateralType, _safeInfo.safeHandler, _deltaWad);
 
     // Locks token amount into the SAFE and generates debt
-    _modifySAFECollateralization(_manager, _safeId, _collateralAmount.toInt(), deltaDebt);
+    _modifySAFECollateralization(_manager, _safeId, _collateralAmount.toInt(), deltaDebt, true);
 
     // Exits and transfers COIN amount to the user's address
     // deltaDebt should always be positive, but we use SafeCast as an extra guard
@@ -227,7 +228,7 @@ contract BasicActions is CommonActions, IBasicActions {
     _joinCollateral(_collateralJoin, _safeInfo.safeHandler, _deltaWad);
 
     // Locks token amount in the safe
-    _modifySAFECollateralization(_manager, _safeId, _deltaWad.toInt(), 0);
+    _modifySAFECollateralization(_manager, _safeId, _deltaWad.toInt(), 0, true);
   }
 
   /// @inheritdoc IBasicActions
@@ -240,7 +241,7 @@ contract BasicActions is CommonActions, IBasicActions {
     // Unlocks token amount from the SAFE
     ODSafeManager.SAFEData memory _safeInfo = ODSafeManager(_manager).safeData(_safeId);
 
-    _modifySAFECollateralization(_manager, _safeId, -_deltaWad.toInt(), 0);
+    _modifySAFECollateralization(_manager, _safeId, -_deltaWad.toInt(), 0, true);
     // Transfers token amount to the user's address
     _collectAndExitCollateral(_manager, _collateralJoin, _safeId, _deltaWad);
   }
@@ -260,7 +261,7 @@ contract BasicActions is CommonActions, IBasicActions {
     );
 
     // Paybacks debt to the SAFE (allowed because reducing debt of the SAFE)
-    _modifySAFECollateralization(_manager, _safeId, 0, -_safeData.generatedDebt.toInt());
+    _modifySAFECollateralization(_manager, _safeId, 0, -_safeData.generatedDebt.toInt(), false);
   }
 
   /// @inheritdoc IBasicActions
@@ -309,7 +310,8 @@ contract BasicActions is CommonActions, IBasicActions {
       _manager,
       _safeId,
       -_collateralWad.toInt(),
-      _getRepaidDeltaDebt(_safeEngine, _safeInfo.collateralType, _safeInfo.safeHandler)
+      _getRepaidDeltaDebt(_safeEngine, _safeInfo.collateralType, _safeInfo.safeHandler),
+      true
     );
 
     // Transfers token amount to the user's address
@@ -337,7 +339,7 @@ contract BasicActions is CommonActions, IBasicActions {
     );
 
     // Paybacks debt to the SAFE and unlocks token amount from it
-    _modifySAFECollateralization(_manager, _safeId, -_collateralWad.toInt(), -_safeData.generatedDebt.toInt());
+    _modifySAFECollateralization(_manager, _safeId, -_collateralWad.toInt(), -_safeData.generatedDebt.toInt(), true);
 
     // Transfers token amount to the user's address
     _collectAndExitCollateral(_manager, _collateralJoin, _safeId, _collateralWad);

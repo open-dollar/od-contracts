@@ -37,7 +37,8 @@ contract FakeBasicActions {
       _manager,
       _safeId,
       _collateralAmount.toInt(),
-      _getGeneratedDeltaDebt(_safeEngine, _safeInfo.collateralType, _safeInfo.safeHandler, _deltaWad)
+      _getGeneratedDeltaDebt(_safeEngine, _safeInfo.collateralType, _safeInfo.safeHandler, _deltaWad),
+      true
     );
 
     // Exits and transfers COIN amount to the user's address
@@ -53,7 +54,8 @@ contract FakeBasicActions {
       _manager,
       _safeId,
       0,
-      _getGeneratedDeltaDebt(_safeEngine, _safeInfo.collateralType, _safeInfo.safeHandler, _deltaWad)
+      _getGeneratedDeltaDebt(_safeEngine, _safeInfo.collateralType, _safeInfo.safeHandler, _deltaWad),
+      true
     );
 
     // Moves the COIN amount to user's address
@@ -64,9 +66,10 @@ contract FakeBasicActions {
     address _manager,
     uint256 _safeId,
     int256 _deltaCollateral,
-    int256 _deltaDebt
+    int256 _deltaDebt,
+    bool _useSafeHandlerAddress
   ) internal {
-    ODSafeManager(_manager).modifySAFECollateralization(_safeId, _deltaCollateral, _deltaDebt);
+    ODSafeManager(_manager).modifySAFECollateralization(_safeId, _deltaCollateral, _deltaDebt, _useSafeHandlerAddress);
   }
 
   function _getGeneratedDeltaDebt(
