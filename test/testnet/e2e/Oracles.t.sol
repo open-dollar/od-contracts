@@ -10,7 +10,13 @@ import {UniV3Relayer} from '@contracts/oracles/UniV3Relayer.sol';
 import {DenominatedOracle, IDenominatedOracle} from '@contracts/oracles/DenominatedOracle.sol';
 import {DelayedOracle, IDelayedOracle} from '@contracts/oracles/DelayedOracle.sol';
 
-import {CHAINLINK_ETH_USD_FEED, CHAINLINK_WSTETH_ETH_FEED, WBTC, WETH} from '@script/Registry.s.sol';
+import {
+  CHAINLINK_ETH_USD_FEED,
+  CHAINLINK_WSTETH_ETH_FEED,
+  WBTC,
+  WETH,
+  GOERLI_UNISWAP_V3_FACTORY
+} from '@script/Registry.s.sol';
 
 import {Math, WAD} from '@libraries/Math.sol';
 
@@ -63,7 +69,7 @@ contract OracleSetup is HaiTest {
     wstethEthPriceSource = new ChainlinkRelayer(CHAINLINK_WSTETH_ETH_FEED, 1 days);
 
     // --- UniV3 ---
-    wbtcWethPriceSource = new UniV3Relayer(WBTC, WETH, FEE_TIER, 1 days);
+    wbtcWethPriceSource = new UniV3Relayer(GOERLI_UNISWAP_V3_FACTORY, WBTC, WETH, FEE_TIER, 1 days);
 
     // --- Denominated ---
     wstethUsdPriceSource = new DenominatedOracle(wstethEthPriceSource, wethUsdPriceSource, false);
