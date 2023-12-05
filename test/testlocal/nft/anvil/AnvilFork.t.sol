@@ -34,12 +34,14 @@ import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 /**
  * @dev to run local tests on Anvil network:
  *
- * URL=http://127.0.0.1:8545
  * anvil
  * yarn deploy:anvil
  * move deployment json to the deployments/anvil folder
+ * - from: broadcast/Deploy.s.sol/31337/run-latest.json
+ * - to: deployments/anvil/
+ * - replace: existing `run-latest.json`
  * node tasks/parseAnvilDeployments.js
- * forge t --fork-url $URL --match-contract ContractToTest -vvvvv
+ * forge t --fork-url http://127.0.0.1:8545  --match-contract ContractToTest -vvvvv
  */
 
 contract AnvilFork is AnvilDeployment, Test {
