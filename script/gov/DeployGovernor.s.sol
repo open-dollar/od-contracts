@@ -5,7 +5,7 @@ import {Script} from 'forge-std/Script.sol';
 import {GoerliContracts} from '@script/GoerliContracts.s.sol';
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 import {TimelockController} from '@openzeppelin/governance/TimelockController.sol';
-import {H, J, P} from '@script/Registry.s.sol';
+import '@script/Registry.s.sol';
 
 // BROADCAST
 // source .env && forge script DeployGovernor --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
@@ -26,7 +26,13 @@ contract DeployGovernor is GoerliContracts, Script {
     members[2] = P;
 
     TimelockController timelockController = new TimelockController(1 minutes, members, members, address(0));
-    ODGovernor odGovernor = new ODGovernor(ProtocolToken_Address, timelockController);
+    ODGovernor odGovernor = new ODGovernor(
+      TEST_INIT_VOTING_DELAY,
+      TEST_INIT_VOTING_PERIOD,
+      TEST_INIT_PROP_THRESHOLD,
+      ProtocolToken_Address,
+      timelockController
+    );
     vm.stopBroadcast();
   }
 }
