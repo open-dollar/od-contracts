@@ -58,7 +58,6 @@ abstract contract AnvilDeployment is Contracts, GoerliParams, AnvilContracts {
 
     // --- factories ---
     chainlinkRelayerFactory = ChainlinkRelayerFactory(ChainlinkRelayerFactory_Address);
-    camelotRelayerFactory = CamelotRelayerFactory(CamelotRelayerFactory_Address);
     denominatedOracleFactory = DenominatedOracleFactory(DenominatedOracleFactory_Address);
     delayedOracleFactory = DelayedOracleFactory(DelayedOracleFactory_Address);
 

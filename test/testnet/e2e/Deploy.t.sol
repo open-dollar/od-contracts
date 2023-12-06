@@ -109,7 +109,6 @@ abstract contract CommonDeploymentTest is HaiTest, Deploy {
 
     // factories
     assertEq(chainlinkRelayerFactory.authorizedAccounts(_target), _permission);
-    assertEq(camelotRelayerFactory.authorizedAccounts(_target), _permission);
     assertEq(denominatedOracleFactory.authorizedAccounts(_target), _permission);
     assertEq(delayedOracleFactory.authorizedAccounts(_target), _permission);
 

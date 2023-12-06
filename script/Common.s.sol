@@ -85,7 +85,6 @@ abstract contract Common is Contracts, Params {
 
     // factories or children
     _revoke(chainlinkRelayerFactory, _governor);
-    _revoke(camelotRelayerFactory, _governor);
     _revoke(denominatedOracleFactory, _governor);
     _revoke(delayedOracleFactory, _governor);
 
@@ -135,7 +134,6 @@ abstract contract Common is Contracts, Params {
     _delegate(coinJoin, __delegate);
 
     _delegate(chainlinkRelayerFactory, __delegate);
-    _delegate(camelotRelayerFactory, __delegate);
     _delegate(denominatedOracleFactory, __delegate);
     _delegate(delayedOracleFactory, __delegate);
 
