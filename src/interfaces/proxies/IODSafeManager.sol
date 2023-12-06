@@ -144,13 +144,13 @@ interface IODSafeManager {
    * @param  _safe Id of the SAFE
    * @param  _deltaCollateral Delta of collateral to add/remove [wad]
    * @param  _deltaDebt Delta of debt to add/remove [wad]
-   * @param  _useSafeHandlerAddress Boolean flag to specify whether to use the safe handler address or the proxy address
+   * @param  _nonSafeHandlerAddress Boolean flag to specify whether to not to use the safe handler address, if true, then we use proxy address
    */
   function modifySAFECollateralization(
     uint256 _safe,
     int256 _deltaCollateral,
     int256 _deltaDebt,
-    bool _useSafeHandlerAddress
+    bool _nonSafeHandlerAddress
   ) external;
 
   /**

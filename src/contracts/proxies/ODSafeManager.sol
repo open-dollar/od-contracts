@@ -165,13 +165,13 @@ contract ODSafeManager is IODSafeManager {
     uint256 _safe,
     int256 _deltaCollateral,
     int256 _deltaDebt,
-    bool _useSafeHandlerAddress
+    bool _nonSafeHandlerAddress
   ) external safeAllowed(_safe) {
     SAFEData memory _sData = _safeData[_safe];
     if (_deltaDebt != 0) {
       ITaxCollector(taxCollector).taxSingle(_sData.collateralType);
     }
-    address collateralSource = _useSafeHandlerAddress ? _sData.safeHandler : msg.sender;
+    address collateralSource = _nonSafeHandlerAddress ? msg.sender : _sData.safeHandler;
     address debtDestination = collateralSource;
     ISAFEEngine(safeEngine).modifySAFECollateralization(
       _sData.collateralType, _sData.safeHandler, collateralSource, debtDestination, _deltaCollateral, _deltaDebt

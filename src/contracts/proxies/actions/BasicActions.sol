@@ -95,7 +95,7 @@ contract BasicActions is CommonActions, IBasicActions {
     int256 deltaDebt = _getGeneratedDeltaDebt(_safeEngine, _safeInfo.collateralType, _safeInfo.safeHandler, _deltaWad);
 
     // Generates debt in the SAFE
-    _modifySAFECollateralization(_manager, _safeId, 0, deltaDebt, true);
+    _modifySAFECollateralization(_manager, _safeId, 0, deltaDebt, false);
 
     // Moves the COIN amount to user's address
     // deltaDebt should always be positive, but we use SafeCast as an extra guard
@@ -115,7 +115,7 @@ contract BasicActions is CommonActions, IBasicActions {
 
     // Paybacks debt to the SAFE
     _modifySAFECollateralization(
-      _manager, _safeId, 0, _getRepaidDeltaDebt(_safeEngine, _safeInfo.collateralType, _safeInfo.safeHandler), true
+      _manager, _safeId, 0, _getRepaidDeltaDebt(_safeEngine, _safeInfo.collateralType, _safeInfo.safeHandler), false
     );
   }
 
@@ -141,9 +141,9 @@ contract BasicActions is CommonActions, IBasicActions {
     uint256 _safeId,
     int256 _deltaCollateral,
     int256 _deltaDebt,
-    bool _useSafeHandlerAddress
+    bool _nonSafeHandlerAddress
   ) internal {
-    ODSafeManager(_manager).modifySAFECollateralization(_safeId, _deltaCollateral, _deltaDebt, _useSafeHandlerAddress);
+    ODSafeManager(_manager).modifySAFECollateralization(_safeId, _deltaCollateral, _deltaDebt, _nonSafeHandlerAddress);
   }
 
   /**
@@ -166,7 +166,7 @@ contract BasicActions is CommonActions, IBasicActions {
     int256 deltaDebt = _getGeneratedDeltaDebt(_safeEngine, _safeInfo.collateralType, _safeInfo.safeHandler, _deltaWad);
 
     // Locks token amount into the SAFE and generates debt
-    _modifySAFECollateralization(_manager, _safeId, _collateralAmount.toInt(), deltaDebt, true);
+    _modifySAFECollateralization(_manager, _safeId, _collateralAmount.toInt(), deltaDebt, false);
 
     // Exits and transfers COIN amount to the user's address
     // deltaDebt should always be positive, but we use SafeCast as an extra guard
@@ -228,7 +228,7 @@ contract BasicActions is CommonActions, IBasicActions {
     _joinCollateral(_collateralJoin, _safeInfo.safeHandler, _deltaWad);
 
     // Locks token amount in the safe
-    _modifySAFECollateralization(_manager, _safeId, _deltaWad.toInt(), 0, true);
+    _modifySAFECollateralization(_manager, _safeId, _deltaWad.toInt(), 0, false);
   }
 
   /// @inheritdoc IBasicActions
@@ -241,7 +241,7 @@ contract BasicActions is CommonActions, IBasicActions {
     // Unlocks token amount from the SAFE
     ODSafeManager.SAFEData memory _safeInfo = ODSafeManager(_manager).safeData(_safeId);
 
-    _modifySAFECollateralization(_manager, _safeId, -_deltaWad.toInt(), 0, true);
+    _modifySAFECollateralization(_manager, _safeId, -_deltaWad.toInt(), 0, false);
     // Transfers token amount to the user's address
     _collectAndExitCollateral(_manager, _collateralJoin, _safeId, _deltaWad);
   }
@@ -261,7 +261,7 @@ contract BasicActions is CommonActions, IBasicActions {
     );
 
     // Paybacks debt to the SAFE (allowed because reducing debt of the SAFE)
-    _modifySAFECollateralization(_manager, _safeId, 0, -_safeData.generatedDebt.toInt(), false);
+    _modifySAFECollateralization(_manager, _safeId, 0, -_safeData.generatedDebt.toInt(), true);
   }
 
   /// @inheritdoc IBasicActions
@@ -311,7 +311,7 @@ contract BasicActions is CommonActions, IBasicActions {
       _safeId,
       -_collateralWad.toInt(),
       _getRepaidDeltaDebt(_safeEngine, _safeInfo.collateralType, _safeInfo.safeHandler),
-      true
+      false
     );
 
     // Transfers token amount to the user's address
@@ -339,7 +339,7 @@ contract BasicActions is CommonActions, IBasicActions {
     );
 
     // Paybacks debt to the SAFE and unlocks token amount from it
-    _modifySAFECollateralization(_manager, _safeId, -_collateralWad.toInt(), -_safeData.generatedDebt.toInt(), true);
+    _modifySAFECollateralization(_manager, _safeId, -_collateralWad.toInt(), -_safeData.generatedDebt.toInt(), false);
 
     // Transfers token amount to the user's address
     _collectAndExitCollateral(_manager, _collateralJoin, _safeId, _collateralWad);

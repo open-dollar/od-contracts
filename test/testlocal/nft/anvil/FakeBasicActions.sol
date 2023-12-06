@@ -67,9 +67,9 @@ contract FakeBasicActions {
     uint256 _safeId,
     int256 _deltaCollateral,
     int256 _deltaDebt,
-    bool _useSafeHandlerAddress
+    bool _nonSafeHandlerAddress
   ) internal {
-    ODSafeManager(_manager).modifySAFECollateralization(_safeId, _deltaCollateral, _deltaDebt, _useSafeHandlerAddress);
+    ODSafeManager(_manager).modifySAFECollateralization(_safeId, _deltaCollateral, _deltaDebt, _nonSafeHandlerAddress);
   }
 
   function _getGeneratedDeltaDebt(
