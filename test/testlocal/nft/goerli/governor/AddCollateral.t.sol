@@ -6,6 +6,8 @@ import {GoerliFork} from '@testlocal/nft/goerli/GoerliFork.t.sol';
 import {Vault721} from '@contracts/proxies/Vault721.sol';
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
+import {ICollateralJoinFactory} from '@interfaces/factories/ICollateralJoinFactory.sol';
+import {ICollateralAuctionHouseFactory} from '@interfaces/factories/ICollateralAuctionHouseFactory.sol';
 import {WAD, RAY, RAD} from '@libraries/Math.sol';
 import {IGovernor} from '@openzeppelin/governance/IGovernor.sol';
 
@@ -158,13 +160,13 @@ contract AddCollateralGoerli is GoerliFork {
     values[0] = 0;
     values[1] = 0;
 
-    bytes memory calldata0 = abi.encodeWithSignature(
-      'deployCollateralJoin(bytes32,address)', bytes32('WETH'), 0xEe01c0CD76354C383B8c7B4e65EA88D00B06f36f
-    );
-    bytes memory calldata1 = abi.encodeWithSignature(
-      'deployCollateralAuctionHouse(bytes32,ICollateralAuctionHouse.CollateralAuctionHouseParams)',
+    bytes memory calldata0 = abi.encodeWithSelector(
+      ICollateralJoinFactory.deployCollateralJoin.selector,
       bytes32('WETH'),
-      _cahCParams
+      0xEe01c0CD76354C383B8c7B4e65EA88D00B06f36f
+    );
+    bytes memory calldata1 = abi.encodeWithSelector(
+      ICollateralAuctionHouseFactory.deployCollateralAuctionHouse.selector, bytes32('WETH'), _cahCParams
     );
 
     calldatas = new bytes[](2);

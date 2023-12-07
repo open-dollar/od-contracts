@@ -6,6 +6,8 @@ import {AnvilFork} from '@testlocal/nft/anvil/AnvilFork.t.sol';
 import {Vault721} from '@contracts/proxies/Vault721.sol';
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
+import {ICollateralJoinFactory} from '@interfaces/factories/ICollateralJoinFactory.sol';
+import {ICollateralAuctionHouseFactory} from '@interfaces/factories/ICollateralAuctionHouseFactory.sol';
 import {WAD, RAY, RAD} from '@libraries/Math.sol';
 import {IGovernor} from '@openzeppelin/governance/IGovernor.sol';
 
@@ -153,27 +155,29 @@ contract AddCollateralAnvil is AnvilFork {
       bytes32 descriptionHash
     )
   {
-    // TODO: add collateralAuctionHouseFactory
-    targets = new address[](1);
+    targets = new address[](2);
     targets[0] = address(collateralJoinFactory);
-    // targets[1] = address(collateralAuctionHouseFactory);
+    targets[1] = address(collateralAuctionHouseFactory);
 
-    values = new uint256[](1);
+    values = new uint256[](2);
     values[0] = 0;
-    // values[1] = 0;
+    values[1] = 0;
 
-    bytes memory calldata0 = abi.encodeWithSignature('deployCollateralJoin(bytes32,address)', newCType, newCAddress);
+    bytes memory calldata0 = abi.encodeWithSelector(ICollateralJoinFactory.deployCollateralJoin.selector, newCType, newCAddress);
 
-    // this function fails
-    bytes memory calldata1 = abi.encodeWithSignature(
-      'deployCollateralAuctionHouse(bytes32,ICollateralAuctionHouse.CollateralAuctionHouseParams)',
-      newCType,
-      _cahCParams
+    bytes memory calldata1 = abi.encodeWithSelector(
+      ICollateralAuctionHouseFactory.deployCollateralAuctionHouse.selector, newCType, _cahCParams
     );
+    // OR:
+    // bytes memory calldata1 = abi.encodeWithSignature(
+    //   'deployCollateralAuctionHouse(bytes32,(uint256,uint256,uint256,uint256))',
+    //   newCType,
+    //   _cahCParams
+    // );
 
-    calldatas = new bytes[](1);
+    calldatas = new bytes[](2);
     calldatas[0] = calldata0;
-    // calldatas[1] = calldata1;
+    calldatas[1] = calldata1;
 
     description = 'Add collateral type';
 
