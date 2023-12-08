@@ -24,7 +24,7 @@ block_timestamp = 1675855961
 fs_permissions = [{ access = "write", path = "./test/simulations" }]
 
 [profile.governance]
-fs_permissions = [{ access = "write", path = "./" }]
+fs_permissions = [{ access = "read-write", path = "./" }]
 
 [profile.optimized]
 via_ir = true

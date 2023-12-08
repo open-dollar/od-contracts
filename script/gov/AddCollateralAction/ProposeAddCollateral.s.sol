@@ -13,9 +13,9 @@ import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
 /// @notice Script to propose adding a new collateral type to the system via ODGovernance
 /// @dev NOTE This script requires the following env vars in the REQUIRED ENV VARS section below
 /// @dev This script is used to propose adding a new collateral type to the system
-/// @dev The script will deploy a new CollateralJoin and CollateralAuctionHouse
+/// @dev The script will propose a deployment of new CollateralJoin and CollateralAuctionHouse contracts
 /// @dev The script will output a JSON file with the proposal data to be used by the QueueProposal and ExecuteAddCollateral scripts
-/// @dev To run: export FOUNDRY_PROFILE=governance && forge script script/gov/AddCollateralAction/ProposeAddCollateral.s.sol
+/// @dev In the root, run: export FOUNDRY_PROFILE=governance && forge script script/gov/AddCollateralAction/ProposeAddCollateral.s.sol
 contract ProposeAddCollateral is Script {
   function run() public {
     /// REQUIRED ENV VARS ///
@@ -33,6 +33,7 @@ contract ProposeAddCollateral is Script {
     IGlobalSettlement globalSettlement = IGlobalSettlement(globalSettlementAddress);
 
     string memory stringCAddress = vm.toString(newCAddress);
+    string memory stringCType = vm.toString(newCType);
 
     // Get target contract addresses from GlobalSettlement:
     //  - CollateralJoinFactory
@@ -80,7 +81,7 @@ contract ProposeAddCollateral is Script {
       // Build the JSON output
       string memory objectKey = 'PROPOSE_ADD_COLLATERAL_KEY';
       vm.serializeString(objectKey, 'addCollateralNewCollateralAddress', stringCAddress);
-      vm.serializeString(objectKey, 'addCollateralNewCollateralType', vm.toString(newCType));
+      vm.serializeString(objectKey, 'addCollateralNewCollateralType', stringCType);
       vm.serializeAddress(objectKey, 'addCollateralTargets', targets);
       vm.serializeUint(objectKey, 'addCollateralValues', values);
       vm.serializeBytes(objectKey, 'addCollateralCalldatas', calldatas);
@@ -88,6 +89,14 @@ contract ProposeAddCollateral is Script {
       vm.serializeBytes32(objectKey, 'addCollateralDescriptionHash', descriptionHash);
 
       // Write the JSON output
+      // Expected JSON output:
+      // {
+      //   "addCollateralCalldatas": bytes[],
+      //   "addCollateralDescription": string,
+      //   "addCollateralDescriptionHash": bytes32,
+      //   "addCollateralTargets": address[],
+      //   "addCollateralValues": uint256[]
+      // }
       string memory jsonOutput = vm.serializeUint(objectKey, 'proposalId', propId);
       vm.writeJson(jsonOutput, string.concat('./gov-output/add-collateral-proposal-', stringCAddress, '.json'));
     }
