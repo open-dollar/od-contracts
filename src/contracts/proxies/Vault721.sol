@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
+import {IODProxy} from '@interfaces/proxies/IODProxy.sol';
+
 import {ERC721} from '@openzeppelin/token/ERC721/ERC721.sol';
 import {ERC721EnumerableUpgradeable} from
   '@openzeppelin-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol';
@@ -18,8 +20,11 @@ contract Vault721 is ERC721EnumerableUpgradeable {
   error NotGovernor();
   error ProxyAlreadyExist();
   error ZeroAddress();
+  error NoSenderProxy();
+  error TransferTooSoon();
 
   address public timelockController;
+  uint256 private _executionDelay = 1 days;
   IODSafeManager public safeManager;
   NFTRenderer public nftRenderer;
 
@@ -140,6 +145,21 @@ contract Vault721 is ERC721EnumerableUpgradeable {
   }
 
   /**
+   * @dev returns the current execution delay
+   */
+  function getExecutionDelay() external view returns (uint256) {
+    return _executionDelay;
+  }
+
+  /**
+   * @dev allows DAO to update enforced delay on transfers
+   * @param _delay the new execution delay in seconds
+   */
+  function setExecutionDelay(uint256 _delay) external onlyGovernance {
+    _executionDelay = _delay;
+  }
+
+  /**
    * @dev generate URI with updated vault information
    */
   function tokenURI(uint256 _safeId) public view override returns (string memory uri) {
@@ -200,6 +220,16 @@ contract Vault721 is ERC721EnumerableUpgradeable {
       } else {
         proxy = payable(_userRegistry[to]);
       }
+
+      IODProxy senderProxy = IODProxy(_userRegistry[from]);
+      if (address(senderProxy) == address(0)) {
+        revert NoSenderProxy();
+      }
+
+      if (senderProxy.getLastExecution() + _executionDelay > block.timestamp) {
+        revert TransferTooSoon();
+      }
+
       IODSafeManager(safeManager).transferSAFEOwnership(firstTokenId, address(proxy));
     }
   }
