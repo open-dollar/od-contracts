@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {Script} from 'forge-std/Script.sol';
+import {JSONScript} from '@script/gov/JSONScript.s.sol';
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 import {IGlobalSettlement} from '@contracts/settlement/GlobalSettlement.sol';
 import {ICollateralJoinFactory} from '@interfaces/factories/ICollateralJoinFactory.sol';
@@ -16,7 +16,7 @@ import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
 /// @dev The script will propose a deployment of new CollateralJoin and CollateralAuctionHouse contracts
 /// @dev The script will output a JSON file with the proposal data to be used by the QueueProposal and ExecuteAddCollateral scripts
 /// @dev In the root, run: export FOUNDRY_PROFILE=governance && forge script script/gov/AddCollateralAction/ProposeAddCollateral.s.sol
-contract ProposeAddCollateral is Script {
+contract ProposeAddCollateral is JSONScript {
   function run() public {
     /// REQUIRED ENV VARS ///
     address governanceAddress = vm.envAddress('GOVERNANCE_ADDRESS');
@@ -72,34 +72,33 @@ contract ProposeAddCollateral is Script {
     vm.startBroadcast(vm.envUint('GOV_EXECUTOR_PK'));
 
     // Propose the action to add the collateral type
-    uint256 propId = gov.propose(targets, values, calldatas, description);
+    uint256 proposalId = gov.propose(targets, values, calldatas, description);
+    string memory stringProposalId = vm.toString(proposalId);
 
     // Verify the proposalId is expected
-    assert(propId == gov.hashProposal(targets, values, calldatas, descriptionHash));
+    assert(proposalId == gov.hashProposal(targets, values, calldatas, descriptionHash));
 
     {
       // Build the JSON output
       string memory objectKey = 'PROPOSE_ADD_COLLATERAL_KEY';
-      vm.serializeString(objectKey, 'addCollateralNewCollateralAddress', stringCAddress);
-      vm.serializeString(objectKey, 'addCollateralNewCollateralType', stringCType);
-      vm.serializeAddress(objectKey, 'addCollateralTargets', targets);
-      vm.serializeUint(objectKey, 'addCollateralValues', values);
-      vm.serializeBytes(objectKey, 'addCollateralCalldatas', calldatas);
-      vm.serializeString(objectKey, 'addCollateralDescription', description);
-      vm.serializeBytes32(objectKey, 'addCollateralDescriptionHash', descriptionHash);
-
-      // Write the JSON output
-      // Expected JSON output:
-      // {
-      //   "addCollateralCalldatas": bytes[],
-      //   "addCollateralDescription": string,
-      //   "addCollateralDescriptionHash": bytes32,
-      //   "addCollateralTargets": address[],
-      //   "addCollateralValues": uint256[]
-      // }
-      string memory jsonOutput = vm.serializeUint(objectKey, 'proposalId', propId);
-      vm.writeJson(jsonOutput, string.concat('./gov-output/add-collateral-proposal-', stringCAddress, '.json'));
+      vm.serializeString(objectKey, 'newCollateralAddress', stringCAddress);
+      vm.serializeString(objectKey, 'newCollateralType', stringCType);
+      string memory jsonOutput =
+        _buildProposalParamsJSON(proposalId, objectKey, targets, values, calldatas, description, descriptionHash);
+      vm.writeJson(jsonOutput, string.concat('./gov-output/', stringProposalId, '-add-collateral-proposal.json'));
     }
+
+    // Expected JSON output:
+    // {
+    //   "proposalId": uint256,
+    //   "newCollateralAddress": string,
+    //   "newCollateralType": bytes32,
+    //   "targets": address[],
+    //   "values": uint256[]
+    //   "calldatas": bytes[],
+    //   "description": string,
+    //   "descriptionHash": bytes32,
+    // }
 
     vm.stopBroadcast();
   }
