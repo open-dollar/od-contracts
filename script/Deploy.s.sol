@@ -196,9 +196,9 @@ contract DeployGoerli is GoerliParams, Deploy {
     collateral[MAGIC] = new MintableERC20('Magic', 'MAGIC', 0);
 
     // to USD - Sepolia does not have Chainlink feeds now
-    // chainlinkEthUSDPriceFeed =
-    //   chainlinkRelayerFactory.deployChainlinkRelayer(GOERLI_CHAINLINK_ETH_USD_FEED, ORACLE_INTERVAL_TEST);
-    chainlinkEthUSDPriceFeed = new OracleForTestnet(1815e18);
+    chainlinkEthUSDPriceFeed =
+      chainlinkRelayerFactory.deployChainlinkRelayer(SEPOLIA_CHAINLINK_ETH_USD_FEED, ORACLE_INTERVAL_TEST);
+    // chainlinkEthUSDPriceFeed = new OracleForTestnet(1815e18);
 
     // to ETH
     OracleForTestnet _arbETHPriceFeed = new OracleForTestnet(GOERLI_ARB_ETH_PRICE_FEED);
