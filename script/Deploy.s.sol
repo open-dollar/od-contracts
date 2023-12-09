@@ -116,9 +116,6 @@ contract DeployMainnet is MainnetParams, Deploy {
     IBaseOracle _arbUSDPriceFeed =
       chainlinkRelayerFactory.deployChainlinkRelayer(CHAINLINK_ARB_USD_FEED, ORACLE_INTERVAL_PROD);
 
-    IBaseOracle _magicUSDPriceFeed =
-      chainlinkRelayerFactory.deployChainlinkRelayer(CHAINLINK_MAGIC_USD_FEED, ORACLE_INTERVAL_PROD);
-
     // to ETH
     IBaseOracle _wstethETHPriceFeed =
       chainlinkRelayerFactory.deployChainlinkRelayer(CHAINLINK_WSTETH_ETH_FEED, ORACLE_INTERVAL_PROD);
@@ -145,19 +142,16 @@ contract DeployMainnet is MainnetParams, Deploy {
     delayedOracle[WSTETH] = delayedOracleFactory.deployDelayedOracle(_wstethUSDPriceFeed, ORACLE_INTERVAL_PROD);
     delayedOracle[CBETH] = delayedOracleFactory.deployDelayedOracle(_cbethUSDPriceFeed, ORACLE_INTERVAL_PROD);
     delayedOracle[RETH] = delayedOracleFactory.deployDelayedOracle(_rethUSDPriceFeed, ORACLE_INTERVAL_PROD);
-    delayedOracle[MAGIC] = delayedOracleFactory.deployDelayedOracle(_magicUSDPriceFeed, ORACLE_INTERVAL_PROD);
 
     collateral[ARB] = IERC20Metadata(ARBITRUM_ARB);
     collateral[WSTETH] = IERC20Metadata(ARBITRUM_WSTETH);
     collateral[CBETH] = IERC20Metadata(ARBITRUM_CBETH);
     collateral[RETH] = IERC20Metadata(ARBITRUM_RETH);
-    collateral[MAGIC] = IERC20Metadata(ARBITRUM_MAGIC);
 
     collateralTypes.push(ARB);
     collateralTypes.push(WSTETH);
     collateralTypes.push(CBETH);
     collateralTypes.push(RETH);
-    collateralTypes.push(MAGIC);
   }
 
   function setupPostEnvironment() public virtual override updateParams {}
@@ -193,7 +187,6 @@ contract DeployGoerli is GoerliParams, Deploy {
     collateral[WSTETH] = new MintableERC20('Wrapped liquid staked Ether 2.0', 'wstETH', 8);
     collateral[CBETH] = new MintableERC20('Coinbase Wrapped Staked ETH', 'cbETH', 8);
     collateral[RETH] = new MintableERC20('Rocket Pool ETH', 'rETH', 3);
-    collateral[MAGIC] = new MintableERC20('Magic', 'MAGIC', 0);
 
     // to USD - Sepolia does not have Chainlink feeds now
     chainlinkEthUSDPriceFeed =
@@ -211,22 +204,16 @@ contract DeployGoerli is GoerliParams, Deploy {
     IBaseOracle _rethOracle =
       denominatedOracleFactory.deployDenominatedOracle(_rethETHOracle, chainlinkEthUSDPriceFeed, false);
 
-    IBaseOracle _magicETHOracle = new OracleForTestnet(0.00032e18);
-    IBaseOracle _magicOracle =
-      denominatedOracleFactory.deployDenominatedOracle(_magicETHOracle, chainlinkEthUSDPriceFeed, false);
-
     delayedOracle[ARB] = delayedOracleFactory.deployDelayedOracle(_arbUSDPriceFeed, ORACLE_INTERVAL_TEST);
     delayedOracle[WSTETH] = delayedOracleFactory.deployDelayedOracle(chainlinkEthUSDPriceFeed, ORACLE_INTERVAL_TEST);
     delayedOracle[CBETH] = delayedOracleFactory.deployDelayedOracle(chainlinkEthUSDPriceFeed, ORACLE_INTERVAL_TEST);
     delayedOracle[RETH] = delayedOracleFactory.deployDelayedOracle(_rethOracle, ORACLE_INTERVAL_TEST);
-    delayedOracle[MAGIC] = delayedOracleFactory.deployDelayedOracle(_magicOracle, ORACLE_INTERVAL_TEST);
 
     // Setup collateral types
     collateralTypes.push(ARB);
     collateralTypes.push(WSTETH);
     collateralTypes.push(CBETH);
     collateralTypes.push(RETH);
-    collateralTypes.push(MAGIC);
   }
 
   /**
@@ -257,7 +244,6 @@ contract DeployAnvil is GoerliParams, Deploy {
     collateral[WSTETH] = new MintableERC20('Wrapped liquid staked Ether 2.0', 'wstETH', 18);
     collateral[CBETH] = new MintableERC20('Coinbase Wrapped Staked ETH', 'cbETH', 18);
     collateral[RETH] = new MintableERC20('Rocket Pool ETH', 'rETH', 18);
-    collateral[MAGIC] = new MintableERC20('Magic', 'MAGIC', 18);
 
     // WSTETH
     IBaseOracle _wstethUSDPriceFeed = new OracleForTestnet(1500e18);
@@ -277,23 +263,16 @@ contract DeployAnvil is GoerliParams, Deploy {
     IBaseOracle _rethOracle =
       denominatedOracleFactory.deployDenominatedOracle(_rethETHOracle, _wstethUSDPriceFeed, false);
 
-    // MAGIC
-    IBaseOracle _magicETHOracle = new OracleForTestnet(0.00032e18);
-    IBaseOracle _magicOracle =
-      denominatedOracleFactory.deployDenominatedOracle(_magicETHOracle, _wstethUSDPriceFeed, false);
-
     delayedOracle[ARB] = delayedOracleFactory.deployDelayedOracle(_arbOracle, ORACLE_INTERVAL_TEST);
     delayedOracle[WSTETH] = delayedOracleFactory.deployDelayedOracle(_wstethUSDPriceFeed, ORACLE_INTERVAL_TEST);
     delayedOracle[CBETH] = delayedOracleFactory.deployDelayedOracle(_cbethOracle, ORACLE_INTERVAL_TEST);
     delayedOracle[RETH] = delayedOracleFactory.deployDelayedOracle(_rethOracle, ORACLE_INTERVAL_TEST);
-    delayedOracle[MAGIC] = delayedOracleFactory.deployDelayedOracle(_magicOracle, ORACLE_INTERVAL_TEST);
 
     // Setup collateral types
     collateralTypes.push(ARB);
     collateralTypes.push(WSTETH);
     collateralTypes.push(CBETH);
     collateralTypes.push(RETH);
-    collateralTypes.push(MAGIC);
   }
 
   function setupPostEnvironment() public virtual override updateParams {}

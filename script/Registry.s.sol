@@ -61,7 +61,7 @@ address constant MAINNET_CAMELOT_RELAYER_FACTORY = address(0);
 address constant MAINNET_CAMELOT_RELAYER = address(0);
 
 // Camelot Protocol
-address constant CAMELOT_AMM_FACTORY = 0x1a3c9B1d2F0529D97f2afC5136Cc23e58f1FD35B
+address constant CAMELOT_AMM_FACTORY = 0x1a3c9B1d2F0529D97f2afC5136Cc23e58f1FD35B;
 
 // Token contracts (all 18 decimals)
 address constant ARBITRUM_WSTETH = 0x5979D7b546E38E414F7E9822514be443A4800529;
