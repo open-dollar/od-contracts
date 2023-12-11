@@ -9,7 +9,7 @@ import {ChainlinkRelayer, IBaseOracle} from '@contracts/oracles/ChainlinkRelayer
 import {DenominatedOracle, IDenominatedOracle} from '@contracts/oracles/DenominatedOracle.sol';
 import {DelayedOracle, IDelayedOracle} from '@contracts/oracles/DelayedOracle.sol';
 
-import {CHAINLINK_ETH_USD_FEED, CHAINLINK_WSTETH_ETH_FEED, CAMELOT_AMM_FACTORY} from '@script/Registry.s.sol';
+import {CHAINLINK_ETH_USD_FEED, CHAINLINK_WSTETH_ETH_FEED, MAINNET_CAMELOT_AMM_FACTORY} from '@script/Registry.s.sol';
 
 import {Math, WAD} from '@libraries/Math.sol';
 

@@ -27,8 +27,8 @@ address constant SEPOLIA_CREATE2_FACTORY = 0xb9d4cbCcF0152040c3269D9701EE6842619
 address constant SEPOLIA_CAMELOT_RELAYER_FACTORY = address(0);
 address constant SEPOLIA_CAMELOT_RELAYER = address(0);
 
-// Algebra protocol
-address constant SEPOLIA_ALGEBRA_FACTORY = 0x21852176141b8D139EC5D3A1041cdC31F0F20b94;
+// Algebra protocol (not deployed by Camelot)
+address constant SEPOLIA_CAMELOT_AMM_FACTORY = 0x21852176141b8D139EC5D3A1041cdC31F0F20b94;
 
 // Chainlink feeds
 address constant SEPOLIA_CHAINLINK_ETH_USD_FEED = 0xd30e2101a97dcbAeBCBC04F14C3f624E67A35165;
@@ -61,7 +61,7 @@ address constant MAINNET_CAMELOT_RELAYER_FACTORY = address(0);
 address constant MAINNET_CAMELOT_RELAYER = address(0);
 
 // Camelot Protocol
-address constant CAMELOT_AMM_FACTORY = 0x1a3c9B1d2F0529D97f2afC5136Cc23e58f1FD35B;
+address constant MAINNET_CAMELOT_AMM_FACTORY = 0x1a3c9B1d2F0529D97f2afC5136Cc23e58f1FD35B;
 
 // Token contracts (all 18 decimals)
 address constant ARBITRUM_WSTETH = 0x5979D7b546E38E414F7E9822514be443A4800529;
