@@ -20,7 +20,7 @@ import {
   CommonActions,
   ODProxy
 } from '@script/Contracts.s.sol';
-import {OP_WETH} from '@script/Registry.s.sol';
+import {SEPOLIA_WETH} from '@script/Registry.s.sol';
 import {IWeth} from '@interfaces/external/IWeth.sol';
 import {BaseUser} from '@testnet/scopes/BaseUser.t.sol';
 
@@ -89,7 +89,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     uint256 _wei = _amount / 10 ** (18 - _decimals);
 
     vm.startPrank(_user);
-    if (address(_collateral) != OP_WETH) {
+    if (address(_collateral) != SEPOLIA_WETH) {
       MintableERC20(address(_collateral)).mint(_user, _wei);
     } else {
       vm.deal(_user, _wei);

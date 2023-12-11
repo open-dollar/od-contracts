@@ -17,3 +17,17 @@ contract DeployCreate2Factory is Script {
     vm.stopBroadcast();
   }
 }
+
+// BROADCAST
+// source .env && forge script DeployCreate2FactoryMain --skip-simulation --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
+
+// SIMULATE
+// source .env && forge script DeployCreate2FactoryMain --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC
+
+contract DeployCreate2FactoryMain is Script {
+  function run() public {
+    vm.startBroadcast(vm.envUint('ARB_MAINNET_DEPLOYER_PK'));
+    new Create2Factory();
+    vm.stopBroadcast();
+  }
+}

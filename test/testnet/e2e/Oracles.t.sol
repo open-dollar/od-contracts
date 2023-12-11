@@ -5,32 +5,24 @@ import {HaiTest} from '@testnet/utils/HaiTest.t.sol';
 import {IChainlinkOracle} from '@interfaces/oracles/IChainlinkOracle.sol';
 
 import {ChainlinkRelayer, IBaseOracle} from '@contracts/oracles/ChainlinkRelayer.sol';
-import {UniV3Relayer} from '@contracts/oracles/UniV3Relayer.sol';
 
 import {DenominatedOracle, IDenominatedOracle} from '@contracts/oracles/DenominatedOracle.sol';
 import {DelayedOracle, IDelayedOracle} from '@contracts/oracles/DelayedOracle.sol';
 
-import {
-  CHAINLINK_ETH_USD_FEED,
-  CHAINLINK_WSTETH_ETH_FEED,
-  WBTC,
-  WETH,
-  GOERLI_UNISWAP_V3_FACTORY
-} from '@script/Registry.s.sol';
+import {CHAINLINK_ETH_USD_FEED, CHAINLINK_WSTETH_ETH_FEED, MAINNET_CAMELOT_AMM_FACTORY} from '@script/Registry.s.sol';
 
 import {Math, WAD} from '@libraries/Math.sol';
 
 contract OracleSetup is HaiTest {
   using Math for uint256;
 
-  // uint256 CHAINLINK_WSTETH_ETH_PRICE = 1_124_766_090_043_756_600; // NOTE: 18 decimals
-
   uint256 WBTC_ETH_PRICE = 14_864_307_223_256_388_569; // 1 BTC = 14.8 ETH
   uint256 WBTC_USD_PRICE = 27_032_972_331_575_231_071_011; // 1 BTC = 27,032 USD
 
   // July 14 2022 7:33 AM - 3:33PM (8h window)
   // - wierd workaround due to Arbitrum block.number refering to L1
-  uint256 FORK_BLOCK = 17_603_828;
+  // uint256 FORK_BLOCK = 17_603_828;
+  uint256 FORK_BLOCK = 158_240_458;
   uint256 FORK_CHANGE = 15_139_375;
 
   uint256 CHAINLINK_ETH_USD_PRICE_18_DECIMALS = 1_097_858_600_000_000_000_000;
@@ -55,8 +47,6 @@ contract OracleSetup is HaiTest {
   IDelayedOracle public wethUsdDelayedOracle;
 
   function setUp() public {
-    // vm.createSelectFork(vm.rpcUrl('mainnet'), FORK_BLOCK);
-
     /**
      * @dev Arbitrum block.number returns L1; createSelectFork does not work
      */
@@ -67,9 +57,6 @@ contract OracleSetup is HaiTest {
     // --- Chainlink ---
     wethUsdPriceSource = new ChainlinkRelayer(CHAINLINK_ETH_USD_FEED, 1 days);
     wstethEthPriceSource = new ChainlinkRelayer(CHAINLINK_WSTETH_ETH_FEED, 1 days);
-
-    // --- UniV3 ---
-    wbtcWethPriceSource = new UniV3Relayer(GOERLI_UNISWAP_V3_FACTORY, WBTC, WETH, FEE_TIER, 1 days);
 
     // --- Denominated ---
     wstethUsdPriceSource = new DenominatedOracle(wstethEthPriceSource, wethUsdPriceSource, false);
@@ -105,20 +92,6 @@ contract OracleSetup is HaiTest {
 
   function test_ChainlinkRelayerSymbol() public {
     assertEq(wethUsdPriceSource.symbol(), 'ETH / USD');
-  }
-
-  // --- UniV3 ---
-
-  /**
-   * @dev This method may revert with 'OLD!' if the pool doesn't have enough cardinality or initialized history
-   */
-  function test_UniV3Relayer() public {
-    // assertEq(wbtcWethPriceSource.read(), WBTC_ETH_PRICE);
-    emit log_string('OLD; pool lacks cardinality or initialized history!');
-  }
-
-  function test_UniV3RelayerSymbol() public {
-    assertEq(wbtcWethPriceSource.symbol(), 'CBETH / WSTETH');
   }
 
   // --- Denominated ---
