@@ -31,12 +31,13 @@ contract UniV3RelayerFactory is Authorizable, IUniV3RelayerFactory {
 
   /// @inheritdoc IUniV3RelayerFactory
   function deployUniV3Relayer(
+    address _uniV3Factory,
     address _baseToken,
     address _quoteToken,
     uint24 _feeTier,
     uint32 _quotePeriod
   ) external isAuthorized returns (IBaseOracle _uniV3Relayer) {
-    _uniV3Relayer = new UniV3RelayerChild(_baseToken, _quoteToken, _feeTier, _quotePeriod);
+    _uniV3Relayer = new UniV3RelayerChild(_uniV3Factory, _baseToken, _quoteToken, _feeTier, _quotePeriod);
     _uniV3Relayers.add(address(_uniV3Relayer));
     emit NewUniV3Relayer(address(_uniV3Relayer), _baseToken, _quoteToken, _feeTier, _quotePeriod);
   }

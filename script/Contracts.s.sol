@@ -139,12 +139,9 @@ abstract contract Contracts {
   ICollateralAuctionHouseFactory public collateralAuctionHouseFactory;
 
   IChainlinkRelayerFactory public chainlinkRelayerFactory;
-  IUniV3RelayerFactory public uniV3RelayerFactory;
   ICamelotRelayerFactory public camelotRelayerFactory;
   IDenominatedOracleFactory public denominatedOracleFactory;
   IDelayedOracleFactory public delayedOracleFactory;
-
-  ICamelotV3Factory public camelotV3Factory;
 
   // --- Settlement contracts ---
   IGlobalSettlement public globalSettlement;

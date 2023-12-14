@@ -21,9 +21,10 @@ contract UniV3RelayerChild is UniV3Relayer, FactoryChild, IUniV3RelayerChild {
    * @param  _quotePeriod Length of the period used to calculate the TWAP quote
    */
   constructor(
+    address _uniV3Factory,
     address _baseToken,
     address _quoteToken,
     uint24 _feeTier,
     uint32 _quotePeriod
-  ) UniV3Relayer(_baseToken, _quoteToken, _feeTier, _quotePeriod) {}
+  ) UniV3Relayer(_uniV3Factory, _baseToken, _quoteToken, _feeTier, _quotePeriod) {}
 }

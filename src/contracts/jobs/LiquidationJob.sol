@@ -54,6 +54,16 @@ contract LiquidationJob is Job, Authorizable, Modifiable, ILiquidationJob {
     liquidationEngine.liquidateSAFE(_cType, _safe);
   }
 
+  /**
+   * @notice Liquidate a SAFE without a reward
+   * @param _cType Bytes32 representation of the collateral type
+   * @param _safe Address of the SAFE to liquidate
+   */
+  function workLiquidationWithoutReward(bytes32 _cType, address _safe) external {
+    if (!shouldWork) revert NotWorkable();
+    liquidationEngine.liquidateSAFE(_cType, _safe);
+  }
+
   // --- Administration ---
 
   /// @inheritdoc Modifiable

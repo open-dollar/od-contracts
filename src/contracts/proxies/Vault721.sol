@@ -2,7 +2,8 @@
 pragma solidity 0.8.19;
 
 import {ERC721} from '@openzeppelin/token/ERC721/ERC721.sol';
-import {ERC721Enumerable} from '@openzeppelin/token/ERC721/extensions/ERC721Enumerable.sol';
+import {ERC721EnumerableUpgradeable} from
+  '@openzeppelin-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol';
 import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
@@ -10,7 +11,10 @@ import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 // Open Dollar
 // Version 1.5.8
 
-contract Vault721 is ERC721Enumerable {
+/**
+ * @notice Upgradeable contract used as singleton, but is not upgradeable
+ */
+contract Vault721 is ERC721EnumerableUpgradeable {
   error NotGovernor();
   error ProxyAlreadyExist();
   error ZeroAddress();
@@ -30,8 +34,9 @@ contract Vault721 is ERC721Enumerable {
   /**
    * @dev initializes DAO timelockController contract
    */
-  constructor(address _timelockController) ERC721('OpenDollar Vault', 'ODV') {
+  function initialize(address _timelockController) external initializer {
     timelockController = _timelockController;
+    __ERC721_init('OpenDollar Vault', 'ODV');
   }
 
   /**
