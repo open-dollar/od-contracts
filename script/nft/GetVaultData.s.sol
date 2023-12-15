@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import {Script} from 'forge-std/Script.sol';
-import {GoerliDeployment} from '@script/GoerliDeployment.s.sol';
+import {SepoliaDeployment} from '@script/SepoliaDeployment.s.sol';
 import {Vault721} from '@contracts/proxies/Vault721.sol';
 
 // BROADCAST
@@ -11,7 +11,7 @@ import {Vault721} from '@contracts/proxies/Vault721.sol';
 // SIMULATE
 // source .env && forge script GetVaultData --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC
 
-contract GetVaultData is GoerliDeployment, Script {
+contract GetVaultData is SepoliaDeployment, Script {
   function run() public {
     vm.startBroadcast(vm.envUint('ARB_SEPOLIA_PK'));
     vault721.tokenURI(2);

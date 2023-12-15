@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import {GoerliFork} from '@testlocal/nft/goerli/GoerliFork.t.sol';
-import {GoerliParams, WSTETH, ARB, CBETH, RETH, MAGIC} from '@script/GoerliParams.s.sol';
+import {SepoliaParams, WSTETH, ARB, CBETH, RETH, MAGIC} from '@script/SepoliaParams.s.sol';
 import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
 import {SafeERC20} from '@openzeppelin/token/ERC20/utils/SafeERC20.sol';
 import {Vault721} from '@contracts/proxies/Vault721.sol';
