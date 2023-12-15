@@ -2,11 +2,11 @@
 pragma solidity 0.8.19;
 
 import '@script/Contracts.s.sol';
-import {GoerliParams, WSTETH, ARB, CBETH, RETH, MAGIC} from '@script/GoerliParams.s.sol';
+import {SepoliaParams, WSTETH, ARB, CBETH, RETH, MAGIC} from '@script/SepoliaParams.s.sol';
 import {SEPOLIA_CAMELOT_RELAYER_FACTORY} from '@script/Registry.s.sol';
 import {SepoliaContracts} from '@script/SepoliaContracts.s.sol';
 
-abstract contract GoerliDeployment is Contracts, GoerliParams, SepoliaContracts {
+abstract contract SepoliaDeployment is Contracts, SepoliaParams, SepoliaContracts {
   // NOTE: The last significant change in the Goerli deployment, to be used in the test scenarios
   uint256 constant GOERLI_DEPLOYMENT_BLOCK = 12_872_701;
 
@@ -55,7 +55,6 @@ abstract contract GoerliDeployment is Contracts, GoerliParams, SepoliaContracts 
 
     // --- factories ---
     chainlinkRelayerFactory = ChainlinkRelayerFactory(ChainlinkRelayerFactory_Address);
-    camelotRelayerFactory = CamelotRelayerFactory(SEPOLIA_CAMELOT_RELAYER_FACTORY);
     denominatedOracleFactory = DenominatedOracleFactory(DenominatedOracleFactory_Address);
     delayedOracleFactory = DelayedOracleFactory(DelayedOracleFactory_Address);
 

@@ -11,9 +11,8 @@ import {FixedPointMathLib} from '@isolmate/utils/FixedPointMathLib.sol';
 import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
 import {Script} from 'forge-std/Script.sol';
 import {Common} from '@script/Common.s.sol';
-import {GoerliParams} from '@script/GoerliParams.s.sol';
+import {SepoliaParams} from '@script/SepoliaParams.s.sol';
 import {MainnetParams} from '@script/MainnetParams.s.sol';
-import {IAlgebraPool} from '@interfaces/oracles/IAlgebraPool.sol';
 import {Create2Factory} from '@contracts/utils/Create2Factory.sol';
 
 abstract contract Deploy is Common, Script {
@@ -157,7 +156,7 @@ contract DeployMainnet is MainnetParams, Deploy {
   function setupPostEnvironment() public virtual override updateParams {}
 }
 
-contract DeployGoerli is GoerliParams, Deploy {
+contract DeployGoerli is SepoliaParams, Deploy {
   using FixedPointMathLib for uint256;
 
   IBaseOracle public chainlinkEthUSDPriceFeed;
@@ -222,7 +221,7 @@ contract DeployGoerli is GoerliParams, Deploy {
   function setupPostEnvironment() public virtual override updateParams {}
 }
 
-contract DeployAnvil is GoerliParams, Deploy {
+contract DeployAnvil is SepoliaParams, Deploy {
   function setUp() public virtual {
     _deployerPk = uint256(vm.envBytes32('ANVIL_ONE'));
     chainId = 31_337;
