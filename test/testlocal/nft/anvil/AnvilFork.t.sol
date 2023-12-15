@@ -149,13 +149,13 @@ contract AnvilFork is AnvilDeployment, Test {
     _safeId = abi.decode(safeData, (uint256));
   }
 
-  function allowSafe(address _proxy, uint256 _safeId, address _user, uint256 _ok) public {
+  function allowSafe(address _proxy, uint256 _safeId, address _user, bool _ok) public {
     bytes memory payload =
       abi.encodeWithSelector(basicActions.allowSAFE.selector, address(safeManager), _safeId, _user, _ok);
     ODProxy(_proxy).execute(address(basicActions), payload);
   }
 
-  function allowHandler(address _proxy, address _user, uint256 _ok) public {
+  function allowHandler(address _proxy, address _user, bool _ok) public {
     bytes memory payload = abi.encodeWithSelector(basicActions.allowHandler.selector, address(safeManager), _user, _ok);
     ODProxy(_proxy).execute(address(basicActions), payload);
   }
