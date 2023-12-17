@@ -6,7 +6,6 @@ import {IUniV3Relayer} from '@interfaces/oracles/IUniV3Relayer.sol';
 import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
 import {IUniswapV3Factory} from '@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol';
 import {OracleLibrary, IUniswapV3Pool} from '@uniswap/v3-periphery/contracts/libraries/OracleLibrary.sol';
-import {UNISWAP_V3_FACTORY, GOERLI_UNISWAP_V3_FACTORY} from '@script/Registry.s.sol';
 
 /**
  * @title  UniV3Relayer
@@ -14,9 +13,6 @@ import {UNISWAP_V3_FACTORY, GOERLI_UNISWAP_V3_FACTORY} from '@script/Registry.s.
  * @dev    The quote obtained from the pool query is transformed into an 18 decimals format
  */
 contract UniV3Relayer is IBaseOracle, IUniV3Relayer {
-  // --- Registry ---
-  address internal constant _UNI_V3_FACTORY = GOERLI_UNISWAP_V3_FACTORY;
-
   /// @inheritdoc IUniV3Relayer
   address public uniV3Pool;
   /// @inheritdoc IUniV3Relayer
@@ -44,8 +40,8 @@ contract UniV3Relayer is IBaseOracle, IUniV3Relayer {
    * @param  _feeTier Fee tier of the pool used to consult the quote
    * @param  _quotePeriod Length in seconds of the TWAP used to consult the pool
    */
-  constructor(address _baseToken, address _quoteToken, uint24 _feeTier, uint32 _quotePeriod) {
-    uniV3Pool = IUniswapV3Factory(_UNI_V3_FACTORY).getPool(_baseToken, _quoteToken, _feeTier);
+  constructor(address _uniV3Factory, address _baseToken, address _quoteToken, uint24 _feeTier, uint32 _quotePeriod) {
+    uniV3Pool = IUniswapV3Factory(_uniV3Factory).getPool(_baseToken, _quoteToken, _feeTier);
     if (uniV3Pool == address(0)) revert UniV3Relayer_InvalidPool();
 
     address _token0 = IUniswapV3Pool(uniV3Pool).token0();

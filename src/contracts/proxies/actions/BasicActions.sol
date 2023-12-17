@@ -209,6 +209,69 @@ contract BasicActions is CommonActions, IBasicActions {
   function generateDebt(address _manager, address _coinJoin, uint256 _safeId, uint256 _deltaWad) external delegateCall {
     _generateDebt(_manager, _coinJoin, _safeId, _deltaWad);
   }
+  function allowSAFE(address _manager, uint256 _safeId, address _usr, uint256 _ok) external delegateCall {
+    ODSafeManager(_manager).allowSAFE(_safeId, _usr, _ok);
+  }
+
+  /// @inheritdoc IBasicActions
+  function allowHandler(address _manager, address _usr, uint256 _ok) external delegateCall {
+    ODSafeManager(_manager).allowHandler(_usr, _ok);
+  }
+
+  /// @inheritdoc IBasicActions
+  function modifySAFECollateralization(
+    address _manager,
+    uint256 _safeId,
+    int256 _deltaCollateral,
+    int256 _deltaDebt
+  ) external delegateCall {
+    _modifySAFECollateralization(_manager, _safeId, _deltaCollateral, _deltaDebt);
+  }
+
+  /// @inheritdoc IBasicActions
+  function transferCollateral(address _manager, uint256 _safeId, address _dst, uint256 _deltaWad) external delegateCall {
+    _transferCollateral(_manager, _safeId, _dst, _deltaWad);
+  }
+
+  /// @inheritdoc IBasicActions
+  function transferInternalCoins(address _manager, uint256 _safeId, address _dst, uint256 _rad) external delegateCall {
+    _transferInternalCoins(_manager, _safeId, _dst, _rad);
+  }
+
+  /// @inheritdoc IBasicActions
+  function quitSystem(address _manager, uint256 _safeId, address _dst) external delegateCall {
+    ODSafeManager(_manager).quitSystem(_safeId, _dst);
+  }
+
+  /// @inheritdoc IBasicActions
+  function enterSystem(address _manager, address _src, uint256 _safeId) external delegateCall {
+    ODSafeManager(_manager).enterSystem(_src, _safeId);
+  }
+
+  /// @inheritdoc IBasicActions
+  function moveSAFE(address _manager, uint256 _src, uint256 _dst) external delegateCall {
+    ODSafeManager(_manager).moveSAFE(_src, _dst);
+  }
+
+  /// @inheritdoc IBasicActions
+  function addSAFE(address _manager, uint256 _safe) external delegateCall {
+    ODSafeManager(_manager).addSAFE(_safe);
+  }
+
+  /// @inheritdoc IBasicActions
+  function removeSAFE(address _manager, uint256 _safe) external delegateCall {
+    ODSafeManager(_manager).removeSAFE(_safe);
+  }
+
+  /// @inheritdoc IBasicActions
+  function protectSAFE(
+    address _manager,
+    uint256 _safe,
+    address _liquidationEngine,
+    address _saviour
+  ) external delegateCall {
+    ODSafeManager(_manager).protectSAFE(_safe, _liquidationEngine, _saviour);
+  }
 
   /// @inheritdoc IBasicActions
   function repayDebt(address _manager, address _coinJoin, uint256 _safeId, uint256 _deltaWad) external delegateCall {

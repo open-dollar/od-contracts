@@ -34,12 +34,14 @@ import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 /**
  * @dev to run local tests on Anvil network:
  *
- * URL=http://127.0.0.1:8545
  * anvil
  * yarn deploy:anvil
  * move deployment json to the deployments/anvil folder
+ * - from: broadcast/Deploy.s.sol/31337/run-latest.json
+ * - to: deployments/anvil/
+ * - replace: existing `run-latest.json`
  * node tasks/parseAnvilDeployments.js
- * forge t --fork-url $URL --match-contract ContractToTest -vvvvv
+ * forge t --fork-url http://127.0.0.1:8545  --match-contract ContractToTest -vvvvv
  */
 
 contract AnvilFork is AnvilDeployment, Test {
@@ -145,6 +147,74 @@ contract AnvilFork is AnvilDeployment, Test {
     bytes memory payload = abi.encodeWithSelector(basicActions.openSAFE.selector, address(safeManager), _cType, _proxy);
     bytes memory safeData = ODProxy(_proxy).execute(address(basicActions), payload);
     _safeId = abi.decode(safeData, (uint256));
+  }
+
+  function allowSafe(address _proxy, uint256 _safeId, address _user, uint256 _ok) public {
+    bytes memory payload =
+      abi.encodeWithSelector(basicActions.allowSAFE.selector, address(safeManager), _safeId, _user, _ok);
+    ODProxy(_proxy).execute(address(basicActions), payload);
+  }
+
+  function allowHandler(address _proxy, address _user, uint256 _ok) public {
+    bytes memory payload = abi.encodeWithSelector(basicActions.allowHandler.selector, address(safeManager), _user, _ok);
+    ODProxy(_proxy).execute(address(basicActions), payload);
+  }
+
+  function modifySAFECollateralization(
+    address _proxy,
+    uint256 _safeId,
+    int256 _collateralDelta,
+    int256 _debtDelta
+  ) public {
+    bytes memory payload = abi.encodeWithSelector(
+      basicActions.modifySAFECollateralization.selector, address(safeManager), _safeId, _collateralDelta, _debtDelta
+    );
+    ODProxy(_proxy).execute(address(basicActions), payload);
+  }
+
+  function transferCollateral(address _proxy, uint256 _safeId, address _dst, uint256 _deltaWad) public {
+    bytes memory payload =
+      abi.encodeWithSelector(basicActions.transferCollateral.selector, address(safeManager), _safeId, _dst, _deltaWad);
+    ODProxy(_proxy).execute(address(basicActions), payload);
+  }
+
+  function transferInternalCoins(address _proxy, uint256 _safeId, address _dst, uint256 _rad) public {
+    bytes memory payload =
+      abi.encodeWithSelector(basicActions.transferInternalCoins.selector, address(safeManager), _safeId, _dst, _rad);
+    ODProxy(_proxy).execute(address(basicActions), payload);
+  }
+
+  function quitSystem(address _proxy, uint256 _safeId, address _dst) public {
+    bytes memory payload = abi.encodeWithSelector(basicActions.quitSystem.selector, address(safeManager), _safeId, _dst);
+    ODProxy(_proxy).execute(address(basicActions), payload);
+  }
+
+  function enterSystem(address _proxy, address _src, uint256 _safeId) public {
+    bytes memory payload =
+      abi.encodeWithSelector(basicActions.enterSystem.selector, address(safeManager), _src, _safeId);
+    ODProxy(_proxy).execute(address(basicActions), payload);
+  }
+
+  function moveSAFE(address _proxy, uint256 _src, uint256 _dst) public {
+    bytes memory payload = abi.encodeWithSelector(basicActions.moveSAFE.selector, address(safeManager), _src, _dst);
+    ODProxy(_proxy).execute(address(basicActions), payload);
+  }
+
+  function addSAFE(address _proxy, uint256 _safe) public {
+    bytes memory payload = abi.encodeWithSelector(basicActions.addSAFE.selector, address(safeManager), _safe);
+    ODProxy(_proxy).execute(address(basicActions), payload);
+  }
+
+  function removeSAFE(address _proxy, uint256 _safe) public {
+    bytes memory payload = abi.encodeWithSelector(basicActions.removeSAFE.selector, address(safeManager), _safe);
+    ODProxy(_proxy).execute(address(basicActions), payload);
+  }
+
+  function protectSAFE(address _proxy, uint256 _safe, address _liquidationEngine, address _saviour) public {
+    bytes memory payload = abi.encodeWithSelector(
+      basicActions.protectSAFE.selector, address(safeManager), _safe, _liquidationEngine, _saviour
+    );
+    ODProxy(_proxy).execute(address(basicActions), payload);
   }
 
   function depositCollatAndGenDebt(

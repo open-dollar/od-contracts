@@ -12,6 +12,7 @@ interface ICamelotRelayerFactory is IAuthorizable {
 
   // --- Methods ---
   function deployCamelotRelayer(
+    address _algebraV3Factory,
     address _baseToken,
     address _quoteToken,
     uint32 _quotePeriod

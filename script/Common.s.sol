@@ -85,8 +85,6 @@ abstract contract Common is Contracts, Params {
 
     // factories or children
     _revoke(chainlinkRelayerFactory, _governor);
-    _revoke(uniV3RelayerFactory, _governor);
-    _revoke(camelotRelayerFactory, _governor);
     _revoke(denominatedOracleFactory, _governor);
     _revoke(delayedOracleFactory, _governor);
 
@@ -112,7 +110,6 @@ abstract contract Common is Contracts, Params {
   function _delegateAllTo(address __delegate) internal {
     // base contracts
     _delegate(safeEngine, __delegate);
-    _delegate(uniV3RelayerFactory, __delegate);
     _delegate(liquidationEngine, __delegate);
     _delegate(accountingEngine, __delegate);
     _delegate(oracleRelayer, __delegate);
@@ -137,7 +134,6 @@ abstract contract Common is Contracts, Params {
     _delegate(coinJoin, __delegate);
 
     _delegate(chainlinkRelayerFactory, __delegate);
-    _delegate(camelotRelayerFactory, __delegate);
     _delegate(denominatedOracleFactory, __delegate);
     _delegate(delayedOracleFactory, __delegate);
 
@@ -183,8 +179,25 @@ abstract contract Common is Contracts, Params {
     address[] memory members = new address[](0);
 
     // deploy governance contracts
-    timelockController = new TimelockController(MIN_DELAY_GOERLI, members, members, deployer);
-    odGovernor = new ODGovernor(address(protocolToken), timelockController);
+    if (getChainId() == 42_161) {
+      timelockController = new TimelockController(MIN_DELAY, members, members, deployer);
+      odGovernor = new ODGovernor(
+        MAINNET_INIT_VOTING_DELAY,
+        MAINNET_INIT_VOTING_PERIOD,
+        MAINNET_INIT_PROP_THRESHOLD,
+        address(protocolToken),
+        timelockController
+      );
+    } else {
+      timelockController = new TimelockController(MIN_DELAY_GOERLI, members, members, deployer);
+      odGovernor = new ODGovernor(
+        TEST_INIT_VOTING_DELAY,
+        TEST_INIT_VOTING_PERIOD,
+        TEST_INIT_PROP_THRESHOLD,
+        address(protocolToken),
+        timelockController
+      );
+    }
 
     // set governor
     governor = address(timelockController);
@@ -301,8 +314,6 @@ abstract contract Common is Contracts, Params {
 
   function deployOracleFactories() public updateParams {
     chainlinkRelayerFactory = new ChainlinkRelayerFactory();
-    uniV3RelayerFactory = new UniV3RelayerFactory();
-    camelotRelayerFactory = new CamelotRelayerFactory();
     denominatedOracleFactory = new DenominatedOracleFactory();
     delayedOracleFactory = new DelayedOracleFactory();
   }
