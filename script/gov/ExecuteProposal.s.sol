@@ -19,6 +19,8 @@ contract ExecuteUpdateProposal is JSONScript {
 
     // The path to the JSON file for the desired proposal to execute
     string memory jsonFilePath = vm.envString('JSON_FILE_PATH');
+
+    uint256 govPK = vm.envUint('GOV_EXECUTOR_PK');
     /// END REQUIRED ENV VARS ///
 
     // See Propose{GovAction}.s.sol to see the expected JSON input
@@ -31,7 +33,7 @@ contract ExecuteUpdateProposal is JSONScript {
     (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, bytes32 descriptionHash) =
       _parseExecutionParamsJSON(jsonFile);
 
-    vm.startBroadcast(vm.envUint('GOV_EXECUTOR_PK'));
+    vm.startBroadcast(govPK);
 
     // execute proposal
     ODGovernor(payable(governanceAddress)).execute(targets, values, calldatas, descriptionHash);
