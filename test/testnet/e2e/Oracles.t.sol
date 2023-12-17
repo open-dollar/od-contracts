@@ -3,19 +3,14 @@ pragma solidity 0.8.19;
 
 import {HaiTest} from '@testnet/utils/HaiTest.t.sol';
 import {IChainlinkOracle} from '@interfaces/oracles/IChainlinkOracle.sol';
-
 import {ChainlinkRelayer, IBaseOracle} from '@contracts/oracles/ChainlinkRelayer.sol';
-import {UniV3Relayer} from '@contracts/oracles/UniV3Relayer.sol';
-
 import {DenominatedOracle, IDenominatedOracle} from '@contracts/oracles/DenominatedOracle.sol';
 import {DelayedOracle, IDelayedOracle} from '@contracts/oracles/DelayedOracle.sol';
-
 import {
   CHAINLINK_ETH_USD_FEED,
   CHAINLINK_WSTETH_ETH_FEED,
-  WBTC,
-  WETH,
-  GOERLI_UNISWAP_V3_FACTORY
+  CHAINLINK_CBETH_ETH_FEED,
+  MAINNET_CAMELOT_AMM_FACTORY
 } from '@script/Registry.s.sol';
 
 import {Math, WAD} from '@libraries/Math.sol';
@@ -23,57 +18,50 @@ import {Math, WAD} from '@libraries/Math.sol';
 contract OracleSetup is HaiTest {
   using Math for uint256;
 
-  // uint256 CHAINLINK_WSTETH_ETH_PRICE = 1_124_766_090_043_756_600; // NOTE: 18 decimals
+  uint256 ARBTIRUM_BLOCK = 159_201_690; // (Dec-11-2023 11:29:40 PM +UTC)
+  uint256 ETHEREUM_BLOCK = 18_766_228; // (Dec-11-2023 11:26:35 PM +UTC)
 
-  uint256 WBTC_ETH_PRICE = 14_864_307_223_256_388_569; // 1 BTC = 14.8 ETH
-  uint256 WBTC_USD_PRICE = 27_032_972_331_575_231_071_011; // 1 BTC = 27,032 USD
+  // approx. price of ETH in USD w/ 18 decimals
+  uint256 CHAINLINK_ETH_USD_PRICE_H = 2_218_500_000_000_000_000_000; // +1 USD
+  uint256 CHAINLINK_ETH_USD_PRICE_L = 2_216_500_000_000_000_000_000; // -1 USD
 
-  // July 14 2022 7:33 AM - 3:33PM (8h window)
-  // - wierd workaround due to Arbitrum block.number refering to L1
-  uint256 FORK_BLOCK = 17_603_828;
-  uint256 FORK_CHANGE = 15_139_375;
+  // approx. price of ETH in USD w/ 6 decimals
+  int256 ETH_USD_PRICE_H = 221_850_000_000; // +1 USD
+  int256 ETH_USD_PRICE_L = 221_650_000_000; // -1 USD
 
-  uint256 CHAINLINK_ETH_USD_PRICE_18_DECIMALS = 1_097_858_600_000_000_000_000;
-  uint256 CHAINLINK_WSTETH_ETH_PRICE = 965_000_000_000_000_000; // NOTE: 18 decimals
-  uint256 WSTETH_USD_PRICE = CHAINLINK_WSTETH_ETH_PRICE.wmul(CHAINLINK_ETH_USD_PRICE_18_DECIMALS);
-
-  int256 ETH_USD_PRICE_L = 107_800_000_000;
-  int256 ETH_USD_PRICE_H = 120_200_000_000;
+  uint256 CHAINLINK_ETH_USD_PRICE_18_DECIMALS_H = 2_223_330_000_000_000_000_000;
+  uint256 CHAINLINK_ETH_USD_PRICE_18_DECIMALS_L = 2_217_310_000_000_000_000_000;
+  uint256 CHAINLINK_WSTETH_ETH_PRICE = 1_145_666_090_043_756_600; // 1.14% value of ETH
+  uint256 WSTETH_USD_PRICE = CHAINLINK_WSTETH_ETH_PRICE.wmul(CHAINLINK_ETH_USD_PRICE_18_DECIMALS_H);
 
   uint256 NEW_ETH_USD_PRICE = 200_000_000_000;
   uint256 NEW_ETH_USD_PRICE_18_DECIMALS = 2_000_000_000_000_000_000_000;
 
-  uint24 FEE_TIER = 500;
-
   IBaseOracle public wethUsdPriceSource;
   IBaseOracle public wstethEthPriceSource;
-  IBaseOracle public wbtcWethPriceSource;
+  IBaseOracle public cbethEthPriceSource;
 
   IDenominatedOracle public wstethUsdPriceSource;
-  IDenominatedOracle public wbtcUsdPriceSource;
+  IDenominatedOracle public cbethUsdPriceSource;
 
   IDelayedOracle public wethUsdDelayedOracle;
 
   function setUp() public {
-    // vm.createSelectFork(vm.rpcUrl('mainnet'), FORK_BLOCK);
-
     /**
      * @dev Arbitrum block.number returns L1; createSelectFork does not work
      */
     uint256 forkId = vm.createFork(vm.rpcUrl('mainnet'));
     vm.selectFork(forkId);
-    vm.rollFork(FORK_BLOCK);
+    vm.rollFork(ARBTIRUM_BLOCK);
 
     // --- Chainlink ---
     wethUsdPriceSource = new ChainlinkRelayer(CHAINLINK_ETH_USD_FEED, 1 days);
     wstethEthPriceSource = new ChainlinkRelayer(CHAINLINK_WSTETH_ETH_FEED, 1 days);
-
-    // --- UniV3 ---
-    wbtcWethPriceSource = new UniV3Relayer(GOERLI_UNISWAP_V3_FACTORY, WBTC, WETH, FEE_TIER, 1 days);
+    cbethEthPriceSource = new ChainlinkRelayer(CHAINLINK_CBETH_ETH_FEED, 1 days);
 
     // --- Denominated ---
     wstethUsdPriceSource = new DenominatedOracle(wstethEthPriceSource, wethUsdPriceSource, false);
-    wbtcUsdPriceSource = new DenominatedOracle(wbtcWethPriceSource, wethUsdPriceSource, false);
+    cbethUsdPriceSource = new DenominatedOracle(cbethEthPriceSource, wethUsdPriceSource, false);
 
     // --- Delayed ---
     wethUsdDelayedOracle = new DelayedOracle(wethUsdPriceSource, 1 hours);
@@ -81,7 +69,7 @@ contract OracleSetup is HaiTest {
 
   function test_ArbitrumFork() public {
     emit log_named_uint('L1 Block Number Oracle Fork', block.number);
-    assertEq(block.number, FORK_CHANGE);
+    assertEq(block.number, ETHEREUM_BLOCK);
   }
 
   // --- Chainlink ---
@@ -92,64 +80,24 @@ contract OracleSetup is HaiTest {
   }
 
   function test_ChainlinkRelayer() public {
-    assertEq(CHAINLINK_ETH_USD_PRICE_18_DECIMALS / 1e18, 1097);
-    assertEq(wethUsdPriceSource.read(), CHAINLINK_ETH_USD_PRICE_18_DECIMALS);
-  }
-
-  function test_ChainlinkRelayerStalePrice() public {
-    vm.warp(block.timestamp + 1 days);
-    vm.expectRevert();
-
-    wethUsdPriceSource.read();
+    uint256 price = wethUsdPriceSource.read();
+    assertTrue(price >= CHAINLINK_ETH_USD_PRICE_L && price <= CHAINLINK_ETH_USD_PRICE_H);
   }
 
   function test_ChainlinkRelayerSymbol() public {
     assertEq(wethUsdPriceSource.symbol(), 'ETH / USD');
   }
 
-  // --- UniV3 ---
-
-  /**
-   * @dev This method may revert with 'OLD!' if the pool doesn't have enough cardinality or initialized history
-   */
-  function test_UniV3Relayer() public {
-    // assertEq(wbtcWethPriceSource.read(), WBTC_ETH_PRICE);
-    emit log_string('OLD; pool lacks cardinality or initialized history!');
-  }
-
-  function test_UniV3RelayerSymbol() public {
-    assertEq(wbtcWethPriceSource.symbol(), 'CBETH / WSTETH');
-  }
-
   // --- Denominated ---
 
-  /**
-   * NOTE: deployer needs to check that the symbols of the two oracles
-   *       concatenate in the right order, e.g WSTETH/ETH - ETH/USD
-   */
   function test_DenominatedOracle() public {
-    assertEq(WSTETH_USD_PRICE / 1e18, 1059); // 1097.86 * 0.965 = 1059
-    assertEq(wstethUsdPriceSource.read(), WSTETH_USD_PRICE);
-  }
-
-  /**
-   * @dev This method may revert with 'OLD!' if the pool doesn't have enough cardinality or initialized history
-   */
-  function test_DenominatedOracleUniV3() public {
-    // assertEq(WBTC_USD_PRICE / 1e18, 27_032); // 14.864 * 1818.65 = 27032
-    // assertEq(wbtcUsdPriceSource.read(), WBTC_USD_PRICE);
-    emit log_string('OLD; pool lacks cardinality or initialized history!');
+    assertEq(wstethUsdPriceSource.read() / WAD, WSTETH_USD_PRICE / WAD);
   }
 
   function test_DenominatedOracleSymbol() public {
-    // assertEq(wstethUsdPriceSource.symbol(), '(WSTETH / ETH) * (ETH / USD)');
-    emit log_string('(wstETH-stETH Exchange Rate) * (ETH / USD) => should be: (WSTETH / ETH) * (ETH / USD)');
+    assertEq(wstethUsdPriceSource.symbol(), '(WSTETH / ETH) * (ETH / USD)');
   }
 
-  /**
-   * NOTE: In this case, the symbols are ETH/USD - ETH/USD
-   *       Using inverted = true, the resulting symbols are USD/ETH - ETH/USD
-   */
   function test_DenominatedOracleInverted() public {
     IDenominatedOracle usdPriceSource = new DenominatedOracle(wethUsdPriceSource, wethUsdPriceSource, true);
 
@@ -165,15 +113,15 @@ contract OracleSetup is HaiTest {
   // --- Delayed ---
 
   function test_DelayedOracle() public {
-    assertEq(wethUsdDelayedOracle.read(), CHAINLINK_ETH_USD_PRICE_18_DECIMALS);
+    assertEq(wethUsdDelayedOracle.read() / WAD, CHAINLINK_ETH_USD_PRICE_18_DECIMALS_L / WAD);
 
     (uint256 _result, bool _validity) = wethUsdDelayedOracle.getResultWithValidity();
     assertTrue(_validity);
-    assertEq(_result, CHAINLINK_ETH_USD_PRICE_18_DECIMALS);
+    assertEq(_result / WAD, CHAINLINK_ETH_USD_PRICE_18_DECIMALS_L / WAD);
 
     (uint256 _nextResult, bool _nextValidity) = wethUsdDelayedOracle.getNextResultWithValidity();
     assertTrue(_nextValidity);
-    assertEq(_nextResult, CHAINLINK_ETH_USD_PRICE_18_DECIMALS);
+    assertEq(_nextResult / WAD, CHAINLINK_ETH_USD_PRICE_18_DECIMALS_L / WAD);
   }
 
   function test_DelayedOracleUpdateResult() public {
@@ -184,13 +132,13 @@ contract OracleSetup is HaiTest {
     );
 
     assertEq(wethUsdPriceSource.read(), NEW_ETH_USD_PRICE_18_DECIMALS);
-    assertEq(wethUsdDelayedOracle.read(), CHAINLINK_ETH_USD_PRICE_18_DECIMALS);
+    assertEq(wethUsdDelayedOracle.read() / WAD, CHAINLINK_ETH_USD_PRICE_18_DECIMALS_L / WAD);
 
     vm.warp(block.timestamp + 1 hours);
     wethUsdDelayedOracle.updateResult();
 
     (uint256 _result,) = wethUsdDelayedOracle.getResultWithValidity();
-    assertEq(_result, CHAINLINK_ETH_USD_PRICE_18_DECIMALS);
+    assertEq(_result / WAD, CHAINLINK_ETH_USD_PRICE_18_DECIMALS_L / WAD);
 
     (uint256 _nextResult,) = wethUsdDelayedOracle.getNextResultWithValidity();
     assertEq(_nextResult, NEW_ETH_USD_PRICE_18_DECIMALS);

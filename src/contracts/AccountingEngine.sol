@@ -211,9 +211,9 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
     }
 
     // auction surplus percentage
-    if (_params.surplusTransferPercentage < ONE_HUNDRED_WAD) {
+    if (_params.surplusTransferPercentage < WAD) {
       _id = surplusAuctionHouse.startAuction({
-        _amountToSell: _params.surplusAmount.wmul(ONE_HUNDRED_WAD - _params.surplusTransferPercentage),
+        _amountToSell: _params.surplusAmount.wmul(WAD - _params.surplusTransferPercentage),
         _initialBid: 0
       });
 

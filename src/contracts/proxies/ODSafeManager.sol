@@ -55,6 +55,15 @@ contract ODSafeManager is IODSafeManager {
   }
 
   /**
+   * @notice Checks if the sender is the owner of the safe
+   * @param  _safe Id of the safe to check if msg.sender has permissions for
+   */
+  modifier onlySafeOwner(uint256 _safe) {
+    if (msg.sender != _safeData[_safe].owner) revert OnlySafeOwner();
+    _;
+  }
+
+  /**
    * @notice Checks if the sender is the safe handler has permissions to call the function
    * @param  _handler Address of the handler to check if msg.sender has permissions for
    */
@@ -104,7 +113,7 @@ contract ODSafeManager is IODSafeManager {
   // --- Methods ---
 
   /// @inheritdoc IODSafeManager
-  function allowSAFE(uint256 _safe, address _usr, bool _ok) external safeAllowed(_safe) {
+  function allowSAFE(uint256 _safe, address _usr, bool _ok) external onlySafeOwner(_safe) {
     address _owner = _safeData[_safe].owner;
     safeCan[_owner][_safe][_usr] = _ok;
     emit AllowSAFE(msg.sender, _safe, _usr, _ok);
@@ -211,7 +220,7 @@ contract ODSafeManager is IODSafeManager {
   /// @inheritdoc IODSafeManager
   function enterSystem(address _src, uint256 _safe) external handlerAllowed(_src) safeAllowed(_safe) {
     SAFEData memory _sData = _safeData[_safe];
-    ISAFEEngine.SAFE memory _safeInfo = ISAFEEngine(safeEngine).safes(_sData.collateralType, _sData.safeHandler);
+    ISAFEEngine.SAFE memory _safeInfo = ISAFEEngine(safeEngine).safes(_sData.collateralType, _src);
     int256 _deltaCollateral = _safeInfo.lockedCollateral.toInt();
     int256 _deltaDebt = _safeInfo.generatedDebt.toInt();
     ISAFEEngine(safeEngine).transferSAFECollateralAndDebt(
