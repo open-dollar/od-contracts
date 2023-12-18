@@ -161,9 +161,7 @@ contract AddCollateralGoerli is GoerliFork {
     values[1] = 0;
 
     bytes memory calldata0 = abi.encodeWithSelector(
-      ICollateralJoinFactory.deployCollateralJoin.selector,
-      bytes32('WETH'),
-      0xEe01c0CD76354C383B8c7B4e65EA88D00B06f36f
+      ICollateralJoinFactory.deployCollateralJoin.selector, bytes32('WETH'), 0xEe01c0CD76354C383B8c7B4e65EA88D00B06f36f
     );
     bytes memory calldata1 = abi.encodeWithSelector(
       ICollateralAuctionHouseFactory.deployCollateralAuctionHouse.selector, bytes32('WETH'), _cahCParams
