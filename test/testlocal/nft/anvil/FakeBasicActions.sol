@@ -15,6 +15,10 @@ import {Math, WAD, RAY, RAD} from '@libraries/Math.sol';
 
 import {CommonActions} from '@contracts/proxies/actions/CommonActions.sol';
 
+/// @title FakeBasicActions
+/// @notice This contract is used to test the basic actions of the ODSafeManager
+/// @dev More specifically, it was used in the original PoC to show how you can
+/// circumvent paying taxes: https://github.com/open-dollar/od-contracts/issues/216
 contract FakeBasicActions {
   using Math for uint256;
 

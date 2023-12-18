@@ -209,6 +209,7 @@ contract BasicActions is CommonActions, IBasicActions {
   function generateDebt(address _manager, address _coinJoin, uint256 _safeId, uint256 _deltaWad) external delegateCall {
     _generateDebt(_manager, _coinJoin, _safeId, _deltaWad);
   }
+
   function allowSAFE(address _manager, uint256 _safeId, address _usr, uint256 _ok) external delegateCall {
     ODSafeManager(_manager).allowSAFE(_safeId, _usr, _ok);
   }
