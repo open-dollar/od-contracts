@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import '@script/Params.s.sol';
 
-abstract contract GoerliParams is Contracts, Params {
+abstract contract SepoliaParams is Contracts, Params {
   // --- Testnet Params ---
   uint256 constant GOERLI_ARB_ETH_PRICE_FEED = 0.001e18; // 1000 OP = 1 ETH
   uint256 constant GOERLI_ARB_PRICE_DEVIATION = 0.995e18; // -0.5%

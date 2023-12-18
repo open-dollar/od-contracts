@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import 'forge-std/Test.sol';
 import {AnvilDeployment} from '@testlocal/nft/anvil/deployment/AnvilDeployment.t.sol';
-import {WSTETH, ARB, CBETH, RETH, MAGIC} from '@script/GoerliParams.s.sol';
+import {WSTETH, ARB, CBETH, RETH, MAGIC} from '@script/SepoliaParams.s.sol';
 
 // --- Collateral ERC20 ---
 import {MintableVoteERC20} from '@contracts/for-test/MintableVoteERC20.sol';
@@ -149,13 +149,13 @@ contract AnvilFork is AnvilDeployment, Test {
     _safeId = abi.decode(safeData, (uint256));
   }
 
-  function allowSafe(address _proxy, uint256 _safeId, address _user, uint256 _ok) public {
+  function allowSafe(address _proxy, uint256 _safeId, address _user, bool _ok) public {
     bytes memory payload =
       abi.encodeWithSelector(basicActions.allowSAFE.selector, address(safeManager), _safeId, _user, _ok);
     ODProxy(_proxy).execute(address(basicActions), payload);
   }
 
-  function allowHandler(address _proxy, address _user, uint256 _ok) public {
+  function allowHandler(address _proxy, address _user, bool _ok) public {
     bytes memory payload = abi.encodeWithSelector(basicActions.allowHandler.selector, address(safeManager), _user, _ok);
     ODProxy(_proxy).execute(address(basicActions), payload);
   }

@@ -8,7 +8,7 @@ import {ParamChecker, WSTETH, ARB} from '@script/Params.s.sol';
 import {ERC20Votes} from '@openzeppelin/token/ERC20/extensions/ERC20Votes.sol';
 
 import {Contracts} from '@script/Contracts.s.sol';
-import {GoerliDeployment} from '@script/GoerliDeployment.s.sol';
+import {SepoliaDeployment} from '@script/SepoliaDeployment.s.sol';
 
 abstract contract CommonDeploymentTest is HaiTest, Deploy {
   // SAFEEngine
@@ -184,7 +184,7 @@ contract E2EDeploymentGoerliTest is DeployGoerli, CommonDeploymentTest {
   }
 }
 
-contract GoerliDeploymentTest is GoerliDeployment, CommonDeploymentTest {
+contract SepoliaDeploymentTest is SepoliaDeployment, CommonDeploymentTest {
   function setUp() public {
     // vm.createSelectFork(vm.rpcUrl('sepolia'), GOERLI_DEPLOYMENT_BLOCK);
     uint256 forkId = vm.createFork(vm.rpcUrl('sepolia'));

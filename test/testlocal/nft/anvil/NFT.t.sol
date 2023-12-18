@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import {AnvilFork} from '@testlocal/nft/anvil/AnvilFork.t.sol';
-import {WSTETH, ARB, CBETH, RETH, MAGIC} from '@script/GoerliParams.s.sol';
+import {WSTETH, ARB, CBETH, RETH, MAGIC} from '@script/SepoliaParams.s.sol';
 import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
 import {SafeERC20} from '@openzeppelin/token/ERC20/utils/SafeERC20.sol';
 import {Vault721} from '@contracts/proxies/Vault721.sol';
@@ -233,37 +233,37 @@ contract NFTAnvil is AnvilFork {
    * test locking collateral
    */
 
-  //  function test_allowSAFE(uint256 cTypeIndex, uint8 ok) public {
-  //    vm.assume(ok < 2);
-  //    cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
-  //    uint256 i = 0;
-  //    address proxy = proxies[i];
-  //    bytes32 cType = cTypes[cTypeIndex];
-  //    uint256 vaultId = vaultIds[proxy][cType];
-  //    vm.startPrank(users[i]);
-  //    allowSafe(proxy, vaultId, users[i], ok);
-  //    vm.stopPrank();
-  //
-  //    IODSafeManager.SAFEData memory sData = safeManager.safeData(vaultId);
-  //
-  //    assertEq(safeManager.safeCan(sData.owner, vaultId, users[i]), ok, 'test_allowSAFE: safeCan not set correctly');
-  //  }
+  function test_allowSAFE(uint256 cTypeIndex, bool ok) public {
+    // vm.assume(ok < 2);
+    cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
+    uint256 i = 0;
+    address proxy = proxies[i];
+    bytes32 cType = cTypes[cTypeIndex];
+    uint256 vaultId = vaultIds[proxy][cType];
+    vm.startPrank(users[i]);
+    allowSafe(proxy, vaultId, users[i], ok);
+    vm.stopPrank();
 
-  //  function test_allowHandler(uint256 cTypeIndex, uint8 ok) public {
-  //    vm.assume(ok < 2);
-  //    cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
-  //    uint256 i = 0;
-  //    address proxy = proxies[i];
-  //    bytes32 cType = cTypes[cTypeIndex];
-  //    uint256 vaultId = vaultIds[proxy][cType];
-  //    vm.startPrank(users[i]);
-  //    allowHandler(proxy, users[i], ok);
-  //    vm.stopPrank();
-  //
-  //    IODSafeManager.SAFEData memory sData = safeManager.safeData(vaultId);
-  //
-  //    assertEq(safeManager.handlerCan(proxy, users[i]), ok, 'test_allowHandler: handlerCan not set correctly');
-  //  }
+    IODSafeManager.SAFEData memory sData = safeManager.safeData(vaultId);
+
+    assertEq(safeManager.safeCan(sData.owner, vaultId, users[i]), ok, 'test_allowSAFE: safeCan not set correctly');
+  }
+
+  function test_allowHandler(uint256 cTypeIndex, bool ok) public {
+    // vm.assume(ok < 2);
+    cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
+    uint256 i = 0;
+    address proxy = proxies[i];
+    bytes32 cType = cTypes[cTypeIndex];
+    uint256 vaultId = vaultIds[proxy][cType];
+    vm.startPrank(users[i]);
+    allowHandler(proxy, users[i], ok);
+    vm.stopPrank();
+
+    IODSafeManager.SAFEData memory sData = safeManager.safeData(vaultId);
+
+    assertEq(safeManager.handlerCan(proxy, users[i]), ok, 'test_allowHandler: handlerCan not set correctly');
+  }
 
   // function test_modifySAFECollateralization(
   //   uint256 cTypeIndex,
