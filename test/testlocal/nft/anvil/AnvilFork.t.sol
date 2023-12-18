@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import 'forge-std/Test.sol';
 import {AnvilDeployment} from '@testlocal/nft/anvil/deployment/AnvilDeployment.t.sol';
-import {WSTETH, ARB, CBETH, RETH, MAGIC} from '@script/GoerliParams.s.sol';
+import {WSTETH, ARB, CBETH, RETH, MAGIC} from '@script/SepoliaParams.s.sol';
 
 // --- Collateral ERC20 ---
 import {MintableVoteERC20} from '@contracts/for-test/MintableVoteERC20.sol';
