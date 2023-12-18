@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import {Script} from 'forge-std/Script.sol';
-import {GoerliContracts} from '@script/GoerliContracts.s.sol';
+import {SepoliaContracts} from '@script/SepoliaContracts.s.sol';
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 import {TimelockController} from '@openzeppelin/governance/TimelockController.sol';
 import '@script/Registry.s.sol';
@@ -17,7 +17,7 @@ import '@script/Registry.s.sol';
 // SIMULATE
 // source .env && forge script DeployGovernor --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC
 
-contract DeployGovernor is GoerliContracts, Script {
+contract DeployGovernor is SepoliaContracts, Script {
   function run() public {
     vm.startBroadcast(vm.envUint('ARB_SEPOLIA_PK'));
     address[] memory members = new address[](3);
