@@ -152,12 +152,11 @@ contract E2EDeploymentMainnetTest is DeployMainnet, CommonDeploymentTest {
   }
 }
 
-contract E2EDeploymentGoerliTest is DeploySepolia, CommonDeploymentTest {
+contract E2EDeploymentSepoliaTest is DeploySepolia, CommonDeploymentTest {
   function setUp() public override {
     uint256 forkId = vm.createFork(vm.rpcUrl('sepolia'));
     vm.selectFork(forkId);
 
-    // governor = address(69);
     governor = address(0x37c5B029f9c3691B3d47cb024f84E5E257aEb0BB);
 
     super.setUp();
