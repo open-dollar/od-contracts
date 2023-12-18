@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {CollateralAuctionHouseForTest, ICollateralAuctionHouse} from '@testnet/mocks/CollateralAuctionHouseForTest.sol';
+import {
+  CollateralAuctionHouseForTest, ICollateralAuctionHouse
+} from '@testnet/mocks/CollateralAuctionHouseForTest.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ILiquidationEngine} from '@interfaces/ILiquidationEngine.sol';
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';

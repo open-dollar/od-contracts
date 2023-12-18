@@ -186,12 +186,7 @@ contract BasicActions is CommonActions, IBasicActions {
     int256 deltaDebt = _getGeneratedDeltaDebt(_safeEngine, _safeInfo.collateralType, _safeInfo.safeHandler, _deltaWad);
 
     // Locks token amount into the SAFE and generates debt
-    _modifySAFECollateralization(
-      _manager,
-      _safeId,
-      _collateralAmount.toInt(),
-      deltaDebt
-    );
+    _modifySAFECollateralization(_manager, _safeId, _collateralAmount.toInt(), deltaDebt);
 
     // Exits and transfers COIN amount to the user's address
     // deltaDebt should always be positive, but we use SafeCast as an extra guard
