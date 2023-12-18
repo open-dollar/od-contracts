@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
+// --- Universal Vars ---
+uint256 constant SEMI_RANDOM_SALT = 1; // set to 0 to use Salts below, set to 1 to randomly generate a salt
+
 // --- ARB Sepolia Testnet ---
 
 // Governance Settings

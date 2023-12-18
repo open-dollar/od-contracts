@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import {HaiTest} from '@testnet/utils/HaiTest.t.sol';
-import {Deploy, DeployMainnet, DeployGoerli} from '@script/Deploy.s.sol';
+import {Deploy, DeployMainnet, DeploySepolia} from '@script/Deploy.s.sol';
 
 import {ParamChecker, WSTETH, ARB} from '@script/Params.s.sol';
 import {ERC20Votes} from '@openzeppelin/token/ERC20/extensions/ERC20Votes.sol';
@@ -129,14 +129,10 @@ abstract contract CommonDeploymentTest is HaiTest, Deploy {
 }
 
 contract E2EDeploymentMainnetTest is DeployMainnet, CommonDeploymentTest {
-  // uint256 FORK_BLOCK = 99_000_000;
-
   function setUp() public override {
-    // vm.createSelectFork(vm.rpcUrl('mainnet'), FORK_BLOCK);
     uint256 forkId = vm.createFork(vm.rpcUrl('mainnet'));
     vm.selectFork(forkId);
 
-    // governor = address(69);
     governor = address(0x37c5B029f9c3691B3d47cb024f84E5E257aEb0BB);
 
     super.setUp();
@@ -156,11 +152,8 @@ contract E2EDeploymentMainnetTest is DeployMainnet, CommonDeploymentTest {
   }
 }
 
-contract E2EDeploymentGoerliTest is DeployGoerli, CommonDeploymentTest {
-  // uint256 FORK_BLOCK = 10_000_000;
-
+contract E2EDeploymentGoerliTest is DeploySepolia, CommonDeploymentTest {
   function setUp() public override {
-    // vm.createSelectFork(vm.rpcUrl('sepolia'), FORK_BLOCK);
     uint256 forkId = vm.createFork(vm.rpcUrl('sepolia'));
     vm.selectFork(forkId);
 
@@ -171,22 +164,21 @@ contract E2EDeploymentGoerliTest is DeployGoerli, CommonDeploymentTest {
     run();
   }
 
-  function setupEnvironment() public override(DeployGoerli, Deploy) {
+  function setupEnvironment() public override(DeploySepolia, Deploy) {
     super.setupEnvironment();
   }
 
-  function setupPostEnvironment() public override(DeployGoerli, Deploy) {
+  function setupPostEnvironment() public override(DeploySepolia, Deploy) {
     super.setupPostEnvironment();
   }
 
-  function mintAirdrop() public override(DeployGoerli, Deploy) {
+  function mintAirdrop() public override(DeploySepolia, Deploy) {
     super.mintAirdrop();
   }
 }
 
 contract SepoliaDeploymentTest is SepoliaDeployment, CommonDeploymentTest {
   function setUp() public {
-    // vm.createSelectFork(vm.rpcUrl('sepolia'), GOERLI_DEPLOYMENT_BLOCK);
     uint256 forkId = vm.createFork(vm.rpcUrl('sepolia'));
     vm.selectFork(forkId);
 

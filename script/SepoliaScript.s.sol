@@ -37,7 +37,7 @@ contract SepoliaScript is SepoliaDeployment, Common, Script {
   }
 }
 
-contract GoerliDelegate is SepoliaDeployment, Common, Script {
+contract SepoliaDelegate is SepoliaDeployment, Common, Script {
   function setUp() public virtual {
     _governorPK = uint256(vm.envBytes32('GOERLI_GOVERNOR_PK'));
     chainId = 421_614;
