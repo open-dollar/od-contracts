@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {CollateralAuctionHouseForTest, ICollateralAuctionHouse} from '@testnet/mocks/CollateralAuctionHouseForTest.sol';
+import {
+  CollateralAuctionHouseForTest, ICollateralAuctionHouse
+} from '@testnet/mocks/CollateralAuctionHouseForTest.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ILiquidationEngine} from '@interfaces/ILiquidationEngine.sol';
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
@@ -48,8 +50,9 @@ contract Base is HaiTest {
   function setUp() public virtual {
     vm.startPrank(deployer);
 
-    collateralAuctionHouse =
-    new CollateralAuctionHouseForTest(address(mockSafeEngine), address(mockLiquidationEngine), address(mockOracleRelayer), collateralType, cahParams);
+    collateralAuctionHouse = new CollateralAuctionHouseForTest(
+      address(mockSafeEngine), address(mockLiquidationEngine), address(mockOracleRelayer), collateralType, cahParams
+    );
     label(address(collateralAuctionHouse), 'CollateralAuctionHouse');
 
     collateralAuctionHouse.addAuthorization(authorizedAccount);
@@ -163,7 +166,9 @@ contract Unit_CollateralAuctionHouse_Constructor is Base {
     vm.expectEmit();
     emit AddAuthorization(user);
 
-    new CollateralAuctionHouseForTest(address(mockSafeEngine), address(mockLiquidationEngine), address(mockOracleRelayer), collateralType, cahParams);
+    new CollateralAuctionHouseForTest(
+      address(mockSafeEngine), address(mockLiquidationEngine), address(mockOracleRelayer), collateralType, cahParams
+    );
   }
 
   function test_Set_SafeEngine() public happyPath {
@@ -178,7 +183,9 @@ contract Unit_CollateralAuctionHouse_Constructor is Base {
     vm.expectEmit();
     emit AddAuthorization(address(mockLiquidationEngine));
 
-    new CollateralAuctionHouseForTest(address(mockSafeEngine), address(mockLiquidationEngine), address(mockOracleRelayer), collateralType, cahParams);
+    new CollateralAuctionHouseForTest(
+      address(mockSafeEngine), address(mockLiquidationEngine), address(mockOracleRelayer), collateralType, cahParams
+    );
   }
 
   function test_Set_OracleRelayer() public happyPath {
@@ -194,8 +201,9 @@ contract Unit_CollateralAuctionHouse_Constructor is Base {
     vm.assume(_cahParams.maxDiscount > 0);
     vm.assume(_cahParams.perSecondDiscountUpdateRate <= RAY);
 
-    collateralAuctionHouse =
-    new CollateralAuctionHouseForTest(address(mockSafeEngine), address(mockLiquidationEngine), address(mockOracleRelayer), collateralType, _cahParams);
+    collateralAuctionHouse = new CollateralAuctionHouseForTest(
+      address(mockSafeEngine), address(mockLiquidationEngine), address(mockOracleRelayer), collateralType, _cahParams
+    );
 
     assertEq(abi.encode(collateralAuctionHouse.params()), abi.encode(_cahParams));
   }
@@ -203,19 +211,25 @@ contract Unit_CollateralAuctionHouse_Constructor is Base {
   function test_Revert_NullAddress_SafeEngine() public {
     vm.expectRevert(Assertions.NullAddress.selector);
 
-    new CollateralAuctionHouseForTest(address(0), address(mockLiquidationEngine), address(mockOracleRelayer), collateralType, cahParams);
+    new CollateralAuctionHouseForTest(
+      address(0), address(mockLiquidationEngine), address(mockOracleRelayer), collateralType, cahParams
+    );
   }
 
   function test_Revert_NullAddress_LiquidationEngine() public {
     vm.expectRevert(Assertions.NullAddress.selector);
 
-    new CollateralAuctionHouseForTest(address(mockSafeEngine), address(0), address(mockOracleRelayer), collateralType, cahParams);
+    new CollateralAuctionHouseForTest(
+      address(mockSafeEngine), address(0), address(mockOracleRelayer), collateralType, cahParams
+    );
   }
 
   function test_Revert_NullAddress_OracleRelayer() public {
     vm.expectRevert(Assertions.NullAddress.selector);
 
-    new CollateralAuctionHouseForTest(address(mockSafeEngine), address(mockLiquidationEngine), address(0), collateralType, cahParams);
+    new CollateralAuctionHouseForTest(
+      address(mockSafeEngine), address(mockLiquidationEngine), address(0), collateralType, cahParams
+    );
   }
 
   function test_Revert_NotGreaterOrEqualThan_MinDiscount(
@@ -227,7 +241,9 @@ contract Unit_CollateralAuctionHouse_Constructor is Base {
       abi.encodeWithSelector(Assertions.NotGreaterOrEqualThan.selector, _cahParams.minDiscount, _cahParams.maxDiscount)
     );
 
-    new CollateralAuctionHouseForTest(address(mockSafeEngine), address(mockLiquidationEngine), address(mockOracleRelayer), collateralType, _cahParams);
+    new CollateralAuctionHouseForTest(
+      address(mockSafeEngine), address(mockLiquidationEngine), address(mockOracleRelayer), collateralType, _cahParams
+    );
   }
 
   function test_Revert_NotLesserOrEqualThan_MinDiscount(
@@ -237,7 +253,9 @@ contract Unit_CollateralAuctionHouse_Constructor is Base {
 
     vm.expectRevert(abi.encodeWithSelector(Assertions.NotLesserOrEqualThan.selector, _cahParams.minDiscount, WAD));
 
-    new CollateralAuctionHouseForTest(address(mockSafeEngine), address(mockLiquidationEngine), address(mockOracleRelayer), collateralType, _cahParams);
+    new CollateralAuctionHouseForTest(
+      address(mockSafeEngine), address(mockLiquidationEngine), address(mockOracleRelayer), collateralType, _cahParams
+    );
   }
 
   function test_Revert_NotGreaterThan_MaxDiscount(
@@ -248,7 +266,9 @@ contract Unit_CollateralAuctionHouse_Constructor is Base {
 
     vm.expectRevert(abi.encodeWithSelector(Assertions.NotGreaterThan.selector, _cahParams.maxDiscount, 0));
 
-    new CollateralAuctionHouseForTest(address(mockSafeEngine), address(mockLiquidationEngine), address(mockOracleRelayer), collateralType, _cahParams);
+    new CollateralAuctionHouseForTest(
+      address(mockSafeEngine), address(mockLiquidationEngine), address(mockOracleRelayer), collateralType, _cahParams
+    );
   }
 
   function test_Revert_NotLesserOrEqualThan_PerSecondDiscountUpdateRate(
@@ -262,7 +282,9 @@ contract Unit_CollateralAuctionHouse_Constructor is Base {
       abi.encodeWithSelector(Assertions.NotLesserOrEqualThan.selector, _cahParams.perSecondDiscountUpdateRate, RAY)
     );
 
-    new CollateralAuctionHouseForTest(address(mockSafeEngine), address(mockLiquidationEngine), address(mockOracleRelayer), collateralType, _cahParams);
+    new CollateralAuctionHouseForTest(
+      address(mockSafeEngine), address(mockLiquidationEngine), address(mockOracleRelayer), collateralType, _cahParams
+    );
   }
 }
 

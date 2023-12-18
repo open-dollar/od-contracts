@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {DebtAuctionHouseForTest, IDebtAuctionHouse, DebtAuctionHouse} from '@testnet/mocks/DebtAuctionHouseForTest.sol';
+import {
+  DebtAuctionHouseForTest, IDebtAuctionHouse, DebtAuctionHouse
+} from '@testnet/mocks/DebtAuctionHouseForTest.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IProtocolToken} from '@interfaces/tokens/IProtocolToken.sol';
 import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';

@@ -737,9 +737,9 @@ contract OrphanSingleCollateralAuctionHouseTest is SingleCollateralAuctionHouseT
     override
     returns (ICollateralAuctionHouse _collateralAuctionHouse)
   {
-    return
-    new CollateralAuctionHouse(address(safeEngine), address(liquidationEngine), address(oracleRelayer), 'collateralType',
-         _cahParams);
+    return new CollateralAuctionHouse(
+      address(safeEngine), address(liquidationEngine), address(oracleRelayer), 'collateralType', _cahParams
+    );
   }
 
   function _modifyParameters(bytes32 _parameter, bytes memory _data) internal override {
