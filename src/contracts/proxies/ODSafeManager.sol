@@ -5,6 +5,7 @@ import {SAFEHandler} from '@contracts/proxies/SAFEHandler.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ILiquidationEngine} from '@interfaces/ILiquidationEngine.sol';
 import {IVault721} from '@interfaces/proxies/IVault721.sol';
+import {ITaxCollector} from '@interfaces/ITaxCollector.sol';
 
 import {Math} from '@libraries/Math.sol';
 import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
@@ -27,6 +28,8 @@ contract ODSafeManager is IODSafeManager {
 
   // --- ERC721 ---
   IVault721 public vault721;
+
+  address public taxCollector;
 
   uint256 internal _safeId; // Auto incremental
   mapping(address _safeOwner => EnumerableSet.UintSet) private _usrSafes;
@@ -72,10 +75,11 @@ contract ODSafeManager is IODSafeManager {
     _;
   }
 
-  constructor(address _safeEngine, address _vault721) {
+  constructor(address _safeEngine, address _vault721, address _taxCollector) {
     safeEngine = _safeEngine.assertNonNull();
     vault721 = IVault721(_vault721);
     vault721.initializeManager();
+    taxCollector = _taxCollector.assertNonNull();
   }
 
   // --- Getters ---
@@ -169,11 +173,17 @@ contract ODSafeManager is IODSafeManager {
   function modifySAFECollateralization(
     uint256 _safe,
     int256 _deltaCollateral,
-    int256 _deltaDebt
+    int256 _deltaDebt,
+    bool _nonSafeHandlerAddress
   ) external safeAllowed(_safe) {
     SAFEData memory _sData = _safeData[_safe];
+    if (_deltaDebt != 0) {
+      ITaxCollector(taxCollector).taxSingle(_sData.collateralType);
+    }
+    address collateralSource = _nonSafeHandlerAddress ? msg.sender : _sData.safeHandler;
+    address debtDestination = collateralSource;
     ISAFEEngine(safeEngine).modifySAFECollateralization(
-      _sData.collateralType, _sData.safeHandler, _sData.safeHandler, _sData.safeHandler, _deltaCollateral, _deltaDebt
+      _sData.collateralType, _sData.safeHandler, collateralSource, debtDestination, _deltaCollateral, _deltaDebt
     );
     emit ModifySAFECollateralization(msg.sender, _safe, _deltaCollateral, _deltaDebt);
   }
