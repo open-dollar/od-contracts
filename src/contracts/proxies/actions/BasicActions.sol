@@ -227,7 +227,7 @@ contract BasicActions is CommonActions, IBasicActions {
     int256 _deltaCollateral,
     int256 _deltaDebt
   ) external delegateCall {
-    _modifySAFECollateralization(_manager, _safeId, _deltaCollateral, _deltaDebt);
+    _modifySAFECollateralization(_manager, _safeId, _deltaCollateral, _deltaDebt, false);
   }
 
   /// @inheritdoc IBasicActions
