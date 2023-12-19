@@ -20,7 +20,7 @@ contract SimulationPIDController is TestParams, Deploy, HaiTest {
   using Math for uint256;
 
   OracleForTest marketOracle;
-  string filePath = './test/simulations/pid-controller/';
+  string filePath = './test/testnet/simulations/pid-controller/';
 
   function setUp() public {
     marketOracle = new OracleForTest(1e18);
@@ -136,11 +136,15 @@ contract SimulationPIDController is TestParams, Deploy, HaiTest {
   }
 
   modifier setupPID(int256 _kp, int256 _ki, uint256 _pscl) {
+    address[] memory accounts = pidController.authorizedAccounts();
+
+    vm.startPrank(accounts[0]);
     pidController.modifyParameters('kp', abi.encode(_kp));
     pidController.modifyParameters('ki', abi.encode(_ki));
     pidController.modifyParameters('perSecondCumulativeLeak', abi.encode(_pscl));
     marketOracle.setPriceAndValidity(1e18, true);
     oracleRelayer.redemptionPrice();
+    vm.stopPrank();
     _;
   }
 
