@@ -39,11 +39,8 @@ contract PIDRateSetterTest is DSTest {
     oracleRelayer = new MockOracleRelayer(address(69), orcl, _oracleRelayerParams);
 
     calculator = new MockPIDCalculator();
-    rateSetter = new PIDRateSetter(
-          address(oracleRelayer),
-          address(calculator),
-          IPIDRateSetter.PIDRateSetterParams(periodSize)
-        );
+    rateSetter =
+      new PIDRateSetter(address(oracleRelayer), address(calculator), IPIDRateSetter.PIDRateSetterParams(periodSize));
     oracleRelayer.addAuthorization(address(rateSetter));
   }
 

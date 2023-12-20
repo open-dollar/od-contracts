@@ -70,8 +70,8 @@ contract SingleAccountingEngineTest is DSTest {
     });
 
     accountingEngine = new AccountingEngine(
-          address(safeEngine), address(surplusAuctionHouseOne), address(debtAuctionHouse), _accountingEngineParams
-        );
+      address(safeEngine), address(surplusAuctionHouseOne), address(debtAuctionHouse), _accountingEngineParams
+    );
     surplusAuctionHouseOne.addAuthorization(address(accountingEngine));
 
     debtAuctionHouse.addAuthorization(address(accountingEngine));
@@ -148,13 +148,16 @@ contract SingleAccountingEngineTest is DSTest {
 
     SAH_ONE newSAH_ONE = new SAH_ONE(address(safeEngine), address(protocolToken), _sahParams);
 
-    DAH newDAH = new DAH(address(safeEngine), address(protocolToken), 
-    IDebtAuctionHouse.DebtAuctionHouseParams({
-      bidDecrease: 1.05e18,
-      amountSoldIncrease: 1.5e18,
-      bidDuration: 3 hours,
-      totalAuctionLength: 2 days
-    }));
+    DAH newDAH = new DAH(
+      address(safeEngine),
+      address(protocolToken),
+      IDebtAuctionHouse.DebtAuctionHouseParams({
+        bidDecrease: 1.05e18,
+        amountSoldIncrease: 1.5e18,
+        bidDuration: 3 hours,
+        totalAuctionLength: 2 days
+      })
+    );
 
     newSAH_ONE.addAuthorization(address(accountingEngine));
     newDAH.addAuthorization(address(accountingEngine));

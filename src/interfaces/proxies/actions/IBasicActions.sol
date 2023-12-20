@@ -21,13 +21,13 @@ interface IBasicActions is ICommonActions {
    * @param  _usr Address of the user to allow/disallow
    * @param  _ok Boolean state to allow/disallow
    */
-  function allowSAFE(address _manager, uint256 _safe, address _usr, uint256 _ok) external;
+  function allowSAFE(address _manager, uint256 _safe, address _usr, bool _ok) external;
   /**
    * @notice Allow/disallow a handler address to manage the safe
    * @param  _usr Address of the user to allow/disallow
    * @param  _ok Boolean state to allow/disallow
    */
-  function allowHandler(address _manager, address _usr, uint256 _ok) external;
+  function allowHandler(address _manager, address _usr, bool _ok) external;
   /**
    * @notice Modify a SAFE's collateralization ratio while keeping the generated COIN or collateral freed in the safe handler address
    * @param  _safe Id of the SAFE
@@ -95,34 +95,20 @@ interface IBasicActions is ICommonActions {
   /**
    * @notice Generates debt and sends COIN amount to msg.sender
    * @param  _manager Address of the ODSafeManager contract
-   * @param  _taxCollector Address of the TaxCollector contract
    * @param  _coinJoin Address of the CoinJoin contract
    * @param  _safeId Id of the SAFE
    * @param  _deltaWad Amount of COIN to generate [wad]
    */
-  function generateDebt(
-    address _manager,
-    address _taxCollector,
-    address _coinJoin,
-    uint256 _safeId,
-    uint256 _deltaWad
-  ) external;
+  function generateDebt(address _manager, address _coinJoin, uint256 _safeId, uint256 _deltaWad) external;
 
   /**
    * @notice Repays an amount of debt
    * @param  _manager Address of the ODSafeManager contract
-   * @param  _taxCollector Address of the TaxCollector contract
    * @param  _coinJoin Address of the CoinJoin contract
    * @param  _safeId Id of the SAFE
    * @param  _deltaWad Amount of COIN to repay [wad]
    */
-  function repayDebt(
-    address _manager,
-    address _taxCollector,
-    address _coinJoin,
-    uint256 _safeId,
-    uint256 _deltaWad
-  ) external;
+  function repayDebt(address _manager, address _coinJoin, uint256 _safeId, uint256 _deltaWad) external;
 
   /**
    * @notice Locks a collateral token amount in the SAFE
@@ -145,17 +131,15 @@ interface IBasicActions is ICommonActions {
   /**
    * @notice Repays the total amount of debt of a SAFE
    * @param  _manager Address of the ODSafeManager contract
-   * @param  _taxCollector Address of the TaxCollector contract
    * @param  _coinJoin Address of the CoinJoin contract
    * @param  _safeId Id of the SAFE
    * @dev    This method is used to close a SAFE's debt, when the amount of debt is increasing due to stability fees
    */
-  function repayAllDebt(address _manager, address _taxCollector, address _coinJoin, uint256 _safeId) external;
+  function repayAllDebt(address _manager, address _coinJoin, uint256 _safeId) external;
 
   /**
    * @notice Locks a collateral token amount in the SAFE and generates debt
    * @param  _manager Address of the ODSafeManager contract
-   * @param  _taxCollector Address of the TaxCollector contract
    * @param  _collateralJoin Address of the CollateralJoin contract
    * @param  _coinJoin Address of the CoinJoin contract
    * @param  _safe Id of the SAFE
@@ -164,7 +148,6 @@ interface IBasicActions is ICommonActions {
    */
   function lockTokenCollateralAndGenerateDebt(
     address _manager,
-    address _taxCollector,
     address _collateralJoin,
     address _coinJoin,
     uint256 _safe,
@@ -175,7 +158,6 @@ interface IBasicActions is ICommonActions {
   /**
    * @notice Creates a SAFE, locks a collateral token amount in it and generates debt
    * @param  _manager Address of the ODSafeManager contract
-   * @param  _taxCollector Address of the TaxCollector contract
    * @param  _collateralJoin Address of the CollateralJoin contract
    * @param  _coinJoin Address of the CoinJoin contract
    * @param  _cType Bytes32 representing the collateral type
@@ -185,7 +167,6 @@ interface IBasicActions is ICommonActions {
    */
   function openLockTokenCollateralAndGenerateDebt(
     address _manager,
-    address _taxCollector,
     address _collateralJoin,
     address _coinJoin,
     bytes32 _cType,
@@ -196,7 +177,6 @@ interface IBasicActions is ICommonActions {
   /**
    * @notice Repays debt and unlocks a collateral token amount from the SAFE
    * @param  _manager Address of the ODSafeManager contract
-   * @param  _taxCollector Address of the TaxCollector contract
    * @param  _collateralJoin Address of the CollateralJoin contract
    * @param  _coinJoin Address of the CoinJoin contract
    * @param  _safeId Id of the SAFE
@@ -205,7 +185,6 @@ interface IBasicActions is ICommonActions {
    */
   function repayDebtAndFreeTokenCollateral(
     address _manager,
-    address _taxCollector,
     address _collateralJoin,
     address _coinJoin,
     uint256 _safeId,
@@ -216,7 +195,6 @@ interface IBasicActions is ICommonActions {
   /**
    * @notice Repays all debt and unlocks collateral from the SAFE
    * @param  _manager Address of the ODSafeManager contract
-   * @param  _taxCollector Address of the TaxCollector contract
    * @param  _collateralJoin Address of the CollateralJoin contract
    * @param  _coinJoin Address of the CoinJoin contract
    * @param  _safeId Id of the SAFE
@@ -224,7 +202,6 @@ interface IBasicActions is ICommonActions {
    */
   function repayAllDebtAndFreeTokenCollateral(
     address _manager,
-    address _taxCollector,
     address _collateralJoin,
     address _coinJoin,
     uint256 _safeId,

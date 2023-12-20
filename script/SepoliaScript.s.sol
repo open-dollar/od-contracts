@@ -5,23 +5,23 @@ import '@script/Contracts.s.sol';
 import {Script, console} from 'forge-std/Script.sol';
 import {Params, ParamChecker, WSTETH, ARB} from '@script/Params.s.sol';
 import {Common} from '@script/Common.s.sol';
-import {GoerliDeployment} from '@script/GoerliDeployment.s.sol';
+import {SepoliaDeployment} from '@script/SepoliaDeployment.s.sol';
 import '@script/Registry.s.sol';
 
 /**
- * @title  GoerliScript
+ * @title  SepoliaScript
  * @notice This contract is used to deploy the system on Goerli
- * @dev    This contract imports deployed addresses from `GoerliDeployment.s.sol`
+ * @dev    This contract imports deployed addresses from `SepoliaDeployment.s.sol`
  * @dev    Mainnet has no scripting implementation (shouldn't be used with EOAs)
  */
-contract GoerliScript is GoerliDeployment, Common, Script {
+contract SepoliaScript is SepoliaDeployment, Common, Script {
   function setUp() public virtual {
     _governorPK = uint256(vm.envBytes32('GOERLI_GOVERNOR_PK'));
     chainId = 421_614;
   }
 
   /**
-   * @notice This script is left as an example on how to use GoerliScript contract
+   * @notice This script is left as an example on how to use SepoliaScript contract
    * @dev    This script is executed with `yarn script:sepolia` command
    */
   function run() public {
@@ -37,7 +37,7 @@ contract GoerliScript is GoerliDeployment, Common, Script {
   }
 }
 
-contract GoerliDelegate is GoerliDeployment, Common, Script {
+contract SepoliaDelegate is SepoliaDeployment, Common, Script {
   function setUp() public virtual {
     _governorPK = uint256(vm.envBytes32('GOERLI_GOVERNOR_PK'));
     chainId = 421_614;

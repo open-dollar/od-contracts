@@ -311,13 +311,13 @@ contract Unit_LiquidationEngine_Constructor is Base {
   function test_Revert_Null_SafeEngine() public {
     vm.expectRevert(Assertions.NullAddress.selector);
 
-    new LiquidationEngine(address(0),  address(mockAccountingEngine), liquidationEngineParams);
+    new LiquidationEngine(address(0), address(mockAccountingEngine), liquidationEngineParams);
   }
 
   function test_Revert_Null_AccountingEngine() public {
     vm.expectRevert(Assertions.NullAddress.selector);
 
-    new LiquidationEngine(address(mockSafeEngine),  address(0), liquidationEngineParams);
+    new LiquidationEngine(address(mockSafeEngine), address(0), liquidationEngineParams);
   }
 }
 
@@ -1708,8 +1708,9 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
   {
     vm.assume(_liquidation.safeDebt < type(uint256).max);
 
-    ISAFESaviour _testSaveSaviour =
-    new SAFESaviourIncreaseGeneratedDebtOrDecreaseCollateral(_liquidation.safeCollateral, _liquidation.safeDebt, false);
+    ISAFESaviour _testSaveSaviour = new SAFESaviourIncreaseGeneratedDebtOrDecreaseCollateral(
+      _liquidation.safeCollateral, _liquidation.safeDebt, false
+    );
     _mockChosenSafeSaviour(collateralType, safe, address(_testSaveSaviour));
     _mockSafeSaviours(address(_testSaveSaviour), 1);
     _mockSafeEngineSafes(collateralType, safe, _liquidation.safeCollateral, _liquidation.safeDebt);
@@ -1739,8 +1740,9 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     public
     happyPathFullLiquidation(_liquidation)
   {
-    ISAFESaviour _testSaveSaviour =
-    new SAFESaviourCollateralTypeModifier(_liquidation.accumulatedRate, 0, _liquidation.safeCollateral, _liquidation.safeDebt);
+    ISAFESaviour _testSaveSaviour = new SAFESaviourCollateralTypeModifier(
+      _liquidation.accumulatedRate, 0, _liquidation.safeCollateral, _liquidation.safeDebt
+    );
     _mockChosenSafeSaviour(collateralType, safe, address(_testSaveSaviour));
     _mockSafeSaviours(address(_testSaveSaviour), 1);
 
