@@ -65,7 +65,7 @@ contract AnvilFork is AnvilDeployment, Test {
   address[3] public users;
   address[2] public newUsers;
   address[3] public proxies;
-  bytes32[5] public cTypes;
+  bytes32[4] public cTypes;
 
   function setUp() public virtual {
     users[0] = ALICE;
@@ -79,7 +79,6 @@ contract AnvilFork is AnvilDeployment, Test {
     cTypes[1] = WSTETH;
     cTypes[2] = CBETH;
     cTypes[3] = RETH;
-    cTypes[4] = MAGIC;
 
     deployProxies();
     labelVars();
@@ -106,6 +105,10 @@ contract AnvilFork is AnvilDeployment, Test {
     vm.label(proxies[0], 'A-proxy');
     vm.label(proxies[1], 'B-proxy');
     vm.label(proxies[2], 'C-proxy');
+    for (uint256 i; i < cTypes.length; i++) {
+      string memory cTypeName = erc20[cTypes[i]].name();
+      vm.label(address(erc20[cTypes[i]]), cTypeName);
+    }
   }
 
   function mintCollateralAndOpenSafes() public {
