@@ -34,7 +34,7 @@ abstract contract Deploy is Common, Script {
     inputs[1] = 'rev-parse';
     inputs[2] = 'HEAD';
 
-    // bytes memory res = vm.ffi(inputs);
+    _chainId = getChainId();
 
     // Deploy oracle factories used to setup the environment
     deployOracleFactories();
@@ -97,13 +97,11 @@ contract DeployMainnet is MainnetParams, Deploy {
     chainId = 42_161;
     _create2Factory = Create2Factory(MAINNET_CREATE2_FACTORY);
     if (SEMI_RANDOM_SALT == 0) {
-      salt1 = MAINNET_SALT_SYSTEMCOIN;
-      salt2 = MAINNET_SALT_PROTOCOLTOKEN;
-      salt3 = MAINNET_SALT_VAULT721;
+      _systemCoinSalt = MAINNET_SALT_SYSTEMCOIN;
+      _vault721Salt = MAINNET_SALT_VAULT721;
     } else {
-      salt1 = getSemiRandSalt();
-      salt2 = getSemiRandSalt();
-      salt3 = getSemiRandSalt();
+      _systemCoinSalt = getSemiRandSalt();
+      _vault721Salt = getSemiRandSalt();
     }
   }
 
@@ -172,13 +170,11 @@ contract DeploySepolia is SepoliaParams, Deploy {
     chainId = 421_614;
     _create2Factory = Create2Factory(SEPOLIA_CREATE2_FACTORY);
     if (SEMI_RANDOM_SALT == 0) {
-      salt1 = SEPOLIA_SALT_SYSTEMCOIN;
-      salt2 = SEPOLIA_SALT_PROTOCOLTOKEN;
-      salt3 = SEPOLIA_SALT_VAULT721;
+      _systemCoinSalt = SEPOLIA_SALT_SYSTEMCOIN;
+      _vault721Salt = SEPOLIA_SALT_VAULT721;
     } else {
-      salt1 = getSemiRandSalt();
-      salt2 = getSemiRandSalt();
-      salt3 = getSemiRandSalt();
+      _systemCoinSalt = getSemiRandSalt();
+      _vault721Salt = getSemiRandSalt();
     }
   }
 
@@ -202,7 +198,6 @@ contract DeploySepolia is SepoliaParams, Deploy {
     // to USD - Sepolia does not have Chainlink feeds now
     chainlinkEthUSDPriceFeed =
       chainlinkRelayerFactory.deployChainlinkRelayer(SEPOLIA_CHAINLINK_ETH_USD_FEED, ORACLE_INTERVAL_TEST);
-    // chainlinkEthUSDPriceFeed = new OracleForTestnet(1815e18);
 
     // to ETH
     OracleForTestnet _arbETHPriceFeed = new OracleForTestnet(GOERLI_ARB_ETH_PRICE_FEED);

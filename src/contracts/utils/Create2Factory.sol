@@ -28,9 +28,12 @@ contract Create2Factory {
     vault721Hash = keccak256(_vault721);
   }
 
-  function deployTokens(uint256 _salt1, uint256 _salt2) external returns (address _deployment1, address _deployment2) {
-    _deployment1 = _deploy(_salt1, _systemCoin);
-    _deployment2 = _deploy(_salt2, _protocolToken);
+  function deployProtocolToken(uint256 _salt) external returns (address _deployment) {
+    _deployment = _deploy(_salt, _protocolToken);
+  }
+
+  function deploySystemCoin(uint256 _salt) external returns (address _deployment) {
+    _deployment = _deploy(_salt, _systemCoin);
   }
 
   function deployVault721(uint256 _salt) external returns (address _deployment) {

@@ -6,6 +6,9 @@ uint256 constant SEMI_RANDOM_SALT = 1; // set to 0 to use Salts below, set to 1 
 
 // --- ARB Sepolia Testnet ---
 
+// Protocol Token
+address constant SEPOLIA_PROTOCOL_TOKEN = address(0);
+
 // Governance Settings
 uint256 constant TEST_INIT_VOTING_DELAY = 1;
 uint256 constant TEST_INIT_VOTING_PERIOD = 15;
@@ -44,6 +47,9 @@ address constant SEPOLIA_CHAINLINK_ARB_USD_FEED = 0xD1092a65338d049DB68D7Be6bD89
 address constant SEPOLIA_WETH = 0x980B62Da83eFf3D4576C647993b0c1D7faf17c73;
 
 // --- ARB Mainnet ---
+
+// Protocol Token
+address constant MAINNET_PROTOCOL_TOKEN = address(0);
 
 // Governance Settings
 uint256 constant MAINNET_INIT_VOTING_DELAY = 332_308;
