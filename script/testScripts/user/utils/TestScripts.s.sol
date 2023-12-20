@@ -53,7 +53,6 @@ contract TestScripts is Deployment {
     bytes memory payload = abi.encodeWithSelector(
       basicActions.lockTokenCollateralAndGenerateDebt.selector,
       address(safeManager),
-      address(taxCollector),
       address(collateralJoin[_cType]),
       address(coinJoin),
       _safeId,
@@ -83,12 +82,7 @@ contract TestScripts is Deployment {
    */
   function genDebt(uint256 _safeId, uint256 _deltaWad, address _proxy) public {
     bytes memory payload = abi.encodeWithSelector(
-      basicActions.generateDebt.selector,
-      address(safeManager),
-      address(taxCollector),
-      address(coinJoin),
-      _safeId,
-      _deltaWad
+      basicActions.generateDebt.selector, address(safeManager), address(coinJoin), _safeId, _deltaWad
     );
     ODProxy(_proxy).execute(address(basicActions), payload);
   }

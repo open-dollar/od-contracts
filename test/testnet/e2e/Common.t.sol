@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
+import {MAINNET_WETH, SEPOLIA_WETH} from '@script/Registry.s.sol';
 import {HaiTest} from '@testnet/utils/HaiTest.t.sol';
 import {OD, OD_INITIAL_PRICE, ETH_A} from '@script/Params.s.sol';
 import {Deploy} from '@script/Deploy.s.sol';
@@ -32,7 +33,7 @@ contract DeployForTest is TestParams, Deploy {
   }
 
   function setupEnvironment() public virtual override {
-    WETH9 weth = WETH9(payable(0x82aF49447D8a07e3bd95BD0d56f35241523fBab1));
+    WETH9 weth = WETH9(payable(MAINNET_WETH));
 
     systemCoinOracle = new OracleForTest(OD_INITIAL_PRICE); // 1 OD = 1 USD
 

@@ -368,7 +368,7 @@ abstract contract Common is Contracts, Params {
     }
     vault721.initialize(address(timelockController));
 
-    safeManager = new ODSafeManager(address(safeEngine), address(vault721));
+    safeManager = new ODSafeManager(address(safeEngine), address(vault721), address(taxCollector));
     nftRenderer =
       new NFTRenderer(address(vault721), address(oracleRelayer), address(taxCollector), address(collateralJoinFactory));
 

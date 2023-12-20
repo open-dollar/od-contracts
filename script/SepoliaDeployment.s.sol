@@ -7,9 +7,6 @@ import {SEPOLIA_CAMELOT_RELAYER_FACTORY} from '@script/Registry.s.sol';
 import {SepoliaContracts} from '@script/SepoliaContracts.s.sol';
 
 abstract contract SepoliaDeployment is Contracts, SepoliaParams, SepoliaContracts {
-  // NOTE: The last significant change in the Goerli deployment, to be used in the test scenarios
-  uint256 constant GOERLI_DEPLOYMENT_BLOCK = 12_872_701;
-
   /**
    * @notice All the addresses that were deployed in the Goerli deployment, in order of creation
    * @dev    This is used to import the deployed contracts to the test scripts
