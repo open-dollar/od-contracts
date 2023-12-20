@@ -236,8 +236,9 @@ contract SingleGlobalSettlementTest is DSTest {
       debtAuctionBidSize: 0
     });
 
-    accountingEngine =
-    new AccountingEngine(address(safeEngine), address(surplusAuctionHouseOne), address(debtAuctionHouse), _accountingEngineParams);
+    accountingEngine = new AccountingEngine(
+      address(safeEngine), address(surplusAuctionHouseOne), address(debtAuctionHouse), _accountingEngineParams
+    );
     postSettlementSurplusDrain = new SettlementSurplusAuctioneer(address(accountingEngine), address(0x45));
     surplusAuctionHouseOne.addAuthorization(address(postSettlementSurplusDrain));
 
@@ -253,34 +254,32 @@ contract SingleGlobalSettlementTest is DSTest {
     IOracleRelayer.OracleRelayerParams memory _oracleRelayerParams =
       IOracleRelayer.OracleRelayerParams({redemptionRateUpperBound: RAY * WAD, redemptionRateLowerBound: 1});
     oracleRelayer = new OracleRelayerForTest({
-      _safeEngine: address(safeEngine), 
-      _systemCoinOracle: IBaseOracle(address(_mockSystemCoinOracle)), 
+      _safeEngine: address(safeEngine),
+      _systemCoinOracle: IBaseOracle(address(_mockSystemCoinOracle)),
       _oracleRelayerParams: _oracleRelayerParams
-      });
+    });
     safeEngine.addAuthorization(address(oracleRelayer));
 
-    collateralAuctionHouseFactory = new CollateralAuctionHouseFactory(
-      address(safeEngine),
-      address(liquidationEngine),
-      address(oracleRelayer)
-    );
+    collateralAuctionHouseFactory =
+      new CollateralAuctionHouseFactory(address(safeEngine), address(liquidationEngine), address(oracleRelayer));
     safeEngine.addAuthorization(address(collateralAuctionHouseFactory));
 
     IStabilityFeeTreasury.StabilityFeeTreasuryParams memory _stabilityFeeTreasuryParams = IStabilityFeeTreasury
       .StabilityFeeTreasuryParams({treasuryCapacity: 0, pullFundsMinThreshold: 0, surplusTransferDelay: 0});
-    stabilityFeeTreasury =
-    new StabilityFeeTreasury(address(safeEngine), address(accountingEngine), address(coinJoin), _stabilityFeeTreasuryParams);
+    stabilityFeeTreasury = new StabilityFeeTreasury(
+      address(safeEngine), address(accountingEngine), address(coinJoin), _stabilityFeeTreasuryParams
+    );
 
     globalSettlement = new GlobalSettlement(
-    address (safeEngine),
-    address (liquidationEngine),
-    address (oracleRelayer),
-    address (coinJoin),
-    address (collateralJoinFactory),
-    address (collateralAuctionHouseFactory),
-    address (stabilityFeeTreasury),
-    address (accountingEngine),
-    IGlobalSettlement.GlobalSettlementParams({shutdownCooldown: 1 hours})
+      address(safeEngine),
+      address(liquidationEngine),
+      address(oracleRelayer),
+      address(coinJoin),
+      address(collateralJoinFactory),
+      address(collateralAuctionHouseFactory),
+      address(stabilityFeeTreasury),
+      address(accountingEngine),
+      IGlobalSettlement.GlobalSettlementParams({shutdownCooldown: 1 hours})
     );
 
     safeEngine.addAuthorization(address(globalSettlement));

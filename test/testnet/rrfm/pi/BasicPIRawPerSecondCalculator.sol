@@ -45,12 +45,8 @@ contract BasicPIRawPerSecondCalculatorTest is DSTest {
 
     IPIDController.ControllerGains memory _pidControllerGains = IPIDController.ControllerGains({kp: Kp, ki: Ki});
 
-    calculator = new BasicPIRawPerSecondCalculator(
-        _pidControllerGains,
-        perSecondCumulativeLeak,
-        integralPeriodSize,
-        importedState
-      );
+    calculator =
+      new BasicPIRawPerSecondCalculator(_pidControllerGains, perSecondCumulativeLeak, integralPeriodSize, importedState);
 
     rateSetter =
       new MockPIDRateSetter(address(orcl), address(oracleRelayer), address(calculator), address(setterRelayer));

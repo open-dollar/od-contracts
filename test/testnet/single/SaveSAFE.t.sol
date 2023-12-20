@@ -179,8 +179,11 @@ contract SingleSaveSAFETest is DSTest {
 
     IOracleRelayer.OracleRelayerParams memory _oracleRelayerParams =
       IOracleRelayer.OracleRelayerParams({redemptionRateUpperBound: 1e45, redemptionRateLowerBound: 1});
-    oracleRelayer =
-    new OracleRelayer({_safeEngine: address(safeEngine), _systemCoinOracle: IBaseOracle(address(systemCoinFeed)), _oracleRelayerParams: _oracleRelayerParams});
+    oracleRelayer = new OracleRelayer({
+      _safeEngine: address(safeEngine),
+      _systemCoinOracle: IBaseOracle(address(systemCoinFeed)),
+      _oracleRelayerParams: _oracleRelayerParams
+    });
 
     IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams memory _pssahParams = IPostSettlementSurplusAuctionHouse
       .PostSettlementSAHParams({bidIncrease: 1.05e18, bidDuration: 3 hours, totalAuctionLength: 2 days});
@@ -207,8 +210,8 @@ contract SingleSaveSAFETest is DSTest {
     });
 
     accountingEngine = new AccountingEngine(
-          address(safeEngine), address(surplusAuctionHouse), address(debtAuctionHouse), _accountingEngineParams
-        );
+      address(safeEngine), address(surplusAuctionHouse), address(debtAuctionHouse), _accountingEngineParams
+    );
     surplusAuctionHouse.addAuthorization(address(accountingEngine));
     debtAuctionHouse.addAuthorization(address(accountingEngine));
     safeEngine.addAuthorization(address(accountingEngine));
@@ -253,8 +256,9 @@ contract SingleSaveSAFETest is DSTest {
       perSecondDiscountUpdateRate: RAY, // [ray]
       minimumBid: 1e18 // 1 system coin
     });
-    collateralAuctionHouse =
-    new CollateralAuctionHouse(address(safeEngine), address(liquidationEngine), address(oracleRelayer), 'gold', _cahParams);
+    collateralAuctionHouse = new CollateralAuctionHouse(
+      address(safeEngine), address(liquidationEngine), address(oracleRelayer), 'gold', _cahParams
+    );
 
     ILiquidationEngine.LiquidationEngineCollateralParams memory _liquidationEngineCollateralParams = ILiquidationEngine
       .LiquidationEngineCollateralParams({

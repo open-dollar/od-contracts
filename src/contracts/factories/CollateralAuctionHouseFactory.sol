@@ -95,7 +95,7 @@ contract CollateralAuctionHouseFactory is Authorizable, Modifiable, Disableable,
       _oracleRelayer: address(0), // read from factory
       _cType: _cType,
       _cahParams: _cahParams
-      });
+    });
 
     collateralAuctionHouses[_cType] = address(_collateralAuctionHouse);
     emit DeployCollateralAuctionHouse(_cType, address(_collateralAuctionHouse));
