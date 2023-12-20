@@ -13,12 +13,14 @@
   "contributors": [
     "cupOJoseph (https://github.com/cupOJoseph)",
     "daopunk (https://github.com/daopunk)",
+    "st4rgard3n (https://github.com/St4rgarden)",
     "wei3erHase (https://github.com/wei3erHase)",
     "0xGorilla (https://github.com/0xGorilla)",
     "0xJabberwock (https://github.com/0xJabberwock)",
     "0xRaccoon (https://github.com/0xRaccoon)"
   ],
   "scripts": {
+
     "build": "forge build",
     "coverage": "forge coverage",
     "deploy:anvil": "bash -c 'source .env && forge script DeployAnvil --with-gas-price 2000000000 -vvvvv --rpc-url $ANVIL_RPC --private-key $ANVIL_ONE --broadcast --ffi'",
