@@ -5,6 +5,10 @@ import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 
 interface IVault721 {
+  error NotGovernor();
+  error ProxyAlreadyExist();
+  error ZeroAddress();
+
   // public variables
   function governor() external returns (address);
   function safeManager() external returns (IODSafeManager);

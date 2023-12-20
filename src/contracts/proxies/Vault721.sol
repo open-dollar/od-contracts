@@ -34,7 +34,7 @@ contract Vault721 is ERC721EnumerableUpgradeable {
   /**
    * @dev initializes DAO timelockController contract
    */
-  function initialize(address _timelockController) external initializer {
+  function initialize(address _timelockController) external initializer nonZero(_timelockController) {
     timelockController = _timelockController;
     __ERC721_init('OpenDollar Vault', 'ODV');
   }
