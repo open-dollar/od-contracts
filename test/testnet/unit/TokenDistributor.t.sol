@@ -144,7 +144,9 @@ contract Unit_TokenDistributor_Constructor is Base {
   function test_Revert_Token_IsNull() public {
     vm.expectRevert(Assertions.NullAddress.selector);
 
-    new TokenDistributor(merkleRoot, ERC20VotesUpgradeable(address(0)), totalClaimable, claimPeriodStart, claimPeriodEnd, deployer);
+    new TokenDistributor(
+      merkleRoot, ERC20VotesUpgradeable(address(0)), totalClaimable, claimPeriodStart, claimPeriodEnd, deployer
+    );
   }
 
   function test_Revert_TotalClaimable_IsNull() public {

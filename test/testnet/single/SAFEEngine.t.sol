@@ -816,8 +816,8 @@ contract SingleLiquidationTest is DSTest {
     });
 
     accountingEngine = new AccountingEngine(
-          address(safeEngine), address(surplusAuctionHouse), address(debtAuctionHouse), _accountingEngineParams
-        );
+      address(safeEngine), address(surplusAuctionHouse), address(debtAuctionHouse), _accountingEngineParams
+    );
     surplusAuctionHouse.addAuthorization(address(accountingEngine));
     debtAuctionHouse.addAuthorization(address(accountingEngine));
     safeEngine.addAuthorization(address(accountingEngine));
@@ -860,10 +860,10 @@ contract SingleLiquidationTest is DSTest {
     IOracleRelayer.OracleRelayerParams memory _oracleRelayerParams =
       IOracleRelayer.OracleRelayerParams({redemptionRateUpperBound: RAY * WAD, redemptionRateLowerBound: 1});
     oracleRelayer = new OracleRelayer({
-        _safeEngine: address(safeEngine), 
-        _systemCoinOracle: IBaseOracle(address(mockSystemCoinOracle)), 
-        _oracleRelayerParams: _oracleRelayerParams
-        });
+      _safeEngine: address(safeEngine),
+      _systemCoinOracle: IBaseOracle(address(mockSystemCoinOracle)),
+      _oracleRelayerParams: _oracleRelayerParams
+    });
     safeEngine.addAuthorization(address(oracleRelayer));
 
     oracleFSM = new DelayedOracleForTest(1 ether, address(0));
@@ -884,8 +884,9 @@ contract SingleLiquidationTest is DSTest {
       perSecondDiscountUpdateRate: RAY, // [ray]
       minimumBid: 1e18 // 1 system coin
     });
-    collateralAuctionHouse =
-    new CollateralAuctionHouse(address(safeEngine), address(liquidationEngine), address(oracleRelayer), 'gold', _cahParams);
+    collateralAuctionHouse = new CollateralAuctionHouse(
+      address(safeEngine), address(liquidationEngine), address(oracleRelayer), 'gold', _cahParams
+    );
 
     ILiquidationEngine.LiquidationEngineCollateralParams memory _liquidationEngineCollateralParams = ILiquidationEngine
       .LiquidationEngineCollateralParams({

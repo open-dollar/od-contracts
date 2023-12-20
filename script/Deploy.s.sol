@@ -11,9 +11,8 @@ import {FixedPointMathLib} from '@isolmate/utils/FixedPointMathLib.sol';
 import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
 import {Script} from 'forge-std/Script.sol';
 import {Common} from '@script/Common.s.sol';
-import {GoerliParams} from '@script/GoerliParams.s.sol';
+import {SepoliaParams} from '@script/SepoliaParams.s.sol';
 import {MainnetParams} from '@script/MainnetParams.s.sol';
-import {IAlgebraPool} from '@interfaces/oracles/IAlgebraPool.sol';
 import {Create2Factory} from '@contracts/utils/Create2Factory.sol';
 
 abstract contract Deploy is Common, Script {
@@ -97,9 +96,15 @@ contract DeployMainnet is MainnetParams, Deploy {
     _deployerPk = uint256(vm.envBytes32('ARB_MAINNET_DEPLOYER_PK'));
     chainId = 42_161;
     _create2Factory = Create2Factory(MAINNET_CREATE2_FACTORY);
-    salt1 = MAINNET_SALT_SYSTEMCOIN;
-    salt2 = MAINNET_SALT_PROTOCOLTOKEN;
-    salt3 = MAINNET_SALT_VAULT721;
+    if (SEMI_RANDOM_SALT == 0) {
+      salt1 = MAINNET_SALT_SYSTEMCOIN;
+      salt2 = MAINNET_SALT_PROTOCOLTOKEN;
+      salt3 = MAINNET_SALT_VAULT721;
+    } else {
+      salt1 = getSemiRandSalt();
+      salt2 = getSemiRandSalt();
+      salt3 = getSemiRandSalt();
+    }
   }
 
   function mintAirdrop() public virtual override {
@@ -157,7 +162,7 @@ contract DeployMainnet is MainnetParams, Deploy {
   function setupPostEnvironment() public virtual override updateParams {}
 }
 
-contract DeployGoerli is GoerliParams, Deploy {
+contract DeploySepolia is SepoliaParams, Deploy {
   using FixedPointMathLib for uint256;
 
   IBaseOracle public chainlinkEthUSDPriceFeed;
@@ -166,9 +171,15 @@ contract DeployGoerli is GoerliParams, Deploy {
     _deployerPk = uint256(vm.envBytes32('ARB_SEPOLIA_DEPLOYER_PK'));
     chainId = 421_614;
     _create2Factory = Create2Factory(SEPOLIA_CREATE2_FACTORY);
-    salt1 = SEPOLIA_SALT_SYSTEMCOIN;
-    salt2 = SEPOLIA_SALT_PROTOCOLTOKEN;
-    salt3 = SEPOLIA_SALT_VAULT721;
+    if (SEMI_RANDOM_SALT == 0) {
+      salt1 = SEPOLIA_SALT_SYSTEMCOIN;
+      salt2 = SEPOLIA_SALT_PROTOCOLTOKEN;
+      salt3 = SEPOLIA_SALT_VAULT721;
+    } else {
+      salt1 = getSemiRandSalt();
+      salt2 = getSemiRandSalt();
+      salt3 = getSemiRandSalt();
+    }
   }
 
   function mintAirdrop() public virtual override {
@@ -222,7 +233,7 @@ contract DeployGoerli is GoerliParams, Deploy {
   function setupPostEnvironment() public virtual override updateParams {}
 }
 
-contract DeployAnvil is GoerliParams, Deploy {
+contract DeployAnvil is SepoliaParams, Deploy {
   function setUp() public virtual {
     _deployerPk = uint256(vm.envBytes32('ANVIL_ONE'));
     chainId = 31_337;

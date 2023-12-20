@@ -22,6 +22,10 @@ abstract contract Common is Contracts, Params {
     return id;
   }
 
+  function getSemiRandSalt() public view returns (uint256) {
+    return uint256(keccak256(abi.encode(block.number, block.timestamp)));
+  }
+
   function deployEthCollateralContracts() public updateParams {
     // deploy ETHJoin and CollateralAuctionHouse
     ethJoin = new ETHJoin(address(safeEngine), ETH_A);
@@ -364,7 +368,7 @@ abstract contract Common is Contracts, Params {
     }
     vault721.initialize(address(timelockController));
 
-    safeManager = new ODSafeManager(address(safeEngine), address(vault721));
+    safeManager = new ODSafeManager(address(safeEngine), address(vault721), address(taxCollector));
     nftRenderer =
       new NFTRenderer(address(vault721), address(oracleRelayer), address(taxCollector), address(collateralJoinFactory));
 

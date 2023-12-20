@@ -52,7 +52,7 @@ contract Base is HaiTest {
       _pidParams: _pidControllerParams,
       _importedState: _importedState,
       _mockPIDController: mockPIDController
-  });
+    });
   }
 
   function setUp() public virtual {
@@ -307,7 +307,7 @@ contract Unit_PIDController_Constructor is Base {
       _cGains: IPIDController.ControllerGains({kp: 1e9, ki: 1e9}),
       _pidParams: _controllerParams,
       _importedState: IPIDController.DeviationObservation(0, 0, 0)
-  });
+    });
     assertEq(abi.encode(pidController.params()), abi.encode(_controllerParams));
   }
 

@@ -56,11 +56,7 @@ contract PIRawPerSecondCalculatorTest is DSTest {
       feedbackOutputLowerBound: feedbackOutputLowerBound
     });
 
-    calculator = new PIRawPerSecondCalculator(
-        _pidControllerGains,
-        _pidControllerParams,
-        importedState
-      );
+    calculator = new PIRawPerSecondCalculator(_pidControllerGains, _pidControllerParams, importedState);
 
     rateSetter =
       new MockPIDRateSetter(address(orcl), address(oracleRelayer), address(calculator), address(setterRelayer));

@@ -56,11 +56,7 @@ contract PIScaledPerSecondCalculatorTest is DSTest {
       feedbackOutputLowerBound: feedbackOutputLowerBound
     });
 
-    calculator = new PIScaledPerSecondCalculator(
-      _pidControllerGains,
-      _pidControllerParams,
-        importedState
-      );
+    calculator = new PIScaledPerSecondCalculator(_pidControllerGains, _pidControllerParams, importedState);
 
     rateSetter =
       new MockPIDRateSetter(address(orcl), address(oracleRelayer), address(calculator), address(setterRelayer));

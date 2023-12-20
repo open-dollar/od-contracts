@@ -118,8 +118,9 @@ contract Base is HaiTest {
     _mockCoinJoinSystemCoin(address(mockSystemCoin));
     _mockSystemCoinApprove(address(mockCoinJoin), type(uint256).max, true);
 
-    stabilityFeeTreasury =
-    new StabilityFeeTreasuryForTest(address(mockSafeEngine), mockExtraSurplusReceiver, address(mockCoinJoin), stabilityFeeTreasuryParams);
+    stabilityFeeTreasury = new StabilityFeeTreasuryForTest(
+      address(mockSafeEngine), mockExtraSurplusReceiver, address(mockCoinJoin), stabilityFeeTreasuryParams
+    );
     label(address(stabilityFeeTreasury), 'StabilityFeeTreasury');
 
     stabilityFeeTreasury.addAuthorization(authorizedAccount);
@@ -141,7 +142,9 @@ contract Unit_StabilityFeeTreasury_Constructor is Base {
     emit AddAuthorization(user);
 
     vm.prank(user);
-    new StabilityFeeTreasuryForTest(address(mockSafeEngine), mockExtraSurplusReceiver, address(mockCoinJoin), stabilityFeeTreasuryParams);
+    new StabilityFeeTreasuryForTest(
+      address(mockSafeEngine), mockExtraSurplusReceiver, address(mockCoinJoin), stabilityFeeTreasuryParams
+    );
   }
 
   function test_Set_ContractEnabled() public {
@@ -171,8 +174,9 @@ contract Unit_StabilityFeeTreasury_Constructor is Base {
   function test_Set_StabilityFeeTreasury_Params(
     IStabilityFeeTreasury.StabilityFeeTreasuryParams memory _stabilityFeeTreasuryParams
   ) public {
-    stabilityFeeTreasury =
-    new StabilityFeeTreasuryForTest(address(mockSafeEngine), mockExtraSurplusReceiver, address(mockCoinJoin), _stabilityFeeTreasuryParams);
+    stabilityFeeTreasury = new StabilityFeeTreasuryForTest(
+      address(mockSafeEngine), mockExtraSurplusReceiver, address(mockCoinJoin), _stabilityFeeTreasuryParams
+    );
 
     assertEq(abi.encode(stabilityFeeTreasury.params()), abi.encode(_stabilityFeeTreasuryParams));
   }
@@ -182,13 +186,17 @@ contract Unit_StabilityFeeTreasury_Constructor is Base {
       address(mockSystemCoin), abi.encodeWithSelector(IERC20.approve.selector, address(mockCoinJoin), type(uint256).max)
     );
 
-    new StabilityFeeTreasuryForTest(address(mockSafeEngine), mockExtraSurplusReceiver, address(mockCoinJoin), stabilityFeeTreasuryParams);
+    new StabilityFeeTreasuryForTest(
+      address(mockSafeEngine), mockExtraSurplusReceiver, address(mockCoinJoin), stabilityFeeTreasuryParams
+    );
   }
 
   function test_Revert_NullAddress_SafeEngine() public {
     vm.expectRevert(Assertions.NullAddress.selector);
 
-    new StabilityFeeTreasuryForTest(address(0), mockExtraSurplusReceiver, address(mockCoinJoin), stabilityFeeTreasuryParams);
+    new StabilityFeeTreasuryForTest(
+      address(0), mockExtraSurplusReceiver, address(mockCoinJoin), stabilityFeeTreasuryParams
+    );
   }
 
   function test_Revert_NullAddress_SystemCoin() public {
@@ -196,13 +204,17 @@ contract Unit_StabilityFeeTreasury_Constructor is Base {
 
     vm.expectRevert(Assertions.NullAddress.selector);
 
-    new StabilityFeeTreasuryForTest(address(mockSafeEngine), mockExtraSurplusReceiver, address(mockCoinJoin), stabilityFeeTreasuryParams);
+    new StabilityFeeTreasuryForTest(
+      address(mockSafeEngine), mockExtraSurplusReceiver, address(mockCoinJoin), stabilityFeeTreasuryParams
+    );
   }
 
   function test_Revert_NullAddress_ExtraSurplusReceiver() public {
     vm.expectRevert(Assertions.NullAddress.selector);
 
-    new StabilityFeeTreasuryForTest(address(mockSafeEngine), address(0), address(mockCoinJoin), stabilityFeeTreasuryParams);
+    new StabilityFeeTreasuryForTest(
+      address(mockSafeEngine), address(0), address(mockCoinJoin), stabilityFeeTreasuryParams
+    );
   }
 }
 

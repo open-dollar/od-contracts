@@ -52,10 +52,8 @@ contract PRawPerSecondCalculatorTest is DSTest {
     });
 
     calculator = new PRawPerSecondCalculator(
-      _pidControllerGains,
-      _pidControllerParams,
-        IPIDController.DeviationObservation(0,0,0)
-      );
+      _pidControllerGains, _pidControllerParams, IPIDController.DeviationObservation(0, 0, 0)
+    );
 
     rateSetter =
       new MockPIDRateSetter(address(orcl), address(oracleRelayer), address(calculator), address(setterRelayer));
