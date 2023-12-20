@@ -30,6 +30,9 @@ address constant SEPOLIA_CREATE2_FACTORY = 0xb9d4cbCcF0152040c3269D9701EE6842619
 address constant SEPOLIA_CAMELOT_RELAYER_FACTORY = address(0);
 address constant SEPOLIA_CAMELOT_RELAYER = address(0);
 
+// SystemCoinOracle (pre-deployed @ sol 0.7.6 as denominatedOracle)
+address constant SEPOLIA_SYSTEM_COIN_ORACLE = address(0);
+
 // Algebra protocol (not deployed by Camelot)
 address constant SEPOLIA_CAMELOT_AMM_FACTORY = 0x21852176141b8D139EC5D3A1041cdC31F0F20b94;
 

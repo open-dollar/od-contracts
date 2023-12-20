@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import {TestScripts} from '@script/user/utils/TestScripts.s.sol';
+import {TestScripts} from '@script/testScripts/user/utils/TestScripts.s.sol';
 import {MintableERC20} from '@contracts/for-test/MintableVoteERC20.sol';
 
 // BROADCAST

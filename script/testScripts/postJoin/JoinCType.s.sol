@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {CTypeBase} from '@script/postdeployment/base/CTypeBase.s.sol';
+import {CTypeBase} from '@script/testScripts/postJoin/base/CTypeBase.s.sol';
 import {ICollateralJoin} from '@interfaces/utils/ICollateralJoin.sol';
 
 // BROADCAST
