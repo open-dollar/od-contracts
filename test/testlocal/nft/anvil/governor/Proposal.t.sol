@@ -3,15 +3,18 @@ pragma solidity 0.8.19;
 
 import {IVotes} from '@openzeppelin/governance/utils/IVotes.sol';
 import {AnvilFork} from '@testlocal/nft/anvil/AnvilFork.t.sol';
-import {Vault721} from '@contracts/proxies/Vault721.sol';
+import {IVault721} from '@interfaces/proxies/IVault721.sol';
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
-import {WAD, RAY, RAD} from '@libraries/Math.sol';
+import {ICollateralJoinFactory} from '@interfaces/factories/ICollateralJoinFactory.sol';
+import {ICollateralAuctionHouseFactory} from '@interfaces/factories/ICollateralAuctionHouseFactory.sol';
+import {WAD} from '@libraries/Math.sol';
 import {IGovernor} from '@openzeppelin/governance/IGovernor.sol';
+import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 
-// forge t --fork-url http://127.0.0.1:8545 --match-contract AddCollateralAnvil -vvvvv
+// forge t --fork-url http://127.0.0.1:8545 --match-contract GovernanceProposalAnvil -vvvvv
 
-contract AddCollateralAnvil is AnvilFork {
+contract GovernanceProposalAnvil is AnvilFork {
   uint256 constant MINUS_0_5_PERCENT_PER_HOUR = 999_998_607_628_240_588_157_433_861;
   /**
    * @notice ProposalState:
@@ -34,7 +37,6 @@ contract AddCollateralAnvil is AnvilFork {
     perSecondDiscountUpdateRate: MINUS_0_5_PERCENT_PER_HOUR
   });
 
-  // test access control
   function testAddCollateral() public {
     vm.startPrank(address(timelockController));
     bytes32[] memory _collateralTypesList = collateralJoinFactory.collateralTypesList();
@@ -48,8 +50,19 @@ contract AddCollateralAnvil is AnvilFork {
     vm.stopPrank();
   }
 
+  function testUpdateNFTRenderer() public {
+    vm.startPrank(vault721.timelockController());
+    address fakeOracleRelayer = address(1);
+    address fakeTaxCollector = address(2);
+    address fakeCollateralJoinFactory = address(3);
+    NFTRenderer newNFTRenderer =
+      new NFTRenderer(address(vault721), fakeOracleRelayer, fakeTaxCollector, fakeCollateralJoinFactory);
+    vault721.updateNftRenderer(address(newNFTRenderer), fakeOracleRelayer, fakeTaxCollector, fakeCollateralJoinFactory);
+    vm.stopPrank();
+  }
+
   // test governance process
-  function testExecuteProp() public {
+  function testExecuteProp(uint8 rand) public {
     IVotes protocolVotes = IVotes(address(protocolToken));
 
     uint256 startBlock = block.number;
@@ -57,13 +70,19 @@ contract AddCollateralAnvil is AnvilFork {
     emit log_named_uint('Block', startBlock);
     emit log_named_uint('Time', startTime);
     ODGovernor dao = ODGovernor(payable(ODGovernor_Address));
-    (
-      address[] memory targets,
-      uint256[] memory values,
-      bytes[] memory calldatas,
-      string memory description,
-      bytes32 descriptionHash
-    ) = generateParams();
+
+    address[] memory targets;
+    uint256[] memory values;
+    bytes[] memory calldatas;
+    string memory description;
+    bytes32 descriptionHash;
+
+    // @note here we randomize between the different proposal types
+    if (rand > 0 && rand <= 31) {
+      (targets, values, calldatas, description, descriptionHash) = generateAddCollateralProposalParams();
+    } else {
+      (targets, values, calldatas, description, descriptionHash) = generateUpdateNFTRendererProposalParams();
+    }
 
     uint256 propId = dao.propose(targets, values, calldatas, description);
     assertEq(propId, dao.hashProposal(targets, values, calldatas, descriptionHash));
@@ -142,8 +161,8 @@ contract AddCollateralAnvil is AnvilFork {
     vm.stopPrank();
   }
 
-  // helpers
-  function generateParams()
+  // Proposal Paarams
+  function generateAddCollateralProposalParams()
     public
     returns (
       address[] memory targets,
@@ -153,29 +172,58 @@ contract AddCollateralAnvil is AnvilFork {
       bytes32 descriptionHash
     )
   {
-    // TODO: add collateralAuctionHouseFactory
-    targets = new address[](1);
+    targets = new address[](2);
     targets[0] = address(collateralJoinFactory);
-    // targets[1] = address(collateralAuctionHouseFactory);
+    targets[1] = address(collateralAuctionHouseFactory);
+
+    values = new uint256[](2);
+    values[0] = 0;
+    values[1] = 0;
+
+    bytes memory calldata0 =
+      abi.encodeWithSelector(ICollateralJoinFactory.deployCollateralJoin.selector, newCType, newCAddress);
+
+    bytes memory calldata1 = abi.encodeWithSelector(
+      ICollateralAuctionHouseFactory.deployCollateralAuctionHouse.selector, newCType, _cahCParams
+    );
+
+    calldatas = new bytes[](2);
+    calldatas[0] = calldata0;
+    calldatas[1] = calldata1;
+
+    description = 'Add collateral type';
+
+    descriptionHash = keccak256(bytes(description));
+  }
+
+  function generateUpdateNFTRendererProposalParams()
+    public
+    returns (
+      address[] memory targets,
+      uint256[] memory values,
+      bytes[] memory calldatas,
+      string memory description,
+      bytes32 descriptionHash
+    )
+  {
+    targets = new address[](1);
+    targets[0] = address(vault721);
 
     values = new uint256[](1);
     values[0] = 0;
-    // values[1] = 0;
 
-    bytes memory calldata0 = abi.encodeWithSignature('deployCollateralJoin(bytes32,address)', newCType, newCAddress);
-
-    // this function fails
-    bytes memory calldata1 = abi.encodeWithSignature(
-      'deployCollateralAuctionHouse(bytes32,ICollateralAuctionHouse.CollateralAuctionHouseParams)',
-      newCType,
-      _cahCParams
+    bytes memory calldata0 = abi.encodeWithSelector(
+      IVault721.updateNftRenderer.selector,
+      address(nftRenderer),
+      address(oracleRelayer),
+      address(taxCollector),
+      address(collateralJoinFactory)
     );
 
     calldatas = new bytes[](1);
     calldatas[0] = calldata0;
-    // calldatas[1] = calldata1;
 
-    description = 'Add collateral type';
+    description = 'Update NFT Renderer';
 
     descriptionHash = keccak256(bytes(description));
   }
