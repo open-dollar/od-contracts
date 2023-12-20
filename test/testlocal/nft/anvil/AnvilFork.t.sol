@@ -27,6 +27,11 @@ import {ODSafeManager} from '@contracts/proxies/ODSafeManager.sol';
 import {Vault721} from '@contracts/proxies/Vault721.sol';
 import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 
+// --- Oracle Contracts ---
+import {IDenominatedOracle} from '@interfaces/oracles/IDenominatedOracle.sol';
+import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
+import {OracleForTestnet} from '@contracts/for-test/OracleForTestnet.sol';
+
 // --- Governance Contracts ---
 import {TimelockController} from '@openzeppelin/governance/TimelockController.sol';
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
@@ -66,6 +71,9 @@ contract AnvilFork is AnvilDeployment, Test {
   address[2] public newUsers;
   address[3] public proxies;
   bytes32[4] public cTypes;
+  IDenominatedOracle[] public denominatedOracles;
+  IDelayedOracle[] public delayedOracles;
+  OracleForTestnet[] public testOracles;
 
   function setUp() public virtual {
     users[0] = ALICE;
@@ -79,6 +87,21 @@ contract AnvilFork is AnvilDeployment, Test {
     cTypes[1] = WSTETH;
     cTypes[2] = CBETH;
     cTypes[3] = RETH;
+
+    denominatedOracles.push(IDenominatedOracle(DenominatedOracleChild_10_Address));
+    denominatedOracles.push(IDenominatedOracle(DenominatedOracleChild_12_Address));
+    denominatedOracles.push(IDenominatedOracle(DenominatedOracleChild_14_Address));
+
+    delayedOracles.push(IDelayedOracle(DelayedOracleChild_15_Address));
+    delayedOracles.push(IDelayedOracle(DelayedOracleChild_16_Address));
+    delayedOracles.push(IDelayedOracle(DelayedOracleChild_17_Address));
+    delayedOracles.push(IDelayedOracle(DelayedOracleChild_18_Address));
+
+    testOracles.push(OracleForTestnet(address(denominatedOracles[0].denominationPriceSource())));
+
+    for (uint256 i; i < denominatedOracles.length; i++) {
+      testOracles.push(OracleForTestnet(address(denominatedOracles[i].priceSource())));
+    }
 
     deployProxies();
     labelVars();
@@ -105,10 +128,22 @@ contract AnvilFork is AnvilDeployment, Test {
     vm.label(proxies[0], 'A-proxy');
     vm.label(proxies[1], 'B-proxy');
     vm.label(proxies[2], 'C-proxy');
+    vm.label(address(systemCoin), systemCoin.symbol());
+
     for (uint256 i; i < cTypes.length; i++) {
-      string memory cTypeName = erc20[cTypes[i]].name();
+      string memory cTypeName = erc20[cTypes[i]].symbol();
       vm.label(address(erc20[cTypes[i]]), cTypeName);
     }
+// #todo label the oracles by token; my suspicion is that they're in order with the first delayed oracle being wstETH
+//    for (uint256 i; i < denominatedOracles.length; i++) {
+//      string memory oracleName = denominatedOracles[i].symbol();
+//      vm.label(address(denominatedOracles[i]), oracleName);
+//    }
+//
+//    for (uint256 i; i < delayedOracles.length; i++) {
+//      string memory oracleName = delayedOracles[i].symbol();
+//      vm.label(address(delayedOracles[i]), oracleName);
+//    }
   }
 
   function mintCollateralAndOpenSafes() public {
@@ -123,7 +158,7 @@ contract AnvilFork is AnvilDeployment, Test {
         vm.startPrank(user);
         erc20[cType].mint(MINT_AMOUNT);
         erc20[cType].approve(proxy, MINT_AMOUNT);
-        vaultIds[proxy][cType] = openSafe(cType, proxy);
+        vaultIds[proxy][cType] = openSafeDepositAndMint(cType, proxy, MINT_AMOUNT, 500_000 ether);
         vm.stopPrank();
       }
     }
@@ -148,6 +183,24 @@ contract AnvilFork is AnvilDeployment, Test {
 
   function openSafe(bytes32 _cType, address _proxy) public returns (uint256 _safeId) {
     bytes memory payload = abi.encodeWithSelector(basicActions.openSAFE.selector, address(safeManager), _cType, _proxy);
+    bytes memory safeData = ODProxy(_proxy).execute(address(basicActions), payload);
+    _safeId = abi.decode(safeData, (uint256));
+  }
+
+  function openSafeDepositAndMint(bytes32 _cType, address _proxy, uint256 collateralAmount, uint256 debtAmount)
+  public
+  returns (uint256 _safeId) {
+    uint256 currentSafeId = vaultIds[_proxy][_cType];
+    bytes memory payload = abi.encodeWithSelector(
+      basicActions.openLockTokenCollateralAndGenerateDebt.selector,
+      address(safeManager),
+      address(taxCollector),
+      address(collateralJoin[_cType]),
+      address(coinJoin),
+      _cType,
+      collateralAmount,
+      debtAmount
+    );
     bytes memory safeData = ODProxy(_proxy).execute(address(basicActions), payload);
     _safeId = abi.decode(safeData, (uint256));
   }
