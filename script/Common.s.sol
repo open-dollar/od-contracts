@@ -62,7 +62,7 @@ abstract contract Common is Contracts, Params {
     _revoke(safeEngine, _governor);
     _revoke(liquidationEngine, _governor);
     _revoke(accountingEngine, _governor);
-    _revoke(oracleRelayer, _governor);
+    // _revoke(oracleRelayer, _governor);
 
     // auction houses
     _revoke(surplusAuctionHouse, _governor);
