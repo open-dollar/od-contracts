@@ -2,7 +2,8 @@
 pragma solidity 0.8.19;
 
 import {ERC721} from '@openzeppelin/token/ERC721/ERC721.sol';
-import {ERC721Enumerable} from '@openzeppelin/token/ERC721/extensions/ERC721Enumerable.sol';
+import {ERC721EnumerableUpgradeable} from
+  '@openzeppelin-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol';
 import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
@@ -10,7 +11,10 @@ import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 // Open Dollar
 // Version 1.5.8
 
-contract Vault721 is ERC721Enumerable {
+/**
+ * @notice Upgradeable contract used as singleton, but is not upgradeable
+ */
+contract Vault721 is ERC721EnumerableUpgradeable {
   error NotGovernor();
   error ProxyAlreadyExist();
   error ZeroAddress();
@@ -20,7 +24,7 @@ contract Vault721 is ERC721Enumerable {
   NFTRenderer public nftRenderer;
 
   string public contractMetaData =
-    '{"name": "Open Dollar Vaults","description": "Tradable Vaults for the Open Dollar stablecoin protocol. Caution! Trading this NFT means trading the ownership of your Vault in the Open Dollar protocol and all of the assets/collateral inside each Vault.","image": "https://app.opendollar.com/collectionImage.png","external_link": "https://opendollar.com"}';
+    '{"name": "Open Dollar Vaults","description": "Open Dollar is a DeFi lending protocol that enables borrowing against liquid staking tokens while earning staking rewards and enabling liquidity via Non-Fungible Vaults (NFVs).","image": "https://app.opendollar.com/collectionImage.png","external_link": "https://opendollar.com"}';
 
   mapping(address proxy => address user) internal _proxyRegistry;
   mapping(address user => address proxy) internal _userRegistry;
@@ -30,8 +34,9 @@ contract Vault721 is ERC721Enumerable {
   /**
    * @dev initializes DAO timelockController contract
    */
-  constructor(address _timelockController) ERC721('OpenDollar Vault', 'ODV') {
+  function initialize(address _timelockController) external initializer nonZero(_timelockController) {
     timelockController = _timelockController;
+    __ERC721_init('OpenDollar Vault', 'ODV');
   }
 
   /**
@@ -138,6 +143,7 @@ contract Vault721 is ERC721Enumerable {
    * @dev generate URI with updated vault information
    */
   function tokenURI(uint256 _safeId) public view override returns (string memory uri) {
+    _requireMinted(_safeId);
     uri = nftRenderer.render(_safeId);
   }
 
@@ -184,7 +190,7 @@ contract Vault721 is ERC721Enumerable {
    * @dev _transfer calls `transferSAFEOwnership` on SafeManager
    * enforces that ODProxy exists for transfer or it deploys a new ODProxy for receiver of vault/nft
    */
-  function _afterTokenTransfer(address from, address to, uint256 firstTokenId, uint256 batchSize) internal override {
+  function _afterTokenTransfer(address from, address to, uint256 firstTokenId, uint256) internal override {
     require(to != address(0), 'V721: no burn');
     if (from != address(0)) {
       address payable proxy;

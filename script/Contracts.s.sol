@@ -32,8 +32,6 @@ import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {DelayedOracle, IDelayedOracle} from '@contracts/oracles/DelayedOracle.sol';
 import {DenominatedOracle} from '@contracts/oracles/DenominatedOracle.sol';
 import {ChainlinkRelayer} from '@contracts/oracles/ChainlinkRelayer.sol';
-import {UniV3Relayer} from '@contracts/oracles/UniV3Relayer.sol';
-import {CamelotRelayer} from '@contracts/oracles/CamelotRelayer.sol';
 
 // --- Testnet contracts ---
 import {MintableERC20} from '@contracts/for-test/MintableERC20.sol';
@@ -53,9 +51,6 @@ import {
   ICollateralAuctionHouseFactory
 } from '@contracts/factories/CollateralAuctionHouseFactory.sol';
 import {ChainlinkRelayerFactory, IChainlinkRelayerFactory} from '@contracts/factories/ChainlinkRelayerFactory.sol';
-import {UniV3RelayerFactory, IUniV3RelayerFactory} from '@contracts/factories/UniV3RelayerFactory.sol';
-import {CamelotRelayerFactory, ICamelotRelayerFactory} from '@contracts/factories/CamelotRelayerFactory.sol';
-import {IAlgebraFactory as ICamelotV3Factory} from '@interfaces/factories/IAlgebraFactory.sol';
 import {DenominatedOracleFactory, IDenominatedOracleFactory} from '@contracts/factories/DenominatedOracleFactory.sol';
 import {DelayedOracleFactory, IDelayedOracleFactory} from '@contracts/factories/DelayedOracleFactory.sol';
 
@@ -139,12 +134,8 @@ abstract contract Contracts {
   ICollateralAuctionHouseFactory public collateralAuctionHouseFactory;
 
   IChainlinkRelayerFactory public chainlinkRelayerFactory;
-  IUniV3RelayerFactory public uniV3RelayerFactory;
-  ICamelotRelayerFactory public camelotRelayerFactory;
   IDenominatedOracleFactory public denominatedOracleFactory;
   IDelayedOracleFactory public delayedOracleFactory;
-
-  ICamelotV3Factory public camelotV3Factory;
 
   // --- Settlement contracts ---
   IGlobalSettlement public globalSettlement;

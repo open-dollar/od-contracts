@@ -5,9 +5,9 @@ interface IODSafeManager {
   // --- Events ---
 
   /// @notice Emitted when calling allowSAFE with the sender address and the method arguments
-  event AllowSAFE(address indexed _sender, uint256 indexed _safe, address _usr, uint256 _ok);
+  event AllowSAFE(address indexed _sender, uint256 indexed _safe, address _usr, bool _ok);
   /// @notice Emitted when calling allowHandler with the sender address and the method arguments
-  event AllowHandler(address indexed _sender, address _usr, uint256 _ok);
+  event AllowHandler(address indexed _sender, address _usr, bool _ok);
   /// @notice Emitted when calling transferSAFEOwnership with the sender address and the method arguments
   event TransferSAFEOwnership(address indexed _sender, uint256 indexed _safe, address _dst);
   /// @notice Emitted when calling openSAFE with the sender address and the method arguments
@@ -43,6 +43,10 @@ interface IODSafeManager {
   error AlreadySafeOwner();
   /// @notice Throws when trying to move a safe to another one with different collateral type
   error CollateralTypesMismatch();
+  /// @notice Throws when trying to transfer collateral to an address that isn't a SAFEHandler
+  error HandlerDoesNotExist();
+  /// @notice Throws if anyone except the safe owner tries to call a function
+  error OnlySafeOwner();
 
   // --- Structs ---
 
@@ -61,10 +65,13 @@ interface IODSafeManager {
   function safeEngine() external view returns (address _safeEngine);
 
   /// @notice Mapping of owner and safe permissions to a caller permissions
-  function safeCan(address _owner, uint256 _safeId, address _caller) external view returns (uint256 _ok);
+  function safeCan(address _owner, uint256 _safeId, address _caller) external view returns (bool _ok);
 
   /// @notice Mapping of handler to a caller permissions
-  function handlerCan(address _safeHandler, address _caller) external view returns (uint256 _ok);
+  function handlerCan(address _safeHandler, address _caller) external view returns (bool _ok);
+
+  /// @notice Mapping of handler to whether it exists
+  function handlerExists(address _safeHandler) external view returns (bool _exists);
 
   // --- Getters ---
 
@@ -110,14 +117,14 @@ interface IODSafeManager {
    * @param  _usr Address of the user to allow/disallow
    * @param  _ok Boolean state to allow/disallow
    */
-  function allowSAFE(uint256 _safe, address _usr, uint256 _ok) external;
+  function allowSAFE(uint256 _safe, address _usr, bool _ok) external;
 
   /**
    * @notice Allow/disallow a handler address to manage the safe
    * @param  _usr Address of the user to allow/disallow
    * @param  _ok Boolean state to allow/disallow
    */
-  function allowHandler(address _usr, uint256 _ok) external;
+  function allowHandler(address _usr, bool _ok) external;
 
   /**
    * @notice Open a new safe for a user address
@@ -139,8 +146,14 @@ interface IODSafeManager {
    * @param  _safe Id of the SAFE
    * @param  _deltaCollateral Delta of collateral to add/remove [wad]
    * @param  _deltaDebt Delta of debt to add/remove [wad]
+   * @param  _nonSafeHandlerAddress Boolean flag to specify whether to not to use the safe handler address, if true, then we use proxy address
    */
-  function modifySAFECollateralization(uint256 _safe, int256 _deltaCollateral, int256 _deltaDebt) external;
+  function modifySAFECollateralization(
+    uint256 _safe,
+    int256 _deltaCollateral,
+    int256 _deltaDebt,
+    bool _nonSafeHandlerAddress
+  ) external;
 
   /**
    * @notice Transfer wad amount of safe collateral from the safe address to a dst address

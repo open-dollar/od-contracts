@@ -75,6 +75,27 @@ contract AccountingJob is Job, Authorizable, Modifiable, IAccountingJob {
     accountingEngine.auctionSurplus();
   }
 
+  /**
+   * @notice Method to pop debt from the AccountingEngine's queue without a reward
+   * @param _debtBlockTimestamp Timestamp of the debt block to pop
+   */
+  function workPopDebtFromQueueWithoutReward(uint256 _debtBlockTimestamp) external {
+    if (!shouldWorkPopDebtFromQueue) revert NotWorkable();
+    accountingEngine.popDebtFromQueue(_debtBlockTimestamp);
+  }
+
+  /// @notice Auction debt from the AccountingEngine without a reward
+  function workAuctionDebtWithoutReward() external {
+    if (!shouldWorkAuctionDebt) revert NotWorkable();
+    accountingEngine.auctionDebt();
+  }
+
+  /// @notice Auction surplus from the AccountingEngine without a reward
+  function workAuctionSurplusWithoutReward() external {
+    if (!shouldWorkAuctionSurplus) revert NotWorkable();
+    accountingEngine.auctionSurplus();
+  }
+
   // --- Administration ---
 
   /// @inheritdoc Modifiable

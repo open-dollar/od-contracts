@@ -5,6 +5,7 @@ import {SAFEHandler} from '@contracts/proxies/SAFEHandler.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ILiquidationEngine} from '@interfaces/ILiquidationEngine.sol';
 import {IVault721} from '@interfaces/proxies/IVault721.sol';
+import {ITaxCollector} from '@interfaces/ITaxCollector.sol';
 
 import {Math} from '@libraries/Math.sol';
 import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
@@ -28,6 +29,8 @@ contract ODSafeManager is IODSafeManager {
   // --- ERC721 ---
   IVault721 public vault721;
 
+  address public taxCollector;
+
   uint256 internal _safeId; // Auto incremental
   mapping(address _safeOwner => EnumerableSet.UintSet) private _usrSafes;
   /// @notice Mapping of user addresses to their enumerable set of safes per collateral type
@@ -36,9 +39,11 @@ contract ODSafeManager is IODSafeManager {
   mapping(uint256 _safeId => SAFEData) internal _safeData;
 
   /// @inheritdoc IODSafeManager
-  mapping(address _owner => mapping(uint256 _safeId => mapping(address _caller => uint256 _ok))) public safeCan;
+  mapping(address _owner => mapping(uint256 _safeId => mapping(address _caller => bool _ok))) public safeCan;
   /// @inheritdoc IODSafeManager
-  mapping(address _safeHandler => mapping(address _caller => uint256 _ok)) public handlerCan;
+  mapping(address _safeHandler => mapping(address _caller => bool _ok)) public handlerCan;
+  /// @inheritdoc IODSafeManager
+  mapping(address _safeHandler => bool _exists) public handlerExists;
 
   // --- Modifiers ---
 
@@ -48,7 +53,16 @@ contract ODSafeManager is IODSafeManager {
    */
   modifier safeAllowed(uint256 _safe) {
     address _owner = _safeData[_safe].owner;
-    if (msg.sender != _owner && safeCan[_owner][_safe][msg.sender] == 0) revert SafeNotAllowed();
+    if (msg.sender != _owner && !safeCan[_owner][_safe][msg.sender]) revert SafeNotAllowed();
+    _;
+  }
+
+  /**
+   * @notice Checks if the sender is the owner of the safe
+   * @param  _safe Id of the safe to check if msg.sender has permissions for
+   */
+  modifier onlySafeOwner(uint256 _safe) {
+    if (msg.sender != _safeData[_safe].owner) revert OnlySafeOwner();
     _;
   }
 
@@ -57,14 +71,15 @@ contract ODSafeManager is IODSafeManager {
    * @param  _handler Address of the handler to check if msg.sender has permissions for
    */
   modifier handlerAllowed(address _handler) {
-    if (msg.sender != _handler && handlerCan[_handler][msg.sender] == 0) revert HandlerNotAllowed();
+    if (msg.sender != _handler && !handlerCan[_handler][msg.sender]) revert HandlerNotAllowed();
     _;
   }
 
-  constructor(address _safeEngine, address _vault721) {
+  constructor(address _safeEngine, address _vault721, address _taxCollector) {
     safeEngine = _safeEngine.assertNonNull();
     vault721 = IVault721(_vault721);
     vault721.initializeManager();
+    taxCollector = _taxCollector.assertNonNull();
   }
 
   // --- Getters ---
@@ -102,14 +117,14 @@ contract ODSafeManager is IODSafeManager {
   // --- Methods ---
 
   /// @inheritdoc IODSafeManager
-  function allowSAFE(uint256 _safe, address _usr, uint256 _ok) external safeAllowed(_safe) {
+  function allowSAFE(uint256 _safe, address _usr, bool _ok) external onlySafeOwner(_safe) {
     address _owner = _safeData[_safe].owner;
     safeCan[_owner][_safe][_usr] = _ok;
     emit AllowSAFE(msg.sender, _safe, _usr, _ok);
   }
 
   /// @inheritdoc IODSafeManager
-  function allowHandler(address _usr, uint256 _ok) external {
+  function allowHandler(address _usr, bool _ok) external {
     handlerCan[msg.sender][_usr] = _ok;
     emit AllowHandler(msg.sender, _usr, _ok);
   }
@@ -122,6 +137,9 @@ contract ODSafeManager is IODSafeManager {
     address _safeHandler = address(new SAFEHandler(safeEngine));
 
     _safeData[_safeId] = SAFEData({owner: _usr, safeHandler: _safeHandler, collateralType: _cType});
+
+    // Save the address of the safeHandler
+    handlerExists[_safeHandler] = true;
 
     _usrSafes[_usr].add(_safeId);
     _usrSafesPerCollat[_usr][_cType].add(_safeId);
@@ -155,11 +173,17 @@ contract ODSafeManager is IODSafeManager {
   function modifySAFECollateralization(
     uint256 _safe,
     int256 _deltaCollateral,
-    int256 _deltaDebt
+    int256 _deltaDebt,
+    bool _nonSafeHandlerAddress
   ) external safeAllowed(_safe) {
     SAFEData memory _sData = _safeData[_safe];
+    if (_deltaDebt != 0) {
+      ITaxCollector(taxCollector).taxSingle(_sData.collateralType);
+    }
+    address collateralSource = _nonSafeHandlerAddress ? msg.sender : _sData.safeHandler;
+    address debtDestination = collateralSource;
     ISAFEEngine(safeEngine).modifySAFECollateralization(
-      _sData.collateralType, _sData.safeHandler, _sData.safeHandler, _sData.safeHandler, _deltaCollateral, _deltaDebt
+      _sData.collateralType, _sData.safeHandler, collateralSource, debtDestination, _deltaCollateral, _deltaDebt
     );
     emit ModifySAFECollateralization(msg.sender, _safe, _deltaCollateral, _deltaDebt);
   }
@@ -167,6 +191,8 @@ contract ODSafeManager is IODSafeManager {
   /// @inheritdoc IODSafeManager
   function transferCollateral(uint256 _safe, address _dst, uint256 _wad) external safeAllowed(_safe) {
     SAFEData memory _sData = _safeData[_safe];
+    if (!handlerExists[_dst]) revert HandlerDoesNotExist();
+
     ISAFEEngine(safeEngine).transferCollateral(_sData.collateralType, _sData.safeHandler, _dst, _wad);
     emit TransferCollateral(msg.sender, _safe, _dst, _wad);
   }
@@ -204,7 +230,7 @@ contract ODSafeManager is IODSafeManager {
   /// @inheritdoc IODSafeManager
   function enterSystem(address _src, uint256 _safe) external handlerAllowed(_src) safeAllowed(_safe) {
     SAFEData memory _sData = _safeData[_safe];
-    ISAFEEngine.SAFE memory _safeInfo = ISAFEEngine(safeEngine).safes(_sData.collateralType, _sData.safeHandler);
+    ISAFEEngine.SAFE memory _safeInfo = ISAFEEngine(safeEngine).safes(_sData.collateralType, _src);
     int256 _deltaCollateral = _safeInfo.lockedCollateral.toInt();
     int256 _deltaDebt = _safeInfo.generatedDebt.toInt();
     ISAFEEngine(safeEngine).transferSAFECollateralAndDebt(
