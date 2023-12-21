@@ -3,6 +3,7 @@ pragma solidity 0.8.19;
 
 import {IVotes} from '@openzeppelin/governance/utils/IVotes.sol';
 import {AnvilFork} from '@testlocal/nft/anvil/AnvilFork.t.sol';
+import {IPIDController} from '@interfaces/IPIDController.sol';
 import {IVault721} from '@interfaces/proxies/IVault721.sol';
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
@@ -61,8 +62,47 @@ contract GovernanceProposalAnvil is AnvilFork {
     vm.stopPrank();
   }
 
-  // test governance process
-  function testExecuteProp(uint8 rand) public {
+  function testUpdatePidController() public {
+    ODGovernor dao = ODGovernor(payable(ODGovernor_Address));
+    vm.startPrank(address(dao));
+    pidController.modifyParameters('seedProposer', abi.encode(address(365_420_690)));
+    pidController.modifyParameters('noiseBarrier', abi.encode(1));
+    pidController.modifyParameters('integralPeriodSize', abi.encode(1));
+    pidController.modifyParameters('feedbackOutputUpperBound', abi.encode(1));
+    pidController.modifyParameters('feedbackOutputLowerBound', abi.encode(1));
+    pidController.modifyParameters('perSecondCumulativeLeak', abi.encode(1));
+    pidController.modifyParameters('kp', abi.encode(1));
+    pidController.modifyParameters('ki', abi.encode(1));
+    pidController.modifyParameters('priceDeviationCumulative', abi.encode(1));
+    vm.stopPrank();
+
+    {
+      IPIDController.PIDControllerParams memory params = pidController.params();
+      assertEq(pidController.seedProposer(), address(365_420_690));
+      assertEq(params.noiseBarrier, 1);
+      assertEq(params.integralPeriodSize, 1);
+      assertEq(params.feedbackOutputUpperBound, 1);
+      assertEq(params.feedbackOutputLowerBound, 1);
+      assertEq(params.perSecondCumulativeLeak, 1);
+    }
+
+    {
+      IPIDController.ControllerGains memory controllerGains = pidController.controllerGains();
+      assertEq(controllerGains.kp, 1);
+      assertEq(controllerGains.ki, 1);
+    }
+
+    IPIDController.DeviationObservation memory deviationObservation = pidController.deviationObservation();
+    assertEq(deviationObservation.integral, 1);
+  }
+
+  function _helperExecuteProp(
+    address[] memory targets,
+    uint256[] memory values,
+    bytes[] memory calldatas,
+    string memory description,
+    bytes32 descriptionHash
+  ) public {
     IVotes protocolVotes = IVotes(address(protocolToken));
 
     uint256 startBlock = block.number;
@@ -70,19 +110,6 @@ contract GovernanceProposalAnvil is AnvilFork {
     emit log_named_uint('Block', startBlock);
     emit log_named_uint('Time', startTime);
     ODGovernor dao = ODGovernor(payable(ODGovernor_Address));
-
-    address[] memory targets;
-    uint256[] memory values;
-    bytes[] memory calldatas;
-    string memory description;
-    bytes32 descriptionHash;
-
-    // @note here we randomize between the different proposal types
-    if (rand > 0 && rand <= 31) {
-      (targets, values, calldatas, description, descriptionHash) = generateAddCollateralProposalParams();
-    } else {
-      (targets, values, calldatas, description, descriptionHash) = generateUpdateNFTRendererProposalParams();
-    }
 
     uint256 propId = dao.propose(targets, values, calldatas, description);
     assertEq(propId, dao.hashProposal(targets, values, calldatas, descriptionHash));
@@ -161,6 +188,52 @@ contract GovernanceProposalAnvil is AnvilFork {
     vm.stopPrank();
   }
 
+  // test governance process
+  function testAddCollateralProposal() public {
+    (
+      address[] memory targets,
+      uint256[] memory values,
+      bytes[] memory calldatas,
+      string memory description,
+      bytes32 descriptionHash
+    ) = generateAddCollateralProposalParams();
+    _helperExecuteProp(targets, values, calldatas, description, descriptionHash);
+  }
+
+  function testUpdateNFTRendererProposal() public {
+    (
+      address[] memory targets,
+      uint256[] memory values,
+      bytes[] memory calldatas,
+      string memory description,
+      bytes32 descriptionHash
+    ) = generateUpdateNFTRendererProposalParams();
+    _helperExecuteProp(targets, values, calldatas, description, descriptionHash);
+  }
+
+  function testUpdatePidControllerProposal() public {
+    (
+      address[] memory targets,
+      uint256[] memory values,
+      bytes[] memory calldatas,
+      string memory description,
+      bytes32 descriptionHash
+    ) = generateUpdatePidControllerProposalParams(
+      UpdatePidControllerParams({
+        seedProposer: address(365_420_690),
+        noiseBarrier: 1,
+        integralPeriodSize: 1,
+        feedbackOutputUpperBound: 1,
+        feedbackOutputLowerBound: 1,
+        perSecondCumulativeLeak: 1,
+        kp: 1,
+        ki: 1,
+        priceDeviationCumulative: 1
+      })
+    );
+    _helperExecuteProp(targets, values, calldatas, description, descriptionHash);
+  }
+
   // Proposal Paarams
   function generateAddCollateralProposalParams()
     public
@@ -226,5 +299,45 @@ contract GovernanceProposalAnvil is AnvilFork {
     description = 'Update NFT Renderer';
 
     descriptionHash = keccak256(bytes(description));
+  }
+
+  struct UpdatePidControllerParams {
+    address seedProposer;
+    uint256 noiseBarrier;
+    uint256 integralPeriodSize;
+    uint256 feedbackOutputUpperBound;
+    uint256 feedbackOutputLowerBound;
+    uint256 perSecondCumulativeLeak;
+    uint256 kp;
+    uint256 ki;
+    uint256 priceDeviationCumulative;
+  }
+
+  function generateUpdatePidControllerProposalParams(UpdatePidControllerParams memory params)
+    public
+    returns (
+      address[] memory targets,
+      uint256[] memory values,
+      bytes[] memory calldatas,
+      string memory description,
+      bytes32 descriptionHash
+    )
+  {
+    targets = new address[](1);
+    targets[0] = address(pidController);
+
+    values = new uint256[](1);
+    values[0] = 0;
+
+    string memory sig = 'modifyParameters(bytes32,bytes)';
+    calldatas[0] = abi.encodeWithSignature(sig, 'seedProposer', abi.encode(params.seedProposer));
+    calldatas[1] = abi.encodeWithSignature(sig, 'noiseBarrier', abi.encode(params.noiseBarrier));
+    calldatas[2] = abi.encodeWithSignature(sig, 'integralPeriodSize', abi.encode(params.integralPeriodSize));
+    calldatas[3] = abi.encodeWithSignature(sig, 'feedbackOutputUpperBound', abi.encode(params.feedbackOutputUpperBound));
+    calldatas[4] = abi.encodeWithSignature(sig, 'feedbackOutputLowerBound', abi.encode(params.feedbackOutputLowerBound));
+    calldatas[5] = abi.encodeWithSignature(sig, 'perSecondCumulativeLeak', abi.encode(params.perSecondCumulativeLeak));
+    calldatas[6] = abi.encodeWithSignature(sig, 'kp', abi.encode(params.kp));
+    calldatas[7] = abi.encodeWithSignature(sig, 'ki', abi.encode(params.ki));
+    calldatas[8] = abi.encodeWithSignature(sig, 'priceDeviationCumulative', abi.encode(params.priceDeviationCumulative));
   }
 }
