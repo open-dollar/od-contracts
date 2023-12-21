@@ -13,11 +13,13 @@ import {SepoliaDeployment} from '@script/SepoliaDeployment.s.sol';
 
 contract SetupOracleRelayer is SepoliaDeployment, Script {
   function run() public {
-    vm.startBroadcast(vm.envUint('ARB_SEPOLIA_DEPLOYER_PK'));
-    oracleRelayer.modifyParameters('systemCoinOracle', abi.encode(SEPOLIA_SYSTEM_COIN_ORACLE));
+    // vm.startBroadcast(vm.envUint('ARB_SEPOLIA_DEPLOYER_PK'));
+    vm.startBroadcast(vm.envUint('ARB_SEPOLIA_PK'));
+    // oracleRelayer.modifyParameters('systemCoinOracle', abi.encode(SEPOLIA_SYSTEM_COIN_ORACLE));
+    oracleRelayer.modifyParameters('systemCoinOracle', abi.encode(0x57cD9e89f86d0D3966C301E235A66Eecd3Cb4d64));
 
-    oracleRelayer.addAuthorization(address(timelockController));
-    oracleRelayer.removeAuthorization(msg.sender);
+    // oracleRelayer.addAuthorization(address(timelockController));
+    // oracleRelayer.removeAuthorization(vm.envAddress('ARB_SEPOLIA_DEPLOYER_PC'));
     vm.stopBroadcast();
   }
 }
