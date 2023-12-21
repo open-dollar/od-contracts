@@ -19,8 +19,8 @@ contract MintableVoteERC20 is MintableERC20, ERC20Burnable, ERC20Votes {
     uint8 __decimals
   ) MintableERC20(_name, _symbol, __decimals) ERC20Permit(_name) {}
 
-  function decimals() public view virtual override(ERC20, MintableERC20) returns (uint8 __decimals) {
-    super.decimals();
+  function decimals() public view virtual override(ERC20, MintableERC20) returns (uint8) {
+    return _decimals;
   }
 
   function _afterTokenTransfer(address from, address to, uint256 amount) internal override(ERC20, ERC20Votes) {

@@ -89,10 +89,10 @@ contract SingleAccountingEngineTest is DSTest {
     (ok,) = address(debtAuctionHouse).call(abi.encodeWithSignature(sig, id, amountToBuy, bid));
   }
 
-  function try_call(address addr, bytes calldata data) external returns (bool) {
+  function try_call(address addr, bytes calldata data) external returns (bool ok) {
     bytes memory _data = data;
     assembly {
-      let ok := call(gas(), addr, 0, add(_data, 0x20), mload(_data), 0, 0)
+      ok := call(gas(), addr, 0, add(_data, 0x20), mload(_data), 0, 0)
       let free := mload(0x40)
       mstore(free, ok)
       mstore(0x40, add(free, 32))
@@ -100,26 +100,26 @@ contract SingleAccountingEngineTest is DSTest {
     }
   }
 
-  function can_auctionSurplus() public returns (bool) {
+  function can_auctionSurplus() public returns (bool ok) {
     string memory sig = 'auctionSurplus()';
     bytes memory data = abi.encodeWithSignature(sig);
+    bytes memory success;
 
     bytes memory can_call = abi.encodeWithSignature('try_call(address,bytes)', accountingEngine, data);
-    (bool ok, bytes memory success) = address(this).call(can_call);
+    (ok, success) = address(this).call(can_call);
 
     ok = abi.decode(success, (bool));
-    if (ok) return true;
   }
 
-  function can_auction_debt() public returns (bool) {
+  function can_auction_debt() public returns (bool ok) {
     string memory sig = 'auctionDebt()';
     bytes memory data = abi.encodeWithSignature(sig);
+    bytes memory success;
 
     bytes memory can_call = abi.encodeWithSignature('try_call(address,bytes)', accountingEngine, data);
-    (bool ok, bytes memory success) = address(this).call(can_call);
+    (ok, success) = address(this).call(can_call);
 
     ok = abi.decode(success, (bool));
-    if (ok) return true;
   }
 
   uint256 constant ONE = 10 ** 27;

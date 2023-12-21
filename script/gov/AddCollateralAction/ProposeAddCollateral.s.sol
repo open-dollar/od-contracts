@@ -14,7 +14,7 @@ import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
 /// @dev NOTE This script requires the following env vars in the REQUIRED ENV VARS section below
 /// @dev This script is used to propose adding a new collateral type to the system
 /// @dev The script will propose a deployment of new CollateralJoin and CollateralAuctionHouse contracts
-/// @dev The script will output a JSON file with the proposal data to be used by the QueueProposal and ExecuteAddCollateral scripts
+/// @dev The script will output a JSON file with the proposal data to be used by the QueueProposal and ExecuteProposal scripts
 /// @dev In the root, run: export FOUNDRY_PROFILE=governance && forge script script/gov/AddCollateralAction/ProposeAddCollateral.s.sol
 contract ProposeAddCollateral is JSONScript {
   function run() public {
