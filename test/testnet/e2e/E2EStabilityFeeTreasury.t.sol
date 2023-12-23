@@ -31,7 +31,7 @@ abstract contract E2EStabilityFeeTreasuryTest is BaseUser, Common {
     // giving 25% of the balance to bob
     uint256 _rad = _coinBalance / 4;
 
-    vm.prank(deployer);
+    vm.prank(governor);
     // Executing give funds method with the 25% of the balance
     stabilityFeeTreasury.giveFunds(bob, _rad);
 
@@ -55,7 +55,7 @@ abstract contract E2EStabilityFeeTreasuryTest is BaseUser, Common {
     safeEngine.approveSAFEModification(address(stabilityFeeTreasury));
     _joinCoins(alice, _wad);
 
-    vm.prank(deployer);
+    vm.prank(governor);
     // Executing take funds method with the 100% of alice's balance
     stabilityFeeTreasury.takeFunds(alice, _wad * RAY);
 
@@ -71,22 +71,22 @@ abstract contract E2EStabilityFeeTreasuryTest is BaseUser, Common {
     uint256 _coinBalance = safeEngine.coinBalance(address(stabilityFeeTreasury));
     uint256 _previousAliceBalance = safeEngine.coinBalance(alice);
 
-    vm.startPrank(deployer);
+    vm.startPrank(governor);
     // Executing pulling ~25% of funds and setting alice as destination
     uint256 _rad = _coinBalance / 4;
     uint256 _wad = _rad / RAY;
     _rad = _wad * RAY; // solves internal rounding errors
 
     // Set total allowance to _rad
-    stabilityFeeTreasury.setTotalAllowance(deployer, _rad);
+    stabilityFeeTreasury.setTotalAllowance(governor, _rad);
     stabilityFeeTreasury.pullFunds(alice, _wad);
     vm.stopPrank();
 
     // Assertions
     assertEq(safeEngine.coinBalance(alice), _previousAliceBalance + _rad);
     assertEq(safeEngine.coinBalance(address(stabilityFeeTreasury)), _coinBalance - _rad);
-    assertEq(stabilityFeeTreasury.allowance(deployer).total, 0); // deployer used all allowance
-    assertEq(stabilityFeeTreasury.pulledPerHour(deployer, block.timestamp / HOUR), _rad);
+    assertEq(stabilityFeeTreasury.allowance(governor).total, 0); // governor used all allowance
+    assertEq(stabilityFeeTreasury.pulledPerHour(governor, block.timestamp / HOUR), _rad);
   }
 
   function test_transfer_surplus_funds() public {
@@ -117,7 +117,7 @@ abstract contract E2EStabilityFeeTreasuryTest is BaseUser, Common {
     uint256 _debt = _coinBalance / 2;
 
     // Generating a debt in stabilityFeeTreasury safe
-    vm.startPrank(deployer);
+    vm.startPrank(governor);
     safeEngine.createUnbackedDebt({
       _debtDestination: address(stabilityFeeTreasury),
       _coinDestination: address(0),
@@ -125,7 +125,7 @@ abstract contract E2EStabilityFeeTreasuryTest is BaseUser, Common {
     });
     assertEq(safeEngine.debtBalance(address(stabilityFeeTreasury)), _debt);
 
-    stabilityFeeTreasury.setTotalAllowance(deployer, _rad);
+    stabilityFeeTreasury.setTotalAllowance(governor, _rad);
     stabilityFeeTreasury.pullFunds(alice, _wad);
     vm.stopPrank();
 
@@ -152,8 +152,8 @@ abstract contract E2EStabilityFeeTreasuryTest is BaseUser, Common {
     vm.stopPrank();
 
     // Executing pulling 100% of funds and setting bob as destination
-    vm.startPrank(deployer);
-    stabilityFeeTreasury.setTotalAllowance(deployer, _wad * RAY);
+    vm.startPrank(governor);
+    stabilityFeeTreasury.setTotalAllowance(governor, _wad * RAY);
     stabilityFeeTreasury.pullFunds(bob, _wad);
     vm.stopPrank();
 

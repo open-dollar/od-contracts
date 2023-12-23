@@ -15,6 +15,8 @@ import {
 import {WETH9} from '@testnet/mocks/WETH9.sol';
 import {Math, RAY} from '@libraries/Math.sol';
 
+import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
+
 uint256 constant RAD_DELTA = 0.0001e45;
 uint256 constant COLLATERAL_PRICE = 100e18;
 
@@ -37,13 +39,11 @@ contract DeployForTest is TestParams, Deploy {
 
     systemCoinOracle = new OracleForTest(OD_INITIAL_PRICE); // 1 OD = 1 USD
 
-    // TODO: fix incorrect conversion
-    // delayedOracle[ETH_A] = new OracleForTest(TEST_ETH_PRICE); // 1 ETH = 2000 USD
-    // delayedOracle[TKN] = new OracleForTest(TEST_TKN_PRICE); // 1 TKN = 1 USD
-
     collateral[WSTETH] = IERC20Metadata(address(weth));
     collateral[TKN] = new ERC20ForTest();
 
+    delayedOracle[WSTETH] = new DelayedOracleForTest(TEST_ETH_PRICE, address(0));
+    delayedOracle[TKN] = new DelayedOracleForTest(TEST_TKN_PRICE, address(0));
     delayedOracle['TKN-A'] = new DelayedOracleForTest(COLLATERAL_PRICE, address(0));
     delayedOracle['TKN-B'] = new DelayedOracleForTest(COLLATERAL_PRICE, address(0));
     delayedOracle['TKN-C'] = new DelayedOracleForTest(COLLATERAL_PRICE, address(0));
