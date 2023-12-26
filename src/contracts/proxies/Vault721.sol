@@ -11,23 +11,36 @@ import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 // Open Dollar
 // Version 1.5.8
 
+struct HashState {
+  uint256 lastHash;
+  uint256 lastBlockNumber;
+  uint256 lastBlockTimestamp;
+}
+
 /**
  * @notice Upgradeable contract used as singleton, but is not upgradeable
  */
 contract Vault721 is ERC721EnumerableUpgradeable {
   error NotGovernor();
+  error NotSafeManager();
   error ProxyAlreadyExist();
+  error BlockDelayNotOver();
+  error TimeDelayNotOver();
   error ZeroAddress();
 
   address public timelockController;
   IODSafeManager public safeManager;
   NFTRenderer public nftRenderer;
+  uint8 public blockDelay;
+  uint256 public timeDelay;
 
   string public contractMetaData =
     '{"name": "Open Dollar Vaults","description": "Open Dollar is a DeFi lending protocol that enables borrowing against liquid staking tokens while earning staking rewards and enabling liquidity via Non-Fungible Vaults (NFVs).","image": "https://app.opendollar.com/collectionImage.png","external_link": "https://opendollar.com"}';
 
   mapping(address proxy => address user) internal _proxyRegistry;
   mapping(address user => address proxy) internal _userRegistry;
+  mapping(uint256 vaultId => HashState hashState) internal _hashState;
+  mapping(address nftExchange => bool whitelisted) internal _whitelist;
 
   event CreateProxy(address indexed _user, address _proxy);
 
@@ -44,6 +57,14 @@ contract Vault721 is ERC721EnumerableUpgradeable {
    */
   modifier onlyGovernance() {
     if (msg.sender != timelockController) revert NotGovernor();
+    _;
+  }
+
+  /**
+   * @dev control access for SafeManager
+   */
+  modifier onlySafeManager() {
+    if (msg.sender != address(safeManager)) revert NotSafeManager();
     _;
   }
 
@@ -77,6 +98,13 @@ contract Vault721 is ERC721EnumerableUpgradeable {
   }
 
   /**
+   * @dev get hash state by vault id
+   */
+  function getHashState(uint256 _vaultId) external view returns (HashState memory) {
+    return _hashState[_vaultId];
+  }
+
+  /**
    * @dev allows msg.sender without an ODProxy to deploy a new ODProxy
    */
   function build() external returns (address payable _proxy) {
@@ -96,8 +124,7 @@ contract Vault721 is ERC721EnumerableUpgradeable {
    * @dev mint can only be called by the SafeManager
    * enforces that only ODProxies call `openSafe` function by checking _proxyRegistry
    */
-  function mint(address _proxy, uint256 _safeId) external {
-    require(msg.sender == address(safeManager), 'V721: only safeManager');
+  function mint(address _proxy, uint256 _safeId) external onlySafeManager {
     require(_proxyRegistry[_proxy] != address(0), 'V721: non-native proxy');
     address _user = _proxyRegistry[_proxy];
     _safeMint(_user, _safeId);
@@ -116,6 +143,37 @@ contract Vault721 is ERC721EnumerableUpgradeable {
     require(_safeManager != address(0));
     _setNftRenderer(_nftRenderer);
     nftRenderer.setImplementation(_safeManager, _oracleRelayer, _taxCollector, _collateralJoinFactory);
+  }
+
+  /**
+   * @dev allows ODSafeManager to update the hash state
+   */
+  function updateVaultHashState(uint256 _vaultId) external onlySafeManager {
+    HashState storage state = _hashState[_vaultId];
+    state.lastHash = uint256(nftRenderer.getStateHashBySafeId(_vaultId));
+    state.lastBlockNumber = block.number;
+    state.lastBlockTimestamp = block.timestamp;
+  }
+
+  /**
+   * @dev allows DAO to update whitelist
+   */
+  function updateWhitelist(address _user, bool _whitelisted) external onlyGovernance nonZero(_user) {
+    _whitelist[_user] = _whitelisted;
+  }
+
+  /**
+   * @dev allows DAO to update the time delay
+   */
+  function updateTimeDelay(uint256 _timeDelay) external onlyGovernance {
+    timeDelay = _timeDelay;
+  }
+
+  /**
+   * @dev allows DAO to update the block delay
+   */
+  function updateBlockDelay(uint8 _blockDelay) external onlyGovernance {
+    blockDelay = _blockDelay;
   }
 
   /**
@@ -194,6 +252,19 @@ contract Vault721 is ERC721EnumerableUpgradeable {
     require(to != address(0), 'V721: no burn');
     if (from != address(0)) {
       address payable proxy;
+
+      if (_whitelist[msg.sender]) {
+        if (
+          block.number < _hashState[firstTokenId].lastBlockNumber + blockDelay
+            || _hashState[firstTokenId].lastHash != uint256(nftRenderer.getStateHashBySafeId(firstTokenId))
+        ) {
+          revert BlockDelayNotOver();
+        }
+      } else {
+        if (block.timestamp < _hashState[firstTokenId].lastBlockTimestamp + timeDelay) {
+          revert TimeDelayNotOver();
+        }
+      }
 
       if (_isNotProxy(to)) {
         proxy = _build(to);

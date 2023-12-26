@@ -185,6 +185,9 @@ contract ODSafeManager is IODSafeManager {
     ISAFEEngine(safeEngine).modifySAFECollateralization(
       _sData.collateralType, _sData.safeHandler, collateralSource, debtDestination, _deltaCollateral, _deltaDebt
     );
+
+    vault721.updateVaultHashState(_safe);
+
     emit ModifySAFECollateralization(msg.sender, _safe, _deltaCollateral, _deltaDebt);
   }
 
@@ -194,6 +197,9 @@ contract ODSafeManager is IODSafeManager {
     if (!handlerExists[_dst]) revert HandlerDoesNotExist();
 
     ISAFEEngine(safeEngine).transferCollateral(_sData.collateralType, _sData.safeHandler, _dst, _wad);
+
+    vault721.updateVaultHashState(_safe);
+
     emit TransferCollateral(msg.sender, _safe, _dst, _wad);
   }
 
@@ -201,6 +207,9 @@ contract ODSafeManager is IODSafeManager {
   function transferCollateral(bytes32 _cType, uint256 _safe, address _dst, uint256 _wad) external safeAllowed(_safe) {
     SAFEData memory _sData = _safeData[_safe];
     ISAFEEngine(safeEngine).transferCollateral(_cType, _sData.safeHandler, _dst, _wad);
+
+    vault721.updateVaultHashState(_safe);
+
     emit TransferCollateral(msg.sender, _cType, _safe, _dst, _wad);
   }
 
@@ -221,6 +230,8 @@ contract ODSafeManager is IODSafeManager {
       _sData.collateralType, _sData.safeHandler, _dst, _deltaCollateral, _deltaDebt
     );
 
+    vault721.updateVaultHashState(_safe);
+
     // Remove safe from owner's list (notice it doesn't erase safe ownership)
     _usrSafes[_sData.owner].remove(_safe);
     _usrSafesPerCollat[_sData.owner][_sData.collateralType].remove(_safe);
@@ -236,6 +247,9 @@ contract ODSafeManager is IODSafeManager {
     ISAFEEngine(safeEngine).transferSAFECollateralAndDebt(
       _sData.collateralType, _src, _sData.safeHandler, _deltaCollateral, _deltaDebt
     );
+
+    vault721.updateVaultHashState(_safe);
+
     emit EnterSystem(msg.sender, _src, _safe);
   }
 
@@ -250,6 +264,11 @@ contract ODSafeManager is IODSafeManager {
     ISAFEEngine(safeEngine).transferSAFECollateralAndDebt(
       _srcData.collateralType, _srcData.safeHandler, _dstData.safeHandler, _deltaCollateral, _deltaDebt
     );
+
+    // @note We update the vault hash state for src and the destination as the value for both changes
+    vault721.updateVaultHashState(_safeSrc);
+
+    vault721.updateVaultHashState(_safeDst);
 
     // Remove safe from owner's list (notice it doesn't erase safe ownership)
     _usrSafes[_srcData.owner].remove(_safeSrc);
