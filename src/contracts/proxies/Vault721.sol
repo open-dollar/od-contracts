@@ -40,7 +40,7 @@ contract Vault721 is ERC721EnumerableUpgradeable {
   mapping(address proxy => address user) internal _proxyRegistry;
   mapping(address user => address proxy) internal _userRegistry;
   mapping(uint256 vaultId => HashState hashState) internal _hashState;
-  mapping(address nftExchange => bool whitelisted) internal _whitelist;
+  mapping(address nftExchange => bool whitelisted) internal _allowlist;
 
   event CreateProxy(address indexed _user, address _proxy);
 
@@ -159,7 +159,7 @@ contract Vault721 is ERC721EnumerableUpgradeable {
    * @dev allows DAO to update whitelist
    */
   function updateWhitelist(address _user, bool _whitelisted) external onlyGovernance nonZero(_user) {
-    _whitelist[_user] = _whitelisted;
+    _allowlist[_user] = _whitelisted;
   }
 
   /**
@@ -253,7 +253,7 @@ contract Vault721 is ERC721EnumerableUpgradeable {
     if (from != address(0)) {
       address payable proxy;
 
-      if (_whitelist[msg.sender]) {
+      if (_allowlist[msg.sender]) {
         if (
           block.number < _hashState[firstTokenId].lastBlockNumber + blockDelay
             || _hashState[firstTokenId].lastHash != uint256(nftRenderer.getStateHashBySafeId(firstTokenId))
