@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import 'forge-std/Test.sol';
-import {SepoliaParams, WSTETH, ARB, CBETH, RETH, MAGIC} from '@script/SepoliaParams.s.sol';
+import {SepoliaParams, WSTETH, ARB, CBETH, RETH} from '@script/SepoliaParams.s.sol';
 import {SepoliaDeployment} from '@script/SepoliaDeployment.s.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';

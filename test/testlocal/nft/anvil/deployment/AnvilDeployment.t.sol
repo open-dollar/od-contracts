@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import '@script/Contracts.s.sol';
-import {SepoliaParams, WSTETH, ARB, CBETH, RETH, MAGIC} from '@script/SepoliaParams.s.sol';
+import {SepoliaParams, WSTETH, ARB, CBETH, RETH} from '@script/SepoliaParams.s.sol';
 import {AnvilContracts} from '@testlocal/nft/anvil/deployment/AnvilContracts.t.sol';
 import {MintableERC20} from '@contracts/for-test/MintableERC20.sol';
 
@@ -23,14 +23,14 @@ abstract contract AnvilDeployment is Contracts, SepoliaParams, AnvilContracts {
 
     // --- ERC20s ---
     collateral[ARB] = IERC20Metadata(MintableVoteERC20_Address);
-    collateral[WSTETH] = IERC20Metadata(MintableERC20_5_Address);
-    collateral[CBETH] = IERC20Metadata(MintableERC20_6_Address);
-    collateral[RETH] = IERC20Metadata(MintableERC20_7_Address);
+    collateral[WSTETH] = IERC20Metadata(MintableERC20_wstETH_Address);
+    collateral[CBETH] = IERC20Metadata(MintableERC20_cbETH_Address);
+    collateral[RETH] = IERC20Metadata(MintableERC20_rETH_Address);
 
     erc20[ARB] = MintableERC20(MintableVoteERC20_Address);
-    erc20[WSTETH] = MintableERC20(MintableERC20_5_Address);
-    erc20[CBETH] = MintableERC20(MintableERC20_6_Address);
-    erc20[RETH] = MintableERC20(MintableERC20_7_Address);
+    erc20[WSTETH] = MintableERC20(MintableERC20_wstETH_Address);
+    erc20[CBETH] = MintableERC20(MintableERC20_cbETH_Address);
+    erc20[RETH] = MintableERC20(MintableERC20_rETH_Address);
 
     systemCoin = SystemCoin(SystemCoin_Address);
     protocolToken = ProtocolToken(ProtocolToken_Address);

@@ -398,8 +398,7 @@ contract NFTRenderer {
    * @dev converts timestamp to human readable date and time format
    */
   function _formatDateTime(uint256 timestamp) internal pure returns (string memory) {
-    (uint256 year, uint256 month, uint256 day, uint256 hour, uint256 minute, ) =
-      timestamp.timestampToDateTime();
+    (uint256 year, uint256 month, uint256 day, uint256 hour, uint256 minute,) = timestamp.timestampToDateTime();
 
     string memory _month;
     if (month == 1) _month = 'Jan';
