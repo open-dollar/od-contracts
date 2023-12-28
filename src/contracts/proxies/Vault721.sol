@@ -130,7 +130,12 @@ contract Vault721 is ERC721EnumerableUpgradeable {
     _safeMint(_user, _safeId);
   }
 
-  function transferFrom(address _from, address _to, uint256 _tokenId) public override {
+  function transferFrom(
+    address _from,
+    address _to,
+    uint256 _tokenId
+  ) public override(ERC721, ERC721EnumerableUpgradeable) {
+    // on allowlist wallets, we check the block delay along with the state hash
     if (_allowlist[msg.sender]) {
       if (
         block.number < _hashState[_tokenId].lastBlockNumber + blockDelay
@@ -138,6 +143,7 @@ contract Vault721 is ERC721EnumerableUpgradeable {
       ) {
         revert BlockDelayNotOver();
       }
+      // on non-allowlist wallets, we just check the time delay
     } else {
       if (block.timestamp < _hashState[_tokenId].lastBlockTimestamp + timeDelay) {
         revert TimeDelayNotOver();
