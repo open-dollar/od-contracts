@@ -180,10 +180,10 @@ contract Vault721 is ERC721EnumerableUpgradeable {
   }
 
   /**
-   * @dev allows DAO to update whitelist
+   * @dev allows DAO to update allowlist
    */
-  function updateWhitelist(address _user, bool _whitelisted) external onlyGovernance nonZero(_user) {
-    _allowlist[_user] = _whitelisted;
+  function updateAllowlist(address _user, bool _allowed) external onlyGovernance nonZero(_user) {
+    _allowlist[_user] = _allowed;
   }
 
   /**
