@@ -17,23 +17,20 @@ abstract contract AnvilDeployment is Contracts, SepoliaParams, AnvilContracts {
     collateralTypes.push(WSTETH);
     collateralTypes.push(CBETH);
     collateralTypes.push(RETH);
-    collateralTypes.push(MAGIC);
 
     // --- utils ---
     delegatee[ARB] = governor;
 
     // --- ERC20s ---
     collateral[ARB] = IERC20Metadata(MintableVoteERC20_Address);
-    collateral[WSTETH] = IERC20Metadata(MintableERC20_7_Address);
-    collateral[CBETH] = IERC20Metadata(MintableERC20_8_Address);
-    collateral[RETH] = IERC20Metadata(MintableERC20_9_Address);
-    collateral[MAGIC] = IERC20Metadata(MintableERC20_10_Address);
+    collateral[WSTETH] = IERC20Metadata(MintableERC20_5_Address);
+    collateral[CBETH] = IERC20Metadata(MintableERC20_6_Address);
+    collateral[RETH] = IERC20Metadata(MintableERC20_7_Address);
 
     erc20[ARB] = MintableERC20(MintableVoteERC20_Address);
-    erc20[WSTETH] = MintableERC20(MintableERC20_7_Address);
-    erc20[CBETH] = MintableERC20(MintableERC20_8_Address);
-    erc20[RETH] = MintableERC20(MintableERC20_9_Address);
-    erc20[MAGIC] = MintableERC20(MintableERC20_10_Address);
+    erc20[WSTETH] = MintableERC20(MintableERC20_5_Address);
+    erc20[CBETH] = MintableERC20(MintableERC20_6_Address);
+    erc20[RETH] = MintableERC20(MintableERC20_7_Address);
 
     systemCoin = SystemCoin(SystemCoin_Address);
     protocolToken = ProtocolToken(ProtocolToken_Address);
@@ -89,12 +86,6 @@ abstract contract AnvilDeployment is Contracts, SepoliaParams, AnvilContracts {
       CollateralAuctionHouseChild_0x5245544800000000000000000000000000000000000000000000000000000000_Address
     );
 
-    collateralJoin[MAGIC] =
-      CollateralJoin(CollateralJoinChild_0x4d41474943000000000000000000000000000000000000000000000000000000_Address);
-    collateralAuctionHouse[MAGIC] = CollateralAuctionHouse(
-      CollateralAuctionHouseChild_0x4d41474943000000000000000000000000000000000000000000000000000000_Address
-    );
-
     // --- jobs ---
     accountingJob = AccountingJob(AccountingJob_Address);
     liquidationJob = LiquidationJob(LiquidationJob_Address);
@@ -118,11 +109,10 @@ abstract contract AnvilDeployment is Contracts, SepoliaParams, AnvilContracts {
     postSettlementSurplusBidActions = PostSettlementSurplusBidActions(PostSettlementSurplusBidActions_Address);
 
     // --- oracles ---
-    delayedOracle[ARB] = IDelayedOracle(DelayedOracleChild_20_Address);
-    delayedOracle[WSTETH] = IDelayedOracle(DelayedOracleChild_21_Address);
-    delayedOracle[CBETH] = IDelayedOracle(DelayedOracleChild_22_Address);
-    delayedOracle[RETH] = IDelayedOracle(DelayedOracleChild_23_Address);
-    delayedOracle[MAGIC] = IDelayedOracle(DelayedOracleChild_24_Address);
+    delayedOracle[ARB] = IDelayedOracle(DelayedOracleChild_15_Address);
+    delayedOracle[WSTETH] = IDelayedOracle(DelayedOracleChild_16_Address);
+    delayedOracle[CBETH] = IDelayedOracle(DelayedOracleChild_17_Address);
+    delayedOracle[RETH] = IDelayedOracle(DelayedOracleChild_18_Address);
 
     // --- tokens ---
   }
