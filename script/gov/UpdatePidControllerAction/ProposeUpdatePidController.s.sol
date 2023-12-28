@@ -13,7 +13,7 @@ import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 /// @dev This script is used to propose updating PID Controller params
 /// @dev The script will update some PID Controller params
 /// @dev The script will output a JSON file with the proposal data to be used by the QueueProposal and ExecuteProposal scripts
-/// @dev In the root, run: export FOUNDRY_PROFILE=governance && forge script script/gov/UpdatePidController/ProposeUpdatePidController.s.sol
+/// @dev In the root, run: export FOUNDRY_PROFILE=governance && forge script script/gov/UpdatePidControllerAction/ProposeUpdatePidController.s.sol
 contract ProposeUpdatePidController is JSONScript {
   function run() public {
     /// REQUIRED ENV VARS ///
@@ -22,7 +22,7 @@ contract ProposeUpdatePidController is JSONScript {
     address seedProposer = vm.envAddress('SEED_PROPOSER');
     uint256 noiseBarrier = vm.envUint('NOISE_BARRIER');
     uint256 integralPeriodSize = vm.envUint('INTEGRAL_PERIOD_SIZE');
-    uint256 feedbackOutputUpperBound = vm.envUint('FEEBACK_OUTPUT_UPPER_BOUND');
+    uint256 feedbackOutputUpperBound = vm.envUint('FEEDBACK_OUTPUT_UPPER_BOUND');
     int256 feedbackOutputLowerBound = vm.envInt('FEEDBACK_OUTPUT_LOWER_BOUND');
     uint256 perSecondCumulativeLeak = vm.envUint('PER_SECOND_CUMULATIVE_LEAK');
     int256 kp = vm.envInt('KP');
