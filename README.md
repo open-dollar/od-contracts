@@ -54,6 +54,7 @@ The JSON output may also include some extra params just for informative purposes
 
 **Required env vars:**
 
+- `GOV_EXECUTOR_PK`: private key of the governance executor
 - `GOVERNANCE_ADDRESS`: address of OD Governance
 - `GLOBAL_SETTLEMENT_ADDRESS`: address of the global settlement contract
 - `ADD_COLLATERAL_NEW_COLLATERAL_TYPE`: bytes32 value of the new collateral type
@@ -71,6 +72,7 @@ This script proposes adding a new collateral to the system (deploys new contract
 
 **Required env vars:**
 
+- `GOV_EXECUTOR_PK`: private key of the governance executor
 - `GOVERNANCE_ADDRESS`: address of OD Governance
 - `VAULT_721_ADDRESS`: address of the Vault721 contract
 - `ORACLE_RELAYER_ADDRESS`: address of the oracle relayer
@@ -78,6 +80,29 @@ This script proposes adding a new collateral to the system (deploys new contract
 - `COLLATERAL_JOIN_FACTORY_ADDRESS`: address of the collateral join factory
 
 This script proposes setting a new NFTRenderer contract on the Vault721 contract (deploys new NFTRenderer contract) and outputs a JSON output with the `proposalParams`.
+
+##### Update PIDController Params
+
+[`ProposeUpdatePidController.s.sol`](script/gov/UpdatePidControllerAction/ProposeUpdatePidController.s.sol)
+
+**Required env vars:**
+
+- `GOV_EXECUTOR_PK`: private key of the governance executor
+- `GOVERNANCE_ADDRESS`: address of OD Governance
+- `PID_CONTROLLER_ADDRESS`: address of PID controller
+- `SEED_PROPOSER`: new seed proposer address
+- `NOISE_BARRIER`: new noise barrier value
+- `INTEGRAL_PERIOD_SIZE`: new integral period size value
+- `FEEDBACK_OUTPUT_UPPER_BOUND`: new feedback output upper bound value
+- `FEEDBACK_OUTPUT_LOWER_BOUND`: new feedback output lower bound value
+- `PER_SECOND_CUMULATIVE_LEAK`: new per second cumulative leak value
+- `KP`: new kp value
+- `KI`: new ki value
+- `PRICE_DEVIATION_CUMULATIVE`: new deviation observation integral value
+
+> NOTE: see [`IPIDController.sol`](src/interfaces/IPIDController.sol) for more information about this.
+
+This script proposes updating params on the PIDController contract and outputs a JSON output with the `proposalParams`.
 
 #### Queuing Governance Actions
 
