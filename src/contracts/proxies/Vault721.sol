@@ -12,7 +12,7 @@ import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 // Version 1.5.8
 
 struct HashState {
-  uint256 lastHash;
+  bytes32 lastHash;
   uint256 lastBlockNumber;
   uint256 lastBlockTimestamp;
 }
@@ -130,6 +130,23 @@ contract Vault721 is ERC721EnumerableUpgradeable {
     _safeMint(_user, _safeId);
   }
 
+  function transferFrom(address _from, address _to, uint256 _tokenId) public override {
+    if (_allowlist[msg.sender]) {
+      if (
+        block.number < _hashState[_tokenId].lastBlockNumber + blockDelay
+          || _hashState[_tokenId].lastHash != nftRenderer.getStateHashBySafeId(_tokenId)
+      ) {
+        revert BlockDelayNotOver();
+      }
+    } else {
+      if (block.timestamp < _hashState[_tokenId].lastBlockTimestamp + timeDelay) {
+        revert TimeDelayNotOver();
+      }
+    }
+
+    super.transferFrom(_from, _to, _tokenId);
+  }
+
   /**
    * @dev allows DAO to update protocol implementation on NFTRenderer
    */
@@ -149,10 +166,11 @@ contract Vault721 is ERC721EnumerableUpgradeable {
    * @dev allows ODSafeManager to update the hash state
    */
   function updateVaultHashState(uint256 _vaultId) external onlySafeManager {
-    HashState storage state = _hashState[_vaultId];
-    state.lastHash = uint256(nftRenderer.getStateHashBySafeId(_vaultId));
-    state.lastBlockNumber = block.number;
-    state.lastBlockTimestamp = block.timestamp;
+    _hashState[_vaultId] = HashState({
+      lastHash: nftRenderer.getStateHashBySafeId(_vaultId),
+      lastBlockNumber: block.number,
+      lastBlockTimestamp: block.timestamp
+    });
   }
 
   /**
@@ -248,30 +266,17 @@ contract Vault721 is ERC721EnumerableUpgradeable {
    * @dev _transfer calls `transferSAFEOwnership` on SafeManager
    * enforces that ODProxy exists for transfer or it deploys a new ODProxy for receiver of vault/nft
    */
-  function _afterTokenTransfer(address from, address to, uint256 firstTokenId, uint256) internal override {
-    require(to != address(0), 'V721: no burn');
-    if (from != address(0)) {
+  function _afterTokenTransfer(address _from, address _to, uint256 _tokenId, uint256) internal override {
+    require(_to != address(0), 'V721: no burn');
+    if (_from != address(0)) {
       address payable proxy;
 
-      if (_allowlist[msg.sender]) {
-        if (
-          block.number < _hashState[firstTokenId].lastBlockNumber + blockDelay
-            || _hashState[firstTokenId].lastHash != uint256(nftRenderer.getStateHashBySafeId(firstTokenId))
-        ) {
-          revert BlockDelayNotOver();
-        }
+      if (_isNotProxy(_to)) {
+        proxy = _build(_to);
       } else {
-        if (block.timestamp < _hashState[firstTokenId].lastBlockTimestamp + timeDelay) {
-          revert TimeDelayNotOver();
-        }
+        proxy = payable(_userRegistry[_to]);
       }
-
-      if (_isNotProxy(to)) {
-        proxy = _build(to);
-      } else {
-        proxy = payable(_userRegistry[to]);
-      }
-      IODSafeManager(safeManager).transferSAFEOwnership(firstTokenId, address(proxy));
+      IODSafeManager(safeManager).transferSAFEOwnership(_tokenId, address(proxy));
     }
   }
 }
