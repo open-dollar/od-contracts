@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {ERC721} from '@openzeppelin/token/ERC721/ERC721.sol';
+import {ERC721Upgradeable, IERC721Upgradeable} from '@openzeppelin-upgradeable/token/ERC721/ERC721Upgradeable.sol';
 import {ERC721EnumerableUpgradeable} from
   '@openzeppelin-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol';
 import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
@@ -134,7 +134,7 @@ contract Vault721 is ERC721EnumerableUpgradeable {
     address _from,
     address _to,
     uint256 _tokenId
-  ) public override(ERC721, ERC721EnumerableUpgradeable) {
+  ) public override(ERC721Upgradeable, IERC721Upgradeable) {
     // on allowlist wallets, we check the block delay along with the state hash
     if (_allowlist[msg.sender]) {
       if (
