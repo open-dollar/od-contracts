@@ -22,6 +22,12 @@ contract SetupOracleRelayer is SepoliaDeployment, Script {
   }
 }
 
+// BROADCAST
+// source .env && forge script MockSetupOracleRelayer --skip-simulation --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
+
+// SIMULATE
+// source .env && forge script MockSetupOracleRelayer --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC
+
 contract MockSetupOracleRelayer is SepoliaDeployment, Script {
   function run() public {
     vm.startBroadcast(vm.envUint('ARB_SEPOLIA_PK'));
