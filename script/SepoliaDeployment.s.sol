@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import '@script/Contracts.s.sol';
-import {SepoliaParams, WSTETH, ARB, CBETH, RETH, MAGIC} from '@script/SepoliaParams.s.sol';
+import {SepoliaParams, WSTETH, ARB, CBETH, RETH} from '@script/SepoliaParams.s.sol';
 import {SEPOLIA_CAMELOT_RELAYER_FACTORY} from '@script/Registry.s.sol';
 import {SepoliaContracts} from '@script/SepoliaContracts.s.sol';
 
@@ -17,7 +17,6 @@ abstract contract SepoliaDeployment is Contracts, SepoliaParams, SepoliaContract
     collateralTypes.push(WSTETH);
     collateralTypes.push(CBETH);
     collateralTypes.push(RETH);
-    collateralTypes.push(MAGIC);
 
     // --- utils ---
     delegatee[ARB] = governor;
@@ -27,7 +26,6 @@ abstract contract SepoliaDeployment is Contracts, SepoliaParams, SepoliaContract
     collateral[WSTETH] = IERC20Metadata(MintableERC20_WSTETH_Address);
     collateral[CBETH] = IERC20Metadata(MintableERC20_CBETH_Address);
     collateral[RETH] = IERC20Metadata(MintableERC20_RETH_Address);
-    collateral[MAGIC] = IERC20Metadata(MintableERC20_MAGIC_Address);
 
     systemCoin = SystemCoin(SystemCoin_Address);
     protocolToken = ProtocolToken(ProtocolToken_Address);
@@ -83,12 +81,6 @@ abstract contract SepoliaDeployment is Contracts, SepoliaParams, SepoliaContract
       CollateralAuctionHouseChild_0x5245544800000000000000000000000000000000000000000000000000000000_Address
     );
 
-    collateralJoin[MAGIC] =
-      CollateralJoin(CollateralJoinChild_0x4d41474943000000000000000000000000000000000000000000000000000000_Address);
-    collateralAuctionHouse[MAGIC] = CollateralAuctionHouse(
-      CollateralAuctionHouseChild_0x4d41474943000000000000000000000000000000000000000000000000000000_Address
-    );
-
     // --- jobs ---
     accountingJob = AccountingJob(AccountingJob_Address);
     liquidationJob = LiquidationJob(LiquidationJob_Address);
@@ -117,6 +109,5 @@ abstract contract SepoliaDeployment is Contracts, SepoliaParams, SepoliaContract
     delayedOracle[WSTETH] = IDelayedOracle(DelayedOracleChild_WSTETH_Address);
     delayedOracle[CBETH] = IDelayedOracle(DelayedOracleChild_CBETH_Address);
     delayedOracle[RETH] = IDelayedOracle(DelayedOracleChild_RETH_Address);
-    delayedOracle[MAGIC] = IDelayedOracle(DelayedOracleChild_MAGIC_Address);
   }
 }
