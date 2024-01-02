@@ -54,6 +54,7 @@ contract NFTRenderer {
     string color;
     string stroke;
     string lastUpdate;
+    string stateHash;
   }
 
   /**
@@ -105,6 +106,47 @@ contract NFTRenderer {
   }
 
   /**
+   * @dev gets the vault ctype, collateral and debt amounts given `_safeId`
+   * @param _safeId vault id
+   * @return cType collateral type
+   * @return collateral collateral amount for safe with `_safeId`
+   * @return debt debt amount for safe with `_safeId`
+   */
+  function getVaultCTypeAndCollateralAndDebt(uint256 _safeId)
+    public
+    view
+    returns (bytes32 cType, uint256 collateral, uint256 debt)
+  {
+    IODSafeManager.SAFEData memory safeMangerData = _safeManager.safeData(_safeId);
+    address safeHandler = safeMangerData.safeHandler;
+    cType = safeMangerData.collateralType;
+
+    ISAFEEngine.SAFE memory SafeEngineData = _safeEngine.safes(cType, safeHandler);
+    collateral = SafeEngineData.lockedCollateral;
+    debt = SafeEngineData.generatedDebt;
+  }
+
+  /**
+   * @dev computes the current state hash based on the state for a vault given `_safeId`
+   * @param _safeId vault id
+   * @return stateHash state hash for safe with `_safeId`
+   */
+  function getStateHashBySafeId(uint256 _safeId) external view returns (bytes32 stateHash) {
+    (, uint256 collateral, uint256 debt) = getVaultCTypeAndCollateralAndDebt(_safeId);
+    stateHash = getStateHash(collateral, debt);
+  }
+
+  /**
+   * @dev computes the current state hash given `_collateral` and `_debt`
+   * @param _collateral collateral amount
+   * @param _debt debt amount
+   * @return stateHash computed state hash
+   */
+  function getStateHash(uint256 _collateral, uint256 _debt) public pure returns (bytes32 stateHash) {
+    stateHash = keccak256(abi.encode(_collateral, _debt));
+  }
+
+  /**
    * @dev reads from various protocol contracts to collect data about user vaults by vault id
    */
   function renderParams(uint256 _safeId) public view returns (VaultParams memory) {
@@ -114,13 +156,9 @@ contract NFTRenderer {
     bytes32 cType;
     // scoped to reduce call stack
     {
-      IODSafeManager.SAFEData memory safeMangerData = _safeManager.safeData(_safeId);
-      address safeHandler = safeMangerData.safeHandler;
-      cType = safeMangerData.collateralType;
-
-      ISAFEEngine.SAFE memory SafeEngineData = _safeEngine.safes(cType, safeHandler);
-      uint256 collateral = SafeEngineData.lockedCollateral;
-      uint256 debt = SafeEngineData.generatedDebt;
+      uint256 collateral;
+      uint256 debt;
+      (cType, collateral, debt) = getVaultCTypeAndCollateralAndDebt(_safeId);
 
       IOracleRelayer.OracleRelayerCollateralParams memory oracleParams = _oracleRelayer.cParams(cType);
       IDelayedOracle oracle = oracleParams.oracle;
@@ -153,6 +191,8 @@ contract NFTRenderer {
       (params.risk, params.color) = _calcRisk(ratio, liquidationCRatio, safetyCRatio);
       params.stroke = _calcStroke(ratio);
       params.ratio = ratio;
+
+      params.stateHash = string(abi.encodePacked(getStateHash(collateral, debt)));
     }
 
     ITaxCollector.TaxCollectorCollateralData memory taxData = _taxCollector.cData(cType);
