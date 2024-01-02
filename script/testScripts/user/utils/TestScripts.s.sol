@@ -1,7 +1,7 @@
   // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import {Deployment} from '@script/user/utils/Deployment.s.sol';
+import {Deployment} from '@script/testScripts/user/utils/Deployment.s.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 
 // TODO update these scritps to work with the NFT-mods / new contracts
