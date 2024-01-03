@@ -15,7 +15,6 @@ uint256 constant MINUS_0_5_PERCENT_PER_HOUR = 999_998_607_628_240_588_157_433_86
  * CTYPE_ADDR= <token address>
  * CTYPE_SYM= <bytes32 of token symbol>
  */
-
 contract CTypeBase is SepoliaContracts, Script {
   CollateralJoinFactory public collateralJoinFactory = CollateralJoinFactory(CollateralJoinFactory_Address);
   CollateralAuctionHouseFactory public collateralAuctionHouseFactory =
