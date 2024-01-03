@@ -9,6 +9,7 @@ import {ICoinJoin} from '@interfaces/utils/ICoinJoin.sol';
 import {ITaxCollector} from '@interfaces/ITaxCollector.sol';
 import {ICollateralJoin} from '@interfaces/utils/ICollateralJoin.sol';
 import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
+import {SafeCast} from '@openzeppelin/utils/math/SafeCast.sol';
 import {IBasicActions} from '@interfaces/proxies/actions/IBasicActions.sol';
 
 import {Math, WAD, RAY, RAD} from '@libraries/Math.sol';
@@ -21,6 +22,7 @@ import {CommonActions} from '@contracts/proxies/actions/CommonActions.sol';
 /// circumvent paying taxes: https://github.com/open-dollar/od-contracts/issues/216
 contract FakeBasicActions {
   using Math for uint256;
+  using SafeCast for int256;
 
   function lockTokenCollateralAndGenerateDebt(
     address _manager,
@@ -36,17 +38,14 @@ contract FakeBasicActions {
     // Takes token amount from user's wallet and joins into the safeEngine
     _joinCollateral(_collateralJoin, _safeInfo.safeHandler, _collateralAmount);
 
+    int256 deltaDebt = _getGeneratedDeltaDebt(_safeEngine, _safeInfo.collateralType, _safeInfo.safeHandler, _deltaWad);
+
     // Locks token amount into the SAFE and generates debt
-    _modifySAFECollateralization(
-      _manager,
-      _safeId,
-      _collateralAmount.toInt(),
-      _getGeneratedDeltaDebt(_safeEngine, _safeInfo.collateralType, _safeInfo.safeHandler, _deltaWad),
-      true
-    );
+    _modifySAFECollateralization(_manager, _safeId, _collateralAmount.toInt(), deltaDebt, false);
 
     // Exits and transfers COIN amount to the user's address
-    _collectAndExitCoins(_manager, _coinJoin, _safeId, _deltaWad);
+    // deltaDebt should always be positive, but we use SafeCast as an extra guard
+    _collectAndExitCoins(_manager, _coinJoin, _safeId, deltaDebt.toUint256());
   }
 
   function generateDebt(address _manager, address _coinJoin, uint256 _safeId, uint256 _deltaWad) public {
