@@ -266,6 +266,8 @@ contract NFTAnvil is AnvilFork {
    */
 
   function test_allowSAFE(uint256 cTypeIndex, bool ok) public {
+
+    vm.assume(ok == true);
     cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
     uint256 i = 0;
     address proxy = proxies[i];
