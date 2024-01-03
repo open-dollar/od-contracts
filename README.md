@@ -64,7 +64,7 @@ The JSON output may also include some extra params just for informative purposes
 - `ADD_COLLATERAL_MAX_DISCOUNT`: maximum discount for the collateral auctions (wad %)
 - `ADD_COLLATERAL_PER_SECOND_DISCOUNT_UPDATE_RATE`: Per second rate at which the discount is updated (ray)
 
-This script proposes adding a new collateral to the system (deploys new contracts via the collateral join and collateral auction house factories) and outputs a JSON output with the `proposalParams`.
+This script proposes adding a new collateral to the system (deploys new contracts via the collateral join and collateral auction house factories).
 
 ##### Update NFT Renderer
 
@@ -79,7 +79,33 @@ This script proposes adding a new collateral to the system (deploys new contract
 - `TAX_COLLECTOR_ADDRESS`: address of the tax collector
 - `COLLATERAL_JOIN_FACTORY_ADDRESS`: address of the collateral join factory
 
-This script proposes setting a new NFTRenderer contract on the Vault721 contract (deploys new NFTRenderer contract) and outputs a JSON output with the `proposalParams`.
+This script proposes setting a new NFTRenderer contract on the Vault721 contract (deploys new NFTRenderer contract).
+
+##### Update Block Delay
+
+[`ProposeUpdateBlockDelay.s.sol`](script/gov/UpdateBlockDelayAction/ProposeUpdateBlockDelay.s.sol)
+
+**Required env vars:**
+
+- `GOV_EXECUTOR_PK`: private key of the governance executor
+- `GOVERNANCE_ADDRESS`: address of OD Governance
+- `VAULT_721_ADDRESS`: address of the Vault721 contract
+- `BLOCK_DELAY`: the number of blocks to wait before being able to transfer after collateral or debt has been updated for allowlisted addresses
+
+This script proposes setting a new block delay on the Vault721 contract.
+
+##### Update Time Delay
+
+[`ProposeUpdateTimeDelay.s.sol`](script/gov/UpdateTimeDelayAction/ProposeUpdateTimeDelay.s.sol)
+
+**Required env vars:**
+
+- `GOV_EXECUTOR_PK`: private key of the governance executor
+- `GOVERNANCE_ADDRESS`: address of OD Governance
+- `VAULT_721_ADDRESS`: address of the Vault721 contract
+- `TIME_DELAY`: the amount of time to wait before being able to transfer after collateral or debt has been updated for non-allowlisted addresses
+
+This script proposes setting a new time delay on the Vault721 contract.
 
 ##### Update PIDController Params
 
@@ -102,7 +128,7 @@ This script proposes setting a new NFTRenderer contract on the Vault721 contract
 
 > NOTE: see [`IPIDController.sol`](src/interfaces/IPIDController.sol) for more information about this.
 
-This script proposes updating params on the PIDController contract and outputs a JSON output with the `proposalParams`.
+This script proposes updating params on the PIDController contract.
 
 #### Queuing Governance Actions
 

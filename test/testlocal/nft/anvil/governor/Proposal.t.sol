@@ -38,7 +38,8 @@ contract GovernanceProposalAnvil is AnvilFork {
     perSecondDiscountUpdateRate: MINUS_0_5_PERCENT_PER_HOUR
   });
 
-  function testAddCollateral() public {
+  //// Add Collateral ////
+  function testDeployCollateralJoin() public {
     vm.startPrank(address(timelockController));
     bytes32[] memory _collateralTypesList = collateralJoinFactory.collateralTypesList();
     collateralJoinFactory.deployCollateralJoin(newCType, newCAddress);
@@ -51,6 +52,7 @@ contract GovernanceProposalAnvil is AnvilFork {
     vm.stopPrank();
   }
 
+  //// Update NFT Renderer ////
   function testUpdateNFTRenderer() public {
     vm.startPrank(vault721.timelockController());
     address fakeOracleRelayer = address(1);
@@ -62,6 +64,7 @@ contract GovernanceProposalAnvil is AnvilFork {
     vm.stopPrank();
   }
 
+  //// Update PID Controller ////
   function testUpdatePidController() public {
     ODGovernor dao = ODGovernor(payable(ODGovernor_Address));
     vm.startPrank(address(dao));
@@ -94,6 +97,24 @@ contract GovernanceProposalAnvil is AnvilFork {
 
     IPIDController.DeviationObservation memory deviationObservation = pidController.deviationObservation();
     assertEq(deviationObservation.integral, 1);
+  }
+
+  //// Update Block Delay ////
+  function testUpdateBlockDelay() public {
+    vm.startPrank(vault721.timelockController());
+    vault721.updateBlockDelay(1);
+    vm.stopPrank();
+
+    assertEq(vault721.blockDelay(), 1, 'testUpdateBlockDelay: Block Delay not set properly');
+  }
+
+  //// Update Time Delay ////
+  function testUpdateTimeDelay() public {
+    vm.startPrank(vault721.timelockController());
+    vault721.updateTimeDelay(1);
+    vm.stopPrank();
+
+    assertEq(vault721.timeDelay(), 1, 'testUpdateTimeDelay: Time Delay not set properly');
   }
 
   function _helperExecuteProp(
@@ -234,7 +255,29 @@ contract GovernanceProposalAnvil is AnvilFork {
     _helperExecuteProp(targets, values, calldatas, description, descriptionHash);
   }
 
-  // Proposal Paarams
+  function testUpdateBlockDelayProposal() public {
+    (
+      address[] memory targets,
+      uint256[] memory values,
+      bytes[] memory calldatas,
+      string memory description,
+      bytes32 descriptionHash
+    ) = generateUpdateBlockDelayProposalParams(1);
+    _helperExecuteProp(targets, values, calldatas, description, descriptionHash);
+  }
+
+  function testUpdateTimeDelayProposal() public {
+    (
+      address[] memory targets,
+      uint256[] memory values,
+      bytes[] memory calldatas,
+      string memory description,
+      bytes32 descriptionHash
+    ) = generateUpdateTimeDelayProposalParams(1);
+    _helperExecuteProp(targets, values, calldatas, description, descriptionHash);
+  }
+
+  //// Proposal Paarams ////
   function generateAddCollateralProposalParams()
     public
     returns (
@@ -339,5 +382,57 @@ contract GovernanceProposalAnvil is AnvilFork {
     calldatas[6] = abi.encodeWithSignature(sig, 'kp', abi.encode(params.kp));
     calldatas[7] = abi.encodeWithSignature(sig, 'ki', abi.encode(params.ki));
     calldatas[8] = abi.encodeWithSignature(sig, 'priceDeviationCumulative', abi.encode(params.priceDeviationCumulative));
+  }
+
+  function generateUpdateBlockDelayProposalParams(uint8 blockDelay)
+    public
+    returns (
+      address[] memory targets,
+      uint256[] memory values,
+      bytes[] memory calldatas,
+      string memory description,
+      bytes32 descriptionHash
+    )
+  {
+    targets = new address[](1);
+    targets[0] = address(vault721);
+
+    values = new uint256[](1);
+    values[0] = 0;
+
+    bytes memory calldata0 = abi.encodeWithSelector(IVault721.updateBlockDelay.selector, blockDelay);
+
+    calldatas = new bytes[](1);
+    calldatas[0] = calldata0;
+
+    description = 'Update Block Delay';
+
+    descriptionHash = keccak256(bytes(description));
+  }
+
+  function generateUpdateTimeDelayProposalParams(uint256 timeDelay)
+    public
+    returns (
+      address[] memory targets,
+      uint256[] memory values,
+      bytes[] memory calldatas,
+      string memory description,
+      bytes32 descriptionHash
+    )
+  {
+    targets = new address[](1);
+    targets[0] = address(vault721);
+
+    values = new uint256[](1);
+    values[0] = 0;
+
+    bytes memory calldata0 = abi.encodeWithSelector(IVault721.updateTimeDelay.selector, timeDelay);
+
+    calldatas = new bytes[](1);
+    calldatas[0] = calldata0;
+
+    description = 'Update Time Delay';
+
+    descriptionHash = keccak256(bytes(description));
   }
 }

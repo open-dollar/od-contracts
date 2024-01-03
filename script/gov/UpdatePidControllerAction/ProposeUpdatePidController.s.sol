@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {JSONScript} from '@script/testScripts/gov/JSONScript.s.sol';
+import {JSONScript} from '@script/gov/JSONScript.s.sol';
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
