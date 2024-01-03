@@ -39,12 +39,10 @@ address constant SEPOLIA_CHAINLINK_RELAYER = 0x1217755f6F4Ed87c70336ae958424bEB0
 
 // Denominated Oracle (pre-deployed @ sol 0.7.6)
 address constant SEPOLIA_DENOMINATED_ORACLE_FACTORY = 0xdc6CCFA4a3c28e3bC031CA4C713507bA71370948;
+
 // SystemCoinOracle (pre-deployed @ sol 0.7.6 as denominatedOracle)
 address constant SEPOLIA_SYSTEM_COIN_ORACLE = 0x571b1fd22DfB354E704b206f756aC8635A431a2a;
 address constant SEPOLIA_SYSTEM_COIN_ORACLE_X = 0x4cc0B8F7867a44023af3C2086c3F7d1e3384AC75;
-
-// SystemCoinOracle (pre-deployed @ sol 0.7.6 as denominatedOracle)
-address constant SEPOLIA_SYSTEM_COIN_ORACLE = address(0);
 
 // Algebra protocol (not deployed by Camelot)
 address constant SEPOLIA_CAMELOT_AMM_FACTORY = 0x21852176141b8D139EC5D3A1041cdC31F0F20b94;
