@@ -230,7 +230,9 @@ contract NFTAnvil is AnvilFork {
     }
   }
 
-  function test_GenerateDebtWithoutTax() public {
+  function test_GenerateDebtWithoutTax(uint256 debt, uint256 collateral) public {
+    debt = bound(debt, 1 ether, debtCeiling);
+    collateral = bound(collateral, debt / 975, MINT_AMOUNT); // ETH price ~ 1500 (debt / 975 > 150% collateralization)
     FakeBasicActions fakeBasicActions = new FakeBasicActions();
     address proxy = proxies[1];
     bytes32 cType = cTypes[1];
@@ -239,26 +241,25 @@ contract NFTAnvil is AnvilFork {
     bytes memory payload = abi.encodeWithSelector(
       fakeBasicActions.lockTokenCollateralAndGenerateDebt.selector,
       address(safeManager),
-      address(taxCollector),
       address(collateralJoin[cType]),
       address(coinJoin),
       vaultId,
-      1,
+      collateral,
       0
     );
     vm.startPrank(users[1]);
 
     // Proxy makes a delegatecall to Malicious BasicAction contract and bypasses the TAX payment
     ODProxy(proxy).execute(address(fakeBasicActions), payload);
-    genDebt(vaultId, 10, proxy);
+    genDebt(vaultId, debt, proxy);
 
     vm.stopPrank();
 
     IODSafeManager.SAFEData memory sData = safeManager.safeData(vaultId);
     address safeHandler = sData.safeHandler;
     ISAFEEngine.SAFE memory SafeEngineData = safeEngine.safes(cType, safeHandler);
-    assertEq(1, SafeEngineData.lockedCollateral);
-    assertEq(10, SafeEngineData.generatedDebt);
+    assertEq(collateral, SafeEngineData.lockedCollateral);
+    assertEq(debt, SafeEngineData.generatedDebt);
   }
   /**
    * @dev fuzz tests set to 256 runs each
