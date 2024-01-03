@@ -15,7 +15,6 @@ contract SetupOracleRelayer is SepoliaDeployment, Script {
   function run() public {
     vm.startBroadcast(vm.envUint('ARB_SEPOLIA_DEPLOYER_PK'));
     oracleRelayer.modifyParameters('systemCoinOracle', abi.encode(SEPOLIA_SYSTEM_COIN_ORACLE));
-
     oracleRelayer.addAuthorization(address(timelockController));
     oracleRelayer.removeAuthorization(vm.envAddress('ARB_SEPOLIA_DEPLOYER_PC'));
     vm.stopBroadcast();

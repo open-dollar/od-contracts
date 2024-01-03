@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import 'forge-std/console2.sol';
-import {JSONScript} from '@script/gov/JSONScript.s.sol';
+import {JSONScript} from '@script/testScripts/gov/JSONScript.s.sol';
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 
 /// @title ExecuteProposal Script
