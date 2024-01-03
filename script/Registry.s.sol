@@ -42,6 +42,9 @@ address constant SEPOLIA_DENOMINATED_ORACLE_FACTORY = 0xdc6CCFA4a3c28e3bC031CA4C
 // SystemCoinOracle (pre-deployed @ sol 0.7.6 as denominatedOracle)
 address constant SEPOLIA_SYSTEM_COIN_ORACLE = 0x571b1fd22DfB354E704b206f756aC8635A431a2a;
 
+// SystemCoinOracle (pre-deployed @ sol 0.7.6 as denominatedOracle)
+address constant SEPOLIA_SYSTEM_COIN_ORACLE = address(0);
+
 // Algebra protocol (not deployed by Camelot)
 address constant SEPOLIA_CAMELOT_AMM_FACTORY = 0x21852176141b8D139EC5D3A1041cdC31F0F20b94;
 address constant SEPOLIA_CAMELOT_POOL = 0x970582952efd504062eb836faA975C4f40fAf3CA;

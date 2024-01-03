@@ -218,7 +218,7 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
       });
 
       lastSurplusTime = block.timestamp;
-      emit AuctionSurplus(_id, 0, _params.surplusAmount.wmul(ONE_HUNDRED_WAD - _params.surplusTransferPercentage));
+      emit AuctionSurplus(_id, 0, _params.surplusAmount.wmul(WAD - _params.surplusTransferPercentage));
     }
 
     // transfer surplus percentage
