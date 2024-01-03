@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import 'forge-std/Test.sol';
 import {AnvilDeployment} from '@testlocal/nft/anvil/deployment/AnvilDeployment.t.sol';
-import {WSTETH, ARB, CBETH, RETH, MAGIC} from '@script/GoerliParams.s.sol';
+import {WSTETH, ARB, CBETH, RETH} from '@script/SepoliaParams.s.sol';
 
 // --- Collateral ERC20 ---
 import {MintableVoteERC20} from '@contracts/for-test/MintableVoteERC20.sol';
@@ -43,7 +43,6 @@ import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
  * node tasks/parseAnvilDeployments.js
  * forge t --fork-url http://127.0.0.1:8545  --match-contract ContractToTest -vvvvv
  */
-
 contract AnvilFork is AnvilDeployment, Test {
   uint256 public constant MINT_AMOUNT = 1_000_000 * 1 ether;
 
@@ -65,7 +64,7 @@ contract AnvilFork is AnvilDeployment, Test {
   address[3] public users;
   address[2] public newUsers;
   address[3] public proxies;
-  bytes32[5] public cTypes;
+  bytes32[4] public cTypes;
 
   function setUp() public virtual {
     users[0] = ALICE;
@@ -79,7 +78,6 @@ contract AnvilFork is AnvilDeployment, Test {
     cTypes[1] = WSTETH;
     cTypes[2] = CBETH;
     cTypes[3] = RETH;
-    cTypes[4] = MAGIC;
 
     deployProxies();
     labelVars();

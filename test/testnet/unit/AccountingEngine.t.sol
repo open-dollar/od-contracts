@@ -38,8 +38,9 @@ abstract contract Base is HaiTest {
   function setUp() public virtual {
     vm.startPrank(deployer);
 
-    accountingEngine =
-    new AccountingEngineForTest(address(mockSafeEngine), address(mockSurplusAuctionHouse), address(mockDebtAuctionHouse), accountingEngineParams);
+    accountingEngine = new AccountingEngineForTest(
+      address(mockSafeEngine), address(mockSurplusAuctionHouse), address(mockDebtAuctionHouse), accountingEngineParams
+    );
     vm.stopPrank();
   }
 
@@ -205,24 +206,31 @@ contract Unit_AccountingEngine_Constructor is Base {
   function test_Set_AccountingEngineParams(IAccountingEngine.AccountingEngineParams memory _accountingEngineParams)
     public
   {
-    accountingEngine =
-    new AccountingEngineForTest(address(mockSafeEngine), address(mockSurplusAuctionHouse), address(mockDebtAuctionHouse), _accountingEngineParams);
+    accountingEngine = new AccountingEngineForTest(
+      address(mockSafeEngine), address(mockSurplusAuctionHouse), address(mockDebtAuctionHouse), _accountingEngineParams
+    );
     assertEq(abi.encode(accountingEngine.params()), abi.encode(_accountingEngineParams));
   }
 
   function test_Revert_NullSafeEngine() public {
     vm.expectRevert(Assertions.NullAddress.selector);
-    new AccountingEngineForTest(address(0), address(mockSurplusAuctionHouse), address(mockDebtAuctionHouse), accountingEngineParams);
+    new AccountingEngineForTest(
+      address(0), address(mockSurplusAuctionHouse), address(mockDebtAuctionHouse), accountingEngineParams
+    );
   }
 
   function test_Revert_NullSurplusAuctionHouse() public {
     vm.expectRevert(Assertions.NullAddress.selector);
-    new AccountingEngineForTest(address(mockSafeEngine), address(0), address(mockDebtAuctionHouse), accountingEngineParams);
+    new AccountingEngineForTest(
+      address(mockSafeEngine), address(0), address(mockDebtAuctionHouse), accountingEngineParams
+    );
   }
 
   function test_Revert_NullDebtAuctionHouse() public {
     vm.expectRevert(Assertions.NullAddress.selector);
-    new AccountingEngineForTest(address(mockSafeEngine), address(mockSurplusAuctionHouse), address(0), accountingEngineParams);
+    new AccountingEngineForTest(
+      address(mockSafeEngine), address(mockSurplusAuctionHouse), address(0), accountingEngineParams
+    );
   }
 }
 

@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
+// --- Universal Vars ---
+uint256 constant SEMI_RANDOM_SALT = 1; // set to 0 to use Salts below, set to 1 to randomly generate a salt
+
 // --- ARB Sepolia Testnet ---
 
 // Governance Settings
@@ -26,6 +29,9 @@ address constant SEPOLIA_CREATE2_FACTORY = 0xb9d4cbCcF0152040c3269D9701EE6842619
 // Camelot Relayer (pre-deployed @ sol 0.7.6)
 address constant SEPOLIA_CAMELOT_RELAYER_FACTORY = address(0);
 address constant SEPOLIA_CAMELOT_RELAYER = address(0);
+
+// SystemCoinOracle (pre-deployed @ sol 0.7.6 as denominatedOracle)
+address constant SEPOLIA_SYSTEM_COIN_ORACLE = address(0);
 
 // Algebra protocol (not deployed by Camelot)
 address constant SEPOLIA_CAMELOT_AMM_FACTORY = 0x21852176141b8D139EC5D3A1041cdC31F0F20b94;
@@ -85,3 +91,6 @@ address constant CHAINLINK_RETH_ETH_FEED = 0xF3272CAfe65b190e76caAF483db13424a3e
 address constant ALICE = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266; // deployer
 address constant BOB = 0x70997970C51812dc3A010C7d01b50e0d17dc79C8;
 address constant CHARLOTTE = 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC;
+
+// WETH token
+address constant MAINNET_WETH = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;

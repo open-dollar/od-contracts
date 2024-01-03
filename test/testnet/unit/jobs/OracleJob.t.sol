@@ -30,8 +30,9 @@ abstract contract Base is HaiTest {
   function setUp() public virtual {
     vm.startPrank(deployer);
 
-    oracleJob =
-    new OracleJobForTest(address(mockOracleRelayer), address(mockPIDRateSetter), address(mockStabilityFeeTreasury), REWARD_AMOUNT);
+    oracleJob = new OracleJobForTest(
+      address(mockOracleRelayer), address(mockPIDRateSetter), address(mockStabilityFeeTreasury), REWARD_AMOUNT
+    );
     label(address(oracleJob), 'OracleJob');
 
     oracleJob.addAuthorization(authorizedAccount);
@@ -91,8 +92,9 @@ contract Unit_OracleJob_Constructor is Base {
     vm.expectEmit();
     emit AddAuthorization(user);
 
-    oracleJob =
-    new OracleJobForTest(address(mockOracleRelayer), address(mockPIDRateSetter), address(mockStabilityFeeTreasury), REWARD_AMOUNT);
+    oracleJob = new OracleJobForTest(
+      address(mockOracleRelayer), address(mockPIDRateSetter), address(mockStabilityFeeTreasury), REWARD_AMOUNT
+    );
   }
 
   function test_Set_OracleRelayer(address _oracleRelayer) public happyPath {

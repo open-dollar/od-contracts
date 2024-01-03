@@ -46,10 +46,10 @@ contract Usr {
     safeEngine = _safeEngine;
   }
 
-  function try_call(address addr, bytes calldata data) external returns (bool) {
+  function try_call(address addr, bytes calldata data) external returns (bool ok) {
     bytes memory _data = data;
     assembly {
-      let ok := call(gas(), addr, 0, add(_data, 0x20), mload(_data), 0, 0)
+      ok := call(gas(), addr, 0, add(_data, 0x20), mload(_data), 0, 0)
       let free := mload(0x40)
       mstore(free, ok)
       mstore(0x40, add(free, 32))
@@ -64,17 +64,17 @@ contract Usr {
     address debtDestination,
     int256 deltaCollateral,
     int256 deltaDebt
-  ) public returns (bool) {
+  ) public returns (bool ok) {
     string memory _sig = 'modifySAFECollateralization(bytes32,address,address,address,int256,int256)';
     bytes memory _data = abi.encodeWithSignature(
       _sig, _collateralType, safe, collateralSource, debtDestination, deltaCollateral, deltaDebt
     );
+    bytes memory _success;
 
     bytes memory _can_call = abi.encodeWithSignature('try_call(address,bytes)', safeEngine, _data);
-    (bool _ok, bytes memory _success) = address(this).call(_can_call);
+    (ok, _success) = address(this).call(_can_call);
 
-    _ok = abi.decode(_success, (bool));
-    if (_ok) return true;
+    ok = abi.decode(_success, (bool));
   }
 
   function can_transferSAFECollateralAndDebt(
@@ -83,15 +83,15 @@ contract Usr {
     address dst,
     int256 deltaCollateral,
     int256 deltaDebt
-  ) public returns (bool) {
+  ) public returns (bool ok) {
     string memory _sig = 'transferSAFECollateralAndDebt(bytes32,address,address,int256,int256)';
     bytes memory data = abi.encodeWithSignature(_sig, _collateralType, src, dst, deltaCollateral, deltaDebt);
 
     bytes memory can_call = abi.encodeWithSignature('try_call(address,bytes)', safeEngine, data);
-    (bool ok, bytes memory success) = address(this).call(can_call);
+    bytes memory success;
+    (ok, success) = address(this).call(can_call);
 
     ok = abi.decode(success, (bool));
-    if (ok) return true;
   }
 
   function approve(address _token, address _target, uint256 _wad) external {
@@ -816,8 +816,8 @@ contract SingleLiquidationTest is DSTest {
     });
 
     accountingEngine = new AccountingEngine(
-          address(safeEngine), address(surplusAuctionHouse), address(debtAuctionHouse), _accountingEngineParams
-        );
+      address(safeEngine), address(surplusAuctionHouse), address(debtAuctionHouse), _accountingEngineParams
+    );
     surplusAuctionHouse.addAuthorization(address(accountingEngine));
     debtAuctionHouse.addAuthorization(address(accountingEngine));
     safeEngine.addAuthorization(address(accountingEngine));
@@ -860,10 +860,10 @@ contract SingleLiquidationTest is DSTest {
     IOracleRelayer.OracleRelayerParams memory _oracleRelayerParams =
       IOracleRelayer.OracleRelayerParams({redemptionRateUpperBound: RAY * WAD, redemptionRateLowerBound: 1});
     oracleRelayer = new OracleRelayer({
-        _safeEngine: address(safeEngine), 
-        _systemCoinOracle: IBaseOracle(address(mockSystemCoinOracle)), 
-        _oracleRelayerParams: _oracleRelayerParams
-        });
+      _safeEngine: address(safeEngine),
+      _systemCoinOracle: IBaseOracle(address(mockSystemCoinOracle)),
+      _oracleRelayerParams: _oracleRelayerParams
+    });
     safeEngine.addAuthorization(address(oracleRelayer));
 
     oracleFSM = new DelayedOracleForTest(1 ether, address(0));
@@ -884,8 +884,9 @@ contract SingleLiquidationTest is DSTest {
       perSecondDiscountUpdateRate: RAY, // [ray]
       minimumBid: 1e18 // 1 system coin
     });
-    collateralAuctionHouse =
-    new CollateralAuctionHouse(address(safeEngine), address(liquidationEngine), address(oracleRelayer), 'gold', _cahParams);
+    collateralAuctionHouse = new CollateralAuctionHouse(
+      address(safeEngine), address(liquidationEngine), address(oracleRelayer), 'gold', _cahParams
+    );
 
     ILiquidationEngine.LiquidationEngineCollateralParams memory _liquidationEngineCollateralParams = ILiquidationEngine
       .LiquidationEngineCollateralParams({

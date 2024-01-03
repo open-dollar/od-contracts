@@ -30,8 +30,8 @@ abstract contract Modifiable is IModifiable, Authorizable {
     bytes32 _param,
     bytes memory _data
   ) external isAuthorized validCParams(_cType) {
-    _modifyParameters(_cType, _param, _data);
     emit ModifyParameters(_param, _cType, _data);
+    _modifyParameters(_cType, _param, _data);
   }
 
   // --- Internal virtual methods ---

@@ -135,6 +135,7 @@ contract SingleBurningSurplusAuctionHouseTest is DSTest {
       ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 0});
     safeEngine = new SAFEEngine(_safeEngineParams);
     protocolToken = new ProtocolToken();
+    protocolToken.initialize("OD Governance", "ODG");
 
     ISurplusAuctionHouse.SurplusAuctionHouseParams memory _sahParams = ISurplusAuctionHouse.SurplusAuctionHouseParams({
       bidIncrease: 1.05e18,
@@ -263,6 +264,7 @@ contract SingleRecyclingSurplusAuctionHouseTest is DSTest {
       ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 0});
     safeEngine = new SAFEEngine(_safeEngineParams);
     protocolToken = new ProtocolToken();
+    protocolToken.initialize("OD Governance", "ODG");
 
     ISurplusAuctionHouse.SurplusAuctionHouseParams memory _sahParams = ISurplusAuctionHouse.SurplusAuctionHouseParams({
       bidIncrease: 1.05e18,
@@ -398,6 +400,7 @@ contract SingleMixedStratSurplusAuctionHouseTest is DSTest {
       ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 0});
     safeEngine = new SAFEEngine(_safeEngineParams);
     protocolToken = new ProtocolToken();
+    protocolToken.initialize("OD Governance", "ODG");
 
     ISurplusAuctionHouse.SurplusAuctionHouseParams memory _sahParams = ISurplusAuctionHouse.SurplusAuctionHouseParams({
       bidIncrease: 1.05e18,
@@ -536,6 +539,7 @@ contract SinglePostSettlementSurplusAuctionHouseTest is DSTest {
       ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 0});
     safeEngine = new SAFEEngine(_safeEngineParams);
     protocolToken = new ProtocolToken();
+    protocolToken.initialize("OD Governance", "ODG");
 
     IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams memory _pssahParams = IPostSettlementSurplusAuctionHouse
       .PostSettlementSAHParams({bidIncrease: 1.05e18, bidDuration: 3 hours, totalAuctionLength: 2 days});

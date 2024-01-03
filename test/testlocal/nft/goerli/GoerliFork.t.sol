@@ -2,13 +2,13 @@
 pragma solidity 0.8.19;
 
 import 'forge-std/Test.sol';
-import {GoerliParams, WSTETH, ARB, CBETH, RETH, MAGIC} from '@script/GoerliParams.s.sol';
-import {GoerliDeployment} from '@script/GoerliDeployment.s.sol';
+import {SepoliaParams, WSTETH, ARB, CBETH, RETH} from '@script/SepoliaParams.s.sol';
+import {SepoliaDeployment} from '@script/SepoliaDeployment.s.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 import {MintableERC20} from '@contracts/for-test/MintableERC20.sol';
 
-contract GoerliFork is Test, GoerliDeployment {
+contract GoerliFork is Test, SepoliaDeployment {
   uint256 private constant MINT_AMOUNT = 1_000_000 ether;
 
   /// @dev Uint256 representation of 1 RAY
