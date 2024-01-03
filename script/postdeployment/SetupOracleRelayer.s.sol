@@ -15,6 +15,22 @@ contract SetupOracleRelayer is SepoliaDeployment, Script {
   function run() public {
     vm.startBroadcast(vm.envUint('ARB_SEPOLIA_DEPLOYER_PK'));
     oracleRelayer.modifyParameters('systemCoinOracle', abi.encode(SEPOLIA_SYSTEM_COIN_ORACLE));
+    oracleRelayer.addAuthorization(address(timelockController));
+    oracleRelayer.removeAuthorization(vm.envAddress('ARB_SEPOLIA_DEPLOYER_PC'));
+    vm.stopBroadcast();
+  }
+}
+
+// BROADCAST
+// source .env && forge script MockSetupOracleRelayer --skip-simulation --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
+
+// SIMULATE
+// source .env && forge script MockSetupOracleRelayer --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC
+
+contract MockSetupOracleRelayer is SepoliaDeployment, Script {
+  function run() public {
+    vm.startBroadcast(vm.envUint('ARB_SEPOLIA_PK'));
+    oracleRelayer.modifyParameters('systemCoinOracle', abi.encode(SEPOLIA_SYSTEM_COIN_ORACLE));
     vm.stopBroadcast();
   }
 }

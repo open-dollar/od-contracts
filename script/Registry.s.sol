@@ -6,6 +6,9 @@ uint256 constant SEMI_RANDOM_SALT = 1; // set to 0 to use Salts below, set to 1 
 
 // --- ARB Sepolia Testnet ---
 
+// Protocol Token
+address constant SEPOLIA_PROTOCOL_TOKEN = address(0);
+
 // Governance Settings
 uint256 constant TEST_INIT_VOTING_DELAY = 1;
 uint256 constant TEST_INIT_VOTING_PERIOD = 15;
@@ -27,14 +30,23 @@ uint256 constant SEPOLIA_SALT_VAULT721 = 4;
 address constant SEPOLIA_CREATE2_FACTORY = 0xb9d4cbCcF0152040c3269D9701EE68426196e42a;
 
 // Camelot Relayer (pre-deployed @ sol 0.7.6)
-address constant SEPOLIA_CAMELOT_RELAYER_FACTORY = address(0);
-address constant SEPOLIA_CAMELOT_RELAYER = address(0);
+address constant SEPOLIA_CAMELOT_RELAYER_FACTORY = 0x600DE56878aa6ce157F40131DBf6b970e8D6f1c3;
+address constant SEPOLIA_CAMELOT_RELAYER = 0x1217755f6F4Ed87c70336ae958424bEB001c9035;
+
+// Chainlink Relayer (pre-deployed @ sol 0.7.6)
+address constant SEPOLIA_CHAINLINK_RELAYER_FACTORY = 0x7966F0c03e6427dEA3960f6040A873E71f954880;
+address constant SEPOLIA_CHAINLINK_RELAYER = 0x1217755f6F4Ed87c70336ae958424bEB001c9035;
+
+// Denominated Oracle (pre-deployed @ sol 0.7.6)
+address constant SEPOLIA_DENOMINATED_ORACLE_FACTORY = 0xdc6CCFA4a3c28e3bC031CA4C713507bA71370948;
 
 // SystemCoinOracle (pre-deployed @ sol 0.7.6 as denominatedOracle)
-address constant SEPOLIA_SYSTEM_COIN_ORACLE = address(0);
+address constant SEPOLIA_SYSTEM_COIN_ORACLE = 0x571b1fd22DfB354E704b206f756aC8635A431a2a;
+address constant SEPOLIA_SYSTEM_COIN_ORACLE_X = 0x4cc0B8F7867a44023af3C2086c3F7d1e3384AC75;
 
 // Algebra protocol (not deployed by Camelot)
 address constant SEPOLIA_CAMELOT_AMM_FACTORY = 0x21852176141b8D139EC5D3A1041cdC31F0F20b94;
+address constant SEPOLIA_CAMELOT_POOL = 0x970582952efd504062eb836faA975C4f40fAf3CA;
 
 // Chainlink feeds
 address constant SEPOLIA_CHAINLINK_ETH_USD_FEED = 0xd30e2101a97dcbAeBCBC04F14C3f624E67A35165;
@@ -44,6 +56,9 @@ address constant SEPOLIA_CHAINLINK_ARB_USD_FEED = 0xD1092a65338d049DB68D7Be6bD89
 address constant SEPOLIA_WETH = 0x980B62Da83eFf3D4576C647993b0c1D7faf17c73;
 
 // --- ARB Mainnet ---
+
+// Protocol Token
+address constant MAINNET_PROTOCOL_TOKEN = address(0);
 
 // Governance Settings
 uint256 constant MAINNET_INIT_VOTING_DELAY = 332_308;

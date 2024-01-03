@@ -16,7 +16,8 @@ contract DeployContracts is Script {
 
   function run() public {
     vm.startBroadcast(vm.envUint('ARB_SEPOLIA_DEPLOYER_PK'));
-    create2Factory.deployTokens(SEPOLIA_SALT_SYSTEMCOIN, SEPOLIA_SALT_PROTOCOLTOKEN);
+    create2Factory.deployProtocolToken(SEPOLIA_SALT_PROTOCOLTOKEN);
+    create2Factory.deploySystemCoin(SEPOLIA_SALT_SYSTEMCOIN);
     create2Factory.deployVault721(SEPOLIA_SALT_VAULT721);
     vm.stopBroadcast();
   }
