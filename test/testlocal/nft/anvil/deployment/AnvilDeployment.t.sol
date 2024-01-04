@@ -32,8 +32,8 @@ abstract contract AnvilDeployment is Contracts, SepoliaParams, AnvilContracts {
     erc20[CBETH] = MintableERC20(MintableERC20_cbETH_Address);
     erc20[RETH] = MintableERC20(MintableERC20_rETH_Address);
 
-    systemCoin = SystemCoin(SystemCoin_Address);
-    protocolToken = ProtocolToken(ProtocolToken_Address);
+    systemCoin = SystemCoin(OpenDollar_Address);
+    protocolToken = ProtocolToken(OpenDollarGovernance_Address);
 
     // --- base contracts ---
     safeEngine = SAFEEngine(SAFEEngine_Address);

@@ -2,8 +2,8 @@
 pragma solidity 0.8.19;
 
 // --- Base Contracts ---
-import {SystemCoin, ISystemCoin} from '@contracts/tokens/SystemCoin.sol';
-import {ProtocolToken, IProtocolToken} from '@contracts/tokens/ProtocolToken.sol';
+import {OpenDollar, SystemCoin, ISystemCoin} from '@contracts/tokens/SystemCoin.sol';
+import {OpenDollarGovernance, ProtocolToken, IProtocolToken} from '@contracts/tokens/ProtocolToken.sol';
 import {SAFEEngine, ISAFEEngine} from '@contracts/SAFEEngine.sol';
 import {TaxCollector, ITaxCollector} from '@contracts/TaxCollector.sol';
 import {AccountingEngine, IAccountingEngine} from '@contracts/AccountingEngine.sol';

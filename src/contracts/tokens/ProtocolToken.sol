@@ -7,7 +7,6 @@ import {
   ERC20Upgradeable
 } from '@openzeppelin-upgradeable/token/ERC20/extensions/ERC20VotesUpgradeable.sol';
 import {AuthorizableUpgradeable} from '@contracts/utils/AuthorizableUpgradeable.sol';
-
 import {IProtocolToken} from '@interfaces/tokens/IProtocolToken.sol';
 
 /**
@@ -39,3 +38,5 @@ contract ProtocolToken is ERC20VotesUpgradeable, AuthorizableUpgradeable, IProto
     _burn(msg.sender, _wad);
   }
 }
+
+contract OpenDollarGovernance is ProtocolToken {}
