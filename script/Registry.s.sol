@@ -3,6 +3,7 @@ pragma solidity 0.8.19;
 
 // --- Universal Vars ---
 uint256 constant SEMI_RANDOM_SALT = 1; // set to 0 to use Salts below, set to 1 to randomly generate a salt
+address constant CREATEX = 0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed; // crosschain secure CREATE2 factory
 
 // --- ARB Sepolia Testnet ---
 
