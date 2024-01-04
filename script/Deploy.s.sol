@@ -102,8 +102,8 @@ contract DeployMainnet is MainnetParams, Deploy {
     _deployerPk = uint256(vm.envBytes32('ARB_MAINNET_DEPLOYER_PK'));
     chainId = 42_161;
     if (SEMI_RANDOM_SALT == 0) {
-      _systemCoinSalt = bytes32(MAINNET_SALT_SYSTEMCOIN);
-      _vault721Salt = bytes32(MAINNET_SALT_VAULT721);
+      _systemCoinSalt = MAINNET_SALT_SYSTEMCOIN;
+      _vault721Salt = MAINNET_SALT_VAULT721;
     } else {
       _systemCoinSalt = getSemiRandSalt();
       _vault721Salt = getSemiRandSalt();
@@ -174,8 +174,8 @@ contract DeploySepolia is SepoliaParams, Deploy {
     _deployerPk = uint256(vm.envBytes32('ARB_SEPOLIA_DEPLOYER_PK'));
     chainId = 421_614;
     if (SEMI_RANDOM_SALT == 0) {
-      _systemCoinSalt = bytes32(SEPOLIA_SALT_SYSTEMCOIN);
-      _vault721Salt = bytes32(SEPOLIA_SALT_VAULT721);
+      _systemCoinSalt = SEPOLIA_SALT_SYSTEMCOIN;
+      _vault721Salt = SEPOLIA_SALT_VAULT721;
     } else {
       _systemCoinSalt = getSemiRandSalt();
       _vault721Salt = getSemiRandSalt();

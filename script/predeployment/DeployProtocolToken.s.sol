@@ -43,7 +43,7 @@ contract DeployProtocolTokenSepolia is Script {
 
     _protocolTokenInitCode = type(OpenDollarGovernance).creationCode;
     IProtocolToken protocolToken =
-      IProtocolToken(_createx.deployCreate2(bytes32(SEPOLIA_SALT_PROTOCOLTOKEN), _protocolTokenInitCode));
+      IProtocolToken(_createx.deployCreate2(SEPOLIA_SALT_PROTOCOLTOKEN, _protocolTokenInitCode));
     protocolToken.initialize('Open Dollar Governance', 'ODG');
 
     vm.stopBroadcast();

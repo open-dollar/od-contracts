@@ -3,7 +3,6 @@ pragma solidity 0.8.19;
 
 import '@script/Contracts.s.sol';
 import {SepoliaParams, WSTETH, ARB, CBETH, RETH} from '@script/SepoliaParams.s.sol';
-import {SEPOLIA_CAMELOT_RELAYER_FACTORY} from '@script/Registry.s.sol';
 import {SepoliaContracts} from '@script/SepoliaContracts.s.sol';
 
 abstract contract SepoliaDeployment is Contracts, SepoliaParams, SepoliaContracts {
