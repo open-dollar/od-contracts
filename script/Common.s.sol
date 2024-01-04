@@ -2,17 +2,17 @@
 pragma solidity 0.8.19;
 
 import '@script/Contracts.s.sol';
-import {Params, ParamChecker, OD, ETH_A, JOB_REWARD} from '@script/Params.s.sol';
 import '@script/Registry.s.sol';
-import {Create2Factory} from '@contracts/utils/Create2Factory.sol';
+import {Params, ParamChecker, OD, ETH_A, JOB_REWARD} from '@script/Params.s.sol';
 
 abstract contract Common is Contracts, Params {
   uint256 internal _chainId;
   uint256 internal _deployerPk = 69; // for tests - from HAI
   uint256 internal _governorPK;
-  Create2Factory internal _create2Factory;
-  uint256 internal _systemCoinSalt;
-  uint256 internal _vault721Salt;
+  bytes32 internal _systemCoinSalt;
+  bytes32 internal _vault721Salt;
+  bytes internal _systemCoinInitCode;
+  bytes internal _vault721InitCode;
 
   function getChainId() public view returns (uint256) {
     uint256 id;
@@ -22,8 +22,8 @@ abstract contract Common is Contracts, Params {
     return id;
   }
 
-  function getSemiRandSalt() public view returns (uint256) {
-    return uint256(keccak256(abi.encode(block.number, block.timestamp)));
+  function getSemiRandSalt() public view returns (bytes32) {
+    return keccak256(abi.encode(block.number, block.timestamp));
   }
 
   function deployEthCollateralContracts() public updateParams {
@@ -171,7 +171,7 @@ abstract contract Common is Contracts, Params {
     // deploy Tokens
 
     if (_chainId != 31_337) {
-      address systemCoinAddress = _create2Factory.deploySystemCoin(_systemCoinSalt);
+      address systemCoinAddress = createx.deployCreate2(_systemCoinSalt, _systemCoinInitCode);
       systemCoin = ISystemCoin(systemCoinAddress);
       if (_chainId == 42_161) {
         protocolToken = IProtocolToken(MAINNET_PROTOCOL_TOKEN); // pre-deployed & initialized
@@ -366,7 +366,7 @@ abstract contract Common is Contracts, Params {
 
   function deployProxyContracts() public updateParams {
     if (_chainId != 31_337) {
-      address vault721Address = _create2Factory.deployVault721(_vault721Salt);
+      address vault721Address = createx.deployCreate2(_vault721Salt, _vault721InitCode);
       vault721 = Vault721(vault721Address);
     } else {
       vault721 = new Vault721();

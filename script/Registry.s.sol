@@ -28,7 +28,6 @@ address constant P = 0xC295763Eed507d4A0f8B77241c03dd3354781a15;
 uint256 constant SEPOLIA_SALT_SYSTEMCOIN = 4;
 uint256 constant SEPOLIA_SALT_PROTOCOLTOKEN = 4;
 uint256 constant SEPOLIA_SALT_VAULT721 = 4;
-address constant SEPOLIA_CREATE2_FACTORY = 0xb9d4cbCcF0152040c3269D9701EE68426196e42a;
 
 // Camelot Relayer (pre-deployed @ sol 0.7.6)
 address constant SEPOLIA_CAMELOT_RELAYER_FACTORY = 0x600DE56878aa6ce157F40131DBf6b970e8D6f1c3;
@@ -76,7 +75,6 @@ uint256 constant ORACLE_INTERVAL_PROD = 1 hours;
 uint256 constant MAINNET_SALT_SYSTEMCOIN = 1;
 uint256 constant MAINNET_SALT_PROTOCOLTOKEN = 1;
 uint256 constant MAINNET_SALT_VAULT721 = 1;
-address constant MAINNET_CREATE2_FACTORY = address(0);
 
 // Camelot Relayer (pre-deployed @ sol 0.7.6)
 address constant MAINNET_CAMELOT_RELAYER_FACTORY = address(0);

@@ -3,7 +3,9 @@ pragma solidity 0.8.19;
 
 import '@script/Registry.s.sol';
 import {Script} from 'forge-std/Script.sol';
-import {Create2Factory} from '@contracts/utils/Create2Factory.sol';
+import {Test} from 'forge-std/Test.sol';
+import {ICreateX} from '@createx/ICreateX.sol';
+import {OpenDollarGovernance, ProtocolToken, IProtocolToken} from '@contracts/tokens/ProtocolToken.sol';
 
 // BROADCAST
 // source .env && forge script CreateXDeploy --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
@@ -11,14 +13,21 @@ import {Create2Factory} from '@contracts/utils/Create2Factory.sol';
 // SIMULATE
 // source .env && forge script CreateXDeploy --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC
 
-contract CreateXDeploy is Script {
-  Create2Factory create2Factory = Create2Factory(SEPOLIA_CREATE2_FACTORY);
+contract CreateXDeploy is Script, Test {
+  ICreateX internal _createx = ICreateX(CREATEX);
+
+  bytes32 internal _salt;
+  bytes internal _protocolToken;
 
   function run() public {
     vm.startBroadcast(vm.envUint('ARB_SEPOLIA_DEPLOYER_PK'));
-    create2Factory.deployProtocolToken(SEPOLIA_SALT_PROTOCOLTOKEN);
-    create2Factory.deploySystemCoin(SEPOLIA_SALT_SYSTEMCOIN);
-    create2Factory.deployVault721(SEPOLIA_SALT_VAULT721);
+
+    _salt = bytes32(block.timestamp);
+    _protocolToken = type(OpenDollarGovernance).creationCode;
+
+    address protocolToken = _createx.deployCreate2(_salt, _protocolToken);
+    emit log_named_address('OpenDollarGovernance', protocolToken);
+
     vm.stopBroadcast();
   }
 }

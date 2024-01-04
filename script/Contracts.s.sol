@@ -53,6 +53,7 @@ import {
 import {ChainlinkRelayerFactory, IChainlinkRelayerFactory} from '@contracts/factories/ChainlinkRelayerFactory.sol';
 import {DenominatedOracleFactory, IDenominatedOracleFactory} from '@contracts/factories/DenominatedOracleFactory.sol';
 import {DelayedOracleFactory, IDelayedOracleFactory} from '@contracts/factories/DelayedOracleFactory.sol';
+import {ICreateX} from '@createx/ICreateX.sol';
 
 // --- Jobs ---
 import {AccountingJob, IAccountingJob} from '@contracts/jobs/AccountingJob.sol';
@@ -100,6 +101,9 @@ abstract contract Contracts {
   address public delegate;
   bytes32[] public collateralTypes;
   mapping(bytes32 => address) public delegatee;
+
+  // -- Create2 Factory --
+  ICreateX public createx;
 
   // --- Base contracts ---
   ISAFEEngine public safeEngine;
