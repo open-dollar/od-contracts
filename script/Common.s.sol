@@ -182,6 +182,7 @@ abstract contract Common is Contracts, Params {
       systemCoin = new SystemCoin();
       protocolToken = new ProtocolToken();
     }
+    protocolToken.initialize('Open Protocol Token', 'OPT');
     systemCoin.initialize('Open Dollar', 'OD');
 
     address[] memory members = new address[](0);
