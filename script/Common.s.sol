@@ -171,7 +171,7 @@ abstract contract Common is Contracts, Params {
     // deploy Tokens
 
     if (_chainId != 31_337) {
-      address systemCoinAddress = createx.deployCreate2(_systemCoinSalt, _systemCoinInitCode);
+      address systemCoinAddress = create2.safeCreate2(_systemCoinSalt, _systemCoinInitCode);
       systemCoin = ISystemCoin(systemCoinAddress);
       if (_chainId == 42_161) {
         protocolToken = IProtocolToken(MAINNET_PROTOCOL_TOKEN); // pre-deployed & initialized
@@ -366,7 +366,7 @@ abstract contract Common is Contracts, Params {
 
   function deployProxyContracts() public updateParams {
     if (_chainId != 31_337) {
-      address vault721Address = createx.deployCreate2(_vault721Salt, _vault721InitCode);
+      address vault721Address = create2.safeCreate2(_vault721Salt, _vault721InitCode);
       vault721 = Vault721(vault721Address);
     } else {
       vault721 = new Vault721();

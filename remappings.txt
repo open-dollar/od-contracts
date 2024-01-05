@@ -3,7 +3,6 @@
 @openzeppelin-upgradeable/=node_modules/@openzeppelin/contracts-upgradeable/
 
 @isolmate/=lib/isolmate/src/
-@createx/=lib/createx/src/
 @console2/=forge-std/console2.sol;
 
 @contracts/=src/contracts/

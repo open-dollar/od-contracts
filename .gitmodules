@@ -12,6 +12,3 @@
 		path = lib/prb-test
 		url = https://github.com/paulrberg/prb-test
 	    branch = 0.5.5
-[submodule "lib/createx"]
-	path = lib/createx
-	url = https://github.com/pcaversaccio/createx

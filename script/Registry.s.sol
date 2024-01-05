@@ -3,7 +3,8 @@ pragma solidity 0.8.19;
 
 // --- Universal Vars ---
 uint256 constant SEMI_RANDOM_SALT = 0; // set to 0 to use Salts below, set to 1 to randomly generate a salt
-address constant CREATEX = 0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed; // crosschain secure CREATE2 factory
+address constant CREATEX = 0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed; // crosschain secure CREATE2 factory (no support for vanity addresses)
+address constant CREATE2FACTORY = 0x0000000000FFe8B47B3e2130213B802212439497; // also no support for vanity addresses
 
 // --- ARB Sepolia Testnet ---
 
@@ -25,9 +26,9 @@ address constant J = 0xcb81A76a565aC4870EDA5B0e32c5a0D2ec734174;
 address constant P = 0xC295763Eed507d4A0f8B77241c03dd3354781a15;
 
 // Vanity address params - use `cast create2` to find salt (salt must change for each deployment)
-bytes32 constant SEPOLIA_SALT_SYSTEMCOIN = 0x55ca6eab76452ad01a1b57da3930a40e6eb0c98a443019ad3f3287e92135402c;
-bytes32 constant SEPOLIA_SALT_PROTOCOLTOKEN = 0x676de0f064dab04d9b641255bb12594a0b439684e86ce66c48c04ed7538eac0d;
-bytes32 constant SEPOLIA_SALT_VAULT721 = 0xe4df04175c9ff860a4d5af833116a9641719d2ce9335630dc330cc99ddfda488;
+bytes32 constant SEPOLIA_SALT_SYSTEMCOIN = 0xbb59d35f2449457f16d317a79991b88175171dd5a40a48e6681e989fec0eae7c;
+bytes32 constant SEPOLIA_SALT_PROTOCOLTOKEN = 0xf7a79cda5802299bb985b2369705c0978e1d1bdef704137d926c3e875f0dd90f;
+bytes32 constant SEPOLIA_SALT_VAULT721 = 0x9cdbffa936f5bb78f6b04c7aa4da7569bf88f0a2ef387bf8a2f51d2686afc895;
 
 // Camelot Relayer (pre-deployed @ sol 0.7.6)
 address constant SEPOLIA_CAMELOT_RELAYER_FACTORY = 0x92Bfb4D96f0b8dcA8F6e5E0fc4713DEa8243d9D6;
