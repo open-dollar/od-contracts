@@ -135,7 +135,7 @@ contract Vault721 is ERC721EnumerableUpgradeable {
     address _to,
     uint256 _tokenId
   ) public override(ERC721Upgradeable, IERC721Upgradeable) {
-    // on allowlist wallets, we check the block delay along with the state hash
+    // on allowlist addresses, we check the block delay along with the state hash
     if (_allowlist[msg.sender]) {
       if (
         block.number < _hashState[_tokenId].lastBlockNumber + blockDelay
@@ -143,7 +143,7 @@ contract Vault721 is ERC721EnumerableUpgradeable {
       ) {
         revert BlockDelayNotOver();
       }
-      // on non-allowlist wallets, we just check the time delay
+      // on non-allowlist addresses, we just check the time delay
     } else {
       if (block.timestamp < _hashState[_tokenId].lastBlockTimestamp + timeDelay) {
         revert TimeDelayNotOver();
