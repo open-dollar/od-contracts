@@ -127,3 +127,10 @@ This script extracts the proposal id and queues the proposal via the OD governan
 [`ExecuteProposal.s.sol`](script/gov/ExecuteProposal.s.sol) is used to execute a proposal given the path of the JSON file you want, e.g. `export JSON_FILE_PATH=gov-output/1-add-collateral-proposal.json`.
 
 The script extracts the necessary execution params from the JSON-the same params used during the proposal and executes the proposal. This script can be used arbitrarily for any proposal.
+
+#### Creating a coverage report
+coverage reports require lcov to be installed on your system.
+ - [lcov for mac/linx](https://formulae.brew.sh/formula/lcov)
+
+
+once you have lcov installed run: `yarn test:coverage` to generate a `coverage-report` folder that will contain the html of the coverage report. point your browser to `coverage-report/index.html` to view the report.

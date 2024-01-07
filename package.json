@@ -41,7 +41,8 @@
     "test:local": "FOUNDRY_FUZZ_RUNS=32 FOUNDRY_FUZZ_MAX_TEST_REJECTS=1000000 forge test -vvv --ffi",
     "test:simulation": "forge test --match-contract Simulation --ffi",
     "test:unit": "FOUNDRY_FUZZ_RUNS=128 FOUNDRY_FUZZ_MAX_TEST_REJECTS=1000000 forge test --match-contract Unit -vvv --ffi",
-    "test:unit:deep": "FOUNDRY_FUZZ_RUNS=1024 FOUNDRY_FUZZ_MAX_TEST_REJECTS=10000000 forge test --match-contract Unit -vvvvv --ffi"
+    "test:unit:deep": "FOUNDRY_FUZZ_RUNS=1024 FOUNDRY_FUZZ_MAX_TEST_REJECTS=10000000 forge test --match-contract Unit -vvvvv --ffi",
+    "test:coverage" : "bash -c 'forge coverage --report lcov -r current-coverage.info && genhtml -o coverage-report current.info'"
   },
   "dependencies": {
     "@defi-wonderland/solidity-utils": "0.0.0-4298c6c6",
