@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {JSONScript} from '@script/gov/JSONScript.s.sol';
+import {JSONScript} from '@script/testScripts/gov/JSONScript.s.sol';
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 import {IGlobalSettlement} from '@contracts/settlement/GlobalSettlement.sol';
 import {ICollateralJoinFactory} from '@interfaces/factories/ICollateralJoinFactory.sol';
@@ -15,7 +15,7 @@ import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
 /// @dev This script is used to propose adding a new collateral type to the system
 /// @dev The script will propose a deployment of new CollateralJoin and CollateralAuctionHouse contracts
 /// @dev The script will output a JSON file with the proposal data to be used by the QueueProposal and ExecuteProposal scripts
-/// @dev In the root, run: export FOUNDRY_PROFILE=governance && forge script script/gov/AddCollateralAction/ProposeAddCollateral.s.sol
+/// @dev In the root, run: export FOUNDRY_PROFILE=governance && forge script script/testScripts/gov/AddCollateralAction/ProposeAddCollateral.s.sol
 contract ProposeAddCollateral is JSONScript {
   function run() public {
     /// REQUIRED ENV VARS ///

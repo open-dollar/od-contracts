@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import 'forge-std/console2.sol';
-import {JSONScript} from '@script/gov/JSONScript.s.sol';
+import {JSONScript} from '@script/testScripts/gov/JSONScript.s.sol';
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 
 /// @title ExecuteProposal Script
@@ -10,7 +10,7 @@ import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 /// @notice Script to execute a proposal given a JSON file
 /// @dev NOTE This script requires the following env vars in the REQUIRED ENV VARS section below
 /// @dev The script will execute the proposal to set the NFT Renderer on Vault721
-/// @dev To run: export FOUNDRY_PROFILE=governance && forge script script/gov/UpdateNFTRendererAction/ExecuteUpdateNFTRenderer.s.sol in the root of the repo
+/// @dev To run: export FOUNDRY_PROFILE=governance && forge script script/testScripts/gov/UpdateNFTRendererAction/ExecuteUpdateNFTRenderer.s.sol in the root of the repo
 contract ExecuteUpdateProposal is JSONScript {
   function run() public {
     /// REQUIRED ENV VARS ///
