@@ -51,6 +51,8 @@ interface IODSafeManager {
   // --- Structs ---
 
   struct SAFEData {
+    // The current nonce of the safe - incremented each time it is transferred
+    uint96 nonce;
     // Address of the safe owner
     address owner;
     // Address of the safe handler
@@ -65,7 +67,7 @@ interface IODSafeManager {
   function safeEngine() external view returns (address _safeEngine);
 
   /// @notice Mapping of owner and safe permissions to a caller permissions
-  function safeCan(address _owner, uint256 _safeId, address _caller) external view returns (bool _ok);
+  function safeCan(address _owner, uint256 _safeId, uint96 _safeNonce, address _caller) external view returns (bool _ok);
 
   /// @notice Mapping of handler to a caller permissions
   function handlerCan(address _safeHandler, address _caller) external view returns (bool _ok);
