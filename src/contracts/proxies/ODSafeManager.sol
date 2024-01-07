@@ -43,7 +43,9 @@ contract ODSafeManager is IODSafeManager {
     address _owner => mapping(uint256 _safeId => mapping(uint96 _safeNonce => mapping(address _caller => bool _ok)))
   ) public safeCan;
   /// @inheritdoc IODSafeManager
-  mapping(address _safeHandler => mapping(address _caller => bool _ok)) public handlerCan;
+  mapping(address _safeHandler => mapping(uint96 _safeNonce => mapping(address _caller => bool _ok))) public handlerCan;
+  /// @inheritdoc IODSafeManager
+  mapping(address _safeHandler => uint256 _safeId) public safeHandlerToSafeId;
   /// @inheritdoc IODSafeManager
   mapping(address _safeHandler => bool _exists) public handlerExists;
 
@@ -74,7 +76,8 @@ contract ODSafeManager is IODSafeManager {
    * @param  _handler Address of the handler to check if msg.sender has permissions for
    */
   modifier handlerAllowed(address _handler) {
-    if (msg.sender != _handler && !handlerCan[_handler][msg.sender]) revert HandlerNotAllowed();
+    SAFEData memory data = getSafeDataFromHandler(_handler);
+    if (msg.sender != _handler && !handlerCan[_handler][data.nonce][msg.sender]) revert HandlerNotAllowed();
     _;
   }
 
@@ -113,6 +116,11 @@ contract ODSafeManager is IODSafeManager {
   }
 
   /// @inheritdoc IODSafeManager
+  function getSafeDataFromHandler(address _handler) public view returns (SAFEData memory _sData) {
+    _sData = _safeData[safeHandlerToSafeId[_handler]];
+  }
+
+  /// @inheritdoc IODSafeManager
   function safeData(uint256 _safe) external view returns (SAFEData memory _sData) {
     _sData = _safeData[_safe];
   }
@@ -129,8 +137,10 @@ contract ODSafeManager is IODSafeManager {
 
   /// @inheritdoc IODSafeManager
   function allowHandler(address _usr, bool _ok) external {
-    handlerCan[msg.sender][_usr] = _ok;
-    emit AllowHandler(msg.sender, _usr, _ok);
+    address safeHandler = msg.sender;
+    SAFEData memory data = getSafeDataFromHandler(safeHandler);
+    handlerCan[safeHandler][data.nonce][_usr] = _ok;
+    emit AllowHandler(safeHandler, _usr, _ok);
   }
 
   /// @inheritdoc IODSafeManager
@@ -141,6 +151,8 @@ contract ODSafeManager is IODSafeManager {
     address _safeHandler = address(new SAFEHandler(safeEngine));
 
     _safeData[_safeId] = SAFEData({nonce: 0, owner: _usr, safeHandler: _safeHandler, collateralType: _cType});
+
+    safeHandlerToSafeId[_safeHandler] = _safeId;
 
     // Save the address of the safeHandler
     handlerExists[_safeHandler] = true;
