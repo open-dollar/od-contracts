@@ -67,7 +67,12 @@ interface IODSafeManager {
   function safeEngine() external view returns (address _safeEngine);
 
   /// @notice Mapping of owner and safe permissions to a caller permissions
-  function safeCan(address _owner, uint256 _safeId, uint96 _safeNonce, address _caller) external view returns (bool _ok);
+  function safeCan(
+    address _owner,
+    uint256 _safeId,
+    uint96 _safeNonce,
+    address _caller
+  ) external view returns (bool _ok);
 
   /// @notice Mapping of handler to a caller permissions
   function handlerCan(address _safeHandler, address _caller) external view returns (bool _ok);

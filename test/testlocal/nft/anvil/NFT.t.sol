@@ -279,7 +279,9 @@ contract NFTAnvil is AnvilFork {
 
     IODSafeManager.SAFEData memory sData = safeManager.safeData(vaultId);
 
-    assertEq(safeManager.safeCan(sData.owner, vaultId, sData.nonce, users[i]), ok, 'test_allowSAFE: safeCan not set correctly');
+    assertEq(
+      safeManager.safeCan(sData.owner, vaultId, sData.nonce, users[i]), ok, 'test_allowSAFE: safeCan not set correctly'
+    );
   }
 
   function test_allowHandler(uint256 cTypeIndex, bool ok) public {
