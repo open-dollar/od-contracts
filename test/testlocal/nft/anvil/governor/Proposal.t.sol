@@ -400,7 +400,6 @@ contract GovernanceProposalAnvil is AnvilFork {
     bytes4 selector = IModifyParameters.modifyParameters.selector;
     calldatas = new bytes[](8);
     calldatas[0] = abi.encodeWithSelector(selector, 'seedProposer', abi.encode(params.seedProposer));
-    console.logBytes(calldatas[0]);
     calldatas[1] = abi.encodeWithSelector(selector, 'noiseBarrier', abi.encode(params.noiseBarrier));
     calldatas[2] = abi.encodeWithSelector(selector, 'integralPeriodSize', abi.encode(params.integralPeriodSize));
     calldatas[3] = abi.encodeWithSelector(selector, 'feedbackOutputUpperBound', abi.encode(params.feedbackOutputUpperBound));
