@@ -9,10 +9,6 @@ out
 out-via-ir
 broadcast/**/run-*.json
 
-# Coverage report files
-current.info
-coverage-report
-
 # Config files
 .env
 

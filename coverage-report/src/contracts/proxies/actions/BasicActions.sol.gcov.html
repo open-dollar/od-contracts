@@ -1,0 +1,488 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - current.info - src/contracts/proxies/actions/BasicActions.sol</title>
+  <link rel="stylesheet" type="text/css" href="../../../../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../../../../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../../../../index.html">top level</a> - <a href="index.html">src/contracts/proxies/actions</a> - BasicActions.sol<span style="font-size: 80%;"> (source / <a href="BasicActions.sol.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">current.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">79</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2024-01-07 16:13:44</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">33</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr><td><img src="../../../../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../../../../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : // SPDX-License-Identifier: GPL-3.0</a>
+<span class="lineNum">       2 </span>            : pragma solidity 0.8.19;
+<span class="lineNum">       3 </span>            : 
+<span class="lineNum">       4 </span>            : import {ODSafeManager} from '@contracts/proxies/ODSafeManager.sol';
+<span class="lineNum">       5 </span>            : 
+<span class="lineNum">       6 </span>            : import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
+<span class="lineNum">       7 </span>            : import {SafeCast} from '@openzeppelin/utils/math/SafeCast.sol';
+<span class="lineNum">       8 </span>            : import {IBasicActions} from '@interfaces/proxies/actions/IBasicActions.sol';
+<span class="lineNum">       9 </span>            : 
+<span class="lineNum">      10 </span>            : import {Math, WAD, RAY, RAD} from '@libraries/Math.sol';
+<span class="lineNum">      11 </span>            : 
+<span class="lineNum">      12 </span>            : import {CommonActions} from '@contracts/proxies/actions/CommonActions.sol';
+<span class="lineNum">      13 </span>            : 
+<span class="lineNum">      14 </span>            : /**
+<span class="lineNum">      15 </span>            :  * @title  BasicActions
+<span class="lineNum">      16 </span>            :  * @notice This contract defines the actions that can be executed to manage a SAFE
+<span class="lineNum">      17 </span>            :  */
+<span class="lineNum">      18 </span>            : contract BasicActions is CommonActions, IBasicActions {
+<span class="lineNum">      19 </span>            :   using Math for uint256;
+<span class="lineNum">      20 </span>            :   using SafeCast for int256;
+<span class="lineNum">      21 </span>            : 
+<span class="lineNum">      22 </span>            :   // --- Internal functions ---
+<span class="lineNum">      23 </span>            : 
+<span class="lineNum">      24 </span>            :   /**
+<span class="lineNum">      25 </span>            :    * @notice Gets delta debt generated for delta wad (always positive)
+<a name="26"><span class="lineNum">      26 </span>            :    * @dev    Total SAFE debt minus available safeHandler COIN balance</a>
+<span class="lineNum">      27 </span>            :    */
+<span class="lineNum">      28 </span>            :   function _getGeneratedDeltaDebt(
+<span class="lineNum">      29 </span>            :     address _safeEngine,
+<span class="lineNum">      30 </span>            :     bytes32 _cType,
+<span class="lineNum">      31 </span>            :     address _safeHandler,
+<span class="lineNum">      32 </span>            :     uint256 _deltaWad
+<span class="lineNum">      33 </span>            :   ) internal view returns (int256 _deltaDebt) {
+<span class="lineNum">      34 </span><span class="lineNoCov">          0 :     uint256 _rate = ISAFEEngine(_safeEngine).cData(_cType).accumulatedRate;</span>
+<span class="lineNum">      35 </span><span class="lineNoCov">          0 :     uint256 _coinAmount = ISAFEEngine(_safeEngine).coinBalance(_safeHandler);</span>
+<span class="lineNum">      36 </span>            : 
+<span class="lineNum">      37 </span>            :     // If there was already enough COIN in the safeEngine balance, just exits it without adding more debt
+<span class="lineNum">      38 </span><span class="lineNoCov">          0 :     if (_coinAmount &lt; _deltaWad * RAY) {</span>
+<span class="lineNum">      39 </span>            :       // Calculates the needed deltaDebt so together with the existing coins in the safeEngine is enough to exit wad amount of COIN tokens
+<span class="lineNum">      40 </span><span class="lineNoCov">          0 :       _deltaDebt = ((_deltaWad * RAY - _coinAmount) / _rate).toInt();</span>
+<span class="lineNum">      41 </span>            :       // This is neeeded due lack of precision. It might need to sum an extra deltaDebt wei (for the given COIN wad amount)
+<span class="lineNum">      42 </span><span class="lineNoCov">          0 :       _deltaDebt = uint256(_deltaDebt) * _rate &lt; _deltaWad * RAY ? _deltaDebt + 1 : _deltaDebt;</span>
+<span class="lineNum">      43 </span>            :     }
+<span class="lineNum">      44 </span>            :   }
+<span class="lineNum">      45 </span>            : 
+<span class="lineNum">      46 </span>            :   /**
+<span class="lineNum">      47 </span>            :    * @notice Gets repaid delta debt generated
+<a name="48"><span class="lineNum">      48 </span>            :    * @dev    The rate adjusted debt of the SAFE</a>
+<span class="lineNum">      49 </span>            :    */
+<span class="lineNum">      50 </span>            :   function _getRepaidDeltaDebt(
+<span class="lineNum">      51 </span>            :     address _safeEngine,
+<span class="lineNum">      52 </span>            :     bytes32 _cType,
+<span class="lineNum">      53 </span>            :     address _safeHandler
+<span class="lineNum">      54 </span>            :   ) internal view returns (int256 _deltaDebt) {
+<span class="lineNum">      55 </span><span class="lineNoCov">          0 :     uint256 _rate = ISAFEEngine(_safeEngine).cData(_cType).accumulatedRate;</span>
+<span class="lineNum">      56 </span><span class="lineNoCov">          0 :     uint256 _generatedDebt = ISAFEEngine(_safeEngine).safes(_cType, _safeHandler).generatedDebt;</span>
+<span class="lineNum">      57 </span><span class="lineNoCov">          0 :     uint256 _coinAmount = ISAFEEngine(_safeEngine).coinBalance(_safeHandler);</span>
+<span class="lineNum">      58 </span>            : 
+<span class="lineNum">      59 </span>            :     // Uses the whole coin balance in the safeEngine to reduce the debt
+<span class="lineNum">      60 </span><span class="lineNoCov">          0 :     _deltaDebt = (_coinAmount / _rate).toInt();</span>
+<span class="lineNum">      61 </span>            :     // Checks the calculated deltaDebt is not higher than safe.generatedDebt (total debt), otherwise uses its value
+<span class="lineNum">      62 </span><span class="lineNoCov">          0 :     _deltaDebt = uint256(_deltaDebt) &lt;= _generatedDebt ? -_deltaDebt : -_generatedDebt.toInt();</span>
+<span class="lineNum">      63 </span>            :   }
+<span class="lineNum">      64 </span>            : 
+<span class="lineNum">      65 </span>            :   /**
+<span class="lineNum">      66 </span>            :    * @notice Gets repaid debt
+<a name="67"><span class="lineNum">      67 </span>            :    * @dev    The rate adjusted SAFE's debt minus COIN balance available in usr's address</a>
+<span class="lineNum">      68 </span>            :    */
+<span class="lineNum">      69 </span>            :   function _getRepaidDebt(
+<span class="lineNum">      70 </span>            :     address _safeEngine,
+<span class="lineNum">      71 </span>            :     address _usr,
+<span class="lineNum">      72 </span>            :     bytes32 _cType,
+<span class="lineNum">      73 </span>            :     address _safeHandler
+<span class="lineNum">      74 </span>            :   ) internal view returns (uint256 _deltaWad) {
+<span class="lineNum">      75 </span><span class="lineNoCov">          0 :     uint256 _rate = ISAFEEngine(_safeEngine).cData(_cType).accumulatedRate;</span>
+<span class="lineNum">      76 </span><span class="lineNoCov">          0 :     uint256 _generatedDebt = ISAFEEngine(_safeEngine).safes(_cType, _safeHandler).generatedDebt;</span>
+<span class="lineNum">      77 </span><span class="lineNoCov">          0 :     uint256 _coinAmount = ISAFEEngine(_safeEngine).coinBalance(_usr);</span>
+<span class="lineNum">      78 </span>            : 
+<span class="lineNum">      79 </span>            :     // Uses the whole coin balance in the safeEngine to reduce the debt
+<span class="lineNum">      80 </span><span class="lineNoCov">          0 :     uint256 _rad = _generatedDebt * _rate - _coinAmount;</span>
+<span class="lineNum">      81 </span>            :     // Calculates the equivalent COIN amount
+<span class="lineNum">      82 </span><span class="lineNoCov">          0 :     _deltaWad = _rad / RAY;</span>
+<span class="lineNum">      83 </span>            :     // If the rad precision has some dust, it will need to request for 1 extra wad wei
+<span class="lineNum">      84 </span><span class="lineNoCov">          0 :     _deltaWad = _deltaWad * RAY &lt; _rad ? _deltaWad + 1 : _deltaWad;</span>
+<span class="lineNum">      85 </span>            :   }
+<span class="lineNum">      86 </span>            : 
+<span class="lineNum">      87 </span>            :   /**
+<span class="lineNum">      88 </span>            :    * @notice Generates debt
+<a name="89"><span class="lineNum">      89 </span>            :    * @dev    Modifies the SAFE collateralization ratio, increasing the debt and sends the COIN amount to the user's address</a>
+<span class="lineNum">      90 </span>            :    */
+<span class="lineNum">      91 </span>            :   function _generateDebt(address _manager, address _coinJoin, uint256 _safeId, uint256 _deltaWad) internal {
+<span class="lineNum">      92 </span><span class="lineNoCov">          0 :     address _safeEngine = ODSafeManager(_manager).safeEngine();</span>
+<span class="lineNum">      93 </span><span class="lineNoCov">          0 :     ODSafeManager.SAFEData memory _safeInfo = ODSafeManager(_manager).safeData(_safeId);</span>
+<span class="lineNum">      94 </span>            : 
+<span class="lineNum">      95 </span><span class="lineNoCov">          0 :     int256 deltaDebt = _getGeneratedDeltaDebt(_safeEngine, _safeInfo.collateralType, _safeInfo.safeHandler, _deltaWad);</span>
+<span class="lineNum">      96 </span>            : 
+<span class="lineNum">      97 </span>            :     // Generates debt in the SAFE
+<span class="lineNum">      98 </span><span class="lineNoCov">          0 :     _modifySAFECollateralization(_manager, _safeId, 0, deltaDebt, false);</span>
+<span class="lineNum">      99 </span>            : 
+<span class="lineNum">     100 </span>            :     // Moves the COIN amount to user's address
+<span class="lineNum">     101 </span>            :     // deltaDebt should always be positive, but we use SafeCast as an extra guard
+<span class="lineNum">     102 </span><span class="lineNoCov">          0 :     _collectAndExitCoins(_manager, _coinJoin, _safeId, deltaDebt.toUint256());</span>
+<span class="lineNum">     103 </span>            :   }
+<span class="lineNum">     104 </span>            : 
+<span class="lineNum">     105 </span>            :   /**
+<span class="lineNum">     106 </span>            :    * @notice Repays debt
+<a name="107"><span class="lineNum">     107 </span>            :    * @dev    Joins COIN amount into the safeEngine and modifies the SAFE collateralization reducing the debt</a>
+<span class="lineNum">     108 </span>            :    */
+<span class="lineNum">     109 </span>            :   function _repayDebt(address _manager, address _coinJoin, uint256 _safeId, uint256 _deltaWad) internal {
+<span class="lineNum">     110 </span><span class="lineNoCov">          0 :     address _safeEngine = ODSafeManager(_manager).safeEngine();</span>
+<span class="lineNum">     111 </span><span class="lineNoCov">          0 :     ODSafeManager.SAFEData memory _safeInfo = ODSafeManager(_manager).safeData(_safeId);</span>
+<span class="lineNum">     112 </span>            : 
+<span class="lineNum">     113 </span>            :     // Joins COIN amount into the safeEngine
+<span class="lineNum">     114 </span><span class="lineNoCov">          0 :     _joinSystemCoins(_coinJoin, _safeInfo.safeHandler, _deltaWad);</span>
+<span class="lineNum">     115 </span>            : 
+<span class="lineNum">     116 </span>            :     // Paybacks debt to the SAFE
+<span class="lineNum">     117 </span><span class="lineNoCov">          0 :     _modifySAFECollateralization(</span>
+<span class="lineNum">     118 </span>            :       _manager, _safeId, 0, _getRepaidDeltaDebt(_safeEngine, _safeInfo.collateralType, _safeInfo.safeHandler), false
+<span class="lineNum">     119 </span>            :     );
+<span class="lineNum">     120 </span>            :   }
+<a name="121"><span class="lineNum">     121 </span>            : </a>
+<span class="lineNum">     122 </span>            :   /// @notice Routes the openSAFE call to the ODSafeManager contract
+<span class="lineNum">     123 </span>            :   function _openSAFE(address _manager, bytes32 _cType, address _usr) internal returns (uint256 _safeId) {
+<span class="lineNum">     124 </span><span class="lineNoCov">          0 :     _safeId = ODSafeManager(_manager).openSAFE(_cType, _usr);</span>
+<span class="lineNum">     125 </span>            :   }
+<a name="126"><span class="lineNum">     126 </span>            : </a>
+<span class="lineNum">     127 </span>            :   /// @notice Routes the transferCollateral call to the ODSafeManager contract
+<span class="lineNum">     128 </span>            :   function _transferCollateral(address _manager, uint256 _safeId, address _dst, uint256 _deltaWad) internal {
+<span class="lineNum">     129 </span><span class="lineNoCov">          0 :     if (_deltaWad == 0) return;</span>
+<span class="lineNum">     130 </span><span class="lineNoCov">          0 :     ODSafeManager(_manager).transferCollateral(_safeId, _dst, _deltaWad);</span>
+<span class="lineNum">     131 </span>            :   }
+<a name="132"><span class="lineNum">     132 </span>            : </a>
+<span class="lineNum">     133 </span>            :   /// @notice Routes the transferInternalCoins call to the ODSafeManager contract
+<span class="lineNum">     134 </span>            :   function _transferInternalCoins(address _manager, uint256 _safeId, address _dst, uint256 _rad) internal {
+<span class="lineNum">     135 </span><span class="lineNoCov">          0 :     ODSafeManager(_manager).transferInternalCoins(_safeId, _dst, _rad);</span>
+<span class="lineNum">     136 </span>            :   }
+<a name="137"><span class="lineNum">     137 </span>            : </a>
+<span class="lineNum">     138 </span>            :   /// @notice Routes the modifySAFECollateralization call to the ODSafeManager contract
+<span class="lineNum">     139 </span>            :   function _modifySAFECollateralization(
+<span class="lineNum">     140 </span>            :     address _manager,
+<span class="lineNum">     141 </span>            :     uint256 _safeId,
+<span class="lineNum">     142 </span>            :     int256 _deltaCollateral,
+<span class="lineNum">     143 </span>            :     int256 _deltaDebt,
+<span class="lineNum">     144 </span>            :     bool _nonSafeHandlerAddress
+<span class="lineNum">     145 </span>            :   ) internal {
+<span class="lineNum">     146 </span><span class="lineNoCov">          0 :     ODSafeManager(_manager).modifySAFECollateralization(_safeId, _deltaCollateral, _deltaDebt, _nonSafeHandlerAddress);</span>
+<span class="lineNum">     147 </span>            :   }
+<span class="lineNum">     148 </span>            : 
+<span class="lineNum">     149 </span>            :   /**
+<a name="150"><span class="lineNum">     150 </span>            :    * @notice Joins collateral and exits an amount of COIN</a>
+<span class="lineNum">     151 </span>            :    */
+<span class="lineNum">     152 </span>            :   function _lockTokenCollateralAndGenerateDebt(
+<span class="lineNum">     153 </span>            :     address _manager,
+<span class="lineNum">     154 </span>            :     address _collateralJoin,
+<span class="lineNum">     155 </span>            :     address _coinJoin,
+<span class="lineNum">     156 </span>            :     uint256 _safeId,
+<span class="lineNum">     157 </span>            :     uint256 _collateralAmount,
+<span class="lineNum">     158 </span>            :     uint256 _deltaWad
+<span class="lineNum">     159 </span>            :   ) internal {
+<span class="lineNum">     160 </span><span class="lineNoCov">          0 :     address _safeEngine = ODSafeManager(_manager).safeEngine();</span>
+<span class="lineNum">     161 </span><span class="lineNoCov">          0 :     ODSafeManager.SAFEData memory _safeInfo = ODSafeManager(_manager).safeData(_safeId);</span>
+<span class="lineNum">     162 </span>            : 
+<span class="lineNum">     163 </span>            :     // Takes token amount from user's wallet and joins into the safeEngine
+<span class="lineNum">     164 </span><span class="lineNoCov">          0 :     _joinCollateral(_collateralJoin, _safeInfo.safeHandler, _collateralAmount);</span>
+<span class="lineNum">     165 </span>            : 
+<span class="lineNum">     166 </span><span class="lineNoCov">          0 :     int256 deltaDebt = _getGeneratedDeltaDebt(_safeEngine, _safeInfo.collateralType, _safeInfo.safeHandler, _deltaWad);</span>
+<span class="lineNum">     167 </span>            : 
+<span class="lineNum">     168 </span>            :     // Locks token amount into the SAFE and generates debt
+<span class="lineNum">     169 </span><span class="lineNoCov">          0 :     _modifySAFECollateralization(_manager, _safeId, _collateralAmount.toInt(), deltaDebt, false);</span>
+<span class="lineNum">     170 </span>            : 
+<span class="lineNum">     171 </span>            :     // Exits and transfers COIN amount to the user's address
+<span class="lineNum">     172 </span>            :     // deltaDebt should always be positive, but we use SafeCast as an extra guard
+<span class="lineNum">     173 </span><span class="lineNoCov">          0 :     _collectAndExitCoins(_manager, _coinJoin, _safeId, deltaDebt.toUint256());</span>
+<span class="lineNum">     174 </span>            :   }
+<span class="lineNum">     175 </span>            : 
+<span class="lineNum">     176 </span>            :   /**
+<a name="177"><span class="lineNum">     177 </span>            :    * @notice Transfers an amount of COIN to the proxy address and exits to the user's address</a>
+<span class="lineNum">     178 </span>            :    */
+<span class="lineNum">     179 </span>            :   function _collectAndExitCoins(address _manager, address _coinJoin, uint256 _safeId, uint256 _deltaWad) internal {
+<span class="lineNum">     180 </span>            :     // Moves the COIN amount to proxy's address
+<span class="lineNum">     181 </span><span class="lineNoCov">          0 :     _transferInternalCoins(_manager, _safeId, address(this), _deltaWad * RAY);</span>
+<span class="lineNum">     182 </span>            :     // Exits the COIN amount to the user's address
+<span class="lineNum">     183 </span><span class="lineNoCov">          0 :     _exitSystemCoins(_coinJoin, _deltaWad * RAY);</span>
+<span class="lineNum">     184 </span>            :   }
+<span class="lineNum">     185 </span>            : 
+<span class="lineNum">     186 </span>            :   /**
+<a name="187"><span class="lineNum">     187 </span>            :    * @notice Transfers an amount of collateral to the proxy address and exits collateral tokens to the user</a>
+<span class="lineNum">     188 </span>            :    */
+<span class="lineNum">     189 </span>            :   function _collectAndExitCollateral(
+<span class="lineNum">     190 </span>            :     address _manager,
+<span class="lineNum">     191 </span>            :     address _collateralJoin,
+<span class="lineNum">     192 </span>            :     uint256 _safeId,
+<span class="lineNum">     193 </span>            :     uint256 _deltaWad
+<span class="lineNum">     194 </span>            :   ) internal {
+<span class="lineNum">     195 </span>            :     // Moves the amount from the SAFE handler to proxy's address
+<span class="lineNum">     196 </span><span class="lineNoCov">          0 :     _transferCollateral(_manager, _safeId, address(this), _deltaWad);</span>
+<span class="lineNum">     197 </span>            :     // Exits a rounded down amount of collateral
+<span class="lineNum">     198 </span><span class="lineNoCov">          0 :     _exitCollateral(_collateralJoin, _deltaWad);</span>
+<span class="lineNum">     199 </span>            :   }
+<span class="lineNum">     200 </span>            : 
+<span class="lineNum">     201 </span>            :   // --- Methods ---
+<a name="202"><span class="lineNum">     202 </span>            : </a>
+<span class="lineNum">     203 </span>            :   /// @inheritdoc IBasicActions
+<span class="lineNum">     204 </span>            :   function openSAFE(address _manager, bytes32 _cType, address _usr) external delegateCall returns (uint256 _safeId) {
+<span class="lineNum">     205 </span><span class="lineNoCov">          0 :     return _openSAFE(_manager, _cType, _usr);</span>
+<span class="lineNum">     206 </span>            :   }
+<a name="207"><span class="lineNum">     207 </span>            : </a>
+<span class="lineNum">     208 </span>            :   /// @inheritdoc IBasicActions
+<span class="lineNum">     209 </span>            :   function generateDebt(address _manager, address _coinJoin, uint256 _safeId, uint256 _deltaWad) external delegateCall {
+<span class="lineNum">     210 </span><span class="lineNoCov">          0 :     _generateDebt(_manager, _coinJoin, _safeId, _deltaWad);</span>
+<span class="lineNum">     211 </span>            :   }
+<a name="212"><span class="lineNum">     212 </span>            : </a>
+<span class="lineNum">     213 </span>            :   /// @inheritdoc IBasicActions
+<span class="lineNum">     214 </span>            :   function allowSAFE(address _manager, uint256 _safeId, address _usr, bool _ok) external delegateCall {
+<span class="lineNum">     215 </span><span class="lineNoCov">          0 :     ODSafeManager(_manager).allowSAFE(_safeId, _usr, _ok);</span>
+<span class="lineNum">     216 </span>            :   }
+<a name="217"><span class="lineNum">     217 </span>            : </a>
+<span class="lineNum">     218 </span>            :   /// @inheritdoc IBasicActions
+<span class="lineNum">     219 </span>            :   function allowHandler(address _manager, address _usr, bool _ok) external delegateCall {
+<span class="lineNum">     220 </span><span class="lineNoCov">          0 :     ODSafeManager(_manager).allowHandler(_usr, _ok);</span>
+<span class="lineNum">     221 </span>            :   }
+<a name="222"><span class="lineNum">     222 </span>            : </a>
+<span class="lineNum">     223 </span>            :   /// @inheritdoc IBasicActions
+<span class="lineNum">     224 </span>            :   function modifySAFECollateralization(
+<span class="lineNum">     225 </span>            :     address _manager,
+<span class="lineNum">     226 </span>            :     uint256 _safeId,
+<span class="lineNum">     227 </span>            :     int256 _deltaCollateral,
+<span class="lineNum">     228 </span>            :     int256 _deltaDebt
+<span class="lineNum">     229 </span>            :   ) external delegateCall {
+<span class="lineNum">     230 </span><span class="lineNoCov">          0 :     _modifySAFECollateralization(_manager, _safeId, _deltaCollateral, _deltaDebt, false);</span>
+<span class="lineNum">     231 </span>            :   }
+<a name="232"><span class="lineNum">     232 </span>            : </a>
+<span class="lineNum">     233 </span>            :   /// @inheritdoc IBasicActions
+<span class="lineNum">     234 </span>            :   function transferCollateral(address _manager, uint256 _safeId, address _dst, uint256 _deltaWad) external delegateCall {
+<span class="lineNum">     235 </span><span class="lineNoCov">          0 :     _transferCollateral(_manager, _safeId, _dst, _deltaWad);</span>
+<span class="lineNum">     236 </span>            :   }
+<a name="237"><span class="lineNum">     237 </span>            : </a>
+<span class="lineNum">     238 </span>            :   /// @inheritdoc IBasicActions
+<span class="lineNum">     239 </span>            :   function transferInternalCoins(address _manager, uint256 _safeId, address _dst, uint256 _rad) external delegateCall {
+<span class="lineNum">     240 </span><span class="lineNoCov">          0 :     _transferInternalCoins(_manager, _safeId, _dst, _rad);</span>
+<span class="lineNum">     241 </span>            :   }
+<a name="242"><span class="lineNum">     242 </span>            : </a>
+<span class="lineNum">     243 </span>            :   /// @inheritdoc IBasicActions
+<span class="lineNum">     244 </span>            :   function quitSystem(address _manager, uint256 _safeId, address _dst) external delegateCall {
+<span class="lineNum">     245 </span><span class="lineNoCov">          0 :     ODSafeManager(_manager).quitSystem(_safeId, _dst);</span>
+<span class="lineNum">     246 </span>            :   }
+<a name="247"><span class="lineNum">     247 </span>            : </a>
+<span class="lineNum">     248 </span>            :   /// @inheritdoc IBasicActions
+<span class="lineNum">     249 </span>            :   function enterSystem(address _manager, address _src, uint256 _safeId) external delegateCall {
+<span class="lineNum">     250 </span><span class="lineNoCov">          0 :     ODSafeManager(_manager).enterSystem(_src, _safeId);</span>
+<span class="lineNum">     251 </span>            :   }
+<a name="252"><span class="lineNum">     252 </span>            : </a>
+<span class="lineNum">     253 </span>            :   /// @inheritdoc IBasicActions
+<span class="lineNum">     254 </span>            :   function moveSAFE(address _manager, uint256 _src, uint256 _dst) external delegateCall {
+<span class="lineNum">     255 </span><span class="lineNoCov">          0 :     ODSafeManager(_manager).moveSAFE(_src, _dst);</span>
+<span class="lineNum">     256 </span>            :   }
+<a name="257"><span class="lineNum">     257 </span>            : </a>
+<span class="lineNum">     258 </span>            :   /// @inheritdoc IBasicActions
+<span class="lineNum">     259 </span>            :   function addSAFE(address _manager, uint256 _safe) external delegateCall {
+<span class="lineNum">     260 </span><span class="lineNoCov">          0 :     ODSafeManager(_manager).addSAFE(_safe);</span>
+<span class="lineNum">     261 </span>            :   }
+<a name="262"><span class="lineNum">     262 </span>            : </a>
+<span class="lineNum">     263 </span>            :   /// @inheritdoc IBasicActions
+<span class="lineNum">     264 </span>            :   function removeSAFE(address _manager, uint256 _safe) external delegateCall {
+<span class="lineNum">     265 </span><span class="lineNoCov">          0 :     ODSafeManager(_manager).removeSAFE(_safe);</span>
+<span class="lineNum">     266 </span>            :   }
+<a name="267"><span class="lineNum">     267 </span>            : </a>
+<span class="lineNum">     268 </span>            :   /// @inheritdoc IBasicActions
+<span class="lineNum">     269 </span>            :   function protectSAFE(
+<span class="lineNum">     270 </span>            :     address _manager,
+<span class="lineNum">     271 </span>            :     uint256 _safe,
+<span class="lineNum">     272 </span>            :     address _liquidationEngine,
+<span class="lineNum">     273 </span>            :     address _saviour
+<span class="lineNum">     274 </span>            :   ) external delegateCall {
+<span class="lineNum">     275 </span><span class="lineNoCov">          0 :     ODSafeManager(_manager).protectSAFE(_safe, _liquidationEngine, _saviour);</span>
+<span class="lineNum">     276 </span>            :   }
+<a name="277"><span class="lineNum">     277 </span>            : </a>
+<span class="lineNum">     278 </span>            :   /// @inheritdoc IBasicActions
+<span class="lineNum">     279 </span>            :   function repayDebt(address _manager, address _coinJoin, uint256 _safeId, uint256 _deltaWad) external delegateCall {
+<span class="lineNum">     280 </span><span class="lineNoCov">          0 :     _repayDebt(_manager, _coinJoin, _safeId, _deltaWad);</span>
+<span class="lineNum">     281 </span>            :   }
+<a name="282"><span class="lineNum">     282 </span>            : </a>
+<span class="lineNum">     283 </span>            :   /// @inheritdoc IBasicActions
+<span class="lineNum">     284 </span>            :   function lockTokenCollateral(
+<span class="lineNum">     285 </span>            :     address _manager,
+<span class="lineNum">     286 </span>            :     address _collateralJoin,
+<span class="lineNum">     287 </span>            :     uint256 _safeId,
+<span class="lineNum">     288 </span>            :     uint256 _deltaWad
+<span class="lineNum">     289 </span>            :   ) external delegateCall {
+<span class="lineNum">     290 </span><span class="lineNoCov">          0 :     ODSafeManager.SAFEData memory _safeInfo = ODSafeManager(_manager).safeData(_safeId);</span>
+<span class="lineNum">     291 </span>            : 
+<span class="lineNum">     292 </span>            :     // Takes token amount from user's wallet and joins into the safeEngine
+<span class="lineNum">     293 </span><span class="lineNoCov">          0 :     _joinCollateral(_collateralJoin, _safeInfo.safeHandler, _deltaWad);</span>
+<span class="lineNum">     294 </span>            : 
+<span class="lineNum">     295 </span>            :     // Locks token amount in the safe
+<span class="lineNum">     296 </span><span class="lineNoCov">          0 :     _modifySAFECollateralization(_manager, _safeId, _deltaWad.toInt(), 0, false);</span>
+<span class="lineNum">     297 </span>            :   }
+<a name="298"><span class="lineNum">     298 </span>            : </a>
+<span class="lineNum">     299 </span>            :   /// @inheritdoc IBasicActions
+<span class="lineNum">     300 </span>            :   function freeTokenCollateral(
+<span class="lineNum">     301 </span>            :     address _manager,
+<span class="lineNum">     302 </span>            :     address _collateralJoin,
+<span class="lineNum">     303 </span>            :     uint256 _safeId,
+<span class="lineNum">     304 </span>            :     uint256 _deltaWad
+<span class="lineNum">     305 </span>            :   ) external delegateCall {
+<span class="lineNum">     306 </span>            :     // Unlocks token amount from the SAFE
+<span class="lineNum">     307 </span><span class="lineNoCov">          0 :     ODSafeManager.SAFEData memory _safeInfo = ODSafeManager(_manager).safeData(_safeId);</span>
+<span class="lineNum">     308 </span>            : 
+<span class="lineNum">     309 </span><span class="lineNoCov">          0 :     _modifySAFECollateralization(_manager, _safeId, -_deltaWad.toInt(), 0, false);</span>
+<span class="lineNum">     310 </span>            :     // Transfers token amount to the user's address
+<span class="lineNum">     311 </span><span class="lineNoCov">          0 :     _collectAndExitCollateral(_manager, _collateralJoin, _safeId, _deltaWad);</span>
+<span class="lineNum">     312 </span>            :   }
+<a name="313"><span class="lineNum">     313 </span>            : </a>
+<span class="lineNum">     314 </span>            :   /// @inheritdoc IBasicActions
+<span class="lineNum">     315 </span>            :   function repayAllDebt(address _manager, address _coinJoin, uint256 _safeId) external delegateCall {
+<span class="lineNum">     316 </span><span class="lineNoCov">          0 :     address _safeEngine = ODSafeManager(_manager).safeEngine();</span>
+<span class="lineNum">     317 </span><span class="lineNoCov">          0 :     ODSafeManager.SAFEData memory _safeInfo = ODSafeManager(_manager).safeData(_safeId);</span>
+<span class="lineNum">     318 </span>            : 
+<span class="lineNum">     319 </span><span class="lineNoCov">          0 :     ISAFEEngine.SAFE memory _safeData = ISAFEEngine(_safeEngine).safes(_safeInfo.collateralType, _safeInfo.safeHandler);</span>
+<span class="lineNum">     320 </span>            : 
+<span class="lineNum">     321 </span>            :     // Joins COIN amount into the safeEngine
+<span class="lineNum">     322 </span><span class="lineNoCov">          0 :     _joinSystemCoins(</span>
+<span class="lineNum">     323 </span>            :       _coinJoin,
+<span class="lineNum">     324 </span>            :       address(this),
+<span class="lineNum">     325 </span>            :       _getRepaidDebt(_safeEngine, address(this), _safeInfo.collateralType, _safeInfo.safeHandler)
+<span class="lineNum">     326 </span>            :     );
+<span class="lineNum">     327 </span>            : 
+<span class="lineNum">     328 </span>            :     // Paybacks debt to the SAFE (allowed because reducing debt of the SAFE)
+<span class="lineNum">     329 </span><span class="lineNoCov">          0 :     _modifySAFECollateralization(_manager, _safeId, 0, -_safeData.generatedDebt.toInt(), true);</span>
+<span class="lineNum">     330 </span>            :   }
+<a name="331"><span class="lineNum">     331 </span>            : </a>
+<span class="lineNum">     332 </span>            :   /// @inheritdoc IBasicActions
+<span class="lineNum">     333 </span>            :   function lockTokenCollateralAndGenerateDebt(
+<span class="lineNum">     334 </span>            :     address _manager,
+<span class="lineNum">     335 </span>            :     address _collateralJoin,
+<span class="lineNum">     336 </span>            :     address _coinJoin,
+<span class="lineNum">     337 </span>            :     uint256 _safe,
+<span class="lineNum">     338 </span>            :     uint256 _collateralAmount,
+<span class="lineNum">     339 </span>            :     uint256 _deltaWad
+<span class="lineNum">     340 </span>            :   ) external delegateCall {
+<span class="lineNum">     341 </span><span class="lineNoCov">          0 :     _lockTokenCollateralAndGenerateDebt(_manager, _collateralJoin, _coinJoin, _safe, _collateralAmount, _deltaWad);</span>
+<span class="lineNum">     342 </span>            :   }
+<a name="343"><span class="lineNum">     343 </span>            : </a>
+<span class="lineNum">     344 </span>            :   /// @inheritdoc IBasicActions
+<span class="lineNum">     345 </span>            :   function openLockTokenCollateralAndGenerateDebt(
+<span class="lineNum">     346 </span>            :     address _manager,
+<span class="lineNum">     347 </span>            :     address _collateralJoin,
+<span class="lineNum">     348 </span>            :     address _coinJoin,
+<span class="lineNum">     349 </span>            :     bytes32 _cType,
+<span class="lineNum">     350 </span>            :     uint256 _collateralAmount,
+<span class="lineNum">     351 </span>            :     uint256 _deltaWad
+<span class="lineNum">     352 </span>            :   ) external delegateCall returns (uint256 _safe) {
+<span class="lineNum">     353 </span><span class="lineNoCov">          0 :     _safe = _openSAFE(_manager, _cType, address(this));</span>
+<span class="lineNum">     354 </span>            : 
+<span class="lineNum">     355 </span><span class="lineNoCov">          0 :     _lockTokenCollateralAndGenerateDebt(_manager, _collateralJoin, _coinJoin, _safe, _collateralAmount, _deltaWad);</span>
+<span class="lineNum">     356 </span>            :   }
+<a name="357"><span class="lineNum">     357 </span>            : </a>
+<span class="lineNum">     358 </span>            :   /// @inheritdoc IBasicActions
+<span class="lineNum">     359 </span>            :   function repayDebtAndFreeTokenCollateral(
+<span class="lineNum">     360 </span>            :     address _manager,
+<span class="lineNum">     361 </span>            :     address _collateralJoin,
+<span class="lineNum">     362 </span>            :     address _coinJoin,
+<span class="lineNum">     363 </span>            :     uint256 _safeId,
+<span class="lineNum">     364 </span>            :     uint256 _collateralWad,
+<span class="lineNum">     365 </span>            :     uint256 _debtWad
+<span class="lineNum">     366 </span>            :   ) external delegateCall {
+<span class="lineNum">     367 </span><span class="lineNoCov">          0 :     address _safeEngine = ODSafeManager(_manager).safeEngine();</span>
+<span class="lineNum">     368 </span><span class="lineNoCov">          0 :     ODSafeManager.SAFEData memory _safeInfo = ODSafeManager(_manager).safeData(_safeId);</span>
+<span class="lineNum">     369 </span>            : 
+<span class="lineNum">     370 </span>            :     // Joins COIN amount into the safeEngine
+<span class="lineNum">     371 </span><span class="lineNoCov">          0 :     _joinSystemCoins(_coinJoin, _safeInfo.safeHandler, _debtWad);</span>
+<span class="lineNum">     372 </span>            : 
+<span class="lineNum">     373 </span>            :     // Paybacks debt to the SAFE and unlocks token amount from it
+<span class="lineNum">     374 </span><span class="lineNoCov">          0 :     _modifySAFECollateralization(</span>
+<span class="lineNum">     375 </span>            :       _manager,
+<span class="lineNum">     376 </span>            :       _safeId,
+<span class="lineNum">     377 </span>            :       -_collateralWad.toInt(),
+<span class="lineNum">     378 </span>            :       _getRepaidDeltaDebt(_safeEngine, _safeInfo.collateralType, _safeInfo.safeHandler),
+<span class="lineNum">     379 </span>            :       false
+<span class="lineNum">     380 </span>            :     );
+<span class="lineNum">     381 </span>            : 
+<span class="lineNum">     382 </span>            :     // Transfers token amount to the user's address
+<span class="lineNum">     383 </span><span class="lineNoCov">          0 :     _collectAndExitCollateral(_manager, _collateralJoin, _safeId, _collateralWad);</span>
+<span class="lineNum">     384 </span>            :   }
+<a name="385"><span class="lineNum">     385 </span>            : </a>
+<span class="lineNum">     386 </span>            :   /// @inheritdoc IBasicActions
+<span class="lineNum">     387 </span>            :   function repayAllDebtAndFreeTokenCollateral(
+<span class="lineNum">     388 </span>            :     address _manager,
+<span class="lineNum">     389 </span>            :     address _collateralJoin,
+<span class="lineNum">     390 </span>            :     address _coinJoin,
+<span class="lineNum">     391 </span>            :     uint256 _safeId,
+<span class="lineNum">     392 </span>            :     uint256 _collateralWad
+<span class="lineNum">     393 </span>            :   ) external delegateCall {
+<span class="lineNum">     394 </span><span class="lineNoCov">          0 :     address _safeEngine = ODSafeManager(_manager).safeEngine();</span>
+<span class="lineNum">     395 </span><span class="lineNoCov">          0 :     ODSafeManager.SAFEData memory _safeInfo = ODSafeManager(_manager).safeData(_safeId);</span>
+<span class="lineNum">     396 </span>            : 
+<span class="lineNum">     397 </span><span class="lineNoCov">          0 :     ISAFEEngine.SAFE memory _safeData = ISAFEEngine(_safeEngine).safes(_safeInfo.collateralType, _safeInfo.safeHandler);</span>
+<span class="lineNum">     398 </span>            : 
+<span class="lineNum">     399 </span>            :     // Joins COIN amount into the safeEngine
+<span class="lineNum">     400 </span><span class="lineNoCov">          0 :     _joinSystemCoins(</span>
+<span class="lineNum">     401 </span>            :       _coinJoin,
+<span class="lineNum">     402 </span>            :       _safeInfo.safeHandler,
+<span class="lineNum">     403 </span>            :       _getRepaidDebt(_safeEngine, _safeInfo.safeHandler, _safeInfo.collateralType, _safeInfo.safeHandler)
+<span class="lineNum">     404 </span>            :     );
+<span class="lineNum">     405 </span>            : 
+<span class="lineNum">     406 </span>            :     // Paybacks debt to the SAFE and unlocks token amount from it
+<span class="lineNum">     407 </span><span class="lineNoCov">          0 :     _modifySAFECollateralization(_manager, _safeId, -_collateralWad.toInt(), -_safeData.generatedDebt.toInt(), false);</span>
+<span class="lineNum">     408 </span>            : 
+<span class="lineNum">     409 </span>            :     // Transfers token amount to the user's address
+<span class="lineNum">     410 </span><span class="lineNoCov">          0 :     _collectAndExitCollateral(_manager, _collateralJoin, _safeId, _collateralWad);</span>
+<span class="lineNum">     411 </span>            :   }
+<span class="lineNum">     412 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../../../../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

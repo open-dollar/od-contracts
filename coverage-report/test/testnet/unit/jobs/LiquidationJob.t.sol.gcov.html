@@ -1,0 +1,250 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - current.info - test/testnet/unit/jobs/LiquidationJob.t.sol</title>
+  <link rel="stylesheet" type="text/css" href="../../../../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../../../../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../../../../index.html">top level</a> - <a href="index.html">test/testnet/unit/jobs</a> - LiquidationJob.t.sol<span style="font-size: 80%;"> (source / <a href="LiquidationJob.t.sol.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">current.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">8</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2024-01-07 16:13:44</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">4</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr><td><img src="../../../../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../../../../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : // SPDX-License-Identifier: GPL-3.0</a>
+<span class="lineNum">       2 </span>            : pragma solidity 0.8.19;
+<span class="lineNum">       3 </span>            : 
+<span class="lineNum">       4 </span>            : import {LiquidationJobForTest, ILiquidationJob} from '@testnet/mocks/LiquidationJobForTest.sol';
+<span class="lineNum">       5 </span>            : import {ILiquidationEngine} from '@interfaces/ILiquidationEngine.sol';
+<span class="lineNum">       6 </span>            : import {IStabilityFeeTreasury} from '@interfaces/IStabilityFeeTreasury.sol';
+<span class="lineNum">       7 </span>            : import {IJob} from '@interfaces/jobs/IJob.sol';
+<span class="lineNum">       8 </span>            : import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
+<span class="lineNum">       9 </span>            : import {IModifiable} from '@interfaces/utils/IModifiable.sol';
+<span class="lineNum">      10 </span>            : import {HaiTest, stdStorage, StdStorage} from '@testnet/utils/HaiTest.t.sol';
+<span class="lineNum">      11 </span>            : 
+<span class="lineNum">      12 </span>            : abstract contract Base is HaiTest {
+<span class="lineNum">      13 </span>            :   using stdStorage for StdStorage;
+<span class="lineNum">      14 </span>            : 
+<span class="lineNum">      15 </span>            :   address deployer = label('deployer');
+<span class="lineNum">      16 </span>            :   address authorizedAccount = label('authorizedAccount');
+<span class="lineNum">      17 </span>            :   address user = label('user');
+<span class="lineNum">      18 </span>            : 
+<span class="lineNum">      19 </span>            :   ILiquidationEngine mockLiquidationEngine = ILiquidationEngine(mockContract('LiquidationEngine'));
+<span class="lineNum">      20 </span>            :   IStabilityFeeTreasury mockStabilityFeeTreasury = IStabilityFeeTreasury(mockContract('StabilityFeeTreasury'));
+<span class="lineNum">      21 </span>            : 
+<span class="lineNum">      22 </span>            :   LiquidationJobForTest liquidationJob;
+<span class="lineNum">      23 </span>            : 
+<a name="24"><span class="lineNum">      24 </span>            :   uint256 constant REWARD_AMOUNT = 1e18;</a>
+<span class="lineNum">      25 </span>            : 
+<span class="lineNum">      26 </span>            :   function setUp() public virtual {
+<span class="lineNum">      27 </span><span class="lineNoCov">          0 :     vm.startPrank(deployer);</span>
+<span class="lineNum">      28 </span>            : 
+<span class="lineNum">      29 </span><span class="lineNoCov">          0 :     liquidationJob =</span>
+<span class="lineNum">      30 </span>            :       new LiquidationJobForTest(address(mockLiquidationEngine), address(mockStabilityFeeTreasury), REWARD_AMOUNT);
+<span class="lineNum">      31 </span><span class="lineNoCov">          0 :     label(address(liquidationJob), 'LiquidationJob');</span>
+<span class="lineNum">      32 </span>            : 
+<span class="lineNum">      33 </span><span class="lineNoCov">          0 :     liquidationJob.addAuthorization(authorizedAccount);</span>
+<span class="lineNum">      34 </span>            : 
+<span class="lineNum">      35 </span><span class="lineNoCov">          0 :     vm.stopPrank();</span>
+<a name="36"><span class="lineNum">      36 </span>            :   }</a>
+<span class="lineNum">      37 </span>            : 
+<span class="lineNum">      38 </span>            :   function _mockLiquidateSAFE(bytes32 _cType, address _safe, uint256 _id) internal {
+<span class="lineNum">      39 </span><span class="lineNoCov">          0 :     vm.mockCall(</span>
+<span class="lineNum">      40 </span>            :       address(mockLiquidationEngine),
+<span class="lineNum">      41 </span>            :       abi.encodeCall(mockLiquidationEngine.liquidateSAFE, (_cType, _safe)),
+<span class="lineNum">      42 </span>            :       abi.encode(_id)
+<span class="lineNum">      43 </span>            :     );
+<a name="44"><span class="lineNum">      44 </span>            :   }</a>
+<span class="lineNum">      45 </span>            : 
+<span class="lineNum">      46 </span>            :   function _mockRewardAmount(uint256 _rewardAmount) internal {
+<span class="lineNum">      47 </span><span class="lineNoCov">          0 :     stdstore.target(address(liquidationJob)).sig(IJob.rewardAmount.selector).checked_write(_rewardAmount);</span>
+<a name="48"><span class="lineNum">      48 </span>            :   }</a>
+<span class="lineNum">      49 </span>            : 
+<span class="lineNum">      50 </span>            :   function _mockShouldWork(bool _shouldWork) internal {
+<span class="lineNum">      51 </span>            :     // BUG: Accessing packed slots is not supported by Std Storage
+<span class="lineNum">      52 </span><span class="lineNoCov">          0 :     liquidationJob.setShouldWork(_shouldWork);</span>
+<span class="lineNum">      53 </span>            :   }
+<span class="lineNum">      54 </span>            : }
+<span class="lineNum">      55 </span>            : 
+<span class="lineNum">      56 </span>            : contract Unit_LiquidationJob_Constructor is Base {
+<span class="lineNum">      57 </span>            :   event AddAuthorization(address _account);
+<span class="lineNum">      58 </span>            : 
+<span class="lineNum">      59 </span>            :   modifier happyPath() {
+<span class="lineNum">      60 </span>            :     vm.startPrank(user);
+<span class="lineNum">      61 </span>            :     _;
+<span class="lineNum">      62 </span>            :   }
+<span class="lineNum">      63 </span>            : 
+<span class="lineNum">      64 </span>            :   function test_Set_StabilityFeeTreasury() public happyPath {
+<span class="lineNum">      65 </span>            :     assertEq(address(liquidationJob.stabilityFeeTreasury()), address(mockStabilityFeeTreasury));
+<span class="lineNum">      66 </span>            :   }
+<span class="lineNum">      67 </span>            : 
+<span class="lineNum">      68 </span>            :   function test_Set_RewardAmount() public happyPath {
+<span class="lineNum">      69 </span>            :     assertEq(liquidationJob.rewardAmount(), REWARD_AMOUNT);
+<span class="lineNum">      70 </span>            :   }
+<span class="lineNum">      71 </span>            : 
+<span class="lineNum">      72 </span>            :   function test_Emit_AddAuthorization() public happyPath {
+<span class="lineNum">      73 </span>            :     vm.expectEmit();
+<span class="lineNum">      74 </span>            :     emit AddAuthorization(user);
+<span class="lineNum">      75 </span>            : 
+<span class="lineNum">      76 </span>            :     liquidationJob =
+<span class="lineNum">      77 </span>            :       new LiquidationJobForTest(address(mockLiquidationEngine), address(mockStabilityFeeTreasury), REWARD_AMOUNT);
+<span class="lineNum">      78 </span>            :   }
+<span class="lineNum">      79 </span>            : 
+<span class="lineNum">      80 </span>            :   function test_Set_LiquidationEngine(address _liquidationEngine) public happyPath {
+<span class="lineNum">      81 </span>            :     liquidationJob = new LiquidationJobForTest(_liquidationEngine, address(mockStabilityFeeTreasury), REWARD_AMOUNT);
+<span class="lineNum">      82 </span>            : 
+<span class="lineNum">      83 </span>            :     assertEq(address(liquidationJob.liquidationEngine()), _liquidationEngine);
+<span class="lineNum">      84 </span>            :   }
+<span class="lineNum">      85 </span>            : 
+<span class="lineNum">      86 </span>            :   function test_Set_ShouldWork() public happyPath {
+<span class="lineNum">      87 </span>            :     assertEq(liquidationJob.shouldWork(), true);
+<span class="lineNum">      88 </span>            :   }
+<span class="lineNum">      89 </span>            : }
+<span class="lineNum">      90 </span>            : 
+<span class="lineNum">      91 </span>            : contract Unit_LiquidationJob_WorkLiquidation is Base {
+<span class="lineNum">      92 </span>            :   event Rewarded(address _rewardedAccount, uint256 _rewardAmount);
+<span class="lineNum">      93 </span>            : 
+<span class="lineNum">      94 </span>            :   function _mockValues(bool _shouldWork, bytes32 _cType, address _safe) internal {
+<span class="lineNum">      95 </span>            :     _mockShouldWork(_shouldWork);
+<span class="lineNum">      96 </span>            :     _mockLiquidateSAFE(_cType, _safe, 1);
+<span class="lineNum">      97 </span>            :   }
+<span class="lineNum">      98 </span>            : 
+<span class="lineNum">      99 </span>            :   function test_Revert_NotWorkable() public {
+<span class="lineNum">     100 </span>            :     bytes32 _cType = 'randomCType';
+<span class="lineNum">     101 </span>            :     address _safe = newAddress();
+<span class="lineNum">     102 </span>            :     _mockValues(false, _cType, _safe);
+<span class="lineNum">     103 </span>            : 
+<span class="lineNum">     104 </span>            :     vm.expectRevert(IJob.NotWorkable.selector);
+<span class="lineNum">     105 </span>            : 
+<span class="lineNum">     106 </span>            :     liquidationJob.workLiquidation(_cType, _safe);
+<span class="lineNum">     107 </span>            :   }
+<span class="lineNum">     108 </span>            : 
+<span class="lineNum">     109 </span>            :   function test_Call_LiquidationEngine_LiquidateSAFE(bytes32 _cType, address _safe) public {
+<span class="lineNum">     110 </span>            :     _mockValues(true, _cType, _safe);
+<span class="lineNum">     111 </span>            : 
+<span class="lineNum">     112 </span>            :     liquidationJob.workLiquidation(_cType, _safe);
+<span class="lineNum">     113 </span>            :   }
+<span class="lineNum">     114 </span>            : 
+<span class="lineNum">     115 </span>            :   function test_Emit_Rewarded(bytes32 _cType, address _safe) public {
+<span class="lineNum">     116 </span>            :     _mockValues(true, _cType, _safe);
+<span class="lineNum">     117 </span>            : 
+<span class="lineNum">     118 </span>            :     vm.expectEmit(address(liquidationJob));
+<span class="lineNum">     119 </span>            :     emit Rewarded(user, REWARD_AMOUNT);
+<span class="lineNum">     120 </span>            : 
+<span class="lineNum">     121 </span>            :     vm.prank(user);
+<span class="lineNum">     122 </span>            :     liquidationJob.workLiquidation(_cType, _safe);
+<span class="lineNum">     123 </span>            :   }
+<span class="lineNum">     124 </span>            : 
+<span class="lineNum">     125 </span>            :   function test_No_Reward(bytes32 _cType, address _safe) public {
+<span class="lineNum">     126 </span>            :     _mockValues(true, _cType, _safe);
+<span class="lineNum">     127 </span>            : 
+<span class="lineNum">     128 </span>            :     vm.recordLogs();
+<span class="lineNum">     129 </span>            :     vm.prank(user);
+<span class="lineNum">     130 </span>            :     liquidationJob.workLiquidationWithoutReward(_cType, _safe);
+<span class="lineNum">     131 </span>            :     assertEq(vm.getRecordedLogs().length, 0);
+<span class="lineNum">     132 </span>            :   }
+<span class="lineNum">     133 </span>            : }
+<span class="lineNum">     134 </span>            : 
+<span class="lineNum">     135 </span>            : contract Unit_LiquidationJob_ModifyParameters is Base {
+<span class="lineNum">     136 </span>            :   event ModifyParameters(bytes32 indexed _param, bytes32 indexed _cType, bytes _data);
+<span class="lineNum">     137 </span>            : 
+<span class="lineNum">     138 </span>            :   modifier happyPath() {
+<span class="lineNum">     139 </span>            :     vm.startPrank(authorizedAccount);
+<span class="lineNum">     140 </span>            :     _;
+<span class="lineNum">     141 </span>            :   }
+<span class="lineNum">     142 </span>            : 
+<span class="lineNum">     143 </span>            :   function test_Set_LiquidationEngine(address _liquidationEngine) public happyPath {
+<span class="lineNum">     144 </span>            :     liquidationJob.modifyParameters('liquidationEngine', abi.encode(_liquidationEngine));
+<span class="lineNum">     145 </span>            : 
+<span class="lineNum">     146 </span>            :     assertEq(address(liquidationJob.liquidationEngine()), _liquidationEngine);
+<span class="lineNum">     147 </span>            :   }
+<span class="lineNum">     148 </span>            : 
+<span class="lineNum">     149 </span>            :   function test_Set_StabilityFeeTreasury(address _stabilityFeeTreasury) public happyPath {
+<span class="lineNum">     150 </span>            :     liquidationJob.modifyParameters('stabilityFeeTreasury', abi.encode(_stabilityFeeTreasury));
+<span class="lineNum">     151 </span>            : 
+<span class="lineNum">     152 </span>            :     assertEq(address(liquidationJob.stabilityFeeTreasury()), _stabilityFeeTreasury);
+<span class="lineNum">     153 </span>            :   }
+<span class="lineNum">     154 </span>            : 
+<span class="lineNum">     155 </span>            :   function test_Set_ShouldWorkPopDebtFromQueue(bool _shouldWork) public happyPath {
+<span class="lineNum">     156 </span>            :     liquidationJob.modifyParameters('shouldWork', abi.encode(_shouldWork));
+<span class="lineNum">     157 </span>            : 
+<span class="lineNum">     158 </span>            :     assertEq(liquidationJob.shouldWork(), _shouldWork);
+<span class="lineNum">     159 </span>            :   }
+<span class="lineNum">     160 </span>            : 
+<span class="lineNum">     161 </span>            :   function test_Set_RewardAmount(uint256 _rewardAmount) public happyPath {
+<span class="lineNum">     162 </span>            :     liquidationJob.modifyParameters('rewardAmount', abi.encode(_rewardAmount));
+<span class="lineNum">     163 </span>            : 
+<span class="lineNum">     164 </span>            :     assertEq(liquidationJob.rewardAmount(), _rewardAmount);
+<span class="lineNum">     165 </span>            :   }
+<span class="lineNum">     166 </span>            : 
+<span class="lineNum">     167 </span>            :   function test_Revert_UnrecognizedParam(bytes memory _data) public {
+<span class="lineNum">     168 </span>            :     vm.startPrank(authorizedAccount);
+<span class="lineNum">     169 </span>            : 
+<span class="lineNum">     170 </span>            :     vm.expectRevert(IModifiable.UnrecognizedParam.selector);
+<span class="lineNum">     171 </span>            : 
+<span class="lineNum">     172 </span>            :     liquidationJob.modifyParameters('unrecognizedParam', _data);
+<span class="lineNum">     173 </span>            :   }
+<span class="lineNum">     174 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../../../../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>
