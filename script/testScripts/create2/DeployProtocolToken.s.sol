@@ -5,7 +5,7 @@ import '@script/Registry.s.sol';
 import {Script} from 'forge-std/Script.sol';
 import {Test} from 'forge-std/Test.sol';
 import {OpenDollarGovernance, ProtocolToken, IProtocolToken} from '@contracts/tokens/ProtocolToken.sol';
-import {IImmutableCreate2Factory} from '@interfaces/utils/IImmutableCreate2Factory.sol';
+import {IODCreate2Factory} from '@interfaces/factories/IODCreate2Factory.sol';
 
 // BROADCAST
 // source .env && forge script Create2DeployProtocolToken --skip-simulation --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
@@ -14,7 +14,7 @@ import {IImmutableCreate2Factory} from '@interfaces/utils/IImmutableCreate2Facto
 // source .env && forge script Create2DeployProtocolToken --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC
 
 contract Create2DeployProtocolToken is Script, Test {
-  IImmutableCreate2Factory internal _create2 = IImmutableCreate2Factory(CREATE2FACTORY);
+  IODCreate2Factory internal _create2 = IODCreate2Factory(CREATE2FACTORY);
 
   bytes internal _protocolTokenInitCode;
   bytes32 internal _protocolTokenHash;
@@ -27,10 +27,10 @@ contract Create2DeployProtocolToken is Script, Test {
     _protocolTokenInitCode = type(OpenDollarGovernance).creationCode;
     _protocolTokenHash = keccak256(_protocolTokenInitCode);
 
-    _precomputeAddress = _create2.findCreate2AddressViaHash(SEPOLIA_SALT_PROTOCOLTOKEN, _protocolTokenHash);
+    _precomputeAddress = _create2.precomputeAddress(SEPOLIA_SALT_PROTOCOLTOKEN, _protocolTokenHash);
     emit log_named_address('ODG precompute', _precomputeAddress);
 
-    _protocolToken = _create2.safeCreate2(SEPOLIA_SALT_PROTOCOLTOKEN, _protocolTokenInitCode);
+    _protocolToken = _create2.create2deploy(SEPOLIA_SALT_PROTOCOLTOKEN, _protocolTokenInitCode);
     emit log_named_address('ODG deployment', _protocolToken);
 
     IProtocolToken(_protocolToken).initialize('Open Dollar Governance', 'ODG');

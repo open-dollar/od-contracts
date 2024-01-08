@@ -24,7 +24,7 @@ abstract contract Deploy is Common, Script {
     vm.startBroadcast(deployer);
 
     // set create2 factory
-    create2 = IImmutableCreate2Factory(CREATE2FACTORY);
+    create2 = IODCreate2Factory(CREATE2FACTORY);
 
     // creation bytecode
     _systemCoinInitCode = type(OpenDollar).creationCode;
