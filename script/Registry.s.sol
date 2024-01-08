@@ -8,7 +8,7 @@ address constant CREATE2FACTORY = 0xd7729CC26096035e1A7e834cE0b72599Da25FA7f;
 // --- ARB Sepolia Testnet ---
 
 // Protocol Token
-address constant SEPOLIA_PROTOCOL_TOKEN = address(0);
+address constant SEPOLIA_PROTOCOL_TOKEN = 0xFEEe338C2A70FC4F754C68c788973a7634b83d5b;
 
 // Governance Settings
 uint256 constant TEST_INIT_VOTING_DELAY = 1;
@@ -26,7 +26,7 @@ address constant P = 0xC295763Eed507d4A0f8B77241c03dd3354781a15;
 
 // Vanity address params - use `cast create2` to find salt (salt must change for each deployment)
 bytes32 constant SEPOLIA_SALT_SYSTEMCOIN = 0x46320220579d213d0446f6f1fb03407627be45d5215e7d705569a5346288aa97;
-bytes32 constant SEPOLIA_SALT_PROTOCOLTOKEN = 0x6db6eafed6e80b66085ed36987b1036f4395f56a4afe54cc63e25738438eeebe;
+bytes32 constant SEPOLIA_SALT_PROTOCOLTOKEN = 0xc262cd83fe003707ee84344a60b91f7fe4ecf9f2699c79415942c5277e5a3985;
 bytes32 constant SEPOLIA_SALT_VAULT721 = 0x2bfa56b0ce602655b440d2aa008f0900d12ef45823378bf9cb8d32eba74439c3;
 
 // Camelot Relayer (pre-deployed @ sol 0.7.6)
