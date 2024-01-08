@@ -1,0 +1,462 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - current.info - src/contracts/settlement/GlobalSettlement.sol</title>
+  <link rel="stylesheet" type="text/css" href="../../../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../../../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../../../index.html">top level</a> - <a href="index.html">src/contracts/settlement</a> - GlobalSettlement.sol<span style="font-size: 80%;"> (source / <a href="GlobalSettlement.sol.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">current.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">80</td>
+            <td class="headerCovTableEntry">80</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2024-01-07 16:13:44</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">13</td>
+            <td class="headerCovTableEntry">13</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../../../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../../../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : // SPDX-License-Identifier: GPL-3.0</a>
+<span class="lineNum">       2 </span>            : pragma solidity 0.8.19;
+<span class="lineNum">       3 </span>            : 
+<span class="lineNum">       4 </span>            : import {
+<span class="lineNum">       5 </span>            :   IGlobalSettlement,
+<span class="lineNum">       6 </span>            :   ISAFEEngine,
+<span class="lineNum">       7 </span>            :   ILiquidationEngine,
+<span class="lineNum">       8 </span>            :   IOracleRelayer
+<span class="lineNum">       9 </span>            : } from '@interfaces/settlement/IGlobalSettlement.sol';
+<span class="lineNum">      10 </span>            : 
+<span class="lineNum">      11 </span>            : import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
+<span class="lineNum">      12 </span>            : import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
+<span class="lineNum">      13 </span>            : 
+<span class="lineNum">      14 </span>            : import {Authorizable} from '@contracts/utils/Authorizable.sol';
+<span class="lineNum">      15 </span>            : import {Modifiable} from '@contracts/utils/Modifiable.sol';
+<span class="lineNum">      16 </span>            : import {Disableable, IDisableable} from '@contracts/utils/Disableable.sol';
+<span class="lineNum">      17 </span>            : 
+<span class="lineNum">      18 </span>            : import {Encoding} from '@libraries/Encoding.sol';
+<span class="lineNum">      19 </span>            : import {Math, RAY} from '@libraries/Math.sol';
+<span class="lineNum">      20 </span>            : import {Assertions} from '@libraries/Assertions.sol';
+<span class="lineNum">      21 </span>            : 
+<span class="lineNum">      22 </span>            : /**
+<span class="lineNum">      23 </span>            :  * @title  Global Settlement
+<span class="lineNum">      24 </span>            :  * @notice This contract is responsible for processing the system settlement, a stateful process that takes place over nine steps.
+<span class="lineNum">      25 </span>            :  * @notice #### System shutdown:
+<span class="lineNum">      26 </span>            :  *         &gt; We must freeze the system and start the cooldown period before we can process any system state.
+<span class="lineNum">      27 </span>            :  *         &gt; In particular, oracle prices are frozen, and no more debt can be generated from the SAFEEngine.
+<span class="lineNum">      28 </span>            :  *
+<span class="lineNum">      29 </span>            :  *         1) `shutdownSystem()`
+<span class="lineNum">      30 </span>            :  *             - freeze the system and start the cooldown period
+<span class="lineNum">      31 </span>            :  *
+<span class="lineNum">      32 </span>            :  *         2) `freezeCollateralType(_cType)`
+<span class="lineNum">      33 </span>            :  *             - reads and store the final price for each collateral type
+<span class="lineNum">      34 </span>            :  *             - initializes `collateralTotalDebt` to the total debt registered in safe engine
+<span class="lineNum">      35 </span>            :  *
+<span class="lineNum">      36 </span>            :  *         #### Cooldown period:
+<span class="lineNum">      37 </span>            :  *         &gt; We must process some system state before it is possible to calculate the final coin / collateral price.
+<span class="lineNum">      38 </span>            :  *         &gt; In particular, we need to determine:
+<span class="lineNum">      39 </span>            :  *         &gt;
+<span class="lineNum">      40 </span>            :  *         &gt; + (a) `collateralShortfall` (considers under-collateralized SAFEs)
+<span class="lineNum">      41 </span>            :  *         &gt; + (b) `outstandingCoinSupply` (after including system surplus / deficit)
+<span class="lineNum">      42 </span>            :  *         &gt;
+<span class="lineNum">      43 </span>            :  *         &gt; - We determine (a) by processing all under-collateralized SAFEs.
+<span class="lineNum">      44 </span>            :  *         &gt; - We determine (b) by processing ongoing coin generating processes, i.e. auctions. We need to ensure that auctions will not generate any further coin income.
+<span class="lineNum">      45 </span>            :  *
+<span class="lineNum">      46 </span>            :  *
+<span class="lineNum">      47 </span>            :  *         3) `processSAFE(_cType, _safe)`
+<span class="lineNum">      48 </span>            :  *           - confiscates SAFE debt and backing collateral (excess of collateral remains).
+<span class="lineNum">      49 </span>            :  *
+<span class="lineNum">      50 </span>            :  *         4) Auctions at SAH and DAH can be terminated prematurely, while CAH auctions are handled by this contract
+<span class="lineNum">      51 </span>            :  *           + 4.a. `SAH.terminateAuctionPrematurely(_id)`
+<span class="lineNum">      52 </span>            :  *             - settles the auction
+<span class="lineNum">      53 </span>            :  *             - transfers the surplus to the highest bidder
+<span class="lineNum">      54 </span>            :  *           + 4.b. `DAH.terminateAuctionPrematurely(_id)`
+<span class="lineNum">      55 </span>            :  *             - settles the auction
+<span class="lineNum">      56 </span>            :  *             - returns the coins to the highest bidder
+<span class="lineNum">      57 </span>            :  *             - registers the unbacked debt at the accounting engine
+<span class="lineNum">      58 </span>            :  *           + 4.c. `this.fastTrackAuction(_cType, _id)`
+<span class="lineNum">      59 </span>            :  *             - settles the auction: returns collateral and debt to the SAFE
+<span class="lineNum">      60 </span>            :  *             - registers returned debt in `collateralTotalDebt`
+<span class="lineNum">      61 </span>            :  *
+<span class="lineNum">      62 </span>            :  *         &gt; When an overcollateralized SAFE has been processed and has no debt remaining, the remaining collateral can be withdrawn:
+<span class="lineNum">      63 </span>            :  *
+<span class="lineNum">      64 </span>            :  *         5) `freeCollateral(_cType)`
+<span class="lineNum">      65 </span>            :  *             - remove collateral from the caller's SAFE (requires SAFE to have no debt)
+<span class="lineNum">      66 </span>            :  *
+<span class="lineNum">      67 </span>            :  *         #### After cooldown period:
+<span class="lineNum">      68 </span>            :  *         &gt; We enable calculation of the final price for each collateral type.
+<span class="lineNum">      69 </span>            :  *         &gt; Requires accounting engine to have no surplus.
+<span class="lineNum">      70 </span>            :  *
+<span class="lineNum">      71 </span>            :  *         7) `setOutstandingCoinSupply()`
+<span class="lineNum">      72 </span>            :  *             - fixes the total outstanding supply of coin
+<span class="lineNum">      73 </span>            :  *         6) `calculateCashPrice(_cType)`
+<span class="lineNum">      74 </span>            :  *             - calculate `collateralCashPrice` adjusted in the case of deficit / surplus
+<span class="lineNum">      75 </span>            :  *
+<span class="lineNum">      76 </span>            :  *         #### Redeeming:
+<span class="lineNum">      77 </span>            :  *         &gt; At this point we have computed the final price for each collateral type and coin holders can now turn their coin into collateral.
+<span class="lineNum">      78 </span>            :  *
+<span class="lineNum">      79 </span>            :  *         8) `prepareCoinsForRedeeming(_wad)`
+<span class="lineNum">      80 </span>            :  *           - deposit the amount of coins to redeem in caller's accountance
+<span class="lineNum">      81 </span>            :  *           - Each unit of coin can claim a proportional amount of all of the system's collateral
+<span class="lineNum">      82 </span>            :  *           - At any point a user can get and prepare more coins to redeem for more collateral
+<span class="lineNum">      83 </span>            :  *
+<span class="lineNum">      84 </span>            :  *         9) `redeemCollateral(_cType, _wad)`
+<span class="lineNum">      85 </span>            :  *           - claim tokens from a specific collateral type given the amount of coins caller has deposited
+<span class="lineNum">      86 </span>            :  *           - The amount of collateral to redeem depends exclusively in the state variables calculated in the previous steps
+<span class="lineNum">      87 </span>            :  *           - The amount of collaterals left when all circulating coins are redeemed should be 0
+<span class="lineNum">      88 </span>            :  */
+<span class="lineNum">      89 </span>            : contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettlement {
+<span class="lineNum">      90 </span>            :   using Math for uint256;
+<span class="lineNum">      91 </span>            :   using Assertions for address;
+<span class="lineNum">      92 </span>            :   using Encoding for bytes;
+<span class="lineNum">      93 </span>            : 
+<span class="lineNum">      94 </span>            :   // --- Data ---
+<span class="lineNum">      95 </span>            :   /// @inheritdoc IGlobalSettlement
+<span class="lineNum">      96 </span>            :   uint256 public shutdownTime;
+<span class="lineNum">      97 </span>            :   /// @inheritdoc IGlobalSettlement
+<span class="lineNum">      98 </span>            :   uint256 /* RAD */ public outstandingCoinSupply;
+<span class="lineNum">      99 </span>            : 
+<span class="lineNum">     100 </span>            :   /// @inheritdoc IGlobalSettlement
+<span class="lineNum">     101 </span>            :   mapping(bytes32 _cType =&gt; uint256 _ray) public finalCoinPerCollateralPrice;
+<span class="lineNum">     102 </span>            :   /// @inheritdoc IGlobalSettlement
+<span class="lineNum">     103 </span>            :   mapping(bytes32 _cType =&gt; uint256 _wad) public collateralShortfall;
+<span class="lineNum">     104 </span>            :   /// @inheritdoc IGlobalSettlement
+<span class="lineNum">     105 </span>            :   mapping(bytes32 _cType =&gt; uint256 _wad) public collateralTotalDebt;
+<span class="lineNum">     106 </span>            :   /// @inheritdoc IGlobalSettlement
+<span class="lineNum">     107 </span>            :   mapping(bytes32 _cType =&gt; uint256 _ray) public collateralCashPrice;
+<span class="lineNum">     108 </span>            : 
+<span class="lineNum">     109 </span>            :   /// @inheritdoc IGlobalSettlement
+<span class="lineNum">     110 </span>            :   mapping(address _usr =&gt; uint256 _wad) public coinBag;
+<span class="lineNum">     111 </span>            :   /// @inheritdoc IGlobalSettlement
+<span class="lineNum">     112 </span>            :   mapping(bytes32 _cType =&gt; mapping(address _usr =&gt; uint256 _wad)) public coinsUsedToRedeem;
+<span class="lineNum">     113 </span>            : 
+<span class="lineNum">     114 </span>            :   // --- Registry ---
+<span class="lineNum">     115 </span>            : 
+<span class="lineNum">     116 </span>            :   /// @inheritdoc IGlobalSettlement
+<span class="lineNum">     117 </span>            :   ISAFEEngine public safeEngine;
+<span class="lineNum">     118 </span>            :   /// @inheritdoc IGlobalSettlement
+<span class="lineNum">     119 </span>            :   ILiquidationEngine public liquidationEngine;
+<span class="lineNum">     120 </span>            :   /// @inheritdoc IGlobalSettlement
+<span class="lineNum">     121 </span>            :   IOracleRelayer public oracleRelayer;
+<span class="lineNum">     122 </span>            : 
+<span class="lineNum">     123 </span>            :   /// @inheritdoc IGlobalSettlement
+<span class="lineNum">     124 </span>            :   IDisableable public coinJoin;
+<span class="lineNum">     125 </span>            :   /// @inheritdoc IGlobalSettlement
+<span class="lineNum">     126 </span>            :   IDisableable public collateralJoinFactory;
+<span class="lineNum">     127 </span>            :   /// @inheritdoc IGlobalSettlement
+<span class="lineNum">     128 </span>            :   IDisableable public collateralAuctionHouseFactory;
+<span class="lineNum">     129 </span>            :   /// @inheritdoc IGlobalSettlement
+<span class="lineNum">     130 </span>            :   IDisableable public stabilityFeeTreasury;
+<span class="lineNum">     131 </span>            :   /// @inheritdoc IGlobalSettlement
+<span class="lineNum">     132 </span>            :   IDisableable public accountingEngine;
+<span class="lineNum">     133 </span>            : 
+<span class="lineNum">     134 </span>            :   /// @inheritdoc IGlobalSettlement
+<span class="lineNum">     135 </span>            :   // solhint-disable-next-line private-vars-leading-underscore
+<span class="lineNum">     136 </span>            :   GlobalSettlementParams public _params;
+<a name="137"><span class="lineNum">     137 </span>            : </a>
+<span class="lineNum">     138 </span>            :   /// @inheritdoc IGlobalSettlement
+<span class="lineNum">     139 </span>            :   function params() external view returns (GlobalSettlementParams memory _globalSettlementParams) {
+<span class="lineNum">     140 </span><span class="lineCov">       3072 :     return _params;</span>
+<span class="lineNum">     141 </span>            :   }
+<span class="lineNum">     142 </span>            : 
+<span class="lineNum">     143 </span>            :   // --- Init ---
+<span class="lineNum">     144 </span>            : 
+<span class="lineNum">     145 </span>            :   /**
+<span class="lineNum">     146 </span>            :    * @param  _safeEngine Address of the SAFEEngine contract
+<span class="lineNum">     147 </span>            :    * @param  _liquidationEngine Address of the LiquidationEngine contract
+<span class="lineNum">     148 </span>            :    * @param  _oracleRelayer Address of the OracleRelayer contract
+<span class="lineNum">     149 </span>            :    * @param  _coinJoin Address of the CoinJoin contract
+<span class="lineNum">     150 </span>            :    * @param  _collateralJoinFactory Address of the CollateralJoinFactory contract
+<span class="lineNum">     151 </span>            :    * @param  _collateralAuctionHouseFactory Address of the CollateralAuctionHouseFactory contract
+<span class="lineNum">     152 </span>            :    * @param  _stabilityFeeTreasury Address of the StabilityFeeTreasury contract
+<span class="lineNum">     153 </span>            :    * @param  _accountingEngine Address of the AccountingEngine contract
+<span class="lineNum">     154 </span>            :    * @param  _gsParams Initial valid GlobalSettlement parameters struct
+<span class="lineNum">     155 </span>            :    */
+<span class="lineNum">     156 </span>            :   constructor(
+<span class="lineNum">     157 </span>            :     address _safeEngine,
+<span class="lineNum">     158 </span>            :     address _liquidationEngine,
+<span class="lineNum">     159 </span>            :     address _oracleRelayer,
+<span class="lineNum">     160 </span>            :     address _coinJoin,
+<span class="lineNum">     161 </span>            :     address _collateralJoinFactory,
+<span class="lineNum">     162 </span>            :     address _collateralAuctionHouseFactory,
+<span class="lineNum">     163 </span>            :     address _stabilityFeeTreasury,
+<span class="lineNum">     164 </span>            :     address _accountingEngine,
+<span class="lineNum">     165 </span>            :     GlobalSettlementParams memory _gsParams
+<span class="lineNum">     166 </span>            :   ) Authorizable(msg.sender) validParams {
+<span class="lineNum">     167 </span>            :     safeEngine = ISAFEEngine(_safeEngine.assertNonNull());
+<span class="lineNum">     168 </span>            :     liquidationEngine = ILiquidationEngine(_liquidationEngine);
+<span class="lineNum">     169 </span>            :     oracleRelayer = IOracleRelayer(_oracleRelayer);
+<span class="lineNum">     170 </span>            :     coinJoin = IDisableable(_coinJoin);
+<span class="lineNum">     171 </span>            :     collateralJoinFactory = IDisableable(_collateralJoinFactory);
+<span class="lineNum">     172 </span>            :     collateralAuctionHouseFactory = IDisableable(_collateralAuctionHouseFactory);
+<span class="lineNum">     173 </span>            :     stabilityFeeTreasury = IDisableable(_stabilityFeeTreasury);
+<span class="lineNum">     174 </span>            :     accountingEngine = IDisableable(_accountingEngine);
+<span class="lineNum">     175 </span>            : 
+<span class="lineNum">     176 </span>            :     _params = _gsParams;
+<span class="lineNum">     177 </span>            :   }
+<span class="lineNum">     178 </span>            : 
+<span class="lineNum">     179 </span>            :   // --- Shutdown ---
+<span class="lineNum">     180 </span>            : 
+<span class="lineNum">     181 </span>            :   /**
+<span class="lineNum">     182 </span>            :    * @dev   Method override avoids externally disabling this contract
+<a name="183"><span class="lineNum">     183 </span>            :    * @inheritdoc Disableable</a>
+<span class="lineNum">     184 </span>            :    */
+<span class="lineNum">     185 </span>            :   function _onContractDisable() internal pure override {
+<span class="lineNum">     186 </span><span class="lineCov">          1 :     revert NonDisableable();</span>
+<span class="lineNum">     187 </span>            :   }
+<span class="lineNum">     188 </span>            : 
+<span class="lineNum">     189 </span>            :   // --- Settlement ---
+<a name="190"><span class="lineNum">     190 </span>            : </a>
+<span class="lineNum">     191 </span>            :   /// @inheritdoc IGlobalSettlement
+<span class="lineNum">     192 </span>            :   function shutdownSystem() external isAuthorized whenEnabled {
+<span class="lineNum">     193 </span><span class="lineCov">         21 :     shutdownTime = block.timestamp;</span>
+<span class="lineNum">     194 </span><span class="lineCov">         21 :     contractEnabled = false;</span>
+<span class="lineNum">     195 </span>            : 
+<span class="lineNum">     196 </span>            :     // Locks the system (SAFEs cannot be modified through the SAFEEngine)
+<span class="lineNum">     197 </span><span class="lineCov">         21 :     safeEngine.disableContract();</span>
+<span class="lineNum">     198 </span>            :     // Locks the oracle relayer (no more price updates)
+<span class="lineNum">     199 </span><span class="lineCov">         21 :     oracleRelayer.disableContract();</span>
+<span class="lineNum">     200 </span>            :     // Avoids further liquidations
+<span class="lineNum">     201 </span><span class="lineCov">         21 :     liquidationEngine.disableContract();</span>
+<span class="lineNum">     202 </span>            :     // Avoids further collateral being bought at auctions
+<span class="lineNum">     203 </span><span class="lineCov">         21 :     collateralAuctionHouseFactory.disableContract();</span>
+<span class="lineNum">     204 </span>            :     // Avoids further coins from exiting the system (being minted for internal balance)
+<span class="lineNum">     205 </span><span class="lineCov">         21 :     coinJoin.disableContract();</span>
+<span class="lineNum">     206 </span>            :     // Avoids further collateral from entering the system (join)
+<span class="lineNum">     207 </span><span class="lineCov">         21 :     collateralJoinFactory.disableContract();</span>
+<span class="lineNum">     208 </span>            :     // Transfers all surplus treasury funds to the accounting engine
+<span class="lineNum">     209 </span><span class="lineCov">         21 :     stabilityFeeTreasury.disableContract();</span>
+<span class="lineNum">     210 </span>            :     // Disables DAH and SAH and tries to settle as much debt as possible
+<span class="lineNum">     211 </span><span class="lineCov">         21 :     accountingEngine.disableContract();</span>
+<span class="lineNum">     212 </span>            : 
+<span class="lineNum">     213 </span><span class="lineCov">         21 :     emit ShutdownSystem();</span>
+<span class="lineNum">     214 </span>            :   }
+<a name="215"><span class="lineNum">     215 </span>            : </a>
+<span class="lineNum">     216 </span>            :   /// @inheritdoc IGlobalSettlement
+<span class="lineNum">     217 </span>            :   function freezeCollateralType(bytes32 _cType) external whenDisabled {
+<span class="lineNum">     218 </span><span class="lineCov">       1035 :     if (finalCoinPerCollateralPrice[_cType] != 0) revert GS_FinalCollateralPriceAlreadyDefined();</span>
+<span class="lineNum">     219 </span><span class="lineCov">        779 :     collateralTotalDebt[_cType] = safeEngine.cData(_cType).debtAmount;</span>
+<span class="lineNum">     220 </span><span class="lineCov">        779 :     IBaseOracle _oracle = oracleRelayer.cParams(_cType).oracle;</span>
+<span class="lineNum">     221 </span>            : 
+<span class="lineNum">     222 </span>            :     // redemptionPrice is a ray, orcl returns a wad, finalCoinPerCollateralPrice is a ray
+<span class="lineNum">     223 </span><span class="lineCov">        779 :     finalCoinPerCollateralPrice[_cType] = oracleRelayer.redemptionPrice().wdiv(_oracle.read());</span>
+<span class="lineNum">     224 </span><span class="lineCov">        779 :     emit FreezeCollateralType(_cType, finalCoinPerCollateralPrice[_cType]);</span>
+<span class="lineNum">     225 </span>            :   }
+<a name="226"><span class="lineNum">     226 </span>            : </a>
+<span class="lineNum">     227 </span>            :   /// @inheritdoc IGlobalSettlement
+<span class="lineNum">     228 </span>            :   function fastTrackAuction(bytes32 _cType, uint256 _auctionId) external {
+<span class="lineNum">     229 </span><span class="lineCov">       1883 :     if (finalCoinPerCollateralPrice[_cType] == 0) revert GS_FinalCollateralPriceNotDefined();</span>
+<span class="lineNum">     230 </span>            : 
+<span class="lineNum">     231 </span><span class="lineCov">       1627 :     ICollateralAuctionHouse _collateralAuctionHouse =</span>
+<span class="lineNum">     232 </span><span class="lineCov">       1627 :       ICollateralAuctionHouse(liquidationEngine.cParams(_cType).collateralAuctionHouse);</span>
+<span class="lineNum">     233 </span><span class="lineCov">       1627 :     uint256 _accumulatedRate = safeEngine.cData(_cType).accumulatedRate;</span>
+<span class="lineNum">     234 </span>            : 
+<span class="lineNum">     235 </span><span class="lineCov">       1627 :     ICollateralAuctionHouse.Auction memory _auction = _collateralAuctionHouse.auctions(_auctionId);</span>
+<span class="lineNum">     236 </span>            : 
+<span class="lineNum">     237 </span>            :     // Creates an unbacked debt at the accounting engine
+<span class="lineNum">     238 </span><span class="lineCov">       1627 :     safeEngine.createUnbackedDebt({</span>
+<span class="lineNum">     239 </span>            :       _debtDestination: address(accountingEngine),
+<span class="lineNum">     240 </span>            :       _coinDestination: address(accountingEngine),
+<span class="lineNum">     241 </span>            :       _rad: _auction.amountToRaise
+<span class="lineNum">     242 </span>            :     });
+<span class="lineNum">     243 </span>            : 
+<span class="lineNum">     244 </span>            :     // Returns debt to the SAFE owner and withdraw the collateral from the auction (to this contract)
+<span class="lineNum">     245 </span><span class="lineCov">       1627 :     _collateralAuctionHouse.terminateAuctionPrematurely(_auctionId);</span>
+<span class="lineNum">     246 </span>            : 
+<span class="lineNum">     247 </span><span class="lineCov">       1627 :     uint256 _debt = _auction.amountToRaise / _accumulatedRate;</span>
+<span class="lineNum">     248 </span><span class="lineCov">       1627 :     collateralTotalDebt[_cType] += _debt;</span>
+<span class="lineNum">     249 </span>            : 
+<span class="lineNum">     250 </span>            :     // Transfers the collateral (from this) and the unbacked debt (from accounting engine) to the SAFE owner
+<span class="lineNum">     251 </span><span class="lineCov">       1627 :     safeEngine.confiscateSAFECollateralAndDebt({</span>
+<span class="lineNum">     252 </span>            :       _cType: _cType,
+<span class="lineNum">     253 </span>            :       _safe: _auction.forgoneCollateralReceiver,
+<span class="lineNum">     254 </span>            :       _collateralSource: address(this),
+<span class="lineNum">     255 </span>            :       _debtDestination: address(accountingEngine),
+<span class="lineNum">     256 </span>            :       _deltaCollateral: _auction.amountToSell.toInt(),
+<span class="lineNum">     257 </span>            :       _deltaDebt: _debt.toInt()
+<span class="lineNum">     258 </span>            :     });
+<span class="lineNum">     259 </span>            : 
+<span class="lineNum">     260 </span><span class="lineCov">       1281 :     emit FastTrackAuction(_cType, _auctionId, collateralTotalDebt[_cType]);</span>
+<span class="lineNum">     261 </span>            :   }
+<a name="262"><span class="lineNum">     262 </span>            : </a>
+<span class="lineNum">     263 </span>            :   /// @inheritdoc IGlobalSettlement
+<span class="lineNum">     264 </span>            :   function processSAFE(bytes32 _cType, address _safe) external {
+<span class="lineNum">     265 </span><span class="lineCov">       1292 :     if (finalCoinPerCollateralPrice[_cType] == 0) revert GS_FinalCollateralPriceNotDefined();</span>
+<span class="lineNum">     266 </span>            : 
+<span class="lineNum">     267 </span><span class="lineCov">       1036 :     ISAFEEngine.SAFE memory _safeData = safeEngine.safes(_cType, _safe);</span>
+<span class="lineNum">     268 </span><span class="lineCov">       1036 :     uint256 _accumulatedRate = safeEngine.cData(_cType).accumulatedRate;</span>
+<span class="lineNum">     269 </span><span class="lineCov">       1036 :     uint256 _amountOwed = _safeData.generatedDebt.rmul(_accumulatedRate).rmul(finalCoinPerCollateralPrice[_cType]);</span>
+<span class="lineNum">     270 </span><span class="lineCov">       1036 :     uint256 _minCollateral = Math.min(_safeData.lockedCollateral, _amountOwed);</span>
+<span class="lineNum">     271 </span>            : 
+<span class="lineNum">     272 </span>            :     // If the SAFE is undercollateralized, add the difference to the collateral shortfall
+<span class="lineNum">     273 </span><span class="lineCov">       1036 :     collateralShortfall[_cType] += _amountOwed - _minCollateral;</span>
+<span class="lineNum">     274 </span>            : 
+<span class="lineNum">     275 </span><span class="lineCov">       1036 :     safeEngine.confiscateSAFECollateralAndDebt({</span>
+<span class="lineNum">     276 </span>            :       _cType: _cType,
+<span class="lineNum">     277 </span>            :       _safe: _safe,
+<span class="lineNum">     278 </span>            :       _collateralSource: address(this),
+<span class="lineNum">     279 </span>            :       _debtDestination: address(accountingEngine),
+<span class="lineNum">     280 </span>            :       _deltaCollateral: -int256(_minCollateral), // safe cast
+<span class="lineNum">     281 </span>            :       _deltaDebt: -_safeData.generatedDebt.toInt()
+<span class="lineNum">     282 </span>            :     });
+<span class="lineNum">     283 </span>            : 
+<span class="lineNum">     284 </span><span class="lineCov">        780 :     emit ProcessSAFE(_cType, _safe, collateralShortfall[_cType]);</span>
+<span class="lineNum">     285 </span>            :   }
+<a name="286"><span class="lineNum">     286 </span>            : </a>
+<span class="lineNum">     287 </span>            :   /// @inheritdoc IGlobalSettlement
+<span class="lineNum">     288 </span>            :   function freeCollateral(bytes32 _cType) external whenDisabled {
+<span class="lineNum">     289 </span><span class="lineCov">       1032 :     ISAFEEngine.SAFE memory _safeData = safeEngine.safes(_cType, msg.sender);</span>
+<span class="lineNum">     290 </span><span class="lineCov">       1032 :     if (_safeData.generatedDebt != 0) revert GS_SafeDebtNotZero();</span>
+<span class="lineNum">     291 </span>            : 
+<span class="lineNum">     292 </span><span class="lineCov">        776 :     safeEngine.confiscateSAFECollateralAndDebt({</span>
+<span class="lineNum">     293 </span>            :       _cType: _cType,
+<span class="lineNum">     294 </span>            :       _safe: msg.sender,
+<span class="lineNum">     295 </span>            :       _collateralSource: msg.sender,
+<span class="lineNum">     296 </span>            :       _debtDestination: address(accountingEngine),
+<span class="lineNum">     297 </span>            :       _deltaCollateral: -_safeData.lockedCollateral.toInt(),
+<span class="lineNum">     298 </span>            :       _deltaDebt: 0
+<span class="lineNum">     299 </span>            :     });
+<span class="lineNum">     300 </span>            : 
+<span class="lineNum">     301 </span><span class="lineCov">        520 :     emit FreeCollateral(_cType, msg.sender, _safeData.lockedCollateral);</span>
+<span class="lineNum">     302 </span>            :   }
+<a name="303"><span class="lineNum">     303 </span>            : </a>
+<span class="lineNum">     304 </span>            :   /// @inheritdoc IGlobalSettlement
+<span class="lineNum">     305 </span>            :   function setOutstandingCoinSupply() external whenDisabled {
+<span class="lineNum">     306 </span><span class="lineCov">       1290 :     if (outstandingCoinSupply != 0) revert GS_OutstandingCoinSupplyNotZero();</span>
+<span class="lineNum">     307 </span><span class="lineCov">       1034 :     if (safeEngine.coinBalance(address(accountingEngine)) != 0) revert GS_SurplusNotZero();</span>
+<span class="lineNum">     308 </span><span class="lineCov">        778 :     if (block.timestamp &lt; shutdownTime + _params.shutdownCooldown) revert GS_ShutdownCooldownNotFinished();</span>
+<span class="lineNum">     309 </span>            : 
+<span class="lineNum">     310 </span><span class="lineCov">        522 :     outstandingCoinSupply = safeEngine.globalDebt();</span>
+<span class="lineNum">     311 </span>            : 
+<span class="lineNum">     312 </span><span class="lineCov">        522 :     emit SetOutstandingCoinSupply(outstandingCoinSupply);</span>
+<span class="lineNum">     313 </span>            :   }
+<a name="314"><span class="lineNum">     314 </span>            : </a>
+<span class="lineNum">     315 </span>            :   /// @inheritdoc IGlobalSettlement
+<span class="lineNum">     316 </span>            :   function calculateCashPrice(bytes32 _cType) external {
+<span class="lineNum">     317 </span><span class="lineCov">       1035 :     if (outstandingCoinSupply == 0) revert GS_OutstandingCoinSupplyZero();</span>
+<span class="lineNum">     318 </span><span class="lineCov">        779 :     if (collateralCashPrice[_cType] != 0) revert GS_CollateralCashPriceAlreadyDefined();</span>
+<span class="lineNum">     319 </span>            : 
+<span class="lineNum">     320 </span><span class="lineCov">        523 :     uint256 _accumulatedRate = safeEngine.cData(_cType).accumulatedRate;</span>
+<span class="lineNum">     321 </span><span class="lineCov">        523 :     uint256 _redemptionAdjustedDebt =</span>
+<span class="lineNum">     322 </span><span class="lineCov">        523 :       collateralTotalDebt[_cType].rmul(_accumulatedRate).rmul(finalCoinPerCollateralPrice[_cType]);</span>
+<span class="lineNum">     323 </span>            : 
+<span class="lineNum">     324 </span><span class="lineCov">        523 :     collateralCashPrice[_cType] =</span>
+<span class="lineNum">     325 </span>            :       (_redemptionAdjustedDebt - collateralShortfall[_cType]).rdiv(outstandingCoinSupply / RAY);
+<span class="lineNum">     326 </span>            : 
+<span class="lineNum">     327 </span><span class="lineCov">        523 :     emit CalculateCashPrice(_cType, collateralCashPrice[_cType]);</span>
+<span class="lineNum">     328 </span>            :   }
+<a name="329"><span class="lineNum">     329 </span>            : </a>
+<span class="lineNum">     330 </span>            :   /// @inheritdoc IGlobalSettlement
+<span class="lineNum">     331 </span>            :   function prepareCoinsForRedeeming(uint256 _coinAmount) external {
+<span class="lineNum">     332 </span><span class="lineCov">       1040 :     if (outstandingCoinSupply == 0) revert GS_OutstandingCoinSupplyZero();</span>
+<span class="lineNum">     333 </span>            : 
+<span class="lineNum">     334 </span><span class="lineCov">        784 :     safeEngine.transferInternalCoins(msg.sender, address(accountingEngine), _coinAmount * RAY);</span>
+<span class="lineNum">     335 </span><span class="lineCov">        784 :     coinBag[msg.sender] += _coinAmount;</span>
+<span class="lineNum">     336 </span>            : 
+<span class="lineNum">     337 </span><span class="lineCov">        784 :     emit PrepareCoinsForRedeeming(msg.sender, coinBag[msg.sender]);</span>
+<span class="lineNum">     338 </span>            :   }
+<a name="339"><span class="lineNum">     339 </span>            : </a>
+<span class="lineNum">     340 </span>            :   /// @inheritdoc IGlobalSettlement
+<span class="lineNum">     341 </span>            :   function redeemCollateral(bytes32 _cType, uint256 _coinsAmount) external {
+<span class="lineNum">     342 </span><span class="lineCov">       1297 :     if (collateralCashPrice[_cType] == 0) revert GS_CollateralCashPriceNotDefined();</span>
+<span class="lineNum">     343 </span>            : 
+<span class="lineNum">     344 </span><span class="lineCov">       1041 :     uint256 _collateralAmount = _coinsAmount.rmul(collateralCashPrice[_cType]);</span>
+<span class="lineNum">     345 </span>            : 
+<span class="lineNum">     346 </span><span class="lineCov">       1041 :     safeEngine.transferCollateral({</span>
+<span class="lineNum">     347 </span>            :       _cType: _cType,
+<span class="lineNum">     348 </span>            :       _source: address(this),
+<span class="lineNum">     349 </span>            :       _destination: msg.sender,
+<span class="lineNum">     350 </span>            :       _wad: _collateralAmount
+<span class="lineNum">     351 </span>            :     });
+<span class="lineNum">     352 </span>            : 
+<span class="lineNum">     353 </span><span class="lineCov">       1041 :     coinsUsedToRedeem[_cType][msg.sender] += _coinsAmount;</span>
+<span class="lineNum">     354 </span>            : 
+<span class="lineNum">     355 </span><span class="lineCov">       1041 :     if (coinsUsedToRedeem[_cType][msg.sender] &gt; coinBag[msg.sender]) revert GS_InsufficientBagBalance();</span>
+<span class="lineNum">     356 </span><span class="lineCov">        785 :     emit RedeemCollateral(_cType, msg.sender, _coinsAmount, _collateralAmount);</span>
+<span class="lineNum">     357 </span>            :   }
+<span class="lineNum">     358 </span>            : 
+<span class="lineNum">     359 </span>            :   // --- Administration ---
+<a name="360"><span class="lineNum">     360 </span>            : </a>
+<span class="lineNum">     361 </span>            :   /// @inheritdoc Modifiable
+<span class="lineNum">     362 </span>            :   function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled {
+<span class="lineNum">     363 </span><span class="lineCov">       2048 :     address _address = _data.toAddress();</span>
+<span class="lineNum">     364 </span>            : 
+<span class="lineNum">     365 </span><span class="lineCov">       2048 :     if (_param == 'oracleRelayer') oracleRelayer = IOracleRelayer(_address);</span>
+<span class="lineNum">     366 </span><span class="lineCov">       1792 :     else if (_param == 'liquidationEngine') liquidationEngine = ILiquidationEngine(_address);</span>
+<span class="lineNum">     367 </span><span class="lineCov">       1536 :     else if (_param == 'coinJoin') coinJoin = IDisableable(_address);</span>
+<span class="lineNum">     368 </span><span class="lineCov">       1280 :     else if (_param == 'collateralJoinFactory') collateralJoinFactory = IDisableable(_address);</span>
+<span class="lineNum">     369 </span><span class="lineCov">       1024 :     else if (_param == 'collateralAuctionHouseFactory') collateralAuctionHouseFactory = IDisableable(_address);</span>
+<span class="lineNum">     370 </span><span class="lineCov">       1024 :     else if (_param == 'stabilityFeeTreasury') stabilityFeeTreasury = IDisableable(_address);</span>
+<span class="lineNum">     371 </span><span class="lineCov">        768 :     else if (_param == 'accountingEngine') accountingEngine = IDisableable(_address);</span>
+<span class="lineNum">     372 </span><span class="lineCov">        512 :     else if (_param == 'shutdownCooldown') _params.shutdownCooldown = _data.toUint256();</span>
+<span class="lineNum">     373 </span><span class="lineCov">        256 :     else revert UnrecognizedParam();</span>
+<span class="lineNum">     374 </span>            :   }
+<a name="375"><span class="lineNum">     375 </span>            : </a>
+<span class="lineNum">     376 </span>            :   /// @inheritdoc Modifiable
+<span class="lineNum">     377 </span>            :   function _validateParameters() internal view override {
+<span class="lineNum">     378 </span><span class="lineCov">       1792 :     address(liquidationEngine).assertNonNull();</span>
+<span class="lineNum">     379 </span><span class="lineCov">       1792 :     address(oracleRelayer).assertNonNull();</span>
+<span class="lineNum">     380 </span><span class="lineCov">       1792 :     address(coinJoin).assertNonNull();</span>
+<span class="lineNum">     381 </span><span class="lineCov">       1792 :     address(collateralJoinFactory).assertNonNull();</span>
+<span class="lineNum">     382 </span><span class="lineCov">       1792 :     address(collateralAuctionHouseFactory).assertNonNull();</span>
+<span class="lineNum">     383 </span><span class="lineCov">       1792 :     address(stabilityFeeTreasury).assertNonNull();</span>
+<span class="lineNum">     384 </span><span class="lineCov">       1792 :     address(accountingEngine).assertNonNull();</span>
+<span class="lineNum">     385 </span>            :   }
+<span class="lineNum">     386 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../../../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

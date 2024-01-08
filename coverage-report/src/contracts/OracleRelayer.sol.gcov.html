@@ -1,0 +1,296 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - current.info - src/contracts/OracleRelayer.sol</title>
+  <link rel="stylesheet" type="text/css" href="../../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../../index.html">top level</a> - <a href="index.html">src/contracts</a> - OracleRelayer.sol<span style="font-size: 80%;"> (source / <a href="OracleRelayer.sol.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">current.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">51</td>
+            <td class="headerCovTableEntry">52</td>
+            <td class="headerCovTableEntryHi">98.1 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2024-01-07 16:13:44</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">15</td>
+            <td class="headerCovTableEntry">16</td>
+            <td class="headerCovTableEntryHi">93.8 %</td>
+          </tr>
+          <tr><td><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : // SPDX-License-Identifier: GPL-3.0</a>
+<span class="lineNum">       2 </span>            : pragma solidity 0.8.19;
+<span class="lineNum">       3 </span>            : 
+<span class="lineNum">       4 </span>            : import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
+<span class="lineNum">       5 </span>            : import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
+<span class="lineNum">       6 </span>            : import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
+<span class="lineNum">       7 </span>            : import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
+<span class="lineNum">       8 </span>            : 
+<span class="lineNum">       9 </span>            : import {Authorizable} from '@contracts/utils/Authorizable.sol';
+<span class="lineNum">      10 </span>            : import {Modifiable} from '@contracts/utils/Modifiable.sol';
+<span class="lineNum">      11 </span>            : import {Disableable} from '@contracts/utils/Disableable.sol';
+<span class="lineNum">      12 </span>            : 
+<span class="lineNum">      13 </span>            : import {Encoding} from '@libraries/Encoding.sol';
+<span class="lineNum">      14 </span>            : import {Assertions} from '@libraries/Assertions.sol';
+<span class="lineNum">      15 </span>            : import {Math, RAY, WAD} from '@libraries/Math.sol';
+<span class="lineNum">      16 </span>            : import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
+<span class="lineNum">      17 </span>            : 
+<span class="lineNum">      18 </span>            : /**
+<span class="lineNum">      19 </span>            :  * @title  OracleRelayer
+<span class="lineNum">      20 </span>            :  * @notice Handles the collateral prices inside the system (SAFEEngine) and calculates the redemption price using the rate
+<span class="lineNum">      21 </span>            :  */
+<span class="lineNum">      22 </span>            : contract OracleRelayer is Authorizable, Modifiable, Disableable, IOracleRelayer {
+<span class="lineNum">      23 </span>            :   using Encoding for bytes;
+<span class="lineNum">      24 </span>            :   using Math for uint256;
+<span class="lineNum">      25 </span>            :   using Assertions for uint256;
+<span class="lineNum">      26 </span>            :   using Assertions for address;
+<span class="lineNum">      27 </span>            :   using EnumerableSet for EnumerableSet.Bytes32Set;
+<span class="lineNum">      28 </span>            : 
+<span class="lineNum">      29 </span>            :   // --- Registry ---
+<span class="lineNum">      30 </span>            : 
+<span class="lineNum">      31 </span>            :   /// @inheritdoc IOracleRelayer
+<span class="lineNum">      32 </span>            :   ISAFEEngine public safeEngine;
+<span class="lineNum">      33 </span>            :   /// @inheritdoc IOracleRelayer
+<span class="lineNum">      34 </span>            :   IBaseOracle public systemCoinOracle;
+<span class="lineNum">      35 </span>            : 
+<span class="lineNum">      36 </span>            :   // --- Params ---
+<span class="lineNum">      37 </span>            :   /// @inheritdoc IOracleRelayer
+<span class="lineNum">      38 </span>            :   // solhint-disable-next-line private-vars-leading-underscore
+<span class="lineNum">      39 </span>            :   OracleRelayerParams public _params;
+<span class="lineNum">      40 </span>            :   /// @inheritdoc IOracleRelayer
+<span class="lineNum">      41 </span>            :   // solhint-disable-next-line private-vars-leading-underscore
+<span class="lineNum">      42 </span>            :   mapping(bytes32 _cType =&gt; OracleRelayerCollateralParams) public _cParams;
+<a name="43"><span class="lineNum">      43 </span>            : </a>
+<span class="lineNum">      44 </span>            :   /// @inheritdoc IOracleRelayer
+<span class="lineNum">      45 </span>            :   function params() external view override returns (OracleRelayerParams memory _oracleRelayerParams) {
+<span class="lineNum">      46 </span><span class="lineCov">       9474 :     return _params;</span>
+<span class="lineNum">      47 </span>            :   }
+<a name="48"><span class="lineNum">      48 </span>            : </a>
+<span class="lineNum">      49 </span>            :   /// @inheritdoc IOracleRelayer
+<span class="lineNum">      50 </span>            :   function cParams(bytes32 _cType) external view returns (OracleRelayerCollateralParams memory _oracleRelayerCParams) {
+<span class="lineNum">      51 </span><span class="lineCov">      37215 :     return _cParams[_cType];</span>
+<span class="lineNum">      52 </span>            :   }
+<span class="lineNum">      53 </span>            : 
+<span class="lineNum">      54 </span>            :   EnumerableSet.Bytes32Set internal _collateralList;
+<span class="lineNum">      55 </span>            : 
+<span class="lineNum">      56 </span>            :   /// @dev Virtual redemption price (not the most updated value) [ray]
+<span class="lineNum">      57 </span>            :   uint256 internal /* RAY */ _redemptionPrice;
+<span class="lineNum">      58 </span>            :   /// @inheritdoc IOracleRelayer
+<span class="lineNum">      59 </span>            :   uint256 public /* RAY */ redemptionRate;
+<span class="lineNum">      60 </span>            :   /// @inheritdoc IOracleRelayer
+<span class="lineNum">      61 </span>            :   uint256 public redemptionPriceUpdateTime;
+<span class="lineNum">      62 </span>            : 
+<span class="lineNum">      63 </span>            :   // --- Init ---
+<span class="lineNum">      64 </span>            : 
+<span class="lineNum">      65 </span>            :   /**
+<span class="lineNum">      66 </span>            :    * @param  _safeEngine Address of the SAFEEngine
+<span class="lineNum">      67 </span>            :    * @param  _systemCoinOracle Address of the system coin oracle
+<span class="lineNum">      68 </span>            :    * @param  _oracleRelayerParams Initial OracleRelayer valid parameters struct
+<span class="lineNum">      69 </span>            :    */
+<span class="lineNum">      70 </span>            :   constructor(
+<span class="lineNum">      71 </span>            :     address _safeEngine,
+<span class="lineNum">      72 </span>            :     IBaseOracle _systemCoinOracle,
+<span class="lineNum">      73 </span>            :     OracleRelayerParams memory _oracleRelayerParams
+<span class="lineNum">      74 </span>            :   ) Authorizable(msg.sender) validParams {
+<span class="lineNum">      75 </span>            :     safeEngine = ISAFEEngine(_safeEngine.assertNonNull());
+<span class="lineNum">      76 </span>            :     systemCoinOracle = _systemCoinOracle;
+<span class="lineNum">      77 </span>            :     _redemptionPrice = RAY;
+<span class="lineNum">      78 </span>            :     redemptionRate = RAY;
+<span class="lineNum">      79 </span>            :     redemptionPriceUpdateTime = block.timestamp;
+<span class="lineNum">      80 </span>            :     _params = _oracleRelayerParams;
+<span class="lineNum">      81 </span>            :   }
+<a name="82"><span class="lineNum">      82 </span>            : </a>
+<span class="lineNum">      83 </span>            :   /// @inheritdoc IOracleRelayer
+<span class="lineNum">      84 </span>            :   function marketPrice() external view returns (uint256 _marketPrice) {
+<span class="lineNum">      85 </span><span class="lineCov">        901 :     (uint256 _priceFeedValue, bool _hasValidValue) = systemCoinOracle.getResultWithValidity();</span>
+<span class="lineNum">      86 </span><span class="lineCov">        901 :     if (_hasValidValue) return _priceFeedValue;</span>
+<span class="lineNum">      87 </span>            :   }
+<span class="lineNum">      88 </span>            : 
+<span class="lineNum">      89 </span>            :   /**
+<span class="lineNum">      90 </span>            :    * @dev To be used within view functions, not to be used in transactions, use `redemptionPrice` instead
+<a name="91"><span class="lineNum">      91 </span>            :    * @inheritdoc IOracleRelayer</a>
+<span class="lineNum">      92 </span>            :    */
+<span class="lineNum">      93 </span>            :   function calcRedemptionPrice() external view returns (uint256 _virtualRedemptionPrice) {
+<span class="lineNum">      94 </span><span class="lineCov">         12 :     return redemptionRate.rpow(block.timestamp - redemptionPriceUpdateTime).rmul(_redemptionPrice);</span>
+<span class="lineNum">      95 </span>            :   }
+<span class="lineNum">      96 </span>            : 
+<span class="lineNum">      97 </span>            :   // --- Redemption Price Update ---
+<a name="98"><span class="lineNum">      98 </span>            : </a>
+<span class="lineNum">      99 </span>            :   /// @notice Calculates and updates the redemption price using the current redemption rate
+<span class="lineNum">     100 </span>            :   function _updateRedemptionPrice() internal virtual returns (uint256 _updatedPrice) {
+<span class="lineNum">     101 </span>            :     // Update redemption price
+<span class="lineNum">     102 </span><span class="lineCov">       2909 :     _updatedPrice = redemptionRate.rpow(block.timestamp - redemptionPriceUpdateTime).rmul(_redemptionPrice);</span>
+<span class="lineNum">     103 </span><span class="lineCov">       2909 :     if (_updatedPrice == 0) _updatedPrice = 1;</span>
+<span class="lineNum">     104 </span><span class="lineCov">       2909 :     _redemptionPrice = _updatedPrice;</span>
+<span class="lineNum">     105 </span><span class="lineCov">       2909 :     redemptionPriceUpdateTime = block.timestamp;</span>
+<span class="lineNum">     106 </span><span class="lineCov">       2909 :     emit UpdateRedemptionPrice(_updatedPrice);</span>
+<span class="lineNum">     107 </span>            :   }
+<a name="108"><span class="lineNum">     108 </span>            : </a>
+<span class="lineNum">     109 </span>            :   /// @inheritdoc IOracleRelayer
+<span class="lineNum">     110 </span>            :   function redemptionPrice() external returns (uint256 _updatedPrice) {
+<span class="lineNum">     111 </span><span class="lineCov">       1824 :     return _getRedemptionPrice();</span>
+<span class="lineNum">     112 </span>            :   }
+<a name="113"><span class="lineNum">     113 </span>            : </a>
+<span class="lineNum">     114 </span>            :   /// @dev Avoids reupdating the redemptionPrice if no seconds have passed since last update
+<span class="lineNum">     115 </span>            :   function _getRedemptionPrice() internal virtual returns (uint256 _updatedPrice) {
+<span class="lineNum">     116 </span><span class="lineCov">       4384 :     if (block.timestamp &gt; redemptionPriceUpdateTime) return _updateRedemptionPrice();</span>
+<span class="lineNum">     117 </span><span class="lineCov">       2243 :     return _redemptionPrice;</span>
+<span class="lineNum">     118 </span>            :   }
+<span class="lineNum">     119 </span>            : 
+<span class="lineNum">     120 </span>            :   // --- Update value ---
+<a name="121"><span class="lineNum">     121 </span>            : </a>
+<span class="lineNum">     122 </span>            :   /// @inheritdoc IOracleRelayer
+<span class="lineNum">     123 </span>            :   function updateCollateralPrice(bytes32 _cType) external whenEnabled {
+<span class="lineNum">     124 </span><span class="lineCov">       2560 :     (uint256 _priceFeedValue, bool _hasValidValue) = _cParams[_cType].oracle.getResultWithValidity();</span>
+<span class="lineNum">     125 </span><span class="lineCov">       2560 :     uint256 _updatedRedemptionPrice = _getRedemptionPrice();</span>
+<span class="lineNum">     126 </span>            : 
+<span class="lineNum">     127 </span><span class="lineCov">       2560 :     uint256 _safetyPrice =</span>
+<span class="lineNum">     128 </span><span class="lineCov">       2560 :       _hasValidValue ? (_priceFeedValue * 1e9).rdiv(_updatedRedemptionPrice).rdiv(_cParams[_cType].safetyCRatio) : 0;</span>
+<span class="lineNum">     129 </span>            : 
+<span class="lineNum">     130 </span><span class="lineCov">       2560 :     uint256 _liquidationPrice = _hasValidValue</span>
+<span class="lineNum">     131 </span>            :       ? (_priceFeedValue * 1e9).rdiv(_updatedRedemptionPrice).rdiv(_cParams[_cType].liquidationCRatio)
+<span class="lineNum">     132 </span>            :       : 0;
+<span class="lineNum">     133 </span>            : 
+<span class="lineNum">     134 </span><span class="lineCov">       2560 :     safeEngine.updateCollateralPrice(_cType, _safetyPrice, _liquidationPrice);</span>
+<span class="lineNum">     135 </span><span class="lineCov">       2560 :     emit UpdateCollateralPrice(_cType, _priceFeedValue, _safetyPrice, _liquidationPrice);</span>
+<span class="lineNum">     136 </span>            :   }
+<a name="137"><span class="lineNum">     137 </span>            : </a>
+<span class="lineNum">     138 </span>            :   /// @inheritdoc IOracleRelayer
+<span class="lineNum">     139 </span>            :   function updateRedemptionRate(uint256 _redemptionRate) external isAuthorized whenEnabled {
+<span class="lineNum">     140 </span><span class="lineCov">       1359 :     if (block.timestamp != redemptionPriceUpdateTime) revert OracleRelayer_RedemptionPriceNotUpdated();</span>
+<span class="lineNum">     141 </span>            : 
+<span class="lineNum">     142 </span><span class="lineCov">       1103 :     if (_redemptionRate &gt; _params.redemptionRateUpperBound) {</span>
+<span class="lineNum">     143 </span><span class="lineCov">        257 :       _redemptionRate = _params.redemptionRateUpperBound;</span>
+<span class="lineNum">     144 </span><span class="lineCov">        846 :     } else if (_redemptionRate &lt; _params.redemptionRateLowerBound) {</span>
+<span class="lineNum">     145 </span><span class="lineCov">        257 :       _redemptionRate = _params.redemptionRateLowerBound;</span>
+<span class="lineNum">     146 </span>            :     }
+<span class="lineNum">     147 </span><span class="lineCov">       1103 :     redemptionRate = _redemptionRate;</span>
+<span class="lineNum">     148 </span>            :   }
+<a name="149"><span class="lineNum">     149 </span>            : </a>
+<span class="lineNum">     150 </span>            :   /// @inheritdoc IOracleRelayer
+<span class="lineNum">     151 </span>            :   function initializeCollateralType(
+<span class="lineNum">     152 </span>            :     bytes32 _cType,
+<span class="lineNum">     153 </span>            :     OracleRelayerCollateralParams memory _oracleRelayerCParams
+<span class="lineNum">     154 </span>            :   ) external isAuthorized validCParams(_cType) {
+<span class="lineNum">     155 </span><span class="lineCov">       1590 :     if (!_collateralList.add(_cType)) revert OracleRelayer_CollateralTypeAlreadyInitialized();</span>
+<span class="lineNum">     156 </span><span class="lineCov">       1334 :     _validateDelayedOracle(address(_oracleRelayerCParams.oracle));</span>
+<span class="lineNum">     157 </span><span class="lineCov">        822 :     _cParams[_cType] = _oracleRelayerCParams;</span>
+<span class="lineNum">     158 </span>            :   }
+<span class="lineNum">     159 </span>            : 
+<span class="lineNum">     160 </span>            :   // --- Shutdown ---
+<span class="lineNum">     161 </span>            :   /**
+<span class="lineNum">     162 </span>            :    * @dev Sets the redemption rate to 1 (no change in the redemption price)
+<a name="163"><span class="lineNum">     163 </span>            :    * @inheritdoc Disableable</a>
+<span class="lineNum">     164 </span>            :    */
+<span class="lineNum">     165 </span>            :   function _onContractDisable() internal override {
+<span class="lineNum">     166 </span><span class="lineCov">         12 :     redemptionRate = RAY;</span>
+<span class="lineNum">     167 </span>            :   }
+<span class="lineNum">     168 </span>            : 
+<a name="169"><span class="lineNum">     169 </span>            :   // --- Views ---</a>
+<span class="lineNum">     170 </span>            :   /// @inheritdoc IOracleRelayer
+<span class="lineNum">     171 </span>            :   function collateralList() external view returns (bytes32[] memory __collateralList) {
+<span class="lineNum">     172 </span><span class="lineNoCov">          0 :     return _collateralList.values();</span>
+<span class="lineNum">     173 </span>            :   }
+<span class="lineNum">     174 </span>            : 
+<span class="lineNum">     175 </span>            :   // --- Administration ---
+<span class="lineNum">     176 </span>            : 
+<span class="lineNum">     177 </span>            :   /// @inheritdoc Modifiable
+<span class="lineNum">     178 </span>            :   function _modifyParameters(bytes32 _param, bytes memory _data) internal override whenEnabled {
+<span class="lineNum">     179 </span><span class="lineCov">       1027 :     uint256 _uint256 = _data.toUint256();</span>
+<span class="lineNum">     180 </span>            : 
+<span class="lineNum">     181 </span><span class="lineCov">       1027 :     if (_param == 'systemCoinOracle') systemCoinOracle = IBaseOracle(_data.toAddress().assertNonNull());</span>
+<span class="lineNum">     182 </span><span class="lineCov">       1027 :     else if (_param == 'redemptionRateUpperBound') _params.redemptionRateUpperBound = _uint256;</span>
+<span class="lineNum">     183 </span><span class="lineCov">        514 :     else if (_param == 'redemptionRateLowerBound') _params.redemptionRateLowerBound = _uint256;</span>
+<span class="lineNum">     184 </span><span class="lineCov">          1 :     else revert UnrecognizedParam();</span>
+<span class="lineNum">     185 </span>            :   }
+<a name="186"><span class="lineNum">     186 </span>            : </a>
+<span class="lineNum">     187 </span>            :   /// @inheritdoc Modifiable
+<span class="lineNum">     188 </span>            :   function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override whenEnabled {
+<span class="lineNum">     189 </span><span class="lineCov">       2560 :     uint256 _uint256 = _data.toUint256();</span>
+<span class="lineNum">     190 </span><span class="lineCov">       2560 :     OracleRelayerCollateralParams storage __cParams = _cParams[_cType];</span>
+<span class="lineNum">     191 </span>            : 
+<span class="lineNum">     192 </span><span class="lineCov">       2560 :     if (!_collateralList.contains(_cType)) revert UnrecognizedCType();</span>
+<span class="lineNum">     193 </span><span class="lineCov">       2304 :     if (_param == 'safetyCRatio') __cParams.safetyCRatio = _uint256;</span>
+<span class="lineNum">     194 </span><span class="lineCov">       1792 :     else if (_param == 'liquidationCRatio') __cParams.liquidationCRatio = _uint256;</span>
+<span class="lineNum">     195 </span><span class="lineCov">       1024 :     else if (_param == 'oracle') __cParams.oracle = _validateDelayedOracle(_data.toAddress());</span>
+<span class="lineNum">     196 </span><span class="lineCov">        256 :     else revert UnrecognizedParam();</span>
+<span class="lineNum">     197 </span>            :   }
+<a name="198"><span class="lineNum">     198 </span>            : </a>
+<span class="lineNum">     199 </span>            :   /// @dev Validates the address is IDelayedOracle compliant and returns it
+<span class="lineNum">     200 </span>            :   function _validateDelayedOracle(address _oracle) internal view returns (IDelayedOracle _delayedOracle) {
+<span class="lineNum">     201 </span>            :     // Checks if the delayed oracle priceSource is implemented
+<span class="lineNum">     202 </span><span class="lineCov">       2102 :     _delayedOracle = IDelayedOracle(_oracle.assertNonNull());</span>
+<span class="lineNum">     203 </span><span class="lineCov">       1590 :     _delayedOracle.priceSource();</span>
+<span class="lineNum">     204 </span>            :   }
+<a name="205"><span class="lineNum">     205 </span>            : </a>
+<span class="lineNum">     206 </span>            :   /// @inheritdoc Modifiable
+<span class="lineNum">     207 </span>            :   function _validateParameters() internal view override {
+<span class="lineNum">     208 </span><span class="lineCov">       1026 :     _params.redemptionRateUpperBound.assertGt(RAY);</span>
+<span class="lineNum">     209 </span><span class="lineCov">        770 :     _params.redemptionRateLowerBound.assertGt(0).assertLt(RAY);</span>
+<span class="lineNum">     210 </span><span class="lineCov">        514 :     address(systemCoinOracle).assertNonNull();</span>
+<span class="lineNum">     211 </span>            :   }
+<a name="212"><span class="lineNum">     212 </span>            : </a>
+<span class="lineNum">     213 </span>            :   /// @inheritdoc Modifiable
+<span class="lineNum">     214 </span>            :   function _validateCParameters(bytes32 _cType) internal view override {
+<span class="lineNum">     215 </span><span class="lineCov">       2358 :     OracleRelayerCollateralParams memory __cParams = _cParams[_cType];</span>
+<span class="lineNum">     216 </span><span class="lineCov">       2358 :     __cParams.safetyCRatio.assertGtEq(__cParams.liquidationCRatio);</span>
+<span class="lineNum">     217 </span><span class="lineCov">       1590 :     __cParams.liquidationCRatio.assertGtEq(RAY);</span>
+<span class="lineNum">     218 </span><span class="lineCov">       1078 :     address(__cParams.oracle).assertNonNull();</span>
+<span class="lineNum">     219 </span>            :   }
+<span class="lineNum">     220 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

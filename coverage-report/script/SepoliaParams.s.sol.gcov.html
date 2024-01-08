@@ -1,0 +1,218 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - current.info - script/SepoliaParams.s.sol</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">script</a> - SepoliaParams.s.sol<span style="font-size: 80%;"> (source / <a href="SepoliaParams.s.sol.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">current.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">28</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2024-01-07 16:13:44</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">1</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : // SPDX-License-Identifier: GPL-3.0</a>
+<span class="lineNum">       2 </span>            : pragma solidity 0.8.19;
+<span class="lineNum">       3 </span>            : 
+<span class="lineNum">       4 </span>            : import '@script/Params.s.sol';
+<span class="lineNum">       5 </span>            : 
+<span class="lineNum">       6 </span>            : abstract contract SepoliaParams is Contracts, Params {
+<span class="lineNum">       7 </span>            :   // --- Testnet Params ---
+<span class="lineNum">       8 </span>            :   uint256 constant GOERLI_ARB_ETH_PRICE_FEED = 0.001e18; // 1000 OP = 1 ETH
+<a name="9"><span class="lineNum">       9 </span>            :   uint256 constant GOERLI_ARB_PRICE_DEVIATION = 0.995e18; // -0.5%</a>
+<span class="lineNum">      10 </span>            : 
+<span class="lineNum">      11 </span>            :   function _getEnvironmentParams() internal override {
+<span class="lineNum">      12 </span>            :     // Setup delegated collateral joins
+<span class="lineNum">      13 </span><span class="lineNoCov">          0 :     delegatee[ARB] = governor;</span>
+<span class="lineNum">      14 </span>            : 
+<span class="lineNum">      15 </span><span class="lineNoCov">          0 :     _safeEngineParams = ISAFEEngine.SAFEEngineParams({</span>
+<span class="lineNum">      16 </span>            :       safeDebtCeiling: 2_000_000 * WAD, // 2M COINs
+<span class="lineNum">      17 </span>            :       globalDebtCeiling: 25_000_000 * RAD // 25M COINs
+<span class="lineNum">      18 </span>            :     });
+<span class="lineNum">      19 </span>            : 
+<span class="lineNum">      20 </span><span class="lineNoCov">          0 :     _accountingEngineParams = IAccountingEngine.AccountingEngineParams({</span>
+<span class="lineNum">      21 </span>            :       surplusTransferPercentage: 0, // percent of surplus that is transfered
+<span class="lineNum">      22 </span>            :       surplusDelay: 1800,
+<span class="lineNum">      23 </span>            :       popDebtDelay: 1800,
+<span class="lineNum">      24 </span>            :       disableCooldown: 3 days,
+<span class="lineNum">      25 </span>            :       surplusAmount: 100 * RAD, // 100 COINs
+<span class="lineNum">      26 </span>            :       surplusBuffer: 1000 * RAD, // 1000 COINs
+<span class="lineNum">      27 </span>            :       debtAuctionMintedTokens: 1e18, // 1 PROTOCOL TOKEN
+<span class="lineNum">      28 </span>            :       debtAuctionBidSize: 100 * RAD // 100 COINs
+<span class="lineNum">      29 </span>            :     });
+<span class="lineNum">      30 </span>            : 
+<span class="lineNum">      31 </span><span class="lineNoCov">          0 :     _debtAuctionHouseParams = IDebtAuctionHouse.DebtAuctionHouseParams({</span>
+<span class="lineNum">      32 </span>            :       bidDecrease: 1.05e18, // - 5%
+<span class="lineNum">      33 </span>            :       amountSoldIncrease: 1.05e18, // + 5%
+<span class="lineNum">      34 </span>            :       bidDuration: 900, // 15 minutes
+<span class="lineNum">      35 </span>            :       totalAuctionLength: 1800 // 30 minutes
+<span class="lineNum">      36 </span>            :     });
+<span class="lineNum">      37 </span>            : 
+<span class="lineNum">      38 </span><span class="lineNoCov">          0 :     _surplusAuctionHouseParams = ISurplusAuctionHouse.SurplusAuctionHouseParams({</span>
+<span class="lineNum">      39 </span>            :       bidIncrease: 1.01e18, // +1 %
+<span class="lineNum">      40 </span>            :       bidDuration: 900, // 15 minutes
+<span class="lineNum">      41 </span>            :       totalAuctionLength: 1800, // 30 minutes
+<span class="lineNum">      42 </span>            :       bidReceiver: governor,
+<span class="lineNum">      43 </span>            :       recyclingPercentage: 50 // 100% - recyclingPercentage is burned
+<span class="lineNum">      44 </span>            :     });
+<span class="lineNum">      45 </span>            : 
+<span class="lineNum">      46 </span><span class="lineNoCov">          0 :     _liquidationEngineParams = ILiquidationEngine.LiquidationEngineParams({</span>
+<span class="lineNum">      47 </span>            :       onAuctionSystemCoinLimit: 500_000 * RAD // 500k COINs
+<span class="lineNum">      48 </span>            :     });
+<span class="lineNum">      49 </span>            : 
+<span class="lineNum">      50 </span><span class="lineNoCov">          0 :     _stabilityFeeTreasuryParams = IStabilityFeeTreasury.StabilityFeeTreasuryParams({</span>
+<span class="lineNum">      51 </span>            :       treasuryCapacity: 1_000_000e45, // 1M COINs
+<span class="lineNum">      52 </span>            :       pullFundsMinThreshold: 0, // no threshold
+<span class="lineNum">      53 </span>            :       surplusTransferDelay: 1 days
+<span class="lineNum">      54 </span>            :     });
+<span class="lineNum">      55 </span>            : 
+<span class="lineNum">      56 </span><span class="lineNoCov">          0 :     _taxCollectorParams = ITaxCollector.TaxCollectorParams({</span>
+<span class="lineNum">      57 </span>            :       primaryTaxReceiver: address(accountingEngine),
+<span class="lineNum">      58 </span>            :       globalStabilityFee: RAY, // no global SF
+<span class="lineNum">      59 </span>            :       maxStabilityFeeRange: RAY - MINUS_0_5_PERCENT_PER_HOUR, // +- 0.5% per hour
+<span class="lineNum">      60 </span>            :       maxSecondaryReceivers: 1
+<span class="lineNum">      61 </span>            :     });
+<span class="lineNum">      62 </span>            : 
+<span class="lineNum">      63 </span><span class="lineNoCov">          0 :     _taxCollectorSecondaryTaxReceiver = ITaxCollector.TaxReceiver({</span>
+<span class="lineNum">      64 </span>            :       receiver: address(stabilityFeeTreasury),
+<span class="lineNum">      65 </span>            :       canTakeBackTax: true, // can take back tax
+<span class="lineNum">      66 </span>            :       taxPercentage: 0.5e18 // 50%
+<span class="lineNum">      67 </span>            :     });
+<span class="lineNum">      68 </span>            : 
+<span class="lineNum">      69 </span>            :     // --- PID Params ---
+<span class="lineNum">      70 </span>            : 
+<span class="lineNum">      71 </span><span class="lineNoCov">          0 :     _oracleRelayerParams = IOracleRelayer.OracleRelayerParams({</span>
+<span class="lineNum">      72 </span>            :       redemptionRateUpperBound: RAY * WAD, // unbounded
+<span class="lineNum">      73 </span>            :       redemptionRateLowerBound: 1 // unbounded
+<span class="lineNum">      74 </span>            :     });
+<span class="lineNum">      75 </span>            : 
+<span class="lineNum">      76 </span><span class="lineNoCov">          0 :     _pidControllerParams = IPIDController.PIDControllerParams({</span>
+<span class="lineNum">      77 </span>            :       perSecondCumulativeLeak: HALF_LIFE_30_DAYS, // 0.999998e27
+<span class="lineNum">      78 </span>            :       noiseBarrier: WAD, // no noise barrier
+<span class="lineNum">      79 </span>            :       feedbackOutputLowerBound: -int256(RAY - 1), // unbounded
+<span class="lineNum">      80 </span>            :       feedbackOutputUpperBound: RAD, // unbounded
+<span class="lineNum">      81 </span>            :       integralPeriodSize: 1 hours
+<span class="lineNum">      82 </span>            :     });
+<span class="lineNum">      83 </span>            : 
+<span class="lineNum">      84 </span><span class="lineNoCov">          0 :     _pidControllerGains = IPIDController.ControllerGains({</span>
+<span class="lineNum">      85 </span>            :       kp: int256(PROPORTIONAL_GAIN), // imported from RAI
+<span class="lineNum">      86 </span>            :       ki: int256(INTEGRAL_GAIN) // imported from RAI
+<span class="lineNum">      87 </span>            :     });
+<span class="lineNum">      88 </span>            : 
+<span class="lineNum">      89 </span><span class="lineNoCov">          0 :     _pidRateSetterParams = IPIDRateSetter.PIDRateSetterParams({updateRateDelay: 1 hours});</span>
+<span class="lineNum">      90 </span>            : 
+<span class="lineNum">      91 </span>            :     // --- Global Settlement Params ---
+<span class="lineNum">      92 </span><span class="lineNoCov">          0 :     _globalSettlementParams = IGlobalSettlement.GlobalSettlementParams({shutdownCooldown: 3 days});</span>
+<span class="lineNum">      93 </span><span class="lineNoCov">          0 :     _postSettlementSAHParams = IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams({</span>
+<span class="lineNum">      94 </span>            :       bidIncrease: 1.01e18, // +1 %
+<span class="lineNum">      95 </span>            :       bidDuration: 900, // 15 minutes
+<span class="lineNum">      96 </span>            :       totalAuctionLength: 1800 // 30 minutes
+<span class="lineNum">      97 </span>            :     });
+<span class="lineNum">      98 </span>            : 
+<span class="lineNum">      99 </span>            :     // --- Collateral Default Params ---
+<span class="lineNum">     100 </span><span class="lineNoCov">          0 :     for (uint256 _i; _i &lt; collateralTypes.length; _i++) {</span>
+<span class="lineNum">     101 </span><span class="lineNoCov">          0 :       bytes32 _cType = collateralTypes[_i];</span>
+<span class="lineNum">     102 </span>            : 
+<span class="lineNum">     103 </span><span class="lineNoCov">          0 :       _oracleRelayerCParams[_cType] = IOracleRelayer.OracleRelayerCollateralParams({</span>
+<span class="lineNum">     104 </span>            :         oracle: delayedOracle[_cType],
+<span class="lineNum">     105 </span>            :         safetyCRatio: 1.5e27, // 150%
+<span class="lineNum">     106 </span>            :         liquidationCRatio: 1.5e27 // 150%
+<span class="lineNum">     107 </span>            :       });
+<span class="lineNum">     108 </span>            : 
+<span class="lineNum">     109 </span><span class="lineNoCov">          0 :       _taxCollectorCParams[_cType] = ITaxCollector.TaxCollectorCollateralParams({</span>
+<span class="lineNum">     110 </span>            :         // NOTE: 42%/yr =&gt; 1.42^(1/yr) = 1 + 11,11926e-9
+<span class="lineNum">     111 </span>            :         stabilityFee: RAY + 11.11926e18 // + 42%/yr
+<span class="lineNum">     112 </span>            :       });
+<span class="lineNum">     113 </span>            : 
+<span class="lineNum">     114 </span><span class="lineNoCov">          0 :       _safeEngineCParams[_cType] = ISAFEEngine.SAFEEngineCollateralParams({</span>
+<span class="lineNum">     115 </span>            :         debtCeiling: 10_000_000 * RAD, // 10M COINs
+<span class="lineNum">     116 </span>            :         debtFloor: 1 * RAD // 1 COINs
+<span class="lineNum">     117 </span>            :       });
+<span class="lineNum">     118 </span>            : 
+<span class="lineNum">     119 </span><span class="lineNoCov">          0 :       _liquidationEngineCParams[_cType] = ILiquidationEngine.LiquidationEngineCollateralParams({</span>
+<span class="lineNum">     120 </span>            :         collateralAuctionHouse: address(collateralAuctionHouse[_cType]),
+<span class="lineNum">     121 </span>            :         liquidationPenalty: 1.1e18, // 10%
+<span class="lineNum">     122 </span>            :         liquidationQuantity: 1000 * RAD // 1000 COINs
+<span class="lineNum">     123 </span>            :       });
+<span class="lineNum">     124 </span>            : 
+<span class="lineNum">     125 </span><span class="lineNoCov">          0 :       _collateralAuctionHouseParams[_cType] = ICollateralAuctionHouse.CollateralAuctionHouseParams({</span>
+<span class="lineNum">     126 </span>            :         minimumBid: WAD, // 1 COINs
+<span class="lineNum">     127 </span>            :         minDiscount: WAD, // no discount
+<span class="lineNum">     128 </span>            :         maxDiscount: 0.9e18, // -10%
+<span class="lineNum">     129 </span>            :         perSecondDiscountUpdateRate: MINUS_0_5_PERCENT_PER_HOUR // RAY
+<span class="lineNum">     130 </span>            :       });
+<span class="lineNum">     131 </span>            :     }
+<span class="lineNum">     132 </span>            : 
+<span class="lineNum">     133 </span>            :     // --- Collateral Specific Params ---
+<span class="lineNum">     134 </span><span class="lineNoCov">          0 :     _oracleRelayerCParams[WSTETH].safetyCRatio = 1.35e27; // 135%</span>
+<span class="lineNum">     135 </span><span class="lineNoCov">          0 :     _oracleRelayerCParams[WSTETH].liquidationCRatio = 1.35e27; // 135%</span>
+<span class="lineNum">     136 </span><span class="lineNoCov">          0 :     _taxCollectorCParams[WSTETH].stabilityFee = RAY + 1.54713e18; // + 5%/yr</span>
+<span class="lineNum">     137 </span><span class="lineNoCov">          0 :     _safeEngineCParams[WSTETH].debtCeiling = 100_000_000 * RAD; // 100M COINs</span>
+<span class="lineNum">     138 </span>            : 
+<span class="lineNum">     139 </span><span class="lineNoCov">          0 :     _liquidationEngineCParams[ARB].liquidationPenalty = 1.2e18; // 20%</span>
+<span class="lineNum">     140 </span><span class="lineNoCov">          0 :     _collateralAuctionHouseParams[ARB].maxDiscount = 0.5e18; // -50%</span>
+<span class="lineNum">     141 </span>            :   }
+<span class="lineNum">     142 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

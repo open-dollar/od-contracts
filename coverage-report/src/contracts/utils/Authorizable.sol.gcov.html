@@ -1,0 +1,173 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - current.info - src/contracts/utils/Authorizable.sol</title>
+  <link rel="stylesheet" type="text/css" href="../../../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../../../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../../../index.html">top level</a> - <a href="index.html">src/contracts/utils</a> - Authorizable.sol<span style="font-size: 80%;"> (source / <a href="Authorizable.sol.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">current.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">11</td>
+            <td class="headerCovTableEntry">11</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2024-01-07 16:13:44</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">6</td>
+            <td class="headerCovTableEntry">6</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../../../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../../../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : // SPDX-License-Identifier: GPL-3.0</a>
+<span class="lineNum">       2 </span>            : pragma solidity 0.8.19;
+<span class="lineNum">       3 </span>            : 
+<span class="lineNum">       4 </span>            : import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
+<span class="lineNum">       5 </span>            : 
+<span class="lineNum">       6 </span>            : import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
+<span class="lineNum">       7 </span>            : 
+<span class="lineNum">       8 </span>            : /**
+<span class="lineNum">       9 </span>            :  * @title  Authorizable
+<span class="lineNum">      10 </span>            :  * @notice Implements authorization control for contracts
+<span class="lineNum">      11 </span>            :  * @dev    Authorization control is boolean and handled by `onlyAuthorized` modifier
+<span class="lineNum">      12 </span>            :  */
+<span class="lineNum">      13 </span>            : abstract contract Authorizable is IAuthorizable {
+<span class="lineNum">      14 </span>            :   using EnumerableSet for EnumerableSet.AddressSet;
+<span class="lineNum">      15 </span>            : 
+<span class="lineNum">      16 </span>            :   // --- Data ---
+<span class="lineNum">      17 </span>            : 
+<span class="lineNum">      18 </span>            :   /// @notice EnumerableSet of authorized accounts
+<span class="lineNum">      19 </span>            :   EnumerableSet.AddressSet internal _authorizedAccounts;
+<span class="lineNum">      20 </span>            : 
+<span class="lineNum">      21 </span>            :   // --- Init ---
+<span class="lineNum">      22 </span>            : 
+<span class="lineNum">      23 </span>            :   /**
+<span class="lineNum">      24 </span>            :    * @param  _account Initial account to add authorization to
+<span class="lineNum">      25 </span>            :    */
+<span class="lineNum">      26 </span>            :   constructor(address _account) {
+<span class="lineNum">      27 </span>            :     _addAuthorization(_account);
+<span class="lineNum">      28 </span>            :   }
+<span class="lineNum">      29 </span>            : 
+<span class="lineNum">      30 </span>            :   // --- Views ---
+<span class="lineNum">      31 </span>            : 
+<span class="lineNum">      32 </span>            :   /**
+<span class="lineNum">      33 </span>            :    * @notice Checks whether an account is authorized
+<span class="lineNum">      34 </span>            :    * @return _authorized Whether the account is authorized or not
+<span class="lineNum">      35 </span>            :    */
+<span class="lineNum">      36 </span>            :   function authorizedAccounts(address _account) external view returns (bool _authorized) {
+<span class="lineNum">      37 </span><span class="lineCov">        810 :     return _isAuthorized(_account);</span>
+<span class="lineNum">      38 </span>            :   }
+<span class="lineNum">      39 </span>            : 
+<span class="lineNum">      40 </span>            :   /**
+<span class="lineNum">      41 </span>            :    * @notice Getter for the authorized accounts
+<a name="42"><span class="lineNum">      42 </span>            :    * @return _accounts Array of authorized accounts</a>
+<span class="lineNum">      43 </span>            :    */
+<span class="lineNum">      44 </span>            :   function authorizedAccounts() external view returns (address[] memory _accounts) {
+<span class="lineNum">      45 </span><span class="lineCov">         11 :     return _authorizedAccounts.values();</span>
+<span class="lineNum">      46 </span>            :   }
+<span class="lineNum">      47 </span>            : 
+<span class="lineNum">      48 </span>            :   // --- Methods ---
+<span class="lineNum">      49 </span>            : 
+<span class="lineNum">      50 </span>            :   /**
+<span class="lineNum">      51 </span>            :    * @notice Add auth to an account
+<a name="52"><span class="lineNum">      52 </span>            :    * @param  _account Account to add auth to</a>
+<span class="lineNum">      53 </span>            :    */
+<span class="lineNum">      54 </span>            :   function addAuthorization(address _account) external virtual isAuthorized {
+<span class="lineNum">      55 </span><span class="lineCov">       3269 :     _addAuthorization(_account);</span>
+<span class="lineNum">      56 </span>            :   }
+<span class="lineNum">      57 </span>            : 
+<span class="lineNum">      58 </span>            :   /**
+<span class="lineNum">      59 </span>            :    * @notice Remove auth from an account
+<a name="60"><span class="lineNum">      60 </span>            :    * @param  _account Account to remove auth from</a>
+<span class="lineNum">      61 </span>            :    */
+<span class="lineNum">      62 </span>            :   function removeAuthorization(address _account) external virtual isAuthorized {
+<span class="lineNum">      63 </span><span class="lineCov">        973 :     _removeAuthorization(_account);</span>
+<span class="lineNum">      64 </span>            :   }
+<a name="65"><span class="lineNum">      65 </span>            : </a>
+<span class="lineNum">      66 </span>            :   // --- Internal methods ---
+<span class="lineNum">      67 </span>            :   function _addAuthorization(address _account) internal {
+<span class="lineNum">      68 </span><span class="lineCov">       6639 :     if (_authorizedAccounts.add(_account)) {</span>
+<span class="lineNum">      69 </span><span class="lineCov">       6638 :       emit AddAuthorization(_account);</span>
+<span class="lineNum">      70 </span>            :     } else {
+<span class="lineNum">      71 </span><span class="lineCov">          1 :       revert AlreadyAuthorized();</span>
+<span class="lineNum">      72 </span>            :     }
+<a name="73"><span class="lineNum">      73 </span>            :   }</a>
+<span class="lineNum">      74 </span>            : 
+<span class="lineNum">      75 </span>            :   function _removeAuthorization(address _account) internal {
+<span class="lineNum">      76 </span><span class="lineCov">       2262 :     if (_authorizedAccounts.remove(_account)) {</span>
+<span class="lineNum">      77 </span><span class="lineCov">       2006 :       emit RemoveAuthorization(_account);</span>
+<span class="lineNum">      78 </span>            :     } else {
+<span class="lineNum">      79 </span><span class="lineCov">        256 :       revert NotAuthorized();</span>
+<span class="lineNum">      80 </span>            :     }
+<a name="81"><span class="lineNum">      81 </span>            :   }</a>
+<span class="lineNum">      82 </span>            : 
+<span class="lineNum">      83 </span>            :   function _isAuthorized(address _account) internal view virtual returns (bool _authorized) {
+<span class="lineNum">      84 </span><span class="lineCov">      98624 :     return _authorizedAccounts.contains(_account);</span>
+<span class="lineNum">      85 </span>            :   }
+<span class="lineNum">      86 </span>            : 
+<span class="lineNum">      87 </span>            :   // --- Modifiers ---
+<span class="lineNum">      88 </span>            : 
+<span class="lineNum">      89 </span>            :   /**
+<span class="lineNum">      90 </span>            :    * @notice Checks whether msg.sender can call an authed function
+<span class="lineNum">      91 </span>            :    * @dev    Will revert with `Unauthorized` if the sender is not authorized
+<span class="lineNum">      92 </span>            :    */
+<span class="lineNum">      93 </span>            :   modifier isAuthorized() {
+<span class="lineNum">      94 </span>            :     if (!_isAuthorized(msg.sender)) revert Unauthorized();
+<span class="lineNum">      95 </span>            :     _;
+<span class="lineNum">      96 </span>            :   }
+<span class="lineNum">      97 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../../../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>
