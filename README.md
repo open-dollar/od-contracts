@@ -22,7 +22,7 @@ We include a set of governance scripts in `script/gov` which allow DAO members t
 
 #### General Files
 
-- [`JSONScript.s.sol`](script/gov/JSONScript.s.sol): provides functionality for building JSON objects for proposing governance actions, parsing the proposal id for queuing proposals and parsing JSON objects for execution of the proposals.
+- [`JSONScript.s.sol`](script/testScripts/gov/JSONScript.s.sol): provides functionality for building JSON objects for proposing governance actions, parsing the proposal id for queuing proposals and parsing JSON objects for execution of the proposals.
 
 #### Proposing Governance Actions
 
@@ -50,7 +50,7 @@ The JSON output may also include some extra params just for informative purposes
 
 ##### Add Collateral
 
-[`ProposeAddCollateral.s.sol`](script/gov/AddCollateralAction/ProposeAddCollateral.s.sol)
+[`ProposeAddCollateral.s.sol`](script/testScripts/gov/AddCollateralAction/ProposeAddCollateral.s.sol)
 
 **Required env vars:**
 
@@ -64,11 +64,11 @@ The JSON output may also include some extra params just for informative purposes
 - `ADD_COLLATERAL_MAX_DISCOUNT`: maximum discount for the collateral auctions (wad %)
 - `ADD_COLLATERAL_PER_SECOND_DISCOUNT_UPDATE_RATE`: Per second rate at which the discount is updated (ray)
 
-This script proposes adding a new collateral to the system (deploys new contracts via the collateral join and collateral auction house factories) and outputs a JSON output with the `proposalParams`.
+This script proposes adding a new collateral to the system (deploys new contracts via the collateral join and collateral auction house factories).
 
 ##### Update NFT Renderer
 
-[`ProposeUpdateNFTRenderer.s.sol`](script/gov/UpdateNFTRendererAction/ProposeUpdateNFTRenderer.s.sol)
+[`ProposeUpdateNFTRenderer.s.sol`](script/testScripts/gov/UpdateNFTRendererAction/ProposeUpdateNFTRenderer.s.sol)
 
 **Required env vars:**
 
@@ -79,11 +79,37 @@ This script proposes adding a new collateral to the system (deploys new contract
 - `TAX_COLLECTOR_ADDRESS`: address of the tax collector
 - `COLLATERAL_JOIN_FACTORY_ADDRESS`: address of the collateral join factory
 
-This script proposes setting a new NFTRenderer contract on the Vault721 contract (deploys new NFTRenderer contract) and outputs a JSON output with the `proposalParams`.
+This script proposes setting a new NFTRenderer contract on the Vault721 contract (deploys new NFTRenderer contract).
+
+##### Update Block Delay
+
+[`ProposeUpdateBlockDelay.s.sol`](script/testScripts/gov/UpdateBlockDelayAction/ProposeUpdateBlockDelay.s.sol)
+
+**Required env vars:**
+
+- `GOV_EXECUTOR_PK`: private key of the governance executor
+- `GOVERNANCE_ADDRESS`: address of OD Governance
+- `VAULT_721_ADDRESS`: address of the Vault721 contract
+- `BLOCK_DELAY`: the number of blocks to wait before being able to transfer after collateral or debt has been updated for allowlisted addresses
+
+This script proposes setting a new block delay on the Vault721 contract.
+
+##### Update Time Delay
+
+[`ProposeUpdateTimeDelay.s.sol`](script/testScripts/gov/UpdateTimeDelayAction/ProposeUpdateTimeDelay.s.sol)
+
+**Required env vars:**
+
+- `GOV_EXECUTOR_PK`: private key of the governance executor
+- `GOVERNANCE_ADDRESS`: address of OD Governance
+- `VAULT_721_ADDRESS`: address of the Vault721 contract
+- `TIME_DELAY`: the amount of time to wait before being able to transfer after collateral or debt has been updated for non-allowlisted addresses
+
+This script proposes setting a new time delay on the Vault721 contract.
 
 ##### Update PIDController Params
 
-[`ProposeUpdatePidController.s.sol`](script/gov/UpdatePidControllerAction/ProposeUpdatePidController.s.sol)
+[`ProposeUpdatePidController.s.sol`](script/testScripts/gov/UpdatePidControllerAction/ProposeUpdatePidController.s.sol)
 
 **Required env vars:**
 
@@ -102,7 +128,7 @@ This script proposes setting a new NFTRenderer contract on the Vault721 contract
 
 > NOTE: see [`IPIDController.sol`](src/interfaces/IPIDController.sol) for more information about this.
 
-This script proposes updating params on the PIDController contract and outputs a JSON output with the `proposalParams`.
+This script proposes updating params on the PIDController contract.
 
 #### Queuing Governance Actions
 
@@ -112,7 +138,7 @@ This script proposes updating params on the PIDController contract and outputs a
 - `JSON_FILE_PATH`: the path to the desired JSON proposal file
 - `GOV_EXECUTOR_PK`: the private key of the queuer of the governance action
 
-[`QueueProposal.s.sol`](script/gov/QueueProposal.s.sol) is used to queue a proposal given the path of the JSON file which you want, e.g. `export JSON_FILE_PATH=gov-output/1-add-collateral-proposal.json`.
+[`QueueProposal.s.sol`](script/testScripts/gov/QueueProposal.s.sol) is used to queue a proposal given the path of the JSON file which you want, e.g. `export JSON_FILE_PATH=gov-output/1-add-collateral-proposal.json`.
 
 This script extracts the proposal id and queues the proposal via the OD governance contract. This script can be used arbitrarily for any proposal.
 
@@ -124,6 +150,13 @@ This script extracts the proposal id and queues the proposal via the OD governan
 - `JSON_FILE_PATH`: the path to the desired JSON proposal file
 - `GOV_EXECUTOR_PK`: the private key of the executor of the governance action
 
-[`ExecuteProposal.s.sol`](script/gov/ExecuteProposal.s.sol) is used to execute a proposal given the path of the JSON file you want, e.g. `export JSON_FILE_PATH=gov-output/1-add-collateral-proposal.json`.
+[`ExecuteProposal.s.sol`](script/testScripts/gov/ExecuteProposal.s.sol) is used to execute a proposal given the path of the JSON file you want, e.g. `export JSON_FILE_PATH=gov-output/1-add-collateral-proposal.json`.
 
 The script extracts the necessary execution params from the JSON-the same params used during the proposal and executes the proposal. This script can be used arbitrarily for any proposal.
+
+#### Creating a coverage report
+coverage reports require lcov to be installed on your system.
+ - [lcov for mac/linx](https://formulae.brew.sh/formula/lcov)
+
+
+once you have lcov installed run: `yarn test:coverage` to generate a `coverage-report` folder that will contain the html of the coverage report. point your browser to `coverage-report/index.html` to view the report.

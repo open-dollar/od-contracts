@@ -1,0 +1,269 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - current.info - test/testnet/e2e/Deploy.t.sol</title>
+  <link rel="stylesheet" type="text/css" href="../../../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../../../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../../../index.html">top level</a> - <a href="index.html">test/testnet/e2e</a> - Deploy.t.sol<span style="font-size: 80%;"> (source / <a href="Deploy.t.sol.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">current.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">16</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2024-01-07 16:13:44</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">8</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr><td><img src="../../../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../../../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : // SPDX-License-Identifier: GPL-3.0</a>
+<span class="lineNum">       2 </span>            : pragma solidity 0.8.19;
+<span class="lineNum">       3 </span>            : 
+<span class="lineNum">       4 </span>            : import {HaiTest} from '@testnet/utils/HaiTest.t.sol';
+<span class="lineNum">       5 </span>            : import {Deploy, DeployMainnet, DeploySepolia} from '@script/Deploy.s.sol';
+<span class="lineNum">       6 </span>            : 
+<span class="lineNum">       7 </span>            : import {ParamChecker, WSTETH, ARB} from '@script/Params.s.sol';
+<span class="lineNum">       8 </span>            : import {ERC20Votes} from '@openzeppelin/token/ERC20/extensions/ERC20Votes.sol';
+<span class="lineNum">       9 </span>            : 
+<span class="lineNum">      10 </span>            : import {Contracts} from '@script/Contracts.s.sol';
+<span class="lineNum">      11 </span>            : import {SepoliaDeployment} from '@script/SepoliaDeployment.s.sol';
+<span class="lineNum">      12 </span>            : 
+<span class="lineNum">      13 </span>            : abstract contract CommonDeploymentTest is HaiTest, Deploy {
+<span class="lineNum">      14 </span>            :   // SAFEEngine
+<span class="lineNum">      15 </span>            :   function test_SAFEEngine_Auth() public {
+<span class="lineNum">      16 </span>            :     assertEq(safeEngine.authorizedAccounts(address(oracleRelayer)), true);
+<span class="lineNum">      17 </span>            :     assertEq(safeEngine.authorizedAccounts(address(taxCollector)), true);
+<span class="lineNum">      18 </span>            :     assertEq(safeEngine.authorizedAccounts(address(debtAuctionHouse)), true);
+<span class="lineNum">      19 </span>            :     assertEq(safeEngine.authorizedAccounts(address(liquidationEngine)), true);
+<span class="lineNum">      20 </span>            : 
+<span class="lineNum">      21 </span>            :     assertTrue(safeEngine.canModifySAFE(address(accountingEngine), address(surplusAuctionHouse)));
+<span class="lineNum">      22 </span>            :   }
+<span class="lineNum">      23 </span>            : 
+<span class="lineNum">      24 </span>            :   function test_SAFEEngine_Params() public view {
+<span class="lineNum">      25 </span>            :     ParamChecker._checkParams(address(safeEngine), abi.encode(_safeEngineParams));
+<span class="lineNum">      26 </span>            :   }
+<span class="lineNum">      27 </span>            : 
+<span class="lineNum">      28 </span>            :   // OracleRelayer
+<span class="lineNum">      29 </span>            :   function test_OracleRelayer_Auth() public {
+<span class="lineNum">      30 </span>            :     assertEq(oracleRelayer.authorizedAccounts(address(pidRateSetter)), true);
+<span class="lineNum">      31 </span>            :   }
+<span class="lineNum">      32 </span>            : 
+<span class="lineNum">      33 </span>            :   // AccountingEngine
+<span class="lineNum">      34 </span>            :   function test_AccountingEngine_Auth() public {
+<span class="lineNum">      35 </span>            :     assertEq(accountingEngine.authorizedAccounts(address(liquidationEngine)), true);
+<span class="lineNum">      36 </span>            :   }
+<span class="lineNum">      37 </span>            : 
+<span class="lineNum">      38 </span>            :   function test_AccountingEntine_Params() public view {
+<span class="lineNum">      39 </span>            :     ParamChecker._checkParams(address(accountingEngine), abi.encode(_accountingEngineParams));
+<span class="lineNum">      40 </span>            :   }
+<span class="lineNum">      41 </span>            : 
+<span class="lineNum">      42 </span>            :   // SystemCoin
+<span class="lineNum">      43 </span>            :   function test_SystemCoin_Auth() public {
+<span class="lineNum">      44 </span>            :     assertEq(systemCoin.authorizedAccounts(address(coinJoin)), true);
+<span class="lineNum">      45 </span>            :   }
+<span class="lineNum">      46 </span>            : 
+<span class="lineNum">      47 </span>            :   // ProtocolToken
+<span class="lineNum">      48 </span>            :   function test_ProtocolToken_Auth() public {
+<span class="lineNum">      49 </span>            :     assertEq(protocolToken.authorizedAccounts(address(debtAuctionHouse)), true);
+<span class="lineNum">      50 </span>            :   }
+<span class="lineNum">      51 </span>            : 
+<span class="lineNum">      52 </span>            :   // SurplusAuctionHouse
+<span class="lineNum">      53 </span>            :   function test_SurplusAuctionHouse_Auth() public {
+<span class="lineNum">      54 </span>            :     assertEq(surplusAuctionHouse.authorizedAccounts(address(accountingEngine)), true);
+<span class="lineNum">      55 </span>            :   }
+<span class="lineNum">      56 </span>            : 
+<span class="lineNum">      57 </span>            :   function test_SurplusAuctionHouse_Params() public view {
+<span class="lineNum">      58 </span>            :     ParamChecker._checkParams(address(surplusAuctionHouse), abi.encode(_surplusAuctionHouseParams));
+<span class="lineNum">      59 </span>            :   }
+<span class="lineNum">      60 </span>            : 
+<span class="lineNum">      61 </span>            :   // DebtAuctionHouse
+<span class="lineNum">      62 </span>            :   function test_DebtAuctionHouse_Auth() public {
+<span class="lineNum">      63 </span>            :     assertEq(debtAuctionHouse.authorizedAccounts(address(accountingEngine)), true);
+<span class="lineNum">      64 </span>            :   }
+<span class="lineNum">      65 </span>            : 
+<span class="lineNum">      66 </span>            :   function test_DebtAuctionHouse_Params() public view {
+<span class="lineNum">      67 </span>            :     ParamChecker._checkParams(address(debtAuctionHouse), abi.encode(_debtAuctionHouseParams));
+<span class="lineNum">      68 </span>            :   }
+<span class="lineNum">      69 </span>            : 
+<span class="lineNum">      70 </span>            :   // CollateralAuctionHouse
+<span class="lineNum">      71 </span>            :   function test_CollateralAuctionHouse_Auth() public {
+<span class="lineNum">      72 </span>            :     for (uint256 _i; _i &lt; collateralTypes.length; _i++) {
+<span class="lineNum">      73 </span>            :       bytes32 _cType = collateralTypes[_i];
+<span class="lineNum">      74 </span>            :       assertEq(collateralAuctionHouse[_cType].authorizedAccounts(address(liquidationEngine)), true);
+<span class="lineNum">      75 </span>            :     }
+<span class="lineNum">      76 </span>            :   }
+<span class="lineNum">      77 </span>            : 
+<span class="lineNum">      78 </span>            :   function test_CollateralAuctionHouse_Params() public view {
+<span class="lineNum">      79 </span>            :     for (uint256 _i; _i &lt; collateralTypes.length; _i++) {
+<span class="lineNum">      80 </span>            :       bytes32 _cType = collateralTypes[_i];
+<span class="lineNum">      81 </span>            :       ParamChecker._checkCParams(
+<span class="lineNum">      82 </span>            :         address(collateralAuctionHouseFactory), _cType, abi.encode(_collateralAuctionHouseParams[_cType])
+<span class="lineNum">      83 </span>            :       );
+<span class="lineNum">      84 </span>            :     }
+<span class="lineNum">      85 </span>            :   }
+<span class="lineNum">      86 </span>            : 
+<span class="lineNum">      87 </span>            :   function test_Grant_Auth() public {
+<span class="lineNum">      88 </span>            :     _test_Authorizations(governor, true);
+<span class="lineNum">      89 </span>            :     if (delegate != address(0)) _test_Authorizations(delegate, true);
+<span class="lineNum">      90 </span>            :     _test_Authorizations(deployer, false);
+<span class="lineNum">      91 </span>            :   }
+<span class="lineNum">      92 </span>            : 
+<span class="lineNum">      93 </span>            :   function _test_Authorizations(address _target, bool _permission) internal {
+<span class="lineNum">      94 </span>            :     // base contracts
+<span class="lineNum">      95 </span>            :     assertEq(safeEngine.authorizedAccounts(_target), _permission);
+<span class="lineNum">      96 </span>            :     assertEq(oracleRelayer.authorizedAccounts(_target), _permission);
+<span class="lineNum">      97 </span>            :     assertEq(taxCollector.authorizedAccounts(_target), _permission);
+<span class="lineNum">      98 </span>            :     assertEq(stabilityFeeTreasury.authorizedAccounts(_target), _permission);
+<span class="lineNum">      99 </span>            :     assertEq(liquidationEngine.authorizedAccounts(_target), _permission);
+<span class="lineNum">     100 </span>            :     assertEq(accountingEngine.authorizedAccounts(_target), _permission);
+<span class="lineNum">     101 </span>            :     assertEq(surplusAuctionHouse.authorizedAccounts(_target), _permission);
+<span class="lineNum">     102 </span>            :     assertEq(debtAuctionHouse.authorizedAccounts(_target), _permission);
+<span class="lineNum">     103 </span>            : 
+<span class="lineNum">     104 </span>            :     // settlement
+<span class="lineNum">     105 </span>            :     assertEq(globalSettlement.authorizedAccounts(_target), _permission);
+<span class="lineNum">     106 </span>            :     assertEq(postSettlementSurplusAuctionHouse.authorizedAccounts(_target), _permission);
+<span class="lineNum">     107 </span>            :     assertEq(settlementSurplusAuctioneer.authorizedAccounts(_target), _permission);
+<span class="lineNum">     108 </span>            : 
+<span class="lineNum">     109 </span>            :     // factories
+<span class="lineNum">     110 </span>            :     assertEq(chainlinkRelayerFactory.authorizedAccounts(_target), _permission);
+<span class="lineNum">     111 </span>            :     assertEq(denominatedOracleFactory.authorizedAccounts(_target), _permission);
+<span class="lineNum">     112 </span>            :     assertEq(delayedOracleFactory.authorizedAccounts(_target), _permission);
+<span class="lineNum">     113 </span>            : 
+<span class="lineNum">     114 </span>            :     assertEq(collateralJoinFactory.authorizedAccounts(_target), _permission);
+<span class="lineNum">     115 </span>            :     assertEq(collateralAuctionHouseFactory.authorizedAccounts(_target), _permission);
+<span class="lineNum">     116 </span>            : 
+<span class="lineNum">     117 </span>            :     // tokens
+<span class="lineNum">     118 </span>            :     assertEq(systemCoin.authorizedAccounts(_target), _permission);
+<span class="lineNum">     119 </span>            :     assertEq(protocolToken.authorizedAccounts(_target), _permission);
+<span class="lineNum">     120 </span>            : 
+<span class="lineNum">     121 </span>            :     // token adapters
+<span class="lineNum">     122 </span>            :     assertEq(coinJoin.authorizedAccounts(_target), _permission);
+<span class="lineNum">     123 </span>            : 
+<span class="lineNum">     124 </span>            :     // jobs
+<span class="lineNum">     125 </span>            :     assertEq(accountingJob.authorizedAccounts(_target), _permission);
+<span class="lineNum">     126 </span>            :     assertEq(liquidationJob.authorizedAccounts(_target), _permission);
+<span class="lineNum">     127 </span>            :     assertEq(oracleJob.authorizedAccounts(_target), _permission);
+<span class="lineNum">     128 </span>            :   }
+<span class="lineNum">     129 </span>            : }
+<a name="130"><span class="lineNum">     130 </span>            : </a>
+<span class="lineNum">     131 </span>            : contract E2EDeploymentMainnetTest is DeployMainnet, CommonDeploymentTest {
+<span class="lineNum">     132 </span>            :   function setUp() public override {
+<span class="lineNum">     133 </span><span class="lineNoCov">          0 :     uint256 forkId = vm.createFork(vm.rpcUrl('mainnet'));</span>
+<span class="lineNum">     134 </span><span class="lineNoCov">          0 :     vm.selectFork(forkId);</span>
+<span class="lineNum">     135 </span>            : 
+<span class="lineNum">     136 </span><span class="lineNoCov">          0 :     governor = address(0x37c5B029f9c3691B3d47cb024f84E5E257aEb0BB);</span>
+<span class="lineNum">     137 </span>            : 
+<span class="lineNum">     138 </span><span class="lineNoCov">          0 :     super.setUp();</span>
+<span class="lineNum">     139 </span><span class="lineNoCov">          0 :     run();</span>
+<a name="140"><span class="lineNum">     140 </span>            :   }</a>
+<span class="lineNum">     141 </span>            : 
+<span class="lineNum">     142 </span>            :   function setupEnvironment() public override(DeployMainnet, Deploy) {
+<span class="lineNum">     143 </span><span class="lineNoCov">          0 :     super.setupEnvironment();</span>
+<a name="144"><span class="lineNum">     144 </span>            :   }</a>
+<span class="lineNum">     145 </span>            : 
+<span class="lineNum">     146 </span>            :   function setupPostEnvironment() public override(DeployMainnet, Deploy) {
+<span class="lineNum">     147 </span><span class="lineNoCov">          0 :     super.setupPostEnvironment();</span>
+<a name="148"><span class="lineNum">     148 </span>            :   }</a>
+<span class="lineNum">     149 </span>            : 
+<span class="lineNum">     150 </span>            :   function mintAirdrop() public override(DeployMainnet, Deploy) {
+<span class="lineNum">     151 </span><span class="lineNoCov">          0 :     super.mintAirdrop();</span>
+<span class="lineNum">     152 </span>            :   }
+<span class="lineNum">     153 </span>            : }
+<a name="154"><span class="lineNum">     154 </span>            : </a>
+<span class="lineNum">     155 </span>            : contract E2EDeploymentSepoliaTest is DeploySepolia, CommonDeploymentTest {
+<span class="lineNum">     156 </span>            :   function setUp() public override {
+<span class="lineNum">     157 </span><span class="lineNoCov">          0 :     uint256 forkId = vm.createFork(vm.rpcUrl('sepolia'));</span>
+<span class="lineNum">     158 </span><span class="lineNoCov">          0 :     vm.selectFork(forkId);</span>
+<span class="lineNum">     159 </span>            : 
+<span class="lineNum">     160 </span><span class="lineNoCov">          0 :     governor = address(0x37c5B029f9c3691B3d47cb024f84E5E257aEb0BB);</span>
+<span class="lineNum">     161 </span>            : 
+<span class="lineNum">     162 </span><span class="lineNoCov">          0 :     super.setUp();</span>
+<span class="lineNum">     163 </span><span class="lineNoCov">          0 :     run();</span>
+<a name="164"><span class="lineNum">     164 </span>            :   }</a>
+<span class="lineNum">     165 </span>            : 
+<span class="lineNum">     166 </span>            :   function setupEnvironment() public override(DeploySepolia, Deploy) {
+<span class="lineNum">     167 </span><span class="lineNoCov">          0 :     super.setupEnvironment();</span>
+<a name="168"><span class="lineNum">     168 </span>            :   }</a>
+<span class="lineNum">     169 </span>            : 
+<span class="lineNum">     170 </span>            :   function setupPostEnvironment() public override(DeploySepolia, Deploy) {
+<span class="lineNum">     171 </span><span class="lineNoCov">          0 :     super.setupPostEnvironment();</span>
+<a name="172"><span class="lineNum">     172 </span>            :   }</a>
+<span class="lineNum">     173 </span>            : 
+<span class="lineNum">     174 </span>            :   function mintAirdrop() public override(DeploySepolia, Deploy) {
+<span class="lineNum">     175 </span><span class="lineNoCov">          0 :     super.mintAirdrop();</span>
+<span class="lineNum">     176 </span>            :   }
+<span class="lineNum">     177 </span>            : }
+<span class="lineNum">     178 </span>            : 
+<span class="lineNum">     179 </span>            : contract SepoliaDeploymentTest is SepoliaDeployment, CommonDeploymentTest {
+<span class="lineNum">     180 </span>            :   function setUp() public {
+<span class="lineNum">     181 </span>            :     uint256 forkId = vm.createFork(vm.rpcUrl('sepolia'));
+<span class="lineNum">     182 </span>            :     vm.selectFork(forkId);
+<span class="lineNum">     183 </span>            : 
+<span class="lineNum">     184 </span>            :     _getEnvironmentParams();
+<span class="lineNum">     185 </span>            : 
+<span class="lineNum">     186 </span>            :     run();
+<span class="lineNum">     187 </span>            :   }
+<span class="lineNum">     188 </span>            : 
+<span class="lineNum">     189 </span>            :   // TODO: fix
+<span class="lineNum">     190 </span>            :   function test_Delegated_OP() public {
+<span class="lineNum">     191 </span>            :     // assertEq(ERC20Votes(GOERLI_GOV_TOKEN).delegates(address(collateralJoin[ARB])), governor);
+<span class="lineNum">     192 </span>            :   }
+<span class="lineNum">     193 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../../../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

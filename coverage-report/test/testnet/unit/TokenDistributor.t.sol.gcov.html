@@ -1,0 +1,653 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - current.info - test/testnet/unit/TokenDistributor.t.sol</title>
+  <link rel="stylesheet" type="text/css" href="../../../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../../../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../../../index.html">top level</a> - <a href="index.html">test/testnet/unit</a> - TokenDistributor.t.sol<span style="font-size: 80%;"> (source / <a href="TokenDistributor.t.sol.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">current.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">30</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2024-01-07 16:13:44</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">7</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr><td><img src="../../../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../../../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : // SPDX-License-Identifier: GPL-3.0</a>
+<span class="lineNum">       2 </span>            : pragma solidity 0.8.19;
+<span class="lineNum">       3 </span>            : 
+<span class="lineNum">       4 </span>            : import {HaiTest, stdStorage, StdStorage} from '@testnet/utils/HaiTest.t.sol';
+<span class="lineNum">       5 </span>            : import {MerkleTreeGenerator} from '@testnet/utils/MerkleTreeGenerator.sol';
+<span class="lineNum">       6 </span>            : import {ITokenDistributor, TokenDistributor} from '@contracts/tokens/TokenDistributor.sol';
+<span class="lineNum">       7 </span>            : import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
+<span class="lineNum">       8 </span>            : import {ERC20VotesUpgradeable} from '@openzeppelin-upgradeable/token/ERC20/extensions/ERC20VotesUpgradeable.sol';
+<span class="lineNum">       9 </span>            : import {Assertions} from '@libraries/Assertions.sol';
+<span class="lineNum">      10 </span>            : 
+<span class="lineNum">      11 </span>            : abstract contract Base is HaiTest {
+<span class="lineNum">      12 </span>            :   using stdStorage for StdStorage;
+<span class="lineNum">      13 </span>            : 
+<span class="lineNum">      14 </span>            :   MerkleTreeGenerator merkleTreeGenerator;
+<span class="lineNum">      15 </span>            :   ITokenDistributor tokenDistributor;
+<span class="lineNum">      16 </span>            : 
+<span class="lineNum">      17 </span>            :   bytes32[] merkleTree;
+<span class="lineNum">      18 </span>            :   bytes32[] leaves;
+<span class="lineNum">      19 </span>            :   bytes32[] validEveProofs;
+<span class="lineNum">      20 </span>            : 
+<span class="lineNum">      21 </span>            :   bytes32 merkleRoot;
+<span class="lineNum">      22 </span>            : 
+<span class="lineNum">      23 </span>            :   address[] airdropRecipients;
+<span class="lineNum">      24 </span>            : 
+<span class="lineNum">      25 </span>            :   uint256[] airdropAmounts;
+<span class="lineNum">      26 </span>            : 
+<span class="lineNum">      27 </span>            :   uint256 airdropAmount = 100_000;
+<span class="lineNum">      28 </span>            :   uint256 totalClaimable = 500_000;
+<span class="lineNum">      29 </span>            :   uint256 claimPeriodStart = block.timestamp + 10 days;
+<span class="lineNum">      30 </span>            :   uint256 claimPeriodEnd = block.timestamp + 20 days;
+<span class="lineNum">      31 </span>            : 
+<span class="lineNum">      32 </span>            :   ERC20VotesUpgradeable token = ERC20VotesUpgradeable(label('ERC20VotesUpgradeable'));
+<span class="lineNum">      33 </span>            : 
+<span class="lineNum">      34 </span>            :   address deployer = label('deployer');
+<span class="lineNum">      35 </span>            :   address delegatee;
+<span class="lineNum">      36 </span>            : 
+<a name="37"><span class="lineNum">      37 </span>            :   event Claimed(address _user, uint256 _amount);</a>
+<span class="lineNum">      38 </span>            : 
+<span class="lineNum">      39 </span>            :   function setUp() public virtual {
+<span class="lineNum">      40 </span><span class="lineNoCov">          0 :     airdropRecipients = new address[](5);</span>
+<span class="lineNum">      41 </span><span class="lineNoCov">          0 :     airdropRecipients[0] = label('alice');</span>
+<span class="lineNum">      42 </span><span class="lineNoCov">          0 :     airdropRecipients[1] = label('bob');</span>
+<span class="lineNum">      43 </span><span class="lineNoCov">          0 :     airdropRecipients[2] = label('charlie');</span>
+<span class="lineNum">      44 </span><span class="lineNoCov">          0 :     airdropRecipients[3] = label('david');</span>
+<span class="lineNum">      45 </span><span class="lineNoCov">          0 :     airdropRecipients[4] = label('eve');</span>
+<span class="lineNum">      46 </span>            : 
+<span class="lineNum">      47 </span><span class="lineNoCov">          0 :     airdropAmounts = new uint256[](5);</span>
+<span class="lineNum">      48 </span><span class="lineNoCov">          0 :     airdropAmounts[0] = airdropAmount;</span>
+<span class="lineNum">      49 </span><span class="lineNoCov">          0 :     airdropAmounts[1] = airdropAmount;</span>
+<span class="lineNum">      50 </span><span class="lineNoCov">          0 :     airdropAmounts[2] = airdropAmount;</span>
+<span class="lineNum">      51 </span><span class="lineNoCov">          0 :     airdropAmounts[3] = airdropAmount;</span>
+<span class="lineNum">      52 </span><span class="lineNoCov">          0 :     airdropAmounts[4] = airdropAmount;</span>
+<span class="lineNum">      53 </span>            : 
+<span class="lineNum">      54 </span><span class="lineNoCov">          0 :     for (uint256 i = 0; i &lt; airdropRecipients.length; i++) {</span>
+<span class="lineNum">      55 </span><span class="lineNoCov">          0 :       leaves.push(keccak256(bytes.concat(keccak256(abi.encode(airdropRecipients[i], airdropAmounts[i])))));</span>
+<span class="lineNum">      56 </span>            :     }
+<span class="lineNum">      57 </span>            : 
+<span class="lineNum">      58 </span><span class="lineNoCov">          0 :     vm.prank(deployer);</span>
+<span class="lineNum">      59 </span><span class="lineNoCov">          0 :     merkleTreeGenerator = new MerkleTreeGenerator();</span>
+<span class="lineNum">      60 </span><span class="lineNoCov">          0 :     merkleTree = merkleTreeGenerator.generateMerkleTree(leaves);</span>
+<span class="lineNum">      61 </span><span class="lineNoCov">          0 :     merkleRoot = merkleTree[0];</span>
+<span class="lineNum">      62 </span>            : 
+<span class="lineNum">      63 </span><span class="lineNoCov">          0 :     delegatee = label('delegatee');</span>
+<span class="lineNum">      64 </span>            : 
+<span class="lineNum">      65 </span><span class="lineNoCov">          0 :     _mockERC20VotesDelegate(deployer);</span>
+<span class="lineNum">      66 </span><span class="lineNoCov">          0 :     vm.prank(deployer);</span>
+<span class="lineNum">      67 </span><span class="lineNoCov">          0 :     tokenDistributor =</span>
+<span class="lineNum">      68 </span>            :       new TokenDistributor(merkleRoot, token, totalClaimable, claimPeriodStart, claimPeriodEnd, deployer);
+<span class="lineNum">      69 </span>            : 
+<span class="lineNum">      70 </span><span class="lineNoCov">          0 :     uint256 _index = merkleTreeGenerator.getIndex(merkleTree, leaves[4]);</span>
+<span class="lineNum">      71 </span><span class="lineNoCov">          0 :     validEveProofs = merkleTreeGenerator.getProof(merkleTree, _index);</span>
+<a name="72"><span class="lineNum">      72 </span>            :   }</a>
+<span class="lineNum">      73 </span>            : 
+<span class="lineNum">      74 </span>            :   function _mockERC20VotesDelegate(address _delegatee) internal {
+<span class="lineNum">      75 </span><span class="lineNoCov">          0 :     vm.mockCall(address(token), abi.encodeCall(token.delegate, (_delegatee)), abi.encode(0));</span>
+<a name="76"><span class="lineNum">      76 </span>            :   }</a>
+<span class="lineNum">      77 </span>            : 
+<span class="lineNum">      78 </span>            :   function _mockERC20VotesTransfer(address _to, uint256 _amount) internal {
+<span class="lineNum">      79 </span><span class="lineNoCov">          0 :     vm.mockCall(address(token), abi.encodeCall(token.transfer, (_to, _amount)), abi.encode(true));</span>
+<a name="80"><span class="lineNum">      80 </span>            :   }</a>
+<span class="lineNum">      81 </span>            : 
+<span class="lineNum">      82 </span>            :   function _mockERC20VotesTransferFail(address _to, uint256 _amount) internal {
+<span class="lineNum">      83 </span><span class="lineNoCov">          0 :     vm.mockCall(address(token), abi.encodeCall(token.transfer, (_to, _amount)), abi.encode(false));</span>
+<a name="84"><span class="lineNum">      84 </span>            :   }</a>
+<span class="lineNum">      85 </span>            : 
+<span class="lineNum">      86 </span>            :   function _mockERC20VotesBalanceOf(address _user, uint256 _balance) internal {
+<span class="lineNum">      87 </span><span class="lineNoCov">          0 :     vm.mockCall(address(token), abi.encodeCall(token.balanceOf, (_user)), abi.encode(_balance));</span>
+<a name="88"><span class="lineNum">      88 </span>            :   }</a>
+<span class="lineNum">      89 </span>            : 
+<span class="lineNum">      90 </span>            :   function _mockERC20VotesDelegateBySig(
+<span class="lineNum">      91 </span>            :     address _delegatee,
+<span class="lineNum">      92 </span>            :     uint256 _nonce,
+<span class="lineNum">      93 </span>            :     uint256 _expiry,
+<span class="lineNum">      94 </span>            :     uint8 _v,
+<span class="lineNum">      95 </span>            :     bytes32 _r,
+<span class="lineNum">      96 </span>            :     bytes32 _s
+<span class="lineNum">      97 </span>            :   ) internal {
+<span class="lineNum">      98 </span><span class="lineNoCov">          0 :     vm.mockCall(</span>
+<span class="lineNum">      99 </span>            :       address(token), abi.encodeCall(token.delegateBySig, (_delegatee, _nonce, _expiry, _v, _r, _s)), abi.encode(0)
+<span class="lineNum">     100 </span>            :     );
+<a name="101"><span class="lineNum">     101 </span>            :   }</a>
+<span class="lineNum">     102 </span>            : 
+<span class="lineNum">     103 </span>            :   function _mockClaimed(address _user, bool _claimed) internal {
+<span class="lineNum">     104 </span><span class="lineNoCov">          0 :     stdstore.target(address(tokenDistributor)).sig(ITokenDistributor.claimed.selector).with_key(_user).checked_write(</span>
+<span class="lineNum">     105 </span>            :       _claimed
+<span class="lineNum">     106 </span>            :     );
+<span class="lineNum">     107 </span>            :   }
+<span class="lineNum">     108 </span>            : 
+<span class="lineNum">     109 </span>            :   modifier authorized() {
+<span class="lineNum">     110 </span>            :     vm.startPrank(deployer);
+<span class="lineNum">     111 </span>            :     _;
+<span class="lineNum">     112 </span>            :   }
+<span class="lineNum">     113 </span>            : }
+<span class="lineNum">     114 </span>            : 
+<span class="lineNum">     115 </span>            : contract Unit_TokenDistributor_Constructor is Base {
+<span class="lineNum">     116 </span>            :   function test_Set_Root() public {
+<span class="lineNum">     117 </span>            :     assertEq(tokenDistributor.root(), merkleRoot);
+<span class="lineNum">     118 </span>            :   }
+<span class="lineNum">     119 </span>            : 
+<span class="lineNum">     120 </span>            :   function test_Set_Token() public {
+<span class="lineNum">     121 </span>            :     assertEq(address(tokenDistributor.token()), address(token));
+<span class="lineNum">     122 </span>            :   }
+<span class="lineNum">     123 </span>            : 
+<span class="lineNum">     124 </span>            :   function test_Set_TotalClaimable() public {
+<span class="lineNum">     125 </span>            :     assertEq(tokenDistributor.totalClaimable(), totalClaimable);
+<span class="lineNum">     126 </span>            :   }
+<span class="lineNum">     127 </span>            : 
+<span class="lineNum">     128 </span>            :   function test_Set_ClaimPeriodStart() public {
+<span class="lineNum">     129 </span>            :     assertEq(tokenDistributor.claimPeriodStart(), claimPeriodStart);
+<span class="lineNum">     130 </span>            :   }
+<span class="lineNum">     131 </span>            : 
+<span class="lineNum">     132 </span>            :   function test_Set_ClaimPeriodEnd() public {
+<span class="lineNum">     133 </span>            :     assertEq(tokenDistributor.claimPeriodEnd(), claimPeriodEnd);
+<span class="lineNum">     134 </span>            :   }
+<span class="lineNum">     135 </span>            : 
+<span class="lineNum">     136 </span>            :   function test_Call_ERC20Votes_Delegate(address _delegate) public {
+<span class="lineNum">     137 </span>            :     vm.assume(_delegate != address(0));
+<span class="lineNum">     138 </span>            : 
+<span class="lineNum">     139 </span>            :     vm.expectCall(address(token), abi.encodeWithSelector(ERC20VotesUpgradeable.delegate.selector, _delegate));
+<span class="lineNum">     140 </span>            : 
+<span class="lineNum">     141 </span>            :     new TokenDistributor(merkleRoot, token, totalClaimable, claimPeriodStart, claimPeriodEnd, _delegate);
+<span class="lineNum">     142 </span>            :   }
+<span class="lineNum">     143 </span>            : 
+<span class="lineNum">     144 </span>            :   function test_Revert_Token_IsNull() public {
+<span class="lineNum">     145 </span>            :     vm.expectRevert(Assertions.NullAddress.selector);
+<span class="lineNum">     146 </span>            : 
+<span class="lineNum">     147 </span>            :     new TokenDistributor(
+<span class="lineNum">     148 </span>            :       merkleRoot, ERC20VotesUpgradeable(address(0)), totalClaimable, claimPeriodStart, claimPeriodEnd, deployer
+<span class="lineNum">     149 </span>            :     );
+<span class="lineNum">     150 </span>            :   }
+<span class="lineNum">     151 </span>            : 
+<span class="lineNum">     152 </span>            :   function test_Revert_TotalClaimable_IsNull() public {
+<span class="lineNum">     153 </span>            :     vm.expectRevert(Assertions.NullAmount.selector);
+<span class="lineNum">     154 </span>            : 
+<span class="lineNum">     155 </span>            :     new TokenDistributor(merkleRoot, token, 0, claimPeriodStart, claimPeriodEnd, deployer);
+<span class="lineNum">     156 </span>            :   }
+<span class="lineNum">     157 </span>            : 
+<span class="lineNum">     158 </span>            :   function test_Revert_ClaimPeriodStart_LtEqTimeStamp(uint256 _claimPeriodStart) public {
+<span class="lineNum">     159 </span>            :     vm.assume(_claimPeriodStart &lt;= block.timestamp);
+<span class="lineNum">     160 </span>            : 
+<span class="lineNum">     161 </span>            :     vm.expectRevert(abi.encodeWithSelector(Assertions.NotGreaterThan.selector, _claimPeriodStart, block.timestamp));
+<span class="lineNum">     162 </span>            : 
+<span class="lineNum">     163 </span>            :     new TokenDistributor(merkleRoot, token, totalClaimable, _claimPeriodStart, claimPeriodEnd, deployer);
+<span class="lineNum">     164 </span>            :   }
+<span class="lineNum">     165 </span>            : 
+<span class="lineNum">     166 </span>            :   function test_Revert_ClaimPeriodEnd_LtEqClaimPeriodStart(uint256 _claimPeriodStart, uint256 _claimPeriodEnd) public {
+<span class="lineNum">     167 </span>            :     vm.assume(_claimPeriodStart &gt; block.timestamp);
+<span class="lineNum">     168 </span>            :     vm.assume(_claimPeriodEnd &lt;= _claimPeriodStart);
+<span class="lineNum">     169 </span>            : 
+<span class="lineNum">     170 </span>            :     vm.expectRevert(abi.encodeWithSelector(Assertions.NotGreaterThan.selector, _claimPeriodEnd, _claimPeriodStart));
+<span class="lineNum">     171 </span>            : 
+<span class="lineNum">     172 </span>            :     new TokenDistributor(merkleRoot, token, totalClaimable, _claimPeriodStart, _claimPeriodEnd, deployer);
+<span class="lineNum">     173 </span>            :   }
+<span class="lineNum">     174 </span>            : }
+<span class="lineNum">     175 </span>            : 
+<span class="lineNum">     176 </span>            : contract Unit_TokenDistributor_CanClaim is Base {
+<span class="lineNum">     177 </span>            :   function setUp() public override {
+<span class="lineNum">     178 </span>            :     super.setUp();
+<span class="lineNum">     179 </span>            :     vm.warp(claimPeriodStart); // going ahead in time for claim period start
+<span class="lineNum">     180 </span>            :   }
+<span class="lineNum">     181 </span>            : 
+<span class="lineNum">     182 </span>            :   function test_CanClaim() public {
+<span class="lineNum">     183 </span>            :     assertTrue(tokenDistributor.canClaim(validEveProofs, airdropRecipients[4], airdropAmounts[4]));
+<span class="lineNum">     184 </span>            :   }
+<span class="lineNum">     185 </span>            : 
+<span class="lineNum">     186 </span>            :   function test_CanClaim2() public {
+<span class="lineNum">     187 </span>            :     uint256 _index0 = merkleTreeGenerator.getIndex(merkleTree, leaves[0]);
+<span class="lineNum">     188 </span>            :     bytes32[] memory _proof0 = merkleTreeGenerator.getProof(merkleTree, _index0);
+<span class="lineNum">     189 </span>            : 
+<span class="lineNum">     190 </span>            :     uint256 _index1 = merkleTreeGenerator.getIndex(merkleTree, leaves[1]);
+<span class="lineNum">     191 </span>            :     bytes32[] memory _proof1 = merkleTreeGenerator.getProof(merkleTree, _index1);
+<span class="lineNum">     192 </span>            : 
+<span class="lineNum">     193 </span>            :     uint256 _index2 = merkleTreeGenerator.getIndex(merkleTree, leaves[2]);
+<span class="lineNum">     194 </span>            :     bytes32[] memory _proof2 = merkleTreeGenerator.getProof(merkleTree, _index2);
+<span class="lineNum">     195 </span>            : 
+<span class="lineNum">     196 </span>            :     uint256 _index3 = merkleTreeGenerator.getIndex(merkleTree, leaves[3]);
+<span class="lineNum">     197 </span>            :     bytes32[] memory _proof3 = merkleTreeGenerator.getProof(merkleTree, _index3);
+<span class="lineNum">     198 </span>            : 
+<span class="lineNum">     199 </span>            :     uint256 _index4 = merkleTreeGenerator.getIndex(merkleTree, leaves[4]);
+<span class="lineNum">     200 </span>            :     bytes32[] memory _proof4 = merkleTreeGenerator.getProof(merkleTree, _index4);
+<span class="lineNum">     201 </span>            : 
+<span class="lineNum">     202 </span>            :     assertTrue(tokenDistributor.canClaim(_proof0, airdropRecipients[0], airdropAmounts[0]));
+<span class="lineNum">     203 </span>            :     assertTrue(tokenDistributor.canClaim(_proof1, airdropRecipients[1], airdropAmounts[1]));
+<span class="lineNum">     204 </span>            :     assertTrue(tokenDistributor.canClaim(_proof2, airdropRecipients[2], airdropAmounts[2]));
+<span class="lineNum">     205 </span>            :     assertTrue(tokenDistributor.canClaim(_proof3, airdropRecipients[3], airdropAmounts[3]));
+<span class="lineNum">     206 </span>            :     assertTrue(tokenDistributor.canClaim(_proof4, airdropRecipients[4], airdropAmounts[4]));
+<span class="lineNum">     207 </span>            :   }
+<span class="lineNum">     208 </span>            : 
+<span class="lineNum">     209 </span>            :   function test_CannotClaim_WrongProof() public {
+<span class="lineNum">     210 </span>            :     bytes32[] memory _proofs = new bytes32[](2);
+<span class="lineNum">     211 </span>            :     _proofs[0] = bytes32(0xbb212d55aa35db46dcf841a5b449aa1a3f90bf752ff0c523967805dfe44f14be); //wrong
+<span class="lineNum">     212 </span>            :     _proofs[1] = bytes32(0xd27f827b191db255598965e23fac05aac5731018191e49e7dfa89e1b007aa77e);
+<span class="lineNum">     213 </span>            : 
+<span class="lineNum">     214 </span>            :     assertFalse(tokenDistributor.canClaim(_proofs, airdropRecipients[1], airdropAmounts[1]));
+<span class="lineNum">     215 </span>            :   }
+<span class="lineNum">     216 </span>            : 
+<span class="lineNum">     217 </span>            :   function test_CannotClaim_WrongAmount() public {
+<span class="lineNum">     218 </span>            :     bytes32[] memory _proofs = new bytes32[](2);
+<span class="lineNum">     219 </span>            :     _proofs[0] = bytes32(0xbb212d55aa35db46dcf841a5b449aa2a3f90bf752ff0c523967805dfe44f14be);
+<span class="lineNum">     220 </span>            :     _proofs[1] = bytes32(0xd27f827b191db255598965e23fac05aac5731018191e49e7dfa89e1b007aa77e);
+<span class="lineNum">     221 </span>            : 
+<span class="lineNum">     222 </span>            :     assertFalse(tokenDistributor.canClaim(_proofs, airdropRecipients[1], 499_999));
+<span class="lineNum">     223 </span>            :   }
+<span class="lineNum">     224 </span>            : 
+<span class="lineNum">     225 </span>            :   function test_CannotClaim_Wrong_Recipient() public {
+<span class="lineNum">     226 </span>            :     bytes32[] memory _proofs = new bytes32[](2);
+<span class="lineNum">     227 </span>            :     _proofs[0] = bytes32(0xbb212d55aa35db46dcf841a5b449aa2a3f90bf752ff0c523967805dfe44f14be);
+<span class="lineNum">     228 </span>            :     _proofs[1] = bytes32(0xd27f827b191db255598965e23fac05aac5731018191e49e7dfa89e1b007aa77e);
+<span class="lineNum">     229 </span>            : 
+<span class="lineNum">     230 </span>            :     assertFalse(tokenDistributor.canClaim(_proofs, newAddress(), airdropAmounts[1]));
+<span class="lineNum">     231 </span>            :   }
+<span class="lineNum">     232 </span>            : 
+<span class="lineNum">     233 </span>            :   function test_CannotClaimPeriodNotStarted() public {
+<span class="lineNum">     234 </span>            :     vm.warp(claimPeriodStart - 1); // going back in time for claim period start
+<span class="lineNum">     235 </span>            : 
+<span class="lineNum">     236 </span>            :     assertFalse(tokenDistributor.canClaim(validEveProofs, airdropRecipients[4], airdropAmounts[4]));
+<span class="lineNum">     237 </span>            :   }
+<span class="lineNum">     238 </span>            : 
+<span class="lineNum">     239 </span>            :   function test_CannotClaimPeriodEnded() public {
+<span class="lineNum">     240 </span>            :     vm.warp(claimPeriodEnd + 1); // going back in time for claim period start
+<span class="lineNum">     241 </span>            : 
+<span class="lineNum">     242 </span>            :     assertFalse(tokenDistributor.canClaim(validEveProofs, airdropRecipients[4], airdropAmounts[4]));
+<span class="lineNum">     243 </span>            :   }
+<span class="lineNum">     244 </span>            : 
+<span class="lineNum">     245 </span>            :   function test_CannotClaimAlreadyClaimed() public {
+<span class="lineNum">     246 </span>            :     _mockClaimed(airdropRecipients[4], true);
+<span class="lineNum">     247 </span>            :     assertFalse(tokenDistributor.canClaim(validEveProofs, airdropRecipients[4], airdropAmounts[4]));
+<span class="lineNum">     248 </span>            :   }
+<span class="lineNum">     249 </span>            : 
+<span class="lineNum">     250 </span>            :   function test_CannotClaimZeroAmount() public {
+<span class="lineNum">     251 </span>            :     assertFalse(tokenDistributor.canClaim(validEveProofs, airdropRecipients[4], 0));
+<span class="lineNum">     252 </span>            :   }
+<span class="lineNum">     253 </span>            : }
+<span class="lineNum">     254 </span>            : 
+<span class="lineNum">     255 </span>            : contract Unit_CanClaim_ExternalScript is Base {
+<span class="lineNum">     256 </span>            :   function setUp() public override {
+<span class="lineNum">     257 </span>            :     super.setUp();
+<span class="lineNum">     258 </span>            :     bytes32 _root = 0x30e48fd8bee18a1728bfd9f536125c5a352b778d5b07a92de684b14cb7bb92ad; // Root generated with OZ js library
+<span class="lineNum">     259 </span>            :     tokenDistributor = new TokenDistributor(_root, token, totalClaimable, claimPeriodStart, claimPeriodEnd, deployer);
+<span class="lineNum">     260 </span>            :     vm.warp(claimPeriodStart); // going ahead in time for claim period start
+<span class="lineNum">     261 </span>            :   }
+<span class="lineNum">     262 </span>            : 
+<span class="lineNum">     263 </span>            :   function test_CanClaim_ExternalScriptTree() public {
+<span class="lineNum">     264 </span>            :     bytes32[] memory _proof = new bytes32[](2);
+<span class="lineNum">     265 </span>            :     _proof[0] = 0x8d2ba45bdde7d748373d27ad49f041388b49f15b1732a45081981e4f66cf621a;
+<span class="lineNum">     266 </span>            :     _proof[1] = 0x418e3bfe8d301afb4acee0a38a37f071396fdd1827548d5b459bb0c52e0bcf9a;
+<span class="lineNum">     267 </span>            : 
+<span class="lineNum">     268 </span>            :     uint256 _amount = 100_000;
+<span class="lineNum">     269 </span>            :     address _recipient = address(0x1C8E4bF2Ccae6dC8246AEF5b791014A6D3Df1DDF);
+<span class="lineNum">     270 </span>            : 
+<span class="lineNum">     271 </span>            :     assertTrue(tokenDistributor.canClaim(_proof, _recipient, _amount));
+<span class="lineNum">     272 </span>            :   }
+<span class="lineNum">     273 </span>            : 
+<span class="lineNum">     274 </span>            :   function test_CanClaim_ExternalScriptTree2() public {
+<span class="lineNum">     275 </span>            :     bytes32[] memory _proof = new bytes32[](2);
+<span class="lineNum">     276 </span>            :     _proof[0] = 0xc26a9779f3008fa2fc84c2e7b69fb2c6e66219a2784e6dd46827e4083ffb277e;
+<span class="lineNum">     277 </span>            :     _proof[1] = 0x320622079a0c4c751ac8d3b4b0b4d0177583cc07cf25f493f963f677e62a4c26;
+<span class="lineNum">     278 </span>            : 
+<span class="lineNum">     279 </span>            :     uint256 _amount = 100_000;
+<span class="lineNum">     280 </span>            :     address _recipient = address(0x5cE727541259Ccc6B15FF5b87Ba50C84Be31A607);
+<span class="lineNum">     281 </span>            : 
+<span class="lineNum">     282 </span>            :     assertTrue(tokenDistributor.canClaim(_proof, _recipient, _amount));
+<span class="lineNum">     283 </span>            :   }
+<span class="lineNum">     284 </span>            : }
+<span class="lineNum">     285 </span>            : 
+<span class="lineNum">     286 </span>            : contract Unit_TokenDistributor_Claim is Base {
+<span class="lineNum">     287 </span>            :   function setUp() public override {
+<span class="lineNum">     288 </span>            :     super.setUp();
+<span class="lineNum">     289 </span>            :     vm.warp(claimPeriodStart); // going ahead in time for claim period start
+<span class="lineNum">     290 </span>            :     _mockERC20VotesTransfer(airdropRecipients[4], airdropAmounts[4]);
+<span class="lineNum">     291 </span>            :     vm.startPrank(airdropRecipients[4]);
+<span class="lineNum">     292 </span>            :   }
+<span class="lineNum">     293 </span>            : 
+<span class="lineNum">     294 </span>            :   function test_Set_Claimed() public {
+<span class="lineNum">     295 </span>            :     tokenDistributor.claim(validEveProofs, airdropAmounts[4]);
+<span class="lineNum">     296 </span>            : 
+<span class="lineNum">     297 </span>            :     assertTrue(tokenDistributor.claimed(airdropRecipients[4]));
+<span class="lineNum">     298 </span>            :   }
+<span class="lineNum">     299 </span>            : 
+<span class="lineNum">     300 </span>            :   function test_Set_TotalClaimable() public {
+<span class="lineNum">     301 </span>            :     tokenDistributor.claim(validEveProofs, airdropAmounts[4]);
+<span class="lineNum">     302 </span>            : 
+<span class="lineNum">     303 </span>            :     assertEq(tokenDistributor.totalClaimable(), totalClaimable - airdropAmounts[4]);
+<span class="lineNum">     304 </span>            :   }
+<span class="lineNum">     305 </span>            : 
+<span class="lineNum">     306 </span>            :   function test_Call_ERC20Votes_Transfer() public {
+<span class="lineNum">     307 </span>            :     vm.expectCall(address(token), abi.encodeCall(token.transfer, (airdropRecipients[4], airdropAmounts[4])));
+<span class="lineNum">     308 </span>            : 
+<span class="lineNum">     309 </span>            :     tokenDistributor.claim(validEveProofs, airdropAmounts[4]);
+<span class="lineNum">     310 </span>            :   }
+<span class="lineNum">     311 </span>            : 
+<span class="lineNum">     312 </span>            :   function test_Emit_Claimed() public {
+<span class="lineNum">     313 </span>            :     vm.expectEmit();
+<span class="lineNum">     314 </span>            :     emit Claimed(airdropRecipients[4], airdropAmounts[4]);
+<span class="lineNum">     315 </span>            : 
+<span class="lineNum">     316 </span>            :     tokenDistributor.claim(validEveProofs, airdropAmounts[4]);
+<span class="lineNum">     317 </span>            :   }
+<span class="lineNum">     318 </span>            : 
+<span class="lineNum">     319 </span>            :   function test_Revert_ClaimPeriodNotStarted() public {
+<span class="lineNum">     320 </span>            :     vm.warp(claimPeriodStart - 1); // going back in time for claim period start
+<span class="lineNum">     321 </span>            :     vm.expectRevert(ITokenDistributor.TokenDistributor_ClaimPeriodNotStarted.selector);
+<span class="lineNum">     322 </span>            : 
+<span class="lineNum">     323 </span>            :     tokenDistributor.claim(validEveProofs, airdropAmounts[4]);
+<span class="lineNum">     324 </span>            :   }
+<span class="lineNum">     325 </span>            : 
+<span class="lineNum">     326 </span>            :   function test_Revert_ClaimPeriodEnded() public {
+<span class="lineNum">     327 </span>            :     vm.warp(claimPeriodEnd + 1); // going ahead in time period ended
+<span class="lineNum">     328 </span>            :     vm.expectRevert(ITokenDistributor.TokenDistributor_ClaimPeriodEnded.selector);
+<span class="lineNum">     329 </span>            : 
+<span class="lineNum">     330 </span>            :     tokenDistributor.claim(validEveProofs, airdropAmounts[4]);
+<span class="lineNum">     331 </span>            :   }
+<span class="lineNum">     332 </span>            : 
+<span class="lineNum">     333 </span>            :   function test_Revert_ZeroAmount() public {
+<span class="lineNum">     334 </span>            :     vm.expectRevert(ITokenDistributor.TokenDistributor_ZeroAmount.selector);
+<span class="lineNum">     335 </span>            : 
+<span class="lineNum">     336 </span>            :     tokenDistributor.claim(validEveProofs, 0);
+<span class="lineNum">     337 </span>            :   }
+<span class="lineNum">     338 </span>            : 
+<span class="lineNum">     339 </span>            :   function test_Revert_AlreadyClaimed() public {
+<span class="lineNum">     340 </span>            :     _mockClaimed(airdropRecipients[4], true);
+<span class="lineNum">     341 </span>            :     vm.expectRevert(ITokenDistributor.TokenDistributor_AlreadyClaimed.selector);
+<span class="lineNum">     342 </span>            : 
+<span class="lineNum">     343 </span>            :     tokenDistributor.claim(validEveProofs, airdropAmounts[4]);
+<span class="lineNum">     344 </span>            :   }
+<span class="lineNum">     345 </span>            : 
+<span class="lineNum">     346 </span>            :   function test_Revert_FailedMerkleProofVerify_InvalidClaimer() public {
+<span class="lineNum">     347 </span>            :     vm.stopPrank();
+<span class="lineNum">     348 </span>            :     vm.startPrank(newAddress());
+<span class="lineNum">     349 </span>            : 
+<span class="lineNum">     350 </span>            :     vm.expectRevert(ITokenDistributor.TokenDistributor_FailedMerkleProofVerify.selector);
+<span class="lineNum">     351 </span>            :     tokenDistributor.claim(validEveProofs, airdropAmounts[4]);
+<span class="lineNum">     352 </span>            :   }
+<span class="lineNum">     353 </span>            : 
+<span class="lineNum">     354 </span>            :   function test_Revert_FailedMerkleProofVerify_InvalidProof() public {
+<span class="lineNum">     355 </span>            :     bytes32[] memory _proofs = new bytes32[](3);
+<span class="lineNum">     356 </span>            :     _proofs[0] = bytes32(0xcf9633789ba0907ad3a73ab3be992a886fa3502e11375044250fc340ae0a0613);
+<span class="lineNum">     357 </span>            :     _proofs[1] = bytes32(0xa0246557dc9e869dd36d0dcede531af0ab5a4bddda571c276a4519029b69affa);
+<span class="lineNum">     358 </span>            :     _proofs[2] = bytes32(0x5372fc2bc58ba885b7863917a0ff8130edf9cca8a1db00c8958f37d59f99af34); // wrong, the valid is 0x5372fc2bc58ba885b7863917a0ff8130edf9cca8a1db00c8958f37d59f99af33
+<span class="lineNum">     359 </span>            : 
+<span class="lineNum">     360 </span>            :     vm.expectRevert(ITokenDistributor.TokenDistributor_FailedMerkleProofVerify.selector);
+<span class="lineNum">     361 </span>            :     tokenDistributor.claim(_proofs, airdropAmounts[4]);
+<span class="lineNum">     362 </span>            :   }
+<span class="lineNum">     363 </span>            : 
+<span class="lineNum">     364 </span>            :   function test_Revert_FailedMerkleProofVerify_InvalidAmount() public {
+<span class="lineNum">     365 </span>            :     vm.expectRevert(ITokenDistributor.TokenDistributor_FailedMerkleProofVerify.selector);
+<span class="lineNum">     366 </span>            :     tokenDistributor.claim(validEveProofs, 499_999);
+<span class="lineNum">     367 </span>            :   }
+<span class="lineNum">     368 </span>            : 
+<span class="lineNum">     369 </span>            :   function testFail_ERC20Votes_Transfer(uint256 _amount) public authorized {
+<span class="lineNum">     370 </span>            :     vm.assume(_amount &gt; 0);
+<span class="lineNum">     371 </span>            :     _mockERC20VotesTransferFail(airdropRecipients[4], _amount);
+<span class="lineNum">     372 </span>            : 
+<span class="lineNum">     373 </span>            :     tokenDistributor.claim(validEveProofs, airdropAmounts[4]);
+<span class="lineNum">     374 </span>            :   }
+<span class="lineNum">     375 </span>            : }
+<span class="lineNum">     376 </span>            : 
+<span class="lineNum">     377 </span>            : contract Unit_TokenDistributor_ClaimAndDelegate is Base {
+<span class="lineNum">     378 </span>            :   function setUp() public override {
+<span class="lineNum">     379 </span>            :     super.setUp();
+<span class="lineNum">     380 </span>            :     vm.warp(claimPeriodStart); // going ahead in time for claim period start
+<span class="lineNum">     381 </span>            :     _mockERC20VotesTransfer(airdropRecipients[4], airdropAmounts[4]);
+<span class="lineNum">     382 </span>            :     vm.startPrank(airdropRecipients[4]);
+<span class="lineNum">     383 </span>            :   }
+<span class="lineNum">     384 </span>            : 
+<span class="lineNum">     385 </span>            :   function test_Set_Claimed(uint256 _expiry, uint8 _v, bytes32 _r, bytes32 _s) public {
+<span class="lineNum">     386 </span>            :     _mockERC20VotesDelegateBySig(delegatee, 0, _expiry, _v, _r, _s);
+<span class="lineNum">     387 </span>            :     tokenDistributor.claimAndDelegate(validEveProofs, airdropAmounts[4], delegatee, _expiry, _v, _r, _s);
+<span class="lineNum">     388 </span>            : 
+<span class="lineNum">     389 </span>            :     assertTrue(tokenDistributor.claimed(airdropRecipients[4]));
+<span class="lineNum">     390 </span>            :   }
+<span class="lineNum">     391 </span>            : 
+<span class="lineNum">     392 </span>            :   function test_Set_TotalClaimable(uint256 _expiry, uint8 _v, bytes32 _r, bytes32 _s) public {
+<span class="lineNum">     393 </span>            :     _mockERC20VotesDelegateBySig(delegatee, 0, _expiry, _v, _r, _s);
+<span class="lineNum">     394 </span>            :     tokenDistributor.claimAndDelegate(validEveProofs, airdropAmounts[4], delegatee, _expiry, _v, _r, _s);
+<span class="lineNum">     395 </span>            : 
+<span class="lineNum">     396 </span>            :     assertEq(tokenDistributor.totalClaimable(), totalClaimable - airdropAmounts[4]);
+<span class="lineNum">     397 </span>            :   }
+<span class="lineNum">     398 </span>            : 
+<span class="lineNum">     399 </span>            :   function test_Call_ERC20Votes_Transfer(uint256 _expiry, uint8 _v, bytes32 _r, bytes32 _s) public {
+<span class="lineNum">     400 </span>            :     _mockERC20VotesDelegateBySig(delegatee, 0, _expiry, _v, _r, _s);
+<span class="lineNum">     401 </span>            : 
+<span class="lineNum">     402 </span>            :     vm.expectCall(address(token), abi.encodeCall(token.transfer, (airdropRecipients[4], airdropAmounts[4])));
+<span class="lineNum">     403 </span>            :     tokenDistributor.claimAndDelegate(validEveProofs, airdropAmounts[4], delegatee, _expiry, _v, _r, _s);
+<span class="lineNum">     404 </span>            :   }
+<span class="lineNum">     405 </span>            : 
+<span class="lineNum">     406 </span>            :   function test_Call_ERC20Votes_DelegateBySig(uint256 _expiry, uint8 _v, bytes32 _r, bytes32 _s) public {
+<span class="lineNum">     407 </span>            :     vm.expectCall(address(token), abi.encodeCall(token.delegateBySig, (delegatee, 0, _expiry, _v, _r, _s)));
+<span class="lineNum">     408 </span>            : 
+<span class="lineNum">     409 </span>            :     tokenDistributor.claimAndDelegate(validEveProofs, airdropAmounts[4], delegatee, _expiry, _v, _r, _s);
+<span class="lineNum">     410 </span>            :   }
+<span class="lineNum">     411 </span>            : 
+<span class="lineNum">     412 </span>            :   function test_Emit_Claimed(uint256 _expiry, uint8 _v, bytes32 _r, bytes32 _s) public {
+<span class="lineNum">     413 </span>            :     _mockERC20VotesDelegateBySig(delegatee, 0, _expiry, _v, _r, _s);
+<span class="lineNum">     414 </span>            : 
+<span class="lineNum">     415 </span>            :     vm.expectEmit();
+<span class="lineNum">     416 </span>            :     emit Claimed(airdropRecipients[4], airdropAmounts[4]);
+<span class="lineNum">     417 </span>            : 
+<span class="lineNum">     418 </span>            :     tokenDistributor.claimAndDelegate(validEveProofs, airdropAmounts[4], delegatee, _expiry, _v, _r, _s);
+<span class="lineNum">     419 </span>            :   }
+<span class="lineNum">     420 </span>            : 
+<span class="lineNum">     421 </span>            :   function test_Revert_ClaimPeriodNotStarted(uint256 _expiry, uint8 _v, bytes32 _r, bytes32 _s) public {
+<span class="lineNum">     422 </span>            :     vm.warp(claimPeriodStart - 1); // going back in time for claim period start
+<span class="lineNum">     423 </span>            :     vm.expectRevert(ITokenDistributor.TokenDistributor_ClaimPeriodNotStarted.selector);
+<span class="lineNum">     424 </span>            : 
+<span class="lineNum">     425 </span>            :     tokenDistributor.claimAndDelegate(validEveProofs, airdropAmounts[4], delegatee, _expiry, _v, _r, _s);
+<span class="lineNum">     426 </span>            :   }
+<span class="lineNum">     427 </span>            : 
+<span class="lineNum">     428 </span>            :   function test_Revert_ClaimPeriodEnded(uint256 _expiry, uint8 _v, bytes32 _r, bytes32 _s) public {
+<span class="lineNum">     429 </span>            :     vm.warp(claimPeriodEnd + 1); // going ahead in time period ended
+<span class="lineNum">     430 </span>            :     vm.expectRevert(ITokenDistributor.TokenDistributor_ClaimPeriodEnded.selector);
+<span class="lineNum">     431 </span>            : 
+<span class="lineNum">     432 </span>            :     tokenDistributor.claimAndDelegate(validEveProofs, airdropAmounts[4], delegatee, _expiry, _v, _r, _s);
+<span class="lineNum">     433 </span>            :   }
+<span class="lineNum">     434 </span>            : 
+<span class="lineNum">     435 </span>            :   function test_Revert_ZeroAmount(uint256 _expiry, uint8 _v, bytes32 _r, bytes32 _s) public {
+<span class="lineNum">     436 </span>            :     vm.expectRevert(ITokenDistributor.TokenDistributor_ZeroAmount.selector);
+<span class="lineNum">     437 </span>            : 
+<span class="lineNum">     438 </span>            :     tokenDistributor.claimAndDelegate(validEveProofs, 0, delegatee, _expiry, _v, _r, _s);
+<span class="lineNum">     439 </span>            :   }
+<span class="lineNum">     440 </span>            : 
+<span class="lineNum">     441 </span>            :   function test_Revert_AlreadyClaimed(uint256 _expiry, uint8 _v, bytes32 _r, bytes32 _s) public {
+<span class="lineNum">     442 </span>            :     _mockClaimed(airdropRecipients[4], true);
+<span class="lineNum">     443 </span>            : 
+<span class="lineNum">     444 </span>            :     vm.expectRevert(ITokenDistributor.TokenDistributor_AlreadyClaimed.selector);
+<span class="lineNum">     445 </span>            :     tokenDistributor.claimAndDelegate(validEveProofs, airdropAmounts[4], delegatee, _expiry, _v, _r, _s);
+<span class="lineNum">     446 </span>            :   }
+<span class="lineNum">     447 </span>            : 
+<span class="lineNum">     448 </span>            :   function test_Revert_FailedMerkleProofVerify_InvalidClaimer(uint256 _expiry, uint8 _v, bytes32 _r, bytes32 _s) public {
+<span class="lineNum">     449 </span>            :     vm.stopPrank();
+<span class="lineNum">     450 </span>            :     vm.startPrank(newAddress());
+<span class="lineNum">     451 </span>            : 
+<span class="lineNum">     452 </span>            :     vm.expectRevert(ITokenDistributor.TokenDistributor_FailedMerkleProofVerify.selector);
+<span class="lineNum">     453 </span>            : 
+<span class="lineNum">     454 </span>            :     tokenDistributor.claimAndDelegate(validEveProofs, airdropAmounts[4], delegatee, _expiry, _v, _r, _s);
+<span class="lineNum">     455 </span>            :   }
+<span class="lineNum">     456 </span>            : 
+<span class="lineNum">     457 </span>            :   function test_Revert_FailedMerkleProofVerify_InvalidProof(uint256 _expiry, uint8 _v, bytes32 _r, bytes32 _s) public {
+<span class="lineNum">     458 </span>            :     bytes32[] memory _proofs = new bytes32[](3);
+<span class="lineNum">     459 </span>            :     _proofs[0] = bytes32(0xcf9633789ba0907ad3a73ab3be992a886fa3502e11375044250fc340ae0a0613);
+<span class="lineNum">     460 </span>            :     _proofs[1] = bytes32(0xa0246557dc9e869dd36d0dcede531af0ab5a4bddda571c276a4519029b69affa);
+<span class="lineNum">     461 </span>            :     _proofs[2] = bytes32(0x5372fc2bc58ba885b7863917a0ff8130edf9cca8a1db00c8958f37d59f99af34); // wrong, the valid is 0x5372fc2bc58ba885b7863917a0ff8130edf9cca8a1db00c8958f37d59f99af33
+<span class="lineNum">     462 </span>            : 
+<span class="lineNum">     463 </span>            :     vm.expectRevert(ITokenDistributor.TokenDistributor_FailedMerkleProofVerify.selector);
+<span class="lineNum">     464 </span>            : 
+<span class="lineNum">     465 </span>            :     tokenDistributor.claimAndDelegate(_proofs, airdropAmounts[4], delegatee, _expiry, _v, _r, _s);
+<span class="lineNum">     466 </span>            :   }
+<span class="lineNum">     467 </span>            : 
+<span class="lineNum">     468 </span>            :   function test_Revert_FailedMerkleProofVerify_InvalidAmount(uint256 _expiry, uint8 _v, bytes32 _r, bytes32 _s) public {
+<span class="lineNum">     469 </span>            :     vm.expectRevert(ITokenDistributor.TokenDistributor_FailedMerkleProofVerify.selector);
+<span class="lineNum">     470 </span>            :     tokenDistributor.claimAndDelegate(validEveProofs, 499_999, delegatee, _expiry, _v, _r, _s);
+<span class="lineNum">     471 </span>            :   }
+<span class="lineNum">     472 </span>            : 
+<span class="lineNum">     473 </span>            :   function testFail_ERC20Votes_Transfer(uint256 _expiry, uint8 _v, bytes32 _r, bytes32 _s) public authorized {
+<span class="lineNum">     474 </span>            :     _mockERC20VotesTransferFail(airdropRecipients[4], airdropAmounts[4]);
+<span class="lineNum">     475 </span>            : 
+<span class="lineNum">     476 </span>            :     tokenDistributor.claimAndDelegate(validEveProofs, airdropAmounts[4], delegatee, _expiry, _v, _r, _s);
+<span class="lineNum">     477 </span>            :   }
+<span class="lineNum">     478 </span>            : }
+<span class="lineNum">     479 </span>            : 
+<span class="lineNum">     480 </span>            : contract Unit_TokenDistributor_Sweep is Base {
+<span class="lineNum">     481 </span>            :   address sweepReceiver = label('sweepReceiver');
+<span class="lineNum">     482 </span>            : 
+<span class="lineNum">     483 </span>            :   event Swept(address _sweepReceiver, uint256 _amount);
+<span class="lineNum">     484 </span>            : 
+<span class="lineNum">     485 </span>            :   function setUp() public override {
+<span class="lineNum">     486 </span>            :     super.setUp();
+<span class="lineNum">     487 </span>            : 
+<span class="lineNum">     488 </span>            :     vm.warp(claimPeriodEnd + 1);
+<span class="lineNum">     489 </span>            :   }
+<span class="lineNum">     490 </span>            : 
+<span class="lineNum">     491 </span>            :   function test_Sweep_Call_ERC20Votes_BalanceOf(uint256 _balance) public authorized {
+<span class="lineNum">     492 </span>            :     vm.assume(_balance &gt; 0);
+<span class="lineNum">     493 </span>            :     _mockERC20VotesBalanceOf(address(tokenDistributor), _balance);
+<span class="lineNum">     494 </span>            :     _mockERC20VotesTransfer(sweepReceiver, _balance);
+<span class="lineNum">     495 </span>            : 
+<span class="lineNum">     496 </span>            :     vm.expectCall(address(token), abi.encodeCall(token.balanceOf, (address(tokenDistributor))));
+<span class="lineNum">     497 </span>            :     tokenDistributor.sweep(sweepReceiver);
+<span class="lineNum">     498 </span>            :   }
+<span class="lineNum">     499 </span>            : 
+<span class="lineNum">     500 </span>            :   function test_Sweep_Call_ERC20Votes_Transfer(uint256 _balance) public authorized {
+<span class="lineNum">     501 </span>            :     vm.assume(_balance &gt; 0);
+<span class="lineNum">     502 </span>            :     _mockERC20VotesBalanceOf(address(tokenDistributor), _balance);
+<span class="lineNum">     503 </span>            :     _mockERC20VotesTransfer(sweepReceiver, _balance);
+<span class="lineNum">     504 </span>            : 
+<span class="lineNum">     505 </span>            :     vm.expectCall(address(token), abi.encodeCall(token.transfer, (sweepReceiver, _balance)));
+<span class="lineNum">     506 </span>            :     tokenDistributor.sweep(sweepReceiver);
+<span class="lineNum">     507 </span>            :   }
+<span class="lineNum">     508 </span>            : 
+<span class="lineNum">     509 </span>            :   function test_Sweep_Emit_Swept(uint256 _balance) public authorized {
+<span class="lineNum">     510 </span>            :     vm.assume(_balance &gt; 0);
+<span class="lineNum">     511 </span>            :     _mockERC20VotesBalanceOf(address(tokenDistributor), _balance);
+<span class="lineNum">     512 </span>            :     _mockERC20VotesTransfer(sweepReceiver, _balance);
+<span class="lineNum">     513 </span>            : 
+<span class="lineNum">     514 </span>            :     vm.expectEmit();
+<span class="lineNum">     515 </span>            :     emit Swept(sweepReceiver, _balance);
+<span class="lineNum">     516 </span>            : 
+<span class="lineNum">     517 </span>            :     tokenDistributor.sweep(sweepReceiver);
+<span class="lineNum">     518 </span>            :   }
+<span class="lineNum">     519 </span>            : 
+<span class="lineNum">     520 </span>            :   function test_Revert_Sweep_Unauthorized() public {
+<span class="lineNum">     521 </span>            :     vm.expectRevert(IAuthorizable.Unauthorized.selector);
+<span class="lineNum">     522 </span>            : 
+<span class="lineNum">     523 </span>            :     tokenDistributor.sweep(sweepReceiver);
+<span class="lineNum">     524 </span>            :   }
+<span class="lineNum">     525 </span>            : 
+<span class="lineNum">     526 </span>            :   function test_Revert_ClaimPeriodNotEnded(uint256 _time) public authorized {
+<span class="lineNum">     527 </span>            :     vm.assume(_time &lt;= claimPeriodEnd);
+<span class="lineNum">     528 </span>            :     vm.warp(_time);
+<span class="lineNum">     529 </span>            :     vm.expectRevert(ITokenDistributor.TokenDistributor_ClaimPeriodNotEnded.selector);
+<span class="lineNum">     530 </span>            : 
+<span class="lineNum">     531 </span>            :     tokenDistributor.sweep(sweepReceiver);
+<span class="lineNum">     532 </span>            :   }
+<span class="lineNum">     533 </span>            : 
+<span class="lineNum">     534 </span>            :   function test_Revert_ZeroBalance() public authorized {
+<span class="lineNum">     535 </span>            :     _mockERC20VotesBalanceOf(address(tokenDistributor), 0);
+<span class="lineNum">     536 </span>            :     vm.expectRevert(abi.encodeWithSelector(Assertions.NotGreaterThan.selector, 0, 0));
+<span class="lineNum">     537 </span>            : 
+<span class="lineNum">     538 </span>            :     tokenDistributor.sweep(sweepReceiver);
+<span class="lineNum">     539 </span>            :   }
+<span class="lineNum">     540 </span>            : }
+<span class="lineNum">     541 </span>            : 
+<span class="lineNum">     542 </span>            : contract Unit_TokenDistributor_Withdraw is Base {
+<span class="lineNum">     543 </span>            :   event Withdrawn(address _to, uint256 _amount);
+<span class="lineNum">     544 </span>            : 
+<span class="lineNum">     545 </span>            :   address recipient = label('recipient');
+<span class="lineNum">     546 </span>            : 
+<span class="lineNum">     547 </span>            :   function test_Call_ERC20Votes_Transfer(uint256 _amount) public authorized {
+<span class="lineNum">     548 </span>            :     vm.assume(_amount &gt; 0);
+<span class="lineNum">     549 </span>            :     _mockERC20VotesTransfer(recipient, _amount);
+<span class="lineNum">     550 </span>            : 
+<span class="lineNum">     551 </span>            :     vm.expectCall(address(token), abi.encodeCall(token.transfer, (recipient, _amount)));
+<span class="lineNum">     552 </span>            :     tokenDistributor.withdraw(recipient, _amount);
+<span class="lineNum">     553 </span>            :   }
+<span class="lineNum">     554 </span>            : 
+<span class="lineNum">     555 </span>            :   function test_Emit_Withdrawn(uint256 _amount) public authorized {
+<span class="lineNum">     556 </span>            :     vm.assume(_amount &gt; 0);
+<span class="lineNum">     557 </span>            :     _mockERC20VotesTransfer(recipient, _amount);
+<span class="lineNum">     558 </span>            : 
+<span class="lineNum">     559 </span>            :     vm.expectEmit();
+<span class="lineNum">     560 </span>            :     emit Withdrawn(recipient, _amount);
+<span class="lineNum">     561 </span>            : 
+<span class="lineNum">     562 </span>            :     tokenDistributor.withdraw(recipient, _amount);
+<span class="lineNum">     563 </span>            :   }
+<span class="lineNum">     564 </span>            : 
+<span class="lineNum">     565 </span>            :   function test_Revert_Sweep_Unauthorized() public {
+<span class="lineNum">     566 </span>            :     vm.expectRevert(IAuthorizable.Unauthorized.selector);
+<span class="lineNum">     567 </span>            : 
+<span class="lineNum">     568 </span>            :     tokenDistributor.withdraw(recipient, 1);
+<span class="lineNum">     569 </span>            :   }
+<span class="lineNum">     570 </span>            : 
+<span class="lineNum">     571 </span>            :   function testFail_ERC20Votes_Transfer(uint256 _amount) public authorized {
+<span class="lineNum">     572 </span>            :     vm.assume(_amount &gt; 0);
+<span class="lineNum">     573 </span>            :     _mockERC20VotesTransferFail(recipient, _amount);
+<span class="lineNum">     574 </span>            : 
+<span class="lineNum">     575 </span>            :     tokenDistributor.withdraw(recipient, _amount);
+<span class="lineNum">     576 </span>            :   }
+<span class="lineNum">     577 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../../../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>
