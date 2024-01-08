@@ -13,7 +13,7 @@ import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 /// @dev This script is used to propose updating the NFT Renderer contract on the Vault721 contract
 /// @dev The script will deploy an NFT Renderer contract and propose setting the NFT Renderer on Vault721
 /// @dev The script will output a JSON file with the proposal data to be used by the QueueProposal and ExecuteProposal scripts
-/// @dev In the root, run: export FOUNDRY_PROFILE=governance && forge script script/gov/UpdateNFTRendererAction/ProposeUpdateNFTRenderer.s.sol
+/// @dev In the root, run: export FOUNDRY_PROFILE=governance && forge script script/testScripts/gov/UpdateNFTRendererAction/ProposeUpdateNFTRenderer.s.sol
 contract ProposeUpdateNFTRenderer is JSONScript {
   function run() public {
     /// REQUIRED ENV VARS ///

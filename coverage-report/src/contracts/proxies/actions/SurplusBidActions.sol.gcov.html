@@ -1,0 +1,118 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - current.info - src/contracts/proxies/actions/SurplusBidActions.sol</title>
+  <link rel="stylesheet" type="text/css" href="../../../../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../../../../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../../../../index.html">top level</a> - <a href="index.html">src/contracts/proxies/actions</a> - SurplusBidActions.sol<span style="font-size: 80%;"> (source / <a href="SurplusBidActions.sol.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">current.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">8</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2024-01-07 16:13:44</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">2</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr><td><img src="../../../../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../../../../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : // SPDX-License-Identifier: GPL-3.0</a>
+<span class="lineNum">       2 </span>            : pragma solidity 0.8.19;
+<span class="lineNum">       3 </span>            : 
+<span class="lineNum">       4 </span>            : import {IERC20MetadataUpgradeable} from '@openzeppelin-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol';
+<span class="lineNum">       5 </span>            : import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
+<span class="lineNum">       6 </span>            : import {ISurplusAuctionHouse} from '@interfaces/ISurplusAuctionHouse.sol';
+<span class="lineNum">       7 </span>            : import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
+<span class="lineNum">       8 </span>            : import {ICoinJoin} from '@interfaces/utils/ICoinJoin.sol';
+<span class="lineNum">       9 </span>            : import {ISurplusBidActions} from '@interfaces/proxies/actions/ISurplusBidActions.sol';
+<span class="lineNum">      10 </span>            : 
+<span class="lineNum">      11 </span>            : import {CommonActions} from '@contracts/proxies/actions/CommonActions.sol';
+<span class="lineNum">      12 </span>            : 
+<span class="lineNum">      13 </span>            : import {RAY} from '@libraries/Math.sol';
+<span class="lineNum">      14 </span>            : 
+<span class="lineNum">      15 </span>            : /**
+<span class="lineNum">      16 </span>            :  * @title  SurplusBidActions
+<span class="lineNum">      17 </span>            :  * @notice All methods here are executed as delegatecalls from the user's proxy
+<span class="lineNum">      18 </span>            :  */
+<span class="lineNum">      19 </span>            : contract SurplusBidActions is ISurplusBidActions, CommonActions {
+<span class="lineNum">      20 </span>            :   // --- Methods ---
+<a name="21"><span class="lineNum">      21 </span>            : </a>
+<span class="lineNum">      22 </span>            :   /// @inheritdoc ISurplusBidActions
+<span class="lineNum">      23 </span>            :   function increaseBidSize(address _surplusAuctionHouse, uint256 _auctionId, uint256 _bidAmount) external delegateCall {
+<span class="lineNum">      24 </span><span class="lineNoCov">          0 :     uint256 _amountToSell = ISurplusAuctionHouse(_surplusAuctionHouse).auctions(_auctionId).amountToSell;</span>
+<span class="lineNum">      25 </span>            : 
+<span class="lineNum">      26 </span>            :     // prepare protocol token spending
+<span class="lineNum">      27 </span><span class="lineNoCov">          0 :     IERC20MetadataUpgradeable _protocolToken = ISurplusAuctionHouse(_surplusAuctionHouse).protocolToken();</span>
+<span class="lineNum">      28 </span><span class="lineNoCov">          0 :     _protocolToken.transferFrom(msg.sender, address(this), _bidAmount);</span>
+<span class="lineNum">      29 </span><span class="lineNoCov">          0 :     _protocolToken.approve(address(_surplusAuctionHouse), _bidAmount);</span>
+<span class="lineNum">      30 </span>            : 
+<span class="lineNum">      31 </span>            :     // proxy needs to be approved for protocol token spending
+<span class="lineNum">      32 </span><span class="lineNoCov">          0 :     ISurplusAuctionHouse(_surplusAuctionHouse).increaseBidSize(_auctionId, _amountToSell, _bidAmount);</span>
+<span class="lineNum">      33 </span>            :   }
+<a name="34"><span class="lineNum">      34 </span>            : </a>
+<span class="lineNum">      35 </span>            :   /// @inheritdoc ISurplusBidActions
+<span class="lineNum">      36 </span>            :   function settleAuction(address _coinJoin, address _surplusAuctionHouse, uint256 _auctionId) external delegateCall {
+<span class="lineNum">      37 </span><span class="lineNoCov">          0 :     uint256 _amountToSell = ISurplusAuctionHouse(_surplusAuctionHouse).auctions(_auctionId).amountToSell;</span>
+<span class="lineNum">      38 </span><span class="lineNoCov">          0 :     ISurplusAuctionHouse(_surplusAuctionHouse).settleAuction(_auctionId);</span>
+<span class="lineNum">      39 </span>            : 
+<span class="lineNum">      40 </span><span class="lineNoCov">          0 :     _exitSystemCoins(_coinJoin, _amountToSell);</span>
+<span class="lineNum">      41 </span>            :   }
+<span class="lineNum">      42 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../../../../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

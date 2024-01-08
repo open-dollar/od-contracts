@@ -13,7 +13,7 @@ import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 /// @dev This script is used to propose updating PID Controller params
 /// @dev The script will update some PID Controller params
 /// @dev The script will output a JSON file with the proposal data to be used by the QueueProposal and ExecuteProposal scripts
-/// @dev In the root, run: export FOUNDRY_PROFILE=governance && forge script script/gov/UpdatePidControllerAction/ProposeUpdatePidController.s.sol
+/// @dev In the root, run: export FOUNDRY_PROFILE=governance && forge script script/testScripts/gov/UpdatePidControllerAction/ProposeUpdatePidController.s.sol
 contract ProposeUpdatePidController is JSONScript {
   function run() public {
     /// REQUIRED ENV VARS ///
@@ -27,24 +27,37 @@ contract ProposeUpdatePidController is JSONScript {
     uint256 perSecondCumulativeLeak = vm.envUint('PER_SECOND_CUMULATIVE_LEAK');
     int256 kp = vm.envInt('KP');
     int256 ki = vm.envInt('KI');
-    int256 priceDeviationCumulative = vm.envInt('PRICE_DEVIATION_CUMULATIVE');
 
     /// END REQUIRED ENV VARS ///
 
     ODGovernor gov = ODGovernor(payable(governanceAddress));
 
-    address[] memory targets = new address[](1);
+    address[] memory targets = new address[](8);
     {
       targets[0] = pidControllerAddress;
+      targets[1] = pidControllerAddress;
+      targets[2] = pidControllerAddress;
+      targets[3] = pidControllerAddress;
+      targets[4] = pidControllerAddress;
+      targets[5] = pidControllerAddress;
+      targets[6] = pidControllerAddress;
+      targets[7] = pidControllerAddress;
     }
 
     // No values needed
-    uint256[] memory values = new uint256[](1);
+    uint256[] memory values = new uint256[](8);
     {
       values[0] = 0;
+      values[1] = 0;
+      values[2] = 0;
+      values[3] = 0;
+      values[4] = 0;
+      values[5] = 0;
+      values[6] = 0;
+      values[7] = 0;
     }
 
-    bytes[] memory calldatas = new bytes[](9);
+    bytes[] memory calldatas = new bytes[](8);
     string memory sig = 'modifyParameters(bytes32,bytes)';
     calldatas[0] = abi.encodeWithSignature(sig, 'seedProposer', abi.encode(seedProposer));
     calldatas[1] = abi.encodeWithSignature(sig, 'noiseBarrier', abi.encode(noiseBarrier));
@@ -54,7 +67,6 @@ contract ProposeUpdatePidController is JSONScript {
     calldatas[5] = abi.encodeWithSignature(sig, 'perSecondCumulativeLeak', abi.encode(perSecondCumulativeLeak));
     calldatas[6] = abi.encodeWithSignature(sig, 'kp', abi.encode(kp));
     calldatas[7] = abi.encodeWithSignature(sig, 'ki', abi.encode(ki));
-    calldatas[8] = abi.encodeWithSignature(sig, 'priceDeviationCumulative', abi.encode(priceDeviationCumulative));
 
     string memory description = 'Update PID Controller';
     bytes32 descriptionHash = keccak256(bytes(description));

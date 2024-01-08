@@ -1,0 +1,396 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - current.info - test/testnet/unit/jobs/AccountingJob.t.sol</title>
+  <link rel="stylesheet" type="text/css" href="../../../../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../../../../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../../../../index.html">top level</a> - <a href="index.html">test/testnet/unit/jobs</a> - AccountingJob.t.sol<span style="font-size: 80%;"> (source / <a href="AccountingJob.t.sol.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">current.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">13</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2024-01-07 16:13:44</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">9</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr><td><img src="../../../../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../../../../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : // SPDX-License-Identifier: GPL-3.0</a>
+<span class="lineNum">       2 </span>            : pragma solidity 0.8.19;
+<span class="lineNum">       3 </span>            : 
+<span class="lineNum">       4 </span>            : import {AccountingJobForTest, IAccountingJob} from '@testnet/mocks/AccountingJobForTest.sol';
+<span class="lineNum">       5 </span>            : import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
+<span class="lineNum">       6 </span>            : import {IStabilityFeeTreasury} from '@interfaces/IStabilityFeeTreasury.sol';
+<span class="lineNum">       7 </span>            : import {IJob} from '@interfaces/jobs/IJob.sol';
+<span class="lineNum">       8 </span>            : import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
+<span class="lineNum">       9 </span>            : import {IModifiable} from '@interfaces/utils/IModifiable.sol';
+<span class="lineNum">      10 </span>            : import {HaiTest, stdStorage, StdStorage} from '@testnet/utils/HaiTest.t.sol';
+<span class="lineNum">      11 </span>            : 
+<span class="lineNum">      12 </span>            : abstract contract Base is HaiTest {
+<span class="lineNum">      13 </span>            :   using stdStorage for StdStorage;
+<span class="lineNum">      14 </span>            : 
+<span class="lineNum">      15 </span>            :   address deployer = label('deployer');
+<span class="lineNum">      16 </span>            :   address authorizedAccount = label('authorizedAccount');
+<span class="lineNum">      17 </span>            :   address user = label('user');
+<span class="lineNum">      18 </span>            : 
+<span class="lineNum">      19 </span>            :   IAccountingEngine mockAccountingEngine = IAccountingEngine(mockContract('AccountingEngine'));
+<span class="lineNum">      20 </span>            :   IStabilityFeeTreasury mockStabilityFeeTreasury = IStabilityFeeTreasury(mockContract('StabilityFeeTreasury'));
+<span class="lineNum">      21 </span>            : 
+<span class="lineNum">      22 </span>            :   AccountingJobForTest accountingJob;
+<span class="lineNum">      23 </span>            : 
+<a name="24"><span class="lineNum">      24 </span>            :   uint256 constant REWARD_AMOUNT = 1e18;</a>
+<span class="lineNum">      25 </span>            : 
+<span class="lineNum">      26 </span>            :   function setUp() public virtual {
+<span class="lineNum">      27 </span><span class="lineNoCov">          0 :     vm.startPrank(deployer);</span>
+<span class="lineNum">      28 </span>            : 
+<span class="lineNum">      29 </span><span class="lineNoCov">          0 :     accountingJob =</span>
+<span class="lineNum">      30 </span>            :       new AccountingJobForTest(address(mockAccountingEngine), address(mockStabilityFeeTreasury), REWARD_AMOUNT);
+<span class="lineNum">      31 </span><span class="lineNoCov">          0 :     label(address(accountingJob), 'AccountingJob');</span>
+<span class="lineNum">      32 </span>            : 
+<span class="lineNum">      33 </span><span class="lineNoCov">          0 :     accountingJob.addAuthorization(authorizedAccount);</span>
+<span class="lineNum">      34 </span>            : 
+<span class="lineNum">      35 </span><span class="lineNoCov">          0 :     vm.stopPrank();</span>
+<a name="36"><span class="lineNum">      36 </span>            :   }</a>
+<span class="lineNum">      37 </span>            : 
+<span class="lineNum">      38 </span>            :   function _mockAuctionDebt(uint256 _id) internal {
+<span class="lineNum">      39 </span><span class="lineNoCov">          0 :     vm.mockCall(address(mockAccountingEngine), abi.encodeCall(mockAccountingEngine.auctionDebt, ()), abi.encode(_id));</span>
+<a name="40"><span class="lineNum">      40 </span>            :   }</a>
+<span class="lineNum">      41 </span>            : 
+<span class="lineNum">      42 </span>            :   function _mockAuctionSurplus(uint256 _id) internal {
+<span class="lineNum">      43 </span><span class="lineNoCov">          0 :     vm.mockCall(address(mockAccountingEngine), abi.encodeCall(mockAccountingEngine.auctionSurplus, ()), abi.encode(_id));</span>
+<a name="44"><span class="lineNum">      44 </span>            :   }</a>
+<span class="lineNum">      45 </span>            : 
+<span class="lineNum">      46 </span>            :   function _mockRewardAmount(uint256 _rewardAmount) internal {
+<span class="lineNum">      47 </span><span class="lineNoCov">          0 :     stdstore.target(address(accountingJob)).sig(IJob.rewardAmount.selector).checked_write(_rewardAmount);</span>
+<a name="48"><span class="lineNum">      48 </span>            :   }</a>
+<span class="lineNum">      49 </span>            : 
+<span class="lineNum">      50 </span>            :   function _mockShouldWorkPopDebtFromQueue(bool _shouldWorkPopDebtFromQueue) internal {
+<span class="lineNum">      51 </span>            :     // BUG: Accessing packed slots is not supported by Std Storage
+<span class="lineNum">      52 </span><span class="lineNoCov">          0 :     accountingJob.setShouldWorkPopDebtFromQueue(_shouldWorkPopDebtFromQueue);</span>
+<a name="53"><span class="lineNum">      53 </span>            :   }</a>
+<span class="lineNum">      54 </span>            : 
+<span class="lineNum">      55 </span>            :   function _mockShouldWorkAuctionDebt(bool _shouldWorkAuctionDebt) internal {
+<span class="lineNum">      56 </span>            :     // BUG: Accessing packed slots is not supported by Std Storage
+<span class="lineNum">      57 </span><span class="lineNoCov">          0 :     accountingJob.setShouldWorkAuctionDebt(_shouldWorkAuctionDebt);</span>
+<a name="58"><span class="lineNum">      58 </span>            :   }</a>
+<span class="lineNum">      59 </span>            : 
+<span class="lineNum">      60 </span>            :   function _mockShouldWorkAuctionSurplus(bool _shouldWorkAuctionSurplus) internal {
+<span class="lineNum">      61 </span>            :     // BUG: Accessing packed slots is not supported by Std Storage
+<span class="lineNum">      62 </span><span class="lineNoCov">          0 :     accountingJob.setShouldWorkAuctionSurplus(_shouldWorkAuctionSurplus);</span>
+<a name="63"><span class="lineNum">      63 </span>            :   }</a>
+<span class="lineNum">      64 </span>            : 
+<span class="lineNum">      65 </span>            :   function _mockShouldWorkTransferExtraSurplus(bool _shouldWorkTransferExtraSurplus) internal {
+<span class="lineNum">      66 </span>            :     // BUG: Accessing packed slots is not supported by Std Storage
+<span class="lineNum">      67 </span><span class="lineNoCov">          0 :     accountingJob.setShouldWorkTransferExtraSurplus(_shouldWorkTransferExtraSurplus);</span>
+<span class="lineNum">      68 </span>            :   }
+<span class="lineNum">      69 </span>            : }
+<span class="lineNum">      70 </span>            : 
+<span class="lineNum">      71 </span>            : contract Unit_AccountingJob_Constructor is Base {
+<span class="lineNum">      72 </span>            :   event AddAuthorization(address _account);
+<span class="lineNum">      73 </span>            : 
+<span class="lineNum">      74 </span>            :   modifier happyPath() {
+<span class="lineNum">      75 </span>            :     vm.startPrank(user);
+<span class="lineNum">      76 </span>            :     _;
+<span class="lineNum">      77 </span>            :   }
+<span class="lineNum">      78 </span>            : 
+<span class="lineNum">      79 </span>            :   function test_Set_StabilityFeeTreasury() public happyPath {
+<span class="lineNum">      80 </span>            :     assertEq(address(accountingJob.stabilityFeeTreasury()), address(mockStabilityFeeTreasury));
+<span class="lineNum">      81 </span>            :   }
+<span class="lineNum">      82 </span>            : 
+<span class="lineNum">      83 </span>            :   function test_Set_RewardAmount() public happyPath {
+<span class="lineNum">      84 </span>            :     assertEq(accountingJob.rewardAmount(), REWARD_AMOUNT);
+<span class="lineNum">      85 </span>            :   }
+<span class="lineNum">      86 </span>            : 
+<span class="lineNum">      87 </span>            :   function test_Emit_AddAuthorization() public happyPath {
+<span class="lineNum">      88 </span>            :     vm.expectEmit();
+<span class="lineNum">      89 </span>            :     emit AddAuthorization(user);
+<span class="lineNum">      90 </span>            : 
+<span class="lineNum">      91 </span>            :     accountingJob =
+<span class="lineNum">      92 </span>            :       new AccountingJobForTest(address(mockAccountingEngine), address(mockStabilityFeeTreasury), REWARD_AMOUNT);
+<span class="lineNum">      93 </span>            :   }
+<span class="lineNum">      94 </span>            : 
+<span class="lineNum">      95 </span>            :   function test_Set_AccountingEngine(address _accountingEngine) public happyPath {
+<span class="lineNum">      96 </span>            :     accountingJob = new AccountingJobForTest(_accountingEngine, address(mockStabilityFeeTreasury), REWARD_AMOUNT);
+<span class="lineNum">      97 </span>            : 
+<span class="lineNum">      98 </span>            :     assertEq(address(accountingJob.accountingEngine()), _accountingEngine);
+<span class="lineNum">      99 </span>            :   }
+<span class="lineNum">     100 </span>            : 
+<span class="lineNum">     101 </span>            :   function test_Set_ShouldWorkPopDebtFromQueue() public happyPath {
+<span class="lineNum">     102 </span>            :     assertEq(accountingJob.shouldWorkPopDebtFromQueue(), true);
+<span class="lineNum">     103 </span>            :   }
+<span class="lineNum">     104 </span>            : 
+<span class="lineNum">     105 </span>            :   function test_Set_ShouldWorkAuctionDebt() public happyPath {
+<span class="lineNum">     106 </span>            :     assertEq(accountingJob.shouldWorkAuctionDebt(), true);
+<span class="lineNum">     107 </span>            :   }
+<span class="lineNum">     108 </span>            : 
+<span class="lineNum">     109 </span>            :   function test_Set_ShouldWorkAuctionSurplus() public happyPath {
+<span class="lineNum">     110 </span>            :     assertEq(accountingJob.shouldWorkAuctionSurplus(), true);
+<span class="lineNum">     111 </span>            :   }
+<span class="lineNum">     112 </span>            : 
+<span class="lineNum">     113 </span>            :   function test_Set_ShouldWorkTransferExtraSurplus() public happyPath {
+<span class="lineNum">     114 </span>            :     assertEq(accountingJob.shouldWorkTransferExtraSurplus(), true);
+<span class="lineNum">     115 </span>            :   }
+<span class="lineNum">     116 </span>            : }
+<span class="lineNum">     117 </span>            : 
+<span class="lineNum">     118 </span>            : contract Unit_AccountingJob_WorkPopDebtFromQueue is Base {
+<span class="lineNum">     119 </span>            :   event Rewarded(address _rewardedAccount, uint256 _rewardAmount);
+<span class="lineNum">     120 </span>            : 
+<span class="lineNum">     121 </span>            :   modifier happyPath() {
+<span class="lineNum">     122 </span>            :     vm.startPrank(user);
+<span class="lineNum">     123 </span>            : 
+<span class="lineNum">     124 </span>            :     _mockValues(true);
+<span class="lineNum">     125 </span>            :     _;
+<span class="lineNum">     126 </span>            :   }
+<span class="lineNum">     127 </span>            : 
+<span class="lineNum">     128 </span>            :   function _mockValues(bool _shouldWorkPopDebtFromQueue) internal {
+<span class="lineNum">     129 </span>            :     _mockShouldWorkPopDebtFromQueue(_shouldWorkPopDebtFromQueue);
+<span class="lineNum">     130 </span>            :   }
+<span class="lineNum">     131 </span>            : 
+<span class="lineNum">     132 </span>            :   function test_Revert_NotWorkable(uint256 _debtBlockTimestamp) public {
+<span class="lineNum">     133 </span>            :     _mockValues(false);
+<span class="lineNum">     134 </span>            : 
+<span class="lineNum">     135 </span>            :     vm.expectRevert(IJob.NotWorkable.selector);
+<span class="lineNum">     136 </span>            : 
+<span class="lineNum">     137 </span>            :     accountingJob.workPopDebtFromQueue(_debtBlockTimestamp);
+<span class="lineNum">     138 </span>            :   }
+<span class="lineNum">     139 </span>            : 
+<span class="lineNum">     140 </span>            :   function test_Call_AccountingEngine_PopDebtFromQueue(uint256 _debtBlockTimestamp) public happyPath {
+<span class="lineNum">     141 </span>            :     vm.expectCall(
+<span class="lineNum">     142 </span>            :       address(mockAccountingEngine), abi.encodeCall(mockAccountingEngine.popDebtFromQueue, (_debtBlockTimestamp)), 1
+<span class="lineNum">     143 </span>            :     );
+<span class="lineNum">     144 </span>            : 
+<span class="lineNum">     145 </span>            :     accountingJob.workPopDebtFromQueue(_debtBlockTimestamp);
+<span class="lineNum">     146 </span>            :   }
+<span class="lineNum">     147 </span>            : 
+<span class="lineNum">     148 </span>            :   function test_Emit_Rewarded(uint256 _debtBlockTimestamp) public happyPath {
+<span class="lineNum">     149 </span>            :     vm.expectEmit(address(accountingJob));
+<span class="lineNum">     150 </span>            :     emit Rewarded(user, REWARD_AMOUNT);
+<span class="lineNum">     151 </span>            : 
+<span class="lineNum">     152 </span>            :     accountingJob.workPopDebtFromQueue(_debtBlockTimestamp);
+<span class="lineNum">     153 </span>            :   }
+<span class="lineNum">     154 </span>            : 
+<span class="lineNum">     155 </span>            :   function test_No_Reward(uint256 _debtBlockTimestamp) public happyPath {
+<span class="lineNum">     156 </span>            :     vm.recordLogs();
+<span class="lineNum">     157 </span>            :     accountingJob.workPopDebtFromQueueWithoutReward(_debtBlockTimestamp);
+<span class="lineNum">     158 </span>            :     assertEq(vm.getRecordedLogs().length, 0);
+<span class="lineNum">     159 </span>            :   }
+<span class="lineNum">     160 </span>            : }
+<span class="lineNum">     161 </span>            : 
+<span class="lineNum">     162 </span>            : contract Unit_AccountingJob_WorkAuctionDebt is Base {
+<span class="lineNum">     163 </span>            :   event Rewarded(address _rewardedAccount, uint256 _rewardAmount);
+<span class="lineNum">     164 </span>            : 
+<span class="lineNum">     165 </span>            :   modifier happyPath(uint256 _id) {
+<span class="lineNum">     166 </span>            :     vm.startPrank(user);
+<span class="lineNum">     167 </span>            : 
+<span class="lineNum">     168 </span>            :     _mockValues(true, _id);
+<span class="lineNum">     169 </span>            :     _;
+<span class="lineNum">     170 </span>            :   }
+<span class="lineNum">     171 </span>            : 
+<span class="lineNum">     172 </span>            :   function _mockValues(bool _shouldWorkAuctionDebt, uint256 _id) internal {
+<span class="lineNum">     173 </span>            :     _mockShouldWorkAuctionDebt(_shouldWorkAuctionDebt);
+<span class="lineNum">     174 </span>            :     _mockAuctionDebt(_id);
+<span class="lineNum">     175 </span>            :   }
+<span class="lineNum">     176 </span>            : 
+<span class="lineNum">     177 </span>            :   function test_Revert_NotWorkable() public {
+<span class="lineNum">     178 </span>            :     _mockValues(false, 0);
+<span class="lineNum">     179 </span>            : 
+<span class="lineNum">     180 </span>            :     vm.expectRevert(IJob.NotWorkable.selector);
+<span class="lineNum">     181 </span>            : 
+<span class="lineNum">     182 </span>            :     accountingJob.workAuctionDebt();
+<span class="lineNum">     183 </span>            :   }
+<span class="lineNum">     184 </span>            : 
+<span class="lineNum">     185 </span>            :   function test_Call_AccountingEngine_AuctionDebt(uint256 _id) public happyPath(_id) {
+<span class="lineNum">     186 </span>            :     vm.expectCall(address(mockAccountingEngine), abi.encodeCall(mockAccountingEngine.auctionDebt, ()), 1);
+<span class="lineNum">     187 </span>            : 
+<span class="lineNum">     188 </span>            :     accountingJob.workAuctionDebt();
+<span class="lineNum">     189 </span>            :   }
+<span class="lineNum">     190 </span>            : 
+<span class="lineNum">     191 </span>            :   function test_Emit_Rewarded(uint256 _id) public happyPath(_id) {
+<span class="lineNum">     192 </span>            :     vm.expectEmit(address(accountingJob));
+<span class="lineNum">     193 </span>            :     emit Rewarded(user, REWARD_AMOUNT);
+<span class="lineNum">     194 </span>            : 
+<span class="lineNum">     195 </span>            :     accountingJob.workAuctionDebt();
+<span class="lineNum">     196 </span>            :   }
+<span class="lineNum">     197 </span>            : 
+<span class="lineNum">     198 </span>            :   function test_No_Reward(uint256 _id) public happyPath(_id) {
+<span class="lineNum">     199 </span>            :     vm.recordLogs();
+<span class="lineNum">     200 </span>            :     accountingJob.workAuctionDebtWithoutReward();
+<span class="lineNum">     201 </span>            :     assertEq(vm.getRecordedLogs().length, 0);
+<span class="lineNum">     202 </span>            :   }
+<span class="lineNum">     203 </span>            : }
+<span class="lineNum">     204 </span>            : 
+<span class="lineNum">     205 </span>            : contract Unit_AccountingJob_WorkAuctionSurplus is Base {
+<span class="lineNum">     206 </span>            :   event Rewarded(address _rewardedAccount, uint256 _rewardAmount);
+<span class="lineNum">     207 </span>            : 
+<span class="lineNum">     208 </span>            :   modifier happyPath(uint256 _id) {
+<span class="lineNum">     209 </span>            :     vm.startPrank(user);
+<span class="lineNum">     210 </span>            : 
+<span class="lineNum">     211 </span>            :     _mockValues(true, _id);
+<span class="lineNum">     212 </span>            :     _;
+<span class="lineNum">     213 </span>            :   }
+<span class="lineNum">     214 </span>            : 
+<span class="lineNum">     215 </span>            :   function _mockValues(bool _shouldWorkAuctionSurplus, uint256 _id) internal {
+<span class="lineNum">     216 </span>            :     _mockShouldWorkAuctionSurplus(_shouldWorkAuctionSurplus);
+<span class="lineNum">     217 </span>            :     _mockAuctionSurplus(_id);
+<span class="lineNum">     218 </span>            :   }
+<span class="lineNum">     219 </span>            : 
+<span class="lineNum">     220 </span>            :   function test_Revert_NotWorkable() public {
+<span class="lineNum">     221 </span>            :     _mockValues(false, 0);
+<span class="lineNum">     222 </span>            : 
+<span class="lineNum">     223 </span>            :     vm.expectRevert(IJob.NotWorkable.selector);
+<span class="lineNum">     224 </span>            : 
+<span class="lineNum">     225 </span>            :     accountingJob.workAuctionSurplus();
+<span class="lineNum">     226 </span>            :   }
+<span class="lineNum">     227 </span>            : 
+<span class="lineNum">     228 </span>            :   function test_Call_AccountingEngine_AuctionSurplus(uint256 _id) public happyPath(_id) {
+<span class="lineNum">     229 </span>            :     vm.expectCall(address(mockAccountingEngine), abi.encodeCall(mockAccountingEngine.auctionSurplus, ()), 1);
+<span class="lineNum">     230 </span>            : 
+<span class="lineNum">     231 </span>            :     accountingJob.workAuctionSurplus();
+<span class="lineNum">     232 </span>            :   }
+<span class="lineNum">     233 </span>            : 
+<span class="lineNum">     234 </span>            :   function test_Emit_Rewarded(uint256 _id) public happyPath(_id) {
+<span class="lineNum">     235 </span>            :     vm.expectEmit(address(accountingJob));
+<span class="lineNum">     236 </span>            :     emit Rewarded(user, REWARD_AMOUNT);
+<span class="lineNum">     237 </span>            : 
+<span class="lineNum">     238 </span>            :     accountingJob.workAuctionSurplus();
+<span class="lineNum">     239 </span>            :   }
+<span class="lineNum">     240 </span>            : 
+<span class="lineNum">     241 </span>            :   function test_No_Reward(uint256 _id) public happyPath(_id) {
+<span class="lineNum">     242 </span>            :     vm.recordLogs();
+<span class="lineNum">     243 </span>            :     accountingJob.workAuctionSurplusWithoutReward();
+<span class="lineNum">     244 </span>            :     assertEq(vm.getRecordedLogs().length, 0);
+<span class="lineNum">     245 </span>            :   }
+<span class="lineNum">     246 </span>            : }
+<span class="lineNum">     247 </span>            : 
+<span class="lineNum">     248 </span>            : contract Unit_AccountingJob_WorkTransferExtraSurplus is Base {
+<span class="lineNum">     249 </span>            :   event Rewarded(address _rewardedAccount, uint256 _rewardAmount);
+<span class="lineNum">     250 </span>            : 
+<span class="lineNum">     251 </span>            :   modifier happyPath() {
+<span class="lineNum">     252 </span>            :     vm.startPrank(user);
+<span class="lineNum">     253 </span>            : 
+<span class="lineNum">     254 </span>            :     _mockValues(true);
+<span class="lineNum">     255 </span>            :     _;
+<a name="256"><span class="lineNum">     256 </span>            :   }</a>
+<span class="lineNum">     257 </span>            : 
+<span class="lineNum">     258 </span>            :   function _mockValues(bool _shouldWorkTransferExtraSurplus) internal {
+<span class="lineNum">     259 </span><span class="lineNoCov">          0 :     _mockShouldWorkTransferExtraSurplus(_shouldWorkTransferExtraSurplus);</span>
+<span class="lineNum">     260 </span>            :   }
+<span class="lineNum">     261 </span>            : }
+<span class="lineNum">     262 </span>            : 
+<span class="lineNum">     263 </span>            : contract Unit_AccountingJob_ModifyParameters is Base {
+<span class="lineNum">     264 </span>            :   event ModifyParameters(bytes32 indexed _param, bytes32 indexed _cType, bytes _data);
+<span class="lineNum">     265 </span>            : 
+<span class="lineNum">     266 </span>            :   modifier happyPath() {
+<span class="lineNum">     267 </span>            :     vm.startPrank(authorizedAccount);
+<span class="lineNum">     268 </span>            :     _;
+<span class="lineNum">     269 </span>            :   }
+<span class="lineNum">     270 </span>            : 
+<span class="lineNum">     271 </span>            :   function test_Set_AccountingEngine(address _accountingEngine) public happyPath {
+<span class="lineNum">     272 </span>            :     accountingJob.modifyParameters('accountingEngine', abi.encode(_accountingEngine));
+<span class="lineNum">     273 </span>            : 
+<span class="lineNum">     274 </span>            :     assertEq(address(accountingJob.accountingEngine()), _accountingEngine);
+<span class="lineNum">     275 </span>            :   }
+<span class="lineNum">     276 </span>            : 
+<span class="lineNum">     277 </span>            :   function test_Set_StabilityFeeTreasury(address _stabilityFeeTreasury) public happyPath {
+<span class="lineNum">     278 </span>            :     accountingJob.modifyParameters('stabilityFeeTreasury', abi.encode(_stabilityFeeTreasury));
+<span class="lineNum">     279 </span>            : 
+<span class="lineNum">     280 </span>            :     assertEq(address(accountingJob.stabilityFeeTreasury()), _stabilityFeeTreasury);
+<span class="lineNum">     281 </span>            :   }
+<span class="lineNum">     282 </span>            : 
+<span class="lineNum">     283 </span>            :   function test_Set_ShouldWorkPopDebtFromQueue(bool _shouldWorkPopDebtFromQueue) public happyPath {
+<span class="lineNum">     284 </span>            :     accountingJob.modifyParameters('shouldWorkPopDebtFromQueue', abi.encode(_shouldWorkPopDebtFromQueue));
+<span class="lineNum">     285 </span>            : 
+<span class="lineNum">     286 </span>            :     assertEq(accountingJob.shouldWorkPopDebtFromQueue(), _shouldWorkPopDebtFromQueue);
+<span class="lineNum">     287 </span>            :   }
+<span class="lineNum">     288 </span>            : 
+<span class="lineNum">     289 </span>            :   function test_Set_ShouldWorkAuctionDebt(bool _shouldWorkAuctionDebt) public happyPath {
+<span class="lineNum">     290 </span>            :     accountingJob.modifyParameters('shouldWorkAuctionDebt', abi.encode(_shouldWorkAuctionDebt));
+<span class="lineNum">     291 </span>            : 
+<span class="lineNum">     292 </span>            :     assertEq(accountingJob.shouldWorkAuctionDebt(), _shouldWorkAuctionDebt);
+<span class="lineNum">     293 </span>            :   }
+<span class="lineNum">     294 </span>            : 
+<span class="lineNum">     295 </span>            :   function test_Set_ShouldWorkAuctionSurplus(bool _shouldWorkAuctionSurplus) public happyPath {
+<span class="lineNum">     296 </span>            :     accountingJob.modifyParameters('shouldWorkAuctionSurplus', abi.encode(_shouldWorkAuctionSurplus));
+<span class="lineNum">     297 </span>            : 
+<span class="lineNum">     298 </span>            :     assertEq(accountingJob.shouldWorkAuctionSurplus(), _shouldWorkAuctionSurplus);
+<span class="lineNum">     299 </span>            :   }
+<span class="lineNum">     300 </span>            : 
+<span class="lineNum">     301 </span>            :   function test_Set_ShouldWorkTransferExtraSurplus(bool _shouldWorkTransferExtraSurplus) public happyPath {
+<span class="lineNum">     302 </span>            :     accountingJob.modifyParameters('shouldWorkTransferExtraSurplus', abi.encode(_shouldWorkTransferExtraSurplus));
+<span class="lineNum">     303 </span>            : 
+<span class="lineNum">     304 </span>            :     assertEq(accountingJob.shouldWorkTransferExtraSurplus(), _shouldWorkTransferExtraSurplus);
+<span class="lineNum">     305 </span>            :   }
+<span class="lineNum">     306 </span>            : 
+<span class="lineNum">     307 </span>            :   function test_Set_RewardAmount(uint256 _rewardAmount) public happyPath {
+<span class="lineNum">     308 </span>            :     accountingJob.modifyParameters('rewardAmount', abi.encode(_rewardAmount));
+<span class="lineNum">     309 </span>            : 
+<span class="lineNum">     310 </span>            :     assertEq(accountingJob.rewardAmount(), _rewardAmount);
+<span class="lineNum">     311 </span>            :   }
+<span class="lineNum">     312 </span>            : 
+<span class="lineNum">     313 </span>            :   function test_Revert_UnrecognizedParam(bytes memory _data) public {
+<span class="lineNum">     314 </span>            :     vm.startPrank(authorizedAccount);
+<span class="lineNum">     315 </span>            : 
+<span class="lineNum">     316 </span>            :     vm.expectRevert(IModifiable.UnrecognizedParam.selector);
+<span class="lineNum">     317 </span>            : 
+<span class="lineNum">     318 </span>            :     accountingJob.modifyParameters('unrecognizedParam', _data);
+<span class="lineNum">     319 </span>            :   }
+<span class="lineNum">     320 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../../../../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

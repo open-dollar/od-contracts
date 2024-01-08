@@ -1,0 +1,1249 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - current.info - test/testnet/unit/StabilityFeeTreasury.t.sol</title>
+  <link rel="stylesheet" type="text/css" href="../../../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../../../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../../../index.html">top level</a> - <a href="index.html">test/testnet/unit</a> - StabilityFeeTreasury.t.sol<span style="font-size: 80%;"> (source / <a href="StabilityFeeTreasury.t.sol.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">current.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">20</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2024-01-07 16:13:44</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">14</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr><td><img src="../../../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../../../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : // SPDX-License-Identifier: GPL-3.0</a>
+<span class="lineNum">       2 </span>            : pragma solidity 0.8.19;
+<span class="lineNum">       3 </span>            : 
+<span class="lineNum">       4 </span>            : import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
+<span class="lineNum">       5 </span>            : import {IDisableable} from '@interfaces/utils/IDisableable.sol';
+<span class="lineNum">       6 </span>            : import {IModifiable} from '@interfaces/utils/IModifiable.sol';
+<span class="lineNum">       7 </span>            : import {IStabilityFeeTreasury} from '@interfaces/IStabilityFeeTreasury.sol';
+<span class="lineNum">       8 </span>            : import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
+<span class="lineNum">       9 </span>            : import {ICoinJoin} from '@interfaces/utils/ICoinJoin.sol';
+<span class="lineNum">      10 </span>            : import {ISystemCoin} from '@interfaces/tokens/ISystemCoin.sol';
+<span class="lineNum">      11 </span>            : 
+<span class="lineNum">      12 </span>            : import {StabilityFeeTreasuryForTest} from '@testnet/mocks/StabilityFeeTreasuryForTest.sol';
+<span class="lineNum">      13 </span>            : import {HaiTest} from '@testnet/utils/HaiTest.t.sol';
+<span class="lineNum">      14 </span>            : import {StdStorage, stdStorage} from 'forge-std/StdStorage.sol';
+<span class="lineNum">      15 </span>            : 
+<span class="lineNum">      16 </span>            : import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
+<span class="lineNum">      17 </span>            : 
+<span class="lineNum">      18 </span>            : import {Math, RAY, WAD, HOUR} from '@libraries/Math.sol';
+<span class="lineNum">      19 </span>            : import {Assertions} from '@libraries/Assertions.sol';
+<span class="lineNum">      20 </span>            : 
+<span class="lineNum">      21 </span>            : contract Base is HaiTest {
+<span class="lineNum">      22 </span>            :   using stdStorage for StdStorage;
+<span class="lineNum">      23 </span>            : 
+<span class="lineNum">      24 </span>            :   address deployer = label('deployer');
+<span class="lineNum">      25 </span>            :   address authorizedAccount = label('authorizedAccount');
+<span class="lineNum">      26 </span>            :   address user = label('user');
+<span class="lineNum">      27 </span>            :   address mockExtraSurplusReceiver = label('surplusReceiver');
+<span class="lineNum">      28 </span>            : 
+<span class="lineNum">      29 </span>            :   ISAFEEngine mockSafeEngine = ISAFEEngine(mockContract('mockSafeEngine'));
+<span class="lineNum">      30 </span>            :   ICoinJoin mockCoinJoin = ICoinJoin(mockContract('coinJoin'));
+<span class="lineNum">      31 </span>            :   ISystemCoin mockSystemCoin = ISystemCoin(mockContract('systemCoin'));
+<span class="lineNum">      32 </span>            : 
+<span class="lineNum">      33 </span>            :   StabilityFeeTreasuryForTest stabilityFeeTreasury;
+<span class="lineNum">      34 </span>            : 
+<span class="lineNum">      35 </span>            :   IStabilityFeeTreasury.StabilityFeeTreasuryParams stabilityFeeTreasuryParams = IStabilityFeeTreasury
+<a name="36"><span class="lineNum">      36 </span>            :     .StabilityFeeTreasuryParams({treasuryCapacity: 0, pullFundsMinThreshold: 0, surplusTransferDelay: 0});</a>
+<span class="lineNum">      37 </span>            : 
+<span class="lineNum">      38 </span>            :   function _mockCoinJoinSystemCoin(address _systemCoin) internal {
+<span class="lineNum">      39 </span><span class="lineNoCov">          0 :     vm.mockCall(address(mockCoinJoin), abi.encodeWithSelector(ICoinJoin.systemCoin.selector), abi.encode(_systemCoin));</span>
+<a name="40"><span class="lineNum">      40 </span>            :   }</a>
+<span class="lineNum">      41 </span>            : 
+<span class="lineNum">      42 </span>            :   function _mockSystemCoinApprove(address _account, uint256 _amount, bool _success) internal {
+<span class="lineNum">      43 </span><span class="lineNoCov">          0 :     vm.mockCall(</span>
+<span class="lineNum">      44 </span>            :       address(mockSystemCoin), abi.encodeWithSelector(IERC20.approve.selector, _account, _amount), abi.encode(_success)
+<span class="lineNum">      45 </span>            :     );
+<a name="46"><span class="lineNum">      46 </span>            :   }</a>
+<span class="lineNum">      47 </span>            : 
+<span class="lineNum">      48 </span>            :   function _mockSystemCoinBalanceOf(uint256 _balance) internal {
+<span class="lineNum">      49 </span><span class="lineNoCov">          0 :     vm.mockCall(</span>
+<span class="lineNum">      50 </span>            :       address(mockSystemCoin),
+<span class="lineNum">      51 </span>            :       abi.encodeWithSelector(IERC20.balanceOf.selector, address(stabilityFeeTreasury)),
+<span class="lineNum">      52 </span>            :       abi.encode(_balance)
+<span class="lineNum">      53 </span>            :     );
+<a name="54"><span class="lineNum">      54 </span>            :   }</a>
+<span class="lineNum">      55 </span>            : 
+<span class="lineNum">      56 </span>            :   function _mockSafeEngineCoinBalance(uint256 _balance) internal {
+<span class="lineNum">      57 </span><span class="lineNoCov">          0 :     vm.mockCall(</span>
+<span class="lineNum">      58 </span>            :       address(mockSafeEngine),
+<span class="lineNum">      59 </span>            :       abi.encodeWithSelector(ISAFEEngine.coinBalance.selector, address(stabilityFeeTreasury)),
+<span class="lineNum">      60 </span>            :       abi.encode(_balance)
+<span class="lineNum">      61 </span>            :     );
+<a name="62"><span class="lineNum">      62 </span>            :   }</a>
+<span class="lineNum">      63 </span>            : 
+<span class="lineNum">      64 </span>            :   function _mockSafeEngineDebtBalance(uint256 _balance) internal {
+<span class="lineNum">      65 </span><span class="lineNoCov">          0 :     vm.mockCall(</span>
+<span class="lineNum">      66 </span>            :       address(mockSafeEngine),
+<span class="lineNum">      67 </span>            :       abi.encodeWithSelector(ISAFEEngine.debtBalance.selector, address(stabilityFeeTreasury)),
+<span class="lineNum">      68 </span>            :       abi.encode(_balance)
+<span class="lineNum">      69 </span>            :     );
+<a name="70"><span class="lineNum">      70 </span>            :   }</a>
+<span class="lineNum">      71 </span>            : 
+<span class="lineNum">      72 </span>            :   function _mockContractEnabled(bool _enabled) internal {
+<span class="lineNum">      73 </span><span class="lineNoCov">          0 :     stdstore.target(address(stabilityFeeTreasury)).sig(IDisableable.contractEnabled.selector).checked_write(_enabled);</span>
+<a name="74"><span class="lineNum">      74 </span>            :   }</a>
+<span class="lineNum">      75 </span>            : 
+<span class="lineNum">      76 </span>            :   function _mockTotalAllowance(address _account, uint256 _rad) internal {
+<span class="lineNum">      77 </span><span class="lineNoCov">          0 :     stdstore.target(address(stabilityFeeTreasury)).sig(IStabilityFeeTreasury.allowance.selector).with_key(_account)</span>
+<span class="lineNum">      78 </span>            :       .depth(0).checked_write(_rad);
+<a name="79"><span class="lineNum">      79 </span>            :   }</a>
+<span class="lineNum">      80 </span>            : 
+<span class="lineNum">      81 </span>            :   function _mockPerHourAllowance(address _account, uint256 _rad) internal {
+<span class="lineNum">      82 </span><span class="lineNoCov">          0 :     stdstore.target(address(stabilityFeeTreasury)).sig(IStabilityFeeTreasury.allowance.selector).with_key(_account)</span>
+<span class="lineNum">      83 </span>            :       .depth(1).checked_write(_rad);
+<a name="84"><span class="lineNum">      84 </span>            :   }</a>
+<span class="lineNum">      85 </span>            : 
+<span class="lineNum">      86 </span>            :   function _mockPulledPerHour(address _account, uint256 _blockHour, uint256 _value) internal {
+<span class="lineNum">      87 </span><span class="lineNoCov">          0 :     stdstore.target(address(stabilityFeeTreasury)).sig(IStabilityFeeTreasury.pulledPerHour.selector).with_key(_account)</span>
+<span class="lineNum">      88 </span>            :       .with_key(_blockHour).checked_write(_value);
+<a name="89"><span class="lineNum">      89 </span>            :   }</a>
+<span class="lineNum">      90 </span>            : 
+<span class="lineNum">      91 </span>            :   function _mockLatestSurplusTransferTime(uint256 _latestSurplusTransferTime) internal {
+<span class="lineNum">      92 </span><span class="lineNoCov">          0 :     stdstore.target(address(stabilityFeeTreasury)).sig(IStabilityFeeTreasury.latestSurplusTransferTime.selector)</span>
+<span class="lineNum">      93 </span>            :       .checked_write(_latestSurplusTransferTime);
+<span class="lineNum">      94 </span>            :   }
+<a name="95"><span class="lineNum">      95 </span>            : </a>
+<span class="lineNum">      96 </span>            :   // params
+<span class="lineNum">      97 </span>            :   function _mockTreasuryCapacity(uint256 _capacity) internal {
+<span class="lineNum">      98 </span><span class="lineNoCov">          0 :     stdstore.target(address(stabilityFeeTreasury)).sig(IStabilityFeeTreasury.params.selector).depth(0).checked_write(</span>
+<span class="lineNum">      99 </span>            :       _capacity
+<span class="lineNum">     100 </span>            :     );
+<a name="101"><span class="lineNum">     101 </span>            :   }</a>
+<span class="lineNum">     102 </span>            : 
+<span class="lineNum">     103 </span>            :   function _mockPullFundsMinThreshold(uint256 _value) internal {
+<span class="lineNum">     104 </span><span class="lineNoCov">          0 :     stdstore.target(address(stabilityFeeTreasury)).sig(IStabilityFeeTreasury.params.selector).depth(1).checked_write(</span>
+<span class="lineNum">     105 </span>            :       _value
+<span class="lineNum">     106 </span>            :     );
+<a name="107"><span class="lineNum">     107 </span>            :   }</a>
+<span class="lineNum">     108 </span>            : 
+<span class="lineNum">     109 </span>            :   function _mockSurplusTransferDelay(uint256 _surplusTransferDelay) internal {
+<span class="lineNum">     110 </span><span class="lineNoCov">          0 :     stdstore.target(address(stabilityFeeTreasury)).sig(IStabilityFeeTreasury.params.selector).depth(2).checked_write(</span>
+<span class="lineNum">     111 </span>            :       _surplusTransferDelay
+<span class="lineNum">     112 </span>            :     );
+<a name="113"><span class="lineNum">     113 </span>            :   }</a>
+<span class="lineNum">     114 </span>            : 
+<span class="lineNum">     115 </span>            :   function setUp() public virtual {
+<span class="lineNum">     116 </span><span class="lineNoCov">          0 :     vm.startPrank(deployer);</span>
+<span class="lineNum">     117 </span>            : 
+<span class="lineNum">     118 </span><span class="lineNoCov">          0 :     _mockCoinJoinSystemCoin(address(mockSystemCoin));</span>
+<span class="lineNum">     119 </span><span class="lineNoCov">          0 :     _mockSystemCoinApprove(address(mockCoinJoin), type(uint256).max, true);</span>
+<span class="lineNum">     120 </span>            : 
+<span class="lineNum">     121 </span><span class="lineNoCov">          0 :     stabilityFeeTreasury = new StabilityFeeTreasuryForTest(</span>
+<span class="lineNum">     122 </span>            :       address(mockSafeEngine), mockExtraSurplusReceiver, address(mockCoinJoin), stabilityFeeTreasuryParams
+<span class="lineNum">     123 </span>            :     );
+<span class="lineNum">     124 </span><span class="lineNoCov">          0 :     label(address(stabilityFeeTreasury), 'StabilityFeeTreasury');</span>
+<span class="lineNum">     125 </span>            : 
+<span class="lineNum">     126 </span><span class="lineNoCov">          0 :     stabilityFeeTreasury.addAuthorization(authorizedAccount);</span>
+<span class="lineNum">     127 </span>            : 
+<span class="lineNum">     128 </span><span class="lineNoCov">          0 :     vm.stopPrank();</span>
+<span class="lineNum">     129 </span>            :   }
+<span class="lineNum">     130 </span>            : 
+<span class="lineNum">     131 </span>            :   modifier authorized() {
+<span class="lineNum">     132 </span>            :     vm.startPrank(authorizedAccount);
+<span class="lineNum">     133 </span>            :     _;
+<span class="lineNum">     134 </span>            :   }
+<span class="lineNum">     135 </span>            : }
+<span class="lineNum">     136 </span>            : 
+<span class="lineNum">     137 </span>            : contract Unit_StabilityFeeTreasury_Constructor is Base {
+<span class="lineNum">     138 </span>            :   event AddAuthorization(address _account);
+<span class="lineNum">     139 </span>            : 
+<span class="lineNum">     140 </span>            :   function test_Emit_AddAuthorization() public {
+<span class="lineNum">     141 </span>            :     vm.expectEmit();
+<span class="lineNum">     142 </span>            :     emit AddAuthorization(user);
+<span class="lineNum">     143 </span>            : 
+<span class="lineNum">     144 </span>            :     vm.prank(user);
+<span class="lineNum">     145 </span>            :     new StabilityFeeTreasuryForTest(
+<span class="lineNum">     146 </span>            :       address(mockSafeEngine), mockExtraSurplusReceiver, address(mockCoinJoin), stabilityFeeTreasuryParams
+<span class="lineNum">     147 </span>            :     );
+<span class="lineNum">     148 </span>            :   }
+<span class="lineNum">     149 </span>            : 
+<span class="lineNum">     150 </span>            :   function test_Set_ContractEnabled() public {
+<span class="lineNum">     151 </span>            :     assertEq(stabilityFeeTreasury.contractEnabled(), true);
+<span class="lineNum">     152 </span>            :   }
+<span class="lineNum">     153 </span>            : 
+<span class="lineNum">     154 </span>            :   function test_Set_SafeEngine() public {
+<span class="lineNum">     155 </span>            :     assertEq(address(stabilityFeeTreasury.safeEngine()), address(mockSafeEngine));
+<span class="lineNum">     156 </span>            :   }
+<span class="lineNum">     157 </span>            : 
+<span class="lineNum">     158 </span>            :   function test_Set_CoinJoin() public {
+<span class="lineNum">     159 </span>            :     assertEq(address(stabilityFeeTreasury.coinJoin()), address(mockCoinJoin));
+<span class="lineNum">     160 </span>            :   }
+<span class="lineNum">     161 </span>            : 
+<span class="lineNum">     162 </span>            :   function test_Set_ExtraSurplusReceiver() public {
+<span class="lineNum">     163 </span>            :     assertEq(address(stabilityFeeTreasury.extraSurplusReceiver()), mockExtraSurplusReceiver);
+<span class="lineNum">     164 </span>            :   }
+<span class="lineNum">     165 </span>            : 
+<span class="lineNum">     166 </span>            :   function test_Set_SystemCoin() public {
+<span class="lineNum">     167 </span>            :     assertEq(address(stabilityFeeTreasury.systemCoin()), address(mockSystemCoin));
+<span class="lineNum">     168 </span>            :   }
+<span class="lineNum">     169 </span>            : 
+<span class="lineNum">     170 </span>            :   function test_Set_LatestSurplusTransferTime() public {
+<span class="lineNum">     171 </span>            :     assertEq(stabilityFeeTreasury.latestSurplusTransferTime(), block.timestamp);
+<span class="lineNum">     172 </span>            :   }
+<span class="lineNum">     173 </span>            : 
+<span class="lineNum">     174 </span>            :   function test_Set_StabilityFeeTreasury_Params(
+<span class="lineNum">     175 </span>            :     IStabilityFeeTreasury.StabilityFeeTreasuryParams memory _stabilityFeeTreasuryParams
+<span class="lineNum">     176 </span>            :   ) public {
+<span class="lineNum">     177 </span>            :     stabilityFeeTreasury = new StabilityFeeTreasuryForTest(
+<span class="lineNum">     178 </span>            :       address(mockSafeEngine), mockExtraSurplusReceiver, address(mockCoinJoin), _stabilityFeeTreasuryParams
+<span class="lineNum">     179 </span>            :     );
+<span class="lineNum">     180 </span>            : 
+<span class="lineNum">     181 </span>            :     assertEq(abi.encode(stabilityFeeTreasury.params()), abi.encode(_stabilityFeeTreasuryParams));
+<span class="lineNum">     182 </span>            :   }
+<span class="lineNum">     183 </span>            : 
+<span class="lineNum">     184 </span>            :   function test_Call_SystemCoin_Approve() public {
+<span class="lineNum">     185 </span>            :     vm.expectCall(
+<span class="lineNum">     186 </span>            :       address(mockSystemCoin), abi.encodeWithSelector(IERC20.approve.selector, address(mockCoinJoin), type(uint256).max)
+<span class="lineNum">     187 </span>            :     );
+<span class="lineNum">     188 </span>            : 
+<span class="lineNum">     189 </span>            :     new StabilityFeeTreasuryForTest(
+<span class="lineNum">     190 </span>            :       address(mockSafeEngine), mockExtraSurplusReceiver, address(mockCoinJoin), stabilityFeeTreasuryParams
+<span class="lineNum">     191 </span>            :     );
+<span class="lineNum">     192 </span>            :   }
+<span class="lineNum">     193 </span>            : 
+<span class="lineNum">     194 </span>            :   function test_Revert_NullAddress_SafeEngine() public {
+<span class="lineNum">     195 </span>            :     vm.expectRevert(Assertions.NullAddress.selector);
+<span class="lineNum">     196 </span>            : 
+<span class="lineNum">     197 </span>            :     new StabilityFeeTreasuryForTest(
+<span class="lineNum">     198 </span>            :       address(0), mockExtraSurplusReceiver, address(mockCoinJoin), stabilityFeeTreasuryParams
+<span class="lineNum">     199 </span>            :     );
+<span class="lineNum">     200 </span>            :   }
+<span class="lineNum">     201 </span>            : 
+<span class="lineNum">     202 </span>            :   function test_Revert_NullAddress_SystemCoin() public {
+<span class="lineNum">     203 </span>            :     _mockCoinJoinSystemCoin(address(0));
+<span class="lineNum">     204 </span>            : 
+<span class="lineNum">     205 </span>            :     vm.expectRevert(Assertions.NullAddress.selector);
+<span class="lineNum">     206 </span>            : 
+<span class="lineNum">     207 </span>            :     new StabilityFeeTreasuryForTest(
+<span class="lineNum">     208 </span>            :       address(mockSafeEngine), mockExtraSurplusReceiver, address(mockCoinJoin), stabilityFeeTreasuryParams
+<span class="lineNum">     209 </span>            :     );
+<span class="lineNum">     210 </span>            :   }
+<span class="lineNum">     211 </span>            : 
+<span class="lineNum">     212 </span>            :   function test_Revert_NullAddress_ExtraSurplusReceiver() public {
+<span class="lineNum">     213 </span>            :     vm.expectRevert(Assertions.NullAddress.selector);
+<span class="lineNum">     214 </span>            : 
+<span class="lineNum">     215 </span>            :     new StabilityFeeTreasuryForTest(
+<span class="lineNum">     216 </span>            :       address(mockSafeEngine), address(0), address(mockCoinJoin), stabilityFeeTreasuryParams
+<span class="lineNum">     217 </span>            :     );
+<span class="lineNum">     218 </span>            :   }
+<span class="lineNum">     219 </span>            : }
+<span class="lineNum">     220 </span>            : 
+<span class="lineNum">     221 </span>            : contract Unit_StabilityFeeTreasury_ModifyParameters is Base {
+<span class="lineNum">     222 </span>            :   function test_ModifyParameters(IStabilityFeeTreasury.StabilityFeeTreasuryParams memory _fuzz) public authorized {
+<span class="lineNum">     223 </span>            :     stabilityFeeTreasury.modifyParameters('treasuryCapacity', abi.encode(_fuzz.treasuryCapacity));
+<span class="lineNum">     224 </span>            :     stabilityFeeTreasury.modifyParameters('pullFundsMinThreshold', abi.encode(_fuzz.pullFundsMinThreshold));
+<span class="lineNum">     225 </span>            :     stabilityFeeTreasury.modifyParameters('surplusTransferDelay', abi.encode(_fuzz.surplusTransferDelay));
+<span class="lineNum">     226 </span>            : 
+<span class="lineNum">     227 </span>            :     IStabilityFeeTreasury.StabilityFeeTreasuryParams memory _params = stabilityFeeTreasury.params();
+<span class="lineNum">     228 </span>            : 
+<span class="lineNum">     229 </span>            :     assertEq(abi.encode(_params), abi.encode(_fuzz));
+<span class="lineNum">     230 </span>            :   }
+<span class="lineNum">     231 </span>            : 
+<span class="lineNum">     232 </span>            :   function test_ModifyParameters_ExtraSurplusReceiver(address _extraSurplusReceiver) public authorized {
+<span class="lineNum">     233 </span>            :     vm.assume(_extraSurplusReceiver != address(0));
+<span class="lineNum">     234 </span>            :     vm.assume(_extraSurplusReceiver != address(stabilityFeeTreasury));
+<span class="lineNum">     235 </span>            : 
+<span class="lineNum">     236 </span>            :     stabilityFeeTreasury.modifyParameters('extraSurplusReceiver', abi.encode(_extraSurplusReceiver));
+<span class="lineNum">     237 </span>            : 
+<span class="lineNum">     238 </span>            :     assertEq(_extraSurplusReceiver, stabilityFeeTreasury.extraSurplusReceiver());
+<span class="lineNum">     239 </span>            :   }
+<span class="lineNum">     240 </span>            : 
+<span class="lineNum">     241 </span>            :   function test_Revert_ModifyParameters_UnrecognizedParam() public authorized {
+<span class="lineNum">     242 </span>            :     vm.expectRevert(IModifiable.UnrecognizedParam.selector);
+<span class="lineNum">     243 </span>            : 
+<span class="lineNum">     244 </span>            :     stabilityFeeTreasury.modifyParameters('unrecognizedParam', abi.encode(0));
+<span class="lineNum">     245 </span>            :   }
+<span class="lineNum">     246 </span>            : 
+<span class="lineNum">     247 </span>            :   function test_Revert_ModifyParameters_ExtraSurplusReceiver() public authorized {
+<span class="lineNum">     248 </span>            :     vm.expectRevert(Assertions.NullAddress.selector);
+<span class="lineNum">     249 </span>            : 
+<span class="lineNum">     250 </span>            :     stabilityFeeTreasury.modifyParameters('extraSurplusReceiver', abi.encode(0));
+<span class="lineNum">     251 </span>            :   }
+<span class="lineNum">     252 </span>            : }
+<span class="lineNum">     253 </span>            : 
+<span class="lineNum">     254 </span>            : contract Unit_StabilityFeeTreasury_DisableContract is Base {
+<span class="lineNum">     255 </span>            :   event DisableContract();
+<span class="lineNum">     256 </span>            :   event JoinCoins(uint256 _wad);
+<span class="lineNum">     257 </span>            : 
+<span class="lineNum">     258 </span>            :   struct DisableContractScenario {
+<span class="lineNum">     259 </span>            :     uint256 systemCoinBalance;
+<span class="lineNum">     260 </span>            :     uint256 safeEngineCoinBalance;
+<span class="lineNum">     261 </span>            :   }
+<span class="lineNum">     262 </span>            : 
+<span class="lineNum">     263 </span>            :   function _joinCoins(DisableContractScenario memory _disableContractScenario) internal pure returns (bool) {
+<span class="lineNum">     264 </span>            :     return _disableContractScenario.systemCoinBalance &gt; 0;
+<span class="lineNum">     265 </span>            :   }
+<span class="lineNum">     266 </span>            : 
+<span class="lineNum">     267 </span>            :   function _mockValues(DisableContractScenario memory _disableContractScenario) internal {
+<span class="lineNum">     268 </span>            :     _mockSystemCoinBalanceOf(_disableContractScenario.systemCoinBalance);
+<span class="lineNum">     269 </span>            :     _mockSafeEngineCoinBalance(_disableContractScenario.safeEngineCoinBalance);
+<span class="lineNum">     270 </span>            :   }
+<span class="lineNum">     271 </span>            : 
+<span class="lineNum">     272 </span>            :   modifier happyPath(DisableContractScenario memory _disableContractScenario) {
+<span class="lineNum">     273 </span>            :     _mockValues(_disableContractScenario);
+<span class="lineNum">     274 </span>            :     vm.startPrank(authorizedAccount);
+<span class="lineNum">     275 </span>            :     _;
+<span class="lineNum">     276 </span>            :   }
+<span class="lineNum">     277 </span>            : 
+<span class="lineNum">     278 </span>            :   function test_Emit_JoinCoins(DisableContractScenario memory _disableContractScenario)
+<span class="lineNum">     279 </span>            :     public
+<span class="lineNum">     280 </span>            :     happyPath(_disableContractScenario)
+<span class="lineNum">     281 </span>            :   {
+<span class="lineNum">     282 </span>            :     vm.assume(_joinCoins(_disableContractScenario));
+<span class="lineNum">     283 </span>            : 
+<span class="lineNum">     284 </span>            :     vm.expectEmit();
+<span class="lineNum">     285 </span>            :     emit JoinCoins(_disableContractScenario.systemCoinBalance);
+<span class="lineNum">     286 </span>            : 
+<span class="lineNum">     287 </span>            :     stabilityFeeTreasury.disableContract();
+<span class="lineNum">     288 </span>            :   }
+<span class="lineNum">     289 </span>            : 
+<span class="lineNum">     290 </span>            :   function test_Call_SafeEngine_TransferInternalCoins(DisableContractScenario memory _disableContractScenario)
+<span class="lineNum">     291 </span>            :     public
+<span class="lineNum">     292 </span>            :     happyPath(_disableContractScenario)
+<span class="lineNum">     293 </span>            :   {
+<span class="lineNum">     294 </span>            :     vm.expectCall(
+<span class="lineNum">     295 </span>            :       address(mockSafeEngine),
+<span class="lineNum">     296 </span>            :       abi.encodeCall(
+<span class="lineNum">     297 </span>            :         mockSafeEngine.transferInternalCoins,
+<span class="lineNum">     298 </span>            :         (address(stabilityFeeTreasury), mockExtraSurplusReceiver, _disableContractScenario.safeEngineCoinBalance)
+<span class="lineNum">     299 </span>            :       ),
+<span class="lineNum">     300 </span>            :       1
+<span class="lineNum">     301 </span>            :     );
+<span class="lineNum">     302 </span>            : 
+<span class="lineNum">     303 </span>            :     stabilityFeeTreasury.disableContract();
+<span class="lineNum">     304 </span>            :   }
+<span class="lineNum">     305 </span>            : }
+<span class="lineNum">     306 </span>            : 
+<span class="lineNum">     307 </span>            : contract Unit_StabilityFeeTreasury_JoinAllCoins is Base {
+<span class="lineNum">     308 </span>            :   event JoinCoins(uint256 _wad);
+<span class="lineNum">     309 </span>            : 
+<span class="lineNum">     310 </span>            :   function _joinCoins(uint256 _systemCoinBalance) internal pure returns (bool) {
+<span class="lineNum">     311 </span>            :     return _systemCoinBalance &gt; 0;
+<span class="lineNum">     312 </span>            :   }
+<span class="lineNum">     313 </span>            : 
+<span class="lineNum">     314 </span>            :   modifier happyPath(uint256 _systemCoinBalance) {
+<span class="lineNum">     315 </span>            :     _mockSystemCoinBalanceOf(_systemCoinBalance);
+<span class="lineNum">     316 </span>            :     _;
+<span class="lineNum">     317 </span>            :   }
+<span class="lineNum">     318 </span>            : 
+<span class="lineNum">     319 </span>            :   function test_Call_CoinJoin_Join(uint256 _systemCoinBalance) public happyPath(_systemCoinBalance) {
+<span class="lineNum">     320 </span>            :     vm.assume(_joinCoins(_systemCoinBalance));
+<span class="lineNum">     321 </span>            : 
+<span class="lineNum">     322 </span>            :     vm.expectCall(
+<span class="lineNum">     323 </span>            :       address(mockCoinJoin), abi.encodeCall(mockCoinJoin.join, (address(stabilityFeeTreasury), _systemCoinBalance)), 1
+<span class="lineNum">     324 </span>            :     );
+<span class="lineNum">     325 </span>            : 
+<span class="lineNum">     326 </span>            :     stabilityFeeTreasury.joinAllCoins();
+<span class="lineNum">     327 </span>            :   }
+<span class="lineNum">     328 </span>            : 
+<span class="lineNum">     329 </span>            :   function test_Emit_JoinCoins(uint256 _systemCoinBalance) public happyPath(_systemCoinBalance) {
+<span class="lineNum">     330 </span>            :     vm.assume(_joinCoins(_systemCoinBalance));
+<span class="lineNum">     331 </span>            : 
+<span class="lineNum">     332 </span>            :     vm.expectEmit();
+<span class="lineNum">     333 </span>            :     emit JoinCoins(_systemCoinBalance);
+<span class="lineNum">     334 </span>            : 
+<span class="lineNum">     335 </span>            :     stabilityFeeTreasury.joinAllCoins();
+<span class="lineNum">     336 </span>            :   }
+<span class="lineNum">     337 </span>            : 
+<span class="lineNum">     338 </span>            :   function testFail_Emit_JoinCoins(uint256 _systemCoinBalance) public happyPath(_systemCoinBalance) {
+<span class="lineNum">     339 </span>            :     vm.assume(!_joinCoins(_systemCoinBalance));
+<span class="lineNum">     340 </span>            : 
+<span class="lineNum">     341 </span>            :     vm.expectEmit(false, false, false, false);
+<span class="lineNum">     342 </span>            :     emit JoinCoins(_systemCoinBalance);
+<span class="lineNum">     343 </span>            : 
+<span class="lineNum">     344 </span>            :     stabilityFeeTreasury.joinAllCoins();
+<span class="lineNum">     345 </span>            :   }
+<span class="lineNum">     346 </span>            : }
+<span class="lineNum">     347 </span>            : 
+<span class="lineNum">     348 </span>            : contract Unit_StabilityFeeTreasury_SettleDebt is Base {
+<span class="lineNum">     349 </span>            :   event SettleDebt(uint256 _rad);
+<span class="lineNum">     350 </span>            : 
+<span class="lineNum">     351 </span>            :   struct SettleDebtScenario {
+<span class="lineNum">     352 </span>            :     uint256 safeEngineCoinBalance;
+<span class="lineNum">     353 </span>            :     uint256 safeEngineDebtBalance;
+<span class="lineNum">     354 </span>            :   }
+<span class="lineNum">     355 </span>            : 
+<span class="lineNum">     356 </span>            :   function _settleDebt(SettleDebtScenario memory _settleDebtScenario) internal pure returns (bool) {
+<span class="lineNum">     357 </span>            :     return _settleDebtScenario.safeEngineDebtBalance &gt; 0;
+<span class="lineNum">     358 </span>            :   }
+<span class="lineNum">     359 </span>            : 
+<span class="lineNum">     360 </span>            :   function _mockValues(SettleDebtScenario memory _settleDebtScenario) internal {
+<span class="lineNum">     361 </span>            :     _mockSafeEngineCoinBalance(_settleDebtScenario.safeEngineCoinBalance);
+<span class="lineNum">     362 </span>            :     _mockSafeEngineDebtBalance(_settleDebtScenario.safeEngineDebtBalance);
+<span class="lineNum">     363 </span>            :   }
+<span class="lineNum">     364 </span>            : 
+<span class="lineNum">     365 </span>            :   modifier happyPath(SettleDebtScenario memory _settleDebtScenario) {
+<span class="lineNum">     366 </span>            :     _mockValues(_settleDebtScenario);
+<span class="lineNum">     367 </span>            :     _;
+<span class="lineNum">     368 </span>            :   }
+<span class="lineNum">     369 </span>            : 
+<span class="lineNum">     370 </span>            :   function test_Call_SafeEngine_SettleDebt(SettleDebtScenario memory _settleDebtScenario)
+<span class="lineNum">     371 </span>            :     public
+<span class="lineNum">     372 </span>            :     happyPath(_settleDebtScenario)
+<span class="lineNum">     373 </span>            :   {
+<span class="lineNum">     374 </span>            :     vm.assume(_settleDebt(_settleDebtScenario));
+<span class="lineNum">     375 </span>            : 
+<span class="lineNum">     376 </span>            :     uint256 _debtToSettle =
+<span class="lineNum">     377 </span>            :       Math.min(_settleDebtScenario.safeEngineCoinBalance, _settleDebtScenario.safeEngineDebtBalance);
+<span class="lineNum">     378 </span>            : 
+<span class="lineNum">     379 </span>            :     vm.expectCall(address(mockSafeEngine), abi.encodeCall(mockSafeEngine.settleDebt, (_debtToSettle)), 1);
+<span class="lineNum">     380 </span>            : 
+<span class="lineNum">     381 </span>            :     stabilityFeeTreasury.settleDebt();
+<span class="lineNum">     382 </span>            :   }
+<span class="lineNum">     383 </span>            : 
+<span class="lineNum">     384 </span>            :   function test_Emit_SettleDebt(SettleDebtScenario memory _settleDebtScenario) public happyPath(_settleDebtScenario) {
+<span class="lineNum">     385 </span>            :     vm.assume(_settleDebt(_settleDebtScenario));
+<span class="lineNum">     386 </span>            : 
+<span class="lineNum">     387 </span>            :     uint256 _debtToSettle =
+<span class="lineNum">     388 </span>            :       Math.min(_settleDebtScenario.safeEngineCoinBalance, _settleDebtScenario.safeEngineDebtBalance);
+<span class="lineNum">     389 </span>            : 
+<span class="lineNum">     390 </span>            :     vm.expectEmit();
+<span class="lineNum">     391 </span>            :     emit SettleDebt(_debtToSettle);
+<span class="lineNum">     392 </span>            : 
+<span class="lineNum">     393 </span>            :     stabilityFeeTreasury.settleDebt();
+<span class="lineNum">     394 </span>            :   }
+<span class="lineNum">     395 </span>            : 
+<span class="lineNum">     396 </span>            :   function test_Return_SafeEngineBalances_SettleDebt(SettleDebtScenario memory _settleDebtScenario)
+<span class="lineNum">     397 </span>            :     public
+<span class="lineNum">     398 </span>            :     happyPath(_settleDebtScenario)
+<span class="lineNum">     399 </span>            :   {
+<span class="lineNum">     400 </span>            :     vm.assume(_settleDebt(_settleDebtScenario));
+<span class="lineNum">     401 </span>            : 
+<span class="lineNum">     402 </span>            :     uint256 _debtToSettle =
+<span class="lineNum">     403 </span>            :       Math.min(_settleDebtScenario.safeEngineCoinBalance, _settleDebtScenario.safeEngineDebtBalance);
+<span class="lineNum">     404 </span>            : 
+<span class="lineNum">     405 </span>            :     (uint256 _coinBalance, uint256 _debtBalance) = stabilityFeeTreasury.settleDebt();
+<span class="lineNum">     406 </span>            : 
+<span class="lineNum">     407 </span>            :     assertEq(_coinBalance, _settleDebtScenario.safeEngineCoinBalance - _debtToSettle);
+<span class="lineNum">     408 </span>            :     assertEq(_debtBalance, _settleDebtScenario.safeEngineDebtBalance - _debtToSettle);
+<span class="lineNum">     409 </span>            :   }
+<span class="lineNum">     410 </span>            : 
+<span class="lineNum">     411 </span>            :   function test_Return_SafeEngineBalances_NoDebt(SettleDebtScenario memory _settleDebtScenario)
+<span class="lineNum">     412 </span>            :     public
+<span class="lineNum">     413 </span>            :     happyPath(_settleDebtScenario)
+<span class="lineNum">     414 </span>            :   {
+<span class="lineNum">     415 </span>            :     vm.assume(!_settleDebt(_settleDebtScenario));
+<span class="lineNum">     416 </span>            : 
+<span class="lineNum">     417 </span>            :     (uint256 _coinBalance, uint256 _debtBalance) = stabilityFeeTreasury.settleDebt();
+<span class="lineNum">     418 </span>            : 
+<span class="lineNum">     419 </span>            :     assertEq(_coinBalance, _settleDebtScenario.safeEngineCoinBalance);
+<span class="lineNum">     420 </span>            :     assertEq(_debtBalance, _settleDebtScenario.safeEngineDebtBalance);
+<span class="lineNum">     421 </span>            :   }
+<span class="lineNum">     422 </span>            : }
+<span class="lineNum">     423 </span>            : 
+<span class="lineNum">     424 </span>            : contract Unit_StabilityFeeTreasury_SetTotalAllowance is Base {
+<span class="lineNum">     425 </span>            :   event SetTotalAllowance(address indexed _account, uint256 _rad);
+<span class="lineNum">     426 </span>            : 
+<span class="lineNum">     427 </span>            :   function _notNullAcc(address _account) internal pure returns (bool) {
+<span class="lineNum">     428 </span>            :     return _account != address(0);
+<span class="lineNum">     429 </span>            :   }
+<span class="lineNum">     430 </span>            : 
+<span class="lineNum">     431 </span>            :   function _notStabilityFeeTreasuryAcc(address _account) internal view returns (bool) {
+<span class="lineNum">     432 </span>            :     return _account != address(stabilityFeeTreasury);
+<span class="lineNum">     433 </span>            :   }
+<span class="lineNum">     434 </span>            : 
+<span class="lineNum">     435 </span>            :   function _assumeHappyPath(address _account) internal view {
+<span class="lineNum">     436 </span>            :     vm.assume(_notNullAcc(_account));
+<span class="lineNum">     437 </span>            :     vm.assume(_notStabilityFeeTreasuryAcc(_account));
+<span class="lineNum">     438 </span>            :   }
+<span class="lineNum">     439 </span>            : 
+<span class="lineNum">     440 </span>            :   modifier happyPath(address _account) {
+<span class="lineNum">     441 </span>            :     _assumeHappyPath(_account);
+<span class="lineNum">     442 </span>            :     vm.startPrank(authorizedAccount);
+<span class="lineNum">     443 </span>            :     _;
+<span class="lineNum">     444 </span>            :   }
+<span class="lineNum">     445 </span>            : 
+<span class="lineNum">     446 </span>            :   function test_Set_Allowance(address _account, uint256 _rad) public happyPath(_account) {
+<span class="lineNum">     447 </span>            :     stabilityFeeTreasury.setTotalAllowance(_account, _rad);
+<span class="lineNum">     448 </span>            : 
+<span class="lineNum">     449 </span>            :     assertEq(stabilityFeeTreasury.allowance(_account).total, _rad);
+<span class="lineNum">     450 </span>            :   }
+<span class="lineNum">     451 </span>            : 
+<span class="lineNum">     452 </span>            :   function test_Emit_SetTotalAllowance(address _account, uint256 _rad) public happyPath(_account) {
+<span class="lineNum">     453 </span>            :     vm.expectEmit();
+<span class="lineNum">     454 </span>            :     emit SetTotalAllowance(_account, _rad);
+<span class="lineNum">     455 </span>            : 
+<span class="lineNum">     456 </span>            :     stabilityFeeTreasury.setTotalAllowance(_account, _rad);
+<span class="lineNum">     457 </span>            :   }
+<span class="lineNum">     458 </span>            : 
+<span class="lineNum">     459 </span>            :   function test_Revert_Unauthorized(address _account, uint256 _rad) public {
+<span class="lineNum">     460 </span>            :     vm.expectRevert(IAuthorizable.Unauthorized.selector);
+<span class="lineNum">     461 </span>            : 
+<span class="lineNum">     462 </span>            :     stabilityFeeTreasury.setTotalAllowance(_account, _rad);
+<span class="lineNum">     463 </span>            :   }
+<span class="lineNum">     464 </span>            : 
+<span class="lineNum">     465 </span>            :   function test_Revert_NullAccount(uint256 _rad) public authorized {
+<span class="lineNum">     466 </span>            :     vm.expectRevert(Assertions.NullAddress.selector);
+<span class="lineNum">     467 </span>            : 
+<span class="lineNum">     468 </span>            :     stabilityFeeTreasury.setTotalAllowance(address(0), _rad);
+<span class="lineNum">     469 </span>            :   }
+<span class="lineNum">     470 </span>            : 
+<span class="lineNum">     471 </span>            :   function test_Revert_AccountCannotBeTreasury(uint256 _rad) public authorized {
+<span class="lineNum">     472 </span>            :     vm.expectRevert(IStabilityFeeTreasury.SFTreasury_AccountCannotBeTreasury.selector);
+<span class="lineNum">     473 </span>            : 
+<span class="lineNum">     474 </span>            :     stabilityFeeTreasury.setTotalAllowance(address(stabilityFeeTreasury), _rad);
+<span class="lineNum">     475 </span>            :   }
+<span class="lineNum">     476 </span>            : }
+<span class="lineNum">     477 </span>            : 
+<span class="lineNum">     478 </span>            : contract Unit_StabilityFeeTreasury_SetPerHourAllowance is Base {
+<span class="lineNum">     479 </span>            :   event SetPerHourAllowance(address indexed _account, uint256 _rad);
+<span class="lineNum">     480 </span>            : 
+<span class="lineNum">     481 </span>            :   function _notNullAcc(address _account) internal pure returns (bool) {
+<span class="lineNum">     482 </span>            :     return _account != address(0);
+<span class="lineNum">     483 </span>            :   }
+<span class="lineNum">     484 </span>            : 
+<span class="lineNum">     485 </span>            :   function _notStabilityFeeTreasuryAcc(address _account) internal view returns (bool) {
+<span class="lineNum">     486 </span>            :     return _account != address(stabilityFeeTreasury);
+<span class="lineNum">     487 </span>            :   }
+<span class="lineNum">     488 </span>            : 
+<span class="lineNum">     489 </span>            :   function _assumeHappyPath(address _account) internal view {
+<span class="lineNum">     490 </span>            :     vm.assume(_notNullAcc(_account));
+<span class="lineNum">     491 </span>            :     vm.assume(_notStabilityFeeTreasuryAcc(_account));
+<span class="lineNum">     492 </span>            :   }
+<span class="lineNum">     493 </span>            : 
+<span class="lineNum">     494 </span>            :   modifier happyPath(address _account) {
+<span class="lineNum">     495 </span>            :     _assumeHappyPath(_account);
+<span class="lineNum">     496 </span>            :     vm.startPrank(authorizedAccount);
+<span class="lineNum">     497 </span>            :     _;
+<span class="lineNum">     498 </span>            :   }
+<span class="lineNum">     499 </span>            : 
+<span class="lineNum">     500 </span>            :   function test_Set_Allowance(address _account, uint256 _rad) public happyPath(_account) {
+<span class="lineNum">     501 </span>            :     stabilityFeeTreasury.setPerHourAllowance(_account, _rad);
+<span class="lineNum">     502 </span>            : 
+<span class="lineNum">     503 </span>            :     assertEq(stabilityFeeTreasury.allowance(_account).perHour, _rad);
+<span class="lineNum">     504 </span>            :   }
+<span class="lineNum">     505 </span>            : 
+<span class="lineNum">     506 </span>            :   function test_Emit_SetPerHourAllowance(address _account, uint256 _rad) public happyPath(_account) {
+<span class="lineNum">     507 </span>            :     vm.expectEmit();
+<span class="lineNum">     508 </span>            :     emit SetPerHourAllowance(_account, _rad);
+<span class="lineNum">     509 </span>            : 
+<span class="lineNum">     510 </span>            :     stabilityFeeTreasury.setPerHourAllowance(_account, _rad);
+<span class="lineNum">     511 </span>            :   }
+<span class="lineNum">     512 </span>            : 
+<span class="lineNum">     513 </span>            :   function test_Revert_Unauthorized(address _account, uint256 _rad) public {
+<span class="lineNum">     514 </span>            :     vm.expectRevert(IAuthorizable.Unauthorized.selector);
+<span class="lineNum">     515 </span>            : 
+<span class="lineNum">     516 </span>            :     stabilityFeeTreasury.setTotalAllowance(_account, _rad);
+<span class="lineNum">     517 </span>            :   }
+<span class="lineNum">     518 </span>            : 
+<span class="lineNum">     519 </span>            :   function test_Revert_NullAccount(uint256 _rad) public authorized {
+<span class="lineNum">     520 </span>            :     vm.expectRevert(Assertions.NullAddress.selector);
+<span class="lineNum">     521 </span>            : 
+<span class="lineNum">     522 </span>            :     stabilityFeeTreasury.setPerHourAllowance(address(0), _rad);
+<span class="lineNum">     523 </span>            :   }
+<span class="lineNum">     524 </span>            : 
+<span class="lineNum">     525 </span>            :   function test_Revert_AccountCannotBeTreasury(uint256 _rad) public authorized {
+<span class="lineNum">     526 </span>            :     vm.expectRevert(IStabilityFeeTreasury.SFTreasury_AccountCannotBeTreasury.selector);
+<span class="lineNum">     527 </span>            : 
+<span class="lineNum">     528 </span>            :     stabilityFeeTreasury.setPerHourAllowance(address(stabilityFeeTreasury), _rad);
+<span class="lineNum">     529 </span>            :   }
+<span class="lineNum">     530 </span>            : }
+<span class="lineNum">     531 </span>            : 
+<span class="lineNum">     532 </span>            : contract Unit_StabilityFeeTreasury_GiveFunds is Base {
+<span class="lineNum">     533 </span>            :   event GiveFunds(address indexed _account, uint256 _rad);
+<span class="lineNum">     534 </span>            :   event JoinCoins(uint256 _wad);
+<span class="lineNum">     535 </span>            :   event SettleDebt(uint256 _rad);
+<span class="lineNum">     536 </span>            : 
+<span class="lineNum">     537 </span>            :   struct GiveFundsScenario {
+<span class="lineNum">     538 </span>            :     address account;
+<span class="lineNum">     539 </span>            :     uint256 rad;
+<span class="lineNum">     540 </span>            :     uint256 systemCoinBalance;
+<span class="lineNum">     541 </span>            :     uint256 safeEngineCoinBalance;
+<span class="lineNum">     542 </span>            :     uint256 safeEngineDebtBalance;
+<span class="lineNum">     543 </span>            :   }
+<span class="lineNum">     544 </span>            : 
+<span class="lineNum">     545 </span>            :   function _notNullAcc(GiveFundsScenario memory _giveFundsScenario) internal pure returns (bool) {
+<span class="lineNum">     546 </span>            :     return _giveFundsScenario.account != address(0);
+<span class="lineNum">     547 </span>            :   }
+<span class="lineNum">     548 </span>            : 
+<span class="lineNum">     549 </span>            :   function _notStabilityFeeTreasuryAcc(GiveFundsScenario memory _giveFundsScenario) internal view returns (bool) {
+<span class="lineNum">     550 </span>            :     return _giveFundsScenario.account != address(stabilityFeeTreasury);
+<span class="lineNum">     551 </span>            :   }
+<span class="lineNum">     552 </span>            : 
+<span class="lineNum">     553 </span>            :   function _joinCoins(GiveFundsScenario memory _giveFundsScenario) internal pure returns (bool) {
+<span class="lineNum">     554 </span>            :     return _giveFundsScenario.systemCoinBalance &gt; 0;
+<span class="lineNum">     555 </span>            :   }
+<span class="lineNum">     556 </span>            : 
+<span class="lineNum">     557 </span>            :   function _settleDebt(GiveFundsScenario memory _giveFundsScenario) internal pure returns (bool) {
+<span class="lineNum">     558 </span>            :     return _giveFundsScenario.safeEngineDebtBalance &gt; 0;
+<span class="lineNum">     559 </span>            :   }
+<span class="lineNum">     560 </span>            : 
+<span class="lineNum">     561 </span>            :   function _nullDebt(GiveFundsScenario memory _giveFundsScenario) internal pure returns (bool) {
+<span class="lineNum">     562 </span>            :     return _giveFundsScenario.safeEngineCoinBalance &gt;= _giveFundsScenario.safeEngineDebtBalance;
+<span class="lineNum">     563 </span>            :   }
+<span class="lineNum">     564 </span>            : 
+<span class="lineNum">     565 </span>            :   function _enoughFunds(GiveFundsScenario memory _giveFundsScenario) internal pure returns (bool) {
+<span class="lineNum">     566 </span>            :     return _giveFundsScenario.safeEngineCoinBalance - _giveFundsScenario.safeEngineDebtBalance &gt;= _giveFundsScenario.rad;
+<span class="lineNum">     567 </span>            :   }
+<span class="lineNum">     568 </span>            : 
+<span class="lineNum">     569 </span>            :   function _assumeHappyPath(GiveFundsScenario memory _giveFundsScenario) internal view {
+<span class="lineNum">     570 </span>            :     vm.assume(_notNullAcc(_giveFundsScenario));
+<span class="lineNum">     571 </span>            :     vm.assume(_notStabilityFeeTreasuryAcc(_giveFundsScenario));
+<span class="lineNum">     572 </span>            :     vm.assume(_nullDebt(_giveFundsScenario));
+<span class="lineNum">     573 </span>            :     vm.assume(_enoughFunds(_giveFundsScenario));
+<span class="lineNum">     574 </span>            :   }
+<span class="lineNum">     575 </span>            : 
+<span class="lineNum">     576 </span>            :   function _mockValues(GiveFundsScenario memory _giveFundsScenario) internal {
+<span class="lineNum">     577 </span>            :     _mockSystemCoinBalanceOf(_giveFundsScenario.systemCoinBalance);
+<span class="lineNum">     578 </span>            :     _mockSafeEngineCoinBalance(_giveFundsScenario.safeEngineCoinBalance);
+<span class="lineNum">     579 </span>            :     _mockSafeEngineDebtBalance(_giveFundsScenario.safeEngineDebtBalance);
+<span class="lineNum">     580 </span>            :   }
+<span class="lineNum">     581 </span>            : 
+<span class="lineNum">     582 </span>            :   modifier happyPath(GiveFundsScenario memory _giveFundsScenario) {
+<span class="lineNum">     583 </span>            :     _assumeHappyPath(_giveFundsScenario);
+<span class="lineNum">     584 </span>            :     _mockValues(_giveFundsScenario);
+<span class="lineNum">     585 </span>            :     _;
+<span class="lineNum">     586 </span>            :   }
+<span class="lineNum">     587 </span>            : 
+<span class="lineNum">     588 </span>            :   function test_Emit_JoinCoins(GiveFundsScenario memory _giveFundsScenario)
+<span class="lineNum">     589 </span>            :     public
+<span class="lineNum">     590 </span>            :     authorized
+<span class="lineNum">     591 </span>            :     happyPath(_giveFundsScenario)
+<span class="lineNum">     592 </span>            :   {
+<span class="lineNum">     593 </span>            :     vm.assume(_joinCoins(_giveFundsScenario));
+<span class="lineNum">     594 </span>            : 
+<span class="lineNum">     595 </span>            :     vm.expectEmit();
+<span class="lineNum">     596 </span>            :     emit JoinCoins(_giveFundsScenario.systemCoinBalance);
+<span class="lineNum">     597 </span>            : 
+<span class="lineNum">     598 </span>            :     stabilityFeeTreasury.giveFunds(_giveFundsScenario.account, _giveFundsScenario.rad);
+<span class="lineNum">     599 </span>            :   }
+<span class="lineNum">     600 </span>            : 
+<span class="lineNum">     601 </span>            :   function test_Emit_SettleDebt(GiveFundsScenario memory _giveFundsScenario)
+<span class="lineNum">     602 </span>            :     public
+<span class="lineNum">     603 </span>            :     authorized
+<span class="lineNum">     604 </span>            :     happyPath(_giveFundsScenario)
+<span class="lineNum">     605 </span>            :   {
+<span class="lineNum">     606 </span>            :     vm.assume(_settleDebt(_giveFundsScenario));
+<span class="lineNum">     607 </span>            : 
+<span class="lineNum">     608 </span>            :     vm.expectEmit();
+<span class="lineNum">     609 </span>            :     emit SettleDebt(_giveFundsScenario.safeEngineDebtBalance);
+<span class="lineNum">     610 </span>            : 
+<span class="lineNum">     611 </span>            :     stabilityFeeTreasury.giveFunds(_giveFundsScenario.account, _giveFundsScenario.rad);
+<span class="lineNum">     612 </span>            :   }
+<span class="lineNum">     613 </span>            : 
+<span class="lineNum">     614 </span>            :   function test_Call_SafeEngine_TransferInternalCoins(GiveFundsScenario memory _giveFundsScenario)
+<span class="lineNum">     615 </span>            :     public
+<span class="lineNum">     616 </span>            :     authorized
+<span class="lineNum">     617 </span>            :     happyPath(_giveFundsScenario)
+<span class="lineNum">     618 </span>            :   {
+<span class="lineNum">     619 </span>            :     vm.expectCall(
+<span class="lineNum">     620 </span>            :       address(mockSafeEngine),
+<span class="lineNum">     621 </span>            :       abi.encodeCall(
+<span class="lineNum">     622 </span>            :         mockSafeEngine.transferInternalCoins,
+<span class="lineNum">     623 </span>            :         (address(stabilityFeeTreasury), _giveFundsScenario.account, _giveFundsScenario.rad)
+<span class="lineNum">     624 </span>            :       ),
+<span class="lineNum">     625 </span>            :       1
+<span class="lineNum">     626 </span>            :     );
+<span class="lineNum">     627 </span>            : 
+<span class="lineNum">     628 </span>            :     stabilityFeeTreasury.giveFunds(_giveFundsScenario.account, _giveFundsScenario.rad);
+<span class="lineNum">     629 </span>            :   }
+<span class="lineNum">     630 </span>            : 
+<span class="lineNum">     631 </span>            :   function test_Emit_GiveFunds(GiveFundsScenario memory _giveFundsScenario)
+<span class="lineNum">     632 </span>            :     public
+<span class="lineNum">     633 </span>            :     authorized
+<span class="lineNum">     634 </span>            :     happyPath(_giveFundsScenario)
+<span class="lineNum">     635 </span>            :   {
+<span class="lineNum">     636 </span>            :     vm.expectEmit();
+<span class="lineNum">     637 </span>            :     emit GiveFunds(_giveFundsScenario.account, _giveFundsScenario.rad);
+<span class="lineNum">     638 </span>            : 
+<span class="lineNum">     639 </span>            :     stabilityFeeTreasury.giveFunds(_giveFundsScenario.account, _giveFundsScenario.rad);
+<span class="lineNum">     640 </span>            :   }
+<span class="lineNum">     641 </span>            : 
+<span class="lineNum">     642 </span>            :   function test_Revert_Unauthorized(GiveFundsScenario memory _giveFundsScenario) public {
+<span class="lineNum">     643 </span>            :     vm.expectRevert(IAuthorizable.Unauthorized.selector);
+<span class="lineNum">     644 </span>            : 
+<span class="lineNum">     645 </span>            :     stabilityFeeTreasury.giveFunds(_giveFundsScenario.account, _giveFundsScenario.rad);
+<span class="lineNum">     646 </span>            :   }
+<span class="lineNum">     647 </span>            : 
+<span class="lineNum">     648 </span>            :   function test_Revert_NullAccount(GiveFundsScenario memory _giveFundsScenario) public authorized {
+<span class="lineNum">     649 </span>            :     _giveFundsScenario.account = address(0);
+<span class="lineNum">     650 </span>            : 
+<span class="lineNum">     651 </span>            :     vm.expectRevert(Assertions.NullAddress.selector);
+<span class="lineNum">     652 </span>            : 
+<span class="lineNum">     653 </span>            :     stabilityFeeTreasury.giveFunds(_giveFundsScenario.account, _giveFundsScenario.rad);
+<span class="lineNum">     654 </span>            :   }
+<span class="lineNum">     655 </span>            : 
+<span class="lineNum">     656 </span>            :   function test_Revert_AccountCannotBeTreasury(GiveFundsScenario memory _giveFundsScenario) public authorized {
+<span class="lineNum">     657 </span>            :     _giveFundsScenario.account = address(stabilityFeeTreasury);
+<span class="lineNum">     658 </span>            : 
+<span class="lineNum">     659 </span>            :     vm.expectRevert(IStabilityFeeTreasury.SFTreasury_AccountCannotBeTreasury.selector);
+<span class="lineNum">     660 </span>            : 
+<span class="lineNum">     661 </span>            :     stabilityFeeTreasury.giveFunds(_giveFundsScenario.account, _giveFundsScenario.rad);
+<span class="lineNum">     662 </span>            :   }
+<span class="lineNum">     663 </span>            : 
+<span class="lineNum">     664 </span>            :   function test_Revert_OutstandingBadDebt(GiveFundsScenario memory _giveFundsScenario) public authorized {
+<span class="lineNum">     665 </span>            :     vm.assume(_notNullAcc(_giveFundsScenario));
+<span class="lineNum">     666 </span>            :     vm.assume(_notStabilityFeeTreasuryAcc(_giveFundsScenario));
+<span class="lineNum">     667 </span>            : 
+<span class="lineNum">     668 </span>            :     vm.assume(!_nullDebt(_giveFundsScenario));
+<span class="lineNum">     669 </span>            :     _mockValues(_giveFundsScenario);
+<span class="lineNum">     670 </span>            : 
+<span class="lineNum">     671 </span>            :     vm.expectRevert(IStabilityFeeTreasury.SFTreasury_OutstandingBadDebt.selector);
+<span class="lineNum">     672 </span>            : 
+<span class="lineNum">     673 </span>            :     stabilityFeeTreasury.giveFunds(_giveFundsScenario.account, _giveFundsScenario.rad);
+<span class="lineNum">     674 </span>            :   }
+<span class="lineNum">     675 </span>            : 
+<span class="lineNum">     676 </span>            :   function test_Revert_NotEnoughFunds(GiveFundsScenario memory _giveFundsScenario) public authorized {
+<span class="lineNum">     677 </span>            :     vm.assume(_notNullAcc(_giveFundsScenario));
+<span class="lineNum">     678 </span>            :     vm.assume(_notStabilityFeeTreasuryAcc(_giveFundsScenario));
+<span class="lineNum">     679 </span>            :     vm.assume(_nullDebt(_giveFundsScenario));
+<span class="lineNum">     680 </span>            : 
+<span class="lineNum">     681 </span>            :     vm.assume(!_enoughFunds(_giveFundsScenario));
+<span class="lineNum">     682 </span>            :     _mockValues(_giveFundsScenario);
+<span class="lineNum">     683 </span>            : 
+<span class="lineNum">     684 </span>            :     vm.expectRevert(IStabilityFeeTreasury.SFTreasury_NotEnoughFunds.selector);
+<span class="lineNum">     685 </span>            : 
+<span class="lineNum">     686 </span>            :     stabilityFeeTreasury.giveFunds(_giveFundsScenario.account, _giveFundsScenario.rad);
+<span class="lineNum">     687 </span>            :   }
+<span class="lineNum">     688 </span>            : }
+<span class="lineNum">     689 </span>            : 
+<span class="lineNum">     690 </span>            : contract Unit_StabilityFeeTreasury_TakeFunds is Base {
+<span class="lineNum">     691 </span>            :   event TakeFunds(address indexed _account, uint256 _rad);
+<span class="lineNum">     692 </span>            : 
+<span class="lineNum">     693 </span>            :   function _notStabilityFeeTreasuryAcc(address _account) internal view returns (bool) {
+<span class="lineNum">     694 </span>            :     return _account != address(stabilityFeeTreasury);
+<span class="lineNum">     695 </span>            :   }
+<span class="lineNum">     696 </span>            : 
+<span class="lineNum">     697 </span>            :   function _assumeHappyPath(address _account) internal view {
+<span class="lineNum">     698 </span>            :     vm.assume(_notStabilityFeeTreasuryAcc(_account));
+<span class="lineNum">     699 </span>            :   }
+<span class="lineNum">     700 </span>            : 
+<span class="lineNum">     701 </span>            :   modifier happyPath(address _account) {
+<span class="lineNum">     702 </span>            :     _assumeHappyPath(_account);
+<span class="lineNum">     703 </span>            :     vm.startPrank(authorizedAccount);
+<span class="lineNum">     704 </span>            :     _;
+<span class="lineNum">     705 </span>            :   }
+<span class="lineNum">     706 </span>            : 
+<span class="lineNum">     707 </span>            :   function test_Call_SafeEngine_TransferInternalCoins(address _account, uint256 _rad) public happyPath(_account) {
+<span class="lineNum">     708 </span>            :     vm.expectCall(
+<span class="lineNum">     709 </span>            :       address(mockSafeEngine),
+<span class="lineNum">     710 </span>            :       abi.encodeCall(mockSafeEngine.transferInternalCoins, (_account, address(stabilityFeeTreasury), _rad)),
+<span class="lineNum">     711 </span>            :       1
+<span class="lineNum">     712 </span>            :     );
+<span class="lineNum">     713 </span>            : 
+<span class="lineNum">     714 </span>            :     stabilityFeeTreasury.takeFunds(_account, _rad);
+<span class="lineNum">     715 </span>            :   }
+<span class="lineNum">     716 </span>            : 
+<span class="lineNum">     717 </span>            :   function test_Emit_TakeFunds(address _account, uint256 _rad) public happyPath(_account) {
+<span class="lineNum">     718 </span>            :     vm.expectEmit();
+<span class="lineNum">     719 </span>            :     emit TakeFunds(_account, _rad);
+<span class="lineNum">     720 </span>            : 
+<span class="lineNum">     721 </span>            :     stabilityFeeTreasury.takeFunds(_account, _rad);
+<span class="lineNum">     722 </span>            :   }
+<span class="lineNum">     723 </span>            : 
+<span class="lineNum">     724 </span>            :   function test_Revert_Unauthorized(address _account, uint256 _rad) public {
+<span class="lineNum">     725 </span>            :     vm.expectRevert(IAuthorizable.Unauthorized.selector);
+<span class="lineNum">     726 </span>            : 
+<span class="lineNum">     727 </span>            :     stabilityFeeTreasury.takeFunds(_account, _rad);
+<span class="lineNum">     728 </span>            :   }
+<span class="lineNum">     729 </span>            : 
+<span class="lineNum">     730 </span>            :   function test_Revert_AccountCannotBeTreasury(uint256 _rad) public authorized {
+<span class="lineNum">     731 </span>            :     vm.expectRevert(IStabilityFeeTreasury.SFTreasury_AccountCannotBeTreasury.selector);
+<span class="lineNum">     732 </span>            : 
+<span class="lineNum">     733 </span>            :     stabilityFeeTreasury.takeFunds(address(stabilityFeeTreasury), _rad);
+<span class="lineNum">     734 </span>            :   }
+<span class="lineNum">     735 </span>            : }
+<span class="lineNum">     736 </span>            : 
+<span class="lineNum">     737 </span>            : contract Unit_StabilityFeeTreasury_PullFunds is Base {
+<span class="lineNum">     738 </span>            :   event PullFunds(address indexed _sender, address indexed _dstAccount, uint256 _rad);
+<span class="lineNum">     739 </span>            :   event JoinCoins(uint256 _wad);
+<span class="lineNum">     740 </span>            :   event SettleDebt(uint256 _rad);
+<span class="lineNum">     741 </span>            : 
+<span class="lineNum">     742 </span>            :   struct PullFundsScenario {
+<span class="lineNum">     743 </span>            :     address dstAccount;
+<span class="lineNum">     744 </span>            :     uint256 wad;
+<span class="lineNum">     745 </span>            :     uint256 totalAllowance;
+<span class="lineNum">     746 </span>            :     uint256 allowancePerHour;
+<span class="lineNum">     747 </span>            :     uint256 initialPulledPerHour;
+<span class="lineNum">     748 </span>            :     uint256 systemCoinBalance;
+<span class="lineNum">     749 </span>            :     uint256 safeEngineCoinBalance;
+<span class="lineNum">     750 </span>            :     uint256 safeEngineDebtBalance;
+<span class="lineNum">     751 </span>            :     uint256 pullFundsMinThreshold;
+<span class="lineNum">     752 </span>            :   }
+<span class="lineNum">     753 </span>            : 
+<span class="lineNum">     754 </span>            :   function _notNullDstAcc(PullFundsScenario memory _pullFundsScenario) internal pure returns (bool) {
+<span class="lineNum">     755 </span>            :     return _pullFundsScenario.dstAccount != address(0); // avoid null dst-acc error
+<span class="lineNum">     756 </span>            :   }
+<span class="lineNum">     757 </span>            : 
+<span class="lineNum">     758 </span>            :   function _notStabilityFeeTreasuryDstAcc(PullFundsScenario memory _pullFundsScenario) internal view returns (bool) {
+<span class="lineNum">     759 </span>            :     return _pullFundsScenario.dstAccount != address(stabilityFeeTreasury);
+<span class="lineNum">     760 </span>            :   }
+<span class="lineNum">     761 </span>            : 
+<span class="lineNum">     762 </span>            :   function _notAccountingDstAcc(PullFundsScenario memory _pullFundsScenario) internal view returns (bool) {
+<span class="lineNum">     763 </span>            :     return _pullFundsScenario.dstAccount != address(mockExtraSurplusReceiver);
+<span class="lineNum">     764 </span>            :   }
+<span class="lineNum">     765 </span>            : 
+<span class="lineNum">     766 </span>            :   function _notNullTransferAmount(PullFundsScenario memory _pullFundsScenario) internal pure returns (bool) {
+<span class="lineNum">     767 </span>            :     return _pullFundsScenario.wad &gt; 0; // avoid null transfer amount error
+<span class="lineNum">     768 </span>            :   }
+<span class="lineNum">     769 </span>            : 
+<span class="lineNum">     770 </span>            :   function _allowed(PullFundsScenario memory _pullFundsScenario) internal pure returns (bool) {
+<span class="lineNum">     771 </span>            :     vm.assume(notOverflowMul(_pullFundsScenario.wad, RAY)); // notOverflow
+<span class="lineNum">     772 </span>            :     return _pullFundsScenario.totalAllowance &gt;= _pullFundsScenario.wad * RAY; // avoid not allowed error
+<span class="lineNum">     773 </span>            :   }
+<span class="lineNum">     774 </span>            : 
+<span class="lineNum">     775 </span>            :   function _allowancePerHourNotZero(PullFundsScenario memory _pullFundsScenario) internal pure returns (bool) {
+<span class="lineNum">     776 </span>            :     return _pullFundsScenario.allowancePerHour &gt; 0; // enter if statement for require
+<span class="lineNum">     777 </span>            :   }
+<span class="lineNum">     778 </span>            : 
+<span class="lineNum">     779 </span>            :   function _notPerHourLimitExceeded(PullFundsScenario memory _pullFundsScenario) internal pure returns (bool) {
+<span class="lineNum">     780 </span>            :     vm.assume(notOverflowAdd(_pullFundsScenario.initialPulledPerHour, _pullFundsScenario.wad * RAY));
+<span class="lineNum">     781 </span>            :     return
+<span class="lineNum">     782 </span>            :       _pullFundsScenario.initialPulledPerHour + (_pullFundsScenario.wad * RAY) &lt;= _pullFundsScenario.allowancePerHour; // avoid StabilityFeeTreasury/per-hour-limit-exceeded
+<span class="lineNum">     783 </span>            :   }
+<span class="lineNum">     784 </span>            : 
+<span class="lineNum">     785 </span>            :   function _joinCoins(PullFundsScenario memory _pullFundsScenario) internal pure returns (bool) {
+<span class="lineNum">     786 </span>            :     return _pullFundsScenario.systemCoinBalance &gt; 0;
+<span class="lineNum">     787 </span>            :   }
+<span class="lineNum">     788 </span>            : 
+<span class="lineNum">     789 </span>            :   function _settleDebt(PullFundsScenario memory _pullFundsScenario) internal pure returns (bool) {
+<span class="lineNum">     790 </span>            :     return _pullFundsScenario.safeEngineDebtBalance &gt; 0;
+<span class="lineNum">     791 </span>            :   }
+<span class="lineNum">     792 </span>            : 
+<span class="lineNum">     793 </span>            :   function _nullDebt(PullFundsScenario memory _pullFundsScenario) internal pure returns (bool) {
+<span class="lineNum">     794 </span>            :     return _pullFundsScenario.safeEngineCoinBalance &gt;= _pullFundsScenario.safeEngineDebtBalance;
+<span class="lineNum">     795 </span>            :   }
+<span class="lineNum">     796 </span>            : 
+<span class="lineNum">     797 </span>            :   function _enoughFunds(PullFundsScenario memory _pullFundsScenario) internal pure returns (bool) {
+<span class="lineNum">     798 </span>            :     return _pullFundsScenario.safeEngineCoinBalance - _pullFundsScenario.safeEngineDebtBalance
+<span class="lineNum">     799 </span>            :       &gt;= _pullFundsScenario.wad * RAY; // avoid StabilityFeeTreasury/not-enough-funds
+<span class="lineNum">     800 </span>            :   }
+<span class="lineNum">     801 </span>            : 
+<span class="lineNum">     802 </span>            :   function _notBelowPullFundsMinThreshold(PullFundsScenario memory _pullFundsScenario) internal pure returns (bool) {
+<span class="lineNum">     803 </span>            :     return _pullFundsScenario.safeEngineCoinBalance - _pullFundsScenario.safeEngineDebtBalance
+<span class="lineNum">     804 </span>            :       &gt;= _pullFundsScenario.pullFundsMinThreshold; // avoid StabilityFeeTreasury/below-pullFunds-min-threshold
+<span class="lineNum">     805 </span>            :   }
+<span class="lineNum">     806 </span>            : 
+<span class="lineNum">     807 </span>            :   function _assumeHappyPath(PullFundsScenario memory _pullFundsScenario) internal view {
+<span class="lineNum">     808 </span>            :     vm.assume(_notNullDstAcc(_pullFundsScenario));
+<span class="lineNum">     809 </span>            :     vm.assume(_notStabilityFeeTreasuryDstAcc(_pullFundsScenario));
+<span class="lineNum">     810 </span>            :     vm.assume(_notAccountingDstAcc(_pullFundsScenario));
+<span class="lineNum">     811 </span>            :     vm.assume(_notNullTransferAmount(_pullFundsScenario));
+<span class="lineNum">     812 </span>            :     vm.assume(_allowed(_pullFundsScenario));
+<span class="lineNum">     813 </span>            :     vm.assume(_allowancePerHourNotZero(_pullFundsScenario));
+<span class="lineNum">     814 </span>            :     vm.assume(_notPerHourLimitExceeded(_pullFundsScenario));
+<span class="lineNum">     815 </span>            :     vm.assume(_nullDebt(_pullFundsScenario));
+<span class="lineNum">     816 </span>            :     vm.assume(_enoughFunds(_pullFundsScenario));
+<span class="lineNum">     817 </span>            :     vm.assume(_notBelowPullFundsMinThreshold(_pullFundsScenario));
+<span class="lineNum">     818 </span>            :   }
+<span class="lineNum">     819 </span>            : 
+<span class="lineNum">     820 </span>            :   function _mockValues(PullFundsScenario memory _pullFundsScenario) internal {
+<span class="lineNum">     821 </span>            :     _mockTotalAllowance(user, _pullFundsScenario.totalAllowance);
+<span class="lineNum">     822 </span>            :     _mockPerHourAllowance(user, _pullFundsScenario.allowancePerHour);
+<span class="lineNum">     823 </span>            :     _mockPulledPerHour(user, block.timestamp / HOUR, _pullFundsScenario.initialPulledPerHour);
+<span class="lineNum">     824 </span>            :     _mockSystemCoinBalanceOf(_pullFundsScenario.systemCoinBalance);
+<span class="lineNum">     825 </span>            :     _mockSafeEngineCoinBalance(_pullFundsScenario.safeEngineCoinBalance);
+<span class="lineNum">     826 </span>            :     _mockSafeEngineDebtBalance(_pullFundsScenario.safeEngineDebtBalance);
+<span class="lineNum">     827 </span>            :     _mockPullFundsMinThreshold(_pullFundsScenario.pullFundsMinThreshold);
+<span class="lineNum">     828 </span>            :   }
+<span class="lineNum">     829 </span>            : 
+<span class="lineNum">     830 </span>            :   modifier happyPath(PullFundsScenario memory _pullFundsScenario) {
+<span class="lineNum">     831 </span>            :     _assumeHappyPath(_pullFundsScenario);
+<span class="lineNum">     832 </span>            :     _mockValues(_pullFundsScenario);
+<span class="lineNum">     833 </span>            :     vm.startPrank(user);
+<span class="lineNum">     834 </span>            :     _;
+<span class="lineNum">     835 </span>            :   }
+<span class="lineNum">     836 </span>            : 
+<span class="lineNum">     837 </span>            :   function test_Set_PulledPerHour(PullFundsScenario memory _pullFundsScenario) public happyPath(_pullFundsScenario) {
+<span class="lineNum">     838 </span>            :     stabilityFeeTreasury.pullFunds(_pullFundsScenario.dstAccount, _pullFundsScenario.wad);
+<span class="lineNum">     839 </span>            : 
+<span class="lineNum">     840 </span>            :     assertEq(
+<span class="lineNum">     841 </span>            :       stabilityFeeTreasury.pulledPerHour(user, block.timestamp / HOUR),
+<span class="lineNum">     842 </span>            :       _pullFundsScenario.initialPulledPerHour + (_pullFundsScenario.wad * RAY)
+<span class="lineNum">     843 </span>            :     );
+<span class="lineNum">     844 </span>            :   }
+<span class="lineNum">     845 </span>            : 
+<span class="lineNum">     846 </span>            :   function test_Emit_JoinCoins(PullFundsScenario memory _pullFundsScenario) public happyPath(_pullFundsScenario) {
+<span class="lineNum">     847 </span>            :     vm.assume(_joinCoins(_pullFundsScenario));
+<span class="lineNum">     848 </span>            : 
+<span class="lineNum">     849 </span>            :     vm.expectEmit();
+<span class="lineNum">     850 </span>            :     emit JoinCoins(_pullFundsScenario.systemCoinBalance);
+<span class="lineNum">     851 </span>            : 
+<span class="lineNum">     852 </span>            :     stabilityFeeTreasury.pullFunds(_pullFundsScenario.dstAccount, _pullFundsScenario.wad);
+<span class="lineNum">     853 </span>            :   }
+<span class="lineNum">     854 </span>            : 
+<span class="lineNum">     855 </span>            :   function test_Emit_SettleDebt(PullFundsScenario memory _pullFundsScenario) public happyPath(_pullFundsScenario) {
+<span class="lineNum">     856 </span>            :     vm.assume(_settleDebt(_pullFundsScenario));
+<span class="lineNum">     857 </span>            : 
+<span class="lineNum">     858 </span>            :     vm.expectEmit();
+<span class="lineNum">     859 </span>            :     emit SettleDebt(_pullFundsScenario.safeEngineDebtBalance);
+<span class="lineNum">     860 </span>            : 
+<span class="lineNum">     861 </span>            :     stabilityFeeTreasury.pullFunds(_pullFundsScenario.dstAccount, _pullFundsScenario.wad);
+<span class="lineNum">     862 </span>            :   }
+<span class="lineNum">     863 </span>            : 
+<span class="lineNum">     864 </span>            :   function test_Set_Allowance(PullFundsScenario memory _pullFundsScenario) public happyPath(_pullFundsScenario) {
+<span class="lineNum">     865 </span>            :     stabilityFeeTreasury.pullFunds(_pullFundsScenario.dstAccount, _pullFundsScenario.wad);
+<span class="lineNum">     866 </span>            : 
+<span class="lineNum">     867 </span>            :     assertEq(
+<span class="lineNum">     868 </span>            :       stabilityFeeTreasury.allowance(user).total, _pullFundsScenario.totalAllowance - (_pullFundsScenario.wad * RAY)
+<span class="lineNum">     869 </span>            :     );
+<span class="lineNum">     870 </span>            :   }
+<span class="lineNum">     871 </span>            : 
+<span class="lineNum">     872 </span>            :   function test_Call_SafeEngine_TransferInternalCoins(PullFundsScenario memory _pullFundsScenario)
+<span class="lineNum">     873 </span>            :     public
+<span class="lineNum">     874 </span>            :     happyPath(_pullFundsScenario)
+<span class="lineNum">     875 </span>            :   {
+<span class="lineNum">     876 </span>            :     vm.expectCall(
+<span class="lineNum">     877 </span>            :       address(mockSafeEngine),
+<span class="lineNum">     878 </span>            :       abi.encodeCall(
+<span class="lineNum">     879 </span>            :         mockSafeEngine.transferInternalCoins,
+<span class="lineNum">     880 </span>            :         (address(stabilityFeeTreasury), _pullFundsScenario.dstAccount, _pullFundsScenario.wad * RAY)
+<span class="lineNum">     881 </span>            :       ),
+<span class="lineNum">     882 </span>            :       1
+<span class="lineNum">     883 </span>            :     );
+<span class="lineNum">     884 </span>            : 
+<span class="lineNum">     885 </span>            :     stabilityFeeTreasury.pullFunds(_pullFundsScenario.dstAccount, _pullFundsScenario.wad);
+<span class="lineNum">     886 </span>            :   }
+<span class="lineNum">     887 </span>            : 
+<span class="lineNum">     888 </span>            :   function test_Emit_PullFunds(PullFundsScenario memory _pullFundsScenario) public happyPath(_pullFundsScenario) {
+<span class="lineNum">     889 </span>            :     vm.expectEmit();
+<span class="lineNum">     890 </span>            :     emit PullFunds(user, _pullFundsScenario.dstAccount, _pullFundsScenario.wad * RAY);
+<span class="lineNum">     891 </span>            : 
+<span class="lineNum">     892 </span>            :     stabilityFeeTreasury.pullFunds(_pullFundsScenario.dstAccount, _pullFundsScenario.wad);
+<span class="lineNum">     893 </span>            :   }
+<span class="lineNum">     894 </span>            : 
+<span class="lineNum">     895 </span>            :   function test_Revert_NullDst(PullFundsScenario memory _pullFundsScenario) public {
+<span class="lineNum">     896 </span>            :     _pullFundsScenario.dstAccount = address(0);
+<span class="lineNum">     897 </span>            : 
+<span class="lineNum">     898 </span>            :     vm.expectRevert(Assertions.NullAddress.selector);
+<span class="lineNum">     899 </span>            : 
+<span class="lineNum">     900 </span>            :     stabilityFeeTreasury.pullFunds(_pullFundsScenario.dstAccount, _pullFundsScenario.wad);
+<span class="lineNum">     901 </span>            :   }
+<span class="lineNum">     902 </span>            : 
+<span class="lineNum">     903 </span>            :   function testFail_Emit_PullFunds_DstAccIsStabilityFeeTreasury(PullFundsScenario memory _pullFundsScenario) public {
+<span class="lineNum">     904 </span>            :     _pullFundsScenario.dstAccount = address(stabilityFeeTreasury);
+<span class="lineNum">     905 </span>            : 
+<span class="lineNum">     906 </span>            :     vm.expectEmit(false, false, false, false);
+<span class="lineNum">     907 </span>            :     emit PullFunds(user, address(stabilityFeeTreasury), _pullFundsScenario.wad * RAY);
+<span class="lineNum">     908 </span>            : 
+<span class="lineNum">     909 </span>            :     stabilityFeeTreasury.pullFunds(_pullFundsScenario.dstAccount, _pullFundsScenario.wad);
+<span class="lineNum">     910 </span>            :   }
+<span class="lineNum">     911 </span>            : 
+<span class="lineNum">     912 </span>            :   function test_Revert_DstCannotBeAccounting(PullFundsScenario memory _pullFundsScenario) public {
+<span class="lineNum">     913 </span>            :     _pullFundsScenario.dstAccount = address(mockExtraSurplusReceiver);
+<span class="lineNum">     914 </span>            : 
+<span class="lineNum">     915 </span>            :     vm.expectRevert(IStabilityFeeTreasury.SFTreasury_DstCannotBeAccounting.selector);
+<span class="lineNum">     916 </span>            : 
+<span class="lineNum">     917 </span>            :     stabilityFeeTreasury.pullFunds(_pullFundsScenario.dstAccount, _pullFundsScenario.wad);
+<span class="lineNum">     918 </span>            :   }
+<span class="lineNum">     919 </span>            : 
+<span class="lineNum">     920 </span>            :   function test_Revert_NullTransferAmount(PullFundsScenario memory _pullFundsScenario) public {
+<span class="lineNum">     921 </span>            :     vm.assume(_notNullDstAcc(_pullFundsScenario));
+<span class="lineNum">     922 </span>            :     vm.assume(_notStabilityFeeTreasuryDstAcc(_pullFundsScenario));
+<span class="lineNum">     923 </span>            :     vm.assume(_notAccountingDstAcc(_pullFundsScenario));
+<span class="lineNum">     924 </span>            : 
+<span class="lineNum">     925 </span>            :     _pullFundsScenario.wad = 0;
+<span class="lineNum">     926 </span>            : 
+<span class="lineNum">     927 </span>            :     vm.expectRevert(IStabilityFeeTreasury.SFTreasury_NullTransferAmount.selector);
+<span class="lineNum">     928 </span>            : 
+<span class="lineNum">     929 </span>            :     stabilityFeeTreasury.pullFunds(_pullFundsScenario.dstAccount, _pullFundsScenario.wad);
+<span class="lineNum">     930 </span>            :   }
+<span class="lineNum">     931 </span>            : 
+<span class="lineNum">     932 </span>            :   function test_Revert_NotAllowed(PullFundsScenario memory _pullFundsScenario) public {
+<span class="lineNum">     933 </span>            :     vm.assume(_notNullDstAcc(_pullFundsScenario));
+<span class="lineNum">     934 </span>            :     vm.assume(_notStabilityFeeTreasuryDstAcc(_pullFundsScenario));
+<span class="lineNum">     935 </span>            :     vm.assume(_notAccountingDstAcc(_pullFundsScenario));
+<span class="lineNum">     936 </span>            :     vm.assume(_notNullTransferAmount(_pullFundsScenario));
+<span class="lineNum">     937 </span>            : 
+<span class="lineNum">     938 </span>            :     vm.assume(!_allowed(_pullFundsScenario));
+<span class="lineNum">     939 </span>            :     _mockValues(_pullFundsScenario);
+<span class="lineNum">     940 </span>            : 
+<span class="lineNum">     941 </span>            :     vm.expectRevert(IStabilityFeeTreasury.SFTreasury_NotAllowed.selector);
+<span class="lineNum">     942 </span>            : 
+<span class="lineNum">     943 </span>            :     vm.prank(user);
+<span class="lineNum">     944 </span>            :     stabilityFeeTreasury.pullFunds(_pullFundsScenario.dstAccount, _pullFundsScenario.wad);
+<span class="lineNum">     945 </span>            :   }
+<span class="lineNum">     946 </span>            : 
+<span class="lineNum">     947 </span>            :   function test_Revert_PerHourLimitExceeded(PullFundsScenario memory _pullFundsScenario) public {
+<span class="lineNum">     948 </span>            :     vm.assume(_notNullDstAcc(_pullFundsScenario));
+<span class="lineNum">     949 </span>            :     vm.assume(_notStabilityFeeTreasuryDstAcc(_pullFundsScenario));
+<span class="lineNum">     950 </span>            :     vm.assume(_notAccountingDstAcc(_pullFundsScenario));
+<span class="lineNum">     951 </span>            :     vm.assume(_notNullTransferAmount(_pullFundsScenario));
+<span class="lineNum">     952 </span>            :     vm.assume(_allowed(_pullFundsScenario));
+<span class="lineNum">     953 </span>            : 
+<span class="lineNum">     954 </span>            :     vm.assume(_allowancePerHourNotZero(_pullFundsScenario));
+<span class="lineNum">     955 </span>            :     vm.assume(!_notPerHourLimitExceeded(_pullFundsScenario));
+<span class="lineNum">     956 </span>            :     _mockValues(_pullFundsScenario);
+<span class="lineNum">     957 </span>            : 
+<span class="lineNum">     958 </span>            :     vm.expectRevert(IStabilityFeeTreasury.SFTreasury_PerHourLimitExceeded.selector);
+<span class="lineNum">     959 </span>            : 
+<span class="lineNum">     960 </span>            :     vm.prank(user);
+<span class="lineNum">     961 </span>            :     stabilityFeeTreasury.pullFunds(_pullFundsScenario.dstAccount, _pullFundsScenario.wad);
+<span class="lineNum">     962 </span>            :   }
+<span class="lineNum">     963 </span>            : 
+<span class="lineNum">     964 </span>            :   function test_Revert_OutstandingBadDebt(PullFundsScenario memory _pullFundsScenario) public {
+<span class="lineNum">     965 </span>            :     vm.assume(_notNullDstAcc(_pullFundsScenario));
+<span class="lineNum">     966 </span>            :     vm.assume(_notStabilityFeeTreasuryDstAcc(_pullFundsScenario));
+<span class="lineNum">     967 </span>            :     vm.assume(_notAccountingDstAcc(_pullFundsScenario));
+<span class="lineNum">     968 </span>            :     vm.assume(_notNullTransferAmount(_pullFundsScenario));
+<span class="lineNum">     969 </span>            :     vm.assume(_allowed(_pullFundsScenario));
+<span class="lineNum">     970 </span>            :     vm.assume(_allowancePerHourNotZero(_pullFundsScenario));
+<span class="lineNum">     971 </span>            :     vm.assume(_notPerHourLimitExceeded(_pullFundsScenario));
+<span class="lineNum">     972 </span>            : 
+<span class="lineNum">     973 </span>            :     vm.assume(!_nullDebt(_pullFundsScenario));
+<span class="lineNum">     974 </span>            :     _mockValues(_pullFundsScenario);
+<span class="lineNum">     975 </span>            : 
+<span class="lineNum">     976 </span>            :     vm.expectRevert(IStabilityFeeTreasury.SFTreasury_OutstandingBadDebt.selector);
+<span class="lineNum">     977 </span>            : 
+<span class="lineNum">     978 </span>            :     vm.prank(user);
+<span class="lineNum">     979 </span>            :     stabilityFeeTreasury.pullFunds(_pullFundsScenario.dstAccount, _pullFundsScenario.wad);
+<span class="lineNum">     980 </span>            :   }
+<span class="lineNum">     981 </span>            : 
+<span class="lineNum">     982 </span>            :   function test_Revert_NotEnoughFunds(PullFundsScenario memory _pullFundsScenario) public {
+<span class="lineNum">     983 </span>            :     vm.assume(_notNullDstAcc(_pullFundsScenario));
+<span class="lineNum">     984 </span>            :     vm.assume(_notStabilityFeeTreasuryDstAcc(_pullFundsScenario));
+<span class="lineNum">     985 </span>            :     vm.assume(_notAccountingDstAcc(_pullFundsScenario));
+<span class="lineNum">     986 </span>            :     vm.assume(_notNullTransferAmount(_pullFundsScenario));
+<span class="lineNum">     987 </span>            :     vm.assume(_allowed(_pullFundsScenario));
+<span class="lineNum">     988 </span>            :     vm.assume(_allowancePerHourNotZero(_pullFundsScenario));
+<span class="lineNum">     989 </span>            :     vm.assume(_notPerHourLimitExceeded(_pullFundsScenario));
+<span class="lineNum">     990 </span>            :     vm.assume(_nullDebt(_pullFundsScenario));
+<span class="lineNum">     991 </span>            : 
+<span class="lineNum">     992 </span>            :     vm.assume(!_enoughFunds(_pullFundsScenario));
+<span class="lineNum">     993 </span>            :     _mockValues(_pullFundsScenario);
+<span class="lineNum">     994 </span>            : 
+<span class="lineNum">     995 </span>            :     vm.expectRevert(IStabilityFeeTreasury.SFTreasury_NotEnoughFunds.selector);
+<span class="lineNum">     996 </span>            : 
+<span class="lineNum">     997 </span>            :     vm.prank(user);
+<span class="lineNum">     998 </span>            :     stabilityFeeTreasury.pullFunds(_pullFundsScenario.dstAccount, _pullFundsScenario.wad);
+<span class="lineNum">     999 </span>            :   }
+<span class="lineNum">    1000 </span>            : 
+<span class="lineNum">    1001 </span>            :   function test_Revert_BelowPullFundsMinThreshold(PullFundsScenario memory _pullFundsScenario) public {
+<span class="lineNum">    1002 </span>            :     vm.assume(_notNullDstAcc(_pullFundsScenario));
+<span class="lineNum">    1003 </span>            :     vm.assume(_notStabilityFeeTreasuryDstAcc(_pullFundsScenario));
+<span class="lineNum">    1004 </span>            :     vm.assume(_notAccountingDstAcc(_pullFundsScenario));
+<span class="lineNum">    1005 </span>            :     vm.assume(_notNullTransferAmount(_pullFundsScenario));
+<span class="lineNum">    1006 </span>            :     vm.assume(_allowed(_pullFundsScenario));
+<span class="lineNum">    1007 </span>            :     vm.assume(_allowancePerHourNotZero(_pullFundsScenario));
+<span class="lineNum">    1008 </span>            :     vm.assume(_notPerHourLimitExceeded(_pullFundsScenario));
+<span class="lineNum">    1009 </span>            :     vm.assume(_nullDebt(_pullFundsScenario));
+<span class="lineNum">    1010 </span>            :     vm.assume(_enoughFunds(_pullFundsScenario));
+<span class="lineNum">    1011 </span>            : 
+<span class="lineNum">    1012 </span>            :     vm.assume(!_notBelowPullFundsMinThreshold(_pullFundsScenario));
+<span class="lineNum">    1013 </span>            :     _mockValues(_pullFundsScenario);
+<span class="lineNum">    1014 </span>            : 
+<span class="lineNum">    1015 </span>            :     vm.expectRevert(IStabilityFeeTreasury.SFTreasury_BelowPullFundsMinThreshold.selector);
+<span class="lineNum">    1016 </span>            : 
+<span class="lineNum">    1017 </span>            :     vm.prank(user);
+<span class="lineNum">    1018 </span>            :     stabilityFeeTreasury.pullFunds(_pullFundsScenario.dstAccount, _pullFundsScenario.wad);
+<span class="lineNum">    1019 </span>            :   }
+<span class="lineNum">    1020 </span>            : }
+<span class="lineNum">    1021 </span>            : 
+<span class="lineNum">    1022 </span>            : contract Unit_StabilityFeeTreasury_TransferSurplusFunds is Base {
+<span class="lineNum">    1023 </span>            :   event TransferSurplusFunds(address _extraSurplusReceiver, uint256 _fundsToTransfer);
+<span class="lineNum">    1024 </span>            :   event JoinCoins(uint256 _wad);
+<span class="lineNum">    1025 </span>            :   event SettleDebt(uint256 _rad);
+<span class="lineNum">    1026 </span>            : 
+<span class="lineNum">    1027 </span>            :   struct TransferSurplusFundsScenario {
+<span class="lineNum">    1028 </span>            :     uint256 treasuryCapacity;
+<span class="lineNum">    1029 </span>            :     uint256 systemCoinBalance;
+<span class="lineNum">    1030 </span>            :     uint256 safeEngineCoinBalance;
+<span class="lineNum">    1031 </span>            :     uint256 safeEngineDebtBalance;
+<span class="lineNum">    1032 </span>            :   }
+<span class="lineNum">    1033 </span>            : 
+<span class="lineNum">    1034 </span>            :   function _joinCoins(TransferSurplusFundsScenario memory _transferSurplusFundsScenario) internal pure returns (bool) {
+<span class="lineNum">    1035 </span>            :     return _transferSurplusFundsScenario.systemCoinBalance &gt; 0;
+<span class="lineNum">    1036 </span>            :   }
+<span class="lineNum">    1037 </span>            : 
+<span class="lineNum">    1038 </span>            :   function _settleDebt(TransferSurplusFundsScenario memory _transferSurplusFundsScenario) internal pure returns (bool) {
+<span class="lineNum">    1039 </span>            :     return _transferSurplusFundsScenario.safeEngineDebtBalance &gt; 0;
+<span class="lineNum">    1040 </span>            :   }
+<span class="lineNum">    1041 </span>            : 
+<span class="lineNum">    1042 </span>            :   function _nullDebt(TransferSurplusFundsScenario memory _transferSurplusFundsScenario) internal pure returns (bool) {
+<span class="lineNum">    1043 </span>            :     return _transferSurplusFundsScenario.safeEngineCoinBalance &gt;= _transferSurplusFundsScenario.safeEngineDebtBalance;
+<span class="lineNum">    1044 </span>            :   }
+<span class="lineNum">    1045 </span>            : 
+<span class="lineNum">    1046 </span>            :   function _enoughSurplus(TransferSurplusFundsScenario memory _transferSurplusFundsScenario)
+<span class="lineNum">    1047 </span>            :     internal
+<span class="lineNum">    1048 </span>            :     pure
+<span class="lineNum">    1049 </span>            :     returns (bool)
+<span class="lineNum">    1050 </span>            :   {
+<span class="lineNum">    1051 </span>            :     return _transferSurplusFundsScenario.safeEngineCoinBalance - _transferSurplusFundsScenario.safeEngineDebtBalance
+<span class="lineNum">    1052 </span>            :       &gt; _transferSurplusFundsScenario.treasuryCapacity;
+<span class="lineNum">    1053 </span>            :   }
+<span class="lineNum">    1054 </span>            : 
+<span class="lineNum">    1055 </span>            :   function _assumeHappyPath(TransferSurplusFundsScenario memory _transferSurplusFundsScenario) internal pure {
+<span class="lineNum">    1056 </span>            :     vm.assume(_nullDebt(_transferSurplusFundsScenario));
+<span class="lineNum">    1057 </span>            :     vm.assume(_enoughSurplus(_transferSurplusFundsScenario));
+<span class="lineNum">    1058 </span>            :   }
+<span class="lineNum">    1059 </span>            : 
+<span class="lineNum">    1060 </span>            :   function _mockValues(TransferSurplusFundsScenario memory _transferSurplusFundsScenario) internal {
+<span class="lineNum">    1061 </span>            :     _mockTreasuryCapacity(_transferSurplusFundsScenario.treasuryCapacity);
+<span class="lineNum">    1062 </span>            :     _mockSystemCoinBalanceOf(_transferSurplusFundsScenario.systemCoinBalance);
+<span class="lineNum">    1063 </span>            :     _mockSafeEngineCoinBalance(_transferSurplusFundsScenario.safeEngineCoinBalance);
+<span class="lineNum">    1064 </span>            :     _mockSafeEngineDebtBalance(_transferSurplusFundsScenario.safeEngineDebtBalance);
+<span class="lineNum">    1065 </span>            :   }
+<span class="lineNum">    1066 </span>            : 
+<span class="lineNum">    1067 </span>            :   modifier happyPath(TransferSurplusFundsScenario memory _transferSurplusFundsScenario) {
+<span class="lineNum">    1068 </span>            :     _assumeHappyPath(_transferSurplusFundsScenario);
+<span class="lineNum">    1069 </span>            :     _mockValues(_transferSurplusFundsScenario);
+<span class="lineNum">    1070 </span>            :     _;
+<span class="lineNum">    1071 </span>            :   }
+<span class="lineNum">    1072 </span>            : 
+<span class="lineNum">    1073 </span>            :   function test_Emit_JoinCoins(TransferSurplusFundsScenario memory _transferSurplusFundsScenario)
+<span class="lineNum">    1074 </span>            :     public
+<span class="lineNum">    1075 </span>            :     happyPath(_transferSurplusFundsScenario)
+<span class="lineNum">    1076 </span>            :   {
+<span class="lineNum">    1077 </span>            :     vm.assume(_joinCoins(_transferSurplusFundsScenario));
+<span class="lineNum">    1078 </span>            : 
+<span class="lineNum">    1079 </span>            :     vm.expectEmit();
+<span class="lineNum">    1080 </span>            :     emit JoinCoins(_transferSurplusFundsScenario.systemCoinBalance);
+<span class="lineNum">    1081 </span>            : 
+<span class="lineNum">    1082 </span>            :     stabilityFeeTreasury.transferSurplusFunds();
+<span class="lineNum">    1083 </span>            :   }
+<span class="lineNum">    1084 </span>            : 
+<span class="lineNum">    1085 </span>            :   function test_Emit_SettleDebt(TransferSurplusFundsScenario memory _transferSurplusFundsScenario)
+<span class="lineNum">    1086 </span>            :     public
+<span class="lineNum">    1087 </span>            :     happyPath(_transferSurplusFundsScenario)
+<span class="lineNum">    1088 </span>            :   {
+<span class="lineNum">    1089 </span>            :     vm.assume(_settleDebt(_transferSurplusFundsScenario));
+<span class="lineNum">    1090 </span>            : 
+<span class="lineNum">    1091 </span>            :     vm.expectEmit();
+<span class="lineNum">    1092 </span>            :     emit SettleDebt(_transferSurplusFundsScenario.safeEngineDebtBalance);
+<span class="lineNum">    1093 </span>            : 
+<span class="lineNum">    1094 </span>            :     stabilityFeeTreasury.transferSurplusFunds();
+<span class="lineNum">    1095 </span>            :   }
+<span class="lineNum">    1096 </span>            : 
+<span class="lineNum">    1097 </span>            :   function test_Set_LatestSurplusTransferTime(
+<span class="lineNum">    1098 </span>            :     TransferSurplusFundsScenario memory _transferSurplusFundsScenario,
+<span class="lineNum">    1099 </span>            :     uint256 _latestSurplusTransferTime
+<span class="lineNum">    1100 </span>            :   ) public happyPath(_transferSurplusFundsScenario) {
+<span class="lineNum">    1101 </span>            :     vm.assume(_latestSurplusTransferTime &lt; block.timestamp);
+<span class="lineNum">    1102 </span>            :     _mockLatestSurplusTransferTime(_latestSurplusTransferTime);
+<span class="lineNum">    1103 </span>            : 
+<span class="lineNum">    1104 </span>            :     stabilityFeeTreasury.transferSurplusFunds();
+<span class="lineNum">    1105 </span>            : 
+<span class="lineNum">    1106 </span>            :     assertEq(stabilityFeeTreasury.latestSurplusTransferTime(), block.timestamp);
+<span class="lineNum">    1107 </span>            :   }
+<span class="lineNum">    1108 </span>            : 
+<span class="lineNum">    1109 </span>            :   function test_Call_SafeEngine_TransferInternalCoins(TransferSurplusFundsScenario memory _transferSurplusFundsScenario)
+<span class="lineNum">    1110 </span>            :     public
+<span class="lineNum">    1111 </span>            :     happyPath(_transferSurplusFundsScenario)
+<span class="lineNum">    1112 </span>            :   {
+<span class="lineNum">    1113 </span>            :     vm.expectCall(
+<span class="lineNum">    1114 </span>            :       address(mockSafeEngine),
+<span class="lineNum">    1115 </span>            :       abi.encodeCall(
+<span class="lineNum">    1116 </span>            :         mockSafeEngine.transferInternalCoins,
+<span class="lineNum">    1117 </span>            :         (
+<span class="lineNum">    1118 </span>            :           address(stabilityFeeTreasury),
+<span class="lineNum">    1119 </span>            :           mockExtraSurplusReceiver,
+<span class="lineNum">    1120 </span>            :           (_transferSurplusFundsScenario.safeEngineCoinBalance - _transferSurplusFundsScenario.safeEngineDebtBalance)
+<span class="lineNum">    1121 </span>            :             - _transferSurplusFundsScenario.treasuryCapacity
+<span class="lineNum">    1122 </span>            :         )
+<span class="lineNum">    1123 </span>            :       ),
+<span class="lineNum">    1124 </span>            :       1
+<span class="lineNum">    1125 </span>            :     );
+<span class="lineNum">    1126 </span>            : 
+<span class="lineNum">    1127 </span>            :     stabilityFeeTreasury.transferSurplusFunds();
+<span class="lineNum">    1128 </span>            :   }
+<span class="lineNum">    1129 </span>            : 
+<span class="lineNum">    1130 </span>            :   function test_Emit_TransferSurplusFunds(TransferSurplusFundsScenario memory _transferSurplusFundsScenario)
+<span class="lineNum">    1131 </span>            :     public
+<span class="lineNum">    1132 </span>            :     happyPath(_transferSurplusFundsScenario)
+<span class="lineNum">    1133 </span>            :   {
+<span class="lineNum">    1134 </span>            :     vm.expectEmit();
+<span class="lineNum">    1135 </span>            :     emit TransferSurplusFunds(
+<span class="lineNum">    1136 </span>            :       mockExtraSurplusReceiver,
+<span class="lineNum">    1137 </span>            :       (_transferSurplusFundsScenario.safeEngineCoinBalance - _transferSurplusFundsScenario.safeEngineDebtBalance)
+<span class="lineNum">    1138 </span>            :         - _transferSurplusFundsScenario.treasuryCapacity
+<span class="lineNum">    1139 </span>            :     );
+<span class="lineNum">    1140 </span>            : 
+<span class="lineNum">    1141 </span>            :     stabilityFeeTreasury.transferSurplusFunds();
+<span class="lineNum">    1142 </span>            :   }
+<span class="lineNum">    1143 </span>            : 
+<span class="lineNum">    1144 </span>            :   function test_Revert_TransferCooldownNotPassed(uint256 _surplusTransferDelay) public {
+<span class="lineNum">    1145 </span>            :     vm.assume(_surplusTransferDelay &gt; 0);
+<span class="lineNum">    1146 </span>            :     vm.assume(notOverflowAdd(block.timestamp, _surplusTransferDelay));
+<span class="lineNum">    1147 </span>            :     _mockSurplusTransferDelay(_surplusTransferDelay);
+<span class="lineNum">    1148 </span>            : 
+<span class="lineNum">    1149 </span>            :     vm.expectRevert(IStabilityFeeTreasury.SFTreasury_TransferCooldownNotPassed.selector);
+<span class="lineNum">    1150 </span>            : 
+<span class="lineNum">    1151 </span>            :     stabilityFeeTreasury.transferSurplusFunds();
+<span class="lineNum">    1152 </span>            :   }
+<span class="lineNum">    1153 </span>            : 
+<span class="lineNum">    1154 </span>            :   function test_Revert_OutstandingBadDebt(TransferSurplusFundsScenario memory _transferSurplusFundsScenario) public {
+<span class="lineNum">    1155 </span>            :     vm.assume(!_nullDebt(_transferSurplusFundsScenario));
+<span class="lineNum">    1156 </span>            :     _mockValues(_transferSurplusFundsScenario);
+<span class="lineNum">    1157 </span>            : 
+<span class="lineNum">    1158 </span>            :     vm.expectRevert(IStabilityFeeTreasury.SFTreasury_OutstandingBadDebt.selector);
+<span class="lineNum">    1159 </span>            : 
+<span class="lineNum">    1160 </span>            :     stabilityFeeTreasury.transferSurplusFunds();
+<span class="lineNum">    1161 </span>            :   }
+<span class="lineNum">    1162 </span>            : 
+<span class="lineNum">    1163 </span>            :   function test_Revert_NotEnoughSurplus(TransferSurplusFundsScenario memory _transferSurplusFundsScenario) public {
+<span class="lineNum">    1164 </span>            :     vm.assume(_nullDebt(_transferSurplusFundsScenario));
+<span class="lineNum">    1165 </span>            : 
+<span class="lineNum">    1166 </span>            :     vm.assume(!_enoughSurplus(_transferSurplusFundsScenario));
+<span class="lineNum">    1167 </span>            :     _mockValues(_transferSurplusFundsScenario);
+<span class="lineNum">    1168 </span>            : 
+<span class="lineNum">    1169 </span>            :     vm.expectRevert(IStabilityFeeTreasury.SFTreasury_NotEnoughSurplus.selector);
+<span class="lineNum">    1170 </span>            : 
+<span class="lineNum">    1171 </span>            :     stabilityFeeTreasury.transferSurplusFunds();
+<span class="lineNum">    1172 </span>            :   }
+<span class="lineNum">    1173 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../../../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>
