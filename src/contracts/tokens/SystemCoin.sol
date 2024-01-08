@@ -3,7 +3,6 @@ pragma solidity 0.8.19;
 
 import {ERC20Upgradeable, IERC20Upgradeable} from '@openzeppelin-upgradeable/token/ERC20/ERC20Upgradeable.sol';
 import {AuthorizableUpgradeable} from '@contracts/utils/AuthorizableUpgradeable.sol';
-
 import {ISystemCoin} from '@interfaces/tokens/ISystemCoin.sol';
 
 /**
@@ -39,3 +38,5 @@ contract SystemCoin is ERC20Upgradeable, AuthorizableUpgradeable, ISystemCoin {
     _burn(_usr, _wad);
   }
 }
+
+contract OpenDollar is SystemCoin {}

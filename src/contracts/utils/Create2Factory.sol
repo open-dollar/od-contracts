@@ -2,8 +2,8 @@
 pragma solidity 0.8.19;
 
 import {Vault721} from '@contracts/proxies/Vault721.sol';
-import {SystemCoin} from '@contracts/tokens/SystemCoin.sol';
-import {ProtocolToken} from '@contracts/tokens/ProtocolToken.sol';
+import {OpenDollar, SystemCoin} from '@contracts/tokens/SystemCoin.sol';
+import {OpenDollarGovernance, ProtocolToken} from '@contracts/tokens/ProtocolToken.sol';
 
 contract Create2Factory {
   bytes internal _systemCoin;
@@ -19,8 +19,8 @@ contract Create2Factory {
   event Deployed(address _addr, uint256 _salt);
 
   constructor() {
-    _systemCoin = type(SystemCoin).creationCode;
-    _protocolToken = type(ProtocolToken).creationCode;
+    _systemCoin = type(OpenDollar).creationCode;
+    _protocolToken = type(OpenDollarGovernance).creationCode;
     _vault721 = type(Vault721).creationCode;
 
     systemCoinHash = keccak256(_systemCoin);

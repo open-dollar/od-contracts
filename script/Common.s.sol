@@ -174,15 +174,15 @@ abstract contract Common is Contracts, Params {
       address systemCoinAddress = _create2Factory.deploySystemCoin(_systemCoinSalt);
       systemCoin = ISystemCoin(systemCoinAddress);
       if (_chainId == 42_161) {
-        protocolToken = IProtocolToken(MAINNET_PROTOCOL_TOKEN);
+        protocolToken = IProtocolToken(MAINNET_PROTOCOL_TOKEN); // pre-deployed & initialized
       } else {
-        protocolToken = IProtocolToken(SEPOLIA_PROTOCOL_TOKEN);
+        protocolToken = IProtocolToken(SEPOLIA_PROTOCOL_TOKEN); // pre-deployed & initialized
       }
     } else {
-      systemCoin = new SystemCoin();
-      protocolToken = new ProtocolToken();
+      systemCoin = new OpenDollar();
+      protocolToken = new OpenDollarGovernance();
+      protocolToken.initialize('Open Dollar Governance', 'ODG');
     }
-    protocolToken.initialize('Open Protocol Token', 'OPT');
     systemCoin.initialize('Open Dollar', 'OD');
 
     address[] memory members = new address[](0);
