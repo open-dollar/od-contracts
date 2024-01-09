@@ -80,9 +80,6 @@ interface IODSafeManager {
   /// @notice Mapping of handler to the safeId
   function safeHandlerToSafeId(address _safeHandler) external view returns (uint256 _safeId);
 
-  /// @notice Mapping of handler to whether it exists
-  function handlerExists(address _safeHandler) external view returns (bool _exists);
-
   // --- Getters ---
 
   /**
