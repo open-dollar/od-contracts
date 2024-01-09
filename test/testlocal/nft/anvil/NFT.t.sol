@@ -279,7 +279,9 @@ contract NFTAnvil is AnvilFork {
 
     IODSafeManager.SAFEData memory sData = safeManager.safeData(vaultId);
 
-    assertEq(safeManager.safeCan(sData.owner, vaultId, users[i]), ok, 'test_allowSAFE: safeCan not set correctly');
+    assertEq(
+      safeManager.safeCan(sData.owner, vaultId, sData.nonce, users[i]), ok, 'test_allowSAFE: safeCan not set correctly'
+    );
   }
 
   function test_allowHandler(uint256 cTypeIndex, bool ok) public {
@@ -404,4 +406,25 @@ contract NFTAnvil is AnvilFork {
   //   protectSAFE(proxy, vaultId, address(liquidationEngine), saviour);
   //   vm.stopPrank();
   // }
+
+  // If the nonce increments, then after each vault transfer
+  // all previous allowSAFE calls will be invalidated
+  // as safeAllowed looks at the current nonce
+  function test_transferFromIncrementsNonce(uint256 cTypeIndex) public {
+    cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
+
+    uint256 vaultId = vaultIds[proxies[0]][cTypes[cTypeIndex]];
+
+    IODSafeManager.SAFEData memory sData = safeManager.safeData(vaultId);
+
+    assertEq(sData.nonce, 0, 'test_transerFromIncrementsNonce: nonce not equal');
+
+    vm.startPrank(users[0]);
+    vault721.transferFrom(users[0], users[1], vaultId);
+    vm.stopPrank();
+
+    sData = safeManager.safeData(vaultId);
+
+    assertEq(sData.nonce, 1, 'test_transerFromIncrementsNonce: nonce not equal');
+  }
 }
