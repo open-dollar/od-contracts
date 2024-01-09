@@ -19,7 +19,6 @@ lcov.info
 # Avoid ignoring gitkeep
 !/**/.gitkeep
 
-lcov.info
 .vscode/
 
 # Docs build files
