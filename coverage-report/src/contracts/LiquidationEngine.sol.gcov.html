@@ -4,7 +4,7 @@
 
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <title>LCOV - current.info - src/contracts/LiquidationEngine.sol</title>
+  <title>LCOV - lcov.info - src/contracts/LiquidationEngine.sol</title>
   <link rel="stylesheet" type="text/css" href="../../gcov.css">
 </head>
 
@@ -28,7 +28,7 @@
           </tr>
           <tr>
             <td class="headerItem">Test:</td>
-            <td class="headerValue">current.info</td>
+            <td class="headerValue">lcov.info</td>
             <td></td>
             <td class="headerItem">Lines:</td>
             <td class="headerCovTableEntry">74</td>
@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2024-01-07 16:13:44</td>
+            <td class="headerValue">2024-01-08 19:17:33</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">13</td>
@@ -121,12 +121,12 @@
 <a name="59"><span class="lineNum">      59 </span>            : </a>
 <span class="lineNum">      60 </span>            :   /// @inheritdoc ILiquidationEngine
 <span class="lineNum">      61 </span>            :   function params() external view returns (LiquidationEngineParams memory _liqEngineParams) {
-<span class="lineNum">      62 </span><span class="lineCov">      13268 :     return _params;</span>
+<span class="lineNum">      62 </span><span class="lineCov">      13366 :     return _params;</span>
 <span class="lineNum">      63 </span>            :   }
 <a name="64"><span class="lineNum">      64 </span>            : </a>
 <span class="lineNum">      65 </span>            :   /// @inheritdoc ILiquidationEngine
 <span class="lineNum">      66 </span>            :   function cParams(bytes32 _cType) external view returns (LiquidationEngineCollateralParams memory _liqEngineCParams) {
-<span class="lineNum">      67 </span><span class="lineCov">      57889 :     return _cParams[_cType];</span>
+<span class="lineNum">      67 </span><span class="lineCov">      58330 :     return _cParams[_cType];</span>
 <span class="lineNum">      68 </span>            :   }
 <span class="lineNum">      69 </span>            : 
 <span class="lineNum">      70 </span>            :   EnumerableSet.Bytes32Set internal _collateralList;
@@ -179,25 +179,25 @@
 <a name="117"><span class="lineNum">     117 </span>            : </a>
 <span class="lineNum">     118 </span>            :   /// @inheritdoc ILiquidationEngine
 <span class="lineNum">     119 </span>            :   function liquidateSAFE(bytes32 _cType, address _safe) external whenEnabled nonReentrant returns (uint256 _auctionId) {
-<span class="lineNum">     120 </span><span class="lineCov">       5621 :     uint256 _debtFloor = safeEngine.cParams(_cType).debtFloor;</span>
-<span class="lineNum">     121 </span><span class="lineCov">       5621 :     ISAFEEngine.SAFEEngineCollateralData memory _safeEngCData = safeEngine.cData(_cType);</span>
-<span class="lineNum">     122 </span><span class="lineCov">       5621 :     ISAFEEngine.SAFE memory _safeData = safeEngine.safes(_cType, _safe);</span>
+<span class="lineNum">     120 </span><span class="lineCov">       5670 :     uint256 _debtFloor = safeEngine.cParams(_cType).debtFloor;</span>
+<span class="lineNum">     121 </span><span class="lineCov">       5670 :     ISAFEEngine.SAFEEngineCollateralData memory _safeEngCData = safeEngine.cData(_cType);</span>
+<span class="lineNum">     122 </span><span class="lineCov">       5670 :     ISAFEEngine.SAFE memory _safeData = safeEngine.safes(_cType, _safe);</span>
 <span class="lineNum">     123 </span>            : 
 <span class="lineNum">     124 </span>            :     // --- Safety checks ---
 <span class="lineNum">     125 </span>            :     {
 <span class="lineNum">     126 </span>            :       if (
-<span class="lineNum">     127 </span><span class="lineCov">       5621 :         _safeEngCData.liquidationPrice == 0</span>
-<span class="lineNum">     128 </span><span class="lineCov">       5583 :           || _safeData.lockedCollateral * _safeEngCData.liquidationPrice</span>
-<span class="lineNum">     129 </span><span class="lineCov">       5583 :             &gt;= _safeData.generatedDebt * _safeEngCData.accumulatedRate</span>
+<span class="lineNum">     127 </span><span class="lineCov">       5670 :         _safeEngCData.liquidationPrice == 0</span>
+<span class="lineNum">     128 </span><span class="lineCov">       5633 :           || _safeData.lockedCollateral * _safeEngCData.liquidationPrice</span>
+<span class="lineNum">     129 </span><span class="lineCov">       5633 :             &gt;= _safeData.generatedDebt * _safeEngCData.accumulatedRate</span>
 <span class="lineNum">     130 </span><span class="lineCov">        256 :       ) revert LiqEng_SAFENotUnsafe();</span>
 <span class="lineNum">     131 </span>            : 
 <span class="lineNum">     132 </span>            :       if (
-<span class="lineNum">     133 </span><span class="lineCov">       5365 :         currentOnAuctionSystemCoins &gt;= _params.onAuctionSystemCoinLimit</span>
-<span class="lineNum">     134 </span><span class="lineCov">       5365 :           || _params.onAuctionSystemCoinLimit - currentOnAuctionSystemCoins &lt; _debtFloor</span>
+<span class="lineNum">     133 </span><span class="lineCov">       5414 :         currentOnAuctionSystemCoins &gt;= _params.onAuctionSystemCoinLimit</span>
+<span class="lineNum">     134 </span><span class="lineCov">       5414 :           || _params.onAuctionSystemCoinLimit - currentOnAuctionSystemCoins &lt; _debtFloor</span>
 <span class="lineNum">     135 </span><span class="lineCov">        256 :       ) revert LiqEng_LiquidationLimitHit();</span>
 <span class="lineNum">     136 </span>            :     }
 <span class="lineNum">     137 </span>            : 
-<span class="lineNum">     138 </span><span class="lineCov">       5109 :     if (chosenSAFESaviour[_cType][_safe] != address(0) &amp;&amp; safeSaviours[chosenSAFESaviour[_cType][_safe]] == 1) {</span>
+<span class="lineNum">     138 </span><span class="lineCov">       5158 :     if (chosenSAFESaviour[_cType][_safe] != address(0) &amp;&amp; safeSaviours[chosenSAFESaviour[_cType][_safe]] == 1) {</span>
 <span class="lineNum">     139 </span><span class="lineCov">       1795 :       try ISAFESaviour(chosenSAFESaviour[_cType][_safe]).saveSAFE(msg.sender, _cType, _safe) returns (</span>
 <span class="lineNum">     140 </span>            :         bool _ok, uint256 _collateralAddedOrDebtRepaid, uint256
 <span class="lineNum">     141 </span>            :       ) {
@@ -223,35 +223,35 @@
 <span class="lineNum">     161 </span>            :     }
 <span class="lineNum">     162 </span>            : 
 <span class="lineNum">     163 </span>            :     if (
-<span class="lineNum">     164 </span><span class="lineCov">       4597 :       _safeData.lockedCollateral * _safeEngCData.liquidationPrice</span>
-<span class="lineNum">     165 </span><span class="lineCov">       4597 :         &lt; _safeData.generatedDebt * _safeEngCData.accumulatedRate</span>
+<span class="lineNum">     164 </span><span class="lineCov">       4646 :       _safeData.lockedCollateral * _safeEngCData.liquidationPrice</span>
+<span class="lineNum">     165 </span><span class="lineCov">       4646 :         &lt; _safeData.generatedDebt * _safeEngCData.accumulatedRate</span>
 <span class="lineNum">     166 </span>            :     ) {
-<span class="lineNum">     167 </span><span class="lineCov">       4340 :       LiquidationEngineCollateralParams memory __cParams = _cParams[_cType];</span>
+<span class="lineNum">     167 </span><span class="lineCov">       4389 :       LiquidationEngineCollateralParams memory __cParams = _cParams[_cType];</span>
 <span class="lineNum">     168 </span>            : 
-<span class="lineNum">     169 </span><span class="lineCov">       4340 :       uint256 _limitAdjustedDebt = Math.min(</span>
+<span class="lineNum">     169 </span><span class="lineCov">       4389 :       uint256 _limitAdjustedDebt = Math.min(</span>
 <span class="lineNum">     170 </span>            :         _safeData.generatedDebt,
 <span class="lineNum">     171 </span>            :         Math.min(__cParams.liquidationQuantity, _params.onAuctionSystemCoinLimit - currentOnAuctionSystemCoins).wdiv(
 <span class="lineNum">     172 </span>            :           _safeEngCData.accumulatedRate
 <span class="lineNum">     173 </span>            :         ) / __cParams.liquidationPenalty
 <span class="lineNum">     174 </span>            :       );
 <span class="lineNum">     175 </span>            : 
-<span class="lineNum">     176 </span><span class="lineCov">       4340 :       uint256 _collateralToSell =</span>
-<span class="lineNum">     177 </span><span class="lineCov">       4340 :         Math.min(_safeData.lockedCollateral, _safeData.lockedCollateral * _limitAdjustedDebt / _safeData.generatedDebt);</span>
-<span class="lineNum">     178 </span><span class="lineCov">       4340 :       uint256 _amountToRaise = (_limitAdjustedDebt * _safeEngCData.accumulatedRate).wmul(__cParams.liquidationPenalty);</span>
+<span class="lineNum">     176 </span><span class="lineCov">       4389 :       uint256 _collateralToSell =</span>
+<span class="lineNum">     177 </span><span class="lineCov">       4389 :         Math.min(_safeData.lockedCollateral, _safeData.lockedCollateral * _limitAdjustedDebt / _safeData.generatedDebt);</span>
+<span class="lineNum">     178 </span><span class="lineCov">       4389 :       uint256 _amountToRaise = (_limitAdjustedDebt * _safeEngCData.accumulatedRate).wmul(__cParams.liquidationPenalty);</span>
 <span class="lineNum">     179 </span>            : 
 <span class="lineNum">     180 </span>            :       // --- Safety checks ---
 <span class="lineNum">     181 </span>            :       {
-<span class="lineNum">     182 </span><span class="lineCov">       4340 :         if (_limitAdjustedDebt == 0) revert LiqEng_NullAuction();</span>
+<span class="lineNum">     182 </span><span class="lineCov">       4389 :         if (_limitAdjustedDebt == 0) revert LiqEng_NullAuction();</span>
 <span class="lineNum">     183 </span>            : 
-<span class="lineNum">     184 </span><span class="lineCov">       4084 :         if (_collateralToSell == 0) revert LiqEng_NullCollateralToSell();</span>
+<span class="lineNum">     184 </span><span class="lineCov">       4133 :         if (_collateralToSell == 0) revert LiqEng_NullCollateralToSell();</span>
 <span class="lineNum">     185 </span>            : 
 <span class="lineNum">     186 </span>            :         if (
-<span class="lineNum">     187 </span><span class="lineCov">       3854 :           _limitAdjustedDebt != _safeData.generatedDebt</span>
-<span class="lineNum">     188 </span><span class="lineCov">        516 :             &amp;&amp; (_safeData.generatedDebt - _limitAdjustedDebt) * _safeEngCData.accumulatedRate &lt; _debtFloor</span>
-<span class="lineNum">     189 </span><span class="lineCov">         14 :         ) revert LiqEng_DustySAFE();</span>
+<span class="lineNum">     187 </span><span class="lineCov">       3881 :           _limitAdjustedDebt != _safeData.generatedDebt</span>
+<span class="lineNum">     188 </span><span class="lineCov">        543 :             &amp;&amp; (_safeData.generatedDebt - _limitAdjustedDebt) * _safeEngCData.accumulatedRate &lt; _debtFloor</span>
+<span class="lineNum">     189 </span><span class="lineCov">         22 :         ) revert LiqEng_DustySAFE();</span>
 <span class="lineNum">     190 </span>            :       }
 <span class="lineNum">     191 </span>            : 
-<span class="lineNum">     192 </span><span class="lineCov">       3840 :       safeEngine.confiscateSAFECollateralAndDebt({</span>
+<span class="lineNum">     192 </span><span class="lineCov">       3859 :       safeEngine.confiscateSAFECollateralAndDebt({</span>
 <span class="lineNum">     193 </span>            :         _cType: _cType,
 <span class="lineNum">     194 </span>            :         _safe: _safe,
 <span class="lineNum">     195 </span>            :         _collateralSource: address(this),
@@ -260,20 +260,20 @@
 <span class="lineNum">     198 </span>            :         _deltaDebt: -_limitAdjustedDebt.toInt()
 <span class="lineNum">     199 </span>            :       });
 <span class="lineNum">     200 </span>            : 
-<span class="lineNum">     201 </span><span class="lineCov">       3838 :       accountingEngine.pushDebtToQueue(_limitAdjustedDebt * _safeEngCData.accumulatedRate);</span>
+<span class="lineNum">     201 </span><span class="lineCov">       3857 :       accountingEngine.pushDebtToQueue(_limitAdjustedDebt * _safeEngCData.accumulatedRate);</span>
 <span class="lineNum">     202 </span>            : 
-<span class="lineNum">     203 </span><span class="lineCov">       3838 :       currentOnAuctionSystemCoins += _amountToRaise;</span>
+<span class="lineNum">     203 </span><span class="lineCov">       3857 :       currentOnAuctionSystemCoins += _amountToRaise;</span>
 <span class="lineNum">     204 </span>            : 
-<span class="lineNum">     205 </span><span class="lineCov">       3838 :       _auctionId = ICollateralAuctionHouse(__cParams.collateralAuctionHouse).startAuction({</span>
+<span class="lineNum">     205 </span><span class="lineCov">       3857 :       _auctionId = ICollateralAuctionHouse(__cParams.collateralAuctionHouse).startAuction({</span>
 <span class="lineNum">     206 </span>            :         _forgoneCollateralReceiver: _safe,
 <span class="lineNum">     207 </span>            :         _initialBidder: address(accountingEngine),
 <span class="lineNum">     208 </span>            :         _amountToRaise: _amountToRaise,
 <span class="lineNum">     209 </span>            :         _collateralToSell: _collateralToSell
 <span class="lineNum">     210 </span>            :       });
 <span class="lineNum">     211 </span>            : 
-<span class="lineNum">     212 </span><span class="lineCov">       3838 :       emit UpdateCurrentOnAuctionSystemCoins(currentOnAuctionSystemCoins);</span>
+<span class="lineNum">     212 </span><span class="lineCov">       3857 :       emit UpdateCurrentOnAuctionSystemCoins(currentOnAuctionSystemCoins);</span>
 <span class="lineNum">     213 </span>            : 
-<span class="lineNum">     214 </span><span class="lineCov">       3838 :       emit Liquidate(</span>
+<span class="lineNum">     214 </span><span class="lineCov">       3857 :       emit Liquidate(</span>
 <span class="lineNum">     215 </span>            :         _cType,
 <span class="lineNum">     216 </span>            :         _safe,
 <span class="lineNum">     217 </span>            :         _collateralToSell,
@@ -363,8 +363,8 @@
 <span class="lineNum">     301 </span>            :   function _setCollateralAuctionHouse(bytes32 _cType, address _newCollateralAuctionHouse) internal {
 <span class="lineNum">     302 </span><span class="lineCov">       1817 :     LiquidationEngineCollateralParams storage __cParams = _cParams[_cType];</span>
 <span class="lineNum">     303 </span><span class="lineCov">       1817 :     if (__cParams.collateralAuctionHouse != address(0)) {</span>
-<span class="lineNum">     304 </span><span class="lineCov">        255 :       safeEngine.denySAFEModification(__cParams.collateralAuctionHouse);</span>
-<span class="lineNum">     305 </span><span class="lineCov">        255 :       _removeAuthorization(__cParams.collateralAuctionHouse);</span>
+<span class="lineNum">     304 </span><span class="lineCov">        256 :       safeEngine.denySAFEModification(__cParams.collateralAuctionHouse);</span>
+<span class="lineNum">     305 </span><span class="lineCov">        256 :       _removeAuthorization(__cParams.collateralAuctionHouse);</span>
 <span class="lineNum">     306 </span>            :     }
 <span class="lineNum">     307 </span><span class="lineCov">       1817 :     __cParams.collateralAuctionHouse = _newCollateralAuctionHouse;</span>
 <span class="lineNum">     308 </span><span class="lineCov">       1817 :     safeEngine.approveSAFEModification(_newCollateralAuctionHouse);</span>

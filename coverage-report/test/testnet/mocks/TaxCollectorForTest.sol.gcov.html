@@ -4,7 +4,7 @@
 
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <title>LCOV - current.info - test/testnet/mocks/TaxCollectorForTest.sol</title>
+  <title>LCOV - lcov.info - test/testnet/mocks/TaxCollectorForTest.sol</title>
   <link rel="stylesheet" type="text/css" href="../../../gcov.css">
 </head>
 
@@ -28,7 +28,7 @@
           </tr>
           <tr>
             <td class="headerItem">Test:</td>
-            <td class="headerValue">current.info</td>
+            <td class="headerValue">lcov.info</td>
             <td></td>
             <td class="headerItem">Lines:</td>
             <td class="headerCovTableEntry">8</td>
@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2024-01-07 16:13:44</td>
+            <td class="headerValue">2024-01-08 19:17:33</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">7</td>
@@ -72,11 +72,11 @@
 <a name="10"><span class="lineNum">      10 </span>            :   ) TaxCollector(_safeEngine, _taxCollectorParams) {}</a>
 <span class="lineNum">      11 </span>            : 
 <span class="lineNum">      12 </span>            :   function splitTaxIncome(bytes32 _cType, uint256 _debtAmount, int256 _deltaRate) external {
-<span class="lineNum">      13 </span><span class="lineCov">        240 :     _splitTaxIncome(_cType, _debtAmount, _deltaRate);</span>
+<span class="lineNum">      13 </span><span class="lineCov">        229 :     _splitTaxIncome(_cType, _debtAmount, _deltaRate);</span>
 <a name="14"><span class="lineNum">      14 </span>            :   }</a>
 <span class="lineNum">      15 </span>            : 
 <span class="lineNum">      16 </span>            :   function distributeTax(bytes32 _cType, address _receiver, uint256 _debtAmount, int256 _deltaRate) external {
-<span class="lineNum">      17 </span><span class="lineCov">       1142 :     _distributeTax(_cType, _receiver, _debtAmount, _deltaRate);</span>
+<span class="lineNum">      17 </span><span class="lineCov">       1140 :     _distributeTax(_cType, _receiver, _debtAmount, _deltaRate);</span>
 <a name="18"><span class="lineNum">      18 </span>            :   }</a>
 <span class="lineNum">      19 </span>            : 
 <span class="lineNum">      20 </span>            :   function addSecondaryTaxReceiver(
@@ -85,12 +85,12 @@
 <span class="lineNum">      23 </span>            :     bool _canTakeBackTax,
 <span class="lineNum">      24 </span>            :     uint256 _taxPercentage
 <span class="lineNum">      25 </span>            :   ) external {
-<span class="lineNum">      26 </span><span class="lineCov">        174 :     _secondaryTaxReceivers[_cType][_receiver] = ITaxCollector.TaxReceiver(_receiver, _canTakeBackTax, _taxPercentage);</span>
-<span class="lineNum">      27 </span><span class="lineCov">        174 :     _secondaryReceiverRevenueSources[_receiver].add(_cType);</span>
+<span class="lineNum">      26 </span><span class="lineCov">        172 :     _secondaryTaxReceivers[_cType][_receiver] = ITaxCollector.TaxReceiver(_receiver, _canTakeBackTax, _taxPercentage);</span>
+<span class="lineNum">      27 </span><span class="lineCov">        172 :     _secondaryReceiverRevenueSources[_receiver].add(_cType);</span>
 <a name="28"><span class="lineNum">      28 </span>            :   }</a>
 <span class="lineNum">      29 </span>            : 
 <span class="lineNum">      30 </span>            :   function addToCollateralList(bytes32 _cType) external {
-<span class="lineNum">      31 </span><span class="lineCov">       2346 :     _collateralList.add(_cType);</span>
+<span class="lineNum">      31 </span><span class="lineCov">       2602 :     _collateralList.add(_cType);</span>
 <a name="32"><span class="lineNum">      32 </span>            :   }</a>
 <span class="lineNum">      33 </span>            : 
 <span class="lineNum">      34 </span>            :   function addSecondaryReceiver(address _receiver) external {

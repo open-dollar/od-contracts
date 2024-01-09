@@ -4,7 +4,7 @@
 
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <title>LCOV - current.info - src/contracts/utils/Authorizable.sol</title>
+  <title>LCOV - lcov.info - src/contracts/utils/Authorizable.sol</title>
   <link rel="stylesheet" type="text/css" href="../../../gcov.css">
 </head>
 
@@ -28,7 +28,7 @@
           </tr>
           <tr>
             <td class="headerItem">Test:</td>
-            <td class="headerValue">current.info</td>
+            <td class="headerValue">lcov.info</td>
             <td></td>
             <td class="headerItem">Lines:</td>
             <td class="headerCovTableEntry">11</td>
@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2024-01-07 16:13:44</td>
+            <td class="headerValue">2024-01-08 19:17:33</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">6</td>
@@ -114,7 +114,7 @@
 <a name="52"><span class="lineNum">      52 </span>            :    * @param  _account Account to add auth to</a>
 <span class="lineNum">      53 </span>            :    */
 <span class="lineNum">      54 </span>            :   function addAuthorization(address _account) external virtual isAuthorized {
-<span class="lineNum">      55 </span><span class="lineCov">       3269 :     _addAuthorization(_account);</span>
+<span class="lineNum">      55 </span><span class="lineCov">       3270 :     _addAuthorization(_account);</span>
 <span class="lineNum">      56 </span>            :   }
 <span class="lineNum">      57 </span>            : 
 <span class="lineNum">      58 </span>            :   /**
@@ -127,8 +127,8 @@
 <a name="65"><span class="lineNum">      65 </span>            : </a>
 <span class="lineNum">      66 </span>            :   // --- Internal methods ---
 <span class="lineNum">      67 </span>            :   function _addAuthorization(address _account) internal {
-<span class="lineNum">      68 </span><span class="lineCov">       6639 :     if (_authorizedAccounts.add(_account)) {</span>
-<span class="lineNum">      69 </span><span class="lineCov">       6638 :       emit AddAuthorization(_account);</span>
+<span class="lineNum">      68 </span><span class="lineCov">       6640 :     if (_authorizedAccounts.add(_account)) {</span>
+<span class="lineNum">      69 </span><span class="lineCov">       6639 :       emit AddAuthorization(_account);</span>
 <span class="lineNum">      70 </span>            :     } else {
 <span class="lineNum">      71 </span><span class="lineCov">          1 :       revert AlreadyAuthorized();</span>
 <span class="lineNum">      72 </span>            :     }
@@ -143,7 +143,7 @@
 <a name="81"><span class="lineNum">      81 </span>            :   }</a>
 <span class="lineNum">      82 </span>            : 
 <span class="lineNum">      83 </span>            :   function _isAuthorized(address _account) internal view virtual returns (bool _authorized) {
-<span class="lineNum">      84 </span><span class="lineCov">      98624 :     return _authorizedAccounts.contains(_account);</span>
+<span class="lineNum">      84 </span><span class="lineCov">      99025 :     return _authorizedAccounts.contains(_account);</span>
 <span class="lineNum">      85 </span>            :   }
 <span class="lineNum">      86 </span>            : 
 <span class="lineNum">      87 </span>            :   // --- Modifiers ---

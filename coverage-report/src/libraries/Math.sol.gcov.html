@@ -4,7 +4,7 @@
 
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <title>LCOV - current.info - src/libraries/Math.sol</title>
+  <title>LCOV - lcov.info - src/libraries/Math.sol</title>
   <link rel="stylesheet" type="text/css" href="../../gcov.css">
 </head>
 
@@ -28,7 +28,7 @@
           </tr>
           <tr>
             <td class="headerItem">Test:</td>
-            <td class="headerValue">current.info</td>
+            <td class="headerValue">lcov.info</td>
             <td></td>
             <td class="headerItem">Lines:</td>
             <td class="headerCovTableEntry">7</td>
@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2024-01-07 16:13:44</td>
+            <td class="headerValue">2024-01-08 19:17:33</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">6</td>
@@ -163,7 +163,7 @@
 <span class="lineNum">     101 </span>            :    * @return _wmul Unsigned multiplication of `_x` and `_y` in WAD precision
 <span class="lineNum">     102 </span>            :    */
 <span class="lineNum">     103 </span>            :   function wmul(uint256 _x, uint256 _y) internal pure returns (uint256 _wmul) {
-<span class="lineNum">     104 </span><span class="lineCov">       6931 :     return (_x * _y) / WAD;</span>
+<span class="lineNum">     104 </span><span class="lineCov">       6980 :     return (_x * _y) / WAD;</span>
 <span class="lineNum">     105 </span>            :   }
 <span class="lineNum">     106 </span>            : 
 <span class="lineNum">     107 </span>            :   /**
@@ -213,7 +213,7 @@
 <a name="151"><span class="lineNum">     151 </span>            :    * @return _wdiv Unsigned division of `_x` by `_y` in WAD precision</a>
 <span class="lineNum">     152 </span>            :    */
 <span class="lineNum">     153 </span>            :   function wdiv(uint256 _x, uint256 _y) internal pure returns (uint256 _wdiv) {
-<span class="lineNum">     154 </span><span class="lineCov">       5890 :     return (_x * WAD) / _y;</span>
+<span class="lineNum">     154 </span><span class="lineCov">       5939 :     return (_x * WAD) / _y;</span>
 <span class="lineNum">     155 </span>            :   }
 <span class="lineNum">     156 </span>            : 
 <span class="lineNum">     157 </span>            :   /**
@@ -270,7 +270,7 @@
 <a name="208"><span class="lineNum">     208 </span>            :    * @return _min Unsigned minimum of `_x` and `_y`</a>
 <span class="lineNum">     209 </span>            :    */
 <span class="lineNum">     210 </span>            :   function min(uint256 _x, uint256 _y) internal pure returns (uint256 _min) {
-<span class="lineNum">     211 </span><span class="lineCov">      25514 :     _min = (_x &lt;= _y) ? _x : _y;</span>
+<span class="lineNum">     211 </span><span class="lineCov">      25678 :     _min = (_x &lt;= _y) ? _x : _y;</span>
 <span class="lineNum">     212 </span>            :   }
 <span class="lineNum">     213 </span>            : 
 <span class="lineNum">     214 </span>            :   /**
@@ -280,8 +280,8 @@
 <a name="218"><span class="lineNum">     218 </span>            :    * @dev    Throws if `_x` is too large to fit in an int256</a>
 <span class="lineNum">     219 </span>            :    */
 <span class="lineNum">     220 </span>            :   function toInt(uint256 _x) internal pure returns (int256 _int) {
-<span class="lineNum">     221 </span><span class="lineCov">      12489 :     _int = int256(_x);</span>
-<span class="lineNum">     222 </span><span class="lineCov">      12489 :     if (_int &lt; 0) revert IntOverflow();</span>
+<span class="lineNum">     221 </span><span class="lineCov">      12495 :     _int = int256(_x);</span>
+<span class="lineNum">     222 </span><span class="lineCov">      12495 :     if (_int &lt; 0) revert IntOverflow();</span>
 <span class="lineNum">     223 </span>            :   }
 <span class="lineNum">     224 </span>            : 
 <span class="lineNum">     225 </span>            :   // --- PI Specific Math ---

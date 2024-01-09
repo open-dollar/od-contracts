@@ -4,7 +4,7 @@
 
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <title>LCOV - current.info - src/contracts/PIDController.sol</title>
+  <title>LCOV - lcov.info - src/contracts/PIDController.sol</title>
   <link rel="stylesheet" type="text/css" href="../../gcov.css">
 </head>
 
@@ -28,7 +28,7 @@
           </tr>
           <tr>
             <td class="headerItem">Test:</td>
-            <td class="headerValue">current.info</td>
+            <td class="headerValue">lcov.info</td>
             <td></td>
             <td class="headerItem">Lines:</td>
             <td class="headerCovTableEntry">81</td>
@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2024-01-07 16:13:44</td>
+            <td class="headerValue">2024-01-08 19:17:33</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">22</td>
@@ -201,10 +201,10 @@
 <span class="lineNum">     139 </span>            :     // If the P * Kp + I * Ki output breaks the noise barrier, you can recompute a non null rate
 <span class="lineNum">     140 </span><span class="lineCov">       2937 :     if (_breaksNoiseBarrier(Math.absolute(_piOutput), _redemptionPrice)) {</span>
 <span class="lineNum">     141 </span>            :       // Get the new redemption rate by taking into account the feedbackOutputUpperBound and feedbackOutputLowerBound
-<span class="lineNum">     142 </span><span class="lineCov">       1643 :       return _getBoundedRedemptionRate(_piOutput);</span>
+<span class="lineNum">     142 </span><span class="lineCov">       1631 :       return _getBoundedRedemptionRate(_piOutput);</span>
 <span class="lineNum">     143 </span>            :     } else {
 <span class="lineNum">     144 </span>            :       // If controller output is below noise barrier, return RAY
-<span class="lineNum">     145 </span><span class="lineCov">       1294 :       return RAY;</span>
+<span class="lineNum">     145 </span><span class="lineCov">       1306 :       return RAY;</span>
 <span class="lineNum">     146 </span>            :     }
 <span class="lineNum">     147 </span>            :   }
 <a name="148"><span class="lineNum">     148 </span>            : </a>
@@ -230,8 +230,8 @@
 <span class="lineNum">     168 </span>            :   /// @dev Returns whether the P + I sum exceeds the noise barrier
 <span class="lineNum">     169 </span>            :   function _breaksNoiseBarrier(uint256 _piSum, uint256 _redemptionPrice) internal view virtual returns (bool _breaksNb) {
 <span class="lineNum">     170 </span><span class="lineCov">        665 :     if (_piSum == 0) return false;</span>
-<span class="lineNum">     171 </span><span class="lineCov">        507 :     uint256 _deltaNoise = 2 * WAD - _params.noiseBarrier;</span>
-<span class="lineNum">     172 </span><span class="lineCov">        507 :     return _piSum &gt;= _redemptionPrice.wmul(_deltaNoise) - _redemptionPrice;</span>
+<span class="lineNum">     171 </span><span class="lineCov">        502 :     uint256 _deltaNoise = 2 * WAD - _params.noiseBarrier;</span>
+<span class="lineNum">     172 </span><span class="lineCov">        502 :     return _piSum &gt;= _redemptionPrice.wmul(_deltaNoise) - _redemptionPrice;</span>
 <span class="lineNum">     173 </span>            :   }
 <a name="174"><span class="lineNum">     174 </span>            : </a>
 <span class="lineNum">     175 </span>            :   /// @inheritdoc IPIDController
@@ -370,12 +370,12 @@
 <span class="lineNum">     308 </span>            :   function _validateParameters() internal view override {
 <span class="lineNum">     309 </span><span class="lineCov">       4010 :     _params.integralPeriodSize.assertNonNull();</span>
 <span class="lineNum">     310 </span><span class="lineCov">       4009 :     _params.noiseBarrier.assertNonNull().assertLtEq(WAD);</span>
-<span class="lineNum">     311 </span><span class="lineCov">       3893 :     _params.feedbackOutputUpperBound.assertNonNull().assertLtEq(_POSITIVE_RATE_LIMIT);</span>
-<span class="lineNum">     312 </span><span class="lineCov">       3840 :     _params.feedbackOutputLowerBound.assertLt(0).assertGtEq(-int256(_NEGATIVE_RATE_LIMIT));</span>
-<span class="lineNum">     313 </span><span class="lineCov">       3615 :     _params.perSecondCumulativeLeak.assertLtEq(RAY);</span>
+<span class="lineNum">     311 </span><span class="lineCov">       3895 :     _params.feedbackOutputUpperBound.assertNonNull().assertLtEq(_POSITIVE_RATE_LIMIT);</span>
+<span class="lineNum">     312 </span><span class="lineCov">       3854 :     _params.feedbackOutputLowerBound.assertLt(0).assertGtEq(-int256(_NEGATIVE_RATE_LIMIT));</span>
+<span class="lineNum">     313 </span><span class="lineCov">       3633 :     _params.perSecondCumulativeLeak.assertLtEq(RAY);</span>
 <span class="lineNum">     314 </span>            : 
-<span class="lineNum">     315 </span><span class="lineCov">       3512 :     _controllerGains.kp.assertGtEq(-int256(WAD)).assertLtEq(int256(WAD));</span>
-<span class="lineNum">     316 </span><span class="lineCov">       3399 :     _controllerGains.ki.assertGtEq(-int256(WAD)).assertLtEq(int256(WAD));</span>
+<span class="lineNum">     315 </span><span class="lineCov">       3543 :     _controllerGains.kp.assertGtEq(-int256(WAD)).assertLtEq(int256(WAD));</span>
+<span class="lineNum">     316 </span><span class="lineCov">       3430 :     _controllerGains.ki.assertGtEq(-int256(WAD)).assertLtEq(int256(WAD));</span>
 <span class="lineNum">     317 </span>            :   }
 <span class="lineNum">     318 </span>            : }
 </pre>

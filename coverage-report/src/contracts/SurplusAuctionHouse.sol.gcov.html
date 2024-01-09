@@ -4,7 +4,7 @@
 
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <title>LCOV - current.info - src/contracts/SurplusAuctionHouse.sol</title>
+  <title>LCOV - lcov.info - src/contracts/SurplusAuctionHouse.sol</title>
   <link rel="stylesheet" type="text/css" href="../../gcov.css">
 </head>
 
@@ -28,7 +28,7 @@
           </tr>
           <tr>
             <td class="headerItem">Test:</td>
-            <td class="headerValue">current.info</td>
+            <td class="headerValue">lcov.info</td>
             <td></td>
             <td class="headerItem">Lines:</td>
             <td class="headerCovTableEntry">57</td>
@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2024-01-07 16:13:44</td>
+            <td class="headerValue">2024-01-08 19:17:33</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">10</td>
@@ -233,12 +233,12 @@
 <span class="lineNum">     171 </span>            : 
 <span class="lineNum">     172 </span><span class="lineCov">       1795 :     uint256 _amountToSend = _auction.bidAmount.wmul(_params.recyclingPercentage);</span>
 <span class="lineNum">     173 </span><span class="lineCov">       1795 :     if (_amountToSend &gt; 0) {</span>
-<span class="lineNum">     174 </span><span class="lineCov">        631 :       protocolToken.safeTransfer(_params.bidReceiver, _amountToSend);</span>
+<span class="lineNum">     174 </span><span class="lineCov">        621 :       protocolToken.safeTransfer(_params.bidReceiver, _amountToSend);</span>
 <span class="lineNum">     175 </span>            :     }
 <span class="lineNum">     176 </span>            : 
 <span class="lineNum">     177 </span><span class="lineCov">       1795 :     uint256 _amountToBurn = _auction.bidAmount - _amountToSend;</span>
 <span class="lineNum">     178 </span><span class="lineCov">       1795 :     if (_amountToBurn &gt; 0) {</span>
-<span class="lineNum">     179 </span><span class="lineCov">       1490 :       protocolToken.burn(_amountToBurn);</span>
+<span class="lineNum">     179 </span><span class="lineCov">       1502 :       protocolToken.burn(_amountToBurn);</span>
 <span class="lineNum">     180 </span>            :     }
 <span class="lineNum">     181 </span>            : 
 <span class="lineNum">     182 </span><span class="lineCov">       1795 :     emit SettleAuction({</span>

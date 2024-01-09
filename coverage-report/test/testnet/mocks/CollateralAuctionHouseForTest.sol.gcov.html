@@ -4,7 +4,7 @@
 
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <title>LCOV - current.info - test/testnet/mocks/CollateralAuctionHouseForTest.sol</title>
+  <title>LCOV - lcov.info - test/testnet/mocks/CollateralAuctionHouseForTest.sol</title>
   <link rel="stylesheet" type="text/css" href="../../../gcov.css">
 </head>
 
@@ -28,7 +28,7 @@
           </tr>
           <tr>
             <td class="headerItem">Test:</td>
-            <td class="headerValue">current.info</td>
+            <td class="headerValue">lcov.info</td>
             <td></td>
             <td class="headerItem">Lines:</td>
             <td class="headerCovTableEntry">10</td>
@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2024-01-07 16:13:44</td>
+            <td class="headerValue">2024-01-08 19:17:33</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">6</td>
@@ -75,7 +75,7 @@
 <span class="lineNum">      13 </span>            :     uint256 _amountToRaise,
 <span class="lineNum">      14 </span>            :     uint256 _collateralToSell
 <span class="lineNum">      15 </span>            :   ) external view returns (uint256 _id) {
-<span class="lineNum">      16 </span><span class="lineCov">       3824 :     return auctionId;</span>
+<span class="lineNum">      16 </span><span class="lineCov">       3843 :     return auctionId;</span>
 <span class="lineNum">      17 </span>            :   }
 <span class="lineNum">      18 </span>            : }
 <span class="lineNum">      19 </span>            : 
@@ -100,11 +100,11 @@
 <span class="lineNum">      38 </span>            :     address _forgoneCollateralReceiver,
 <span class="lineNum">      39 </span>            :     address _auctionIncomeRecipient
 <span class="lineNum">      40 </span>            :   ) external {
-<span class="lineNum">      41 </span><span class="lineCov">      10134 :     _auctions[_id].amountToSell = _amountToSell;</span>
-<span class="lineNum">      42 </span><span class="lineCov">      10134 :     _auctions[_id].amountToRaise = _amountToRaise;</span>
-<span class="lineNum">      43 </span><span class="lineCov">      10134 :     _auctions[_id].initialTimestamp = _initialTimestamp;</span>
-<span class="lineNum">      44 </span><span class="lineCov">      10134 :     _auctions[_id].forgoneCollateralReceiver = _forgoneCollateralReceiver;</span>
-<span class="lineNum">      45 </span><span class="lineCov">      10134 :     _auctions[_id].auctionIncomeRecipient = _auctionIncomeRecipient;</span>
+<span class="lineNum">      41 </span><span class="lineCov">      10193 :     _auctions[_id].amountToSell = _amountToSell;</span>
+<span class="lineNum">      42 </span><span class="lineCov">      10193 :     _auctions[_id].amountToRaise = _amountToRaise;</span>
+<span class="lineNum">      43 </span><span class="lineCov">      10193 :     _auctions[_id].initialTimestamp = _initialTimestamp;</span>
+<span class="lineNum">      44 </span><span class="lineCov">      10193 :     _auctions[_id].forgoneCollateralReceiver = _forgoneCollateralReceiver;</span>
+<span class="lineNum">      45 </span><span class="lineCov">      10193 :     _auctions[_id].auctionIncomeRecipient = _auctionIncomeRecipient;</span>
 <a name="46"><span class="lineNum">      46 </span>            :   }</a>
 <span class="lineNum">      47 </span>            : 
 <span class="lineNum">      48 </span>            :   function getAdjustedBid(uint256 _id, uint256 _wad) external view returns (uint256 _adjustedBid) {

@@ -4,7 +4,7 @@
 
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <title>LCOV - current.info - src/contracts/settlement/GlobalSettlement.sol</title>
+  <title>LCOV - lcov.info - src/contracts/settlement/GlobalSettlement.sol</title>
   <link rel="stylesheet" type="text/css" href="../../../gcov.css">
 </head>
 
@@ -28,7 +28,7 @@
           </tr>
           <tr>
             <td class="headerItem">Test:</td>
-            <td class="headerValue">current.info</td>
+            <td class="headerValue">lcov.info</td>
             <td></td>
             <td class="headerItem">Lines:</td>
             <td class="headerCovTableEntry">80</td>
@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2024-01-07 16:13:44</td>
+            <td class="headerValue">2024-01-08 19:17:33</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">13</td>
@@ -288,29 +288,29 @@
 <a name="226"><span class="lineNum">     226 </span>            : </a>
 <span class="lineNum">     227 </span>            :   /// @inheritdoc IGlobalSettlement
 <span class="lineNum">     228 </span>            :   function fastTrackAuction(bytes32 _cType, uint256 _auctionId) external {
-<span class="lineNum">     229 </span><span class="lineCov">       1883 :     if (finalCoinPerCollateralPrice[_cType] == 0) revert GS_FinalCollateralPriceNotDefined();</span>
+<span class="lineNum">     229 </span><span class="lineCov">       1867 :     if (finalCoinPerCollateralPrice[_cType] == 0) revert GS_FinalCollateralPriceNotDefined();</span>
 <span class="lineNum">     230 </span>            : 
-<span class="lineNum">     231 </span><span class="lineCov">       1627 :     ICollateralAuctionHouse _collateralAuctionHouse =</span>
-<span class="lineNum">     232 </span><span class="lineCov">       1627 :       ICollateralAuctionHouse(liquidationEngine.cParams(_cType).collateralAuctionHouse);</span>
-<span class="lineNum">     233 </span><span class="lineCov">       1627 :     uint256 _accumulatedRate = safeEngine.cData(_cType).accumulatedRate;</span>
+<span class="lineNum">     231 </span><span class="lineCov">       1611 :     ICollateralAuctionHouse _collateralAuctionHouse =</span>
+<span class="lineNum">     232 </span><span class="lineCov">       1611 :       ICollateralAuctionHouse(liquidationEngine.cParams(_cType).collateralAuctionHouse);</span>
+<span class="lineNum">     233 </span><span class="lineCov">       1611 :     uint256 _accumulatedRate = safeEngine.cData(_cType).accumulatedRate;</span>
 <span class="lineNum">     234 </span>            : 
-<span class="lineNum">     235 </span><span class="lineCov">       1627 :     ICollateralAuctionHouse.Auction memory _auction = _collateralAuctionHouse.auctions(_auctionId);</span>
+<span class="lineNum">     235 </span><span class="lineCov">       1611 :     ICollateralAuctionHouse.Auction memory _auction = _collateralAuctionHouse.auctions(_auctionId);</span>
 <span class="lineNum">     236 </span>            : 
 <span class="lineNum">     237 </span>            :     // Creates an unbacked debt at the accounting engine
-<span class="lineNum">     238 </span><span class="lineCov">       1627 :     safeEngine.createUnbackedDebt({</span>
+<span class="lineNum">     238 </span><span class="lineCov">       1611 :     safeEngine.createUnbackedDebt({</span>
 <span class="lineNum">     239 </span>            :       _debtDestination: address(accountingEngine),
 <span class="lineNum">     240 </span>            :       _coinDestination: address(accountingEngine),
 <span class="lineNum">     241 </span>            :       _rad: _auction.amountToRaise
 <span class="lineNum">     242 </span>            :     });
 <span class="lineNum">     243 </span>            : 
 <span class="lineNum">     244 </span>            :     // Returns debt to the SAFE owner and withdraw the collateral from the auction (to this contract)
-<span class="lineNum">     245 </span><span class="lineCov">       1627 :     _collateralAuctionHouse.terminateAuctionPrematurely(_auctionId);</span>
+<span class="lineNum">     245 </span><span class="lineCov">       1611 :     _collateralAuctionHouse.terminateAuctionPrematurely(_auctionId);</span>
 <span class="lineNum">     246 </span>            : 
-<span class="lineNum">     247 </span><span class="lineCov">       1627 :     uint256 _debt = _auction.amountToRaise / _accumulatedRate;</span>
-<span class="lineNum">     248 </span><span class="lineCov">       1627 :     collateralTotalDebt[_cType] += _debt;</span>
+<span class="lineNum">     247 </span><span class="lineCov">       1611 :     uint256 _debt = _auction.amountToRaise / _accumulatedRate;</span>
+<span class="lineNum">     248 </span><span class="lineCov">       1611 :     collateralTotalDebt[_cType] += _debt;</span>
 <span class="lineNum">     249 </span>            : 
 <span class="lineNum">     250 </span>            :     // Transfers the collateral (from this) and the unbacked debt (from accounting engine) to the SAFE owner
-<span class="lineNum">     251 </span><span class="lineCov">       1627 :     safeEngine.confiscateSAFECollateralAndDebt({</span>
+<span class="lineNum">     251 </span><span class="lineCov">       1611 :     safeEngine.confiscateSAFECollateralAndDebt({</span>
 <span class="lineNum">     252 </span>            :       _cType: _cType,
 <span class="lineNum">     253 </span>            :       _safe: _auction.forgoneCollateralReceiver,
 <span class="lineNum">     254 </span>            :       _collateralSource: address(this),

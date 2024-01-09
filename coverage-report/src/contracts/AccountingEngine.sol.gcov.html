@@ -4,7 +4,7 @@
 
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <title>LCOV - current.info - src/contracts/AccountingEngine.sol</title>
+  <title>LCOV - lcov.info - src/contracts/AccountingEngine.sol</title>
   <link rel="stylesheet" type="text/css" href="../../gcov.css">
 </head>
 
@@ -28,7 +28,7 @@
           </tr>
           <tr>
             <td class="headerItem">Test:</td>
-            <td class="headerValue">current.info</td>
+            <td class="headerValue">lcov.info</td>
             <td></td>
             <td class="headerItem">Lines:</td>
             <td class="headerCovTableEntry">89</td>
@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2024-01-07 16:13:44</td>
+            <td class="headerValue">2024-01-08 19:17:33</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">16</td>
@@ -330,13 +330,13 @@
 <span class="lineNum">     268 </span><span class="lineCov">       1796 :     (_coinBalance,) = _settleDebt(_coinBalance, _debtBalance, _debtToSettle);</span>
 <span class="lineNum">     269 </span>            : 
 <span class="lineNum">     270 </span><span class="lineCov">       1796 :     if (_coinBalance &gt; 0) {</span>
-<span class="lineNum">     271 </span><span class="lineCov">        905 :       safeEngine.transferInternalCoins({</span>
+<span class="lineNum">     271 </span><span class="lineCov">        871 :       safeEngine.transferInternalCoins({</span>
 <span class="lineNum">     272 </span>            :         _source: address(this),
 <span class="lineNum">     273 </span>            :         _destination: postSettlementSurplusDrain,
 <span class="lineNum">     274 </span>            :         _rad: _coinBalance
 <span class="lineNum">     275 </span>            :       });
 <span class="lineNum">     276 </span>            : 
-<span class="lineNum">     277 </span><span class="lineCov">        905 :       emit TransferSurplus(postSettlementSurplusDrain, _coinBalance);</span>
+<span class="lineNum">     277 </span><span class="lineCov">        871 :       emit TransferSurplus(postSettlementSurplusDrain, _coinBalance);</span>
 <span class="lineNum">     278 </span>            :     }
 <span class="lineNum">     279 </span>            :   }
 <span class="lineNum">     280 </span>            : 

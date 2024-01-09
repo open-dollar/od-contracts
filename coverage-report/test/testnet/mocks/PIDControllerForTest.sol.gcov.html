@@ -4,7 +4,7 @@
 
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <title>LCOV - current.info - test/testnet/mocks/PIDControllerForTest.sol</title>
+  <title>LCOV - lcov.info - test/testnet/mocks/PIDControllerForTest.sol</title>
   <link rel="stylesheet" type="text/css" href="../../../gcov.css">
 </head>
 
@@ -28,7 +28,7 @@
           </tr>
           <tr>
             <td class="headerItem">Test:</td>
-            <td class="headerValue">current.info</td>
+            <td class="headerValue">lcov.info</td>
             <td></td>
             <td class="headerItem">Lines:</td>
             <td class="headerCovTableEntry">38</td>
@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2024-01-07 16:13:44</td>
+            <td class="headerValue">2024-01-08 19:17:33</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">22</td>
@@ -185,11 +185,11 @@
 <a name="123"><span class="lineNum">     123 </span>            :   }</a>
 <span class="lineNum">     124 </span>            : 
 <span class="lineNum">     125 </span>            :   function _getBoundedRedemptionRate(int256 _piOutput) internal view virtual override returns (uint256) {
-<span class="lineNum">     126 </span><span class="lineCov">       3461 :     watcher.calledInternal(abi.encodeWithSignature('_getBoundedRedemptionRate(int256)', _piOutput));</span>
-<span class="lineNum">     127 </span><span class="lineCov">       3461 :     if (callSuper || callSupper_getBoundedRedemptionRate) {</span>
+<span class="lineNum">     126 </span><span class="lineCov">       3449 :     watcher.calledInternal(abi.encodeWithSignature('_getBoundedRedemptionRate(int256)', _piOutput));</span>
+<span class="lineNum">     127 </span><span class="lineCov">       3449 :     if (callSuper || callSupper_getBoundedRedemptionRate) {</span>
 <span class="lineNum">     128 </span><span class="lineCov">       1536 :       return super._getBoundedRedemptionRate(_piOutput);</span>
 <span class="lineNum">     129 </span>            :     } else {
-<span class="lineNum">     130 </span><span class="lineCov">       1925 :       return mockPIDController.mock_getBoundedRedemptionRate(_piOutput);</span>
+<span class="lineNum">     130 </span><span class="lineCov">       1913 :       return mockPIDController.mock_getBoundedRedemptionRate(_piOutput);</span>
 <span class="lineNum">     131 </span>            :     }
 <span class="lineNum">     132 </span>            :   }
 <span class="lineNum">     133 </span>            : 

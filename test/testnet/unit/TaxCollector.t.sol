@@ -999,4 +999,29 @@ contract Unit_TaxCollector_ModifyParametersPerCollateral is Base {
 
     taxCollector.modifyParameters(_cType, _param, _data);
   }
+
+  function test_Revert_SecondartReceiver_TaxAllotmentTooHigh(bytes32 _cType) public {
+    vm.startPrank(authorizedAccount);
+    _mockCollateralList(_cType);
+
+    // increase secondary receivers to 1
+
+    ITaxCollector.TaxCollectorParams memory newTaxCollectorParams = ITaxCollector.TaxCollectorParams({
+      primaryTaxReceiver: primaryTaxReceiver,
+      globalStabilityFee: globalStabilityFee,
+      maxStabilityFeeRange: maxStabilityFeeRange,
+      maxSecondaryReceivers: 1
+    });
+
+    taxCollector.modifyParameters('maxSecondaryReceivers', abi.encode(newTaxCollectorParams));
+
+    // input too high a tax percentage for secondary receiver
+
+    ITaxCollector.TaxReceiver memory newSecondary =
+      ITaxCollector.TaxReceiver({receiver: secondaryReceiverC, canTakeBackTax: true, taxPercentage: 11 * 10 ** 18});
+
+    vm.expectRevert(ITaxCollector.TaxCollector_TaxCutExceedsHundred.selector);
+
+    taxCollector.modifyParameters(_cType, 'secondaryTaxReceiver', abi.encode(newSecondary));
+  }
 }

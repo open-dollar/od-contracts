@@ -4,7 +4,7 @@
 
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <title>LCOV - current.info - src/contracts/CollateralAuctionHouse.sol</title>
+  <title>LCOV - lcov.info - src/contracts/CollateralAuctionHouse.sol</title>
   <link rel="stylesheet" type="text/css" href="../../gcov.css">
 </head>
 
@@ -28,7 +28,7 @@
           </tr>
           <tr>
             <td class="headerItem">Test:</td>
-            <td class="headerValue">current.info</td>
+            <td class="headerValue">lcov.info</td>
             <td></td>
             <td class="headerItem">Lines:</td>
             <td class="headerCovTableEntry">88</td>
@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2024-01-07 16:13:44</td>
+            <td class="headerValue">2024-01-08 19:17:33</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">18</td>
@@ -103,12 +103,12 @@
 <a name="41"><span class="lineNum">      41 </span>            : </a>
 <span class="lineNum">      42 </span>            :   /// @inheritdoc ICollateralAuctionHouse
 <span class="lineNum">      43 </span>            :   function liquidationEngine() public view virtual returns (ILiquidationEngine __liquidationEngine) {
-<span class="lineNum">      44 </span><span class="lineCov">       6636 :     return _liquidationEngine;</span>
+<span class="lineNum">      44 </span><span class="lineCov">       6690 :     return _liquidationEngine;</span>
 <span class="lineNum">      45 </span>            :   }
 <a name="46"><span class="lineNum">      46 </span>            : </a>
 <span class="lineNum">      47 </span>            :   /// @inheritdoc ICollateralAuctionHouse
 <span class="lineNum">      48 </span>            :   function oracleRelayer() public view virtual returns (IOracleRelayer __oracleRelayer) {
-<span class="lineNum">      49 </span><span class="lineCov">      10673 :     return _oracleRelayer;</span>
+<span class="lineNum">      49 </span><span class="lineCov">      10791 :     return _oracleRelayer;</span>
 <span class="lineNum">      50 </span>            :   }
 <span class="lineNum">      51 </span>            : 
 <span class="lineNum">      52 </span>            :   // --- Data ---
@@ -124,7 +124,7 @@
 <a name="62"><span class="lineNum">      62 </span>            : </a>
 <span class="lineNum">      63 </span>            :   /// @inheritdoc ICollateralAuctionHouse
 <span class="lineNum">      64 </span>            :   function auctions(uint256 _auctionId) external view returns (Auction memory _auction) {
-<span class="lineNum">      65 </span><span class="lineCov">        867 :     return _auctions[_auctionId];</span>
+<span class="lineNum">      65 </span><span class="lineCov">        879 :     return _auctions[_auctionId];</span>
 <span class="lineNum">      66 </span>            :   }
 <span class="lineNum">      67 </span>            : 
 <span class="lineNum">      68 </span>            :   /// @inheritdoc ICollateralAuctionHouse
@@ -133,7 +133,7 @@
 <a name="71"><span class="lineNum">      71 </span>            : </a>
 <span class="lineNum">      72 </span>            :   /// @inheritdoc ICollateralAuctionHouse
 <span class="lineNum">      73 </span>            :   function params() external view returns (CollateralAuctionHouseParams memory _cahParams) {
-<span class="lineNum">      74 </span><span class="lineCov">       4087 :     return _params;</span>
+<span class="lineNum">      74 </span><span class="lineCov">       4102 :     return _params;</span>
 <span class="lineNum">      75 </span>            :   }
 <span class="lineNum">      76 </span>            : 
 <span class="lineNum">      77 </span>            :   // --- Init ---
@@ -181,16 +181,16 @@
 <span class="lineNum">     119 </span>            :     uint256 _customDiscount
 <span class="lineNum">     120 </span>            :   ) internal pure returns (uint256 _boughtCollateral, uint256 _readjustedBid) {
 <span class="lineNum">     121 </span>            :     // calculate the collateral price in relation to the latest system coin price and apply the discount
-<span class="lineNum">     122 </span><span class="lineCov">       3306 :     uint256 _discountedPrice = _collateralPrice.rdiv(_systemCoinPrice).wmul(_customDiscount);</span>
+<span class="lineNum">     122 </span><span class="lineCov">       3365 :     uint256 _discountedPrice = _collateralPrice.rdiv(_systemCoinPrice).wmul(_customDiscount);</span>
 <span class="lineNum">     123 </span>            :     // calculate the amount of collateral bought
-<span class="lineNum">     124 </span><span class="lineCov">       3306 :     _boughtCollateral = _adjustedBid.wdiv(_discountedPrice);</span>
+<span class="lineNum">     124 </span><span class="lineCov">       3365 :     _boughtCollateral = _adjustedBid.wdiv(_discountedPrice);</span>
 <span class="lineNum">     125 </span>            : 
-<span class="lineNum">     126 </span><span class="lineCov">       3306 :     if (_boughtCollateral &lt;= _amountToSell) {</span>
-<span class="lineNum">     127 </span><span class="lineCov">       2019 :       return (_boughtCollateral, _adjustedBid);</span>
+<span class="lineNum">     126 </span><span class="lineCov">       3365 :     if (_boughtCollateral &lt;= _amountToSell) {</span>
+<span class="lineNum">     127 </span><span class="lineCov">       2083 :       return (_boughtCollateral, _adjustedBid);</span>
 <span class="lineNum">     128 </span>            :     } else {
 <span class="lineNum">     129 </span>            :       // if calculated collateral amount exceeds the amount for sale, adjust it to the remaining amount
-<span class="lineNum">     130 </span><span class="lineCov">       1287 :       _readjustedBid = _adjustedBid * _amountToSell / _boughtCollateral;</span>
-<span class="lineNum">     131 </span><span class="lineCov">       1287 :       return (_amountToSell, _readjustedBid);</span>
+<span class="lineNum">     130 </span><span class="lineCov">       1282 :       _readjustedBid = _adjustedBid * _amountToSell / _boughtCollateral;</span>
+<span class="lineNum">     131 </span><span class="lineCov">       1282 :       return (_amountToSell, _readjustedBid);</span>
 <span class="lineNum">     132 </span>            :     }
 <span class="lineNum">     133 </span>            :   }
 <span class="lineNum">     134 </span>            : 
@@ -199,12 +199,12 @@
 <a name="137"><span class="lineNum">     137 </span>            :    * @return _collateralPrice The collateral price if valid [wad]</a>
 <span class="lineNum">     138 </span>            :    */
 <span class="lineNum">     139 </span>            :   function _getCollateralPrice() internal view returns (uint256 _collateralPrice) {
-<span class="lineNum">     140 </span><span class="lineCov">       3818 :     IDelayedOracle _delayedOracle = oracleRelayer().cParams(collateralType).oracle;</span>
-<span class="lineNum">     141 </span><span class="lineCov">       3818 :     bool _hasValidValue;</span>
-<span class="lineNum">     142 </span><span class="lineCov">       3818 :     (_collateralPrice, _hasValidValue) = _delayedOracle.getResultWithValidity();</span>
-<span class="lineNum">     143 </span><span class="lineCov">       3818 :     if (!_hasValidValue) return 0;</span>
+<span class="lineNum">     140 </span><span class="lineCov">       3877 :     IDelayedOracle _delayedOracle = oracleRelayer().cParams(collateralType).oracle;</span>
+<span class="lineNum">     141 </span><span class="lineCov">       3877 :     bool _hasValidValue;</span>
+<span class="lineNum">     142 </span><span class="lineCov">       3877 :     (_collateralPrice, _hasValidValue) = _delayedOracle.getResultWithValidity();</span>
+<span class="lineNum">     143 </span><span class="lineCov">       3877 :     if (!_hasValidValue) return 0;</span>
 <span class="lineNum">     144 </span>            : 
-<span class="lineNum">     145 </span><span class="lineCov">       3306 :     return _collateralPrice;</span>
+<span class="lineNum">     145 </span><span class="lineCov">       3365 :     return _collateralPrice;</span>
 <span class="lineNum">     146 </span>            :   }
 <span class="lineNum">     147 </span>            : 
 <span class="lineNum">     148 </span>            :   /**
@@ -213,13 +213,13 @@
 <a name="151"><span class="lineNum">     151 </span>            :    * @return _auctionDiscount The upcoming discount that will be used in the targeted auction</a>
 <span class="lineNum">     152 </span>            :    */
 <span class="lineNum">     153 </span>            :   function _getAuctionDiscount(uint256 _id) internal view returns (uint256 _auctionDiscount) {
-<span class="lineNum">     154 </span><span class="lineCov">       3840 :     uint256 _auctionTimestamp = _auctions[_id].initialTimestamp;</span>
-<span class="lineNum">     155 </span><span class="lineCov">       3840 :     if (_auctionTimestamp == 0) return WAD; // auction is finished, return no discount</span>
+<span class="lineNum">     154 </span><span class="lineCov">       3899 :     uint256 _auctionTimestamp = _auctions[_id].initialTimestamp;</span>
+<span class="lineNum">     155 </span><span class="lineCov">       3899 :     if (_auctionTimestamp == 0) return WAD; // auction is finished, return no discount</span>
 <span class="lineNum">     156 </span>            : 
-<span class="lineNum">     157 </span><span class="lineCov">       3401 :     uint256 _timeSinceCreation = block.timestamp - _auctionTimestamp;</span>
-<span class="lineNum">     158 </span><span class="lineCov">       3401 :     _auctionDiscount = _params.perSecondDiscountUpdateRate.rpow(_timeSinceCreation).rmul(_params.minDiscount);</span>
+<span class="lineNum">     157 </span><span class="lineCov">       3435 :     uint256 _timeSinceCreation = block.timestamp - _auctionTimestamp;</span>
+<span class="lineNum">     158 </span><span class="lineCov">       3435 :     _auctionDiscount = _params.perSecondDiscountUpdateRate.rpow(_timeSinceCreation).rmul(_params.minDiscount);</span>
 <span class="lineNum">     159 </span>            : 
-<span class="lineNum">     160 </span><span class="lineCov">       3401 :     if (_auctionDiscount &lt; _params.maxDiscount) return _params.maxDiscount;</span>
+<span class="lineNum">     160 </span><span class="lineCov">       3435 :     if (_auctionDiscount &lt; _params.maxDiscount) return _params.maxDiscount;</span>
 <span class="lineNum">     161 </span>            :   }
 <span class="lineNum">     162 </span>            : 
 <span class="lineNum">     163 </span>            :   /**
@@ -230,13 +230,13 @@
 <a name="168"><span class="lineNum">     168 </span>            :    * @dev    The inputted bid is capped to the amount of system coins the auction needs to raise</a>
 <span class="lineNum">     169 </span>            :    */
 <span class="lineNum">     170 </span>            :   function _getAdjustedBid(uint256 _id, uint256 _wad) internal view returns (uint256 _adjustedBid) {
-<span class="lineNum">     171 </span><span class="lineCov">       5866 :     Auction memory _auction = _auctions[_id];</span>
-<span class="lineNum">     172 </span><span class="lineCov">       5866 :     if (_auction.amountToRaise == 0 || _auction.amountToSell == 0) return 0;</span>
+<span class="lineNum">     171 </span><span class="lineCov">       5925 :     Auction memory _auction = _auctions[_id];</span>
+<span class="lineNum">     172 </span><span class="lineCov">       5925 :     if (_auction.amountToRaise == 0 || _auction.amountToSell == 0) return 0;</span>
 <span class="lineNum">     173 </span>            : 
 <span class="lineNum">     174 </span>            :     // bound max amount offered in exchange for collateral
-<span class="lineNum">     175 </span><span class="lineCov">       4694 :     _adjustedBid = _wad;</span>
-<span class="lineNum">     176 </span><span class="lineCov">       4694 :     if (_adjustedBid * RAY &gt; _auction.amountToRaise) {</span>
-<span class="lineNum">     177 </span><span class="lineCov">       1671 :       _adjustedBid = (_auction.amountToRaise / RAY) + 1;</span>
+<span class="lineNum">     175 </span><span class="lineCov">       4753 :     _adjustedBid = _wad;</span>
+<span class="lineNum">     176 </span><span class="lineCov">       4753 :     if (_adjustedBid * RAY &gt; _auction.amountToRaise) {</span>
+<span class="lineNum">     177 </span><span class="lineCov">       1676 :       _adjustedBid = (_auction.amountToRaise / RAY) + 1;</span>
 <span class="lineNum">     178 </span>            :     }
 <span class="lineNum">     179 </span>            :   }
 <span class="lineNum">     180 </span>            : 
@@ -309,66 +309,66 @@
 <span class="lineNum">     247 </span>            :     uint256 _id,
 <span class="lineNum">     248 </span>            :     uint256 _wad
 <span class="lineNum">     249 </span>            :   ) external whenEnabled returns (uint256 _boughtCollateral, uint256 _adjustedBid) {
-<span class="lineNum">     250 </span><span class="lineCov">       4062 :     Auction storage _auction = _auctions[_id];</span>
-<span class="lineNum">     251 </span><span class="lineCov">       4062 :     if (_wad == 0 || _wad &lt; _params.minimumBid) revert CAH_InvalidBid();</span>
+<span class="lineNum">     250 </span><span class="lineCov">       4121 :     Auction storage _auction = _auctions[_id];</span>
+<span class="lineNum">     251 </span><span class="lineCov">       4121 :     if (_wad == 0 || _wad &lt; _params.minimumBid) revert CAH_InvalidBid();</span>
 <span class="lineNum">     252 </span>            : 
 <span class="lineNum">     253 </span>            :     // Bound max amount offered in exchange for collateral (in case someone offers more than it's necessary)
-<span class="lineNum">     254 </span><span class="lineCov">       3550 :     _adjustedBid = _getAdjustedBid(_id, _wad);</span>
-<span class="lineNum">     255 </span><span class="lineCov">       3550 :     if (_adjustedBid == 0) revert CAH_InexistentAuction();</span>
+<span class="lineNum">     254 </span><span class="lineCov">       3609 :     _adjustedBid = _getAdjustedBid(_id, _wad);</span>
+<span class="lineNum">     255 </span><span class="lineCov">       3609 :     if (_adjustedBid == 0) revert CAH_InexistentAuction();</span>
 <span class="lineNum">     256 </span>            : 
 <span class="lineNum">     257 </span>            :     // Read (and update) the redemption price
-<span class="lineNum">     258 </span><span class="lineCov">       3038 :     uint256 _redemptionPrice = oracleRelayer().redemptionPrice();</span>
-<span class="lineNum">     259 </span><span class="lineCov">       3038 :     if (_redemptionPrice == 0) revert CAH_InvalidRedemptionPriceProvided();</span>
+<span class="lineNum">     258 </span><span class="lineCov">       3097 :     uint256 _redemptionPrice = oracleRelayer().redemptionPrice();</span>
+<span class="lineNum">     259 </span><span class="lineCov">       3097 :     if (_redemptionPrice == 0) revert CAH_InvalidRedemptionPriceProvided();</span>
 <span class="lineNum">     260 </span>            : 
 <span class="lineNum">     261 </span>            :     // Read and check the collateral price
-<span class="lineNum">     262 </span><span class="lineCov">       2782 :     uint256 _collateralPrice = _getCollateralPrice();</span>
-<span class="lineNum">     263 </span><span class="lineCov">       2782 :     if (_collateralPrice == 0) revert CAH_CollateralOracleInvalidValue();</span>
+<span class="lineNum">     262 </span><span class="lineCov">       2841 :     uint256 _collateralPrice = _getCollateralPrice();</span>
+<span class="lineNum">     263 </span><span class="lineCov">       2841 :     if (_collateralPrice == 0) revert CAH_CollateralOracleInvalidValue();</span>
 <span class="lineNum">     264 </span>            : 
 <span class="lineNum">     265 </span>            :     // Get and check the amount of collateral bought
-<span class="lineNum">     266 </span><span class="lineCov">       2526 :     (_boughtCollateral, _adjustedBid) = _getBoughtCollateral(</span>
+<span class="lineNum">     266 </span><span class="lineCov">       2585 :     (_boughtCollateral, _adjustedBid) = _getBoughtCollateral(</span>
 <span class="lineNum">     267 </span>            :       _collateralPrice, _redemptionPrice, _auction.amountToSell, _adjustedBid, _getAuctionDiscount(_id)
 <span class="lineNum">     268 </span>            :     );
-<span class="lineNum">     269 </span><span class="lineCov">       2526 :     if (_boughtCollateral == 0) revert CAH_NullBoughtAmount();</span>
+<span class="lineNum">     269 </span><span class="lineCov">       2585 :     if (_boughtCollateral == 0) revert CAH_NullBoughtAmount();</span>
 <span class="lineNum">     270 </span>            : 
 <span class="lineNum">     271 </span>            :     // Transfer the bid to the income recipient and the collateral to the bidder
-<span class="lineNum">     272 </span><span class="lineCov">       2270 :     safeEngine.transferInternalCoins({</span>
+<span class="lineNum">     272 </span><span class="lineCov">       2329 :     safeEngine.transferInternalCoins({</span>
 <span class="lineNum">     273 </span>            :       _source: msg.sender,
 <span class="lineNum">     274 </span>            :       _destination: _auction.auctionIncomeRecipient,
 <span class="lineNum">     275 </span>            :       _rad: _adjustedBid * RAY
 <span class="lineNum">     276 </span>            :     });
 <span class="lineNum">     277 </span>            : 
-<span class="lineNum">     278 </span><span class="lineCov">       2270 :     safeEngine.transferCollateral({</span>
+<span class="lineNum">     278 </span><span class="lineCov">       2329 :     safeEngine.transferCollateral({</span>
 <span class="lineNum">     279 </span>            :       _cType: collateralType,
 <span class="lineNum">     280 </span>            :       _source: address(this),
 <span class="lineNum">     281 </span>            :       _destination: msg.sender,
 <span class="lineNum">     282 </span>            :       _wad: _boughtCollateral
 <span class="lineNum">     283 </span>            :     });
 <span class="lineNum">     284 </span>            : 
-<span class="lineNum">     285 </span><span class="lineCov">       2270 :     if (_adjustedBid * RAY &lt; _auction.amountToRaise &amp;&amp; _auction.amountToSell &gt; _boughtCollateral) {</span>
+<span class="lineNum">     285 </span><span class="lineCov">       2329 :     if (_adjustedBid * RAY &lt; _auction.amountToRaise &amp;&amp; _auction.amountToSell &gt; _boughtCollateral) {</span>
 <span class="lineNum">     286 </span>            :       // --- Partial bid ---
 <span class="lineNum">     287 </span>            :       // If the bid doesn't raise the whole amount or purchase all collateral to sell:
 <span class="lineNum">     288 </span>            : 
 <span class="lineNum">     289 </span>            :       // Update the amount of collateral to sell
-<span class="lineNum">     290 </span><span class="lineCov">       1174 :       _auction.amountToSell -= _boughtCollateral;</span>
+<span class="lineNum">     290 </span><span class="lineCov">       1240 :       _auction.amountToSell -= _boughtCollateral;</span>
 <span class="lineNum">     291 </span>            : 
 <span class="lineNum">     292 </span>            :       // Update leftover amount to raise in the bid struct
-<span class="lineNum">     293 </span><span class="lineCov">       1174 :       _auction.amountToRaise -= _adjustedBid * RAY;</span>
+<span class="lineNum">     293 </span><span class="lineCov">       1240 :       _auction.amountToRaise -= _adjustedBid * RAY;</span>
 <span class="lineNum">     294 </span>            : 
 <span class="lineNum">     295 </span>            :       // Check that the remaining amount to raise is higher than minimum bid
-<span class="lineNum">     296 </span><span class="lineCov">       1174 :       if (_auction.amountToRaise &lt; _params.minimumBid * RAY) revert CAH_InvalidLeftToRaise();</span>
+<span class="lineNum">     296 </span><span class="lineCov">       1240 :       if (_auction.amountToRaise &lt; _params.minimumBid * RAY) revert CAH_InvalidLeftToRaise();</span>
 <span class="lineNum">     297 </span>            : 
 <span class="lineNum">     298 </span>            :       // Remove raised amount from the liquidation engine queue
-<span class="lineNum">     299 </span><span class="lineCov">        923 :       liquidationEngine().removeCoinsFromAuction(_adjustedBid * RAY);</span>
+<span class="lineNum">     299 </span><span class="lineCov">        984 :       liquidationEngine().removeCoinsFromAuction(_adjustedBid * RAY);</span>
 <span class="lineNum">     300 </span>            :     } else {
 <span class="lineNum">     301 </span>            :       // --- Full bid ---
 <span class="lineNum">     302 </span>            :       // If the bid raises the whole amount left or purchases all collateral left:
 <span class="lineNum">     303 </span>            : 
 <span class="lineNum">     304 </span>            :       // Calculate (if any) the remaining collateral to send to the forgone receiver
-<span class="lineNum">     305 </span><span class="lineCov">       1096 :       uint256 _remainingCollateral = _auction.amountToSell - _boughtCollateral;</span>
+<span class="lineNum">     305 </span><span class="lineCov">       1089 :       uint256 _remainingCollateral = _auction.amountToSell - _boughtCollateral;</span>
 <span class="lineNum">     306 </span>            : 
-<span class="lineNum">     307 </span><span class="lineCov">       1096 :       if (_remainingCollateral &gt; 0) {</span>
+<span class="lineNum">     307 </span><span class="lineCov">       1089 :       if (_remainingCollateral &gt; 0) {</span>
 <span class="lineNum">     308 </span>            :         // Send remaining collateral to the forgone receiver
-<span class="lineNum">     309 </span><span class="lineCov">         75 :         safeEngine.transferCollateral({</span>
+<span class="lineNum">     309 </span><span class="lineCov">         66 :         safeEngine.transferCollateral({</span>
 <span class="lineNum">     310 </span>            :           _cType: collateralType,
 <span class="lineNum">     311 </span>            :           _source: address(this),
 <span class="lineNum">     312 </span>            :           _destination: _auction.forgoneCollateralReceiver,
@@ -377,9 +377,9 @@
 <span class="lineNum">     315 </span>            :       }
 <span class="lineNum">     316 </span>            : 
 <span class="lineNum">     317 </span>            :       // Remove remaining to raise from the liquidation engine queue
-<span class="lineNum">     318 </span><span class="lineCov">       1096 :       liquidationEngine().removeCoinsFromAuction(_auction.amountToRaise);</span>
+<span class="lineNum">     318 </span><span class="lineCov">       1089 :       liquidationEngine().removeCoinsFromAuction(_auction.amountToRaise);</span>
 <span class="lineNum">     319 </span>            : 
-<span class="lineNum">     320 </span><span class="lineCov">       1096 :       emit SettleAuction({</span>
+<span class="lineNum">     320 </span><span class="lineCov">       1089 :       emit SettleAuction({</span>
 <span class="lineNum">     321 </span>            :         _id: _id,
 <span class="lineNum">     322 </span>            :         _blockTimestamp: block.timestamp,
 <span class="lineNum">     323 </span>            :         _leftoverReceiver: _auction.forgoneCollateralReceiver,
@@ -387,11 +387,11 @@
 <span class="lineNum">     325 </span>            :       });
 <span class="lineNum">     326 </span>            : 
 <span class="lineNum">     327 </span>            :       // Delete the auction
-<span class="lineNum">     328 </span><span class="lineCov">       1096 :       delete _auctions[_id];</span>
+<span class="lineNum">     328 </span><span class="lineCov">       1089 :       delete _auctions[_id];</span>
 <span class="lineNum">     329 </span>            :     }
 <span class="lineNum">     330 </span>            : 
 <span class="lineNum">     331 </span>            :     // Emit the buy event
-<span class="lineNum">     332 </span><span class="lineCov">       2019 :     emit BuyCollateral({</span>
+<span class="lineNum">     332 </span><span class="lineCov">       2073 :     emit BuyCollateral({</span>
 <span class="lineNum">     333 </span>            :       _id: _id,
 <span class="lineNum">     334 </span>            :       _bidder: msg.sender,
 <span class="lineNum">     335 </span>            :       _blockTimestamp: block.timestamp,

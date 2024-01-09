@@ -4,7 +4,7 @@
 
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <title>LCOV - current.info - src/contracts/StabilityFeeTreasury.sol</title>
+  <title>LCOV - lcov.info - src/contracts/StabilityFeeTreasury.sol</title>
   <link rel="stylesheet" type="text/css" href="../../gcov.css">
 </head>
 
@@ -28,7 +28,7 @@
           </tr>
           <tr>
             <td class="headerItem">Test:</td>
-            <td class="headerValue">current.info</td>
+            <td class="headerValue">lcov.info</td>
             <td></td>
             <td class="headerItem">Lines:</td>
             <td class="headerCovTableEntry">64</td>
@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2024-01-07 16:13:44</td>
+            <td class="headerValue">2024-01-08 19:17:33</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">14</td>
@@ -174,8 +174,8 @@
 <span class="lineNum">     112 </span>            :   function _joinAllCoins() internal {
 <span class="lineNum">     113 </span><span class="lineCov">       6936 :     uint256 _systemCoinBalance = systemCoin.balanceOf(address(this));</span>
 <span class="lineNum">     114 </span><span class="lineCov">       6936 :     if (_systemCoinBalance &gt; 0) {</span>
-<span class="lineNum">     115 </span><span class="lineCov">       6425 :       coinJoin.join(address(this), _systemCoinBalance);</span>
-<span class="lineNum">     116 </span><span class="lineCov">       6425 :       emit JoinCoins(_systemCoinBalance);</span>
+<span class="lineNum">     115 </span><span class="lineCov">       6415 :       coinJoin.join(address(this), _systemCoinBalance);</span>
+<span class="lineNum">     116 </span><span class="lineCov">       6415 :       emit JoinCoins(_systemCoinBalance);</span>
 <span class="lineNum">     117 </span>            :     }
 <span class="lineNum">     118 </span>            :   }
 <a name="119"><span class="lineNum">     119 </span>            : </a>
@@ -193,11 +193,11 @@
 <span class="lineNum">     131 </span><span class="lineCov">       6669 :     _coinBalance = safeEngine.coinBalance(address(this));</span>
 <span class="lineNum">     132 </span><span class="lineCov">       6669 :     _debtBalance = safeEngine.debtBalance(address(this));</span>
 <span class="lineNum">     133 </span><span class="lineCov">       6669 :     if (_debtBalance &gt; 0) {</span>
-<span class="lineNum">     134 </span><span class="lineCov">       6063 :       uint256 _debtToSettle = Math.min(_coinBalance, _debtBalance);</span>
-<span class="lineNum">     135 </span><span class="lineCov">       6063 :       _coinBalance -= _debtToSettle;</span>
-<span class="lineNum">     136 </span><span class="lineCov">       6063 :       _debtBalance -= _debtToSettle;</span>
-<span class="lineNum">     137 </span><span class="lineCov">       6063 :       safeEngine.settleDebt(_debtToSettle);</span>
-<span class="lineNum">     138 </span><span class="lineCov">       6063 :       emit SettleDebt(_debtToSettle);</span>
+<span class="lineNum">     134 </span><span class="lineCov">       6070 :       uint256 _debtToSettle = Math.min(_coinBalance, _debtBalance);</span>
+<span class="lineNum">     135 </span><span class="lineCov">       6070 :       _coinBalance -= _debtToSettle;</span>
+<span class="lineNum">     136 </span><span class="lineCov">       6070 :       _debtBalance -= _debtToSettle;</span>
+<span class="lineNum">     137 </span><span class="lineCov">       6070 :       safeEngine.settleDebt(_debtToSettle);</span>
+<span class="lineNum">     138 </span><span class="lineCov">       6070 :       emit SettleDebt(_debtToSettle);</span>
 <span class="lineNum">     139 </span>            :     }
 <span class="lineNum">     140 </span>            :   }
 <span class="lineNum">     141 </span>            : 
@@ -240,7 +240,7 @@
 <a name="178"><span class="lineNum">     178 </span>            : </a>
 <span class="lineNum">     179 </span>            :   /// @inheritdoc IStabilityFeeTreasury
 <span class="lineNum">     180 </span>            :   function pullFunds(address _dstAccount, uint256 _wad) external {
-<span class="lineNum">     181 </span><span class="lineCov">       3772 :     if (_dstAccount.assertNonNull() == address(this)) return;</span>
+<span class="lineNum">     181 </span><span class="lineCov">       3774 :     if (_dstAccount.assertNonNull() == address(this)) return;</span>
 <span class="lineNum">     182 </span><span class="lineCov">       3332 :     if (_dstAccount == extraSurplusReceiver) revert SFTreasury_DstCannotBeAccounting();</span>
 <span class="lineNum">     183 </span><span class="lineCov">       3076 :     if (_wad == 0) revert SFTreasury_NullTransferAmount();</span>
 <span class="lineNum">     184 </span><span class="lineCov">       2820 :     if (_allowance[msg.sender].total &lt; _wad * RAY) revert SFTreasury_NotAllowed();</span>
