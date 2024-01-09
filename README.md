@@ -159,4 +159,4 @@ coverage reports require lcov to be installed on your system.
  - [lcov for mac/linx](https://formulae.brew.sh/formula/lcov)
 
 
-once you have lcov installed run: `yarn test:coverage` to generate a `coverage-report` folder that will contain the html of the coverage report. point your browser to `coverage-report/index.html` to view the report.
+once you have lcov installed run: `anvil` and then in a separate terminal run`yarn test:coverage` to generate a `coverage-report` folder that will contain the html of the coverage report. point your browser to `coverage-report/index.html` to view the report.
