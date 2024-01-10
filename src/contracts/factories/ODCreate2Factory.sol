@@ -9,7 +9,9 @@ import {IODCreate2Factory} from '@interfaces/factories/IODCreate2Factory.sol';
  * @notice Prevents frontrunning with access control
  */
 contract ODCreate2Factory is Authorizable, IODCreate2Factory {
-  constructor() Authorizable(msg.sender) {}
+  constructor(address _deployer) Authorizable(msg.sender) {
+    _addAuthorization(_deployer);
+  }
 
   function precomputeAddress(bytes32 _salt, bytes32 _initCodeHash) external view returns (address _precompute) {
     _precompute = address(uint160(uint256(keccak256(abi.encodePacked(hex'ff', address(this), _salt, _initCodeHash)))));

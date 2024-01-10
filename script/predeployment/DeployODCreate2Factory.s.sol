@@ -6,18 +6,17 @@ import {Script} from 'forge-std/Script.sol';
 import {ODCreate2Factory} from '@contracts/factories/ODCreate2Factory.sol';
 
 // BROADCAST
-// source .env && forge script DeployODCreate2FactoryMain --skip-simulation --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
+// source .env && forge script DeployODCreate2FactoryMainnet --skip-simulation --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
 
 // SIMULATE
-// source .env && forge script DeployODCreate2FactoryMain --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC
+// source .env && forge script DeployODCreate2FactoryMainnet --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC
 
 contract DeployODCreate2FactoryMainnet is Script {
   ODCreate2Factory internal create2;
 
   function run() public {
-    vm.startBroadcast(vm.envUint('ARB_MAINNET_DEPLOYER_PK'));
-    create2 = new ODCreate2Factory();
-    create2.addAuthorization(MAINNET_DEPLOYER);
+    vm.startBroadcast(vm.envUint('ARB_MAINNET_ADMIN_PK'));
+    create2 = new ODCreate2Factory(MAINNET_DEPLOYER);
     vm.stopBroadcast();
   }
 }
@@ -33,8 +32,7 @@ contract DeployODCreate2FactorySepolia is Script {
 
   function run() public {
     vm.startBroadcast(vm.envUint('ARB_SEPOLIA_DEPLOYER_PK'));
-    create2 = new ODCreate2Factory();
-    create2.addAuthorization(TEST_DEPLOYER);
+    create2 = new ODCreate2Factory(TEST_DEPLOYER);
     vm.stopBroadcast();
   }
 }

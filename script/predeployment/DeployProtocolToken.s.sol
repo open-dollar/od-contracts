@@ -8,10 +8,10 @@ import {OpenDollarGovernance, ProtocolToken, IProtocolToken} from '@contracts/to
 import {IODCreate2Factory} from '@interfaces/factories/IODCreate2Factory.sol';
 
 // BROADCAST
-// source .env && forge script DeployProtocolTokenMain --skip-simulation --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
+// source .env && forge script DeployProtocolTokenMainnet --skip-simulation --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
 
 // SIMULATE
-// source .env && forge script DeployProtocolTokenMain --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC
+// source .env && forge script DeployProtocolTokenMainnet --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC
 
 contract DeployProtocolTokenMainnet is Script, Test {
   IODCreate2Factory internal _create2 = IODCreate2Factory(MAINNET_CREATE2FACTORY);
