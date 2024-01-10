@@ -12,10 +12,12 @@ import {ODCreate2Factory} from '@contracts/factories/ODCreate2Factory.sol';
 // source .env && forge script DeployODCreate2FactoryMain --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC
 
 contract DeployODCreate2FactoryMainnet is Script {
+  ODCreate2Factory internal create2;
+
   function run() public {
     vm.startBroadcast(vm.envUint('ARB_MAINNET_DEPLOYER_PK'));
-    new ODCreate2Factory();
-    create2.addAuthorization(MAINNET_SAFE);
+    create2 = new ODCreate2Factory();
+    create2.addAuthorization(MAINNET_DEPLOYER);
     vm.stopBroadcast();
   }
 }
@@ -27,12 +29,12 @@ contract DeployODCreate2FactoryMainnet is Script {
 // source .env && forge script DeployODCreate2FactorySepolia --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC
 
 contract DeployODCreate2FactorySepolia is Script {
-  IODCreate2Factory internal create2;
+  ODCreate2Factory internal create2;
 
   function run() public {
     vm.startBroadcast(vm.envUint('ARB_SEPOLIA_DEPLOYER_PK'));
-    new ODCreate2Factory();
-    create2.addAuthorization(TEST_SAFE);
+    create2 = new ODCreate2Factory();
+    create2.addAuthorization(TEST_DEPLOYER);
     vm.stopBroadcast();
   }
 }

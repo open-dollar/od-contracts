@@ -23,9 +23,6 @@ abstract contract Deploy is Common, Script {
     deployer = vm.addr(_deployerPk); // ARB_SEPOLIA_DEPLOYER_PK
     vm.startBroadcast(deployer);
 
-    // set create2 factory
-    create2 = IODCreate2Factory(CREATE2FACTORY);
-
     // creation bytecode
     _systemCoinInitCode = type(OpenDollar).creationCode;
     _vault721InitCode = type(Vault721).creationCode;
@@ -99,6 +96,9 @@ abstract contract Deploy is Common, Script {
 
 contract DeployMainnet is MainnetParams, Deploy {
   function setUp() public virtual {
+    // set create2 factory
+    create2 = IODCreate2Factory(MAINNET_CREATE2FACTORY);
+
     _deployerPk = uint256(vm.envBytes32('ARB_MAINNET_DEPLOYER_PK'));
     chainId = 42_161;
     if (SEMI_RANDOM_SALT == 0) {
@@ -111,8 +111,8 @@ contract DeployMainnet is MainnetParams, Deploy {
   }
 
   function mintAirdrop() public virtual override {
-    require(DAO_SAFE != address(0), 'DAO zeroAddress');
-    protocolToken.mint(DAO_SAFE, AIRDROP_AMOUNT);
+    require(MAINNET_SAFE != address(0), 'DAO zeroAddress');
+    protocolToken.mint(MAINNET_SAFE, AIRDROP_AMOUNT);
   }
 
   // Setup oracle feeds
@@ -171,6 +171,9 @@ contract DeploySepolia is SepoliaParams, Deploy {
   IBaseOracle public chainlinkEthUSDPriceFeed;
 
   function setUp() public virtual {
+    // set create2 factory
+    create2 = IODCreate2Factory(TEST_CREATE2FACTORY);
+
     _deployerPk = uint256(vm.envBytes32('ARB_SEPOLIA_DEPLOYER_PK'));
     chainId = 421_614;
     if (SEMI_RANDOM_SALT == 0) {

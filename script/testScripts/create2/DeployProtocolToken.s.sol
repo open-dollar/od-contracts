@@ -14,7 +14,7 @@ import {IODCreate2Factory} from '@interfaces/factories/IODCreate2Factory.sol';
 // source .env && forge script Create2DeployProtocolToken --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC
 
 contract Create2DeployProtocolToken is Script, Test {
-  IODCreate2Factory internal _create2 = IODCreate2Factory(CREATE2FACTORY);
+  IODCreate2Factory internal _create2 = IODCreate2Factory(TEST_CREATE2FACTORY);
 
   bytes internal _protocolTokenInitCode;
   bytes32 internal _protocolTokenHash;

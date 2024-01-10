@@ -7,7 +7,7 @@ uint256 constant SEMI_RANDOM_SALT = 0; // set to 0 to use Salts below, set to 1 
 // --- ARB Sepolia Testnet ---
 
 // Create2 Factory
-address constant CREATE2FACTORY = 0xd7729CC26096035e1A7e834cE0b72599Da25FA7f;
+address constant TEST_CREATE2FACTORY = 0xd7729CC26096035e1A7e834cE0b72599Da25FA7f;
 
 // Protocol Token
 address constant SEPOLIA_PROTOCOL_TOKEN = 0xFEEe338C2A70FC4F754C68c788973a7634b83d5b;
@@ -18,7 +18,8 @@ uint256 constant TEST_INIT_VOTING_PERIOD = 15;
 uint256 constant TEST_INIT_PROP_THRESHOLD = 0;
 
 // Deployment params
-address constant TEST_SAFE = address(1234);
+address constant TEST_DEPLOYER = 0xA0313248556DeA42fd17B345817Dd5DC5674c1E1;
+address constant TEST_SAFE = 0xA0313248556DeA42fd17B345817Dd5DC5674c1E1;
 uint256 constant MIN_DELAY_GOERLI = 1 minutes;
 uint256 constant ORACLE_INTERVAL_TEST = 1 minutes;
 
@@ -61,7 +62,7 @@ address constant SEPOLIA_WETH = 0x980B62Da83eFf3D4576C647993b0c1D7faf17c73;
 // --- ARB Mainnet ---
 
 // Create2 Factory
-address constant CREATE2FACTORY = address(0);
+address constant MAINNET_CREATE2FACTORY = address(0);
 
 // Protocol Token
 address constant MAINNET_PROTOCOL_TOKEN = address(0);
@@ -72,6 +73,7 @@ uint256 constant MAINNET_INIT_VOTING_PERIOD = 2_326_156;
 uint256 constant MAINNET_INIT_PROP_THRESHOLD = 0;
 
 // Deployment params
+address constant MAINNET_DEPLOYER = 0xF78dA2A37049627636546E0cFAaB2aD664950917;
 address constant MAINNET_SAFE = 0x8516B2319b0541E0253b866557929FF7B76027ba; // set this before mainnet deployment
 uint256 constant AIRDROP_AMOUNT = 10_000e18; // 10k tokens
 uint256 constant MIN_DELAY = 3 days; // timelock for governor

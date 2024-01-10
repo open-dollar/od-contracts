@@ -14,7 +14,7 @@ import {IODCreate2Factory} from '@interfaces/factories/IODCreate2Factory.sol';
 // source .env && forge script DeployProtocolTokenMain --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC
 
 contract DeployProtocolTokenMainnet is Script, Test {
-  IODCreate2Factory internal _create2 = IODCreate2Factory(CREATE2FACTORY);
+  IODCreate2Factory internal _create2 = IODCreate2Factory(MAINNET_CREATE2FACTORY);
 
   bytes internal _protocolTokenInitCode;
   bytes32 internal _protocolTokenHash;
@@ -27,13 +27,14 @@ contract DeployProtocolTokenMainnet is Script, Test {
     _protocolTokenInitCode = type(OpenDollarGovernance).creationCode;
     _protocolTokenHash = keccak256(_protocolTokenInitCode);
 
-    _precomputeAddress = _create2.precomputeAddress(SEPOLIA_SALT_PROTOCOLTOKEN, _protocolTokenHash);
+    _precomputeAddress = _create2.precomputeAddress(MAINNET_SALT_PROTOCOLTOKEN, _protocolTokenHash);
     emit log_named_address('ODG precompute', _precomputeAddress);
 
-    _protocolToken = _create2.create2deploy(SEPOLIA_SALT_PROTOCOLTOKEN, _protocolTokenInitCode);
+    _protocolToken = _create2.create2deploy(MAINNET_SALT_PROTOCOLTOKEN, _protocolTokenInitCode);
     emit log_named_address('ODG deployment', _protocolToken);
 
     IProtocolToken(_protocolToken).initialize('Open Dollar Governance', 'ODG');
+    IProtocolToken(_protocolToken).mint(MAINNET_SAFE, 10_000_000 * 1e18);
 
     vm.stopBroadcast();
   }
@@ -46,7 +47,7 @@ contract DeployProtocolTokenMainnet is Script, Test {
 // source .env && forge script DeployProtocolTokenSepolia --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC
 
 contract DeployProtocolTokenSepolia is Script, Test {
-  IODCreate2Factory internal _create2 = IODCreate2Factory(CREATE2FACTORY);
+  IODCreate2Factory internal _create2 = IODCreate2Factory(TEST_CREATE2FACTORY);
 
   bytes internal _protocolTokenInitCode;
   bytes32 internal _protocolTokenHash;
@@ -66,6 +67,7 @@ contract DeployProtocolTokenSepolia is Script, Test {
     emit log_named_address('ODG deployment', _protocolToken);
 
     IProtocolToken(_protocolToken).initialize('Open Dollar Governance', 'ODG');
+    IProtocolToken(_protocolToken).mint(TEST_SAFE, 10_000_000 * 1e18);
 
     vm.stopBroadcast();
   }
