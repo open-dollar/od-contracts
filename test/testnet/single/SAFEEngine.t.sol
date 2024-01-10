@@ -1104,25 +1104,27 @@ contract SingleLiquidationTest is DSTest {
   function test_liquidate_when_system_surplus() public {
     protocolToken.approve(address(surplusAuctionHouse), type(uint256).max);
 
+    address mockExtraSurplusReceiver = address(this);
     // get some surplus
     safeEngine.createUnbackedDebt(address(0), address(accountingEngine), rad(100 ether));
     assertEq(safeEngine.coinBalance(address(accountingEngine)), rad(100 ether));
     assertEq(protocolToken.balanceOf(address(this)), 100 ether);
 
     accountingEngine.modifyParameters('surplusAmount', abi.encode(rad(100 ether)));
+    accountingEngine.modifyParameters('extraSurplusReceiver', abi.encode(mockExtraSurplusReceiver));
     assertEq(accountingEngine.unqueuedUnauctionedDebt(), 0 ether);
     assertEq(accountingEngine.totalOnAuctionDebt(), 0 ether);
     uint256 id = accountingEngine.auctionSurplus();
 
-    assertEq(safeEngine.coinBalance(address(this)), 0 ether);
-    assertEq(protocolToken.balanceOf(address(this)), 100 ether);
+    assertEq(safeEngine.coinBalance(mockExtraSurplusReceiver), 0 ether);
+    assertEq(protocolToken.balanceOf(mockExtraSurplusReceiver), 100 ether);
     surplusAuctionHouse.increaseBidSize(id, rad(100 ether), 10 ether);
     hevm.warp(block.timestamp + 4 hours);
 
     surplusAuctionHouse.settleAuction(id);
 
-    assertEq(safeEngine.coinBalance(address(this)), rad(100 ether));
-    assertEq(protocolToken.balanceOf(address(this)), 90 ether);
+    assertEq(safeEngine.coinBalance(mockExtraSurplusReceiver), rad(100 ether));
+    assertEq(protocolToken.balanceOf(mockExtraSurplusReceiver), 90 ether);
   }
 
   // tests a partial liquidation because it would fill the onAuctionSystemCoinLimit
