@@ -3,9 +3,11 @@ pragma solidity 0.8.19;
 
 // --- Universal Vars ---
 uint256 constant SEMI_RANDOM_SALT = 0; // set to 0 to use Salts below, set to 1 to randomly generate a salt
-address constant CREATE2FACTORY = 0xd7729CC26096035e1A7e834cE0b72599Da25FA7f;
 
 // --- ARB Sepolia Testnet ---
+
+// Create2 Factory
+address constant CREATE2FACTORY = 0xd7729CC26096035e1A7e834cE0b72599Da25FA7f;
 
 // Protocol Token
 address constant SEPOLIA_PROTOCOL_TOKEN = 0xFEEe338C2A70FC4F754C68c788973a7634b83d5b;
@@ -16,6 +18,7 @@ uint256 constant TEST_INIT_VOTING_PERIOD = 15;
 uint256 constant TEST_INIT_PROP_THRESHOLD = 0;
 
 // Deployment params
+address constant TEST_SAFE = address(1234);
 uint256 constant MIN_DELAY_GOERLI = 1 minutes;
 uint256 constant ORACLE_INTERVAL_TEST = 1 minutes;
 
@@ -41,8 +44,8 @@ address constant SEPOLIA_CHAINLINK_RELAYER = 0x1217755f6F4Ed87c70336ae958424bEB0
 address constant SEPOLIA_DENOMINATED_ORACLE_FACTORY = 0xaF3A59b1794d0E51197CED02AEb87E14DEf07aCf;
 
 // SystemCoinOracle (pre-deployed @ sol 0.7.6 as denominatedOracle)
-address constant SEPOLIA_SYSTEM_COIN_ORACLE = 0x571b1fd22DfB354E704b206f756aC8635A431a2a;
-address constant SEPOLIA_SYSTEM_COIN_ORACLE_X = 0x4cc0B8F7867a44023af3C2086c3F7d1e3384AC75;
+address constant SEPOLIA_SYSTEM_COIN_ORACLE_X = 0x571b1fd22DfB354E704b206f756aC8635A431a2a;
+address constant SEPOLIA_SYSTEM_COIN_ORACLE = 0x4cc0B8F7867a44023af3C2086c3F7d1e3384AC75;
 
 // Algebra protocol (not deployed by Camelot)
 address constant SEPOLIA_CAMELOT_AMM_FACTORY = 0x21852176141b8D139EC5D3A1041cdC31F0F20b94;
@@ -57,6 +60,9 @@ address constant SEPOLIA_WETH = 0x980B62Da83eFf3D4576C647993b0c1D7faf17c73;
 
 // --- ARB Mainnet ---
 
+// Create2 Factory
+address constant CREATE2FACTORY = address(0);
+
 // Protocol Token
 address constant MAINNET_PROTOCOL_TOKEN = address(0);
 
@@ -66,7 +72,7 @@ uint256 constant MAINNET_INIT_VOTING_PERIOD = 2_326_156;
 uint256 constant MAINNET_INIT_PROP_THRESHOLD = 0;
 
 // Deployment params
-address constant DAO_SAFE = address(1); // set this before mainnet deployment
+address constant MAINNET_SAFE = 0x8516B2319b0541E0253b866557929FF7B76027ba; // set this before mainnet deployment
 uint256 constant AIRDROP_AMOUNT = 10_000e18; // 10k tokens
 uint256 constant MIN_DELAY = 3 days; // timelock for governor
 uint256 constant ORACLE_INTERVAL_PROD = 1 hours;

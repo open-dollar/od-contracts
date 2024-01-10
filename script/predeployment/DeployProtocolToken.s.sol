@@ -8,12 +8,12 @@ import {OpenDollarGovernance, ProtocolToken, IProtocolToken} from '@contracts/to
 import {IODCreate2Factory} from '@interfaces/factories/IODCreate2Factory.sol';
 
 // BROADCAST
-// source .env && forge script DeployProtocolTokenSepolia --skip-simulation --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
+// source .env && forge script DeployProtocolTokenMain --skip-simulation --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
 
 // SIMULATE
-// source .env && forge script DeployProtocolTokenSepolia --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC
+// source .env && forge script DeployProtocolTokenMain --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC
 
-contract DeployProtocolTokenSepolia is Script, Test {
+contract DeployProtocolTokenMainnet is Script, Test {
   IODCreate2Factory internal _create2 = IODCreate2Factory(CREATE2FACTORY);
 
   bytes internal _protocolTokenInitCode;
@@ -22,7 +22,7 @@ contract DeployProtocolTokenSepolia is Script, Test {
   address internal _protocolToken;
 
   function run() public {
-    vm.startBroadcast(vm.envUint('ARB_SEPOLIA_DEPLOYER_PK'));
+    vm.startBroadcast(vm.envUint('ARB_MAINNET_DEPLOYER_PK'));
 
     _protocolTokenInitCode = type(OpenDollarGovernance).creationCode;
     _protocolTokenHash = keccak256(_protocolTokenInitCode);
@@ -40,12 +40,12 @@ contract DeployProtocolTokenSepolia is Script, Test {
 }
 
 // BROADCAST
-// source .env && forge script DeployProtocolTokenMain --skip-simulation --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
+// source .env && forge script DeployProtocolTokenSepolia --skip-simulation --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
 
 // SIMULATE
-// source .env && forge script DeployProtocolTokenMain --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC
+// source .env && forge script DeployProtocolTokenSepolia --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC
 
-contract DeployProtocolTokenMain is Script, Test {
+contract DeployProtocolTokenSepolia is Script, Test {
   IODCreate2Factory internal _create2 = IODCreate2Factory(CREATE2FACTORY);
 
   bytes internal _protocolTokenInitCode;
@@ -54,7 +54,7 @@ contract DeployProtocolTokenMain is Script, Test {
   address internal _protocolToken;
 
   function run() public {
-    vm.startBroadcast(vm.envUint('ARB_MAINNET_DEPLOYER_PK'));
+    vm.startBroadcast(vm.envUint('ARB_SEPOLIA_DEPLOYER_PK'));
 
     _protocolTokenInitCode = type(OpenDollarGovernance).creationCode;
     _protocolTokenHash = keccak256(_protocolTokenInitCode);
