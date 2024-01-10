@@ -402,9 +402,12 @@ contract GovernanceProposalAnvil is AnvilFork {
     calldatas[0] = abi.encodeWithSelector(selector, 'seedProposer', abi.encode(params.seedProposer));
     calldatas[1] = abi.encodeWithSelector(selector, 'noiseBarrier', abi.encode(params.noiseBarrier));
     calldatas[2] = abi.encodeWithSelector(selector, 'integralPeriodSize', abi.encode(params.integralPeriodSize));
-    calldatas[3] = abi.encodeWithSelector(selector, 'feedbackOutputUpperBound', abi.encode(params.feedbackOutputUpperBound));
-    calldatas[4] = abi.encodeWithSelector(selector, 'feedbackOutputLowerBound', abi.encode(params.feedbackOutputLowerBound));
-    calldatas[5] = abi.encodeWithSelector(selector, 'perSecondCumulativeLeak', abi.encode(params.perSecondCumulativeLeak));
+    calldatas[3] =
+      abi.encodeWithSelector(selector, 'feedbackOutputUpperBound', abi.encode(params.feedbackOutputUpperBound));
+    calldatas[4] =
+      abi.encodeWithSelector(selector, 'feedbackOutputLowerBound', abi.encode(params.feedbackOutputLowerBound));
+    calldatas[5] =
+      abi.encodeWithSelector(selector, 'perSecondCumulativeLeak', abi.encode(params.perSecondCumulativeLeak));
     calldatas[6] = abi.encodeWithSelector(selector, 'kp', abi.encode(params.kp));
     calldatas[7] = abi.encodeWithSelector(selector, 'ki', abi.encode(params.ki));
 
