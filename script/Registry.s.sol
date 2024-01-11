@@ -2,12 +2,15 @@
 pragma solidity 0.8.19;
 
 // --- Universal Vars ---
-uint256 constant SEMI_RANDOM_SALT = 1; // set to 0 to use Salts below, set to 1 to randomly generate a salt
+uint256 constant SEMI_RANDOM_SALT = 0; // set to 0 to use Salts below, set to 1 to randomly generate a salt
 
 // --- ARB Sepolia Testnet ---
 
+// Create2 Factory
+address constant TEST_CREATE2FACTORY = 0xd7729CC26096035e1A7e834cE0b72599Da25FA7f;
+
 // Protocol Token
-address constant SEPOLIA_PROTOCOL_TOKEN = address(0);
+address constant SEPOLIA_PROTOCOL_TOKEN = 0xFEEe338C2A70FC4F754C68c788973a7634b83d5b;
 
 // Governance Settings
 uint256 constant TEST_INIT_VOTING_DELAY = 1;
@@ -15,6 +18,8 @@ uint256 constant TEST_INIT_VOTING_PERIOD = 15;
 uint256 constant TEST_INIT_PROP_THRESHOLD = 0;
 
 // Deployment params
+address constant TEST_DEPLOYER = 0xA0313248556DeA42fd17B345817Dd5DC5674c1E1;
+address constant TEST_SAFE = 0xA0313248556DeA42fd17B345817Dd5DC5674c1E1;
 uint256 constant MIN_DELAY_GOERLI = 1 minutes;
 uint256 constant ORACLE_INTERVAL_TEST = 1 minutes;
 
@@ -24,25 +29,24 @@ address constant J = 0xcb81A76a565aC4870EDA5B0e32c5a0D2ec734174;
 address constant P = 0xC295763Eed507d4A0f8B77241c03dd3354781a15;
 
 // Vanity address params - use `cast create2` to find salt (salt must change for each deployment)
-uint256 constant SEPOLIA_SALT_SYSTEMCOIN = 4;
-uint256 constant SEPOLIA_SALT_PROTOCOLTOKEN = 4;
-uint256 constant SEPOLIA_SALT_VAULT721 = 4;
-address constant SEPOLIA_CREATE2_FACTORY = 0xb9d4cbCcF0152040c3269D9701EE68426196e42a;
+bytes32 constant SEPOLIA_SALT_SYSTEMCOIN = 0x46320220579d213d0446f6f1fb03407627be45d5215e7d705569a5346288aa97;
+bytes32 constant SEPOLIA_SALT_PROTOCOLTOKEN = 0xc262cd83fe003707ee84344a60b91f7fe4ecf9f2699c79415942c5277e5a3985;
+bytes32 constant SEPOLIA_SALT_VAULT721 = 0x2bfa56b0ce602655b440d2aa008f0900d12ef45823378bf9cb8d32eba74439c3;
 
 // Camelot Relayer (pre-deployed @ sol 0.7.6)
-address constant SEPOLIA_CAMELOT_RELAYER_FACTORY = 0x600DE56878aa6ce157F40131DBf6b970e8D6f1c3;
+address constant SEPOLIA_CAMELOT_RELAYER_FACTORY = 0x92Bfb4D96f0b8dcA8F6e5E0fc4713DEa8243d9D6;
 address constant SEPOLIA_CAMELOT_RELAYER = 0x1217755f6F4Ed87c70336ae958424bEB001c9035;
 
 // Chainlink Relayer (pre-deployed @ sol 0.7.6)
-address constant SEPOLIA_CHAINLINK_RELAYER_FACTORY = 0x7966F0c03e6427dEA3960f6040A873E71f954880;
+address constant SEPOLIA_CHAINLINK_RELAYER_FACTORY = 0x321D55f347095cdA4Ec8d10B63cD099396D1eb29;
 address constant SEPOLIA_CHAINLINK_RELAYER = 0x1217755f6F4Ed87c70336ae958424bEB001c9035;
 
 // Denominated Oracle (pre-deployed @ sol 0.7.6)
-address constant SEPOLIA_DENOMINATED_ORACLE_FACTORY = 0xdc6CCFA4a3c28e3bC031CA4C713507bA71370948;
+address constant SEPOLIA_DENOMINATED_ORACLE_FACTORY = 0xaF3A59b1794d0E51197CED02AEb87E14DEf07aCf;
 
 // SystemCoinOracle (pre-deployed @ sol 0.7.6 as denominatedOracle)
-address constant SEPOLIA_SYSTEM_COIN_ORACLE = 0x571b1fd22DfB354E704b206f756aC8635A431a2a;
-address constant SEPOLIA_SYSTEM_COIN_ORACLE_X = 0x4cc0B8F7867a44023af3C2086c3F7d1e3384AC75;
+address constant SEPOLIA_SYSTEM_COIN_ORACLE_X = 0x571b1fd22DfB354E704b206f756aC8635A431a2a;
+address constant SEPOLIA_SYSTEM_COIN_ORACLE = 0x4cc0B8F7867a44023af3C2086c3F7d1e3384AC75;
 
 // Algebra protocol (not deployed by Camelot)
 address constant SEPOLIA_CAMELOT_AMM_FACTORY = 0x21852176141b8D139EC5D3A1041cdC31F0F20b94;
@@ -57,6 +61,9 @@ address constant SEPOLIA_WETH = 0x980B62Da83eFf3D4576C647993b0c1D7faf17c73;
 
 // --- ARB Mainnet ---
 
+// Create2 Factory
+address constant MAINNET_CREATE2FACTORY = address(0);
+
 // Protocol Token
 address constant MAINNET_PROTOCOL_TOKEN = address(0);
 
@@ -66,16 +73,16 @@ uint256 constant MAINNET_INIT_VOTING_PERIOD = 2_326_156;
 uint256 constant MAINNET_INIT_PROP_THRESHOLD = 0;
 
 // Deployment params
-address constant DAO_SAFE = address(1); // set this before mainnet deployment
+address constant MAINNET_DEPLOYER = 0xF78dA2A37049627636546E0cFAaB2aD664950917;
+address constant MAINNET_SAFE = 0x8516B2319b0541E0253b866557929FF7B76027ba; // set this before mainnet deployment
 uint256 constant AIRDROP_AMOUNT = 10_000e18; // 10k tokens
 uint256 constant MIN_DELAY = 3 days; // timelock for governor
 uint256 constant ORACLE_INTERVAL_PROD = 1 hours;
 
 // Vanity address params - use `cast create2` to find salt
-uint256 constant MAINNET_SALT_SYSTEMCOIN = 1;
-uint256 constant MAINNET_SALT_PROTOCOLTOKEN = 1;
-uint256 constant MAINNET_SALT_VAULT721 = 1;
-address constant MAINNET_CREATE2_FACTORY = address(0);
+bytes32 constant MAINNET_SALT_SYSTEMCOIN = bytes32(uint256(0x1));
+bytes32 constant MAINNET_SALT_PROTOCOLTOKEN = bytes32(uint256(0x1));
+bytes32 constant MAINNET_SALT_VAULT721 = bytes32(uint256(0x1));
 
 // Camelot Relayer (pre-deployed @ sol 0.7.6)
 address constant MAINNET_CAMELOT_RELAYER_FACTORY = address(0);

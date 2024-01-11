@@ -1,25 +1,74 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
+import '@script/Registry.s.sol';
 import {Script} from 'forge-std/Script.sol';
-import {SEPOLIA_CREATE2_FACTORY, SEPOLIA_SALT_PROTOCOLTOKEN} from '@script/Registry.s.sol';
-import {ProtocolToken, IProtocolToken} from '@contracts/tokens/ProtocolToken.sol';
-import {Create2Factory} from '@contracts/utils/Create2Factory.sol';
+import {Test} from 'forge-std/Test.sol';
+import {OpenDollarGovernance, ProtocolToken, IProtocolToken} from '@contracts/tokens/ProtocolToken.sol';
+import {IODCreate2Factory} from '@interfaces/factories/IODCreate2Factory.sol';
 
 // BROADCAST
-// source .env && forge script DeployProtocolToken --skip-simulation --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
+// source .env && forge script DeployProtocolTokenMainnet --skip-simulation --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
 
 // SIMULATE
-// source .env && forge script DeployProtocolToken --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC
+// source .env && forge script DeployProtocolTokenMainnet --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC
 
-contract DeployProtocolToken is Script {
-  Create2Factory create2Factory = Create2Factory(SEPOLIA_CREATE2_FACTORY);
+contract DeployProtocolTokenMainnet is Script, Test {
+  IODCreate2Factory internal _create2 = IODCreate2Factory(MAINNET_CREATE2FACTORY);
+
+  bytes internal _protocolTokenInitCode;
+  bytes32 internal _protocolTokenHash;
+  address internal _precomputeAddress;
+  address internal _protocolToken;
+
+  function run() public {
+    vm.startBroadcast(vm.envUint('ARB_MAINNET_DEPLOYER_PK'));
+
+    _protocolTokenInitCode = type(OpenDollarGovernance).creationCode;
+    _protocolTokenHash = keccak256(_protocolTokenInitCode);
+
+    _precomputeAddress = _create2.precomputeAddress(MAINNET_SALT_PROTOCOLTOKEN, _protocolTokenHash);
+    emit log_named_address('ODG precompute', _precomputeAddress);
+
+    _protocolToken = _create2.create2deploy(MAINNET_SALT_PROTOCOLTOKEN, _protocolTokenInitCode);
+    emit log_named_address('ODG deployment', _protocolToken);
+
+    IProtocolToken(_protocolToken).initialize('Open Dollar Governance', 'ODG');
+    IProtocolToken(_protocolToken).mint(MAINNET_SAFE, 10_000_000 * 1e18);
+
+    vm.stopBroadcast();
+  }
+}
+
+// BROADCAST
+// source .env && forge script DeployProtocolTokenSepolia --skip-simulation --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
+
+// SIMULATE
+// source .env && forge script DeployProtocolTokenSepolia --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC
+
+contract DeployProtocolTokenSepolia is Script, Test {
+  IODCreate2Factory internal _create2 = IODCreate2Factory(TEST_CREATE2FACTORY);
+
+  bytes internal _protocolTokenInitCode;
+  bytes32 internal _protocolTokenHash;
+  address internal _precomputeAddress;
+  address internal _protocolToken;
 
   function run() public {
     vm.startBroadcast(vm.envUint('ARB_SEPOLIA_DEPLOYER_PK'));
-    address protocolTokenAddress = create2Factory.deployProtocolToken(SEPOLIA_SALT_PROTOCOLTOKEN);
-    IProtocolToken protocolToken = IProtocolToken(protocolTokenAddress);
-    protocolToken.initialize('Open Dollar Governance', 'ODG');
+
+    _protocolTokenInitCode = type(OpenDollarGovernance).creationCode;
+    _protocolTokenHash = keccak256(_protocolTokenInitCode);
+
+    _precomputeAddress = _create2.precomputeAddress(SEPOLIA_SALT_PROTOCOLTOKEN, _protocolTokenHash);
+    emit log_named_address('ODG precompute', _precomputeAddress);
+
+    _protocolToken = _create2.create2deploy(SEPOLIA_SALT_PROTOCOLTOKEN, _protocolTokenInitCode);
+    emit log_named_address('ODG deployment', _protocolToken);
+
+    IProtocolToken(_protocolToken).initialize('Open Dollar Governance', 'ODG');
+    IProtocolToken(_protocolToken).mint(TEST_SAFE, 10_000_000 * 1e18);
+
     vm.stopBroadcast();
   }
 }
