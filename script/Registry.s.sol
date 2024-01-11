@@ -62,7 +62,7 @@ address constant SEPOLIA_WETH = 0x980B62Da83eFf3D4576C647993b0c1D7faf17c73;
 // --- ARB Mainnet ---
 
 // Create2 Factory
-address constant MAINNET_CREATE2FACTORY = address(0);
+address constant MAINNET_CREATE2FACTORY = 0x6EDb251053B4F7670C98e18bbEA20818367b4C0f;
 
 // Protocol Token
 address constant MAINNET_PROTOCOL_TOKEN = address(0);
@@ -81,7 +81,8 @@ uint256 constant ORACLE_INTERVAL_PROD = 1 hours;
 
 // Vanity address params - use `cast create2` to find salt
 bytes32 constant MAINNET_SALT_SYSTEMCOIN = bytes32(uint256(0x1));
-bytes32 constant MAINNET_SALT_PROTOCOLTOKEN = bytes32(uint256(0x1));
+bytes32 constant MAINNET_SALT_PROTOCOLTOKEN_X = 0x9b1a9c8e5919ef7cfcbfc9bca7a4e864a4cb000e481d77291abf03c358055d0f; // 0x000000d627d89106efd5bbFFb2aBa457310e04AA
+bytes32 constant MAINNET_SALT_PROTOCOLTOKEN = 0xc9a9fed357826f89be546dd81e107a64fd2feab41f85119fc682ecdc3d209ae2; // 0x00000D6e081E063dfA1c0e4F71D60E29ff5BC26c
 bytes32 constant MAINNET_SALT_VAULT721 = bytes32(uint256(0x1));
 
 // Camelot Relayer (pre-deployed @ sol 0.7.6)
