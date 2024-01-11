@@ -155,8 +155,27 @@ This script extracts the proposal id and queues the proposal via the OD governan
 The script extracts the necessary execution params from the JSON-the same params used during the proposal and executes the proposal. This script can be used arbitrarily for any proposal.
 
 #### Creating a coverage report
+
 coverage reports require lcov to be installed on your system.
  - [lcov for mac/linx](https://formulae.brew.sh/formula/lcov)
 
+ First get set up to run local tests on Anvil.
 
-once you have lcov installed run: `yarn test:coverage` to generate a `coverage-report` folder that will contain the html of the coverage report. point your browser to `coverage-report/index.html` to view the report.
+ **Required env vars:**
+ - `ANVIL_ONE` : run `anvil` and copy a private key from anvil terminal
+    
+
+**Steps to run tests on Anvil**
+  - `anvil`
+  -  `yarn deploy:anvil`
+            move deployment json to the deployments/anvil folder
+            from: broadcast/Deploy.s.sol/31337/run-latest.json
+            to: deployments/anvil/
+            replace: existing `run-latest.json`
+
+  - node tasks/parseAnvilDeployments.js
+ 
+
+
+- run`yarn test:coverage` to generate a `coverage-report` folder that will contain the html of the coverage report. 
+- Point your browser to `coverage-report/index.html` to view the report.
