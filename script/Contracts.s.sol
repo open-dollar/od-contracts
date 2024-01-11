@@ -2,8 +2,8 @@
 pragma solidity 0.8.19;
 
 // --- Base Contracts ---
-import {SystemCoin, ISystemCoin} from '@contracts/tokens/SystemCoin.sol';
-import {ProtocolToken, IProtocolToken} from '@contracts/tokens/ProtocolToken.sol';
+import {OpenDollar, SystemCoin, ISystemCoin} from '@contracts/tokens/SystemCoin.sol';
+import {OpenDollarGovernance, ProtocolToken, IProtocolToken} from '@contracts/tokens/ProtocolToken.sol';
 import {SAFEEngine, ISAFEEngine} from '@contracts/SAFEEngine.sol';
 import {TaxCollector, ITaxCollector} from '@contracts/TaxCollector.sol';
 import {AccountingEngine, IAccountingEngine} from '@contracts/AccountingEngine.sol';
@@ -53,6 +53,7 @@ import {
 import {ChainlinkRelayerFactory, IChainlinkRelayerFactory} from '@contracts/factories/ChainlinkRelayerFactory.sol';
 import {DenominatedOracleFactory, IDenominatedOracleFactory} from '@contracts/factories/DenominatedOracleFactory.sol';
 import {DelayedOracleFactory, IDelayedOracleFactory} from '@contracts/factories/DelayedOracleFactory.sol';
+import {IODCreate2Factory} from '@interfaces/factories/IODCreate2Factory.sol';
 
 // --- Jobs ---
 import {AccountingJob, IAccountingJob} from '@contracts/jobs/AccountingJob.sol';
@@ -100,6 +101,9 @@ abstract contract Contracts {
   address public delegate;
   bytes32[] public collateralTypes;
   mapping(bytes32 => address) public delegatee;
+
+  // -- Create2 Factory --
+  IODCreate2Factory public create2;
 
   // --- Base contracts ---
   ISAFEEngine public safeEngine;

@@ -17,8 +17,8 @@ abstract contract AnvilContracts {
   address public DelayedOracleChild_16_Address = 0xE451980132E65465d0a498c53f0b5227326Dd73F;
   address public DelayedOracleChild_17_Address = 0x5392A33F7F677f59e833FEBF4016cDDD88fF9E67;
   address public DelayedOracleChild_18_Address = 0xa783CDc72e34a174CCa57a6d9a74904d0Bec05A9;
-  address public SystemCoin_Address = 0x3Aa5ebB10DC797CAC828524e59A333d0A371443c;
-  address public ProtocolToken_Address = 0xc6e7DF5E7b4f2A278906862b61205850344D4e7d;
+  address public OpenDollar_Address = 0x3Aa5ebB10DC797CAC828524e59A333d0A371443c;
+  address public OpenDollarGovernance_Address = 0xc6e7DF5E7b4f2A278906862b61205850344D4e7d;
   address public TimelockController_Address = 0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44;
   address public ODGovernor_Address = 0xa85233C63b9Ee964Add6F2cffe00Fd84eb32338f;
   address public SAFEEngine_Address = 0xc5a5C42992dECbae36851359345FE25997F5C42d;

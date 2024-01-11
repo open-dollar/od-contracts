@@ -13,7 +13,6 @@ import {Script} from 'forge-std/Script.sol';
 import {Common} from '@script/Common.s.sol';
 import {SepoliaParams} from '@script/SepoliaParams.s.sol';
 import {MainnetParams} from '@script/MainnetParams.s.sol';
-import {Create2Factory} from '@contracts/utils/Create2Factory.sol';
 
 abstract contract Deploy is Common, Script {
   function setupEnvironment() public virtual {}
@@ -23,6 +22,10 @@ abstract contract Deploy is Common, Script {
   function run() public {
     deployer = vm.addr(_deployerPk); // ARB_SEPOLIA_DEPLOYER_PK
     vm.startBroadcast(deployer);
+
+    // creation bytecode
+    _systemCoinInitCode = type(OpenDollar).creationCode;
+    _vault721InitCode = type(Vault721).creationCode;
 
     // set governor to deployer during deployment
     governor = address(0);
@@ -93,9 +96,11 @@ abstract contract Deploy is Common, Script {
 
 contract DeployMainnet is MainnetParams, Deploy {
   function setUp() public virtual {
+    // set create2 factory
+    create2 = IODCreate2Factory(MAINNET_CREATE2FACTORY);
+
     _deployerPk = uint256(vm.envBytes32('ARB_MAINNET_DEPLOYER_PK'));
     chainId = 42_161;
-    _create2Factory = Create2Factory(MAINNET_CREATE2_FACTORY);
     if (SEMI_RANDOM_SALT == 0) {
       _systemCoinSalt = MAINNET_SALT_SYSTEMCOIN;
       _vault721Salt = MAINNET_SALT_VAULT721;
@@ -106,8 +111,8 @@ contract DeployMainnet is MainnetParams, Deploy {
   }
 
   function mintAirdrop() public virtual override {
-    require(DAO_SAFE != address(0), 'DAO zeroAddress');
-    protocolToken.mint(DAO_SAFE, AIRDROP_AMOUNT);
+    require(MAINNET_SAFE != address(0), 'DAO zeroAddress');
+    protocolToken.mint(MAINNET_SAFE, AIRDROP_AMOUNT);
   }
 
   // Setup oracle feeds
@@ -166,9 +171,11 @@ contract DeploySepolia is SepoliaParams, Deploy {
   IBaseOracle public chainlinkEthUSDPriceFeed;
 
   function setUp() public virtual {
+    // set create2 factory
+    create2 = IODCreate2Factory(TEST_CREATE2FACTORY);
+
     _deployerPk = uint256(vm.envBytes32('ARB_SEPOLIA_DEPLOYER_PK'));
     chainId = 421_614;
-    _create2Factory = Create2Factory(SEPOLIA_CREATE2_FACTORY);
     if (SEMI_RANDOM_SALT == 0) {
       _systemCoinSalt = SEPOLIA_SALT_SYSTEMCOIN;
       _vault721Salt = SEPOLIA_SALT_VAULT721;

@@ -39,7 +39,9 @@ contract ODSafeManager is IODSafeManager {
   mapping(uint256 _safeId => SAFEData) internal _safeData;
 
   /// @inheritdoc IODSafeManager
-  mapping(address _owner => mapping(uint256 _safeId => mapping(address _caller => bool _ok))) public safeCan;
+  mapping(
+    address _owner => mapping(uint256 _safeId => mapping(uint96 _safeNonce => mapping(address _caller => bool _ok)))
+  ) public safeCan;
   /// @inheritdoc IODSafeManager
   mapping(address _safeHandler => mapping(address _caller => bool _ok)) public handlerCan;
   /// @inheritdoc IODSafeManager
@@ -52,8 +54,9 @@ contract ODSafeManager is IODSafeManager {
    * @param  _safe Id of the safe to check if msg.sender has permissions for
    */
   modifier safeAllowed(uint256 _safe) {
-    address _owner = _safeData[_safe].owner;
-    if (msg.sender != _owner && !safeCan[_owner][_safe][msg.sender]) revert SafeNotAllowed();
+    SAFEData memory data = _safeData[_safe];
+    address owner = data.owner;
+    if (msg.sender != owner && !safeCan[owner][_safe][data.nonce][msg.sender]) revert SafeNotAllowed();
     _;
   }
 
@@ -118,8 +121,9 @@ contract ODSafeManager is IODSafeManager {
 
   /// @inheritdoc IODSafeManager
   function allowSAFE(uint256 _safe, address _usr, bool _ok) external onlySafeOwner(_safe) {
-    address _owner = _safeData[_safe].owner;
-    safeCan[_owner][_safe][_usr] = _ok;
+    SAFEData memory data = _safeData[_safe];
+    address owner = data.owner;
+    safeCan[owner][_safe][data.nonce][_usr] = _ok;
     emit AllowSAFE(msg.sender, _safe, _usr, _ok);
   }
 
@@ -136,7 +140,7 @@ contract ODSafeManager is IODSafeManager {
     ++_safeId;
     address _safeHandler = address(new SAFEHandler(safeEngine));
 
-    _safeData[_safeId] = SAFEData({owner: _usr, safeHandler: _safeHandler, collateralType: _cType});
+    _safeData[_safeId] = SAFEData({nonce: 0, owner: _usr, safeHandler: _safeHandler, collateralType: _cType});
 
     // Save the address of the safeHandler
     handlerExists[_safeHandler] = true;
@@ -157,6 +161,8 @@ contract ODSafeManager is IODSafeManager {
     if (_dst == address(0)) revert ZeroAddress();
     SAFEData memory _sData = _safeData[_safe];
     if (_dst == _sData.owner) revert AlreadySafeOwner();
+
+    _safeData[_safe].nonce += 1;
 
     _usrSafes[_sData.owner].remove(_safe);
     _usrSafesPerCollat[_sData.owner][_sData.collateralType].remove(_safe);
