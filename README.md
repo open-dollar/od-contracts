@@ -166,16 +166,7 @@ coverage reports require lcov to be installed on your system.
     
 
 **Steps to run tests on Anvil**
-  - `anvil`
-  -  `yarn deploy:anvil`
-            move deployment json to the deployments/anvil folder
-            from: broadcast/Deploy.s.sol/31337/run-latest.json
-            to: deployments/anvil/
-            replace: existing `run-latest.json`
-
-  - node tasks/parseAnvilDeployments.js
- 
-
-
-- run`yarn test:coverage` to generate a `coverage-report` folder that will contain the html of the coverage report. 
-- Point your browser to `coverage-report/index.html` to view the report.
+  - `anvil` 
+  - open a new terminal and `yarn deploy:anvil`
+  - `yarn test:coverage` to generate a `coverage-report` folder that will contain the html of the coverage report. 
+  - Point your browser to `coverage-report/index.html` to view the report.
