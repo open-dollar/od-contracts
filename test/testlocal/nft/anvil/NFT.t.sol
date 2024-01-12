@@ -296,7 +296,9 @@ contract NFTAnvil is AnvilFork {
 
     IODSafeManager.SAFEData memory sData = safeManager.safeData(vaultId);
 
-    assertEq(safeManager.handlerCan(proxy, users[i]), ok, 'test_allowHandler: handlerCan not set correctly');
+    assertEq(
+      safeManager.handlerCan(proxy, sData.nonce, users[i]), ok, 'test_allowHandler: handlerCan not set correctly'
+    );
   }
 
   // function test_modifySAFECollateralization(
@@ -408,7 +410,7 @@ contract NFTAnvil is AnvilFork {
   // }
 
   // If the nonce increments, then after each vault transfer
-  // all previous allowSAFE calls will be invalidated
+  // all previous allowSAFE/allowHandler calls will be invalidated
   // as safeAllowed looks at the current nonce
   function test_transferFromIncrementsNonce(uint256 cTypeIndex) public {
     cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
