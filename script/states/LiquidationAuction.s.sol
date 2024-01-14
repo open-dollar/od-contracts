@@ -7,10 +7,15 @@ import {ODSafeManager} from "@contracts/proxies/ODSafeManager.sol";
 import {ODProxy} from "@contracts/proxies/ODProxy.sol";
 import {ILiquidationEngine} from "@interfaces/ILiquidationEngine.sol";
 
+// This script will push the collateral prices down using DebtState and then proceed to liquidate all safes
+// except for the wstETH vaults. It will then bid on one collateral auction and complete it.  This is designed to
+// leave many collateral auctions open for testing - but also to complete one for testing purposes.
+
 contract LiquidationAuction is DebtState {
 
-    mapping (bytes32 _cType => uint256 _auctionId) public auctionIds;
+    mapping (bytes32 _cType => uint256[] _auctionId) public auctionIds;
 
+    // helper function for identifying the cType bytes32
     function bytes32ToString(bytes32 _bytes32) public pure returns (string memory) {
         uint8 i = 0;
         while(i < 32 && _bytes32[i] != 0) {
@@ -23,6 +28,7 @@ contract LiquidationAuction is DebtState {
         return string(bytesArray);
     }
 
+    // liquidate all safes except for the wstETH vaults
     function liquidateSafes() public {
       for (uint256 i = 0; i < users.length; i++) {
         address user = users[i];
@@ -39,12 +45,11 @@ contract LiquidationAuction is DebtState {
           ODSafeManager.SAFEData memory safeData = safeManager.safeData(safeId);
           address safeHandler = safeData.safeHandler;
 
-          console.logBytes4(ILiquidationEngine.LiqEng_SAFENotUnsafe.selector);
           string memory cTypeString = bytes32ToString(cType);
           console.log(cTypeString);
           uint256 auctionId;
           auctionId = liquidationEngine.liquidateSAFE(cType, safeHandler);
-          auctionIds[cType] = auctionId;
+          auctionIds[cType].push(auctionId);
         }
       }
     }
@@ -57,24 +62,40 @@ contract LiquidationAuction is DebtState {
             address user = users[i];
             address proxy = vault721.getProxy(user);
             vm.startPrank(user);
-            systemCoin.transfer(proxy, 500_000 ether);
+            systemCoin.approve(proxy, 500_000 ether);
 
-            for (uint256 j = 0; j < cTypes.length; j++) {
-                bytes memory payloadApprove = abi.encodeWithSelector(
-                systemCoin.approve.selector,
-                collateralAuctionHouse[cTypes[j]],
-                500_000 ether);
-
-                bytes memory returnData = ODProxy(proxy).execute(address(systemCoin), payloadApprove);
-            }
             vm.stopPrank();
         }
+    }
+
+    // Use the CollateralBidActions contract to bid on the collateral auction using proxy and delegatecall
+    function bidAndCompleteCollateralAuction() public {
+        address user = users[0];
+        bytes32 cType = cTypes[0];
+        address proxy = vault721.getProxy(user);
+        vm.startPrank(user);
+
+        bytes memory payload = abi.encodeWithSelector(
+          collateralBidActions.buyCollateral.selector,
+          address(coinJoin),
+          address(collateralJoin[cType]),
+          address(collateralAuctionHouse[cType]),
+          auctionIds[cType][0],
+          0,
+          500_000 ether
+        );
+
+        bytes memory returnData = ODProxy(proxy).execute(address(collateralBidActions), payload);
+
+        vm.stopPrank();
     }
 
     function run() public override {
         // call the liquidation engine
         liquidateSafes();
-
-
+        transferToProxyAndApprove();
+        bidAndCompleteCollateralAuction();
     }
+
+    // forge script script/states/LiquidationAuction.s.sol:LiquidationAuction --fork-url http://localhost:8545 -vvvvv
 }
