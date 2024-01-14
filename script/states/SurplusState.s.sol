@@ -13,9 +13,9 @@ contract SurplusState is AnvilFork, Script {
     uint256 coinBalance = safeEngine.coinBalance(address(accountingEngine));
     uint256 debtBalance = safeEngine.debtBalance(address(accountingEngine));
 
-    console.log("Coin Balance of Accounting Engine");
+    console.log('Coin Balance of Accounting Engine');
     console.logUint(coinBalance);
-    console.log("Debt Balance of Accounting Engine");
+    console.log('Debt Balance of Accounting Engine');
     console.logUint(debtBalance);
   }
   // forge script script/states/SurplusState.s.sol:SurplusState --fork-url http://localhost:8545 -vvvvv

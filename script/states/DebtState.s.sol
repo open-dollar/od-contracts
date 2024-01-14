@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import "forge-std/console.sol";
+import 'forge-std/console.sol';
 import {AnvilFork} from '@testlocal/nft/anvil/AnvilFork.t.sol';
 import {Script} from 'forge-std/Script.sol';
 import {J, P} from '@script/Registry.s.sol';
 
 contract DebtState is AnvilFork, Script {
-
   function warpAndUpdatePriceFeeds() public {
     // warp time and update the price feeds
     for (uint256 i = 0; i < delayedOracles.length; i++) {
@@ -17,7 +16,6 @@ contract DebtState is AnvilFork, Script {
   }
 
   function setPriceLowToTriggerDebtScenario() public {
-
     // change the wstETH delayed oracle price very low
     for (uint256 i = 0; i < testOracles.length - 1; i++) {
       vm.prank(J);
