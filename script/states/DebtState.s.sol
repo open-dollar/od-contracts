@@ -8,11 +8,6 @@ import {J, P} from '@script/Registry.s.sol';
 
 contract DebtState is AnvilFork, Script {
 
-  function setUp() public virtual override {
-    super.setUp();
-    setPriceLowToTriggerDebtScenario();
-  }
-
   function warpAndUpdatePriceFeeds() public {
     // warp time and update the price feeds
     for (uint256 i = 0; i < delayedOracles.length; i++) {
@@ -48,7 +43,7 @@ contract DebtState is AnvilFork, Script {
   }
 
   function run() public virtual {
-    setUp();
+    setPriceLowToTriggerDebtScenario();
   }
 
   // forge script script/states/DebtState.s.sol:DebtState --fork-url http://localhost:8545 -vvvvv

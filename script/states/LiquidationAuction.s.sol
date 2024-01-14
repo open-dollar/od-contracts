@@ -11,6 +11,8 @@ import {ILiquidationEngine} from "@interfaces/ILiquidationEngine.sol";
 // except for the wstETH vaults. It will then bid on one collateral auction and complete it.  This is designed to
 // leave many collateral auctions open for testing - but also to complete one for testing purposes.
 
+// This script also leaves the system in a state of debt so that a debt auction can be launched
+
 contract LiquidationAuction is DebtState {
 
     mapping (bytes32 _cType => uint256[] _auctionId) public auctionIds;
@@ -90,11 +92,30 @@ contract LiquidationAuction is DebtState {
         vm.stopPrank();
     }
 
-    function run() public override {
+    function addUnbackedDebtToAccountingEngine() public {
+    // access the authorized accounts from the SAFEEngine
+    address[] memory authorizedAccounts = safeEngine.authorizedAccounts();
+    // prank an authorized accounting
+    vm.prank(authorizedAccounts[0]);
+    // add unbacked debt to the accounting engine by calling SAFEEngine
+    safeEngine.createUnbackedDebt(address(accountingEngine), users[0], 1_000_000 * 10**45);
+  }
+
+    function run() public virtual override {
+        super.run();
         // call the liquidation engine
         liquidateSafes();
         transferToProxyAndApprove();
         bidAndCompleteCollateralAuction();
+
+        uint256 coinBalance = safeEngine.coinBalance(address(accountingEngine));
+        uint256 debtBalance = safeEngine.debtBalance(address(accountingEngine));
+
+        console.log("Coin Balance of Accounting Engine");
+        console.logUint(coinBalance);
+        console.log("Debt Balance of Accounting Engine");
+        console.logUint(debtBalance);
+        addUnbackedDebtToAccountingEngine();
     }
 
     // forge script script/states/LiquidationAuction.s.sol:LiquidationAuction --fork-url http://localhost:8545 -vvvvv
