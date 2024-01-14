@@ -4,13 +4,13 @@ pragma solidity 0.8.19;
 import {HaiTest, stdStorage, StdStorage} from '@testnet/utils/HaiTest.t.sol';
 import {Vault721} from '@contracts/proxies/Vault721.sol';
 import {IVault721} from '@interfaces/proxies/IVault721.sol';
-import {SAFEEngine} from '@contracts/SAFEEngine.sol';
+import {SAFEEngineForTest, ISAFEEngine} from '@testnet/mocks/SAFEEngineForTest.sol';
 import {ODSafeManager} from '@contracts/proxies/ODSafeManager.sol';
 import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 import {TaxCollector} from '@contracts/TaxCollector.sol';
 import {ITaxCollector} from '@interfaces/ITaxCollector.sol';
 import {TimelockController} from '@openzeppelin/governance/TimelockController.sol';
-import {RAY} from '@libraries/Math.sol';
+import {Math, RAY} from '@libraries/Math.sol';
 
 contract Base is HaiTest {
   using stdStorage for StdStorage;
@@ -35,7 +35,7 @@ contract Base is HaiTest {
   TaxCollector taxCollector;
   ODSafeManager safeManager;
   TimelockController timelockController;
-  SAFEEngine mockSafeEngine;
+  ISAFEEngine mockSafeEngine;
 
   function setUp() public virtual {
     ITaxCollector.TaxCollectorParams memory taxCollectorParams = ITaxCollector.TaxCollectorParams({
@@ -45,9 +45,13 @@ contract Base is HaiTest {
       maxSecondaryReceivers: 0
     });
 
+
+  ISAFEEngine.SAFEEngineParams memory safeEngineParams =
+    ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 1e18});
+
     vm.startPrank(deployer);
 
-    mockSafeEngine = SAFEEngine(mockContract('mockSafeEngine'));
+    mockSafeEngine = new SAFEEngineForTest(safeEngineParams);
     timelockController = TimelockController(payable(mockContract('timeLockController')));
 
     vault721 = new Vault721();
@@ -82,6 +86,19 @@ contract Base is HaiTest {
   function _openSafe(bytes32 _cType) internal returns (uint256) {
     return safeManager.openSAFE(_cType, userProxy);
   }
+
+  //  function _mockSafeDebtCeiling(uint256 _safeDebtCeiling) internal {
+  //   stdstore.target(address(safeEngine)).sig(ISAFEEngine.params.selector).depth(0).checked_write(_safeDebtCeiling);
+  // }
+
+  // function _mockGlobalDebtCeiling(uint256 _globalDebtCeiling) internal {
+  //   stdstore.target(address(safeEngine)).sig(ISAFEEngine.params.selector).depth(1).checked_write(_globalDebtCeiling);
+  // }
+
+  //   function _mockParams(ISAFEEngine.SAFEEngineParams memory _params) internal {
+  //   _mockSafeDebtCeiling(_params.safeDebtCeiling);
+  //   _mockGlobalDebtCeiling(_params.globalDebtCeiling);
+  // }
 }
 
 contract Unit_ODSafeManager_Deployment is Base {
@@ -93,10 +110,6 @@ contract Unit_ODSafeManager_Deployment is Base {
 }
 
 contract Unit_ODSafeManager_SAFEManagement is Base {
-  modifier userSafe(bytes32 _cType) {
-    _openSafe(_cType);
-    _;
-  }
 
   event OpenSAFE(address indexed _sender, address indexed _own, uint256 indexed _safe);
 
@@ -113,7 +126,9 @@ contract Unit_ODSafeManager_SAFEManagement is Base {
 
   event AllowSAFE(address indexed _sender, uint256 indexed _safe, address _usr, bool _ok);
 
-  function test_AllowSafe() public userSafe(collateralTypeA) {
+  function test_AllowSafe() public {
+    _openSafe(collateralTypeA);
+
     vm.startPrank(userProxy);
 
     vm.expectEmit(true, true, true, true);
@@ -127,12 +142,11 @@ contract Unit_ODSafeManager_SAFEManagement is Base {
 
   event TransferSAFEOwnership(address indexed _sender, uint256 indexed _safe, address _dst);
 
-  function test_transferSAFEOwnership() public userSafe(collateralTypeA) {
+  function test_transferSAFEOwnership() public {
+    _openSafe(collateralTypeA);
     vm.startPrank(address(vault721));
     vm.expectEmit();
     emit TransferSAFEOwnership(address(vault721), 1, address(user));
-
-    // note there's no check in the safe manager to make sure you're transferring a safe to a proxy.  only when opening a new safe.
 
     safeManager.transferSAFEOwnership(1, address(user));
 
@@ -143,7 +157,8 @@ contract Unit_ODSafeManager_SAFEManagement is Base {
 
   event AllowHandler(address indexed _sender, address _usr, bool _ok);
 
-  function test_AllowHandler() public userSafe(collateralTypeA) {
+  function test_AllowHandler() public {
+    _openSafe(collateralTypeA);
     vm.startPrank(userProxy);
 
     vm.expectEmit();
@@ -152,5 +167,109 @@ contract Unit_ODSafeManager_SAFEManagement is Base {
     safeManager.allowHandler(rando, true);
 
     assertTrue(safeManager.handlerCan(userProxy, rando), 'handler not allowed');
+  }
+}
+
+contract Unit_ODSafeManager_CollateralManagement is Base {
+  using Math for uint256;
+  
+  struct ModifySAFECollateralizationScenario {
+    ISAFEEngine.SAFE safeData;
+    ISAFEEngine.SAFEEngineCollateralData cData;
+    uint256 coinBalance;
+    uint256 collateralBalance;
+    int256 deltaCollateral;
+    int256 deltaDebt;
+    uint256 globalDebt;
+  }  
+  
+  function _assumeHappyPath(ModifySAFECollateralizationScenario memory _scenario) internal pure {
+    // global
+    vm.assume(_scenario.cData.accumulatedRate != 0);
+
+    // modify collateral balance
+    vm.assume(notUnderOrOverflowSub(_scenario.collateralBalance, _scenario.deltaCollateral));
+
+    // modify safe collateralization
+    vm.assume(notUnderOrOverflowAdd(_scenario.safeData.lockedCollateral, _scenario.deltaCollateral));
+    vm.assume(notUnderOrOverflowAdd(_scenario.safeData.generatedDebt, _scenario.deltaDebt));
+    uint256 _newLockedCollateral = _scenario.safeData.lockedCollateral.add(_scenario.deltaCollateral);
+    uint256 _newSafeDebt = _scenario.safeData.generatedDebt.add(_scenario.deltaDebt);
+
+    // modify collateral debt
+    vm.assume(notUnderOrOverflowAdd(_scenario.cData.debtAmount, _scenario.deltaDebt));
+    vm.assume(notUnderOrOverflowAdd(_scenario.cData.lockedAmount, _scenario.deltaCollateral));
+    uint256 _newCollateralDebt = _scenario.cData.debtAmount.add(_scenario.deltaDebt);
+
+    // modify internal coins (calculates rate adjusted debt)
+    vm.assume(notUnderOrOverflowMul(_scenario.cData.accumulatedRate, _scenario.deltaDebt));
+    int256 _deltaAdjustedDebt = _scenario.cData.accumulatedRate.mul(_scenario.deltaDebt);
+    vm.assume(notUnderOrOverflowAdd(_scenario.coinBalance, _deltaAdjustedDebt));
+
+    // modify globalDebt
+    vm.assume(notUnderOrOverflowAdd(_scenario.globalDebt, _deltaAdjustedDebt));
+
+    // --- Safety checks ---
+
+    vm.assume(notOverflowMul(_scenario.cData.accumulatedRate, _newSafeDebt));
+    uint256 _totalDebtIssued = _scenario.cData.accumulatedRate * _newSafeDebt;
+
+    // ceilings
+    vm.assume(notOverflowMul(_scenario.cData.accumulatedRate, _newCollateralDebt));
+
+    // safety
+    vm.assume(notOverflowMul(_scenario.cData.accumulatedRate, _newSafeDebt));
+    vm.assume(notOverflowMul(_newLockedCollateral, _scenario.cData.safetyPrice));
+    if (_scenario.deltaDebt > 0 || _scenario.deltaCollateral < 0) {
+      vm.assume(_totalDebtIssued <= _newLockedCollateral * _scenario.cData.safetyPrice);
+    }
+  }
+
+  function test_modifySAFECollateralization(
+   ModifySAFECollateralizationScenario memory _scenario ) public {
+
+      _assumeHappyPath(_scenario);
+
+      ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCParams = ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: 1e25, debtFloor: 0});
+      vm.startPrank(deployer);
+      mockSafeEngine.addAuthorization(address(safeManager));
+       mockSafeEngine.addAuthorization(address(userProxy));
+        mockSafeEngine.initializeCollateralType(collateralTypeA, _safeEngineCParams);
+
+    _mockSafeEngineCData(collateralTypeA, _scenario.cData.debtAmount, 0, _scenario.cData.accumulatedRate, 0, 0);
+    
+    _openSafe(collateralTypeA);
+    vm.stopPrank();
+    vm.prank(userProxy); 
+
+      vm.mockCall(
+        address(mockSafeEngine),
+        abi.encodeWithSelector(mockSafeEngine.modifySAFECollateralization.selector),
+        abi.encode()
+    ); 
+         vm.mockCall(
+        address(mockSafeEngine),
+        abi.encodeWithSelector(mockSafeEngine.updateAccumulatedRate.selector),
+        abi.encode()
+    ); 
+    
+    vm.mockCall(
+      address(vault721),
+      abi.encodeWithSelector(IVault721.updateVaultHashState.selector),
+      abi.encode()
+    );
+
+    vm.mockCall(
+      address(taxCollector),
+      abi.encodeWithSelector(ITaxCollector.taxSingle.selector),
+      abi.encode(_scenario.cData.accumulatedRate + 10)
+    );
+
+    safeManager.modifySAFECollateralization(
+    1,
+    (_scenario.deltaCollateral),
+    (_scenario.deltaDebt),
+     false
+  );
   }
 }
