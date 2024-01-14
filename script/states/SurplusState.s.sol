@@ -6,7 +6,7 @@ import {Script} from 'forge-std/Script.sol';
 import 'forge-std/Console.sol';
 
 contract SurplusState is AnvilFork, Script {
-  function run() public {
+  function run() public virtual {
     setUp();
     vm.warp(block.timestamp + 365 days);
     taxCollector.taxMany(0, 3);
