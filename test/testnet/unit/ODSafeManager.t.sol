@@ -81,24 +81,11 @@ contract Base is HaiTest {
       abi.encode(_debtAmount, _lockedAmount, _accumulatedRate, _safetyPrice, _liquidationPrice)
     );
   }
-  //_mockSafeEngineCData(collateralTypeA, debtAmount, 0, _lastAccumulatedRate, 0, 0);
 
   function _openSafe(bytes32 _cType) internal returns (uint256) {
     return safeManager.openSAFE(_cType, userProxy);
   }
 
-  //  function _mockSafeDebtCeiling(uint256 _safeDebtCeiling) internal {
-  //   stdstore.target(address(safeEngine)).sig(ISAFEEngine.params.selector).depth(0).checked_write(_safeDebtCeiling);
-  // }
-
-  // function _mockGlobalDebtCeiling(uint256 _globalDebtCeiling) internal {
-  //   stdstore.target(address(safeEngine)).sig(ISAFEEngine.params.selector).depth(1).checked_write(_globalDebtCeiling);
-  // }
-
-  //   function _mockParams(ISAFEEngine.SAFEEngineParams memory _params) internal {
-  //   _mockSafeDebtCeiling(_params.safeDebtCeiling);
-  //   _mockGlobalDebtCeiling(_params.globalDebtCeiling);
-  // }
 }
 
 contract Unit_ODSafeManager_Deployment is Base {
@@ -114,10 +101,11 @@ contract Unit_ODSafeManager_SAFEManagement is Base {
   event OpenSAFE(address indexed _sender, address indexed _own, uint256 indexed _safe);
 
   function test_OpenSafe() public {
-    vm.startPrank(owner);
+    vm.startPrank(user);
 
     vm.expectEmit(true, true, false, true);
-    emit OpenSAFE(owner, userProxy, 1);
+
+    emit OpenSAFE(user, userProxy, 1);
 
     uint256 safeId = safeManager.openSAFE('i', userProxy);
 
@@ -173,7 +161,8 @@ contract Unit_ODSafeManager_SAFEManagement is Base {
 contract Unit_ODSafeManager_CollateralManagement is Base {
   using Math for uint256;
   
-  struct ModifySAFECollateralizationScenario {
+  struct Scenario {
+    bytes32 cType;
     ISAFEEngine.SAFE safeData;
     ISAFEEngine.SAFEEngineCollateralData cData;
     uint256 coinBalance;
@@ -181,9 +170,17 @@ contract Unit_ODSafeManager_CollateralManagement is Base {
     int256 deltaCollateral;
     int256 deltaDebt;
     uint256 globalDebt;
+    uint256 safeId;
   }  
-  
-  function _assumeHappyPath(ModifySAFECollateralizationScenario memory _scenario) internal pure {
+
+  modifier happyPath(Scenario memory _scenario){
+    _assumeHappyPath(_scenario);
+
+    _scenario.safeId = _openSafe(_scenario.cType);
+    _;
+  }
+
+  function _assumeHappyPath(Scenario memory _scenario) internal pure {
     // global
     vm.assume(_scenario.cData.accumulatedRate != 0);
 
@@ -224,30 +221,20 @@ contract Unit_ODSafeManager_CollateralManagement is Base {
       vm.assume(_totalDebtIssued <= _newLockedCollateral * _scenario.cData.safetyPrice);
     }
   }
-
+  event ModifySAFECollateralization(
+    address indexed _sender, uint256 indexed _safe, int256 _deltaCollateral, int256 _deltaDebt
+  );
   function test_modifySAFECollateralization(
-   ModifySAFECollateralizationScenario memory _scenario ) public {
-
-      _assumeHappyPath(_scenario);
-
-      ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCParams = ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: 1e25, debtFloor: 0});
-      vm.startPrank(deployer);
-      mockSafeEngine.addAuthorization(address(safeManager));
-       mockSafeEngine.addAuthorization(address(userProxy));
-        mockSafeEngine.initializeCollateralType(collateralTypeA, _safeEngineCParams);
-
-    _mockSafeEngineCData(collateralTypeA, _scenario.cData.debtAmount, 0, _scenario.cData.accumulatedRate, 0, 0);
+   Scenario memory _scenario ) public happyPath(_scenario){
     
-    _openSafe(collateralTypeA);
-    vm.stopPrank();
-    vm.prank(userProxy); 
 
-      vm.mockCall(
+    vm.mockCall(
         address(mockSafeEngine),
         abi.encodeWithSelector(mockSafeEngine.modifySAFECollateralization.selector),
         abi.encode()
     ); 
-         vm.mockCall(
+
+    vm.mockCall(
         address(mockSafeEngine),
         abi.encodeWithSelector(mockSafeEngine.updateAccumulatedRate.selector),
         abi.encode()
@@ -262,14 +249,71 @@ contract Unit_ODSafeManager_CollateralManagement is Base {
     vm.mockCall(
       address(taxCollector),
       abi.encodeWithSelector(ITaxCollector.taxSingle.selector),
-      abi.encode(_scenario.cData.accumulatedRate + 10)
+      abi.encode(_scenario.cData.accumulatedRate)
     );
+
+    vm.prank(userProxy); 
+
+    vm.expectEmit();
+
+    emit ModifySAFECollateralization(userProxy, 1,_scenario.deltaCollateral, _scenario.deltaDebt );
 
     safeManager.modifySAFECollateralization(
     1,
     (_scenario.deltaCollateral),
     (_scenario.deltaDebt),
-     false
+     true
   );
+  }
+
+  event TransferCollateral(address indexed _sender, uint256 indexed _safe, address _dst, uint256 _wad);
+
+  event TransferCollateral(address indexed _sender, bytes32 _cType, uint256 indexed _safe, address _dst, uint256 _wad);
+
+    function test_transferCollateral(Scenario memory _scenario) public happyPath(_scenario){
+      address safeHandler = safeManager.safeData(_scenario.safeId).safeHandler;
+    vm.prank(userProxy);
+    safeManager.allowHandler(safeHandler, true);
+    vm.prank(userProxy);
+    safeManager.allowSAFE(_scenario.safeId, safeHandler, true);
+    vm.mockCall(
+      address(mockSafeEngine),
+      abi.encodeWithSelector(ISAFEEngine.transferCollateral.selector),
+      abi.encode()
+    );
+       vm.mockCall(
+      address(vault721),
+      abi.encodeWithSelector(IVault721.updateVaultHashState.selector),
+      abi.encode()
+    );
+
+    vm.expectEmit();
+    emit TransferCollateral( safeHandler, _scenario.safeId, safeHandler, 100);
+
+    
+    vm.prank(safeHandler);
+    safeManager.transferCollateral(_scenario.safeId, safeHandler,  100);
+  }
+
+  function test_transferCollateral_cType(Scenario memory _scenario) public happyPath(_scenario){
+    vm.mockCall(
+      address(mockSafeEngine),
+      abi.encodeWithSelector(ISAFEEngine.transferCollateral.selector),
+      abi.encode()
+    );
+       vm.mockCall(
+      address(vault721),
+      abi.encodeWithSelector(IVault721.updateVaultHashState.selector),
+      abi.encode()
+    );
+
+    vm.expectEmit();
+    emit TransferCollateral( userProxy, _scenario.cType, _scenario.safeId, owner, 100);
+    vm.prank(userProxy);
+    safeManager.transferCollateral(_scenario.cType, _scenario.safeId, owner,  100);
+  }
+
+  function test_transferInternalCoins(Scenario memory scenario) public happyPath(_scenario){
+    
   }
 }
