@@ -138,7 +138,7 @@ contract ODSafeManager is IODSafeManager {
     if (_usr == address(0)) revert ZeroAddress();
 
     ++_safeId;
-    address _safeHandler = address(new  (safeEngine));
+    address _safeHandler = address(new SAFEHandler(safeEngine));
 
     _safeData[_safeId] = SAFEData({nonce: 0, owner: _usr, safeHandler: _safeHandler, collateralType: _cType});
 
