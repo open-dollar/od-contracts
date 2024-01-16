@@ -32,7 +32,7 @@ contract DeployODCreate2FactorySepolia is Script {
 
   function run() public {
     vm.startBroadcast(vm.envUint('ARB_SEPOLIA_DEPLOYER_PK'));
-    create2 = new ODCreate2Factory(TEST_DEPLOYER);
+    create2 = new ODCreate2Factory(vm.envAddress('ARB_SEPOLIA_PC'));
     vm.stopBroadcast();
   }
 }
