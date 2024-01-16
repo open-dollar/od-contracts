@@ -9,7 +9,7 @@ import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 
 // Open Dollar
-// Version 1.5.8
+// Version 1.5.9
 
 struct HashState {
   bytes32 lastHash;

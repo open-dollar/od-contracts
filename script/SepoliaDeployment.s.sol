@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
+import '@script/Registry.s.sol';
 import '@script/Contracts.s.sol';
 import {SepoliaParams, WSTETH, ARB, CBETH, RETH} from '@script/SepoliaParams.s.sol';
 import {SepoliaContracts} from '@script/SepoliaContracts.s.sol';
@@ -26,8 +27,8 @@ abstract contract SepoliaDeployment is Contracts, SepoliaParams, SepoliaContract
     collateral[CBETH] = IERC20Metadata(MintableERC20_CBETH_Address);
     collateral[RETH] = IERC20Metadata(MintableERC20_RETH_Address);
 
-    systemCoin = SystemCoin(SystemCoin_Address);
-    protocolToken = ProtocolToken(ProtocolToken_Address);
+    systemCoin = SystemCoin(SEPOLIA_SYSTEM_COIN);
+    protocolToken = ProtocolToken(SEPOLIA_PROTOCOL_TOKEN);
 
     // --- base contracts ---
     safeEngine = SAFEEngine(SAFEEngine_Address);

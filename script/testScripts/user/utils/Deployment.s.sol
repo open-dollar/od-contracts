@@ -2,6 +2,7 @@
 pragma solidity ^0.8.13;
 
 import 'forge-std/Script.sol';
+import '@script/Registry.s.sol';
 import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
 
 import {SepoliaContracts} from '@script/SepoliaContracts.s.sol';
@@ -60,15 +61,12 @@ contract Deployment is Contracts, SepoliaContracts, Script {
     collateralBidActions = CollateralBidActions(CollateralBidActions_Address);
     rewardedActions = RewardedActions(RewardedActions_Address);
 
-    protocolToken = ProtocolToken(ProtocolToken_Address); // OPEN
-    systemCoin = SystemCoin(SystemCoin_Address); // OD
+    protocolToken = ProtocolToken(SEPOLIA_PROTOCOL_TOKEN); // OPEN
+    systemCoin = SystemCoin(SEPOLIA_SYSTEM_COIN); // OD
 
     taxCollector = TaxCollector(TaxCollector_Address);
     coinJoin = CoinJoin(CoinJoin_Address);
     collateralJoin[WSTETH] =
       CollateralJoin(CollateralJoinChild_0x5753544554480000000000000000000000000000000000000000000000000000_Address);
-
-    // MintableERC20(address(WETH_TOKEN)).mint(USER1, 1_000_000 ether);
-    // MintableERC20(address(WETH_TOKEN)).mint(USER2, 1_000_000 ether);
   }
 }

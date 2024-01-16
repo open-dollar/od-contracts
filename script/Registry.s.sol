@@ -9,8 +9,9 @@ uint256 constant SEMI_RANDOM_SALT = 0; // set to 0 to use Salts below, set to 1 
 // Create2 Factory
 address constant TEST_CREATE2FACTORY = 0xC5f2C81d16764908B18379D95f410912d928Adc2;
 
-// Protocol Token
+// Tokens
 address constant SEPOLIA_PROTOCOL_TOKEN = 0x00D2363Ea723d8Bc3D664b87Cf51A04033BD0Ef1;
+address constant SEPOLIA_SYSTEM_COIN = 0x00D0f23771915A857d6483C7734838b87Fc90fD2;
 
 // Governance Settings
 uint256 constant TEST_INIT_VOTING_DELAY = 1;
