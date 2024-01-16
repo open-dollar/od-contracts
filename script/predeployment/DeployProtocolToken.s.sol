@@ -16,13 +16,13 @@ import {IODCreate2Factory} from '@interfaces/factories/IODCreate2Factory.sol';
 /**
  * @dev forge script to generate salt
  * ProtocolToken
- * cast create2 --starts-with 00000D6 --case-sensitive --deployer 0x6EDb251053B4F7670C98e18bbEA20818367b4C0f --init-code-hash 0xefe18de3888fd4c30afdd243d43fa8763c95e8ed0faa142f76a67d94062b3c83
+ * cast create2 --starts-with 000D6 --case-sensitive --deployer 0x6EDb251053B4F7670C98e18bbEA20818367b4C0f --init-code-hash 0xefe18de3888fd4c30afdd243d43fa8763c95e8ed0faa142f76a67d94062b3c83
  *
  * SystemCoin
- * cast create2 --starts-with 00000D011A5 --case-sensitive --deployer 0x6EDb251053B4F7670C98e18bbEA20818367b4C0f --init-code-hash 0x2c2da24cf8ff20a033122ffbcaa010c6edbc1b0a17ae658667c45c8b28d54a75
+ * cast create2 --starts-with 000D011A --case-sensitive --deployer 0x6EDb251053B4F7670C98e18bbEA20818367b4C0f --init-code-hash 0x2c2da24cf8ff20a033122ffbcaa010c6edbc1b0a17ae658667c45c8b28d54a75
  *
  * Vault721
- * cast create2 --starts-with 000005AFE --case-sensitive --deployer 0x6EDb251053B4F7670C98e18bbEA20818367b4C0f --init-code-hash 0x72826cfc58dad84e93750b991b5b55307bccd08ec741ca412a5b01a465ac2c65
+ * cast create2 --starts-with 0005AFE --case-sensitive --deployer 0x6EDb251053B4F7670C98e18bbEA20818367b4C0f --init-code-hash 0x72826cfc58dad84e93750b991b5b55307bccd08ec741ca412a5b01a465ac2c65
  */
 
 contract DeployProtocolTokenMainnet is Script, Test {
@@ -34,7 +34,7 @@ contract DeployProtocolTokenMainnet is Script, Test {
   address internal _protocolToken;
 
   function run() public {
-    vm.startBroadcast(vm.envUint('ARB_MAINNET_ADMIN_PK'));
+    vm.startBroadcast(vm.envUint('ARB_MAINNET_DEPLOYER_PK'));
 
     _protocolTokenInitCode = type(OpenDollarGovernance).creationCode;
     _protocolTokenHash = keccak256(_protocolTokenInitCode);
@@ -79,7 +79,7 @@ contract DeployProtocolTokenSepolia is Script, Test {
     emit log_named_address('ODG deployment', _protocolToken);
 
     IProtocolToken(_protocolToken).initialize('Open Dollar Governance', 'ODG');
-    IProtocolToken(_protocolToken).mint(TEST_SAFE, 10_000_000 * 1e18);
+    IProtocolToken(_protocolToken).mint(vm.envAddress('ARB_SEPOLIA_PC'), 10_000_000 * 1e18);
 
     vm.stopBroadcast();
   }

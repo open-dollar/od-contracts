@@ -98,6 +98,7 @@ contract DeployMainnet is MainnetParams, Deploy {
   function setUp() public virtual {
     // set create2 factory
     create2 = IODCreate2Factory(MAINNET_CREATE2FACTORY);
+    protocolToken = IProtocolToken(MAINNET_PROTOCOL_TOKEN);
 
     _deployerPk = uint256(vm.envBytes32('ARB_MAINNET_DEPLOYER_PK'));
     chainId = 42_161;
@@ -173,6 +174,7 @@ contract DeploySepolia is SepoliaParams, Deploy {
   function setUp() public virtual {
     // set create2 factory
     create2 = IODCreate2Factory(TEST_CREATE2FACTORY);
+    protocolToken = IProtocolToken(SEPOLIA_PROTOCOL_TOKEN);
 
     _deployerPk = uint256(vm.envBytes32('ARB_SEPOLIA_DEPLOYER_PK'));
     chainId = 421_614;

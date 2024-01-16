@@ -173,11 +173,6 @@ abstract contract Common is Contracts, Params {
     if (_chainId != 31_337) {
       address systemCoinAddress = create2.create2deploy(_systemCoinSalt, _systemCoinInitCode);
       systemCoin = ISystemCoin(systemCoinAddress);
-      if (_chainId == 42_161) {
-        protocolToken = IProtocolToken(MAINNET_PROTOCOL_TOKEN); // pre-deployed & initialized
-      } else {
-        protocolToken = IProtocolToken(SEPOLIA_PROTOCOL_TOKEN); // pre-deployed & initialized
-      }
     } else {
       systemCoin = new OpenDollar();
       protocolToken = new OpenDollarGovernance();
