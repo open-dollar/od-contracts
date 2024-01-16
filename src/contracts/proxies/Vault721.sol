@@ -104,6 +104,10 @@ contract Vault721 is ERC721EnumerableUpgradeable {
     return _hashState[_vaultId];
   }
 
+  function getIsAllowlisted(address _user) external view returns (bool) {
+    return _allowlist[_user];
+  }
+
   /**
    * @dev allows msg.sender without an ODProxy to deploy a new ODProxy
    */
