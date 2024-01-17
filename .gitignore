@@ -14,7 +14,7 @@ coverage-report
 lcov.info
 
 # Local test files
-test/testnet/simulations/pid-controller/*.csv
+test/testnet/simulations/pid-controller/
 deployments/anvil/
 
 # Config files
@@ -28,4 +28,4 @@ deployments/anvil/
 docs/book
 docs/src/src/
 docs/src/static
-# test/testnet/simulations/pid-controller/decay_with_impulse.csv
+

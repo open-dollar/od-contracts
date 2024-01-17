@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import {HaiTest, stdStorage, StdStorage} from '@testnet/utils/HaiTest.t.sol';
-import {Vault721} from '@contracts/proxies/Vault721.sol';
+import {Vault721, HashState} from '@contracts/proxies/Vault721.sol';
 import {IVault721} from '@interfaces/proxies/IVault721.sol';
 import {ODSafeManager} from '@contracts/proxies/ODSafeManager.sol';
 import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
@@ -13,6 +13,8 @@ contract Base is HaiTest {
 
   address deployer = label('deployer');
   address owner = label('owner');
+  address user = address(0xdeadce11);
+  address userProxy;
 
   Vault721 vault721;
   NFTRenderer renderer;
@@ -65,5 +67,240 @@ contract Unit_Vault721_Initialize is Base {
     vault721.initialize(address(timelockController));
     vm.expectRevert(bytes('Initializable: contract is already initialized'));
     vault721.initialize(address(timelockController));
+  }
+}
+
+contract Unit_Vault721_Build is Base {
+  function test_Build_NoUser() public {
+    vm.prank(owner);
+    address builtProxy = vault721.build();
+    address proxy = vault721.getProxy(owner);
+    assertEq(proxy, builtProxy, 'incorrect proxy address');
+  }
+
+  function test_Build_User() public {
+    address builtProxy = vault721.build(owner);
+    address proxy = vault721.getProxy(owner);
+    assertEq(proxy, builtProxy, 'incorrect proxy address');
+  }
+
+  function test_Build_Revert_ProxyAlreadyExists() public {
+    vm.startPrank(owner);
+    //build first vault
+    vault721.build();
+
+    vm.expectRevert(IVault721.ProxyAlreadyExist.selector);
+    //build second vault to revert
+    vault721.build();
+  }
+}
+
+contract Unit_Vault721_Mint is Base {
+  function setUp() public override {
+    Base.setUp();
+    vault721.initialize(address(timelockController));
+    vm.prank(address(safeManager));
+    vault721.initializeManager();
+
+    userProxy = vault721.build(user);
+  }
+
+  function test_Mint() public {
+    vm.prank(address(safeManager));
+    vault721.mint(userProxy, 0);
+  }
+
+  function test_Mint_Revert_NonNativeProxy() public {
+    vm.prank(address(safeManager));
+    vm.expectRevert('V721: non-native proxy');
+    vault721.mint(user, 0);
+  }
+}
+
+contract Vault721_ViewFunctions is Base {
+  function setUp() public override {
+    Base.setUp();
+    vault721.initialize(address(timelockController));
+    vm.prank(address(renderer));
+    vault721.initializeRenderer();
+    vm.prank(address(safeManager));
+    vault721.initializeManager();
+
+    userProxy = vault721.build(user);
+  }
+
+  function test_GetProxy() public {
+    address _userProxy = vault721.getProxy(user);
+    assertEq(_userProxy, userProxy, 'incorrect proxy gotten');
+  }
+
+  function test_GetHashState() public {
+    vm.mockCall(
+      address(renderer),
+      abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector),
+      abi.encode(bytes32(keccak256('testHash')))
+    );
+
+    vm.prank(address(safeManager));
+    vault721.updateVaultHashState(1);
+
+    HashState memory hashState = vault721.getHashState(1);
+
+    assertEq(hashState.lastBlockNumber, block.number, 'incorrect block number');
+    assertEq(hashState.lastBlockTimestamp, block.timestamp, 'incorrect time stamp');
+  }
+
+  function test_ContractURI() public {
+    string memory contractURI = vault721.contractURI();
+    assertEq(
+      contractURI,
+      'data:application/json;utf8,{"name": "Open Dollar Vaults","description": "Open Dollar is a DeFi lending protocol that enables borrowing against liquid staking tokens while earning staking rewards and enabling liquidity via Non-Fungible Vaults (NFVs).","image": "https://app.opendollar.com/collectionImage.png","external_link": "https://opendollar.com"}',
+      'incorrect returned string'
+    );
+  }
+}
+
+contract Unit_Vault721_UpdateVaultHashState is Base {
+  function setUp() public override {
+    Base.setUp();
+    vault721.initialize(address(timelockController));
+    vm.prank(address(renderer));
+    vault721.initializeRenderer();
+    vm.prank(address(safeManager));
+    vault721.initializeManager();
+
+    userProxy = vault721.build(user);
+  }
+
+  function test_UpdateHashState() public {
+    vm.mockCall(
+      address(renderer),
+      abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector),
+      abi.encode(bytes32(keccak256('testHash')))
+    );
+
+    vm.prank(address(safeManager));
+    vault721.updateVaultHashState(1);
+
+    HashState memory hashState = vault721.getHashState(1);
+
+    assertEq(hashState.lastBlockNumber, block.number, 'incorrect block number');
+    assertEq(hashState.lastBlockTimestamp, block.timestamp, 'incorrect time stamp');
+    assertEq(hashState.lastHash, bytes32(keccak256('testHash')), 'incorrect hash');
+  }
+
+  function test_UpdateHashState_Revert_OnlySafeManager() public {
+    vm.expectRevert(Vault721.NotSafeManager.selector);
+
+    vm.prank(address(user));
+    vault721.updateVaultHashState(1);
+  }
+}
+
+contract Unit_Vault721_GovernanceFunctions is Base {
+
+  struct Scenario {
+    address nftRenderer;
+    address oracleRelayer;
+    address taxCollector;
+    address collateralJoinFactory;
+    address user;
+  }
+
+  function setUp() public override {
+    Base.setUp();
+    vault721.initialize(address(timelockController));
+    vm.prank(address(renderer));
+    vault721.initializeRenderer();
+    vm.prank(address(safeManager));
+    vault721.initializeManager();
+
+    userProxy = vault721.build(user);
+  }
+
+  modifier happyPath(Scenario memory _scenario) {
+    vm.assume(_scenario.nftRenderer != address(0));
+    vm.assume(_scenario.oracleRelayer != address(0));
+    vm.assume(_scenario.taxCollector != address(0));
+    vm.assume(_scenario.collateralJoinFactory != address(0));
+    vm.assume(_scenario.user != address(0));
+    _;
+  }
+
+  function _mintNft(Scenario memory _scenario) internal returns(address userProxy) {
+
+    userProxy = vault721.build(_scenario.user);
+
+    vm.prank(address(safeManager));
+    vault721.mint(userProxy, 1);
+
+  }
+  
+  function test_UpdateNFTRenderer(Scenario memory _scenario) public happyPath(_scenario) {
+    vm.prank(address(timelockController));
+    vm.mockCall(address(_scenario.nftRenderer), abi.encodeWithSelector(NFTRenderer.setImplementation.selector), abi.encode());
+    vault721.updateNftRenderer(_scenario.nftRenderer,_scenario.oracleRelayer,  _scenario.taxCollector, _scenario.collateralJoinFactory);
+  }
+
+  function test_UpdateNFTRenderer_Revert_OnlyGovernance() public {
+    vm.mockCall(address(renderer), abi.encodeWithSelector(NFTRenderer.setImplementation.selector), abi.encode());
+    vm.prank(address(user));
+    vm.expectRevert(Vault721.NotGovernor.selector);
+    vault721.updateNftRenderer(address(1),address(1), address(1), address(1));
+  }
+
+    function test_UpdateNFTRenderer_Revert_ZeroAddress(Scenario memory _scenario) public {
+    vm.mockCall(address(renderer), abi.encodeWithSelector(NFTRenderer.setImplementation.selector), abi.encode());
+    vm.prank(address(timelockController));
+    vm.expectRevert(Vault721.ZeroAddress.selector);
+    vault721.updateNftRenderer(address(0),_scenario.oracleRelayer,  _scenario.taxCollector, _scenario.collateralJoinFactory);
+  }
+
+  function test_UpdateAllowList(Scenario memory _scenario)public happyPath(_scenario){
+  _mintNft(_scenario);
+
+  vm.prank(address(timelockController));
+  vault721.updateAllowlist(_scenario.user, true);
+
+    vm.warp(block.timestamp + 100000);
+
+   vm.mockCall(
+      address(renderer),
+      abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector),
+      abi.encode(bytes32(0))
+    );
+
+    vm.prank(_scenario.user);
+    // transfer token to verify allowlist was updated since there's no view function
+    vault721.transferFrom(_scenario.user, owner, 1);
+
+    assertEq(vault721.balanceOf(owner), 1, 'transfer not succesful');
+  }
+
+  function test_UpdateTimeDelay(Scenario memory _scenario, uint256 timeDelay) public happyPath(_scenario){
+    _mintNft(_scenario);
+    vm.assume(timeDelay > 10000000000);
+    vm.assume(notUnderOrOverflowAdd(timeDelay, int256(block.timestamp)));
+    vm.prank(address(timelockController));
+    vault721.updateTimeDelay(timeDelay);
+
+        
+
+   vm.mockCall(
+      address(renderer),
+      abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector),
+      abi.encode(bytes32(0))
+    );
+
+    vm.prank(_scenario.user);
+    // transfer token to verify blockDelay was updated since there's no view function
+    vm.expectRevert(Vault721.TimeDelayNotOver.selector);
+    vault721.transferFrom(_scenario.user, owner, 1);
+
+    vm.warp(block.timestamp + timeDelay);
+    vm.prank(_scenario.user);
+    vault721.transferFrom(_scenario.user, owner, 1);
+
+  assertEq(vault721.balanceOf(owner), 1, 'transfer not succesful');
   }
 }

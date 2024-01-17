@@ -105,7 +105,6 @@ contract Base is HaiTest {
     vm.assume(notOverflowMul(_scenario.cData.accumulatedRate, _newSafeDebt));
     uint256 _totalDebtIssued = _scenario.cData.accumulatedRate * _newSafeDebt;
 
-
     // safety
     vm.assume(notOverflowMul(_scenario.cData.accumulatedRate, _newSafeDebt));
     vm.assume(notOverflowMul(_newLockedCollateral, _scenario.cData.safetyPrice));
@@ -129,22 +128,23 @@ contract Unit_ODSafeManager_ViewFunctions is Base {
     _;
   }
 
-  function test_getSafes_PerCollateral(Scenario memory _scenario) public happyPath(_scenario){
+  function test_getSafes_PerCollateral(Scenario memory _scenario) public happyPath(_scenario) {
     uint256[] memory safes = safeManager.getSafes(_scenario.userProxy, _scenario.cType);
 
     assertEq(safes.length, 1, 'incorrect number of safes');
     assertEq(safes[0], 1, 'incorrect safe id');
   }
 
-    function test_getSafes(Scenario memory _scenario) public happyPath(_scenario){
+  function test_getSafes(Scenario memory _scenario) public happyPath(_scenario) {
     uint256[] memory safes = safeManager.getSafes(_scenario.userProxy);
 
     assertEq(safes.length, 1, 'incorrect number of safes');
     assertEq(safes[0], 1, 'incorrect safe id');
   }
 
-  function test_GetSafesData(Scenario memory _scenario)public happyPath(_scenario){
-    (uint256[] memory _safes, address[] memory _safeHandlers, bytes32[] memory _cTypes) = safeManager.getSafesData(_scenario.userProxy);
+  function test_GetSafesData(Scenario memory _scenario) public happyPath(_scenario) {
+    (uint256[] memory _safes, address[] memory _safeHandlers, bytes32[] memory _cTypes) =
+      safeManager.getSafesData(_scenario.userProxy);
 
     assertEq(_safes.length, 1, 'incorrect number of safes');
     assertEq(_safeHandlers.length, 1, 'incorrect number of safe handlers');
@@ -169,8 +169,6 @@ contract Unit_ODSafeManager_SAFEManagement is Base {
     vm.expectEmit(true, true, false, true);
 
     emit OpenSAFE(_scenario.user, _scenario.userProxy, 1);
-
-  
 
     _scenario.safeId = safeManager.openSAFE('i', _scenario.userProxy);
 
@@ -263,14 +261,12 @@ contract Unit_ODSafeManager_SAFEManagement is Base {
   event MoveSAFE(address indexed _sender, uint256 indexed _safeSrc, uint256 indexed _safeDst);
 
   function test_MoveSAFE(Scenario memory _scenario) public happyPath(_scenario) {
-
-    
     address newUserProxy = vault721.build(_scenario.rando);
     vm.prank(newUserProxy);
     uint256 safeId2 = safeManager.openSAFE(_scenario.cType, newUserProxy);
-        
-   vm.prank(newUserProxy);
-   safeManager.allowSAFE(safeId2, _scenario.userProxy, true);
+
+    vm.prank(newUserProxy);
+    safeManager.allowSAFE(safeId2, _scenario.userProxy, true);
 
     vm.expectEmit();
     emit MoveSAFE(address(_scenario.userProxy), _scenario.safeId, safeId2);
@@ -293,22 +289,21 @@ contract Unit_ODSafeManager_SAFEManagement is Base {
 
   event ProtectSAFE(address indexed _sender, uint256 indexed _safe, address _liquidationEngine, address _saviour);
 
-  function test_ProtectSafe(Scenario memory _scenario) public happyPath(_scenario){
+  function test_ProtectSafe(Scenario memory _scenario) public happyPath(_scenario) {
     address mockLiquidationEngine = address(0xc0ffee);
     address mockSavior = address(0x1337);
     vm.expectEmit();
     emit ProtectSAFE(_scenario.userProxy, _scenario.safeId, mockLiquidationEngine, mockSavior);
 
     vm.mockCall(
-      address(mockLiquidationEngine),
-      abi.encodeWithSelector(ILiquidationEngine.protectSAFE.selector),
-      abi.encode()
+      address(mockLiquidationEngine), abi.encodeWithSelector(ILiquidationEngine.protectSAFE.selector), abi.encode()
     );
 
     vm.prank(_scenario.userProxy);
     safeManager.protectSAFE(_scenario.safeId, mockLiquidationEngine, mockSavior);
   }
 }
+
 contract Unit_ODSafeManager_SystemManagement is Base {
   modifier happyPath(Scenario memory _scenario) {
     _assumeHappyPath(_scenario);
@@ -321,36 +316,24 @@ contract Unit_ODSafeManager_SystemManagement is Base {
     safeManager.allowHandler(_scenario.userProxy, true);
     safeManager.allowSAFE(_scenario.safeId, _scenario.userProxy, true);
     vm.mockCall(
-      address(mockSafeEngine),
-      abi.encodeWithSelector(ISAFEEngine.transferSAFECollateralAndDebt.selector),
-      abi.encode()
+      address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.transferSAFECollateralAndDebt.selector), abi.encode()
     );
 
-    vm.mockCall(
-      address(vault721),
-      abi.encodeWithSelector(IVault721.updateVaultHashState.selector),
-      abi.encode()
-    );
+    vm.mockCall(address(vault721), abi.encodeWithSelector(IVault721.updateVaultHashState.selector), abi.encode());
 
     safeManager.enterSystem(_scenario.userProxy, _scenario.safeId);
   }
 
-  function test_QuitSystem(Scenario memory _scenario) public happyPath(_scenario){
-        vm.startPrank(_scenario.userProxy);
+  function test_QuitSystem(Scenario memory _scenario) public happyPath(_scenario) {
+    vm.startPrank(_scenario.userProxy);
     safeManager.allowHandler(_scenario.userProxy, true);
     safeManager.allowSAFE(_scenario.safeId, _scenario.userProxy, true);
 
-       vm.mockCall(
-      address(mockSafeEngine),
-      abi.encodeWithSelector(ISAFEEngine.transferSAFECollateralAndDebt.selector),
-      abi.encode()
+    vm.mockCall(
+      address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.transferSAFECollateralAndDebt.selector), abi.encode()
     );
 
-       vm.mockCall(
-      address(vault721),
-      abi.encodeWithSelector(IVault721.updateVaultHashState.selector),
-      abi.encode()
-    );
+    vm.mockCall(address(vault721), abi.encodeWithSelector(IVault721.updateVaultHashState.selector), abi.encode());
 
     safeManager.quitSystem(_scenario.safeId, _scenario.userProxy);
   }
@@ -388,7 +371,9 @@ contract Unit_ODSafeManager_CollateralManagement is Base {
 
     vm.expectEmit();
 
-    emit ModifySAFECollateralization(_scenario.userProxy, _scenario.safeId, _scenario.deltaCollateral, _scenario.deltaDebt);
+    emit ModifySAFECollateralization(
+      _scenario.userProxy, _scenario.safeId, _scenario.deltaCollateral, _scenario.deltaDebt
+    );
 
     safeManager.modifySAFECollateralization(_scenario.safeId, (_scenario.deltaCollateral), (_scenario.deltaDebt), true);
   }
