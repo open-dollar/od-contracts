@@ -14,7 +14,7 @@ contract Base is HaiTest {
   address deployer = label('deployer');
   address owner = label('owner');
   address user = address(0xdeadce11);
-  address userProxy;
+  // address userProxy;
 
   Vault721 vault721;
   NFTRenderer renderer;
@@ -96,6 +96,8 @@ contract Unit_Vault721_Build is Base {
 }
 
 contract Unit_Vault721_Mint is Base {
+  address userProxy;
+
   function setUp() public override {
     Base.setUp();
     vault721.initialize(address(timelockController));
@@ -118,6 +120,8 @@ contract Unit_Vault721_Mint is Base {
 }
 
 contract Vault721_ViewFunctions is Base {
+  address userProxy;
+
   function setUp() public override {
     Base.setUp();
     vault721.initialize(address(timelockController));
@@ -158,9 +162,25 @@ contract Vault721_ViewFunctions is Base {
       'incorrect returned string'
     );
   }
+
+  function test_TokenURI() public {
+    address _userProxy = vault721.build(address(1));
+
+    vm.prank(address(safeManager));
+    vault721.mint(_userProxy, 1);
+
+    //mock call for test
+    vm.mockCall(address(renderer), abi.encodeWithSelector(NFTRenderer.render.selector), abi.encode('testURI'));
+
+    string memory tokenURI = vault721.tokenURI(1);
+
+    assertEq(tokenURI, 'testURI', 'incorrect token uri');
+  }
 }
 
 contract Unit_Vault721_UpdateVaultHashState is Base {
+  address userProxy;
+
   function setUp() public override {
     Base.setUp();
     vault721.initialize(address(timelockController));
@@ -198,13 +218,13 @@ contract Unit_Vault721_UpdateVaultHashState is Base {
 }
 
 contract Unit_Vault721_GovernanceFunctions is Base {
-
   struct Scenario {
     address nftRenderer;
     address oracleRelayer;
     address taxCollector;
     address collateralJoinFactory;
     address user;
+    address rando;
   }
 
   function setUp() public override {
@@ -214,8 +234,6 @@ contract Unit_Vault721_GovernanceFunctions is Base {
     vault721.initializeRenderer();
     vm.prank(address(safeManager));
     vault721.initializeManager();
-
-    userProxy = vault721.build(user);
   }
 
   modifier happyPath(Scenario memory _scenario) {
@@ -227,47 +245,48 @@ contract Unit_Vault721_GovernanceFunctions is Base {
     _;
   }
 
-  function _mintNft(Scenario memory _scenario) internal returns(address userProxy) {
-
-    userProxy = vault721.build(_scenario.user);
+  function _mintNft(Scenario memory _scenario) internal returns (address _userProxy) {
+    _userProxy = vault721.build(_scenario.user);
 
     vm.prank(address(safeManager));
-    vault721.mint(userProxy, 1);
-
+    vault721.mint(_userProxy, 1);
   }
-  
+
   function test_UpdateNFTRenderer(Scenario memory _scenario) public happyPath(_scenario) {
     vm.prank(address(timelockController));
-    vm.mockCall(address(_scenario.nftRenderer), abi.encodeWithSelector(NFTRenderer.setImplementation.selector), abi.encode());
-    vault721.updateNftRenderer(_scenario.nftRenderer,_scenario.oracleRelayer,  _scenario.taxCollector, _scenario.collateralJoinFactory);
+    vm.mockCall(
+      address(_scenario.nftRenderer), abi.encodeWithSelector(NFTRenderer.setImplementation.selector), abi.encode()
+    );
+    vault721.updateNftRenderer(
+      _scenario.nftRenderer, _scenario.oracleRelayer, _scenario.taxCollector, _scenario.collateralJoinFactory
+    );
   }
 
   function test_UpdateNFTRenderer_Revert_OnlyGovernance() public {
     vm.mockCall(address(renderer), abi.encodeWithSelector(NFTRenderer.setImplementation.selector), abi.encode());
     vm.prank(address(user));
     vm.expectRevert(Vault721.NotGovernor.selector);
-    vault721.updateNftRenderer(address(1),address(1), address(1), address(1));
+    vault721.updateNftRenderer(address(1), address(1), address(1), address(1));
   }
 
-    function test_UpdateNFTRenderer_Revert_ZeroAddress(Scenario memory _scenario) public {
+  function test_UpdateNFTRenderer_Revert_ZeroAddress(Scenario memory _scenario) public {
     vm.mockCall(address(renderer), abi.encodeWithSelector(NFTRenderer.setImplementation.selector), abi.encode());
     vm.prank(address(timelockController));
     vm.expectRevert(Vault721.ZeroAddress.selector);
-    vault721.updateNftRenderer(address(0),_scenario.oracleRelayer,  _scenario.taxCollector, _scenario.collateralJoinFactory);
+    vault721.updateNftRenderer(
+      address(0), _scenario.oracleRelayer, _scenario.taxCollector, _scenario.collateralJoinFactory
+    );
   }
 
-  function test_UpdateAllowList(Scenario memory _scenario)public happyPath(_scenario){
-  _mintNft(_scenario);
+  function test_UpdateAllowList(Scenario memory _scenario) public happyPath(_scenario) {
+    _mintNft(_scenario);
+    vm.prank(address(timelockController));
+    vault721.updateAllowlist(_scenario.user, true);
 
-  vm.prank(address(timelockController));
-  vault721.updateAllowlist(_scenario.user, true);
+    vm.warp(block.timestamp + 100_000);
 
-    vm.warp(block.timestamp + 100000);
-
-   vm.mockCall(
-      address(renderer),
-      abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector),
-      abi.encode(bytes32(0))
+    vm.mockCall(
+      address(renderer), abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector), abi.encode(bytes32(0))
     );
 
     vm.prank(_scenario.user);
@@ -277,30 +296,229 @@ contract Unit_Vault721_GovernanceFunctions is Base {
     assertEq(vault721.balanceOf(owner), 1, 'transfer not succesful');
   }
 
-  function test_UpdateTimeDelay(Scenario memory _scenario, uint256 timeDelay) public happyPath(_scenario){
+  function test_UpdateTimeDelay(Scenario memory _scenario, uint256 timeDelay) public happyPath(_scenario) {
     _mintNft(_scenario);
-    vm.assume(timeDelay > 10000000000);
+
+    vm.assume(timeDelay > 0);
     vm.assume(notUnderOrOverflowAdd(timeDelay, int256(block.timestamp)));
+
     vm.prank(address(timelockController));
     vault721.updateTimeDelay(timeDelay);
-
-        
-
-   vm.mockCall(
+    //update vault hash state so there's a time to check against
+    vm.prank(address(safeManager));
+    vm.mockCall(
       address(renderer),
       abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector),
-      abi.encode(bytes32(0))
+      abi.encode(bytes32('test-hash'))
     );
+    vault721.updateVaultHashState(1);
 
     vm.prank(_scenario.user);
-    // transfer token to verify blockDelay was updated since there's no view function
+    vault721.setApprovalForAll(_scenario.rando, true);
+
+    vm.prank(_scenario.rando);
+    // transfer token from rando to verify timeDelay was updated since there's no view function
     vm.expectRevert(Vault721.TimeDelayNotOver.selector);
+    vm.mockCall(
+      address(renderer),
+      abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector),
+      abi.encode(bytes32('test-hash'))
+    );
     vault721.transferFrom(_scenario.user, owner, 1);
 
     vm.warp(block.timestamp + timeDelay);
     vm.prank(_scenario.user);
+    vault721.setApprovalForAll(_scenario.rando, true);
+
+    vm.prank(_scenario.rando);
+    vm.mockCall(
+      address(renderer),
+      abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector),
+      abi.encode(bytes32('test-hash'))
+    );
     vault721.transferFrom(_scenario.user, owner, 1);
 
-  assertEq(vault721.balanceOf(owner), 1, 'transfer not succesful');
+    assertEq(vault721.balanceOf(owner), 1, 'transfer not succesful');
+  }
+
+  function test_UpdateBlockDelay(Scenario memory _scenario, uint8 blockDelay) public happyPath(_scenario) {
+    // hardcode previous hash into mock call for test
+    bytes32 previousHashState = 0x0508bed9fd4f78f10478c995115fdf0b087b42d661e8c6f27710c035187b029b;
+    _mintNft(_scenario);
+    vm.assume(notUnderOrOverflowAdd(blockDelay, int256(block.number)));
+
+    vm.prank(address(timelockController));
+    vault721.updateBlockDelay(blockDelay);
+
+    //add to allow list so that block delay will be checked
+    vm.prank(address(timelockController));
+    vault721.updateAllowlist(_scenario.user, true);
+
+    //update hash state with hardcoded value.
+
+    vm.mockCall(
+      address(renderer),
+      abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector),
+      abi.encode(bytes32(previousHashState))
+    );
+
+    vm.prank(address(safeManager));
+    vault721.updateVaultHashState(1);
+
+    // transfer token to verify blockDelay was updated since there's no view function
+
+    //advance to correct block
+    vm.roll(block.number + blockDelay + 1);
+
+    vm.prank(_scenario.user);
+    vm.mockCall(
+      address(renderer),
+      abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector),
+      abi.encode(bytes32(previousHashState))
+    );
+
+    vault721.transferFrom(_scenario.user, owner, 1);
+
+    assertEq(vault721.balanceOf(owner), 1, 'transfer not succesful');
+  }
+
+  function test_UpdateContractURI() public {
+    vm.prank(address(timelockController));
+    vault721.updateContractURI('testURI');
+    assertEq(vault721.contractURI(), 'data:application/json;utf8,testURI', 'incorrect uri');
+  }
+
+  function test_SetSafeManager() public {
+    vm.prank(address(timelockController));
+    vault721.setSafeManager(address(1));
+    assertEq(address(vault721.safeManager()), address(1), 'incorrect safe manager');
+  }
+
+  function test_SetNftRenderer() public {
+    vm.prank(address(timelockController));
+    vault721.setNftRenderer(address(1));
+    assertEq(address(vault721.nftRenderer()), address(1), 'incorrect address set');
+  }
+}
+
+contract Unit_Vault721_TransferFrom is Base {
+  address userProxy;
+
+  struct Scenario {
+    address user1;
+    address user2;
+    uint256 tokenId1;
+    uint8 blockDelay;
+    uint256 timeDelay;
+  }
+
+  function setUp() public override {
+    Base.setUp();
+    vault721.initialize(address(timelockController));
+    vm.prank(address(renderer));
+    vault721.initializeRenderer();
+    vm.prank(address(safeManager));
+    vault721.initializeManager();
+  }
+
+  modifier basicLimits(Scenario memory _scenario) {
+    vm.assume(_scenario.user1 != address(0));
+    vm.assume(_scenario.user2 != address(0));
+    vm.assume(_scenario.tokenId1 != uint256(0));
+    vm.assume(_scenario.blockDelay > 0);
+    vm.assume(_scenario.timeDelay > 0);
+    vm.assume(notUnderOrOverflowAdd(_scenario.blockDelay, int256(block.number)));
+    vm.assume(notUnderOrOverflowAdd(_scenario.timeDelay, int256(block.timestamp)));
+    _;
+  }
+
+  function _mintNft(Scenario memory _scenario) internal returns (address _userProxy) {
+    _userProxy = vault721.build(_scenario.user1);
+
+    vm.prank(address(safeManager));
+    vault721.mint(_userProxy, _scenario.tokenId1);
+  }
+
+  function test_TransferFrom(Scenario memory _scenario) public basicLimits(_scenario) {
+    _mintNft(_scenario);
+    vault721.build(_scenario.user2);
+    vm.prank(_scenario.user1);
+    vault721.setApprovalForAll(_scenario.user2, true);
+
+    vm.prank(_scenario.user2);
+    vm.mockCall(
+      address(renderer), abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector), abi.encode(bytes32(0))
+    );
+
+    vault721.transferFrom(_scenario.user1, _scenario.user2, _scenario.tokenId1);
+  }
+
+  function test_TransferFrom_Revert_BlockDelayNotReached(Scenario memory _scenario) public basicLimits(_scenario) {
+    // hardcode previous hash into mock call for test
+    bytes32 previousHashState = 0x0508bed9fd4f78f10478c995115fdf0b087b42d661e8c6f27710c035187b029b;
+    _mintNft(_scenario);
+
+    vm.prank(address(timelockController));
+    vault721.updateBlockDelay(_scenario.blockDelay);
+
+    //add to allow list so that block delay will be checked
+    vm.prank(address(timelockController));
+    vault721.updateAllowlist(_scenario.user1, true);
+
+    //update hash state with hardcoded value.
+
+    vm.mockCall(
+      address(renderer),
+      abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector),
+      abi.encode(bytes32(previousHashState))
+    );
+
+    vm.prank(address(safeManager));
+
+    vault721.updateVaultHashState(1);
+    vm.prank(_scenario.user1);
+
+    vm.expectRevert(Vault721.BlockDelayNotOver.selector);
+
+    vm.mockCall(
+      address(renderer),
+      abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector),
+      abi.encode(bytes32(previousHashState))
+    );
+
+    vault721.transferFrom(_scenario.user1, _scenario.user2, _scenario.tokenId1);
+    assertEq(vault721.balanceOf(_scenario.user1), 1, 'token transferred');
+  }
+
+  function test_TransferFrom_Revert_TimeDelayNotOver(Scenario memory _scenario) public basicLimits(_scenario) {
+    _mintNft(_scenario);
+
+    vm.prank(address(timelockController));
+    vault721.updateTimeDelay(_scenario.timeDelay);
+
+    //update vault hash state so there's a time to check against
+    vm.prank(address(safeManager));
+    vm.mockCall(
+      address(renderer),
+      abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector),
+      abi.encode(bytes32('test-hash'))
+    );
+
+    vault721.updateVaultHashState(_scenario.tokenId1);
+
+    vm.prank(_scenario.user1);
+    vault721.setApprovalForAll(_scenario.user2, true);
+
+    vm.prank(_scenario.user2);
+
+    vm.expectRevert(Vault721.TimeDelayNotOver.selector);
+    vm.mockCall(
+      address(renderer),
+      abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector),
+      abi.encode(bytes32('test-hash'))
+    );
+    vault721.transferFrom(_scenario.user1, _scenario.user2, _scenario.tokenId1);
+
+    assertEq(vault721.balanceOf(_scenario.user1), 1, 'transfer succesful');
   }
 }
