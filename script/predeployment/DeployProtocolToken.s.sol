@@ -24,7 +24,6 @@ import {IODCreate2Factory} from '@interfaces/factories/IODCreate2Factory.sol';
  * Vault721
  * cast create2 --starts-with 0005AFE --case-sensitive --deployer 0x6EDb251053B4F7670C98e18bbEA20818367b4C0f --init-code-hash 0x72826cfc58dad84e93750b991b5b55307bccd08ec741ca412a5b01a465ac2c65
  */
-
 contract DeployProtocolTokenMainnet is Script, Test {
   IODCreate2Factory internal _create2 = IODCreate2Factory(MAINNET_CREATE2FACTORY);
 
