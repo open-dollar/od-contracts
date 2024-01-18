@@ -2,6 +2,8 @@
 pragma solidity 0.8.19;
 
 abstract contract SepoliaContracts {
+  address public SystemCoin_Address = 0x00D0f23771915A857d6483C7734838b87Fc90fD2;
+  address public ProtocolToken_Address = 0x00D2363Ea723d8Bc3D664b87Cf51A04033BD0Ef1;
   address public ChainlinkRelayerFactory_Address = 0x7C7De459742428AE0786d1d2aCF5100Db1EB0387;
   address public DenominatedOracleFactory_Address = 0xd8d4D616dB32164362Cf9904a6c1936a807B0297;
   address public DelayedOracleFactory_Address = 0x4eB15BDeb24031271c61b6f1671E08DFc809e979;
