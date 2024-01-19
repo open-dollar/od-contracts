@@ -117,7 +117,6 @@ abstract contract Base is HaiTest {
 
     stdstore.target(address(liquidationEngine)).sig(ILiquidationEngine.cParams.selector).with_key(_cType).depth(2)
       .checked_write(_liquidationQuantity);
-
   }
 
   function _mockSafeEngineCData(
