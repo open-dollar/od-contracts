@@ -510,7 +510,6 @@ contract Unit_Vault721_TransferFrom is Base {
     vault721.setApprovalForAll(_scenario.user2, true);
 
     vm.prank(_scenario.user2);
-
     vm.expectRevert(Vault721.TimeDelayNotOver.selector);
     vm.mockCall(
       address(renderer),
