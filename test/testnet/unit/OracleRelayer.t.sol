@@ -149,6 +149,16 @@ contract Unit_OracleRelayer_Constructor is Base {
 
     new OracleRelayer(address(mockSafeEngine), IBaseOracle(address(0)), oracleRelayerParams);
   }
+
+  function test_listCollateralTypes() public {
+    bytes32[] memory collateralTypes = oracleRelayer.collateralList();
+    assertEq(collateralTypes.length, 0);
+
+    // add a collateral type
+    OracleRelayerForTest(address(oracleRelayer)).addToCollateralList(collateralType);
+    collateralTypes = oracleRelayer.collateralList();
+    assertEq(collateralTypes.length, 1);
+  }
 }
 
 contract Unit_OracleRelayer_ModifyParameters is Base {
