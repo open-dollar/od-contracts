@@ -117,6 +117,7 @@ abstract contract Base is HaiTest {
 
     stdstore.target(address(liquidationEngine)).sig(ILiquidationEngine.cParams.selector).with_key(_cType).depth(2)
       .checked_write(_liquidationQuantity);
+
   }
 
   function _mockSafeEngineCData(
@@ -346,6 +347,9 @@ contract Unit_LiquidationEngine_ModifyParameters is Base {
     ILiquidationEngine.LiquidationEngineCollateralParams memory _params = liquidationEngine.cParams(_cType);
 
     assertEq(abi.encode(_fuzz), abi.encode(_params));
+
+    bytes32[] memory collateralList = liquidationEngine.collateralList();
+    assertEq(collateralList.length, 1);
   }
 
   function test_Revert_ModifyParameters_LiquidationQuantity(
