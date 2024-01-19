@@ -27,3 +27,5 @@ docs/src/src/
 docs/src/static
 
 test/testnet/simulations/pid-controller/
+
+.idea/
