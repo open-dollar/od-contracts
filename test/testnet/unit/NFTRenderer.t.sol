@@ -61,6 +61,8 @@ contract Unit_NFTRenderer_Deployment is Base {
   }
 }
 
-contract Unit_NFTRenderer_RenderParams is Base {
-  function test_RenderParams() public {}
+contract Unit_NFTRenderer_GetVaultCTypeAndCollateralAndDebt is Base {
+  function test_getVaultCTypeAndCollateralAndDebt() public {
+    
+  }
 }
