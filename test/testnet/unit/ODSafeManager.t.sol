@@ -80,11 +80,7 @@ contract Base is HaiTest {
     vm.prank(_scenario.user);
     _scenario.userProxy = vault721.build();
     vm.prank(_scenario.userProxy);
-        vm.mockCall(
-      address(vault721),
-      abi.encodeWithSelector(IVault721.mint.selector),
-      abi.encode()
-    );  
+    vm.mockCall(address(vault721), abi.encodeWithSelector(IVault721.mint.selector), abi.encode());
     _scenario.safeId = safeManager.openSAFE(_scenario.cType, _scenario.userProxy);
   }
 
@@ -175,11 +171,7 @@ contract Unit_ODSafeManager_SAFEManagement is Base {
 
     emit OpenSAFE(_scenario.user, _scenario.userProxy, 1);
 
-    vm.mockCall(
-      address(vault721),
-      abi.encodeWithSelector(IVault721.mint.selector),
-      abi.encode()
-    );  
+    vm.mockCall(address(vault721), abi.encodeWithSelector(IVault721.mint.selector), abi.encode());
 
     _scenario.safeId = safeManager.openSAFE('i', _scenario.userProxy);
 
