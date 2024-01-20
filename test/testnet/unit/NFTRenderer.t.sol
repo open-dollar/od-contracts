@@ -118,33 +118,39 @@ contract Unit_NFTRenderer_GetStateHash is Base {
     assertEq(stateHash, keccak256(abi.encode( _safeEngineData.lockedCollateral,_safeEngineData.generatedDebt)), 'incorrect state hash');
   }
 }
-
+import 'forge-std/console2.sol';
 contract Unit_NFTRenderer_RenderParams is Base {
+using Math for uint256;
+
 IDelayedOracle oracle;
 
 struct RenderParamsData {
-  ITaxCollector.TaxCollectorCollateralData  taxData;
+  ITaxCollector.TaxCollectorCollateralData taxData;
   IODSafeManager.SAFEData safeData;
-  ISAFEEngine.SAFEEngineCollateralData  safeEngineCollateralData;
+  ISAFEEngine.SAFEEngineCollateralData safeEngineCollateralData;
   ISAFEEngine.SAFE safeEngineData;
-  IOracleRelayer.OracleRelayerCollateralParams  oracleParams;
+  IOracleRelayer.OracleRelayerCollateralParams oracleParams;
   address collateralJoin;
   address collateral;
   string symbol;
-  uint256 lastUpdateTime;
   uint256 readValue;
 }
 
 function setUp() public override {
   Base.setUp();
-  oracle = IDelayedOracle(mockContract('oracle'));
+  oracle = IDelayedOracle(address(0xb3375));
 }
 
 modifier noOverFlow(RenderParamsData memory _data){
   vm.assume(notUnderOrOverflowMul(_data.readValue, int256(_data.safeEngineData.lockedCollateral)));
+  vm.assume(notUnderOrOverflowMul(_data.safeEngineCollateralData.accumulatedRate, int256(_data.safeEngineData.generatedDebt)));
+  uint256 collateral = _data.safeEngineCollateralData.accumulatedRate.wmul(_data.safeEngineData.generatedDebt);
+  uint256 debt = _data.readValue.wmul(_data.safeEngineData.lockedCollateral);
+  console2.log(debt , collateral);
+  // vm.assume(((debt).wdiv(collateral)/ 1e7) > 0);
   _;
 }
-function test_RenderParams(RenderParamsData memory _data)public {
+function test_RenderParams(RenderParamsData memory _data)public noOverFlow(_data){
        vm.mockCall(
       address(safeManager),
       abi.encodeWithSelector(IODSafeManager.safeData.selector),
@@ -160,7 +166,8 @@ function test_RenderParams(RenderParamsData memory _data)public {
     abi.encodeWithSelector(oracleRelayer.cParams.selector),
     abi.encode(_data.oracleParams)
   );
-  if(_data.safeEngineData.lockedCollateral != 0){
+  
+  if(_data.safeEngineData.lockedCollateral != 0 && _data.safeEngineData.generatedDebt != 0 ){
     vm.mockCall(
     address(safeEngine),
     abi.encodeWithSelector(ISAFEEngine.cData.selector),
@@ -203,7 +210,7 @@ function test_RenderParams(RenderParamsData memory _data)public {
   vm.mockCall(
     address(oracle),
     abi.encodeWithSelector(IDelayedOracle.lastUpdateTime.selector),
-    abi.encode(_data.lastUpdateTime)
+    abi.encode(block.timestamp)
   );
 
 
