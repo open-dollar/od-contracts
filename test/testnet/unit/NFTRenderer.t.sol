@@ -145,7 +145,7 @@ modifier noOverFlow(RenderParamsData memory _data){
   _;
 }
 function test_RenderParams(RenderParamsData memory _data)public {
-    vm.mockCall(
+       vm.mockCall(
       address(safeManager),
       abi.encodeWithSelector(IODSafeManager.safeData.selector),
       abi.encode(_data.safeData)
@@ -155,12 +155,26 @@ function test_RenderParams(RenderParamsData memory _data)public {
       abi.encodeWithSelector(ISAFEEngine.safes.selector),
       abi.encode(_data.safeEngineData)
     ); 
-
-     vm.mockCall(
+    vm.mockCall(
     address(oracleRelayer),
     abi.encodeWithSelector(oracleRelayer.cParams.selector),
     abi.encode(_data.oracleParams)
   );
+  if(_data.safeEngineData.lockedCollateral != 0){
+    vm.mockCall(
+    address(safeEngine),
+    abi.encodeWithSelector(ISAFEEngine.cData.selector),
+    abi.encode(_data.safeEngineCollateralData)
+    );
+
+
+    vm.mockCall(
+    address(oracle),
+    abi.encodeWithSelector(IBaseOracle.read.selector),
+    abi.encode(_data.readValue)
+  );
+  }
+
 
   vm.mockCall(
     address(collateralJoinFactory),
@@ -192,11 +206,6 @@ function test_RenderParams(RenderParamsData memory _data)public {
     abi.encode(_data.lastUpdateTime)
   );
 
-    vm.mockCall(
-    address(oracle),
-    abi.encodeWithSelector(IBaseOracle.read.selector),
-    abi.encode(_data.readValue)
-  );
 
   NFTRenderer.VaultParams memory params = nftRenderer.renderParams(1);
 }
