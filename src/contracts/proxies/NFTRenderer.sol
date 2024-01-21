@@ -15,6 +15,7 @@ import {ICollateralJoinFactory} from '@interfaces/factories/ICollateralJoinFacto
 import {ICollateralJoin} from '@interfaces/utils/ICollateralJoin.sol';
 import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
 
+import 'forge-std/console2.sol';
 contract NFTRenderer {
   using Strings for uint256;
   using Math for uint256;
@@ -168,11 +169,15 @@ contract NFTRenderer {
       uint256 ratio;
       if (collateral != 0 && debt != 0) {
         ISAFEEngine.SAFEEngineCollateralData memory cTypeData = _safeEngine.cData(cType);
+        console2.log('collateral', collateral);
+        console2.log('oracle read', oracle.read());
+        console2.log('debt', debt);
+        console2.log('accum rate', cTypeData.accumulatedRate);
         ratio = ((collateral.wmul(oracle.read())).wdiv(debt.wmul(cTypeData.accumulatedRate))) / 1e7; // _RAY to _WAD conversion
       } else {
         ratio = 0;
       }
-
+      console2.log('ratio', ratio);
       IERC20Metadata token = ICollateralJoin(_collateralJoinFactory.collateralJoins(cType)).collateral();
       params.symbol = token.symbol();
 

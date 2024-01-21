@@ -8,6 +8,7 @@ import {Vault721} from '@contracts/proxies/Vault721.sol';
 import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
+import {OracleForTest}  from '@contracts/for-test/OracleForTest.sol';
 import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {ITaxCollector} from '@interfaces/ITaxCollector.sol';
@@ -16,7 +17,7 @@ import {ICollateralJoin} from '@interfaces/utils/ICollateralJoin.sol';
 import {CollateralJoin} from '@contracts/utils/CollateralJoin.sol';
 import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
 
-import {Math} from '@libraries/Math.sol';
+import {Math, WAD, RAY} from '@libraries/Math.sol';
 import {DateTime} from '@libraries/DateTime.sol';
 import {Strings} from '@openzeppelin/utils/Strings.sol';
 import {Base64} from '@openzeppelin/utils/Base64.sol';
@@ -47,7 +48,7 @@ contract Base is HaiTest {
 
     safeManager = IODSafeManager(mockContract('IODSafeManager'));
     safeEngine = ISAFEEngine(mockContract('SAFEEngine'));
-    oracleRelayer = IOracleRelayer(mockContract('oracleRelayer'));
+    oracleRelayer = IOracleRelayer(address(new OracleForTest(WAD)));
     taxCollector = ITaxCollector(mockContract('taxCollector'));
     collateralJoinFactory = ICollateralJoinFactory(mockContract('collateralJoinFactory'));
     vault721 = IVault721(address(new Vault721()));
@@ -122,8 +123,6 @@ import 'forge-std/console2.sol';
 contract Unit_NFTRenderer_RenderParams is Base {
 using Math for uint256;
 
-IDelayedOracle oracle;
-
 struct RenderParamsData {
   ITaxCollector.TaxCollectorCollateralData taxData;
   IODSafeManager.SAFEData safeData;
@@ -136,20 +135,16 @@ struct RenderParamsData {
   uint256 readValue;
 }
 
-function setUp() public override {
-  Base.setUp();
-  oracle = IDelayedOracle(address(0xb3375));
-}
 
 modifier noOverFlow(RenderParamsData memory _data){
-  vm.assume(notUnderOrOverflowMul(_data.readValue, int256(_data.safeEngineData.lockedCollateral)));
-  vm.assume(notUnderOrOverflowMul(_data.safeEngineCollateralData.accumulatedRate, int256(_data.safeEngineData.generatedDebt)));
-  uint256 collateral = _data.safeEngineCollateralData.accumulatedRate.wmul(_data.safeEngineData.generatedDebt);
-  uint256 debt = _data.readValue.wmul(_data.safeEngineData.lockedCollateral);
-  console2.log(debt , collateral);
-  // vm.assume(((debt).wdiv(collateral)/ 1e7) > 0);
+  _data.oracleParams.oracle = IDelayedOracle(address(oracleRelayer));
+
+  vm.assume(notUnderOrOverflowMul(_data.safeEngineData.lockedCollateral, Math.toInt(_data.oracleParams.oracle.read())));
+  vm.assume(notUnderOrOverflowMul(_data.safeEngineData.generatedDebt, Math.toInt(_data.safeEngineCollateralData.accumulatedRate)));
+  vm.assume(_data.safeEngineData.lockedCollateral.wmul(_data.oracleParams.oracle.read()) > _data.safeEngineData.generatedDebt.wmul(_data.safeEngineCollateralData.accumulatedRate));
   _;
 }
+
 function test_RenderParams(RenderParamsData memory _data)public noOverFlow(_data){
        vm.mockCall(
       address(safeManager),
@@ -167,7 +162,7 @@ function test_RenderParams(RenderParamsData memory _data)public noOverFlow(_data
     abi.encode(_data.oracleParams)
   );
   
-  if(_data.safeEngineData.lockedCollateral != 0 && _data.safeEngineData.generatedDebt != 0 ){
+  // if(_data.safeEngineData.lockedCollateral != 0 && _data.safeEngineData.generatedDebt != 0 ){
     vm.mockCall(
     address(safeEngine),
     abi.encodeWithSelector(ISAFEEngine.cData.selector),
@@ -175,12 +170,12 @@ function test_RenderParams(RenderParamsData memory _data)public noOverFlow(_data
     );
 
 
-    vm.mockCall(
-    address(oracle),
-    abi.encodeWithSelector(IBaseOracle.read.selector),
-    abi.encode(_data.readValue)
-  );
-  }
+    // vm.mockCall(
+    // address(_data.oracleParams.oracle),
+    // abi.encodeWithSelector(IBaseOracle.read.selector),
+    // abi.encode(_data.readValue)
+  // );
+  // }
 
 
   vm.mockCall(
@@ -195,11 +190,7 @@ function test_RenderParams(RenderParamsData memory _data)public noOverFlow(_data
     abi.encode(address(_data.collateral))
   );
 
-  vm.mockCall(
-    address(taxCollector),
-    abi.encodeWithSelector(ITaxCollector.cData.selector),
-    abi.encode(_data.taxData)
-  );
+
 
   vm.mockCall(
     address(_data.collateral),
@@ -208,9 +199,15 @@ function test_RenderParams(RenderParamsData memory _data)public noOverFlow(_data
   );
 
   vm.mockCall(
-    address(oracle),
+    address(_data.oracleParams.oracle),
     abi.encodeWithSelector(IDelayedOracle.lastUpdateTime.selector),
     abi.encode(block.timestamp)
+  );
+
+    vm.mockCall(
+    address(taxCollector),
+    abi.encodeWithSelector(ITaxCollector.cData.selector),
+    abi.encode(_data.taxData)
   );
 
 
