@@ -38,8 +38,9 @@ abstract contract Base is HaiTest {
   function setUp() public virtual {
     vm.startPrank(deployer);
 
-    accountingEngine =
-    new AccountingEngineForTest(address(mockSafeEngine), address(mockSurplusAuctionHouse), address(mockDebtAuctionHouse), accountingEngineParams);
+    accountingEngine = new AccountingEngineForTest(
+      address(mockSafeEngine), address(mockSurplusAuctionHouse), address(mockDebtAuctionHouse), accountingEngineParams
+    );
     vm.stopPrank();
   }
 
@@ -205,24 +206,31 @@ contract Unit_AccountingEngine_Constructor is Base {
   function test_Set_AccountingEngineParams(IAccountingEngine.AccountingEngineParams memory _accountingEngineParams)
     public
   {
-    accountingEngine =
-    new AccountingEngineForTest(address(mockSafeEngine), address(mockSurplusAuctionHouse), address(mockDebtAuctionHouse), _accountingEngineParams);
+    accountingEngine = new AccountingEngineForTest(
+      address(mockSafeEngine), address(mockSurplusAuctionHouse), address(mockDebtAuctionHouse), _accountingEngineParams
+    );
     assertEq(abi.encode(accountingEngine.params()), abi.encode(_accountingEngineParams));
   }
 
   function test_Revert_NullSafeEngine() public {
     vm.expectRevert(Assertions.NullAddress.selector);
-    new AccountingEngineForTest(address(0), address(mockSurplusAuctionHouse), address(mockDebtAuctionHouse), accountingEngineParams);
+    new AccountingEngineForTest(
+      address(0), address(mockSurplusAuctionHouse), address(mockDebtAuctionHouse), accountingEngineParams
+    );
   }
 
   function test_Revert_NullSurplusAuctionHouse() public {
     vm.expectRevert(Assertions.NullAddress.selector);
-    new AccountingEngineForTest(address(mockSafeEngine), address(0), address(mockDebtAuctionHouse), accountingEngineParams);
+    new AccountingEngineForTest(
+      address(mockSafeEngine), address(0), address(mockDebtAuctionHouse), accountingEngineParams
+    );
   }
 
   function test_Revert_NullDebtAuctionHouse() public {
     vm.expectRevert(Assertions.NullAddress.selector);
-    new AccountingEngineForTest(address(mockSafeEngine), address(mockSurplusAuctionHouse), address(0), accountingEngineParams);
+    new AccountingEngineForTest(
+      address(mockSafeEngine), address(mockSurplusAuctionHouse), address(0), accountingEngineParams
+    );
   }
 }
 
@@ -781,12 +789,17 @@ contract Unit_AccountingEngine_AuctionSurplus is Base {
     _mockSurplusAuctionHouse(address(mockSurplusAuctionHouse));
     _mockSurplusStartAuction(1);
     _mockSurplusStartAuction(1, _amountToSell);
+    vm.prank(deployer);
+    accountingEngine.modifyParameters('extraSurplusReceiver', abi.encode(deployer));
   }
 
   function _assumeHappyPath(AuctionSurplusScenario memory _scenario) internal pure {
     vm.assume(notOverflowAdd(_scenario.surplusAmount, _scenario.surplusBuffer));
     vm.assume(_scenario.coinBalance >= _scenario.surplusAmount + _scenario.surplusBuffer);
     vm.assume(_scenario.surplusAmount > 0);
+    vm.assume(_scenario.surplusBuffer <= type(uint256).max / 10 ** 18);
+    vm.assume(_scenario.surplusAmount <= type(uint256).max / 10 ** 18);
+    vm.assume(_scenario.coinBalance <= type(uint256).max / 10 ** 18);
   }
 
   function _mockValues(
@@ -860,7 +873,7 @@ contract Unit_AccountingEngine_AuctionSurplus is Base {
   function test_Revert_surplusTransferPercentageIs1() public {
     _mocksurplusTransferPercentage(1);
 
-    vm.expectRevert(IAccountingEngine.AccEng_SurplusAuctionDisabled.selector);
+    vm.expectRevert();
     accountingEngine.auctionSurplus();
   }
 

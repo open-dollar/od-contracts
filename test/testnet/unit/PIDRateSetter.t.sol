@@ -26,8 +26,9 @@ contract Base is HaiTest {
 
   function _createDefaulPIDRateSetter() internal returns (PIDRateSetter _pidRateSetter) {
     vm.prank(deployer);
-    _pidRateSetter =
-    new PIDRateSetter(address(mockOracleRelayer), address(mockPIDController), IPIDRateSetter.PIDRateSetterParams(periodSize));
+    _pidRateSetter = new PIDRateSetter(
+      address(mockOracleRelayer), address(mockPIDController), IPIDRateSetter.PIDRateSetterParams(periodSize)
+    );
   }
 
   function setUp() public virtual {

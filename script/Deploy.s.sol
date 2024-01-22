@@ -13,7 +13,6 @@ import {Script} from 'forge-std/Script.sol';
 import {Common} from '@script/Common.s.sol';
 import {SepoliaParams} from '@script/SepoliaParams.s.sol';
 import {MainnetParams} from '@script/MainnetParams.s.sol';
-import {Create2Factory} from '@contracts/utils/Create2Factory.sol';
 
 abstract contract Deploy is Common, Script {
   function setupEnvironment() public virtual {}
@@ -23,6 +22,10 @@ abstract contract Deploy is Common, Script {
   function run() public {
     deployer = vm.addr(_deployerPk); // ARB_SEPOLIA_DEPLOYER_PK
     vm.startBroadcast(deployer);
+
+    // creation bytecode
+    _systemCoinInitCode = type(OpenDollar).creationCode;
+    _vault721InitCode = type(Vault721).creationCode;
 
     // set governor to deployer during deployment
     governor = address(0);
@@ -34,7 +37,7 @@ abstract contract Deploy is Common, Script {
     inputs[1] = 'rev-parse';
     inputs[2] = 'HEAD';
 
-    // bytes memory res = vm.ffi(inputs);
+    _chainId = getChainId();
 
     // Deploy oracle factories used to setup the environment
     deployOracleFactories();
@@ -68,8 +71,10 @@ abstract contract Deploy is Common, Script {
       _setupCollateral(_cType);
     }
 
-    // Mint initial ODG airdrop
-    mintAirdrop();
+    // Mint initial ODG airdrop Anvil
+    if (_chainId == 31_337) {
+      mintAirdrop();
+    }
 
     // Deploy contracts related to the SafeManager usecase
     deployProxyContracts();
@@ -77,7 +82,7 @@ abstract contract Deploy is Common, Script {
     // Deploy and setup contracts that rely on deployed environment
     setupPostEnvironment();
 
-    if (getChainId() == 42_161) {
+    if (_chainId == 42_161) {
       // mainnet: revoke deployer, authorize governor
       _revokeAllTo(governor);
     } else {
@@ -93,17 +98,19 @@ abstract contract Deploy is Common, Script {
 
 contract DeployMainnet is MainnetParams, Deploy {
   function setUp() public virtual {
+    // set create2 factory
+    create2 = IODCreate2Factory(MAINNET_CREATE2FACTORY);
+    protocolToken = IProtocolToken(MAINNET_PROTOCOL_TOKEN);
+
     _deployerPk = uint256(vm.envBytes32('ARB_MAINNET_DEPLOYER_PK'));
     chainId = 42_161;
-    _create2Factory = Create2Factory(MAINNET_CREATE2_FACTORY);
-    salt1 = MAINNET_SALT_SYSTEMCOIN;
-    salt2 = MAINNET_SALT_PROTOCOLTOKEN;
-    salt3 = MAINNET_SALT_VAULT721;
-  }
-
-  function mintAirdrop() public virtual override {
-    require(DAO_SAFE != address(0), 'DAO zeroAddress');
-    protocolToken.mint(DAO_SAFE, AIRDROP_AMOUNT);
+    if (SEMI_RANDOM_SALT == 0) {
+      _systemCoinSalt = MAINNET_SALT_SYSTEMCOIN;
+      _vault721Salt = MAINNET_SALT_VAULT721;
+    } else {
+      _systemCoinSalt = getSemiRandSalt();
+      _vault721Salt = getSemiRandSalt();
+    }
   }
 
   // Setup oracle feeds
@@ -156,24 +163,25 @@ contract DeployMainnet is MainnetParams, Deploy {
   function setupPostEnvironment() public virtual override updateParams {}
 }
 
-contract DeployGoerli is SepoliaParams, Deploy {
+contract DeploySepolia is SepoliaParams, Deploy {
   using FixedPointMathLib for uint256;
 
   IBaseOracle public chainlinkEthUSDPriceFeed;
 
   function setUp() public virtual {
+    // set create2 factory
+    create2 = IODCreate2Factory(TEST_CREATE2FACTORY);
+    protocolToken = IProtocolToken(SEPOLIA_PROTOCOL_TOKEN);
+
     _deployerPk = uint256(vm.envBytes32('ARB_SEPOLIA_DEPLOYER_PK'));
     chainId = 421_614;
-    _create2Factory = Create2Factory(SEPOLIA_CREATE2_FACTORY);
-    salt1 = SEPOLIA_SALT_SYSTEMCOIN;
-    salt2 = SEPOLIA_SALT_PROTOCOLTOKEN;
-    salt3 = SEPOLIA_SALT_VAULT721;
-  }
-
-  function mintAirdrop() public virtual override {
-    protocolToken.mint(H, AIRDROP_AMOUNT / 3);
-    protocolToken.mint(J, AIRDROP_AMOUNT / 3);
-    protocolToken.mint(P, AIRDROP_AMOUNT / 3);
+    if (SEMI_RANDOM_SALT == 0) {
+      _systemCoinSalt = SEPOLIA_SALT_SYSTEMCOIN;
+      _vault721Salt = SEPOLIA_SALT_VAULT721;
+    } else {
+      _systemCoinSalt = getSemiRandSalt();
+      _vault721Salt = getSemiRandSalt();
+    }
   }
 
   // Setup oracle feeds
@@ -190,7 +198,6 @@ contract DeployGoerli is SepoliaParams, Deploy {
     // to USD - Sepolia does not have Chainlink feeds now
     chainlinkEthUSDPriceFeed =
       chainlinkRelayerFactory.deployChainlinkRelayer(SEPOLIA_CHAINLINK_ETH_USD_FEED, ORACLE_INTERVAL_TEST);
-    // chainlinkEthUSDPriceFeed = new OracleForTestnet(1815e18);
 
     // to ETH
     OracleForTestnet _arbETHPriceFeed = new OracleForTestnet(GOERLI_ARB_ETH_PRICE_FEED);

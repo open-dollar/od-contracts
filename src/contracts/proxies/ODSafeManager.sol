@@ -5,6 +5,7 @@ import {SAFEHandler} from '@contracts/proxies/SAFEHandler.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ILiquidationEngine} from '@interfaces/ILiquidationEngine.sol';
 import {IVault721} from '@interfaces/proxies/IVault721.sol';
+import {ITaxCollector} from '@interfaces/ITaxCollector.sol';
 
 import {Math} from '@libraries/Math.sol';
 import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
@@ -28,6 +29,8 @@ contract ODSafeManager is IODSafeManager {
   // --- ERC721 ---
   IVault721 public vault721;
 
+  address public taxCollector;
+
   uint256 internal _safeId; // Auto incremental
   mapping(address _safeOwner => EnumerableSet.UintSet) private _usrSafes;
   /// @notice Mapping of user addresses to their enumerable set of safes per collateral type
@@ -36,11 +39,13 @@ contract ODSafeManager is IODSafeManager {
   mapping(uint256 _safeId => SAFEData) internal _safeData;
 
   /// @inheritdoc IODSafeManager
-  mapping(address _owner => mapping(uint256 _safeId => mapping(address _caller => bool _ok))) public safeCan;
+  mapping(
+    address _owner => mapping(uint256 _safeId => mapping(uint96 _safeNonce => mapping(address _caller => bool _ok)))
+  ) public safeCan;
   /// @inheritdoc IODSafeManager
-  mapping(address _safeHandler => mapping(address _caller => bool _ok)) public handlerCan;
+  mapping(address _safeHandler => mapping(uint96 _safeNonce => mapping(address _caller => bool _ok))) public handlerCan;
   /// @inheritdoc IODSafeManager
-  mapping(address _safeHandler => bool _exists) public handlerExists;
+  mapping(address _safeHandler => uint256 _safeId) public safeHandlerToSafeId;
 
   // --- Modifiers ---
 
@@ -49,8 +54,9 @@ contract ODSafeManager is IODSafeManager {
    * @param  _safe Id of the safe to check if msg.sender has permissions for
    */
   modifier safeAllowed(uint256 _safe) {
-    address _owner = _safeData[_safe].owner;
-    if (msg.sender != _owner && !safeCan[_owner][_safe][msg.sender]) revert SafeNotAllowed();
+    SAFEData memory data = _safeData[_safe];
+    address owner = data.owner;
+    if (msg.sender != owner && !safeCan[owner][_safe][data.nonce][msg.sender]) revert SafeNotAllowed();
     _;
   }
 
@@ -68,14 +74,16 @@ contract ODSafeManager is IODSafeManager {
    * @param  _handler Address of the handler to check if msg.sender has permissions for
    */
   modifier handlerAllowed(address _handler) {
-    if (msg.sender != _handler && !handlerCan[_handler][msg.sender]) revert HandlerNotAllowed();
+    SAFEData memory data = getSafeDataFromHandler(_handler);
+    if (msg.sender != _handler && !handlerCan[_handler][data.nonce][msg.sender]) revert HandlerNotAllowed();
     _;
   }
 
-  constructor(address _safeEngine, address _vault721) {
+  constructor(address _safeEngine, address _vault721, address _taxCollector) {
     safeEngine = _safeEngine.assertNonNull();
     vault721 = IVault721(_vault721);
     vault721.initializeManager();
+    taxCollector = _taxCollector.assertNonNull();
   }
 
   // --- Getters ---
@@ -106,6 +114,11 @@ contract ODSafeManager is IODSafeManager {
   }
 
   /// @inheritdoc IODSafeManager
+  function getSafeDataFromHandler(address _handler) public view returns (SAFEData memory _sData) {
+    _sData = _safeData[safeHandlerToSafeId[_handler]];
+  }
+
+  /// @inheritdoc IODSafeManager
   function safeData(uint256 _safe) external view returns (SAFEData memory _sData) {
     _sData = _safeData[_safe];
   }
@@ -114,15 +127,18 @@ contract ODSafeManager is IODSafeManager {
 
   /// @inheritdoc IODSafeManager
   function allowSAFE(uint256 _safe, address _usr, bool _ok) external onlySafeOwner(_safe) {
-    address _owner = _safeData[_safe].owner;
-    safeCan[_owner][_safe][_usr] = _ok;
+    SAFEData memory data = _safeData[_safe];
+    address owner = data.owner;
+    safeCan[owner][_safe][data.nonce][_usr] = _ok;
     emit AllowSAFE(msg.sender, _safe, _usr, _ok);
   }
 
   /// @inheritdoc IODSafeManager
   function allowHandler(address _usr, bool _ok) external {
-    handlerCan[msg.sender][_usr] = _ok;
-    emit AllowHandler(msg.sender, _usr, _ok);
+    address safeHandler = msg.sender;
+    SAFEData memory data = getSafeDataFromHandler(safeHandler);
+    handlerCan[safeHandler][data.nonce][_usr] = _ok;
+    emit AllowHandler(safeHandler, _usr, _ok);
   }
 
   /// @inheritdoc IODSafeManager
@@ -132,10 +148,9 @@ contract ODSafeManager is IODSafeManager {
     ++_safeId;
     address _safeHandler = address(new SAFEHandler(safeEngine));
 
-    _safeData[_safeId] = SAFEData({owner: _usr, safeHandler: _safeHandler, collateralType: _cType});
+    _safeData[_safeId] = SAFEData({nonce: 0, owner: _usr, safeHandler: _safeHandler, collateralType: _cType});
 
-    // Save the address of the safeHandler
-    handlerExists[_safeHandler] = true;
+    safeHandlerToSafeId[_safeHandler] = _safeId;
 
     _usrSafes[_usr].add(_safeId);
     _usrSafesPerCollat[_usr][_cType].add(_safeId);
@@ -154,6 +169,8 @@ contract ODSafeManager is IODSafeManager {
     SAFEData memory _sData = _safeData[_safe];
     if (_dst == _sData.owner) revert AlreadySafeOwner();
 
+    _safeData[_safe].nonce += 1;
+
     _usrSafes[_sData.owner].remove(_safe);
     _usrSafesPerCollat[_sData.owner][_sData.collateralType].remove(_safe);
 
@@ -169,21 +186,33 @@ contract ODSafeManager is IODSafeManager {
   function modifySAFECollateralization(
     uint256 _safe,
     int256 _deltaCollateral,
-    int256 _deltaDebt
+    int256 _deltaDebt,
+    bool _nonSafeHandlerAddress
   ) external safeAllowed(_safe) {
     SAFEData memory _sData = _safeData[_safe];
+    if (_deltaDebt != 0) {
+      ITaxCollector(taxCollector).taxSingle(_sData.collateralType);
+    }
+    address collateralSource = _nonSafeHandlerAddress ? msg.sender : _sData.safeHandler;
+    address debtDestination = collateralSource;
     ISAFEEngine(safeEngine).modifySAFECollateralization(
-      _sData.collateralType, _sData.safeHandler, _sData.safeHandler, _sData.safeHandler, _deltaCollateral, _deltaDebt
+      _sData.collateralType, _sData.safeHandler, collateralSource, debtDestination, _deltaCollateral, _deltaDebt
     );
+
+    vault721.updateVaultHashState(_safe);
+
     emit ModifySAFECollateralization(msg.sender, _safe, _deltaCollateral, _deltaDebt);
   }
 
   /// @inheritdoc IODSafeManager
   function transferCollateral(uint256 _safe, address _dst, uint256 _wad) external safeAllowed(_safe) {
     SAFEData memory _sData = _safeData[_safe];
-    if (!handlerExists[_dst]) revert HandlerDoesNotExist();
+    if (safeHandlerToSafeId[_dst] == 0) revert HandlerDoesNotExist();
 
     ISAFEEngine(safeEngine).transferCollateral(_sData.collateralType, _sData.safeHandler, _dst, _wad);
+
+    vault721.updateVaultHashState(_safe);
+
     emit TransferCollateral(msg.sender, _safe, _dst, _wad);
   }
 
@@ -191,6 +220,9 @@ contract ODSafeManager is IODSafeManager {
   function transferCollateral(bytes32 _cType, uint256 _safe, address _dst, uint256 _wad) external safeAllowed(_safe) {
     SAFEData memory _sData = _safeData[_safe];
     ISAFEEngine(safeEngine).transferCollateral(_cType, _sData.safeHandler, _dst, _wad);
+
+    vault721.updateVaultHashState(_safe);
+
     emit TransferCollateral(msg.sender, _cType, _safe, _dst, _wad);
   }
 
@@ -211,6 +243,8 @@ contract ODSafeManager is IODSafeManager {
       _sData.collateralType, _sData.safeHandler, _dst, _deltaCollateral, _deltaDebt
     );
 
+    vault721.updateVaultHashState(_safe);
+
     // Remove safe from owner's list (notice it doesn't erase safe ownership)
     _usrSafes[_sData.owner].remove(_safe);
     _usrSafesPerCollat[_sData.owner][_sData.collateralType].remove(_safe);
@@ -226,6 +260,9 @@ contract ODSafeManager is IODSafeManager {
     ISAFEEngine(safeEngine).transferSAFECollateralAndDebt(
       _sData.collateralType, _src, _sData.safeHandler, _deltaCollateral, _deltaDebt
     );
+
+    vault721.updateVaultHashState(_safe);
+
     emit EnterSystem(msg.sender, _src, _safe);
   }
 
@@ -240,6 +277,11 @@ contract ODSafeManager is IODSafeManager {
     ISAFEEngine(safeEngine).transferSAFECollateralAndDebt(
       _srcData.collateralType, _srcData.safeHandler, _dstData.safeHandler, _deltaCollateral, _deltaDebt
     );
+
+    // @note We update the vault hash state for src and the destination as the value for both changes
+    vault721.updateVaultHashState(_safeSrc);
+
+    vault721.updateVaultHashState(_safeDst);
 
     // Remove safe from owner's list (notice it doesn't erase safe ownership)
     _usrSafes[_srcData.owner].remove(_safeSrc);

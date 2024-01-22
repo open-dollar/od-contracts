@@ -4,7 +4,7 @@ pragma solidity 0.8.19;
 import '@script/Params.s.sol';
 
 bytes32 constant TKN = bytes32('TKN');
-uint256 constant TEST_ETH_PRICE = 1000e18; // 1 ETH = 1000 OD
+uint256 constant TEST_ETH_PRICE = 2000e18; // 1 ETH = 1000 OD
 uint256 constant TEST_TKN_PRICE = 1e18; // 1 TKN = 1 OD
 
 uint256 constant INITIAL_DEBT_AUCTION_MINTED_TOKENS = 1e18;

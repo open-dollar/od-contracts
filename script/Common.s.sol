@@ -2,17 +2,17 @@
 pragma solidity 0.8.19;
 
 import '@script/Contracts.s.sol';
-import {Params, ParamChecker, OD, ETH_A, JOB_REWARD} from '@script/Params.s.sol';
 import '@script/Registry.s.sol';
-import {Create2Factory} from '@contracts/utils/Create2Factory.sol';
+import {Params, ParamChecker, OD, ETH_A, JOB_REWARD} from '@script/Params.s.sol';
 
 abstract contract Common is Contracts, Params {
+  uint256 internal _chainId;
   uint256 internal _deployerPk = 69; // for tests - from HAI
   uint256 internal _governorPK;
-  Create2Factory internal _create2Factory;
-  uint256 internal salt1;
-  uint256 internal salt2;
-  uint256 internal salt3;
+  bytes32 internal _systemCoinSalt;
+  bytes32 internal _vault721Salt;
+  bytes internal _systemCoinInitCode;
+  bytes internal _vault721InitCode;
 
   function getChainId() public view returns (uint256) {
     uint256 id;
@@ -20,6 +20,10 @@ abstract contract Common is Contracts, Params {
       id := chainid()
     }
     return id;
+  }
+
+  function getSemiRandSalt() public view returns (bytes32) {
+    return keccak256(abi.encode(block.number, block.timestamp));
   }
 
   function deployEthCollateralContracts() public updateParams {
@@ -58,7 +62,7 @@ abstract contract Common is Contracts, Params {
     _revoke(safeEngine, _governor);
     _revoke(liquidationEngine, _governor);
     _revoke(accountingEngine, _governor);
-    _revoke(oracleRelayer, _governor);
+    // _revoke(oracleRelayer, _governor);
 
     // auction houses
     _revoke(surplusAuctionHouse, _governor);
@@ -165,21 +169,21 @@ abstract contract Common is Contracts, Params {
 
   function deployTokenGovernance() public updateParams {
     // deploy Tokens
-    if (getChainId() != 31_337) {
-      (address systemCoinAddress, address protocolTokenAddress) = _create2Factory.deployTokens(salt1, salt2);
+
+    if (_chainId != 31_337) {
+      address systemCoinAddress = create2.create2deploy(_systemCoinSalt, _systemCoinInitCode);
       systemCoin = ISystemCoin(systemCoinAddress);
-      protocolToken = IProtocolToken(protocolTokenAddress);
     } else {
-      systemCoin = new SystemCoin();
-      protocolToken = new ProtocolToken();
+      systemCoin = new OpenDollar();
+      protocolToken = new OpenDollarGovernance();
+      protocolToken.initialize('Open Dollar Governance', 'ODG');
     }
     systemCoin.initialize('Open Dollar', 'OD');
-    protocolToken.initialize('Open Dollar Governance', 'ODG');
 
     address[] memory members = new address[](0);
 
     // deploy governance contracts
-    if (getChainId() == 42_161) {
+    if (_chainId == 42_161) {
       timelockController = new TimelockController(MIN_DELAY, members, members, deployer);
       odGovernor = new ODGovernor(
         MAINNET_INIT_VOTING_DELAY,
@@ -356,15 +360,15 @@ abstract contract Common is Contracts, Params {
   }
 
   function deployProxyContracts() public updateParams {
-    if (getChainId() != 31_337) {
-      address vault721Address = _create2Factory.deployVault721(salt3);
+    if (_chainId != 31_337) {
+      address vault721Address = create2.create2deploy(_vault721Salt, _vault721InitCode);
       vault721 = Vault721(vault721Address);
     } else {
       vault721 = new Vault721();
     }
     vault721.initialize(address(timelockController));
 
-    safeManager = new ODSafeManager(address(safeEngine), address(vault721));
+    safeManager = new ODSafeManager(address(safeEngine), address(vault721), address(taxCollector));
     nftRenderer =
       new NFTRenderer(address(vault721), address(oracleRelayer), address(taxCollector), address(collateralJoinFactory));
 

@@ -15,7 +15,8 @@ fs.readFile(filePath, "utf8", (err, data) => {
       // Protocol contracts
       let name = contractName;
       if (contractName === "MintableERC20") {
-        name = name + "_" + index;
+        const tokenSymbolArg = curr.arguments[1];
+        name = name + "_" + tokenSymbolArg.replaceAll('"', "");
       }
       acc[name] = contractAddress;
     }
@@ -57,7 +58,10 @@ const createAnvilDeploymentsFile = (contracts) => {
     return acc;
   }, "");
 
-  const outputPath = path.join(__dirname, "../test/testlocal/nft/anvil/deployment/AnvilContracts.t.sol");
+  const outputPath = path.join(
+    __dirname,
+    "../test/testlocal/nft/anvil/deployment/AnvilContracts.t.sol"
+  );
   const content = `// SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 

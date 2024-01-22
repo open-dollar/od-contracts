@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import 'forge-std/Test.sol';
 import {AnvilDeployment} from '@testlocal/nft/anvil/deployment/AnvilDeployment.t.sol';
-import {WSTETH, ARB, CBETH, RETH, MAGIC} from '@script/SepoliaParams.s.sol';
+import {WSTETH, ARB, CBETH, RETH} from '@script/SepoliaParams.s.sol';
 
 // --- Collateral ERC20 ---
 import {MintableVoteERC20} from '@contracts/for-test/MintableVoteERC20.sol';
@@ -48,7 +48,6 @@ import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
  * node tasks/parseAnvilDeployments.js
  * forge t --fork-url http://127.0.0.1:8545  --match-contract ContractToTest -vvvvv
  */
-
 contract AnvilFork is AnvilDeployment, Test {
   uint256 public constant MINT_AMOUNT = 1_000_000 * 1 ether;
 
@@ -87,6 +86,7 @@ contract AnvilFork is AnvilDeployment, Test {
     cTypes[1] = WSTETH;
     cTypes[2] = CBETH;
     cTypes[3] = RETH;
+
 
     denominatedOracles.push(IDenominatedOracle(DenominatedOracleChild_10_Address));
     denominatedOracles.push(IDenominatedOracle(DenominatedOracleChild_12_Address));
@@ -283,7 +283,6 @@ contract AnvilFork is AnvilDeployment, Test {
     bytes memory payload = abi.encodeWithSelector(
       basicActions.lockTokenCollateralAndGenerateDebt.selector,
       address(safeManager),
-      address(taxCollector),
       address(collateralJoin[_cType]),
       address(coinJoin),
       _safeId,
@@ -295,24 +294,14 @@ contract AnvilFork is AnvilDeployment, Test {
 
   function genDebt(uint256 _safeId, uint256 _deltaWad, address _proxy) public {
     bytes memory payload = abi.encodeWithSelector(
-      basicActions.generateDebt.selector,
-      address(safeManager),
-      address(taxCollector),
-      address(coinJoin),
-      _safeId,
-      _deltaWad
+      basicActions.generateDebt.selector, address(safeManager), address(coinJoin), _safeId, _deltaWad
     );
     ODProxy(_proxy).execute(address(basicActions), payload);
   }
 
   function repayDebt(uint256 _safeId, uint256 _deltaWad, address proxy) public {
     bytes memory payload = abi.encodeWithSelector(
-      basicActions.repayDebt.selector,
-      address(safeManager),
-      address(taxCollector),
-      address(coinJoin),
-      _safeId,
-      _deltaWad
+      basicActions.repayDebt.selector, address(safeManager), address(coinJoin), _safeId, _deltaWad
     );
     ODProxy(proxy).execute(address(basicActions), payload);
   }

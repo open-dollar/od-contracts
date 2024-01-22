@@ -51,6 +51,8 @@ interface IODSafeManager {
   // --- Structs ---
 
   struct SAFEData {
+    // The current nonce of the safe - incremented each time it is transferred
+    uint96 nonce;
     // Address of the safe owner
     address owner;
     // Address of the safe handler
@@ -65,13 +67,18 @@ interface IODSafeManager {
   function safeEngine() external view returns (address _safeEngine);
 
   /// @notice Mapping of owner and safe permissions to a caller permissions
-  function safeCan(address _owner, uint256 _safeId, address _caller) external view returns (bool _ok);
+  function safeCan(
+    address _owner,
+    uint256 _safeId,
+    uint96 _safeNonce,
+    address _caller
+  ) external view returns (bool _ok);
 
   /// @notice Mapping of handler to a caller permissions
-  function handlerCan(address _safeHandler, address _caller) external view returns (bool _ok);
+  function handlerCan(address _safeHandler, uint96 _safeNonce, address _caller) external view returns (bool _ok);
 
-  /// @notice Mapping of handler to whether it exists
-  function handlerExists(address _safeHandler) external view returns (bool _exists);
+  /// @notice Mapping of handler to the safeId
+  function safeHandlerToSafeId(address _safeHandler) external view returns (uint256 _safeId);
 
   // --- Getters ---
 
@@ -101,6 +108,13 @@ interface IODSafeManager {
     external
     view
     returns (uint256[] memory _safes, address[] memory _safeHandlers, bytes32[] memory _cTypes);
+
+  /**
+   * @notice Getter for the details of the safe given a handler address
+   * @param  _handler Address of the handler
+   * @return _sData Struct with the safe data
+   */
+  function getSafeDataFromHandler(address _handler) external view returns (SAFEData memory _sData);
 
   /**
    * @notice Getter for the details of a SAFE
@@ -146,8 +160,14 @@ interface IODSafeManager {
    * @param  _safe Id of the SAFE
    * @param  _deltaCollateral Delta of collateral to add/remove [wad]
    * @param  _deltaDebt Delta of debt to add/remove [wad]
+   * @param  _nonSafeHandlerAddress Boolean flag to specify whether to not to use the safe handler address, if true, then we use proxy address
    */
-  function modifySAFECollateralization(uint256 _safe, int256 _deltaCollateral, int256 _deltaDebt) external;
+  function modifySAFECollateralization(
+    uint256 _safe,
+    int256 _deltaCollateral,
+    int256 _deltaDebt,
+    bool _nonSafeHandlerAddress
+  ) external;
 
   /**
    * @notice Transfer wad amount of safe collateral from the safe address to a dst address

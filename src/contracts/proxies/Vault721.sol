@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {ERC721} from '@openzeppelin/token/ERC721/ERC721.sol';
+import {ERC721Upgradeable, IERC721Upgradeable} from '@openzeppelin-upgradeable/token/ERC721/ERC721Upgradeable.sol';
 import {ERC721EnumerableUpgradeable} from
   '@openzeppelin-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol';
 import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
@@ -9,32 +9,45 @@ import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 
 // Open Dollar
-// Version 1.5.8
+// Version 1.5.9
+
+struct HashState {
+  bytes32 lastHash;
+  uint256 lastBlockNumber;
+  uint256 lastBlockTimestamp;
+}
 
 /**
  * @notice Upgradeable contract used as singleton, but is not upgradeable
  */
 contract Vault721 is ERC721EnumerableUpgradeable {
   error NotGovernor();
+  error NotSafeManager();
   error ProxyAlreadyExist();
+  error BlockDelayNotOver();
+  error TimeDelayNotOver();
   error ZeroAddress();
 
   address public timelockController;
   IODSafeManager public safeManager;
   NFTRenderer public nftRenderer;
+  uint8 public blockDelay;
+  uint256 public timeDelay;
 
   string public contractMetaData =
     '{"name": "Open Dollar Vaults","description": "Open Dollar is a DeFi lending protocol that enables borrowing against liquid staking tokens while earning staking rewards and enabling liquidity via Non-Fungible Vaults (NFVs).","image": "https://app.opendollar.com/collectionImage.png","external_link": "https://opendollar.com"}';
 
   mapping(address proxy => address user) internal _proxyRegistry;
   mapping(address user => address proxy) internal _userRegistry;
+  mapping(uint256 vaultId => HashState hashState) internal _hashState;
+  mapping(address nftExchange => bool whitelisted) internal _allowlist;
 
   event CreateProxy(address indexed _user, address _proxy);
 
   /**
    * @dev initializes DAO timelockController contract
    */
-  function initialize(address _timelockController) external initializer {
+  function initialize(address _timelockController) external initializer nonZero(_timelockController) {
     timelockController = _timelockController;
     __ERC721_init('OpenDollar Vault', 'ODV');
   }
@@ -44,6 +57,14 @@ contract Vault721 is ERC721EnumerableUpgradeable {
    */
   modifier onlyGovernance() {
     if (msg.sender != timelockController) revert NotGovernor();
+    _;
+  }
+
+  /**
+   * @dev control access for SafeManager
+   */
+  modifier onlySafeManager() {
+    if (msg.sender != address(safeManager)) revert NotSafeManager();
     _;
   }
 
@@ -77,6 +98,17 @@ contract Vault721 is ERC721EnumerableUpgradeable {
   }
 
   /**
+   * @dev get hash state by vault id
+   */
+  function getHashState(uint256 _vaultId) external view returns (HashState memory) {
+    return _hashState[_vaultId];
+  }
+
+  function getIsAllowlisted(address _user) external view returns (bool) {
+    return _allowlist[_user];
+  }
+
+  /**
    * @dev allows msg.sender without an ODProxy to deploy a new ODProxy
    */
   function build() external returns (address payable _proxy) {
@@ -96,11 +128,33 @@ contract Vault721 is ERC721EnumerableUpgradeable {
    * @dev mint can only be called by the SafeManager
    * enforces that only ODProxies call `openSafe` function by checking _proxyRegistry
    */
-  function mint(address _proxy, uint256 _safeId) external {
-    require(msg.sender == address(safeManager), 'V721: only safeManager');
+  function mint(address _proxy, uint256 _safeId) external onlySafeManager {
     require(_proxyRegistry[_proxy] != address(0), 'V721: non-native proxy');
     address _user = _proxyRegistry[_proxy];
     _safeMint(_user, _safeId);
+  }
+
+  function transferFrom(
+    address _from,
+    address _to,
+    uint256 _tokenId
+  ) public override(ERC721Upgradeable, IERC721Upgradeable) {
+    // on allowlist addresses, we check the block delay along with the state hash
+    if (_allowlist[msg.sender]) {
+      if (
+        block.number < _hashState[_tokenId].lastBlockNumber + blockDelay
+          || _hashState[_tokenId].lastHash != nftRenderer.getStateHashBySafeId(_tokenId)
+      ) {
+        revert BlockDelayNotOver();
+      }
+      // on non-allowlist addresses, we just check the time delay
+    } else {
+      if (block.timestamp < _hashState[_tokenId].lastBlockTimestamp + timeDelay) {
+        revert TimeDelayNotOver();
+      }
+    }
+
+    super.transferFrom(_from, _to, _tokenId);
   }
 
   /**
@@ -116,6 +170,38 @@ contract Vault721 is ERC721EnumerableUpgradeable {
     require(_safeManager != address(0));
     _setNftRenderer(_nftRenderer);
     nftRenderer.setImplementation(_safeManager, _oracleRelayer, _taxCollector, _collateralJoinFactory);
+  }
+
+  /**
+   * @dev allows ODSafeManager to update the hash state
+   */
+  function updateVaultHashState(uint256 _vaultId) external onlySafeManager {
+    _hashState[_vaultId] = HashState({
+      lastHash: nftRenderer.getStateHashBySafeId(_vaultId),
+      lastBlockNumber: block.number,
+      lastBlockTimestamp: block.timestamp
+    });
+  }
+
+  /**
+   * @dev allows DAO to update allowlist
+   */
+  function updateAllowlist(address _user, bool _allowed) external onlyGovernance nonZero(_user) {
+    _allowlist[_user] = _allowed;
+  }
+
+  /**
+   * @dev allows DAO to update the time delay
+   */
+  function updateTimeDelay(uint256 _timeDelay) external onlyGovernance {
+    timeDelay = _timeDelay;
+  }
+
+  /**
+   * @dev allows DAO to update the block delay
+   */
+  function updateBlockDelay(uint8 _blockDelay) external onlyGovernance {
+    blockDelay = _blockDelay;
   }
 
   /**
@@ -190,17 +276,17 @@ contract Vault721 is ERC721EnumerableUpgradeable {
    * @dev _transfer calls `transferSAFEOwnership` on SafeManager
    * enforces that ODProxy exists for transfer or it deploys a new ODProxy for receiver of vault/nft
    */
-  function _afterTokenTransfer(address from, address to, uint256 firstTokenId, uint256 batchSize) internal override {
-    require(to != address(0), 'V721: no burn');
-    if (from != address(0)) {
+  function _afterTokenTransfer(address _from, address _to, uint256 _tokenId, uint256) internal override {
+    require(_to != address(0), 'V721: no burn');
+    if (_from != address(0)) {
       address payable proxy;
 
-      if (_isNotProxy(to)) {
-        proxy = _build(to);
+      if (_isNotProxy(_to)) {
+        proxy = _build(_to);
       } else {
-        proxy = payable(_userRegistry[to]);
+        proxy = payable(_userRegistry[_to]);
       }
-      IODSafeManager(safeManager).transferSAFEOwnership(firstTokenId, address(proxy));
+      IODSafeManager(safeManager).transferSAFEOwnership(_tokenId, address(proxy));
     }
   }
 }
