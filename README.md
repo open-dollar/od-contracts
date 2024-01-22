@@ -179,3 +179,57 @@ coverage reports require lcov to be installed on your system.
 
 - run`yarn test:coverage` to generate a `coverage-report` folder that will contain the html of the coverage report. 
 - Point your browser to `coverage-report/index.html` to view the report.
+
+#### Anvil Testing and State Scripts
+
+In order to launch an Anvil test environment locally, run `anvil` in the terminal.  Open a second terminal and run
+`yarn deploy:anvil`
+
+You now have a local anvil test environment with a locally deployed and instantiated version of the Open Dollar Protocol.
+
+There are a number of helpful scripts available for Anvil Testing of OD dApp functionality.  Each different script
+simulates states of the Open Dollar protocol specifically for testing.  The scripts can be found in `script/states` and 
+are described below:
+---
+
+***DebtState.s.sol*** :
+
+- `DebtState.s.sol` puts every SAFE in jeopardy of liquidation by driving the non-wstETH collateral prices down. After 
+running DebtState any SAFEs can be liquidated freely for testing. 
+
+Run : `forge script script/states/DebtState.s.sol:DebtState --fork-url http://localhost:8545 -vvvvv`
+
+---
+***LiquidationAuction.s.sol*** :
+
+- `LiquidationAuction.s.sol` takes DebtState a step further and liquidates every SAFE on the platform. It then initiates 
+and completes a single collateral auction. We also create a chunk of unbacked debt in the accounting engine which 
+enables launching a debt auction. This state can be used to test liquidations, launching collateral auctions, launching 
+a debt auction or viewing a completed collateral auction.
+
+Run : `forge script script/states/DebtAuction.s.sol:DebtAuction --fork-url http://localhost:8545 -vvvvv`
+
+---
+***DebtAuction.s.sol*** :
+
+`DebtAuction.s.sol` takes LiquidationAuction a step further and creates a large amount of unbacked debt in the 
+AccountingEngine; which allows us to then create a debt auction. The debt auction is then bid on and settled. This 
+allows testing of viewing a completed debt auction.
+
+Run : `forge script script/states/DebtAuction.s.sol:DebtAuction --fork-url http://localhost:8545 -vvvvv`
+
+---
+***SurplusState.s.sol*** :
+
+`SurplusState.s.sol` pushes the clock forward so that the protocol accrues surplus. It can be used to test launching a 
+SurplusAuction.
+
+Run : `forge script script/states/SurplusState.s.sol:SurplusState --fork-url http://localhost:8545 -vvvvv`
+
+---
+***SurplusAuction.s.sol*** :
+
+`SurplusAuction.s.sol` takes SurplusState a step farther, and initiates a surplus auction, bids on it and settles it. 
+It can be used to test viewing a completed surplus auction.`
+
+Run : `forge script script/states/SurplusAuction.s.sol:SurplusAuction --fork-url http://localhost:8545 -vvvvv`
