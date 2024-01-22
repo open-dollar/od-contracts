@@ -5,6 +5,10 @@ abstract contract AnvilContracts {
   address public ChainlinkRelayerFactory_Address = 0x5FbDB2315678afecb367f032d93F642f64180aa3;
   address public DenominatedOracleFactory_Address = 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512;
   address public DelayedOracleFactory_Address = 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0;
+  address public MintableVoteERC20_Address = 0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9;
+  address public MintableERC20_5_Address = 0x5FC8d32690cc91D4c39d9d3abcBD16989F875707;
+  address public MintableERC20_6_Address = 0x0165878A594ca255338adfa4d48449f69242Eb8F;
+  address public MintableERC20_7_Address = 0xa513E6E4b8f2a923D98304ec87F64353C4D5C853;
   address public InternalCallsExtension_Address = 0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82;
   address public MintableVoteERC20_Address = 0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9;
   address public MintableERC20_wstETH_Address = 0x5FC8d32690cc91D4c39d9d3abcBD16989F875707;
@@ -17,6 +21,8 @@ abstract contract AnvilContracts {
   address public DelayedOracleChild_16_Address = 0xE451980132E65465d0a498c53f0b5227326Dd73F;
   address public DelayedOracleChild_17_Address = 0x5392A33F7F677f59e833FEBF4016cDDD88fF9E67;
   address public DelayedOracleChild_18_Address = 0xa783CDc72e34a174CCa57a6d9a74904d0Bec05A9;
+  address public SystemCoin_Address = 0x3Aa5ebB10DC797CAC828524e59A333d0A371443c;
+  address public ProtocolToken_Address = 0xc6e7DF5E7b4f2A278906862b61205850344D4e7d;
   address public OpenDollar_Address = 0x3Aa5ebB10DC797CAC828524e59A333d0A371443c;
   address public OpenDollarGovernance_Address = 0xc6e7DF5E7b4f2A278906862b61205850344D4e7d;
   address public TimelockController_Address = 0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44;
