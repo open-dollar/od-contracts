@@ -15,7 +15,6 @@ import {ICollateralJoinFactory} from '@interfaces/factories/ICollateralJoinFacto
 import {ICollateralJoin} from '@interfaces/utils/ICollateralJoin.sol';
 import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
 
-
 contract NFTRenderer {
   using Strings for uint256;
   using Math for uint256;
@@ -31,6 +30,10 @@ contract NFTRenderer {
   IOracleRelayer internal _oracleRelayer;
   ITaxCollector internal _taxCollector;
   ICollateralJoinFactory internal _collateralJoinFactory;
+
+  event ImplementationSet(
+    address safeManager, address safeEngine, address oracleRelayer, address taxCollector, address collateralJoinFactory
+  );
 
   constructor(address _vault721, address oracleRelayer, address taxCollector, address collateralJoinFactory) {
     vault721 = IVault721(_vault721);
@@ -73,6 +76,14 @@ contract NFTRenderer {
     _oracleRelayer = IOracleRelayer(oracleRelayer);
     _taxCollector = ITaxCollector(taxCollector);
     _collateralJoinFactory = ICollateralJoinFactory(collateralJoinFactory);
+
+    emit ImplementationSet(
+      address(_safeManager),
+      address(_safeEngine),
+      address(_oracleRelayer),
+      address(_taxCollector),
+      address(_collateralJoinFactory)
+    );
   }
 
   /**

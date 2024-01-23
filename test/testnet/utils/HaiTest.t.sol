@@ -96,7 +96,7 @@ contract OverflowChecker {
       _valid = int256(Math.absolute(_a)) <= type(int256).max / int256(Math.absolute(_b));
     }
   }
-  
+
   // When the result is uint256
   function notUnderOrOverflowMul(uint256 _a, int256 _b) public pure returns (bool _valid) {
     if (int256(_a) < 0) {
