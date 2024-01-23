@@ -48,7 +48,7 @@ contract Base is HaiTest {
 
     safeManager = IODSafeManager(mockContract('IODSafeManager'));
     safeEngine = ISAFEEngine(mockContract('SAFEEngine'));
-    oracleRelayer = IOracleRelayer(address(new OracleForTest(WAD)));
+    oracleRelayer = IOracleRelayer(address(new OracleForTest(3 * WAD)));
     taxCollector = ITaxCollector(mockContract('taxCollector'));
     collateralJoinFactory = ICollateralJoinFactory(mockContract('collateralJoinFactory'));
     vault721 = IVault721(address(new Vault721()));
@@ -122,8 +122,10 @@ contract Unit_NFTRenderer_GetStateHash is Base {
 import 'forge-std/console2.sol';
 contract Unit_NFTRenderer_RenderParams is Base {
 using Math for uint256;
+using Strings for uint256;
 
 struct RenderParamsData {
+  uint256 safeId;
   ITaxCollector.TaxCollectorCollateralData taxData;
   IODSafeManager.SAFEData safeData;
   ISAFEEngine.SAFEEngineCollateralData safeEngineCollateralData;
@@ -138,10 +140,16 @@ struct RenderParamsData {
 
 modifier noOverFlow(RenderParamsData memory _data){
   _data.oracleParams.oracle = IDelayedOracle(address(oracleRelayer));
-
+  vm.assume(_data.safeEngineData.lockedCollateral <= WAD);
+  vm.assume(_data.safeEngineData.generatedDebt <= WAD);
+  vm.assume(_data.safeEngineCollateralData.accumulatedRate > 0);
+  vm.assume(_data.safeEngineCollateralData.accumulatedRate <= WAD);
   vm.assume(notUnderOrOverflowMul(_data.safeEngineData.lockedCollateral, Math.toInt(_data.oracleParams.oracle.read())));
   vm.assume(notUnderOrOverflowMul(_data.safeEngineData.generatedDebt, Math.toInt(_data.safeEngineCollateralData.accumulatedRate)));
   vm.assume(_data.safeEngineData.lockedCollateral.wmul(_data.oracleParams.oracle.read()) > _data.safeEngineData.generatedDebt.wmul(_data.safeEngineCollateralData.accumulatedRate));
+  _data.safeEngineData.lockedCollateral = _data.safeEngineData.lockedCollateral * WAD;
+  _data.safeEngineData.generatedDebt = _data.safeEngineData.generatedDebt * WAD;
+  _data.safeEngineCollateralData.accumulatedRate = _data.safeEngineCollateralData.accumulatedRate * WAD;
   _;
 }
 
@@ -161,21 +169,13 @@ function test_RenderParams(RenderParamsData memory _data)public noOverFlow(_data
     abi.encodeWithSelector(oracleRelayer.cParams.selector),
     abi.encode(_data.oracleParams)
   );
-  
-  // if(_data.safeEngineData.lockedCollateral != 0 && _data.safeEngineData.generatedDebt != 0 ){
+
     vm.mockCall(
     address(safeEngine),
     abi.encodeWithSelector(ISAFEEngine.cData.selector),
     abi.encode(_data.safeEngineCollateralData)
     );
 
-
-    // vm.mockCall(
-    // address(_data.oracleParams.oracle),
-    // abi.encodeWithSelector(IBaseOracle.read.selector),
-    // abi.encode(_data.readValue)
-  // );
-  // }
 
 
   vm.mockCall(
@@ -211,8 +211,87 @@ function test_RenderParams(RenderParamsData memory _data)public noOverFlow(_data
   );
 
 
-  NFTRenderer.VaultParams memory params = nftRenderer.renderParams(1);
+  NFTRenderer.VaultParams memory params = nftRenderer.renderParams(_data.safeId);
+/**  struct VaultParams {
+    uint256 ratio;
+    string collateral;
+    string debt;
+    string metaCollateral;
+    string metaDebt;
+    string vaultId;
+    string stabilityFee;
+    string symbol;
+    string risk;
+    string color;
+    string stroke;
+    string lastUpdate;
+    string stateHash;
+  } */
+
+  if(_data.safeEngineData.generatedDebt != 0 && _data.safeEngineData.lockedCollateral !=0 ){
+  assertEq(params.ratio, ((_data.safeEngineData.lockedCollateral.wmul(_data.oracleParams.oracle.read())).wdiv(_data.safeEngineData.generatedDebt.wmul(_data.safeEngineCollateralData.accumulatedRate))) / 1e7, 'incorrect ratio');
+  } else {
+    assertEq(params.ratio, 0, 'incorrect ratio param');
+  }
+  {
+    (uint256 left, uint256 right) = _floatingPoint(_data.safeEngineData.lockedCollateral);
+  assertEq(keccak256(abi.encode(params.collateral)), keccak256(abi.encode(_parseNumberWithComma(left, right))), 'incorrect collateral');
+  }
+  {
+    (uint256 left, uint256 right) = _floatingPoint(_data.safeEngineData.generatedDebt);
+  assertEq(keccak256(abi.encode(params.debt)), keccak256(abi.encode(_parseNumberWithComma(left, right))), 'incorrect collateral');
+  assertEq(keccak256(abi.encode(params.metaDebt)), keccak256(abi.encode(_parseNumber(left, right))), 'incorrect collateral');
+  }
+  assertEq(string(abi.encodePacked(keccak256(abi.encode(_data.safeEngineData.lockedCollateral, _data.safeEngineData.generatedDebt)))), params.stateHash, 'incorrect state hash');
 }
+
+  function _parseNumberWithComma(uint256 left, uint256 right) internal pure returns (string memory) {
+    if (left > 0) {
+      return string.concat(_commaFormat(left), '.', right.toString());
+    } else {
+      return string.concat('0.', right.toString());
+    }
+  }
+
+  function _floatingPoint(uint256 num) internal pure returns (uint256 left, uint256 right) {
+    left = num / 1e18;
+    uint256 expLeft = left * 1e18;
+    uint256 expRight = num - expLeft;
+    right = expRight / 1e14; // format to 4 decimal places
+  }
+    function _commaFormat(uint256 source) internal pure returns (string memory) {
+    string memory result = '';
+    uint128 index;
+
+    while (source > 0) {
+      uint256 part = source % 10; // get each digit
+      bool isSet = index != 0 && index % 3 == 0; // request set glue for every additional 3 digits
+
+      result = _concatWithComma(result, part, isSet);
+      source = source / 10;
+      index += 1;
+    }
+
+    return result;
+  }
+
+  function _concatWithComma(string memory base, uint256 part, bool isSet) internal pure returns (string memory) {
+    string memory stringified = part.toString();
+    string memory glue = ',';
+
+    if (!isSet) glue = '';
+    return string(abi.encodePacked(stringified, glue, base));
+  }
+
+    function _parseNumber(uint256 left, uint256 right) internal pure returns (string memory) {
+    if (left > 0) {
+      return string.concat(left.toString(), '.', right.toString());
+    } else {
+      return string.concat('0.', right.toString());
+    }
+  }
+
+
 }
 
 
