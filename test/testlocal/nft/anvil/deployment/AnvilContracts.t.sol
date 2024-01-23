@@ -10,10 +10,6 @@ abstract contract AnvilContracts {
   address public MintableERC20_6_Address = 0x0165878A594ca255338adfa4d48449f69242Eb8F;
   address public MintableERC20_7_Address = 0xa513E6E4b8f2a923D98304ec87F64353C4D5C853;
   address public InternalCallsExtension_Address = 0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82;
-  address public MintableVoteERC20_Address = 0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9;
-  address public MintableERC20_wstETH_Address = 0x5FC8d32690cc91D4c39d9d3abcBD16989F875707;
-  address public MintableERC20_cbETH_Address = 0x0165878A594ca255338adfa4d48449f69242Eb8F;
-  address public MintableERC20_rETH_Address = 0xa513E6E4b8f2a923D98304ec87F64353C4D5C853;
   address public DenominatedOracleChild_10_Address = 0xCafac3dD18aC6c6e92c921884f9E4176737C052c;
   address public DenominatedOracleChild_12_Address = 0x9f1ac54BEF0DD2f6f3462EA0fa94fC62300d3a8e;
   address public DenominatedOracleChild_14_Address = 0xbf9fBFf01664500A33080Da5d437028b07DFcC55;
