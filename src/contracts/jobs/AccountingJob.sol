@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.20;
+pragma solidity 0.8.19;
 
 import {IAccountingJob} from '@interfaces/jobs/IAccountingJob.sol';
 import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
@@ -76,10 +76,25 @@ contract AccountingJob is Authorizable, Modifiable, Job, IAccountingJob {
     accountingEngine.auctionSurplus();
   }
 
-  /// @inheritdoc IAccountingJob
-  function workTransferExtraSurplus() external reward {
-    if (!shouldWorkTransferExtraSurplus) revert NotWorkable();
-    accountingEngine.transferExtraSurplus();
+  /**
+   * @notice Method to pop debt from the AccountingEngine's queue without a reward
+   * @param _debtBlockTimestamp Timestamp of the debt block to pop
+   */
+  function workPopDebtFromQueueWithoutReward(uint256 _debtBlockTimestamp) external {
+    if (!shouldWorkPopDebtFromQueue) revert NotWorkable();
+    accountingEngine.popDebtFromQueue(_debtBlockTimestamp);
+  }
+
+  /// @notice Auction debt from the AccountingEngine without a reward
+  function workAuctionDebtWithoutReward() external {
+    if (!shouldWorkAuctionDebt) revert NotWorkable();
+    accountingEngine.auctionDebt();
+  }
+
+  /// @notice Auction surplus from the AccountingEngine without a reward
+  function workAuctionSurplusWithoutReward() external {
+    if (!shouldWorkAuctionSurplus) revert NotWorkable();
+    accountingEngine.auctionSurplus();
   }
 
   // --- Administration ---

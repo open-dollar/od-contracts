@@ -9,7 +9,7 @@ on:
 
 jobs:
   generate_interfaces:
-    if: github.repository == 'hai-on-op/hai'
+    if: github.repository == 'open-dollar/od-contracts'
     runs-on: ubuntu-latest
 
     steps:
@@ -23,8 +23,8 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 16
-          registry-url: 'https://registry.npmjs.org'
+          node-version: 18
+          registry-url: "https://registry.npmjs.org"
 
       - name: Install dependencies
         run: yarn --frozen-lockfile --network-concurrency 1
@@ -36,17 +36,17 @@ jobs:
         run: yarn add typechain @typechain/web3-v1 @typechain/ethers-v6
 
       - name: Run Interface Exporter Action
-        uses: defi-wonderland/interface-exporter-action@v1.1.1
+        uses: open-dollar/solidity-exporter-action@v1.0.1
         with:
-          out_dir: 'out'
-          typing_type: 'ethers-v6'
-          package_name: '@hai-on-op/abis'
-          destination_dir: 'abis-package'
+          out_dir: "out"
+          typing_type: "ethers-v6"
+          package_name: "@opendollar/abis"
+          destination_dir: "abis-package"
 
       - name: Generate canary tag
         if: github.ref_name != 'main'
         run: cd abis-package && yarn version --new-version "0.0.0-${GITHUB_SHA::8}" --no-git-tag-version
-      
+
       - name: Publish
         run: cd abis-package && npm publish --access public
         env:

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.20;
+pragma solidity 0.8.19;
 
 // --- Base Contracts ---
-import {SystemCoin, ISystemCoin} from '@contracts/tokens/SystemCoin.sol';
-import {ProtocolToken, IProtocolToken} from '@contracts/tokens/ProtocolToken.sol';
+import {OpenDollar, SystemCoin, ISystemCoin} from '@contracts/tokens/SystemCoin.sol';
+import {OpenDollarGovernance, ProtocolToken, IProtocolToken} from '@contracts/tokens/ProtocolToken.sol';
 import {SAFEEngine, ISAFEEngine} from '@contracts/SAFEEngine.sol';
 import {TaxCollector, ITaxCollector} from '@contracts/TaxCollector.sol';
 import {AccountingEngine, IAccountingEngine} from '@contracts/AccountingEngine.sol';
@@ -32,10 +32,10 @@ import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {DelayedOracle, IDelayedOracle} from '@contracts/oracles/DelayedOracle.sol';
 import {DenominatedOracle} from '@contracts/oracles/DenominatedOracle.sol';
 import {ChainlinkRelayer} from '@contracts/oracles/ChainlinkRelayer.sol';
-import {UniV3Relayer, IUniV3Relayer} from '@contracts/oracles/UniV3Relayer.sol';
 
 // --- Testnet contracts ---
 import {MintableERC20} from '@contracts/for-test/MintableERC20.sol';
+import {MintableVoteERC20} from '@contracts/for-test/MintableVoteERC20.sol';
 import {DeviatedOracle} from '@contracts/for-test/DeviatedOracle.sol';
 import {HardcodedOracle} from '@contracts/for-test/HardcodedOracle.sol';
 
@@ -50,9 +50,9 @@ import {
   ICollateralAuctionHouseFactory
 } from '@contracts/factories/CollateralAuctionHouseFactory.sol';
 import {ChainlinkRelayerFactory, IChainlinkRelayerFactory} from '@contracts/factories/ChainlinkRelayerFactory.sol';
-import {UniV3RelayerFactory, IUniV3RelayerFactory} from '@contracts/factories/UniV3RelayerFactory.sol';
 import {DenominatedOracleFactory, IDenominatedOracleFactory} from '@contracts/factories/DenominatedOracleFactory.sol';
 import {DelayedOracleFactory, IDelayedOracleFactory} from '@contracts/factories/DelayedOracleFactory.sol';
+import {IODCreate2Factory} from '@interfaces/factories/IODCreate2Factory.sol';
 
 // --- Jobs ---
 import {AccountingJob, IAccountingJob} from '@contracts/jobs/AccountingJob.sol';
@@ -60,9 +60,7 @@ import {LiquidationJob, ILiquidationJob} from '@contracts/jobs/LiquidationJob.so
 import {OracleJob, IOracleJob} from '@contracts/jobs/OracleJob.sol';
 
 // --- Interfaces ---
-import {IERC20Metadata} from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
-import {IUniswapV3Factory} from '@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol';
-import {IUniswapV3Pool} from '@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol';
+import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 
@@ -74,9 +72,21 @@ import {CollateralBidActions} from '@contracts/proxies/actions/CollateralBidActi
 import {PostSettlementSurplusBidActions} from '@contracts/proxies/actions/PostSettlementSurplusBidActions.sol';
 import {GlobalSettlementActions} from '@contracts/proxies/actions/GlobalSettlementActions.sol';
 import {RewardedActions} from '@contracts/proxies/actions/RewardedActions.sol';
-import {HaiProxy} from '@contracts/proxies/HaiProxy.sol';
-import {HaiProxyFactory} from '@contracts/proxies/HaiProxyFactory.sol';
-import {HaiSafeManager} from '@contracts/proxies/HaiSafeManager.sol';
+import {GlobalSettlementActions} from '@contracts/proxies/actions/GlobalSettlementActions.sol';
+import {PostSettlementSurplusBidActions} from '@contracts/proxies/actions/PostSettlementSurplusBidActions.sol';
+import {ODProxy} from '@contracts/proxies/ODProxy.sol';
+import {ODSafeManager} from '@contracts/proxies/ODSafeManager.sol';
+import {Vault721} from '@contracts/proxies/Vault721.sol';
+import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
+
+// --- Governance Contracts ---
+import {TimelockController} from '@openzeppelin/governance/TimelockController.sol';
+import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
+
+// --- ForTestnet ---
+import {OracleForTest} from '@contracts/for-test/OracleForTest.sol';
+import {OracleForTestnet} from '@contracts/for-test/OracleForTestnet.sol';
+import {ChainlinkUptimeFeedForTestnet} from '@contracts/for-test/ChainlinkUptimeFeedForTestnet.sol';
 
 /**
  * @title  Contracts
@@ -92,6 +102,9 @@ abstract contract Contracts {
   bytes32[] public collateralTypes;
   mapping(bytes32 => address) public delegatee;
 
+  // -- Create2 Factory --
+  IODCreate2Factory public create2;
+
   // --- Base contracts ---
   ISAFEEngine public safeEngine;
   ITaxCollector public taxCollector;
@@ -106,6 +119,7 @@ abstract contract Contracts {
   // --- Token contracts ---
   IProtocolToken public protocolToken;
   ISystemCoin public systemCoin;
+  mapping(bytes32 => MintableERC20) public erc20;
   mapping(bytes32 => IERC20Metadata) public collateral;
   ICoinJoin public coinJoin;
   mapping(bytes32 => ICollateralJoin) public collateralJoin;
@@ -123,7 +137,6 @@ abstract contract Contracts {
   ICollateralAuctionHouseFactory public collateralAuctionHouseFactory;
 
   IChainlinkRelayerFactory public chainlinkRelayerFactory;
-  IUniV3RelayerFactory public uniV3RelayerFactory;
   IDenominatedOracleFactory public denominatedOracleFactory;
   IDelayedOracleFactory public delayedOracleFactory;
 
@@ -138,14 +151,19 @@ abstract contract Contracts {
   IOracleJob public oracleJob;
 
   // --- Proxy contracts ---
-  HaiProxyFactory public proxyFactory;
-  HaiSafeManager public safeManager;
+  ODSafeManager public safeManager;
+  Vault721 public vault721;
+  NFTRenderer public nftRenderer;
 
   BasicActions public basicActions;
   DebtBidActions public debtBidActions;
   SurplusBidActions public surplusBidActions;
   CollateralBidActions public collateralBidActions;
-  PostSettlementSurplusBidActions public postSettlementSurplusBidActions;
-  GlobalSettlementActions public globalSettlementActions;
   RewardedActions public rewardedActions;
+  GlobalSettlementActions public globalSettlementActions;
+  PostSettlementSurplusBidActions public postSettlementSurplusBidActions;
+
+  // --- Governance Contracts ---
+  TimelockController public timelockController;
+  ODGovernor public odGovernor;
 }

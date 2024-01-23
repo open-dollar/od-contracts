@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.20;
+pragma solidity 0.8.19;
 
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
-import {IERC20Metadata} from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
+import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
+import {IERC20MetadataUpgradeable} from '@openzeppelin-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol';
 import {ICoinJoin} from '@interfaces/utils/ICoinJoin.sol';
 import {ICollateralJoin} from '@interfaces/utils/ICollateralJoin.sol';
 import {ICommonActions} from '@interfaces/proxies/actions/ICommonActions.sol';
 
-import {SafeERC20} from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import {SafeERC20} from '@openzeppelin/token/ERC20/utils/SafeERC20.sol';
+import {SafeERC20Upgradeable} from '@openzeppelin-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol';
 import {RAY} from '@libraries/Math.sol';
 
 /**
@@ -16,6 +18,7 @@ import {RAY} from '@libraries/Math.sol';
  */
 abstract contract CommonActions is ICommonActions {
   using SafeERC20 for IERC20Metadata;
+  using SafeERC20Upgradeable for IERC20MetadataUpgradeable;
 
   /// @notice Address of the inheriting contract, used to check if the call is being made through a delegate call
   // solhint-disable-next-line var-name-mixedcase
@@ -54,11 +57,11 @@ abstract contract CommonActions is ICommonActions {
     if (_wad == 0) return;
 
     // NOTE: assumes systemCoin uses 18 decimals
-    IERC20Metadata _systemCoin = ICoinJoin(_coinJoin).systemCoin();
+    IERC20MetadataUpgradeable _systemCoin = ICoinJoin(_coinJoin).systemCoin();
     // Transfers coins from the user to the proxy
     _systemCoin.safeTransferFrom(msg.sender, address(this), _wad);
     // Approves adapter to take the COIN amount
-    _systemCoin.forceApprove(_coinJoin, _wad);
+    _systemCoin.safeApprove(_coinJoin, _wad);
     // Joins COIN into the safeEngine
     ICoinJoin(_coinJoin).join(_dst, _wad);
   }
@@ -97,7 +100,7 @@ abstract contract CommonActions is ICommonActions {
     // Gets token from the user's wallet
     _token.safeTransferFrom(msg.sender, address(this), _wei);
     // Approves adapter to take the token amount
-    _token.forceApprove(_collateralJoin, _wei);
+    _token.safeApprove(_collateralJoin, _wei);
     // Joins token collateral into the safeEngine
     __collateralJoin.join(_safe, _wei);
   }

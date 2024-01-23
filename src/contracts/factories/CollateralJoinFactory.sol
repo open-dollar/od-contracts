@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.20;
+pragma solidity 0.8.19;
 
 import {ICollateralJoinFactory} from '@interfaces/factories/ICollateralJoinFactory.sol';
 import {ICollateralJoin} from '@interfaces/utils/ICollateralJoin.sol';
@@ -11,7 +11,7 @@ import {Authorizable, IAuthorizable} from '@contracts/utils/Authorizable.sol';
 import {Disableable, IDisableable} from '@contracts/utils/Disableable.sol';
 
 import {Assertions} from '@libraries/Assertions.sol';
-import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
+import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
 
 /**
  * @title  CollateralJoinFactory

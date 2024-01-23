@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.20;
+pragma solidity 0.8.19;
 
 import {IChainlinkRelayerChild} from '@interfaces/factories/IChainlinkRelayerChild.sol';
 import {IChainlinkOracle} from '@interfaces/oracles/IChainlinkOracle.sol';

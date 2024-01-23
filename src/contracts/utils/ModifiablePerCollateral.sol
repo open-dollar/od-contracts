@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.20;
+pragma solidity 0.8.19;
 
 import {IModifiablePerCollateral} from '@interfaces/utils/IModifiablePerCollateral.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
-import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
+import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
 
 /**
  * @title  ModifiablePerCollateral

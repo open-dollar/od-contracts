@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.20;
+pragma solidity 0.8.19;
 
 import {
   IGlobalSettlement,
@@ -86,7 +86,6 @@ import {Assertions} from '@libraries/Assertions.sol';
  *           - The amount of collateral to redeem depends exclusively in the state variables calculated in the previous steps
  *           - The amount of collaterals left when all circulating coins are redeemed should be 0
  */
-
 contract GlobalSettlement is Authorizable, Modifiable, Disableable, IGlobalSettlement {
   using Math for uint256;
   using Assertions for address;

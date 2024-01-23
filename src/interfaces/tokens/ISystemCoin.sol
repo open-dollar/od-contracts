@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.20;
+pragma solidity 0.8.19;
 
-import {IERC20Metadata} from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
+import {IERC20MetadataUpgradeable} from '@openzeppelin-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 
-interface ISystemCoin is IERC20Metadata, IAuthorizable {
+interface ISystemCoin is IERC20MetadataUpgradeable, IAuthorizable {
+  function initialize(string memory _name, string memory _symbol) external;
+
   /**
    * @notice Mint an amount of tokens to an account
    * @param _account Address of the account to mint tokens to

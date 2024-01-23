@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.20;
+pragma solidity 0.8.19;
 
 import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
 
@@ -66,4 +66,17 @@ interface ICollateralAuctionHouseFactory is IAuthorizable, IModifiable, IModifia
    * @return _collateralAuctionHouses List of CollateralAuctionHouse contracts
    */
   function collateralAuctionHousesList() external view returns (address[] memory _collateralAuctionHouses);
+
+  // --- Methods ---
+
+  /**
+   * @notice Deploys a new CollateralAuctionHouse contract for a collateral type
+   * @param _cType Bytes32 representation of the collateral type
+   * @param _cahParams CollateralAuctionHouse parameters struct
+   * @return _collateralAuctionHouse Address of the deployed CollateralAuctionHouse contract
+   */
+  function deployCollateralAuctionHouse(
+    bytes32 _cType,
+    ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahParams
+  ) external returns (ICollateralAuctionHouse _collateralAuctionHouse);
 }

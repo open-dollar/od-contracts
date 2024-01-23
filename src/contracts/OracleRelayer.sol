@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.20;
+pragma solidity 0.8.19;
 
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
@@ -13,7 +13,7 @@ import {Disableable} from '@contracts/utils/Disableable.sol';
 import {Encoding} from '@libraries/Encoding.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 import {Math, RAY, WAD} from '@libraries/Math.sol';
-import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
+import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
 
 /**
  * @title  OracleRelayer

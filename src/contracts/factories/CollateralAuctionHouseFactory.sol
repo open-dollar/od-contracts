@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.20;
+pragma solidity 0.8.19;
 
 import {ICollateralAuctionHouseFactory} from '@interfaces/factories/ICollateralAuctionHouseFactory.sol';
 import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
@@ -14,7 +14,7 @@ import {IModifiablePerCollateral, ModifiablePerCollateral} from '@contracts/util
 import {Encoding} from '@libraries/Encoding.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 import {WAD} from '@libraries/Math.sol';
-import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
+import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
 
 /**
  * @title  CollateralAuctionHouseFactory
@@ -84,6 +84,19 @@ contract CollateralAuctionHouseFactory is
     oracleRelayer = _oracleRelayer;
   }
 
+  // --- Methods ---
+
+  /// @inheritdoc ICollateralAuctionHouseFactory
+  function deployCollateralAuctionHouse(
+    bytes32 _cType,
+    ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahParams
+  ) external isAuthorized whenEnabled returns (ICollateralAuctionHouse _collateralAuctionHouse) {
+    if (!_collateralList.add(_cType)) revert CollateralTypeAlreadyInitialized();
+
+    _initializeCollateralType(_cType, abi.encode(_cahParams));
+    return ICollateralAuctionHouse(collateralAuctionHouses[_cType]);
+  }
+
   // --- Views ---
 
   /// @inheritdoc ICollateralAuctionHouseFactory
@@ -107,7 +120,7 @@ contract CollateralAuctionHouseFactory is
       _oracleRelayer: address(0), // read from factory
       _cType: _cType,
       _cahParams: _cahParams
-      });
+    });
 
     collateralAuctionHouses[_cType] = address(_collateralAuctionHouse);
     emit DeployCollateralAuctionHouse(_cType, address(_collateralAuctionHouse));

@@ -9,12 +9,11 @@ number_underscore = 'thousands'
 wrap_comments = false
 
 [profile.docs]
-title = 'HAI docs'
-src ='src' # root_path variable in build-docs.sh
+title = 'Open Dollar Docs'
+src = 'src/'               # root_path variable in build-docs.sh
 
 [profile.default]
-solc = '0.8.20'
-evm_version = 'paris'
+auto_detect_solc = true
 src = 'src'
 test = 'test'
 out = 'out'
@@ -22,7 +21,10 @@ libs = ['lib']
 fuzz_runs = 1000
 optimizer_runs = 10_000
 block_timestamp = 1675855961
-fs_permissions = [{ access = "write", path = "./test/simulations"}]
+fs_permissions = [{ access = "write", path = "./test/testnet/simulations" }]
+
+[profile.governance]
+fs_permissions = [{ access = "read-write", path = "./" }]
 
 [profile.optimized]
 via_ir = true
@@ -36,5 +38,5 @@ fuzz_runs = 5000
 src = 'test'
 
 [rpc_endpoints]
-mainnet = "${OP_MAINNET_RPC}"
-goerli = "${OP_GOERLI_RPC}"
+mainnet = "${ARB_MAINNET_RPC}"
+sepolia = "${ARB_SEPOLIA_RPC}"

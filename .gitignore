@@ -9,16 +9,23 @@ out
 out-via-ir
 broadcast/**/run-*.json
 
+# Coverage Reports
+coverage-report
+lcov.info
+
 # Config files
 .env
 
 # Avoid ignoring gitkeep
 !/**/.gitkeep
 
-lcov.info
 .vscode/
 
 # Docs build files
 docs/book
 docs/src/src/
 docs/src/static
+
+test/testnet/simulations/pid-controller/
+
+.idea/

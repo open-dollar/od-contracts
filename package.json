@@ -1,15 +1,20 @@
 {
-  "name": "hai",
-  "version": "1.0.0",
-  "description": "Multicollateral debt backed stablecoin",
-  "homepage": "https://github.com/hai-on-op/hai#readme",
+  "name": "@opendollar/contracts",
+  "version": "1.5.9",
+  "private": true,
+  "description": "Multicollateral ETH backed stablecoin",
+  "homepage": "https://www.opendollar.com/",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/hai-on-op/hai.git"
+    "url": "https://github.com/UseKeyp/od-contracts"
   },
   "license": "MIT",
-  "author": "Wonderland",
+  "author": "Keyp",
   "contributors": [
+    "cupOJoseph (https://github.com/cupOJoseph)",
+    "daopunk (https://github.com/daopunk)",
+    "st4rgard3n (https://github.com/St4rgarden)",
+    "0xdavinchee (https://github.com/0xdavinchee)",
     "wei3erHase (https://github.com/wei3erHase)",
     "0xGorilla (https://github.com/0xGorilla)",
     "0xJabberwock (https://github.com/0xJabberwock)",
@@ -18,32 +23,32 @@
   "scripts": {
     "build": "forge build",
     "coverage": "forge coverage",
-    "deploy:goerli": "bash -c 'source .env && forge script DeployGoerli --with-gas-price 2000000000 -vvvvv --rpc-url $OP_GOERLI_RPC --broadcast --private-key $OP_GOERLI_DEPLOYER_PK --verify --etherscan-api-key $OP_ETHERSCAN_API_KEY'",
-    "deploy:mainnet": "bash -c 'source .env && forge script DeployMainnet --rpc-url $OP_MAINNET_RPC --broadcast --private-key $OP_MAINNET_DEPLOYER_PK --verify --etherscan-api-key $OP_ETHERSCAN_API_KEY'",
-    "docs:build": "./build-docs.sh",
-    "docs:run": "mdbook serve docs",
-    "lint:check": "yarn lint:sol && forge fmt",
+    "deploy:anvil": "bash -c 'source .env && forge script DeployAnvil --with-gas-price 2000000000 -vvvvv --rpc-url $ANVIL_RPC --private-key $ANVIL_ONE --broadcast --ffi' && cp broadcast/Deploy.s.sol/31337/run-latest.json deployments/anvil/ && node tasks/parseAnvilDeployments.js",
+    "deploy:mainnet": "bash -c 'source .env && forge script DeployMainnet --rpc-url $ARB_MAINNET_RPC --broadcast --private-key $ARB_MAINNET_DEPLOYER_PK --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY'",
+    "deploy:mainnet:ffi": "bash -c 'source .env && forge script DeployMainnet --rpc-url $ARB_MAINNET_RPC --broadcast --private-key $ARB_MAINNET_DEPLOYER_PK --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY --ffi'",
+    "deploy:sepolia:ffi": "bash -c 'source .env && forge script DeploySepolia --with-gas-price 2000000000 -vvvvv --chain-id 461614 --rpc-url $ARB_SEPOLIA_RPC --private-key $ARB_SEPOLIA_DEPLOYER_PK --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY --ffi'",
+    "postinstall": "forge install",
+    "lint:check": "yarn lint:sol && forge fmt --check",
     "lint:fix": "sort-package-json && forge fmt && yarn lint:sol --fix",
     "lint:sol": "cross-env solhint 'src/**/*.sol' 'test/**/*.sol'",
     "prepare": "husky install",
-    "script:goerli": "bash -c 'source .env && forge script GoerliScript --with-gas-price 2000000000 -vvvvv --rpc-url $OP_GOERLI_RPC --broadcast --private-key $OP_GOERLI_GOVERNOR_PK --verify --etherscan-api-key $OP_ETHERSCAN_API_KEY'",
-    "script:goerli:delegate": "bash -c 'source .env && forge script GoerliDelegate --with-gas-price 2000000000 -vvvvv --rpc-url $OP_GOERLI_RPC --broadcast --private-key $OP_GOERLI_GOVERNOR_PK --verify --etherscan-api-key $OP_ETHERSCAN_API_KEY'",
-    "test": "FOUNDRY_FUZZ_RUNS=128 FOUNDRY_FUZZ_MAX_TEST_REJECTS=10000000 FOUNDRY_FUZZ_SEED=69 forge test -vvv",
-    "test:e2e": "forge test --match-contract E2E -vvv",
-    "test:local": "FOUNDRY_FUZZ_RUNS=32 FOUNDRY_FUZZ_MAX_TEST_REJECTS=1000000 forge test -vvv",
+    "script:sepolia": "bash -c 'source .env && forge script SepoliaScript --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC --broadcast --private-key $GOERLI_GOVERNOR_PK --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY'",
+    "script:sepolia:delegate": "bash -c 'source .env && forge script SepoliaDelegate --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC --broadcast --private-key $GOERLI_GOVERNOR_PK --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY'",
+    "simulate-deploy:mainnet:ffi": "bash -c 'source .env && forge script DeployMainnet --rpc-url $ARB_MAINNET_RPC --private-key $ARB_MAINNET_DEPLOYER_PK --ffi'",
+    "simulate-deploy:sepolia": "bash -c 'source .env && forge script DeploySepolia --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC --private-key $ARB_SEPOLIA_DEPLOYER_PK'",
+    "test": "FOUNDRY_FUZZ_RUNS=128 FOUNDRY_FUZZ_MAX_TEST_REJECTS=1000000 forge test --no-match-contract Unit --no-match-path test/testlocal/**/*.t.sol -vvv --ffi & FOUNDRY_FUZZ_RUNS=128 FOUNDRY_FUZZ_MAX_TEST_REJECTS=1000000 forge test --match-contract Unit -vvv --ffi",
+    "test:coverage": "bash -c 'forge coverage --fork-url http://127.0.0.1:8545 --report lcov && lcov --ignore-errors unused --remove lcov.info 'node_modules/*' 'script/*' 'test/*' 'src/contracts/for-test/*' -o lcov.info.pruned && mv lcov.info.pruned lcov.info && genhtml -o coverage-report lcov.info'",
+    "test:e2e": "forge test --match-contract E2E -vvv --ffi",
+    "test:full": "FOUNDRY_FUZZ_RUNS=128 FOUNDRY_FUZZ_MAX_TEST_REJECTS=1000000 forge test -vvv --ffi",
+    "test:local": "FOUNDRY_FUZZ_RUNS=32 FOUNDRY_FUZZ_MAX_TEST_REJECTS=1000000 forge test -vvv --ffi",
     "test:simulation": "forge test --match-contract Simulation --ffi",
-    "test:unit": "FOUNDRY_FUZZ_RUNS=128 FOUNDRY_FUZZ_MAX_TEST_REJECTS=1000000 forge test --match-contract Unit -vvv",
-    "test:unit:deep": "FOUNDRY_FUZZ_RUNS=1024 FOUNDRY_FUZZ_MAX_TEST_REJECTS=10000000 forge test --match-contract Unit -vvvvv"
-  },
-  "lint-staged": {
-    "*.{js,css,md,ts,sol}": "forge fmt",
-    "*.sol": "cross-env solhint --fix 'src/**/*.sol",
-    "package.json": "sort-package-json"
+    "test:unit": "FOUNDRY_FUZZ_RUNS=128 FOUNDRY_FUZZ_MAX_TEST_REJECTS=1000000 forge test --match-contract Unit -vvv --ffi",
+    "test:unit:deep": "FOUNDRY_FUZZ_RUNS=1024 FOUNDRY_FUZZ_MAX_TEST_REJECTS=10000000 forge test --match-contract Unit -vvvvv --ffi"
   },
   "dependencies": {
     "@defi-wonderland/solidity-utils": "0.0.0-4298c6c6",
-    "@openzeppelin/contracts": "5.0.0",
-    "@uniswap/v3-periphery": "https://github.com/Uniswap/v3-periphery.git#0.8",
+    "@openzeppelin/contracts": "4.8.2",
+    "@openzeppelin/contracts-upgradeable": "4.8.2",
     "forge-std": "https://github.com/foundry-rs/forge-std.git#f73c73d2018eb6a111f35e4dae7b4f27401e9421"
   },
   "devDependencies": {
@@ -51,7 +56,6 @@
     "@commitlint/config-conventional": "17.0.3",
     "cross-env": "7.0.3",
     "husky": ">=8",
-    "lint-staged": ">=10",
     "solhint": "3.4.1",
     "solhint-plugin-defi-wonderland": "1.1.0",
     "sort-package-json": "1.53.1"

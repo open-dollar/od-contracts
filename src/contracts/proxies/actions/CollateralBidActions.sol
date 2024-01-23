@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.20;
+pragma solidity 0.8.19;
 
 import {ICollateralJoin} from '@interfaces/utils/ICollateralJoin.sol';
 import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
@@ -25,7 +25,7 @@ contract CollateralBidActions is CommonActions, ICollateralBidActions {
     address _collateralAuctionHouse,
     uint256 _auctionId,
     uint256 _minCollateralAmount,
-    uint256 _bidAmount
+    uint256 _bidAmount // WAD
   ) external onlyDelegateCall {
     ISAFEEngine _safeEngine = ICoinJoin(_coinJoin).safeEngine();
     // checks coin balance and joins more if needed

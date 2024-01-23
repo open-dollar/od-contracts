@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.20;
+pragma solidity 0.8.19;
 
 import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
 import {ISAFESaviour} from '@interfaces/external/ISAFESaviour.sol';
@@ -12,8 +12,8 @@ import {Modifiable} from '@contracts/utils/Modifiable.sol';
 import {IModifiablePerCollateral, ModifiablePerCollateral} from '@contracts/utils/ModifiablePerCollateral.sol';
 import {Disableable} from '@contracts/utils/Disableable.sol';
 
-import {ReentrancyGuard} from '@openzeppelin/contracts/utils/ReentrancyGuard.sol';
-import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
+import {ReentrancyGuard} from '@openzeppelin/security/ReentrancyGuard.sol';
+import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
 import {Encoding} from '@libraries/Encoding.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 import {Math, RAY, WAD, MAX_RAD} from '@libraries/Math.sol';

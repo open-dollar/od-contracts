@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.20;
+pragma solidity 0.8.19;
 
 import {IAccountingJob} from '@interfaces/jobs/IAccountingJob.sol';
 import {ILiquidationJob} from '@interfaces/jobs/ILiquidationJob.sol';
@@ -43,8 +43,8 @@ contract RewardedActions is CommonActions, IRewardedActions {
   }
 
   /// @inheritdoc IRewardedActions
-  function transferExtraSurplus(address _accountingJob, address _coinJoin) external onlyDelegateCall {
-    IAccountingJob(_accountingJob).workTransferExtraSurplus();
+  function auctionSurplus(address _accountingJob, address _coinJoin) external onlyDelegateCall {
+    IAccountingJob(_accountingJob).workAuctionSurplus();
     _exitReward(_accountingJob, _coinJoin);
   }
 

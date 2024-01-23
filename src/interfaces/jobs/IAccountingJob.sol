@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.20;
+pragma solidity 0.8.19;
 
 import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
 
@@ -41,7 +41,4 @@ interface IAccountingJob is IAuthorizable, IModifiable, IJob {
 
   /// @notice Rewarded method to auction surplus from the AccountingEngine
   function workAuctionSurplus() external;
-
-  /// @notice Rewarded method to transfer surplus from the AccountingEngine
-  function workTransferExtraSurplus() external;
 }

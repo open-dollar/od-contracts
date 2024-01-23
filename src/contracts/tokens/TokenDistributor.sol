@@ -1,21 +1,21 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.20;
+pragma solidity 0.8.19;
 
 import {ITokenDistributor} from '@interfaces/tokens/ITokenDistributor.sol';
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 
-import {ERC20Votes} from '@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol';
-import {MerkleProof} from '@openzeppelin/contracts/utils/cryptography/MerkleProof.sol';
+import {ERC20VotesUpgradeable} from '@openzeppelin-upgradeable/token/ERC20/extensions/ERC20VotesUpgradeable.sol';
+import {MerkleProof} from '@openzeppelin/utils/cryptography/MerkleProof.sol';
 
-import {SafeERC20} from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import {SafeERC20Upgradeable} from '@openzeppelin-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol';
 
 /**
  * @title  TokenDistributor
  * @notice This contract allows users to claim tokens from a merkle tree proof
  */
 contract TokenDistributor is Authorizable, ITokenDistributor {
-  using SafeERC20 for ERC20Votes;
+  using SafeERC20Upgradeable for ERC20VotesUpgradeable;
   using Assertions for address;
   using Assertions for uint256;
 
@@ -24,7 +24,7 @@ contract TokenDistributor is Authorizable, ITokenDistributor {
   /// @inheritdoc ITokenDistributor
   bytes32 public root;
   /// @inheritdoc ITokenDistributor
-  ERC20Votes public token;
+  ERC20VotesUpgradeable public token;
   /// @inheritdoc ITokenDistributor
   uint256 public totalClaimable;
   /// @inheritdoc ITokenDistributor
@@ -43,13 +43,13 @@ contract TokenDistributor is Authorizable, ITokenDistributor {
    */
   constructor(
     bytes32 _root,
-    ERC20Votes _token,
+    ERC20VotesUpgradeable _token,
     uint256 _totalClaimable,
     uint256 _claimPeriodStart,
     uint256 _claimPeriodEnd
   ) Authorizable(msg.sender) {
     root = _root;
-    token = ERC20Votes(address(_token).assertNonNull());
+    token = ERC20VotesUpgradeable(address(_token).assertNonNull());
     totalClaimable = _totalClaimable.assertNonNull();
     claimPeriodStart = _claimPeriodStart.assertGt(block.timestamp);
     claimPeriodEnd = _claimPeriodEnd.assertGt(claimPeriodStart);

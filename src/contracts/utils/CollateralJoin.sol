@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.20;
+pragma solidity 0.8.19;
 
 import {ICollateralJoin} from '@interfaces/utils/ICollateralJoin.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
-import {IERC20Metadata} from '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
+import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {Disableable} from '@contracts/utils/Disableable.sol';
 
 import {Math} from '@libraries/Math.sol';
-import {SafeERC20} from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import {SafeERC20} from '@openzeppelin/token/ERC20/utils/SafeERC20.sol';
 
 import {Assertions} from '@libraries/Assertions.sol';
 
@@ -65,9 +65,12 @@ contract CollateralJoin is Disableable, ICollateralJoin {
    * @inheritdoc ICollateralJoin
    */
   function join(address _account, uint256 _wei) external whenEnabled {
-    collateral.safeTransferFrom(msg.sender, address(this), _wei);
+    // Effect
     uint256 _wad = _wei * 10 ** multiplier; // convert to 18 decimals [wad]
     safeEngine.modifyCollateralBalance(collateralType, _account, _wad.toInt());
+
+    // Interaction
+    collateral.safeTransferFrom(msg.sender, address(this), _wei);
     emit Join(msg.sender, _account, _wad);
   }
 
@@ -78,8 +81,11 @@ contract CollateralJoin is Disableable, ICollateralJoin {
    * @inheritdoc ICollateralJoin
    */
   function exit(address _account, uint256 _wei) external {
+    // Effect
     uint256 _wad = _wei * 10 ** multiplier; // convert to 18 decimals [wad]
     safeEngine.modifyCollateralBalance(collateralType, msg.sender, -_wad.toInt());
+
+    // Interaction
     collateral.safeTransfer(_account, _wei);
     emit Exit(msg.sender, _account, _wad);
   }

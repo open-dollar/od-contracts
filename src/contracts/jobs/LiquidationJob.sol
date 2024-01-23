@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.20;
+pragma solidity 0.8.19;
 
 import {ILiquidationJob} from '@interfaces/jobs/ILiquidationJob.sol';
 import {ILiquidationEngine} from '@interfaces/ILiquidationEngine.sol';
@@ -51,6 +51,16 @@ contract LiquidationJob is Authorizable, Modifiable, Job, ILiquidationJob {
 
   /// @inheritdoc ILiquidationJob
   function workLiquidation(bytes32 _cType, address _safe) external reward {
+    if (!shouldWork) revert NotWorkable();
+    liquidationEngine.liquidateSAFE(_cType, _safe);
+  }
+
+  /**
+   * @notice Liquidate a SAFE without a reward
+   * @param _cType Bytes32 representation of the collateral type
+   * @param _safe Address of the SAFE to liquidate
+   */
+  function workLiquidationWithoutReward(bytes32 _cType, address _safe) external {
     if (!shouldWork) revert NotWorkable();
     liquidationEngine.liquidateSAFE(_cType, _safe);
   }

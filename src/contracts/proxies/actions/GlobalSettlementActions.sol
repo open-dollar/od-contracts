@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.20;
+pragma solidity 0.8.19;
 
-import {HaiSafeManager} from '@contracts/proxies/HaiSafeManager.sol';
+import {ODSafeManager} from '@contracts/proxies/ODSafeManager.sol';
 import {CommonActions} from '@contracts/proxies/actions/CommonActions.sol';
 
 import {IGlobalSettlement} from '@interfaces/settlement/IGlobalSettlement.sol';
@@ -26,8 +26,8 @@ contract GlobalSettlementActions is CommonActions, IGlobalSettlementActions {
     uint256 _safeId
   ) external onlyDelegateCall returns (uint256 _collateralAmount) {
     IGlobalSettlement __globalSettlement = IGlobalSettlement(_globalSettlement);
-    HaiSafeManager __manager = HaiSafeManager(_manager);
-    HaiSafeManager.SAFEData memory _safeData = __manager.safeData(_safeId);
+    ODSafeManager __manager = ODSafeManager(_manager);
+    ODSafeManager.SAFEData memory _safeData = __manager.safeData(_safeId);
     ISAFEEngine _safeEngine = ISAFEEngine(__manager.safeEngine());
     ISAFEEngine.SAFE memory _safe = _safeEngine.safes(_safeData.collateralType, _safeData.safeHandler);
 

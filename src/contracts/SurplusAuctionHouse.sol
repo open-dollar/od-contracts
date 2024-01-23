@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.20;
+pragma solidity 0.8.19;
 
 import {ISurplusAuctionHouse, ICommonSurplusAuctionHouse} from '@interfaces/ISurplusAuctionHouse.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
@@ -9,7 +9,7 @@ import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {Modifiable} from '@contracts/utils/Modifiable.sol';
 import {Disableable} from '@contracts/utils/Disableable.sol';
 
-import {SafeERC20} from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import {SafeERC20Upgradeable} from '@openzeppelin-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol';
 import {Encoding} from '@libraries/Encoding.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 import {Math, WAD} from '@libraries/Math.sol';
@@ -23,7 +23,7 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
   using Math for uint256;
   using Encoding for bytes;
   using Assertions for address;
-  using SafeERC20 for IProtocolToken;
+  using SafeERC20Upgradeable for IProtocolToken;
 
   /// @inheritdoc ICommonSurplusAuctionHouse
   bytes32 public constant AUCTION_HOUSE_TYPE = bytes32('SURPLUS');

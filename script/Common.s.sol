@@ -1,13 +1,32 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.20;
+pragma solidity 0.8.19;
 
 import '@script/Contracts.s.sol';
 import '@script/Params.s.sol';
 import '@script/Registry.s.sol';
+import {Params, ParamChecker, OD, ETH_A, JOB_REWARD} from '@script/Params.s.sol';
 
 abstract contract Common is Contracts, Params {
-  uint256 internal _deployerPk = 69; // for tests
+  uint256 internal _chainId;
+  uint256 internal _deployerPk = 69; // for tests - from HAI
   uint256 internal _governorPK;
+  bytes32 internal _systemCoinSalt;
+  bytes32 internal _vault721Salt;
+  bytes internal _systemCoinInitCode;
+  bytes internal _vault721InitCode;
+  address internal _chainlinkUptimeFeed;
+
+  function getChainId() public view returns (uint256) {
+    uint256 id;
+    assembly {
+      id := chainid()
+    }
+    return id;
+  }
+
+  function getSemiRandSalt() public view returns (bytes32) {
+    return keccak256(abi.encode(block.number, block.timestamp));
+  }
 
   function deployCollateralContracts(bytes32 _cType) public updateParams {
     // deploy CollateralJoin and CollateralAuctionHouse
@@ -35,7 +54,7 @@ abstract contract Common is Contracts, Params {
     _revoke(safeEngine, _governor);
     _revoke(liquidationEngine, _governor);
     _revoke(accountingEngine, _governor);
-    _revoke(oracleRelayer, _governor);
+    // _revoke(oracleRelayer, _governor);
 
     // auction houses
     _revoke(surplusAuctionHouse, _governor);
@@ -58,7 +77,6 @@ abstract contract Common is Contracts, Params {
 
     // factories or children
     _revoke(chainlinkRelayerFactory, _governor);
-    _revoke(uniV3RelayerFactory, _governor);
     _revoke(denominatedOracleFactory, _governor);
     _revoke(delayedOracleFactory, _governor);
 
@@ -108,7 +126,6 @@ abstract contract Common is Contracts, Params {
     _delegate(coinJoin, __delegate);
 
     _delegate(chainlinkRelayerFactory, __delegate);
-    _delegate(uniV3RelayerFactory, __delegate);
     _delegate(denominatedOracleFactory, __delegate);
     _delegate(delayedOracleFactory, __delegate);
 
@@ -134,44 +151,70 @@ abstract contract Common is Contracts, Params {
     return governor != deployer && governor != address(0);
   }
 
-  function deployTokens() public updateParams {
-    systemCoin = new SystemCoin('HAI Index Token', 'HAI');
-    protocolToken = new ProtocolToken('Protocol Token', 'KITE');
+  function deployTokenGovernance() public updateParams {
+    // deploy Tokens
+
+    if (_chainId != 31_337) {
+      address systemCoinAddress = create2.create2deploy(_systemCoinSalt, _systemCoinInitCode);
+      systemCoin = ISystemCoin(systemCoinAddress);
+    } else {
+      systemCoin = new OpenDollar();
+      protocolToken = new OpenDollarGovernance();
+      protocolToken.initialize('Open Dollar Governance', 'ODG');
+    }
+    systemCoin.initialize('Open Dollar', 'OD');
+
+    address[] memory members = new address[](0);
+
+    // deploy governance contracts
+    if (_chainId == 42_161) {
+      timelockController = new TimelockController(MIN_DELAY, members, members, deployer);
+      odGovernor = new ODGovernor(
+        MAINNET_INIT_VOTING_DELAY,
+        MAINNET_INIT_VOTING_PERIOD,
+        MAINNET_INIT_PROP_THRESHOLD,
+        address(protocolToken),
+        timelockController
+      );
+    } else {
+      timelockController = new TimelockController(MIN_DELAY_GOERLI, members, members, deployer);
+      odGovernor = new ODGovernor(
+        TEST_INIT_VOTING_DELAY,
+        TEST_INIT_VOTING_PERIOD,
+        TEST_INIT_PROP_THRESHOLD,
+        address(protocolToken),
+        timelockController
+      );
+    }
+
+    // set governor
+    governor = address(timelockController);
+
+    // set odGovernor as PROPOSER_ROLE and EXECUTOR_ROLE
+    timelockController.grantRole(timelockController.PROPOSER_ROLE(), address(odGovernor));
+    timelockController.grantRole(timelockController.EXECUTOR_ROLE(), address(odGovernor));
+
+    // // revoke deployer from TIMELOCK_ADMIN_ROLE
+    timelockController.renounceRole(timelockController.TIMELOCK_ADMIN_ROLE(), deployer);
   }
 
   function deployContracts() public updateParams {
+    require(governor == address(timelockController), 'governor not set');
+
     // deploy Base contracts
     safeEngine = new SAFEEngine(_safeEngineParams);
 
-    oracleRelayer = new OracleRelayer(
-            address(safeEngine),
-            systemCoinOracle,
-            _oracleRelayerParams
-        );
+    oracleRelayer = new OracleRelayer(address(safeEngine), systemCoinOracle, _oracleRelayerParams);
 
-    surplusAuctionHouse = new SurplusAuctionHouse(
-            address(safeEngine),
-            address(protocolToken),
-            _surplusAuctionHouseParams
-        );
-    debtAuctionHouse = new DebtAuctionHouse(
-            address(safeEngine),
-            address(protocolToken),
-            _debtAuctionHouseParams
-        );
+    surplusAuctionHouse =
+      new SurplusAuctionHouse(address(safeEngine), address(protocolToken), _surplusAuctionHouseParams);
+    debtAuctionHouse = new DebtAuctionHouse(address(safeEngine), address(protocolToken), _debtAuctionHouseParams);
 
     accountingEngine = new AccountingEngine(
-            address(safeEngine),
-            address(surplusAuctionHouse),
-            address(debtAuctionHouse),
-            _accountingEngineParams
-        );
+      address(safeEngine), address(surplusAuctionHouse), address(debtAuctionHouse), _accountingEngineParams
+    );
 
-    liquidationEngine = new LiquidationEngine(
-            address(safeEngine),
-            address(accountingEngine),
-            _liquidationEngineParams
-        );
+    liquidationEngine = new LiquidationEngine(address(safeEngine), address(accountingEngine), _liquidationEngineParams);
 
     collateralAuctionHouseFactory =
       new CollateralAuctionHouseFactory(address(safeEngine), address(liquidationEngine), address(oracleRelayer));
@@ -182,42 +225,31 @@ abstract contract Common is Contracts, Params {
   }
 
   function deployTaxModule() public updateParams {
-    taxCollector = new TaxCollector(
-            address(safeEngine),
-            _taxCollectorParams
-        );
+    taxCollector = new TaxCollector(address(safeEngine), _taxCollectorParams);
 
     stabilityFeeTreasury = new StabilityFeeTreasury(
-            address(safeEngine),
-            address(accountingEngine),
-            address(coinJoin),
-            _stabilityFeeTreasuryParams
-        );
+      address(safeEngine), address(accountingEngine), address(coinJoin), _stabilityFeeTreasuryParams
+    );
   }
 
   function deployGlobalSettlement() public updateParams {
     globalSettlement = new GlobalSettlement(
-            address(safeEngine),
-            address(liquidationEngine),
-            address(oracleRelayer),
-            address(coinJoin),
-            address(collateralJoinFactory),
-            address(collateralAuctionHouseFactory),
-            address(stabilityFeeTreasury),
-            address(accountingEngine),
-            _globalSettlementParams
-        );
+      address(safeEngine),
+      address(liquidationEngine),
+      address(oracleRelayer),
+      address(coinJoin),
+      address(collateralJoinFactory),
+      address(collateralAuctionHouseFactory),
+      address(stabilityFeeTreasury),
+      address(accountingEngine),
+      _globalSettlementParams
+    );
 
-    postSettlementSurplusAuctionHouse = new PostSettlementSurplusAuctionHouse(
-            address(safeEngine),
-            address(protocolToken),
-            _postSettlementSAHParams
-        );
+    postSettlementSurplusAuctionHouse =
+      new PostSettlementSurplusAuctionHouse(address(safeEngine), address(protocolToken), _postSettlementSAHParams);
 
-    settlementSurplusAuctioneer = new SettlementSurplusAuctioneer(
-            address(accountingEngine),
-            address(postSettlementSurplusAuctionHouse)
-        );
+    settlementSurplusAuctioneer =
+      new SettlementSurplusAuctioneer(address(accountingEngine), address(postSettlementSurplusAuctionHouse));
   }
 
   function _setupGlobalSettlement() internal {
@@ -268,18 +300,24 @@ abstract contract Common is Contracts, Params {
     oracleRelayer.updateCollateralPrice(_cType);
   }
 
+  function deployOracleFactories(address _uptimeFeed) public updateParams {
+    chainlinkRelayerFactory = new ChainlinkRelayerFactory(_uptimeFeed);
+    denominatedOracleFactory = new DenominatedOracleFactory();
+    delayedOracleFactory = new DelayedOracleFactory();
+  }
+
   function deployPIDController() public updateParams {
     pidController = new PIDController({
-            _cGains: _pidControllerGains,
-            _pidParams: _pidControllerParams,
-            _importedState: IPIDController.DeviationObservation(0, 0, 0)
-        });
+      _cGains: _pidControllerGains,
+      _pidParams: _pidControllerParams,
+      _importedState: IPIDController.DeviationObservation(0, 0, 0)
+    });
 
     pidRateSetter = new PIDRateSetter({
-             _oracleRelayer: address(oracleRelayer),
-            _pidCalculator: address(pidController),
-            _pidRateSetterParams: _pidRateSetterParams
-        });
+      _oracleRelayer: address(oracleRelayer),
+      _pidCalculator: address(pidController),
+      _pidRateSetterParams: _pidRateSetterParams
+    });
   }
 
   function _setupPIDController() internal {
@@ -291,22 +329,9 @@ abstract contract Common is Contracts, Params {
   }
 
   function deployJobContracts() public updateParams {
-    accountingJob = new AccountingJob(
-            address(accountingEngine),
-            address(stabilityFeeTreasury),
-            JOB_REWARD
-        );
-    liquidationJob = new LiquidationJob(
-            address(liquidationEngine),
-            address(stabilityFeeTreasury),
-            JOB_REWARD
-        );
-    oracleJob = new OracleJob(
-            address(oracleRelayer),
-            address(pidRateSetter),
-            address(stabilityFeeTreasury),
-            JOB_REWARD
-        );
+    accountingJob = new AccountingJob(address(accountingEngine), address(stabilityFeeTreasury), JOB_REWARD);
+    liquidationJob = new LiquidationJob(address(liquidationEngine), address(stabilityFeeTreasury), JOB_REWARD);
+    oracleJob = new OracleJob(address(oracleRelayer), address(pidRateSetter), address(stabilityFeeTreasury), JOB_REWARD);
   }
 
   function _setupJobContracts() internal {
@@ -315,9 +340,19 @@ abstract contract Common is Contracts, Params {
     stabilityFeeTreasury.setTotalAllowance(address(oracleJob), type(uint256).max);
   }
 
-  function deployProxyContracts(address _safeEngine) public updateParams {
-    proxyFactory = new HaiProxyFactory();
-    safeManager = new HaiSafeManager(_safeEngine);
+  function deployProxyContracts() public updateParams {
+    if (_chainId != 31_337) {
+      address vault721Address = create2.create2deploy(_vault721Salt, _vault721InitCode);
+      vault721 = Vault721(vault721Address);
+    } else {
+      vault721 = new Vault721();
+    }
+    vault721.initialize(address(timelockController));
+
+    safeManager = new ODSafeManager(address(safeEngine), address(vault721), address(taxCollector));
+    nftRenderer =
+      new NFTRenderer(address(vault721), address(oracleRelayer), address(taxCollector), address(collateralJoinFactory));
+
     _deployProxyActions();
   }
 
@@ -329,25 +364,6 @@ abstract contract Common is Contracts, Params {
     postSettlementSurplusBidActions = new PostSettlementSurplusBidActions();
     globalSettlementActions = new GlobalSettlementActions();
     rewardedActions = new RewardedActions();
-  }
-
-  function _deployUniV3Pool() internal {
-    address _uniV3Pool = IUniswapV3Factory(UNISWAP_V3_FACTORY).createPool({
-      tokenA: address(systemCoin),
-      tokenB: address(collateral[WETH]),
-      fee: HAI_POOL_FEE_TIER
-    });
-
-    address _token0 = IUniswapV3Pool(_uniV3Pool).token0();
-    uint160 _sqrtPriceX96 =
-      _token0 == address(systemCoin) ? HAI_INITIAL_SQRT_PRICE_X96 : HAI_INITIAL_SQRT_PRICE_X96_INVERSE;
-
-    IUniswapV3Pool(_uniV3Pool).initialize(_sqrtPriceX96);
-
-    for (uint256 _i; _i < HAI_POOL_OBSERVATION_CARDINALITY;) {
-      IUniswapV3Pool(_uniV3Pool).increaseObservationCardinalityNext(500);
-      _i += 500;
-    }
   }
 
   modifier updateParams() {

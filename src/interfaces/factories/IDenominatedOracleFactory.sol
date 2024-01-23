@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.20;
+pragma solidity 0.8.19;
 
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';

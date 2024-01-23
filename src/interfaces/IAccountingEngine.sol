@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.20;
+pragma solidity 0.8.19;
 
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ISurplusAuctionHouse} from '@interfaces/ISurplusAuctionHouse.sol';
@@ -87,26 +87,28 @@ interface IAccountingEngine is IAuthorizable, IDisableable, IModifiable {
   error AccEng_PopDebtCooldown();
   /// @notice Throws when trying to transfer post-settlement surplus before the disable cooldown has passed
   error AccEng_PostSettlementCooldown();
+  /// @notice Throws when surplus surplusTransferPercentage is great than WAD (100%)
+  error AccEng_surplusTransferPercentOverLimit();
 
   // --- Structs ---
 
   struct AccountingEngineParams {
-    // Whether the system transfers surplus instead of auctioning it
-    uint256 /* 0 | 1  */ surplusIsTransferred;
-    // Amount of seconds required to wait between surplus actions
-    uint256 /* seconds */ surplusDelay;
-    // Amount of seconds after which debt can be popped from debtQueue
-    uint256 /* seconds */ popDebtDelay;
-    // Amount of seconds to wait (post settlement) until surplus can be drained
-    uint256 /* seconds */ disableCooldown;
-    // Amount of surplus transferred or sold in one surplus action
-    uint256 /* RAD     */ surplusAmount;
-    // Amount of surplus that needs to accrue in this contract before any surplus action can start
-    uint256 /* RAD     */ surplusBuffer;
-    // Amount of protocol tokens offered to be minted in debt auctions
-    uint256 /* WAD     */ debtAuctionMintedTokens;
-    // Amount of debt sold in one debt auction
-    uint256 /* RAD     */ debtAuctionBidSize;
+    // percent of the Surplus the system transfers instead of auctioning [0/100]
+    uint256 surplusTransferPercentage;
+    // Delay between surplus actions
+    uint256 surplusDelay;
+    // Delay after which debt can be popped from debtQueue
+    uint256 popDebtDelay;
+    // Time to wait (post settlement) until any remaining surplus can be transferred to the settlement auctioneer
+    uint256 disableCooldown;
+    // Amount of surplus stability fees transferred or sold in one surplus auction
+    uint256 surplusAmount;
+    // Amount of stability fees that need to accrue in this contract before any surplus auction can start
+    uint256 surplusBuffer;
+    // Amount of protocol tokens to be minted post-auction
+    uint256 debtAuctionMintedTokens;
+    // Amount of debt sold in one debt auction (initial coin bid for debtAuctionMintedTokens protocol tokens)
+    uint256 debtAuctionBidSize;
   }
 
   // --- Registry ---
@@ -143,7 +145,7 @@ interface IAccountingEngine is IAuthorizable, IDisableable, IModifiable {
 
   /**
    * @notice Getter for the unpacked contract parameters struct
-   * @return _surplusIsTransferred Whether the system transfers surplus instead of auctioning it [0/1]
+   * @return _surplusTransferPercentage Whether the system transfers surplus instead of auctioning it [0/1]
    * @return _surplusDelay Amount of seconds between surplus actions
    * @return _popDebtDelay Amount of seconds after which debt can be popped from debtQueue
    * @return _disableCooldown Amount of seconds to wait (post settlement) until surplus can be drained
@@ -157,7 +159,7 @@ interface IAccountingEngine is IAuthorizable, IDisableable, IModifiable {
     external
     view
     returns (
-      uint256 _surplusIsTransferred,
+      uint256 _surplusTransferPercentage,
       uint256 _surplusDelay,
       uint256 _popDebtDelay,
       uint256 _disableCooldown,
@@ -249,21 +251,13 @@ interface IAccountingEngine is IAuthorizable, IDisableable, IModifiable {
   function auctionDebt() external returns (uint256 _id);
 
   /**
-   * @notice Start a surplus auction (sell surplus stability fees for protocol tokens)
-   * @dev    It can only auction surplus if `surplusIsTransferred` is set to false
+   * @notice Start a surplus auction (sell surplus stability fees for protocol tokens) and send percentage of surplus to extraSurplusReciever
+   * @dev    It can only auction surplus if `surplusTransferPercentage` is set to greater than 0
    * @dev    It can only auction surplus if `surplusDelay` seconds have elapsed since the last surplus auction/transfer was triggered
    * @dev    It can only auction surplus if enough surplus remains in the buffer and if there is no more debt left to settle
    * @return _id Id of the surplus auction that was started
    */
   function auctionSurplus() external returns (uint256 _id);
-
-  /**
-   * @notice Transfer surplus to an address as an alternative to surplus auctions
-   * @dev    It can only transfer surplus if `surplusIsTransferred` is set to true
-   * @dev    It can only transfer surplus if `surplusDelay` seconds have elapsed since the last surplus auction/transfer was triggered
-   * @dev    It can only transfer surplus if enough surplus remains in the buffer and if there is no more debt left to settle
-   */
-  function transferExtraSurplus() external;
 
   /**
    * @notice Transfer any remaining surplus after the disable cooldown has passed. Meant to be a backup in case GlobalSettlement.processSAFE

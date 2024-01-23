@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.20;
+pragma solidity 0.8.19;
 
 import {IChainlinkRelayerFactory} from '@interfaces/factories/IChainlinkRelayerFactory.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
@@ -9,7 +9,7 @@ import {ChainlinkRelayerChild} from '@contracts/factories/ChainlinkRelayerChild.
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
-import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
+import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
 
 /**
  * @title  ChainlinkRelayerFactory
