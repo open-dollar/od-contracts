@@ -138,6 +138,13 @@ contract Vault721_ViewFunctions is Base {
     assertEq(_userProxy, userProxy, 'incorrect proxy gotten');
   }
 
+  function test_GetIsAllowlisted() public {
+    vm.prank(address(timelockController));
+    vault721.updateAllowlist(address(user), true);
+    bool allowlisted = vault721.getIsAllowlisted(address(user));
+    assertTrue(allowlisted, 'user not allowed');
+  }
+
   function test_GetHashState() public {
     vm.mockCall(
       address(renderer),
