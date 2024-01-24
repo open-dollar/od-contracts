@@ -102,6 +102,8 @@ contract DeployMainnet is MainnetParams, Deploy {
     create2 = IODCreate2Factory(MAINNET_CREATE2FACTORY);
     protocolToken = IProtocolToken(MAINNET_PROTOCOL_TOKEN);
     governor = MAINNET_TIMELOCK_CONTROLLER;
+    timelockController = TimelockController(payable(MAINNET_TIMELOCK_CONTROLLER));
+    odGovernor = ODGovernor(payable(MAINNET_OD_GOVERNOR));
 
     _deployerPk = uint256(vm.envBytes32('ARB_MAINNET_DEPLOYER_PK'));
     chainId = 42_161;
@@ -174,6 +176,8 @@ contract DeploySepolia is SepoliaParams, Deploy {
     create2 = IODCreate2Factory(TEST_CREATE2FACTORY);
     protocolToken = IProtocolToken(SEPOLIA_PROTOCOL_TOKEN);
     governor = SEPOLIA_TIMELOCK_CONTROLLER;
+    timelockController = TimelockController(payable(SEPOLIA_TIMELOCK_CONTROLLER));
+    odGovernor = ODGovernor(payable(SEPOLIA_OD_GOVERNOR));
 
     _deployerPk = uint256(vm.envBytes32('ARB_SEPOLIA_DEPLOYER_PK'));
     chainId = 421_614;
