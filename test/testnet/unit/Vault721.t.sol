@@ -511,7 +511,7 @@ contract Unit_Vault721_TransferFrom is Base {
 
     vm.prank(_scenario.user2);
     vm.expectRevert(Vault721.TimeDelayNotOver.selector);
-    
+
     vm.mockCall(
       address(renderer),
       abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector),
