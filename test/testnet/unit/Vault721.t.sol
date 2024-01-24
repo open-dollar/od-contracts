@@ -413,7 +413,7 @@ contract Unit_Vault721_TransferFrom is Base {
   struct Scenario {
     address user1;
     address user2;
-    uint256 tokenId1;
+    uint256 tokenId;
     uint8 blockDelay;
     uint256 timeDelay;
   }
@@ -430,7 +430,7 @@ contract Unit_Vault721_TransferFrom is Base {
   modifier basicLimits(Scenario memory _scenario) {
     vm.assume(_scenario.user1 != address(0));
     vm.assume(_scenario.user2 != address(0));
-    vm.assume(_scenario.tokenId1 != uint256(0));
+    vm.assume(_scenario.tokenId != uint256(0));
     vm.assume(_scenario.blockDelay > 0);
     vm.assume(_scenario.timeDelay > 0);
     vm.assume(notUnderOrOverflowAdd(_scenario.blockDelay, int256(block.number)));
@@ -442,7 +442,7 @@ contract Unit_Vault721_TransferFrom is Base {
     _userProxy = vault721.build(_scenario.user1);
 
     vm.prank(address(safeManager));
-    vault721.mint(_userProxy, _scenario.tokenId1);
+    vault721.mint(_userProxy, _scenario.tokenId);
   }
 
   function test_TransferFrom(Scenario memory _scenario) public basicLimits(_scenario) {
@@ -456,12 +456,12 @@ contract Unit_Vault721_TransferFrom is Base {
       address(renderer), abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector), abi.encode(bytes32(0))
     );
 
-    vault721.transferFrom(_scenario.user1, _scenario.user2, _scenario.tokenId1);
+    vault721.transferFrom(_scenario.user1, _scenario.user2, _scenario.tokenId);
   }
 
   function test_TransferFrom_Revert_BlockDelayNotReached(Scenario memory _scenario) public basicLimits(_scenario) {
     // hardcode previous hash into mock call for test
-    bytes32 previousHashState = 0x0508bed9fd4f78f10478c995115fdf0b087b42d661e8c6f27710c035187b029b;
+    bytes32 previousHashState = vault721.getHashState(_scenario.tokenId).lastHash;
     _mintNft(_scenario);
 
     vm.prank(address(timelockController));
@@ -481,7 +481,7 @@ contract Unit_Vault721_TransferFrom is Base {
 
     vm.prank(address(safeManager));
 
-    vault721.updateVaultHashState(1);
+    vault721.updateVaultHashState(_scenario.tokenId);
     vm.prank(_scenario.user1);
 
     vm.expectRevert(Vault721.BlockDelayNotOver.selector);
@@ -489,10 +489,10 @@ contract Unit_Vault721_TransferFrom is Base {
     vm.mockCall(
       address(renderer),
       abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector),
-      abi.encode(bytes32(previousHashState))
+      abi.encode(bytes32('test-hash'))
     );
 
-    vault721.transferFrom(_scenario.user1, _scenario.user2, _scenario.tokenId1);
+    vault721.transferFrom(_scenario.user1, _scenario.user2, _scenario.tokenId);
     assertEq(vault721.balanceOf(_scenario.user1), 1, 'token transferred');
   }
 
@@ -510,7 +510,7 @@ contract Unit_Vault721_TransferFrom is Base {
       abi.encode(bytes32('test-hash'))
     );
 
-    vault721.updateVaultHashState(_scenario.tokenId1);
+    vault721.updateVaultHashState(_scenario.tokenId);
 
     vm.prank(_scenario.user1);
     vault721.setApprovalForAll(_scenario.user2, true);
@@ -523,7 +523,7 @@ contract Unit_Vault721_TransferFrom is Base {
       abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector),
       abi.encode(bytes32('test-hash'))
     );
-    vault721.transferFrom(_scenario.user1, _scenario.user2, _scenario.tokenId1);
+    vault721.transferFrom(_scenario.user1, _scenario.user2, _scenario.tokenId);
 
     assertEq(vault721.balanceOf(_scenario.user1), 1, 'transfer succesful');
   }
