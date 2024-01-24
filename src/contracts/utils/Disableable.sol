@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0
+  // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
