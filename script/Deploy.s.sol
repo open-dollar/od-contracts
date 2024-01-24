@@ -20,7 +20,7 @@ abstract contract Deploy is Common, Script {
   function mintAirdrop() public virtual {}
 
   function run() public {
-    deployer = vm.addr(_deployerPk); // ARB_SEPOLIA_DEPLOYER_PK
+    deployer = vm.addr(_deployerPk);
     vm.startBroadcast(deployer);
 
     // creation bytecode
@@ -101,6 +101,7 @@ contract DeployMainnet is MainnetParams, Deploy {
     // set create2 factory
     create2 = IODCreate2Factory(MAINNET_CREATE2FACTORY);
     protocolToken = IProtocolToken(MAINNET_PROTOCOL_TOKEN);
+    governor = MAINNET_TIMELOCK_CONTROLLER;
 
     _deployerPk = uint256(vm.envBytes32('ARB_MAINNET_DEPLOYER_PK'));
     chainId = 42_161;
@@ -172,6 +173,7 @@ contract DeploySepolia is SepoliaParams, Deploy {
     // set create2 factory
     create2 = IODCreate2Factory(TEST_CREATE2FACTORY);
     protocolToken = IProtocolToken(SEPOLIA_PROTOCOL_TOKEN);
+    governor = SEPOLIA_TIMELOCK_CONTROLLER;
 
     _deployerPk = uint256(vm.envBytes32('ARB_SEPOLIA_DEPLOYER_PK'));
     chainId = 421_614;

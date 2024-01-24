@@ -6,6 +6,10 @@ uint256 constant SEMI_RANDOM_SALT = 0; // set to 0 to use Salts below, set to 1 
 
 // --- ARB Sepolia Testnet ---
 
+// Governor
+SEPOLIA_TIMELOCK_CONTROLLER = 0x3D2DA0286758841b59881bc64f821F1FB0Dbe284;
+SEPOLIA_OD_GOVERNOR = 0x8132fbC8A9C58C0B35966DB9221F6698aBe1a8FE;
+
 // Create2 Factory
 address constant TEST_CREATE2FACTORY = 0xC5f2C81d16764908B18379D95f410912d928Adc2;
 
@@ -60,11 +64,15 @@ address constant SEPOLIA_WETH = 0x980B62Da83eFf3D4576C647993b0c1D7faf17c73;
 
 // --- ARB Mainnet ---
 
+// Governor
+MAINNET_TIMELOCK_CONTROLLER = address(1);
+MAINNET_OD_GOVERNOR = address(1);
+
 // Create2 Factory
 address constant MAINNET_CREATE2FACTORY = 0x6EDb251053B4F7670C98e18bbEA20818367b4C0f;
 
 // Protocol Token
-address constant MAINNET_PROTOCOL_TOKEN = address(0);
+address constant MAINNET_PROTOCOL_TOKEN = 0x000D636bD52BFc1B3a699165Ef5aa340BEA8939c;
 
 // Governance Settings
 uint256 constant MAINNET_INIT_VOTING_DELAY = 332_308;
