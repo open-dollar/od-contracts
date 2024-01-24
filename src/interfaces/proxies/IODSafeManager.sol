@@ -75,10 +75,10 @@ interface IODSafeManager {
   ) external view returns (bool _ok);
 
   /// @notice Mapping of handler to a caller permissions
-  function handlerCan(address _safeHandler, address _caller) external view returns (bool _ok);
+  function handlerCan(address _safeHandler, uint96 _safeNonce, address _caller) external view returns (bool _ok);
 
-  /// @notice Mapping of handler to whether it exists
-  function handlerExists(address _safeHandler) external view returns (bool _exists);
+  /// @notice Mapping of handler to the safeId
+  function safeHandlerToSafeId(address _safeHandler) external view returns (uint256 _safeId);
 
   // --- Getters ---
 
@@ -108,6 +108,13 @@ interface IODSafeManager {
     external
     view
     returns (uint256[] memory _safes, address[] memory _safeHandlers, bytes32[] memory _cTypes);
+
+  /**
+   * @notice Getter for the details of the safe given a handler address
+   * @param  _handler Address of the handler
+   * @return _sData Struct with the safe data
+   */
+  function getSafeDataFromHandler(address _handler) external view returns (SAFEData memory _sData);
 
   /**
    * @notice Getter for the details of a SAFE

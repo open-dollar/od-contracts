@@ -9,7 +9,7 @@ import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 
 // Open Dollar
-// Version 1.5.8
+// Version 1.5.9
 
 struct HashState {
   bytes32 lastHash;
@@ -102,6 +102,10 @@ contract Vault721 is ERC721EnumerableUpgradeable {
    */
   function getHashState(uint256 _vaultId) external view returns (HashState memory) {
     return _hashState[_vaultId];
+  }
+
+  function getIsAllowlisted(address _user) external view returns (bool) {
+    return _allowlist[_user];
   }
 
   /**

@@ -146,10 +146,6 @@ contract E2EDeploymentMainnetTest is DeployMainnet, CommonDeploymentTest {
   function setupPostEnvironment() public override(DeployMainnet, Deploy) {
     super.setupPostEnvironment();
   }
-
-  function mintAirdrop() public override(DeployMainnet, Deploy) {
-    super.mintAirdrop();
-  }
 }
 
 contract E2EDeploymentSepoliaTest is DeploySepolia, CommonDeploymentTest {
@@ -169,10 +165,6 @@ contract E2EDeploymentSepoliaTest is DeploySepolia, CommonDeploymentTest {
 
   function setupPostEnvironment() public override(DeploySepolia, Deploy) {
     super.setupPostEnvironment();
-  }
-
-  function mintAirdrop() public override(DeploySepolia, Deploy) {
-    super.mintAirdrop();
   }
 }
 

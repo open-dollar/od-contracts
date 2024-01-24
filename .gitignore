@@ -29,13 +29,6 @@ docs/book
 docs/src/src/
 docs/src/static
 
-test/testnet/simulations/pid-controller/decay_with_impulse.csv
-test/testnet/simulations/pid-controller/decay_with_step.csv
-test/testnet/simulations/pid-controller/integral_gain_with_impulse.csv
-test/testnet/simulations/pid-controller/integral_gain_with_step.csv
-test/testnet/simulations/pid-controller/no_gain_with_impulse.csv
-test/testnet/simulations/pid-controller/no_gain_with_step.csv
-test/testnet/simulations/pid-controller/production_setup_with_impulse.csv
-test/testnet/simulations/pid-controller/production_setup_with_step.csv
-test/testnet/simulations/pid-controller/proportional_gain_with_impulse.csv
-test/testnet/simulations/pid-controller/proportional_gain_with_step.csv
+test/testnet/simulations/pid-controller/
+
+.idea/

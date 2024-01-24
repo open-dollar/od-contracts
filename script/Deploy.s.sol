@@ -71,8 +71,10 @@ abstract contract Deploy is Common, Script {
       _setupCollateral(_cType);
     }
 
-    // Mint initial ODG airdrop
-    mintAirdrop();
+    // Mint initial ODG airdrop Anvil
+    if (_chainId == 31_337) {
+      mintAirdrop();
+    }
 
     // Deploy contracts related to the SafeManager usecase
     deployProxyContracts();
@@ -80,7 +82,7 @@ abstract contract Deploy is Common, Script {
     // Deploy and setup contracts that rely on deployed environment
     setupPostEnvironment();
 
-    if (getChainId() == 42_161) {
+    if (_chainId == 42_161) {
       // mainnet: revoke deployer, authorize governor
       _revokeAllTo(governor);
     } else {
@@ -98,6 +100,7 @@ contract DeployMainnet is MainnetParams, Deploy {
   function setUp() public virtual {
     // set create2 factory
     create2 = IODCreate2Factory(MAINNET_CREATE2FACTORY);
+    protocolToken = IProtocolToken(MAINNET_PROTOCOL_TOKEN);
 
     _deployerPk = uint256(vm.envBytes32('ARB_MAINNET_DEPLOYER_PK'));
     chainId = 42_161;
@@ -108,11 +111,6 @@ contract DeployMainnet is MainnetParams, Deploy {
       _systemCoinSalt = getSemiRandSalt();
       _vault721Salt = getSemiRandSalt();
     }
-  }
-
-  function mintAirdrop() public virtual override {
-    require(MAINNET_SAFE != address(0), 'DAO zeroAddress');
-    protocolToken.mint(MAINNET_SAFE, AIRDROP_AMOUNT);
   }
 
   // Setup oracle feeds
@@ -173,6 +171,7 @@ contract DeploySepolia is SepoliaParams, Deploy {
   function setUp() public virtual {
     // set create2 factory
     create2 = IODCreate2Factory(TEST_CREATE2FACTORY);
+    protocolToken = IProtocolToken(SEPOLIA_PROTOCOL_TOKEN);
 
     _deployerPk = uint256(vm.envBytes32('ARB_SEPOLIA_DEPLOYER_PK'));
     chainId = 421_614;
@@ -183,12 +182,6 @@ contract DeploySepolia is SepoliaParams, Deploy {
       _systemCoinSalt = getSemiRandSalt();
       _vault721Salt = getSemiRandSalt();
     }
-  }
-
-  function mintAirdrop() public virtual override {
-    protocolToken.mint(H, AIRDROP_AMOUNT / 3);
-    protocolToken.mint(J, AIRDROP_AMOUNT / 3);
-    protocolToken.mint(P, AIRDROP_AMOUNT / 3);
   }
 
   // Setup oracle feeds

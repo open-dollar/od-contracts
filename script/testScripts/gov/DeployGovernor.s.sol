@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
+import '@script/Registry.s.sol';
 import {Script} from 'forge-std/Script.sol';
 import {SepoliaContracts} from '@script/SepoliaContracts.s.sol';
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 import {TimelockController} from '@openzeppelin/governance/TimelockController.sol';
-import '@script/Registry.s.sol';
 
 // BROADCAST
 // source .env && forge script DeployGovernor --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
@@ -30,7 +30,7 @@ contract DeployGovernor is SepoliaContracts, Script {
       TEST_INIT_VOTING_DELAY,
       TEST_INIT_VOTING_PERIOD,
       TEST_INIT_PROP_THRESHOLD,
-      ProtocolToken_Address,
+      SEPOLIA_PROTOCOL_TOKEN,
       timelockController
     );
     vm.stopBroadcast();
