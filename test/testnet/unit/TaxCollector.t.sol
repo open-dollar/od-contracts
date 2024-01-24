@@ -1058,6 +1058,6 @@ contract Unit_TaxCollector_SecondaryReceiverViewFunctions is Base {
   function test_SecondaryReceiverRevenueSourcesList() public {
     bytes32[] memory secondaryReceiverRevenueSourcesList =
       taxCollector.secondaryReceiverRevenueSourcesList(secondaryReceiverA);
-    assertEq(secondaryReceiverRevenueSourcesList[0], bytes32(0), 'incorrect secondary receiver address');
+    assertEq(secondaryReceiverRevenueSourcesList[0], bytes32(collateralTypeA), 'incorrect secondary receiver address');
   }
 }

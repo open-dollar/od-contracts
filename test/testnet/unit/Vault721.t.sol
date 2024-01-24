@@ -359,7 +359,7 @@ contract Unit_Vault721_GovernanceFunctions is Base {
     vm.mockCall(
       address(renderer),
       abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector),
-      abi.encode(bytes32(previousHashState))
+      abi.encode(previousHashState)
     );
 
     vm.prank(address(safeManager));
@@ -511,6 +511,7 @@ contract Unit_Vault721_TransferFrom is Base {
 
     vm.prank(_scenario.user2);
     vm.expectRevert(Vault721.TimeDelayNotOver.selector);
+    
     vm.mockCall(
       address(renderer),
       abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector),
