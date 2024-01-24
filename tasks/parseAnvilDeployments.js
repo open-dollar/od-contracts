@@ -15,7 +15,7 @@ fs.readFile(filePath, "utf8", (err, data) => {
       // Protocol contracts
       let name = contractName;
       if (contractName === "MintableERC20") {
-        const tokenSymbolArg = curr.arguments[1];
+        const tokenSymbolArg = curr.arguments[1].toUpperCase();
         name = name + "_" + tokenSymbolArg.replaceAll('"', "");
       }
       acc[name] = contractAddress;
