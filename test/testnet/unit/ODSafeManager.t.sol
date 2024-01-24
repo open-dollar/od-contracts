@@ -241,7 +241,7 @@ contract Unit_ODSafeManager_SAFEManagement is Base {
 
     safeManager.allowHandler(_scenario.rando, true);
 
-    assertTrue(safeManager.handlerCan(_scenario.userProxy, _scenario.rando), 'handler not allowed');
+    assertTrue(safeManager.handlerCan(_scenario.userProxy, 0, _scenario.rando), 'handler not allowed');
   }
 
   function test_AddSAFE(Scenario memory _scenario) public happyPath(_scenario) {

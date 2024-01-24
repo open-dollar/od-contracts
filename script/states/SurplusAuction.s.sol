@@ -7,7 +7,6 @@ import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
 import {Modifiable} from '@contracts/utils/Modifiable.sol';
 import {SurplusAuctionHouse} from '@contracts/SurplusAuctionHouse.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
-import 'forge-std/Console.sol';
 
 // This script will push the system into a state of surplus, create a surplus auction, push bids into the auction
 // and then complete the auction.
