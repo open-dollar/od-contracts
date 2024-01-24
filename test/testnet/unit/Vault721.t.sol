@@ -242,6 +242,11 @@ contract Unit_Vault721_GovernanceFunctions is Base {
     vm.assume(_scenario.taxCollector != address(0));
     vm.assume(_scenario.collateralJoinFactory != address(0));
     vm.assume(_scenario.user != address(0));
+    address[4] memory contractAddresses = [address(renderer), address(vault721), address(timelockController), address(safeManager)];
+    for(uint256 i; i<contractAddresses.length; i++){
+      vm.assume(_scenario.user != contractAddresses[i]);
+    }
+    
     _;
   }
 
