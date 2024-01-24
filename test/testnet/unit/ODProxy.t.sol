@@ -4,10 +4,8 @@ pragma solidity 0.8.19;
 import {HaiTest} from '@testnet/utils/HaiTest.t.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 
-
 contract Base is HaiTest {
   ODProxy odProxy;
-
 
   address owner = address(0xdeadce11);
   address deployer = address(0xbeef);
@@ -16,7 +14,6 @@ contract Base is HaiTest {
     vm.prank(deployer);
 
     odProxy = new ODProxy(owner);
-
   }
 }
 
