@@ -246,8 +246,8 @@ contract Unit_Vault721_GovernanceFunctions is Base {
       [address(renderer), address(vault721), address(timelockController), address(safeManager)];
     for (uint256 i; i < contractAddresses.length; i++) {
       vm.assume(_scenario.user != contractAddresses[i]);
+      vm.assume(_scenario.rando != contractAddresses[i]);
     }
-
     _;
   }
 
@@ -433,8 +433,15 @@ contract Unit_Vault721_TransferFrom is Base {
     vm.assume(_scenario.tokenId != uint256(0));
     vm.assume(_scenario.blockDelay > 0);
     vm.assume(_scenario.timeDelay > 0);
+    vm.assume(_scenario.timeDelay < 9_000_000_000);
     vm.assume(notUnderOrOverflowAdd(_scenario.blockDelay, int256(block.number)));
     vm.assume(notUnderOrOverflowAdd(_scenario.timeDelay, int256(block.timestamp)));
+    address[4] memory contractAddresses =
+      [address(vault721), address(renderer), address(safeManager), address(timelockController)];
+    for (uint256 i; i < contractAddresses.length; i++) {
+      vm.assume(_scenario.user1 != contractAddresses[i]);
+      vm.assume(_scenario.user2 != contractAddresses[i]);
+    }
     _;
   }
 
@@ -460,9 +467,8 @@ contract Unit_Vault721_TransferFrom is Base {
   }
 
   function test_TransferFrom_Revert_BlockDelayNotReached(Scenario memory _scenario) public basicLimits(_scenario) {
-    // hardcode previous hash into mock call for test
-    bytes32 previousHashState = vault721.getHashState(_scenario.tokenId).lastHash;
     _mintNft(_scenario);
+    bytes32 previousHashState = vault721.getHashState(_scenario.tokenId).lastHash;
 
     vm.prank(address(timelockController));
     vault721.updateBlockDelay(_scenario.blockDelay);
@@ -482,6 +488,7 @@ contract Unit_Vault721_TransferFrom is Base {
     vm.prank(address(safeManager));
 
     vault721.updateVaultHashState(_scenario.tokenId);
+
     vm.prank(_scenario.user1);
 
     vm.expectRevert(Vault721.BlockDelayNotOver.selector);
@@ -489,7 +496,7 @@ contract Unit_Vault721_TransferFrom is Base {
     vm.mockCall(
       address(renderer),
       abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector),
-      abi.encode(bytes32('test-hash'))
+      abi.encode(bytes32(previousHashState))
     );
 
     vault721.transferFrom(_scenario.user1, _scenario.user2, _scenario.tokenId);
