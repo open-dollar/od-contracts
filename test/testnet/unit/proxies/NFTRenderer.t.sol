@@ -455,25 +455,13 @@ contract Unit_NFTRenderer_RenderParams is Base {
   }
 
   function test_RenderParams_zeros(RenderParamsData memory _data) public noOverFlow(_data) {
+    _data.safeEngineData.generatedDebt = 0;
+    _data.safeEngineData.lockedCollateral = 0;
     _mockRenderCalls(_data);
-    _data.safeEngineData.generatedDebt == 0;
-    _data.safeEngineData.lockedCollateral == 0;
 
     NFTRenderer.VaultParams memory params = nftRenderer.renderParams(_data.safeId);
 
-    if (_data.safeEngineData.generatedDebt != 0 && _data.safeEngineData.lockedCollateral != 0) {
-      assertEq(
-        params.ratio,
-        (
-          (_data.safeEngineData.lockedCollateral.wmul(_data.oracleParams.oracle.read())).wdiv(
-            _data.safeEngineData.generatedDebt.wmul(_data.safeEngineCollateralData.accumulatedRate)
-          )
-        ) / 1e7,
-        'incorrect ratio'
-      );
-    } else {
-      assertEq(params.ratio, 0, 'incorrect ratio param');
-    }
+    assertEq(params.ratio, 0, 'incorrect ratio param');
 
     {
       (uint256 left, uint256 right) = _floatingPoint(_data.safeEngineData.lockedCollateral);
