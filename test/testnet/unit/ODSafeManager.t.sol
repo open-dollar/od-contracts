@@ -91,6 +91,8 @@ contract Base is HaiTest {
     // modify safe collateralization
     vm.assume(notUnderOrOverflowAdd(_scenario.safeData.lockedCollateral, _scenario.deltaCollateral));
     vm.assume(notUnderOrOverflowAdd(_scenario.safeData.generatedDebt, _scenario.deltaDebt));
+    vm.assume(_scenario.safeData.generatedDebt < uint256(type(int256).max));
+    vm.assume(notUnderOrOverflowMul(_scenario.safeData.lockedCollateral, Math.toInt(_scenario.safeData.generatedDebt)));
     uint256 _newLockedCollateral = _scenario.safeData.lockedCollateral.add(_scenario.deltaCollateral);
     uint256 _newSafeDebt = _scenario.safeData.generatedDebt.add(_scenario.deltaDebt);
 
