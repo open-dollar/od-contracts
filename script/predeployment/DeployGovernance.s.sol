@@ -33,11 +33,11 @@ contract DeployGovernanceMainnet is Script {
     );
 
     // set odGovernor as PROPOSER_ROLE and EXECUTOR_ROLE
-    timelockController.grantRole(timelockController.PROPOSER_ROLE(), address(_odGovernor));
-    timelockController.grantRole(timelockController.EXECUTOR_ROLE(), address(_odGovernor));
+    _timelockController.grantRole(_timelockController.PROPOSER_ROLE(), address(_odGovernor));
+    _timelockController.grantRole(_timelockController.EXECUTOR_ROLE(), address(_odGovernor));
 
     // // revoke deployer from TIMELOCK_ADMIN_ROLE
-    timelockController.renounceRole(timelockController.TIMELOCK_ADMIN_ROLE(), deployer);
+    _timelockController.renounceRole(_timelockController.TIMELOCK_ADMIN_ROLE(), deployer);
 
     vm.stopBroadcast();
   }
@@ -70,11 +70,11 @@ contract DeployGovernanceSepolia is Script {
     );
 
     // set odGovernor as PROPOSER_ROLE and EXECUTOR_ROLE
-    timelockController.grantRole(timelockController.PROPOSER_ROLE(), address(_odGovernor));
-    timelockController.grantRole(timelockController.EXECUTOR_ROLE(), address(_odGovernor));
+    _timelockController.grantRole(_timelockController.PROPOSER_ROLE(), address(_odGovernor));
+    _timelockController.grantRole(_timelockController.EXECUTOR_ROLE(), address(_odGovernor));
 
     // // revoke deployer from TIMELOCK_ADMIN_ROLE
-    timelockController.renounceRole(timelockController.TIMELOCK_ADMIN_ROLE(), deployer);
+    _timelockController.renounceRole(_timelockController.TIMELOCK_ADMIN_ROLE(), deployer);
 
     vm.stopBroadcast();
   }
