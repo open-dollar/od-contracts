@@ -41,11 +41,6 @@ contract Unit_Vault721_Initialize is Base {
     _;
   }
 
-  modifier rendererPath() {
-    vm.startPrank(address(renderer));
-    _;
-  }
-
   function testInitialize() public {
     vault721.initialize(address(timelockController));
   }
@@ -443,12 +438,13 @@ contract Unit_Vault721_TransferFrom is Base {
     vm.assume(_scenario.timeDelay < 9_000_000_000);
     vm.assume(notUnderOrOverflowAdd(_scenario.blockDelay, int256(block.number)));
     vm.assume(notUnderOrOverflowAdd(_scenario.timeDelay, int256(block.timestamp)));
-    address[4] memory contractAddresses =
-      [address(vault721), address(renderer), address(safeManager), address(timelockController)];
+    address[5] memory contractAddresses =
+      [address(vault721), address(renderer), address(safeManager), address(timelockController), address(userProxy)];
     for (uint256 i; i < contractAddresses.length; i++) {
       vm.assume(_scenario.user1 != contractAddresses[i]);
       vm.assume(_scenario.user2 != contractAddresses[i]);
     }
+    vm.assume(_scenario.user1 != _scenario.user2);
     _;
   }
 
@@ -460,7 +456,9 @@ contract Unit_Vault721_TransferFrom is Base {
   }
 
   function test_TransferFrom(Scenario memory _scenario) public basicLimits(_scenario) {
-    _mintNft(_scenario);
+    userProxy = _mintNft(_scenario);
+    vm.assume(_scenario.user1 != userProxy);
+    vm.assume(_scenario.user2 != userProxy);
     vault721.build(_scenario.user2);
     vm.prank(_scenario.user1);
     vault721.setApprovalForAll(_scenario.user2, true);
