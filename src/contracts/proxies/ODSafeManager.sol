@@ -154,6 +154,7 @@ contract ODSafeManager is IODSafeManager {
 
     _usrSafes[_usr].add(_safeId);
     _usrSafesPerCollat[_usr][_cType].add(_safeId);
+    
     vault721.mint(_usr, _safeId);
 
     emit OpenSAFE(msg.sender, _usr, _safeId);
