@@ -84,7 +84,7 @@ contract Base is HaiTest {
     _scenario.safeId = safeManager.openSAFE(_scenario.cType, _scenario.userProxy);
   }
 
-  function _assumeHappyPath(Scenario memory _scenario) internal pure {
+  function _assumeHappyPath(Scenario memory _scenario) internal view {
     // global
     vm.assume(_scenario.cData.accumulatedRate != 0);
 
@@ -113,6 +113,19 @@ contract Base is HaiTest {
     vm.assume(notOverflowMul(_newLockedCollateral, _scenario.cData.safetyPrice));
     if (_scenario.deltaDebt > 0 || _scenario.deltaCollateral < 0) {
       vm.assume(_totalDebtIssued <= _newLockedCollateral * _scenario.cData.safetyPrice);
+    }
+    vm.assume(_scenario.user != _scenario.rando);
+    address[6] memory addressesToAvoid = [
+      address(vault721),
+      address(taxCollector),
+      address(safeManager),
+      address(timelockController),
+      address(mockSafeEngine),
+      address(_scenario.userProxy)
+    ];
+    for (uint256 i; i < addressesToAvoid.length; i++) {
+      vm.assume(_scenario.user != addressesToAvoid[i]);
+      vm.assume(_scenario.rando != addressesToAvoid[i]);
     }
   }
 }
