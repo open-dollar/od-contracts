@@ -18,7 +18,6 @@ import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
  * @notice This contract acts as interface to the SAFEEngine, facilitating the management of SAFEs
  * @dev    This contract is meant to be used by users that interact with the protocol through a proxy contract
  */
-
 contract ODSafeManager is IODSafeManager {
   using Math for uint256;
   using EnumerableSet for EnumerableSet.UintSet;
