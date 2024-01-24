@@ -205,8 +205,6 @@ abstract contract Common is Contracts, Params {
   }
 
   function deployContracts() public updateParams {
-    require(governor == address(timelockController), 'governor not set');
-
     // deploy Base contracts
     safeEngine = new SAFEEngine(_safeEngineParams);
 

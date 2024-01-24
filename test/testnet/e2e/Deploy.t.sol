@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
+import '@script/Registry.s.sol';
+
 import {HaiTest} from '@testnet/utils/HaiTest.t.sol';
 import {Deploy, DeployMainnet, DeploySepolia} from '@script/Deploy.s.sol';
 
@@ -9,6 +11,11 @@ import {ERC20Votes} from '@openzeppelin/token/ERC20/extensions/ERC20Votes.sol';
 
 import {Contracts} from '@script/Contracts.s.sol';
 import {SepoliaDeployment} from '@script/SepoliaDeployment.s.sol';
+
+import {TimelockController} from '@openzeppelin/governance/TimelockController.sol';
+import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
+import {IODCreate2Factory} from '@interfaces/factories/IODCreate2Factory.sol';
+import {IProtocolToken} from '@contracts/tokens/ProtocolToken.sol';
 
 abstract contract CommonDeploymentTest is HaiTest, Deploy {
   // SAFEEngine
@@ -153,9 +160,21 @@ contract E2EDeploymentSepoliaTest is DeploySepolia, CommonDeploymentTest {
     uint256 forkId = vm.createFork(vm.rpcUrl('sepolia'));
     vm.selectFork(forkId);
 
-    governor = address(0x37c5B029f9c3691B3d47cb024f84E5E257aEb0BB);
+    // governor = address(0x37c5B029f9c3691B3d47cb024f84E5E257aEb0BB);
 
-    super.setUp();
+    create2 = IODCreate2Factory(TEST_CREATE2FACTORY);
+    protocolToken = IProtocolToken(SEPOLIA_PROTOCOL_TOKEN);
+    governor = SEPOLIA_TIMELOCK_CONTROLLER;
+    timelockController = TimelockController(payable(SEPOLIA_TIMELOCK_CONTROLLER));
+    odGovernor = ODGovernor(payable(SEPOLIA_OD_GOVERNOR));
+
+    _deployerPk = uint256(vm.envBytes32('ARB_SEPOLIA_DEPLOYER_PK'));
+    chainId = 421_614;
+
+    _systemCoinSalt = getSemiRandSalt();
+    _vault721Salt = getSemiRandSalt();
+
+    // super.setUp();
     run();
   }
 
@@ -172,6 +191,13 @@ contract SepoliaDeploymentTest is SepoliaDeployment, CommonDeploymentTest {
   function setUp() public {
     uint256 forkId = vm.createFork(vm.rpcUrl('sepolia'));
     vm.selectFork(forkId);
+    _deployerPk = uint256(vm.envBytes32('ARB_SEPOLIA_DEPLOYER_PK'));
+
+    create2 = IODCreate2Factory(TEST_CREATE2FACTORY);
+    protocolToken = IProtocolToken(SEPOLIA_PROTOCOL_TOKEN);
+    governor = SEPOLIA_TIMELOCK_CONTROLLER;
+    timelockController = TimelockController(payable(SEPOLIA_TIMELOCK_CONTROLLER));
+    odGovernor = ODGovernor(payable(SEPOLIA_OD_GOVERNOR));
 
     _getEnvironmentParams();
 
