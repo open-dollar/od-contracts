@@ -32,16 +32,6 @@ abstract contract AnvilDeployment is Contracts, SepoliaParams, AnvilContracts {
     erc20[CBETH] = MintableERC20(MintableERC20_6_Address);
     erc20[RETH] = MintableERC20(MintableERC20_7_Address);
 
-    collateral[WSTETH] = IERC20Metadata(MintableERC20_wstETH_Address);
-    collateral[CBETH] = IERC20Metadata(MintableERC20_cbETH_Address);
-    collateral[RETH] = IERC20Metadata(MintableERC20_rETH_Address);
-
-    erc20[ARB] = MintableERC20(MintableVoteERC20_Address);
-    erc20[WSTETH] = MintableERC20(MintableERC20_wstETH_Address);
-    erc20[CBETH] = MintableERC20(MintableERC20_cbETH_Address);
-    erc20[RETH] = MintableERC20(MintableERC20_rETH_Address);
-
-
     systemCoin = SystemCoin(OpenDollar_Address);
     protocolToken = ProtocolToken(OpenDollarGovernance_Address);
 
@@ -123,7 +113,5 @@ abstract contract AnvilDeployment is Contracts, SepoliaParams, AnvilContracts {
     delayedOracle[WSTETH] = IDelayedOracle(DelayedOracleChild_16_Address);
     delayedOracle[CBETH] = IDelayedOracle(DelayedOracleChild_17_Address);
     delayedOracle[RETH] = IDelayedOracle(DelayedOracleChild_18_Address);
-
-    // --- tokens ---
   }
 }
