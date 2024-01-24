@@ -99,7 +99,7 @@ contract Unit_OracleJob_Constructor is Base {
     assertEq(oracleJob.rewardAmount(), REWARD_AMOUNT);
   }
 
-  function test_Set_OracleRelayer(address _oracleRelayer) public happyPath {
+  function test_Set_OracleRelayer(address _oracleRelayer) public happyPath mockAsContract(_oracleRelayer) {
     oracleJob =
       new OracleJobForTest(_oracleRelayer, address(mockPIDRateSetter), address(mockStabilityFeeTreasury), REWARD_AMOUNT);
 
