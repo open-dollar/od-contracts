@@ -18,12 +18,17 @@ This repository contains the core smart contract code for Open Dollar.
 
 **Documentation**
 
-- Contracts documentation here: https://contracts.opendollar.com
-- Developer docs https://docs.opendollar.com
+- Technical Contracts docs: https://contracts.opendollar.com
+- Protocol Docs: https://docs.opendollar.com
 
 **Contract Deployments**
 
-Contract addresses for testnet can be found in the app: https://app.dev.opendollar.com/stats
+Addresses for testnet can be found in the app: https://app.dev.opendollar.com/stats
+
+**Tools**
+
+- `@opendollar/abis` - ABI interfaces are published automatically from this repo, on merge to `main` https://www.npmjs.com/package/@opendollar/abis
+- `@opendollar/sdk` - Library to interact with Open Dollar smart contracts https://github.com/open-dollar/od-sdk
 
 # Usage
 
