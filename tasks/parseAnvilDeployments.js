@@ -11,12 +11,16 @@ fs.readFile(filePath, "utf8", (err, data) => {
   const dataObj = JSON.parse(data);
   const contracts = dataObj.transactions.reduce((acc, curr, index) => {
     const { contractAddress, contractName, transactionType } = curr;
-    if (contractAddress && contractName && transactionType === "CREATE") {
+    if (contractAddress && contractName && transactionType.includes("CREATE")) {
       // Protocol contracts
       let name = contractName;
       if (contractName === "MintableERC20") {
-        const tokenSymbolArg = curr.arguments[1];
+        const tokenSymbolArg = curr.arguments[1].toUpperCase();
         name = name + "_" + tokenSymbolArg.replaceAll('"', "");
+      } else if (contractName === "OpenDollarGovernance") {
+        name = "ProtocolToken";
+      } else if (contractName === "OpenDollar") {
+        name = "SystemCoin";
       }
       acc[name] = contractAddress;
     }
