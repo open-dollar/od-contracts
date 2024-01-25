@@ -406,7 +406,6 @@ contract Unit_ODSafeManager_CollateralManagement is Base {
   }
 
   function test_SafeAllowed(Scenario memory _scenario) public happyPath(_scenario) {
-    
     vm.expectRevert(IODSafeManager.SafeNotAllowed.selector);
     vm.prank(_scenario.bob);
     safeManager.modifySAFECollateralization(_scenario.safeId, (_scenario.deltaCollateral), (_scenario.deltaDebt), true);
