@@ -182,17 +182,8 @@ abstract contract Common is Contracts, Params {
 
     address[] memory members = new address[](0);
 
-    // deploy governance contracts
-    if (_chainId == 42_161) {
-      timelockController = new TimelockController(MIN_DELAY, members, members, deployer);
-      odGovernor = new ODGovernor(
-        MAINNET_INIT_VOTING_DELAY,
-        MAINNET_INIT_VOTING_PERIOD,
-        MAINNET_INIT_PROP_THRESHOLD,
-        address(protocolToken),
-        timelockController
-      );
-    } else {
+    if (_chainId == 31_337) {
+      // deploy governance contracts for anvil
       timelockController = new TimelockController(MIN_DELAY_GOERLI, members, members, deployer);
       odGovernor = new ODGovernor(
         TEST_INIT_VOTING_DELAY,
@@ -201,17 +192,16 @@ abstract contract Common is Contracts, Params {
         address(protocolToken),
         timelockController
       );
+      // set governor
+      governor = address(timelockController);
+
+      // set odGovernor as PROPOSER_ROLE and EXECUTOR_ROLE
+      timelockController.grantRole(timelockController.PROPOSER_ROLE(), address(odGovernor));
+      timelockController.grantRole(timelockController.EXECUTOR_ROLE(), address(odGovernor));
+
+      // // revoke deployer from TIMELOCK_ADMIN_ROLE
+      timelockController.renounceRole(timelockController.TIMELOCK_ADMIN_ROLE(), deployer);
     }
-
-    // set governor
-    governor = address(timelockController);
-
-    // set odGovernor as PROPOSER_ROLE and EXECUTOR_ROLE
-    timelockController.grantRole(timelockController.PROPOSER_ROLE(), address(odGovernor));
-    timelockController.grantRole(timelockController.EXECUTOR_ROLE(), address(odGovernor));
-
-    // // revoke deployer from TIMELOCK_ADMIN_ROLE
-    timelockController.renounceRole(timelockController.TIMELOCK_ADMIN_ROLE(), deployer);
   }
 
   function deployContracts() public updateParams {
