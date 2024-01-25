@@ -222,13 +222,6 @@ The following scripts are used to simulate various states of the protocol. The s
 forge script script/states/DebtState.s.sol:DebtState --fork-url http://localhost:8545 -vvvvv
 ```
 
-
-**Steps to run tests on Anvil**
-  - `anvil` 
-  - open a new terminal and `yarn deploy:anvil`
-  - `yarn test:coverage` to generate a `coverage-report` folder that will contain the html of the coverage report. 
-  - Point your browser to `coverage-report/index.html` to view the report.
-
 **_LiquidationAuction.s.sol_**
 
 - `LiquidationAuction.s.sol` takes DebtState a step further and liquidates every SAFE on the platform. It then initiates
@@ -283,4 +276,3 @@ yarn test:coverage
 ```
 
 3. Open `coverage-report/index.html` to view the report.
-
