@@ -1,6 +1,31 @@
-# Open Dollar
+<p align="center">
+  <svg width="60" viewBox="0 0 17 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M8.26508 16C12.6833 16 16.2651 12.4183 16.2651 8.00001C16.2651 3.58173 12.6833 1.52588e-05 8.26508 1.52588e-05V16Z" fill="#43C7FF"/>
+<path d="M8.26508 -1.90735e-06C3.8468 -2.29361e-06 0.265086 3.58172 0.265086 7.99999C0.265086 12.4183 3.8468 16 8.26508 16L8.26508 -1.90735e-06Z" fill="#0079AD"/>
+<ellipse cx="8.26509" cy="7.99998" rx="5.33333" ry="5.33333" fill="#002B40"/>
+<path d="M8.26508 10.6666C9.73782 10.6666 10.9317 9.47271 10.9317 7.99997C10.9317 6.52722 9.73782 5.33333 8.26508 5.33333V10.6666Z" fill="#0079AD"/>
+<path d="M8.26508 5.3334C6.79234 5.3334 5.59845 6.52729 5.59845 8.00003C5.59845 9.47277 6.79234 10.6667 8.26508 10.6667L8.26508 5.3334Z" fill="#43C7FF"/>
+</svg>
 
-This repository contains the core smart contract code for Open Dollar, a GEB fork. GEB is the abbreviation of [Gödel, Escher and Bach](https://en.wikipedia.org/wiki/G%C3%B6del,_Escher,_Bach) as well as the name of an [Egyptian god](https://en.wikipedia.org/wiki/Geb).
+</p>
+<h1 align="center">
+  Open Dollar Contracts
+</h1>
+
+This repository contains the core smart contract code for Open Dollar.
+
+# Resources
+
+**Documentation**
+
+- Contracts documentation here: https://contracts.opendollar.com
+- Developer docs https://docs.opendollar.com
+
+**Contract Deployments**
+
+Contract addresses for testnet can be found in the app: https://app.dev.opendollar.com/stats
+
+# Usage
 
 ## Selecting a Foundry profile
 
@@ -154,82 +179,97 @@ This script extracts the proposal id and queues the proposal via the OD governan
 
 The script extracts the necessary execution params from the JSON-the same params used during the proposal and executes the proposal. This script can be used arbitrarily for any proposal.
 
-#### Creating a coverage report
+# Development
 
-coverage reports require lcov to be installed on your system.
- - [lcov for mac/linx](https://formulae.brew.sh/formula/lcov)
+## Anvil
 
- First get set up to run local tests on Anvil.
+Start Anvil:
 
- **Required env vars:**
- - `ANVIL_ONE` : run `anvil` and copy a private key from anvil terminal
-    
+```bash
+anvil
+```
 
-**Steps to run tests on Anvil**
-  - `anvil`
-  -  `yarn deploy:anvil`
-            move deployment json to the deployments/anvil folder
-            from: broadcast/Deploy.s.sol/31337/run-latest.json
-            to: deployments/anvil/
-            replace: existing `run-latest.json`
+Next, copy the private key from anvil terminal output into your `.env`
 
-  - node tasks/parseAnvilDeployments.js
- 
+```
+ANVIL_RPC=http://127.0.0.1:8545
+ANVIL_ONE=0x....
+```
 
+Deploy the contracts locally:
 
-- run`yarn test:coverage` to generate a `coverage-report` folder that will contain the html of the coverage report. 
-- Point your browser to `coverage-report/index.html` to view the report.
-
-#### Anvil Testing and State Scripts
-
-In order to launch an Anvil test environment locally, run `anvil` in the terminal.  Open a second terminal and run
-`yarn deploy:anvil`
+```bash
+yarn deploy:anvil
+```
 
 You now have a local anvil test environment with a locally deployed and instantiated version of the Open Dollar Protocol.
 
-There are a number of helpful scripts available for Anvil Testing of OD dApp functionality.  Each different script
-simulates states of the Open Dollar protocol specifically for testing.  The scripts can be found in `script/states` and 
-are described below:
----
+> NOTE: You may need to manually verify that all required addresses were updated in `AnvilContracts.t.sol`. The script `parseAnvilDeployments.js` is not perfect.
 
-***DebtState.s.sol*** :
+## Anvil Testing
 
-- `DebtState.s.sol` puts every SAFE in jeopardy of liquidation by driving the non-wstETH collateral prices down. After 
-running DebtState any SAFEs can be liquidated freely for testing. 
+The following scripts are used to simulate various states of the protocol. The scripts can be found in `script/states` and are described below:
 
-Run : `forge script script/states/DebtState.s.sol:DebtState --fork-url http://localhost:8545 -vvvvv`
+**_DebtState.s.sol_**
 
----
-***LiquidationAuction.s.sol*** :
+- `DebtState.s.sol` puts every SAFE in jeopardy of liquidation by driving the non-wstETH collateral prices down. After
+  running DebtState any SAFEs can be liquidated freely for testing.
 
-- `LiquidationAuction.s.sol` takes DebtState a step further and liquidates every SAFE on the platform. It then initiates 
-and completes a single collateral auction. We also create a chunk of unbacked debt in the accounting engine which 
-enables launching a debt auction. This state can be used to test liquidations, launching collateral auctions, launching 
-a debt auction or viewing a completed collateral auction.
+```
+forge script script/states/DebtState.s.sol:DebtState --fork-url http://localhost:8545 -vvvvv
+```
 
-Run : `forge script script/states/DebtAuction.s.sol:DebtAuction --fork-url http://localhost:8545 -vvvvv`
+**_LiquidationAuction.s.sol_**
 
----
-***DebtAuction.s.sol*** :
+- `LiquidationAuction.s.sol` takes DebtState a step further and liquidates every SAFE on the platform. It then initiates
+  and completes a single collateral auction. We also create a chunk of unbacked debt in the accounting engine which
+  enables launching a debt auction. This state can be used to test liquidations, launching collateral auctions, launching
+  a debt auction or viewing a completed collateral auction.
 
-`DebtAuction.s.sol` takes LiquidationAuction a step further and creates a large amount of unbacked debt in the 
-AccountingEngine; which allows us to then create a debt auction. The debt auction is then bid on and settled. This 
+```
+forge script script/states/DebtAuction.s.sol:DebtAuction --fork-url http://localhost:8545 -vvvvv
+```
+
+**_DebtAuction.s.sol_**
+
+`DebtAuction.s.sol` takes LiquidationAuction a step further and creates a large amount of unbacked debt in the
+AccountingEngine; which allows us to then create a debt auction. The debt auction is then bid on and settled. This
 allows testing of viewing a completed debt auction.
 
-Run : `forge script script/states/DebtAuction.s.sol:DebtAuction --fork-url http://localhost:8545 -vvvvv`
+```
+forge script script/states/DebtAuction.s.sol:DebtAuction --fork-url http://localhost:8545 -vvvvv`
+```
 
----
-***SurplusState.s.sol*** :
+**_SurplusState.s.sol_**
 
-`SurplusState.s.sol` pushes the clock forward so that the protocol accrues surplus. It can be used to test launching a 
+`SurplusState.s.sol` pushes the clock forward so that the protocol accrues surplus. It can be used to test launching a
 SurplusAuction.
 
-Run : `forge script script/states/SurplusState.s.sol:SurplusState --fork-url http://localhost:8545 -vvvvv`
+```
+forge script script/states/SurplusState.s.sol:SurplusState --fork-url http://localhost:8545 -vvvvv
+```
 
----
-***SurplusAuction.s.sol*** :
+**_SurplusAuction.s.sol_**
 
-`SurplusAuction.s.sol` takes SurplusState a step farther, and initiates a surplus auction, bids on it and settles it. 
+`SurplusAuction.s.sol` takes SurplusState a step farther, and initiates a surplus auction, bids on it and settles it.
 It can be used to test viewing a completed surplus auction.`
 
-Run : `forge script script/states/SurplusAuction.s.sol:SurplusAuction --fork-url http://localhost:8545 -vvvvv`
+```
+forge script script/states/SurplusAuction.s.sol:SurplusAuction --fork-url http://localhost:8545 -vvvvv
+```
+
+# Tests
+
+## Coverage Reports
+
+Coverage testing is performed using lcov and a local Anvil fork of the contracts. First install [lcov for mac/linx](https://formulae.brew.sh/formula/lcov).
+
+1. Start Anvil using the instructions above.
+
+2. To generate a report, run the command:
+
+```bash
+yarn test:coverage
+```
+
+3. Open `coverage-report/index.html` to view the report.
