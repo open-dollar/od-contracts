@@ -12,9 +12,3 @@
 		path = lib/prb-test
 		url = https://github.com/paulrberg/prb-test
 	    branch = 0.5.5
-[submodule "lib/Algebra"]
-    path = lib/Algebra
-    url = https://github.com/cryptoalgebra/Algebra
-[submodule "lib/core"]
-    path = lib/core
-    url = https://github.com/CamelotLabs/core
