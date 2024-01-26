@@ -106,8 +106,6 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
     // and feedbackOutputUpperBound will never be greater than POSITIVE_RATE_LIMIT : uint256(type(int256).max)
     // boundedPIOutput can be safely added to RAY
     _newRedemptionRate = _boundedPIOutput < -int256(RAY) ? _NEGATIVE_RATE_LIMIT : RAY.add(_boundedPIOutput);
-
-    return _newRedemptionRate;
   }
 
   /// @dev Computes the pi output by taking into account the feedbackOutputUpperBound and feedbackOutputLowerBound
@@ -118,7 +116,6 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
     } else if (_piOutput > _params.feedbackOutputUpperBound.toInt()) {
       _boundedPIOutput = int256(_params.feedbackOutputUpperBound);
     }
-    return _boundedPIOutput;
   }
 
   // --- Rate Validation/Calculation ---
@@ -156,8 +153,6 @@ contract PIDController is Authorizable, Modifiable, IPIDController {
 
     // Calculate the proportional term as (redemptionPrice - marketPrice) * RAY / redemptionPrice
     _proportionalTerm = _redemptionPrice.sub(_scaledMarketPrice).rdiv(int256(_redemptionPrice)); // safe cast: cannot overflow because minuend of sub
-
-    return _proportionalTerm;
   }
 
   /// @inheritdoc IPIDController

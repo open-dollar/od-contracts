@@ -61,7 +61,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
 
   function _lockETH(address _user, uint256 _collatAmount) internal override {
     ODProxy _proxy = _getProxy(_user);
-    (uint256 _safeId,) = _getSafe(_user, ETH_A);
+    // (uint256 _safeId,) = _getSafe(_user, ETH_A);
 
     vm.startPrank(_user);
     IWeth(address(collateral[ETH_A])).deposit{value: _collatAmount}();
@@ -361,7 +361,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
   function _redeemCollateral(
     address _user,
     bytes32 _cType,
-    uint256 _coinsAmount
+    uint256 /*_coinsAmount*/
   ) internal override returns (uint256 _collateralAmount) {
     ODProxy _proxy = _getProxy(_user);
 

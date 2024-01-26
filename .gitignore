@@ -13,12 +13,15 @@ broadcast/**/run-*.json
 coverage-report
 lcov.info
 
+# Local test files
+test/testnet/simulations/pid-controller/
+deployments/anvil/
+
 # Config files
 .env
 
 # Avoid ignoring gitkeep
 !/**/.gitkeep
-
 .vscode/
 
 # Docs build files

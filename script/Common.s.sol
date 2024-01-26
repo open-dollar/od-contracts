@@ -3,9 +3,10 @@ pragma solidity 0.8.19;
 
 import '@script/Contracts.s.sol';
 import '@script/Registry.s.sol';
+import {Test} from 'forge-std/Test.sol';
 import {Params, ParamChecker, OD, ETH_A, JOB_REWARD} from '@script/Params.s.sol';
 
-abstract contract Common is Contracts, Params {
+abstract contract Common is Contracts, Params, Test {
   uint256 internal _chainId;
   uint256 internal _deployerPk = 69; // for tests - from HAI
   uint256 internal _governorPK;
@@ -13,6 +14,10 @@ abstract contract Common is Contracts, Params {
   bytes32 internal _vault721Salt;
   bytes internal _systemCoinInitCode;
   bytes internal _vault721InitCode;
+
+  function logGovernor() public {
+    emit log_named_address('Governor', governor);
+  }
 
   function getChainId() public view returns (uint256) {
     uint256 id;

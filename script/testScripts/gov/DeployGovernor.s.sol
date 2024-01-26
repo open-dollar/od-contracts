@@ -26,7 +26,8 @@ contract DeployGovernor is SepoliaContracts, Script {
     members[2] = P;
 
     TimelockController timelockController = new TimelockController(1 minutes, members, members, address(0));
-    ODGovernor odGovernor = new ODGovernor(
+
+    new ODGovernor(
       TEST_INIT_VOTING_DELAY,
       TEST_INIT_VOTING_PERIOD,
       TEST_INIT_PROP_THRESHOLD,
