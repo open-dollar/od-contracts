@@ -10,6 +10,7 @@ import {Math, WAD, RAY, RAD} from '@libraries/Math.sol';
 // TODO update these scritps to work with the NFT-mods / new contracts
 
 contract TestScripts is Deployment {
+  using Math for uint256;
   /**
    * @dev this function calls the proxyFactory directly,
    * therefore it bypasses the proxyRegistry and proxy address
@@ -104,8 +105,7 @@ contract TestScripts is Deployment {
   ) public {
     _labelAddresses(_proxy);
     IODSafeManager.SAFEData memory _safeInfo = safeManager.safeData(_safeId);
-    uint256 _collateralWad = _getRepaidDebt(address(safeEngine), _user, _cType, _safeInfo.safeHandler);
-
+    int256 _collateralWad = _getGeneratedDeltaDebt(address(safeEngine), _cType, _safeInfo.safeHandler, _debtWad);
     bytes memory payload = abi.encodeWithSelector(
       basicActions.repayDebtAndFreeTokenCollateral.selector,
       address(safeManager),
@@ -146,6 +146,25 @@ contract TestScripts is Deployment {
   }
 
   /**
+   * @notice Gets repaid delta debt generated
+   * @dev    The rate adjusted debt of the SAFE
+   */
+    function _getRepaidDeltaDebt(
+    address _safeEngine,
+    bytes32 _cType,
+    address _safeHandler
+  ) internal view returns (int256 _deltaDebt) {
+    uint256 _rate = ISAFEEngine(_safeEngine).cData(_cType).accumulatedRate;
+    uint256 _generatedDebt = ISAFEEngine(_safeEngine).safes(_cType, _safeHandler).generatedDebt;
+    uint256 _coinAmount = ISAFEEngine(_safeEngine).coinBalance(_safeHandler);
+
+    // Uses the whole coin balance in the safeEngine to reduce the debt
+    _deltaDebt = (_coinAmount / _rate).toInt();
+    // Checks the calculated deltaDebt is not higher than safe.generatedDebt (total debt), otherwise uses its value
+    _deltaDebt = uint256(_deltaDebt) <= _generatedDebt ? -_deltaDebt : -_generatedDebt.toInt();
+  }
+
+  /**
    * @notice Gets repaid debt
    * @dev    The rate adjusted SAFE's debt minus COIN balance available in usr's address
    */
@@ -165,5 +184,23 @@ contract TestScripts is Deployment {
     _deltaWad = _rad / RAY;
     // If the rad precision has some dust, it will need to request for 1 extra wad wei
     _deltaWad = _deltaWad * RAY < _rad ? _deltaWad + 1 : _deltaWad;
+  }
+  
+    function _getGeneratedDeltaDebt(
+    address _safeEngine,
+    bytes32 _cType,
+    address _safeHandler,
+    uint256 _deltaWad
+  ) internal view returns (int256 _deltaDebt) {
+    uint256 _rate = ISAFEEngine(_safeEngine).cData(_cType).accumulatedRate;
+    uint256 _coinAmount = ISAFEEngine(_safeEngine).coinBalance(_safeHandler);
+
+    // If there was already enough COIN in the safeEngine balance, just exits it without adding more debt
+    if (_coinAmount < _deltaWad * RAY) {
+      // Calculates the needed deltaDebt so together with the existing coins in the safeEngine is enough to exit wad amount of COIN tokens
+      _deltaDebt = ((_deltaWad * RAY - _coinAmount) / _rate).toInt();
+      // This is neeeded due lack of precision. It might need to sum an extra deltaDebt wei (for the given COIN wad amount)
+      _deltaDebt = uint256(_deltaDebt) * _rate < _deltaWad * RAY ? _deltaDebt + 1 : _deltaDebt;
+    }
   }
 }
