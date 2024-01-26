@@ -14,7 +14,7 @@ import {SepoliaContracts} from '@script/SepoliaContracts.s.sol';
 import {Contracts} from '@script/Contracts.s.sol';
 import {MintableERC20} from '@contracts/for-test/MintableERC20.sol';
 import {MintableVoteERC20} from '@contracts/for-test/MintableVoteERC20.sol';
-
+import {SAFEEngine} from '@contracts/SAFEEngine.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 import {ODSafeManager} from '@contracts/proxies/ODSafeManager.sol';
 import {Vault721} from '@contracts/proxies/Vault721.sol';
@@ -63,6 +63,7 @@ contract Deployment is Contracts, SepoliaContracts, Script {
     surplusBidActions = SurplusBidActions(SurplusBidActions_Address);
     collateralBidActions = CollateralBidActions(CollateralBidActions_Address);
     rewardedActions = RewardedActions(RewardedActions_Address);
+    safeEngine = SAFEEngine(SAFEEngine_Address);
 
     protocolToken = ProtocolToken(SEPOLIA_PROTOCOL_TOKEN); // OPEN
     systemCoin = SystemCoin(SEPOLIA_SYSTEM_COIN); // OD
