@@ -7,7 +7,6 @@ import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 import {Math, WAD, RAY, RAD} from '@libraries/Math.sol';
 
-
 // TODO update these scritps to work with the NFT-mods / new contracts
 
 contract TestScripts is Deployment {
@@ -39,7 +38,7 @@ contract TestScripts is Deployment {
    */
   function openSafe(bytes32 _cType, address _proxy) public returns (uint256 _safeId) {
     _labelAddresses(_proxy);
-        bytes memory payload = abi.encodeWithSelector(basicActions.openSAFE.selector, address(safeManager), _cType, _proxy);
+    bytes memory payload = abi.encodeWithSelector(basicActions.openSAFE.selector, address(safeManager), _cType, _proxy);
     bytes memory safeData = ODProxy(_proxy).execute(address(basicActions), payload);
     _safeId = abi.decode(safeData, (uint256));
   }
@@ -95,29 +94,42 @@ contract TestScripts is Deployment {
     ODProxy(_proxy).execute(address(basicActions), payload);
   }
 
- 
   /// @dev will repay as much debt as can be repaid with user's COIN balance
-  function repayDebtAndFreeTokenCollateral(bytes32 _cType, uint256 _safeId, address _user, address _proxy, uint256 _debtWad)public {
+  function repayDebtAndFreeTokenCollateral(
+    bytes32 _cType,
+    uint256 _safeId,
+    address _user,
+    address _proxy,
+    uint256 _debtWad
+  ) public {
     _labelAddresses(_proxy);
     IODSafeManager.SAFEData memory _safeInfo = safeManager.safeData(_safeId);
     uint256 _collateralWad = _getRepaidDebt(address(safeEngine), _user, _cType, _safeInfo.safeHandler);
-    
-    bytes memory payload = abi.encodeWithSelector(basicActions.repayDebtAndFreeTokenCollateral.selector, address(safeManager), collateralJoin[_cType], address(coinJoin), _safeId, _collateralWad, _debtWad);
+
+    bytes memory payload = abi.encodeWithSelector(
+      basicActions.repayDebtAndFreeTokenCollateral.selector,
+      address(safeManager),
+      collateralJoin[_cType],
+      address(coinJoin),
+      _safeId,
+      _collateralWad,
+      _debtWad
+    );
     ODProxy(_proxy).execute(address(basicActions), payload);
   }
-  
+
   function _labelAddresses(address _proxy) internal {
     vm.label(address(_proxy), 'ODProxy');
     _labelKnownAddresses();
   }
-    function _labelAddresses(bytes32 _cType, address _proxy) internal {
+
+  function _labelAddresses(bytes32 _cType, address _proxy) internal {
     vm.label(address(collateralJoin[_cType]), 'Collateral Join');
     vm.label(address(_proxy), 'ODProxy');
     _labelKnownAddresses();
-
   }
 
-  function _labelKnownAddresses()internal{
+  function _labelKnownAddresses() internal {
     vm.label(address(vault721), 'Vault721');
     vm.label(address(basicActions), 'BasicActions');
     vm.label(address(debtBidActions), 'DebtBidActions');
@@ -133,7 +145,7 @@ contract TestScripts is Deployment {
     vm.label(address(coinJoin), 'COIN JOIN');
   }
 
-    /**
+  /**
    * @notice Gets repaid debt
    * @dev    The rate adjusted SAFE's debt minus COIN balance available in usr's address
    */
