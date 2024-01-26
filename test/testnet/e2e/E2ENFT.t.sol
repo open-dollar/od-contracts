@@ -67,7 +67,6 @@ contract NFTSetup is Test, SepoliaDeployment {
     bytes memory payload = abi.encodeWithSelector(
       basicActions.lockTokenCollateralAndGenerateDebt.selector,
       address(safeManager),
-      address(taxCollector),
       address(collateralJoin[_cType]),
       address(coinJoin),
       _safeId,
