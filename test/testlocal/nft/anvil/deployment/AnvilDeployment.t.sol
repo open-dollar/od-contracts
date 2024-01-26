@@ -23,17 +23,17 @@ abstract contract AnvilDeployment is Contracts, SepoliaParams, AnvilContracts {
 
     // --- ERC20s ---
     collateral[ARB] = IERC20Metadata(MintableVoteERC20_Address);
-    collateral[WSTETH] = IERC20Metadata(MintableERC20_wstETH_Address);
-    collateral[CBETH] = IERC20Metadata(MintableERC20_cbETH_Address);
-    collateral[RETH] = IERC20Metadata(MintableERC20_rETH_Address);
+    collateral[WSTETH] = IERC20Metadata(MintableERC20_WSTETH_Address);
+    collateral[CBETH] = IERC20Metadata(MintableERC20_CBETH_Address);
+    collateral[RETH] = IERC20Metadata(MintableERC20_RETH_Address);
 
     erc20[ARB] = MintableERC20(MintableVoteERC20_Address);
-    erc20[WSTETH] = MintableERC20(MintableERC20_wstETH_Address);
-    erc20[CBETH] = MintableERC20(MintableERC20_cbETH_Address);
-    erc20[RETH] = MintableERC20(MintableERC20_rETH_Address);
+    erc20[WSTETH] = MintableERC20(MintableERC20_WSTETH_Address);
+    erc20[CBETH] = MintableERC20(MintableERC20_CBETH_Address);
+    erc20[RETH] = MintableERC20(MintableERC20_RETH_Address);
 
-    systemCoin = SystemCoin(OpenDollar_Address);
-    protocolToken = ProtocolToken(OpenDollarGovernance_Address);
+    systemCoin = SystemCoin(SystemCoin_Address);
+    protocolToken = ProtocolToken(ProtocolToken_Address);
 
     // --- base contracts ---
     safeEngine = SAFEEngine(SAFEEngine_Address);
