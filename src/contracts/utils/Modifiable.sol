@@ -20,8 +20,8 @@ abstract contract Modifiable is IModifiable, Authorizable {
 
   /// @inheritdoc IModifiable
   function modifyParameters(bytes32 _param, bytes memory _data) external isAuthorized validParams {
-    _modifyParameters(_param, _data);
     emit ModifyParameters(_param, _GLOBAL_PARAM, _data);
+    _modifyParameters(_param, _data);
   }
 
   /// @inheritdoc IModifiable
