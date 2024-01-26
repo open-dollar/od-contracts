@@ -32,9 +32,9 @@ address constant J = 0xcb81A76a565aC4870EDA5B0e32c5a0D2ec734174;
 address constant P = 0xC295763Eed507d4A0f8B77241c03dd3354781a15;
 
 // Vanity address params - use `cast create2` to find salt (salt must change for each deployment)
-bytes32 constant SEPOLIA_SALT_SYSTEMCOIN = 0x320b084950f2ed030fd47ee2a0d2e917b0be85568b45a5ab588489d1ee750f81;
-bytes32 constant SEPOLIA_SALT_PROTOCOLTOKEN = 0x2eeca8c9b7363a55d7c815636716e32bdbd3b6531752ae4e6f6be1f83d6f8441;
-bytes32 constant SEPOLIA_SALT_VAULT721 = 0xbdf2f56ce92411dbdc7a4de225c95fee8bcc5c94cd325ff55353a16597966d11;
+bytes32 constant SEPOLIA_SALT_SYSTEMCOIN = 0x320b084950f2ed030fd47ee2a0d2e917b0be85568b45a5ab588489d1ee750f11;
+bytes32 constant SEPOLIA_SALT_PROTOCOLTOKEN = 0x2eeca8c9b7363a55d7c815636716e32bdbd3b6531752ae4e6f6be1f83d6f8411;
+bytes32 constant SEPOLIA_SALT_VAULT721 = 0xbdf2f56ce92411dbdc7a4de225c95fee8bcc5c94cd325ff55353a16597966111;
 
 // Camelot Relayer (pre-deployed @ sol 0.7.6)
 address constant SEPOLIA_CAMELOT_RELAYER_FACTORY = 0x92Bfb4D96f0b8dcA8F6e5E0fc4713DEa8243d9D6;
