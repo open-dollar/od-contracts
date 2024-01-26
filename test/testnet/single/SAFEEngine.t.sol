@@ -1010,7 +1010,6 @@ contract SingleLiquidationTest is DSTest {
   function test_liquidate_happy_safe() public {
     safeEngine.updateCollateralPrice('gold', ray(2.5 ether), ray(2.5 ether)); // $2.5
     oracleFSM.setPriceAndValidity(2.5 ether, true); // auction uses this price feed
-    uint256 _auctionDiscount = 0.95e18; // 5% discount
 
     // safety: 40 collateral tokens => $100
     // debt:   100 system coins => $100
@@ -1073,7 +1072,8 @@ contract SingleLiquidationTest is DSTest {
 
     liquidationEngine.modifyParameters('gold', 'liquidationQuantity', abi.encode(rad(200 ether))); // => liquidate everything
     assertEq(accountingEngine.debtQueue(block.timestamp), rad(0 ether));
-    uint256 _auction = liquidationEngine.liquidateSAFE('gold', address(this));
+    /*uint256 _auction = */
+    liquidationEngine.liquidateSAFE('gold', address(this));
     assertEq(accountingEngine.debtQueue(block.timestamp), rad(100 ether));
 
     assertEq(accountingEngine.totalQueuedDebt(), rad(100 ether));

@@ -361,7 +361,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
   function _redeemCollateral(
     address _user,
     bytes32 _cType,
-    uint256 _coinsAmount
+    uint256 /*_coinsAmount*/
   ) internal override returns (uint256 _collateralAmount) {
     ODProxy _proxy = _getProxy(_user);
 
