@@ -16,6 +16,7 @@ contract TestScripts is Deployment {
    * therefore it bypasses the proxyRegistry and proxy address
    * will not be saved in the proxyRegistry mapping
    */
+
   function deploy() public returns (address payable) {
     return vault721.build();
   }
@@ -105,7 +106,9 @@ contract TestScripts is Deployment {
   ) public {
     _labelAddresses(_proxy);
     IODSafeManager.SAFEData memory _safeInfo = safeManager.safeData(_safeId);
-    int256 _collateralWad = _getGeneratedDeltaDebt(address(safeEngine), _cType, _safeInfo.safeHandler, _debtWad);
+
+    uint256 _collateralWad = _getRepaidDebt(address(safeEngine), _safeInfo.safeHandler, _cType, _safeInfo.safeHandler);
+
     bytes memory payload = abi.encodeWithSelector(
       basicActions.repayDebtAndFreeTokenCollateral.selector,
       address(safeManager),
@@ -149,7 +152,7 @@ contract TestScripts is Deployment {
    * @notice Gets repaid delta debt generated
    * @dev    The rate adjusted debt of the SAFE
    */
-    function _getRepaidDeltaDebt(
+  function _getRepaidDeltaDebt(
     address _safeEngine,
     bytes32 _cType,
     address _safeHandler
@@ -185,8 +188,8 @@ contract TestScripts is Deployment {
     // If the rad precision has some dust, it will need to request for 1 extra wad wei
     _deltaWad = _deltaWad * RAY < _rad ? _deltaWad + 1 : _deltaWad;
   }
-  
-    function _getGeneratedDeltaDebt(
+
+  function _getGeneratedDeltaDebt(
     address _safeEngine,
     bytes32 _cType,
     address _safeHandler,
