@@ -12,4 +12,5 @@
 @script/=script/
 @testnet/=test/testnet/
 @testlocal/=test/testlocal/
+@test/=test/
 

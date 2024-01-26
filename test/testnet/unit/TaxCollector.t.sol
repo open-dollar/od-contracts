@@ -999,4 +999,65 @@ contract Unit_TaxCollector_ModifyParametersPerCollateral is Base {
 
     taxCollector.modifyParameters(_cType, _param, _data);
   }
+
+  function test_Revert_SecondartReceiver_TaxAllotmentTooHigh(bytes32 _cType) public {
+    vm.startPrank(authorizedAccount);
+    _mockCollateralList(_cType);
+
+    // increase secondary receivers to 1
+
+    ITaxCollector.TaxCollectorParams memory newTaxCollectorParams = ITaxCollector.TaxCollectorParams({
+      primaryTaxReceiver: primaryTaxReceiver,
+      globalStabilityFee: globalStabilityFee,
+      maxStabilityFeeRange: maxStabilityFeeRange,
+      maxSecondaryReceivers: 1
+    });
+
+    taxCollector.modifyParameters('maxSecondaryReceivers', abi.encode(newTaxCollectorParams));
+
+    // input too high a tax percentage for secondary receiver
+
+    ITaxCollector.TaxReceiver memory newSecondary =
+      ITaxCollector.TaxReceiver({receiver: secondaryReceiverC, canTakeBackTax: true, taxPercentage: 11 * 10 ** 18});
+
+    vm.expectRevert(ITaxCollector.TaxCollector_TaxCutExceedsHundred.selector);
+
+    taxCollector.modifyParameters(_cType, 'secondaryTaxReceiver', abi.encode(newSecondary));
+  }
+}
+
+contract Unit_TaxCollector_SecondaryReceiverViewFunctions is Base {
+  ITaxCollector.TaxReceiver newSecondaryReceiver =
+    ITaxCollector.TaxReceiver({receiver: secondaryReceiverC, canTakeBackTax: true, taxPercentage: 100});
+
+  ITaxCollector.TaxCollectorParams newTaxCollectorParams = ITaxCollector.TaxCollectorParams({
+    primaryTaxReceiver: primaryTaxReceiver,
+    globalStabilityFee: globalStabilityFee,
+    maxStabilityFeeRange: maxStabilityFeeRange,
+    maxSecondaryReceivers: 1
+  });
+
+  function setUp() public override {
+    Base.setUp();
+
+    Base.setUpSplitTaxIncome(collateralTypeA);
+  }
+
+  function test_SecondaryReceiversList() public {
+    address[] memory secondaryReceiversList = taxCollector.secondaryReceiversList();
+
+    assertEq(secondaryReceiversList[0], secondaryReceiverA, 'incorrect secondary receiver A');
+    assertEq(secondaryReceiversList[1], secondaryReceiverB, 'incorrect secondary receiver B');
+    assertEq(secondaryReceiversList[2], secondaryReceiverC, 'incorrect secondary receiver C');
+  }
+
+  function test_SecondaryReceiversListLength() public {
+    assertEq(taxCollector.secondaryReceiversListLength(), 3, 'incorrect number of receivers');
+  }
+
+  function test_SecondaryReceiverRevenueSourcesList() public {
+    bytes32[] memory secondaryReceiverRevenueSourcesList =
+      taxCollector.secondaryReceiverRevenueSourcesList(secondaryReceiverA);
+    assertEq(secondaryReceiverRevenueSourcesList[0], bytes32(collateralTypeA), 'incorrect secondary receiver address');
+  }
 }
