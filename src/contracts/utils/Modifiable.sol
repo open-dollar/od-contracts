@@ -20,8 +20,8 @@ abstract contract Modifiable is IModifiable, Authorizable {
 
   /// @inheritdoc IModifiable
   function modifyParameters(bytes32 _param, bytes memory _data) external isAuthorized validParams {
-    _modifyParameters(_param, _data);
     emit ModifyParameters(_param, _GLOBAL_PARAM, _data);
+    _modifyParameters(_param, _data);
   }
 
   /// @inheritdoc IModifiable
@@ -41,7 +41,7 @@ abstract contract Modifiable is IModifiable, Authorizable {
    * @dev    This function is set to revert if not overriden
    */
   // solhint-disable-next-line no-unused-vars
-  function _modifyParameters(bytes32 _param, bytes memory _data) internal virtual {
+  function _modifyParameters(bytes32, /*_param*/ bytes memory /*_data*/ ) internal virtual {
     revert UnrecognizedParam();
   }
 
@@ -50,7 +50,7 @@ abstract contract Modifiable is IModifiable, Authorizable {
    * @dev    This function is set to revert if not overriden
    */
   // solhint-disable-next-line no-unused-vars
-  function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal virtual {
+  function _modifyParameters(bytes32, /*_cType*/ bytes32, /*_param*/ bytes memory /*_data*/ ) internal virtual {
     revert UnrecognizedParam();
   }
 

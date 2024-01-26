@@ -181,7 +181,7 @@ abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
     vm.stopPrank();
   }
 
-  function _settleDebtAuction(address _user, uint256 _auctionId) internal override {
+  function _settleDebtAuction(address, uint256 _auctionId) internal override {
     debtAuctionHouse.settleAuction(_auctionId);
   }
 
@@ -217,7 +217,7 @@ abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
     vm.stopPrank();
   }
 
-  function _settlePostSettlementSurplusAuction(address _user, uint256 _auctionId) internal override {
+  function _settlePostSettlementSurplusAuction(address, uint256 _auctionId) internal override {
     postSettlementSurplusAuctionHouse.settleAuction(_auctionId);
   }
 

@@ -30,7 +30,7 @@ contract DebtAuction is LiquidationAuction {
 
     systemCoin.approve(proxy, 1 ether);
 
-    bytes memory returnData = ODProxy(proxy).execute(address(debtBidActions), payload);
+    ODProxy(proxy).execute(address(debtBidActions), payload);
   }
 
   function warpAndSettle(uint256 auctionId) public {
@@ -45,7 +45,7 @@ contract DebtAuction is LiquidationAuction {
       debtBidActions.settleAuction.selector, address(coinJoin), address(debtAuctionHouse), auctionId
     );
 
-    bytes memory returnData = ODProxy(proxy).execute(address(debtBidActions), payload);
+    ODProxy(proxy).execute(address(debtBidActions), payload);
   }
 
   // This contract will queue debt via the accounting engine, start a debt auction and complete it

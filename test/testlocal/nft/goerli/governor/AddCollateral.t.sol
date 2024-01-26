@@ -43,6 +43,7 @@ contract AddCollateralGoerli is GoerliFork {
   function testAddCollateral() public {
     vm.startPrank(address(timelockController));
     bytes32[] memory _collateralTypesList = collateralJoinFactory.collateralTypesList();
+    assertEq(_collateralTypesList.length, 1);
     collateralJoinFactory.deployCollateralJoin(bytes32('WETH'), 0xEe01c0CD76354C383B8c7B4e65EA88D00B06f36f);
     vm.stopPrank();
   }
@@ -144,6 +145,7 @@ contract AddCollateralGoerli is GoerliFork {
   // helpers
   function generateParams()
     public
+    view
     returns (
       address[] memory targets,
       uint256[] memory values,
