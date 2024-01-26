@@ -11,7 +11,7 @@ import {SystemCoin} from '@contracts/tokens/SystemCoin.sol';
 // source .env && forge script RepayDebtAndFreeTokenCollateral --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC
 
 contract RepayDebtAndFreeTokenCollateral is TestScripts {
-  /// @dev this script will find the balance of your unlocked collateral and retreive it.
+  /// @dev this script will pay off as much debt as it cain with your availible COIN and then unlock as much Collateral as possible.
   function run() public {
     vm.startBroadcast(vm.envUint('ARB_SEPOLIA_PK'));
     address proxy = address(deployOrFind(USER2));
