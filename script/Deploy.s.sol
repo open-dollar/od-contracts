@@ -2,14 +2,12 @@
 pragma solidity 0.8.19;
 
 import 'forge-std/console2.sol';
-
 import '@script/Contracts.s.sol';
 import '@script/Registry.s.sol';
 import '@script/Params.s.sol';
-
+import {Script} from 'forge-std/Script.sol';
 import {FixedPointMathLib} from '@isolmate/utils/FixedPointMathLib.sol';
 import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
-import {Script} from 'forge-std/Script.sol';
 import {Common} from '@script/Common.s.sol';
 import {SepoliaParams} from '@script/SepoliaParams.s.sol';
 import {MainnetParams} from '@script/MainnetParams.s.sol';
@@ -22,14 +20,11 @@ abstract contract Deploy is Common, Script {
   function run() public {
     deployer = vm.addr(_deployerPk);
     vm.startBroadcast(deployer);
+    logGovernor();
 
     // creation bytecode
     _systemCoinInitCode = type(OpenDollar).creationCode;
     _vault721InitCode = type(Vault721).creationCode;
-
-    // set governor to deployer during deployment
-    governor = address(0);
-    delegate = address(0);
 
     //print the commit hash
     string[] memory inputs = new string[](3);
