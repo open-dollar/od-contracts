@@ -30,7 +30,7 @@ fs.readFile(filePath, "utf8", (err, data) => {
 
 const createOutputFile = (contracts) => {
   // VERIFY!!!
-  const ETH_ADDRESS = "0xEe01c0CD76354C383B8c7B4e65EA88D00B06f36f";
+  const ETH_ADDRESS = "Verify Manually";
   const final = {
     MULTICALL: "0xcA11bde05977b3631167028862bE2a173976CA11",
     ETH: ETH_ADDRESS,
@@ -80,10 +80,6 @@ const createOutputFile = (contracts) => {
     },
     WETH: {
       address: ETH_ADDRESS,
-      collateralJoin:
-        contracts.CollateralJoinChild_0x5745544800000000000000000000000000000000000000000000000000000000_Address,
-      collateralAuctionHouse:
-        contracts.CollateralAuctionHouseChild_0x5745544800000000000000000000000000000000000000000000000000000000_Address,
     },
     ARB: {
       address: contracts.MintableVoteERC20_Address,
@@ -112,14 +108,7 @@ const createOutputFile = (contracts) => {
         contracts.CollateralJoinChild_0x5245544800000000000000000000000000000000000000000000000000000000_Address,
       collateralAuctionHouse:
         contracts.CollateralAuctionHouseChild_0x5245544800000000000000000000000000000000000000000000000000000000_Address,
-    },
-    MAGIC: {
-      address: contracts.MintableERC20_MAGIC_Address,
-      collateralJoin:
-        contracts.CollateralJoinChild_0x4d41474943000000000000000000000000000000000000000000000000000000_Address,
-      collateralAuctionHouse:
-        contracts.CollateralAuctionHouseChild_0x4d41474943000000000000000000000000000000000000000000000000000000_Address,
-    },
+    }
   };
 
   const subgraph = {
@@ -132,6 +121,9 @@ const createOutputFile = (contracts) => {
     debtAuctionHouse: {
       address: contracts.DebtAuctionHouse_Address,
     },
+    vault721: {
+      address: contracts.Vault721_Address,
+    }
   };
   const validate = (obj) => {
     const missing = Object.values(obj).reduce((acc, curr, i) => {
