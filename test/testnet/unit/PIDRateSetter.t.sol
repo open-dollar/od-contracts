@@ -17,6 +17,8 @@ import {Assertions} from '@libraries/Assertions.sol';
 contract Base is HaiTest {
   using stdStorage for StdStorage;
 
+  error UnrecognizedParam();
+
   address deployer = label('deployer');
   uint256 periodSize = 3600;
   IPIDRateSetter pidRateSetter;
@@ -137,6 +139,11 @@ contract Unit_PIDRateSetter_ModifyParameters is Base {
     vm.expectRevert(abi.encodeWithSelector(Assertions.NotGreaterThan.selector, 0, 0));
 
     pidRateSetter.modifyParameters('updateRateDelay', abi.encode(0));
+  }
+
+  function test_Revert_UnrecognizedParameter() public authorized {
+    vm.expectRevert(UnrecognizedParam.selector);
+    pidRateSetter.modifyParameters('unrecognizedParameter', abi.encode(address(0)));
   }
 }
 

@@ -1399,6 +1399,12 @@ contract Unit_CollateralAuctionHouse_BuyCollateral is Base {
     collateralAuctionHouse.buyCollateral(_buyCollateralScenario.auction.id, _buyCollateralScenario.bid);
   }
 
+  // this test is just for coverage completeness, the function is deprecated
+  function test_SettleAuction_Deprecated() public {
+    vm.expectCall(address(collateralAuctionHouse), abi.encodeCall(collateralAuctionHouse.settleAuction, (1)), 1);
+    collateralAuctionHouse.settleAuction(1);
+  }
+
   function test_Emit_SettleAuction(BuyCollateralScenario memory _buyCollateralScenario)
     public
     happyPath(_buyCollateralScenario)

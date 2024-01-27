@@ -192,7 +192,6 @@ contract AnvilFork is AnvilDeployment, Test {
     uint256 collateralAmount,
     uint256 debtAmount
   ) public returns (uint256 _safeId) {
-    uint256 currentSafeId = vaultIds[_proxy][_cType];
     bytes memory payload = abi.encodeWithSelector(
       basicActions.openLockTokenCollateralAndGenerateDebt.selector,
       address(safeManager),

@@ -46,6 +46,7 @@ contract GovernanceProposalAnvil is AnvilFork {
   function testDeployCollateralJoin() public {
     vm.startPrank(address(timelockController));
     bytes32[] memory _collateralTypesList = collateralJoinFactory.collateralTypesList();
+    assertEq(_collateralTypesList.length, 1);
     collateralJoinFactory.deployCollateralJoin(newCType, newCAddress);
     vm.stopPrank();
   }
@@ -292,6 +293,7 @@ contract GovernanceProposalAnvil is AnvilFork {
   //// Proposal Paarams ////
   function generateAddCollateralProposalParams()
     public
+    view
     returns (
       address[] memory targets,
       uint256[] memory values,
@@ -326,6 +328,7 @@ contract GovernanceProposalAnvil is AnvilFork {
 
   function generateUpdateNFTRendererProposalParams()
     public
+    view
     returns (
       address[] memory targets,
       uint256[] memory values,
@@ -369,6 +372,7 @@ contract GovernanceProposalAnvil is AnvilFork {
 
   function generateUpdatePidControllerProposalParams(UpdatePidControllerParams memory params)
     public
+    view
     returns (
       address[] memory targets,
       uint256[] memory values,
@@ -418,6 +422,7 @@ contract GovernanceProposalAnvil is AnvilFork {
 
   function generateUpdateBlockDelayProposalParams(uint8 blockDelay)
     public
+    view
     returns (
       address[] memory targets,
       uint256[] memory values,
@@ -444,6 +449,7 @@ contract GovernanceProposalAnvil is AnvilFork {
 
   function generateUpdateTimeDelayProposalParams(uint256 timeDelay)
     public
+    view
     returns (
       address[] memory targets,
       uint256[] memory values,
