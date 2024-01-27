@@ -19,7 +19,7 @@ contract RepayDebtAndFreeTokenCollateral is TestScripts {
     uint256 sysCoinBalance = systemCoin.balanceOf(address(USER2));
     systemCoin.approve(proxy, type(uint256).max);
 
-    repayDebtAndFreeTokenCollateral(WSTETH, SAFE, USER2, proxy, (sysCoinBalance - 1_000_000_000_000_000));
+    repayDebtAndFreeTokenCollateral(WSTETH, SAFE, USER2, proxy, (sysCoinBalance));
     vm.stopBroadcast();
   }
 }

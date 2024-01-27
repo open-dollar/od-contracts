@@ -96,6 +96,15 @@ contract TestScripts is Deployment {
     ODProxy(_proxy).execute(address(basicActions), payload);
   }
 
+  /// @dev repays a specified amount of debt
+  /// @param _deltaWad the amount of debt you'd like to repay
+  function repayDebt(address _proxy, uint256 _safeId, uint256 _deltaWad) public {
+    bytes memory payload = abi.encodeWithSelector(
+      basicActions.repayDebt.selector, address(safeManager), address(coinJoin), _safeId, _deltaWad
+    );
+    ODProxy(_proxy).execute(address(basicActions), payload);
+  }
+
   /// @dev will repay as much debt as can be repaid with user's COIN balance
   function repayDebtAndFreeTokenCollateral(
     bytes32 _cType,
@@ -188,6 +197,11 @@ contract TestScripts is Deployment {
     // If the rad precision has some dust, it will need to request for 1 extra wad wei
     _deltaWad = _deltaWad * RAY < _rad ? _deltaWad + 1 : _deltaWad;
   }
+
+  /**
+   * @notice Gets delta debt generated for delta wad (always positive)
+   * @dev    Total SAFE debt minus available safeHandler COIN balance
+   */
 
   function _getGeneratedDeltaDebt(
     address _safeEngine,
