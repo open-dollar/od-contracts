@@ -202,7 +202,6 @@ contract TestScripts is Deployment {
    * @notice Gets delta debt generated for delta wad (always positive)
    * @dev    Total SAFE debt minus available safeHandler COIN balance
    */
-
   function _getGeneratedDeltaDebt(
     address _safeEngine,
     bytes32 _cType,
