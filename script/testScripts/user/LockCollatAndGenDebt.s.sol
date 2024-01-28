@@ -12,7 +12,7 @@ import {MintableERC20} from '@contracts/for-test/MintableVoteERC20.sol';
 
 contract LockCollAndGenDebt is TestScripts {
   function run() public {
-    vm.startBroadcast(vm.envUint('ARB_SEPOLIA_PK'));
+    vm.startBroadcast(vm.envUint('ARB_SEPOLIA_PK2'));
     MintableERC20(address(WETH_TOKEN)).mint(USER2, 1_000_000 ether);
 
     address proxy = address(deployOrFind(USER2));

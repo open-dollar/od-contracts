@@ -7,6 +7,8 @@ import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 import {Math, WAD, RAY, RAD} from '@libraries/Math.sol';
 
+import 'forge-std/console2.sol';
+
 // TODO update these scritps to work with the NFT-mods / new contracts
 
 contract TestScripts is Deployment {
@@ -66,7 +68,8 @@ contract TestScripts is Deployment {
       _collatAmount,
       _deltaWad
     );
-    ODProxy(_proxy).execute(address(basicActions), payload);
+    bytes memory executionData = ODProxy(_proxy).execute(address(basicActions), payload);
+
   }
 
   /**
@@ -98,15 +101,15 @@ contract TestScripts is Deployment {
 
   /// @dev repays a specified amount of debt
   /// @param _deltaWad the amount of debt you'd like to repay
-  function repayDebt(address _proxy, uint256 _safeId, uint256 _deltaWad) public {
+  function repayAllDebt(address _proxy, uint256 _safeId, uint256 _deltaWad) public {
     bytes memory payload = abi.encodeWithSelector(
       basicActions.repayDebt.selector, address(safeManager), address(coinJoin), _safeId, _deltaWad
     );
     ODProxy(_proxy).execute(address(basicActions), payload);
   }
 
-  /// @dev will repay as much debt as can be repaid with user's COIN balance
-  function repayDebtAndFreeTokenCollateral(
+  /// @dev will repays all debt with user's COIN balance and unlocks locked collateral
+  function repayAllDebtAndFreeTokenCollateral(
     bytes32 _cType,
     uint256 _safeId,
     address _user,
@@ -116,16 +119,15 @@ contract TestScripts is Deployment {
     _labelAddresses(_proxy);
     IODSafeManager.SAFEData memory _safeInfo = safeManager.safeData(_safeId);
 
-    uint256 _collateralWad = _getRepaidDebt(address(safeEngine), _safeInfo.safeHandler, _cType, _safeInfo.safeHandler);
+    // uint256 _collateralWad = _getRepaidDebt(address(safeEngine), _safeInfo.safeHandler, _cType, _safeInfo.safeHandler);
 
     bytes memory payload = abi.encodeWithSelector(
-      basicActions.repayDebtAndFreeTokenCollateral.selector,
+      basicActions.repayAllDebtAndFreeTokenCollateral.selector,
       address(safeManager),
       collateralJoin[_cType],
       address(coinJoin),
       _safeId,
-      _collateralWad,
-      _debtWad
+      COLLATERAL
     );
     ODProxy(_proxy).execute(address(basicActions), payload);
   }
