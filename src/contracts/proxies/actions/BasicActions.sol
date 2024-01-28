@@ -6,6 +6,8 @@ import {ODSafeManager} from '@contracts/proxies/ODSafeManager.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {SafeCast} from '@openzeppelin/utils/math/SafeCast.sol';
 import {IBasicActions} from '@interfaces/proxies/actions/IBasicActions.sol';
+import {ITaxCollector} from '@interfaces/ITaxCollector.sol';
+import {ICollateralJoin} from '@interfaces/utils/ICollateralJoin.sol';
 
 import {Math, WAD, RAY, RAD} from '@libraries/Math.sol';
 
@@ -42,6 +44,8 @@ contract BasicActions is CommonActions, IBasicActions {
       _deltaDebt = uint256(_deltaDebt) * _rate < _deltaWad * RAY ? _deltaDebt + 1 : _deltaDebt;
     }
   }
+
+  
 
   /**
    * @notice Gets repaid delta debt generated
@@ -313,7 +317,9 @@ contract BasicActions is CommonActions, IBasicActions {
   function repayAllDebt(address _manager, address _coinJoin, uint256 _safeId) external delegateCall {
     address _safeEngine = ODSafeManager(_manager).safeEngine();
     ODSafeManager.SAFEData memory _safeInfo = ODSafeManager(_manager).safeData(_safeId);
-
+    
+    _taxSingle(_safeManager, _collateralJoin);
+    
     ISAFEEngine.SAFE memory _safeData = ISAFEEngine(_safeEngine).safes(_safeInfo.collateralType, _safeInfo.safeHandler);
 
     // Joins COIN amount into the safeEngine
@@ -364,7 +370,7 @@ contract BasicActions is CommonActions, IBasicActions {
   ) external delegateCall {
     address _safeEngine = ODSafeManager(_manager).safeEngine();
     ODSafeManager.SAFEData memory _safeInfo = ODSafeManager(_manager).safeData(_safeId);
-
+    _taxSingle(_safeManager, _collateralJoin);
     // Joins COIN amount into the safeEngine
     _joinSystemCoins(_coinJoin, _safeInfo.safeHandler, _debtWad);
 
@@ -386,13 +392,12 @@ contract BasicActions is CommonActions, IBasicActions {
     address _manager,
     address _collateralJoin,
     address _coinJoin,
-    address _taxCollector,
     uint256 _safeId,
     uint256 _collateralWad
   ) external delegateCall {
     address _safeEngine = ODSafeManager(_manager).safeEngine();
     //collecting tax before getting safe data to avoid overflow in collection
-    TaxCollector(_taxCollector).taxSingle(_cType);
+    _taxSingle(_safeManager, _collateralJoin);
 
     ODSafeManager.SAFEData memory _safeInfo = ODSafeManager(_manager).safeData(_safeId);
     
@@ -410,5 +415,11 @@ contract BasicActions is CommonActions, IBasicActions {
 
     // Transfers token amount to the user's address
     _collectAndExitCollateral(_manager, _collateralJoin, _safeId, _collateralWad);
+  }
+  /**
+  * @dev Makes the taxSingle call.  do this before making any calls to safeManager modifySafeCollateralization
+   */
+  function _taxSingle(address _safeManager, address _collateralJoin) internal {
+    ITaxCollector(ODSafeManager(_safeManager).taxCollector()).taxSingle(ICollateralJoin(_collateralJoin).collateralType());
   }
 }
