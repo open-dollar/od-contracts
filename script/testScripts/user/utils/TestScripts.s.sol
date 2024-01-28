@@ -126,6 +126,7 @@ contract TestScripts is Deployment {
       address(safeManager),
       collateralJoin[_cType],
       address(coinJoin),
+      address(taxCollector),
       _safeId,
       COLLATERAL
     );

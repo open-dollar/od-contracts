@@ -386,12 +386,16 @@ contract BasicActions is CommonActions, IBasicActions {
     address _manager,
     address _collateralJoin,
     address _coinJoin,
+    address _taxCollector,
     uint256 _safeId,
     uint256 _collateralWad
   ) external delegateCall {
     address _safeEngine = ODSafeManager(_manager).safeEngine();
-    ODSafeManager.SAFEData memory _safeInfo = ODSafeManager(_manager).safeData(_safeId);
+    //collecting tax before getting safe data to avoid overflow in collection
+    TaxCollector(_taxCollector).taxSingle(_cType);
 
+    ODSafeManager.SAFEData memory _safeInfo = ODSafeManager(_manager).safeData(_safeId);
+    
     ISAFEEngine.SAFE memory _safeData = ISAFEEngine(_safeEngine).safes(_safeInfo.collateralType, _safeInfo.safeHandler);
 
     // Joins COIN amount into the safeEngine
