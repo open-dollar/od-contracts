@@ -66,6 +66,8 @@ address constant SEPOLIA_WETH = 0x980B62Da83eFf3D4576C647993b0c1D7faf17c73;
 address constant MAINNET_TIMELOCK_CONTROLLER = address(1);
 address constant MAINNET_OD_GOVERNOR = address(1);
 
+address constant MAINNET_SYSTEM_COIN_ORACLE = address(1); // from od-relayer deployment
+
 // Create2 Factory
 address constant MAINNET_CREATE2FACTORY = 0x6EDb251053B4F7670C98e18bbEA20818367b4C0f;
 
