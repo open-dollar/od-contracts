@@ -100,11 +100,7 @@ abstract contract CommonDeploymentTest is HaiTest, Deploy {
   function _test_Authorizations(address _target, bool _permission) internal {
     // base contracts
     assertEq(safeEngine.authorizedAccounts(_target), _permission);
-
-    /**
-     * @dev oracleRelayer deployment and auth moved to post-deploy setup
-     * assertEq(oracleRelayer.authorizedAccounts(_target), _permission);
-     */
+    assertEq(oracleRelayer.authorizedAccounts(_target), _permission);
     assertEq(taxCollector.authorizedAccounts(_target), _permission);
     assertEq(stabilityFeeTreasury.authorizedAccounts(_target), _permission);
     assertEq(liquidationEngine.authorizedAccounts(_target), _permission);
@@ -205,13 +201,18 @@ contract SepoliaDeploymentTest is SepoliaDeployment, CommonDeploymentTest {
   function setUp() public {
     uint256 forkId = vm.createFork(vm.rpcUrl('sepolia'));
     vm.selectFork(forkId);
-    _deployerPk = uint256(vm.envBytes32('ARB_SEPOLIA_DEPLOYER_PK'));
 
     create2 = IODCreate2Factory(TEST_CREATE2FACTORY);
     protocolToken = IProtocolToken(SEPOLIA_PROTOCOL_TOKEN);
     governor = SEPOLIA_TIMELOCK_CONTROLLER;
     timelockController = TimelockController(payable(SEPOLIA_TIMELOCK_CONTROLLER));
     odGovernor = ODGovernor(payable(SEPOLIA_OD_GOVERNOR));
+
+    _deployerPk = uint256(vm.envBytes32('ARB_SEPOLIA_DEPLOYER_PK'));
+    chainId = 421_614;
+
+    _systemCoinSalt = getSemiRandSalt();
+    _vault721Salt = getSemiRandSalt();
 
     _getEnvironmentParams();
 
