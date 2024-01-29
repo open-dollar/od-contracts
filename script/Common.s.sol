@@ -79,7 +79,13 @@ abstract contract Common is Contracts, Params, Test {
 
     // tokens
     _revoke(systemCoin, _governor);
-    _revoke(protocolToken, _governor);
+
+    if (protocolToken.authorizedAccounts(_governor) == false) {
+      // pre-deployed protocolToken
+      _revoke(protocolToken, _governor);
+    } else {
+      protocolToken.removeAuthorization(deployer);
+    }
 
     // pid controller
     _revoke(pidController, _governor);
@@ -133,7 +139,11 @@ abstract contract Common is Contracts, Params, Test {
 
     // tokens
     _delegate(systemCoin, __delegate);
-    _delegate(protocolToken, __delegate);
+
+    if (protocolToken.authorizedAccounts(__delegate) != true) {
+      // pre-deployed protocolToken
+      _delegate(protocolToken, __delegate);
+    }
 
     // pid controller
     _delegate(pidController, __delegate);
