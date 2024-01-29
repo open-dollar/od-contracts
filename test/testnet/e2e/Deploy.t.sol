@@ -139,34 +139,39 @@ abstract contract CommonDeploymentTest is HaiTest, Deploy {
   }
 }
 
-contract E2EDeploymentMainnetTest is DeployMainnet, CommonDeploymentTest {
-  function setUp() public override {
-    uint256 forkId = vm.createFork(vm.rpcUrl('mainnet'));
-    vm.selectFork(forkId);
-
-    create2 = IODCreate2Factory(MAINNET_CREATE2FACTORY);
-    protocolToken = IProtocolToken(MAINNET_PROTOCOL_TOKEN);
-    governor = MAINNET_TIMELOCK_CONTROLLER;
-    timelockController = TimelockController(payable(MAINNET_TIMELOCK_CONTROLLER));
-    odGovernor = ODGovernor(payable(MAINNET_OD_GOVERNOR));
-
-    _deployerPk = uint256(vm.envBytes32('ARB_MAINNET_TEST_DEPLOYER_PK'));
-    chainId = 42_161;
-
-    _systemCoinSalt = getSemiRandSalt();
-    _vault721Salt = getSemiRandSalt();
-
-    run();
-  }
-
-  function setupEnvironment() public override(DeployMainnet, Deploy) {
-    super.setupEnvironment();
-  }
-
-  function setupPostEnvironment() public override(DeployMainnet, Deploy) {
-    super.setupPostEnvironment();
-  }
-}
+/**
+ * @dev not possible to test mainnet deployment due to predeployment of protcolToken
+ *  that is exclusively authorized to single wallet
+ *
+ * contract E2EDeploymentMainnetTest is DeployMainnet, CommonDeploymentTest {
+ *   function setUp() public override {
+ *     uint256 forkId = vm.createFork(vm.rpcUrl('mainnet'));
+ *     vm.selectFork(forkId);
+ *
+ *     create2 = IODCreate2Factory(MAINNET_CREATE2FACTORY);
+ *     protocolToken = IProtocolToken(MAINNET_PROTOCOL_TOKEN);
+ *     governor = MAINNET_TIMELOCK_CONTROLLER;
+ *     timelockController = TimelockController(payable(MAINNET_TIMELOCK_CONTROLLER));
+ *     odGovernor = ODGovernor(payable(MAINNET_OD_GOVERNOR));
+ *
+ *     _deployerPk = uint256(vm.envBytes32('ARB_MAINNET_TEST_DEPLOYER_PK'));
+ *     chainId = 42_161;
+ *
+ *     _systemCoinSalt = getSemiRandSalt();
+ *     _vault721Salt = getSemiRandSalt();
+ *
+ *     run();
+ *   }
+ *
+ *   function setupEnvironment() public override(DeployMainnet, Deploy) {
+ *     super.setupEnvironment();
+ *   }
+ *
+ *   function setupPostEnvironment() public override(DeployMainnet, Deploy) {
+ *     super.setupPostEnvironment();
+ *   }
+ * }
+ */
 
 contract E2EDeploymentSepoliaTest is DeploySepolia, CommonDeploymentTest {
   function setUp() public override {
