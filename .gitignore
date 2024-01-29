@@ -14,7 +14,7 @@ coverage-report
 lcov.info
 
 # Local test files
-test/testnet/simulations/pid-controller/
+test/testnet/simulations/pid-controller/**/*
 deployments/anvil/
 
 # Config files
