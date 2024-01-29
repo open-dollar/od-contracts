@@ -26,6 +26,7 @@ interface IVault721 {
   function getHashState(uint256 _vaultId) external view returns (uint256, uint256, uint256);
   function build() external returns (address payable);
   function build(address _user) external returns (address payable);
+  function build(address[] memory _users) external returns (address payable[] memory _proxies);
 
   // external: only SafeManager
   function mint(address proxy, uint256 safeId) external;
