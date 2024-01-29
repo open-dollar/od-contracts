@@ -542,7 +542,6 @@ contract Unit_Vault721_TransferFrom is Base {
 }
 
 contract Unit_Vault721_ProxyDeployment is Base {
-
   function setUp() public override {
     Base.setUp();
     vault721.initialize(address(timelockController));
@@ -575,15 +574,14 @@ contract Unit_Vault721_ProxyDeployment is Base {
   function test_DeployProxy_MultiProxies() public {
     address[] memory users = new address[](10);
 
-    for(uint256 i; i < users.length; i++) {
+    for (uint256 i; i < users.length; i++) {
       users[i] = address(uint160(i + 100));
     }
 
     address payable[] memory proxies = vault721.build(users);
     assertEq(proxies.length, users.length, 'incorrect proxy length');
-    for(uint256 i; i < users.length; i++) {
+    for (uint256 i; i < users.length; i++) {
       assertEq(vault721.getProxy(users[i]), proxies[i], 'incorrect proxy address');
     }
   }
-
 }
