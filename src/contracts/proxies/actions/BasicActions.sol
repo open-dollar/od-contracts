@@ -194,8 +194,10 @@ contract BasicActions is CommonActions, IBasicActions {
     uint256 _safeId,
     uint256 _deltaWad
   ) internal {
+    ODSafeManager.SAFEData memory _safeData = ODSafeManager(_manager).safeData(_safeId);
     // Moves the amount from the SAFE handler to proxy's address
     _transferCollateral(_manager, _safeId, address(this), _deltaWad);
+    // _transferCollateral(_manager, _safeId, _safeData.safeHandler, _deltaWad);
     // Exits a rounded down amount of collateral
     _exitCollateral(_collateralJoin, _deltaWad);
   }

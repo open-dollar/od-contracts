@@ -12,8 +12,8 @@ import 'forge-std/console2.sol';
 
 contract OpenSafe is TestScripts {
   function run() public {
-    vm.startBroadcast(vm.envUint('ARB_SEPOLIA_PK2'));
-    address proxy = address(deployOrFind(USER2));
+    vm.startBroadcast(vm.envUint('ARB_SEPOLIA_PK'));
+    address proxy = address(deployOrFind(USER1));
     uint256 safeId = openSafe(WSTETH, proxy);
     console2.log('SAFE ID: ', safeId);
     vm.stopBroadcast();

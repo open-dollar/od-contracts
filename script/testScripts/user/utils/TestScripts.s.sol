@@ -7,8 +7,6 @@ import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 import {Math, WAD, RAY, RAD} from '@libraries/Math.sol';
 
-import 'forge-std/console2.sol';
-
 // TODO update these scritps to work with the NFT-mods / new contracts
 
 contract TestScripts is Deployment {
@@ -68,7 +66,7 @@ contract TestScripts is Deployment {
       _collatAmount,
       _deltaWad
     );
-    bytes memory executionData = ODProxy(_proxy).execute(address(basicActions), payload);
+    ODProxy(_proxy).execute(address(basicActions), payload);
   }
 
   /**
@@ -131,6 +129,39 @@ contract TestScripts is Deployment {
       _safeId,
       COLLATERAL
     );
+    ODProxy(_proxy).execute(address(basicActions), payload);
+  }
+
+  /**
+   * @dev Allows a safe handler
+   */
+  function allowHandler(address _usr, bool _ok, address _proxy)public {
+        bytes memory payload = abi.encodeWithSelector(
+      basicActions.allowHandler.selector,
+      address(safeManager),
+      _usr,
+      _ok
+    );
+    ODProxy(_proxy).execute(address(basicActions), payload);
+  }
+
+  function safeData(uint256 _safeId) public returns(IODSafeManager.SAFEData memory _safeData) {
+      _safeData = safeManager.safeData(_safeId);
+  }
+
+
+  /**
+   * @dev Allows a safe
+   */
+  function allowSAFE(address _usr, uint256 _safeId, bool _ok, address _proxy)public {
+        bytes memory payload = abi.encodeWithSelector(
+      basicActions.allowSAFE.selector,
+      address(safeManager),
+      _safeId,
+      _usr,
+      _ok
+    );
+
     ODProxy(_proxy).execute(address(basicActions), payload);
   }
 

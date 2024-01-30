@@ -444,10 +444,10 @@ contract Unit_ODSafeManager_CollateralManagement is Base {
 
   function test_transferCollateral(Scenario memory _scenario) public happyPath(_scenario) {
     address safeHandler = safeManager.safeData(_scenario.safeId).safeHandler;
-    vm.prank(_scenario.aliceProxy);
+    vm.startPrank(_scenario.aliceProxy);
     safeManager.allowHandler(safeHandler, true);
-    vm.prank(_scenario.aliceProxy);
     safeManager.allowSAFE(_scenario.safeId, safeHandler, true);
+    vm.stopPrank();
     vm.mockCall(address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.transferCollateral.selector), abi.encode());
     vm.mockCall(address(vault721), abi.encodeWithSelector(IVault721.updateVaultHashState.selector), abi.encode());
 
