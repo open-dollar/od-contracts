@@ -35,12 +35,12 @@ contract LiquidationAuction is DebtState {
       address user = users[i];
       address proxy = vault721.getProxy(user);
 
-      for (uint256 j = 0; j < cTypes.length; j++) {
+      for (uint256 j = 0; j < collateralTypes.length; j++) {
         // we skip liquidating the wstETH vaults
         if (j == 1) {
           continue;
         }
-        bytes32 cType = cTypes[j];
+        bytes32 cType = collateralTypes[j];
         uint256 safeId = vaultIds[proxy][cType];
 
         ODSafeManager.SAFEData memory safeData = safeManager.safeData(safeId);
@@ -72,7 +72,7 @@ contract LiquidationAuction is DebtState {
   // Use the CollateralBidActions contract to bid on the collateral auction using proxy and delegatecall
   function bidAndCompleteCollateralAuction() public {
     address user = users[0];
-    bytes32 cType = cTypes[0];
+    bytes32 cType = collateralTypes[0];
     address proxy = vault721.getProxy(user);
     vm.startPrank(user);
 
