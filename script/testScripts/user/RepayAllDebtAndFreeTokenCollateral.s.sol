@@ -16,10 +16,9 @@ contract RepayAllDebtAndFreeTokenCollateral is TestScripts {
     vm.startBroadcast(vm.envUint('ARB_SEPOLIA_PK'));
     address proxy = address(deployOrFind(USER1));
 
-    uint256 sysCoinBalance = systemCoin.balanceOf(address(USER1));
     systemCoin.approve(proxy, type(uint256).max);
 
-    repayAllDebtAndFreeTokenCollateral(WSTETH, SAFE, USER2, proxy, (sysCoinBalance));
+    repayAllDebtAndFreeTokenCollateral(WSTETH, SAFE, proxy);
     vm.stopBroadcast();
   }
 }

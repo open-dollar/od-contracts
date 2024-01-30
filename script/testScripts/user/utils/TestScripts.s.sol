@@ -69,7 +69,6 @@ contract TestScripts is Deployment {
       _deltaWad
     );
     bytes memory executionData = ODProxy(_proxy).execute(address(basicActions), payload);
-
   }
 
   /**
@@ -99,34 +98,36 @@ contract TestScripts is Deployment {
     ODProxy(_proxy).execute(address(basicActions), payload);
   }
 
-  /// @dev repays a specified amount of debt
-  /// @param _deltaWad the amount of debt you'd like to repay
-  function repayAllDebt(address _proxy, uint256 _safeId, uint256 _deltaWad) public {
+  /**
+   * @dev repays a specified amount of debt
+   */
+  function repayDebt(address _proxy, uint256 _safeId, uint256 _deltaWad) public {
     bytes memory payload = abi.encodeWithSelector(
       basicActions.repayDebt.selector, address(safeManager), address(coinJoin), _safeId, _deltaWad
     );
     ODProxy(_proxy).execute(address(basicActions), payload);
   }
 
-  /// @dev will repays all debt with user's COIN balance and unlocks locked collateral
-  function repayAllDebtAndFreeTokenCollateral(
-    bytes32 _cType,
-    uint256 _safeId,
-    address _user,
-    address _proxy,
-    uint256 _debtWad
-  ) public {
-    _labelAddresses(_proxy);
-    IODSafeManager.SAFEData memory _safeInfo = safeManager.safeData(_safeId);
+  /**
+   * @dev repays all of debt with user's COIN BALANCE
+   */
+  function repayAllDebt(uint256 _safeId, address _proxy) public {
+    bytes memory payload =
+      abi.encodeWithSelector(basicActions.repayAllDebt.selector, address(safeManager), address(coinJoin), _safeId);
+    ODProxy(_proxy).execute(address(basicActions), payload);
+  }
 
-    // uint256 _collateralWad = _getRepaidDebt(address(safeEngine), _safeInfo.safeHandler, _cType, _safeInfo.safeHandler);
+  /**
+   * @dev will repays all debt with user's COIN balance and unlocks all collateral
+   */
+  function repayAllDebtAndFreeTokenCollateral(bytes32 _cType, uint256 _safeId, address _proxy) public {
+    _labelAddresses(_proxy);
 
     bytes memory payload = abi.encodeWithSelector(
       basicActions.repayAllDebtAndFreeTokenCollateral.selector,
       address(safeManager),
       collateralJoin[_cType],
       address(coinJoin),
-      address(taxCollector),
       _safeId,
       COLLATERAL
     );
@@ -158,68 +159,5 @@ contract TestScripts is Deployment {
     vm.label(address(USER2), 'User');
     vm.label(address(safeManager), 'SAFE MANAGER');
     vm.label(address(coinJoin), 'COIN JOIN');
-  }
-
-  /**
-   * @notice Gets repaid delta debt generated
-   * @dev    The rate adjusted debt of the SAFE
-   */
-  function _getRepaidDeltaDebt(
-    address _safeEngine,
-    bytes32 _cType,
-    address _safeHandler
-  ) internal view returns (int256 _deltaDebt) {
-    uint256 _rate = ISAFEEngine(_safeEngine).cData(_cType).accumulatedRate;
-    uint256 _generatedDebt = ISAFEEngine(_safeEngine).safes(_cType, _safeHandler).generatedDebt;
-    uint256 _coinAmount = ISAFEEngine(_safeEngine).coinBalance(_safeHandler);
-
-    // Uses the whole coin balance in the safeEngine to reduce the debt
-    _deltaDebt = (_coinAmount / _rate).toInt();
-    // Checks the calculated deltaDebt is not higher than safe.generatedDebt (total debt), otherwise uses its value
-    _deltaDebt = uint256(_deltaDebt) <= _generatedDebt ? -_deltaDebt : -_generatedDebt.toInt();
-  }
-
-  /**
-   * @notice Gets repaid debt
-   * @dev    The rate adjusted SAFE's debt minus COIN balance available in usr's address
-   */
-  function _getRepaidDebt(
-    address _safeEngine,
-    address _usr,
-    bytes32 _cType,
-    address _safeHandler
-  ) internal view returns (uint256 _deltaWad) {
-    uint256 _rate = ISAFEEngine(_safeEngine).cData(_cType).accumulatedRate;
-    uint256 _generatedDebt = ISAFEEngine(_safeEngine).safes(_cType, _safeHandler).generatedDebt;
-    uint256 _coinAmount = ISAFEEngine(_safeEngine).coinBalance(_usr);
-
-    // Uses the whole coin balance in the safeEngine to reduce the debt
-    uint256 _rad = _generatedDebt * _rate - _coinAmount;
-    // Calculates the equivalent COIN amount
-    _deltaWad = _rad / RAY;
-    // If the rad precision has some dust, it will need to request for 1 extra wad wei
-    _deltaWad = _deltaWad * RAY < _rad ? _deltaWad + 1 : _deltaWad;
-  }
-
-  /**
-   * @notice Gets delta debt generated for delta wad (always positive)
-   * @dev    Total SAFE debt minus available safeHandler COIN balance
-   */
-  function _getGeneratedDeltaDebt(
-    address _safeEngine,
-    bytes32 _cType,
-    address _safeHandler,
-    uint256 _deltaWad
-  ) internal view returns (int256 _deltaDebt) {
-    uint256 _rate = ISAFEEngine(_safeEngine).cData(_cType).accumulatedRate;
-    uint256 _coinAmount = ISAFEEngine(_safeEngine).coinBalance(_safeHandler);
-
-    // If there was already enough COIN in the safeEngine balance, just exits it without adding more debt
-    if (_coinAmount < _deltaWad * RAY) {
-      // Calculates the needed deltaDebt so together with the existing coins in the safeEngine is enough to exit wad amount of COIN tokens
-      _deltaDebt = ((_deltaWad * RAY - _coinAmount) / _rate).toInt();
-      // This is neeeded due lack of precision. It might need to sum an extra deltaDebt wei (for the given COIN wad amount)
-      _deltaDebt = uint256(_deltaDebt) * _rate < _deltaWad * RAY ? _deltaDebt + 1 : _deltaDebt;
-    }
   }
 }

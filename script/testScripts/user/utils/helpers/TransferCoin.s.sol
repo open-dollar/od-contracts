@@ -9,7 +9,6 @@ import {TestScripts} from '@script/testScripts/user/utils/TestScripts.s.sol';
 // SIMULATE
 // source .env && forge script TransferCoin --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC
 
-
 //transfers system token from user2 to user1 to have extra COIN to repay debt
 contract TransferCoin is TestScripts {
   function run() public {

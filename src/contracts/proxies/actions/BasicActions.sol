@@ -45,8 +45,6 @@ contract BasicActions is CommonActions, IBasicActions {
     }
   }
 
-  
-
   /**
    * @notice Gets repaid delta debt generated
    * @dev    The rate adjusted debt of the SAFE
@@ -317,9 +315,9 @@ contract BasicActions is CommonActions, IBasicActions {
   function repayAllDebt(address _manager, address _coinJoin, uint256 _safeId) external delegateCall {
     address _safeEngine = ODSafeManager(_manager).safeEngine();
     ODSafeManager.SAFEData memory _safeInfo = ODSafeManager(_manager).safeData(_safeId);
-    
-    _taxSingle(_safeManager, _collateralJoin);
-    
+
+    _taxSingle(_manager, _safeId);
+
     ISAFEEngine.SAFE memory _safeData = ISAFEEngine(_safeEngine).safes(_safeInfo.collateralType, _safeInfo.safeHandler);
 
     // Joins COIN amount into the safeEngine
@@ -370,7 +368,7 @@ contract BasicActions is CommonActions, IBasicActions {
   ) external delegateCall {
     address _safeEngine = ODSafeManager(_manager).safeEngine();
     ODSafeManager.SAFEData memory _safeInfo = ODSafeManager(_manager).safeData(_safeId);
-    _taxSingle(_safeManager, _collateralJoin);
+    _taxSingle(_manager, _safeId);
     // Joins COIN amount into the safeEngine
     _joinSystemCoins(_coinJoin, _safeInfo.safeHandler, _debtWad);
 
@@ -397,10 +395,10 @@ contract BasicActions is CommonActions, IBasicActions {
   ) external delegateCall {
     address _safeEngine = ODSafeManager(_manager).safeEngine();
     //collecting tax before getting safe data to avoid overflow in collection
-    _taxSingle(_safeManager, _collateralJoin);
+    _taxSingle(_manager, _safeId);
 
     ODSafeManager.SAFEData memory _safeInfo = ODSafeManager(_manager).safeData(_safeId);
-    
+
     ISAFEEngine.SAFE memory _safeData = ISAFEEngine(_safeEngine).safes(_safeInfo.collateralType, _safeInfo.safeHandler);
 
     // Joins COIN amount into the safeEngine
@@ -417,9 +415,11 @@ contract BasicActions is CommonActions, IBasicActions {
     _collectAndExitCollateral(_manager, _collateralJoin, _safeId, _collateralWad);
   }
   /**
-  * @dev Makes the taxSingle call.  do this before making any calls to safeManager modifySafeCollateralization
+   * @dev Makes the taxSingle call.  do this before making any calls to safeManager modifySafeCollateralization
    */
-  function _taxSingle(address _safeManager, address _collateralJoin) internal {
-    ITaxCollector(ODSafeManager(_safeManager).taxCollector()).taxSingle(ICollateralJoin(_collateralJoin).collateralType());
+
+  function _taxSingle(address _manager, uint256 _safeId) internal {
+    ODSafeManager.SAFEData memory _safeData = ODSafeManager(_manager).safeData(_safeId);
+    ITaxCollector(ODSafeManager(_manager).taxCollector()).taxSingle(_safeData.collateralType);
   }
 }
