@@ -616,7 +616,6 @@ contract SingleGlobalSettlementTest is DSTest {
     gold.oracleSecurityModule.setPriceAndValidity(5 * WAD, true);
 
     Guy _ali = new Guy(safeEngine, globalSettlement);
-    Guy _bob = new Guy(safeEngine, globalSettlement);
     Guy _charlie = new Guy(safeEngine, globalSettlement);
 
     // make a SAFE:
@@ -667,7 +666,6 @@ contract SingleGlobalSettlementTest is DSTest {
     CollateralType memory gold = _init_collateral('gold', 'gold');
 
     Guy _ali = new Guy(safeEngine, globalSettlement);
-    Guy _bob = new Guy(safeEngine, globalSettlement);
     Guy _charlie = new Guy(safeEngine, globalSettlement);
 
     // make a SAFE:
@@ -752,7 +750,6 @@ contract SingleGlobalSettlementTest is DSTest {
     CollateralType memory gold = _init_collateral('gold', 'gold');
 
     Guy _ali = new Guy(safeEngine, globalSettlement);
-    Guy _bob = new Guy(safeEngine, globalSettlement);
     Guy _charlie = new Guy(safeEngine, globalSettlement);
 
     // make a SAFE:

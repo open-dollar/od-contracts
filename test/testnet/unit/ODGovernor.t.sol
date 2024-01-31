@@ -146,6 +146,7 @@ contract Unit_ODGovernorTest is Base {
   // helpers
   function __createProposalArgs()
     public
+    view
     returns (address[] memory targets, uint256[] memory values, bytes[] memory calldatas)
   {
     calldatas = new bytes[](1);

@@ -23,8 +23,8 @@ abstract contract Disableable is IDisableable, Authorizable {
   /// @inheritdoc IDisableable
   function disableContract() external isAuthorized whenEnabled {
     contractEnabled = false;
-    _onContractDisable();
     emit DisableContract();
+    _onContractDisable();
   }
 
   // --- Internal virtual methods ---

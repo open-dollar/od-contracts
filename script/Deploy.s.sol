@@ -2,14 +2,12 @@
 pragma solidity 0.8.19;
 
 import 'forge-std/console2.sol';
-
 import '@script/Contracts.s.sol';
 import '@script/Registry.s.sol';
 import '@script/Params.s.sol';
-
+import {Script} from 'forge-std/Script.sol';
 import {FixedPointMathLib} from '@isolmate/utils/FixedPointMathLib.sol';
 import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
-import {Script} from 'forge-std/Script.sol';
 import {Common} from '@script/Common.s.sol';
 import {SepoliaParams} from '@script/SepoliaParams.s.sol';
 import {MainnetParams} from '@script/MainnetParams.s.sol';
@@ -20,16 +18,13 @@ abstract contract Deploy is Common, Script {
   function mintAirdrop() public virtual {}
 
   function run() public {
-    deployer = vm.addr(_deployerPk); // ARB_SEPOLIA_DEPLOYER_PK
+    deployer = vm.addr(_deployerPk);
     vm.startBroadcast(deployer);
+    logGovernor();
 
     // creation bytecode
     _systemCoinInitCode = type(OpenDollar).creationCode;
     _vault721InitCode = type(Vault721).creationCode;
-
-    // set governor to deployer during deployment
-    governor = address(0);
-    delegate = address(0);
 
     //print the commit hash
     string[] memory inputs = new string[](3);
@@ -101,16 +96,14 @@ contract DeployMainnet is MainnetParams, Deploy {
     // set create2 factory
     create2 = IODCreate2Factory(MAINNET_CREATE2FACTORY);
     protocolToken = IProtocolToken(MAINNET_PROTOCOL_TOKEN);
+    governor = MAINNET_TIMELOCK_CONTROLLER;
+    timelockController = TimelockController(payable(MAINNET_TIMELOCK_CONTROLLER));
+    odGovernor = ODGovernor(payable(MAINNET_OD_GOVERNOR));
 
     _deployerPk = uint256(vm.envBytes32('ARB_MAINNET_DEPLOYER_PK'));
     chainId = 42_161;
-    if (SEMI_RANDOM_SALT == 0) {
-      _systemCoinSalt = MAINNET_SALT_SYSTEMCOIN;
-      _vault721Salt = MAINNET_SALT_VAULT721;
-    } else {
-      _systemCoinSalt = getSemiRandSalt();
-      _vault721Salt = getSemiRandSalt();
-    }
+    _systemCoinSalt = MAINNET_SALT_SYSTEMCOIN;
+    _vault721Salt = MAINNET_SALT_VAULT721;
   }
 
   // Setup oracle feeds
@@ -172,16 +165,14 @@ contract DeploySepolia is SepoliaParams, Deploy {
     // set create2 factory
     create2 = IODCreate2Factory(TEST_CREATE2FACTORY);
     protocolToken = IProtocolToken(SEPOLIA_PROTOCOL_TOKEN);
+    governor = SEPOLIA_TIMELOCK_CONTROLLER;
+    timelockController = TimelockController(payable(SEPOLIA_TIMELOCK_CONTROLLER));
+    odGovernor = ODGovernor(payable(SEPOLIA_OD_GOVERNOR));
 
     _deployerPk = uint256(vm.envBytes32('ARB_SEPOLIA_DEPLOYER_PK'));
     chainId = 421_614;
-    if (SEMI_RANDOM_SALT == 0) {
-      _systemCoinSalt = SEPOLIA_SALT_SYSTEMCOIN;
-      _vault721Salt = SEPOLIA_SALT_VAULT721;
-    } else {
-      _systemCoinSalt = getSemiRandSalt();
-      _vault721Salt = getSemiRandSalt();
-    }
+    _systemCoinSalt = SEPOLIA_SALT_SYSTEMCOIN;
+    _vault721Salt = SEPOLIA_SALT_VAULT721;
   }
 
   // Setup oracle feeds

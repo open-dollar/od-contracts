@@ -31,6 +31,10 @@ contract NFTRenderer {
   ITaxCollector internal _taxCollector;
   ICollateralJoinFactory internal _collateralJoinFactory;
 
+  event ImplementationSet(
+    address safeManager, address safeEngine, address oracleRelayer, address taxCollector, address collateralJoinFactory
+  );
+
   constructor(address _vault721, address oracleRelayer, address taxCollector, address collateralJoinFactory) {
     vault721 = IVault721(_vault721);
     vault721.initializeRenderer();
@@ -72,6 +76,14 @@ contract NFTRenderer {
     _oracleRelayer = IOracleRelayer(oracleRelayer);
     _taxCollector = ITaxCollector(taxCollector);
     _collateralJoinFactory = ICollateralJoinFactory(collateralJoinFactory);
+
+    emit ImplementationSet(
+      address(_safeManager),
+      address(_safeEngine),
+      address(_oracleRelayer),
+      address(_taxCollector),
+      address(_collateralJoinFactory)
+    );
   }
 
   /**
@@ -172,7 +184,6 @@ contract NFTRenderer {
       } else {
         ratio = 0;
       }
-
       IERC20Metadata token = ICollateralJoin(_collateralJoinFactory.collateralJoins(cType)).collateral();
       params.symbol = token.symbol();
 
@@ -394,7 +405,7 @@ contract NFTRenderer {
   }
 
   /**
-   * @dev parses comma-separeted number
+   * @dev parses comma-separated number
    */
   function _parseNumberWithComma(uint256 left, uint256 right) internal pure returns (string memory) {
     if (left > 0) {

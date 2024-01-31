@@ -187,6 +187,9 @@ contract Unit_SAFEEngine_ModifyParameters is Base {
     ISAFEEngine.SAFEEngineCollateralParams memory _cParams = safeEngine.cParams(_cType);
 
     assertEq(abi.encode(_cParams), abi.encode(_fuzz));
+
+    bytes32[] memory _collateralList = safeEngine.collateralList();
+    assertEq(_collateralList[0], _cType);
   }
 
   function test_Revert_ModifyParameters_UnrecognizedParam() public authorized {

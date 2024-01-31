@@ -87,7 +87,6 @@ contract AnvilFork is AnvilDeployment, Test {
     cTypes[2] = CBETH;
     cTypes[3] = RETH;
 
-
     denominatedOracles.push(IDenominatedOracle(DenominatedOracleChild_10_Address));
     denominatedOracles.push(IDenominatedOracle(DenominatedOracleChild_12_Address));
     denominatedOracles.push(IDenominatedOracle(DenominatedOracleChild_14_Address));
@@ -134,16 +133,16 @@ contract AnvilFork is AnvilDeployment, Test {
       string memory cTypeName = erc20[cTypes[i]].symbol();
       vm.label(address(erc20[cTypes[i]]), cTypeName);
     }
-// #todo label the oracles by token; my suspicion is that they're in order with the first delayed oracle being wstETH
-//    for (uint256 i; i < denominatedOracles.length; i++) {
-//      string memory oracleName = denominatedOracles[i].symbol();
-//      vm.label(address(denominatedOracles[i]), oracleName);
-//    }
-//
-//    for (uint256 i; i < delayedOracles.length; i++) {
-//      string memory oracleName = delayedOracles[i].symbol();
-//      vm.label(address(delayedOracles[i]), oracleName);
-//    }
+    // #todo label the oracles by token; my suspicion is that they're in order with the first delayed oracle being wstETH
+    //    for (uint256 i; i < denominatedOracles.length; i++) {
+    //      string memory oracleName = denominatedOracles[i].symbol();
+    //      vm.label(address(denominatedOracles[i]), oracleName);
+    //    }
+    //
+    //    for (uint256 i; i < delayedOracles.length; i++) {
+    //      string memory oracleName = delayedOracles[i].symbol();
+    //      vm.label(address(delayedOracles[i]), oracleName);
+    //    }
   }
 
   function mintCollateralAndOpenSafes() public {
@@ -187,10 +186,12 @@ contract AnvilFork is AnvilDeployment, Test {
     _safeId = abi.decode(safeData, (uint256));
   }
 
-  function openSafeDepositAndMint(bytes32 _cType, address _proxy, uint256 collateralAmount, uint256 debtAmount)
-  public
-  returns (uint256 _safeId) {
-    uint256 currentSafeId = vaultIds[_proxy][_cType];
+  function openSafeDepositAndMint(
+    bytes32 _cType,
+    address _proxy,
+    uint256 collateralAmount,
+    uint256 debtAmount
+  ) public returns (uint256 _safeId) {
     bytes memory payload = abi.encodeWithSelector(
       basicActions.openLockTokenCollateralAndGenerateDebt.selector,
       address(safeManager),

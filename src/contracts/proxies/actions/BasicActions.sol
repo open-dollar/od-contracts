@@ -304,8 +304,6 @@ contract BasicActions is CommonActions, IBasicActions {
     uint256 _deltaWad
   ) external delegateCall {
     // Unlocks token amount from the SAFE
-    ODSafeManager.SAFEData memory _safeInfo = ODSafeManager(_manager).safeData(_safeId);
-
     _modifySAFECollateralization(_manager, _safeId, -_deltaWad.toInt(), 0, false);
     // Transfers token amount to the user's address
     _collectAndExitCollateral(_manager, _collateralJoin, _safeId, _deltaWad);
