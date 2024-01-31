@@ -20,6 +20,8 @@ contract Base is HaiTest {
 
   using stdStorage for StdStorage;
 
+  error UnrecognizedParam();
+
   uint256 internal constant NEGATIVE_RATE_LIMIT = RAY - 1;
   uint256 internal constant POSITIVE_RATE_LIMIT = uint256(type(int256).max);
   int256 constant PID_INTEGRAL_GAIN = 1e18;
@@ -1360,8 +1362,12 @@ contract Unit_PIDController_ModifyParameters is Base {
 
   function test_Revert_NullSeedProposer() public authorized {
     vm.expectRevert(Assertions.NullAddress.selector);
-
     pidController.modifyParameters('seedProposer', abi.encode(address(0)));
+  }
+
+  function test_Revert_UnrecognizedParameter() public authorized {
+    vm.expectRevert(UnrecognizedParam.selector);
+    pidController.modifyParameters('unrecognizedParameter', abi.encode(address(0)));
   }
 
   function test_Revert_InvalidNoiseBarrier(uint256 _noiseBarrier) public authorized {

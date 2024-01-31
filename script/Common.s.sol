@@ -3,9 +3,10 @@ pragma solidity 0.8.19;
 
 import '@script/Contracts.s.sol';
 import '@script/Registry.s.sol';
+import {Test} from 'forge-std/Test.sol';
 import {Params, ParamChecker, OD, ETH_A, JOB_REWARD} from '@script/Params.s.sol';
 
-abstract contract Common is Contracts, Params {
+abstract contract Common is Contracts, Params, Test {
   uint256 internal _chainId;
   uint256 internal _deployerPk = 69; // for tests - from HAI
   uint256 internal _governorPK;
@@ -13,6 +14,10 @@ abstract contract Common is Contracts, Params {
   bytes32 internal _vault721Salt;
   bytes internal _systemCoinInitCode;
   bytes internal _vault721InitCode;
+
+  function logGovernor() public {
+    emit log_named_address('Governor', governor);
+  }
 
   function getChainId() public view returns (uint256) {
     uint256 id;
@@ -62,7 +67,7 @@ abstract contract Common is Contracts, Params {
     _revoke(safeEngine, _governor);
     _revoke(liquidationEngine, _governor);
     _revoke(accountingEngine, _governor);
-    // _revoke(oracleRelayer, _governor);
+    _revoke(oracleRelayer, _governor);
 
     // auction houses
     _revoke(surplusAuctionHouse, _governor);
@@ -74,7 +79,13 @@ abstract contract Common is Contracts, Params {
 
     // tokens
     _revoke(systemCoin, _governor);
-    _revoke(protocolToken, _governor);
+
+    if (protocolToken.authorizedAccounts(_governor) == false) {
+      // pre-deployed protocolToken
+      _revoke(protocolToken, _governor);
+    } else {
+      protocolToken.removeAuthorization(deployer);
+    }
 
     // pid controller
     _revoke(pidController, _governor);
@@ -128,7 +139,11 @@ abstract contract Common is Contracts, Params {
 
     // tokens
     _delegate(systemCoin, __delegate);
-    _delegate(protocolToken, __delegate);
+
+    if (protocolToken.authorizedAccounts(__delegate) != true) {
+      // pre-deployed protocolToken
+      _delegate(protocolToken, __delegate);
+    }
 
     // pid controller
     _delegate(pidController, __delegate);
@@ -182,17 +197,8 @@ abstract contract Common is Contracts, Params {
 
     address[] memory members = new address[](0);
 
-    // deploy governance contracts
-    if (_chainId == 42_161) {
-      timelockController = new TimelockController(MIN_DELAY, members, members, deployer);
-      odGovernor = new ODGovernor(
-        MAINNET_INIT_VOTING_DELAY,
-        MAINNET_INIT_VOTING_PERIOD,
-        MAINNET_INIT_PROP_THRESHOLD,
-        address(protocolToken),
-        timelockController
-      );
-    } else {
+    if (_chainId == 31_337) {
+      // deploy governance contracts for anvil
       timelockController = new TimelockController(MIN_DELAY_GOERLI, members, members, deployer);
       odGovernor = new ODGovernor(
         TEST_INIT_VOTING_DELAY,
@@ -201,22 +207,19 @@ abstract contract Common is Contracts, Params {
         address(protocolToken),
         timelockController
       );
+      // set governor
+      governor = address(timelockController);
+
+      // set odGovernor as PROPOSER_ROLE and EXECUTOR_ROLE
+      timelockController.grantRole(timelockController.PROPOSER_ROLE(), address(odGovernor));
+      timelockController.grantRole(timelockController.EXECUTOR_ROLE(), address(odGovernor));
+
+      // // revoke deployer from TIMELOCK_ADMIN_ROLE
+      timelockController.renounceRole(timelockController.TIMELOCK_ADMIN_ROLE(), deployer);
     }
-
-    // set governor
-    governor = address(timelockController);
-
-    // set odGovernor as PROPOSER_ROLE and EXECUTOR_ROLE
-    timelockController.grantRole(timelockController.PROPOSER_ROLE(), address(odGovernor));
-    timelockController.grantRole(timelockController.EXECUTOR_ROLE(), address(odGovernor));
-
-    // // revoke deployer from TIMELOCK_ADMIN_ROLE
-    timelockController.renounceRole(timelockController.TIMELOCK_ADMIN_ROLE(), deployer);
   }
 
   function deployContracts() public updateParams {
-    require(governor == address(timelockController), 'governor not set');
-
     // deploy Base contracts
     safeEngine = new SAFEEngine(_safeEngineParams);
 

@@ -86,7 +86,7 @@ contract LiquidationAuction is DebtState {
       500_000 ether
     );
 
-    bytes memory returnData = ODProxy(proxy).execute(address(collateralBidActions), payload);
+    ODProxy(proxy).execute(address(collateralBidActions), payload);
 
     vm.stopPrank();
   }

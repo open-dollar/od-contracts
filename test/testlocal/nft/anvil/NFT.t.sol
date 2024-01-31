@@ -180,7 +180,6 @@ contract NFTAnvil is AnvilFork {
     bytes32 cType = cTypes[cTypeIndex];
     uint256 aliceVaultId = _helperDepositCollateralAndGenerateDebt(alice, aliceProxy, cType, _collateral, 0);
 
-    address bob = users[1];
     address bobProxy = proxies[1]; // bob's proxy
     uint256 bobVaultId = vaultIds[bobProxy][cType];
 
@@ -454,7 +453,6 @@ contract NFTAnvil is AnvilFork {
     bytes32 cType = cTypes[cTypeIndex];
     uint256 aliceVaultId = _helperDepositCollateralAndGenerateDebt(alice, aliceProxy, cType, _collateral, 0);
 
-    address bob = users[1];
     address bobProxy = proxies[1]; // bob's proxy
     uint256 bobVaultId = vaultIds[bobProxy][cType];
 
@@ -593,7 +591,6 @@ contract NFTAnvil is AnvilFork {
     uint256 i = 0;
     address proxy = proxies[i];
     bytes32 cType = cTypes[cTypeIndex];
-    uint256 vaultId = vaultIds[proxy][cType];
     uint256 anotherVaultId = vaultIds[proxies[1]][cType];
     vm.startPrank(users[i]);
     addSAFE(proxy, anotherVaultId);

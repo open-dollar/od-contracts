@@ -22,7 +22,7 @@ contract DebtState is AnvilFork, Script {
       testOracles[i + 1].setPriceAndValidity(1_000_000, true);
     }
 
-    uint256 updateDelay = delayedOracles[0].updateDelay();
+    delayedOracles[0].updateDelay();
 
     // update all the denominatedOracles
     for (uint256 i = 0; i < denominatedOracles.length; i++) {
