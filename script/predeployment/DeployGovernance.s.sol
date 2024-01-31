@@ -20,6 +20,8 @@ contract DeployGovernanceMainnet is Script {
     vm.startBroadcast(vm.envUint('ARB_MAINNET_DEPLOYER_PK'));
 
     address deployer = vm.envAddress('ARB_MAINNET_DEPLOYER_PC');
+
+    // empty address array for Proposers and Executors (ODGovernor will assume these roles)
     address[] memory members = new address[](0);
 
     _timelockController = new TimelockController(MIN_DELAY, members, members, deployer);
@@ -35,9 +37,6 @@ contract DeployGovernanceMainnet is Script {
     // set odGovernor as PROPOSER_ROLE and EXECUTOR_ROLE
     _timelockController.grantRole(_timelockController.PROPOSER_ROLE(), address(_odGovernor));
     _timelockController.grantRole(_timelockController.EXECUTOR_ROLE(), address(_odGovernor));
-
-    // // revoke deployer from TIMELOCK_ADMIN_ROLE
-    _timelockController.renounceRole(_timelockController.TIMELOCK_ADMIN_ROLE(), deployer);
 
     vm.stopBroadcast();
   }
@@ -57,6 +56,8 @@ contract DeployGovernanceSepolia is Script {
     vm.startBroadcast(vm.envUint('ARB_SEPOLIA_DEPLOYER_PK'));
 
     address deployer = vm.envAddress('ARB_SEPOLIA_DEPLOYER_PC');
+
+    // empty address array for Proposers and Executors (ODGovernor will assume these roles)
     address[] memory members = new address[](0);
 
     _timelockController = new TimelockController(MIN_DELAY, members, members, deployer);
@@ -73,9 +74,12 @@ contract DeployGovernanceSepolia is Script {
     _timelockController.grantRole(_timelockController.PROPOSER_ROLE(), address(_odGovernor));
     _timelockController.grantRole(_timelockController.EXECUTOR_ROLE(), address(_odGovernor));
 
-    // // revoke deployer from TIMELOCK_ADMIN_ROLE
-    _timelockController.renounceRole(_timelockController.TIMELOCK_ADMIN_ROLE(), deployer);
-
+    /**
+     * @dev this is now being proposed and executed by the DAO (deployer will keep admin role until DAO revokes it)
+     *
+     * revoke deployer from TIMELOCK_ADMIN_ROLE
+     *   _timelockController.renounceRole(_timelockController.TIMELOCK_ADMIN_ROLE(), deployer);
+     */
     vm.stopBroadcast();
   }
 }
