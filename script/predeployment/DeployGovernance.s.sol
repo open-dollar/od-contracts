@@ -24,7 +24,7 @@ contract DeployGovernanceMainnet is Script {
     // empty address array for Proposers and Executors (ODGovernor will assume these roles)
     address[] memory members = new address[](0);
 
-    _timelockController = new TimelockController(MIN_DELAY, members, members, deployer);
+    _timelockController = new TimelockController(MAINNET_MIN_DELAY, members, members, deployer);
 
     _odGovernor = new ODGovernor(
       MAINNET_INIT_VOTING_DELAY,
@@ -60,7 +60,7 @@ contract DeployGovernanceSepolia is Script {
     // empty address array for Proposers and Executors (ODGovernor will assume these roles)
     address[] memory members = new address[](0);
 
-    _timelockController = new TimelockController(MIN_DELAY, members, members, deployer);
+    _timelockController = new TimelockController(SEPOLIA_MIN_DELAY, members, members, deployer);
 
     _odGovernor = new ODGovernor(
       TEST_INIT_VOTING_DELAY,

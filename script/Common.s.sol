@@ -199,7 +199,7 @@ abstract contract Common is Contracts, Params, Test {
 
     if (_chainId == 31_337) {
       // deploy governance contracts for anvil
-      timelockController = new TimelockController(MIN_DELAY_GOERLI, members, members, deployer);
+      timelockController = new TimelockController(SEPOLIA_MIN_DELAY, members, members, deployer);
       odGovernor = new ODGovernor(
         TEST_INIT_VOTING_DELAY,
         TEST_INIT_VOTING_PERIOD,

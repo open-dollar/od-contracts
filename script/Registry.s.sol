@@ -21,8 +21,8 @@ uint256 constant TEST_INIT_VOTING_PERIOD = 15;
 uint256 constant TEST_INIT_PROP_THRESHOLD = 0;
 
 // Deployment params
-uint256 constant MIN_DELAY_GOERLI = 1 minutes;
 uint256 constant ORACLE_INTERVAL_TEST = 1 minutes;
+uint256 constant SEPOLIA_MIN_DELAY = 1 minutes;
 
 // Members for governance
 address constant H = 0x37c5B029f9c3691B3d47cb024f84E5E257aEb0BB;
@@ -83,7 +83,7 @@ uint256 constant MAINNET_INIT_PROP_THRESHOLD = 0;
 address constant MAINNET_TEST_DEPLOYER = 0xA0313248556DeA42fd17B345817Dd5DC5674c1E1;
 address constant MAINNET_DEPLOYER = 0xF78dA2A37049627636546E0cFAaB2aD664950917;
 address constant MAINNET_SAFE = 0x8516B2319b0541E0253b866557929FF7B76027ba; // set this before mainnet deployment
-uint256 constant MIN_DELAY = 3 days; // timelock for governor
+uint256 constant MAINNET_MIN_DELAY = 3 days; // timelock for governor
 uint256 constant ORACLE_INTERVAL_PROD = 1 hours;
 
 // Vanity address params - use `cast create2` to find salt
