@@ -423,21 +423,14 @@ contract Unit_Vault721_TransferFrom is Base {
   }
 
   modifier basicLimits(Scenario memory _scenario) {
-    vm.assume(_scenario.user1 != address(0));
-    vm.assume(_scenario.user2 != address(0));
+    _scenario.user1 = address(1);
+    _scenario.user2 = address(2);
     vm.assume(_scenario.tokenId != uint256(0));
     vm.assume(_scenario.blockDelay > 0);
     vm.assume(_scenario.timeDelay > 0);
     vm.assume(_scenario.timeDelay < 9_000_000_000);
     vm.assume(notUnderOrOverflowAdd(_scenario.blockDelay, int256(block.number)));
     vm.assume(notUnderOrOverflowAdd(_scenario.timeDelay, int256(block.timestamp)));
-    address[5] memory contractAddresses =
-      [address(vault721), address(renderer), address(safeManager), address(timelockController), address(userProxy)];
-    for (uint256 i; i < contractAddresses.length; i++) {
-      vm.assume(_scenario.user1 != contractAddresses[i]);
-      vm.assume(_scenario.user2 != contractAddresses[i]);
-    }
-    vm.assume(_scenario.user1 != _scenario.user2);
     _;
   }
 
