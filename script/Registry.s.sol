@@ -64,8 +64,8 @@ address constant SEPOLIA_WETH = 0x980B62Da83eFf3D4576C647993b0c1D7faf17c73;
 // --- ARB Mainnet ---
 
 // Governor
-address constant MAINNET_TIMELOCK_CONTROLLER = address(1);
-address constant MAINNET_OD_GOVERNOR = address(1);
+address constant MAINNET_TIMELOCK_CONTROLLER = 0x7A528eA3E06D85ED1C22219471Cf0b1851943903;
+address constant MAINNET_OD_GOVERNOR = 0xb7D1793425494e4C4133cF947C0992DC85F2948E;
 
 address constant MAINNET_SYSTEM_COIN_ORACLE = address(1); // from od-relayer deployment
 
