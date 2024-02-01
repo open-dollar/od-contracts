@@ -246,7 +246,6 @@ contract Unit_Vault721_GovernanceFunctions is Base {
     _scenario.collateralJoinFactory = address(5);
   }
 
-
   function _mintNft() internal returns (address _userProxy) {
     _userProxy = vault721.build(_scenario.user);
 
@@ -298,7 +297,7 @@ contract Unit_Vault721_GovernanceFunctions is Base {
     assertEq(vault721.balanceOf(owner), 1, 'transfer not succesful');
   }
 
-  function test_UpdateTimeDelay(uint256 timeDelay) public{
+  function test_UpdateTimeDelay(uint256 timeDelay) public {
     _mintNft();
 
     vm.assume(timeDelay > 0);
