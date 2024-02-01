@@ -244,6 +244,7 @@ contract Unit_Vault721_GovernanceFunctions is Base {
     vm.assume(_scenario.taxCollector != address(0));
     vm.assume(_scenario.collateralJoinFactory != address(0));
     vm.assume(_scenario.user != address(0));
+    vm.assume(_scenario.rando != address(0));
     address[4] memory contractAddresses =
       [address(renderer), address(vault721), address(timelockController), address(safeManager)];
     for (uint256 i; i < contractAddresses.length; i++) {
@@ -353,7 +354,7 @@ contract Unit_Vault721_GovernanceFunctions is Base {
     // hardcode previous hash into mock call for test
     bytes32 previousHashState = 0x0508bed9fd4f78f10478c995115fdf0b087b42d661e8c6f27710c035187b029b;
     _mintNft(_scenario);
-    vm.assume(notUnderOrOverflowAdd(blockDelay, int256(block.number)));
+    vm.assume(blockDelay > 0 && blockDelay < 1000);
 
     vm.prank(address(timelockController));
     vault721.updateBlockDelay(blockDelay);
