@@ -266,6 +266,33 @@ contract SingleAccountingEngineTest is DSTest {
     assertEq(id, 1);
   }
 
+
+  function test_settlement_auction_surplus_transfer_surplus_percentage() public {
+    address extraSurplusReceiver = address(0x123);
+    // Post settlement auction house setup
+    IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams memory _pssahParams = IPostSettlementSurplusAuctionHouse
+      .PostSettlementSAHParams({bidIncrease: 1.05e18, bidDuration: 3 hours, totalAuctionLength: 2 days});
+    surplusAuctionHouseTwo = new SAH_TWO(address(safeEngine), address(protocolToken), _pssahParams);
+    // Auctioneer setup
+    postSettlementSurplusDrain =
+      new SettlementSurplusAuctioneer(address(accountingEngine), address(surplusAuctionHouseTwo));
+    surplusAuctionHouseTwo.addAuthorization(address(postSettlementSurplusDrain));
+
+    accountingEngine.modifyParameters('surplusTransferPercentage', abi.encode(1 ether));
+
+    safeEngine.createUnbackedDebt(address(0), address(accountingEngine), rad(100 ether));
+
+    accountingEngine.modifyParameters('extraSurplusReceiver', abi.encode(extraSurplusReceiver));
+
+    accountingEngine.auctionSurplus();
+
+    uint256 transferedSurplus = safeEngine.coinBalance(extraSurplusReceiver);
+    IAccountingEngine.AccountingEngineParams memory _params = accountingEngine.params();
+
+    assertEq(transferedSurplus, (100 ether * 1e27), 'incorrect transfered surplus');
+  }
+
+
   function test_settlement_delay_transfer_surplus() public {
     // Post settlement auction house setup
     IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams memory _pssahParams = IPostSettlementSurplusAuctionHouse
