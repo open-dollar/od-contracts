@@ -30,6 +30,7 @@ contract DeployGovernanceMainnet is Script {
       MAINNET_INIT_VOTING_DELAY,
       MAINNET_INIT_VOTING_PERIOD,
       MAINNET_INIT_PROP_THRESHOLD,
+      MAINNET_INIT_VOTE_QUORUM,
       MAINNET_PROTOCOL_TOKEN,
       _timelockController
     );
@@ -66,6 +67,7 @@ contract DeployGovernanceSepolia is Script {
       TEST_INIT_VOTING_DELAY,
       TEST_INIT_VOTING_PERIOD,
       TEST_INIT_PROP_THRESHOLD,
+      TEST_INIT_VOTE_QUORUM,
       SEPOLIA_PROTOCOL_TOKEN,
       _timelockController
     );

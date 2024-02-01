@@ -19,6 +19,7 @@ uint256 constant AIRDROP_AMOUNT = 10_000e18; // 10k tokens
 uint256 constant TEST_INIT_VOTING_DELAY = 1;
 uint256 constant TEST_INIT_VOTING_PERIOD = 15;
 uint256 constant TEST_INIT_PROP_THRESHOLD = 0;
+uint256 constant TEST_INIT_VOTE_QUORUM = 3;
 
 // Deployment params
 uint256 constant ORACLE_INTERVAL_TEST = 1 minutes;
@@ -78,6 +79,7 @@ address constant MAINNET_PROTOCOL_TOKEN = 0x000D636bD52BFc1B3a699165Ef5aa340BEA8
 uint256 constant MAINNET_INIT_VOTING_DELAY = 7200;
 uint256 constant MAINNET_INIT_VOTING_PERIOD = 50_400;
 uint256 constant MAINNET_INIT_PROP_THRESHOLD = 10_000 * 1e18;
+uint256 constant MAINNET_INIT_VOTE_QUORUM = 3;
 
 // Deployment params
 address constant MAINNET_TEST_DEPLOYER = 0xA0313248556DeA42fd17B345817Dd5DC5674c1E1;

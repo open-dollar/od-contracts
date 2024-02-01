@@ -204,6 +204,7 @@ abstract contract Common is Contracts, Params, Test {
         TEST_INIT_VOTING_DELAY,
         TEST_INIT_VOTING_PERIOD,
         TEST_INIT_PROP_THRESHOLD,
+        TEST_INIT_VOTE_QUORUM,
         address(protocolToken),
         timelockController
       );

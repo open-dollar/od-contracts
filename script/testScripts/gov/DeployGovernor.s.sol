@@ -31,6 +31,7 @@ contract DeployGovernor is SepoliaContracts, Script {
       TEST_INIT_VOTING_DELAY,
       TEST_INIT_VOTING_PERIOD,
       TEST_INIT_PROP_THRESHOLD,
+      TEST_INIT_VOTE_QUORUM,
       SEPOLIA_PROTOCOL_TOKEN,
       timelockController
     );
