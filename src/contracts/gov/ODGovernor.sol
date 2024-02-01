@@ -49,6 +49,14 @@ contract ODGovernor is
   {}
 
   /**
+   * @dev - change quorum from denominator default of 100 to 1000
+   * allow quorum of less than zero
+   */
+  function quorumDenominator() public pure override returns (uint256) {
+    return 1000;
+  }
+
+  /**
    * @dev - below are required override functions -
    *
    * inherit: GovernorSettings
