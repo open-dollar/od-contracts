@@ -266,7 +266,6 @@ contract SingleAccountingEngineTest is DSTest {
     assertEq(id, 1);
   }
 
-
   function test_settlement_auction_surplus_transfer_surplus_percentage() public {
     address extraSurplusReceiver = address(0x123);
     // Post settlement auction house setup
@@ -291,7 +290,6 @@ contract SingleAccountingEngineTest is DSTest {
 
     assertEq(transferedSurplus, (100 ether * 1e27), 'incorrect transfered surplus');
   }
-
 
   function test_settlement_delay_transfer_surplus() public {
     // Post settlement auction house setup
