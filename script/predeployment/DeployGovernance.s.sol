@@ -19,7 +19,7 @@ contract DeployGovernanceMainnet is Script {
   function run() public {
     vm.startBroadcast(vm.envUint('ARB_MAINNET_DEPLOYER_PK'));
 
-    address deployer = vm.envAddress('ARB_MAINNET_DEPLOYER_PC');
+    address deployer = vm.envAddress('ARB_MAINNET_DEPLOYER_ADDR');
 
     // empty address array for Proposers and Executors (ODGovernor will assume these roles)
     address[] memory members = new address[](0);
@@ -56,7 +56,7 @@ contract DeployGovernanceSepolia is Script {
   function run() public {
     vm.startBroadcast(vm.envUint('ARB_SEPOLIA_DEPLOYER_PK'));
 
-    address deployer = vm.envAddress('ARB_SEPOLIA_DEPLOYER_PC');
+    address deployer = vm.envAddress('ARB_SEPOLIA_DEPLOYER_ADDR');
 
     // empty address array for Proposers and Executors (ODGovernor will assume these roles)
     address[] memory members = new address[](0);
