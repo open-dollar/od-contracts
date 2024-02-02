@@ -307,7 +307,7 @@ contract Unit_Vault721_GovernanceFunctions is Base {
   function test_UpdateTimeDelay(Scenario memory _scenario, uint256 timeDelay) public happyPath(_scenario) {
     _mintNft(_scenario);
 
-    vm.assume(timeDelay > 0 && timeDelay < 10_00_000_000);
+    vm.assume(timeDelay > uint256(0) && timeDelay < Uint26(1_000_000_000));
     vm.assume(notUnderOrOverflowAdd(timeDelay, int256(block.timestamp)));
 
     vm.prank(address(timelockController));
