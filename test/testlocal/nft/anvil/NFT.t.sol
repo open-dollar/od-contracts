@@ -67,10 +67,10 @@ contract NFTAnvil is AnvilFork {
    * test locking collateral
    */
   function test_depositCollateral(uint256 _collateral, uint256 cTypeIndex) public maxLock(_collateral) {
-    cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
+    cTypeIndex = bound(cTypeIndex, 1, collateralTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
 
     for (uint256 i = 0; i < proxies.length; i++) {
-      _helperDepositCollateralAndGenerateDebt(users[i], proxies[i], cTypes[cTypeIndex], _collateral, 0);
+      _helperDepositCollateralAndGenerateDebt(users[i], proxies[i], collateralTypes[cTypeIndex], _collateral, 0);
     }
   }
 
@@ -80,11 +80,11 @@ contract NFTAnvil is AnvilFork {
   function test_generateDebt(uint256 debt, uint256 _collateral, uint256 cTypeIndex) public {
     debt = bound(debt, 1 ether, debtCeiling);
     _collateral = bound(_collateral, debt / 975, MINT_AMOUNT); // ETH price ~ 1500 (debt / 975 > 150% collateralization)
-    cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 2); // range: WSTETH, CBETH, RETH
+    cTypeIndex = bound(cTypeIndex, 1, collateralTypes.length - 2); // range: WSTETH, CBETH, RETH
 
     for (uint256 i = 0; i < proxies.length; i++) {
       address proxy = proxies[i];
-      bytes32 cType = cTypes[cTypeIndex];
+      bytes32 cType = collateralTypes[cTypeIndex];
       uint256 vaultId = vaultIds[proxy][cType];
       vm.startPrank(users[i]);
       depositCollatAndGenDebt(cType, vaultId, _collateral, 0, proxy);
@@ -105,10 +105,10 @@ contract NFTAnvil is AnvilFork {
   function test_depositCollateral_generateDebt(uint256 debt, uint256 _collateral, uint256 cTypeIndex) public {
     debt = bound(debt, 1 ether, debtCeiling);
     _collateral = bound(_collateral, debt / 975, MINT_AMOUNT);
-    cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 2);
+    cTypeIndex = bound(cTypeIndex, 1, collateralTypes.length - 2);
 
     for (uint256 i = 0; i < proxies.length; i++) {
-      _helperDepositCollateralAndGenerateDebt(users[i], proxies[i], cTypes[cTypeIndex], _collateral, debt);
+      _helperDepositCollateralAndGenerateDebt(users[i], proxies[i], collateralTypes[cTypeIndex], _collateral, debt);
     }
   }
 
@@ -157,10 +157,10 @@ contract NFTAnvil is AnvilFork {
     uint256 _collateral,
     uint256 cTypeIndex
   ) public maxLock(_collateral) {
-    cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
+    cTypeIndex = bound(cTypeIndex, 1, collateralTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
     address alice = users[0];
     address proxy = proxies[0]; // alice's proxy
-    bytes32 cType = cTypes[cTypeIndex];
+    bytes32 cType = collateralTypes[cTypeIndex];
     uint256 vaultId = _helperDepositCollateralAndGenerateDebt(alice, proxy, cType, _collateral, 0);
 
     vm.startPrank(proxy);
@@ -173,11 +173,13 @@ contract NFTAnvil is AnvilFork {
    * @dev Test transfering collateral
    * succeeds
    */
+
   function test_transferCollateral(uint256 _collateral, uint256 cTypeIndex) public maxLock(_collateral) {
-    cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
+    cTypeIndex = bound(cTypeIndex, 1, collateralTypes.length - 1); // range: WSTETH, CBETH, RETH
+
     address alice = users[0];
     address aliceProxy = proxies[0]; // alice's proxy
-    bytes32 cType = cTypes[cTypeIndex];
+    bytes32 cType = collateralTypes[cTypeIndex];
     uint256 aliceVaultId = _helperDepositCollateralAndGenerateDebt(alice, aliceProxy, cType, _collateral, 0);
 
     address bobProxy = proxies[1]; // bob's proxy
@@ -206,11 +208,11 @@ contract NFTAnvil is AnvilFork {
   function test_generateDebtAndRepay(uint256 debt, uint256 _collateral, uint256 cTypeIndex) public {
     debt = bound(debt, 1 ether, debtCeiling);
     _collateral = bound(_collateral, debt / 975, MINT_AMOUNT); // ETH price ~ 1500 (debt / 975 > 150% collateralization)
-    cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 2); // range: WSTETH, CBETH, RETH
+    cTypeIndex = bound(cTypeIndex, 1, collateralTypes.length - 2); // range: WSTETH, CBETH, RETH
 
     for (uint256 i = 0; i < proxies.length; i++) {
       address proxy = proxies[i];
-      bytes32 cType = cTypes[cTypeIndex];
+      bytes32 cType = collateralTypes[cTypeIndex];
       uint256 vaultId = vaultIds[proxy][cType];
       vm.startPrank(users[i]);
       depositCollatAndGenDebt(cType, vaultId, _collateral, 0, proxy);
@@ -239,7 +241,7 @@ contract NFTAnvil is AnvilFork {
     collateral = bound(collateral, debt / 975, MINT_AMOUNT); // ETH price ~ 1500 (debt / 975 > 150% collateralization)
     FakeBasicActions fakeBasicActions = new FakeBasicActions();
     address proxy = proxies[1];
-    bytes32 cType = cTypes[1];
+    bytes32 cType = collateralTypes[1];
     uint256 vaultId = vaultIds[proxy][cType];
 
     bytes memory payload = abi.encodeWithSelector(
@@ -346,12 +348,12 @@ contract NFTAnvil is AnvilFork {
     uint256 _collateral,
     uint256 cTypeIndex
   ) public maxLock(_collateral) {
-    cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
+    cTypeIndex = bound(cTypeIndex, 1, collateralTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
 
-    _helperDepositCollateralAndGenerateDebt(users[0], proxies[0], cTypes[cTypeIndex], _collateral, 0);
+    _helperDepositCollateralAndGenerateDebt(users[0], proxies[0], collateralTypes[cTypeIndex], _collateral, 0);
     vm.startPrank(users[0]);
     vm.expectRevert(Vault721.TimeDelayNotOver.selector);
-    vault721.transferFrom(users[0], users[1], vaultIds[proxies[0]][cTypes[cTypeIndex]]);
+    vault721.transferFrom(users[0], users[1], vaultIds[proxies[0]][collateralTypes[cTypeIndex]]);
     vm.stopPrank();
   }
 
@@ -364,32 +366,32 @@ contract NFTAnvil is AnvilFork {
     vault721.updateAllowlist(allowedAddress, true);
     vm.stopPrank();
 
-    cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
+    cTypeIndex = bound(cTypeIndex, 1, collateralTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
 
-    _helperDepositCollateralAndGenerateDebt(users[0], proxies[0], cTypes[cTypeIndex], _collateral, 0);
+    _helperDepositCollateralAndGenerateDebt(users[0], proxies[0], collateralTypes[cTypeIndex], _collateral, 0);
     vm.startPrank(users[0]);
     vm.expectRevert(Vault721.BlockDelayNotOver.selector);
-    vault721.transferFrom(users[0], users[1], vaultIds[proxies[0]][cTypes[cTypeIndex]]);
+    vault721.transferFrom(users[0], users[1], vaultIds[proxies[0]][collateralTypes[cTypeIndex]]);
     vm.stopPrank();
   }
 
   function test_transerFromWithoutAnyDelays(uint256 cTypeIndex) public {
-    cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
+    cTypeIndex = bound(cTypeIndex, 1, collateralTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
 
     vm.startPrank(users[0]);
-    vault721.transferFrom(users[0], users[1], vaultIds[proxies[0]][cTypes[cTypeIndex]]);
+    vault721.transferFrom(users[0], users[1], vaultIds[proxies[0]][collateralTypes[cTypeIndex]]);
     vm.stopPrank();
   }
 
   function test_transferFromAfterTimeDelayPassed(uint256 _collateral, uint256 cTypeIndex) public maxLock(_collateral) {
-    cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
+    cTypeIndex = bound(cTypeIndex, 1, collateralTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
 
-    _helperDepositCollateralAndGenerateDebt(users[0], proxies[0], cTypes[cTypeIndex], _collateral, 0);
+    _helperDepositCollateralAndGenerateDebt(users[0], proxies[0], collateralTypes[cTypeIndex], _collateral, 0);
 
     vm.warp(block.timestamp + vault721.timeDelay());
 
     vm.startPrank(users[0]);
-    vault721.transferFrom(users[0], users[1], vaultIds[proxies[0]][cTypes[cTypeIndex]]);
+    vault721.transferFrom(users[0], users[1], vaultIds[proxies[0]][collateralTypes[cTypeIndex]]);
     vm.stopPrank();
   }
 
@@ -399,14 +401,14 @@ contract NFTAnvil is AnvilFork {
     vault721.updateAllowlist(allowedAddress, true);
     vm.stopPrank();
 
-    cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
+    cTypeIndex = bound(cTypeIndex, 1, collateralTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
 
-    _helperDepositCollateralAndGenerateDebt(users[0], proxies[0], cTypes[cTypeIndex], _collateral, 0);
+    _helperDepositCollateralAndGenerateDebt(users[0], proxies[0], collateralTypes[cTypeIndex], _collateral, 0);
 
     vm.roll(block.number + vault721.blockDelay());
 
     vm.startPrank(users[0]);
-    vault721.transferFrom(users[0], users[1], vaultIds[proxies[0]][cTypes[cTypeIndex]]);
+    vault721.transferFrom(users[0], users[1], vaultIds[proxies[0]][collateralTypes[cTypeIndex]]);
     vm.stopPrank();
   }
 
@@ -414,15 +416,15 @@ contract NFTAnvil is AnvilFork {
     uint256 _collateral,
     uint256 cTypeIndex
   ) public maxLock(_collateral) {
-    cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
+    cTypeIndex = bound(cTypeIndex, 1, collateralTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
 
     vm.roll(69);
     vm.warp(420);
     // this calls depositCollatAndGenDebt which calls BasicActions.lockTokenCollateralAndGenerateDebt
     // which does _modifySAFECollateralization
-    _helperDepositCollateralAndGenerateDebt(users[0], proxies[0], cTypes[cTypeIndex], _collateral, 0);
+    _helperDepositCollateralAndGenerateDebt(users[0], proxies[0], collateralTypes[cTypeIndex], _collateral, 0);
 
-    HashState memory hashState = vault721.getHashState(vaultIds[proxies[0]][cTypes[cTypeIndex]]);
+    HashState memory hashState = vault721.getHashState(vaultIds[proxies[0]][collateralTypes[cTypeIndex]]);
 
     assertEq(
       hashState.lastBlockNumber,
@@ -440,14 +442,14 @@ contract NFTAnvil is AnvilFork {
     uint256 _collateral,
     uint256 cTypeIndex
   ) public maxLock(_collateral) {
-    cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
+    cTypeIndex = bound(cTypeIndex, 1, collateralTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
 
     vm.roll(69);
     vm.warp(420);
 
     address alice = users[0];
     address aliceProxy = proxies[0]; // alice's proxy
-    bytes32 cType = cTypes[cTypeIndex];
+    bytes32 cType = collateralTypes[cTypeIndex];
     uint256 aliceVaultId = _helperDepositCollateralAndGenerateDebt(alice, aliceProxy, cType, _collateral, 0);
 
     address bobProxy = proxies[1]; // bob's proxy
@@ -473,10 +475,10 @@ contract NFTAnvil is AnvilFork {
   // BasicActions Call Tests
   function test_allowSAFE(uint256 cTypeIndex, bool ok) public {
     vm.assume(ok == true);
-    cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
+    cTypeIndex = bound(cTypeIndex, 1, collateralTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
     uint256 i = 0;
     address proxy = proxies[i];
-    bytes32 cType = cTypes[cTypeIndex];
+    bytes32 cType = collateralTypes[cTypeIndex];
     uint256 vaultId = vaultIds[proxy][cType];
     vm.startPrank(users[i]);
     allowSafe(proxy, vaultId, users[i], ok);
@@ -490,10 +492,10 @@ contract NFTAnvil is AnvilFork {
   }
 
   function test_allowHandler(uint256 cTypeIndex, bool ok) public {
-    cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
+    cTypeIndex = bound(cTypeIndex, 1, collateralTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
     uint256 i = 0;
     address proxy = proxies[i];
-    bytes32 cType = cTypes[cTypeIndex];
+    bytes32 cType = collateralTypes[cTypeIndex];
     uint256 vaultId = vaultIds[proxy][cType];
     vm.startPrank(users[i]);
     allowHandler(proxy, users[i], ok);
@@ -511,10 +513,10 @@ contract NFTAnvil is AnvilFork {
   //   uint256 collateral,
   //   int256 deltaDebt
   // ) public maxLock(collateral) {
-  //   cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
+  //   cTypeIndex = bound(cTypeIndex, 1, collateralTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
   //   uint256 i = 0;
   //   address proxy = proxies[i];
-  //   bytes32 cType = cTypes[cTypeIndex];
+  //   bytes32 cType = collateralTypes[cTypeIndex];
   //   uint256 vaultId = vaultIds[proxy][cType];
   //   vm.startPrank(users[i]);
   //   modifySAFECollateralization(proxy, vaultId, int256(collateral), deltaDebt);
@@ -522,10 +524,10 @@ contract NFTAnvil is AnvilFork {
   // }
 
   // function test_transferCollateral(uint256 cTypeIndex, uint256 collateral) public maxLock(collateral) {
-  //   cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
+  //   cTypeIndex = bound(cTypeIndex, 1, collateralTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
   //   uint256 i = 0;
   //   address proxy = proxies[i];
-  //   bytes32 cType = cTypes[cTypeIndex];
+  //   bytes32 cType = collateralTypes[cTypeIndex];
   //   uint256 vaultId = vaultIds[proxy][cType];
   //   uint256 destId = vaultIds[proxies[1]][cType];
   //   IODSafeManager.SAFEData memory sData = safeManager.safeData(destId);
@@ -535,10 +537,10 @@ contract NFTAnvil is AnvilFork {
   // }
 
   // function test_transferInternalCoins(uint256 cTypeIndex, address _dst, uint256 _rad) public {
-  //   cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
+  //   cTypeIndex = bound(cTypeIndex, 1, collateralTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
   //   uint256 i = 0;
   //   address proxy = proxies[i];
-  //   bytes32 cType = cTypes[cTypeIndex];
+  //   bytes32 cType = collateralTypes[cTypeIndex];
   //   uint256 vaultId = vaultIds[proxy][cType];
   //   vm.startPrank(users[i]);
   //   transferInternalCoins(proxy, vaultId, _dst, _rad);
@@ -546,10 +548,10 @@ contract NFTAnvil is AnvilFork {
   // }
 
   // function test_quitSystem(uint256 cTypeIndex, address _dst) public {
-  //   cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
+  //   cTypeIndex = bound(cTypeIndex, 1, collateralTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
   //   uint256 i = 0;
   //   address proxy = proxies[i];
-  //   bytes32 cType = cTypes[cTypeIndex];
+  //   bytes32 cType = collateralTypes[cTypeIndex];
   //   uint256 vaultId = vaultIds[proxy][cType];
   //   vm.startPrank(users[i]);
   //   quitSystem(proxy, vaultId, _dst);
@@ -557,10 +559,10 @@ contract NFTAnvil is AnvilFork {
   // }
 
   // function test_enterSystem(uint256 cTypeIndex, address _src) public {
-  //   cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
+  //   cTypeIndex = bound(cTypeIndex, 1, collateralTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
   //   uint256 i = 0;
   //   address proxy = proxies[i];
-  //   bytes32 cType = cTypes[cTypeIndex];
+  //   bytes32 cType = collateralTypes[cTypeIndex];
   //   uint256 vaultId = vaultIds[proxies[1]][cType];
   //   vm.startPrank(users[i]);
   //   enterSystem(proxy, _src, vaultId);
@@ -568,10 +570,10 @@ contract NFTAnvil is AnvilFork {
   // }
 
   // function test_moveSAFE(uint256 cTypeIndex) public {
-  //   cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
+  //   cTypeIndex = bound(cTypeIndex, 1, collateralTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
   //   uint256 i = 0;
   //   address proxy = proxies[i];
-  //   bytes32 cType = cTypes[cTypeIndex];
+  //   bytes32 cType = collateralTypes[cTypeIndex];
   //   uint256 vaultId = vaultIds[proxy][cType];
   //   uint256 anotherVaultId = vaultIds[proxies[1]][cType];
   //   vm.startPrank(users[i]);
@@ -580,10 +582,10 @@ contract NFTAnvil is AnvilFork {
   // }
 
   function test_addSAFE(uint256 cTypeIndex) public {
-    cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
+    cTypeIndex = bound(cTypeIndex, 1, collateralTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
     uint256 i = 0;
     address proxy = proxies[i];
-    bytes32 cType = cTypes[cTypeIndex];
+    bytes32 cType = collateralTypes[cTypeIndex];
     uint256 anotherVaultId = vaultIds[proxies[1]][cType];
     vm.startPrank(users[i]);
     addSAFE(proxy, anotherVaultId);
@@ -591,10 +593,10 @@ contract NFTAnvil is AnvilFork {
   }
 
   function test_removeSAFE(uint256 cTypeIndex) public {
-    cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
+    cTypeIndex = bound(cTypeIndex, 1, collateralTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
     uint256 i = 0;
     address proxy = proxies[i];
-    bytes32 cType = cTypes[cTypeIndex];
+    bytes32 cType = collateralTypes[cTypeIndex];
     uint256 vaultId = vaultIds[proxy][cType];
     vm.startPrank(users[i]);
     removeSAFE(proxy, vaultId);
@@ -602,11 +604,11 @@ contract NFTAnvil is AnvilFork {
   }
 
   // function test_protectSAFE(uint256 cTypeIndex) public {
-  //   cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
+  //   cTypeIndex = bound(cTypeIndex, 1, collateralTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
   //   uint256 i = 0;
   //   address saviour = address(0x420);
   //   address proxy = proxies[i];
-  //   bytes32 cType = cTypes[cTypeIndex];
+  //   bytes32 cType = collateralTypes[cTypeIndex];
   //   uint256 vaultId = vaultIds[proxy][cType];
   //   vm.startPrank(users[i]);
   //   protectSAFE(proxy, vaultId, address(liquidationEngine), saviour);
@@ -617,9 +619,9 @@ contract NFTAnvil is AnvilFork {
   // all previous allowSAFE/allowHandler calls will be invalidated
   // as safeAllowed looks at the current nonce
   function test_transferFromIncrementsNonce(uint256 cTypeIndex) public {
-    cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
+    cTypeIndex = bound(cTypeIndex, 1, collateralTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
 
-    uint256 vaultId = vaultIds[proxies[0]][cTypes[cTypeIndex]];
+    uint256 vaultId = vaultIds[proxies[0]][collateralTypes[cTypeIndex]];
 
     IODSafeManager.SAFEData memory sData = safeManager.safeData(vaultId);
 

@@ -19,10 +19,11 @@ uint256 constant AIRDROP_AMOUNT = 10_000e18; // 10k tokens
 uint256 constant TEST_INIT_VOTING_DELAY = 1;
 uint256 constant TEST_INIT_VOTING_PERIOD = 15;
 uint256 constant TEST_INIT_PROP_THRESHOLD = 0;
+uint256 constant TEST_INIT_VOTE_QUORUM = 3;
 
 // Deployment params
-uint256 constant MIN_DELAY_GOERLI = 1 minutes;
 uint256 constant ORACLE_INTERVAL_TEST = 1 minutes;
+uint256 constant SEPOLIA_MIN_DELAY = 1 minutes;
 
 // Members for governance
 address constant H = 0x37c5B029f9c3691B3d47cb024f84E5E257aEb0BB;
@@ -63,8 +64,8 @@ address constant SEPOLIA_WETH = 0x980B62Da83eFf3D4576C647993b0c1D7faf17c73;
 // --- ARB Mainnet ---
 
 // Governor
-address constant MAINNET_TIMELOCK_CONTROLLER = address(1);
-address constant MAINNET_OD_GOVERNOR = address(1);
+address constant MAINNET_TIMELOCK_CONTROLLER = 0x7A528eA3E06D85ED1C22219471Cf0b1851943903;
+address constant MAINNET_OD_GOVERNOR = 0xb7D1793425494e4C4133cF947C0992DC85F2948E;
 
 address constant MAINNET_SYSTEM_COIN_ORACLE = address(1); // from od-relayer deployment
 
@@ -75,15 +76,16 @@ address constant MAINNET_CREATE2FACTORY = 0x6EDb251053B4F7670C98e18bbEA20818367b
 address constant MAINNET_PROTOCOL_TOKEN = 0x000D636bD52BFc1B3a699165Ef5aa340BEA8939c;
 
 // Governance Settings
-uint256 constant MAINNET_INIT_VOTING_DELAY = 332_308;
-uint256 constant MAINNET_INIT_VOTING_PERIOD = 2_326_156;
-uint256 constant MAINNET_INIT_PROP_THRESHOLD = 0;
+uint256 constant MAINNET_INIT_VOTING_DELAY = 7200;
+uint256 constant MAINNET_INIT_VOTING_PERIOD = 50_400;
+uint256 constant MAINNET_INIT_PROP_THRESHOLD = 10_000 * 1e18;
+uint256 constant MAINNET_INIT_VOTE_QUORUM = 2;
 
 // Deployment params
 address constant MAINNET_TEST_DEPLOYER = 0xA0313248556DeA42fd17B345817Dd5DC5674c1E1;
 address constant MAINNET_DEPLOYER = 0xF78dA2A37049627636546E0cFAaB2aD664950917;
 address constant MAINNET_SAFE = 0x8516B2319b0541E0253b866557929FF7B76027ba; // set this before mainnet deployment
-uint256 constant MIN_DELAY = 3 days; // timelock for governor
+uint256 constant MAINNET_MIN_DELAY = 3 days; // timelock for governor
 uint256 constant ORACLE_INTERVAL_PROD = 1 hours;
 
 // Vanity address params - use `cast create2` to find salt

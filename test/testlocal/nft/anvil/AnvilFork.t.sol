@@ -41,11 +41,7 @@ import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
  *
  * anvil
  * yarn deploy:anvil
- * move deployment json to the deployments/anvil folder
- * - from: broadcast/Deploy.s.sol/31337/run-latest.json
- * - to: deployments/anvil/
- * - replace: existing `run-latest.json`
- * node tasks/parseAnvilDeployments.js
+ *
  * forge t --fork-url http://127.0.0.1:8545  --match-contract ContractToTest -vvvvv
  */
 contract AnvilFork is AnvilDeployment, Test {
@@ -69,7 +65,6 @@ contract AnvilFork is AnvilDeployment, Test {
   address[3] public users;
   address[2] public newUsers;
   address[3] public proxies;
-  bytes32[4] public cTypes;
   IDenominatedOracle[] public denominatedOracles;
   IDelayedOracle[] public delayedOracles;
   OracleForTestnet[] public testOracles;
@@ -81,11 +76,6 @@ contract AnvilFork is AnvilDeployment, Test {
 
     newUsers[0] = DAN;
     newUsers[1] = ERICA;
-
-    cTypes[0] = ARB;
-    cTypes[1] = WSTETH;
-    cTypes[2] = CBETH;
-    cTypes[3] = RETH;
 
     denominatedOracles.push(IDenominatedOracle(DenominatedOracleChild_10_Address));
     denominatedOracles.push(IDenominatedOracle(DenominatedOracleChild_12_Address));
@@ -129,10 +119,11 @@ contract AnvilFork is AnvilDeployment, Test {
     vm.label(proxies[2], 'C-proxy');
     vm.label(address(systemCoin), systemCoin.symbol());
 
-    for (uint256 i; i < cTypes.length; i++) {
-      string memory cTypeName = erc20[cTypes[i]].symbol();
-      vm.label(address(erc20[cTypes[i]]), cTypeName);
+    for (uint256 i; i < collateralTypes.length; i++) {
+      string memory cTypeName = erc20[collateralTypes[i]].symbol();
+      vm.label(address(erc20[collateralTypes[i]]), cTypeName);
     }
+
     // #todo label the oracles by token; my suspicion is that they're in order with the first delayed oracle being wstETH
     //    for (uint256 i; i < denominatedOracles.length; i++) {
     //      string memory oracleName = denominatedOracles[i].symbol();
@@ -150,8 +141,8 @@ contract AnvilFork is AnvilDeployment, Test {
       address user = users[i];
       address proxy = vault721.getProxy(user);
 
-      for (uint256 j = 0; j < cTypes.length; j++) {
-        bytes32 cType = cTypes[j];
+      for (uint256 j = 0; j < collateralTypes.length; j++) {
+        bytes32 cType = collateralTypes[j];
         totalVaults++;
 
         vm.startPrank(user);
@@ -195,7 +186,6 @@ contract AnvilFork is AnvilDeployment, Test {
     bytes memory payload = abi.encodeWithSelector(
       basicActions.openLockTokenCollateralAndGenerateDebt.selector,
       address(safeManager),
-      address(taxCollector),
       address(collateralJoin[_cType]),
       address(coinJoin),
       _cType,
@@ -324,8 +314,8 @@ contract AnvilFork is AnvilDeployment, Test {
       address proxy = vault721.getProxy(user);
       assertEq(totalVaults / 3, vault721.balanceOf(user));
 
-      for (uint256 j = 0; j < cTypes.length; j++) {
-        assertEq(vaultId, vaultIds[proxy][cTypes[j]]);
+      for (uint256 j = 0; j < collateralTypes.length; j++) {
+        assertEq(vaultId, vaultIds[proxy][collateralTypes[j]]);
         assertEq(user, vault721.ownerOf(vaultId));
         vaultId++;
       }

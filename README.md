@@ -43,7 +43,7 @@ OpenDollar governance follows the common pattern of:
 - queuing the governance action
 - executing the governance action
 
-We include a set of governance scripts in `script/gov` which allow DAO members to propose, queue and execute different governance actions.
+We include a set of governance scripts in `script/testScripts/gov` which allow DAO members to propose, queue and execute different governance actions.
 
 > NOTE: It is important that you use the `governance` profile when running the different scripts otherwise the reading and writing of JSON files will not work.
 
