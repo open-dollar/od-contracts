@@ -303,6 +303,7 @@ contract BasicActions is CommonActions, IBasicActions {
     uint256 _safeId,
     uint256 _deltaWad
   ) external delegateCall {
+    _taxSingle(_manager, _safeID);
     // Unlocks token amount from the SAFE
     _modifySAFECollateralization(_manager, _safeId, -_deltaWad.toInt(), 0, false);
     // Transfers token amount to the user's address
