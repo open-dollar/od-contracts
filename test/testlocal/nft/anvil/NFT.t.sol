@@ -170,10 +170,10 @@ contract NFTAnvil is AnvilFork {
   }
 
   /**
-   * @dev Test transfering collateral to an address that is a safeHandler
+   * @dev Test transfering collateral
    * succeeds
    */
-  function test_transferCollateral_To_SafeHandler(uint256 _collateral, uint256 cTypeIndex) public maxLock(_collateral) {
+  function test_transferCollateral(uint256 _collateral, uint256 cTypeIndex) public maxLock(_collateral) {
     cTypeIndex = bound(cTypeIndex, 1, cTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
     address alice = users[0];
     address aliceProxy = proxies[0]; // alice's proxy
@@ -181,12 +181,9 @@ contract NFTAnvil is AnvilFork {
     uint256 aliceVaultId = _helperDepositCollateralAndGenerateDebt(alice, aliceProxy, cType, _collateral, 0);
 
     address bobProxy = proxies[1]; // bob's proxy
-    uint256 bobVaultId = vaultIds[bobProxy][cType];
 
-    IODSafeManager.SAFEData memory bobSafeData = safeManager.safeData(bobVaultId);
-    address bobSafeHandler = bobSafeData.safeHandler;
     assertEq(
-      safeEngine.safes(cType, bobSafeHandler).lockedCollateral,
+      safeEngine.safes(cType, bobProxy).lockedCollateral,
       0,
       'test_transferCollateralToSafeHandler: collateral is empty'
     );
@@ -194,10 +191,10 @@ contract NFTAnvil is AnvilFork {
     vm.startPrank(aliceProxy);
     // @note TODO when we deposit collateral, it is locked, how do we move it from locked to tokenCollateral so
     // we can transfer it? this will fail if we try to transfer non-zero value
-    safeManager.transferCollateral(aliceVaultId, bobSafeHandler, 0);
+    safeManager.transferCollateral(aliceVaultId, bobProxy, 0);
     vm.stopPrank();
     assertEq(
-      safeEngine.tokenCollateral(cType, bobSafeHandler),
+      safeEngine.tokenCollateral(cType, bobProxy),
       0,
       'test_transferCollateralToSafeHandler: collateral is not equal'
     );
@@ -454,13 +451,9 @@ contract NFTAnvil is AnvilFork {
     uint256 aliceVaultId = _helperDepositCollateralAndGenerateDebt(alice, aliceProxy, cType, _collateral, 0);
 
     address bobProxy = proxies[1]; // bob's proxy
-    uint256 bobVaultId = vaultIds[bobProxy][cType];
-
-    IODSafeManager.SAFEData memory bobSafeData = safeManager.safeData(bobVaultId);
-    address bobSafeHandler = bobSafeData.safeHandler;
 
     vm.startPrank(aliceProxy);
-    safeManager.transferCollateral(aliceVaultId, bobSafeHandler, 0);
+    safeManager.transferCollateral(aliceVaultId, bobProxy, 0);
     vm.stopPrank();
 
     HashState memory hashState = vault721.getHashState(aliceVaultId);
