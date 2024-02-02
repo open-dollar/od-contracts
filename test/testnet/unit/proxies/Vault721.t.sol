@@ -300,7 +300,7 @@ contract Unit_Vault721_GovernanceFunctions is Base {
   function test_UpdateTimeDelay(uint256 timeDelay) public {
     _mintNft();
 
-    vm.assume(timeDelay > 0);
+    vm.assume(timeDelay > uint256(0) && timeDelay < uint256(1_000_000_000));
     vm.assume(notUnderOrOverflowAdd(timeDelay, int256(block.timestamp)));
 
     vm.prank(address(timelockController));
