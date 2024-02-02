@@ -19,7 +19,7 @@ import {SepoliaDeployment} from '@script/SepoliaDeployment.s.sol';
  *     vm.startBroadcast(vm.envUint('ARB_MAINNET_DEPLOYER_PK'));
  *     oracleRelayer.modifyParameters('systemCoinOracle', abi.encode(MAINNET_SYSTEM_COIN_ORACLE));
  *     oracleRelayer.addAuthorization(MAINNET_TIMELOCK_CONTROLLER);
- *     oracleRelayer.removeAuthorization(vm.envAddress('ARB_MAINNET_DEPLOYER_PC'));
+ *     oracleRelayer.removeAuthorization(vm.envAddress('ARB_MAINNET_DEPLOYER_ADDR'));
  *     vm.stopBroadcast();
  *   }
  * }
@@ -36,7 +36,7 @@ contract SetupOracleRelayerSepolia is SepoliaDeployment, Script {
     vm.startBroadcast(vm.envUint('ARB_SEPOLIA_DEPLOYER_PK'));
     oracleRelayer.modifyParameters('systemCoinOracle', abi.encode(SEPOLIA_SYSTEM_COIN_ORACLE));
     oracleRelayer.addAuthorization(SEPOLIA_TIMELOCK_CONTROLLER);
-    oracleRelayer.removeAuthorization(vm.envAddress('ARB_SEPOLIA_DEPLOYER_PC'));
+    oracleRelayer.removeAuthorization(vm.envAddress('ARB_SEPOLIA_DEPLOYER_ADDR'));
     vm.stopBroadcast();
   }
 }
