@@ -12,7 +12,7 @@ import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 /// @dev NOTE This script requires the following env vars in the REQUIRED ENV VARS section below
 /// @dev The script will propose setting the block delay value on Vault721
 /// @dev The script will output a JSON file with the proposal data to be used by the QueueProposal and ExecuteProposal scripts
-/// @dev In the root, run: export FOUNDRY_PROFILE=governance && forge script script/testScripts/gov/UpdateBlockDelayAction/ProposeUpdateBlockDelay.s.sol
+/// @dev In the root, run: export FOUNDRY_PROFILE=governance && forge script --rpc-url <RPC_URL> script/testScripts/gov/UpdateBlockDelayAction/ProposeUpdateBlockDelay.s.sol
 contract UpdateBlockDelay is JSONScript {
   function run() public {
     /// REQUIRED ENV VARS ///

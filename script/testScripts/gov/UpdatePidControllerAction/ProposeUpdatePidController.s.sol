@@ -13,7 +13,7 @@ import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 /// @dev This script is used to propose updating PID Controller params
 /// @dev The script will update some PID Controller params
 /// @dev The script will output a JSON file with the proposal data to be used by the QueueProposal and ExecuteProposal scripts
-/// @dev In the root, run: export FOUNDRY_PROFILE=governance && forge script script/testScripts/gov/UpdatePidControllerAction/ProposeUpdatePidController.s.sol
+/// @dev In the root, run: export FOUNDRY_PROFILE=governance && forge script --rpc-url <RPC_URL> script/testScripts/gov/UpdatePidControllerAction/ProposeUpdatePidController.s.sol
 contract ProposeUpdatePidController is JSONScript {
   function run() public {
     /// REQUIRED ENV VARS ///
