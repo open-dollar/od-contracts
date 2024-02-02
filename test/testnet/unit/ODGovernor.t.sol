@@ -60,12 +60,12 @@ contract Unit_ODGovernorTest is Base {
     assertEq(odGovernor.proposalThreshold(), initialProposalThreshold);
   }
 
-  function test_ODGovernor_Qorum() public {
+  function test_ODGovernor_Quorum() public {
     // setup scenario: Alice and Bob have tokens
     token.mint(alice, 10 ether);
     token.mint(bob, 20 ether);
     vm.roll(100); // move to block number to 100
-    assertEq(odGovernor.quorum(10), 900_000_000_000_000_000); // 3% of total supply
+    assertEq(odGovernor.quorum(10), 30_000_000_000_000_000); // 0.3% of total supply
   }
 
   function test_ODGovernor_SupportsInterface() public {
