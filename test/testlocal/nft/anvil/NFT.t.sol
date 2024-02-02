@@ -185,9 +185,7 @@ contract NFTAnvil is AnvilFork {
     address bobProxy = proxies[1]; // bob's proxy
 
     assertEq(
-      safeEngine.safes(cType, bobProxy).lockedCollateral,
-      0,
-      'test_transferCollateralToSafeHandler: collateral is empty'
+      safeEngine.safes(cType, bobProxy).lockedCollateral, 0, 'test_transferCollateralToSafeHandler: collateral is empty'
     );
 
     vm.startPrank(aliceProxy);
@@ -196,9 +194,7 @@ contract NFTAnvil is AnvilFork {
     safeManager.transferCollateral(aliceVaultId, bobProxy, 0);
     vm.stopPrank();
     assertEq(
-      safeEngine.tokenCollateral(cType, bobProxy),
-      0,
-      'test_transferCollateralToSafeHandler: collateral is not equal'
+      safeEngine.tokenCollateral(cType, bobProxy), 0, 'test_transferCollateralToSafeHandler: collateral is not equal'
     );
   }
 
