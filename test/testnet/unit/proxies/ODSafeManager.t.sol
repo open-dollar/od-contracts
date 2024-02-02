@@ -159,12 +159,12 @@ contract Unit_ODSafeManager_ViewFunctions is Base {
   }
 
   function test_GetSafesData(Scenario memory _scenario) public happyPath(_scenario) {
-    (uint256[] memory _safes, address[] memory _safeHandlers, bytes32[] memory _cTypes) =
+    (uint256[] memory _safes, address[] memory _safeHandlers, bytes32[] memory _collateralTypes) =
       safeManager.getSafesData(_scenario.aliceProxy);
 
     assertEq(_safes.length, 1, 'incorrect number of safes');
     assertEq(_safeHandlers.length, 1, 'incorrect number of safe handlers');
-    assertEq(_cTypes.length, 1, 'incorrect number of cTypes');
+    assertEq(_collateralTypes.length, 1, 'incorrect number of collateralTypes');
   }
 }
 
