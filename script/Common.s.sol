@@ -67,7 +67,7 @@ abstract contract Common is Contracts, Params, Test {
     _revoke(safeEngine, _governor);
     _revoke(liquidationEngine, _governor);
     _revoke(accountingEngine, _governor);
-    // _revoke(oracleRelayer, _governor);
+    _revoke(oracleRelayer, _governor);
 
     // auction houses
     _revoke(surplusAuctionHouse, _governor);
@@ -79,7 +79,13 @@ abstract contract Common is Contracts, Params, Test {
 
     // tokens
     _revoke(systemCoin, _governor);
-    _revoke(protocolToken, _governor);
+
+    if (protocolToken.authorizedAccounts(_governor) == false) {
+      // pre-deployed protocolToken
+      _revoke(protocolToken, _governor);
+    } else {
+      protocolToken.removeAuthorization(deployer);
+    }
 
     // pid controller
     _revoke(pidController, _governor);
@@ -133,7 +139,11 @@ abstract contract Common is Contracts, Params, Test {
 
     // tokens
     _delegate(systemCoin, __delegate);
-    _delegate(protocolToken, __delegate);
+
+    if (protocolToken.authorizedAccounts(__delegate) != true) {
+      // pre-deployed protocolToken
+      _delegate(protocolToken, __delegate);
+    }
 
     // pid controller
     _delegate(pidController, __delegate);
@@ -189,11 +199,12 @@ abstract contract Common is Contracts, Params, Test {
 
     if (_chainId == 31_337) {
       // deploy governance contracts for anvil
-      timelockController = new TimelockController(MIN_DELAY_GOERLI, members, members, deployer);
+      timelockController = new TimelockController(SEPOLIA_MIN_DELAY, members, members, deployer);
       odGovernor = new ODGovernor(
         TEST_INIT_VOTING_DELAY,
         TEST_INIT_VOTING_PERIOD,
         TEST_INIT_PROP_THRESHOLD,
+        TEST_INIT_VOTE_QUORUM,
         address(protocolToken),
         timelockController
       );
