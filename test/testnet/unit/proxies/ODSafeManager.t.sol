@@ -159,12 +159,12 @@ contract Unit_ODSafeManager_ViewFunctions is Base {
   }
 
   function test_GetSafesData(Scenario memory _scenario) public happyPath(_scenario) {
-    (uint256[] memory _safes, address[] memory _safeHandlers, bytes32[] memory _cTypes) =
+    (uint256[] memory _safes, address[] memory _safeHandlers, bytes32[] memory _collateralTypes) =
       safeManager.getSafesData(_scenario.aliceProxy);
 
     assertEq(_safes.length, 1, 'incorrect number of safes');
     assertEq(_safeHandlers.length, 1, 'incorrect number of safe handlers');
-    assertEq(_cTypes.length, 1, 'incorrect number of cTypes');
+    assertEq(_collateralTypes.length, 1, 'incorrect number of collateralTypes');
   }
 }
 
@@ -443,29 +443,14 @@ contract Unit_ODSafeManager_CollateralManagement is Base {
   event TransferCollateral(address indexed _sender, bytes32 _cType, uint256 indexed _safe, address _dst, uint256 _wad);
 
   function test_transferCollateral(Scenario memory _scenario) public happyPath(_scenario) {
-    address safeHandler = safeManager.safeData(_scenario.safeId).safeHandler;
-    vm.prank(_scenario.aliceProxy);
-    safeManager.allowHandler(safeHandler, true);
-    vm.prank(_scenario.aliceProxy);
-    safeManager.allowSAFE(_scenario.safeId, safeHandler, true);
     vm.mockCall(address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.transferCollateral.selector), abi.encode());
     vm.mockCall(address(vault721), abi.encodeWithSelector(IVault721.updateVaultHashState.selector), abi.encode());
 
     vm.expectEmit();
-    emit TransferCollateral(safeHandler, _scenario.safeId, safeHandler, 100);
+    emit TransferCollateral(_scenario.aliceProxy, _scenario.safeId, _scenario.aliceProxy, 100);
 
-    vm.prank(safeHandler);
-    safeManager.transferCollateral(_scenario.safeId, safeHandler, 100);
-  }
-
-  function test_transferCollateral_Revert_HandlerDoesNotExist(Scenario memory _scenario) public {
-    _openSafe(_scenario);
     vm.prank(_scenario.aliceProxy);
-    safeManager.allowSAFE(_scenario.safeId, _scenario.bob, true);
-
-    vm.expectRevert(IODSafeManager.HandlerDoesNotExist.selector);
-    vm.prank(_scenario.bob);
-    safeManager.transferCollateral(_scenario.safeId, _scenario.bob, 100);
+    safeManager.transferCollateral(_scenario.safeId, _scenario.aliceProxy, 100);
   }
 
   function test_transferCollateral_cType(Scenario memory _scenario) public happyPath(_scenario) {

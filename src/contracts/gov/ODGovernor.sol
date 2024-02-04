@@ -37,15 +37,24 @@ contract ODGovernor is
     uint256 initialVotingDelay,
     uint256 initialVotingPeriod,
     uint256 initialProposalThreshold,
+    uint256 initialVotesQuorum,
     address _token,
     TimelockController _timelock
   )
     Governor('ODGovernor')
     GovernorSettings(initialVotingDelay, initialVotingPeriod, initialProposalThreshold)
     GovernorVotes(IVotes(_token))
-    GovernorVotesQuorumFraction(3)
+    GovernorVotesQuorumFraction(initialVotesQuorum)
     GovernorTimelockControl(_timelock)
   {}
+
+  /**
+   * @dev - change quorum from denominator default of 100 to 1000
+   * allow quorum of less than zero
+   */
+  function quorumDenominator() public pure override returns (uint256) {
+    return 1000;
+  }
 
   /**
    * @dev - below are required override functions -

@@ -34,9 +34,9 @@ contract DebtState is AnvilFork, Script {
       warpAndUpdatePriceFeeds();
     }
 
-    for (uint256 i = 0; i < cTypes.length; i++) {
+    for (uint256 i = 0; i < collateralTypes.length; i++) {
       // call updateCollateralPrice on the oracle relayer
-      oracleRelayer.updateCollateralPrice(cTypes[i]);
+      oracleRelayer.updateCollateralPrice(collateralTypes[i]);
     }
   }
 
