@@ -526,3 +526,48 @@ contract Unit_Vault721_TransferFrom is Base {
     assertEq(vault721.balanceOf(_scenario.user1), 1, 'transfer succesful');
   }
 }
+
+contract Unit_Vault721_ProxyDeployment is Base {
+  function setUp() public override {
+    Base.setUp();
+    vault721.initialize(address(timelockController));
+    vm.prank(address(renderer));
+    vault721.initializeRenderer();
+    vm.prank(address(safeManager));
+    vault721.initializeManager();
+  }
+
+  function test_DeployProxy() public {
+    vm.startPrank(owner);
+    address proxy = vault721.build();
+    assertEq(vault721.getProxy(owner), proxy, 'incorrect proxy address');
+  }
+
+  function test_DeployProxy_ForUser() public {
+    address proxy = vault721.build(owner);
+    assertEq(vault721.getProxy(owner), proxy, 'incorrect proxy address');
+  }
+
+  function test_DeployProxy_ProxyAlreadyExists() public {
+    //build first vault
+    vault721.build();
+
+    vm.expectRevert(IVault721.ProxyAlreadyExist.selector);
+    //build second vault to revert
+    vault721.build();
+  }
+
+  function test_DeployProxy_MultiProxies() public {
+    address[] memory users = new address[](10);
+
+    for (uint256 i; i < users.length; i++) {
+      users[i] = address(uint160(i + 100));
+    }
+
+    address payable[] memory proxies = vault721.build(users);
+    assertEq(proxies.length, users.length, 'incorrect proxy length');
+    for (uint256 i; i < users.length; i++) {
+      assertEq(vault721.getProxy(users[i]), proxies[i], 'incorrect proxy address');
+    }
+  }
+}

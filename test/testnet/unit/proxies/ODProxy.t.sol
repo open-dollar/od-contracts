@@ -3,7 +3,6 @@ pragma solidity 0.8.19;
 
 import 'forge-std/Test.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
-import 'forge-std/console.sol';
 
 // create mock contract to test ODProxy
 contract MockProxyTarget {
