@@ -107,10 +107,9 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
 
   /// @inheritdoc ILiquidationEngine
   function protectSAFE(bytes32 _cType, address _safe, address _saviour) external {
-    if (_saviour != address(0)) {
-      if (!safeEngine.canModifySAFE(_safe, msg.sender)) revert LiqEng_CannotModifySAFE();
-      if (safeSaviours[_saviour] == 0) revert LiqEng_SaviourNotAuthorized();
-    }
+    if (!safeEngine.canModifySAFE(_safe, msg.sender)) revert LiqEng_CannotModifySAFE();
+    if (_saviour != address(0) && safeSaviours[_saviour] == 0) revert LiqEng_SaviourNotAuthorized();
+
     chosenSAFESaviour[_cType][_safe] = _saviour;
     emit ProtectSAFE(_cType, _safe, _saviour);
   }
