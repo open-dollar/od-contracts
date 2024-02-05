@@ -41,8 +41,8 @@ contract TestScripts is Deployment {
   function openSafe(bytes32 _cType, address _proxy) public returns (uint256 _safeId) {
     _labelAddresses(_proxy);
     bytes memory payload = abi.encodeWithSelector(basicActions.openSAFE.selector, address(safeManager), _cType, _proxy);
-    bytes memory safeData = ODProxy(_proxy).execute(address(basicActions), payload);
-    _safeId = abi.decode(safeData, (uint256));
+    bytes memory _safeData = ODProxy(_proxy).execute(address(basicActions), payload);
+    _safeId = abi.decode(_safeData, (uint256));
   }
 
   /**
@@ -99,9 +99,20 @@ contract TestScripts is Deployment {
   /**
    * @dev repays a specified amount of debt
    */
-  function repayDebt(address _proxy, uint256 _safeId, uint256 _deltaWad) public {
+  function repayDebt(uint256 _safeId, uint256 _deltaWad, address _proxy) public {
     bytes memory payload = abi.encodeWithSelector(
       basicActions.repayDebt.selector, address(safeManager), address(coinJoin), _safeId, _deltaWad
+    );
+    ODProxy(_proxy).execute(address(basicActions), payload);
+  }
+
+  function freeTokenCollateral(bytes32 _cType, uint256 _safeId, uint256 _deltaWad, address _proxy) public {
+    bytes memory payload = abi.encodeWithSelector(
+      basicActions.freeTokenCollateral.selector,
+      address(safeManager),
+      address(collateralJoin[_cType]),
+      _safeId,
+      _deltaWad
     );
     ODProxy(_proxy).execute(address(basicActions), payload);
   }
@@ -135,32 +146,21 @@ contract TestScripts is Deployment {
   /**
    * @dev Allows a safe handler
    */
-  function allowHandler(address _usr, bool _ok, address _proxy)public {
-        bytes memory payload = abi.encodeWithSelector(
-      basicActions.allowHandler.selector,
-      address(safeManager),
-      _usr,
-      _ok
-    );
+  function allowHandler(address _usr, bool _ok, address _proxy) public {
+    bytes memory payload = abi.encodeWithSelector(basicActions.allowHandler.selector, address(safeManager), _usr, _ok);
     ODProxy(_proxy).execute(address(basicActions), payload);
   }
 
-  function safeData(uint256 _safeId) public returns(IODSafeManager.SAFEData memory _safeData) {
-      _safeData = safeManager.safeData(_safeId);
+  function safeData(uint256 _safeId) public returns (IODSafeManager.SAFEData memory _safeData) {
+    _safeData = safeManager.safeData(_safeId);
   }
-
 
   /**
    * @dev Allows a safe
    */
-  function allowSAFE(address _usr, uint256 _safeId, bool _ok, address _proxy)public {
-        bytes memory payload = abi.encodeWithSelector(
-      basicActions.allowSAFE.selector,
-      address(safeManager),
-      _safeId,
-      _usr,
-      _ok
-    );
+  function allowSAFE(address _usr, uint256 _safeId, bool _ok, address _proxy) public {
+    bytes memory payload =
+      abi.encodeWithSelector(basicActions.allowSAFE.selector, address(safeManager), _safeId, _usr, _ok);
 
     ODProxy(_proxy).execute(address(basicActions), payload);
   }
