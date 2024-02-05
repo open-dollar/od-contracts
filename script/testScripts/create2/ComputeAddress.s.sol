@@ -12,11 +12,14 @@ import {Vault721} from '@contracts/proxies/Vault721.sol';
 // source .env && forge script ComputeAdress --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC
 
 /**
- * cast create2 --starts-with 00D0 --case-sensitive --deployer 0xC5f2C81d16764908B18379D95f410912d928Adc2 --init-code-hash 0x2c2da24cf8ff20a033122ffbcaa010c6edbc1b0a17ae658667c45c8b28d54a75
+ * systemCoin
+ * cast create2 --starts-with 000 --case-sensitive --deployer 0xC5f2C81d16764908B18379D95f410912d928Adc2 --init-code-hash 0x2c2da24cf8ff20a033122ffbcaa010c6edbc1b0a17ae658667c45c8b28d54a75
  *
- * cast create2 --starts-with 00D --case-sensitive --deployer 0xC5f2C81d16764908B18379D95f410912d928Adc2 --init-code-hash 0xefe18de3888fd4c30afdd243d43fa8763c95e8ed0faa142f76a67d94062b3c83
+ * protocolToken
+ * cast create2 --starts-with 000 --case-sensitive --deployer 0xC5f2C81d16764908B18379D95f410912d928Adc2 --init-code-hash 0xefe18de3888fd4c30afdd243d43fa8763c95e8ed0faa142f76a67d94062b3c83
  *
- * cast create2 --starts-with 00D --case-sensitive --deployer 0xC5f2C81d16764908B18379D95f410912d928Adc2 --init-code-hash 0x72826cfc58dad84e93750b991b5b55307bccd08ec741ca412a5b01a465ac2c65
+ * vault721
+ * cast create2 --starts-with 000 --case-sensitive --deployer 0xC5f2C81d16764908B18379D95f410912d928Adc2 --init-code-hash 0x03160121e9b16d692233a05a09dd1d28fa1ddd8ae2398810df6f85940019bfa4
  */
 contract ComputeAdress is Script, Test {
   bytes internal _systemTokenInitCode;

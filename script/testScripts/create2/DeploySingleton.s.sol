@@ -6,6 +6,22 @@ import {OpenDollarGovernance, ProtocolToken, IProtocolToken} from '@contracts/to
 import {OpenDollar, SystemCoin, ISystemCoin} from '@contracts/tokens/SystemCoin.sol';
 import {Vault721} from '@contracts/proxies/Vault721.sol';
 
+// BROADCAST
+// source .env && forge script DeploySingletonMain --skip-simulation --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
+
+// SIMULATE
+// source .env && forge script DeploySingletonMain --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC
+
+contract DeploySingletonMain is Script {
+  function run() public {
+    vm.startBroadcast(vm.envUint('ARB_MAINNET_DEPLOYER_PK'));
+    new OpenDollarGovernance();
+    new OpenDollar();
+    new Vault721();
+    vm.stopBroadcast();
+  }
+}
+
 /**
  * @dev singleton contracts deployed prior to create2 factory deployment for etherscan verification
  */
@@ -19,22 +35,6 @@ import {Vault721} from '@contracts/proxies/Vault721.sol';
 contract DeploySingletonSepolia is Script {
   function run() public {
     vm.startBroadcast(vm.envUint('ARB_SEPOLIA_DEPLOYER_PK'));
-    new OpenDollarGovernance();
-    new OpenDollar();
-    new Vault721();
-    vm.stopBroadcast();
-  }
-}
-
-// BROADCAST
-// source .env && forge script DeploySingletonMain --skip-simulation --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
-
-// SIMULATE
-// source .env && forge script DeploySingletonMain --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC
-
-contract DeploySingletonMain is Script {
-  function run() public {
-    vm.startBroadcast(vm.envUint('ARB_MAINNET_DEPLOYER_PK'));
     new OpenDollarGovernance();
     new OpenDollar();
     new Vault721();
