@@ -8,7 +8,7 @@ import {SafeCast} from '@openzeppelin/utils/math/SafeCast.sol';
 import {IBasicActions} from '@interfaces/proxies/actions/IBasicActions.sol';
 import {ITaxCollector} from '@interfaces/ITaxCollector.sol';
 
-import {Math, WAD, RAY, RAD} from '@libraries/Math.sol';
+import {Math, RAY} from '@libraries/Math.sol';
 
 import {CommonActions} from '@contracts/proxies/actions/CommonActions.sol';
 
@@ -193,7 +193,6 @@ contract BasicActions is CommonActions, IBasicActions {
     uint256 _safeId,
     uint256 _deltaWad
   ) internal {
-    ODSafeManager.SAFEData memory _safeData = ODSafeManager(_manager).safeData(_safeId);
     // Moves the amount from the SAFE handler to proxy's address
     _transferCollateral(_manager, _safeId, address(this), _deltaWad);
     // _transferCollateral(_manager, _safeId, _safeData.safeHandler, _deltaWad);
