@@ -13,7 +13,7 @@ import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 // source .env && forge script RepayDebt --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC
 
 contract RepayDebt is TestScripts {
-  uint2256 public debtToRepay = 1_000_000_000; //replace this with whatever amount of debt you'd like to repay
+  uint256 public debtToRepay = 1_000_000_000; //replace this with whatever amount of debt you'd like to repay
 
   /// @dev this script will pay off as much debt as it can with your availible COIN and then unlock as much Collateral as possible.
   function run() public {
