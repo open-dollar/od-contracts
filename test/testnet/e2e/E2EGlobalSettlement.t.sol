@@ -328,8 +328,8 @@ abstract contract E2EGlobalSettlementTest is BaseUser, Common {
 
   /// Tests that incrementing a bid while being the top bidder only pulls the increment
   function test_post_settlement_surplus_auction_house_rebid() public {
-    _generateDebt(alice, address(collateralJoin[WETH]), int256(COLLAT), int256(DEBT));
-    _collectFees(WETH, 50 * YEAR);
+    _generateDebt(alice, address(collateralJoin[WSTETH]), int256(COLLAT), int256(DEBT));
+    _collectFees(WSTETH, 50 * YEAR);
 
     vm.prank(deployer);
     globalSettlement.shutdownSystem();
