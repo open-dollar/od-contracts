@@ -236,12 +236,6 @@ interface ICollateralAuctionHouse is IAuthorizable, IModifiable, IDisableable {
   ) external returns (uint256 _id);
 
   /**
-   * @notice Deprecated
-   * @dev    Current CollateralAuctionHouse implementation automatically settles auctions
-   */
-  function settleAuction(uint256 _id) external;
-
-  /**
    * @notice Terminates an auction prematurely
    * @dev    Transfers collateral and coins to the authorized caller address
    * @param  _auctionId Id of the auction
