@@ -51,12 +51,6 @@ contract GovernanceProposalAnvil is AnvilFork {
     vm.stopPrank();
   }
 
-  function testDeployCollateralAuctionHouse() public {
-    vm.startPrank(address(timelockController));
-    collateralAuctionHouseFactory.deployCollateralAuctionHouse(newCType, _cahCParams);
-    vm.stopPrank();
-  }
-
   //// Update NFT Renderer ////
   function testUpdateNFTRenderer() public {
     vm.startPrank(vault721.timelockController());
@@ -313,13 +307,8 @@ contract GovernanceProposalAnvil is AnvilFork {
     bytes memory calldata0 =
       abi.encodeWithSelector(ICollateralJoinFactory.deployCollateralJoin.selector, newCType, newCAddress);
 
-    bytes memory calldata1 = abi.encodeWithSelector(
-      ICollateralAuctionHouseFactory.deployCollateralAuctionHouse.selector, newCType, _cahCParams
-    );
-
-    calldatas = new bytes[](2);
+    calldatas = new bytes[](1);
     calldatas[0] = calldata0;
-    calldatas[1] = calldata1;
 
     description = 'Add collateral type';
 

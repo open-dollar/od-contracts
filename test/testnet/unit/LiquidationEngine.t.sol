@@ -1800,8 +1800,13 @@ contract Unit_LiquidationEngine_InitializeCollateralType is Base {
   function test_Set_CParams(
     bytes32 _cType,
     ILiquidationEngine.LiquidationEngineCollateralParams memory _liqEngineCParams
-  ) public authorized happyPath(_liqEngineCParams) mockAsContract(_liqEngineCParams.collateralAuctionHouse) {
+// <<<<<<< HEAD:test/testnet/unit/LiquidationEngine.t.sol
+//   ) public authorized happyPath(_liqEngineCParams) {
+//     liquidationEngine.initializeCollateralType(_cType, _liqEngineCParams);
+// =======
+  ) public authorized happyPath(_liqEngineCParams) {
     liquidationEngine.initializeCollateralType(_cType, abi.encode(_liqEngineCParams));
+// >>>>>>> 01bea93e (refactor: add `ModifiablePerCollateral` to generalize `initializeCollateralType`):test/unit/LiquidationEngine.t.sol
 
     assertEq(abi.encode(liquidationEngine.cParams(_cType)), abi.encode(_liqEngineCParams));
   }

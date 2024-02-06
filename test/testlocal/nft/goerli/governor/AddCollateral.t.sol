@@ -48,12 +48,6 @@ contract AddCollateralGoerli is GoerliFork {
     vm.stopPrank();
   }
 
-  function testDeployCollateralAuctionHouse() public {
-    vm.startPrank(address(timelockController));
-    collateralAuctionHouseFactory.deployCollateralAuctionHouse(bytes32('WETH'), _cahCParams);
-    vm.stopPrank();
-  }
-
   // test governance process
   function testExecuteProp() public {
     IVotes protocolVotes = IVotes(address(protocolToken));
@@ -165,13 +159,9 @@ contract AddCollateralGoerli is GoerliFork {
     bytes memory calldata0 = abi.encodeWithSelector(
       ICollateralJoinFactory.deployCollateralJoin.selector, bytes32('WETH'), 0xEe01c0CD76354C383B8c7B4e65EA88D00B06f36f
     );
-    bytes memory calldata1 = abi.encodeWithSelector(
-      ICollateralAuctionHouseFactory.deployCollateralAuctionHouse.selector, bytes32('WETH'), _cahCParams
-    );
 
-    calldatas = new bytes[](2);
+    calldatas = new bytes[](1);
     calldatas[0] = calldata0;
-    calldatas[1] = calldata1;
 
     description = 'Add collateral type';
 

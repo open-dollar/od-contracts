@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {ModifiableForTest, IModifiable} from '@test/mocks/ModifiableForTest.sol';
+import {ModifiableForTest, IModifiable} from '../mocks/ModifiableForTest.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {HaiTest, stdStorage, StdStorage} from '@testnet/utils/HaiTest.t.sol';
 

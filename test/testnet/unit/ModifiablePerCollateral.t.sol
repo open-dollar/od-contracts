@@ -3,9 +3,9 @@ pragma solidity 0.8.19;
 
 import {
   ModifiablePerCollateralForTest, IModifiablePerCollateral
-} from '@test/mocks/ModifiablePerCollateralForTest.sol';
+} from '../mocks/ModifiablePerCollateralForTest.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
-import {HaiTest, stdStorage, StdStorage} from '@test/utils/HaiTest.t.sol';
+import {HaiTest, stdStorage, StdStorage} from '../utils/HaiTest.t.sol';
 
 abstract contract Base is HaiTest {
   using stdStorage for StdStorage;
