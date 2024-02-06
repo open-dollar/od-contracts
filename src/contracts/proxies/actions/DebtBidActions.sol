@@ -8,7 +8,7 @@ import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ICoinJoin} from '@interfaces/utils/ICoinJoin.sol';
 import {IDebtBidActions} from '@interfaces/proxies/actions/IDebtBidActions.sol';
 
-import {CommonActions} from '@contracts/proxies/actions/CommonActions.sol';
+import {CommonActions, SafeERC20, IERC20} from '@contracts/proxies/actions/CommonActions.sol';
 
 import {RAY} from '@libraries/Math.sol';
 
@@ -51,7 +51,7 @@ contract DebtBidActions is CommonActions, IDebtBidActions {
     if (_auction.highBidder == address(this)) {
       // get the amount of protocol tokens that were sold
       IERC20MetadataUpgradeable _protocolToken = IDebtAuctionHouse(_debtAuctionHouse).protocolToken();
-      _protocolToken.transfer(msg.sender, _auction.amountToSell);
+      SafeERC20.safeTransfer(IERC20(address(_protocolToken)), msg.sender, _auction.amountToSell);
     }
 
     // exit all system coins from the coinJoin
@@ -66,6 +66,6 @@ contract DebtBidActions is CommonActions, IDebtBidActions {
   function collectProtocolTokens(address _protocolToken) external delegateCall {
     // get the amount of protocol tokens that the proxy has
     uint256 _coinsToCollect = IERC20MetadataUpgradeable(_protocolToken).balanceOf(address(this));
-    IERC20MetadataUpgradeable(_protocolToken).transfer(msg.sender, _coinsToCollect);
+    SafeERC20.safeTransfer(IERC20(_protocolToken), msg.sender, _coinsToCollect);
   }
 }
