@@ -26,6 +26,7 @@ abstract contract Base is HaiTest {
   uint256 initialVotingDelay = 1;
   uint256 initialVotingPeriod = 1000;
   uint256 initialProposalThreshold = 1;
+  uint256 initialVoteQuorum = 1;
 
   function setUp() public virtual {
     vm.startPrank(deployer);
@@ -41,8 +42,9 @@ abstract contract Base is HaiTest {
     timelock = new TimelockController(1, proposers, executors, deployer);
 
     // initialize a new ODGovernor instance
-    odGovernor =
-      new ODGovernor(initialVotingDelay, initialVotingPeriod, initialProposalThreshold, address(token), timelock);
+    odGovernor = new ODGovernor(
+      initialVotingDelay, initialVotingPeriod, initialProposalThreshold, initialVoteQuorum, address(token), timelock
+    );
     timelock.grantRole(timelock.EXECUTOR_ROLE(), address(odGovernor));
     timelock.grantRole(timelock.PROPOSER_ROLE(), address(odGovernor));
     vm.stopPrank();

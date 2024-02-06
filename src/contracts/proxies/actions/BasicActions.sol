@@ -6,6 +6,7 @@ import {ODSafeManager} from '@contracts/proxies/ODSafeManager.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {SafeCast} from '@openzeppelin/utils/math/SafeCast.sol';
 import {IBasicActions} from '@interfaces/proxies/actions/IBasicActions.sol';
+import {ITaxCollector} from '@interfaces/ITaxCollector.sol';
 
 import {Math, WAD, RAY, RAD} from '@libraries/Math.sol';
 
@@ -303,6 +304,7 @@ contract BasicActions is CommonActions, IBasicActions {
     uint256 _safeId,
     uint256 _deltaWad
   ) external delegateCall {
+    _taxSingle(_manager, _safeId);
     // Unlocks token amount from the SAFE
     _modifySAFECollateralization(_manager, _safeId, -_deltaWad.toInt(), 0, false);
     // Transfers token amount to the user's address
@@ -315,7 +317,7 @@ contract BasicActions is CommonActions, IBasicActions {
     ODSafeManager.SAFEData memory _safeInfo = ODSafeManager(_manager).safeData(_safeId);
 
     ISAFEEngine.SAFE memory _safeData = ISAFEEngine(_safeEngine).safes(_safeInfo.collateralType, _safeInfo.safeHandler);
-
+    _taxSingle(_manager, _safeId);
     // Joins COIN amount into the safeEngine
     _joinSystemCoins(
       _coinJoin,
@@ -364,7 +366,7 @@ contract BasicActions is CommonActions, IBasicActions {
   ) external delegateCall {
     address _safeEngine = ODSafeManager(_manager).safeEngine();
     ODSafeManager.SAFEData memory _safeInfo = ODSafeManager(_manager).safeData(_safeId);
-
+    _taxSingle(_manager, _safeId);
     // Joins COIN amount into the safeEngine
     _joinSystemCoins(_coinJoin, _safeInfo.safeHandler, _debtWad);
 
@@ -393,7 +395,7 @@ contract BasicActions is CommonActions, IBasicActions {
     ODSafeManager.SAFEData memory _safeInfo = ODSafeManager(_manager).safeData(_safeId);
 
     ISAFEEngine.SAFE memory _safeData = ISAFEEngine(_safeEngine).safes(_safeInfo.collateralType, _safeInfo.safeHandler);
-
+    _taxSingle(_manager, _safeId);
     // Joins COIN amount into the safeEngine
     _joinSystemCoins(
       _coinJoin,
@@ -406,5 +408,13 @@ contract BasicActions is CommonActions, IBasicActions {
 
     // Transfers token amount to the user's address
     _collectAndExitCollateral(_manager, _collateralJoin, _safeId, _collateralWad);
+  }
+
+  /**
+   * @dev calls Tax single on taxCollector.  do this before making any calls to safeManager modifySafeCollateralization
+   */
+  function _taxSingle(address _manager, uint256 _safeId) internal {
+    ODSafeManager.SAFEData memory _safeData = ODSafeManager(_manager).safeData(_safeId);
+    ITaxCollector(ODSafeManager(_manager).taxCollector()).taxSingle(_safeData.collateralType);
   }
 }

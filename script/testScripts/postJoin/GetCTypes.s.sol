@@ -12,8 +12,8 @@ import {CTypeBase} from '@script/testScripts/postJoin/base/CTypeBase.s.sol';
 contract GetCTypes is CTypeBase {
   function run() public {
     vm.startBroadcast(vm.envUint('ARB_SEPOLIA_PK'));
-    collateralJoinFactory.collateralTypesList(); // bytes32 cTypes
-    collateralAuctionHouseFactory.collateralList(); // bytes32 cTypes for collat auction
+    collateralJoinFactory.collateralTypesList(); // bytes32 collateralTypes
+    collateralAuctionHouseFactory.collateralList(); // bytes32 collateralTypes for collat auction
     vm.stopBroadcast();
   }
 }

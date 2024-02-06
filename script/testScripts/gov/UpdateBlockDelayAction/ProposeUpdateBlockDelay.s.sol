@@ -13,6 +13,7 @@ import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 /// @dev The script will propose setting the block delay value on Vault721
 /// @dev The script will output a JSON file with the proposal data to be used by the QueueProposal and ExecuteProposal scripts
 /// @dev In the root, run: export FOUNDRY_PROFILE=governance && forge script --rpc-url <RPC_URL> script/testScripts/gov/UpdateBlockDelayAction/ProposeUpdateBlockDelay.s.sol
+
 contract UpdateBlockDelay is JSONScript {
   function run() public {
     /// REQUIRED ENV VARS ///
@@ -42,7 +43,7 @@ contract UpdateBlockDelay is JSONScript {
 
     vm.startBroadcast(vm.envUint('GOV_EXECUTOR_PK'));
 
-    // Propose the action to add the collateral type
+    // Propose the action to update the block delay
     uint256 proposalId = gov.propose(targets, values, calldatas, description);
     string memory stringProposalId = vm.toString(proposalId);
 

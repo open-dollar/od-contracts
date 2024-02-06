@@ -9,7 +9,7 @@ import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 
 // Open Dollar
-// Version 1.6.0
+// Version 1.6.1
 
 struct HashState {
   bytes32 lastHash;
@@ -42,7 +42,7 @@ contract Vault721 is ERC721EnumerableUpgradeable {
   mapping(uint256 vaultId => HashState hashState) internal _hashState;
   mapping(address nftExchange => bool whitelisted) internal _allowlist;
 
-  event CreateProxy(address indexed _user, address _proxy);
+  event CreateProxy(address indexed _user, address indexed _proxy);
 
   /**
    * @dev initializes DAO timelockController contract
@@ -122,6 +122,20 @@ contract Vault721 is ERC721EnumerableUpgradeable {
   function build(address _user) external returns (address payable _proxy) {
     if (!_isNotProxy(_user)) revert ProxyAlreadyExist();
     _proxy = _build(_user);
+  }
+
+  /**
+   * @dev allows user to deploy proxies for multiple users
+   * @param _users array of user addresses
+   * @return _proxies array of proxy addresses
+   */
+  function build(address[] memory _users) external returns (address payable[] memory _proxies) {
+    uint256 len = _users.length;
+    _proxies = new address payable[](len);
+    for (uint256 i = 0; i < len; i++) {
+      if (!_isNotProxy(_users[i])) revert ProxyAlreadyExist();
+      _proxies[i] = _build(_users[i]);
+    }
   }
 
   /**
