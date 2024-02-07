@@ -32,7 +32,9 @@ contract DebtBidActions is CommonActions, IDebtBidActions {
     // checks coin balance and joins more if needed
     uint256 _coinBalance = _safeEngine.coinBalance(address(this));
     if (_coinBalance < _bidAmount) {
-      _joinSystemCoins(_coinJoin, address(this), (_bidAmount - _coinBalance) / RAY);
+      // Calculate the amount to join and round up to compensate for loss of precision
+      uint256 _joinAmount = ((_bidAmount - _coinBalance - 1) / RAY) + 1;
+      _joinSystemCoins(_coinJoin, address(this), _joinAmount);
     }
 
     // debtAuctionHouse needs to be approved for system coin spending
