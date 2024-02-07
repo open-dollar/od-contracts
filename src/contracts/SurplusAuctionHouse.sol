@@ -131,12 +131,11 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
   }
 
   /// @inheritdoc ICommonSurplusAuctionHouse
-  function increaseBidSize(uint256 _id, uint256 _amountToBuy, uint256 _bid) external whenEnabled {
+  function increaseBidSize(uint256 _id, uint256 _bid) external whenEnabled {
     Auction storage _auction = _auctions[_id];
     if (_auction.highBidder == address(0)) revert SAH_HighBidderNotSet();
     if (_auction.bidExpiry <= block.timestamp && _auction.bidExpiry != 0) revert SAH_BidAlreadyExpired();
     if (_auction.auctionDeadline <= block.timestamp) revert SAH_AuctionAlreadyExpired();
-    if (_amountToBuy != _auction.amountToSell) revert SAH_AmountsNotMatching();
     if (_bid <= _auction.bidAmount) revert SAH_BidNotHigher();
     if (_bid * WAD < _params.bidIncrease * _auction.bidAmount) revert SAH_InsufficientIncrease();
 
@@ -155,7 +154,7 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
       _bidder: msg.sender,
       _blockTimestamp: block.timestamp,
       _raisedAmount: _bid,
-      _soldAmount: _amountToBuy,
+      _soldAmount: _auction.amountToSell,
       _bidExpiry: _auction.bidExpiry
     });
   }

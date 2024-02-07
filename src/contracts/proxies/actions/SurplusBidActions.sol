@@ -29,7 +29,7 @@ contract SurplusBidActions is ISurplusBidActions, CommonActions {
     _protocolToken.approve(address(_surplusAuctionHouse), _bidAmount);
 
     // proxy needs to be approved for protocol token spending
-    ISurplusAuctionHouse(_surplusAuctionHouse).increaseBidSize(_auctionId, _amountToSell, _bidAmount);
+    ISurplusAuctionHouse(_surplusAuctionHouse).increaseBidSize(_auctionId, _bidAmount);
   }
 
   /// @inheritdoc ISurplusBidActions
