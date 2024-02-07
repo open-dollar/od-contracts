@@ -190,7 +190,7 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
 
       _auctionId = ICollateralAuctionHouse(__cParams.collateralAuctionHouse).startAuction({
         _forgoneCollateralReceiver: _safe,
-        _initialBidder: address(accountingEngine),
+        _auctionIncomeRecipient: address(accountingEngine),
         _amountToRaise: _amountToRaise,
         _collateralToSell: _collateralToSell
       });
