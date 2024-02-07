@@ -135,11 +135,7 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
         _rad = _rad + _debtAmount.mul(_deltaRate);
       }
     }
-    if (_rad < 0) {
-      _ok = _rad >= _primaryReceiverBalance;
-    } else {
-      _ok = true;
-    }
+    _ok = _rad >= 0 || _rad >= _primaryReceiverBalance;
   }
 
   /// @inheritdoc ITaxCollector
