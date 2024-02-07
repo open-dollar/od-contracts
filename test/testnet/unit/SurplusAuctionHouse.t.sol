@@ -600,11 +600,14 @@ contract Unit_SurplusAuctionHouse_IncreaseBidSize is Base {
     uint256 _bidIncrease,
     uint256 _bidDuration
   ) public happyPath(_auction, _bid, _bidIncrease, _bidDuration) {
-    vm.expectCall(
-      address(mockProtocolToken),
-      abi.encodeCall(mockProtocolToken.transferFrom, (user, _auction.highBidder, _auction.bidAmount)),
-      1
-    );
+    // If there was no initial bidAmount then this would transfer 0 tokens, so its not called
+    if (_auction.bidAmount != 0) {
+      vm.expectCall(
+        address(mockProtocolToken),
+        abi.encodeCall(mockProtocolToken.transferFrom, (user, _auction.highBidder, _auction.bidAmount)),
+        1
+      );
+    }
     vm.expectCall(
       address(mockProtocolToken),
       abi.encodeCall(mockProtocolToken.transferFrom, (user, address(surplusAuctionHouse), _bid - _auction.bidAmount)),
