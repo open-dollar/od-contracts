@@ -153,7 +153,7 @@ contract OracleSetup is HaiTest {
   function test_DelayedOracleUpdateInvalidResult() public {
     // The next update returns an invalid result (for the first 10 minutes)
     vm.mockCall(
-      OP_CHAINLINK_ETH_USD_FEED,
+      CHAINLINK_ETH_USD_FEED,
       abi.encodeWithSelector(IChainlinkOracle.latestRoundData.selector),
       abi.encode(uint80(0), int256(NEW_ETH_USD_PRICE), uint256(0), block.timestamp + 1 hours + 10 minutes, uint80(0))
     );
