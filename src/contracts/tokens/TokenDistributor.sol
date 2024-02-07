@@ -80,7 +80,7 @@ contract TokenDistributor is Authorizable, ITokenDistributor {
     bytes32 _s
   ) external {
     _claim(_proof, _amount);
-    token.delegateBySig(_delegatee, 0, _expiry, _v, _r, _s); // using 0 nonce
+    token.delegateBySig(_delegatee, token.nonces(msg.sender), _expiry, _v, _r, _s);
   }
 
   /// @inheritdoc ITokenDistributor
