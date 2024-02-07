@@ -93,13 +93,6 @@ contract TokenDistributor is Authorizable, ITokenDistributor {
     emit Swept({_sweepReceiver: _sweepReceiver, _amount: _balance});
   }
 
-  /// @inheritdoc ITokenDistributor
-  function withdraw(address _to, uint256 _amount) external override isAuthorized {
-    token.safeTransfer(_to, _amount);
-
-    emit Withdrawn({_to: _to, _amount: _amount});
-  }
-
   function _canClaim(bytes32[] calldata _proof, address _user, uint256 _amount) internal view returns (bool _claimable) {
     _claimable = _claimPeriodActive() && _amount > 0 && !claimed[_user] && _merkleVerified(_proof, _user, _amount);
   }
