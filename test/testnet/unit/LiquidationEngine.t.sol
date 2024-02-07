@@ -42,8 +42,10 @@ abstract contract Base is HaiTest {
   ICollateralAuctionHouse collateralAuctionHouseForTest =
     ICollateralAuctionHouse(address(new DummyCollateralAuctionHouse()));
 
-  ILiquidationEngine.LiquidationEngineParams liquidationEngineParams =
-    ILiquidationEngine.LiquidationEngineParams({onAuctionSystemCoinLimit: type(uint256).max});
+  ILiquidationEngine.LiquidationEngineParams liquidationEngineParams = ILiquidationEngine.LiquidationEngineParams({
+    onAuctionSystemCoinLimit: type(uint256).max,
+    saviourGasLimit: 10_000_000
+  });
 
   function setUp() public virtual {
     vm.prank(deployer);
@@ -214,11 +216,16 @@ contract SAFESaviourIncreaseGeneratedDebtOrDecreaseCollateral is ISAFESaviour, B
   uint256 lockedCollateral;
   // true decrease collateral, false increase debt
   bool collateralOrDebt;
+  // If true this performs the increase or decrease, if false this saviour does nothing.
+  bool performAction;
+  // Track if the `saveSAFE` was called
+  bool public wasCalled;
 
-  constructor(uint256 _lockedCollateral, uint256 _generatedDebt, bool _collateralOrDebt) {
+  constructor(uint256 _lockedCollateral, uint256 _generatedDebt, bool _collateralOrDebt, bool _performAction) {
     lockedCollateral = _lockedCollateral;
     generatedDebt = _generatedDebt;
     collateralOrDebt = _collateralOrDebt;
+    performAction = _performAction;
   }
 
   function saveSAFE(
@@ -226,6 +233,9 @@ contract SAFESaviourIncreaseGeneratedDebtOrDecreaseCollateral is ISAFESaviour, B
     bytes32 _cType,
     address _safe
   ) external returns (bool _ok, uint256 _collateralAdded, uint256 _liquidatorReward) {
+    wasCalled = true;
+    if (!performAction) return (true, 0, 0);
+
     uint256 newLockedCollateral = collateralOrDebt ? lockedCollateral - 1 : lockedCollateral;
     uint256 newGeneratedDebt = collateralOrDebt ? generatedDebt : generatedDebt + 1;
     _mockSafeEngineSafes(_cType, _safe, newLockedCollateral, newGeneratedDebt + 1);
@@ -324,6 +334,7 @@ contract Unit_LiquidationEngine_Constructor is Base {
 contract Unit_LiquidationEngine_ModifyParameters is Base {
   function test_ModifyParameters(ILiquidationEngine.LiquidationEngineParams memory _fuzz) public authorized {
     liquidationEngine.modifyParameters('onAuctionSystemCoinLimit', abi.encode(_fuzz.onAuctionSystemCoinLimit));
+    liquidationEngine.modifyParameters('saviourGasLimit', abi.encode(_fuzz.saviourGasLimit));
 
     ILiquidationEngine.LiquidationEngineParams memory _params = liquidationEngine.params();
 
@@ -1703,38 +1714,44 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     liquidationEngine.liquidateSAFE(collateralType, safe);
   }
 
-  function test_Revert_InvalidSaviourOperation_IncreaseGeneratedDebt(Liquidation memory _liquidation)
-    public
-    happyPathFullLiquidation(_liquidation)
-  {
+  function test_InternalRevert_InvalidSaviourOperation_IncreaseGeneratedDebt(
+    Liquidation memory _liquidation,
+    bool _attemptIncrease
+  ) public happyPathFullLiquidation(_liquidation) {
     vm.assume(_liquidation.safeDebt < type(uint256).max);
-
-    ISAFESaviour _testSaveSaviour = new SAFESaviourIncreaseGeneratedDebtOrDecreaseCollateral(
-      _liquidation.safeCollateral, _liquidation.safeDebt, false
-    );
+    ISAFESaviour _testSaveSaviour =
+    new SAFESaviourIncreaseGeneratedDebtOrDecreaseCollateral(_liquidation.safeCollateral, _liquidation.safeDebt, false, _attemptIncrease);
     _mockChosenSafeSaviour(collateralType, safe, address(_testSaveSaviour));
     _mockSafeSaviours(address(_testSaveSaviour), 1);
     _mockSafeEngineSafes(collateralType, safe, _liquidation.safeCollateral, _liquidation.safeDebt);
 
-    vm.expectRevert(ILiquidationEngine.LiqEng_InvalidSAFESaviourOperation.selector);
-
     vm.prank(user);
     liquidationEngine.liquidateSAFE(collateralType, safe);
+
+    // Test that if an increase was attempted the state was reverted to reflect it never happening
+    // if no increase was attempted the call will succeed.
+    assertEq(
+      _attemptIncrease, !SAFESaviourIncreaseGeneratedDebtOrDecreaseCollateral(address(_testSaveSaviour)).wasCalled()
+    );
   }
 
-  function test_Revert_InvalidSaviourOperation_DecreaseCollateral(Liquidation memory _liquidation)
-    public
-    happyPathFullLiquidation(_liquidation)
-  {
+  function test_InternalRevert_InvalidSaviourOperation_DecreaseCollateral(
+    Liquidation memory _liquidation,
+    bool _attemptDecrease
+  ) public happyPathFullLiquidation(_liquidation) {
     ISAFESaviour _testSaveSaviour =
-      new SAFESaviourIncreaseGeneratedDebtOrDecreaseCollateral(_liquidation.safeCollateral, _liquidation.safeDebt, true);
+    new SAFESaviourIncreaseGeneratedDebtOrDecreaseCollateral(_liquidation.safeCollateral, _liquidation.safeDebt, true, _attemptDecrease);
     _mockChosenSafeSaviour(collateralType, safe, address(_testSaveSaviour));
     _mockSafeSaviours(address(_testSaveSaviour), 1);
 
-    vm.expectRevert(ILiquidationEngine.LiqEng_InvalidSAFESaviourOperation.selector);
-
     vm.prank(user);
     liquidationEngine.liquidateSAFE(collateralType, safe);
+
+    // Test that if an decrease was attempted the state was reverted to reflect it never happening
+    // if no decrease was attempted the call will succeed.
+    assertEq(
+      _attemptDecrease, !SAFESaviourIncreaseGeneratedDebtOrDecreaseCollateral(address(_testSaveSaviour)).wasCalled()
+    );
   }
 
   function test_NotRevert_NewLiquidationPriceIsZero(Liquidation memory _liquidation)
