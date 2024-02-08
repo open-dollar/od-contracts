@@ -599,25 +599,33 @@ contract Unit_LiquidationEngine_DisconnectSAFESaviour is Base {
 
 contract Unit_LiquidationEngine_GetLimitAdjustedDebtToCover is Base {
   function _assumeHappyPath(
+    uint256 _safeDebt,
     uint256 _accumulatedRate,
     uint256 _liquidationPenalty,
     uint256 _liquidationQuantity,
-    uint256 _onAuctionSystemCoinLimit,
-    uint256 _currentOnAuctionSystemCoins
-  ) internal pure {
+    uint256 _debtFloor
+  ) internal pure returns (uint256 _limitAdjustedDebt) {
+    vm.assume(_liquidationPenalty > WAD);
     vm.assume(_accumulatedRate > 0);
-    vm.assume(_liquidationPenalty > 0);
-    vm.assume(notUnderflow(_onAuctionSystemCoinLimit, _currentOnAuctionSystemCoins));
-    vm.assume(notOverflowMul(_liquidationQuantity, _onAuctionSystemCoinLimit - _currentOnAuctionSystemCoins));
+    vm.assume(notOverflowMul(_liquidationQuantity, WAD));
+    vm.assume(notOverflowMul(_safeDebt, _accumulatedRate));
+    vm.assume(notOverflowMul(_safeDebt * _accumulatedRate, _liquidationPenalty));
+    vm.assume(_liquidationQuantity >= _accumulatedRate); // not-null
+
+    _limitAdjustedDebt = _liquidationQuantity * WAD / _liquidationPenalty / _accumulatedRate;
+
+    vm.assume(notOverflowAdd(_limitAdjustedDebt, _debtFloor / _accumulatedRate));
+
+    // not-null
+    vm.assume(_safeDebt > 0);
   }
 
   function _mockValues(
-    uint256 _accumulatedRate,
     uint256 _safeDebt,
+    uint256 _accumulatedRate,
     uint256 _liquidationPenalty,
     uint256 _liquidationQuantity,
-    uint256 _onAuctionSystemCoinLimit,
-    uint256 _currentOnAuctionSystemCoins
+    uint256 _debtFloor
   ) public {
     _mockSafeEngineCData({
       _cType: collateralType,
@@ -628,97 +636,87 @@ contract Unit_LiquidationEngine_GetLimitAdjustedDebtToCover is Base {
       _liquidationPrice: 0
     });
     _mockSafeEngineSafes({_cType: collateralType, _safe: safe, _lockedCollateral: 0, _generatedDebt: _safeDebt});
+    _mockSafeEngineCParams({_cType: collateralType, _debtCeiling: 0, _debtFloor: _debtFloor});
     _mockLiquidationEngineCollateralType(
       collateralType, mockCollateralAuctionHouse, _liquidationPenalty, _liquidationQuantity
     );
-    _mockOnAuctionSystemCoinLimit(_onAuctionSystemCoinLimit);
-    _mockCurrentOnAuctionSystemCoins(_currentOnAuctionSystemCoins);
   }
 
   function test_Return_LimitAdjustedDebtToCover(
-    uint256 _accumulatedRate,
     uint256 _safeDebt,
+    uint256 _accumulatedRate,
     uint256 _liquidationPenalty,
     uint256 _liquidationQuantity,
-    uint256 _onAuctionSystemCoinLimit,
-    uint256 _currentOnAuctionSystemCoins
+    uint256 _debtFloor
   ) public {
-    _assumeHappyPath(
-      _accumulatedRate,
-      _liquidationPenalty,
-      _liquidationQuantity,
-      _onAuctionSystemCoinLimit,
-      _currentOnAuctionSystemCoins
-    );
-    _mockValues(
-      _accumulatedRate,
-      _safeDebt,
-      _liquidationPenalty,
-      _liquidationQuantity,
-      _onAuctionSystemCoinLimit,
-      _currentOnAuctionSystemCoins
-    );
+    uint256 _limitAdjustedDebt =
+      _assumeHappyPath(_safeDebt, _accumulatedRate, _liquidationPenalty, _liquidationQuantity, _debtFloor);
+    _mockValues(_safeDebt, _accumulatedRate, _liquidationPenalty, _liquidationQuantity, _debtFloor);
 
-    uint256 _result = Math.min(
-      _safeDebt,
-      Math.min(_liquidationQuantity, _onAuctionSystemCoinLimit - _currentOnAuctionSystemCoins) * WAD / _accumulatedRate
-        / _liquidationPenalty
-    );
-    assertEq(liquidationEngine.getLimitAdjustedDebtToCover(collateralType, safe), _result);
+    uint256 _returnValue = liquidationEngine.getLimitAdjustedDebtToCover(collateralType, safe);
+    vm.assume(_returnValue > 0);
+
+    vm.assume(_safeDebt <= _limitAdjustedDebt + _debtFloor / _accumulatedRate);
+    assertEq(_returnValue, _safeDebt);
   }
 
-  function test_Call_SafeEngineCollateralTypes(
-    uint256 _accumulatedRate,
+  function test_Return_LimitAdjustedDebtToCover_Partial(
     uint256 _safeDebt,
+    uint256 _accumulatedRate,
     uint256 _liquidationPenalty,
     uint256 _liquidationQuantity,
-    uint256 _onAuctionSystemCoinLimit,
-    uint256 _currentOnAuctionSystemCoins
+    uint256 _debtFloor
   ) public {
-    _assumeHappyPath(
-      _accumulatedRate,
-      _liquidationPenalty,
-      _liquidationQuantity,
-      _onAuctionSystemCoinLimit,
-      _currentOnAuctionSystemCoins
-    );
-    _mockValues(
-      _accumulatedRate,
-      _safeDebt,
-      _liquidationPenalty,
-      _liquidationQuantity,
-      _onAuctionSystemCoinLimit,
-      _currentOnAuctionSystemCoins
-    );
+    uint256 _limitAdjustedDebt =
+      _assumeHappyPath(_safeDebt, _accumulatedRate, _liquidationPenalty, _liquidationQuantity, _debtFloor);
+    _mockValues(_safeDebt, _accumulatedRate, _liquidationPenalty, _liquidationQuantity, _debtFloor);
+
+    uint256 _returnValue = liquidationEngine.getLimitAdjustedDebtToCover(collateralType, safe);
+    vm.assume(_returnValue > 0);
+
+    vm.assume(_safeDebt > _limitAdjustedDebt + _debtFloor / _accumulatedRate);
+    assertEq(_returnValue, _limitAdjustedDebt);
+  }
+
+  function test_Call_SafeEngine_CParams(
+    uint256 _safeDebt,
+    uint256 _accumulatedRate,
+    uint256 _liquidationPenalty,
+    uint256 _liquidationQuantity,
+    uint256 _debtFloor
+  ) public {
+    _assumeHappyPath(_safeDebt, _accumulatedRate, _liquidationPenalty, _liquidationQuantity, _debtFloor);
+    _mockValues(_safeDebt, _accumulatedRate, _liquidationPenalty, _liquidationQuantity, _debtFloor);
+
+    vm.expectCall(address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.cParams.selector, collateralType));
+
+    liquidationEngine.getLimitAdjustedDebtToCover(collateralType, safe);
+  }
+
+  function test_Call_SafeEngine_CData(
+    uint256 _safeDebt,
+    uint256 _accumulatedRate,
+    uint256 _liquidationPenalty,
+    uint256 _liquidationQuantity,
+    uint256 _debtFloor
+  ) public {
+    _assumeHappyPath(_safeDebt, _accumulatedRate, _liquidationPenalty, _liquidationQuantity, _debtFloor);
+    _mockValues(_safeDebt, _accumulatedRate, _liquidationPenalty, _liquidationQuantity, _debtFloor);
 
     vm.expectCall(address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.cData.selector, collateralType));
 
     liquidationEngine.getLimitAdjustedDebtToCover(collateralType, safe);
   }
 
-  function test_Call_SafeEngineSafes(
-    uint256 _accumulatedRate,
+  function test_Call_SafeEngine_Safes(
     uint256 _safeDebt,
+    uint256 _accumulatedRate,
     uint256 _liquidationPenalty,
     uint256 _liquidationQuantity,
-    uint256 _onAuctionSystemCoinLimit,
-    uint256 _currentOnAuctionSystemCoins
+    uint256 _debtFloor
   ) public {
-    _assumeHappyPath(
-      _accumulatedRate,
-      _liquidationPenalty,
-      _liquidationQuantity,
-      _onAuctionSystemCoinLimit,
-      _currentOnAuctionSystemCoins
-    );
-    _mockValues(
-      _accumulatedRate,
-      _safeDebt,
-      _liquidationPenalty,
-      _liquidationQuantity,
-      _onAuctionSystemCoinLimit,
-      _currentOnAuctionSystemCoins
-    );
+    _assumeHappyPath(_safeDebt, _accumulatedRate, _liquidationPenalty, _liquidationQuantity, _debtFloor);
+    _mockValues(_safeDebt, _accumulatedRate, _liquidationPenalty, _liquidationQuantity, _debtFloor);
 
     vm.expectCall(address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.safes.selector, collateralType, safe));
 
@@ -1552,56 +1550,6 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     );
 
     vm.expectRevert(ILiquidationEngine.LiqEng_NullCollateralToSell.selector);
-
-    liquidationEngine.liquidateSAFE(collateralType, safe);
-  }
-
-  function test_Revert_DustySafe_LiquidationQuantity(Liquidation memory _liquidation) public {
-    vm.assume(_notZeroDivision(_liquidation.accumulatedRate, _liquidation.liquidationPenalty));
-    vm.assume(
-      _notSafe(
-        _liquidation.liquidationPrice, _liquidation.safeCollateral, _liquidation.safeDebt, _liquidation.accumulatedRate
-      )
-    );
-    vm.assume(
-      _notNullAuction(_liquidation.liquidationQuantity, _liquidation.liquidationPenalty, _liquidation.accumulatedRate)
-    );
-    vm.assume(
-      _notNullCollateralToSell(
-        _liquidation.safeDebt,
-        _liquidation.safeCollateral,
-        _liquidation.liquidationQuantity,
-        _liquidation.accumulatedRate,
-        _liquidation.liquidationPenalty,
-        _liquidation.currentOnAuctionSystemCoins
-      )
-    );
-    // Making it dusty
-    vm.assume(
-      !_notDusty(
-        _liquidation.safeDebt,
-        _liquidation.liquidationQuantity,
-        _liquidation.liquidationPenalty,
-        _liquidation.debtFloor,
-        _liquidation.accumulatedRate
-      )
-    );
-
-    _mockValues(
-      Liquidation({
-        accumulatedRate: _liquidation.accumulatedRate,
-        debtFloor: _liquidation.debtFloor,
-        liquidationPrice: _liquidation.liquidationPrice,
-        safeCollateral: _liquidation.safeCollateral,
-        safeDebt: _liquidation.safeDebt,
-        onAuctionSystemCoinLimit: type(uint256).max,
-        currentOnAuctionSystemCoins: 0,
-        liquidationPenalty: _liquidation.liquidationPenalty,
-        liquidationQuantity: _liquidation.liquidationQuantity
-      })
-    );
-
-    vm.expectRevert(ILiquidationEngine.LiqEng_DustySAFE.selector);
 
     liquidationEngine.liquidateSAFE(collateralType, safe);
   }

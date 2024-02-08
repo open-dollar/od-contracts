@@ -1147,7 +1147,7 @@ contract SingleLiquidationTest is DSTest {
     assertEq(safeEngine.tokenCollateral('gold', address(this)), 900 ether);
 
     liquidationEngine.modifyParameters('onAuctionSystemCoinLimit', abi.encode(rad(75 ether)));
-    liquidationEngine.modifyParameters('gold', 'liquidationQuantity', abi.encode(rad(100 ether)));
+    liquidationEngine.modifyParameters('gold', 'liquidationQuantity', abi.encode(rad(75 ether)));
     assertEq(liquidationEngine.params().onAuctionSystemCoinLimit, rad(75 ether));
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), 0);
     uint256 auction = liquidationEngine.liquidateSAFE('gold', address(this));
@@ -1196,7 +1196,7 @@ contract SingleLiquidationTest is DSTest {
     assertEq(safeEngine.tokenCollateral('gold', address(this)), 900 ether);
 
     liquidationEngine.modifyParameters('onAuctionSystemCoinLimit', abi.encode(rad(75 ether)));
-    liquidationEngine.modifyParameters('gold', 'liquidationQuantity', abi.encode(rad(100 ether)));
+    liquidationEngine.modifyParameters('gold', 'liquidationQuantity', abi.encode(rad(75 ether)));
     assertEq(liquidationEngine.params().onAuctionSystemCoinLimit, rad(75 ether));
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), 0);
     liquidationEngine.liquidateSAFE('gold', address(this));

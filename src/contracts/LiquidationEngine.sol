@@ -128,11 +128,6 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
           || _safeData.lockedCollateral * _safeEngCData.liquidationPrice
             >= _safeData.generatedDebt * _safeEngCData.accumulatedRate
       ) revert LiqEng_SAFENotUnsafe();
-
-      if (
-        currentOnAuctionSystemCoins >= _params.onAuctionSystemCoinLimit
-          || _params.onAuctionSystemCoinLimit - currentOnAuctionSystemCoins < _debtFloor
-      ) revert LiqEng_LiquidationLimitHit();
     }
 
     if (chosenSAFESaviour[_cType][_safe] != address(0) && safeSaviours[chosenSAFESaviour[_cType][_safe]] == 1) {
@@ -166,15 +161,16 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
     ) {
       LiquidationEngineCollateralParams memory __cParams = _cParams[_cType];
 
-      uint256 _limitAdjustedDebt = Math.min(
+      uint256 _limitAdjustedDebt = _getLimitAdjustedDebt(
         _safeData.generatedDebt,
-        Math.min(__cParams.liquidationQuantity, _params.onAuctionSystemCoinLimit - currentOnAuctionSystemCoins).wdiv(
-          _safeEngCData.accumulatedRate
-        ) / __cParams.liquidationPenalty
+        _safeEngCData.accumulatedRate,
+        __cParams.liquidationQuantity,
+        __cParams.liquidationPenalty,
+        _debtFloor
       );
 
-      uint256 _collateralToSell =
-        Math.min(_safeData.lockedCollateral, _safeData.lockedCollateral * _limitAdjustedDebt / _safeData.generatedDebt);
+      uint256 _collateralToSell = _safeData.lockedCollateral * _limitAdjustedDebt / _safeData.generatedDebt;
+
       uint256 _amountToRaise = (_limitAdjustedDebt * _safeEngCData.accumulatedRate).wmul(__cParams.liquidationPenalty);
 
       // --- Safety checks ---
@@ -183,10 +179,9 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
 
         if (_collateralToSell == 0) revert LiqEng_NullCollateralToSell();
 
-        if (
-          _limitAdjustedDebt != _safeData.generatedDebt
-            && (_safeData.generatedDebt - _limitAdjustedDebt) * _safeEngCData.accumulatedRate < _debtFloor
-        ) revert LiqEng_DustySAFE();
+        if (currentOnAuctionSystemCoins + _amountToRaise > _params.onAuctionSystemCoinLimit) {
+          revert LiqEng_LiquidationLimitHit();
+        }
       }
 
       safeEngine.confiscateSAFECollateralAndDebt({
@@ -246,15 +241,13 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
     bytes32 _cType,
     address _safe
   ) external view returns (uint256 _limitAdjustedDebtToCover) {
+    uint256 _debtFloor = safeEngine.cParams(_cType).debtFloor;
     uint256 _accumulatedRate = safeEngine.cData(_cType).accumulatedRate;
     uint256 _generatedDebt = safeEngine.safes(_cType, _safe).generatedDebt;
     LiquidationEngineCollateralParams memory __cParams = _cParams[_cType];
 
-    return Math.min(
-      _generatedDebt,
-      Math.min(__cParams.liquidationQuantity, _params.onAuctionSystemCoinLimit - currentOnAuctionSystemCoins).wdiv(
-        _accumulatedRate
-      ) / __cParams.liquidationPenalty
+    return _getLimitAdjustedDebt(
+      _generatedDebt, _accumulatedRate, __cParams.liquidationQuantity, __cParams.liquidationPenalty, _debtFloor
     );
   }
 
@@ -263,6 +256,22 @@ contract LiquidationEngine is Authorizable, Modifiable, Disableable, ReentrancyG
   /// @inheritdoc ILiquidationEngine
   function collateralList() external view returns (bytes32[] memory __collateralList) {
     return _collateralList.values();
+  }
+
+  function _getLimitAdjustedDebt(
+    uint256 _generatedDebt,
+    uint256 _accumulatedRate,
+    uint256 _liquidationQuantity,
+    uint256 _liquidationPenalty,
+    uint256 _debtFloor
+  ) internal pure returns (uint256 _limitAdjustedDebt) {
+    _limitAdjustedDebt = Math.min(_generatedDebt, _liquidationQuantity.wdiv(_liquidationPenalty) / _accumulatedRate);
+
+    // NOTE: If the SAFE is dusty afterwards, we liquidate the whole debt
+    _limitAdjustedDebt = _limitAdjustedDebt != _generatedDebt
+      && _generatedDebt - _limitAdjustedDebt < _debtFloor / _accumulatedRate ? _generatedDebt : _limitAdjustedDebt;
+
+    return _limitAdjustedDebt;
   }
 
   // --- Administration ---
