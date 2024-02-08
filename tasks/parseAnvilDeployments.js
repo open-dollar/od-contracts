@@ -11,6 +11,7 @@ fs.readFile(filePath, "utf8", (err, data) => {
   const dataObj = JSON.parse(data);
   const contracts = dataObj.transactions.reduce((acc, curr, index) => {
     const { contractAddress, contractName, transactionType } = curr;
+
     if (contractAddress && contractName && transactionType.includes("CREATE")) {
       // Protocol contracts
       let name = contractName;
@@ -28,21 +29,25 @@ fs.readFile(filePath, "utf8", (err, data) => {
       // Factory children
       curr.additionalContracts.forEach((contract) => {
         if (contract.address && contract.transactionType === "CREATE") {
-          let contractName = curr.contractName.replace("Factory", "Child");
+          // let contractName = curr.contractName.replace("Factory", "Child");
           if (
-            curr.contractName === "CollateralAuctionHouseFactory" ||
-            curr.contractName == "CollateralJoinFactory"
+            curr.contractName.includes("CollateralAuctionHouseFactory") ||
+            curr.contractName.includes("CollateralJoinFactory")
           ) {
+            contractName = contractName.includes("CollateralAuctionHouseFactory") ? "CollateralAuctionHouseChild" : "CollateralJoinChild"
             // Appends the collateral type
             contractName = contractName + "_" + curr.arguments[0];
+            console.log("CollateralJoinFactory: ", contractName);
           }
 
           if (
-            curr.contractName === "DelayedOracleFactory" ||
-            curr.contractName === "DenominatedOracleFactory" ||
-            curr.contractName.includes("RelayerFactory")
+            curr.contractName.includes("DelayedOracleFactory")
           ) {
-            contractName = contractName + "_" + index;
+            contractName = "DelayedOracleChild" + "_" + index;
+          } else if (  curr.contractName.includes("DenominatedOracleFactory") ){
+            contractName = "DenominatedOracleChild" + "_" + index;
+          } else if( curr.contractName.includes("RelayerFactory") ){
+            contractName = "RelayerChild" + "_" + index;
           }
 
           acc[contractName] = contract.address;
@@ -60,7 +65,7 @@ const createAnvilDeploymentsFile = (contracts) => {
   const addressText = Object.keys(contracts).reduce((acc, curr) => {
     acc += `  address public ${curr}_Address = ${contracts[curr]};\n`;
     return acc;
-  }, "");
+  }, ""); 
 
   const outputPath = path.join(
     __dirname,
