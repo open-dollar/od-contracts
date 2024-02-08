@@ -65,7 +65,7 @@ contract Unit_ODGovernorTest is Base {
     token.mint(alice, 10 ether);
     token.mint(bob, 20 ether);
     vm.roll(100); // move to block number to 100
-    assertEq(odGovernor.quorum(10), 0.09 ether); // 30 ether (totalSupply) * 0.3 ether (0.3% quorom) = 0.09 ether
+    assertEq(odGovernor.quorum(10), 0.09 ether); // 30 ether (totalSupply) * 0.3 ether (0.3% quorum) = 0.09 ether
   }
 
   function test_ODGovernor_SupportsInterface() public {
