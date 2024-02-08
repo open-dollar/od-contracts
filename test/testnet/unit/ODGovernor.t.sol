@@ -26,7 +26,7 @@ abstract contract Base is HaiTest {
   uint256 initialVotingDelay = 1;
   uint256 initialVotingPeriod = 1000;
   uint256 initialProposalThreshold = 1;
-  uint256 initialVoteQuorum = 1;
+  uint256 initialVoteQuorum = 3; // 3 / 1000 = 0.3% quorum
 
   function setUp() public virtual {
     vm.startPrank(deployer);
@@ -65,7 +65,7 @@ contract Unit_ODGovernorTest is Base {
     token.mint(alice, 10 ether);
     token.mint(bob, 20 ether);
     vm.roll(100); // move to block number to 100
-    assertEq(odGovernor.quorum(10), 30_000_000_000_000_000); // 0.3% of total supply
+    assertEq(odGovernor.quorum(10), 0.09 ether); // 30 ether (totalSupply) * 0.3 ether (0.3% quorom) = 0.09 ether
   }
 
   function test_ODGovernor_SupportsInterface() public {
