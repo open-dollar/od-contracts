@@ -694,6 +694,8 @@ contract Unit_SAFEEngine_UpdateAccumulatedRate is Base {
   }
 }
 
+import 'forge-std/console2.sol';
+
 contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
   using Math for uint256;
 
@@ -882,6 +884,8 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
     safeEngine.modifySAFECollateralization(
       collateralType, safe, src, debtDestination, _scenario.deltaCollateral, _scenario.deltaDebt
     );
+    console2.logInt(_scenario.deltaCollateral);
+    console2.logInt(_scenario.deltaDebt);
   }
 
   function test_Revert_ContractIsDisabled() public {

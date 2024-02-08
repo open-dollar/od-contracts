@@ -8,7 +8,7 @@ import {SafeCast} from '@openzeppelin/utils/math/SafeCast.sol';
 import {IBasicActions} from '@interfaces/proxies/actions/IBasicActions.sol';
 import {ITaxCollector} from '@interfaces/ITaxCollector.sol';
 
-import {Math, WAD, RAY, RAD} from '@libraries/Math.sol';
+import {Math, RAY} from '@libraries/Math.sol';
 
 import {CommonActions} from '@contracts/proxies/actions/CommonActions.sol';
 
@@ -195,6 +195,7 @@ contract BasicActions is CommonActions, IBasicActions {
   ) internal {
     // Moves the amount from the SAFE handler to proxy's address
     _transferCollateral(_manager, _safeId, address(this), _deltaWad);
+    // _transferCollateral(_manager, _safeId, _safeData.safeHandler, _deltaWad);
     // Exits a rounded down amount of collateral
     _exitCollateral(_collateralJoin, _deltaWad);
   }
@@ -316,6 +317,8 @@ contract BasicActions is CommonActions, IBasicActions {
     address _safeEngine = ODSafeManager(_manager).safeEngine();
     ODSafeManager.SAFEData memory _safeInfo = ODSafeManager(_manager).safeData(_safeId);
 
+    _taxSingle(_manager, _safeId);
+
     ISAFEEngine.SAFE memory _safeData = ISAFEEngine(_safeEngine).safes(_safeInfo.collateralType, _safeInfo.safeHandler);
     _taxSingle(_manager, _safeId);
     // Joins COIN amount into the safeEngine
@@ -392,6 +395,9 @@ contract BasicActions is CommonActions, IBasicActions {
     uint256 _collateralWad
   ) external delegateCall {
     address _safeEngine = ODSafeManager(_manager).safeEngine();
+    //collecting tax before getting safe data to avoid overflow in collection
+    _taxSingle(_manager, _safeId);
+
     ODSafeManager.SAFEData memory _safeInfo = ODSafeManager(_manager).safeData(_safeId);
 
     ISAFEEngine.SAFE memory _safeData = ISAFEEngine(_safeEngine).safes(_safeInfo.collateralType, _safeInfo.safeHandler);

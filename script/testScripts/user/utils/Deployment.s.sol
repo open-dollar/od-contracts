@@ -2,6 +2,9 @@
 pragma solidity ^0.8.13;
 
 import 'forge-std/Script.sol';
+import 'forge-std/StdJson.sol';
+import 'forge-std/console2.sol';
+
 import '@script/Registry.s.sol';
 import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
 
@@ -11,7 +14,7 @@ import {SepoliaContracts} from '@script/SepoliaContracts.s.sol';
 import {Contracts} from '@script/Contracts.s.sol';
 import {MintableERC20} from '@contracts/for-test/MintableERC20.sol';
 import {MintableVoteERC20} from '@contracts/for-test/MintableVoteERC20.sol';
-
+import {SAFEEngine} from '@contracts/SAFEEngine.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 import {ODSafeManager} from '@contracts/proxies/ODSafeManager.sol';
 import {Vault721} from '@contracts/proxies/Vault721.sol';
@@ -37,7 +40,7 @@ contract Deployment is Contracts, SepoliaContracts, Script {
   // Collateral
   bytes32 public constant ETH_A = bytes32('ETH-A'); // 0x4554482d41000000000000000000000000000000000000000000000000000000
   bytes32 public constant WSTETH = bytes32('WSTETH'); // 0x5745544800000000000000000000000000000000000000000000000000000000
-  bytes32 public constant ARB = bytes32('ARB');
+  bytes32 public constant ARB = bytes32('ARB'); //0x4152420000000000000000000000000000000000000000000000000000000000
 
   IERC20 public WETH_TOKEN = IERC20(MintableERC20_WSTETH_Address);
 
@@ -60,6 +63,7 @@ contract Deployment is Contracts, SepoliaContracts, Script {
     surplusBidActions = SurplusBidActions(SurplusBidActions_Address);
     collateralBidActions = CollateralBidActions(CollateralBidActions_Address);
     rewardedActions = RewardedActions(RewardedActions_Address);
+    safeEngine = SAFEEngine(SAFEEngine_Address);
 
     protocolToken = ProtocolToken(SEPOLIA_PROTOCOL_TOKEN); // OPEN
     systemCoin = SystemCoin(SEPOLIA_SYSTEM_COIN); // OD

@@ -173,7 +173,6 @@ contract NFTAnvil is AnvilFork {
    * @dev Test transfering collateral
    * succeeds
    */
-
   function test_transferCollateral(uint256 _collateral, uint256 cTypeIndex) public maxLock(_collateral) {
     cTypeIndex = bound(cTypeIndex, 1, collateralTypes.length - 1); // range: WSTETH, CBETH, RETH
 
