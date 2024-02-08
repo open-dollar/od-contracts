@@ -26,6 +26,7 @@ fs.readFile(filePath, "utf8", (err, data) => {
       acc[name] = contractAddress;
     }
     if (curr.additionalContracts.length) {
+      let name;
       // Factory children
       curr.additionalContracts.forEach((contract) => {
         if (contract.address && contract.transactionType === "CREATE") {
@@ -34,23 +35,22 @@ fs.readFile(filePath, "utf8", (err, data) => {
             curr.contractName.includes("CollateralAuctionHouseFactory") ||
             curr.contractName.includes("CollateralJoinFactory")
           ) {
-            contractName = contractName.includes("CollateralAuctionHouseFactory") ? "CollateralAuctionHouseChild" : "CollateralJoinChild"
+            name = curr.contractName.includes("CollateralAuctionHouseFactory") ? "CollateralAuctionHouseChild" : "CollateralJoinChild"
             // Appends the collateral type
-            contractName = contractName + "_" + curr.arguments[0];
-            console.log("CollateralJoinFactory: ", contractName);
+            name = name + "_" + curr.arguments[0];
           }
 
           if (
             curr.contractName.includes("DelayedOracleFactory")
           ) {
-            contractName = "DelayedOracleChild" + "_" + index;
+            name = "DelayedOracleChild" + "_" + index;
           } else if (  curr.contractName.includes("DenominatedOracleFactory") ){
-            contractName = "DenominatedOracleChild" + "_" + index;
+            name = "DenominatedOracleChild" + "_" + index;
           } else if( curr.contractName.includes("RelayerFactory") ){
-            contractName = "RelayerChild" + "_" + index;
+            name = "RelayerChild" + "_" + index;
           }
 
-          acc[contractName] = contract.address;
+          acc[name] = contract.address;
         }
       });
     }
