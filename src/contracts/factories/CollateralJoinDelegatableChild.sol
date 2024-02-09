@@ -5,6 +5,7 @@ import {ICollateralJoinChild} from '@interfaces/factories/ICollateralJoinChild.s
 import {ERC20Votes} from '@openzeppelin/token/ERC20/extensions/ERC20Votes.sol';
 import {CollateralJoinChild} from '@contracts/factories/CollateralJoinChild.sol';
 import {ICollateralJoinDelegatableChild} from '@interfaces/factories/ICollateralJoinDelegatableChild.sol';
+import {Assertions} from '@libraries/Assertions.sol';
 
 /**
  * @title  CollateralJoinDelegatableChild
@@ -12,6 +13,8 @@ import {ICollateralJoinDelegatableChild} from '@interfaces/factories/ICollateral
  * @dev    For well behaved ERC20Votes tokens with less than 18 decimals
  */
 contract CollateralJoinDelegatableChild is CollateralJoinChild, ICollateralJoinDelegatableChild {
+  using Assertions for address;
+
   /// @notice Address to whom the voting power is delegated
   address public delegatee;
 
@@ -29,7 +32,7 @@ contract CollateralJoinDelegatableChild is CollateralJoinChild, ICollateralJoinD
     address _collateral,
     address _delegatee
   ) CollateralJoinChild(_safeEngine, _cType, _collateral) {
-    ERC20Votes(_collateral).delegate(_delegatee);
+    ERC20Votes(_collateral).delegate(_delegatee.assertNonNull());
     delegatee = _delegatee;
   }
 }

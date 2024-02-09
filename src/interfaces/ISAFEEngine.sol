@@ -220,7 +220,7 @@ interface ISAFEEngine is IAuthorizable, IDisableable, IModifiable, IModifiablePe
    * @notice Getter for the unpacked collateral data struct
    * @param  _cType Bytes32 representation of the collateral type
    * @return _debtAmount Total amount of debt issued by a collateral type [wad]
-   * @return _lockedAmount Total amount of collateral locked in a SAFE [wad]
+   * @return _lockedAmount Total amount of collateral locked in all SAFEs of the collateral type [wad]
    * @return _accumulatedRate Accumulated rate of a collateral type [ray]
    * @return _safetyPrice Floor price at which a SAFE is allowed to generate debt [ray]
    * @return _liquidationPrice Price at which a SAFE gets liquidated [ray]

@@ -120,11 +120,7 @@ contract TaxCollector is Authorizable, Modifiable, ModifiablePerCollateral, ITax
         _rad = _rad + _debtAmount.mul(_deltaRate);
       }
     }
-    if (_rad < 0) {
-      _ok = _rad >= _primaryReceiverBalance;
-    } else {
-      _ok = true;
-    }
+    _ok = _rad >= 0 || _rad >= _primaryReceiverBalance;
   }
 
   /// @inheritdoc ITaxCollector
@@ -184,7 +180,7 @@ contract TaxCollector is Authorizable, Modifiable, ModifiablePerCollateral, ITax
   function taxSingle(bytes32 _cType) public returns (uint256 _latestAccumulatedRate) {
     TaxCollectorCollateralData memory __cData = _cData[_cType];
 
-    if (block.timestamp <= __cData.updateTime) {
+    if (block.timestamp == __cData.updateTime) {
       _latestAccumulatedRate = safeEngine.cData(_cType).accumulatedRate;
       _cData[_cType].nextStabilityFee = _getNextStabilityFee(_cType);
       return _latestAccumulatedRate;
