@@ -116,6 +116,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_Constructor is Base {
 
   function test_Set_ProtocolToken(address _protocolToken) public happyPath {
     vm.assume(_protocolToken != address(0));
+    vm.etch(_protocolToken, '0xF');
     postSettlementSurplusAuctionHouse =
       new PostSettlementSurplusAuctionHouseForTest(address(mockSafeEngine), _protocolToken, pssahParams);
 
@@ -139,7 +140,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_Constructor is Base {
   }
 
   function test_Revert_Null_ProtocolToken() public {
-    vm.expectRevert(Assertions.NullAddress.selector);
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
 
     new PostSettlementSurplusAuctionHouseForTest(address(mockSafeEngine), address(0), pssahParams);
   }
@@ -681,6 +682,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_ModifyParameters is Base {
 
   function test_Set_ProtocolToken(address _protocolToken) public happyPath {
     vm.assume(_protocolToken != address(0));
+    vm.etch(_protocolToken, '0xF');
     postSettlementSurplusAuctionHouse.modifyParameters('protocolToken', abi.encode(_protocolToken));
 
     assertEq(address(postSettlementSurplusAuctionHouse.protocolToken()), _protocolToken);
@@ -688,7 +690,7 @@ contract Unit_PostSettlementSurplusAuctionHouse_ModifyParameters is Base {
 
   function test_Revert_ProtocolToken_NullAddress() public {
     vm.startPrank(authorizedAccount);
-    vm.expectRevert(Assertions.NullAddress.selector);
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
 
     postSettlementSurplusAuctionHouse.modifyParameters('protocolToken', abi.encode(0));
   }

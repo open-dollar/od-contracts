@@ -315,7 +315,7 @@ contract Unit_LiquidationEngine_Constructor is Base {
   }
 
   function test_Revert_Null_AccountingEngine() public {
-    vm.expectRevert(Assertions.NullAddress.selector);
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
 
     new LiquidationEngine(address(mockSafeEngine), address(0), liquidationEngineParams);
   }
@@ -335,6 +335,8 @@ contract Unit_LiquidationEngine_ModifyParameters is Base {
     ILiquidationEngine.LiquidationEngineCollateralParams memory _fuzz
   ) public authorized {
     _mockCollateralList(_cType);
+
+    vm.etch(_fuzz.collateralAuctionHouse, '0xF');
 
     vm.assume(_fuzz.collateralAuctionHouse != address(0));
     vm.assume(_fuzz.collateralAuctionHouse != deployer);
@@ -364,6 +366,7 @@ contract Unit_LiquidationEngine_ModifyParameters is Base {
 
   function test_ModifyParameters_AccountingEngine(address _accountingEngine) public authorized {
     vm.assume(_accountingEngine != address(0));
+    vm.etch(_accountingEngine, '0xF');
     liquidationEngine.modifyParameters('accountingEngine', abi.encode(_accountingEngine));
 
     assertEq(_accountingEngine, address(liquidationEngine.accountingEngine()));
@@ -379,6 +382,8 @@ contract Unit_LiquidationEngine_ModifyParameters is Base {
     vm.assume(_newCAH != address(0));
     vm.assume(_newCAH != deployer);
     vm.assume(_previousCAH != deployer);
+
+    vm.etch(_newCAH, '0xF');
 
     LiquidationEngineForTest(address(liquidationEngine)).setCollateralAuctionHouse(_cType, _previousCAH);
 
@@ -1801,6 +1806,7 @@ contract Unit_LiquidationEngine_InitializeCollateralType is Base {
     bytes32 _cType,
     ILiquidationEngine.LiquidationEngineCollateralParams memory _liqEngineCParams
   ) public authorized happyPath(_liqEngineCParams) {
+    vm.etch(address(_liqEngineCParams.collateralAuctionHouse), '0xF');
     liquidationEngine.initializeCollateralType(_cType, _liqEngineCParams);
 
     assertEq(abi.encode(liquidationEngine.cParams(_cType)), abi.encode(_liqEngineCParams));
@@ -1810,6 +1816,7 @@ contract Unit_LiquidationEngine_InitializeCollateralType is Base {
     bytes32 _cType,
     ILiquidationEngine.LiquidationEngineCollateralParams memory _liqEngineCParams
   ) public authorized happyPath(_liqEngineCParams) {
+    vm.etch(_liqEngineCParams.collateralAuctionHouse, '0xF');
     vm.expectCall(
       address(mockSafeEngine),
       abi.encodeCall(mockSafeEngine.approveSAFEModification, (_liqEngineCParams.collateralAuctionHouse))
@@ -1822,6 +1829,7 @@ contract Unit_LiquidationEngine_InitializeCollateralType is Base {
     bytes32 _cType,
     ILiquidationEngine.LiquidationEngineCollateralParams memory _liqEngineCParams
   ) public authorized happyPath(_liqEngineCParams) {
+    vm.etch(_liqEngineCParams.collateralAuctionHouse, '0xF');
     vm.expectEmit();
     emit AddAuthorization(_liqEngineCParams.collateralAuctionHouse);
 
@@ -1834,7 +1842,7 @@ contract Unit_LiquidationEngine_InitializeCollateralType is Base {
   ) public authorized {
     _liqEngineCParams.collateralAuctionHouse = address(0);
 
-    vm.expectRevert(Assertions.NullAddress.selector);
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
 
     liquidationEngine.initializeCollateralType(_cType, _liqEngineCParams);
   }
@@ -1846,6 +1854,8 @@ contract Unit_LiquidationEngine_InitializeCollateralType is Base {
     vm.assume(_liqEngineCParams.collateralAuctionHouse != address(0));
     vm.assume(_liqEngineCParams.collateralAuctionHouse != deployer);
     vm.assume(_liqEngineCParams.liquidationQuantity > MAX_RAD);
+
+    vm.etch(address(_liqEngineCParams.collateralAuctionHouse), '0xF');
 
     vm.expectRevert(
       abi.encodeWithSelector(Assertions.NotLesserOrEqualThan.selector, _liqEngineCParams.liquidationQuantity, MAX_RAD)

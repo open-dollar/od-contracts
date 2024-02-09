@@ -223,6 +223,6 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
 
   /// @inheritdoc Modifiable
   function _validateParameters() internal view override {
-    address(protocolToken).assertNonNull();
+    address(protocolToken).assertHasCode();
   }
 }

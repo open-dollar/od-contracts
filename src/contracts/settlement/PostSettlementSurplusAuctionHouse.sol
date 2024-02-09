@@ -167,6 +167,6 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, Modifiable, IPostSet
 
   /// @inheritdoc Modifiable
   function _validateParameters() internal view override {
-    address(protocolToken).assertNonNull();
+    address(protocolToken).assertHasCode();
   }
 }

@@ -217,7 +217,7 @@ contract Unit_CollateralAuctionHouse_Constructor is Base {
   }
 
   function test_Revert_NullAddress_LiquidationEngine() public {
-    vm.expectRevert(Assertions.NullAddress.selector);
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
 
     new CollateralAuctionHouseForTest(
       address(mockSafeEngine), address(0), address(mockOracleRelayer), collateralType, cahParams
@@ -225,7 +225,7 @@ contract Unit_CollateralAuctionHouse_Constructor is Base {
   }
 
   function test_Revert_NullAddress_OracleRelayer() public {
-    vm.expectRevert(Assertions.NullAddress.selector);
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
 
     new CollateralAuctionHouseForTest(
       address(mockSafeEngine), address(mockLiquidationEngine), address(0), collateralType, cahParams
@@ -1611,6 +1611,8 @@ contract Unit_CollateralAuctionHouse_ModifyParameters is Base {
     vm.assume(_liquidationEngine != deployer);
     vm.assume(_liquidationEngine != authorizedAccount);
 
+    vm.etch(_liquidationEngine, '0xF');
+
     collateralAuctionHouse.modifyParameters('liquidationEngine', abi.encode(_liquidationEngine));
 
     assertEq(address(collateralAuctionHouse.liquidationEngine()), _liquidationEngine);
@@ -1620,6 +1622,7 @@ contract Unit_CollateralAuctionHouse_ModifyParameters is Base {
     address _oldLiquidationEngine,
     address _newLiquidationEngine
   ) public happyPath {
+    vm.etch(_newLiquidationEngine, '0xF');
     vm.assume(_newLiquidationEngine != address(0));
     vm.assume(_newLiquidationEngine != deployer);
     vm.assume(_newLiquidationEngine != authorizedAccount);
@@ -1642,6 +1645,7 @@ contract Unit_CollateralAuctionHouse_ModifyParameters is Base {
 
   function test_Set_OracleRelayer(address _oracleRelayer) public happyPath {
     vm.assume(_oracleRelayer != address(0));
+    vm.etch(_oracleRelayer, '0xF');
 
     collateralAuctionHouse.modifyParameters('oracleRelayer', abi.encode(_oracleRelayer));
 
@@ -1651,7 +1655,7 @@ contract Unit_CollateralAuctionHouse_ModifyParameters is Base {
   function test_Revert_NullAddress_LiquidationEngine() public {
     vm.startPrank(authorizedAccount);
 
-    vm.expectRevert(Assertions.NullAddress.selector);
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
 
     collateralAuctionHouse.modifyParameters('liquidationEngine', abi.encode(0));
   }
@@ -1659,7 +1663,7 @@ contract Unit_CollateralAuctionHouse_ModifyParameters is Base {
   function test_Revert_NullAddress_OracleRelayer() public {
     vm.startPrank(authorizedAccount);
 
-    vm.expectRevert(Assertions.NullAddress.selector);
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
 
     collateralAuctionHouse.modifyParameters('oracleRelayer', abi.encode(0));
   }
