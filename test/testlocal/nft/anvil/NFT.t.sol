@@ -10,7 +10,7 @@ import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 import {FakeBasicActions} from '@testlocal/nft/anvil/FakeBasicActions.sol';
-import "forge-std/console2.sol";
+import 'forge-std/console2.sol';
 
 // forge t --fork-url http://127.0.0.1:8545 --match-contract NFTAnvil -vvvvv
 
@@ -61,9 +61,15 @@ contract NFTAnvil is AnvilFork {
 
     ISAFEEngine.SAFE memory SafeEngineData = safeEngine.safes(cType, safeHandler);
     assertEq(
-      SafeEngineData1.lockedCollateral + _collateral, SafeEngineData.lockedCollateral, '_helperDepositCollateralAndGenerateDebt: collateral not equal'
+      SafeEngineData1.lockedCollateral + _collateral,
+      SafeEngineData.lockedCollateral,
+      '_helperDepositCollateralAndGenerateDebt: collateral not equal'
     );
-    assertEq(SafeEngineData1.generatedDebt + debt, SafeEngineData.generatedDebt, '_helperDepositCollateralAndGenerateDebt: debt not equal');
+    assertEq(
+      SafeEngineData1.generatedDebt + debt,
+      SafeEngineData.generatedDebt,
+      '_helperDepositCollateralAndGenerateDebt: debt not equal'
+    );
   }
 
   /**
@@ -181,7 +187,7 @@ contract NFTAnvil is AnvilFork {
     mintCollateralAndOpenSafes();
     cTypeIndex = bound(cTypeIndex, 1, collateralTypes.length - 1); // range: WSTETH, CBETH, RETH
     address alice = users[0];
-    address aliceProxy = deployOrFind(alice);//proxies[0]; // alice's proxy
+    address aliceProxy = deployOrFind(alice); //proxies[0]; // alice's proxy
     bytes32 cType = collateralTypes[cTypeIndex];
     uint256 aliceVaultId = vaultIds[aliceProxy][cType];
     address bob = users[1];
@@ -191,7 +197,7 @@ contract NFTAnvil is AnvilFork {
     modifySAFECollateralization(aliceVaultId, -10 ether, 10 ether, aliceProxy);
     transferCollateral(aliceProxy, aliceVaultId, bob, 10 ether);
     vm.stopPrank();
-    
+
     assertEq(
       safeEngine.tokenCollateral(cType, bob), 10 ether, 'test_transferCollateralToSafeHandler: collateral is not equal'
     );
