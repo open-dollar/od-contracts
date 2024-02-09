@@ -5,6 +5,7 @@ import {TaxCollectorForTest, ITaxCollector} from '@testnet/mocks/TaxCollectorFor
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
+import {IModifiablePerCollateral} from '@interfaces/utils/IModifiablePerCollateral.sol';
 
 import {HaiTest, stdStorage, StdStorage} from '@testnet/utils/HaiTest.t.sol';
 
@@ -385,16 +386,16 @@ contract Unit_TaxCollector_InitializeCollateralType is Base {
   function test_Revert_Unauthorized(bytes32 _cType) public {
     vm.expectRevert(IAuthorizable.Unauthorized.selector);
 
-    taxCollector.initializeCollateralType(_cType, taxCollectorCollateralParams);
+    taxCollector.initializeCollateralType(_cType, abi.encode(taxCollectorCollateralParams));
   }
 
   function test_Revert_CollateralTypeAlreadyInit(bytes32 _cType) public {
     vm.startPrank(authorizedAccount);
     _mockCollateralList(_cType);
 
-    vm.expectRevert(ITaxCollector.TaxCollector_CollateralTypeAlreadyInitialized.selector);
+    vm.expectRevert(IModifiablePerCollateral.CollateralTypeAlreadyInitialized.selector);
 
-    taxCollector.initializeCollateralType(_cType, taxCollectorCollateralParams);
+    taxCollector.initializeCollateralType(_cType, abi.encode(taxCollectorCollateralParams));
   }
 
   function test_Revert_NotGreaterOrEqualThan_StabilityFee(
@@ -410,7 +411,7 @@ contract Unit_TaxCollector_InitializeCollateralType is Base {
       )
     );
 
-    taxCollector.initializeCollateralType(_cType, _taxCollectorCParams);
+    taxCollector.initializeCollateralType(_cType, abi.encode(_taxCollectorCParams));
   }
 
   function test_Revert_NotLesserOrEqualThan_StabilityFee(
@@ -426,29 +427,29 @@ contract Unit_TaxCollector_InitializeCollateralType is Base {
       )
     );
 
-    taxCollector.initializeCollateralType(_cType, _taxCollectorCParams);
+    taxCollector.initializeCollateralType(_cType, abi.encode(_taxCollectorCParams));
   }
 
   function test_Set_CollateralList(bytes32 _cType) public happyPath {
-    taxCollector.initializeCollateralType(_cType, taxCollectorCollateralParams);
+    taxCollector.initializeCollateralType(_cType, abi.encode(taxCollectorCollateralParams));
 
     assertEq(taxCollector.collateralList()[0], _cType);
   }
 
   function test_Set_NextStabilityFee(bytes32 _cType) public happyPath {
-    taxCollector.initializeCollateralType(_cType, taxCollectorCollateralParams);
+    taxCollector.initializeCollateralType(_cType, abi.encode(taxCollectorCollateralParams));
 
     assertEq(taxCollector.cData(_cType).nextStabilityFee, RAY);
   }
 
   function test_Set_UpdateTime(bytes32 _cType) public happyPath {
-    taxCollector.initializeCollateralType(_cType, taxCollectorCollateralParams);
+    taxCollector.initializeCollateralType(_cType, abi.encode(taxCollectorCollateralParams));
 
     assertEq(taxCollector.cData(_cType).updateTime, block.timestamp);
   }
 
   function test_Set_StabilityFee(bytes32 _cType) public happyPath {
-    taxCollector.initializeCollateralType(_cType, taxCollectorCollateralParams);
+    taxCollector.initializeCollateralType(_cType, abi.encode(taxCollectorCollateralParams));
 
     assertEq(taxCollector.cParams(_cType).stabilityFee, stabilityFee);
   }
@@ -457,7 +458,7 @@ contract Unit_TaxCollector_InitializeCollateralType is Base {
     vm.expectEmit();
     emit InitializeCollateralType(_cType);
 
-    taxCollector.initializeCollateralType(_cType, taxCollectorCollateralParams);
+    taxCollector.initializeCollateralType(_cType, abi.encode(taxCollectorCollateralParams));
   }
 }
 
@@ -674,6 +675,7 @@ contract Unit_TaxCollector_TaxSingle is Base {
 
   function test_Set_NextStabilityFee(uint256 _globalStabilityFee, uint256 _stabilityFee, uint256 _updateTime) public {
     vm.assume(notOverflowMul(_globalStabilityFee, _stabilityFee));
+    vm.assume(_updateTime <= block.timestamp);
     _mockGlobalStabilityFee(_globalStabilityFee);
     _mockStabilityFee(collateralTypeA, _stabilityFee);
     _mockUpdateTime(collateralTypeA, _updateTime);
@@ -717,14 +719,14 @@ contract Unit_TaxCollector_TaxSingle is Base {
   }
 
   function test_Return_LatestAccumulatedRate(uint256 _updateTime) public {
+    vm.assume(_updateTime <= block.timestamp);
     _mockUpdateTime(collateralTypeA, _updateTime);
 
     assertEq(taxCollector.taxSingle(collateralTypeA), lastAccumulatedRate);
   }
 
-  function testFail_AlreadyLatestAccumulatedRate(uint256 _updateTime) public {
-    vm.assume(block.timestamp <= _updateTime);
-    _mockUpdateTime(collateralTypeA, _updateTime);
+  function testFail_AlreadyLatestAccumulatedRate() public {
+    _mockUpdateTime(collateralTypeA, block.timestamp);
 
     (, int256 _deltaRate) = taxCollector.taxSingleOutcome(collateralTypeA);
 
