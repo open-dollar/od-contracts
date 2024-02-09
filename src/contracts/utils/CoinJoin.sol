@@ -48,7 +48,8 @@ contract CoinJoin is Authorizable, Disableable, ICoinJoin {
   /// @inheritdoc ICoinJoin
   function join(address _account, uint256 _wad) external {
     safeEngine.transferInternalCoins(address(this), _account, RAY * _wad);
-    systemCoin.burn(msg.sender, _wad);
+    systemCoin.transferFrom(msg.sender, address(this), _wad);
+    systemCoin.burn(_wad);
     emit Join(msg.sender, _account, _wad);
   }
 

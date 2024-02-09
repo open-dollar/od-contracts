@@ -8,7 +8,7 @@ import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ICoinJoin} from '@interfaces/utils/ICoinJoin.sol';
 import {ISurplusBidActions} from '@interfaces/proxies/actions/ISurplusBidActions.sol';
 
-import {CommonActions} from '@contracts/proxies/actions/CommonActions.sol';
+import {CommonActions, SafeERC20, IERC20} from '@contracts/proxies/actions/CommonActions.sol';
 
 import {RAY} from '@libraries/Math.sol';
 
@@ -30,12 +30,12 @@ contract SurplusBidActions is ISurplusBidActions, CommonActions {
     }
 
     // prepare protocol token spending
-    IERC20MetadataUpgradeable _protocolToken = ISurplusAuctionHouse(_surplusAuctionHouse).protocolToken();
-    _protocolToken.transferFrom(msg.sender, address(this), _spendAmount);
-    _protocolToken.approve(address(_surplusAuctionHouse), _spendAmount);
+    address _protocolToken = address(ISurplusAuctionHouse(_surplusAuctionHouse).protocolToken());
+    SafeERC20.safeTransferFrom(IERC20(_protocolToken), msg.sender, address(this), _bidAmount);
+    SafeERC20.safeApprove(IERC20(_protocolToken), address(_surplusAuctionHouse), _bidAmount);
 
     // proxy needs to be approved for protocol token spending
-    ISurplusAuctionHouse(_surplusAuctionHouse).increaseBidSize(_auctionId, _auction.amountToSell, _bidAmount);
+    ISurplusAuctionHouse(_surplusAuctionHouse).increaseBidSize(_auctionId, _bidAmount);
   }
 
   /// @inheritdoc ISurplusBidActions
