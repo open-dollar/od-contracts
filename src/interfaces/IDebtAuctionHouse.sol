@@ -222,9 +222,8 @@ interface IDebtAuctionHouse is IAuthorizable, IModifiable, IDisableable {
    *         exchange for providing the same amount of system coins being raised by the auction
    * @param  _id ID of the auction for which you want to submit a new bid
    * @param  _amountToBuy Amount of protocol tokens to buy (must be smaller than the previous proposed amount) [wad]
-   * @param  _bid New system coin bid (must always equal the total amount raised by the auction) [rad]
    */
-  function decreaseSoldAmount(uint256 _id, uint256 _amountToBuy, uint256 _bid) external;
+  function decreaseSoldAmount(uint256 _id, uint256 _amountToBuy) external;
 
   /**
    * @notice Settle an auction

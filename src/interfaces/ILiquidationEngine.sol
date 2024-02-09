@@ -95,12 +95,16 @@ interface ILiquidationEngine is IAuthorizable, IModifiable, IDisableable {
   error LiqEng_NullCollateralToSell();
   /// @notice Throws when trying to initialize a collateral type that is already initialized
   error LiqEng_CollateralTypeAlreadyInitialized();
+  /// @notice Throws when trying to call a function only the liquidator is allowed to call
+  error LiqEng_OnlyLiqEng();
 
   // --- Structs ---
 
   struct LiquidationEngineParams {
     // Max amount of system coins to be auctioned at the same time
     uint256 /* RAD */ onAuctionSystemCoinLimit;
+    // The gas limit for the saviour call
+    uint256 /*       */ saviourGasLimit;
   }
 
   struct LiquidationEngineCollateralParams {
@@ -138,7 +142,7 @@ interface ILiquidationEngine is IAuthorizable, IModifiable, IDisableable {
    * @return _onAuctionSystemCoinLimit Max amount of system coins to be auctioned at the same time [rad]
    */
   // solhint-disable-next-line private-vars-leading-underscore
-  function _params() external view returns (uint256 _onAuctionSystemCoinLimit);
+  function _params() external view returns (uint256 _onAuctionSystemCoinLimit, uint256 _saviourGasLimit);
 
   /**
    * @notice Getter for the collateral parameters struct

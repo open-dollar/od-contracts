@@ -8,6 +8,7 @@ import {ICoinJoin} from '@interfaces/utils/ICoinJoin.sol';
 import {ICollateralJoin} from '@interfaces/utils/ICollateralJoin.sol';
 import {ICommonActions} from '@interfaces/proxies/actions/ICommonActions.sol';
 
+import {SafeERC20, IERC20} from '@openzeppelin/token/ERC20/utils/SafeERC20.sol';
 import {RAY} from '@libraries/Math.sol';
 
 /**
@@ -15,6 +16,7 @@ import {RAY} from '@libraries/Math.sol';
  * @notice This abstract contract defines common actions to be used by the proxy actions contracts
  */
 abstract contract CommonActions is ICommonActions {
+
   /// @notice Address of the inheriting contract, used to check if the call is being made through a delegate call
   // solhint-disable-next-line var-name-mixedcase
   address internal immutable _THIS = address(this);
@@ -52,11 +54,11 @@ abstract contract CommonActions is ICommonActions {
     if (_wad == 0) return;
 
     // NOTE: assumes systemCoin uses 18 decimals
-    IERC20MetadataUpgradeable _systemCoin = ICoinJoin(_coinJoin).systemCoin();
+    address _systemCoin = address(ICoinJoin(_coinJoin).systemCoin());
     // Transfers coins from the user to the proxy
-    _systemCoin.transferFrom(msg.sender, address(this), _wad);
+    SafeERC20.safeTransferFrom(IERC20(_systemCoin), msg.sender, address(this), _wad);
     // Approves adapter to take the COIN amount
-    _systemCoin.approve(_coinJoin, _wad);
+    SafeERC20.safeApprove(IERC20(_systemCoin), _coinJoin, _wad);
     // Joins COIN into the safeEngine
     ICoinJoin(_coinJoin).join(_dst, _wad);
   }
@@ -93,9 +95,9 @@ abstract contract CommonActions is ICommonActions {
     if (_wei == 0) return;
 
     // Gets token from the user's wallet
-    _token.transferFrom(msg.sender, address(this), _wei);
+    SafeERC20.safeTransferFrom(IERC20(address(_token)), msg.sender, address(this), _wei);
     // Approves adapter to take the token amount
-    _token.approve(_collateralJoin, _wei);
+    SafeERC20.safeApprove(IERC20(address(_token)), _collateralJoin, _wei);
     // Joins token collateral into the safeEngine
     __collateralJoin.join(_safe, _wei);
   }
