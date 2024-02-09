@@ -297,6 +297,31 @@ contract AnvilFork is AnvilDeployment, Test {
     ODProxy(proxy).execute(address(basicActions), payload);
   }
 
+   function repayDebtAndFreeTokenCollateral(
+    bytes32 _cType,
+    uint256 _safeId,
+    uint256 _collateralWad,
+    uint256 _debtWad,
+    address _proxy
+  ) public {
+    bytes memory payload = abi.encodeWithSelector(
+      basicActions.repayDebtAndFreeTokenCollateral.selector, address(safeManager), address(collateralJoin[_cType]), address(coinJoin), _safeId, _collateralWad, _debtWad
+    );
+    ODProxy(_proxy).execute(address(basicActions), payload);
+  }
+
+  function modifySAFECollateralization(
+    uint256 _safeId,
+    int256 _deltaCollateral,
+    int256 _deltaDebt,
+    address _proxy
+  )public {
+    bytes memory payload = abi.encodeWithSelector(
+      basicActions.modifySAFECollateralization.selector, address(safeManager), _safeId, _deltaCollateral, _deltaDebt
+    );
+    ODProxy(_proxy).execute(address(basicActions), payload);
+  }
+
   /**
    * @dev internal helper functions
    */

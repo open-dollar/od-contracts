@@ -10,6 +10,7 @@ import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 import {FakeBasicActions} from '@testlocal/nft/anvil/FakeBasicActions.sol';
+import "forge-std/console2.sol";
 
 // forge t --fork-url http://127.0.0.1:8545 --match-contract NFTAnvil -vvvvv
 
@@ -49,17 +50,20 @@ contract NFTAnvil is AnvilFork {
     uint256 debt
   ) internal returns (uint256 vaultId) {
     vaultId = vaultIds[proxy][cType];
+    IODSafeManager.SAFEData memory sData = safeManager.safeData(vaultId);
+    address safeHandler = sData.safeHandler;
+
+    ISAFEEngine.SAFE memory SafeEngineData1 = safeEngine.safes(cType, safeHandler);
+
     vm.startPrank(owner);
     depositCollatAndGenDebt(cType, vaultId, _collateral, debt, proxy);
     vm.stopPrank();
 
-    IODSafeManager.SAFEData memory sData = safeManager.safeData(vaultId);
-    address safeHandler = sData.safeHandler;
     ISAFEEngine.SAFE memory SafeEngineData = safeEngine.safes(cType, safeHandler);
     assertEq(
-      _collateral, SafeEngineData.lockedCollateral, '_helperDepositCollateralAndGenerateDebt: collateral not equal'
+      SafeEngineData1.lockedCollateral + _collateral, SafeEngineData.lockedCollateral, '_helperDepositCollateralAndGenerateDebt: collateral not equal'
     );
-    assertEq(debt, SafeEngineData.generatedDebt, '_helperDepositCollateralAndGenerateDebt: debt not equal');
+    assertEq(SafeEngineData1.generatedDebt + debt, SafeEngineData.generatedDebt, '_helperDepositCollateralAndGenerateDebt: debt not equal');
   }
 
   /**
@@ -173,27 +177,23 @@ contract NFTAnvil is AnvilFork {
    * @dev Test transfering collateral
    * succeeds
    */
-  function test_transferCollateral(uint256 _collateral, uint256 cTypeIndex) public maxLock(_collateral) {
+  function test_transferCollateral(uint256 cTypeIndex) public {
+    mintCollateralAndOpenSafes();
     cTypeIndex = bound(cTypeIndex, 1, collateralTypes.length - 1); // range: WSTETH, CBETH, RETH
-
     address alice = users[0];
-    address aliceProxy = proxies[0]; // alice's proxy
+    address aliceProxy = deployOrFind(alice);//proxies[0]; // alice's proxy
     bytes32 cType = collateralTypes[cTypeIndex];
-    uint256 aliceVaultId = _helperDepositCollateralAndGenerateDebt(alice, aliceProxy, cType, _collateral, 0);
+    uint256 aliceVaultId = vaultIds[aliceProxy][cType];
+    address bob = users[1];
 
-    address bobProxy = proxies[1]; // bob's proxy
-
-    assertEq(
-      safeEngine.safes(cType, bobProxy).lockedCollateral, 0, 'test_transferCollateralToSafeHandler: collateral is empty'
-    );
-
-    vm.startPrank(aliceProxy);
-    // @note TODO when we deposit collateral, it is locked, how do we move it from locked to tokenCollateral so
-    // we can transfer it? this will fail if we try to transfer non-zero value
-    safeManager.transferCollateral(aliceVaultId, bobProxy, 0);
+    vm.startPrank(alice);
+    IERC20(SystemCoin_Address).approve(aliceProxy, 10 ether);
+    modifySAFECollateralization(aliceVaultId, -10 ether, 10 ether, aliceProxy);
+    transferCollateral(aliceProxy, aliceVaultId, bob, 10 ether);
     vm.stopPrank();
+    
     assertEq(
-      safeEngine.tokenCollateral(cType, bobProxy), 0, 'test_transferCollateralToSafeHandler: collateral is not equal'
+      safeEngine.tokenCollateral(cType, bob), 10 ether, 'test_transferCollateralToSafeHandler: collateral is not equal'
     );
   }
 
