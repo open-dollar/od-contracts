@@ -81,11 +81,8 @@ contract CollateralJoin is Disableable, ICollateralJoin {
    * @inheritdoc ICollateralJoin
    */
   function exit(address _account, uint256 _wei) external {
-    // Effect
     uint256 _wad = _wei * 10 ** multiplier; // convert to 18 decimals [wad]
     safeEngine.modifyCollateralBalance(collateralType, msg.sender, -_wad.toInt());
-
-    // Interaction
     collateral.safeTransfer(_account, _wei);
     emit Exit(msg.sender, _account, _wad);
   }

@@ -115,12 +115,11 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, Modifiable, IPostSet
   }
 
   /// @inheritdoc ICommonSurplusAuctionHouse
-  function increaseBidSize(uint256 _id, uint256 _amountToBuy, uint256 _bid) external {
+  function increaseBidSize(uint256 _id, uint256 _bid) external {
     Auction storage _auction = _auctions[_id];
     if (_auction.highBidder == address(0)) revert SAH_HighBidderNotSet();
     if (_auction.bidExpiry <= block.timestamp && _auction.bidExpiry != 0) revert SAH_BidAlreadyExpired();
     if (_auction.auctionDeadline <= block.timestamp) revert SAH_AuctionAlreadyExpired();
-    if (_amountToBuy != _auction.amountToSell) revert SAH_AmountsNotMatching();
     if (_bid <= _auction.bidAmount) revert SAH_BidNotHigher();
     if (_bid * WAD < _params.bidIncrease * _auction.bidAmount) revert SAH_InsufficientIncrease();
 
@@ -133,7 +132,7 @@ contract PostSettlementSurplusAuctionHouse is Authorizable, Modifiable, IPostSet
     _auction.bidAmount = _bid;
     _auction.bidExpiry = block.timestamp + _params.bidDuration;
 
-    emit IncreaseBidSize(_id, msg.sender, block.timestamp, _bid, _amountToBuy, _auction.bidExpiry);
+    emit IncreaseBidSize(_id, msg.sender, block.timestamp, _bid, _auction.amountToSell, _auction.bidExpiry);
   }
 
   /// @inheritdoc ICommonSurplusAuctionHouse

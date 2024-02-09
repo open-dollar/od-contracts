@@ -131,17 +131,17 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
   }
 
   /// @inheritdoc ICommonSurplusAuctionHouse
-  function increaseBidSize(uint256 _id, uint256 _amountToBuy, uint256 _bid) external whenEnabled {
+  function increaseBidSize(uint256 _id, uint256 _bid) external whenEnabled {
     Auction storage _auction = _auctions[_id];
     if (_auction.highBidder == address(0)) revert SAH_HighBidderNotSet();
     if (_auction.bidExpiry <= block.timestamp && _auction.bidExpiry != 0) revert SAH_BidAlreadyExpired();
     if (_auction.auctionDeadline <= block.timestamp) revert SAH_AuctionAlreadyExpired();
-    if (_amountToBuy != _auction.amountToSell) revert SAH_AmountsNotMatching();
     if (_bid <= _auction.bidAmount) revert SAH_BidNotHigher();
     if (_bid * WAD < _params.bidIncrease * _auction.bidAmount) revert SAH_InsufficientIncrease();
 
     if (msg.sender != _auction.highBidder) {
-      protocolToken.safeTransferFrom(msg.sender, _auction.highBidder, _auction.bidAmount);
+      // If there was no previous bid then no transfer is needed
+      if (_auction.bidAmount != 0) protocolToken.safeTransferFrom(msg.sender, _auction.highBidder, _auction.bidAmount);
       _auction.highBidder = msg.sender;
     }
     protocolToken.safeTransferFrom(msg.sender, address(this), _bid - _auction.bidAmount);
@@ -154,7 +154,7 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
       _bidder: msg.sender,
       _blockTimestamp: block.timestamp,
       _raisedAmount: _bid,
-      _soldAmount: _amountToBuy,
+      _soldAmount: _auction.amountToSell,
       _bidExpiry: _auction.bidExpiry
     });
   }
@@ -162,6 +162,7 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
   /// @inheritdoc ICommonSurplusAuctionHouse
   function settleAuction(uint256 _id) external whenEnabled {
     Auction memory _auction = _auctions[_id];
+    delete _auctions[_id];
     if (_auction.bidExpiry == 0 || (_auction.bidExpiry > block.timestamp && _auction.auctionDeadline > block.timestamp))
     {
       revert SAH_AuctionNotFinished();
@@ -185,13 +186,12 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
       _highBidder: _auction.highBidder,
       _raisedAmount: _auction.bidAmount
     });
-
-    delete _auctions[_id];
   }
 
   /// @inheritdoc ISurplusAuctionHouse
   function terminateAuctionPrematurely(uint256 _id) external whenDisabled {
     Auction memory _auction = _auctions[_id];
+    delete _auctions[_id];
     if (_auction.highBidder == address(0)) revert SAH_HighBidderNotSet();
 
     protocolToken.safeTransfer(_auction.highBidder, _auction.bidAmount);
@@ -202,8 +202,6 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
       _highBidder: _auction.highBidder,
       _raisedAmount: _auction.bidAmount
     });
-
-    delete _auctions[_id];
   }
 
   // --- Administration ---
