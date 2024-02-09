@@ -9,7 +9,7 @@ import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 
-interface IDebtAuctionHouse is IAuthorizable, IModifiable, IDisableable {
+interface IDebtAuctionHouse is IAuthorizable, IDisableable, IModifiable {
   // --- Events ---
 
   /**
