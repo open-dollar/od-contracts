@@ -8,7 +8,7 @@ import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
 /**
  * @title  Authorizable
  * @notice Implements authorization control for contracts
- * @dev    Authorization control is boolean and handled by `onlyAuthorized` modifier
+ * @dev    Authorization control is boolean and handled by `isAuthorized` modifier
  */
 abstract contract Authorizable is IAuthorizable {
   using EnumerableSet for EnumerableSet.AddressSet;

@@ -176,6 +176,7 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
   /// @inheritdoc ICommonSurplusAuctionHouse
   function settleAuction(uint256 _id) external whenEnabled {
     Auction memory _auction = _auctions[_id];
+    delete _auctions[_id];
     if (_auction.bidExpiry == 0 || (_auction.bidExpiry > block.timestamp && _auction.auctionDeadline > block.timestamp))
     {
       revert SAH_AuctionNotFinished();
@@ -199,13 +200,12 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
       _highBidder: _auction.highBidder,
       _raisedAmount: _auction.bidAmount
     });
-
-    delete _auctions[_id];
   }
 
   /// @inheritdoc ISurplusAuctionHouse
   function terminateAuctionPrematurely(uint256 _id) external whenDisabled {
     Auction memory _auction = _auctions[_id];
+    delete _auctions[_id];
     if (_auction.highBidder == address(0)) revert SAH_HighBidderNotSet();
 
     protocolToken.safeTransfer(_auction.highBidder, _auction.bidAmount);
@@ -216,8 +216,6 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
       _highBidder: _auction.highBidder,
       _raisedAmount: _auction.bidAmount
     });
-
-    delete _auctions[_id];
   }
 
   // --- Administration ---

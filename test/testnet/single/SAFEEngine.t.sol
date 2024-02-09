@@ -187,7 +187,7 @@ contract SingleModifySAFECollateralizationTest is DSTest {
 
     ISAFEEngine.SAFEEngineCollateralParams memory _collateralParams =
       ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: rad(1000 ether), debtFloor: 0});
-    safeEngine.initializeCollateralType('gold', _collateralParams);
+    safeEngine.initializeCollateralType('gold', abi.encode(_collateralParams));
 
     collateralJoinFactory = new CollateralJoinFactory(address(safeEngine));
     safeEngine.addAuthorization(address(collateralJoinFactory));
@@ -206,7 +206,7 @@ contract SingleModifySAFECollateralizationTest is DSTest {
     taxCollector = new TaxCollector(address(safeEngine), _taxCollectorParams);
     ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
       ITaxCollector.TaxCollectorCollateralParams({stabilityFee: RAY});
-    taxCollector.initializeCollateralType('gold', _taxCollectorCollateralParams);
+    taxCollector.initializeCollateralType('gold', abi.encode(_taxCollectorCollateralParams));
     safeEngine.addAuthorization(address(taxCollector));
 
     gold.approve(address(collateralA), type(uint256).max);
@@ -459,7 +459,7 @@ contract SingleSAFEDebtLimitTest is DSTest {
 
     ISAFEEngine.SAFEEngineCollateralParams memory _collateralParams =
       ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: rad(1000 ether), debtFloor: 0});
-    safeEngine.initializeCollateralType('gold', _collateralParams);
+    safeEngine.initializeCollateralType('gold', abi.encode(_collateralParams));
 
     collateralJoinFactory = new CollateralJoinFactory(address(safeEngine));
     safeEngine.addAuthorization(address(collateralJoinFactory));
@@ -477,7 +477,7 @@ contract SingleSAFEDebtLimitTest is DSTest {
     taxCollector = new TaxCollector(address(safeEngine), _taxCollectorParams);
     ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
       ITaxCollector.TaxCollectorCollateralParams({stabilityFee: RAY});
-    taxCollector.initializeCollateralType('gold', _taxCollectorCollateralParams);
+    taxCollector.initializeCollateralType('gold', abi.encode(_taxCollectorCollateralParams));
     taxCollector.modifyParameters('gold', 'stabilityFee', abi.encode(1_000_000_564_701_133_626_865_910_626)); // 5% / day
     safeEngine.addAuthorization(address(taxCollector));
 
@@ -582,7 +582,7 @@ contract SingleJoinTest is DSTest {
 
     ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
       ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: 0, debtFloor: 0});
-    safeEngine.initializeCollateralType('ETH', _safeEngineCollateralParams);
+    safeEngine.initializeCollateralType('ETH', abi.encode(_safeEngineCollateralParams));
 
     collateral = new CoinForTest('Coin', 'Coin');
     collateralJoinFactory = new CollateralJoinFactory(address(safeEngine));
@@ -831,11 +831,11 @@ contract SingleLiquidationTest is DSTest {
     taxCollector = new TaxCollector(address(safeEngine), _taxCollectorParams);
     ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCollateralParams =
       ITaxCollector.TaxCollectorCollateralParams({stabilityFee: RAY});
-    taxCollector.initializeCollateralType('gold', _taxCollectorCollateralParams);
+    taxCollector.initializeCollateralType('gold', abi.encode(_taxCollectorCollateralParams));
     safeEngine.addAuthorization(address(taxCollector));
 
-    ILiquidationEngine.LiquidationEngineParams memory _liquidationEngineParams =
-      ILiquidationEngine.LiquidationEngineParams({onAuctionSystemCoinLimit: type(uint256).max});
+    ILiquidationEngine.LiquidationEngineParams memory _liquidationEngineParams = ILiquidationEngine
+      .LiquidationEngineParams({onAuctionSystemCoinLimit: type(uint256).max, saviourGasLimit: 10_000_000});
     liquidationEngine = new LiquidationEngine(address(safeEngine), address(accountingEngine), _liquidationEngineParams);
 
     safeEngine.addAuthorization(address(liquidationEngine));
@@ -846,7 +846,7 @@ contract SingleLiquidationTest is DSTest {
 
     ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
       ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: rad(1000 ether), debtFloor: 0});
-    safeEngine.initializeCollateralType('gold', _safeEngineCollateralParams);
+    safeEngine.initializeCollateralType('gold', abi.encode(_safeEngineCollateralParams));
     collateralJoinFactory = new CollateralJoinFactory(address(safeEngine));
     safeEngine.addAuthorization(address(collateralJoinFactory));
     collateralA = collateralJoinFactory.deployCollateralJoin('gold', address(gold));
@@ -870,11 +870,13 @@ contract SingleLiquidationTest is DSTest {
 
     oracleRelayer.initializeCollateralType(
       'gold',
-      IOracleRelayer.OracleRelayerCollateralParams({
-        oracle: IDelayedOracle(address(oracleFSM)),
-        safetyCRatio: ray(1.5 ether),
-        liquidationCRatio: ray(1.5 ether)
-      })
+      abi.encode(
+        IOracleRelayer.OracleRelayerCollateralParams({
+          oracle: IDelayedOracle(address(oracleFSM)),
+          safetyCRatio: ray(1.5 ether),
+          liquidationCRatio: ray(1.5 ether)
+        })
+      )
     );
 
     ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahParams = ICollateralAuctionHouse
@@ -894,7 +896,7 @@ contract SingleLiquidationTest is DSTest {
       liquidationPenalty: 1 ether,
       liquidationQuantity: 0
     });
-    liquidationEngine.initializeCollateralType('gold', _liquidationEngineCollateralParams);
+    liquidationEngine.initializeCollateralType('gold', abi.encode(_liquidationEngineCollateralParams));
 
     safeEngine.addAuthorization(address(collateralAuctionHouse));
     safeEngine.addAuthorization(address(surplusAuctionHouse));
@@ -1059,7 +1061,6 @@ contract SingleLiquidationTest is DSTest {
     assertEq(accountingEngine.debtQueue(block.timestamp), rad(100 ether));
 
     hevm.warp(block.timestamp + 4 hours);
-    collateralAuctionHouse.settleAuction(auction);
     assertEq(safeEngine.coinBalance(address(accountingEngine)), rad(95 ether) + ray(5 ether));
   }
 
@@ -1175,7 +1176,6 @@ contract SingleLiquidationTest is DSTest {
     assertEq(accountingEngine.debtQueue(block.timestamp), rad(75 ether));
 
     hevm.warp(block.timestamp + 4 hours);
-    collateralAuctionHouse.settleAuction(auction); // no effect
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), 0);
     assertEq(safeEngine.tokenCollateral('gold', address(this)), 950 ether);
     assertEq(safeEngine.coinBalance(address(this)), rad(145 ether) - rad(_adjustedBid));
@@ -1260,7 +1260,6 @@ contract SingleLiquidationTest is DSTest {
     // have to settle an auction and then liquidate again
 
     hevm.warp(block.timestamp + 4 hours);
-    collateralAuctionHouse.settleAuction(auction);
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), 0);
     assertEq(safeEngine.tokenCollateral('gold', address(this)), 950 ether);
     assertEq(safeEngine.coinBalance(address(this)), _newCoinBalance);
@@ -1292,7 +1291,6 @@ contract SingleLiquidationTest is DSTest {
     assertEq(accountingEngine.debtQueue(block.timestamp), rad(75 ether));
 
     hevm.warp(block.timestamp + 4 hours);
-    collateralAuctionHouse.settleAuction(auction);
     assertEq(liquidationEngine.currentOnAuctionSystemCoins(), 0);
     assertEq(safeEngine.tokenCollateral('gold', address(this)), 1000 ether);
     assertEq(safeEngine.coinBalance(address(this)), _newCoinBalance);
@@ -1415,7 +1413,7 @@ contract SingleAccumulateRatesTest is DSTest {
     safeEngine = new SAFEEngine(_safeEngineParams);
     ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
       ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: rad(100 ether), debtFloor: 0});
-    safeEngine.initializeCollateralType('gold', _safeEngineCollateralParams);
+    safeEngine.initializeCollateralType('gold', abi.encode(_safeEngineCollateralParams));
     safeEngine.modifyParameters('globalDebtCeiling', abi.encode(rad(100 ether)));
   }
 

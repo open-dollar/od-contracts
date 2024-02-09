@@ -61,7 +61,7 @@ contract ChainlinkRelayer is IBaseOracle, IChainlinkRelayer {
     (, int256 _aggregatorResult,, uint256 _aggregatorTimestamp,) = chainlinkFeed.latestRoundData();
 
     // Revert if price is invalid
-    if (_aggregatorResult == 0 || !_isValidFeed(_aggregatorTimestamp)) revert InvalidPriceFeed();
+    if (_aggregatorResult <= 0 || !_isValidFeed(_aggregatorTimestamp)) revert InvalidPriceFeed();
 
     // Parse the quote into 18 decimals format
     _result = _parseResult(_aggregatorResult);
