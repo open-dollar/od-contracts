@@ -10,7 +10,6 @@ import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 import {FakeBasicActions} from '@testlocal/nft/anvil/FakeBasicActions.sol';
-import 'forge-std/console2.sol';
 
 // forge t --fork-url http://127.0.0.1:8545 --match-contract NFTAnvil -vvvvv
 
