@@ -200,16 +200,14 @@ contract Unit_OracleRelayer_ModifyParameters is Base {
     bytes32 _cType,
     IOracleRelayer.OracleRelayerCollateralParams memory _fuzz,
     address _fuzzPriceSource
-  ) public authorized previousValidCTypeParams(_cType) {
+  ) public authorized previousValidCTypeParams(_cType) mockAsContract(address(_fuzz.oracle)) {
     vm.assume(_validOracleRelayerCollateralParams(_fuzz));
     // NOTE: needs to have a valid liqCRatio to pass the `modifyParameters` check
     _mockCTypeLiquidationCRatio(_cType, 1e27);
 
-    vm.etch(_fuzzPriceSource, '0xF');
     vm.mockCall(
       address(_fuzz.oracle), abi.encodeWithSelector(IDelayedOracle.priceSource.selector), abi.encode(_fuzzPriceSource)
     );
-    vm.etch(address(_fuzz.oracle), '0xF');
 
     oracleRelayer.modifyParameters(_cType, 'oracle', abi.encode(_fuzz.oracle));
     oracleRelayer.modifyParameters(_cType, 'safetyCRatio', abi.encode(_fuzz.safetyCRatio));

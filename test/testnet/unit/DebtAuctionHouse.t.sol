@@ -157,9 +157,8 @@ contract Unit_DebtAuctionHouse_Constructor is Base {
     assertEq(address(debtAuctionHouse.safeEngine()), _safeEngine);
   }
 
-  function test_Set_ProtocolToken(address _protocolToken) public happyPath {
+  function test_Set_ProtocolToken(address _protocolToken) public happyPath mockAsContract(_protocolToken) {
     vm.assume(_protocolToken != address(0));
-    vm.etch(_protocolToken, '0xF');
     debtAuctionHouse = new DebtAuctionHouseForTest(address(mockSafeEngine), _protocolToken, dahParams);
 
     assertEq(address(debtAuctionHouse.protocolToken()), _protocolToken);
@@ -930,9 +929,8 @@ contract Unit_DebtAuctionHouse_ModifyParameters is Base {
     assertEq(abi.encode(_params), abi.encode(_fuzz));
   }
 
-  function test_Set_ProtocolToken(address _protocolToken) public happyPath {
+  function test_Set_ProtocolToken(address _protocolToken) public happyPath mockAsContract(_protocolToken) {
     vm.assume(_protocolToken != address(0));
-    vm.etch(_protocolToken, '0xF');
     debtAuctionHouse.modifyParameters('protocolToken', abi.encode(_protocolToken));
 
     assertEq(address(debtAuctionHouse.protocolToken()), _protocolToken);
