@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {NFTPool} from '@contracts/for-test/NFTPool/NFTPool.sol';
-import {INFTHandler} from '@contracts/for-test/NFTPool/interfaces/INFTHandler.sol';
+import {NFTPool} from '@contracts/for-test/CamelotDex/NFTPool.sol';
+import {INFTHandler} from '@contracts/for-test/CamelotDex/interfaces/INFTHandler.sol';
 import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
 import {IERC721} from '@openzeppelin/token/ERC721/IERC721.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
@@ -83,7 +83,7 @@ interface ILiquidityPool {
 
 /**
  * @title  NFTPoolProxyHandler
- * @notice This contract will unwinds the NFTPool position and transfer the tokens to the user ODProxy to be deposit on OD protocol
+ * @notice This contract will unwinds the CamelotDex position and transfer the tokens to the user ODProxy to be deposit on OD protocol
  * @dev This contract is meant to be used by users that already have ODProxy contract
  */
 contract NFTPoolProxyHandler is INFTHandler {
@@ -148,12 +148,18 @@ contract NFTPoolProxyHandler is INFTHandler {
     if (shares == 0) {
       revert NFT_HANDLER_POSITION_AMOUNT_ZERO();
     }
-    // approve router
-    IERC20(address(liquidityPool)).approve(router, shares);
 
-    CamelotRouterV2(router).removeLiquidity(
-      liquidityPool.token0(), liquidityPool.token1(), shares, amount0Min, amount1Min, address(odProxy), block.timestamp
-    );
+    // TODO: Transfer OD Token to user
+
+    // IERC20(address(liquidityPool)).transfer(address(odProxy), shares);
+    // deposit to OD Contract give shares to user
+
+    // approve router
+    //IERC20(address(liquidityPool)).approve(router, shares);
+
+   // CamelotRouterV2(router).removeLiquidity(
+   //   liquidityPool.token0(), liquidityPool.token1(), shares, amount0Min, amount1Min, address(odProxy), block.timestamp
+    //);
 
     return true;
   }
@@ -228,11 +234,11 @@ contract NFTPoolProxyHandler is INFTHandler {
     return true;
   }
 
-  // NFTPool interface
+  // CamelotDex interface
   function onNFTAddToPosition(address operator, uint256 tokenId, uint256 lpAmount) external override returns (bool) {
     return true;
   }
-  // NFTPool interface
+  // CamelotDex interface
 
   function onNFTHarvest(
     address operator,
@@ -244,7 +250,7 @@ contract NFTPoolProxyHandler is INFTHandler {
     return true;
   }
 
-  // NFTPool interface
+  // CamelotDex interface
   function onNFTWithdraw(address operator, uint256 tokenId, uint256 lpAmount) external override returns (bool) {
     return true;
   }

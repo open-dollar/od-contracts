@@ -342,6 +342,7 @@ contract BasicActions is CommonActions, IBasicActions {
   }
 
   /// @inheritdoc IBasicActions
+  // TODO: Open the save and lock the token, after this trasnsfer from from the vault
   function openLockTokenCollateralAndGenerateDebt(
     address _manager,
     address _collateralJoin,

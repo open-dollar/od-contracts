@@ -17,7 +17,7 @@ import './interfaces/tokens/IXGrailToken.sol';
 /*
  * This contract wraps ERC20 assets into non-fungible staking positions called spNFTs
  * spNFTs add the possibility to create an additional layer on liquidity providing lock features
- * spNFTs are yield-generating positions when the NFTPool contract has allocations from the Camelot Master
+ * spNFTs are yield-generating positions when the CamelotDex contract has allocations from the Camelot Master
  */
 contract NFTPool is ReentrancyGuard, INFTPool, ERC721('Camelot staking position NFT', 'spNFT') {
   using Address for address;
