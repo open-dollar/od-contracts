@@ -14,7 +14,6 @@ contract JoinCType is CTypeBase {
   function run() public {
     vm.startBroadcast(vm.envUint('ARB_SEPOLIA_PK'));
     collateralJoinFactory.deployCollateralJoin(cType, cAddr); // ICollateralJoin
-    collateralAuctionHouseFactory.deployCollateralAuctionHouse(cType, _cahCParams);
     vm.stopBroadcast();
   }
 }
