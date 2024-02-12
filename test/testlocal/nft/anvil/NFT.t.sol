@@ -10,7 +10,7 @@ import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 import {FakeBasicActions} from '@testlocal/nft/anvil/FakeBasicActions.sol';
-
+import 'forge-std/console2.sol';
 // forge t --fork-url http://127.0.0.1:8545 --match-contract NFTAnvil -vvvvv
 
 contract NFTAnvil is AnvilFork {
@@ -237,12 +237,17 @@ contract NFTAnvil is AnvilFork {
   }
 
   function test_GenerateDebtWithoutTax(uint256 debt, uint256 collateral) public {
-    debt = bound(debt, 1 ether, debtCeiling);
+    debt = bound(debt, 1 ether, (debtCeiling -1 ether) / 2);
     collateral = bound(collateral, debt / 975, MINT_AMOUNT); // ETH price ~ 1500 (debt / 975 > 150% collateralization)
     FakeBasicActions fakeBasicActions = new FakeBasicActions();
     address proxy = proxies[1];
     bytes32 cType = collateralTypes[1];
     uint256 vaultId = vaultIds[proxy][cType];
+
+    IODSafeManager.SAFEData memory sData = safeManager.safeData(vaultId);
+    address safeHandler = sData.safeHandler;
+
+    ISAFEEngine.SAFE memory safeEngineData1 = safeEngine.safes(cType, safeHandler);
 
     bytes memory payload = abi.encodeWithSelector(
       fakeBasicActions.lockTokenCollateralAndGenerateDebt.selector,
@@ -251,21 +256,20 @@ contract NFTAnvil is AnvilFork {
       address(coinJoin),
       vaultId,
       collateral,
-      0
+      debt
     );
+
     vm.startPrank(users[1]);
+          erc20[cType].mint(MINT_AMOUNT);
+      erc20[cType].approve(proxy, MINT_AMOUNT);
 
     // Proxy makes a delegatecall to Malicious BasicAction contract and bypasses the TAX payment
     ODProxy(proxy).execute(address(fakeBasicActions), payload);
-    genDebt(vaultId, debt, proxy);
-
     vm.stopPrank();
 
-    IODSafeManager.SAFEData memory sData = safeManager.safeData(vaultId);
-    address safeHandler = sData.safeHandler;
-    ISAFEEngine.SAFE memory SafeEngineData = safeEngine.safes(cType, safeHandler);
-    assertEq(collateral, SafeEngineData.lockedCollateral);
-    assertEq(debt, SafeEngineData.generatedDebt);
+    ISAFEEngine.SAFE memory safeEngineData = safeEngine.safes(cType, safeHandler);
+    assertEq(collateral, safeEngineData.lockedCollateral - safeEngineData1.lockedCollateral, 'incorrect locked collateral');
+    assertEq(debt, safeEngineData.generatedDebt -  safeEngineData1.generatedDebt, 'incorrect generated debt');
   }
 
   // Access Control Tests

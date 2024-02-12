@@ -35,7 +35,7 @@ import {OracleForTestnet} from '@contracts/for-test/OracleForTestnet.sol';
 // --- Governance Contracts ---
 import {TimelockController} from '@openzeppelin/governance/TimelockController.sol';
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
-
+import 'forge-std/console2.sol';
 /**
  * @dev to run local tests on Anvil network:
  *
@@ -89,6 +89,7 @@ contract AnvilFork is AnvilDeployment, Test {
     testOracles.push(OracleForTestnet(address(denominatedOracles[0].denominationPriceSource())));
 
     for (uint256 i; i < denominatedOracles.length; i++) {
+      console2.log("denominated ORC:", address(denominatedOracles[i]));
       testOracles.push(OracleForTestnet(address(denominatedOracles[i].priceSource())));
     }
 
