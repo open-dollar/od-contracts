@@ -78,6 +78,7 @@ contract Base is HaiTest {
     _data.safeEngineData.generatedDebt = _data.safeEngineData.generatedDebt * WAD;
     _data.safeEngineCollateralData.accumulatedRate = _data.safeEngineCollateralData.accumulatedRate * WAD;
     vm.assume(_data.timestamp > 1_000_000_000 && _data.timestamp < 9_000_000_000);
+    _data.taxData.nextStabilityFee = RAY - 2;
     _;
   }
 
