@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {
-  ModifiablePerCollateralForTest, IModifiablePerCollateral
-} from '../mocks/ModifiablePerCollateralForTest.sol';
+import {ModifiablePerCollateralForTest, IModifiablePerCollateral} from '../mocks/ModifiablePerCollateralForTest.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {ODTest, stdStorage, StdStorage} from '../utils/ODTest.t.sol';
 
