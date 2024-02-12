@@ -12,7 +12,7 @@ import {TestScripts} from '@script/testScripts/user/utils/TestScripts.s.sol';
 contract GenerateDebt is TestScripts {
   function run() public {
     vm.startBroadcast(vm.envUint('ARB_SEPOLIA_PK'));
-    address proxy = address(deployOrFind(USER2));
+    address proxy = address(deployOrFind(USER1));
     genDebt(SAFE, DEBT, proxy);
     vm.stopBroadcast();
   }

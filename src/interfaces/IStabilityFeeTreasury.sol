@@ -9,7 +9,7 @@ import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 
-interface IStabilityFeeTreasury is IAuthorizable, IModifiable, IDisableable {
+interface IStabilityFeeTreasury is IAuthorizable, IDisableable, IModifiable {
   // --- Events ---
 
   /**
