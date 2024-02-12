@@ -6,6 +6,7 @@ import {INFTHandler} from '@contracts/for-test/CamelotDex/interfaces/INFTHandler
 import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
 import {IERC721} from '@openzeppelin/token/ERC721/IERC721.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
+import {Initializable} from '@openzeppelin/proxy/utils/Initializable.sol';
 
 interface CamelotRouterV2 {
   function removeLiquidity(
@@ -82,29 +83,33 @@ interface ILiquidityPool {
 }
 
 /**
- * @title  NFTPoolProxyHandler
+ * @title  NFTPoolHandler
  * @notice This contract will unwinds the CamelotDex position and transfer the tokens to the user ODProxy to be deposit on OD protocol
  * @dev This contract is meant to be used by users that already have ODProxy contract
  */
-contract NFTPoolProxyHandler is INFTHandler {
+contract NFTPoolHandler is INFTHandler, Initializable {
   error NFT_HANDLER_POSITION_AMOUNT_ZERO();
   error NTF_HANDLER_ROUTER_NOT_SET();
 
-  ODProxy public immutable odProxy;
+  ODProxy public odProxy;
   address public immutable nftPool;
-  address public immutable proxyOwner; // don't call ODProxy.OWNER() multi times to save gas
+  address public proxyOwner; // don't call ODProxy.OWNER() multi times to save gas
   address public immutable router; // depending on the version of the pool can be router v2 or v3
 
   modifier onlyOwner() {
-    require(msg.sender == proxyOwner, 'NFTPoolProxyHandler: only ODProxy');
+    require(msg.sender == proxyOwner, 'NFTPoolHandler: only ODProxy');
     _;
   }
 
-  // add more checks for each address
-  constructor(ODProxy _odProxy, address _nftPool, address _router) {
-    odProxy = _odProxy;
+  constructor(address _nftPool, address _router) {
     nftPool = _nftPool;
     router = _router;
+    _disableInitializers();
+  }
+
+  // add more checks for each address
+  function initialize(ODProxy _odProxy) external initializer {
+    odProxy = _odProxy;
     proxyOwner = _odProxy.OWNER();
     assert(proxyOwner != address(0));
   }
@@ -157,55 +162,9 @@ contract NFTPoolProxyHandler is INFTHandler {
     // approve router
     //IERC20(address(liquidityPool)).approve(router, shares);
 
-   // CamelotRouterV2(router).removeLiquidity(
-   //   liquidityPool.token0(), liquidityPool.token1(), shares, amount0Min, amount1Min, address(odProxy), block.timestamp
+    // CamelotRouterV2(router).removeLiquidity(
+    //   liquidityPool.token0(), liquidityPool.token1(), shares, amount0Min, amount1Min, address(odProxy), block.timestamp
     //);
-
-    return true;
-  }
-  /**
-   * @notice Withdraws from a V3 position and sends underlying tokens to the ODProxy.
-   * @param tokenId ID of the NFT representing the position.
-   * @param amount0Min Minimum amount of token0 expected to prevent slippage.
-   * @param amount1Min Minimum amount of token1 expected to prevent slippage.
-   * @return True on success.
-   */
-
-  function withdrawFromPositionV3(
-    uint256 tokenId,
-    uint256 amount0Min,
-    uint256 amount1Min
-  ) public onlyOwner returns (bool) {
-    uint128 liquidity = _getPositionLiquidityV3(tokenId);
-    if (liquidity == 0) {
-      revert NFT_HANDLER_POSITION_AMOUNT_ZERO();
-    }
-
-    NFTPool(nftPool).transferFrom(msg.sender, address(this), tokenId);
-    IERC721(nftPool).approve(router, tokenId);
-
-    INonfungiblePositionManager positionManager = INonfungiblePositionManager(nftPool);
-
-    // Decrease liquidity
-    positionManager.decreaseLiquidity(
-      INonfungiblePositionManager.DecreaseLiquidityParams({
-        tokenId: tokenId,
-        liquidity: liquidity,
-        amount0Min: amount0Min,
-        amount1Min: amount1Min,
-        deadline: block.timestamp
-      })
-    );
-
-    // Collect the tokens
-    positionManager.collect(
-      INonfungiblePositionManager.CollectParams({
-        tokenId: tokenId,
-        recipient: address(odProxy),
-        amount0Max: type(uint128).max,
-        amount1Max: type(uint128).max
-      })
-    );
 
     return true;
   }
