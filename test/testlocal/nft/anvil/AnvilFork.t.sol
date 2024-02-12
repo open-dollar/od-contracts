@@ -31,11 +31,12 @@ import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 import {IDenominatedOracle} from '@interfaces/oracles/IDenominatedOracle.sol';
 import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
 import {OracleForTestnet} from '@contracts/for-test/OracleForTestnet.sol';
+import {IDenominatedOracleFactory} from '@interfaces/factories/IDenominatedOracleFactory.sol';
 
 // --- Governance Contracts ---
 import {TimelockController} from '@openzeppelin/governance/TimelockController.sol';
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
-
+import 'forge-std/console2.sol';
 /**
  * @dev to run local tests on Anvil network:
  *
@@ -44,6 +45,7 @@ import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
  *
  * forge t --fork-url http://127.0.0.1:8545  --match-contract ContractToTest -vvvvv
  */
+
 contract AnvilFork is AnvilDeployment, Test {
   uint256 public constant MINT_AMOUNT = 1_000_000 * 1 ether;
 
@@ -76,7 +78,6 @@ contract AnvilFork is AnvilDeployment, Test {
 
     newUsers[0] = DAN;
     newUsers[1] = ERICA;
-
     denominatedOracles.push(IDenominatedOracle(DenominatedOracleChild_10_Address));
     denominatedOracles.push(IDenominatedOracle(DenominatedOracleChild_12_Address));
     denominatedOracles.push(IDenominatedOracle(DenominatedOracleChild_14_Address));
@@ -86,7 +87,7 @@ contract AnvilFork is AnvilDeployment, Test {
     delayedOracles.push(IDelayedOracle(DelayedOracleChild_17_Address));
     delayedOracles.push(IDelayedOracle(DelayedOracleChild_18_Address));
 
-    testOracles.push(OracleForTestnet(address(denominatedOracles[0].denominationPriceSource())));
+    testOracles.push(OracleForTestnet(address(denominatedOracles[0].priceSource())));
 
     for (uint256 i; i < denominatedOracles.length; i++) {
       testOracles.push(OracleForTestnet(address(denominatedOracles[i].priceSource())));
