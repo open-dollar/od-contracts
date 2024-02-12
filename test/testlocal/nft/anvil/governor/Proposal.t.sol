@@ -371,7 +371,7 @@ contract GovernanceProposalAnvil is AnvilFork {
 
     description = 'Add collateral type';
 
-    descriptionHash = keccak256(abi.encode(description));
+    descriptionHash = keccak256(bytes(description));
   }
 
   function generateUpdateNFTRendererProposalParams()
@@ -465,7 +465,7 @@ contract GovernanceProposalAnvil is AnvilFork {
 
     description = 'Update PID Controller';
 
-    descriptionHash = keccak256(abi.encode(description));
+    descriptionHash = keccak256(bytes(description));
   }
 
   function generateUpdateBlockDelayProposalParams(uint8 blockDelay)

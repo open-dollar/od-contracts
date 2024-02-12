@@ -30,7 +30,6 @@ fs.readFile(filePath, "utf8", (err, data) => {
       // Factory children
       curr.additionalContracts.forEach((contract) => {
         if (contract.address && contract.transactionType === "CREATE") {
-          // let contractName = curr.contractName.replace("Factory", "Child");
           if (
             curr.contractName.includes("CollateralAuctionHouseFactory") ||
             curr.contractName.includes("CollateralJoinFactory")
@@ -64,7 +63,7 @@ const createAnvilDeploymentsFile = (contracts) => {
   const addressText = Object.keys(contracts).reduce((acc, curr) => {
     acc += `  address public ${curr}_Address = ${contracts[curr]};\n`;
     return acc;
-  }, ""); 
+  }, "");
 
   const outputPath = path.join(
     __dirname,

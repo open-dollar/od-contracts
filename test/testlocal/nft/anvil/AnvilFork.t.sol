@@ -36,7 +36,7 @@ import {IDenominatedOracleFactory} from '@interfaces/factories/IDenominatedOracl
 // --- Governance Contracts ---
 import {TimelockController} from '@openzeppelin/governance/TimelockController.sol';
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
-import 'forge-std/console2.sol';
+
 /**
  * @dev to run local tests on Anvil network:
  *
@@ -45,7 +45,6 @@ import 'forge-std/console2.sol';
  *
  * forge t --fork-url http://127.0.0.1:8545  --match-contract ContractToTest -vvvvv
  */
-
 contract AnvilFork is AnvilDeployment, Test {
   uint256 public constant MINT_AMOUNT = 1_000_000 * 1 ether;
 
@@ -87,7 +86,7 @@ contract AnvilFork is AnvilDeployment, Test {
     delayedOracles.push(IDelayedOracle(DelayedOracleChild_17_Address));
     delayedOracles.push(IDelayedOracle(DelayedOracleChild_18_Address));
 
-    testOracles.push(OracleForTestnet(address(denominatedOracles[0].priceSource())));
+    testOracles.push(OracleForTestnet(address(denominatedOracles[0].denominationPriceSource())));
 
     for (uint256 i; i < denominatedOracles.length; i++) {
       testOracles.push(OracleForTestnet(address(denominatedOracles[i].priceSource())));
