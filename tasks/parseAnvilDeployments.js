@@ -30,16 +30,17 @@ fs.readFile(filePath, "utf8", (err, data) => {
       // Factory children
       curr.additionalContracts.forEach((contract) => {
         if (contract.address && contract.transactionType === "CREATE") {
-          // let contractName = curr.contractName.replace("Factory", "Child");
+
           if (
             curr.contractName.includes("CollateralAuctionHouseFactory") ||
             curr.contractName.includes("CollateralJoinFactory")
           ) {
+
             name = curr.contractName.includes("CollateralAuctionHouseFactory") ? "CollateralAuctionHouseChild" : "CollateralJoinChild"
+
             // Appends the collateral type
             name = name + "_" + curr.arguments[0];
           }
-
           if (
             curr.contractName.includes("DelayedOracleFactory")
           ) {

@@ -12,6 +12,7 @@ import {ICollateralAuctionHouseFactory} from '@interfaces/factories/ICollateralA
 import {WAD} from '@libraries/Math.sol';
 import {IGovernor} from '@openzeppelin/governance/IGovernor.sol';
 import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
+import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
 // forge t --fork-url http://127.0.0.1:8545 --match-contract GovernanceProposalAnvil -vvvvv
 
@@ -230,32 +231,79 @@ contract GovernanceProposalAnvil is AnvilFork {
   }
 
   function testUpdatePidControllerProposal() public {
-    (
-      address[] memory targets,
-      uint256[] memory values,
-      bytes[] memory calldatas,
-      string memory description,
-      bytes32 descriptionHash
-    ) = generateUpdatePidControllerProposalParams(
-      UpdatePidControllerParams({
-        seedProposer: address(365_420_690),
-        noiseBarrier: 1,
-        integralPeriodSize: 1,
-        feedbackOutputUpperBound: 1,
-        feedbackOutputLowerBound: -1,
-        perSecondCumulativeLeak: 1,
-        kp: 1,
-        ki: 1
-      })
-    );
+    UpdatePidControllerParams memory _params = UpdatePidControllerParams({
+      seedProposer: address(365_420_690),
+      noiseBarrier: 1,
+      integralPeriodSize: 1,
+      feedbackOutputUpperBound: 1,
+      feedbackOutputLowerBound: -1,
+      perSecondCumulativeLeak: 1,
+      kp: int256(1),
+      ki: int256(0)
+    });
+
+    string[9] memory paramString = [
+      'seedProposer',
+      'noiseBarrier',
+      'integralPeriodSize',
+      'feedbackOutputUpperBound',
+      'feedbackOutputLowerBound',
+      'perSecondCumulativeLeak',
+      'kp',
+      'ki',
+      'priceDeviationCumulative'
+    ];
 
     address[] memory authorizedAccounts = pidController.authorizedAccounts();
-    ODGovernor dao = ODGovernor(payable(ODGovernor_Address));
     vm.startPrank(authorizedAccounts[0]);
-    pidController.addAuthorization(address(dao));
+    pidController.modifyParameters(_convertStringToBytes32(paramString[0]), abi.encode(_params.seedProposer));
+    pidController.modifyParameters(_convertStringToBytes32(paramString[1]), abi.encode(_params.noiseBarrier));
+    pidController.modifyParameters(_convertStringToBytes32(paramString[2]), abi.encode(_params.integralPeriodSize));
+    pidController.modifyParameters(
+      _convertStringToBytes32(paramString[3]), abi.encode(_params.feedbackOutputUpperBound)
+    );
+    pidController.modifyParameters(
+      _convertStringToBytes32(paramString[4]), abi.encode(_params.feedbackOutputLowerBound)
+    );
+    pidController.modifyParameters(_convertStringToBytes32(paramString[5]), abi.encode(_params.perSecondCumulativeLeak));
+    pidController.modifyParameters(_convertStringToBytes32(paramString[6]), abi.encode(_params.kp));
+    pidController.modifyParameters(_convertStringToBytes32(paramString[7]), abi.encode(_params.ki));
+    pidController.modifyParameters(_convertStringToBytes32(paramString[8]), abi.encode(int256(1)));
     vm.stopPrank();
+    assertEq(pidController.seedProposer(), address(365_420_690), 'incorrect seed proposer');
+    assertEq(pidController.params().noiseBarrier, _params.noiseBarrier, 'incorrect noiseBarrier');
+    assertEq(pidController.params().integralPeriodSize, _params.integralPeriodSize, 'incorrect integralPeriodSize');
+    assertEq(
+      pidController.params().feedbackOutputUpperBound,
+      _params.feedbackOutputUpperBound,
+      'incorrect feedbackOutputUpperBound'
+    );
+    assertEq(
+      pidController.params().feedbackOutputLowerBound,
+      _params.feedbackOutputLowerBound,
+      'incorrect feedbackOutputLowerBound'
+    );
+    assertEq(
+      pidController.params().perSecondCumulativeLeak,
+      _params.perSecondCumulativeLeak,
+      'incorrect perSecondCumulativeLeak'
+    );
+    assertEq(pidController.controllerGains().kp, _params.kp, 'incorrect kp');
+    assertEq(pidController.controllerGains().ki, _params.ki, 'incorrect ki');
+    assertEq(pidController.deviationObservation().integral, int256(1), 'incorrect deviationObservation');
+  }
 
-    _helperExecuteProp(targets, values, calldatas, description, descriptionHash);
+  function testUpdatePidControllerProposalRevert() public {
+    address[] memory authorizedAccounts = pidController.authorizedAccounts();
+    vm.expectRevert(IModifiable.UnrecognizedParam.selector);
+    vm.prank(authorizedAccounts[0]);
+    pidController.modifyParameters(_convertStringToBytes32('unrecognized param'), abi.encode(100));
+  }
+
+  function _convertStringToBytes32(string memory stringToConvert) internal pure returns (bytes32 bytes32String) {
+    assembly {
+      bytes32String := mload(add(stringToConvert, 32))
+    }
   }
 
   function testUpdateBlockDelayProposal(uint8 blockDelay) public {
@@ -355,8 +403,8 @@ contract GovernanceProposalAnvil is AnvilFork {
     uint256 feedbackOutputUpperBound;
     int256 feedbackOutputLowerBound;
     uint256 perSecondCumulativeLeak;
-    uint256 kp;
-    uint256 ki;
+    int256 kp;
+    int256 ki;
   }
 
   function generateUpdatePidControllerProposalParams(UpdatePidControllerParams memory params)

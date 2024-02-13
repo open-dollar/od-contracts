@@ -131,4 +131,4 @@ contract OverflowChecker {
   }
 }
 
-abstract contract HaiTest is DSTestPlus, OverflowChecker {}
+abstract contract ODTest is DSTestPlus, OverflowChecker {}

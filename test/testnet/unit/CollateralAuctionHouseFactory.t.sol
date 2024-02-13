@@ -15,9 +15,9 @@ import {IModifiablePerCollateral} from '@interfaces/utils/IModifiablePerCollater
 import {IFactoryChild} from '@interfaces/factories/IFactoryChild.sol';
 import {WAD} from '@libraries/Math.sol';
 import {Assertions} from '@libraries/Assertions.sol';
-import {HaiTest, stdStorage, StdStorage} from '@testnet/utils/HaiTest.t.sol';
+import {ODTest, stdStorage, StdStorage} from '@testnet/utils/ODTest.t.sol';
 
-abstract contract Base is HaiTest {
+abstract contract Base is ODTest {
   using stdStorage for StdStorage;
 
   address deployer = label('deployer');

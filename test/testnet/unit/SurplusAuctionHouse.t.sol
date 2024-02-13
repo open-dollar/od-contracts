@@ -9,12 +9,12 @@ import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
 import {SurplusAuctionHouseForTest, ISurplusAuctionHouse} from '@testnet/mocks/SurplusAuctionHouseForTest.sol';
 import {ICommonSurplusAuctionHouse} from '@interfaces/ICommonSurplusAuctionHouse.sol';
-import {HaiTest, stdStorage, StdStorage} from '@testnet/utils/HaiTest.t.sol';
+import {ODTest, stdStorage, StdStorage} from '@testnet/utils/ODTest.t.sol';
 
 import {Math, WAD} from '@libraries/Math.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 
-abstract contract Base is HaiTest {
+abstract contract Base is ODTest {
   using stdStorage for StdStorage;
 
   struct SurplusAuction {

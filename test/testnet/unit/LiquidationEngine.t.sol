@@ -13,13 +13,13 @@ import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {LiquidationEngine} from '@contracts/LiquidationEngine.sol';
 import {LiquidationEngineForTest} from '@testnet/mocks/LiquidationEngineForTest.sol';
 import {DummyCollateralAuctionHouse} from '@testnet/mocks/CollateralAuctionHouseForTest.sol';
-import {HaiTest} from '@testnet/utils/HaiTest.t.sol';
+import {ODTest} from '@testnet/utils/ODTest.t.sol';
 import {StdStorage, stdStorage} from 'forge-std/StdStorage.sol';
 
 import {Math, MAX_RAD, RAY, WAD} from '@libraries/Math.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 
-abstract contract Base is HaiTest {
+abstract contract Base is ODTest {
   using stdStorage for StdStorage;
 
   uint256 auctionId = 123_456;

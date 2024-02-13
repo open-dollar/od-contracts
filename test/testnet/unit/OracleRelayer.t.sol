@@ -12,7 +12,7 @@ import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IModifiablePerCollateral} from '@interfaces/utils/IModifiablePerCollateral.sol';
 
-import {HaiTest} from '@testnet/utils/HaiTest.t.sol';
+import {ODTest} from '@testnet/utils/ODTest.t.sol';
 import {OracleRelayer} from '@contracts/OracleRelayer.sol';
 import {SAFEEngine} from '@contracts/SAFEEngine.sol';
 import {OracleForTest} from '@testnet/mocks/OracleForTest.sol';
@@ -21,7 +21,7 @@ import {OracleRelayerForTest, OracleRelayerForInternalCallsTest} from '@testnet/
 import {Math, RAY, WAD} from '@libraries/Math.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 
-abstract contract Base is HaiTest {
+abstract contract Base is ODTest {
   using stdStorage for StdStorage;
 
   IOracleRelayer oracleRelayer;
