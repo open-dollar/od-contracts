@@ -11,6 +11,7 @@ fs.readFile(filePath, "utf8", (err, data) => {
   const dataObj = JSON.parse(data);
   const contracts = dataObj.transactions.reduce((acc, curr, index) => {
     const { contractAddress, contractName, transactionType } = curr;
+
     if (contractAddress && contractName && transactionType.includes("CREATE")) {
       // Protocol contracts
       let name = contractName;
@@ -25,27 +26,29 @@ fs.readFile(filePath, "utf8", (err, data) => {
       acc[name] = contractAddress;
     }
     if (curr.additionalContracts.length) {
+      let name;
       // Factory children
       curr.additionalContracts.forEach((contract) => {
         if (contract.address && contract.transactionType === "CREATE") {
-          let contractName = curr.contractName.replace("Factory", "Child");
           if (
-            curr.contractName === "CollateralAuctionHouseFactory" ||
-            curr.contractName == "CollateralJoinFactory"
+            curr.contractName.includes("CollateralAuctionHouseFactory") ||
+            curr.contractName.includes("CollateralJoinFactory")
           ) {
+            name = curr.contractName.includes("CollateralAuctionHouseFactory") ? "CollateralAuctionHouseChild" : "CollateralJoinChild";
             // Appends the collateral type
-            contractName = contractName + "_" + curr.arguments[0];
+            name = name + "_" + curr.arguments[0];
           }
-
           if (
-            curr.contractName === "DelayedOracleFactory" ||
-            curr.contractName === "DenominatedOracleFactory" ||
-            curr.contractName.includes("RelayerFactory")
+            curr.contractName.includes("DelayedOracleFactory")
           ) {
-            contractName = contractName + "_" + index;
+            name = "DelayedOracleChild" + "_" + index;
+          } else if (  curr.contractName.includes("DenominatedOracleFactory") ){
+            name = "DenominatedOracleChild" + "_" + index;
+          } else if( curr.contractName.includes("RelayerFactory") ){
+            name = "RelayerChild" + "_" + index;
           }
 
-          acc[contractName] = contract.address;
+          acc[name] = contract.address;
         }
       });
     }

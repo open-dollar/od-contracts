@@ -31,6 +31,7 @@ import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 import {IDenominatedOracle} from '@interfaces/oracles/IDenominatedOracle.sol';
 import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
 import {OracleForTestnet} from '@contracts/for-test/OracleForTestnet.sol';
+import {IDenominatedOracleFactory} from '@interfaces/factories/IDenominatedOracleFactory.sol';
 
 // --- Governance Contracts ---
 import {TimelockController} from '@openzeppelin/governance/TimelockController.sol';
@@ -76,7 +77,6 @@ contract AnvilFork is AnvilDeployment, Test {
 
     newUsers[0] = DAN;
     newUsers[1] = ERICA;
-
     denominatedOracles.push(IDenominatedOracle(DenominatedOracleChild_10_Address));
     denominatedOracles.push(IDenominatedOracle(DenominatedOracleChild_12_Address));
     denominatedOracles.push(IDenominatedOracle(DenominatedOracleChild_14_Address));
