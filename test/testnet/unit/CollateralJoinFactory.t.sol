@@ -12,9 +12,9 @@ import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IFactoryChild} from '@interfaces/factories/IFactoryChild.sol';
 import {Assertions} from '@libraries/Assertions.sol';
-import {HaiTest, stdStorage, StdStorage} from '@testnet/utils/HaiTest.t.sol';
+import {ODTest, stdStorage, StdStorage} from '@testnet/utils/ODTest.t.sol';
 
-abstract contract Base is HaiTest {
+abstract contract Base is ODTest {
   using stdStorage for StdStorage;
 
   address deployer = label('deployer');
@@ -227,6 +227,11 @@ contract Unit_CollateralJoinFactory_DeployDelegatableCollateralJoin is Base {
     assertEq(address(collateralJoinChild.safeEngine()), address(mockSafeEngine));
     assertEq(address(collateralJoinChild.collateral()), address(mockCollateral));
     assertEq(collateralJoinChild.collateralType(), _cType);
+  }
+
+  function test_Revert_NullDelegatee(bytes32 _cType, uint8 _decimals) public happyPath(_decimals) {
+    vm.expectRevert(Assertions.NullAddress.selector);
+    collateralJoinFactory.deployDelegatableCollateralJoin(_cType, address(mockCollateral), address(0));
   }
 
   function test_Set_CollateralTypes(bytes32 _cType, uint8 _decimals) public happyPath(_decimals) {

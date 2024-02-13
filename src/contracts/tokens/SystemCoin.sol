@@ -32,11 +32,6 @@ contract SystemCoin is ERC20Upgradeable, AuthorizableUpgradeable, ISystemCoin {
   function burn(uint256 _wad) external {
     _burn(msg.sender, _wad);
   }
-
-  /// @inheritdoc ISystemCoin
-  function burn(address _usr, uint256 _wad) external isAuthorized {
-    _burn(_usr, _wad);
-  }
 }
 
 contract OpenDollar is SystemCoin {}

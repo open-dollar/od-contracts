@@ -10,8 +10,9 @@ import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
+import {IModifiablePerCollateral} from '@interfaces/utils/IModifiablePerCollateral.sol';
 
-import {HaiTest} from '@testnet/utils/HaiTest.t.sol';
+import {ODTest} from '@testnet/utils/ODTest.t.sol';
 import {OracleRelayer} from '@contracts/OracleRelayer.sol';
 import {SAFEEngine} from '@contracts/SAFEEngine.sol';
 import {OracleForTest} from '@testnet/mocks/OracleForTest.sol';
@@ -20,7 +21,7 @@ import {OracleRelayerForTest, OracleRelayerForInternalCallsTest} from '@testnet/
 import {Math, RAY, WAD} from '@libraries/Math.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 
-abstract contract Base is HaiTest {
+abstract contract Base is ODTest {
   using stdStorage for StdStorage;
 
   IOracleRelayer oracleRelayer;
@@ -858,7 +859,7 @@ contract Unit_OracleRelayer_InitializeCollateralType is Base {
     bytes32 _cType,
     IOracleRelayer.OracleRelayerCollateralParams memory _oracleRelayerCParams
   ) public authorized happyPath(_oracleRelayerCParams) {
-    oracleRelayer.initializeCollateralType(_cType, _oracleRelayerCParams);
+    oracleRelayer.initializeCollateralType(_cType, abi.encode(_oracleRelayerCParams));
 
     assertEq(abi.encode(oracleRelayer.cParams(_cType)), abi.encode(_oracleRelayerCParams));
   }
@@ -871,7 +872,7 @@ contract Unit_OracleRelayer_InitializeCollateralType is Base {
 
     vm.expectRevert(Assertions.NullAddress.selector);
 
-    oracleRelayer.initializeCollateralType(_cType, _oracleRelayerCParams);
+    oracleRelayer.initializeCollateralType(_cType, abi.encode(_oracleRelayerCParams));
   }
 
   function test_Revert_Oracle_NonDelayedOracle(
@@ -882,7 +883,7 @@ contract Unit_OracleRelayer_InitializeCollateralType is Base {
 
     vm.expectRevert();
     // NOTE: doesn't mockCall for `priceSource`
-    oracleRelayer.initializeCollateralType(_cType, _oracleRelayerCParams);
+    oracleRelayer.initializeCollateralType(_cType, abi.encode(_oracleRelayerCParams));
   }
 
   function test_Revert_SafetyCRatio_NotGreaterOrEqualThan(
@@ -903,7 +904,7 @@ contract Unit_OracleRelayer_InitializeCollateralType is Base {
       )
     );
 
-    oracleRelayer.initializeCollateralType(_cType, _oracleRelayerCParams);
+    oracleRelayer.initializeCollateralType(_cType, abi.encode(_oracleRelayerCParams));
   }
 
   function test_Revert_LiquidationCRatio_NotGreaterOrEqualThan(
@@ -921,7 +922,7 @@ contract Unit_OracleRelayer_InitializeCollateralType is Base {
       abi.encodeWithSelector(Assertions.NotGreaterOrEqualThan.selector, _oracleRelayerCParams.liquidationCRatio, RAY)
     );
 
-    oracleRelayer.initializeCollateralType(_cType, _oracleRelayerCParams);
+    oracleRelayer.initializeCollateralType(_cType, abi.encode(_oracleRelayerCParams));
   }
 
   function test_Revert_NotAuthorized(
@@ -930,7 +931,7 @@ contract Unit_OracleRelayer_InitializeCollateralType is Base {
   ) public {
     vm.expectRevert(IAuthorizable.Unauthorized.selector);
 
-    oracleRelayer.initializeCollateralType(_cType, _oracleRelayerCParams);
+    oracleRelayer.initializeCollateralType(_cType, abi.encode(_oracleRelayerCParams));
   }
 
   function test_Revert_CollateralTypeAlreadyInitialized(
@@ -939,8 +940,8 @@ contract Unit_OracleRelayer_InitializeCollateralType is Base {
   ) public authorized {
     _mockCollateralList(_cType);
 
-    vm.expectRevert(IOracleRelayer.OracleRelayer_CollateralTypeAlreadyInitialized.selector);
+    vm.expectRevert(IModifiablePerCollateral.CollateralTypeAlreadyInitialized.selector);
 
-    oracleRelayer.initializeCollateralType(_cType, _oracleRelayerCParams);
+    oracleRelayer.initializeCollateralType(_cType, abi.encode(_oracleRelayerCParams));
   }
 }

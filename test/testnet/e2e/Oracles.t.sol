@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {HaiTest} from '@testnet/utils/HaiTest.t.sol';
+import {ODTest} from '@testnet/utils/ODTest.t.sol';
 import {IChainlinkOracle} from '@interfaces/oracles/IChainlinkOracle.sol';
 import {ChainlinkRelayer, IBaseOracle} from '@contracts/oracles/ChainlinkRelayer.sol';
 import {DenominatedOracle, IDenominatedOracle} from '@contracts/oracles/DenominatedOracle.sol';
@@ -15,7 +15,7 @@ import {
 
 import {Math, WAD} from '@libraries/Math.sol';
 
-contract OracleSetup is HaiTest {
+contract OracleSetup is ODTest {
   using Math for uint256;
 
   uint256 ARBTIRUM_BLOCK = 159_201_690; // (Dec-11-2023 11:29:40 PM +UTC)
@@ -148,6 +148,40 @@ contract OracleSetup is HaiTest {
 
     (_result,) = wethUsdDelayedOracle.getResultWithValidity();
     assertEq(_result, NEW_ETH_USD_PRICE_18_DECIMALS);
+  }
+
+  function test_DelayedOracleUpdateInvalidResult() public {
+    // The next update returns an invalid result (for the first 10 minutes)
+    vm.mockCall(
+      CHAINLINK_ETH_USD_FEED,
+      abi.encodeWithSelector(IChainlinkOracle.latestRoundData.selector),
+      abi.encode(uint80(0), int256(NEW_ETH_USD_PRICE), uint256(0), block.timestamp + 1 hours + 10 minutes, uint80(0))
+    );
+
+    bool _valid;
+    vm.warp(block.timestamp + 1 hours);
+    wethUsdDelayedOracle.updateResult();
+
+    // The 'next' feed is now the current feed, which will be valid
+    (, _valid) = wethUsdDelayedOracle.getResultWithValidity();
+    assertEq(_valid, true);
+    // The upcoming feed however is invalid
+    (, _valid) = wethUsdDelayedOracle.getNextResultWithValidity();
+    assertEq(_valid, false);
+
+    // After 10 minutes this result becomes valid and it's updated to reflect this
+    vm.warp(block.timestamp + 10 minutes);
+    wethUsdDelayedOracle.updateResult();
+
+    // The current feed should stay valid
+    (, _valid) = wethUsdDelayedOracle.getResultWithValidity();
+    assertEq(_valid, true);
+    // Check that the next feed now has also become valid
+    (, _valid) = wethUsdDelayedOracle.getNextResultWithValidity();
+    assertEq(_valid, true);
+
+    vm.warp(block.timestamp + 1 hours);
+    wethUsdDelayedOracle.updateResult();
   }
 
   function test_DelayedOracleSymbol() public {

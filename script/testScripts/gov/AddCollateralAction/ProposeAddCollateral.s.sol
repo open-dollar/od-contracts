@@ -51,8 +51,7 @@ contract ProposeAddCollateral is JSONScript {
     }
     // Get calldata for:
     //  - CollateralJoinFactory.deployCollateralJoin
-    //  - CollateralAuctionHouseFactory.deployCollateralAuctionHouse
-    bytes[] memory calldatas = new bytes[](2);
+    bytes[] memory calldatas = new bytes[](1);
     ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams = ICollateralAuctionHouse
       .CollateralAuctionHouseParams({
       minimumBid: minimumBid,
@@ -61,9 +60,6 @@ contract ProposeAddCollateral is JSONScript {
       perSecondDiscountUpdateRate: perSecondDiscountUpdateRate
     });
     calldatas[0] = abi.encodeWithSelector(ICollateralJoinFactory.deployCollateralJoin.selector, newCType, newCAddress);
-    calldatas[1] = abi.encodeWithSelector(
-      ICollateralAuctionHouseFactory.deployCollateralAuctionHouse.selector, newCType, _cahCParams
-    );
 
     // Get the description and descriptionHash
     string memory description = 'Add collateral to the system';

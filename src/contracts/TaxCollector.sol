@@ -6,6 +6,7 @@ import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {Modifiable} from '@contracts/utils/Modifiable.sol';
+import {ModifiablePerCollateral} from '@contracts/utils/ModifiablePerCollateral.sol';
 
 import {Assertions} from '@libraries/Assertions.sol';
 import {Encoding} from '@libraries/Encoding.sol';
@@ -16,7 +17,7 @@ import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
  * @title  TaxCollector
  * @notice This contract calculates and collects the stability fee from all collateral types
  */
-contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
+contract TaxCollector is Authorizable, Modifiable, ModifiablePerCollateral, ITaxCollector {
   using Math for uint256;
   using Encoding for bytes;
   using Assertions for uint256;
@@ -73,9 +74,6 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
     return _secondaryTaxReceivers[_cType][_receiver];
   }
 
-  /// @notice Enumerable set with the initialized collateral types
-  EnumerableSet.Bytes32Set internal _collateralList;
-
   /// @notice Enumerable set with the active secondary tax receivers
   EnumerableSet.AddressSet internal _secondaryReceivers;
 
@@ -89,19 +87,6 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
     safeEngine = ISAFEEngine(_safeEngine.assertNonNull());
     _params = _taxCollectorParams;
     _setPrimaryTaxReceiver(_taxCollectorParams.primaryTaxReceiver);
-  }
-
-  /// @inheritdoc ITaxCollector
-  function initializeCollateralType(
-    bytes32 _cType,
-    TaxCollectorCollateralParams memory _taxCollectorCParams
-  ) external isAuthorized validCParams(_cType) {
-    if (!_collateralList.add(_cType)) revert TaxCollector_CollateralTypeAlreadyInitialized();
-    _cData[_cType] =
-      TaxCollectorCollateralData({nextStabilityFee: RAY, updateTime: block.timestamp, secondaryReceiverAllotedTax: 0});
-    _cParams[_cType] = _taxCollectorCParams;
-
-    emit InitializeCollateralType(_cType);
   }
 
   // --- Tax Collection Utils ---
@@ -135,11 +120,7 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
         _rad = _rad + _debtAmount.mul(_deltaRate);
       }
     }
-    if (_rad < 0) {
-      _ok = _rad >= _primaryReceiverBalance;
-    } else {
-      _ok = true;
-    }
+    _ok = _rad >= 0 || _rad >= _primaryReceiverBalance;
   }
 
   /// @inheritdoc ITaxCollector
@@ -172,11 +153,6 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
   // --- Views ---
 
   /// @inheritdoc ITaxCollector
-  function collateralList() external view returns (bytes32[] memory __collateralList) {
-    return _collateralList.values();
-  }
-
-  /// @inheritdoc ITaxCollector
   function secondaryReceiversList() external view returns (address[] memory _secondaryReceiversList) {
     return _secondaryReceivers.values();
   }
@@ -204,7 +180,7 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
   function taxSingle(bytes32 _cType) public returns (uint256 _latestAccumulatedRate) {
     TaxCollectorCollateralData memory __cData = _cData[_cType];
 
-    if (block.timestamp <= __cData.updateTime) {
+    if (block.timestamp == __cData.updateTime) {
       _latestAccumulatedRate = safeEngine.cData(_cType).accumulatedRate;
       _cData[_cType].nextStabilityFee = _getNextStabilityFee(_cType);
       return _latestAccumulatedRate;
@@ -296,6 +272,15 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
 
   // --- Administration ---
 
+  /// @inheritdoc ModifiablePerCollateral
+  function _initializeCollateralType(bytes32 _cType, bytes memory _collateralParams) internal override {
+    TaxCollectorCollateralParams memory _taxCollectorCParams =
+      abi.decode(_collateralParams, (TaxCollectorCollateralParams));
+    _cData[_cType] =
+      TaxCollectorCollateralData({nextStabilityFee: RAY, updateTime: block.timestamp, secondaryReceiverAllotedTax: 0});
+    _cParams[_cType] = _taxCollectorCParams;
+  }
+
   /// @inheritdoc Modifiable
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     uint256 _uint256 = _data.toUint256();
@@ -307,7 +292,7 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
     else revert UnrecognizedParam();
   }
 
-  /// @inheritdoc Modifiable
+  /// @inheritdoc ModifiablePerCollateral
   function _modifyParameters(bytes32 _cType, bytes32 _param, bytes memory _data) internal override {
     if (!_collateralList.contains(_cType)) revert UnrecognizedCType();
     if (_param == 'stabilityFee') _cParams[_cType].stabilityFee = _data.toUint256();
@@ -324,7 +309,7 @@ contract TaxCollector is Authorizable, Modifiable, ITaxCollector {
     );
   }
 
-  /// @inheritdoc Modifiable
+  /// @inheritdoc ModifiablePerCollateral
   function _validateCParameters(bytes32 _cType) internal view override {
     _cParams[_cType].stabilityFee.assertGtEq(RAY - _params.maxStabilityFeeRange).assertLtEq(
       RAY + _params.maxStabilityFeeRange

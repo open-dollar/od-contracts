@@ -8,7 +8,7 @@ import {Params, ParamChecker, OD, ETH_A, JOB_REWARD} from '@script/Params.s.sol'
 
 abstract contract Common is Contracts, Params, Test {
   uint256 internal _chainId;
-  uint256 internal _deployerPk = 69; // for tests - from HAI
+  uint256 internal _deployerPk = 69; // for tests - from OD
   uint256 internal _governorPK;
   bytes32 internal _systemCoinSalt;
   bytes32 internal _vault721Salt;
@@ -35,9 +35,9 @@ abstract contract Common is Contracts, Params, Test {
     // deploy ETHJoin and CollateralAuctionHouse
     ethJoin = new ETHJoin(address(safeEngine), ETH_A);
 
+    collateralAuctionHouseFactory.initializeCollateralType(ETH_A, abi.encode(_collateralAuctionHouseParams[ETH_A]));
     collateralAuctionHouse[ETH_A] =
-      collateralAuctionHouseFactory.deployCollateralAuctionHouse(ETH_A, _collateralAuctionHouseParams[ETH_A]);
-
+      ICollateralAuctionHouse(collateralAuctionHouseFactory.collateralAuctionHouses(ETH_A));
     collateralJoin[ETH_A] = CollateralJoin(address(ethJoin));
     safeEngine.addAuthorization(address(ethJoin));
   }
@@ -56,8 +56,9 @@ abstract contract Common is Contracts, Params, Test {
       });
     }
 
+    collateralAuctionHouseFactory.initializeCollateralType(_cType, abi.encode(_collateralAuctionHouseParams[_cType]));
     collateralAuctionHouse[_cType] =
-      collateralAuctionHouseFactory.deployCollateralAuctionHouse(_cType, _collateralAuctionHouseParams[_cType]);
+      ICollateralAuctionHouse(collateralAuctionHouseFactory.collateralAuctionHouses(_cType));
   }
 
   function _revokeAllTo(address _governor) internal {
@@ -307,11 +308,11 @@ abstract contract Common is Contracts, Params, Test {
   }
 
   function _setupCollateral(bytes32 _cType) internal {
-    safeEngine.initializeCollateralType(_cType, _safeEngineCParams[_cType]);
-    oracleRelayer.initializeCollateralType(_cType, _oracleRelayerCParams[_cType]);
-    liquidationEngine.initializeCollateralType(_cType, _liquidationEngineCParams[_cType]);
+    safeEngine.initializeCollateralType(_cType, abi.encode(_safeEngineCParams[_cType]));
+    oracleRelayer.initializeCollateralType(_cType, abi.encode(_oracleRelayerCParams[_cType]));
+    liquidationEngine.initializeCollateralType(_cType, abi.encode(_liquidationEngineCParams[_cType]));
 
-    taxCollector.initializeCollateralType(_cType, _taxCollectorCParams[_cType]);
+    taxCollector.initializeCollateralType(_cType, abi.encode(_taxCollectorCParams[_cType]));
     if (_taxCollectorSecondaryTaxReceiver.receiver != address(0)) {
       taxCollector.modifyParameters(_cType, 'secondaryTaxReceiver', abi.encode(_taxCollectorSecondaryTaxReceiver));
     }

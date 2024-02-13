@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import '@script/Registry.s.sol';
 
-import {HaiTest} from '@testnet/utils/HaiTest.t.sol';
+import {ODTest} from '@testnet/utils/ODTest.t.sol';
 import {Deploy, DeployMainnet, DeploySepolia} from '@script/Deploy.s.sol';
 
 import {ParamChecker, WSTETH, ARB} from '@script/Params.s.sol';
@@ -17,7 +17,7 @@ import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 import {IODCreate2Factory} from '@interfaces/factories/IODCreate2Factory.sol';
 import {IProtocolToken} from '@contracts/tokens/ProtocolToken.sol';
 
-abstract contract CommonDeploymentTest is HaiTest, Deploy {
+abstract contract CommonDeploymentTest is ODTest, Deploy {
   // SAFEEngine
   function test_SAFEEngine_Auth() public {
     assertEq(safeEngine.authorizedAccounts(address(oracleRelayer)), true);

@@ -5,11 +5,12 @@ import {SAFEEngineForTest, ISAFEEngine} from '@testnet/mocks/SAFEEngineForTest.s
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
-import {HaiTest, stdStorage, StdStorage} from '@testnet/utils/HaiTest.t.sol';
+import {IModifiablePerCollateral} from '@interfaces/utils/IModifiablePerCollateral.sol';
+import {ODTest, stdStorage, StdStorage} from '../utils/ODTest.t.sol';
 
 import {Math, RAY, WAD} from '@libraries/Math.sol';
 
-abstract contract Base is HaiTest {
+abstract contract Base is ODTest {
   using stdStorage for StdStorage;
 
   // Test addresses
@@ -1607,7 +1608,7 @@ contract Unit_SAFEEngine_InitializeCollateralType is Base {
     bytes32 _cType,
     ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCParams
   ) public authorized {
-    safeEngine.initializeCollateralType(_cType, _safeEngineCParams);
+    safeEngine.initializeCollateralType(_cType, abi.encode(_safeEngineCParams));
 
     uint256 _accumulatedRate = safeEngine.cData(_cType).accumulatedRate;
     assertEq(_accumulatedRate, RAY);
@@ -1617,7 +1618,7 @@ contract Unit_SAFEEngine_InitializeCollateralType is Base {
     bytes32 _cType,
     ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCParams
   ) public authorized {
-    safeEngine.initializeCollateralType(_cType, _safeEngineCParams);
+    safeEngine.initializeCollateralType(_cType, abi.encode(_safeEngineCParams));
 
     assertEq(abi.encode(safeEngine.cParams(_cType)), abi.encode(_safeEngineCParams));
   }
@@ -1629,7 +1630,7 @@ contract Unit_SAFEEngine_InitializeCollateralType is Base {
     vm.expectEmit();
     emit InitializeCollateralType(_cType);
 
-    safeEngine.initializeCollateralType(_cType, _safeEngineCParams);
+    safeEngine.initializeCollateralType(_cType, abi.encode(_safeEngineCParams));
   }
 
   function test_Revert_NotAuthorized(
@@ -1638,7 +1639,7 @@ contract Unit_SAFEEngine_InitializeCollateralType is Base {
   ) public {
     vm.expectRevert(IAuthorizable.Unauthorized.selector);
 
-    safeEngine.initializeCollateralType(_cType, _safeEngineCParams);
+    safeEngine.initializeCollateralType(_cType, abi.encode(_safeEngineCParams));
   }
 
   function test_Revert_CollateralTypeAlreadyExists(
@@ -1647,20 +1648,19 @@ contract Unit_SAFEEngine_InitializeCollateralType is Base {
   ) public authorized {
     _mockCollateralList(_cType);
 
-    vm.expectRevert(ISAFEEngine.SAFEEng_CollateralTypeAlreadyExists.selector);
+    vm.expectRevert(IModifiablePerCollateral.CollateralTypeAlreadyInitialized.selector);
 
-    safeEngine.initializeCollateralType(_cType, _safeEngineCParams);
+    safeEngine.initializeCollateralType(_cType, abi.encode(_safeEngineCParams));
   }
 
   function test_Revert_ContractIsDisabled(
     bytes32 _cType,
     ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCParams
   ) public authorized {
-    _mockCollateralList(_cType);
     _mockContractEnabled(false);
 
     vm.expectRevert(IDisableable.ContractIsDisabled.selector);
 
-    safeEngine.initializeCollateralType(_cType, _safeEngineCParams);
+    safeEngine.initializeCollateralType(_cType, abi.encode(_safeEngineCParams));
   }
 }
