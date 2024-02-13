@@ -11,7 +11,7 @@ import {
   SURPLUS_AUCTION_BID_RECEIVER
 } from '@testnet/e2e/TestParams.t.sol';
 
-import {Math, RAY, YEAR} from '@libraries/Math.sol';
+import {Math, RAY, WAD, YEAR} from '@libraries/Math.sol';
 
 import {BaseUser} from '@testnet/scopes/BaseUser.t.sol';
 import {DirectUser} from '@testnet/scopes/DirectUser.t.sol';
@@ -256,6 +256,79 @@ abstract contract E2ETest is BaseUser, Base_CType, Common {
     _collectSystemCoins(address(this));
     assertEq(protocolToken.totalSupply(), INITIAL_BID / 2); // 50% of the bid is burned
     assertEq(protocolToken.balanceOf(SURPLUS_AUCTION_BID_RECEIVER), INITIAL_BID / 2); // 50% is sent to the receiver
+    assertEq(protocolToken.balanceOf(address(this)), 0);
+    assertEq(systemCoin.balanceOf(address(this)) - _initialBalance, _auction.amountToSell / RAY);
+  }
+
+  function test_surplus_auction_and_multi_bid() public {
+    _generateDebt(address(this), address(collateralJoin[_cType()]), int256(COLLATERAL_AMOUNT), int256(DEBT_AMOUNT));
+    uint256 _initialBalance = systemCoin.balanceOf(address(this));
+    uint256 INITIAL_BID = 1e18;
+    address other_user = label('other_user');
+
+    uint256 _bidIncrease = surplusAuctionHouse.params().bidIncrease;
+    uint256 _secondBid = INITIAL_BID * _bidIncrease / WAD;
+
+    // mint protocol tokens to bid with
+    vm.prank(deployer);
+    protocolToken.mint(other_user, INITIAL_BID);
+    vm.prank(deployer);
+    protocolToken.mint(address(this), _secondBid);
+
+    // generate surplus
+    _collectFees(_cType(), 10 * YEAR);
+
+    uint256 _auctionId = accountingEngine.auctionSurplus();
+    _increaseBidSize(other_user, _auctionId, INITIAL_BID);
+    _increaseBidSize(address(this), _auctionId, _secondBid);
+
+    ISurplusAuctionHouse.Auction memory _auction = surplusAuctionHouse.auctions(_auctionId);
+    assertEq(_auction.bidAmount, _secondBid);
+
+    vm.warp(_auction.auctionDeadline);
+
+    assertEq(protocolToken.totalSupply(), INITIAL_BID + _secondBid);
+    surplusAuctionHouse.settleAuction(_auctionId);
+    _collectSystemCoins(address(this));
+    // 50% of the winning bid is burned
+    assertEq(protocolToken.totalSupply(), INITIAL_BID + (_secondBid / 2));
+    // 50% of the winning bid is sent to the receiver
+    assertEq(protocolToken.balanceOf(SURPLUS_AUCTION_BID_RECEIVER), _secondBid / 2);
+    assertEq(protocolToken.balanceOf(address(this)), 0);
+    assertEq(systemCoin.balanceOf(address(this)) - _initialBalance, _auction.amountToSell / RAY);
+  }
+
+  function test_surplus_auction_and_rebid() public {
+    _generateDebt(address(this), address(collateralJoin[_cType()]), int256(COLLATERAL_AMOUNT), int256(DEBT_AMOUNT));
+    uint256 _initialBalance = systemCoin.balanceOf(address(this));
+    uint256 INITIAL_BID = 1e18;
+
+    uint256 _bidIncrease = surplusAuctionHouse.params().bidIncrease;
+    uint256 _secondBid = INITIAL_BID * _bidIncrease / WAD;
+
+    // mint protocol tokens to bid with
+    vm.prank(deployer);
+    protocolToken.mint(address(this), _secondBid);
+
+    // generate surplus
+    _collectFees(_cType(), 10 * YEAR);
+
+    uint256 _auctionId = accountingEngine.auctionSurplus();
+    _increaseBidSize(address(this), _auctionId, INITIAL_BID);
+    _increaseBidSize(address(this), _auctionId, _secondBid);
+
+    ISurplusAuctionHouse.Auction memory _auction = surplusAuctionHouse.auctions(_auctionId);
+    assertEq(_auction.bidAmount, _secondBid);
+
+    vm.warp(_auction.auctionDeadline);
+
+    assertEq(protocolToken.totalSupply(), _secondBid);
+    surplusAuctionHouse.settleAuction(_auctionId);
+    _collectSystemCoins(address(this));
+    // 50% of the winning bid is burned
+    assertEq(protocolToken.totalSupply(), _secondBid / 2);
+    // 50% of the winning bid is sent to the receiver
+    assertEq(protocolToken.balanceOf(SURPLUS_AUCTION_BID_RECEIVER), _secondBid / 2);
     assertEq(protocolToken.balanceOf(address(this)), 0);
     assertEq(systemCoin.balanceOf(address(this)) - _initialBalance, _auction.amountToSell / RAY);
   }
