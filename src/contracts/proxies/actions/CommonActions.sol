@@ -16,7 +16,6 @@ import {RAY} from '@libraries/Math.sol';
  * @notice This abstract contract defines common actions to be used by the proxy actions contracts
  */
 abstract contract CommonActions is ICommonActions {
-
   /// @notice Address of the inheriting contract, used to check if the call is being made through a delegate call
   // solhint-disable-next-line var-name-mixedcase
   address internal immutable _THIS = address(this);

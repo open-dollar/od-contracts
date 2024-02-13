@@ -8,7 +8,7 @@ import {Params, ParamChecker, OD, ETH_A, JOB_REWARD} from '@script/Params.s.sol'
 
 abstract contract Common is Contracts, Params, Test {
   uint256 internal _chainId;
-  uint256 internal _deployerPk = 69; // for tests - from HAI
+  uint256 internal _deployerPk = 69; // for tests - from OD
   uint256 internal _governorPK;
   bytes32 internal _systemCoinSalt;
   bytes32 internal _vault721Salt;

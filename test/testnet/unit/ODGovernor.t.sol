@@ -4,10 +4,10 @@ pragma solidity 0.8.19;
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 import {TimelockController} from '@openzeppelin/governance/TimelockController.sol';
 import {IGovernorTimelock, IGovernor} from '@openzeppelin/governance/extensions/IGovernorTimelock.sol';
-import {HaiTest, stdStorage, StdStorage} from '@testnet/utils/HaiTest.t.sol';
+import {ODTest, stdStorage, StdStorage} from '@testnet/utils/ODTest.t.sol';
 import {MintableVoteERC20} from '@contracts/for-test/MintableVoteERC20.sol';
 
-abstract contract Base is HaiTest {
+abstract contract Base is ODTest {
   using stdStorage for StdStorage;
 
   ODGovernor public odGovernor;

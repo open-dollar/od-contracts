@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {HaiTest} from '@testnet/utils/HaiTest.t.sol';
+import {ODTest} from '@testnet/utils/ODTest.t.sol';
 import {TestParams, Deploy} from '@testnet/e2e/Common.t.sol';
 import {console2} from 'forge-std/Script.sol';
 import {Math} from '@libraries/Math.sol';
@@ -16,7 +16,7 @@ import {IPIDController} from '@interfaces/IPIDController.sol';
  * @notice This test contract is used to simulate the PID controller and export the data to a csv file
  * @dev    This test is run with the command `yarn test:simulation`
  */
-contract SimulationPIDController is TestParams, Deploy, HaiTest {
+contract SimulationPIDController is TestParams, Deploy, ODTest {
   using Math for uint256;
 
   OracleForTest marketOracle;
