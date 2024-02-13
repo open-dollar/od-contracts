@@ -396,8 +396,8 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, Disableable, IColla
   /// @inheritdoc Modifiable
   function _validateParameters() internal view override {
     // Registry
-    address(liquidationEngine()).assertNonNull();
-    address(oracleRelayer()).assertNonNull();
+    address(liquidationEngine()).assertHasCode();
+    address(oracleRelayer()).assertHasCode();
     // CAH Params
     _params.minDiscount.assertGtEq(_params.maxDiscount).assertLtEq(WAD);
     _params.maxDiscount.assertGt(0);

@@ -220,14 +220,14 @@ contract Unit_AccountingEngine_Constructor is Base {
   }
 
   function test_Revert_NullSurplusAuctionHouse() public {
-    vm.expectRevert(Assertions.NullAddress.selector);
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
     new AccountingEngineForTest(
       address(mockSafeEngine), address(0), address(mockDebtAuctionHouse), accountingEngineParams
     );
   }
 
   function test_Revert_NullDebtAuctionHouse() public {
-    vm.expectRevert(Assertions.NullAddress.selector);
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
     new AccountingEngineForTest(
       address(mockSafeEngine), address(mockSurplusAuctionHouse), address(0), accountingEngineParams
     );
@@ -250,7 +250,7 @@ contract Unit_AccountingEngine_ModifyParameters is Base {
     assertEq(abi.encode(_fuzz), abi.encode(_params));
   }
 
-  function test_ModifyParameters_SurplusAuctionHouse(address _surplusAuctionHouse) public authorized {
+  function test_ModifyParameters_SurplusAuctionHouse(address _surplusAuctionHouse) public authorized mockAsContract(_surplusAuctionHouse) {
     vm.assume(_surplusAuctionHouse != address(0));
     address _previousSurplusAuctionHouse = address(accountingEngine.surplusAuctionHouse());
     if (_previousSurplusAuctionHouse != address(0)) {
@@ -269,7 +269,7 @@ contract Unit_AccountingEngine_ModifyParameters is Base {
     assertEq(_surplusAuctionHouse, address(accountingEngine.surplusAuctionHouse()));
   }
 
-  function test_ModifyParameters_DebtAuctionHouse(address _debtAuctionHouse) public authorized {
+  function test_ModifyParameters_DebtAuctionHouse(address _debtAuctionHouse) public authorized mockAsContract(_debtAuctionHouse) {
     vm.assume(_debtAuctionHouse != address(0));
     accountingEngine.modifyParameters('debtAuctionHouse', abi.encode(_debtAuctionHouse));
 

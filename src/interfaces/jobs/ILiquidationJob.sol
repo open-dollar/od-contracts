@@ -8,7 +8,7 @@ import {IJob} from '@interfaces/jobs/IJob.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
-interface ILiquidationJob is IJob, IAuthorizable, IModifiable {
+interface ILiquidationJob is IAuthorizable, IModifiable, IJob {
   // --- Data ---
 
   /// @notice Whether the liquidation job should be worked

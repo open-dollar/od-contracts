@@ -146,7 +146,7 @@ contract Unit_OracleRelayer_Constructor is Base {
   }
 
   function test_Revert_Null_SystemCoinOracle() public {
-    vm.expectRevert(Assertions.NullAddress.selector);
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
 
     new OracleRelayer(address(mockSafeEngine), IBaseOracle(address(0)), oracleRelayerParams);
   }
@@ -201,18 +201,18 @@ contract Unit_OracleRelayer_ModifyParameters is Base {
     bytes32 _cType,
     IOracleRelayer.OracleRelayerCollateralParams memory _fuzz,
     address _fuzzPriceSource
-  ) public authorized previousValidCTypeParams(_cType) {
+  ) public authorized previousValidCTypeParams(_cType) mockAsContract(address(_fuzz.oracle)) {
     vm.assume(_validOracleRelayerCollateralParams(_fuzz));
     // NOTE: needs to have a valid liqCRatio to pass the `modifyParameters` check
     _mockCTypeLiquidationCRatio(_cType, 1e27);
 
-    oracleRelayer.modifyParameters(_cType, 'safetyCRatio', abi.encode(_fuzz.safetyCRatio));
-    oracleRelayer.modifyParameters(_cType, 'liquidationCRatio', abi.encode(_fuzz.liquidationCRatio));
-
     vm.mockCall(
       address(_fuzz.oracle), abi.encodeWithSelector(IDelayedOracle.priceSource.selector), abi.encode(_fuzzPriceSource)
     );
+
     oracleRelayer.modifyParameters(_cType, 'oracle', abi.encode(_fuzz.oracle));
+    oracleRelayer.modifyParameters(_cType, 'safetyCRatio', abi.encode(_fuzz.safetyCRatio));
+    oracleRelayer.modifyParameters(_cType, 'liquidationCRatio', abi.encode(_fuzz.liquidationCRatio));
 
     IOracleRelayer.OracleRelayerCollateralParams memory _cParams = oracleRelayer.cParams(_cType);
 
@@ -305,7 +305,7 @@ contract Unit_OracleRelayer_ModifyParameters is Base {
     authorized
     previousValidCTypeParams(_cType)
   {
-    vm.expectRevert(Assertions.NullAddress.selector);
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
 
     oracleRelayer.modifyParameters(_cType, 'oracle', abi.encode(address(0)));
   }
@@ -870,7 +870,7 @@ contract Unit_OracleRelayer_InitializeCollateralType is Base {
   ) public authorized {
     _oracleRelayerCParams.oracle = IDelayedOracle(address(0));
 
-    vm.expectRevert(Assertions.NullAddress.selector);
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
 
     oracleRelayer.initializeCollateralType(_cType, abi.encode(_oracleRelayerCParams));
   }

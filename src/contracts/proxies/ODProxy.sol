@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
+import {Address} from '@openzeppelin/utils/Address.sol';
 
 // Open Dollar
 // Version 1.6.1
 
 contract ODProxy {
+  using Address for address;
   error TargetAddressRequired();
   error TargetCallFailed(bytes _response);
   error OnlyOwner();
@@ -26,11 +28,6 @@ contract ODProxy {
   function execute(address _target, bytes memory _data) external payable onlyOwner returns (bytes memory _response) {
     if (_target == address(0)) revert TargetAddressRequired();
 
-    bool _succeeded;
-    (_succeeded, _response) = _target.delegatecall(_data);
-
-    if (!_succeeded) {
-      revert TargetCallFailed(_response);
-    }
+    _response = _target.functionDelegateCall(_data);
   }
 }

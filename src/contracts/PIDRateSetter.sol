@@ -101,7 +101,7 @@ contract PIDRateSetter is Authorizable, Modifiable, IPIDRateSetter {
   function _validateParameters() internal view override {
     _params.updateRateDelay.assertGt(0);
 
-    address(oracleRelayer).assertNonNull();
-    address(pidCalculator).assertNonNull();
+    address(oracleRelayer).assertHasCode();
+    address(pidCalculator).assertHasCode();
   }
 }
