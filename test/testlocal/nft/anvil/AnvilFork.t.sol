@@ -68,7 +68,7 @@ contract AnvilFork is AnvilDeployment, Test {
   address[3] public proxies;
   IDenominatedOracle[] public denominatedOracles;
   IDelayedOracle[] public delayedOracles;
-  OracleForTestnet[] public testOracles;
+  OracleForTestnet[] public oraclesForTest;
 
   function setUp() public virtual {
     users[0] = ALICE;
@@ -86,10 +86,10 @@ contract AnvilFork is AnvilDeployment, Test {
     delayedOracles.push(IDelayedOracle(DelayedOracleChild_17_Address));
     delayedOracles.push(IDelayedOracle(DelayedOracleChild_18_Address));
 
-    testOracles.push(OracleForTestnet(address(denominatedOracles[0].denominationPriceSource())));
+    oraclesForTest.push(OracleForTestnet(address(denominatedOracles[0].denominationPriceSource())));
 
     for (uint256 i; i < denominatedOracles.length; i++) {
-      testOracles.push(OracleForTestnet(address(denominatedOracles[i].priceSource())));
+      oraclesForTest.push(OracleForTestnet(address(denominatedOracles[i].priceSource())));
     }
 
     deployProxies();
@@ -295,6 +295,37 @@ contract AnvilFork is AnvilDeployment, Test {
       basicActions.repayDebt.selector, address(safeManager), address(coinJoin), _safeId, _deltaWad
     );
     ODProxy(proxy).execute(address(basicActions), payload);
+  }
+
+  function repayDebtAndFreeTokenCollateral(
+    bytes32 _cType,
+    uint256 _safeId,
+    uint256 _collateralWad,
+    uint256 _debtWad,
+    address _proxy
+  ) public {
+    bytes memory payload = abi.encodeWithSelector(
+      basicActions.repayDebtAndFreeTokenCollateral.selector,
+      address(safeManager),
+      address(collateralJoin[_cType]),
+      address(coinJoin),
+      _safeId,
+      _collateralWad,
+      _debtWad
+    );
+    ODProxy(_proxy).execute(address(basicActions), payload);
+  }
+
+  function modifySAFECollateralization(
+    uint256 _safeId,
+    int256 _deltaCollateral,
+    int256 _deltaDebt,
+    address _proxy
+  ) public {
+    bytes memory payload = abi.encodeWithSelector(
+      basicActions.modifySAFECollateralization.selector, address(safeManager), _safeId, _deltaCollateral, _deltaDebt
+    );
+    ODProxy(_proxy).execute(address(basicActions), payload);
   }
 
   /**

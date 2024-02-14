@@ -63,7 +63,7 @@ const createAnvilDeploymentsFile = (contracts) => {
   const addressText = Object.keys(contracts).reduce((acc, curr) => {
     acc += `  address public ${curr}_Address = ${contracts[curr]};\n`;
     return acc;
-  }, "");
+  }, ""); 
 
   const outputPath = path.join(
     __dirname,

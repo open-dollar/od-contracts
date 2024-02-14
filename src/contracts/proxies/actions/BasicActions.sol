@@ -110,7 +110,7 @@ contract BasicActions is CommonActions, IBasicActions {
   function _repayDebt(address _manager, address _coinJoin, uint256 _safeId, uint256 _deltaWad) internal {
     address _safeEngine = ODSafeManager(_manager).safeEngine();
     ODSafeManager.SAFEData memory _safeInfo = ODSafeManager(_manager).safeData(_safeId);
-
+    _taxSingle(_manager, _safeId);
     // Joins COIN amount into the safeEngine
     _joinSystemCoins(_coinJoin, _safeInfo.safeHandler, _deltaWad);
 
