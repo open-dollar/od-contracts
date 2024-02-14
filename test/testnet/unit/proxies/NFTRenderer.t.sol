@@ -29,8 +29,6 @@ struct RenderParamsData {
   ISAFEEngine.SAFEEngineCollateralData safeEngineCollateralData;
   ISAFEEngine.SAFE safeEngineData;
   IOracleRelayer.OracleRelayerCollateralParams oracleParams;
-  address collateralJoin;
-  address collateral;
   uint256 readValue;
   uint256 timestamp;
 }
@@ -44,6 +42,8 @@ contract Base is ODTest {
   address deployer = label('deployer');
   address owner = label('owner');
   address user = address(0xdeadce11);
+  address _collateralJoin = address(0xdeadbeef);
+  address _collateral = address(0xdeadc0ffee);
   string emptyString;
 
   NFTRenderer public nftRenderer;
@@ -58,10 +58,11 @@ contract Base is ODTest {
 
   modifier noOverFlow(RenderParamsData memory _data) {
     _data.oracleParams.oracle = IDelayedOracle(address(oracleRelayer));
-    vm.assume(_data.safeEngineData.lockedCollateral <= WAD);
-    vm.assume(_data.safeEngineData.generatedDebt <= WAD);
+    _data.safeEngineData.lockedCollateral = bound(_data.safeEngineData.lockedCollateral, 0, WAD * 1000);
+    _data.safeEngineData.generatedDebt = bound(_data.safeEngineData.generatedDebt, 0, WAD * 1000);
     vm.assume(_data.safeEngineCollateralData.accumulatedRate > 0);
-    vm.assume(_data.safeEngineCollateralData.accumulatedRate <= WAD);
+    _data.safeEngineCollateralData.accumulatedRate =
+      bound(_data.safeEngineCollateralData.accumulatedRate, 1, WAD * 1000);
     vm.assume(
       notUnderOrOverflowMul(_data.safeEngineData.lockedCollateral, Math.toInt(_data.oracleParams.oracle.read()))
     );
@@ -77,8 +78,8 @@ contract Base is ODTest {
     _data.safeEngineData.lockedCollateral = _data.safeEngineData.lockedCollateral * WAD;
     _data.safeEngineData.generatedDebt = _data.safeEngineData.generatedDebt * WAD;
     _data.safeEngineCollateralData.accumulatedRate = _data.safeEngineCollateralData.accumulatedRate * WAD;
-    vm.assume(_data.timestamp > 1_000_000_000 && _data.timestamp < 9_000_000_000);
-    _data.taxData.nextStabilityFee = RAY - 2;
+
+    _data.timestamp = bound(_data.timestamp, 100, 9_000_000_000);
     _;
   }
 
@@ -115,33 +116,28 @@ contract Base is ODTest {
     vm.mockCall(
       address(oracleRelayer), abi.encodeWithSelector(oracleRelayer.cParams.selector), abi.encode(_data.oracleParams)
     );
-
     vm.mockCall(
       address(safeEngine),
       abi.encodeWithSelector(ISAFEEngine.cData.selector),
       abi.encode(_data.safeEngineCollateralData)
     );
-
     vm.mockCall(
       address(collateralJoinFactory),
       abi.encodeWithSelector(collateralJoinFactory.collateralJoins.selector),
-      abi.encode(address(_data.collateralJoin))
+      abi.encode(address(_collateralJoin))
     );
-
     vm.mockCall(
-      address(_data.collateralJoin),
+      address(_collateralJoin),
       abi.encodeWithSelector(ICollateralJoin.collateral.selector),
-      abi.encode(address(_data.collateral))
+      abi.encode(address(_collateral))
     );
 
-    vm.mockCall(address(_data.collateral), abi.encodeWithSelector(IERC20Metadata.symbol.selector), abi.encode('TST'));
-
+    vm.mockCall(address(_collateral), abi.encodeWithSelector(IERC20Metadata.symbol.selector), abi.encode('TST'));
     vm.mockCall(
       address(_data.oracleParams.oracle),
       abi.encodeWithSelector(IDelayedOracle.lastUpdateTime.selector),
       abi.encode(_data.timestamp)
     );
-
     vm.mockCall(address(taxCollector), abi.encodeWithSelector(ITaxCollector.cData.selector), abi.encode(_data.taxData));
   }
 }
