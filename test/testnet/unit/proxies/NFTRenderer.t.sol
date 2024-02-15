@@ -78,6 +78,7 @@ contract Base is ODTest {
     _data.safeEngineData.lockedCollateral = _data.safeEngineData.lockedCollateral * WAD;
     _data.safeEngineData.generatedDebt = _data.safeEngineData.generatedDebt * WAD;
     _data.safeEngineCollateralData.accumulatedRate = _data.safeEngineCollateralData.accumulatedRate * WAD;
+
     _data.timestamp = bound(_data.timestamp, 100, 9_000_000_000);
     _;
   }
