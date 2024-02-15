@@ -74,7 +74,7 @@ contract SingleDebtAuctionHouseTest is DSTest {
   SAFEEngine safeEngine;
   ProtocolToken protocolToken;
   DummyAccountingEngine accountingEngine;
-  address deployer = address(0xdeadce11);
+
   address ali;
   address bob;
 
@@ -115,7 +115,6 @@ contract SingleDebtAuctionHouseTest is DSTest {
 
     safeEngine.transferInternalCoins(address(this), ali, 200 ether);
     safeEngine.transferInternalCoins(address(this), bob, 200 ether);
-
   }
 
   function test_startAuction() public {
