@@ -74,7 +74,7 @@ contract SingleDebtAuctionHouseTest is DSTest {
   SAFEEngine safeEngine;
   ProtocolToken protocolToken;
   DummyAccountingEngine accountingEngine;
-
+  address deployer = address(0xdeadce11);
   address ali;
   address bob;
 
@@ -88,6 +88,7 @@ contract SingleDebtAuctionHouseTest is DSTest {
       ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: 0});
     safeEngine = new SAFEEngine(_safeEngineParams);
     protocolToken = new ProtocolToken();
+    protocolToken.initialize('protocol token', 'PROT');
 
     IDebtAuctionHouse.DebtAuctionHouseParams memory _debtAuctionHouseParams = IDebtAuctionHouse.DebtAuctionHouseParams({
       bidDecrease: 1.05e18,
@@ -114,6 +115,7 @@ contract SingleDebtAuctionHouseTest is DSTest {
 
     safeEngine.transferInternalCoins(address(this), ali, 200 ether);
     safeEngine.transferInternalCoins(address(this), bob, 200 ether);
+
   }
 
   function test_startAuction() public {
