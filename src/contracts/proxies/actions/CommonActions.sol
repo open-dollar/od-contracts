@@ -58,7 +58,7 @@ abstract contract CommonActions is ICommonActions {
     SafeERC20.safeTransferFrom(IERC20(_systemCoin), msg.sender, address(this), _wad);
     //check if coinJoin has an approval amount
     uint256 allowance = IERC20(_systemCoin).allowance(address(this), _coinJoin);
-    if(allowance == 0){
+    if (allowance == 0) {
       // Approves adapter to take the COIN amount
       SafeERC20.safeApprove(IERC20(_systemCoin), _coinJoin, _wad);
     } else {
