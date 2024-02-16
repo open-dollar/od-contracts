@@ -102,7 +102,15 @@ abstract contract CommonActions is ICommonActions {
 
     // Gets token from the user's wallet
     SafeERC20.safeTransferFrom(IERC20(address(_token)), msg.sender, address(this), _wei);
+    uint256 allowance = IERC20(_token).allowance(address(this), _collateralJoin);
     // Approves adapter to take the token amount
+    if (allowance == 0) {
+      // Approves adapter to take the COIN amount
+      SafeERC20.safeApprove(IERC20(_token), _collateralJoin, _wad);
+    } else {
+      // if approval amount is a non-zero number, increase allowance.
+      SafeERC20.safeIncreaseAllowance(IERC20(_token), _collateralJoin, _wad);
+    }
     SafeERC20.safeApprove(IERC20(address(_token)), _collateralJoin, _wei);
     // Joins token collateral into the safeEngine
     __collateralJoin.join(_safe, _wei);
