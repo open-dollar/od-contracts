@@ -62,7 +62,7 @@ abstract contract SepoliaContracts {
   address public Vault721_Address = 0x00024F3c588d9a1c11Be800637b43E0C88befF1A;
   address public ODSafeManager_Address = 0xea1bF408bF3f29C4787712E67390552163a465f3;
   address public NFTRenderer_Address = 0xAbAfb6e349354A1897E385A46DF01eC6c945730D;
-  address public BasicActions_Address = 0x65AA70ed223368119D34C6a24a5050b446Ce74f7;
+  address public BasicActions_Address = 0x890726e13DDde77856b1774ba55C187f7a331Ce1;
   address public DebtBidActions_Address = 0x51905778Af208271a6Cb817617C21ACa961C3B20;
   address public SurplusBidActions_Address = 0x3DE22DE876C56011c3Ffa6139f089138e34bB538;
   address public CollateralBidActions_Address = 0x696C34Dfcc907e93cbAb4924126664E79b0b155c;

@@ -99,13 +99,16 @@ contract TestScripts is Deployment {
    * @dev repays a specified amount of debt
    */
   function repayDebt(uint256 _safeId, uint256 _deltaWad, address _proxy) public {
+    _labelAddresses(_proxy);
     bytes memory payload = abi.encodeWithSelector(
       basicActions.repayDebt.selector, address(safeManager), address(coinJoin), _safeId, _deltaWad
     );
+
     ODProxy(_proxy).execute(address(basicActions), payload);
   }
 
   function freeTokenCollateral(bytes32 _cType, uint256 _safeId, uint256 _deltaWad, address _proxy) public {
+    _labelAddresses(_cType, _proxy);
     bytes memory payload = abi.encodeWithSelector(
       basicActions.freeTokenCollateral.selector,
       address(safeManager),
@@ -150,7 +153,7 @@ contract TestScripts is Deployment {
     ODProxy(_proxy).execute(address(basicActions), payload);
   }
 
-  function safeData(uint256 _safeId) public returns (IODSafeManager.SAFEData memory _safeData) {
+  function safeData(uint256 _safeId) public view returns (IODSafeManager.SAFEData memory _safeData) {
     _safeData = safeManager.safeData(_safeId);
   }
 
