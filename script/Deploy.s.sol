@@ -33,7 +33,7 @@ abstract contract Deploy is Common, Script {
 
     _chainId = getChainId();
 
-    if(isFork()) {
+    if (isFork()) {
       address create2AuthAddr = create2.authorizedAccounts()[0];
       address protocolTokenAuthAddr = protocolToken.authorizedAccounts()[0];
       vm.stopBroadcast();
@@ -92,7 +92,8 @@ abstract contract Deploy is Common, Script {
       _delegateAllTo(P);
       _delegateAllTo(governor);
 
-      if(!isFork()) { // if not in a fork we should remove the deployer
+      if (!isFork()) {
+        // if not in a fork we should remove the deployer
         _revokeAllTo(deployer);
       }
     }

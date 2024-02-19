@@ -187,7 +187,7 @@ abstract contract Common is Contracts, Params, Test {
     // deploy Tokens
 
     if (_chainId != 31_337) {
-      address systemCoinAddress  = create2.create2deploy(_systemCoinSalt, _systemCoinInitCode);
+      address systemCoinAddress = create2.create2deploy(_systemCoinSalt, _systemCoinInitCode);
       systemCoin = ISystemCoin(systemCoinAddress);
     } else {
       systemCoin = new OpenDollar();
