@@ -320,7 +320,7 @@ contract BasicActions is CommonActions, IBasicActions {
     _taxSingle(_manager, _safeId);
 
     ISAFEEngine.SAFE memory _safeData = ISAFEEngine(_safeEngine).safes(_safeInfo.collateralType, _safeInfo.safeHandler);
-    _taxSingle(_manager, _safeId);
+
     // Joins COIN amount into the safeEngine
     _joinSystemCoins(
       _coinJoin,

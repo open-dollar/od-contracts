@@ -18,7 +18,8 @@
     "wei3erHase (https://github.com/wei3erHase)",
     "0xGorilla (https://github.com/0xGorilla)",
     "0xJabberwock (https://github.com/0xJabberwock)",
-    "0xRaccoon (https://github.com/0xRaccoon)"
+    "0xRaccoon (https://github.com/0xRaccoon)",
+    "MrDeadCe11 (https://github.com/MrDeadCe11)"
   ],
   "scripts": {
     "build": "forge build",
