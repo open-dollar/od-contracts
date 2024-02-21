@@ -8,7 +8,7 @@ abstract contract MainnetParams is Contracts, Params {
   function _getEnvironmentParams() internal override {
     _safeEngineParams = ISAFEEngine.SAFEEngineParams({
       safeDebtCeiling: 10_000_000 * WAD, // WAD
-      globalDebtCeiling: 10_000_000_000 * RAD // RAD
+      globalDebtCeiling: 25_000_000 * RAD // RAD
     });
 
     _accountingEngineParams = IAccountingEngine.AccountingEngineParams({
@@ -91,34 +91,38 @@ abstract contract MainnetParams is Contracts, Params {
       totalAuctionLength: 2 days
     });
 
+    //ARB
+    /* safetyCRatio: 1.40e27 
+liquidationCRatio:  1.35e27 **/
+
     // --- Collateral Default Params ---
     for (uint256 _i; _i < collateralTypes.length; _i++) {
       bytes32 _cType = collateralTypes[_i];
 
       _oracleRelayerCParams[_cType] = IOracleRelayer.OracleRelayerCollateralParams({
         oracle: delayedOracle[_cType],
-        safetyCRatio: 1.35e27, // 135%
-        liquidationCRatio: 1.35e27 // 135%
+        safetyCRatio: 1.25e27, // 125%
+        liquidationCRatio: 1.20e27 // 120%
       });
 
       _taxCollectorCParams[_cType] = ITaxCollector.TaxCollectorCollateralParams({
         // NOTE: 5%/yr => 1.05^(1/yr) = 1 + 1.54713e-9
-        stabilityFee: RAY + 1.54713e18 // RAY
+        stabilityFee: RAY + 6.27857e17 // RAY
       });
 
       _safeEngineCParams[_cType] = ISAFEEngine.SAFEEngineCollateralParams({
-        debtCeiling: 100_000_000e45, // 100M COINs
-        debtFloor: 1000 * RAD // 1_000 COINs
+        debtCeiling: 10_000e45, // 10m COINs
+        debtFloor: 200 * RAD // 1 COIN
       });
 
       _liquidationEngineCParams[_cType] = ILiquidationEngine.LiquidationEngineCollateralParams({
         collateralAuctionHouse: address(collateralAuctionHouse[_cType]),
-        liquidationPenalty: 1.1e18, // WAD
+        liquidationPenalty: 1.05e18, // WAD
         liquidationQuantity: 100_000e45 // RAD
       });
 
       _collateralAuctionHouseParams[_cType] = ICollateralAuctionHouse.CollateralAuctionHouseParams({
-        minimumBid: 100e18, // 100 COINs
+        minimumBid: 5e18, // 5 COINs
         minDiscount: 1e18, // no discount
         maxDiscount: 1e18, // no discount
         perSecondDiscountUpdateRate: MINUS_0_5_PERCENT_PER_HOUR // RAY
