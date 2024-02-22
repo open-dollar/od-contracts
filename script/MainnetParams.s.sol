@@ -91,9 +91,6 @@ abstract contract MainnetParams is Contracts, Params {
       totalAuctionLength: 2 days
     });
 
-    //ARB
-    /* safetyCRatio: 1.40e27 
-liquidationCRatio:  1.35e27 **/
 
     // --- Collateral Default Params ---
     for (uint256 _i; _i < collateralTypes.length; _i++) {
@@ -133,5 +130,8 @@ liquidationCRatio:  1.35e27 **/
     _taxCollectorCParams[WSTETH].stabilityFee = RAY + 11.11926e18; // + 42%/yr
     _safeEngineCParams[WSTETH].debtFloor = 5000 * RAD; // 5_000 COINs
     _liquidationEngineCParams[WSTETH].liquidationPenalty = 1.15e18; // WAD
+    _oracleRelayerCParams[ARB].safetyCRatio = 1.40e27;
+    _oracleRelayerCParams[ARB].liquidationCRatio = 1.35e27;
+    
   }
 }

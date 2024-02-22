@@ -84,6 +84,8 @@ abstract contract Params {
 
   IGlobalSettlement.GlobalSettlementParams _globalSettlementParams;
   IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams _postSettlementSAHParams;
+
+  
 }
 
 /**
