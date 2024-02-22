@@ -8,7 +8,6 @@ import {VmSafe} from 'forge-std/Script.sol';
 import {Params, ParamChecker, OD, ETH_A, JOB_REWARD} from '@script/Params.s.sol';
 
 abstract contract Common is Contracts, Params, Test {
-
   uint256 internal _chainId;
   uint256 internal _deployerPk = 69; // for tests - from OD
   uint256 internal _governorPK;
@@ -32,19 +31,19 @@ abstract contract Common is Contracts, Params, Test {
   // Exclude anvil from the fork check - Not opt for overriding to avoid obscuring the logic
   // Only relevant if we start a anvil instance outside the tests .eg `forge script DeployAnvil --rpc-url $ANVIL_RPC`
   function onFork() public view returns (bool status) {
-    status = _chainId != 31337 && isFork();
+    status = _chainId != 31_337 && isFork();
   }
 
   function isNetworkAnvil() public view returns (bool) {
-    return _chainId == 31337;
+    return _chainId == 31_337;
   }
 
   function isNetworkArbitrumSepolia() public view returns (bool) {
-    return _chainId == 421614;
+    return _chainId == 421_614;
   }
 
   function isNetworkArbitrumOne() public view returns (bool) {
-    return _chainId == 42161;
+    return _chainId == 42_161;
   }
 
   function getSemiRandSalt() public view returns (bytes32) {
@@ -418,7 +417,7 @@ abstract contract Common is Contracts, Params, Test {
 
   // @dev: only run function if on fork
   modifier runIfFork() {
-    if(onFork()) {
+    if (onFork()) {
       _;
     }
   }
@@ -426,7 +425,7 @@ abstract contract Common is Contracts, Params, Test {
   // @dev: if in the middle of a active broadcast, call function and restore original caller after execution.
   // @attention: function is responsible for starting and stopping the broadcast it needs
   modifier restoreOriginalCaller() {
-    (VmSafe.CallerMode callerMode, address activeBroadcastAddr, ) = vm.readCallers();
+    (VmSafe.CallerMode callerMode, address activeBroadcastAddr,) = vm.readCallers();
     bool activeBroadcast = callerMode == VmSafe.CallerMode.RecurrentBroadcast;
     if (activeBroadcast) {
       vm.stopBroadcast();

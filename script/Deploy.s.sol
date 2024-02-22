@@ -12,7 +12,6 @@ import {SepoliaParams} from '@script/SepoliaParams.s.sol';
 import {MainnetParams} from '@script/MainnetParams.s.sol';
 
 abstract contract Deploy is Common, Script {
-
   function _addAuthCreate2AndProtocolToken() public runIfFork restoreOriginalCaller {
     address deployerAddr = vm.addr(_deployerPk);
     address create2AuthAddr = create2.authorizedAccounts()[0];
@@ -96,11 +95,10 @@ abstract contract Deploy is Common, Script {
 }
 
 contract DeployMainnet is MainnetParams, Deploy {
-
   function setUp() public virtual {
-
-    if(!isNetworkArbitrumOne())
-        revert("DeployMainnet: network is not Arbitrum One");
+    if (!isNetworkArbitrumOne()) {
+      revert('DeployMainnet: network is not Arbitrum One');
+    }
 
     // set create2 factory
     create2 = IODCreate2Factory(MAINNET_CREATE2FACTORY);
@@ -171,8 +169,9 @@ contract DeploySepolia is SepoliaParams, Deploy {
   IBaseOracle public chainlinkEthUSDPriceFeed;
 
   function setUp() public virtual {
-    if(!isNetworkArbitrumSepolia())
-        revert("DeploySepolia: network is not Arbitrum Sepolia");
+    if (!isNetworkArbitrumSepolia()) {
+      revert('DeploySepolia: network is not Arbitrum Sepolia');
+    }
 
     chainId = 421_614;
     // set create2 factory
@@ -234,8 +233,9 @@ contract DeploySepolia is SepoliaParams, Deploy {
 
 contract DeployAnvil is SepoliaParams, Deploy {
   function setUp() public virtual {
-    if(!isNetworkAnvil())
-        revert("DeployAnvil: network is not Anvil");
+    if (!isNetworkAnvil()) {
+      revert('DeployAnvil: network is not Anvil');
+    }
     _deployerPk = uint256(vm.envBytes32('ANVIL_ONE'));
     chainId = 31_337;
   }
