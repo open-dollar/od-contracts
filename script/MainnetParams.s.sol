@@ -91,7 +91,6 @@ abstract contract MainnetParams is Contracts, Params {
       totalAuctionLength: 2 days
     });
 
-
     // --- Collateral Default Params ---
     for (uint256 _i; _i < collateralTypes.length; _i++) {
       bytes32 _cType = collateralTypes[_i];
@@ -99,7 +98,7 @@ abstract contract MainnetParams is Contracts, Params {
       _oracleRelayerCParams[_cType] = IOracleRelayer.OracleRelayerCollateralParams({
         oracle: delayedOracle[_cType],
         safetyCRatio: 1.25e27, // 125%
-        liquidationCRatio: 1.20e27 // 120%
+        liquidationCRatio: 1.2e27 // 120%
       });
 
       _taxCollectorCParams[_cType] = ITaxCollector.TaxCollectorCollateralParams({
@@ -130,8 +129,7 @@ abstract contract MainnetParams is Contracts, Params {
     _taxCollectorCParams[WSTETH].stabilityFee = RAY + 11.11926e18; // + 42%/yr
     _safeEngineCParams[WSTETH].debtFloor = 5000 * RAD; // 5_000 COINs
     _liquidationEngineCParams[WSTETH].liquidationPenalty = 1.15e18; // WAD
-    _oracleRelayerCParams[ARB].safetyCRatio = 1.40e27;
+    _oracleRelayerCParams[ARB].safetyCRatio = 1.4e27;
     _oracleRelayerCParams[ARB].liquidationCRatio = 1.35e27;
-    
   }
 }
