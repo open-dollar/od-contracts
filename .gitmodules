@@ -2,8 +2,8 @@
 		path = lib/ds-test
 		url = https://github.com/dapphub/ds-test
 [submodule "lib/forge-std"]
-		path = lib/forge-std
-		url = https://github.com/brockelmore/forge-std
+	path = lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
 		branch = chore/v1.5.4
 [submodule "lib/isolmate"]
 		path = lib/isolmate
