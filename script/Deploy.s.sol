@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import 'forge-std/console2.sol';
 import '@script/Contracts.s.sol';
 import '@script/Registry.s.sol';
 import '@script/Params.s.sol';
@@ -34,29 +33,39 @@ abstract contract Deploy is Common, Script {
 
     _chainId = getChainId();
 
+    if (isFork()) {
+      address create2AuthAddr = create2.authorizedAccounts()[0];
+      address protocolTokenAuthAddr = protocolToken.authorizedAccounts()[0];
+      vm.stopBroadcast();
+
+      vm.startBroadcast(create2AuthAddr);
+      create2.addAuthorization(vm.addr(_deployerPk));
+      vm.stopBroadcast();
+      vm.startBroadcast(protocolTokenAuthAddr);
+      protocolToken.addAuthorization(vm.addr(_deployerPk));
+      //protocolToken.addAuthorization(address(this));
+      vm.stopBroadcast();
+
+      vm.startBroadcast(deployer);
+    }
+
     // Deploy oracle factories used to setup the environment
     deployOracleFactories();
-
     // Environment may be different for each network
     setupEnvironment();
-
     // Common deployment routine for all networks
     deployTokenGovernance();
     deployContracts();
     deployTaxModule();
     _setupContracts();
-
     deployGlobalSettlement();
     _setupGlobalSettlement();
-
     // PID Controller contracts
     deployPIDController();
     _setupPIDController();
-
     // Rewarded Actions contracts
     deployJobContracts();
     _setupJobContracts();
-
     // Deploy collateral contracts
     for (uint256 _i; _i < collateralTypes.length; _i++) {
       bytes32 _cType = collateralTypes[_i];
@@ -70,13 +79,10 @@ abstract contract Deploy is Common, Script {
     if (_chainId == 31_337) {
       mintAirdrop();
     }
-
     // Deploy contracts related to the SafeManager usecase
     deployProxyContracts();
-
     // Deploy and setup contracts that rely on deployed environment
     setupPostEnvironment();
-
     if (_chainId == 42_161) {
       // mainnet: revoke deployer, authorize governor
       _revokeAllTo(governor);
@@ -84,10 +90,13 @@ abstract contract Deploy is Common, Script {
       // sepolia || anvil: revoke deployer, authorize [H, P, governor]
       _delegateAllTo(H);
       _delegateAllTo(P);
-      _revokeAllTo(governor);
-    }
+      _delegateAllTo(governor);
 
-    vm.stopBroadcast();
+      if (!isFork()) {
+        // if not in a fork we should remove the deployer
+        _revokeAllTo(deployer);
+      }
+    }
   }
 }
 
@@ -162,6 +171,7 @@ contract DeploySepolia is SepoliaParams, Deploy {
   IBaseOracle public chainlinkEthUSDPriceFeed;
 
   function setUp() public virtual {
+    chainId = 421_614;
     // set create2 factory
     create2 = IODCreate2Factory(TEST_CREATE2FACTORY);
     protocolToken = IProtocolToken(SEPOLIA_PROTOCOL_TOKEN);
@@ -170,7 +180,7 @@ contract DeploySepolia is SepoliaParams, Deploy {
     odGovernor = ODGovernor(payable(SEPOLIA_OD_GOVERNOR));
 
     _deployerPk = uint256(vm.envBytes32('ARB_SEPOLIA_DEPLOYER_PK'));
-    chainId = 421_614;
+
     _systemCoinSalt = SEPOLIA_SALT_SYSTEMCOIN;
     _vault721Salt = SEPOLIA_SALT_VAULT721;
   }
