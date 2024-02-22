@@ -25,6 +25,7 @@ abstract contract Deploy is Common, Script {
   function run() public {
     deployer = vm.addr(_deployerPk);
     vm.startBroadcast(deployer);
+
     logGovernor();
 
     // creation bytecode
@@ -38,7 +39,6 @@ abstract contract Deploy is Common, Script {
     inputs[2] = 'HEAD';
 
     _addAuthCreate2AndProtocolToken();
-
     // Deploy oracle factories used to setup the environment
     deployOracleFactories();
     // Environment may be different for each network
@@ -64,7 +64,6 @@ abstract contract Deploy is Common, Script {
       else deployCollateralContracts(_cType);
       _setupCollateral(_cType);
     }
-
     // Mint initial ODG airdrop Anvil
     if (isNetworkAnvil()) {
       mintAirdrop();
@@ -75,15 +74,16 @@ abstract contract Deploy is Common, Script {
     setupPostEnvironment();
     if (isNetworkArbitrumOne()) {
       // mainnet: revoke deployer, authorize governor
-      _revokeAllTo(governor);
+      _updateAuthorizationForAllContracts(deployer, governor);
     } else {
       // sepolia || anvil -> revoke deployer, authorize [H, P, governor]
       _delegateAllTo(H);
       _delegateAllTo(P);
-      _delegateAllTo(governor);
 
       if (!onFork()) {
-        _revokeAllTo(deployer);
+        _updateAuthorizationForAllContracts(deployer, governor);
+      } else {
+        _delegateAllTo(governor);
       }
     }
   }
