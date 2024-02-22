@@ -31,7 +31,7 @@ abstract contract Common is Contracts, Params, Test {
   // Exclude anvil from the fork check - Not opt for overriding to avoid obscuring the logic
   // Only relevant if we start a anvil instance outside the tests .eg `forge script DeployAnvil --rpc-url $ANVIL_RPC`
   function onFork() public view returns (bool status) {
-    status = getChainId() != 31_337 && isFork();
+    status = !isNetworkAnvil() && isFork();
   }
 
   function isNetworkAnvil() public view returns (bool) {
