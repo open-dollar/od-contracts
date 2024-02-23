@@ -20,6 +20,7 @@ abstract contract CommonActions is ICommonActions {
   using SafeERC20 for IERC20Metadata;
   /// @notice Address of the inheriting contract, used to check if the call is being made through a delegate call
   // solhint-disable-next-line var-name-mixedcase
+
   address internal immutable _THIS = address(this);
 
   // --- Methods ---
