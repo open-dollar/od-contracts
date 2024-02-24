@@ -56,7 +56,7 @@ abstract contract Common is Contracts, Params, Test {
 
     collateralAuctionHouseFactory.initializeCollateralType(ETH_A, abi.encode(_collateralAuctionHouseParams[ETH_A]));
     collateralAuctionHouse[ETH_A] =
-            ICollateralAuctionHouse(collateralAuctionHouseFactory.collateralAuctionHouses(ETH_A));
+      ICollateralAuctionHouse(collateralAuctionHouseFactory.collateralAuctionHouses(ETH_A));
     collateralJoin[ETH_A] = CollateralJoin(address(ethJoin));
     safeEngine.addAuthorization(address(ethJoin));
   }
@@ -66,7 +66,7 @@ abstract contract Common is Contracts, Params, Test {
     address _delegatee = delegatee[_cType];
     if (_delegatee == address(0)) {
       collateralJoin[_cType] =
-                collateralJoinFactory.deployCollateralJoin({_cType: _cType, _collateral: address(collateral[_cType])});
+        collateralJoinFactory.deployCollateralJoin({_cType: _cType, _collateral: address(collateral[_cType])});
     } else {
       collateralJoin[_cType] = collateralJoinFactory.deployDelegatableCollateralJoin({
         _cType: _cType,
@@ -77,7 +77,7 @@ abstract contract Common is Contracts, Params, Test {
 
     collateralAuctionHouseFactory.initializeCollateralType(_cType, abi.encode(_collateralAuctionHouseParams[_cType]));
     collateralAuctionHouse[_cType] =
-            ICollateralAuctionHouse(collateralAuctionHouseFactory.collateralAuctionHouses(_cType));
+      ICollateralAuctionHouse(collateralAuctionHouseFactory.collateralAuctionHouses(_cType));
   }
 
   function _updateAuthorizationForAllContracts(address removeAddress, address addAddress) internal {
@@ -237,7 +237,7 @@ abstract contract Common is Contracts, Params, Test {
     oracleRelayer = new OracleRelayer(address(safeEngine), systemCoinOracle, _oracleRelayerParams);
 
     surplusAuctionHouse =
-          new SurplusAuctionHouse(address(safeEngine), address(protocolToken), _surplusAuctionHouseParams);
+      new SurplusAuctionHouse(address(safeEngine), address(protocolToken), _surplusAuctionHouseParams);
 
     debtAuctionHouse = new DebtAuctionHouse(address(safeEngine), address(protocolToken), _debtAuctionHouseParams);
 
@@ -248,7 +248,7 @@ abstract contract Common is Contracts, Params, Test {
     liquidationEngine = new LiquidationEngine(address(safeEngine), address(accountingEngine), _liquidationEngineParams);
 
     collateralAuctionHouseFactory =
-          new CollateralAuctionHouseFactory(address(safeEngine), address(liquidationEngine), address(oracleRelayer));
+      new CollateralAuctionHouseFactory(address(safeEngine), address(liquidationEngine), address(oracleRelayer));
 
     // deploy Token adapters
     coinJoin = new CoinJoin(address(safeEngine), address(systemCoin));
@@ -277,10 +277,10 @@ abstract contract Common is Contracts, Params, Test {
     );
 
     postSettlementSurplusAuctionHouse =
-          new PostSettlementSurplusAuctionHouse(address(safeEngine), address(protocolToken), _postSettlementSAHParams);
+      new PostSettlementSurplusAuctionHouse(address(safeEngine), address(protocolToken), _postSettlementSAHParams);
 
     settlementSurplusAuctioneer =
-          new SettlementSurplusAuctioneer(address(accountingEngine), address(postSettlementSurplusAuctionHouse));
+      new SettlementSurplusAuctioneer(address(accountingEngine), address(postSettlementSurplusAuctionHouse));
   }
 
   function _setupGlobalSettlement() internal {
@@ -385,7 +385,7 @@ abstract contract Common is Contracts, Params, Test {
 
     safeManager = new ODSafeManager(address(safeEngine), address(vault721), address(taxCollector));
     nftRenderer =
-          new NFTRenderer(address(vault721), address(oracleRelayer), address(taxCollector), address(collateralJoinFactory));
+      new NFTRenderer(address(vault721), address(oracleRelayer), address(taxCollector), address(collateralJoinFactory));
 
     _deployProxyActions();
   }
