@@ -22,12 +22,11 @@ contract SimulationPIDController is TestParams, Deploy, ODTest {
   OracleForTest marketOracle;
   string filePath = './test/testnet/simulations/pid-controller/';
 
-  function setUp() public {
+  function setUp() restoreOriginalCaller public {
     marketOracle = new OracleForTest(1e18);
     systemCoinOracle = IBaseOracle(marketOracle);
     _getEnvironmentParams();
     run();
-    vm.startPrank(deployer);
   }
 
   // --- settings ---
@@ -47,18 +46,20 @@ contract SimulationPIDController is TestParams, Deploy, ODTest {
 
   function test_production_setup_with_impulse()
     public
+  restoreOriginalCaller
     setupPID(_proportionalGain, _integralGain, _alphaDecay)
     writeCSV('production_setup_with_impulse', _columns)
   {
     _runSimulationWithImpulse();
   }
 
-  function test_no_gain_with_impulse() public setupPID(0, 0, 0) writeCSV('no_gain_with_impulse', _columns) {
+  function test_no_gain_with_impulse() public restoreOriginalCaller setupPID(0, 0, 0) writeCSV('no_gain_with_impulse', _columns) {
     _runSimulationWithImpulse();
   }
 
   function test_proportional_with_impulse()
     public
+  restoreOriginalCaller
     setupPID(_proportionalGain, 0, 0)
     writeCSV('proportional_gain_with_impulse', _columns)
   {
@@ -67,41 +68,44 @@ contract SimulationPIDController is TestParams, Deploy, ODTest {
 
   function test_integral_with_impulse()
     public
+  restoreOriginalCaller
     setupPID(0, _integralGain, 0)
     writeCSV('integral_gain_with_impulse', _columns)
   {
     _runSimulationWithImpulse();
   }
 
-  function test_decay_with_impulse() public setupPID(0, 0, _alphaDecay) writeCSV('decay_with_impulse', _columns) {
+  function test_decay_with_impulse() public restoreOriginalCaller setupPID(0, 0, _alphaDecay) writeCSV('decay_with_impulse', _columns) {
     _runSimulationWithImpulse();
   }
 
   function test_production_setup_with_step()
     public
+  restoreOriginalCaller
     setupPID(_proportionalGain, _integralGain, _alphaDecay)
     writeCSV('production_setup_with_step', _columns)
   {
     _runSimulationWithStep();
   }
 
-  function test_no_gain_with_step() public setupPID(0, 0, 0) writeCSV('no_gain_with_step', _columns) {
+  function test_no_gain_with_step() public restoreOriginalCaller setupPID(0, 0, 0) writeCSV('no_gain_with_step', _columns) {
     _runSimulationWithStep();
   }
 
   function test_proportional_with_step()
     public
+  restoreOriginalCaller
     setupPID(_proportionalGain, 0, 0)
     writeCSV('proportional_gain_with_step', _columns)
   {
     _runSimulationWithStep();
   }
 
-  function test_integral_with_step() public setupPID(0, _integralGain, 0) writeCSV('integral_gain_with_step', _columns) {
+  function test_integral_with_step() public restoreOriginalCaller setupPID(0, _integralGain, 0) writeCSV('integral_gain_with_step', _columns) {
     _runSimulationWithStep();
   }
 
-  function test_decay_with_step() public setupPID(0, 0, _alphaDecay) writeCSV('decay_with_step', _columns) {
+  function test_decay_with_step() public restoreOriginalCaller setupPID(0, 0, _alphaDecay) writeCSV('decay_with_step', _columns) {
     _runSimulationWithStep();
   }
 

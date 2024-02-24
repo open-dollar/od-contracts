@@ -22,7 +22,7 @@ abstract contract E2EStabilityFeeTreasuryTest is BaseUser, Common {
     _collectFees(TKN, YEAR * 100);
   }
 
-  function test_give_funds() public {
+  function test_give_funds() restoreOriginalCaller public {
     // Collecting fees for stabilityFeeTreasury
     _gatherFees();
 
@@ -40,7 +40,7 @@ abstract contract E2EStabilityFeeTreasuryTest is BaseUser, Common {
     assertEq(safeEngine.coinBalance(address(stabilityFeeTreasury)), _coinBalance - _rad);
   }
 
-  function test_take_funds() public {
+  function test_take_funds() restoreOriginalCaller public {
     uint256 _wad = INITIAL_DEBT;
 
     // opening alice safe
@@ -64,7 +64,7 @@ abstract contract E2EStabilityFeeTreasuryTest is BaseUser, Common {
     assertEq(safeEngine.coinBalance(address(stabilityFeeTreasury)), _wad * RAY);
   }
 
-  function test_pull_funds() public {
+  function test_pull_funds() restoreOriginalCaller public {
     // Collecting fees for stabilityFeeTreasury
     _gatherFees();
 
@@ -89,7 +89,7 @@ abstract contract E2EStabilityFeeTreasuryTest is BaseUser, Common {
     assertEq(stabilityFeeTreasury.pulledPerHour(governor, block.timestamp / HOUR), _rad);
   }
 
-  function test_transfer_surplus_funds() public {
+  function test_transfer_surplus_funds() restoreOriginalCaller public {
     // Collecting fees for stabilityFeeTreasury
     _gatherFees();
     address _extraSurplusReceiver = stabilityFeeTreasury.extraSurplusReceiver();
@@ -103,7 +103,7 @@ abstract contract E2EStabilityFeeTreasuryTest is BaseUser, Common {
     assertEq(stabilityFeeTreasury.latestSurplusTransferTime(), block.timestamp);
   }
 
-  function test_repay_debt_before_pull() public {
+  function test_repay_debt_before_pull() restoreOriginalCaller public {
     // Collecting fees for stabilityFeeTreasury
     _gatherFees();
     uint256 _coinBalance = safeEngine.coinBalance(address(stabilityFeeTreasury));
@@ -135,7 +135,7 @@ abstract contract E2EStabilityFeeTreasuryTest is BaseUser, Common {
     assertEq(safeEngine.debtBalance(address(stabilityFeeTreasury)), 0);
   }
 
-  function test_join_coins_before_pull() public {
+  function test_join_coins_before_pull() restoreOriginalCaller public {
     uint256 _wad = INITIAL_DEBT;
 
     // opening alice safe
