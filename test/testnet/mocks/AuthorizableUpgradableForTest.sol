@@ -6,7 +6,7 @@ import {AuthorizableUpgradeable, IAuthorizable} from '@contracts/utils/Authoriza
 contract AuthorizableUpgradableForTest is AuthorizableUpgradeable {
   error ModifierError();
 
-  function init(address _deployer) public  initializer {
+  function init(address _deployer) public initializer {
     __authorizable_init(_deployer);
   }
 

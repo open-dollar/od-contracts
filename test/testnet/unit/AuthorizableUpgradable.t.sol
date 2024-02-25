@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {AuthorizableUpgradableForTest, IAuthorizable } from '@testnet/mocks/AuthorizableUpgradableForTest.sol';
+import {AuthorizableUpgradableForTest, IAuthorizable} from '@testnet/mocks/AuthorizableUpgradableForTest.sol';
 import {ODTest} from '@testnet/utils/ODTest.t.sol';
 
 abstract contract Base is ODTest {
@@ -78,7 +78,5 @@ contract Unit_AuthorizableUpgradable is Base {
     vm.startPrank(deployer);
     vm.expectRevert(IAuthorizable.NotAuthorized.selector);
     authorizable.removeAuthorization(address(0x21));
-
   }
-
 }

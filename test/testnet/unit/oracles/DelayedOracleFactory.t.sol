@@ -8,23 +8,21 @@ import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {ODTest, stdStorage, StdStorage} from '@testnet/utils/ODTest.t.sol';
 
-import "forge-std/console2.sol";
-import "@contracts/oracles/DenominatedOracle.sol";
+import 'forge-std/console2.sol';
+import '@contracts/oracles/DenominatedOracle.sol';
 
 contract PriceSourceMock is IBaseOracle {
+  function symbol() external view override returns (string memory) {
+    return 'ETH/USD';
+  }
 
-    function symbol() external view override returns (string memory) {
-        return "ETH/USD";
-    }
+  function getResultWithValidity() external view override returns (uint256, bool) {
+    return (1000, true);
+  }
 
-    function getResultWithValidity() external view override returns (uint256, bool) {
-        return (1000, true);
-    }
-
-    function read() external view override returns (uint256) {
-        return 1000;
-    }
-
+  function read() external view override returns (uint256) {
+    return 1000;
+  }
 }
 
 abstract contract Base is ODTest {
