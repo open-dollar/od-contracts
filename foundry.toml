@@ -22,6 +22,7 @@ fuzz_runs = 1000
 optimizer_runs = 10_000
 block_timestamp = 1675855961
 fs_permissions = [{ access = "write", path = "./test/testnet/simulations" }]
+fuzz.max_test_rejects = 10000000
 
 [profile.governance]
 fs_permissions = [{ access = "read-write", path = "./" }]
