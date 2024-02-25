@@ -2,10 +2,30 @@
 pragma solidity 0.8.19;
 
 import {DelayedOracleFactory} from '@contracts/factories/DelayedOracleFactory.sol';
-import {DelayedOracleChild} from '@contracts/factories/DelayedOracleChild.sol';
+import {DelayedOracleChild, DelayedOracle} from '@contracts/factories/DelayedOracleChild.sol';
+import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {ODTest, stdStorage, StdStorage} from '@testnet/utils/ODTest.t.sol';
+
+import "forge-std/console2.sol";
+import "@contracts/oracles/DenominatedOracle.sol";
+
+contract PriceSourceMock is IBaseOracle {
+
+    function symbol() external view override returns (string memory) {
+        return "ETH/USD";
+    }
+
+    function getResultWithValidity() external view override returns (uint256, bool) {
+        return (1000, true);
+    }
+
+    function read() external view override returns (uint256) {
+        return 1000;
+    }
+
+}
 
 abstract contract Base is ODTest {
   using stdStorage for StdStorage;
@@ -134,5 +154,20 @@ contract Unit_DelayedOracleFactory_DeployDelayedOracle is Base {
     assertEq(
       address(delayedOracleFactory.deployDelayedOracle(mockPriceSource, _updateDelay)), address(delayedOracleChild)
     );
+  }
+
+  function test_ShouldUpate() public {
+    PriceSourceMock priceSource = new PriceSourceMock();
+    DelayedOracle oracle = new DelayedOracle(priceSource, 100);
+    assertTrue(!oracle.shouldUpdate());
+    vm.expectRevert(IDelayedOracle.DelayedOracle_DelayHasNotElapsed.selector);
+    oracle.updateResult();
+  }
+
+  function test_inversed() public {
+    PriceSourceMock priceSource = new PriceSourceMock();
+    DenominatedOracle oracle = new DenominatedOracle(priceSource, priceSource, true);
+    // mock results, we just care if call can go through
+    (uint256 _result, bool _validity) = oracle.getResultWithValidity();
   }
 }
