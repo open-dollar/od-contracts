@@ -9,6 +9,7 @@ import {IModifiablePerCollateral} from '@interfaces/utils/IModifiablePerCollater
 import {ODTest, stdStorage, StdStorage} from '../utils/ODTest.t.sol';
 
 import {Math, RAY, WAD} from '@libraries/Math.sol';
+import 'forge-std/console2.sol';
 
 abstract contract Base is ODTest {
   using stdStorage for StdStorage;
@@ -138,6 +139,7 @@ abstract contract Base is ODTest {
 
 contract Unit_SAFEEngine_Constructor is Base {
   event AddAuthorization(address _account);
+  event RemoveAuthorization(address _account);
   event ModifyParameters(bytes32 indexed _parameter, bytes32 indexed _collateral, bytes _data);
 
   function test_Set_AuthorizedAccounts() public {
@@ -158,6 +160,13 @@ contract Unit_SAFEEngine_Constructor is Base {
     emit AddAuthorization(deployer);
     vm.prank(deployer);
     safeEngine = new SAFEEngineForTest(safeEngineParams);
+  }
+
+  function test_RemoveAuthorization() public {
+    vm.startPrank(deployer);
+    safeEngine = new SAFEEngineForTest(safeEngineParams);
+    emit RemoveAuthorization(deployer);
+    safeEngine.removeAuthorization(deployer);
   }
 
   function test_Set_SAFEEngine_Params(ISAFEEngine.SAFEEngineParams memory _safeEngineParams) public {
@@ -694,8 +703,6 @@ contract Unit_SAFEEngine_UpdateAccumulatedRate is Base {
     safeEngine.updateAccumulatedRate(collateralType, surplusDst, _rateMultiplier);
   }
 }
-
-import 'forge-std/console2.sol';
 
 contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
   using Math for uint256;
