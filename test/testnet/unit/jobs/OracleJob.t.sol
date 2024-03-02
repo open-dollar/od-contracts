@@ -86,7 +86,9 @@ contract Unit_OracleJob_Constructor is Base {
     vm.expectEmit();
     emit AddAuthorization(user);
 
-    new OracleJobForTest(address(mockOracleRelayer), address(mockPIDRateSetter), address(mockStabilityFeeTreasury), REWARD_AMOUNT);
+    new OracleJobForTest(
+      address(mockOracleRelayer), address(mockPIDRateSetter), address(mockStabilityFeeTreasury), REWARD_AMOUNT
+    );
   }
 
   function test_Set_StabilityFeeTreasury() public happyPath {
