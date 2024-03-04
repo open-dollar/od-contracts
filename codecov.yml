@@ -22,7 +22,7 @@ comment:
   require_head: yes
 
 ignore:
-  - "test/*"
-  - "script/*"
-  - "src/libraries/*"
-  - "src/contracts/for-test/*"
+  - "test"
+  - "script"
+  - "src/libraries/"
+  - "src/contracts/for-test/"
