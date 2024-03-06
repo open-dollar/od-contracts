@@ -1,6 +1,6 @@
 {
   "name": "@opendollar/contracts",
-  "version": "1.6.1",
+  "version": "1.6.4",
   "private": true,
   "description": "Multicollateral ETH backed stablecoin",
   "homepage": "https://www.opendollar.com/",
@@ -18,7 +18,8 @@
     "wei3erHase (https://github.com/wei3erHase)",
     "0xGorilla (https://github.com/0xGorilla)",
     "0xJabberwock (https://github.com/0xJabberwock)",
-    "0xRaccoon (https://github.com/0xRaccoon)"
+    "0xRaccoon (https://github.com/0xRaccoon)",
+    "pi0neerpat (https://github.com/pi0neerpat)"
   ],
   "scripts": {
     "build": "forge build",
