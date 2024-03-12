@@ -418,12 +418,17 @@ abstract contract Common is Contracts, Params, Test {
   modifier restoreOriginalCaller() {
     (VmSafe.CallerMode callerMode, address activeBroadcastAddr,) = vm.readCallers();
     bool activeBroadcast = callerMode == VmSafe.CallerMode.RecurrentBroadcast;
+    bool activePrank = callerMode == VmSafe.CallerMode.RecurrentPrank;
     if (activeBroadcast) {
       vm.stopBroadcast();
-    }
-    _;
-    if (activeBroadcast) {
+      _;
       vm.startBroadcast(activeBroadcastAddr);
+    } else if (activePrank) {
+      vm.stopPrank();
+      _;
+      vm.startPrank(activeBroadcastAddr);
+    } else {
+      _;
     }
   }
 }
