@@ -32,7 +32,7 @@ out = 'out-via-ir'
 fuzz_runs = 5000
 
 [profile.test]
-via_ir = true
+via_ir = false
 out = 'out-via-ir'
 fuzz_runs = 5000
 src = 'test'
