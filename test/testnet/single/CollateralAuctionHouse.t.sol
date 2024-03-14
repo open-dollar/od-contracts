@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {HaiTest} from '@testnet/utils/HaiTest.t.sol';
+import {ODTest} from '@testnet/utils/ODTest.t.sol';
 
 import {ISAFEEngine, SAFEEngine} from '@contracts/SAFEEngine.sol';
 import {CollateralAuctionHouse, ICollateralAuctionHouse} from '@contracts/CollateralAuctionHouse.sol';
@@ -74,7 +74,7 @@ contract DummyLiquidationEngine {
   function addAuthorization(address) external {}
 }
 
-abstract contract SingleCollateralAuctionHouseTest is HaiTest {
+abstract contract SingleCollateralAuctionHouseTest is ODTest {
   using Math for uint256;
 
   DummyLiquidationEngine liquidationEngine;

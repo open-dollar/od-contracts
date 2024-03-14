@@ -4,18 +4,19 @@ pragma solidity 0.8.19;
 import '@script/Contracts.s.sol';
 import '@script/Registry.s.sol';
 import {Test} from 'forge-std/Test.sol';
+import {VmSafe} from 'forge-std/Script.sol';
 import {Params, ParamChecker, OD, ETH_A, JOB_REWARD} from '@script/Params.s.sol';
 
 abstract contract Common is Contracts, Params, Test {
   uint256 internal _chainId;
-  uint256 internal _deployerPk = 69; // for tests - from HAI
+  uint256 internal _deployerPk = 69; // for tests - from OD
   uint256 internal _governorPK;
   bytes32 internal _systemCoinSalt;
   bytes32 internal _vault721Salt;
   bytes internal _systemCoinInitCode;
   bytes internal _vault721InitCode;
 
-  function logGovernor() public {
+  function logGovernor() public runIfFork {
     emit log_named_address('Governor', governor);
   }
 
@@ -25,6 +26,24 @@ abstract contract Common is Contracts, Params, Test {
       id := chainid()
     }
     return id;
+  }
+
+  // Exclude anvil from the fork check - Not opt for overriding to avoid obscuring the logic
+  // Only relevant if we start a anvil instance outside the tests .eg `forge script DeployAnvil --rpc-url $ANVIL_RPC`
+  function onFork() public view returns (bool status) {
+    status = !isNetworkAnvil() && isFork();
+  }
+
+  function isNetworkAnvil() public view returns (bool) {
+    return getChainId() == 31_337;
+  }
+
+  function isNetworkArbitrumSepolia() public view returns (bool) {
+    return getChainId() == 421_614;
+  }
+
+  function isNetworkArbitrumOne() public view returns (bool) {
+    return getChainId() == 42_161;
   }
 
   function getSemiRandSalt() public view returns (bytes32) {
@@ -61,66 +80,61 @@ abstract contract Common is Contracts, Params, Test {
       ICollateralAuctionHouse(collateralAuctionHouseFactory.collateralAuctionHouses(_cType));
   }
 
-  function _revokeAllTo(address _governor) internal {
-    if (!_shouldRevoke()) return;
-
+  function _updateAuthorizationForAllContracts(address removeAddress, address addAddress) internal {
     // base contracts
-    _revoke(safeEngine, _governor);
-    _revoke(liquidationEngine, _governor);
-    _revoke(accountingEngine, _governor);
-    _revoke(oracleRelayer, _governor);
+    _revoke(safeEngine, removeAddress, addAddress);
+    _revoke(liquidationEngine, removeAddress, addAddress);
+    _revoke(accountingEngine, removeAddress, addAddress);
+    _revoke(oracleRelayer, removeAddress, addAddress);
 
     // auction houses
-    _revoke(surplusAuctionHouse, _governor);
-    _revoke(debtAuctionHouse, _governor);
+    _revoke(surplusAuctionHouse, removeAddress, addAddress);
+    _revoke(debtAuctionHouse, removeAddress, addAddress);
 
     // tax
-    _revoke(taxCollector, _governor);
-    _revoke(stabilityFeeTreasury, _governor);
+    _revoke(taxCollector, removeAddress, addAddress);
+    _revoke(stabilityFeeTreasury, removeAddress, addAddress);
 
     // tokens
-    _revoke(systemCoin, _governor);
-
-    if (protocolToken.authorizedAccounts(_governor) == false) {
-      // pre-deployed protocolToken
-      _revoke(protocolToken, _governor);
-    } else {
-      protocolToken.removeAuthorization(deployer);
-    }
+    _revoke(systemCoin, removeAddress, addAddress);
+    _revoke(protocolToken, removeAddress, addAddress);
 
     // pid controller
-    _revoke(pidController, _governor);
-    _revoke(pidRateSetter, _governor);
+    _revoke(pidController, removeAddress, addAddress);
+    _revoke(pidRateSetter, removeAddress, addAddress);
 
     // token adapters
-    _revoke(coinJoin, _governor);
+    _revoke(coinJoin, removeAddress, addAddress);
 
     if (address(ethJoin) != address(0)) {
-      _revoke(ethJoin, _governor);
+      _revoke(ethJoin, removeAddress, addAddress);
     }
 
     // factories or children
-    _revoke(chainlinkRelayerFactory, _governor);
-    _revoke(denominatedOracleFactory, _governor);
-    _revoke(delayedOracleFactory, _governor);
-
-    _revoke(collateralJoinFactory, _governor);
-    _revoke(collateralAuctionHouseFactory, _governor);
+    _revoke(chainlinkRelayerFactory, removeAddress, addAddress);
+    _revoke(denominatedOracleFactory, removeAddress, addAddress);
+    _revoke(delayedOracleFactory, removeAddress, addAddress);
+    _revoke(collateralJoinFactory, removeAddress, addAddress);
+    _revoke(collateralAuctionHouseFactory, removeAddress, addAddress);
 
     // global settlement
-    _revoke(globalSettlement, _governor);
-    _revoke(postSettlementSurplusAuctionHouse, _governor);
-    _revoke(settlementSurplusAuctioneer, _governor);
+    _revoke(globalSettlement, removeAddress, addAddress);
+    _revoke(postSettlementSurplusAuctionHouse, removeAddress, addAddress);
+    _revoke(settlementSurplusAuctioneer, removeAddress, addAddress);
 
     // jobs
-    _revoke(accountingJob, _governor);
-    _revoke(liquidationJob, _governor);
-    _revoke(oracleJob, _governor);
+    _revoke(accountingJob, removeAddress, addAddress);
+    _revoke(liquidationJob, removeAddress, addAddress);
+    _revoke(oracleJob, removeAddress, addAddress);
   }
 
-  function _revoke(IAuthorizable _contract, address _target) internal {
-    _contract.addAuthorization(_target);
-    _contract.removeAuthorization(deployer);
+  function _revoke(IAuthorizable _contract, address _removeAddress, address addAddress) internal {
+    if (addAddress != address(0)) {
+      _contract.addAuthorization(addAddress);
+    }
+    if (_removeAddress == address(0)) {
+      _contract.removeAuthorization(_removeAddress);
+    }
   }
 
   function _delegateAllTo(address __delegate) internal {
@@ -179,14 +193,10 @@ abstract contract Common is Contracts, Params, Test {
     _contract.addAuthorization(_target);
   }
 
-  function _shouldRevoke() internal view returns (bool) {
-    return governor != deployer && governor != address(0);
-  }
-
   function deployTokenGovernance() public updateParams {
     // deploy Tokens
 
-    if (_chainId != 31_337) {
+    if (!isNetworkAnvil()) {
       address systemCoinAddress = create2.create2deploy(_systemCoinSalt, _systemCoinInitCode);
       systemCoin = ISystemCoin(systemCoinAddress);
     } else {
@@ -198,7 +208,7 @@ abstract contract Common is Contracts, Params, Test {
 
     address[] memory members = new address[](0);
 
-    if (_chainId == 31_337) {
+    if (isNetworkAnvil()) {
       // deploy governance contracts for anvil
       timelockController = new TimelockController(SEPOLIA_MIN_DELAY, members, members, deployer);
       odGovernor = new ODGovernor(
@@ -224,11 +234,11 @@ abstract contract Common is Contracts, Params, Test {
   function deployContracts() public updateParams {
     // deploy Base contracts
     safeEngine = new SAFEEngine(_safeEngineParams);
-
     oracleRelayer = new OracleRelayer(address(safeEngine), systemCoinOracle, _oracleRelayerParams);
 
     surplusAuctionHouse =
       new SurplusAuctionHouse(address(safeEngine), address(protocolToken), _surplusAuctionHouseParams);
+
     debtAuctionHouse = new DebtAuctionHouse(address(safeEngine), address(protocolToken), _debtAuctionHouseParams);
 
     accountingEngine = new AccountingEngine(
@@ -365,7 +375,7 @@ abstract contract Common is Contracts, Params, Test {
   }
 
   function deployProxyContracts() public updateParams {
-    if (_chainId != 31_337) {
+    if (!isNetworkAnvil()) {
       address vault721Address = create2.create2deploy(_vault721Salt, _vault721InitCode);
       vault721 = Vault721(vault721Address);
     } else {
@@ -394,5 +404,31 @@ abstract contract Common is Contracts, Params, Test {
     _getEnvironmentParams();
     _;
     _getEnvironmentParams();
+  }
+
+  // @dev: only run function if on fork
+  modifier runIfFork() {
+    if (onFork()) {
+      _;
+    }
+  }
+
+  // @dev: if in the middle of a active broadcast, call function and restore original caller after execution.
+  // @attention: function is responsible for starting and stopping the broadcast it needs
+  modifier restoreOriginalCaller() {
+    (VmSafe.CallerMode callerMode, address activeBroadcastAddr,) = vm.readCallers();
+    bool activeBroadcast = callerMode == VmSafe.CallerMode.RecurrentBroadcast;
+    bool activePrank = callerMode == VmSafe.CallerMode.RecurrentPrank;
+    if (activeBroadcast) {
+      vm.stopBroadcast();
+      _;
+      vm.startBroadcast(activeBroadcastAddr);
+    } else if (activePrank) {
+      vm.stopPrank();
+      _;
+      vm.startPrank(activeBroadcastAddr);
+    } else {
+      _;
+    }
   }
 }

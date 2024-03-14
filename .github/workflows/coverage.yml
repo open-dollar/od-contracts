@@ -1,0 +1,43 @@
+name: Coverage
+
+on: [push]
+
+concurrency:
+  group: ${{github.workflow}}-${{github.ref}}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+          cache: "yarn"
+
+      - name: Install dependencies
+        run: yarn --frozen-lockfile --network-concurrency 1
+
+      - name: Install forge dependencies
+        run: forge install
+
+      - name: Precompile using 0.8.19 and via-ir=false
+        run: yarn build
+
+      - name: Run Coverage
+        shell: bash
+        run: yarn coverage
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v4.0.1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: open-dollar/od-contracts

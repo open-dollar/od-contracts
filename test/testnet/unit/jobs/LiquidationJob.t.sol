@@ -7,11 +7,11 @@ import {IStabilityFeeTreasury} from '@interfaces/IStabilityFeeTreasury.sol';
 import {IJob} from '@interfaces/jobs/IJob.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
-import {HaiTest, stdStorage, StdStorage} from '@testnet/utils/HaiTest.t.sol';
+import {ODTest, stdStorage, StdStorage} from '@testnet/utils/ODTest.t.sol';
 
 import {Assertions} from '@libraries/Assertions.sol';
 
-abstract contract Base is HaiTest {
+abstract contract Base is ODTest {
   using stdStorage for StdStorage;
 
   address deployer = label('deployer');
@@ -163,7 +163,11 @@ contract Unit_LiquidationJob_ModifyParameters is Base {
     assertEq(address(liquidationJob.liquidationEngine()), _liquidationEngine);
   }
 
-  function test_Set_StabilityFeeTreasury(address _stabilityFeeTreasury) public happyPath mockAsContract(_stabilityFeeTreasury) {
+  function test_Set_StabilityFeeTreasury(address _stabilityFeeTreasury)
+    public
+    happyPath
+    mockAsContract(_stabilityFeeTreasury)
+  {
     liquidationJob.modifyParameters('stabilityFeeTreasury', abi.encode(_stabilityFeeTreasury));
 
     assertEq(address(liquidationJob.stabilityFeeTreasury()), _stabilityFeeTreasury);

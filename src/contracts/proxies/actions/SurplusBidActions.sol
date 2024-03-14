@@ -17,6 +17,7 @@ import {RAY} from '@libraries/Math.sol';
  * @notice All methods here are executed as delegatecalls from the user's proxy
  */
 contract SurplusBidActions is ISurplusBidActions, CommonActions {
+  using SafeERC20 for IERC20;
   // --- Methods ---
 
   /// @inheritdoc ISurplusBidActions
@@ -31,8 +32,8 @@ contract SurplusBidActions is ISurplusBidActions, CommonActions {
 
     // prepare protocol token spending
     address _protocolToken = address(ISurplusAuctionHouse(_surplusAuctionHouse).protocolToken());
-    SafeERC20.safeTransferFrom(IERC20(_protocolToken), msg.sender, address(this), _bidAmount);
-    SafeERC20.safeApprove(IERC20(_protocolToken), address(_surplusAuctionHouse), _bidAmount);
+    IERC20(_protocolToken).safeTransferFrom(msg.sender, address(this), _bidAmount);
+    IERC20(_protocolToken).safeIncreaseAllowance(address(_surplusAuctionHouse), _bidAmount);
 
     // proxy needs to be approved for protocol token spending
     ISurplusAuctionHouse(_surplusAuctionHouse).increaseBidSize(_auctionId, _bidAmount);

@@ -11,6 +11,7 @@ import {RAY, WAD} from '@libraries/Math.sol';
 import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
 import {SafeERC20} from '@openzeppelin/token/ERC20/utils/SafeERC20.sol';
 import {Vault721} from '@contracts/proxies/Vault721.sol';
+import {BasicActions} from '@contracts/proxies/actions/BasicActions.sol';
 
 contract NFTSetup is Test, SepoliaDeployment {
   uint256 private constant MINT_AMOUNT = 1_000_000 ether;
@@ -37,6 +38,9 @@ contract NFTSetup is Test, SepoliaDeployment {
     MintableERC20(wsteth).mint(bob, MINT_AMOUNT);
     MintableERC20(arb).mint(alice, MINT_AMOUNT);
     MintableERC20(arb).mint(bob, MINT_AMOUNT);
+
+    //TODO: This is a workaround until there is a new deployment on Sepolia
+    basicActions = new BasicActions();
   }
 
   // --- helper functions ---

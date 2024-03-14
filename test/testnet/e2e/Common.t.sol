@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import {MAINNET_WETH, SEPOLIA_WETH} from '@script/Registry.s.sol';
-import {HaiTest} from '@testnet/utils/HaiTest.t.sol';
+import {ODTest} from '@testnet/utils/ODTest.t.sol';
 import {OD, OD_INITIAL_PRICE, ETH_A} from '@script/Params.s.sol';
 import {Deploy} from '@script/Deploy.s.sol';
 import {TestParams, WSTETH, TKN, TEST_ETH_PRICE, TEST_TKN_PRICE} from '@testnet/e2e/TestParams.t.sol';
@@ -70,7 +70,7 @@ contract DeployForTest is TestParams, Deploy {
  * @notice Abstract contract that contains for test methods, and triggers DeployForTest routine
  * @dev    Used to be inherited by different test contracts with different scopes
  */
-abstract contract Common is DeployForTest, HaiTest {
+abstract contract Common is DeployForTest, ODTest {
   address alice = address(0x420);
   address bob = address(0x421);
   address carol = address(0x422);

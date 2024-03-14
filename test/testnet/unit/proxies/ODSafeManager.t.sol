@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {HaiTest, stdStorage, StdStorage} from '@testnet/utils/HaiTest.t.sol';
+import {ODTest, stdStorage, StdStorage} from '@testnet/utils/ODTest.t.sol';
 import {Vault721} from '@contracts/proxies/Vault721.sol';
 import {IVault721} from '@interfaces/proxies/IVault721.sol';
 import {SAFEEngineForTest, ISAFEEngine} from '@testnet/mocks/SAFEEngineForTest.sol';
@@ -25,7 +25,7 @@ struct Scenario {
   address bob;
 }
 
-contract Base is HaiTest {
+contract Base is ODTest {
   using stdStorage for StdStorage;
   using Math for uint256;
 

@@ -1,14 +1,14 @@
-# HAI Protocol 101
+# OD Protocol 101
 
-## HAI Framework Mechanics
+## OD Framework Mechanics
 
-### What is HAI?
+### What is OD?
 
-- **Low-Cost**: The HAI protocol is deployed on the Optimism network, offering significantly low gas fees for transactions.
+- **Low-Cost**: The OD protocol is deployed on the Optimism network, offering significantly low gas fees for transactions.
 - **Dollar-Denominated**: Both the system coin and the collaterals are denominated in US Dollar.
 - **Collateral-Backed**: A diverse basket of collateral types backs the minting of the system coin.
 - **Control-Pegged**: A PID controller dynamically adjusts the funding rate to balance value transfer between minters (debtors) and holders (creditors).
-- **Settleable**: The system can undergo a Global Settlement, during which all debts are squared and HAI holders can redeem tokens for a share of the collateral pool, regardless of whether they have outstanding debts.
+- **Settleable**: The system can undergo a Global Settlement, during which all debts are squared and OD holders can redeem tokens for a share of the collateral pool, regardless of whether they have outstanding debts.
 
 ### Glossary
 
@@ -22,13 +22,13 @@
 
 #### Tokens
 
-- `systemCoin`: The ERC20 stablecoin issued by HAI.
+- `systemCoin`: The ERC20 stablecoin issued by OD.
 - `protocolToken`: The ERC20 governance token, used for system parameter voting and participating in debt/surplus auctions.
 - `collateral`: Any ERC20 token that serves as collateral, enhancing the corresponding `cType` balance.
 
 #### Key Concepts
 
-- `cType`: Represents a unique identifier for a collateral type within the HAI system.
+- `cType`: Represents a unique identifier for a collateral type within the OD system.
 - `COIN`: An internal balance of system coins convertible to `systemCoin` on a `1:1` basis.
 - `DEBT`: An internal ledger entry representing unbacked debt, erasable with `COIN` on a `1:1` basis.
 - `SAFE`: A vault-like contract holding collateral and generating `COINs`, which may also accrue `DEBT`.
@@ -41,4 +41,4 @@
 - `stabilityFee`: A separate interest rate, unconnected to the `redemptionRate`, applied to user debts and collected by the system.
 - `accumulatedRate`: Reflects the compounded `stabilityFee` applied to a `cType`, determining the relationship between `generatedDebt` and the `COINs` produced.
 
-This guide aims to provide a comprehensive understanding of HAI's framework and its intricacies. Armed with this knowledge, you'll be better equipped to interact with the protocol effectively.
+This guide aims to provide a comprehensive understanding of OD's framework and its intricacies. Armed with this knowledge, you'll be better equipped to interact with the protocol effectively.

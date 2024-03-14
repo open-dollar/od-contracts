@@ -18,12 +18,13 @@
     "wei3erHase (https://github.com/wei3erHase)",
     "0xGorilla (https://github.com/0xGorilla)",
     "0xJabberwock (https://github.com/0xJabberwock)",
-    "0xRaccoon (https://github.com/0xRaccoon)"
+    "0xRaccoon (https://github.com/0xRaccoon)",
+    "MrDeadCe11 (https://github.com/MrDeadCe11)"
   ],
   "scripts": {
     "build": "forge build",
     "coverage": "forge coverage",
-    "deploy:anvil": "bash -c 'source .env && forge script DeployAnvil --with-gas-price 2000000000 -vvvvv --rpc-url $ANVIL_RPC --private-key $ANVIL_ONE --broadcast --ffi' && cp broadcast/Deploy.s.sol/31337/run-latest.json deployments/anvil/ && node tasks/parseAnvilDeployments.js",
+    "deploy:anvil": "bash -c 'source .env && forge script DeployAnvil --with-gas-price 2000000000 -vvvvv --rpc-url $ANVIL_RPC --private-key $ANVIL_ONE --broadcast --ffi' && mkdir -p deployments/anvil/ && cp broadcast/Deploy.s.sol/31337/run-latest.json deployments/anvil/ && node tasks/parseAnvilDeployments.js",
     "deploy:mainnet": "bash -c 'source .env && forge script DeployMainnet --rpc-url $ARB_MAINNET_RPC --broadcast --private-key $ARB_MAINNET_DEPLOYER_PK --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY'",
     "deploy:mainnet:ffi": "bash -c 'source .env && forge script DeployMainnet --rpc-url $ARB_MAINNET_RPC --broadcast --private-key $ARB_MAINNET_DEPLOYER_PK --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY --ffi'",
     "deploy:sepolia:ffi": "bash -c 'source .env && forge script DeploySepolia --with-gas-price 2000000000 -vvvvv --chain-id 461614 --rpc-url $ARB_SEPOLIA_RPC --private-key $ARB_SEPOLIA_DEPLOYER_PK --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY --ffi'",
@@ -37,7 +38,7 @@
     "simulate-deploy:mainnet:ffi": "bash -c 'source .env && forge script DeployMainnet --rpc-url $ARB_MAINNET_RPC --private-key $ARB_MAINNET_DEPLOYER_PK --ffi'",
     "simulate-deploy:sepolia": "bash -c 'source .env && forge script DeploySepolia --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC --private-key $ARB_SEPOLIA_DEPLOYER_PK'",
     "test": "FOUNDRY_FUZZ_RUNS=128 FOUNDRY_FUZZ_MAX_TEST_REJECTS=1000000 forge test --no-match-contract Unit --no-match-path test/testlocal/**/*.t.sol -vvv --ffi & FOUNDRY_FUZZ_RUNS=128 FOUNDRY_FUZZ_MAX_TEST_REJECTS=1000000 forge test --match-contract Unit -vvv --ffi",
-    "test:coverage": "bash -c 'forge coverage --fork-url http://127.0.0.1:8545 --report lcov && lcov --ignore-errors unused --remove lcov.info 'node_modules/*' 'script/*' 'test/*' 'src/contracts/for-test/*' -o lcov.info.pruned && mv lcov.info.pruned lcov.info && genhtml -o coverage-report lcov.info'",
+    "test:coverage": "forge coverage --report lcov && lcov --ignore-errors unused --remove lcov.info 'node_modules/*' 'script/*' 'test/*' 'src/contracts/for-test/*' 'src/libraries/*' -o lcov.info.pruned && mv lcov.info.pruned lcov.info && genhtml -o coverage-report lcov.info",
     "test:e2e": "forge test --match-contract E2E -vvv --ffi",
     "test:full": "FOUNDRY_FUZZ_RUNS=128 FOUNDRY_FUZZ_MAX_TEST_REJECTS=1000000 forge test -vvv --ffi",
     "test:local": "FOUNDRY_FUZZ_RUNS=32 FOUNDRY_FUZZ_MAX_TEST_REJECTS=1000000 forge test -vvv --ffi",

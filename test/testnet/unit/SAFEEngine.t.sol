@@ -6,11 +6,12 @@ import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {IModifiablePerCollateral} from '@interfaces/utils/IModifiablePerCollateral.sol';
-import {HaiTest, stdStorage, StdStorage} from '../utils/HaiTest.t.sol';
+import {ODTest, stdStorage, StdStorage} from '../utils/ODTest.t.sol';
 
 import {Math, RAY, WAD} from '@libraries/Math.sol';
+import 'forge-std/console2.sol';
 
-abstract contract Base is HaiTest {
+abstract contract Base is ODTest {
   using stdStorage for StdStorage;
 
   // Test addresses
@@ -138,6 +139,7 @@ abstract contract Base is HaiTest {
 
 contract Unit_SAFEEngine_Constructor is Base {
   event AddAuthorization(address _account);
+  event RemoveAuthorization(address _account);
   event ModifyParameters(bytes32 indexed _parameter, bytes32 indexed _collateral, bytes _data);
 
   function test_Set_AuthorizedAccounts() public {
@@ -158,6 +160,13 @@ contract Unit_SAFEEngine_Constructor is Base {
     emit AddAuthorization(deployer);
     vm.prank(deployer);
     safeEngine = new SAFEEngineForTest(safeEngineParams);
+  }
+
+  function test_RemoveAuthorization() public {
+    vm.startPrank(deployer);
+    safeEngine = new SAFEEngineForTest(safeEngineParams);
+    emit RemoveAuthorization(deployer);
+    safeEngine.removeAuthorization(deployer);
   }
 
   function test_Set_SAFEEngine_Params(ISAFEEngine.SAFEEngineParams memory _safeEngineParams) public {
@@ -883,6 +892,8 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
     safeEngine.modifySAFECollateralization(
       collateralType, safe, src, debtDestination, _scenario.deltaCollateral, _scenario.deltaDebt
     );
+    console2.logInt(_scenario.deltaCollateral);
+    console2.logInt(_scenario.deltaDebt);
   }
 
   function test_Revert_ContractIsDisabled() public {

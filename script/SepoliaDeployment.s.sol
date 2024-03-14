@@ -27,8 +27,8 @@ abstract contract SepoliaDeployment is Contracts, SepoliaParams, SepoliaContract
     collateral[CBETH] = IERC20Metadata(MintableERC20_CBETH_Address);
     collateral[RETH] = IERC20Metadata(MintableERC20_RETH_Address);
 
-    systemCoin = SystemCoin(SEPOLIA_SYSTEM_COIN);
-    protocolToken = ProtocolToken(SEPOLIA_PROTOCOL_TOKEN);
+    systemCoin = SystemCoin(SystemCoin_Address);
+    protocolToken = ProtocolToken(ProtocolToken_Address);
 
     // --- base contracts ---
     safeEngine = SAFEEngine(SAFEEngine_Address);

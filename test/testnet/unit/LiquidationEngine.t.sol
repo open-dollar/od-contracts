@@ -13,13 +13,13 @@ import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {LiquidationEngine} from '@contracts/LiquidationEngine.sol';
 import {LiquidationEngineForTest} from '@testnet/mocks/LiquidationEngineForTest.sol';
 import {DummyCollateralAuctionHouse} from '@testnet/mocks/CollateralAuctionHouseForTest.sol';
-import {HaiTest} from '@testnet/utils/HaiTest.t.sol';
+import {ODTest} from '@testnet/utils/ODTest.t.sol';
 import {StdStorage, stdStorage} from 'forge-std/StdStorage.sol';
 
 import {Math, MAX_RAD, RAY, WAD} from '@libraries/Math.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 
-abstract contract Base is HaiTest {
+abstract contract Base is ODTest {
   using stdStorage for StdStorage;
 
   uint256 auctionId = 123_456;
@@ -373,7 +373,11 @@ contract Unit_LiquidationEngine_ModifyParameters is Base {
     liquidationEngine.modifyParameters(_cType, 'liquidationQuantity', abi.encode(_liquidationQuantity));
   }
 
-  function test_ModifyParameters_AccountingEngine(address _accountingEngine) public authorized mockAsContract(_accountingEngine) {
+  function test_ModifyParameters_AccountingEngine(address _accountingEngine)
+    public
+    authorized
+    mockAsContract(_accountingEngine)
+  {
     vm.assume(_accountingEngine != address(0));
     liquidationEngine.modifyParameters('accountingEngine', abi.encode(_accountingEngine));
 
@@ -1719,8 +1723,9 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     bool _attemptIncrease
   ) public happyPathFullLiquidation(_liquidation) {
     vm.assume(_liquidation.safeDebt < type(uint256).max);
-    ISAFESaviour _testSaveSaviour =
-    new SAFESaviourIncreaseGeneratedDebtOrDecreaseCollateral(_liquidation.safeCollateral, _liquidation.safeDebt, false, _attemptIncrease);
+    ISAFESaviour _testSaveSaviour = new SAFESaviourIncreaseGeneratedDebtOrDecreaseCollateral(
+      _liquidation.safeCollateral, _liquidation.safeDebt, false, _attemptIncrease
+    );
     _mockChosenSafeSaviour(collateralType, safe, address(_testSaveSaviour));
     _mockSafeSaviours(address(_testSaveSaviour), 1);
     _mockSafeEngineSafes(collateralType, safe, _liquidation.safeCollateral, _liquidation.safeDebt);
@@ -1739,8 +1744,9 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     Liquidation memory _liquidation,
     bool _attemptDecrease
   ) public happyPathFullLiquidation(_liquidation) {
-    ISAFESaviour _testSaveSaviour =
-    new SAFESaviourIncreaseGeneratedDebtOrDecreaseCollateral(_liquidation.safeCollateral, _liquidation.safeDebt, true, _attemptDecrease);
+    ISAFESaviour _testSaveSaviour = new SAFESaviourIncreaseGeneratedDebtOrDecreaseCollateral(
+      _liquidation.safeCollateral, _liquidation.safeDebt, true, _attemptDecrease
+    );
     _mockChosenSafeSaviour(collateralType, safe, address(_testSaveSaviour));
     _mockSafeSaviours(address(_testSaveSaviour), 1);
 
@@ -1815,13 +1821,18 @@ contract Unit_LiquidationEngine_InitializeCollateralType is Base {
   function test_Set_CParams(
     bytes32 _cType,
     ILiquidationEngine.LiquidationEngineCollateralParams memory _liqEngineCParams
-// <<<<<<< HEAD:test/testnet/unit/LiquidationEngine.t.sol
-//   ) public authorized happyPath(_liqEngineCParams) {
-//     liquidationEngine.initializeCollateralType(_cType, _liqEngineCParams);
-// =======
-  ) public authorized happyPath(_liqEngineCParams) mockAsContract(_liqEngineCParams.collateralAuctionHouse) {
+  )
+    // <<<<<<< HEAD:test/testnet/unit/LiquidationEngine.t.sol
+    //   ) public authorized happyPath(_liqEngineCParams) {
+    //     liquidationEngine.initializeCollateralType(_cType, _liqEngineCParams);
+    // =======
+    public
+    authorized
+    happyPath(_liqEngineCParams)
+    mockAsContract(_liqEngineCParams.collateralAuctionHouse)
+  {
     liquidationEngine.initializeCollateralType(_cType, abi.encode(_liqEngineCParams));
-// >>>>>>> 01bea93e (refactor: add `ModifiablePerCollateral` to generalize `initializeCollateralType`):test/unit/LiquidationEngine.t.sol
+    // >>>>>>> 01bea93e (refactor: add `ModifiablePerCollateral` to generalize `initializeCollateralType`):test/unit/LiquidationEngine.t.sol
 
     assertEq(abi.encode(liquidationEngine.cParams(_cType)), abi.encode(_liqEngineCParams));
   }

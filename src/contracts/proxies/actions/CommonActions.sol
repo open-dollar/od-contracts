@@ -16,9 +16,11 @@ import {RAY} from '@libraries/Math.sol';
  * @notice This abstract contract defines common actions to be used by the proxy actions contracts
  */
 abstract contract CommonActions is ICommonActions {
-
+  using SafeERC20 for IERC20;
+  using SafeERC20 for IERC20Metadata;
   /// @notice Address of the inheriting contract, used to check if the call is being made through a delegate call
   // solhint-disable-next-line var-name-mixedcase
+
   address internal immutable _THIS = address(this);
 
   // --- Methods ---
@@ -54,11 +56,11 @@ abstract contract CommonActions is ICommonActions {
     if (_wad == 0) return;
 
     // NOTE: assumes systemCoin uses 18 decimals
-    address _systemCoin = address(ICoinJoin(_coinJoin).systemCoin());
+    IERC20 _systemCoin = IERC20(address(ICoinJoin(_coinJoin).systemCoin()));
     // Transfers coins from the user to the proxy
-    SafeERC20.safeTransferFrom(IERC20(_systemCoin), msg.sender, address(this), _wad);
+    _systemCoin.safeTransferFrom(msg.sender, address(this), _wad);
     // Approves adapter to take the COIN amount
-    SafeERC20.safeApprove(IERC20(_systemCoin), _coinJoin, _wad);
+    _systemCoin.safeIncreaseAllowance(_coinJoin, _wad);
     // Joins COIN into the safeEngine
     ICoinJoin(_coinJoin).join(_dst, _wad);
   }
@@ -95,9 +97,9 @@ abstract contract CommonActions is ICommonActions {
     if (_wei == 0) return;
 
     // Gets token from the user's wallet
-    SafeERC20.safeTransferFrom(IERC20(address(_token)), msg.sender, address(this), _wei);
+    _token.safeTransferFrom(msg.sender, address(this), _wei);
     // Approves adapter to take the token amount
-    SafeERC20.safeApprove(IERC20(address(_token)), _collateralJoin, _wei);
+    _token.safeIncreaseAllowance(_collateralJoin, _wei);
     // Joins token collateral into the safeEngine
     __collateralJoin.join(_safe, _wei);
   }
