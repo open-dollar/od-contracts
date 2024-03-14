@@ -290,7 +290,11 @@ contract Unit_GlobalSettlement_Constructor is Base {
     assertEq(address(globalSettlement.coinJoin()), _coinJoin);
   }
 
-  function test_Set_CollateralJoinFactory(address _collateralJoinFactory) public happyPath mockAsContract(_collateralJoinFactory) {
+  function test_Set_CollateralJoinFactory(address _collateralJoinFactory)
+    public
+    happyPath
+    mockAsContract(_collateralJoinFactory)
+  {
     vm.assume(address(_collateralJoinFactory) != address(0));
     globalSettlement = new GlobalSettlement(
       address(mockSafeEngine),
@@ -306,7 +310,11 @@ contract Unit_GlobalSettlement_Constructor is Base {
     assertEq(address(globalSettlement.collateralJoinFactory()), _collateralJoinFactory);
   }
 
-  function test_Set_CollateralAuctionHouseFactory(address _collateralAuctionHouseFactory) public happyPath mockAsContract(_collateralAuctionHouseFactory) {
+  function test_Set_CollateralAuctionHouseFactory(address _collateralAuctionHouseFactory)
+    public
+    happyPath
+    mockAsContract(_collateralAuctionHouseFactory)
+  {
     vm.assume(address(_collateralAuctionHouseFactory) != address(0));
     globalSettlement = new GlobalSettlement(
       address(mockSafeEngine),
@@ -1308,14 +1316,22 @@ contract Unit_GlobalSettlement_ModifyParameters is Base {
     assertEq(address(globalSettlement.coinJoin()), _coinJoin);
   }
 
-  function test_Set_CollateralJoinFactory(address _collateralJoinFactory) public happyPath mockAsContract(_collateralJoinFactory){
+  function test_Set_CollateralJoinFactory(address _collateralJoinFactory)
+    public
+    happyPath
+    mockAsContract(_collateralJoinFactory)
+  {
     vm.assume(_collateralJoinFactory != address(0));
     globalSettlement.modifyParameters('collateralJoinFactory', abi.encode(_collateralJoinFactory));
 
     assertEq(address(globalSettlement.collateralJoinFactory()), _collateralJoinFactory);
   }
 
-  function test_Set_StabilityFeeTreasury(address _stabilityFeeTreasury) public happyPath mockAsContract(_stabilityFeeTreasury) {
+  function test_Set_StabilityFeeTreasury(address _stabilityFeeTreasury)
+    public
+    happyPath
+    mockAsContract(_stabilityFeeTreasury)
+  {
     vm.assume(_stabilityFeeTreasury != address(0));
     globalSettlement.modifyParameters('stabilityFeeTreasury', abi.encode(_stabilityFeeTreasury));
 
