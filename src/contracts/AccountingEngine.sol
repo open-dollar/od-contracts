@@ -313,7 +313,7 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
 
   /// @inheritdoc Modifiable
   function _validateParameters() internal view override {
-    address(surplusAuctionHouse).assertNonNull();
-    address(debtAuctionHouse).assertNonNull();
+    address(surplusAuctionHouse).assertHasCode();
+    address(debtAuctionHouse).assertHasCode();
   }
 }

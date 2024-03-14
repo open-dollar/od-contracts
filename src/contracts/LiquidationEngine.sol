@@ -301,13 +301,13 @@ contract LiquidationEngine is
 
   /// @inheritdoc Modifiable
   function _validateParameters() internal view override {
-    address(accountingEngine).assertNonNull();
+    address(accountingEngine).assertHasCode();
   }
 
   /// @inheritdoc ModifiablePerCollateral
   function _validateCParameters(bytes32 _cType) internal view override {
     LiquidationEngineCollateralParams memory __cParams = _cParams[_cType];
-    address(__cParams.collateralAuctionHouse).assertNonNull();
+    address(__cParams.collateralAuctionHouse).assertHasCode();
     __cParams.liquidationQuantity.assertLtEq(MAX_RAD);
   }
 
