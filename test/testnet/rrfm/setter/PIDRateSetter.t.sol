@@ -52,10 +52,7 @@ contract PIDRateSetterTest is DSTest {
   function test_modify_parameters() public {
     // Mock - We create a new mock relayer and use it to modify the parameters
     IOracleRelayer.OracleRelayerParams memory _oracleRelayerParams =
-              IOracleRelayer.OracleRelayerParams({
-        redemptionRateUpperBound: RAY * WAD,
-        redemptionRateLowerBound: 1
-      });
+      IOracleRelayer.OracleRelayerParams({redemptionRateUpperBound: RAY * WAD, redemptionRateLowerBound: 1});
     address mockContract = address(new MockOracleRelayer(address(69), orcl, _oracleRelayerParams));
 
     // Modify
