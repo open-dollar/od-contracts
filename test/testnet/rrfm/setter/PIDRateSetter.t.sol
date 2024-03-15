@@ -50,14 +50,22 @@ contract PIDRateSetterTest is DSTest {
   }
 
   function test_modify_parameters() public {
+    // Mock - We create a new mock relayer and use it to modify the parameters
+    IOracleRelayer.OracleRelayerParams memory _oracleRelayerParams =
+              IOracleRelayer.OracleRelayerParams({
+        redemptionRateUpperBound: RAY * WAD,
+        redemptionRateLowerBound: 1
+      });
+    address mockContract = address(new MockOracleRelayer(address(69), orcl, _oracleRelayerParams));
+
     // Modify
-    rateSetter.modifyParameters('oracleRelayer', abi.encode(0x12));
-    rateSetter.modifyParameters('pidCalculator', abi.encode(0x12));
+    rateSetter.modifyParameters('oracleRelayer', abi.encode(mockContract));
+    rateSetter.modifyParameters('pidCalculator', abi.encode(mockContract));
     rateSetter.modifyParameters('updateRateDelay', abi.encode(1));
 
     // Check
-    assertTrue(address(rateSetter.oracleRelayer()) == address(0x12));
-    assertTrue(address(rateSetter.pidCalculator()) == address(0x12));
+    assertTrue(address(rateSetter.oracleRelayer()) == mockContract);
+    assertTrue(address(rateSetter.pidCalculator()) == mockContract);
 
     assertEq(rateSetter.params().updateRateDelay, 1);
   }
