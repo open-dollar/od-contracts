@@ -43,7 +43,7 @@ contract ProposeERC20Transfer is JSONScript {
 
     vm.startBroadcast(vm.envUint('GOV_EXECUTOR_PK'));
 
-    // Propose the action to add the collateral type
+    // Propose the action to add transfer the ERC20 token to the receiver
     uint256 proposalId = gov.propose(targets, values, calldatas, description);
     string memory stringProposalId = vm.toString(proposalId);
 
