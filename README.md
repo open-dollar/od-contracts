@@ -183,6 +183,23 @@ This script extracts the proposal id and queues the proposal via the OD governan
 
 The script extracts the necessary execution params from the JSON-the same params used during the proposal and executes the proposal. This script can be used arbitrarily for any proposal.
 
+##### ERC20 Transfer
+
+[`ProposeERC20Transfer.s.sol`](script/testScripts/gov/ProposeERC20Transfer.s.sol)
+
+> NOTE: This script uses `transferFrom` to allow the governance to manage transfers from governance balance but also to allow the governance to transfer tokens from any address to any address
+
+**Required env vars:**
+
+- `GOV_EXECUTOR_PK`: private key of the governance executor
+- `GOVERNANCE_ADDRESS`: address of OD Governance
+- `ERC20_TRANSFER_TOKEN_ADDRESS`: address of the ERC20 contract
+- `ERC20_TRANSFER_FROM_ADDRESS`: address of the sender of the ERC20 tokens
+- `ERC20_TRANSFER_RECEIVER_ADDRESS`: address of the receiver of the ERC20 tokens
+- `ERC20_TRANSFER_AMOUNT`: amount to be transferred
+
+This script proposes transferring ERC20 tokens from one address to another.
+
 # Development
 
 ## Anvil
