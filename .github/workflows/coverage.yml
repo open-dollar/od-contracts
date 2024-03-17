@@ -32,6 +32,9 @@ jobs:
       - name: Precompile using 0.8.19 and via-ir=false
         run: yarn build
 
+      - name: Install lcov (coverage dependency)
+        run: sudo apt-get update && sudo apt-get install lcov -y
+
       - name: Run Coverage
         shell: bash
         run: yarn test:coverage
