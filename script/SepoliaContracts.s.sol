@@ -25,7 +25,7 @@ abstract contract SepoliaContracts {
   address public SurplusAuctionHouse_Address = 0x59F7e0B28A9a5F1c19c186Db696d4D7ADCac806F;
   address public DebtAuctionHouse_Address = 0x0905014Fe6C74e691c2cd00e0f1F8c4561D629C8;
   address public AccountingEngine_Address = 0xCcb14A69Eae9eA51F16D7C602c621303Af1Fbc22;
-  address public LiquidationEngine_Address = 0xd744ba2BAd75FC1674b99D40c0A2B5fBDDB835D4;
+  address public LiquidationEngine_Address = 0x76d90151Ae5bD1Fc5e09F5A02A42824E26a323DB;
   address public CollateralAuctionHouseFactory_Address = 0x45C9D97AcA464162C4499527AD20683dE47a3dE9;
   address public CoinJoin_Address = 0xc72E00bbce6E76bb48e44B0F1BC92D5f15a5af73;
   address public CollateralJoinFactory_Address = 0x0B1F7a0d2F71452a21E2805042E56Ae28ce755aC;
