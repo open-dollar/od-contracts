@@ -23,6 +23,7 @@ struct HashState {
 contract Vault721 is ERC721EnumerableUpgradeable {
   error NotGovernor();
   error NotSafeManager();
+  error IsProxy();
   error ProxyAlreadyExist();
   error BlockDelayNotOver();
   error TimeDelayNotOver();
@@ -256,8 +257,10 @@ contract Vault721 is ERC721EnumerableUpgradeable {
 
   /**
    * @dev check that proxy does not exist OR that the user does not own proxy
+   * revert if a proxy address was input as the _user (EOA or smart contract wallet)
    */
   function _isNotProxy(address _user) internal view returns (bool) {
+    if (_proxyRegistry[_user] != address(0)) revert IsProxy();
     return _userRegistry[_user] == address(0) || ODProxy(_userRegistry[_user]).OWNER() != _user;
   }
 

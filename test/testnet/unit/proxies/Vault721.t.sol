@@ -88,6 +88,14 @@ contract Unit_Vault721_Build is Base {
     //build second vault to revert
     vault721.build();
   }
+
+  function test_Build_Revert_IsProxy() public {
+    vm.startPrank(owner);
+    address builtProxy = vault721.build();
+
+    vm.expectRevert(IVault721.IsProxy.selector);
+    vault721.build(builtProxy);
+  }
 }
 
 contract Unit_Vault721_Mint is Base {
