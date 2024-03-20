@@ -113,7 +113,7 @@ contract Vault721 is ERC721EnumerableUpgradeable {
    * @dev allows msg.sender without an ODProxy to deploy a new ODProxy
    */
   function build() external returns (address payable _proxy) {
-    if (!_isNotProxy(msg.sender)) revert ProxyAlreadyExist();
+    if (!_buildProxy(msg.sender)) revert ProxyAlreadyExist();
     _proxy = _build(msg.sender);
   }
 
@@ -121,7 +121,7 @@ contract Vault721 is ERC721EnumerableUpgradeable {
    * @dev allows user without an ODProxy to deploy a new ODProxy
    */
   function build(address _user) external returns (address payable _proxy) {
-    if (!_isNotProxy(_user)) revert ProxyAlreadyExist();
+    if (!_buildProxy(_user)) revert ProxyAlreadyExist();
     _proxy = _build(_user);
   }
 
@@ -134,7 +134,7 @@ contract Vault721 is ERC721EnumerableUpgradeable {
     uint256 len = _users.length;
     _proxies = new address payable[](len);
     for (uint256 i = 0; i < len; i++) {
-      if (!_isNotProxy(_users[i])) revert ProxyAlreadyExist();
+      if (!_buildProxy(_users[i])) revert ProxyAlreadyExist();
       _proxies[i] = _build(_users[i]);
     }
   }
@@ -259,7 +259,7 @@ contract Vault721 is ERC721EnumerableUpgradeable {
    * @dev check that proxy does not exist OR that the user does not own proxy
    * revert if a proxy address was input as the _user (EOA or smart contract wallet)
    */
-  function _isNotProxy(address _user) internal view returns (bool) {
+  function _buildProxy(address _user) internal view returns (bool) {
     if (_proxyRegistry[_user] != address(0)) revert IsProxy();
     return _userRegistry[_user] == address(0) || ODProxy(_userRegistry[_user]).OWNER() != _user;
   }
@@ -298,7 +298,7 @@ contract Vault721 is ERC721EnumerableUpgradeable {
     if (_from != address(0)) {
       address payable proxy;
 
-      if (_isNotProxy(_to)) {
+      if (_buildProxy(_to)) {
         proxy = _build(_to);
       } else {
         proxy = payable(_userRegistry[_to]);
