@@ -40,7 +40,6 @@ interface IVault721 {
     address _collateralJoinFactory
   ) external;
   function updateContractURI(string memory _metaData) external;
-  function setSafeManager(address _safeManager) external;
   function setNftRenderer(address _nftRenderer) external;
   function updateWhitelist(address _user, bool _status) external;
   function updateTimeDelay(uint256 _timeDelay) external;

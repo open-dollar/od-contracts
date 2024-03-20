@@ -389,12 +389,6 @@ contract Unit_Vault721_GovernanceFunctions is Base {
     assertEq(vault721.contractURI(), 'data:application/json;utf8,testURI', 'incorrect uri');
   }
 
-  function test_SetSafeManager() public {
-    vm.prank(address(timelockController));
-    vault721.setSafeManager(address(1));
-    assertEq(address(vault721.safeManager()), address(1), 'incorrect safe manager');
-  }
-
   function test_SetNftRenderer() public {
     vm.prank(address(timelockController));
     vault721.setNftRenderer(address(1));

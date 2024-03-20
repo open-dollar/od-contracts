@@ -226,13 +226,6 @@ contract Vault721 is ERC721EnumerableUpgradeable {
   }
 
   /**
-   * @dev allows DAO to update protocol implementation of SafeManager
-   */
-  function setSafeManager(address _safeManager) external onlyGovernance {
-    _setSafeManager(_safeManager);
-  }
-
-  /**
    * @dev allows DAO to update protocol implementation of NFTRenderer
    */
   function setNftRenderer(address _nftRenderer) external onlyGovernance {
