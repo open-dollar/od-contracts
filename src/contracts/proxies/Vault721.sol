@@ -228,9 +228,10 @@ contract Vault721 is ERC721EnumerableUpgradeable {
   /**
    * @dev allows DAO to update protocol implementation of SafeManager
    *
-   * WARNING: This function should not be called with adding functionality to the
-   * new SafeManager to increment the safeId from the current tokenId. Additional
-   * considerations regarding data migration of core contracts should be addressed.
+   * WARNING: This function should not be called unless the new SafeManager
+   * is capable of correctly persisting the proper safeId as it relates to the
+   * current tokenId. Additional considerations regarding data migration of
+   * core contracts should be addressed.
    */
   function setSafeManager(address _safeManager) external onlyGovernance {
     _setSafeManager(_safeManager);
