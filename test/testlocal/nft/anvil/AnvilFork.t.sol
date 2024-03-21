@@ -47,7 +47,10 @@ import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
  * forge t --fork-url http://127.0.0.1:8545  --match-contract ContractToTest -vvvvv
  */
 contract AnvilFork is AnvilDeployment, Test {
-  uint256 public constant MINT_AMOUNT = 1_000_000 * 1 ether;
+  uint256 public constant MINT_AMOUNT = 10_000_000 ether;
+
+  uint256 public constant COLLATERAL_AMOUNT = 0.1 ether;
+  uint256 public constant DEBT_AMOUNT = 50 ether;
 
   bytes32 constant newCType = bytes32('NC');
   address public newCAddress;
@@ -93,8 +96,6 @@ contract AnvilFork is AnvilDeployment, Test {
     for (uint256 i; i < denominatedOracles.length; i++) {
       oraclesForTest.push(OracleForTestnet(address(denominatedOracles[i].priceSource())));
     }
-
-    console.log('ORACLE SETUP COMPLETE');
 
     deployProxies();
 
@@ -154,6 +155,8 @@ contract AnvilFork is AnvilDeployment, Test {
       address user = users[i];
       address proxy = vault721.getProxy(user);
 
+      console.log('PROXY ', i, 'DEPLOYED');
+
       for (uint256 j = 0; j < collateralTypes.length; j++) {
         bytes32 cType = collateralTypes[j];
         totalVaults++;
@@ -161,7 +164,7 @@ contract AnvilFork is AnvilDeployment, Test {
         vm.startPrank(user);
         erc20[cType].mint(MINT_AMOUNT);
         erc20[cType].approve(proxy, MINT_AMOUNT);
-        vaultIds[proxy][cType] = openSafeDepositAndMint(cType, proxy, MINT_AMOUNT, 500_000 ether);
+        vaultIds[proxy][cType] = openSafeDepositAndMint(cType, proxy, COLLATERAL_AMOUNT, DEBT_AMOUNT);
         vm.stopPrank();
       }
     }
