@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {RawPIDController} from '@testnet/mocks/RawPIDController.sol';
 import {RAY} from '@libraries/Math.sol';

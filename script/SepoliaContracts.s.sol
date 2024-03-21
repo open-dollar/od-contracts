@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 abstract contract SepoliaContracts {
   address public SystemCoin_Address = 0x0006d00Ae8375BDb0b10fBb100490CD5504fD802;

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {ODTest, stdStorage, StdStorage} from '@testnet/utils/ODTest.t.sol';
 import {MerkleTreeGenerator} from '@testnet/utils/MerkleTreeGenerator.sol';

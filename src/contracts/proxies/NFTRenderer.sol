@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {DateTime} from '@libraries/DateTime.sol';
 import {Strings} from '@openzeppelin/utils/Strings.sol';
