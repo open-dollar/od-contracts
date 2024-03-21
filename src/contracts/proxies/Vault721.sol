@@ -23,7 +23,7 @@ struct HashState {
 contract Vault721 is ERC721EnumerableUpgradeable {
   error NotGovernor();
   error NotSafeManager();
-  error IsProxy();
+  error NotWallet();
   error ProxyAlreadyExist();
   error BlockDelayNotOver();
   error TimeDelayNotOver();
@@ -154,6 +154,8 @@ contract Vault721 is ERC721EnumerableUpgradeable {
     address _to,
     uint256 _tokenId
   ) public override(ERC721Upgradeable, IERC721Upgradeable) {
+    if (_proxyRegistry[_to] != address(0)) revert NotWallet();
+
     // on allowlist addresses, we check the block delay along with the state hash
     if (_allowlist[msg.sender]) {
       if (
@@ -257,10 +259,8 @@ contract Vault721 is ERC721EnumerableUpgradeable {
 
   /**
    * @dev check that proxy does not exist OR that the user does not own proxy
-   * revert if a proxy address was input as the _user (EOA or smart contract wallet)
    */
   function _buildProxy(address _user) internal view returns (bool) {
-    if (_proxyRegistry[_user] != address(0)) revert IsProxy();
     return _userRegistry[_user] == address(0) || ODProxy(_userRegistry[_user]).OWNER() != _user;
   }
 
@@ -269,6 +269,7 @@ contract Vault721 is ERC721EnumerableUpgradeable {
    * updates _proxyRegistry and _userRegistry mappings for new ODProxy
    */
   function _build(address _user) internal returns (address payable _proxy) {
+    if (_proxyRegistry[_user] != address(0)) revert NotWallet();
     _proxy = payable(address(new ODProxy(_user)));
     _proxyRegistry[_proxy] = _user;
     _userRegistry[_user] = _proxy;

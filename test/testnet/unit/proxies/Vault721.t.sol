@@ -93,7 +93,7 @@ contract Unit_Vault721_Build is Base {
     vm.startPrank(owner);
     address builtProxy = vault721.build();
 
-    vm.expectRevert(IVault721.IsProxy.selector);
+    vm.expectRevert(IVault721.NotWallet.selector);
     vault721.build(builtProxy);
   }
 }

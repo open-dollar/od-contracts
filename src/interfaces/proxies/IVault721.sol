@@ -7,7 +7,7 @@ import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 interface IVault721 {
   error NotGovernor();
   error NotSafeManager();
-  error IsProxy();
+  error NotWallet();
   error ProxyAlreadyExist();
   error BlockDelayNotOver();
   error TimeDelayNotOver();

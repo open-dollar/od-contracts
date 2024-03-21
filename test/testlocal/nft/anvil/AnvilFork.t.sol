@@ -2,6 +2,7 @@
 pragma solidity 0.8.19;
 
 import 'forge-std/Test.sol';
+import 'forge-std/console.sol';
 import {AnvilDeployment} from '@testlocal/nft/anvil/deployment/AnvilDeployment.t.sol';
 import {WSTETH, ARB, CBETH, RETH} from '@script/SepoliaParams.s.sol';
 
@@ -77,6 +78,7 @@ contract AnvilFork is AnvilDeployment, Test {
 
     newUsers[0] = DAN;
     newUsers[1] = ERICA;
+
     denominatedOracles.push(IDenominatedOracle(DenominatedOracleChild_10_Address));
     denominatedOracles.push(IDenominatedOracle(DenominatedOracleChild_12_Address));
     denominatedOracles.push(IDenominatedOracle(DenominatedOracleChild_14_Address));
@@ -92,13 +94,24 @@ contract AnvilFork is AnvilDeployment, Test {
       oraclesForTest.push(OracleForTestnet(address(denominatedOracles[i].priceSource())));
     }
 
+    console.log('ORACLE SETUP COMPLETE');
+
     deployProxies();
+
+    console.log('PROXY SETUP COMPLETE');
+
     labelVars();
     mintCollateralAndOpenSafes();
 
+    console.log('SAFES SETUP COMPLETE');
+
     debtCeiling = setDebtCeiling();
 
+    console.log('DEBT CEILING SET');
+
     newCAddress = address(new MintableVoteERC20('NewCoin', 'NC', 18));
+
+    console.log('SETUP COMPLETE');
   }
 
   /**

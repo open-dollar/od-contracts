@@ -11,6 +11,7 @@ import {RAY, WAD} from '@libraries/Math.sol';
 import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
 import {SafeERC20} from '@openzeppelin/token/ERC20/utils/SafeERC20.sol';
 import {Vault721} from '@contracts/proxies/Vault721.sol';
+import {IVault721} from '@interfaces/proxies/IVault721.sol';
 import {BasicActions} from '@contracts/proxies/actions/BasicActions.sol';
 
 contract NFTSetup is Test, SepoliaDeployment {
@@ -32,8 +33,8 @@ contract NFTSetup is Test, SepoliaDeployment {
     aliceProxy = deployOrFind(alice);
     bobProxy = deployOrFind(bob);
 
-    vm.label(aliceProxy, 'Alice');
-    vm.label(bobProxy, 'Bob');
+    vm.label(aliceProxy, 'AliceProxy');
+    vm.label(bobProxy, 'BobProxy');
     MintableERC20(wsteth).mint(alice, MINT_AMOUNT);
     MintableERC20(wsteth).mint(bob, MINT_AMOUNT);
     MintableERC20(arb).mint(alice, MINT_AMOUNT);
@@ -203,4 +204,16 @@ contract E2ENFTTest is NFTSetup {
     assertEq(_safes.length, 1);
     assertEq(_safes[0], vault721.totalSupply());
   }
+
+  // todo: uncomment after next Sepolia deployment
+  // function test_openSafe_transferToProxyFail() public {
+  //   vm.startPrank(alice);
+
+  //   uint256 safeId = openSafe(ARB, alice);
+  //   assertEq(safeId, vault721.totalSupply());
+
+  //   vm.expectRevert(IVault721.NotWallet.selector);
+  //   Vault721(vault721).transferFrom(alice, bobProxy, safeId);
+  //   vm.stopPrank();
+  // }
 }
