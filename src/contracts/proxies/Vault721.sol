@@ -230,6 +230,11 @@ contract Vault721 is ERC721EnumerableUpgradeable {
 
   /**
    * @dev allows DAO to update protocol implementation of SafeManager
+   *
+   * WARNING: This function should not be called unless the new SafeManager
+   * is capable of correctly persisting the proper safeId as it relates to the
+   * current tokenId. Additional considerations regarding data migration of
+   * core contracts should be addressed.
    */
   function setSafeManager(address _safeManager) external onlyGovernance {
     _setSafeManager(_safeManager);
@@ -277,14 +282,14 @@ contract Vault721 is ERC721EnumerableUpgradeable {
   }
 
   /**
-   * @dev allows DAO to update protocol implementation of SafeManager
+   * @dev set or update protocol implementation of SafeManager
    */
   function _setSafeManager(address _safeManager) internal nonZero(_safeManager) {
     safeManager = IODSafeManager(_safeManager);
   }
 
   /**
-   * @dev allows DAO to update protocol implementation of NFTRenderer
+   * @dev set or update protocol implementation of NFTRenderer
    */
   function _setNftRenderer(address _nftRenderer) internal nonZero(_nftRenderer) {
     nftRenderer = NFTRenderer(_nftRenderer);
