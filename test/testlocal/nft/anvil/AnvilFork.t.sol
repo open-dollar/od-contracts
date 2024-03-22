@@ -105,8 +105,6 @@ contract AnvilFork is AnvilDeployment, Test {
 
     debtCeiling = setDebtCeiling();
     newCAddress = address(new MintableVoteERC20('NewCoin', 'NC', 18));
-
-    console.log('SETUP COMPLETE');
   }
 
   /**
