@@ -154,24 +154,27 @@ contract Vault721 is ERC721EnumerableUpgradeable {
     address _to,
     uint256 _tokenId
   ) public override(ERC721Upgradeable, IERC721Upgradeable) {
-    if (_proxyRegistry[_to] != address(0)) revert NotWallet();
-
-    // on allowlist addresses, we check the block delay along with the state hash
-    if (_allowlist[msg.sender]) {
-      if (
-        block.number < _hashState[_tokenId].lastBlockNumber + blockDelay
-          || _hashState[_tokenId].lastHash != nftRenderer.getStateHashBySafeId(_tokenId)
-      ) {
-        revert BlockDelayNotOver();
-      }
-      // on non-allowlist addresses, we just check the time delay
-    } else {
-      if (block.timestamp < _hashState[_tokenId].lastBlockTimestamp + timeDelay) {
-        revert TimeDelayNotOver();
-      }
-    }
-
+    _enforceStaticState(msg.sender);
     super.transferFrom(_from, _to, _tokenId);
+  }
+
+  function safeTransferFrom(
+    address _from,
+    address _to,
+    uint256 _tokenId
+  ) public override(ERC721Upgradeable, IERC721Upgradeable) {
+    _enforceStaticState(msg.sender);
+    super.safeTransferFrom(_from, _to, _tokenId);
+  }
+
+  function safeTransferFrom(
+    address from,
+    address to,
+    uint256 tokenId,
+    bytes memory data
+  ) public virtual override(ERC721Upgradeable, IERC721Upgradeable) {
+    _enforceStaticState(msg.sender);
+    super.safeTransferFrom(_from, _to, _tokenId, data);
   }
 
   /**
@@ -293,6 +296,26 @@ contract Vault721 is ERC721EnumerableUpgradeable {
    */
   function _setNftRenderer(address _nftRenderer) internal nonZero(_nftRenderer) {
     nftRenderer = NFTRenderer(_nftRenderer);
+  }
+
+  /**
+   * @dev prevent frontrun state change during token transferFrom
+   */
+  function _enforceStaticState(address _operator) internal {
+    // on allowlist addresses, we check the block delay along with the state hash
+    if (_allowlist[_operator]) {
+      if (
+        block.number < _hashState[_tokenId].lastBlockNumber + blockDelay
+          || _hashState[_tokenId].lastHash != nftRenderer.getStateHashBySafeId(_tokenId)
+      ) {
+        revert BlockDelayNotOver();
+      }
+      // on non-allowlist addresses, we just check the time delay
+    } else {
+      if (block.timestamp < _hashState[_tokenId].lastBlockTimestamp + timeDelay) {
+        revert TimeDelayNotOver();
+      }
+    }
   }
 
   /**
