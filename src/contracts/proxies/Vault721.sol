@@ -276,7 +276,7 @@ contract Vault721 is ERC721EnumerableUpgradeable {
    * @dev deploys ODProxy for user to interact with protocol
    * updates _proxyRegistry and _userRegistry mappings for new ODProxy
    */
-  function _build(address _user) internal returns (address payable _proxy) {
+  function _build(address _user) internal virtual returns (address payable _proxy) {
     if (_proxyRegistry[_user] != address(0)) revert NotWallet();
     _proxy = payable(address(new ODProxy(_user)));
     _proxyRegistry[_proxy] = _user;
