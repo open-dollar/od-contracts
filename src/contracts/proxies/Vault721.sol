@@ -154,7 +154,7 @@ contract Vault721 is ERC721EnumerableUpgradeable {
     address _to,
     uint256 _tokenId
   ) public override(ERC721Upgradeable, IERC721Upgradeable) {
-    _enforceStaticState(msg.sender);
+    _enforceStaticState(msg.sender, _tokenId);
     super.transferFrom(_from, _to, _tokenId);
   }
 
@@ -163,18 +163,18 @@ contract Vault721 is ERC721EnumerableUpgradeable {
     address _to,
     uint256 _tokenId
   ) public override(ERC721Upgradeable, IERC721Upgradeable) {
-    _enforceStaticState(msg.sender);
+    _enforceStaticState(msg.sender, _tokenId);
     super.safeTransferFrom(_from, _to, _tokenId);
   }
 
   function safeTransferFrom(
-    address from,
-    address to,
-    uint256 tokenId,
-    bytes memory data
+    address _from,
+    address _to,
+    uint256 _tokenId,
+    bytes memory _data
   ) public virtual override(ERC721Upgradeable, IERC721Upgradeable) {
-    _enforceStaticState(msg.sender);
-    super.safeTransferFrom(_from, _to, _tokenId, data);
+    _enforceStaticState(msg.sender, _tokenId);
+    super.safeTransferFrom(_from, _to, _tokenId, _data);
   }
 
   /**
@@ -301,7 +301,7 @@ contract Vault721 is ERC721EnumerableUpgradeable {
   /**
    * @dev prevent frontrun state change during token transferFrom
    */
-  function _enforceStaticState(address _operator) internal {
+  function _enforceStaticState(address _operator, uint256 _tokenId) internal {
     // on allowlist addresses, we check the block delay along with the state hash
     if (_allowlist[_operator]) {
       if (
