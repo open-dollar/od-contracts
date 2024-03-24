@@ -16,7 +16,7 @@ import {Assertions} from '@libraries/Assertions.sol';
 
 /**
  * @title  DebtAuctionHouse
- * @notice This contract enables the sell of newly minted protocol tokens in exchange for system coins to cover a protocol debt
+ * @notice This contract enables the selling of newly minted protocol tokens in exchange for system coins to cover a protocol debt
  */
 contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuctionHouse {
   using Encoding for bytes;
