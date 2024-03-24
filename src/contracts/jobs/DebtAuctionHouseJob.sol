@@ -5,6 +5,7 @@ import {Job} from '@contracts/jobs/Job.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {Modifiable} from '@contracts/utils/Modifiable.sol';
+import {IDebtAuctionHouse} from '@interfaces/IDebtAuctionHouse.sol';
 
 import {Encoding} from '@libraries/Encoding.sol';
 import {Assertions} from '@libraries/Assertions.sol';
@@ -17,7 +18,7 @@ contract DebtAuctionHouseJob is Authorizable, Modifiable, Job {
     using Encoding for bytes;
     using Assertions for address;
 
-    address public debtAuctionHouse;
+    IDebtAuctionHouse public debtAuctionHouse;
   /**
    * @param  _debtAuctionHouse Address of the debtAuctionHouse contract
    * @param  _stabilityFeeTreasury Address of the StabilityFeeTreasury contract
@@ -28,11 +29,15 @@ contract DebtAuctionHouseJob is Authorizable, Modifiable, Job {
     address _stabilityFeeTreasury,
     uint256 _rewardAmount
   ) Job(_stabilityFeeTreasury, _rewardAmount) Authorizable(msg.sender) validParams {
-    debtAuctionHouse = _debtAuctionHouse;
+    debtAuctionHouse = IDebtAuctionHouse(_debtAuctionHouse);
   }
 
+
+  function restartAuction(uint256 auctionId) external reward {
+    debtAuctionHouse.restartAuction(auctionId);
+  }
     /// @inheritdoc Modifiable
-    function _validateParameters() internal view override(Job, Modifiable) {
+  function _validateParameters() internal view override(Job, Modifiable) {
         Job._validateParameters();
       }
 }
