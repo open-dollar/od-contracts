@@ -107,7 +107,7 @@ abstract contract MainnetParams is Contracts, Params {
       });
 
       _safeEngineCParams[_cType] = ISAFEEngine.SAFEEngineCollateralParams({
-        debtCeiling: 10_000e45, // 10m COINs
+        debtCeiling: 10_000_000 * RAD, // 10M COINs
         debtFloor: 200 * RAD // 1 COIN
       });
 
