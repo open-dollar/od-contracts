@@ -40,7 +40,6 @@ abstract contract Base is ODTest {
     totalAuctionLength: 2 days
   });
 
-
   function setUp() public virtual {
     vm.startPrank(deployer);
 
@@ -52,7 +51,6 @@ abstract contract Base is ODTest {
     debtAuctionJob =
       new DebtAuctionHouseJob(address(debtAuctionHouse), address(mockStabilityFeeTreasury), REWARD_AMOUNT);
     label(address(debtAuctionJob), 'DebtAuctionJob');
-
 
     vm.stopPrank();
   }
@@ -68,32 +66,27 @@ abstract contract Base is ODTest {
 }
 
 contract Unit_DebtAuctionHouseJob_Constructor is Base {
-    function test_DebtAuctionHouseDeployment() public {
-      assertEq(address(debtAuctionJob.debtAuctionHouse()), address(debtAuctionHouse), 'incorrect auction house address');
-      assertEq(debtAuctionJob.rewardAmount(), REWARD_AMOUNT, 'incorrect reward amount');
-      assertEq(address(debtAuctionJob.stabilityFeeTreasury()), address(mockStabilityFeeTreasury), 'incorrect treasury');
-    }
+  function test_DebtAuctionHouseDeployment() public {
+    assertEq(address(debtAuctionJob.debtAuctionHouse()), address(debtAuctionHouse), 'incorrect auction house address');
+    assertEq(debtAuctionJob.rewardAmount(), REWARD_AMOUNT, 'incorrect reward amount');
+    assertEq(address(debtAuctionJob.stabilityFeeTreasury()), address(mockStabilityFeeTreasury), 'incorrect treasury');
+  }
 }
 
-
-
 contract Unit_DebtAuctionHouseJob_RestartAuction is Base {
-
   event Rewarded(address _rewardedAccount, uint256 _rewardAmount);
 
   function test_RestartAuctionJob() public {
-    
     vm.prank(authorizedAccount);
-   uint256 auctionId = debtAuctionHouse.startAuction(user, 100 ether, 10 ether);
+    uint256 auctionId = debtAuctionHouse.startAuction(user, 100 ether, 10 ether);
 
-   IDebtAuctionHouse.Auction memory auction = debtAuctionHouse.auctions(auctionId);
+    IDebtAuctionHouse.Auction memory auction = debtAuctionHouse.auctions(auctionId);
 
-   vm.warp(1 + auction.auctionDeadline);
+    vm.warp(1 + auction.auctionDeadline);
 
-   vm.prank(user);
-   vm.expectEmit();
-   emit Rewarded(user, REWARD_AMOUNT);
-   debtAuctionJob.restartAuction(auctionId);
+    vm.prank(user);
+    vm.expectEmit();
+    emit Rewarded(user, REWARD_AMOUNT);
+    debtAuctionJob.restartAuction(auctionId);
   }
-  
 }

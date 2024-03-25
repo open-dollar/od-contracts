@@ -15,15 +15,16 @@ import {Assertions} from '@libraries/Assertions.sol';
  * @notice This contract contains rewarded methods to handle the the restarting of debt auctions.
  */
 contract DebtAuctionHouseJob is Authorizable, Modifiable, Job {
-    using Encoding for bytes;
-    using Assertions for address;
+  using Encoding for bytes;
+  using Assertions for address;
 
-    IDebtAuctionHouse public debtAuctionHouse;
+  IDebtAuctionHouse public debtAuctionHouse;
   /**
    * @param  _debtAuctionHouse Address of the debtAuctionHouse contract
    * @param  _stabilityFeeTreasury Address of the StabilityFeeTreasury contract
    * @param  _rewardAmount Amount of tokens to reward per job transaction [wad]
    */
+
   constructor(
     address _debtAuctionHouse,
     address _stabilityFeeTreasury,
@@ -32,12 +33,12 @@ contract DebtAuctionHouseJob is Authorizable, Modifiable, Job {
     debtAuctionHouse = IDebtAuctionHouse(_debtAuctionHouse);
   }
 
-
   function restartAuction(uint256 auctionId) external reward {
     debtAuctionHouse.restartAuction(auctionId);
   }
-    /// @inheritdoc Modifiable
+
+  /// @inheritdoc Modifiable
   function _validateParameters() internal view override(Job, Modifiable) {
-        Job._validateParameters();
-      }
+    Job._validateParameters();
+  }
 }
