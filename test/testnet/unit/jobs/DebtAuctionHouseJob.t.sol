@@ -67,11 +67,8 @@ contract Unit_DebtAuctionHouseJob_Constructor is Base {
   }
 }
 
-import 'forge-std/console2.sol';
-
 contract Unit_DebtAuctionHouseJob_RestartAuction is Base {
   event Rewarded(address _rewardedAccount, uint256 _rewardAmount);
-  event RestartAuction(uint256 _id, uint256 _blockTimestamp, uint256 _auctionDeadline);
 
   function test_RestartAuctionJob() public {
     vm.prank(authorizedAccount);
