@@ -149,34 +149,6 @@ contract Vault721 is ERC721EnumerableUpgradeable {
     _safeMint(_user, _safeId);
   }
 
-  function transferFrom(
-    address _from,
-    address _to,
-    uint256 _tokenId
-  ) public override(ERC721Upgradeable, IERC721Upgradeable) {
-    _enforceStaticState(msg.sender, _tokenId);
-    super.transferFrom(_from, _to, _tokenId);
-  }
-
-  function safeTransferFrom(
-    address _from,
-    address _to,
-    uint256 _tokenId
-  ) public override(ERC721Upgradeable, IERC721Upgradeable) {
-    _enforceStaticState(msg.sender, _tokenId);
-    super.safeTransferFrom(_from, _to, _tokenId);
-  }
-
-  function safeTransferFrom(
-    address _from,
-    address _to,
-    uint256 _tokenId,
-    bytes memory _data
-  ) public virtual override(ERC721Upgradeable, IERC721Upgradeable) {
-    _enforceStaticState(msg.sender, _tokenId);
-    super.safeTransferFrom(_from, _to, _tokenId, _data);
-  }
-
   /**
    * @dev allows DAO to update protocol implementation on NFTRenderer
    */
@@ -301,7 +273,7 @@ contract Vault721 is ERC721EnumerableUpgradeable {
   /**
    * @dev prevent frontrun state change during token transferFrom
    */
-  function _enforceStaticState(address _operator, uint256 _tokenId) internal {
+  function _enforceStaticState(address _operator, uint256 _tokenId) internal view {
     // on allowlist addresses, we check the block delay along with the state hash
     if (_allowlist[_operator]) {
       if (
@@ -319,8 +291,16 @@ contract Vault721 is ERC721EnumerableUpgradeable {
   }
 
   /**
+   * @dev enforce state before _transfer
+   */
+  function _transfer(address _from, address _to, uint256 _tokenId) internal override {
+    _enforceStaticState(msg.sender, _tokenId);
+    super._transfer(_from, _to, _tokenId);
+  }
+
+  /**
    * @dev _transfer calls `transferSAFEOwnership` on SafeManager
-   * enforces that ODProxy exists for transfer or it deploys a new ODProxy for receiver of vault/nft
+   * @notice check that NFV receiver has proxy or build
    */
   function _afterTokenTransfer(address _from, address _to, uint256 _tokenId, uint256) internal override {
     require(_to != address(0), 'V721: no burn');
