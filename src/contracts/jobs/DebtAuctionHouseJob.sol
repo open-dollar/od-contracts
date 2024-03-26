@@ -35,11 +35,11 @@ contract DebtAuctionHouseJob is Authorizable, Modifiable, Job, IDebtAuctionHouse
   }
 
   // --- Job ---
-  
+
   /**
    * @notice Restarts an auction with a reward
    * @param auctionId the Id of the auction to be restarted
-  */
+   */
   function restartAuction(uint256 auctionId) external reward {
     debtAuctionHouse.restartAuction(auctionId);
   }
@@ -47,7 +47,7 @@ contract DebtAuctionHouseJob is Authorizable, Modifiable, Job, IDebtAuctionHouse
   /**
    * @notice Restarts an auction without a reward
    * @param auctionId the Id of the auction to be restarted
-  */
+   */
   function restartAuctionWithoutReward(uint256 auctionId) external {
     debtAuctionHouse.restartAuction(auctionId);
   }

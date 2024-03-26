@@ -66,10 +66,12 @@ contract Unit_DebtAuctionHouseJob_Constructor is Base {
     assertEq(address(debtAuctionJob.stabilityFeeTreasury()), address(mockStabilityFeeTreasury), 'incorrect treasury');
   }
 }
-import "forge-std/console2.sol";
+
+import 'forge-std/console2.sol';
+
 contract Unit_DebtAuctionHouseJob_RestartAuction is Base {
   event Rewarded(address _rewardedAccount, uint256 _rewardAmount);
-  event RestartAuction(uint256 _id, uint256 _blockTimestamp, uint256 _auctionDeadline); 
+  event RestartAuction(uint256 _id, uint256 _blockTimestamp, uint256 _auctionDeadline);
 
   function test_RestartAuctionJob() public {
     vm.prank(authorizedAccount);
