@@ -89,6 +89,7 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
     address _debtAuctionHouse,
     AccountingEngineParams memory _accEngineParams
   ) Authorizable(msg.sender) validParams {
+    if(_debtAuctionHouse == address(0)) revert AccEng_InvalidParams();
     safeEngine = ISAFEEngine(_safeEngine.assertNonNull());
     _setSurplusAuctionHouse(_surplusAuctionHouse);
     debtAuctionHouse = IDebtAuctionHouse(_debtAuctionHouse);
@@ -315,5 +316,6 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
   function _validateParameters() internal view override {
     address(surplusAuctionHouse).assertHasCode();
     address(debtAuctionHouse).assertHasCode();
+    if(_params.debtAuctionMintedTokens == 0) revert AccEng_InvalidParams();
   }
 }
