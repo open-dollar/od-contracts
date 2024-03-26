@@ -33,7 +33,7 @@ contract DebtAuctionHouseJob is Authorizable, Modifiable, Job {
     debtAuctionHouse = IDebtAuctionHouse(_debtAuctionHouse);
   }
 
-  function restartAuction(uint256 auctionId) external reward validParams {
+  function restartAuction(uint256 auctionId) external reward {
     debtAuctionHouse.restartAuction(auctionId);
   }
 
