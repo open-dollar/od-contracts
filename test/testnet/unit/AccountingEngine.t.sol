@@ -31,7 +31,7 @@ abstract contract Base is ODTest {
     disableCooldown: 0,
     surplusAmount: 0,
     surplusBuffer: 0,
-    debtAuctionMintedTokens: 0,
+    debtAuctionMintedTokens: 1,
     debtAuctionBidSize: 0
   });
 
@@ -197,6 +197,10 @@ abstract contract Base is ODTest {
 }
 
 contract Unit_AccountingEngine_Constructor is Base {
+  modifier happyPath(IAccountingEngine.AccountingEngineParams memory params){
+    vm.assume(params.debtAuctionMintedTokens != 0);
+    _;
+  }
   function test_Set_Parameters() public {
     assertEq(address(accountingEngine.safeEngine()), address(mockSafeEngine));
     assertEq(address(accountingEngine.surplusAuctionHouse()), address(mockSurplusAuctionHouse));
@@ -205,6 +209,7 @@ contract Unit_AccountingEngine_Constructor is Base {
 
   function test_Set_AccountingEngineParams(IAccountingEngine.AccountingEngineParams memory _accountingEngineParams)
     public
+    happyPath(_accountingEngineParams)
   {
     accountingEngine = new AccountingEngineForTest(
       address(mockSafeEngine), address(mockSurplusAuctionHouse), address(mockDebtAuctionHouse), _accountingEngineParams
@@ -227,7 +232,7 @@ contract Unit_AccountingEngine_Constructor is Base {
   }
 
   function test_Revert_NullDebtAuctionHouse() public {
-    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
+    vm.expectRevert(abi.encodeWithSelector(IAccountingEngine.AccEng_InvalidParams.selector));
     new AccountingEngineForTest(
       address(mockSafeEngine), address(mockSurplusAuctionHouse), address(0), accountingEngineParams
     );
@@ -235,7 +240,11 @@ contract Unit_AccountingEngine_Constructor is Base {
 }
 
 contract Unit_AccountingEngine_ModifyParameters is Base {
-  function test_ModifyParameters(IAccountingEngine.AccountingEngineParams memory _fuzz) public authorized {
+  modifier happyPath(IAccountingEngine.AccountingEngineParams memory params){
+    vm.assume(params.debtAuctionMintedTokens != 0);
+    _;
+  }
+  function test_ModifyParameters(IAccountingEngine.AccountingEngineParams memory _fuzz) public authorized happyPath(_fuzz){
     accountingEngine.modifyParameters('surplusTransferPercentage', abi.encode(_fuzz.surplusTransferPercentage));
     accountingEngine.modifyParameters('surplusDelay', abi.encode(_fuzz.surplusDelay));
     accountingEngine.modifyParameters('popDebtDelay', abi.encode(_fuzz.popDebtDelay));

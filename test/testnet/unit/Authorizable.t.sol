@@ -24,6 +24,7 @@ contract Unit_Authorizable_Constructor is Base {
   event AddAuthorization(address _account);
 
   function test_Emit_AddAuthorization(address _account) public {
+    vm.assume(_account != address(0));
     vm.expectEmit();
     emit AddAuthorization(_account);
 

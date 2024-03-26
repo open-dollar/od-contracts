@@ -209,7 +209,7 @@ contract Unit_CollateralAuctionHouse_Constructor is Base {
   }
 
   function test_Revert_NullAddress_SafeEngine() public {
-    vm.expectRevert(Assertions.NullAddress.selector);
+    vm.expectRevert(IAuthorizable.NullAddress.selector);
 
     new CollateralAuctionHouseForTest(
       address(0), address(mockLiquidationEngine), address(mockOracleRelayer), collateralType, cahParams
@@ -217,7 +217,7 @@ contract Unit_CollateralAuctionHouse_Constructor is Base {
   }
 
   function test_Revert_NullAddress_LiquidationEngine() public {
-    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
+    vm.expectRevert(abi.encodeWithSelector(IAuthorizable.NullAddress.selector));
 
     new CollateralAuctionHouseForTest(
       address(mockSafeEngine), address(0), address(mockOracleRelayer), collateralType, cahParams
@@ -1603,6 +1603,7 @@ contract Unit_CollateralAuctionHouse_ModifyParameters is Base {
     vm.assume(_newLiquidationEngine != address(0));
     vm.assume(_newLiquidationEngine != deployer);
     vm.assume(_newLiquidationEngine != authorizedAccount);
+    vm.assume(_oldLiquidationEngine != address(0));
     vm.assume(_oldLiquidationEngine != deployer);
     vm.assume(_oldLiquidationEngine != authorizedAccount);
 
@@ -1631,7 +1632,7 @@ contract Unit_CollateralAuctionHouse_ModifyParameters is Base {
   function test_Revert_NullAddress_LiquidationEngine() public {
     vm.startPrank(authorizedAccount);
 
-    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
+    vm.expectRevert(abi.encodeWithSelector(IAuthorizable.NullAddress.selector, address(0)));
 
     collateralAuctionHouse.modifyParameters('liquidationEngine', abi.encode(0));
   }
