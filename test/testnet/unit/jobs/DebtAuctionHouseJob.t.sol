@@ -12,8 +12,8 @@ import {IJob} from '@interfaces/jobs/IJob.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {ODTest, stdStorage, StdStorage} from '@testnet/utils/ODTest.t.sol';
-
 import {Assertions} from '@libraries/Assertions.sol';
+import 'forge-std/Vm.sol';
 
 abstract contract Base is ODTest {
   using stdStorage for StdStorage;
@@ -66,9 +66,10 @@ contract Unit_DebtAuctionHouseJob_Constructor is Base {
     assertEq(address(debtAuctionJob.stabilityFeeTreasury()), address(mockStabilityFeeTreasury), 'incorrect treasury');
   }
 }
-
+import "forge-std/console2.sol";
 contract Unit_DebtAuctionHouseJob_RestartAuction is Base {
   event Rewarded(address _rewardedAccount, uint256 _rewardAmount);
+  event RestartAuction(uint256 _id, uint256 _blockTimestamp, uint256 _auctionDeadline); 
 
   function test_RestartAuctionJob() public {
     vm.prank(authorizedAccount);
@@ -84,6 +85,25 @@ contract Unit_DebtAuctionHouseJob_RestartAuction is Base {
     emit Rewarded(user, REWARD_AMOUNT);
     //restart auction.
     debtAuctionJob.restartAuction(auctionId);
+  }
+
+  function test_RestartAuction_NoReward_Job() public {
+    vm.prank(authorizedAccount);
+    //start auction
+    uint256 auctionId = debtAuctionHouse.startAuction(user, 100 ether, 10 ether);
+
+    IDebtAuctionHouse.Auction memory auction = debtAuctionHouse.auctions(auctionId);
+    //end the auction
+    vm.warp(1 + auction.auctionDeadline);
+
+    vm.prank(user);
+    vm.recordLogs();
+    //restart auction.
+    debtAuctionJob.restartAuctionWithoutReward(auctionId);
+
+    Vm.Log[] memory logs = vm.getRecordedLogs();
+
+    assertEq(logs[0].topics[0], keccak256('RestartAuction(uint256,uint256,uint256)'));
   }
 
   function test_RestartAuctionJob_Revert_AuctionNotEnded() public {

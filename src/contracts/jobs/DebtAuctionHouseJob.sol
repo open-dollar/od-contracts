@@ -6,15 +6,16 @@ import {Job} from '@contracts/jobs/Job.sol';
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {Modifiable} from '@contracts/utils/Modifiable.sol';
 import {IDebtAuctionHouse} from '@interfaces/IDebtAuctionHouse.sol';
+import {IDebtAuctionHouseJob} from '@interfaces/jobs/IDebtAuctionHouseJob.sol';
 
 import {Encoding} from '@libraries/Encoding.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 
 /**
- * @title  LiquidationJob
+ * @title  DebtAuctionHouseJob
  * @notice This contract contains rewarded methods to handle the the restarting of debt auctions.
  */
-contract DebtAuctionHouseJob is Authorizable, Modifiable, Job {
+contract DebtAuctionHouseJob is Authorizable, Modifiable, Job, IDebtAuctionHouseJob {
   using Encoding for bytes;
   using Assertions for address;
 
@@ -33,7 +34,21 @@ contract DebtAuctionHouseJob is Authorizable, Modifiable, Job {
     debtAuctionHouse = IDebtAuctionHouse(_debtAuctionHouse);
   }
 
+  // --- Job ---
+  
+  /**
+   * @notice Restarts an auction with a reward
+   * @param auctionId the Id of the auction to be restarted
+  */
   function restartAuction(uint256 auctionId) external reward {
+    debtAuctionHouse.restartAuction(auctionId);
+  }
+
+  /**
+   * @notice Restarts an auction without a reward
+   * @param auctionId the Id of the auction to be restarted
+  */
+  function restartAuctionWithoutReward(uint256 auctionId) external {
     debtAuctionHouse.restartAuction(auctionId);
   }
 
