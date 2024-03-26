@@ -33,12 +33,19 @@ contract DebtAuctionHouseJob is Authorizable, Modifiable, Job {
     debtAuctionHouse = IDebtAuctionHouse(_debtAuctionHouse);
   }
 
-  function restartAuction(uint256 auctionId) external reward {
+  function restartAuction(uint256 auctionId) external reward validParams {
     debtAuctionHouse.restartAuction(auctionId);
   }
 
   /// @inheritdoc Modifiable
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override(Modifiable, Job) {
+    if (_param == 'debtAuctionHouse') debtAuctionHouse = IDebtAuctionHouse(abi.decode(_data, (address)));
+    else Job._modifyParameters(_param, _data);
+  }
+
+  /// @inheritdoc Modifiable
   function _validateParameters() internal view override(Job, Modifiable) {
+    address(debtAuctionHouse).assertHasCode();
     Job._validateParameters();
   }
 }
