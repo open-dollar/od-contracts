@@ -89,8 +89,6 @@ interface IAccountingEngine is IAuthorizable, IDisableable, IModifiable {
   error AccEng_PostSettlementCooldown();
   /// @notice Throws when surplus surplusTransferPercentage is great than WAD (100%)
   error AccEng_surplusTransferPercentOverLimit();
-  /// @notice Throws when invalid parameters are passed detected
-  error AccEng_InvalidParams();
 
   // --- Structs ---
 

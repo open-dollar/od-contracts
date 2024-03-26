@@ -60,8 +60,8 @@ contract Unit_Authorizable_AddAuthorization is Base {
   event AddAuthorization(address _account);
 
   modifier happyPath(address _account) {
+    vm.assume(_account != address(0));
     vm.startPrank(authorizedAccount);
-
     _assumeHappyPath(_account);
     _;
   }
@@ -85,6 +85,7 @@ contract Unit_Authorizable_AddAuthorization is Base {
   }
 
   function test_Set_AuthorizedAccounts(address _account) public happyPath(_account) {
+    vm.assume(_account != address(0));
     authorizable.addAuthorization(_account);
 
     assertEq(authorizable.authorizedAccounts(_account), true);

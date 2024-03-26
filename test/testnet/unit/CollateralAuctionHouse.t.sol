@@ -44,7 +44,7 @@ contract Base is ODTest {
     minDiscount: WAD, // no discount
     maxDiscount: 1, // 99.999% discount
     perSecondDiscountUpdateRate: RAY, // no update rate
-    minimumBid: 0 // no minimum bid
+    minimumBid: 1 // non-zero minimum bid
   });
 
   function setUp() public virtual {
@@ -200,6 +200,7 @@ contract Unit_CollateralAuctionHouse_Constructor is Base {
     vm.assume(_cahParams.minDiscount >= _cahParams.maxDiscount && _cahParams.minDiscount <= WAD);
     vm.assume(_cahParams.maxDiscount > 0);
     vm.assume(_cahParams.perSecondDiscountUpdateRate <= RAY);
+    vm.assume(_cahParams.minimumBid > 0);
 
     collateralAuctionHouse = new CollateralAuctionHouseForTest(
       address(mockSafeEngine), address(mockLiquidationEngine), address(mockOracleRelayer), collateralType, _cahParams
@@ -1573,6 +1574,7 @@ contract Unit_CollateralAuctionHouse_ModifyParameters is Base {
     vm.assume(_fuzz.minDiscount >= _fuzz.maxDiscount && _fuzz.minDiscount <= WAD);
     vm.assume(_fuzz.maxDiscount > 0);
     vm.assume(_fuzz.perSecondDiscountUpdateRate <= RAY);
+    vm.assume(_fuzz.minimumBid > 0);
 
     collateralAuctionHouse.modifyParameters('minimumBid', abi.encode(_fuzz.minimumBid));
     collateralAuctionHouse.modifyParameters('maxDiscount', abi.encode(_fuzz.maxDiscount));
@@ -1632,7 +1634,7 @@ contract Unit_CollateralAuctionHouse_ModifyParameters is Base {
   function test_Revert_NullAddress_LiquidationEngine() public {
     vm.startPrank(authorizedAccount);
 
-    vm.expectRevert(abi.encodeWithSelector(IAuthorizable.NullAddress.selector, address(0)));
+    vm.expectRevert(abi.encodeWithSelector(IAuthorizable.NullAddress.selector));
 
     collateralAuctionHouse.modifyParameters('liquidationEngine', abi.encode(0));
   }

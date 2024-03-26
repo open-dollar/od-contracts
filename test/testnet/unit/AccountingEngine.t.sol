@@ -197,10 +197,11 @@ abstract contract Base is ODTest {
 }
 
 contract Unit_AccountingEngine_Constructor is Base {
-  modifier happyPath(IAccountingEngine.AccountingEngineParams memory params){
+  modifier happyPath(IAccountingEngine.AccountingEngineParams memory params) {
     vm.assume(params.debtAuctionMintedTokens != 0);
     _;
   }
+
   function test_Set_Parameters() public {
     assertEq(address(accountingEngine.safeEngine()), address(mockSafeEngine));
     assertEq(address(accountingEngine.surplusAuctionHouse()), address(mockSurplusAuctionHouse));
@@ -232,7 +233,7 @@ contract Unit_AccountingEngine_Constructor is Base {
   }
 
   function test_Revert_NullDebtAuctionHouse() public {
-    vm.expectRevert(abi.encodeWithSelector(IAccountingEngine.AccEng_InvalidParams.selector));
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NullAddress.selector));
     new AccountingEngineForTest(
       address(mockSafeEngine), address(mockSurplusAuctionHouse), address(0), accountingEngineParams
     );
@@ -240,11 +241,16 @@ contract Unit_AccountingEngine_Constructor is Base {
 }
 
 contract Unit_AccountingEngine_ModifyParameters is Base {
-  modifier happyPath(IAccountingEngine.AccountingEngineParams memory params){
+  modifier happyPath(IAccountingEngine.AccountingEngineParams memory params) {
     vm.assume(params.debtAuctionMintedTokens != 0);
     _;
   }
-  function test_ModifyParameters(IAccountingEngine.AccountingEngineParams memory _fuzz) public authorized happyPath(_fuzz){
+
+  function test_ModifyParameters(IAccountingEngine.AccountingEngineParams memory _fuzz)
+    public
+    authorized
+    happyPath(_fuzz)
+  {
     accountingEngine.modifyParameters('surplusTransferPercentage', abi.encode(_fuzz.surplusTransferPercentage));
     accountingEngine.modifyParameters('surplusDelay', abi.encode(_fuzz.surplusDelay));
     accountingEngine.modifyParameters('popDebtDelay', abi.encode(_fuzz.popDebtDelay));
