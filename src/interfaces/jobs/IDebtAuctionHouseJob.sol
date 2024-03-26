@@ -10,6 +10,7 @@ import {IDebtAuctionHouse} from '@interfaces/IDebtAuctionHouse.sol';
  * @title  IDebtAuctionHouseJob
  * @notice This contract contains the interface for DebtAuctionHouseJob.
  */
+
 interface IDebtAuctionHouseJob is IAuthorizable, IModifiable, IJob {
   /**
    * @notice Restarts an auction with a reward
@@ -24,5 +25,5 @@ interface IDebtAuctionHouseJob is IAuthorizable, IModifiable, IJob {
   function restartAuctionWithoutReward(uint256 auctionId) external;
 
   /// @notice get the debt auction house
-  function debtAuctionHouse()external returns(IDebtAuctionHouse _debtAuctionHouse);
+  function debtAuctionHouse() external returns (IDebtAuctionHouse _debtAuctionHouse);
 }
