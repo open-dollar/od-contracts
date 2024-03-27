@@ -48,6 +48,8 @@ contract NFTRenderer {
   struct VaultParams {
     uint256 ratio;
     string collateral;
+    string coinBalance;
+    string tokenCollateral;
     string debt;
     string metaCollateral;
     string metaDebt;
@@ -104,7 +106,7 @@ contract NFTRenderer {
           string.concat(
             _renderVaultInfo(params.vaultId, params.color),
             _renderCollatAndDebt(
-              ratio, params.stabilityFee, params.debt, params.collateral, params.symbol, params.lastUpdate
+              ratio, params.stabilityFee, params.debt, params.collateral, params.symbol, params.lastUpdate //tokenCollateral and coinBalance are not included here because they will usuall be redundant.
             ),
             _renderRisk(ratio, params.stroke, params.risk),
             _renderBackground(params.color)
@@ -250,13 +252,17 @@ contract NFTRenderer {
       params.metaDebt,
       '"},{"trait_type":"Collateral","value":"',
       params.metaCollateral,
+      '"},{"trait_type":"Coin Balance"',
+      params.coinBalance, 
+      '"},{"trait_type":"Token Collateral","value":"',
+      params.tokenCollateral, 
       '"},{"trait_type":"Collateral Type","value":"',
       params.symbol,
       '"},{"trait_type":"Stability Fee","value":"',
       params.stabilityFee,
       '"},{"trait_type":"Risk","value":"',
       params.risk,
-      '"},{"trait_type":"Collateral Ratio","value":"',
+      '"},{"trait_type":"Collateralization Ratio","value":"',
       params.ratio.toString(),
       '"},{"trait_type":"Last Updated","value":"'
     );
