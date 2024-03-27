@@ -243,6 +243,6 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
     _params.totalAuctionLength.assertGt(0);
     _params.bidDuration.assertGt(0);
     _params.bidDuration.assertLt(_params.totalAuctionLength);
-    _params.recyclingPercentage.assertLt(1e18);
+    _params.recyclingPercentage.assertLt(1e19);
   }
 }
