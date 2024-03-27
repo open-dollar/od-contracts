@@ -981,7 +981,6 @@ contract Unit_SurplusAuctionHouse_ModifyParameters is Base {
     vm.assume(_fuzz.totalAuctionLength > _fuzz.bidDuration);
     vm.assume(_fuzz.recyclingPercentage < 100);
 
-
     surplusAuctionHouse.modifyParameters('bidIncrease', abi.encode(_fuzz.bidIncrease));
     surplusAuctionHouse.modifyParameters('bidDuration', abi.encode(_fuzz.bidDuration));
     surplusAuctionHouse.modifyParameters('totalAuctionLength', abi.encode(_fuzz.totalAuctionLength));
