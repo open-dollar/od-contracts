@@ -238,7 +238,7 @@ contract NFTRenderer {
     desc = string.concat(
       '"Non-Fungible Vault #',
       _safeId,
-      ' Caution! Trading this NFV gives the recipient full ownership of your Vault, including all collateral & debt obligations. This act is irreversible.",'
+      ' Caution! Trading this NFV gives the recipient full ownership of your Vault, including all collateral inside it & debt obligations. This act is irreversible.",'
     );
   }
 
