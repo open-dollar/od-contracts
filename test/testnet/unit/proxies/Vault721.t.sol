@@ -33,6 +33,14 @@ contract Base is ODTest {
 
     vm.stopPrank();
   }
+
+  function _mockSafeCall()internal{
+    vm.mockCall(
+      address(safeManager),
+      abi.encodeWithSelector(ODSafeManager.safeData.selector),
+      abi.encode(address(1));
+    );
+  }
 }
 
 contract Unit_Vault721_Initialize is Base {
@@ -202,6 +210,7 @@ contract Unit_Vault721_UpdateVaultHashState is Base {
     );
 
     vm.prank(address(safeManager));
+    _mockSafeCall();
     vault721.updateVaultHashState(1);
 
     HashState memory hashState = vault721.getHashState(1);
@@ -312,6 +321,7 @@ contract Unit_Vault721_GovernanceFunctions is Base {
       abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector),
       abi.encode(bytes32('test-hash'))
     );
+    _mockSafeCall();
     vault721.updateVaultHashState(1);
 
     vm.prank(_scenario.user);
@@ -362,7 +372,7 @@ contract Unit_Vault721_GovernanceFunctions is Base {
       abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector),
       abi.encode(previousHashState)
     );
-
+    _mockSafeCall();
     vm.prank(address(safeManager));
     vault721.updateVaultHashState(1);
 
@@ -477,7 +487,7 @@ contract Unit_Vault721_TransferFrom is Base {
     );
 
     vm.prank(address(safeManager));
-
+    _mockSafeCall();
     vault721.updateVaultHashState(_scenario.tokenId);
 
     vm.prank(_scenario.user1);
@@ -507,7 +517,7 @@ contract Unit_Vault721_TransferFrom is Base {
       abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector),
       abi.encode(bytes32('test-hash'))
     );
-
+    _mockSafeCall();
     vault721.updateVaultHashState(_scenario.tokenId);
 
     vm.prank(_scenario.user1);
