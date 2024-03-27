@@ -124,6 +124,18 @@ contract Unit_SurplusAuctionHouse_Constants is Base {
 contract Unit_SurplusAuctionHouse_Constructor is Base {
   event AddAuthorization(address _account);
 
+  modifier happyPathParams(ISurplusAuctionHouse.SurplusAuctionHouseParams memory _sahParams) {
+    vm.assume(_sahParams.bidReceiver != address(0));
+    vm.assume(_sahParams.bidIncrease > 0);
+    vm.assume(_sahParams.totalAuctionLength > 0);
+    vm.assume(_sahParams.bidDuration > 0);
+    vm.assume(_sahParams.totalAuctionLength > _sahParams.bidDuration);
+    vm.assume(_sahParams.recyclingPercentage < 100);
+
+    vm.startPrank(user);
+    _;
+  }
+
   modifier happyPath() {
     vm.startPrank(user);
     _;
@@ -154,8 +166,10 @@ contract Unit_SurplusAuctionHouse_Constructor is Base {
     assertEq(address(surplusAuctionHouse.protocolToken()), _protocolToken);
   }
 
-  function test_Set_SAH_Params(ISurplusAuctionHouse.SurplusAuctionHouseParams memory _sahParams) public happyPath {
-    vm.assume(_sahParams.bidReceiver != address(0));
+  function test_Set_SAH_Params(ISurplusAuctionHouse.SurplusAuctionHouseParams memory _sahParams)
+    public
+    happyPathParams(_sahParams)
+  {
     surplusAuctionHouse =
       new SurplusAuctionHouseForTest(address(mockSafeEngine), address(mockProtocolToken), _sahParams);
 
@@ -174,9 +188,63 @@ contract Unit_SurplusAuctionHouse_Constructor is Base {
     new SurplusAuctionHouseForTest(address(mockSafeEngine), address(0), sahParams);
   }
 
-  function test_Revert_Null_BidReceiver(ISurplusAuctionHouse.SurplusAuctionHouseParams memory _sahParams) public {
+  function test_Revert_Null_BidReceiver(ISurplusAuctionHouse.SurplusAuctionHouseParams memory _sahParams)
+    public
+    happyPathParams(_sahParams)
+  {
     _sahParams.bidReceiver = address(0);
     vm.expectRevert(Assertions.NullAddress.selector);
+
+    new SurplusAuctionHouseForTest(address(mockSafeEngine), address(mockProtocolToken), _sahParams);
+  }
+
+  function test_Revert_BidIncreaseZero(ISurplusAuctionHouse.SurplusAuctionHouseParams memory _sahParams)
+    public
+    happyPathParams(_sahParams)
+  {
+    _sahParams.bidIncrease = 0;
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NotGreaterThan.selector, 0, 0));
+
+    new SurplusAuctionHouseForTest(address(mockSafeEngine), address(mockProtocolToken), _sahParams);
+  }
+
+  function test_Revert_TotalAuctionLengthZero(ISurplusAuctionHouse.SurplusAuctionHouseParams memory _sahParams)
+    public
+    happyPathParams(_sahParams)
+  {
+    _sahParams.totalAuctionLength = 0;
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NotGreaterThan.selector, 0, 0));
+
+    new SurplusAuctionHouseForTest(address(mockSafeEngine), address(mockProtocolToken), _sahParams);
+  }
+
+  function test_Revert_BidDurationLengthZero(ISurplusAuctionHouse.SurplusAuctionHouseParams memory _sahParams)
+    public
+    happyPathParams(_sahParams)
+  {
+    _sahParams.bidDuration = 0;
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NotGreaterThan.selector, 0, 0));
+
+    new SurplusAuctionHouseForTest(address(mockSafeEngine), address(mockProtocolToken), _sahParams);
+  }
+
+  function test_Revert_RecyclingPercentageMax(ISurplusAuctionHouse.SurplusAuctionHouseParams memory _sahParams)
+    public
+    happyPathParams(_sahParams)
+  {
+    _sahParams.recyclingPercentage = 100;
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NotLesserThan.selector, 100, 100));
+
+    new SurplusAuctionHouseForTest(address(mockSafeEngine), address(mockProtocolToken), _sahParams);
+  }
+
+  function test_Revert_TotalAuctionLessThanBidDuration(ISurplusAuctionHouse.SurplusAuctionHouseParams memory _sahParams)
+    public
+    happyPathParams(_sahParams)
+  {
+    _sahParams.bidDuration = 100;
+    _sahParams.totalAuctionLength = 10;
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NotLesserThan.selector, 100, 10));
 
     new SurplusAuctionHouseForTest(address(mockSafeEngine), address(mockProtocolToken), _sahParams);
   }

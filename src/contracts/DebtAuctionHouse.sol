@@ -21,6 +21,7 @@ import {Assertions} from '@libraries/Assertions.sol';
 contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuctionHouse {
   using Encoding for bytes;
   using Assertions for address;
+  using Assertions for uint256;
 
   /// @inheritdoc IDebtAuctionHouse
   bytes32 public constant AUCTION_HOUSE_TYPE = bytes32('DEBT');
@@ -222,5 +223,7 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
   /// @inheritdoc Modifiable
   function _validateParameters() internal view override {
     address(protocolToken).assertHasCode();
+    _params.bidDecrease.assertGt(0);
+    _params.amountSoldIncrease.assertGt(0);
   }
 }

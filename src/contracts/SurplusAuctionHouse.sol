@@ -23,6 +23,7 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
   using Math for uint256;
   using Encoding for bytes;
   using Assertions for address;
+  using Assertions for uint256;
   using SafeERC20Upgradeable for IProtocolToken;
 
   /// @inheritdoc ICommonSurplusAuctionHouse
@@ -238,5 +239,10 @@ contract SurplusAuctionHouse is Authorizable, Modifiable, Disableable, ISurplusA
   function _validateParameters() internal view override {
     address(protocolToken).assertHasCode();
     _params.bidReceiver.assertNonNull();
+    _params.bidIncrease.assertGt(0);
+    _params.totalAuctionLength.assertGt(0);
+    _params.bidDuration.assertGt(0);
+    _params.bidDuration.assertLt(_params.totalAuctionLength);
+    _params.recyclingPercentage.assertLt(100);
   }
 }

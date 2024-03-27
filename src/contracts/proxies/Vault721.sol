@@ -190,6 +190,7 @@ contract Vault721 is ERC721EnumerableUpgradeable {
    * @dev allows ODSafeManager to update the hash state
    */
   function updateVaultHashState(uint256 _vaultId) external onlySafeManager {
+    if (safeManager.safeData(_vaultId).safeHandler == address(0)) revert ZeroAddress();
     _hashState[_vaultId] = HashState({
       lastHash: nftRenderer.getStateHashBySafeId(_vaultId),
       lastBlockNumber: block.number,
