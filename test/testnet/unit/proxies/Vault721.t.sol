@@ -232,7 +232,7 @@ contract Unit_Vault721_UpdateVaultHashState is Base {
 
     IODSafeManager.SAFEData memory returnSafe;
     vm.mockCall(address(safeManager), abi.encodeWithSelector(ODSafeManager.safeData.selector), abi.encode(returnSafe));
-    
+
     vm.prank(address(safeManager));
     vault721.updateVaultHashState(1);
   }
