@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {Common, COLLAT, DEBT, TKN} from './Common.t.sol';
+import {Common, COLLAT, DEBT, TKN} from '@testnet/e2e/Common.t.sol';
 import {JOB_REWARD} from '@script/Params.s.sol';
 
 import {AccountingJob, IAccountingJob} from '@contracts/jobs/AccountingJob.sol';

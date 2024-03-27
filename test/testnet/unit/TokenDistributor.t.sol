@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {HaiTest, stdStorage, StdStorage} from '@testnet/utils/HaiTest.t.sol';
+import {ODTest, stdStorage, StdStorage} from '@testnet/utils/ODTest.t.sol';
 import {MerkleTreeGenerator} from '@testnet/utils/MerkleTreeGenerator.sol';
 import {ITokenDistributor, TokenDistributor} from '@contracts/tokens/TokenDistributor.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {ERC20VotesUpgradeable} from '@openzeppelin-upgradeable/token/ERC20/extensions/ERC20VotesUpgradeable.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 
-abstract contract Base is HaiTest {
+abstract contract Base is ODTest {
   using stdStorage for StdStorage;
 
   MerkleTreeGenerator merkleTreeGenerator;

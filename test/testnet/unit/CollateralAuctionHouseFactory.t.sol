@@ -15,9 +15,9 @@ import {IModifiablePerCollateral} from '@interfaces/utils/IModifiablePerCollater
 import {IFactoryChild} from '@interfaces/factories/IFactoryChild.sol';
 import {WAD} from '@libraries/Math.sol';
 import {Assertions} from '@libraries/Assertions.sol';
-import {HaiTest, stdStorage, StdStorage} from '@testnet/utils/HaiTest.t.sol';
+import {ODTest, stdStorage, StdStorage} from '@testnet/utils/ODTest.t.sol';
 
-abstract contract Base is HaiTest {
+abstract contract Base is ODTest {
   using stdStorage for StdStorage;
 
   address deployer = label('deployer');
@@ -182,6 +182,13 @@ contract Unit_CollateralAuctionHouseFactory_DeployCollateralAuctionHouse is Base
     emit DeployCollateralAuctionHouse(_cType, address(collateralAuctionHouseChild));
 
     collateralAuctionHouseFactory.initializeCollateralType(_cType, abi.encode(cahParams));
+    assertEq(abi.encode(collateralAuctionHouseFactory.cParams(_cType)), abi.encode(cahParams));
+    (uint256 _minimumBid, uint256 _minDiscount, uint256 _maxDiscount, uint256 _perSecondDiscountUpdateRate) =
+      collateralAuctionHouseFactory._cParams(_cType);
+    assertEq(_minimumBid, cahParams.minimumBid);
+    assertEq(_minDiscount, cahParams.minDiscount);
+    assertEq(_maxDiscount, cahParams.maxDiscount);
+    assertEq(_perSecondDiscountUpdateRate, cahParams.perSecondDiscountUpdateRate);
   }
 
   function test_Return_CollateralAuctionHouse(bytes32 _cType) public happyPath {

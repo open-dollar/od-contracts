@@ -7,11 +7,11 @@ import {IStabilityFeeTreasury} from '@interfaces/IStabilityFeeTreasury.sol';
 import {IJob} from '@interfaces/jobs/IJob.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
-import {HaiTest, stdStorage, StdStorage} from '@testnet/utils/HaiTest.t.sol';
+import {ODTest, stdStorage, StdStorage} from '@testnet/utils/ODTest.t.sol';
 
 import {Assertions} from '@libraries/Assertions.sol';
 
-abstract contract Base is HaiTest {
+abstract contract Base is ODTest {
   using stdStorage for StdStorage;
 
   address deployer = label('deployer');

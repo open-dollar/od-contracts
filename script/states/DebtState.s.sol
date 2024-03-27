@@ -17,9 +17,9 @@ contract DebtState is AnvilFork, Script {
 
   function setPriceLowToTriggerDebtScenario() public {
     // change the wstETH delayed oracle price very low
-    for (uint256 i = 0; i < testOracles.length - 1; i++) {
+    for (uint256 i = 0; i < oraclesForTest.length - 1; i++) {
       vm.prank(J);
-      testOracles[i + 1].setPriceAndValidity(1_000_000, true);
+      oraclesForTest[i + 1].setPriceAndValidity(1_000_000, true);
     }
 
     delayedOracles[0].updateDelay();

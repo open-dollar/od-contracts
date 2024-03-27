@@ -131,7 +131,7 @@ contract OverflowChecker {
   }
 }
 
-abstract contract HaiTest is DSTestPlus, OverflowChecker {
+abstract contract ODTest is DSTestPlus, OverflowChecker {
   modifier mockAsContract(address _address) {
     // Foundry fuzzer sometimes gives us the next deployment address
     // this results in very unexpected reverts as any contract deploy will revert

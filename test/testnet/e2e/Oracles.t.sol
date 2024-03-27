@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {HaiTest} from '@testnet/utils/HaiTest.t.sol';
+import {ODTest} from '@testnet/utils/ODTest.t.sol';
 import {IChainlinkOracle} from '@interfaces/oracles/IChainlinkOracle.sol';
 import {ChainlinkRelayer, IBaseOracle} from '@contracts/oracles/ChainlinkRelayer.sol';
 import {DenominatedOracle, IDenominatedOracle} from '@contracts/oracles/DenominatedOracle.sol';
@@ -15,7 +15,7 @@ import {
 
 import {Math, WAD} from '@libraries/Math.sol';
 
-contract OracleSetup is HaiTest {
+contract OracleSetup is ODTest {
   using Math for uint256;
 
   uint256 ARBTIRUM_BLOCK = 159_201_690; // (Dec-11-2023 11:29:40 PM +UTC)

@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import 'forge-std/console2.sol';
 import '@script/Contracts.s.sol';
 import '@script/Registry.s.sol';
 import '@script/Params.s.sol';
-import {Script} from 'forge-std/Script.sol';
+import {Script, VmSafe} from 'forge-std/Script.sol';
 import {FixedPointMathLib} from '@isolmate/utils/FixedPointMathLib.sol';
 import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
 import {Common} from '@script/Common.s.sol';
@@ -13,14 +12,24 @@ import {SepoliaParams} from '@script/SepoliaParams.s.sol';
 import {MainnetParams} from '@script/MainnetParams.s.sol';
 
 abstract contract Deploy is Common, Script {
-  function setupEnvironment() public virtual {}
-  function setupPostEnvironment() public virtual {}
-  function mintAirdrop() public virtual {}
+  function _addAuthCreate2AndProtocolToken() public runIfFork restoreOriginalCaller {
+    address deployerAddr = vm.addr(_deployerPk);
+    address create2AuthAddr = create2.authorizedAccounts()[0];
+    address protocolTokenAuthAddr = protocolToken.authorizedAccounts()[0];
+    vm.broadcast(create2AuthAddr);
+    create2.addAuthorization(deployerAddr);
+    vm.broadcast(protocolTokenAuthAddr);
+    protocolToken.addAuthorization(deployerAddr);
+  }
 
   function run() public {
     deployer = vm.addr(_deployerPk);
-    vm.startBroadcast(deployer);
-    logGovernor();
+
+    if (isFork()) {
+      vm.startPrank(deployer);
+    } else {
+      vm.startBroadcast(deployer);
+    }
 
     // creation bytecode
     _systemCoinInitCode = type(OpenDollar).creationCode;
@@ -32,31 +41,24 @@ abstract contract Deploy is Common, Script {
     inputs[1] = 'rev-parse';
     inputs[2] = 'HEAD';
 
-    _chainId = getChainId();
-
+    _addAuthCreate2AndProtocolToken();
     // Deploy oracle factories used to setup the environment
     deployOracleFactories();
-
     // Environment may be different for each network
     setupEnvironment();
-
     // Common deployment routine for all networks
     deployTokenGovernance();
     deployContracts();
     deployTaxModule();
     _setupContracts();
-
     deployGlobalSettlement();
     _setupGlobalSettlement();
-
     // PID Controller contracts
     deployPIDController();
     _setupPIDController();
-
     // Rewarded Actions contracts
     deployJobContracts();
     _setupJobContracts();
-
     // Deploy collateral contracts
     for (uint256 _i; _i < collateralTypes.length; _i++) {
       bytes32 _cType = collateralTypes[_i];
@@ -65,34 +67,42 @@ abstract contract Deploy is Common, Script {
       else deployCollateralContracts(_cType);
       _setupCollateral(_cType);
     }
-
     // Mint initial ODG airdrop Anvil
-    if (_chainId == 31_337) {
+    if (isNetworkAnvil()) {
       mintAirdrop();
     }
-
     // Deploy contracts related to the SafeManager usecase
     deployProxyContracts();
-
     // Deploy and setup contracts that rely on deployed environment
     setupPostEnvironment();
-
-    if (_chainId == 42_161) {
+    if (isNetworkArbitrumOne()) {
       // mainnet: revoke deployer, authorize governor
-      _revokeAllTo(governor);
+      _updateAuthorizationForAllContracts(deployer, governor);
     } else {
-      // sepolia || anvil: revoke deployer, authorize [H, P, governor]
+      // sepolia || anvil -> revoke deployer, authorize [H, P, governor]
       _delegateAllTo(H);
       _delegateAllTo(P);
-      _revokeAllTo(governor);
-    }
 
-    vm.stopBroadcast();
+      if (!onFork()) {
+        _updateAuthorizationForAllContracts(deployer, governor);
+      } else {
+        _delegateAllTo(governor);
+      }
+    }
   }
+
+  // abstract methods to be overridden by network-specific deployments
+  function setupEnvironment() public virtual {}
+  function setupPostEnvironment() public virtual {}
+  function mintAirdrop() public virtual {}
 }
 
 contract DeployMainnet is MainnetParams, Deploy {
   function setUp() public virtual {
+    if (!isNetworkArbitrumOne()) {
+      revert('DeployMainnet: network is not Arbitrum One');
+    }
+
     // set create2 factory
     create2 = IODCreate2Factory(MAINNET_CREATE2FACTORY);
     protocolToken = IProtocolToken(MAINNET_PROTOCOL_TOKEN);
@@ -162,6 +172,11 @@ contract DeploySepolia is SepoliaParams, Deploy {
   IBaseOracle public chainlinkEthUSDPriceFeed;
 
   function setUp() public virtual {
+    if (!isNetworkArbitrumSepolia()) {
+      revert('DeploySepolia: network is not Arbitrum Sepolia');
+    }
+
+    chainId = 421_614;
     // set create2 factory
     create2 = IODCreate2Factory(TEST_CREATE2FACTORY);
     protocolToken = IProtocolToken(SEPOLIA_PROTOCOL_TOKEN);
@@ -170,7 +185,7 @@ contract DeploySepolia is SepoliaParams, Deploy {
     odGovernor = ODGovernor(payable(SEPOLIA_OD_GOVERNOR));
 
     _deployerPk = uint256(vm.envBytes32('ARB_SEPOLIA_DEPLOYER_PK'));
-    chainId = 421_614;
+
     _systemCoinSalt = SEPOLIA_SALT_SYSTEMCOIN;
     _vault721Salt = SEPOLIA_SALT_VAULT721;
   }
@@ -221,6 +236,9 @@ contract DeploySepolia is SepoliaParams, Deploy {
 
 contract DeployAnvil is SepoliaParams, Deploy {
   function setUp() public virtual {
+    if (!isNetworkAnvil()) {
+      revert('DeployAnvil: network is not Anvil');
+    }
     _deployerPk = uint256(vm.envBytes32('ANVIL_ONE'));
     chainId = 31_337;
   }

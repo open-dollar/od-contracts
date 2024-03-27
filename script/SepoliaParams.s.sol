@@ -13,38 +13,38 @@ abstract contract SepoliaParams is Contracts, Params {
     delegatee[ARB] = governor;
 
     _safeEngineParams = ISAFEEngine.SAFEEngineParams({
-      safeDebtCeiling: 2_000_000 * WAD, // 2M COINs
-      globalDebtCeiling: 25_000_000 * RAD // 25M COINs
+      safeDebtCeiling: 10_000_000 * WAD, // WAD
+      globalDebtCeiling: 25_000_000 * RAD // RAD
     });
 
     _accountingEngineParams = IAccountingEngine.AccountingEngineParams({
       surplusTransferPercentage: 0, // percent of surplus that is transfered
-      surplusDelay: 1800,
-      popDebtDelay: 1800,
+      surplusDelay: 1 days,
+      popDebtDelay: 1 days,
       disableCooldown: 3 days,
-      surplusAmount: 100 * RAD, // 100 COINs
-      surplusBuffer: 1000 * RAD, // 1000 COINs
+      surplusAmount: 100e45, // 100 COINs
+      surplusBuffer: 1000e45, // 1000 COINs
       debtAuctionMintedTokens: 1e18, // 1 PROTOCOL TOKEN
-      debtAuctionBidSize: 100 * RAD // 100 COINs
+      debtAuctionBidSize: 100e45 // 100 COINs
     });
 
     _debtAuctionHouseParams = IDebtAuctionHouse.DebtAuctionHouseParams({
-      bidDecrease: 1.05e18, // - 5%
-      amountSoldIncrease: 1.05e18, // + 5%
-      bidDuration: 900, // 15 minutes
-      totalAuctionLength: 1800 // 30 minutes
+      bidDecrease: 1.05e18, // -5 %
+      amountSoldIncrease: 1.5e18, // +50 %
+      bidDuration: 3 hours,
+      totalAuctionLength: 2 days
     });
 
     _surplusAuctionHouseParams = ISurplusAuctionHouse.SurplusAuctionHouseParams({
       bidIncrease: 1.01e18, // +1 %
-      bidDuration: 900, // 15 minutes
-      totalAuctionLength: 1800, // 30 minutes
+      bidDuration: 1 hours,
+      totalAuctionLength: 1 days,
       bidReceiver: governor,
-      recyclingPercentage: 50 // 100% - recyclingPercentage is burned
+      recyclingPercentage: 0.5e18 // 50% is burned
     });
 
     _liquidationEngineParams = ILiquidationEngine.LiquidationEngineParams({
-      onAuctionSystemCoinLimit: 500_000 * RAD, // 500k COINs
+      onAuctionSystemCoinLimit: 10_000 * RAD, // 10_000 COINs
       saviourGasLimit: 10_000_000 // 10M gas
     });
 
@@ -58,20 +58,20 @@ abstract contract SepoliaParams is Contracts, Params {
       primaryTaxReceiver: address(accountingEngine),
       globalStabilityFee: RAY, // no global SF
       maxStabilityFeeRange: RAY - MINUS_0_5_PERCENT_PER_HOUR, // +- 0.5% per hour
-      maxSecondaryReceivers: 1
+      maxSecondaryReceivers: 1 // stabilityFeeTreasury
     });
 
     _taxCollectorSecondaryTaxReceiver = ITaxCollector.TaxReceiver({
       receiver: address(stabilityFeeTreasury),
-      canTakeBackTax: true, // can take back tax
-      taxPercentage: 0.5e18 // 50%
+      canTakeBackTax: true, // [bool]
+      taxPercentage: 0.5e18 // [wad%]
     });
 
     // --- PID Params ---
 
     _oracleRelayerParams = IOracleRelayer.OracleRelayerParams({
-      redemptionRateUpperBound: RAY * WAD, // unbounded
-      redemptionRateLowerBound: 1 // unbounded
+      redemptionRateUpperBound: RAY * WAD, // RAY
+      redemptionRateLowerBound: 1 // RAY
     });
 
     _pidControllerParams = IPIDController.PIDControllerParams({
@@ -93,8 +93,8 @@ abstract contract SepoliaParams is Contracts, Params {
     _globalSettlementParams = IGlobalSettlement.GlobalSettlementParams({shutdownCooldown: 3 days});
     _postSettlementSAHParams = IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams({
       bidIncrease: 1.01e18, // +1 %
-      bidDuration: 900, // 15 minutes
-      totalAuctionLength: 1800 // 30 minutes
+      bidDuration: 3 hours,
+      totalAuctionLength: 2 days
     });
 
     // --- Collateral Default Params ---
@@ -103,41 +103,39 @@ abstract contract SepoliaParams is Contracts, Params {
 
       _oracleRelayerCParams[_cType] = IOracleRelayer.OracleRelayerCollateralParams({
         oracle: delayedOracle[_cType],
-        safetyCRatio: 1.5e27, // 150%
-        liquidationCRatio: 1.5e27 // 150%
+        safetyCRatio: 1.25e27, // 125%
+        liquidationCRatio: 1.2e27 // 120%
       });
 
       _taxCollectorCParams[_cType] = ITaxCollector.TaxCollectorCollateralParams({
-        // NOTE: 42%/yr => 1.42^(1/yr) = 1 + 11,11926e-9
-        stabilityFee: RAY + 11.11926e18 // + 42%/yr
+        // NOTE: 5%/yr => 1.05^(1/yr) = 1 + 1.54713e-9
+        stabilityFee: RAY + 6.27857e17 // RAY
       });
 
       _safeEngineCParams[_cType] = ISAFEEngine.SAFEEngineCollateralParams({
         debtCeiling: 10_000_000 * RAD, // 10M COINs
-        debtFloor: 1 * RAD // 1 COINs
+        debtFloor: 200 * RAD // 1 COIN
       });
 
       _liquidationEngineCParams[_cType] = ILiquidationEngine.LiquidationEngineCollateralParams({
         collateralAuctionHouse: address(collateralAuctionHouse[_cType]),
-        liquidationPenalty: 1.1e18, // 10%
-        liquidationQuantity: 1000 * RAD // 1000 COINs
+        liquidationPenalty: 1.05e18, // WAD
+        liquidationQuantity: 100_000e45 // RAD
       });
 
       _collateralAuctionHouseParams[_cType] = ICollateralAuctionHouse.CollateralAuctionHouseParams({
-        minimumBid: WAD, // 1 COINs
-        minDiscount: WAD, // no discount
-        maxDiscount: 0.9e18, // -10%
+        minimumBid: 5e18, // 5 COINs
+        minDiscount: 1e18, // no discount
+        maxDiscount: 1e18, // no discount
         perSecondDiscountUpdateRate: MINUS_0_5_PERCENT_PER_HOUR // RAY
       });
     }
 
     // --- Collateral Specific Params ---
-    _oracleRelayerCParams[WSTETH].safetyCRatio = 1.35e27; // 135%
-    _oracleRelayerCParams[WSTETH].liquidationCRatio = 1.35e27; // 135%
-    _taxCollectorCParams[WSTETH].stabilityFee = RAY + 1.54713e18; // + 5%/yr
-    _safeEngineCParams[WSTETH].debtCeiling = 100_000_000 * RAD; // 100M COINs
-
-    _liquidationEngineCParams[ARB].liquidationPenalty = 1.2e18; // 20%
-    _collateralAuctionHouseParams[ARB].maxDiscount = 0.5e18; // -50%
+    _taxCollectorCParams[WSTETH].stabilityFee = RAY + 11.11926e18; // + 42%/yr
+    _safeEngineCParams[WSTETH].debtFloor = 5000 * RAD; // 5_000 COINs
+    _liquidationEngineCParams[WSTETH].liquidationPenalty = 1.15e18; // WAD
+    _oracleRelayerCParams[ARB].safetyCRatio = 1.4e27;
+    _oracleRelayerCParams[ARB].liquidationCRatio = 1.35e27;
   }
 }

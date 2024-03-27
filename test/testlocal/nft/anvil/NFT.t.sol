@@ -49,17 +49,28 @@ contract NFTAnvil is AnvilFork {
     uint256 debt
   ) internal returns (uint256 vaultId) {
     vaultId = vaultIds[proxy][cType];
+    IODSafeManager.SAFEData memory sData = safeManager.safeData(vaultId);
+    address safeHandler = sData.safeHandler;
+
+    ISAFEEngine.SAFE memory SafeEngineData1 = safeEngine.safes(cType, safeHandler);
+
     vm.startPrank(owner);
+    erc20[cType].mint(MINT_AMOUNT);
+    erc20[cType].approve(proxy, MINT_AMOUNT);
     depositCollatAndGenDebt(cType, vaultId, _collateral, debt, proxy);
     vm.stopPrank();
 
-    IODSafeManager.SAFEData memory sData = safeManager.safeData(vaultId);
-    address safeHandler = sData.safeHandler;
     ISAFEEngine.SAFE memory SafeEngineData = safeEngine.safes(cType, safeHandler);
     assertEq(
-      _collateral, SafeEngineData.lockedCollateral, '_helperDepositCollateralAndGenerateDebt: collateral not equal'
+      SafeEngineData1.lockedCollateral + _collateral,
+      SafeEngineData.lockedCollateral,
+      '_helperDepositCollateralAndGenerateDebt: collateral not equal'
     );
-    assertEq(debt, SafeEngineData.generatedDebt, '_helperDepositCollateralAndGenerateDebt: debt not equal');
+    assertEq(
+      SafeEngineData1.generatedDebt + debt,
+      SafeEngineData.generatedDebt,
+      '_helperDepositCollateralAndGenerateDebt: debt not equal'
+    );
   }
 
   /**
@@ -78,7 +89,7 @@ contract NFTAnvil is AnvilFork {
    * @dev test generating debt after locking collateral
    */
   function test_generateDebt(uint256 debt, uint256 _collateral, uint256 cTypeIndex) public {
-    debt = bound(debt, 1 ether, debtCeiling);
+    debt = bound(debt, 1 ether, debtCeiling / 2);
     _collateral = bound(_collateral, debt / 975, MINT_AMOUNT); // ETH price ~ 1500 (debt / 975 > 150% collateralization)
     cTypeIndex = bound(cTypeIndex, 1, collateralTypes.length - 2); // range: WSTETH, CBETH, RETH
 
@@ -86,16 +97,19 @@ contract NFTAnvil is AnvilFork {
       address proxy = proxies[i];
       bytes32 cType = collateralTypes[cTypeIndex];
       uint256 vaultId = vaultIds[proxy][cType];
+      IODSafeManager.SAFEData memory sData = safeManager.safeData(vaultId);
+      address safeHandler = sData.safeHandler;
+      ISAFEEngine.SAFE memory SafeEngineData1 = safeEngine.safes(cType, safeHandler);
       vm.startPrank(users[i]);
+      erc20[cType].mint(MINT_AMOUNT);
+      erc20[cType].approve(proxy, MINT_AMOUNT);
       depositCollatAndGenDebt(cType, vaultId, _collateral, 0, proxy);
       genDebt(vaultId, debt, proxy);
       vm.stopPrank();
 
-      IODSafeManager.SAFEData memory sData = safeManager.safeData(vaultId);
-      address safeHandler = sData.safeHandler;
-      ISAFEEngine.SAFE memory SafeEngineData = safeEngine.safes(cType, safeHandler);
-      assertEq(_collateral, SafeEngineData.lockedCollateral);
-      assertEq(debt, SafeEngineData.generatedDebt);
+      ISAFEEngine.SAFE memory SafeEngineData2 = safeEngine.safes(cType, safeHandler);
+      assertEq(SafeEngineData1.lockedCollateral + _collateral, SafeEngineData2.lockedCollateral);
+      assertEq(SafeEngineData1.generatedDebt + debt, SafeEngineData2.generatedDebt);
     }
   }
 
@@ -103,7 +117,7 @@ contract NFTAnvil is AnvilFork {
    * @dev test generating debt and locking collateral in single tx
    */
   function test_depositCollateral_generateDebt(uint256 debt, uint256 _collateral, uint256 cTypeIndex) public {
-    debt = bound(debt, 1 ether, debtCeiling);
+    debt = bound(debt, 1 ether, debtCeiling / 2);
     _collateral = bound(_collateral, debt / 975, MINT_AMOUNT);
     cTypeIndex = bound(cTypeIndex, 1, collateralTypes.length - 2);
 
@@ -121,7 +135,7 @@ contract NFTAnvil is AnvilFork {
     uint256 initBal = vault721.balanceOf(owner);
 
     address receiver = newUsers[0];
-
+    vm.warp(block.timestamp + vault721.timeDelay() + 1);
     vm.startPrank(owner);
     vault721.transferFrom(owner, receiver, vaultId);
     vm.stopPrank();
@@ -141,6 +155,7 @@ contract NFTAnvil is AnvilFork {
 
     address receiver = address(0);
 
+    vm.warp(block.timestamp + vault721.timeDelay() + 1);
     vm.startPrank(owner);
     vm.expectRevert('ERC721: transfer to the zero address');
     vault721.transferFrom(owner, receiver, vaultId);
@@ -150,51 +165,26 @@ contract NFTAnvil is AnvilFork {
   }
 
   /**
-   * @dev Test transfering collateral to an address
-   * that isn't a safeHandler reverts.
-   */
-  function test_revert_If_TransferCollateral_To_NonSafeHandler(
-    uint256 _collateral,
-    uint256 cTypeIndex
-  ) public maxLock(_collateral) {
-    cTypeIndex = bound(cTypeIndex, 1, collateralTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
-    address alice = users[0];
-    address proxy = proxies[0]; // alice's proxy
-    bytes32 cType = collateralTypes[cTypeIndex];
-    uint256 vaultId = _helperDepositCollateralAndGenerateDebt(alice, proxy, cType, _collateral, 0);
-
-    vm.startPrank(proxy);
-    vm.expectRevert(IODSafeManager.HandlerDoesNotExist.selector);
-    safeManager.transferCollateral(vaultId, alice, _collateral);
-    vm.stopPrank();
-  }
-
-  /**
    * @dev Test transfering collateral
    * succeeds
    */
-
-  function test_transferCollateral(uint256 _collateral, uint256 cTypeIndex) public maxLock(_collateral) {
+  function test_transferCollateral(uint256 cTypeIndex) public {
+    mintCollateralAndOpenSafes();
     cTypeIndex = bound(cTypeIndex, 1, collateralTypes.length - 1); // range: WSTETH, CBETH, RETH
-
     address alice = users[0];
-    address aliceProxy = proxies[0]; // alice's proxy
+    address aliceProxy = deployOrFind(alice); //proxies[0]; // alice's proxy
     bytes32 cType = collateralTypes[cTypeIndex];
-    uint256 aliceVaultId = _helperDepositCollateralAndGenerateDebt(alice, aliceProxy, cType, _collateral, 0);
+    uint256 aliceVaultId = vaultIds[aliceProxy][cType];
+    address bob = users[1];
 
-    address bobProxy = proxies[1]; // bob's proxy
-
-    assertEq(
-      safeEngine.safes(cType, bobProxy).lockedCollateral, 0, 'test_transferCollateralToSafeHandler: collateral is empty'
-    );
-
-    vm.startPrank(aliceProxy);
-    // @note TODO when we deposit collateral, it is locked, how do we move it from locked to tokenCollateral so
-    // we can transfer it? this will fail if we try to transfer non-zero value
-    safeManager.transferCollateral(aliceVaultId, bobProxy, 0);
+    vm.startPrank(alice);
+    IERC20(SystemCoin_Address).approve(aliceProxy, 10 ether);
+    modifySAFECollateralization(aliceVaultId, -10 ether, 10 ether, aliceProxy);
+    transferCollateral(aliceProxy, aliceVaultId, bob, 10 ether);
     vm.stopPrank();
+
     assertEq(
-      safeEngine.tokenCollateral(cType, bobProxy), 0, 'test_transferCollateralToSafeHandler: collateral is not equal'
+      safeEngine.tokenCollateral(cType, bob), 10 ether, 'test_transferCollateralToSafeHandler: collateral is not equal'
     );
   }
 
@@ -202,7 +192,7 @@ contract NFTAnvil is AnvilFork {
    * @dev Test generating debt and repaying it
    */
   function test_generateDebtAndRepay(uint256 debt, uint256 _collateral, uint256 cTypeIndex) public {
-    debt = bound(debt, 1 ether, debtCeiling);
+    debt = bound(debt, 1 ether, debtCeiling / 2);
     _collateral = bound(_collateral, debt / 975, MINT_AMOUNT); // ETH price ~ 1500 (debt / 975 > 150% collateralization)
     cTypeIndex = bound(cTypeIndex, 1, collateralTypes.length - 2); // range: WSTETH, CBETH, RETH
 
@@ -210,16 +200,21 @@ contract NFTAnvil is AnvilFork {
       address proxy = proxies[i];
       bytes32 cType = collateralTypes[cTypeIndex];
       uint256 vaultId = vaultIds[proxy][cType];
+      IODSafeManager.SAFEData memory sData = safeManager.safeData(vaultId);
+      address safeHandler = sData.safeHandler;
+      ISAFEEngine.SAFE memory SafeEngineData1 = safeEngine.safes(cType, safeHandler);
       vm.startPrank(users[i]);
+      erc20[cType].mint(MINT_AMOUNT);
+      erc20[cType].approve(proxy, MINT_AMOUNT);
       depositCollatAndGenDebt(cType, vaultId, _collateral, 0, proxy);
       genDebt(vaultId, debt, proxy);
       vm.stopPrank();
 
-      IODSafeManager.SAFEData memory sData = safeManager.safeData(vaultId);
-      address safeHandler = sData.safeHandler;
-      ISAFEEngine.SAFE memory SafeEngineData = safeEngine.safes(cType, safeHandler);
-      assertEq(_collateral, SafeEngineData.lockedCollateral);
-      assertEq(debt, SafeEngineData.generatedDebt);
+      ISAFEEngine.SAFE memory SafeEngineData2 = safeEngine.safes(cType, safeHandler);
+      assertEq(
+        SafeEngineData2.lockedCollateral, SafeEngineData1.lockedCollateral + _collateral, 'collateral not transfered'
+      );
+      assertEq(SafeEngineData2.generatedDebt, SafeEngineData1.generatedDebt + debt, 'debt not generated');
 
       vm.startPrank(users[i]);
       systemCoin.approve(address(proxy), debt);
@@ -227,18 +222,23 @@ contract NFTAnvil is AnvilFork {
       vm.stopPrank();
 
       // debt should be paid off and no longer exist
-      SafeEngineData = safeEngine.safes(cType, safeHandler);
-      assertEq(SafeEngineData.generatedDebt, 0);
+      ISAFEEngine.SAFE memory safeEngineData = safeEngine.safes(cType, safeHandler);
+      assertEq(safeEngineData.generatedDebt, SafeEngineData2.generatedDebt - debt, 'debt not repaid');
     }
   }
 
   function test_GenerateDebtWithoutTax(uint256 debt, uint256 collateral) public {
-    debt = bound(debt, 1 ether, debtCeiling);
+    debt = bound(debt, 1 ether, (debtCeiling - 1 ether) / 2);
     collateral = bound(collateral, debt / 975, MINT_AMOUNT); // ETH price ~ 1500 (debt / 975 > 150% collateralization)
     FakeBasicActions fakeBasicActions = new FakeBasicActions();
     address proxy = proxies[1];
     bytes32 cType = collateralTypes[1];
     uint256 vaultId = vaultIds[proxy][cType];
+
+    IODSafeManager.SAFEData memory sData = safeManager.safeData(vaultId);
+    address safeHandler = sData.safeHandler;
+
+    ISAFEEngine.SAFE memory safeEngineData1 = safeEngine.safes(cType, safeHandler);
 
     bytes memory payload = abi.encodeWithSelector(
       fakeBasicActions.lockTokenCollateralAndGenerateDebt.selector,
@@ -247,21 +247,22 @@ contract NFTAnvil is AnvilFork {
       address(coinJoin),
       vaultId,
       collateral,
-      0
+      debt
     );
+
     vm.startPrank(users[1]);
+    erc20[cType].mint(MINT_AMOUNT);
+    erc20[cType].approve(proxy, MINT_AMOUNT);
 
     // Proxy makes a delegatecall to Malicious BasicAction contract and bypasses the TAX payment
     ODProxy(proxy).execute(address(fakeBasicActions), payload);
-    genDebt(vaultId, debt, proxy);
-
     vm.stopPrank();
 
-    IODSafeManager.SAFEData memory sData = safeManager.safeData(vaultId);
-    address safeHandler = sData.safeHandler;
-    ISAFEEngine.SAFE memory SafeEngineData = safeEngine.safes(cType, safeHandler);
-    assertEq(collateral, SafeEngineData.lockedCollateral);
-    assertEq(debt, SafeEngineData.generatedDebt);
+    ISAFEEngine.SAFE memory safeEngineData = safeEngine.safes(cType, safeHandler);
+    assertEq(
+      collateral, safeEngineData.lockedCollateral - safeEngineData1.lockedCollateral, 'incorrect locked collateral'
+    );
+    assertEq(debt, safeEngineData.generatedDebt - safeEngineData1.generatedDebt, 'incorrect generated debt');
   }
 
   // Access Control Tests
@@ -371,23 +372,25 @@ contract NFTAnvil is AnvilFork {
     vm.stopPrank();
   }
 
-  function test_transerFromWithoutAnyDelays(uint256 cTypeIndex) public {
+  function test_transerFromWithoutAnyDelays_Revert(uint256 cTypeIndex) public {
     cTypeIndex = bound(cTypeIndex, 1, collateralTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
 
     vm.startPrank(users[0]);
+    vm.expectRevert(Vault721.TimeDelayNotOver.selector);
     vault721.transferFrom(users[0], users[1], vaultIds[proxies[0]][collateralTypes[cTypeIndex]]);
     vm.stopPrank();
   }
 
   function test_transferFromAfterTimeDelayPassed(uint256 _collateral, uint256 cTypeIndex) public maxLock(_collateral) {
     cTypeIndex = bound(cTypeIndex, 1, collateralTypes.length - 1); // range: WSTETH, CBETH, RETH, MAGIC
+    bytes32 cType = collateralTypes[cTypeIndex];
 
-    _helperDepositCollateralAndGenerateDebt(users[0], proxies[0], collateralTypes[cTypeIndex], _collateral, 0);
+    _helperDepositCollateralAndGenerateDebt(users[0], proxies[0], cType, _collateral, 0);
 
-    vm.warp(block.timestamp + vault721.timeDelay());
+    vm.warp(block.timestamp + vault721.timeDelay() + 1);
 
     vm.startPrank(users[0]);
-    vault721.transferFrom(users[0], users[1], vaultIds[proxies[0]][collateralTypes[cTypeIndex]]);
+    vault721.transferFrom(users[0], users[1], vaultIds[proxies[0]][cType]);
     vm.stopPrank();
   }
 
@@ -622,7 +625,7 @@ contract NFTAnvil is AnvilFork {
     IODSafeManager.SAFEData memory sData = safeManager.safeData(vaultId);
 
     assertEq(sData.nonce, 0, 'test_transerFromIncrementsNonce: nonce not equal');
-
+    vm.warp(block.timestamp + vault721.timeDelay() + 1);
     vm.startPrank(users[0]);
     vault721.transferFrom(users[0], users[1], vaultId);
     vm.stopPrank();

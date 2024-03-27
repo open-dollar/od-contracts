@@ -58,15 +58,15 @@ abstract contract SepoliaContracts {
     0x707AD742ce9064bab6B54670Be90866987596eFa;
   address public
     CollateralAuctionHouseChild_0x5245544800000000000000000000000000000000000000000000000000000000_Address =
-      0xfCbBBF6Ed1f93cFA5794C9952444fdef21AEcEfE;
-  address public Vault721_Address = 0xa602c0cFf8028Dd4c99fbC5e85cF0c083C5b991A;
-  address public ODSafeManager_Address = 0x8ca7D88eaFB6f666997Ca0F62Beddd8A09a62910;
-  address public NFTRenderer_Address = 0x53c239d164BAd9A5b979cb2039f07cb7573409D5;
-  address public BasicActions_Address = 0x60487E0a0eFbfbD30908b03ea6b7833E2520604F;
-  address public DebtBidActions_Address = 0xA5969D1D5DB3D9456B062b55b52244108130E05D;
-  address public SurplusBidActions_Address = 0xaA2d962926c4a09FdB6323a46400A2d848C9A97f;
-  address public CollateralBidActions_Address = 0xf8D494A026075Ccc3FC62dED62cD821F1320c300;
-  address public PostSettlementSurplusBidActions_Address = 0xfF5b17F3D1E3329aB50677110A290f99F39af4c5;
-  address public GlobalSettlementActions_Address = 0x2c281AF052959073ad1B9d9Cd437aEFf6114569F;
-  address public RewardedActions_Address = 0x27E1A17629645f5F7cAF9733E55aA6b2207bea2F;
+      0x5ff631684f3dcF6430764C002b7184b9757C814c;
+  address public Vault721_Address = 0x00024F3c588d9a1c11Be800637b43E0C88befF1A;
+  address public ODSafeManager_Address = 0xea1bF408bF3f29C4787712E67390552163a465f3;
+  address public NFTRenderer_Address = 0xAbAfb6e349354A1897E385A46DF01eC6c945730D;
+  address public BasicActions_Address = 0x4e8a80c3A8bDD1BD1e7a85ad31b7adfC347cBF12;
+  address public DebtBidActions_Address = 0x51905778Af208271a6Cb817617C21ACa961C3B20;
+  address public SurplusBidActions_Address = 0x3DE22DE876C56011c3Ffa6139f089138e34bB538;
+  address public CollateralBidActions_Address = 0x696C34Dfcc907e93cbAb4924126664E79b0b155c;
+  address public PostSettlementSurplusBidActions_Address = 0x8c6A844c3adCe310B7502C137eb1Ad4B9B0dDced;
+  address public GlobalSettlementActions_Address = 0x555b26c14eB5Fbc6483E1A749DAF470520de1991;
+  address public RewardedActions_Address = 0xc9c31849a7f32885A0f1BDE98ec9181F06198CfD;
 }
