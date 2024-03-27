@@ -35,7 +35,7 @@ contract TestScripts is Deployment {
   }
 
   /**
-   * @dev open new saf
+   * @dev open new safe
    */
   function openSafe(bytes32 _cType, address _proxy) public returns (uint256 _safeId) {
     _labelAddresses(_proxy);

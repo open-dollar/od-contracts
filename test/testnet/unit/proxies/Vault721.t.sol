@@ -4,6 +4,8 @@ pragma solidity 0.8.19;
 import {ODTest, stdStorage, StdStorage} from '@testnet/utils/ODTest.t.sol';
 import {Vault721, HashState} from '@contracts/proxies/Vault721.sol';
 import {IVault721} from '@interfaces/proxies/IVault721.sol';
+import {TestVault721} from '@contracts/for-test/TestVault721.sol';
+import {SCWallet, Bad_SCWallet} from '@contracts/for-test/SCWallet.sol';
 import {ODSafeManager} from '@contracts/proxies/ODSafeManager.sol';
 import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 import {TimelockController} from '@openzeppelin/governance/TimelockController.sol';
@@ -81,12 +83,18 @@ contract Unit_Vault721_Build is Base {
 
   function test_Build_Revert_ProxyAlreadyExists() public {
     vm.startPrank(owner);
-    //build first vault
     vault721.build();
 
     vm.expectRevert(IVault721.ProxyAlreadyExist.selector);
-    //build second vault to revert
     vault721.build();
+  }
+
+  function test_Build_Revert_IsProxy() public {
+    vm.startPrank(owner);
+    address builtProxy = vault721.build();
+
+    vm.expectRevert(IVault721.NotWallet.selector);
+    vault721.build(builtProxy);
   }
 }
 
@@ -402,6 +410,161 @@ contract Unit_Vault721_GovernanceFunctions is Base {
   }
 }
 
+contract Unit_TestVault721_TransferFrom_ProxyReceiver is Base {
+  TestVault721 internal testVault721;
+  address internal user1 = address(1);
+  address internal user2 = address(2);
+  address internal userProxy1;
+  address internal userProxy2;
+
+  function setUp() public override {
+    Base.setUp();
+    testVault721 = new TestVault721();
+    testVault721.initialize(address(timelockController));
+    vm.prank(address(renderer));
+    testVault721.initializeRenderer();
+    vm.prank(address(safeManager));
+    testVault721.initializeManager();
+    userProxy1 = testVault721.build(user1);
+    userProxy2 = testVault721.build(user2);
+  }
+
+  function test_TransferFrom() public {
+    vm.prank(address(safeManager));
+    testVault721.mint(userProxy1, 1);
+
+    vm.prank(user1);
+    testVault721.setApprovalForAll(user2, true);
+
+    vm.prank(user2);
+    vm.mockCall(
+      address(renderer), abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector), abi.encode(bytes32(0))
+    );
+
+    testVault721.transferFrom(user1, user2, 1);
+  }
+
+  function test_TransferFrom_Revert_OnReceiver() public {
+    vm.prank(address(safeManager));
+    testVault721.mint(userProxy1, 1);
+
+    vm.prank(user1);
+    testVault721.setApprovalForAll(user2, true);
+
+    vm.prank(user2);
+    vm.mockCall(
+      address(renderer), abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector), abi.encode(bytes32(0))
+    );
+
+    vm.expectRevert(IVault721.NotWallet.selector);
+    testVault721.transferFrom(user1, userProxy2, 1);
+  }
+}
+
+contract Unit_Vault721_SafeTransferFrom is Base {
+  address internal user1 = address(1);
+  address internal user2 = address(2);
+  address internal userProxy1;
+  address internal userProxy2;
+  address internal scwallet;
+  address internal badscwallet;
+
+  function setUp() public override {
+    Base.setUp();
+    scwallet = address(new SCWallet());
+    badscwallet = address(new Bad_SCWallet());
+    vault721.initialize(address(timelockController));
+    vm.prank(address(renderer));
+    vault721.initializeRenderer();
+    vm.prank(address(safeManager));
+    vault721.initializeManager();
+    userProxy1 = vault721.build(user1);
+    userProxy2 = vault721.build(user2);
+  }
+
+  function test_TransferFrom() public {
+    vm.prank(address(safeManager));
+    vault721.mint(userProxy1, 1);
+
+    vm.prank(user1);
+    vault721.setApprovalForAll(user2, true);
+
+    vm.prank(user2);
+    vm.mockCall(
+      address(renderer), abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector), abi.encode(bytes32(0))
+    );
+
+    // user2 has no bytecode - assumed to be EOA
+    vault721.safeTransferFrom(user1, user2, 1);
+  }
+
+  function test_SafeTransferFrom() public {
+    vm.prank(address(safeManager));
+    vault721.mint(userProxy1, 1);
+
+    vm.prank(user1);
+    vault721.setApprovalForAll(user2, true);
+
+    vm.prank(user2);
+    vm.mockCall(
+      address(renderer), abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector), abi.encode(bytes32(0))
+    );
+
+    // scwallet has erc721Reveiver - no revert
+    vault721.safeTransferFrom(user1, scwallet, 1);
+  }
+
+  function test_SafeTransferFrom_Revert() public {
+    vm.prank(address(safeManager));
+    vault721.mint(userProxy1, 1);
+
+    vm.prank(user1);
+    vault721.setApprovalForAll(user2, true);
+
+    vm.prank(user2);
+    vm.mockCall(
+      address(renderer), abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector), abi.encode(bytes32(0))
+    );
+
+    // safe transfer reverts
+    vm.expectRevert('ERC721: transfer to non ERC721Receiver implementer');
+    vault721.safeTransferFrom(user1, badscwallet, 1);
+  }
+
+  function test_Unsafe_TransferFrom() public {
+    vm.prank(address(safeManager));
+    vault721.mint(userProxy1, 1);
+
+    vm.prank(user1);
+    vault721.setApprovalForAll(user2, true);
+
+    vm.prank(user2);
+    vm.mockCall(
+      address(renderer), abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector), abi.encode(bytes32(0))
+    );
+
+    // transfer does not revert
+    vault721.transferFrom(user1, badscwallet, 1);
+  }
+
+  function test_TransferFrom_Revert_NoReceiver() public {
+    vm.prank(address(safeManager));
+    vault721.mint(userProxy1, 1);
+
+    vm.prank(user1);
+    vault721.setApprovalForAll(user2, true);
+
+    vm.prank(user2);
+    vm.mockCall(
+      address(renderer), abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector), abi.encode(bytes32(0))
+    );
+
+    // NotWallet check triggered before proxy can fail on Non-erc721Reveiver
+    vm.expectRevert(IVault721.NotWallet.selector);
+    vault721.transferFrom(user1, userProxy2, 1);
+  }
+}
+
 contract Unit_Vault721_TransferFrom is Base {
   address userProxy;
 
@@ -549,11 +712,9 @@ contract Unit_Vault721_ProxyDeployment is Base {
   }
 
   function test_DeployProxy_ProxyAlreadyExists() public {
-    //build first vault
     vault721.build();
 
     vm.expectRevert(IVault721.ProxyAlreadyExist.selector);
-    //build second vault to revert
     vault721.build();
   }
 
