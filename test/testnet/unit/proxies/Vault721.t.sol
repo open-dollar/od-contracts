@@ -34,12 +34,8 @@ contract Base is ODTest {
     vm.stopPrank();
   }
 
-  function _mockSafeCall()internal{
-    vm.mockCall(
-      address(safeManager),
-      abi.encodeWithSelector(ODSafeManager.safeData.selector),
-      abi.encode(address(1));
-    );
+  function _mockSafeCall() internal {
+    vm.mockCall(address(safeManager), abi.encodeWithSelector(ODSafeManager.safeData.selector), abi.encode(address(1)));
   }
 }
 
