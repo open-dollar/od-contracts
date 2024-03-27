@@ -13,9 +13,6 @@ broadcast/**/run-*.json
 coverage-report
 lcov.info
 
-# Local test files
-deployments/anvil/
-
 # Config files
 .env
 
