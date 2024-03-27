@@ -7,6 +7,7 @@ import {IVault721} from '@interfaces/proxies/IVault721.sol';
 import {ODSafeManager} from '@contracts/proxies/ODSafeManager.sol';
 import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 import {TimelockController} from '@openzeppelin/governance/TimelockController.sol';
+import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 
 contract Base is ODTest {
   using stdStorage for StdStorage;
@@ -35,7 +36,9 @@ contract Base is ODTest {
   }
 
   function _mockSafeCall() internal {
-    vm.mockCall(address(safeManager), abi.encodeWithSelector(ODSafeManager.safeData.selector), abi.encode(address(1)));
+    IODSafeManager.SAFEData memory returnSafe;
+    returnSafe.safeHandler = address(1);
+    vm.mockCall(address(safeManager), abi.encodeWithSelector(ODSafeManager.safeData.selector), abi.encode(returnSafe));
   }
 }
 
@@ -150,7 +153,7 @@ contract Vault721_ViewFunctions is Base {
       abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector),
       abi.encode(bytes32(keccak256('testHash')))
     );
-
+    _mockSafeCall();
     vm.prank(address(safeManager));
     vault721.updateVaultHashState(1);
 
@@ -205,8 +208,9 @@ contract Unit_Vault721_UpdateVaultHashState is Base {
       abi.encode(bytes32(keccak256('testHash')))
     );
 
-    vm.prank(address(safeManager));
     _mockSafeCall();
+
+    vm.prank(address(safeManager));
     vault721.updateVaultHashState(1);
 
     HashState memory hashState = vault721.getHashState(1);
@@ -220,6 +224,16 @@ contract Unit_Vault721_UpdateVaultHashState is Base {
     vm.expectRevert(Vault721.NotSafeManager.selector);
 
     vm.prank(address(user));
+    vault721.updateVaultHashState(1);
+  }
+
+  function test_UpdateHashState_Revert_ZeroAddress() public {
+    vm.expectRevert(Vault721.ZeroAddress.selector);
+
+    IODSafeManager.SAFEData memory returnSafe;
+    vm.mockCall(address(safeManager), abi.encodeWithSelector(ODSafeManager.safeData.selector), abi.encode(returnSafe));
+    
+    vm.prank(address(safeManager));
     vault721.updateVaultHashState(1);
   }
 }

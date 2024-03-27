@@ -932,7 +932,7 @@ contract Unit_CollateralAuctionHouse_BuyCollateral is Base {
   function _assumeHappyPath(BuyCollateralScenario memory _buyCollateralScenario) internal view {
     vm.assume(_buyCollateralScenario.auction.amountToSell > 0); // null auction
     vm.assume(_buyCollateralScenario.auction.amountToRaise > RAY); // not possible to bid (1 wei coin = 1 RAY debt)
-
+    vm.assume(_buyCollateralScenario.auction.amountToRaise > cahParams.minimumBid * RAY);
     // time difference doesn't overflow on discount calculation
     vm.assume(_buyCollateralScenario.auction.initialTimestamp <= block.timestamp); // not overflow sub
     vm.assume(block.timestamp - _buyCollateralScenario.auction.initialTimestamp <= RAY); // not overflow rpow
@@ -1179,6 +1179,7 @@ contract Unit_CollateralAuctionHouse_BuyCollateral is Base {
     public
     happyPath(_buyCollateralScenario)
   {
+    vm.assume(_buyCollateralScenario.auction.amountToRaise > cahParams.minimumBid * RAY);
     (uint256 _boughtCollateral, uint256 _readjustedBid) = _computeBoughtCollateral(
       _buyCollateralScenario,
       _computeAdjustedBid(_buyCollateralScenario),

@@ -233,7 +233,7 @@ contract Unit_SurplusAuctionHouse_Constructor is Base {
     happyPathParams(_sahParams)
   {
     _sahParams.recyclingPercentage = 2e19;
-    vm.expectRevert(abi.encodeWithSelector(Assertions.NotLesserThan.selector, _sahParams.recyclingPercentage, 1e19));
+    vm.expectRevert(abi.encodeWithSelector(Assertions.NotLesserThan.selector, _sahParams.recyclingPercentage, 1e18));
 
     new SurplusAuctionHouseForTest(address(mockSafeEngine), address(mockProtocolToken), _sahParams);
   }
@@ -977,9 +977,10 @@ contract Unit_SurplusAuctionHouse_ModifyParameters is Base {
     vm.assume(_fuzz.bidReceiver != address(0));
     vm.assume(_fuzz.bidIncrease > 0);
     vm.assume(_fuzz.totalAuctionLength > 0);
-    vm.assume(_fuzz.bidDuration > 0);
+    vm.assume(_fuzz.bidDuration < sahParams.totalAuctionLength && _fuzz.bidDuration > 0);
     vm.assume(_fuzz.totalAuctionLength > _fuzz.bidDuration);
-    vm.assume(_fuzz.recyclingPercentage < 1e19);
+    vm.assume(_fuzz.totalAuctionLength != _fuzz.bidDuration);
+    vm.assume(_fuzz.recyclingPercentage < 1e18);
 
     surplusAuctionHouse.modifyParameters('bidIncrease', abi.encode(_fuzz.bidIncrease));
     surplusAuctionHouse.modifyParameters('bidDuration', abi.encode(_fuzz.bidDuration));
