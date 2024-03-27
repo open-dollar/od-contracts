@@ -24,9 +24,12 @@ abstract contract Deploy is Common, Script {
 
   function run() public {
     deployer = vm.addr(_deployerPk);
-    vm.startBroadcast(deployer);
 
-    logGovernor();
+    if (isFork()) {
+      vm.startPrank(deployer);
+    } else {
+      vm.startBroadcast(deployer);
+    }
 
     // creation bytecode
     _systemCoinInitCode = type(OpenDollar).creationCode;

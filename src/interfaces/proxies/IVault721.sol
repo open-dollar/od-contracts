@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
+import {IERC721EnumerableUpgradeable} from
+  '@openzeppelin-upgradeable/token/ERC721/extensions/IERC721EnumerableUpgradeable.sol';
 import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 
-interface IVault721 {
+interface IVault721 is IERC721EnumerableUpgradeable {
   error NotGovernor();
   error NotSafeManager();
   error NotWallet();

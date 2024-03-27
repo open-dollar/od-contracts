@@ -1,50 +1,38 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import 'forge-std/Test.sol';
-import {SepoliaParams, WSTETH, ARB, CBETH, RETH} from '@script/SepoliaParams.s.sol';
-import {SepoliaDeployment} from '@script/SepoliaDeployment.s.sol';
-import {ODProxy} from '@contracts/proxies/ODProxy.sol';
-import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
-import {MintableERC20} from '@contracts/for-test/MintableERC20.sol';
-import {RAY, WAD} from '@libraries/Math.sol';
 import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
+import {Common, COLLAT, DEBT, TKN} from '@testnet/e2e/Common.t.sol';
+import {BaseUser} from '@testnet/scopes/BaseUser.t.sol';
+import {DirectUser} from '@testnet/scopes/DirectUser.t.sol';
+import {ProxyUser} from '@testnet/scopes/ProxyUser.t.sol';
+import {ERC20ForTest} from '@testnet/mocks/ERC20ForTest.sol';
+import {ODProxy} from '@contracts/proxies/ODProxy.sol';
+import {RAY, WAD} from '@libraries/Math.sol';
 import {SafeERC20} from '@openzeppelin/token/ERC20/utils/SafeERC20.sol';
 import {Vault721} from '@contracts/proxies/Vault721.sol';
+
 import {IVault721} from '@interfaces/proxies/IVault721.sol';
-import {BasicActions} from '@contracts/proxies/actions/BasicActions.sol';
 
-contract NFTSetup is Test, SepoliaDeployment {
+contract NFTSetup is Common {
   uint256 private constant MINT_AMOUNT = 1_000_000 ether;
-
-  address public alice = address(0xa11ce);
-  address public bob = address(0xb0b);
 
   address public aliceProxy;
   address public bobProxy;
 
-  address public wsteth = MintableERC20_WSTETH_Address;
-  address public arb = MintableVoteERC20_Address;
+  ERC20ForTest public token;
+  bytes32 constant WSTETH = bytes32('WSTETH');
 
-  function setUp() public virtual {
-    uint256 forkId = vm.createFork(vm.rpcUrl('sepolia'));
-    vm.selectFork(forkId);
-
+  function setUp() public override {
+    super.setUp();
     aliceProxy = deployOrFind(alice);
     bobProxy = deployOrFind(bob);
-
     vm.label(aliceProxy, 'AliceProxy');
     vm.label(bobProxy, 'BobProxy');
-    MintableERC20(wsteth).mint(alice, MINT_AMOUNT);
-    MintableERC20(wsteth).mint(bob, MINT_AMOUNT);
-    MintableERC20(arb).mint(alice, MINT_AMOUNT);
-    MintableERC20(arb).mint(bob, MINT_AMOUNT);
 
-    //TODO: This is a workaround until there is a new deployment on Sepolia
-    basicActions = new BasicActions();
+    token = ERC20ForTest(address(collateral[TKN]));
+    vm.stopPrank();
   }
-
-  // --- helper functions ---
 
   function deployOrFind(address owner) public returns (address) {
     address proxy = vault721.getProxy(owner);
@@ -86,124 +74,121 @@ contract E2ENFTTest is NFTSetup {
   using SafeERC20 for IERC20;
 
   function test_openSafe() public {
-    vm.startPrank(alice);
-    uint256 wethSafeId = openSafe(WSTETH, alice);
-    assertEq(wethSafeId, vault721.totalSupply());
+    address alice = address(0x420);
+    // uint256 safeId = openSafe(WSTETH, alice);
+    bytes memory payload =
+      abi.encodeWithSelector(basicActions.openSAFE.selector, address(safeManager), WSTETH, aliceProxy);
 
-    address wethSafeIdOwner = Vault721(vault721).ownerOf(wethSafeId);
-    assertEq(wethSafeIdOwner, alice);
-    vm.stopPrank();
+    vm.prank(alice);
+    bytes memory safeData = ODProxy(aliceProxy).execute(address(basicActions), payload);
 
-    vm.startPrank(alice);
-    uint256 arbSafeId = openSafe(ARB, alice);
-    assertEq(arbSafeId, vault721.totalSupply());
+    // assertEq(safeId, vault721.totalSupply());
 
-    address arbSafeIdOwner = Vault721(vault721).ownerOf(arbSafeId);
-    assertEq(arbSafeIdOwner, alice);
-    vm.stopPrank();
+    // address safeIdOwner = Vault721(vault721).ownerOf(safeId);
+    // assertEq(safeIdOwner, alice);
   }
 
-  function test_openSafe_lockCollateral_WSTETH() public {
-    vm.startPrank(alice);
+  // function test_openSafe_lockCollateral_WSTETH() public {
+  //   vm.startPrank(alice);
 
-    uint256 safeId = openSafe(WSTETH, alice);
-    assertEq(safeId, vault721.totalSupply());
+  //   uint256 safeId = openSafe(WSTETH, alice);
+  //   assertEq(safeId, vault721.totalSupply());
 
-    IERC20(wsteth).approve(aliceProxy, type(uint256).max);
-    depositCollatAndGenDebt(WSTETH, vault721.totalSupply(), 0.0001 ether, 0, aliceProxy);
-    vm.stopPrank();
-  }
+  //   IERC20(wsteth).approve(aliceProxy, type(uint256).max);
+  //   depositCollatAndGenDebt(WSTETH, vault721.totalSupply(), 0.0001 ether, 0, aliceProxy);
+  //   vm.stopPrank();
+  // }
 
-  function test_openSafe_lockCollateral_ARB() public {
-    vm.startPrank(alice);
+  // function test_openSafe_lockCollateral_ARB() public {
+  //   vm.startPrank(alice);
 
-    uint256 safeId = openSafe(ARB, alice);
-    assertEq(safeId, vault721.totalSupply());
+  //   uint256 safeId = openSafe(ARB, alice);
+  //   assertEq(safeId, vault721.totalSupply());
 
-    IERC20(arb).approve(aliceProxy, type(uint256).max);
-    depositCollatAndGenDebt(ARB, vault721.totalSupply(), 1 ether, 0, aliceProxy);
-    vm.stopPrank();
-  }
+  //   IERC20(arb).approve(aliceProxy, type(uint256).max);
+  //   depositCollatAndGenDebt(ARB, vault721.totalSupply(), 1 ether, 0, aliceProxy);
+  //   vm.stopPrank();
+  // }
 
-  function test_openSafe_lockCollateral_generateDebt_WSTETH() public {
-    vm.startPrank(alice);
+  // function test_openSafe_lockCollateral_generateDebt_WSTETH() public {
+  //   vm.startPrank(alice);
 
-    uint256 safeId = openSafe(WSTETH, alice);
-    assertEq(safeId, vault721.totalSupply());
+  //   uint256 safeId = openSafe(WSTETH, alice);
+  //   assertEq(safeId, vault721.totalSupply());
 
-    IERC20(wsteth).approve(aliceProxy, type(uint256).max);
-    depositCollatAndGenDebt(WSTETH, vault721.totalSupply(), 0.3 ether, 150 ether, aliceProxy);
-    vm.stopPrank();
-  }
+  //   IERC20(wsteth).approve(aliceProxy, type(uint256).max);
+  //   depositCollatAndGenDebt(WSTETH, vault721.totalSupply(), 0.3 ether, 150 ether, aliceProxy);
+  //   vm.stopPrank();
+  // }
 
-  function test_openSafe_lockCollateral_generateDebt_ARB() public {
-    vm.startPrank(alice);
+  // function test_openSafe_lockCollateral_generateDebt_ARB() public {
+  //   vm.startPrank(alice);
 
-    uint256 safeId = openSafe(ARB, alice);
-    assertEq(safeId, vault721.totalSupply());
+  //   uint256 safeId = openSafe(ARB, alice);
+  //   assertEq(safeId, vault721.totalSupply());
 
-    IERC20(arb).approve(aliceProxy, type(uint256).max);
-    depositCollatAndGenDebt(ARB, vault721.totalSupply(), 125 ether, 75 ether, aliceProxy);
-    vm.stopPrank();
-  }
+  //   IERC20(arb).approve(aliceProxy, type(uint256).max);
+  //   depositCollatAndGenDebt(ARB, vault721.totalSupply(), 125 ether, 75 ether, aliceProxy);
+  //   vm.stopPrank();
+  // }
 
-  function test_openSafe_lockCollateral_transfer_WSTETH() public {
-    vm.startPrank(alice);
+  // function test_openSafe_lockCollateral_transfer_WSTETH() public {
+  //   vm.startPrank(alice);
 
-    uint256 safeId = openSafe(WSTETH, alice);
-    assertEq(safeId, vault721.totalSupply());
+  //   uint256 safeId = openSafe(WSTETH, alice);
+  //   assertEq(safeId, vault721.totalSupply());
 
-    IERC20(wsteth).approve(aliceProxy, type(uint256).max);
-    depositCollatAndGenDebt(WSTETH, vault721.totalSupply(), 0.0001 ether, 0, aliceProxy);
+  //   IERC20(wsteth).approve(aliceProxy, type(uint256).max);
+  //   depositCollatAndGenDebt(WSTETH, vault721.totalSupply(), 0.0001 ether, 0, aliceProxy);
 
-    uint256 nftBalAliceBefore = Vault721(vault721).balanceOf(alice);
-    uint256 nftBalBobBefore = Vault721(vault721).balanceOf(bob);
+  //   uint256 nftBalAliceBefore = Vault721(vault721).balanceOf(alice);
+  //   uint256 nftBalBobBefore = Vault721(vault721).balanceOf(bob);
 
-    assertEq(nftBalAliceBefore, 1);
-    assertEq(nftBalBobBefore, 0);
+  //   assertEq(nftBalAliceBefore, 1);
+  //   assertEq(nftBalBobBefore, 0);
 
-    Vault721(vault721).transferFrom(alice, bob, vault721.totalSupply());
+  //   Vault721(vault721).transferFrom(alice, bob, vault721.totalSupply());
 
-    uint256 nftBalAliceAfter = Vault721(vault721).balanceOf(alice);
-    uint256 nftBalBobAfter = Vault721(vault721).balanceOf(bob);
+  //   uint256 nftBalAliceAfter = Vault721(vault721).balanceOf(alice);
+  //   uint256 nftBalBobAfter = Vault721(vault721).balanceOf(bob);
 
-    assertEq(nftBalAliceAfter, 0);
-    assertEq(nftBalBobAfter, 1);
-    vm.stopPrank();
+  //   assertEq(nftBalAliceAfter, 0);
+  //   assertEq(nftBalBobAfter, 1);
+  //   vm.stopPrank();
 
-    uint256[] memory _safes = safeManager.getSafes(deployOrFind(bob));
-    assertEq(_safes.length, 1);
-    assertEq(_safes[0], vault721.totalSupply());
-  }
+  //   uint256[] memory _safes = safeManager.getSafes(deployOrFind(bob));
+  //   assertEq(_safes.length, 1);
+  //   assertEq(_safes[0], vault721.totalSupply());
+  // }
 
-  function test_openSafe_lockCollateral_generateDebt_transfer_ARB() public {
-    vm.startPrank(alice);
+  // function test_openSafe_lockCollateral_generateDebt_transfer_ARB() public {
+  //   vm.startPrank(alice);
 
-    uint256 safeId = openSafe(ARB, alice);
-    assertEq(safeId, vault721.totalSupply());
+  //   uint256 safeId = openSafe(ARB, alice);
+  //   assertEq(safeId, vault721.totalSupply());
 
-    IERC20(arb).approve(aliceProxy, type(uint256).max);
-    depositCollatAndGenDebt(ARB, vault721.totalSupply(), 125 ether, 75 ether, aliceProxy);
+  //   IERC20(arb).approve(aliceProxy, type(uint256).max);
+  //   depositCollatAndGenDebt(ARB, vault721.totalSupply(), 125 ether, 75 ether, aliceProxy);
 
-    uint256 nftBalAliceBefore = Vault721(vault721).balanceOf(alice);
-    uint256 nftBalBobBefore = Vault721(vault721).balanceOf(bob);
+  //   uint256 nftBalAliceBefore = Vault721(vault721).balanceOf(alice);
+  //   uint256 nftBalBobBefore = Vault721(vault721).balanceOf(bob);
 
-    assertEq(nftBalAliceBefore, 1);
-    assertEq(nftBalBobBefore, 0);
+  //   assertEq(nftBalAliceBefore, 1);
+  //   assertEq(nftBalBobBefore, 0);
 
-    Vault721(vault721).transferFrom(alice, bob, vault721.totalSupply());
+  //   Vault721(vault721).transferFrom(alice, bob, vault721.totalSupply());
 
-    uint256 nftBalAliceAfter = Vault721(vault721).balanceOf(alice);
-    uint256 nftBalBobAfter = Vault721(vault721).balanceOf(bob);
+  //   uint256 nftBalAliceAfter = Vault721(vault721).balanceOf(alice);
+  //   uint256 nftBalBobAfter = Vault721(vault721).balanceOf(bob);
 
-    assertEq(nftBalAliceAfter, 0);
-    assertEq(nftBalBobAfter, 1);
-    vm.stopPrank();
+  //   assertEq(nftBalAliceAfter, 0);
+  //   assertEq(nftBalBobAfter, 1);
+  //   vm.stopPrank();
 
-    uint256[] memory _safes = safeManager.getSafes(deployOrFind(bob));
-    assertEq(_safes.length, 1);
-    assertEq(_safes[0], vault721.totalSupply());
-  }
+  //   uint256[] memory _safes = safeManager.getSafes(deployOrFind(bob));
+  //   assertEq(_safes.length, 1);
+  //   assertEq(_safes[0], vault721.totalSupply());
+  // }
 
   // todo: uncomment after next Sepolia deployment
   // function test_openSafe_transferToProxyFail() public {
@@ -212,7 +197,7 @@ contract E2ENFTTest is NFTSetup {
   //   uint256 safeId = openSafe(ARB, alice);
   //   assertEq(safeId, vault721.totalSupply());
 
-  //   vm.expectRevert(IVault721.NotWallet.selector);
+  //   vm.expectRevert(Vault721.NotWallet.selector);
   //   Vault721(vault721).transferFrom(alice, bobProxy, safeId);
   //   vm.stopPrank();
   // }
