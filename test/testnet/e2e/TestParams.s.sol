@@ -122,7 +122,7 @@ abstract contract TestParams is Contracts, Params {
       });
 
       _collateralAuctionHouseParams[_cType] = ICollateralAuctionHouse.CollateralAuctionHouseParams({
-        minimumBid: 0, // no min
+        minimumBid: 1, // no min
         minDiscount: WAD, // no discount
         maxDiscount: 0.9e18, // -10%
         perSecondDiscountUpdateRate: MINUS_0_5_PERCENT_PER_HOUR // RAY

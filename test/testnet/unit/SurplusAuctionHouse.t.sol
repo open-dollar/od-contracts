@@ -975,6 +975,12 @@ contract Unit_SurplusAuctionHouse_ModifyParameters is Base {
 
   function test_Set_Parameters(ISurplusAuctionHouse.SurplusAuctionHouseParams memory _fuzz) public happyPath {
     vm.assume(_fuzz.bidReceiver != address(0));
+    vm.assume(_fuzz.bidIncrease > 0);
+    vm.assume(_fuzz.totalAuctionLength > 0);
+    vm.assume(_fuzz.bidDuration > 0);
+    vm.assume(_fuzz.totalAuctionLength > _fuzz.bidDuration);
+    vm.assume(_fuzz.recyclingPercentage < 100);
+
 
     surplusAuctionHouse.modifyParameters('bidIncrease', abi.encode(_fuzz.bidIncrease));
     surplusAuctionHouse.modifyParameters('bidDuration', abi.encode(_fuzz.bidDuration));

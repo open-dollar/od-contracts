@@ -50,7 +50,7 @@ contract SingleSettlementSurplusAuctioneerTest is DSTest {
       disableCooldown: 0,
       surplusAmount: 100 ether * 10 ** 9,
       surplusBuffer: 0,
-      debtAuctionMintedTokens: 0,
+      debtAuctionMintedTokens: 1,
       debtAuctionBidSize: 0
     });
 
