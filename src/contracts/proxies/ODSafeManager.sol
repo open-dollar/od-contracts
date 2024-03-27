@@ -229,6 +229,8 @@ contract ODSafeManager is IODSafeManager {
   function transferInternalCoins(uint256 _safe, address _dst, uint256 _rad) external safeAllowed(_safe) {
     SAFEData memory _sData = _safeData[_safe];
     ISAFEEngine(safeEngine).transferInternalCoins(_sData.safeHandler, _dst, _rad);
+
+    vault721.updateVaultHashState(_safe);
     emit TransferInternalCoins(msg.sender, _safe, _dst, _rad);
   }
 
