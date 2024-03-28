@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import 'forge-std/Test.sol';
-import {AnvilDeployment} from '@testlocal/nft/anvil/deployment/AnvilDeployment.t.sol';
+import {AnvilDeployment} from '@script/anvil/deployment/AnvilDeployment.t.sol';
 
 import {IDenominatedOracle} from '@interfaces/oracles/IDenominatedOracle.sol';
 import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';

@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import '@script/Contracts.s.sol';
 import {SepoliaParams, WSTETH, ARB, CBETH, RETH} from '@script/SepoliaParams.s.sol';
-import {AnvilContracts} from '@testlocal/nft/anvil/deployment/AnvilContracts.t.sol';
+import {AnvilContracts} from '@script/anvil/deployment/AnvilContracts.t.sol';
 import {MintableERC20} from '@contracts/for-test/MintableERC20.sol';
 
 abstract contract AnvilDeployment is Contracts, SepoliaParams, AnvilContracts {
