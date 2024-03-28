@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {ODTest} from '@testnet/utils/ODTest.t.sol';
+import {ODTest} from '@test/utils/ODTest.t.sol';
 
 import {ISAFEEngine, SAFEEngine} from '@contracts/SAFEEngine.sol';
 import {CollateralAuctionHouse, ICollateralAuctionHouse} from '@contracts/CollateralAuctionHouse.sol';
@@ -9,12 +9,12 @@ import {
   ICollateralAuctionHouseFactory,
   CollateralAuctionHouseFactory
 } from '@contracts/factories/CollateralAuctionHouseFactory.sol';
-import {IOracleRelayer, OracleRelayerForTest} from '@testnet/mocks/OracleRelayerForTest.sol';
+import {IOracleRelayer, OracleRelayerForTest} from '@test/mocks/OracleRelayerForTest.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
 
-import {DelayedOracleForTest} from '@testnet/mocks/DelayedOracleForTest.sol';
-import {OracleForTest} from '@testnet/mocks/OracleForTest.sol';
+import {DelayedOracleForTest} from '@test/mocks/DelayedOracleForTest.sol';
+import {OracleForTest} from '@test/mocks/OracleForTest.sol';
 
 import {Math, WAD, RAY, RAD} from '@libraries/Math.sol';
 

@@ -28,6 +28,6 @@ docs/book
 docs/src/src/
 docs/src/static
 
-test/testnet/simulations/pid-controller/
+test/simulations/pid-controller/
 
 .idea/

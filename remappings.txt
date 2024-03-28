@@ -10,4 +10,4 @@
 @interfaces/=src/interfaces/
 @libraries/=src/libraries/
 @script/=script/
-@testnet/=test/
+@test/=test/

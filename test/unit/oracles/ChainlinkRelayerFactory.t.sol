@@ -5,7 +5,7 @@ import {ChainlinkRelayerFactory} from '@contracts/factories/ChainlinkRelayerFact
 import {ChainlinkRelayerChild} from '@contracts/factories/ChainlinkRelayerChild.sol';
 import {IChainlinkOracle} from '@interfaces/oracles/IChainlinkOracle.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
-import {ODTest, stdStorage, StdStorage} from '@testnet/utils/ODTest.t.sol';
+import {ODTest, stdStorage, StdStorage} from '@test/utils/ODTest.t.sol';
 
 abstract contract Base is ODTest {
   using stdStorage for StdStorage;

@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import '@script/Registry.s.sol';
 
-import {ODTest} from '@testnet/utils/ODTest.t.sol';
+import {ODTest} from '@test/utils/ODTest.t.sol';
 import {Deploy, DeployMainnet, DeploySepolia} from '@script/Deploy.s.sol';
 
 import {ParamChecker, WSTETH, ARB} from '@script/Params.s.sol';

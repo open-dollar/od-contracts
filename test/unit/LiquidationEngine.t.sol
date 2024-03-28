@@ -11,9 +11,9 @@ import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
 import {LiquidationEngine} from '@contracts/LiquidationEngine.sol';
-import {LiquidationEngineForTest} from '@testnet/mocks/LiquidationEngineForTest.sol';
-import {DummyCollateralAuctionHouse} from '@testnet/mocks/CollateralAuctionHouseForTest.sol';
-import {ODTest} from '@testnet/utils/ODTest.t.sol';
+import {LiquidationEngineForTest} from '@test/mocks/LiquidationEngineForTest.sol';
+import {DummyCollateralAuctionHouse} from '@test/mocks/CollateralAuctionHouseForTest.sol';
+import {ODTest} from '@test/utils/ODTest.t.sol';
 import {StdStorage, stdStorage} from 'forge-std/StdStorage.sol';
 
 import {Math, MAX_RAD, RAY, WAD} from '@libraries/Math.sol';
@@ -1821,18 +1821,8 @@ contract Unit_LiquidationEngine_InitializeCollateralType is Base {
   function test_Set_CParams(
     bytes32 _cType,
     ILiquidationEngine.LiquidationEngineCollateralParams memory _liqEngineCParams
-  )
-    // <<<<<<< HEAD:test/testnet/unit/LiquidationEngine.t.sol
-    //   ) public authorized happyPath(_liqEngineCParams) {
-    //     liquidationEngine.initializeCollateralType(_cType, _liqEngineCParams);
-    // =======
-    public
-    authorized
-    happyPath(_liqEngineCParams)
-    mockAsContract(_liqEngineCParams.collateralAuctionHouse)
-  {
+  ) public authorized happyPath(_liqEngineCParams) mockAsContract(_liqEngineCParams.collateralAuctionHouse) {
     liquidationEngine.initializeCollateralType(_cType, abi.encode(_liqEngineCParams));
-    // >>>>>>> 01bea93e (refactor: add `ModifiablePerCollateral` to generalize `initializeCollateralType`):test/unit/LiquidationEngine.t.sol
 
     assertEq(abi.encode(liquidationEngine.cParams(_cType)), abi.encode(_liqEngineCParams));
   }

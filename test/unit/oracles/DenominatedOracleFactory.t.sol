@@ -5,7 +5,7 @@ import {DenominatedOracleFactory} from '@contracts/factories/DenominatedOracleFa
 import {DenominatedOracleChild} from '@contracts/factories/DenominatedOracleChild.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
-import {ODTest, stdStorage, StdStorage} from '@testnet/utils/ODTest.t.sol';
+import {ODTest, stdStorage, StdStorage} from '@test/utils/ODTest.t.sol';
 
 abstract contract Base is ODTest {
   using stdStorage for StdStorage;

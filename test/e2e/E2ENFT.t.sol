@@ -2,11 +2,11 @@
 pragma solidity 0.8.19;
 
 import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
-import {Common, COLLAT, DEBT, TKN} from '@testnet/e2e/Common.t.sol';
-import {BaseUser} from '@testnet/scopes/BaseUser.t.sol';
-import {DirectUser} from '@testnet/scopes/DirectUser.t.sol';
-import {ProxyUser} from '@testnet/scopes/ProxyUser.t.sol';
-import {ERC20ForTest} from '@testnet/mocks/ERC20ForTest.sol';
+import {Common, COLLAT, DEBT, TKN} from '@test/e2e/Common.t.sol';
+import {BaseUser} from '@test/scopes/BaseUser.t.sol';
+import {DirectUser} from '@test/scopes/DirectUser.t.sol';
+import {ProxyUser} from '@test/scopes/ProxyUser.t.sol';
+import {ERC20ForTest} from '@test/mocks/ERC20ForTest.sol';
 import {HashState, Vault721} from '@contracts/proxies/Vault721.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 import {RAY, WAD} from '@libraries/Math.sol';

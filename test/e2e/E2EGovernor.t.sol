@@ -4,7 +4,7 @@ pragma solidity 0.8.19;
 import {IVotes} from '@openzeppelin/governance/utils/IVotes.sol';
 import {IGovernor} from '@openzeppelin/governance/IGovernor.sol';
 import {TimelockController} from '@openzeppelin/governance/TimelockController.sol';
-import {Common, COLLAT, DEBT, TKN} from '@testnet/e2e/Common.t.sol';
+import {Common, COLLAT, DEBT, TKN} from '@test/e2e/Common.t.sol';
 import {IPIDController} from '@interfaces/IPIDController.sol';
 import {IVault721} from '@interfaces/proxies/IVault721.sol';
 import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';

@@ -12,11 +12,11 @@ import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IModifiablePerCollateral} from '@interfaces/utils/IModifiablePerCollateral.sol';
 
-import {ODTest} from '@testnet/utils/ODTest.t.sol';
+import {ODTest} from '@test/utils/ODTest.t.sol';
 import {OracleRelayer} from '@contracts/OracleRelayer.sol';
 import {SAFEEngine} from '@contracts/SAFEEngine.sol';
-import {OracleForTest} from '@testnet/mocks/OracleForTest.sol';
-import {OracleRelayerForTest, OracleRelayerForInternalCallsTest} from '@testnet/mocks/OracleRelayerForTest.sol';
+import {OracleForTest} from '@test/mocks/OracleForTest.sol';
+import {OracleRelayerForTest, OracleRelayerForInternalCallsTest} from '@test/mocks/OracleRelayerForTest.sol';
 
 import {Math, RAY, WAD} from '@libraries/Math.sol';
 import {Assertions} from '@libraries/Assertions.sol';

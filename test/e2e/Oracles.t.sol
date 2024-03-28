@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {ODTest} from '@testnet/utils/ODTest.t.sol';
+import {ODTest} from '@test/utils/ODTest.t.sol';
 import {IChainlinkOracle} from '@interfaces/oracles/IChainlinkOracle.sol';
 import {ChainlinkRelayer, IBaseOracle} from '@contracts/oracles/ChainlinkRelayer.sol';
 import {DenominatedOracle, IDenominatedOracle} from '@contracts/oracles/DenominatedOracle.sol';

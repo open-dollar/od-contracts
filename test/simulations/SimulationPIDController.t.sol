@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {ODTest} from '@testnet/utils/ODTest.t.sol';
-import {TestParams, Deploy} from '@testnet/e2e/Common.t.sol';
+import {ODTest} from '@test/utils/ODTest.t.sol';
+import {TestParams, Deploy} from '@test/e2e/Common.t.sol';
 import {console2} from 'forge-std/Script.sol';
 import {Math} from '@libraries/Math.sol';
 import {RAY, YEAR} from '@libraries/Math.sol';
 import {PROPORTIONAL_GAIN, INTEGRAL_GAIN, HALF_LIFE_30_DAYS} from '@script/Params.s.sol';
 
-import {OracleForTest, IBaseOracle} from '@testnet/mocks/OracleForTest.sol';
+import {OracleForTest, IBaseOracle} from '@test/mocks/OracleForTest.sol';
 import {IPIDController} from '@interfaces/IPIDController.sol';
 
 /**
@@ -20,7 +20,7 @@ contract SimulationPIDController is TestParams, Deploy, ODTest {
   using Math for uint256;
 
   OracleForTest marketOracle;
-  string filePath = './test/testnet/simulations/pid-controller/';
+  string filePath = './test/simulations/pid-controller/';
 
   function setUp() public restoreOriginalCaller {
     marketOracle = new OracleForTest(1e18);

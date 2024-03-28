@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {ODTest, stdStorage, StdStorage} from '@testnet/utils/ODTest.t.sol';
+import {ODTest, stdStorage, StdStorage} from '@test/utils/ODTest.t.sol';
 import {Vault721} from '@contracts/proxies/Vault721.sol';
 import {IVault721} from '@interfaces/proxies/IVault721.sol';
-import {SAFEEngineForTest, ISAFEEngine} from '@testnet/mocks/SAFEEngineForTest.sol';
+import {SAFEEngineForTest, ISAFEEngine} from '@test/mocks/SAFEEngineForTest.sol';
 import {ODSafeManager} from '@contracts/proxies/ODSafeManager.sol';
 import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 import {TaxCollector} from '@contracts/TaxCollector.sol';

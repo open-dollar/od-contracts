@@ -22,7 +22,7 @@ import {
 } from '@script/Contracts.s.sol';
 import {SEPOLIA_WETH} from '@script/Registry.s.sol';
 import {IWeth} from '@interfaces/external/IWeth.sol';
-import {BaseUser} from '@testnet/scopes/BaseUser.t.sol';
+import {BaseUser} from '@test/scopes/BaseUser.t.sol';
 
 abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
   mapping(address => ODProxy) proxy;

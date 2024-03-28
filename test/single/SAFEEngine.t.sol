@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import 'ds-test/test.sol';
-import {CoinForTest} from '@testnet/mocks/CoinForTest.sol';
+import {CoinForTest} from '@test/mocks/CoinForTest.sol';
 
 import {SAFEEngine} from '@contracts/SAFEEngine.sol';
 import {ILiquidationEngine, LiquidationEngine} from '@contracts/LiquidationEngine.sol';
@@ -19,8 +19,8 @@ import {IOracleRelayer, OracleRelayer} from '@contracts/OracleRelayer.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
 
-import {DelayedOracleForTest} from '@testnet/mocks/DelayedOracleForTest.sol';
-import {OracleForTest} from '@testnet/mocks/OracleForTest.sol';
+import {DelayedOracleForTest} from '@test/mocks/DelayedOracleForTest.sol';
+import {OracleForTest} from '@test/mocks/OracleForTest.sol';
 
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 

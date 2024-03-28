@@ -4,13 +4,13 @@ pragma solidity 0.8.19;
 import {
   PostSettlementSurplusAuctionHouseForTest,
   IPostSettlementSurplusAuctionHouse
-} from '@testnet/mocks/PostSettlementSurplusAuctionHouseForTest.sol';
+} from '@test/mocks/PostSettlementSurplusAuctionHouseForTest.sol';
 import {ICommonSurplusAuctionHouse} from '@interfaces/ICommonSurplusAuctionHouse.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IProtocolToken} from '@interfaces/tokens/IProtocolToken.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
-import {ODTest, stdStorage, StdStorage} from '@testnet/utils/ODTest.t.sol';
+import {ODTest, stdStorage, StdStorage} from '@test/utils/ODTest.t.sol';
 
 import {WAD} from '@libraries/Math.sol';
 import {Assertions} from '@libraries/Assertions.sol';

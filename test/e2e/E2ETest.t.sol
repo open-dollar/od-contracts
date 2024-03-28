@@ -9,17 +9,17 @@ import {
   ONE_HUNDRED_COINS,
   PERCENTAGE_OF_STABILITY_FEE_TO_TREASURY,
   SURPLUS_AUCTION_BID_RECEIVER
-} from '@testnet/e2e/TestParams.t.sol';
+} from '@test/e2e/TestParams.t.sol';
 
 import {Math, RAY, WAD, YEAR} from '@libraries/Math.sol';
 
-import {BaseUser} from '@testnet/scopes/BaseUser.t.sol';
-import {DirectUser} from '@testnet/scopes/DirectUser.t.sol';
-import {ProxyUser} from '@testnet/scopes/ProxyUser.t.sol';
-import {Base_CType} from '@testnet/scopes/Base_CType.t.sol';
-import {ETH_CType} from '@testnet/scopes/ETH_CType.t.sol';
-import {TKN_CType} from '@testnet/scopes/TKN_CType.t.sol';
-import {TKN_8D_CType} from '@testnet/scopes/TKN_8D_CType.t.sol';
+import {BaseUser} from '@test/scopes/BaseUser.t.sol';
+import {DirectUser} from '@test/scopes/DirectUser.t.sol';
+import {ProxyUser} from '@test/scopes/ProxyUser.t.sol';
+import {Base_CType} from '@test/scopes/Base_CType.t.sol';
+import {ETH_CType} from '@test/scopes/ETH_CType.t.sol';
+import {TKN_CType} from '@test/scopes/TKN_CType.t.sol';
+import {TKN_8D_CType} from '@test/scopes/TKN_8D_CType.t.sol';
 
 uint256 constant COLLATERAL_AMOUNT = 1e18; // 1
 uint256 constant DEBT_AMOUNT = 500e18; // 500 OD

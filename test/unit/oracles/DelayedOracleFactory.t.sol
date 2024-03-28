@@ -6,7 +6,7 @@ import {DelayedOracleChild, DelayedOracle} from '@contracts/factories/DelayedOra
 import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
-import {ODTest, stdStorage, StdStorage} from '@testnet/utils/ODTest.t.sol';
+import {ODTest, stdStorage, StdStorage} from '@test/utils/ODTest.t.sol';
 
 import 'forge-std/console2.sol';
 import '@contracts/oracles/DenominatedOracle.sol';

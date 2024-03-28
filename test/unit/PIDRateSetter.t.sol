@@ -9,7 +9,7 @@ import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
 import {PIDRateSetter} from '@contracts/PIDRateSetter.sol';
 
-import {ODTest, stdStorage, StdStorage} from '@testnet/utils/ODTest.t.sol';
+import {ODTest, stdStorage, StdStorage} from '@test/utils/ODTest.t.sol';
 
 import {Math, RAY} from '@libraries/Math.sol';
 import {Assertions} from '@libraries/Assertions.sol';

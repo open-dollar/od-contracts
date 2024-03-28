@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import {IPIDController, PIDController} from '@contracts/PIDController.sol';
-import {InternalCallsWatcher, InternalCallsExtension} from '@testnet/utils/InternalCallsWatcher.sol';
+import {InternalCallsWatcher, InternalCallsExtension} from '@test/utils/InternalCallsWatcher.sol';
 
 // solhint-disable
 contract PIDControllerForTest is PIDController, InternalCallsExtension {

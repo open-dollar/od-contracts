@@ -3,14 +3,14 @@ pragma solidity 0.8.19;
 
 import {Common, COLLAT, DEBT, TEST_ETH_PRICE_DROP} from './Common.t.sol';
 import {Math} from '@libraries/Math.sol';
-import {OracleForTest} from '@testnet/mocks/OracleForTest.sol';
+import {OracleForTest} from '@test/mocks/OracleForTest.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {WSTETH, ETH_A, OD_INITIAL_PRICE} from '@script/Params.s.sol';
 import {RAY, YEAR, WAD} from '@libraries/Math.sol';
 
-import {BaseUser} from '@testnet/scopes/BaseUser.t.sol';
-import {DirectUser} from '@testnet/scopes/DirectUser.t.sol';
-import {ProxyUser} from '@testnet/scopes/ProxyUser.t.sol';
+import {BaseUser} from '@test/scopes/BaseUser.t.sol';
+import {DirectUser} from '@test/scopes/DirectUser.t.sol';
+import {ProxyUser} from '@test/scopes/ProxyUser.t.sol';
 
 abstract contract E2EGlobalSettlementTest is BaseUser, Common {
   using Math for uint256;

@@ -7,9 +7,9 @@ import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
-import {SurplusAuctionHouseForTest, ISurplusAuctionHouse} from '@testnet/mocks/SurplusAuctionHouseForTest.sol';
+import {SurplusAuctionHouseForTest, ISurplusAuctionHouse} from '@test/mocks/SurplusAuctionHouseForTest.sol';
 import {ICommonSurplusAuctionHouse} from '@interfaces/ICommonSurplusAuctionHouse.sol';
-import {ODTest, stdStorage, StdStorage} from '@testnet/utils/ODTest.t.sol';
+import {ODTest, stdStorage, StdStorage} from '@test/utils/ODTest.t.sol';
 
 import {Math, WAD} from '@libraries/Math.sol';
 import {Assertions} from '@libraries/Assertions.sol';

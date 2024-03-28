@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {LiquidationJobForTest, ILiquidationJob} from '@testnet/mocks/LiquidationJobForTest.sol';
+import {LiquidationJobForTest, ILiquidationJob} from '@test/mocks/LiquidationJobForTest.sol';
 import {ILiquidationEngine} from '@interfaces/ILiquidationEngine.sol';
 import {IStabilityFeeTreasury} from '@interfaces/IStabilityFeeTreasury.sol';
 import {IJob} from '@interfaces/jobs/IJob.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
-import {ODTest, stdStorage, StdStorage} from '@testnet/utils/ODTest.t.sol';
+import {ODTest, stdStorage, StdStorage} from '@test/utils/ODTest.t.sol';
 
 import {Assertions} from '@libraries/Assertions.sol';
 

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {AuthorizableForTest, IAuthorizable} from '@testnet/mocks/AuthorizableForTest.sol';
-import {ODTest} from '@testnet/utils/ODTest.t.sol';
+import {AuthorizableForTest, IAuthorizable} from '@test/mocks/AuthorizableForTest.sol';
+import {ODTest} from '@test/utils/ODTest.t.sol';
 
 abstract contract Base is ODTest {
   address deployer = label('deployer');

@@ -3,11 +3,11 @@ pragma solidity 0.8.19;
 
 import 'ds-test/test.sol';
 
-import {RawPIDController as PIRawPerSecondCalculator} from '@testnet/mocks/RawPIDController.sol';
+import {RawPIDController as PIRawPerSecondCalculator} from '@test/mocks/RawPIDController.sol';
 import {IPIDController} from '@interfaces/IPIDController.sol';
 import {MockPIDRateSetter} from '../utils/mock/MockPIDRateSetter.sol';
 import '../utils/mock/MockOracleRelayer.sol';
-import {OracleForTest} from '@testnet/mocks/OracleForTest.sol';
+import {OracleForTest} from '@test/mocks/OracleForTest.sol';
 
 import {Math} from '@libraries/Math.sol';
 

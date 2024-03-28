@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {OracleForTest} from '@testnet/mocks/OracleForTest.sol';
+import {OracleForTest} from '@test/mocks/OracleForTest.sol';
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {J, P} from '@script/Registry.s.sol';

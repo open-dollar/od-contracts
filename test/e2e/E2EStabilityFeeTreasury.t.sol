@@ -3,9 +3,9 @@ pragma solidity 0.8.19;
 
 import {Common, TKN, RAY, COLLAT, DEBT} from './Common.t.sol';
 
-import {BaseUser} from '@testnet/scopes/BaseUser.t.sol';
-import {DirectUser} from '@testnet/scopes/DirectUser.t.sol';
-import {ProxyUser} from '@testnet/scopes/ProxyUser.t.sol';
+import {BaseUser} from '@test/scopes/BaseUser.t.sol';
+import {DirectUser} from '@test/scopes/DirectUser.t.sol';
+import {ProxyUser} from '@test/scopes/ProxyUser.t.sol';
 
 import {HOUR, YEAR} from '@libraries/Math.sol';
 

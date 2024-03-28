@@ -9,8 +9,8 @@ import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ICoinJoin} from '@interfaces/utils/ICoinJoin.sol';
 import {ISystemCoin} from '@interfaces/tokens/ISystemCoin.sol';
 
-import {StabilityFeeTreasuryForTest} from '@testnet/mocks/StabilityFeeTreasuryForTest.sol';
-import {ODTest} from '@testnet/utils/ODTest.t.sol';
+import {StabilityFeeTreasuryForTest} from '@test/mocks/StabilityFeeTreasuryForTest.sol';
+import {ODTest} from '@test/utils/ODTest.t.sol';
 import {StdStorage, stdStorage} from 'forge-std/StdStorage.sol';
 
 import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';

@@ -2,9 +2,9 @@
 pragma solidity 0.8.19;
 
 import {IPIDController, PIDController} from '@contracts/PIDController.sol';
-import {ODTest, stdStorage, StdStorage} from '@testnet/utils/ODTest.t.sol';
-import {InternalCallsWatcher, InternalCallsExtension} from '@testnet/utils/InternalCallsWatcher.sol';
-import {PIDControllerForTest, MockPIDController} from '@testnet/mocks/PIDControllerForTest.sol';
+import {ODTest, stdStorage, StdStorage} from '@test/utils/ODTest.t.sol';
+import {InternalCallsWatcher, InternalCallsExtension} from '@test/utils/InternalCallsWatcher.sol';
+import {PIDControllerForTest, MockPIDController} from '@test/mocks/PIDControllerForTest.sol';
 
 import '@script/Params.s.sol';
 

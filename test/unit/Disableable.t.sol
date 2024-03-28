@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {DisableableForTest, IDisableable} from '@testnet/mocks/DisableableForTest.sol';
+import {DisableableForTest, IDisableable} from '@test/mocks/DisableableForTest.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
-import {ODTest, stdStorage, StdStorage} from '@testnet/utils/ODTest.t.sol';
+import {ODTest, stdStorage, StdStorage} from '@test/utils/ODTest.t.sol';
 
 abstract contract Base is ODTest {
   using stdStorage for StdStorage;

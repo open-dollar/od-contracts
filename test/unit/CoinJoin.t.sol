@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {CoinJoinForTest} from '@testnet/mocks/CoinJoinForTest.sol';
+import {CoinJoinForTest} from '@test/mocks/CoinJoinForTest.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ISystemCoin} from '@interfaces/tokens/ISystemCoin.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
-import {ODTest, stdStorage, StdStorage} from '@testnet/utils/ODTest.t.sol';
+import {ODTest, stdStorage, StdStorage} from '@test/utils/ODTest.t.sol';
 
 import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
 import {RAY} from '@libraries/Math.sol';

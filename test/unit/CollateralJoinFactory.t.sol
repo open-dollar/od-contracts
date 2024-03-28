@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {CollateralJoinFactoryForTest, ICollateralJoinFactory} from '@testnet/mocks/CollateralJoinFactoryForTest.sol';
+import {CollateralJoinFactoryForTest, ICollateralJoinFactory} from '@test/mocks/CollateralJoinFactoryForTest.sol';
 import {CollateralJoinChild} from '@contracts/factories/CollateralJoinChild.sol';
 import {CollateralJoinDelegatableChild} from '@contracts/factories/CollateralJoinDelegatableChild.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
@@ -12,7 +12,7 @@ import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IFactoryChild} from '@interfaces/factories/IFactoryChild.sol';
 import {Assertions} from '@libraries/Assertions.sol';
-import {ODTest, stdStorage, StdStorage} from '@testnet/utils/ODTest.t.sol';
+import {ODTest, stdStorage, StdStorage} from '@test/utils/ODTest.t.sol';
 
 abstract contract Base is ODTest {
   using stdStorage for StdStorage;

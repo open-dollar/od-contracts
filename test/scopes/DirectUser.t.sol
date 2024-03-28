@@ -13,7 +13,7 @@ import {
 } from '@script/Contracts.s.sol';
 import {IWeth} from '@interfaces/external/IWeth.sol';
 import {SEPOLIA_WETH} from '@script/Registry.s.sol';
-import {BaseUser} from '@testnet/scopes/BaseUser.t.sol';
+import {BaseUser} from '@test/scopes/BaseUser.t.sol';
 
 abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
   function _getSafeStatus(

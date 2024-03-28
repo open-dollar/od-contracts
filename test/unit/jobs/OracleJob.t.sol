@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {OracleJobForTest, IOracleJob} from '@testnet/mocks/OracleJobForTest.sol';
+import {OracleJobForTest, IOracleJob} from '@test/mocks/OracleJobForTest.sol';
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
 import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
 import {IPIDRateSetter} from '@interfaces/IPIDRateSetter.sol';
@@ -9,7 +9,7 @@ import {IStabilityFeeTreasury} from '@interfaces/IStabilityFeeTreasury.sol';
 import {IJob} from '@interfaces/jobs/IJob.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
-import {ODTest, stdStorage, StdStorage} from '@testnet/utils/ODTest.t.sol';
+import {ODTest, stdStorage, StdStorage} from '@test/utils/ODTest.t.sol';
 
 import {Assertions} from '@libraries/Assertions.sol';
 

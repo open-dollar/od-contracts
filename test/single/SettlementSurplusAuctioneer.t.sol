@@ -2,8 +2,8 @@
 pragma solidity 0.8.19;
 
 import 'ds-test/test.sol';
-import {CoinForTest} from '@testnet/mocks/CoinForTest.sol';
-import {DisableableForTest} from '@testnet/mocks/DisableableForTest.sol';
+import {CoinForTest} from '@test/mocks/CoinForTest.sol';
+import {DisableableForTest} from '@test/mocks/DisableableForTest.sol';
 import {
   IPostSettlementSurplusAuctionHouse,
   PostSettlementSurplusAuctionHouse

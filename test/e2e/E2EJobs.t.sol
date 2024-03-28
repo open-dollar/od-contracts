@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {Common, COLLAT, DEBT, TKN} from '@testnet/e2e/Common.t.sol';
+import {Common, COLLAT, DEBT, TKN} from '@test/e2e/Common.t.sol';
 import {JOB_REWARD} from '@script/Params.s.sol';
 
 import {AccountingJob, IAccountingJob} from '@contracts/jobs/AccountingJob.sol';
@@ -10,9 +10,9 @@ import {OracleJob, IOracleJob} from '@contracts/jobs/OracleJob.sol';
 
 import {RAY, YEAR} from '@libraries/Math.sol';
 
-import {BaseUser} from '@testnet/scopes/BaseUser.t.sol';
-import {DirectUser} from '@testnet/scopes/DirectUser.t.sol';
-import {ProxyUser} from '@testnet/scopes/ProxyUser.t.sol';
+import {BaseUser} from '@test/scopes/BaseUser.t.sol';
+import {DirectUser} from '@test/scopes/DirectUser.t.sol';
+import {ProxyUser} from '@test/scopes/ProxyUser.t.sol';
 
 abstract contract E2EJobsTest is BaseUser, Common {
   address safeHandler;

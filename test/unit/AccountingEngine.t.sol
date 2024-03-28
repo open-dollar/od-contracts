@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {AccountingEngineForTest, IAccountingEngine} from '@testnet/mocks/AccountingEngineForTest.sol';
+import {AccountingEngineForTest, IAccountingEngine} from '@test/mocks/AccountingEngineForTest.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IDebtAuctionHouse} from '@interfaces/IDebtAuctionHouse.sol';
 import {ICommonSurplusAuctionHouse} from '@interfaces/ICommonSurplusAuctionHouse.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
-import {ODTest, stdStorage, StdStorage} from '@testnet/utils/ODTest.t.sol';
+import {ODTest, stdStorage, StdStorage} from '@test/utils/ODTest.t.sol';
 
 import {Assertions} from '@libraries/Assertions.sol';
 import {Math} from '@libraries/Math.sol';
 
-import {DummySAFEEngine} from '@testnet/mocks/SAFEEngineForTest.sol';
+import {DummySAFEEngine} from '@test/mocks/SAFEEngineForTest.sol';
 
 abstract contract Base is ODTest {
   using stdStorage for StdStorage;

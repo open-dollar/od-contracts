@@ -2,17 +2,17 @@
 pragma solidity 0.8.19;
 
 import {MAINNET_WETH, SEPOLIA_WETH} from '@script/Registry.s.sol';
-import {ODTest} from '@testnet/utils/ODTest.t.sol';
+import {ODTest} from '@test/utils/ODTest.t.sol';
 import {OD, OD_INITIAL_PRICE, ETH_A} from '@script/Params.s.sol';
 import {Deploy} from '@script/Deploy.s.sol';
-import {TestParams, WSTETH, TKN, TEST_ETH_PRICE, TEST_TKN_PRICE} from '@testnet/e2e/TestParams.t.sol';
-import {ERC20ForTest} from '@testnet/mocks/ERC20ForTest.sol';
-import {OracleForTest} from '@testnet/mocks/OracleForTest.sol';
-import {DelayedOracleForTest} from '@testnet/mocks/DelayedOracleForTest.sol';
+import {TestParams, WSTETH, TKN, TEST_ETH_PRICE, TEST_TKN_PRICE} from '@test/e2e/TestParams.t.sol';
+import {ERC20ForTest} from '@test/mocks/ERC20ForTest.sol';
+import {OracleForTest} from '@test/mocks/OracleForTest.sol';
+import {DelayedOracleForTest} from '@test/mocks/DelayedOracleForTest.sol';
 import {
   Contracts, ICollateralJoin, MintableERC20, IERC20Metadata, IBaseOracle, ISAFEEngine
 } from '@script/Contracts.s.sol';
-import {WETH9} from '@testnet/mocks/WETH9.sol';
+import {WETH9} from '@test/mocks/WETH9.sol';
 import {Math, RAY} from '@libraries/Math.sol';
 
 import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';

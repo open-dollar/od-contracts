@@ -4,7 +4,7 @@ pragma solidity 0.8.19;
 import {
   CollateralAuctionHouseFactoryForTest,
   ICollateralAuctionHouseFactory
-} from '@testnet/mocks/CollateralAuctionHouseFactoryForTest.sol';
+} from '@test/mocks/CollateralAuctionHouseFactoryForTest.sol';
 import {
   CollateralAuctionHouseChild, ICollateralAuctionHouse
 } from '@contracts/factories/CollateralAuctionHouseChild.sol';
@@ -15,7 +15,7 @@ import {IModifiablePerCollateral} from '@interfaces/utils/IModifiablePerCollater
 import {IFactoryChild} from '@interfaces/factories/IFactoryChild.sol';
 import {WAD} from '@libraries/Math.sol';
 import {Assertions} from '@libraries/Assertions.sol';
-import {ODTest, stdStorage, StdStorage} from '@testnet/utils/ODTest.t.sol';
+import {ODTest, stdStorage, StdStorage} from '@test/utils/ODTest.t.sol';
 
 abstract contract Base is ODTest {
   using stdStorage for StdStorage;
