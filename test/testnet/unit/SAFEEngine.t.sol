@@ -185,6 +185,10 @@ contract Unit_SAFEEngine_Constructor is Base {
     safeEngine = new SAFEEngineForTest(_safeEngineParams);
     assertEq(abi.encode(safeEngine.params()), abi.encode(_safeEngineParams));
   }
+
+  function test_ODSafeManager_Initializer() public {
+    assertEq(safeEngine.odSafeManager(), address(safeManager));
+  }
 }
 
 contract Unit_SAFEEngine_ModifyParameters is Base {
