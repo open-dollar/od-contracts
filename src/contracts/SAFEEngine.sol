@@ -79,7 +79,7 @@ contract SAFEEngine is Authorizable, Disableable, Modifiable, ModifiablePerColla
     return _safes[_cType][_safe];
   }
 
-    /// @inheritdoc ISAFEEngine
+  /// @inheritdoc ISAFEEngine
   function odSafeManager() external view returns (address _safeManager) {
     return address(_odSafeManager);
   }
@@ -107,7 +107,7 @@ contract SAFEEngine is Authorizable, Disableable, Modifiable, ModifiablePerColla
   }
 
   function initializeSafeManager() external {
-    if(address(_odSafeManager) == address(0)) _odSafeManager = IODSafeManager(msg.sender);
+    if (address(_odSafeManager) == address(0)) _odSafeManager = IODSafeManager(msg.sender);
   }
 
   // --- Fungibility ---
@@ -151,7 +151,7 @@ contract SAFEEngine is Authorizable, Disableable, Modifiable, ModifiablePerColla
     int256 _deltaCollateral,
     int256 _deltaDebt
   ) external whenEnabled {
-    if(_odSafeManager.safeHandlerToSafeId(_safe) == 0 )revert SAFEEng_NotSAFEAllowed();
+    if (_odSafeManager.safeHandlerToSafeId(_safe) == 0) revert SAFEEng_NotSAFEAllowed();
     SAFEEngineCollateralData storage __cData = _cData[_cType];
     // collateral type has been initialised
     if (__cData.accumulatedRate == 0) revert SAFEEng_CollateralTypeNotInitialized();

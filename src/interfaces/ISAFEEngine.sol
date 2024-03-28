@@ -218,7 +218,7 @@ interface ISAFEEngine is IAuthorizable, IDisableable, IModifiable, IModifiablePe
   /**
    * @notice Getter for the address of the safe manager
    * @return _safeManager Address of safe manager
-  */
+   */
   function odSafeManager() external view returns (address _safeManager);
   /**
    * @notice Getter for the unpacked collateral data struct
@@ -451,7 +451,7 @@ interface ISAFEEngine is IAuthorizable, IDisableable, IModifiable, IModifiablePe
   function canModifySAFE(address _safe, address _account) external view returns (bool _allowed);
 
   /**
-  * @notice called by ODSafeManager during deployment
-  */
+   * @notice called by ODSafeManager during deployment
+   */
   function initializeSafeManager() external;
 }
