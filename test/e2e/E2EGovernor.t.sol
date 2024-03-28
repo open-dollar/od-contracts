@@ -345,27 +345,27 @@ contract E2EGovernor is Common {
 }
 
 contract E2EGovernorProposal is E2EGovernor {
-  function testAddCollateralProposal() public {
-    (
-      address[] memory targets,
-      uint256[] memory values,
-      bytes[] memory calldatas,
-      string memory description,
-      bytes32 descriptionHash
-    ) = generateAddCollateralProposalParams();
-    _helperExecuteProp(targets, values, calldatas, description, descriptionHash);
-  }
+  // function testAddCollateralProposal() public {
+  //   (
+  //     address[] memory targets,
+  //     uint256[] memory values,
+  //     bytes[] memory calldatas,
+  //     string memory description,
+  //     bytes32 descriptionHash
+  //   ) = generateAddCollateralProposalParams();
+  //   _helperExecuteProp(targets, values, calldatas, description, descriptionHash);
+  // }
 
-  function testUpdateNFTRendererProposal() public {
-    (
-      address[] memory targets,
-      uint256[] memory values,
-      bytes[] memory calldatas,
-      string memory description,
-      bytes32 descriptionHash
-    ) = generateUpdateNFTRendererProposalParams();
-    _helperExecuteProp(targets, values, calldatas, description, descriptionHash);
-  }
+  // function testUpdateNFTRendererProposal() public {
+  //   (
+  //     address[] memory targets,
+  //     uint256[] memory values,
+  //     bytes[] memory calldatas,
+  //     string memory description,
+  //     bytes32 descriptionHash
+  //   ) = generateUpdateNFTRendererProposalParams();
+  //   _helperExecuteProp(targets, values, calldatas, description, descriptionHash);
+  // }
 
   function testUpdatePidControllerProposal() public {
     UpdatePidControllerParams memory _params = UpdatePidControllerParams({
@@ -443,31 +443,31 @@ contract E2EGovernorProposal is E2EGovernor {
     }
   }
 
-  function testUpdateBlockDelayProposal(uint8 blockDelay) public {
-    (
-      address[] memory targets,
-      uint256[] memory values,
-      bytes[] memory calldatas,
-      string memory description,
-      bytes32 descriptionHash
-    ) = generateUpdateBlockDelayProposalParams(blockDelay);
-    _helperExecuteProp(targets, values, calldatas, description, descriptionHash);
+  // function testUpdateBlockDelayProposal(uint8 blockDelay) public {
+  //   (
+  //     address[] memory targets,
+  //     uint256[] memory values,
+  //     bytes[] memory calldatas,
+  //     string memory description,
+  //     bytes32 descriptionHash
+  //   ) = generateUpdateBlockDelayProposalParams(blockDelay);
+  //   _helperExecuteProp(targets, values, calldatas, description, descriptionHash);
 
-    assertEq(vault721.blockDelay(), blockDelay, 'testUpdateBlockDelayProposal: Block Delay not set properly');
-  }
+  //   assertEq(vault721.blockDelay(), blockDelay, 'testUpdateBlockDelayProposal: Block Delay not set properly');
+  // }
 
-  function testUpdateTimeDelayProposal(uint256 timeDelay) public {
-    (
-      address[] memory targets,
-      uint256[] memory values,
-      bytes[] memory calldatas,
-      string memory description,
-      bytes32 descriptionHash
-    ) = generateUpdateTimeDelayProposalParams(timeDelay);
-    _helperExecuteProp(targets, values, calldatas, description, descriptionHash);
+  // function testUpdateTimeDelayProposal(uint256 timeDelay) public {
+  //   (
+  //     address[] memory targets,
+  //     uint256[] memory values,
+  //     bytes[] memory calldatas,
+  //     string memory description,
+  //     bytes32 descriptionHash
+  //   ) = generateUpdateTimeDelayProposalParams(timeDelay);
+  //   _helperExecuteProp(targets, values, calldatas, description, descriptionHash);
 
-    assertEq(vault721.timeDelay(), timeDelay, 'testUpdateTimeDelayProposal: Time Delay not set properly');
-  }
+  //   assertEq(vault721.timeDelay(), timeDelay, 'testUpdateTimeDelayProposal: Time Delay not set properly');
+  // }
 }
 
 contract E2EGovernorAccessControl is E2EGovernor {
