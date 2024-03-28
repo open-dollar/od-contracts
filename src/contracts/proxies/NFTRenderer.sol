@@ -206,7 +206,12 @@ contract NFTRenderer {
       params.ratio = ratio;
 
       params.stateHash = string(abi.encodePacked(getStateHash(collateral, debt)));
+
+      params.coinBalance = _safeEngine.coinBalance(_safeId);
+
+      params.tokenCollateral = _safeEngine.tokenCollateral(cType, _safeId);
     }
+
 
     ITaxCollector.TaxCollectorCollateralData memory taxData = _taxCollector.cData(cType);
     params.stabilityFee = (taxData.nextStabilityFee / _RAY).toString();

@@ -158,6 +158,7 @@ contract Vault721 is ERC721EnumerableUpgradeable {
       if (
         block.number < _hashState[_tokenId].lastBlockNumber + blockDelay
           || _hashState[_tokenId].lastHash != nftRenderer.getStateHashBySafeId(_tokenId)
+          //|| (SafeEngine.tokenCollateral or SafeEngine.coinBalance has changed since last timedelay)
       ) {
         revert BlockDelayNotOver();
       }
