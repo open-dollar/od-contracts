@@ -416,7 +416,7 @@ contract SAFEEngine is Authorizable, Disableable, Modifiable, ModifiablePerColla
 
     if (_param == 'globalDebtCeiling') _params.globalDebtCeiling = _uint256;
     else if (_param == 'safeDebtCeiling') _params.safeDebtCeiling = _uint256;
-    else if (_param == 'odSafeManager') _odSafeManager = IODSafeManager(_data.toAddress());
+    else if (_param == 'odSafeManager') _odSafeManager = IODSafeManager(_data.toAddress().assertNonNull());
     else revert UnrecognizedParam();
   }
 
