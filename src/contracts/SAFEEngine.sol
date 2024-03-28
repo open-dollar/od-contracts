@@ -17,6 +17,7 @@ https://defi.sucks
 */
 
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
+import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 
 import {Authorizable, IAuthorizable} from '@contracts/utils/Authorizable.sol';
 import {Modifiable} from '@contracts/utils/Modifiable.sol';
@@ -25,6 +26,7 @@ import {Disableable} from '@contracts/utils/Disableable.sol';
 
 import {Encoding} from '@libraries/Encoding.sol';
 import {Math, RAY} from '@libraries/Math.sol';
+import {Assertions} from '@libraries/Assertions.sol';
 import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
 
 /**
@@ -35,12 +37,16 @@ contract SAFEEngine is Authorizable, Disableable, Modifiable, ModifiablePerColla
   using Math for uint256;
   using Encoding for bytes;
   using EnumerableSet for EnumerableSet.Bytes32Set;
+  using Assertions for address;
 
   // --- Data ---
 
   /// @inheritdoc ISAFEEngine
   // solhint-disable-next-line private-vars-leading-underscore
   SAFEEngineParams public _params;
+  /// @notice safe manager contract for verifying safe validity
+  // solhint-disable-next-line private-vars-leading-underscore
+  IODSafeManager public _odSafeManager;
   /// @inheritdoc ISAFEEngine
   // solhint-disable-next-line private-vars-leading-underscore
   mapping(bytes32 _cType => SAFEEngineCollateralParams) public _cParams;
@@ -73,6 +79,11 @@ contract SAFEEngine is Authorizable, Disableable, Modifiable, ModifiablePerColla
     return _safes[_cType][_safe];
   }
 
+    /// @inheritdoc ISAFEEngine
+  function odSafeManager() external view returns (address _safeManager) {
+    return address(_odSafeManager);
+  }
+
   // --- Balances ---
 
   /// @inheritdoc ISAFEEngine
@@ -93,6 +104,10 @@ contract SAFEEngine is Authorizable, Disableable, Modifiable, ModifiablePerColla
    */
   constructor(SAFEEngineParams memory _safeEngineParams) Authorizable(msg.sender) validParams {
     _params = _safeEngineParams;
+  }
+
+  function initializeSafeManager() external {
+    if(address(_odSafeManager) == address(0)) _odSafeManager = IODSafeManager(msg.sender);
   }
 
   // --- Fungibility ---
@@ -136,6 +151,7 @@ contract SAFEEngine is Authorizable, Disableable, Modifiable, ModifiablePerColla
     int256 _deltaCollateral,
     int256 _deltaDebt
   ) external whenEnabled {
+    if(_odSafeManager.safeHandlerToSafeId(_safe) == 0 )revert SAFEEng_NotSAFEAllowed();
     SAFEEngineCollateralData storage __cData = _cData[_cType];
     // collateral type has been initialised
     if (__cData.accumulatedRate == 0) revert SAFEEng_CollateralTypeNotInitialized();
@@ -400,6 +416,7 @@ contract SAFEEngine is Authorizable, Disableable, Modifiable, ModifiablePerColla
 
     if (_param == 'globalDebtCeiling') _params.globalDebtCeiling = _uint256;
     else if (_param == 'safeDebtCeiling') _params.safeDebtCeiling = _uint256;
+    else if (_param == 'odSafeManager') _odSafeManager = IODSafeManager(_data.toAddress());
     else revert UnrecognizedParam();
   }
 
