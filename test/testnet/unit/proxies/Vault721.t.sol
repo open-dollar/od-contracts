@@ -410,7 +410,7 @@ contract Unit_Vault721_GovernanceFunctions is Base {
   }
 }
 
-contract Unit_TestVault721_TransferFrom_ProxyReceiver is Base {
+contract Unit_TestVault721_TransferFrom_SafeTransferFrom_ProxyReceiver is Base {
   TestVault721 internal testVault721;
   address internal user1 = address(1);
   address internal user2 = address(2);
@@ -444,7 +444,22 @@ contract Unit_TestVault721_TransferFrom_ProxyReceiver is Base {
     testVault721.transferFrom(user1, user2, 1);
   }
 
-  function test_TransferFrom_Revert_OnReceiver() public {
+  function test_SafeTransferFrom() public {
+    vm.prank(address(safeManager));
+    testVault721.mint(userProxy1, 1);
+
+    vm.prank(user1);
+    testVault721.setApprovalForAll(user2, true);
+
+    vm.prank(user2);
+    vm.mockCall(
+      address(renderer), abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector), abi.encode(bytes32(0))
+    );
+
+    testVault721.safeTransferFrom(user1, user2, 1);
+  }
+
+  function test_TransferFrom_ToProxy_Revert() public {
     vm.prank(address(safeManager));
     testVault721.mint(userProxy1, 1);
 
@@ -459,9 +474,25 @@ contract Unit_TestVault721_TransferFrom_ProxyReceiver is Base {
     vm.expectRevert(IVault721.NotWallet.selector);
     testVault721.transferFrom(user1, userProxy2, 1);
   }
+
+  function test_SafeTransferFrom_ToProxy_Revert() public {
+    vm.prank(address(safeManager));
+    testVault721.mint(userProxy1, 1);
+
+    vm.prank(user1);
+    testVault721.setApprovalForAll(user2, true);
+
+    vm.prank(user2);
+    vm.mockCall(
+      address(renderer), abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector), abi.encode(bytes32(0))
+    );
+
+    vm.expectRevert(IVault721.NotWallet.selector);
+    testVault721.safeTransferFrom(user1, userProxy2, 1);
+  }
 }
 
-contract Unit_Vault721_SafeTransferFrom is Base {
+contract Unit_Vault721_TransferFrom_SafeTransferFrom is Base {
   address internal user1 = address(1);
   address internal user2 = address(2);
   address internal userProxy1;
@@ -514,7 +545,7 @@ contract Unit_Vault721_SafeTransferFrom is Base {
     vault721.safeTransferFrom(user1, scwallet, 1);
   }
 
-  function test_SafeTransferFrom_Revert() public {
+  function test_SafeTransferFrom_NoReceiver_Revert() public {
     vm.prank(address(safeManager));
     vault721.mint(userProxy1, 1);
 
@@ -526,12 +557,12 @@ contract Unit_Vault721_SafeTransferFrom is Base {
       address(renderer), abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector), abi.encode(bytes32(0))
     );
 
-    // safe transfer reverts
+    // badscwallet does not have erc721Reveiver - revert
     vm.expectRevert('ERC721: transfer to non ERC721Receiver implementer');
     vault721.safeTransferFrom(user1, badscwallet, 1);
   }
 
-  function test_Unsafe_TransferFrom() public {
+  function test_Unsafe_TransferFrom_NoReceiver() public {
     vm.prank(address(safeManager));
     vault721.mint(userProxy1, 1);
 
@@ -543,11 +574,28 @@ contract Unit_Vault721_SafeTransferFrom is Base {
       address(renderer), abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector), abi.encode(bytes32(0))
     );
 
-    // transfer does not revert
+    // badscwallet does not have erc721Reveiver - no revert becuase transferFrom does not check for erc721Reveiver
     vault721.transferFrom(user1, badscwallet, 1);
   }
 
-  function test_TransferFrom_Revert_NoReceiver() public {
+  function test_TransferFrom_ToProxy_NoReceiver_Revert() public {
+    vm.prank(address(safeManager));
+    vault721.mint(userProxy1, 1);
+
+    vm.prank(user1);
+    vault721.setApprovalForAll(user2, true);
+
+    vm.prank(user2);
+    vm.mockCall(
+      address(renderer), abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector), abi.encode(bytes32(0))
+    );
+
+    // NotWallet check triggered before proxy can fail on Non-erc721Reveiver
+    vm.expectRevert(IVault721.NotWallet.selector);
+    vault721.transferFrom(user1, userProxy2, 1);
+  }
+
+  function test_safeTransferFrom_ToProxy_NoReceiver_Revert() public {
     vm.prank(address(safeManager));
     vault721.mint(userProxy1, 1);
 
