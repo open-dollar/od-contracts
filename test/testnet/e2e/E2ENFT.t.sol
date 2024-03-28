@@ -12,7 +12,7 @@ import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 import {RAY, WAD} from '@libraries/Math.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
-import {FakeBasicActions} from '@testlocal/nft/anvil/FakeBasicActions.sol';
+import {FakeBasicActions} from '@contracts/for-test/FakeBasicActions.sol';
 
 contract NFTSetup is Common {
   uint256 public constant MINT_AMOUNT = 1000 ether;
