@@ -23,6 +23,8 @@ interface IAuthorizable {
   error NotAuthorized();
   /// @notice Throws if the account is not authorized and tries to call an `onlyAuthorized` method
   error Unauthorized();
+  /// @notice Throws if zero address is passed
+  error NullAddress();
 
   // --- Data ---
 

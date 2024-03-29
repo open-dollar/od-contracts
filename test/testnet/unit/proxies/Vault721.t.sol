@@ -9,6 +9,7 @@ import {SCWallet, Bad_SCWallet} from '@contracts/for-test/SCWallet.sol';
 import {ODSafeManager} from '@contracts/proxies/ODSafeManager.sol';
 import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 import {TimelockController} from '@openzeppelin/governance/TimelockController.sol';
+import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 
 contract Base is ODTest {
   using stdStorage for StdStorage;
@@ -34,6 +35,12 @@ contract Base is ODTest {
     timelockController = TimelockController(payable(mockContract('timeLockController')));
 
     vm.stopPrank();
+  }
+
+  function _mockSafeCall() internal {
+    IODSafeManager.SAFEData memory returnSafe;
+    returnSafe.safeHandler = address(1);
+    vm.mockCall(address(safeManager), abi.encodeWithSelector(ODSafeManager.safeData.selector), abi.encode(returnSafe));
   }
 }
 
@@ -154,7 +161,7 @@ contract Vault721_ViewFunctions is Base {
       abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector),
       abi.encode(bytes32(keccak256('testHash')))
     );
-
+    _mockSafeCall();
     vm.prank(address(safeManager));
     vault721.updateVaultHashState(1);
 
@@ -209,6 +216,8 @@ contract Unit_Vault721_UpdateVaultHashState is Base {
       abi.encode(bytes32(keccak256('testHash')))
     );
 
+    _mockSafeCall();
+
     vm.prank(address(safeManager));
     vault721.updateVaultHashState(1);
 
@@ -223,6 +232,16 @@ contract Unit_Vault721_UpdateVaultHashState is Base {
     vm.expectRevert(Vault721.NotSafeManager.selector);
 
     vm.prank(address(user));
+    vault721.updateVaultHashState(1);
+  }
+
+  function test_UpdateHashState_Revert_ZeroAddress() public {
+    vm.expectRevert(Vault721.ZeroAddress.selector);
+
+    IODSafeManager.SAFEData memory returnSafe;
+    vm.mockCall(address(safeManager), abi.encodeWithSelector(ODSafeManager.safeData.selector), abi.encode(returnSafe));
+
+    vm.prank(address(safeManager));
     vault721.updateVaultHashState(1);
   }
 }
@@ -320,6 +339,7 @@ contract Unit_Vault721_GovernanceFunctions is Base {
       abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector),
       abi.encode(bytes32('test-hash'))
     );
+    _mockSafeCall();
     vault721.updateVaultHashState(1);
 
     vm.prank(_scenario.user);
@@ -370,7 +390,7 @@ contract Unit_Vault721_GovernanceFunctions is Base {
       abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector),
       abi.encode(previousHashState)
     );
-
+    _mockSafeCall();
     vm.prank(address(safeManager));
     vault721.updateVaultHashState(1);
 
@@ -640,7 +660,7 @@ contract Unit_Vault721_TransferFrom is Base {
     );
 
     vm.prank(address(safeManager));
-
+    _mockSafeCall();
     vault721.updateVaultHashState(_scenario.tokenId);
 
     vm.prank(_scenario.user1);
@@ -670,7 +690,7 @@ contract Unit_Vault721_TransferFrom is Base {
       abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector),
       abi.encode(bytes32('test-hash'))
     );
-
+    _mockSafeCall();
     vault721.updateVaultHashState(_scenario.tokenId);
 
     vm.prank(_scenario.user1);

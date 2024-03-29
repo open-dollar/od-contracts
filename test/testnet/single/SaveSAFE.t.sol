@@ -205,7 +205,7 @@ contract SingleSaveSAFETest is DSTest {
       disableCooldown: 0,
       surplusAmount: 0,
       surplusBuffer: 0,
-      debtAuctionMintedTokens: 0,
+      debtAuctionMintedTokens: 1,
       debtAuctionBidSize: 0
     });
 

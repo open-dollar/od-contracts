@@ -1865,7 +1865,7 @@ contract Unit_LiquidationEngine_InitializeCollateralType is Base {
   ) public authorized {
     _liqEngineCParams.collateralAuctionHouse = address(0);
 
-    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
+    vm.expectRevert(abi.encodeWithSelector(IAuthorizable.NullAddress.selector));
 
     liquidationEngine.initializeCollateralType(_cType, abi.encode(_liqEngineCParams));
   }
