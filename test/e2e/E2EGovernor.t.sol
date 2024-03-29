@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
+import {AIRDROP_AMOUNT, AIRDROP_RECIPIENTS} from '@script/Registry.s.sol';
 import {IVotes} from '@openzeppelin/governance/utils/IVotes.sol';
 import {IGovernor} from '@openzeppelin/governance/IGovernor.sol';
 import {TimelockController} from '@openzeppelin/governance/TimelockController.sol';
@@ -35,6 +36,7 @@ struct UpdatePidControllerParams {
 contract E2EGovernor is Common {
   bytes32 constant NEW_CTYPE = bytes32('NEW');
   uint256 constant MINUS_0_5_PERCENT_PER_HOUR = 999_998_607_628_240_588_157_433_861;
+  uint256 constant VOTER_WEIGHT = AIRDROP_AMOUNT / AIRDROP_RECIPIENTS;
   address public NEW_CTYPE_ADDR;
 
   ICollateralAuctionHouse.CollateralAuctionHouseParams _cahCParams = ICollateralAuctionHouse
@@ -81,11 +83,6 @@ contract E2EGovernor is Common {
     emit log_named_uint('Block', startBlock);
     emit log_named_uint('Time', startTime);
 
-    // IAuthorizable(address(protocolToken)).
-
-    protocolToken.mint(alice, 2_500_000 * 1e18);
-    protocolToken.mint(bob, 2_500_000 * 1e18);
-
     uint256 propId = odGovernor.propose(targets, values, calldatas, description);
     assertEq(
       propId,
@@ -98,11 +95,8 @@ contract E2EGovernor is Common {
     emit log_named_uint('Voting Delay:', odGovernor.votingDelay());
     emit log_named_uint('Voting Period:', odGovernor.votingPeriod());
 
-    emit log_named_address('PROTOCOL TOKEN', address(protocolToken));
-    // emit log_named_uint('PROTOCOL TOKEN', getChainId());
-
-    assertEq(2_500_000 * 1e18, protocolToken.balanceOf(alice));
-    assertEq(2_500_000 * 1e18, protocolToken.balanceOf(bob));
+    assertEq(VOTER_WEIGHT, protocolToken.balanceOf(alice));
+    assertEq(VOTER_WEIGHT, protocolToken.balanceOf(bob));
     assertEq(0, protocolVotes.getVotes(alice));
     assertEq(0, protocolVotes.getVotes(bob));
 
@@ -111,7 +105,7 @@ contract E2EGovernor is Common {
     vm.stopPrank();
 
     assertEq(0, protocolVotes.getVotes(alice));
-    assertEq(2_500_000 * 1e18, protocolVotes.getVotes(bob));
+    assertEq(VOTER_WEIGHT, protocolVotes.getVotes(bob));
 
     vm.roll(startBlock + 2);
     vm.warp(startTime + 30 seconds);
@@ -121,14 +115,14 @@ contract E2EGovernor is Common {
     propState = odGovernor.state(propId);
 
     vm.startPrank(alice);
-    // alice holds no governance tokens, so should not effect outcome
+    // alice has not delegated her governance tokens - no voter weight
     odGovernor.castVote(propId, 0);
     vm.stopPrank();
 
     propState = odGovernor.state(propId); // returns 1 (Active)
 
     vm.startPrank(bob);
-    // bob holds 33% of governance tokens
+    // bob holds 25% of governance tokens
     odGovernor.castVote(propId, 1);
     vm.stopPrank();
 
@@ -153,7 +147,6 @@ contract E2EGovernor is Common {
     assertEq(true, timelockController.hasRole(PROPOSER_ROLE, address(odGovernor)));
     assertEq(true, timelockController.hasRole(EXECUTOR_ROLE, address(odGovernor)));
 
-    emit log_named_uint('FAIL HERE', 69);
     vm.startPrank(bob);
     odGovernor.queue(targets, values, calldatas, descriptionHash);
     propState = odGovernor.state(propId); // returns 5 (Queued)
@@ -185,13 +178,19 @@ contract E2EGovernor is Common {
       bytes32 descriptionHash
     )
   {
-    targets = new address[](2);
-    targets[0] = address(collateralJoinFactory);
-    targets[1] = address(collateralAuctionHouseFactory);
+    // targets = new address[](2);
+    // targets[0] = address(collateralJoinFactory);
+    // targets[1] = address(collateralAuctionHouseFactory);
 
-    values = new uint256[](2);
+    targets = new address[](1);
+    targets[0] = address(collateralJoinFactory);
+
+    // values = new uint256[](2);
+    // values[0] = 0;
+    // values[1] = 0;
+
+    values = new uint256[](1);
     values[0] = 0;
-    values[1] = 0;
 
     bytes memory calldata0 =
       abi.encodeWithSelector(ICollateralJoinFactory.deployCollateralJoin.selector, NEW_CTYPE, NEW_CTYPE_ADDR);
@@ -355,16 +354,16 @@ contract E2EGovernor is Common {
 }
 
 contract E2EGovernorProposal is E2EGovernor {
-  // function testAddCollateralProposal() public {
-  //   (
-  //     address[] memory targets,
-  //     uint256[] memory values,
-  //     bytes[] memory calldatas,
-  //     string memory description,
-  //     bytes32 descriptionHash
-  //   ) = generateAddCollateralProposalParams();
-  //   _helperExecuteProp(targets, values, calldatas, description, descriptionHash);
-  // }
+  function testAddCollateralProposal() public {
+    (
+      address[] memory targets,
+      uint256[] memory values,
+      bytes[] memory calldatas,
+      string memory description,
+      bytes32 descriptionHash
+    ) = generateAddCollateralProposalParams();
+    _helperExecuteProp(targets, values, calldatas, description, descriptionHash);
+  }
 
   function testUpdateNFTRendererProposal() public {
     (
@@ -453,31 +452,31 @@ contract E2EGovernorProposal is E2EGovernor {
     }
   }
 
-  // function testUpdateBlockDelayProposal(uint8 blockDelay) public {
-  //   (
-  //     address[] memory targets,
-  //     uint256[] memory values,
-  //     bytes[] memory calldatas,
-  //     string memory description,
-  //     bytes32 descriptionHash
-  //   ) = generateUpdateBlockDelayProposalParams(blockDelay);
-  //   _helperExecuteProp(targets, values, calldatas, description, descriptionHash);
+  function testUpdateBlockDelayProposal(uint8 blockDelay) public {
+    (
+      address[] memory targets,
+      uint256[] memory values,
+      bytes[] memory calldatas,
+      string memory description,
+      bytes32 descriptionHash
+    ) = generateUpdateBlockDelayProposalParams(blockDelay);
+    _helperExecuteProp(targets, values, calldatas, description, descriptionHash);
 
-  //   assertEq(vault721.blockDelay(), blockDelay, 'testUpdateBlockDelayProposal: Block Delay not set properly');
-  // }
+    assertEq(vault721.blockDelay(), blockDelay, 'testUpdateBlockDelayProposal: Block Delay not set properly');
+  }
 
-  // function testUpdateTimeDelayProposal(uint256 timeDelay) public {
-  //   (
-  //     address[] memory targets,
-  //     uint256[] memory values,
-  //     bytes[] memory calldatas,
-  //     string memory description,
-  //     bytes32 descriptionHash
-  //   ) = generateUpdateTimeDelayProposalParams(timeDelay);
-  //   _helperExecuteProp(targets, values, calldatas, description, descriptionHash);
+  function testUpdateTimeDelayProposal(uint256 timeDelay) public {
+    (
+      address[] memory targets,
+      uint256[] memory values,
+      bytes[] memory calldatas,
+      string memory description,
+      bytes32 descriptionHash
+    ) = generateUpdateTimeDelayProposalParams(timeDelay);
+    _helperExecuteProp(targets, values, calldatas, description, descriptionHash);
 
-  //   assertEq(vault721.timeDelay(), timeDelay, 'testUpdateTimeDelayProposal: Time Delay not set properly');
-  // }
+    assertEq(vault721.timeDelay(), timeDelay, 'testUpdateTimeDelayProposal: Time Delay not set properly');
+  }
 }
 
 contract E2EGovernorAccessControl is E2EGovernor {
