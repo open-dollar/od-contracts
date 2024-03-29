@@ -11,6 +11,7 @@ import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
 import {ICollateralJoinFactory} from '@interfaces/factories/ICollateralJoinFactory.sol';
 import {ICollateralAuctionHouseFactory} from '@interfaces/factories/ICollateralAuctionHouseFactory.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
+import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {WAD} from '@libraries/Math.sol';
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
@@ -80,6 +81,11 @@ contract E2EGovernor is Common {
     emit log_named_uint('Block', startBlock);
     emit log_named_uint('Time', startTime);
 
+    // IAuthorizable(address(protocolToken)).
+
+    protocolToken.mint(alice, 2_500_000 * 1e18);
+    protocolToken.mint(bob, 2_500_000 * 1e18);
+
     uint256 propId = odGovernor.propose(targets, values, calldatas, description);
     assertEq(
       propId,
@@ -92,8 +98,11 @@ contract E2EGovernor is Common {
     emit log_named_uint('Voting Delay:', odGovernor.votingDelay());
     emit log_named_uint('Voting Period:', odGovernor.votingPeriod());
 
-    assertEq(3_333_333_333_333_333_333_333, protocolToken.balanceOf(alice));
-    assertEq(3_333_333_333_333_333_333_333, protocolToken.balanceOf(bob));
+    emit log_named_address('PROTOCOL TOKEN', address(protocolToken));
+    // emit log_named_uint('PROTOCOL TOKEN', getChainId());
+
+    assertEq(2_500_000 * 1e18, protocolToken.balanceOf(alice));
+    assertEq(2_500_000 * 1e18, protocolToken.balanceOf(bob));
     assertEq(0, protocolVotes.getVotes(alice));
     assertEq(0, protocolVotes.getVotes(bob));
 
@@ -102,7 +111,7 @@ contract E2EGovernor is Common {
     vm.stopPrank();
 
     assertEq(0, protocolVotes.getVotes(alice));
-    assertEq(3_333_333_333_333_333_333_333, protocolVotes.getVotes(bob));
+    assertEq(2_500_000 * 1e18, protocolVotes.getVotes(bob));
 
     vm.roll(startBlock + 2);
     vm.warp(startTime + 30 seconds);
@@ -144,6 +153,7 @@ contract E2EGovernor is Common {
     assertEq(true, timelockController.hasRole(PROPOSER_ROLE, address(odGovernor)));
     assertEq(true, timelockController.hasRole(EXECUTOR_ROLE, address(odGovernor)));
 
+    emit log_named_uint('FAIL HERE', 69);
     vm.startPrank(bob);
     odGovernor.queue(targets, values, calldatas, descriptionHash);
     propState = odGovernor.state(propId); // returns 5 (Queued)
@@ -356,16 +366,16 @@ contract E2EGovernorProposal is E2EGovernor {
   //   _helperExecuteProp(targets, values, calldatas, description, descriptionHash);
   // }
 
-  // function testUpdateNFTRendererProposal() public {
-  //   (
-  //     address[] memory targets,
-  //     uint256[] memory values,
-  //     bytes[] memory calldatas,
-  //     string memory description,
-  //     bytes32 descriptionHash
-  //   ) = generateUpdateNFTRendererProposalParams();
-  //   _helperExecuteProp(targets, values, calldatas, description, descriptionHash);
-  // }
+  function testUpdateNFTRendererProposal() public {
+    (
+      address[] memory targets,
+      uint256[] memory values,
+      bytes[] memory calldatas,
+      string memory description,
+      bytes32 descriptionHash
+    ) = generateUpdateNFTRendererProposalParams();
+    _helperExecuteProp(targets, values, calldatas, description, descriptionHash);
+  }
 
   function testUpdatePidControllerProposal() public {
     UpdatePidControllerParams memory _params = UpdatePidControllerParams({
