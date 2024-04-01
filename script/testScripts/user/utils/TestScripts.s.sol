@@ -145,14 +145,6 @@ contract TestScripts is Deployment {
     ODProxy(_proxy).execute(address(basicActions), payload);
   }
 
-  /**
-   * @dev Allows a safe handler
-   */
-  function allowHandler(address _usr, bool _ok, address _proxy) public {
-    bytes memory payload = abi.encodeWithSelector(basicActions.allowHandler.selector, address(safeManager), _usr, _ok);
-    ODProxy(_proxy).execute(address(basicActions), payload);
-  }
-
   function safeData(uint256 _safeId) public view returns (IODSafeManager.SAFEData memory _safeData) {
     _safeData = safeManager.safeData(_safeId);
   }
