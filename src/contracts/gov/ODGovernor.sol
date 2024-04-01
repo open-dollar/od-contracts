@@ -104,6 +104,21 @@ contract ODGovernor is
   }
 
   /**
+ * inherit: IGovernorCompatibilityBravo
+ * @dev - propose with signatures, with check for valid proposal
+ */
+  function propose(
+    address[] memory targets,
+    uint256[] memory values,
+    string[] memory signatures,
+    bytes[] memory calldatas,
+    string memory description
+  ) public override returns (uint256) {
+    require(signatures.length == calldatas.length, 'Governor: invalid proposal');
+    return super.propose(targets, values, signatures, calldatas, description);
+  }
+
+  /**
    * inherit: Governor, GovernorSettings
    */
   function proposalThreshold() public view override(Governor, GovernorSettings) returns (uint256) {
