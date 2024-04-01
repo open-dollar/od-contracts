@@ -286,7 +286,7 @@ contract E2EGovernor is Common {
   /**
    * @dev Generate Block Delay Params for Proposal
    */
-  function generateUpdateBlockDelayProposalParams(uint8 blockDelay)
+  function generateUpdateBlockDelayProposalParams(uint256 blockDelay)
     public
     view
     returns (
@@ -443,7 +443,7 @@ contract E2EGovernorProposal is E2EGovernor {
     }
   }
 
-  // function testUpdateBlockDelayProposal(uint8 blockDelay) public {
+  // function testUpdateBlockDelayProposal(uint256 blockDelay) public {
   //   (
   //     address[] memory targets,
   //     uint256[] memory values,

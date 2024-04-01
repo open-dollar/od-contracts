@@ -350,7 +350,7 @@ contract Unit_Vault721_GovernanceFunctions is Base {
     assertEq(vault721.balanceOf(owner), 1, 'transfer not succesful');
   }
 
-  function test_UpdateBlockDelay(uint8 blockDelay) public {
+  function test_UpdateBlockDelay(uint256 blockDelay) public {
     // hardcode previous hash into mock call for test
     bytes32 previousHashState = 0x0508bed9fd4f78f10478c995115fdf0b087b42d661e8c6f27710c035187b029b;
     _mintNft();
@@ -572,7 +572,7 @@ contract Unit_Vault721_TransferFrom is Base {
     address user1;
     address user2;
     uint256 tokenId;
-    uint8 blockDelay;
+    uint256 blockDelay;
     uint256 timeDelay;
   }
 
