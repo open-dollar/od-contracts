@@ -89,6 +89,10 @@ abstract contract Deploy is Common, Script {
         _delegateAllTo(governor);
       }
     }
+
+    if (isFork()) {
+      vm.stopPrank();
+    }
   }
 
   // abstract methods to be overridden by network-specific deployments

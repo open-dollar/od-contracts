@@ -96,6 +96,6 @@ abstract contract E2EJobsTest is BaseUser, Common {
 
 // --- Scoped test contracts ---
 
-abstract contract E2EJobsTestDirectUser is DirectUser, E2EJobsTest {}
+contract E2EJobsTestDirectUser is DirectUser, E2EJobsTest {}
 
-abstract contract E2EJobsTestProxyUser is ProxyUser, E2EJobsTest {}
+contract E2EJobsTestProxyUser is ProxyUser, E2EJobsTest {}

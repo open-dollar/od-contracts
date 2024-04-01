@@ -385,6 +385,6 @@ abstract contract E2EGlobalSettlementTest is BaseUser, Common {
 // --- Scoped test contracts ---
 
 // NOTE: missing expectations for lesser decimals ERC20s (for 0 decimals, delta should be 1)
-abstract contract E2EGlobalSettlementTestDirectUser is DirectUser, E2EGlobalSettlementTest {}
+contract E2EGlobalSettlementTestDirectUser is DirectUser, E2EGlobalSettlementTest {}
 
-abstract contract E2EGlobalSettlementTestProxyUser is ProxyUser, E2EGlobalSettlementTest {}
+contract E2EGlobalSettlementTestProxyUser is ProxyUser, E2EGlobalSettlementTest {}

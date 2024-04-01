@@ -36,7 +36,6 @@ contract NFTSetup is Common {
 
     ISAFEEngine.SAFEEngineParams memory params = safeEngine.params();
     debtCeiling = params.safeDebtCeiling;
-    vm.stopPrank();
   }
 
   function deployOrFind(address owner) public returns (address) {

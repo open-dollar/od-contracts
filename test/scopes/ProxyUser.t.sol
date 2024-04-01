@@ -302,6 +302,17 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     _proxy.execute(address(surplusBidActions), _callData);
   }
 
+  function _settleSurplusAuction(address _user, uint256 _auctionId) internal override {
+    ODProxy _proxy = _getProxy(_user);
+
+    bytes memory _callData = abi.encodeWithSelector(
+      SurplusBidActions.settleAuction.selector, address(coinJoin), address(surplusAuctionHouse), _auctionId
+    );
+
+    vm.prank(_user);
+    _proxy.execute(address(surplusBidActions), _callData);
+  }
+
   // --- Global Settlement actions ---
 
   function _increasePostSettlementBidSize(address _user, uint256 _auctionId, uint256 _bidAmount) internal override {
