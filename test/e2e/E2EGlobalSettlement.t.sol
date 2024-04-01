@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {Common, COLLAT, DEBT, TEST_ETH_PRICE_DROP} from './Common.t.sol';
+import {Common, COLLAT, DEBT, TEST_ETH_PRICE_DROP} from '@test/e2e/Common.t.sol';
 import {Math} from '@libraries/Math.sol';
 import {OracleForTest} from '@test/mocks/OracleForTest.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
-import {WSTETH, ETH_A, OD_INITIAL_PRICE} from '@script/Params.s.sol';
+import {OD_INITIAL_PRICE} from '@script/Params.s.sol';
 import {RAY, YEAR, WAD} from '@libraries/Math.sol';
 
 import {BaseUser} from '@test/scopes/BaseUser.t.sol';
@@ -254,47 +254,47 @@ abstract contract E2EGlobalSettlementTest is BaseUser, Common {
     // carol has a safe that provides surplus (active surplus auction)
     // dave has a healthy active safe
 
-    _generateDebt(alice, address(collateralJoin[WSTETH]), int256(COLLAT), int256(DEBT));
-    _generateDebt(bob, address(collateralJoin[WSTETH]), int256(COLLAT), int256(DEBT));
-    _generateDebt(carol, address(collateralJoin[WSTETH]), int256(COLLAT), int256(DEBT));
+    _generateDebt(alice, address(collateralJoin['TKN']), int256(COLLAT), int256(DEBT));
+    _generateDebt(bob, address(collateralJoin['TKN']), int256(COLLAT), int256(DEBT));
+    _generateDebt(carol, address(collateralJoin['TKN']), int256(COLLAT), int256(DEBT));
 
-    _setCollateralPrice(WSTETH, TEST_ETH_PRICE_DROP); // price 1 ETH = 100 OD
-    _liquidateSAFE(WSTETH, alice);
+    _setCollateralPrice('TKN', TEST_ETH_PRICE_DROP); // price 1 ETH = 100 OD
+    _liquidateSAFE('TKN', alice);
     accountingEngine.popDebtFromQueue(block.timestamp);
     accountingEngine.auctionDebt(); // active debt auction
 
-    _liquidateSAFE(WSTETH, bob); // active collateral auction
+    _liquidateSAFE('TKN', bob); // active collateral auction
     uint256 _collateralAuction = 1;
 
-    _collectFees(WSTETH, 50 * YEAR);
+    _collectFees('TKN', 50 * YEAR);
     accountingEngine.auctionSurplus(); // active surplus auction
 
     // NOTE: why DEBT/10 not-safe? (price dropped to 1/10)
-    _generateDebt(dave, address(collateralJoin[WSTETH]), int256(COLLAT), int256(DEBT / 100)); // active healthy safe
+    _generateDebt(dave, address(collateralJoin['TKN']), int256(COLLAT), int256(DEBT / 100)); // active healthy safe
 
     vm.prank(deployer);
     globalSettlement.shutdownSystem();
-    globalSettlement.freezeCollateralType(WSTETH);
+    globalSettlement.freezeCollateralType('TKN');
 
-    globalSettlement.fastTrackAuction(WSTETH, _collateralAuction);
+    globalSettlement.fastTrackAuction('TKN', _collateralAuction);
 
-    _freeCollateral(alice, WSTETH);
-    _freeCollateral(bob, WSTETH);
-    _freeCollateral(carol, WSTETH);
-    _freeCollateral(dave, WSTETH);
+    _freeCollateral(alice, 'TKN');
+    _freeCollateral(bob, 'TKN');
+    _freeCollateral(carol, 'TKN');
+    _freeCollateral(dave, 'TKN');
 
     accountingEngine.settleDebt(safeEngine.coinBalance(address(accountingEngine)));
     vm.warp(block.timestamp + globalSettlement.params().shutdownCooldown);
     globalSettlement.setOutstandingCoinSupply();
-    globalSettlement.calculateCashPrice(WSTETH);
+    globalSettlement.calculateCashPrice('TKN');
 
     _prepareCoinsForRedeeming(dave, DEBT / 100);
-    _redeemCollateral(dave, WSTETH, DEBT / 100);
+    _redeemCollateral(dave, 'TKN', DEBT / 100);
   }
 
   function test_post_settlement_surplus_auction_house() public {
-    _generateDebt(alice, address(collateralJoin[WSTETH]), int256(COLLAT), int256(DEBT));
-    _collectFees(WSTETH, 50 * YEAR);
+    _generateDebt(alice, address(collateralJoin['TKN']), int256(COLLAT), int256(DEBT));
+    _collectFees('TKN', 50 * YEAR);
 
     vm.prank(deployer);
     globalSettlement.shutdownSystem();
@@ -328,8 +328,8 @@ abstract contract E2EGlobalSettlementTest is BaseUser, Common {
 
   /// Tests that incrementing a bid while being the top bidder only pulls the increment
   function test_post_settlement_surplus_auction_house_rebid() public {
-    _generateDebt(alice, address(collateralJoin[WSTETH]), int256(COLLAT), int256(DEBT));
-    _collectFees(WSTETH, 50 * YEAR);
+    _generateDebt(alice, address(collateralJoin['TKN']), int256(COLLAT), int256(DEBT));
+    _collectFees('TKN', 50 * YEAR);
 
     vm.prank(deployer);
     globalSettlement.shutdownSystem();
