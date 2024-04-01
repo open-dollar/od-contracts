@@ -3,9 +3,10 @@ pragma solidity 0.8.19;
 
 import {JSONScript} from '@script/testScripts/gov/JSONScript.s.sol';
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
+import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
 
 // Mock contract for NitroPool that will be used in the script. This is used to be very clear about what we are proposing.
-contract NitroPool {
+interface NitroPool {
 	function addRewards(uint256 amountToken1, uint256 amountToken2) external;
 }
 
@@ -13,7 +14,7 @@ contract NitroPool {
 /// @author OpenDollar
 /// @notice Script to propose adding rewards to NitroPool via ODGovernance
 /// @dev NOTE This script requires the following env vars in the REQUIRED ENV VARS section below
-/// @dev This script is used to propose adding rewards to NitroPool
+/// @dev This script is used to propose adding rewards to NitroPool, we first approve ERC20 to NitroPool and then call addRewards
 /// @dev The script will output a JSON file with the proposal data to be used by the QueueProposal and ExecuteProposal scripts
 /// @dev In the root, run: export FOUNDRY_PROFILE=governance && forge script --rpc-url <RPC_URL> script/testScripts/gov/AddRewardsToNitroPool/ProposeAddRewardsToNitroPool.s.sol
 contract ProposeAddRewardsToNitroPool is JSONScript {
@@ -31,18 +32,24 @@ contract ProposeAddRewardsToNitroPool is JSONScript {
 		ODGovernor gov = ODGovernor(payable(governanceAddress));
 		address[] memory targets = new address[](1);
 		{
-			targets[0] = nitroPoolAddress;
+			targets[0] = rewardTokenAddress1;
+			targets[1] = rewardTokenAddress2;
+			targets[2] = nitroPoolAddress;
 		}
 		// No values needed
 		uint256[] memory values = new uint256[](1);
 		{
 			values[0] = 0;
+			values[1] = 0;
+			values[2] = 0;
 		}
 
 		// Get calldata for:
 		//  - CollateralJoinFactory.deployCollateralJoin
 		bytes[] memory calldatas = new bytes[](1);
-		calldatas[0] = abi.encodeWithSelector(NitroPool.addRewards, amountTokenReward1, amountTokenReward2);
+		calldatas[0] = abi.encodeWithSelector(IERC20.approve.selector, nitroPoolAddress, amountTokenReward1);
+		calldatas[1] = abi.encodeWithSelector(IERC20.approve.selector, nitroPoolAddress, amountTokenReward2);
+		calldatas[2] = abi.encodeWithSelector(NitroPool.addRewards.selector, amountTokenReward1, amountTokenReward2);
 
 		// Get the description and descriptionHash
 		string memory description = 'Add rewards to NitroPool';
@@ -59,11 +66,10 @@ contract ProposeAddRewardsToNitroPool is JSONScript {
 		{
 			// Build the JSON output
 			string memory objectKey = 'PROPOSE_ADD_NITROPOOL_REWARDS_KEY';
-			vm.serializeAddress(objectKey, 'nitroPoolAddress', nitroPoolAddress);
 			vm.serializeAddress(objectKey, 'rewardTokenAddress1', rewardTokenAddress1);
 			vm.serializeAddress(objectKey, 'rewardTokenAddress2', rewardTokenAddress2);
-			vm.serializeString(objectKey, 'amountTokenReward1', amountTokenReward1);
-			vm.serializeString(objectKey, 'amountTokenReward2', amountTokenReward2);
+			vm.serializeUint(objectKey, 'amountTokenReward1', amountTokenReward1);
+			vm.serializeUint(objectKey, 'amountTokenReward2', amountTokenReward2);
 			string memory jsonOutput =
 							_buildProposalParamsJSON(proposalId, objectKey, targets, values, calldatas, description, descriptionHash);
 			vm.writeJson(jsonOutput, string.concat('./gov-output/', stringProposalId, '-add-rewards-nitro-proposal.json'));
@@ -72,7 +78,6 @@ contract ProposeAddRewardsToNitroPool is JSONScript {
 		// Expected JSON output:
 		// {
 		//   "proposalId": uint256,
-		//   "nitroPoolAddress": string,
 		//   "rewardTokenAddress1": string,
 		//   "rewardTokenAddress2": string,
 		//   "amountTokenReward1": string,
