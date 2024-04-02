@@ -6,7 +6,6 @@ import {CoinForTest} from '@testnet/mocks/CoinForTest.sol';
 
 import {ISAFEEngine, SAFEEngine} from '@contracts/SAFEEngine.sol';
 import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
-import {Vault721} from '@contracts/proxies/Vault721.sol';
 import {ILiquidationEngine, LiquidationEngine} from '@contracts/LiquidationEngine.sol';
 import {IAccountingEngine, AccountingEngine} from '@contracts/AccountingEngine.sol';
 import {IStabilityFeeTreasury, StabilityFeeTreasury} from '@contracts/StabilityFeeTreasury.sol';

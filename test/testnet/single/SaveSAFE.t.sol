@@ -5,6 +5,7 @@ import 'ds-test/test.sol';
 import {CoinForTest} from '@testnet/mocks/CoinForTest.sol';
 
 import {ISAFEEngine, SAFEEngine} from '@contracts/SAFEEngine.sol';
+import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 import {ILiquidationEngine, LiquidationEngine} from '@contracts/LiquidationEngine.sol';
 import {IAccountingEngine, AccountingEngine} from '@contracts/AccountingEngine.sol';
 import {ITaxCollector, TaxCollector} from '@contracts/TaxCollector.sol';
@@ -29,6 +30,7 @@ import {RAY, WAD} from '@libraries/Math.sol';
 abstract contract Hevm {
   function warp(uint256) public virtual;
   function prank(address) external virtual;
+  function mockCall(address, bytes memory, bytes memory)external virtual;
 }
 
 contract Feed {
@@ -101,8 +103,10 @@ contract ReentrantSaviour {
 contract GenuineSaviour {
   address safeEngine;
   address liquidationEngine;
+  Hevm hevm;
 
   constructor(address safeEngine_, address liquidationEngine_) {
+    hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     safeEngine = safeEngine_;
     liquidationEngine = liquidationEngine_;
   }
@@ -111,6 +115,7 @@ contract GenuineSaviour {
     if (liquidator == liquidationEngine) {
       return (true, uint256(int256(-1)), uint256(int256(-1)));
     } else {
+      hevm.mockCall(address(0), abi.encodeWithSelector(IODSafeManager.safeHandlerToSafeId.selector, safe), abi.encode(uint256(1)));
       SAFEEngine(safeEngine).modifySAFECollateralization(collateralType, safe, address(this), safe, 10_900 ether, 0);
       return (true, 10_900 ether, 0);
     }
@@ -146,6 +151,7 @@ contract SingleSaveSAFETest is DSTest {
   ) public returns (bool ok) {
     string memory sig = 'modifySAFECollateralization(bytes32,address,address,address,int256,int256)';
     address self = address(this);
+    hevm.mockCall(address(0), abi.encodeWithSelector(IODSafeManager.safeHandlerToSafeId.selector, self), abi.encode(uint256(1)));
     (ok,) = address(safeEngine).call(
       abi.encodeWithSignature(sig, collateralType, self, self, self, lockedCollateral, generatedDebt)
     );
@@ -289,6 +295,7 @@ contract SingleSaveSAFETest is DSTest {
     safeEngine.modifyParameters('globalDebtCeiling', abi.encode(rad(300_000 ether)));
     safeEngine.modifyParameters('gold', 'debtCeiling', abi.encode(rad(300_000 ether)));
     safeEngine.updateCollateralPrice('gold', ray(5 ether), ray(5 ether));
+    hevm.mockCall(address(0), abi.encodeWithSelector(IODSafeManager.safeHandlerToSafeId.selector, me), abi.encode(uint256(1)));
     safeEngine.modifySAFECollateralization('gold', me, me, me, 10 ether, 50 ether);
 
     safeEngine.updateCollateralPrice('gold', ray(2 ether), ray(2 ether)); // now unsafe
@@ -305,6 +312,7 @@ contract SingleSaveSAFETest is DSTest {
     safeEngine.modifyParameters('globalDebtCeiling', abi.encode(rad(300_000 ether)));
     safeEngine.modifyParameters('gold', 'debtCeiling', abi.encode(rad(300_000 ether)));
     safeEngine.updateCollateralPrice('gold', ray(5 ether), ray(5 ether));
+    hevm.mockCall(address(0), abi.encodeWithSelector(IODSafeManager.safeHandlerToSafeId.selector, me), abi.encode(uint256(1)));
     safeEngine.modifySAFECollateralization('gold', me, me, me, 10 ether, 50 ether);
 
     safeEngine.updateCollateralPrice('gold', ray(2 ether), ray(2 ether)); // now unsafe
