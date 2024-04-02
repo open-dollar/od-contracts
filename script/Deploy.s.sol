@@ -10,16 +10,27 @@ import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadat
 import {Common} from '@script/Common.s.sol';
 import {SepoliaParams} from '@script/SepoliaParams.s.sol';
 import {MainnetParams} from '@script/MainnetParams.s.sol';
+import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 
 abstract contract Deploy is Common, Script {
   function _addAuthCreate2AndProtocolToken() public runIfFork restoreOriginalCaller {
     address deployerAddr = vm.addr(_deployerPk);
-    address create2AuthAddr = create2.authorizedAccounts()[0];
+    address create2AuthAddr1 = create2.authorizedAccounts()[0];
     address protocolTokenAuthAddr = protocolToken.authorizedAccounts()[0];
-    vm.broadcast(create2AuthAddr);
-    create2.addAuthorization(deployerAddr);
-    vm.broadcast(protocolTokenAuthAddr);
-    protocolToken.addAuthorization(deployerAddr);
+    vm.startBroadcast(create2AuthAddr1);
+    if (!_isAuth(address(create2), deployerAddr)) {
+      create2.addAuthorization(deployerAddr);
+    }
+    vm.stopBroadcast();
+    vm.startBroadcast(protocolTokenAuthAddr);
+    if (!_isAuth(address(protocolToken), deployerAddr)) {
+      protocolToken.addAuthorization(deployerAddr);
+    }
+    vm.stopBroadcast();
+  }
+
+  function _isAuth(address _contract, address _account) public returns (bool b) {
+    b = IAuthorizable(_contract).authorizedAccounts(_account);
   }
 
   function run() public {
