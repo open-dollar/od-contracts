@@ -225,6 +225,7 @@ contract Unit_CollateralAuctionHouseFactory_ModifyParameters is Base {
     vm.assume(_newLiquidationEngine != address(0));
     vm.assume(_newLiquidationEngine != deployer);
     vm.assume(_newLiquidationEngine != authorizedAccount);
+    vm.assume(_oldLiquidationEngine != address(0));
     vm.assume(_oldLiquidationEngine != deployer);
     vm.assume(_oldLiquidationEngine != authorizedAccount);
 

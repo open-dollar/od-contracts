@@ -2,6 +2,7 @@
 pragma solidity 0.8.19;
 
 import {SAFEEngineForTest, ISAFEEngine} from '@test/mocks/SAFEEngineForTest.sol';
+import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
@@ -9,7 +10,7 @@ import {IModifiablePerCollateral} from '@interfaces/utils/IModifiablePerCollater
 import {ODTest, stdStorage, StdStorage} from '../utils/ODTest.t.sol';
 
 import {Math, RAY, WAD} from '@libraries/Math.sol';
-import 'forge-std/console2.sol';
+import {Assertions} from '@libraries/Assertions.sol';
 
 abstract contract Base is ODTest {
   using stdStorage for StdStorage;
@@ -32,11 +33,14 @@ abstract contract Base is ODTest {
   bytes32 collateralType = 'collateralTest';
 
   ISAFEEngine safeEngine;
+  IODSafeManager safeManager = IODSafeManager(mockContract('ODSafeManager'));
 
   function setUp() public virtual {
     vm.prank(deployer);
 
     safeEngine = new SAFEEngineForTest(safeEngineParams);
+    vm.prank(address(safeManager));
+    safeEngine.initializeSafeManager();
   }
 
   modifier authorized() {
@@ -135,6 +139,14 @@ abstract contract Base is ODTest {
     stdstore.target(address(safeEngine)).sig(ISAFEEngine.safeRights.selector).with_key(_safe).with_key(_account)
       .checked_write(_canModifySafe);
   }
+
+  function _mockSafeCheck(address _safeHandler) internal {
+    vm.mockCall(
+      address(safeManager),
+      abi.encodeWithSelector(IODSafeManager.safeHandlerToSafeId.selector, _safeHandler),
+      abi.encode(1)
+    );
+  }
 }
 
 contract Unit_SAFEEngine_Constructor is Base {
@@ -173,12 +185,18 @@ contract Unit_SAFEEngine_Constructor is Base {
     safeEngine = new SAFEEngineForTest(_safeEngineParams);
     assertEq(abi.encode(safeEngine.params()), abi.encode(_safeEngineParams));
   }
+
+  function test_ODSafeManager_Initializer() public {
+    assertEq(safeEngine.odSafeManager(), address(safeManager));
+  }
 }
 
 contract Unit_SAFEEngine_ModifyParameters is Base {
-  function test_ModifyParameters(ISAFEEngine.SAFEEngineParams memory _fuzz) public authorized {
+  function test_ModifyParameters(ISAFEEngine.SAFEEngineParams memory _fuzz, address _odSafeManager) public authorized {
+    vm.assume(_odSafeManager != address(0));
     safeEngine.modifyParameters('safeDebtCeiling', abi.encode(_fuzz.safeDebtCeiling));
     safeEngine.modifyParameters('globalDebtCeiling', abi.encode(_fuzz.globalDebtCeiling));
+    safeEngine.modifyParameters('odSafeManager', abi.encode(_odSafeManager));
 
     ISAFEEngine.SAFEEngineParams memory _params = safeEngine.params();
 
@@ -217,6 +235,11 @@ contract Unit_SAFEEngine_ModifyParameters is Base {
   function test_Revert_ModifyParameters_PerCollateral_UnrecognizedCType(bytes32 _cType) public authorized {
     vm.expectRevert(IModifiable.UnrecognizedCType.selector);
     safeEngine.modifyParameters(_cType, '', abi.encode(0));
+  }
+
+  function test_Revert_ModifyParamenters_NullAddress() public authorized {
+    vm.expectRevert(Assertions.NullAddress.selector);
+    safeEngine.modifyParameters('odSafeManager', abi.encode(address(0)));
   }
 }
 
@@ -726,7 +749,7 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
     uint256 globalDebt;
   }
 
-  function _assumeHappyPath(ModifySAFECollateralizationScenario memory _scenario) internal pure {
+  function _assumeHappyPath(ModifySAFECollateralizationScenario memory _scenario) internal {
     // global
     vm.assume(_scenario.cData.accumulatedRate != 0);
 
@@ -766,6 +789,7 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
     if (_scenario.deltaDebt > 0 || _scenario.deltaCollateral < 0) {
       vm.assume(_totalDebtIssued <= _newLockedCollateral * _scenario.cData.safetyPrice);
     }
+    _mockSafeCheck(safe);
   }
 
   function _mockValues(ModifySAFECollateralizationScenario memory _scenario) internal {
@@ -892,8 +916,6 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
     safeEngine.modifySAFECollateralization(
       collateralType, safe, src, debtDestination, _scenario.deltaCollateral, _scenario.deltaDebt
     );
-    console2.logInt(_scenario.deltaCollateral);
-    console2.logInt(_scenario.deltaDebt);
   }
 
   function test_Revert_ContractIsDisabled() public {
@@ -914,8 +936,29 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
         liquidationPrice: 0
       })
     );
-
+    _mockSafeCheck(safe);
     vm.expectRevert(ISAFEEngine.SAFEEng_CollateralTypeNotInitialized.selector);
+
+    safeEngine.modifySAFECollateralization(collateralType, safe, src, debtDestination, 0, 0);
+  }
+
+  function test_Revert_InvalidSafeHander() public {
+    _mockCollateralType(
+      collateralType,
+      ISAFEEngine.SAFEEngineCollateralData({
+        debtAmount: 0,
+        lockedAmount: 0,
+        accumulatedRate: 0,
+        safetyPrice: 0,
+        liquidationPrice: 0
+      })
+    );
+
+    vm.mockCall(
+      address(safeManager), abi.encodeWithSelector(IODSafeManager.safeHandlerToSafeId.selector, safe), abi.encode(0)
+    );
+
+    vm.expectRevert(ISAFEEngine.SAFEEng_NotSAFEAllowed.selector);
 
     safeEngine.modifySAFECollateralization(collateralType, safe, src, debtDestination, 0, 0);
   }

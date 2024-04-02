@@ -23,6 +23,7 @@ import {Assertions} from '@libraries/Assertions.sol';
 contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingEngine {
   using Encoding for bytes;
   using Assertions for address;
+  using Assertions for uint256;
   using Math for uint256;
 
   uint256 internal constant ONE_HUNDRED_WAD = 100 * WAD;
@@ -89,6 +90,7 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
     address _debtAuctionHouse,
     AccountingEngineParams memory _accEngineParams
   ) Authorizable(msg.sender) validParams {
+    _debtAuctionHouse.assertNonNull();
     safeEngine = ISAFEEngine(_safeEngine.assertNonNull());
     _setSurplusAuctionHouse(_surplusAuctionHouse);
     debtAuctionHouse = IDebtAuctionHouse(_debtAuctionHouse);
@@ -315,5 +317,6 @@ contract AccountingEngine is Authorizable, Modifiable, Disableable, IAccountingE
   function _validateParameters() internal view override {
     address(surplusAuctionHouse).assertHasCode();
     address(debtAuctionHouse).assertHasCode();
+    _params.debtAuctionMintedTokens.assertGt(0);
   }
 }
