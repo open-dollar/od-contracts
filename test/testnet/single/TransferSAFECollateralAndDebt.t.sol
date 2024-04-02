@@ -16,7 +16,7 @@ abstract contract Hevm {
   function warp(uint256) public virtual;
   function store(address, bytes32, bytes32) external virtual;
   function prank(address) external virtual;
-  function mockCall(address, bytes memory, bytes memory)external virtual;
+  function mockCall(address, bytes memory, bytes memory) external virtual;
 }
 
 contract Guy is IERC721Receiver {
@@ -127,11 +127,8 @@ contract Guy is IERC721Receiver {
     bool _nonSafeHandlerAddress
   ) public {
     hevm.prank(userProxy);
-    safeManager.modifySAFECollateralization(
-      _safe, _deltaCollateral, _deltaDebt, _nonSafeHandlerAddress
-    );
+    safeManager.modifySAFECollateralization(_safe, _deltaCollateral, _deltaDebt, _nonSafeHandlerAddress);
   }
-
 
   function transferSAFECollateralAndDebt(
     bytes32 collateralType,
@@ -146,7 +143,7 @@ contract Guy is IERC721Receiver {
   function approveSAFEModification(address usr) public {
     safeEngine.approveSAFEModification(usr);
   }
-  
+
   function openSafe(Vault721 vault721) public returns (address) {
     userProxy = vault721.build(address(this));
     safeId = safeManager.openSAFE('collateralTokens', userProxy);
@@ -210,9 +207,10 @@ contract SingleTransferSAFECollateralAndDebtTest is DSTest {
 
     ISAFEEngine.SAFEEngineCollateralParams memory _safeEngineCollateralParams =
       ISAFEEngine.SAFEEngineCollateralParams({debtCeiling: rad(1000 ether), debtFloor: 0});
-  
+
     safeEngine.initializeCollateralType('collateralTokens', abi.encode(_safeEngineCollateralParams));
-    ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCParams = ITaxCollector.TaxCollectorCollateralParams({stabilityFee: RAY + 1.54713e18});
+    ITaxCollector.TaxCollectorCollateralParams memory _taxCollectorCParams =
+      ITaxCollector.TaxCollectorCollateralParams({stabilityFee: RAY + 1.54713e18});
     taxCollector.initializeCollateralType('collateralTokens', abi.encode(_taxCollectorCParams));
 
     safeEngine.updateCollateralPrice('collateralTokens', ray(0.5 ether), ray(0.5 ether));
@@ -249,7 +247,7 @@ contract SingleTransferSAFECollateralAndDebtTest is DSTest {
     hevm.prank(a);
     safeEngine.approveSAFEModification(address(ali));
     ali.modifySAFECollateralization('collateralTokens', a, a, a, 8 ether, 4 ether);
-    
+
     bob.approveSAFEModification(address(ali));
     hevm.prank(b);
     safeEngine.approveSAFEModification(address(ali));

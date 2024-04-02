@@ -42,7 +42,7 @@ abstract contract Hevm {
   function warp(uint256) public virtual;
   function store(address, bytes32, bytes32) external virtual;
   function prank(address) external virtual;
-  function mockCall(address, bytes memory, bytes memory)external virtual;
+  function mockCall(address, bytes memory, bytes memory) external virtual;
 }
 
 contract Usr is IERC721Receiver {
@@ -165,9 +165,7 @@ contract Usr is IERC721Receiver {
     bool _nonSafeHandlerAddress
   ) public {
     hevm.prank(userProxy);
-    safeManager.modifySAFECollateralization(
-      _safe, _deltaCollateral, _deltaDebt, _nonSafeHandlerAddress
-    );
+    safeManager.modifySAFECollateralization(_safe, _deltaCollateral, _deltaDebt, _nonSafeHandlerAddress);
   }
 
   function transferSAFECollateralAndDebt(
@@ -640,7 +638,7 @@ contract SingleSAFEDebtLimitTest is DSTest {
 
     safeEngine.addAuthorization(a);
     safeEngine.modifyCollateralBalance('gold', a, int256(rad(20 ether)));
-    
+
     ali.modifySAFECollateralizationAsProxy(ali.safeId(), 10 ether, 5 ether, false);
     ali.modifySAFECollateralizationAsProxy(ali.safeId(), 0, -5 ether, false);
   }
@@ -1572,7 +1570,13 @@ contract SingleAccumulateRatesTest is DSTest {
     safeEngine.updateCollateralPrice(_collateralType, _collateralPrice, _collateralPrice);
     address _self = address(this);
     safeEngine.modifyCollateralBalance(_collateralType, _self, 10 ** 27 * 1 ether);
-    hevm.mockCall(address(0), abi.encodeWithSelector(IODSafeManager.safeHandlerToSafeId.selector, address(0x7FA9385bE102ac3EAc297483Dd6233D62b3e1496)), abi.encode(uint256(1)));
+    hevm.mockCall(
+      address(0),
+      abi.encodeWithSelector(
+        IODSafeManager.safeHandlerToSafeId.selector, address(0x7FA9385bE102ac3EAc297483Dd6233D62b3e1496)
+      ),
+      abi.encode(uint256(1))
+    );
     safeEngine.modifySAFECollateralization(_collateralType, _self, _self, _self, 1 ether, int256(_coin));
   }
 

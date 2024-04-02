@@ -37,7 +37,7 @@ import {Math, RAY, WAD} from '@libraries/Math.sol';
 abstract contract Hevm {
   function warp(uint256) public virtual;
   function prank(address) external virtual;
-  function mockCall(address, bytes memory, bytes memory)external virtual;
+  function mockCall(address, bytes memory, bytes memory) external virtual;
 }
 
 contract Guy is IERC721Receiver {
@@ -59,7 +59,9 @@ contract Guy is IERC721Receiver {
     int256 _deltaCollateral,
     int256 _deltaDebt
   ) public {
-    hevm.mockCall(address(0), abi.encodeWithSelector(IODSafeManager.safeHandlerToSafeId.selector, _safe), abi.encode(uint256(1)));
+    hevm.mockCall(
+      address(0), abi.encodeWithSelector(IODSafeManager.safeHandlerToSafeId.selector, _safe), abi.encode(uint256(1))
+    );
     safeEngine.modifySAFECollateralization(
       _collateralType, _safe, _collateralSrc, _debtDst, _deltaCollateral, _deltaDebt
     );

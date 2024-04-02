@@ -11,7 +11,7 @@ import {RAY} from '@libraries/Math.sol';
 
 abstract contract Hevm {
   function warp(uint256) public virtual;
-  function mockCall(address, bytes memory, bytes memory)external virtual;
+  function mockCall(address, bytes memory, bytes memory) external virtual;
 }
 
 contract SingleTaxCollectorTest is DSTest {
@@ -75,7 +75,9 @@ contract SingleTaxCollectorTest is DSTest {
     safeEngine.updateCollateralPrice(collateralType, _collateralPrice, _collateralPrice);
     address self = address(this);
     safeEngine.modifyCollateralBalance(collateralType, self, 10 ** 27 * 1 ether);
-    hevm.mockCall(address(0), abi.encodeWithSelector(IODSafeManager.safeHandlerToSafeId.selector, self), abi.encode(uint256(1)));
+    hevm.mockCall(
+      address(0), abi.encodeWithSelector(IODSafeManager.safeHandlerToSafeId.selector, self), abi.encode(uint256(1))
+    );
     safeEngine.modifySAFECollateralization(collateralType, self, self, self, int256(1 ether), int256(_coin));
   }
 
