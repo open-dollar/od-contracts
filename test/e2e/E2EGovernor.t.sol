@@ -295,7 +295,7 @@ contract E2EGovernor is Common {
   /**
    * @dev Generate Block Delay Params for Proposal
    */
-  function generateUpdateBlockDelayProposalParams(uint8 blockDelay)
+  function generateUpdateBlockDelayProposalParams(uint256 blockDelay)
     public
     view
     returns (
@@ -361,130 +361,20 @@ contract E2EGovernorProposal is E2EGovernor {
       bytes[] memory calldatas,
       string memory description,
       bytes32 descriptionHash
-    )
-  {
-    targets = new address[](8);
-    targets[0] = address(pidController);
-    targets[1] = address(pidController);
-    targets[2] = address(pidController);
-    targets[3] = address(pidController);
-    targets[4] = address(pidController);
-    targets[5] = address(pidController);
-    targets[6] = address(pidController);
-    targets[7] = address(pidController);
-
-    values = new uint256[](8);
-    values[0] = 0;
-    values[1] = 0;
-    values[2] = 0;
-    values[3] = 0;
-    values[4] = 0;
-    values[5] = 0;
-    values[6] = 0;
-    values[7] = 0;
-
-    bytes4 selector = IModifyParameters.modifyParameters.selector;
-    calldatas = new bytes[](8);
-    calldatas[0] = abi.encodeWithSelector(selector, 'seedProposer', abi.encode(params.seedProposer));
-    calldatas[1] = abi.encodeWithSelector(selector, 'noiseBarrier', abi.encode(params.noiseBarrier));
-    calldatas[2] = abi.encodeWithSelector(selector, 'integralPeriodSize', abi.encode(params.integralPeriodSize));
-    calldatas[3] =
-      abi.encodeWithSelector(selector, 'feedbackOutputUpperBound', abi.encode(params.feedbackOutputUpperBound));
-    calldatas[4] =
-      abi.encodeWithSelector(selector, 'feedbackOutputLowerBound', abi.encode(params.feedbackOutputLowerBound));
-    calldatas[5] =
-      abi.encodeWithSelector(selector, 'perSecondCumulativeLeak', abi.encode(params.perSecondCumulativeLeak));
-    calldatas[6] = abi.encodeWithSelector(selector, 'kp', abi.encode(params.kp));
-    calldatas[7] = abi.encodeWithSelector(selector, 'ki', abi.encode(params.ki));
-
-    description = 'Update PID Controller';
-
-    descriptionHash = keccak256(bytes(description));
+    ) = generateAddCollateralProposalParams();
+    _helperExecuteProp(targets, values, calldatas, description, descriptionHash);
   }
 
-  /**
-   * @dev Generate Block Delay Params for Proposal
-   */
-  function generateUpdateBlockDelayProposalParams(uint256 blockDelay)
-    public
-    view
-    returns (
+  function testUpdateNFTRendererProposal() public {
+    (
       address[] memory targets,
       uint256[] memory values,
       bytes[] memory calldatas,
       string memory description,
       bytes32 descriptionHash
-    )
-  {
-    targets = new address[](1);
-    targets[0] = address(vault721);
-
-    values = new uint256[](1);
-    values[0] = 0;
-
-    bytes memory calldata0 = abi.encodeWithSelector(IVault721.updateBlockDelay.selector, blockDelay);
-
-    calldatas = new bytes[](1);
-    calldatas[0] = calldata0;
-
-    description = 'Update Block Delay';
-
-    descriptionHash = keccak256(bytes(description));
+    ) = generateUpdateNFTRendererProposalParams();
+    _helperExecuteProp(targets, values, calldatas, description, descriptionHash);
   }
-
-  /**
-   * @dev Generate Time Delay Params for Proposal
-   */
-  function generateUpdateTimeDelayProposalParams(uint256 timeDelay)
-    public
-    view
-    returns (
-      address[] memory targets,
-      uint256[] memory values,
-      bytes[] memory calldatas,
-      string memory description,
-      bytes32 descriptionHash
-    )
-  {
-    targets = new address[](1);
-    targets[0] = address(vault721);
-
-    values = new uint256[](1);
-    values[0] = 0;
-
-    bytes memory calldata0 = abi.encodeWithSelector(IVault721.updateTimeDelay.selector, timeDelay);
-
-    calldatas = new bytes[](1);
-    calldatas[0] = calldata0;
-
-    description = 'Update Time Delay';
-
-    descriptionHash = keccak256(bytes(description));
-  }
-}
-
-contract E2EGovernorProposal is E2EGovernor {
-  // function testAddCollateralProposal() public {
-  //   (
-  //     address[] memory targets,
-  //     uint256[] memory values,
-  //     bytes[] memory calldatas,
-  //     string memory description,
-  //     bytes32 descriptionHash
-  //   ) = generateAddCollateralProposalParams();
-  //   _helperExecuteProp(targets, values, calldatas, description, descriptionHash);
-  // }
-
-  // function testUpdateNFTRendererProposal() public {
-  //   (
-  //     address[] memory targets,
-  //     uint256[] memory values,
-  //     bytes[] memory calldatas,
-  //     string memory description,
-  //     bytes32 descriptionHash
-  //   ) = generateUpdateNFTRendererProposalParams();
-  //   _helperExecuteProp(targets, values, calldatas, description, descriptionHash);
-  // }
 
   function testUpdatePidControllerProposal() public {
     UpdatePidControllerParams memory _params = UpdatePidControllerParams({
@@ -562,28 +452,28 @@ contract E2EGovernorProposal is E2EGovernor {
     }
   }
 
-  // function testUpdateBlockDelayProposal(uint256 blockDelay) public {
-  //   (
-  //     address[] memory targets,
-  //     uint256[] memory values,
-  //     bytes[] memory calldatas,
-  //     string memory description,
-  //     bytes32 descriptionHash
-  //   ) = generateUpdateBlockDelayProposalParams(blockDelay);
-  //   _helperExecuteProp(targets, values, calldatas, description, descriptionHash);
+  function testUpdateBlockDelayProposal(uint256 blockDelay) public {
+    (
+      address[] memory targets,
+      uint256[] memory values,
+      bytes[] memory calldatas,
+      string memory description,
+      bytes32 descriptionHash
+    ) = generateUpdateBlockDelayProposalParams(blockDelay);
+    _helperExecuteProp(targets, values, calldatas, description, descriptionHash);
 
-  //   assertEq(vault721.blockDelay(), blockDelay, 'testUpdateBlockDelayProposal: Block Delay not set properly');
-  // }
+    assertEq(vault721.blockDelay(), blockDelay, 'testUpdateBlockDelayProposal: Block Delay not set properly');
+  }
 
-  // function testUpdateTimeDelayProposal(uint256 timeDelay) public {
-  //   (
-  //     address[] memory targets,
-  //     uint256[] memory values,
-  //     bytes[] memory calldatas,
-  //     string memory description,
-  //     bytes32 descriptionHash
-  //   ) = generateUpdateTimeDelayProposalParams(timeDelay);
-  //   _helperExecuteProp(targets, values, calldatas, description, descriptionHash);
+  function testUpdateTimeDelayProposal(uint256 timeDelay) public {
+    (
+      address[] memory targets,
+      uint256[] memory values,
+      bytes[] memory calldatas,
+      string memory description,
+      bytes32 descriptionHash
+    ) = generateUpdateTimeDelayProposalParams(timeDelay);
+    _helperExecuteProp(targets, values, calldatas, description, descriptionHash);
 
     assertEq(vault721.timeDelay(), timeDelay, 'testUpdateTimeDelayProposal: Time Delay not set properly');
   }
