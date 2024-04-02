@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
+import {AIRDROP_AMOUNT, AIRDROP_RECIPIENTS} from '@script/Registry.s.sol';
 import {IVotes} from '@openzeppelin/governance/utils/IVotes.sol';
 import {IGovernor} from '@openzeppelin/governance/IGovernor.sol';
 import {TimelockController} from '@openzeppelin/governance/TimelockController.sol';
@@ -11,6 +12,7 @@ import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
 import {ICollateralJoinFactory} from '@interfaces/factories/ICollateralJoinFactory.sol';
 import {ICollateralAuctionHouseFactory} from '@interfaces/factories/ICollateralAuctionHouseFactory.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
+import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {WAD} from '@libraries/Math.sol';
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
@@ -34,6 +36,7 @@ struct UpdatePidControllerParams {
 contract E2EGovernor is Common {
   bytes32 constant NEW_CTYPE = bytes32('NEW');
   uint256 constant MINUS_0_5_PERCENT_PER_HOUR = 999_998_607_628_240_588_157_433_861;
+  uint256 constant VOTER_WEIGHT = AIRDROP_AMOUNT / AIRDROP_RECIPIENTS;
   address public NEW_CTYPE_ADDR;
 
   ICollateralAuctionHouse.CollateralAuctionHouseParams _cahCParams = ICollateralAuctionHouse
@@ -92,8 +95,8 @@ contract E2EGovernor is Common {
     emit log_named_uint('Voting Delay:', odGovernor.votingDelay());
     emit log_named_uint('Voting Period:', odGovernor.votingPeriod());
 
-    assertEq(3_333_333_333_333_333_333_333, protocolToken.balanceOf(alice));
-    assertEq(3_333_333_333_333_333_333_333, protocolToken.balanceOf(bob));
+    assertEq(VOTER_WEIGHT, protocolToken.balanceOf(alice));
+    assertEq(VOTER_WEIGHT, protocolToken.balanceOf(bob));
     assertEq(0, protocolVotes.getVotes(alice));
     assertEq(0, protocolVotes.getVotes(bob));
 
@@ -102,7 +105,7 @@ contract E2EGovernor is Common {
     vm.stopPrank();
 
     assertEq(0, protocolVotes.getVotes(alice));
-    assertEq(3_333_333_333_333_333_333_333, protocolVotes.getVotes(bob));
+    assertEq(VOTER_WEIGHT, protocolVotes.getVotes(bob));
 
     vm.roll(startBlock + 2);
     vm.warp(startTime + 30 seconds);
@@ -112,14 +115,14 @@ contract E2EGovernor is Common {
     propState = odGovernor.state(propId);
 
     vm.startPrank(alice);
-    // alice holds no governance tokens, so should not effect outcome
+    // alice has not delegated her governance tokens - no voter weight
     odGovernor.castVote(propId, 0);
     vm.stopPrank();
 
     propState = odGovernor.state(propId); // returns 1 (Active)
 
     vm.startPrank(bob);
-    // bob holds 33% of governance tokens
+    // bob holds 25% of governance tokens
     odGovernor.castVote(propId, 1);
     vm.stopPrank();
 
@@ -175,13 +178,19 @@ contract E2EGovernor is Common {
       bytes32 descriptionHash
     )
   {
-    targets = new address[](2);
-    targets[0] = address(collateralJoinFactory);
-    targets[1] = address(collateralAuctionHouseFactory);
+    // targets = new address[](2);
+    // targets[0] = address(collateralJoinFactory);
+    // targets[1] = address(collateralAuctionHouseFactory);
 
-    values = new uint256[](2);
+    targets = new address[](1);
+    targets[0] = address(collateralJoinFactory);
+
+    // values = new uint256[](2);
+    // values[0] = 0;
+    // values[1] = 0;
+
+    values = new uint256[](1);
     values[0] = 0;
-    values[1] = 0;
 
     bytes memory calldata0 =
       abi.encodeWithSelector(ICollateralJoinFactory.deployCollateralJoin.selector, NEW_CTYPE, NEW_CTYPE_ADDR);
@@ -237,6 +246,116 @@ contract E2EGovernor is Common {
     public
     view
     returns (
+      address[] memory targets,
+      uint256[] memory values,
+      bytes[] memory calldatas,
+      string memory description,
+      bytes32 descriptionHash
+    )
+  {
+    targets = new address[](8);
+    targets[0] = address(pidController);
+    targets[1] = address(pidController);
+    targets[2] = address(pidController);
+    targets[3] = address(pidController);
+    targets[4] = address(pidController);
+    targets[5] = address(pidController);
+    targets[6] = address(pidController);
+    targets[7] = address(pidController);
+
+    values = new uint256[](8);
+    values[0] = 0;
+    values[1] = 0;
+    values[2] = 0;
+    values[3] = 0;
+    values[4] = 0;
+    values[5] = 0;
+    values[6] = 0;
+    values[7] = 0;
+
+    bytes4 selector = IModifyParameters.modifyParameters.selector;
+    calldatas = new bytes[](8);
+    calldatas[0] = abi.encodeWithSelector(selector, 'seedProposer', abi.encode(params.seedProposer));
+    calldatas[1] = abi.encodeWithSelector(selector, 'noiseBarrier', abi.encode(params.noiseBarrier));
+    calldatas[2] = abi.encodeWithSelector(selector, 'integralPeriodSize', abi.encode(params.integralPeriodSize));
+    calldatas[3] =
+      abi.encodeWithSelector(selector, 'feedbackOutputUpperBound', abi.encode(params.feedbackOutputUpperBound));
+    calldatas[4] =
+      abi.encodeWithSelector(selector, 'feedbackOutputLowerBound', abi.encode(params.feedbackOutputLowerBound));
+    calldatas[5] =
+      abi.encodeWithSelector(selector, 'perSecondCumulativeLeak', abi.encode(params.perSecondCumulativeLeak));
+    calldatas[6] = abi.encodeWithSelector(selector, 'kp', abi.encode(params.kp));
+    calldatas[7] = abi.encodeWithSelector(selector, 'ki', abi.encode(params.ki));
+
+    description = 'Update PID Controller';
+
+    descriptionHash = keccak256(bytes(description));
+  }
+
+  /**
+   * @dev Generate Block Delay Params for Proposal
+   */
+  function generateUpdateBlockDelayProposalParams(uint8 blockDelay)
+    public
+    view
+    returns (
+      address[] memory targets,
+      uint256[] memory values,
+      bytes[] memory calldatas,
+      string memory description,
+      bytes32 descriptionHash
+    )
+  {
+    targets = new address[](1);
+    targets[0] = address(vault721);
+
+    values = new uint256[](1);
+    values[0] = 0;
+
+    bytes memory calldata0 = abi.encodeWithSelector(IVault721.updateBlockDelay.selector, blockDelay);
+
+    calldatas = new bytes[](1);
+    calldatas[0] = calldata0;
+
+    description = 'Update Block Delay';
+
+    descriptionHash = keccak256(bytes(description));
+  }
+
+  /**
+   * @dev Generate Time Delay Params for Proposal
+   */
+  function generateUpdateTimeDelayProposalParams(uint256 timeDelay)
+    public
+    view
+    returns (
+      address[] memory targets,
+      uint256[] memory values,
+      bytes[] memory calldatas,
+      string memory description,
+      bytes32 descriptionHash
+    )
+  {
+    targets = new address[](1);
+    targets[0] = address(vault721);
+
+    values = new uint256[](1);
+    values[0] = 0;
+
+    bytes memory calldata0 = abi.encodeWithSelector(IVault721.updateTimeDelay.selector, timeDelay);
+
+    calldatas = new bytes[](1);
+    calldatas[0] = calldata0;
+
+    description = 'Update Time Delay';
+
+    descriptionHash = keccak256(bytes(description));
+  }
+}
+
+contract E2EGovernorProposal is E2EGovernor {
+  function testAddCollateralProposal() public {
+    (
       address[] memory targets,
       uint256[] memory values,
       bytes[] memory calldatas,
@@ -466,8 +585,8 @@ contract E2EGovernorProposal is E2EGovernor {
   //   ) = generateUpdateTimeDelayProposalParams(timeDelay);
   //   _helperExecuteProp(targets, values, calldatas, description, descriptionHash);
 
-  //   assertEq(vault721.timeDelay(), timeDelay, 'testUpdateTimeDelayProposal: Time Delay not set properly');
-  // }
+    assertEq(vault721.timeDelay(), timeDelay, 'testUpdateTimeDelayProposal: Time Delay not set properly');
+  }
 }
 
 contract E2EGovernorAccessControl is E2EGovernor {
