@@ -16,10 +16,20 @@ abstract contract Deploy is Common, Script {
     address deployerAddr = vm.addr(_deployerPk);
     address create2AuthAddr = create2.authorizedAccounts()[0];
     address protocolTokenAuthAddr = protocolToken.authorizedAccounts()[0];
-    vm.broadcast(create2AuthAddr);
-    create2.addAuthorization(deployerAddr);
-    vm.broadcast(protocolTokenAuthAddr);
-    protocolToken.addAuthorization(deployerAddr);
+    vm.startBroadcast(create2AuthAddr);
+    if (!_isAuth(address(create2), deployerAddr)) {
+      create2.addAuthorization(deployerAddr);
+    }
+    vm.stopBroadcast();
+    vm.startBroadcast(protocolTokenAuthAddr);
+    if (!_isAuth(address(protocolToken), deployerAddr)) {
+      protocolToken.addAuthorization(deployerAddr);
+    }
+    vm.stopBroadcast();
+  }
+
+  function _isAuth(address _contract, address _account) public returns (bool b) {
+    b = IAuthorizable(_contract).authorizedAccounts(_account);
   }
 
   function run() public {
@@ -67,10 +77,12 @@ abstract contract Deploy is Common, Script {
       else deployCollateralContracts(_cType);
       _setupCollateral(_cType);
     }
-    // Mint initial ODG airdrop Anvil
-    if (isNetworkAnvil()) {
-      mintAirdrop();
+    // Mint initial ODG airdrop E2E or Anvil
+    if (isFork() || isNetworkAnvil()) {
+      protocolToken.mint(address(0x420), AIRDROP_AMOUNT / AIRDROP_RECIPIENTS);
+      protocolToken.mint(address(0x421), AIRDROP_AMOUNT / AIRDROP_RECIPIENTS);
     }
+
     // Deploy contracts related to the SafeManager usecase
     deployProxyContracts();
     // Deploy and setup contracts that rely on deployed environment
@@ -89,12 +101,15 @@ abstract contract Deploy is Common, Script {
         _delegateAllTo(governor);
       }
     }
+
+    if (isFork()) {
+      vm.stopPrank();
+    }
   }
 
   // abstract methods to be overridden by network-specific deployments
   function setupEnvironment() public virtual {}
   function setupPostEnvironment() public virtual {}
-  function mintAirdrop() public virtual {}
 }
 
 contract DeployMainnet is MainnetParams, Deploy {
@@ -241,12 +256,6 @@ contract DeployAnvil is SepoliaParams, Deploy {
     }
     _deployerPk = uint256(vm.envBytes32('ANVIL_ONE'));
     chainId = 31_337;
-  }
-
-  function mintAirdrop() public virtual override {
-    protocolToken.mint(ALICE, AIRDROP_AMOUNT / 3);
-    protocolToken.mint(BOB, AIRDROP_AMOUNT / 3);
-    protocolToken.mint(CHARLOTTE, AIRDROP_AMOUNT / 3);
   }
 
   // Setup oracle feeds

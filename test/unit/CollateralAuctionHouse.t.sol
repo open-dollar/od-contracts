@@ -42,7 +42,7 @@ contract Base is ODTest {
     minDiscount: WAD, // no discount
     maxDiscount: 1, // 99.999% discount
     perSecondDiscountUpdateRate: RAY, // no update rate
-    minimumBid: 0 // no minimum bid
+    minimumBid: 1 // non-zero minimum bid
   });
 
   function setUp() public virtual {
@@ -198,6 +198,7 @@ contract Unit_CollateralAuctionHouse_Constructor is Base {
     vm.assume(_cahParams.minDiscount >= _cahParams.maxDiscount && _cahParams.minDiscount <= WAD);
     vm.assume(_cahParams.maxDiscount > 0);
     vm.assume(_cahParams.perSecondDiscountUpdateRate <= RAY);
+    vm.assume(_cahParams.minimumBid > 0);
 
     collateralAuctionHouse = new CollateralAuctionHouseForTest(
       address(mockSafeEngine), address(mockLiquidationEngine), address(mockOracleRelayer), collateralType, _cahParams
@@ -207,7 +208,7 @@ contract Unit_CollateralAuctionHouse_Constructor is Base {
   }
 
   function test_Revert_NullAddress_SafeEngine() public {
-    vm.expectRevert(Assertions.NullAddress.selector);
+    vm.expectRevert(IAuthorizable.NullAddress.selector);
 
     new CollateralAuctionHouseForTest(
       address(0), address(mockLiquidationEngine), address(mockOracleRelayer), collateralType, cahParams
@@ -215,7 +216,7 @@ contract Unit_CollateralAuctionHouse_Constructor is Base {
   }
 
   function test_Revert_NullAddress_LiquidationEngine() public {
-    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
+    vm.expectRevert(abi.encodeWithSelector(IAuthorizable.NullAddress.selector));
 
     new CollateralAuctionHouseForTest(
       address(mockSafeEngine), address(0), address(mockOracleRelayer), collateralType, cahParams
@@ -929,7 +930,7 @@ contract Unit_CollateralAuctionHouse_BuyCollateral is Base {
   function _assumeHappyPath(BuyCollateralScenario memory _buyCollateralScenario) internal view {
     vm.assume(_buyCollateralScenario.auction.amountToSell > 0); // null auction
     vm.assume(_buyCollateralScenario.auction.amountToRaise > RAY); // not possible to bid (1 wei coin = 1 RAY debt)
-
+    vm.assume(_buyCollateralScenario.auction.amountToRaise > cahParams.minimumBid * RAY);
     // time difference doesn't overflow on discount calculation
     vm.assume(_buyCollateralScenario.auction.initialTimestamp <= block.timestamp); // not overflow sub
     vm.assume(block.timestamp - _buyCollateralScenario.auction.initialTimestamp <= RAY); // not overflow rpow
@@ -1176,6 +1177,7 @@ contract Unit_CollateralAuctionHouse_BuyCollateral is Base {
     public
     happyPath(_buyCollateralScenario)
   {
+    vm.assume(_buyCollateralScenario.auction.amountToRaise > cahParams.minimumBid * RAY);
     (uint256 _boughtCollateral, uint256 _readjustedBid) = _computeBoughtCollateral(
       _buyCollateralScenario,
       _computeAdjustedBid(_buyCollateralScenario),
@@ -1571,6 +1573,7 @@ contract Unit_CollateralAuctionHouse_ModifyParameters is Base {
     vm.assume(_fuzz.minDiscount >= _fuzz.maxDiscount && _fuzz.minDiscount <= WAD);
     vm.assume(_fuzz.maxDiscount > 0);
     vm.assume(_fuzz.perSecondDiscountUpdateRate <= RAY);
+    vm.assume(_fuzz.minimumBid > 0);
 
     collateralAuctionHouse.modifyParameters('minimumBid', abi.encode(_fuzz.minimumBid));
     collateralAuctionHouse.modifyParameters('maxDiscount', abi.encode(_fuzz.maxDiscount));
@@ -1601,6 +1604,7 @@ contract Unit_CollateralAuctionHouse_ModifyParameters is Base {
     vm.assume(_newLiquidationEngine != address(0));
     vm.assume(_newLiquidationEngine != deployer);
     vm.assume(_newLiquidationEngine != authorizedAccount);
+    vm.assume(_oldLiquidationEngine != address(0));
     vm.assume(_oldLiquidationEngine != deployer);
     vm.assume(_oldLiquidationEngine != authorizedAccount);
 
@@ -1629,7 +1633,7 @@ contract Unit_CollateralAuctionHouse_ModifyParameters is Base {
   function test_Revert_NullAddress_LiquidationEngine() public {
     vm.startPrank(authorizedAccount);
 
-    vm.expectRevert(abi.encodeWithSelector(Assertions.NoCode.selector, address(0)));
+    vm.expectRevert(abi.encodeWithSelector(IAuthorizable.NullAddress.selector));
 
     collateralAuctionHouse.modifyParameters('liquidationEngine', abi.encode(0));
   }
