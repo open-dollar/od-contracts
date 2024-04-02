@@ -4,6 +4,7 @@ pragma solidity 0.8.19;
 import '@script/Registry.s.sol';
 
 import {ODTest} from '@test/utils/ODTest.t.sol';
+import {ODTest} from '@test/utils/ODTest.t.sol';
 import {Deploy, DeployMainnet, DeploySepolia} from '@script/Deploy.s.sol';
 
 import {ParamChecker, WSTETH, ARB} from '@script/Params.s.sol';
@@ -216,15 +217,26 @@ contract E2EDeploymentSepoliaTest is DeploySepolia, CommonDeploymentTest {
 //     governor = SEPOLIA_TIMELOCK_CONTROLLER;
 //     timelockController = TimelockController(payable(SEPOLIA_TIMELOCK_CONTROLLER));
 //     odGovernor = ODGovernor(payable(SEPOLIA_OD_GOVERNOR));
+//     protocolToken = IProtocolToken(SEPOLIA_PROTOCOL_TOKEN);
+//     governor = SEPOLIA_TIMELOCK_CONTROLLER;
+//     timelockController = TimelockController(payable(SEPOLIA_TIMELOCK_CONTROLLER));
+//     odGovernor = ODGovernor(payable(SEPOLIA_OD_GOVERNOR));
 
+//     _deployerPk = uint256(vm.envBytes32('ARB_SEPOLIA_DEPLOYER_PK'));
+//     chainId = 421_614;
 //     _deployerPk = uint256(vm.envBytes32('ARB_SEPOLIA_DEPLOYER_PK'));
 //     chainId = 421_614;
 
 //     _systemCoinSalt = getSemiRandSalt();
 //     _vault721Salt = getSemiRandSalt();
+//     _systemCoinSalt = getSemiRandSalt();
+//     _vault721Salt = getSemiRandSalt();
 
 //     _getEnvironmentParams();
+//     _getEnvironmentParams();
 
+//     run();
+//   }
 //     run();
 //   }
 

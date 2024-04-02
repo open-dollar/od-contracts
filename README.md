@@ -31,6 +31,13 @@ Addresses for testnet can be found in the app: https://app.dev.opendollar.com/st
 
 # Usage
 
+## Basic Setup for Cloned Repo
+
+Run:
+`yarn install`,
+`yarn build`,
+`yarn test`
+
 ## Selecting a Foundry profile
 
 When running `forge`, you can specify the profile to use using the FOUNDRY_PROFILE environment variable. e.g. `export FOUNDRY_PROFILE=test && forge test`. Alternatively, you can add `FOUNDRY_PROFILE=test` to `.env` and run `source .env`.
@@ -281,7 +288,11 @@ forge script script/states/SurplusAuction.s.sol:SurplusAuction --fork-url http:/
 
 # Tests
 
-## Coverage Reports
+## Forge test
+
+`yarn test` will run all tests in the test folder. These tests are pranked on a fork Arbitrum mainnet. Additionally, there are Sepolia deployment tests.
+
+## Coverage Reports with Anvil
 
 Coverage testing is performed using lcov and a local Anvil fork of the contracts. First install [lcov for mac/linx](https://formulae.brew.sh/formula/lcov).
 

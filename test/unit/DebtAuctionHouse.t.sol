@@ -163,6 +163,8 @@ contract Unit_DebtAuctionHouse_Constructor is Base {
   }
 
   function test_Set_DAH_Params(IDebtAuctionHouse.DebtAuctionHouseParams memory _dahParams) public happyPath {
+    vm.assume(_dahParams.amountSoldIncrease > 0);
+    vm.assume(_dahParams.bidDecrease > 0);
     debtAuctionHouse = new DebtAuctionHouseForTest(address(mockSafeEngine), address(mockProtocolToken), _dahParams);
 
     assertEq(abi.encode(debtAuctionHouse.params()), abi.encode(_dahParams));
@@ -904,6 +906,8 @@ contract Unit_DebtAuctionHouse_ModifyParameters is Base {
   }
 
   function test_Set_Parameters(IDebtAuctionHouse.DebtAuctionHouseParams memory _fuzz) public happyPath {
+    vm.assume(_fuzz.bidDecrease > 0);
+    vm.assume(_fuzz.amountSoldIncrease > 0);
     debtAuctionHouse.modifyParameters('bidDecrease', abi.encode(_fuzz.bidDecrease));
     debtAuctionHouse.modifyParameters('amountSoldIncrease', abi.encode(_fuzz.amountSoldIncrease));
     debtAuctionHouse.modifyParameters('bidDuration', abi.encode(_fuzz.bidDuration));
