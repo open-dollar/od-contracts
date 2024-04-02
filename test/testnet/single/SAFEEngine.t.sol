@@ -5,8 +5,8 @@ import 'ds-test/test.sol';
 import {CoinForTest} from '@testnet/mocks/CoinForTest.sol';
 
 import {SAFEEngine} from '@contracts/SAFEEngine.sol';
-import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 import {ODSafeManager} from '@contracts/proxies/ODSafeManager.sol';
+import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 import {Vault721} from '@contracts/proxies/Vault721.sol';
 import {ILiquidationEngine, LiquidationEngine} from '@contracts/LiquidationEngine.sol';
 import {IAccountingEngine, AccountingEngine} from '@contracts/AccountingEngine.sol';
@@ -42,14 +42,15 @@ abstract contract Hevm {
   function warp(uint256) public virtual;
   function store(address, bytes32, bytes32) external virtual;
   function prank(address) external virtual;
+  function mockCall(address, bytes memory, bytes memory)external virtual;
 }
 
 contract Usr is IERC721Receiver {
   SAFEEngine public safeEngine;
   ODSafeManager public safeManager;
   Hevm public hevm;
-  address userProxy;
-  uint256 safeId;
+  address public userProxy;
+  uint256 public safeId;
 
   constructor(SAFEEngine _safeEngine, ODSafeManager _safeManager) {
     hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
@@ -154,6 +155,18 @@ contract Usr is IERC721Receiver {
   ) public {
     safeEngine.modifySAFECollateralization(
       _collateralType, _safe, _collateralSrc, _debtDst, _deltaCollateral, _deltaDebt
+    );
+  }
+
+  function modifySAFECollateralizationAsProxy(
+    uint256 _safe,
+    int256 _deltaCollateral,
+    int256 _deltaDebt,
+    bool _nonSafeHandlerAddress
+  ) public {
+    hevm.prank(userProxy);
+    safeManager.modifySAFECollateralization(
+      _safe, _deltaCollateral, _deltaDebt, _nonSafeHandlerAddress
     );
   }
 
@@ -594,6 +607,8 @@ contract SingleSAFEDebtLimitTest is DSTest {
     safeEngine.modifyParameters('gold', 'debtCeiling', abi.encode(rad(10 ether)));
     safeEngine.modifyParameters('safeDebtCeiling', abi.encode(5 ether));
 
+    new NFTRenderer(address(vault721), address(1), address(taxCollector), address(collateralJoinFactory));
+
     me = address(this);
   }
 
@@ -606,7 +621,7 @@ contract SingleSAFEDebtLimitTest is DSTest {
 
   function testFail_generate_debt_above_safe_limit() public {
     Usr ali = new Usr(safeEngine, safeManager);
-    address a = safeManager.safeData(safeManager.openSAFE('gold', me)).safeHandler;
+    address a = ali.openSafe(vault721);
 
     safeEngine.addAuthorization(a);
     safeEngine.modifyCollateralBalance('gold', a, int256(rad(20 ether)));
@@ -621,37 +636,37 @@ contract SingleSAFEDebtLimitTest is DSTest {
 
   function test_repay_debt() public {
     Usr ali = new Usr(safeEngine, safeManager);
-    address a = safeManager.safeData(safeManager.openSAFE('gold', me)).safeHandler;
+    address a = ali.openSafe(vault721);
 
     safeEngine.addAuthorization(a);
     safeEngine.modifyCollateralBalance('gold', a, int256(rad(20 ether)));
-
-    ali.modifySAFECollateralization('gold', a, a, a, 10 ether, 5 ether);
-    ali.modifySAFECollateralization('gold', a, a, a, 0, -5 ether);
+    
+    ali.modifySAFECollateralizationAsProxy(ali.safeId(), 10 ether, 5 ether, false);
+    ali.modifySAFECollateralizationAsProxy(ali.safeId(), 0, -5 ether, false);
   }
 
   function test_tax_and_repay_debt() public {
     Usr ali = new Usr(safeEngine, safeManager);
-    address a = safeManager.safeData(safeManager.openSAFE('gold', me)).safeHandler;
+    address a = ali.openSafe(vault721);
 
     safeEngine.addAuthorization(a);
     safeEngine.modifyCollateralBalance('gold', a, int256(rad(20 ether)));
-
-    ali.modifySAFECollateralization('gold', a, a, a, 10 ether, 5 ether);
+    ali.modifySAFECollateralizationAsProxy(ali.safeId(), 10 ether, 5 ether, false);
 
     hevm.warp(block.timestamp + 1 days);
     taxCollector.taxSingle('gold');
 
-    ali.modifySAFECollateralization('gold', a, a, a, 0, -4 ether);
+    ali.modifySAFECollateralizationAsProxy(ali.safeId(), 0, -4 ether, false);
   }
 
   function test_change_safe_limit_and_modify_cratio() public {
     Usr ali = new Usr(safeEngine, safeManager);
-    address a = safeManager.safeData(safeManager.openSAFE('gold', me)).safeHandler;
+    address a = ali.openSafe(vault721);
 
     safeEngine.addAuthorization(a);
     safeEngine.modifyCollateralBalance('gold', a, int256(rad(20 ether)));
-
+    hevm.prank(a);
+    safeEngine.approveSAFEModification(address(ali));
     ali.modifySAFECollateralization('gold', a, a, a, 10 ether, 5 ether);
 
     safeEngine.modifyParameters('safeDebtCeiling', abi.encode(4 ether));
@@ -1522,6 +1537,7 @@ contract SingleLiquidationTest is DSTest {
 
 contract SingleAccumulateRatesTest is DSTest {
   SAFEEngine safeEngine;
+  Hevm hevm;
 
   function ray(uint256 wad) internal pure returns (uint256) {
     return wad * 10 ** 9;
@@ -1538,6 +1554,7 @@ contract SingleAccumulateRatesTest is DSTest {
   }
 
   function setUp() public {
+    hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     ISAFEEngine.SAFEEngineParams memory _safeEngineParams =
       ISAFEEngine.SAFEEngineParams({safeDebtCeiling: type(uint256).max, globalDebtCeiling: rad(100 ether)});
 
@@ -1555,6 +1572,7 @@ contract SingleAccumulateRatesTest is DSTest {
     safeEngine.updateCollateralPrice(_collateralType, _collateralPrice, _collateralPrice);
     address _self = address(this);
     safeEngine.modifyCollateralBalance(_collateralType, _self, 10 ** 27 * 1 ether);
+    hevm.mockCall(address(0), abi.encodeWithSelector(IODSafeManager.safeHandlerToSafeId.selector, address(0x7FA9385bE102ac3EAc297483Dd6233D62b3e1496)), abi.encode(uint256(1)));
     safeEngine.modifySAFECollateralization(_collateralType, _self, _self, _self, 1 ether, int256(_coin));
   }
 
