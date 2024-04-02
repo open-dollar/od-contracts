@@ -16,10 +16,20 @@ abstract contract Deploy is Common, Script {
     address deployerAddr = vm.addr(_deployerPk);
     address create2AuthAddr = create2.authorizedAccounts()[0];
     address protocolTokenAuthAddr = protocolToken.authorizedAccounts()[0];
-    vm.broadcast(create2AuthAddr);
-    create2.addAuthorization(deployerAddr);
-    vm.broadcast(protocolTokenAuthAddr);
-    protocolToken.addAuthorization(deployerAddr);
+    vm.startBroadcast(create2AuthAddr);
+    if (!_isAuth(address(create2), deployerAddr)) {
+      create2.addAuthorization(deployerAddr);
+    }
+    vm.stopBroadcast();
+    vm.startBroadcast(protocolTokenAuthAddr);
+    if (!_isAuth(address(protocolToken), deployerAddr)) {
+      protocolToken.addAuthorization(deployerAddr);
+    }
+    vm.stopBroadcast();
+  }
+
+  function _isAuth(address _contract, address _account) public returns (bool b) {
+    b = IAuthorizable(_contract).authorizedAccounts(_account);
   }
 
   function run() public {
@@ -88,6 +98,10 @@ abstract contract Deploy is Common, Script {
       } else {
         _delegateAllTo(governor);
       }
+    }
+
+    if (isFork()) {
+      vm.stopPrank();
     }
   }
 
