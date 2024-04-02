@@ -24,7 +24,7 @@ import {
 import {CoinJoin} from '@contracts/utils/CoinJoin.sol';
 import {GlobalSettlement, IGlobalSettlement} from '@contracts/settlement/GlobalSettlement.sol';
 import {SettlementSurplusAuctioneer} from '@contracts/settlement/SettlementSurplusAuctioneer.sol';
-import {IOracleRelayer, OracleRelayerForTest} from '@testnet/mocks/OracleRelayerForTest.sol';
+import {IOracleRelayer, OracleRelayerForTest} from '@test/mocks/OracleRelayerForTest.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
 
