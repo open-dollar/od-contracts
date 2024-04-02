@@ -81,6 +81,7 @@ contract ODSafeManager is IODSafeManager {
 
   constructor(address _safeEngine, address _vault721, address _taxCollector) {
     safeEngine = _safeEngine.assertNonNull();
+    ISAFEEngine(safeEngine).initializeSafeManager();
     vault721 = IVault721(_vault721);
     vault721.initializeManager();
     taxCollector = _taxCollector.assertNonNull();

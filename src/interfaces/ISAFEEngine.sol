@@ -215,7 +215,11 @@ interface ISAFEEngine is IAuthorizable, IDisableable, IModifiable, IModifiablePe
    * @dev    Returns a SAFEEngineCollateralData struct
    */
   function cData(bytes32 _cType) external view returns (SAFEEngineCollateralData memory _safeEngineCData);
-
+  /**
+   * @notice Getter for the address of the safe manager
+   * @return _safeManager Address of safe manager
+   */
+  function odSafeManager() external view returns (address _safeManager);
   /**
    * @notice Getter for the unpacked collateral data struct
    * @param  _cType Bytes32 representation of the collateral type
@@ -445,4 +449,9 @@ interface ISAFEEngine is IAuthorizable, IDisableable, IModifiable, IModifiablePe
    * @notice Checks whether msg.sender has the right to modify a SAFE
    */
   function canModifySAFE(address _safe, address _account) external view returns (bool _allowed);
+
+  /**
+   * @notice called by ODSafeManager during deployment
+   */
+  function initializeSafeManager() external;
 }

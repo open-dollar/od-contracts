@@ -13,9 +13,6 @@ broadcast/**/run-*.json
 coverage-report
 lcov.info
 
-# Local test files
-deployments/anvil/
-
 # Config files
 .env
 
@@ -27,5 +24,7 @@ deployments/anvil/
 docs/book
 docs/src/src/
 docs/src/static
+
+test/simulations/pid-controller/
 
 .idea/

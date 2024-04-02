@@ -302,7 +302,7 @@ contract SingleRecyclingSurplusAuctionHouseTest is DSTest {
       bidDuration: 3 hours,
       totalAuctionLength: 2 days,
       bidReceiver: address(0x123),
-      recyclingPercentage: 1e18
+      recyclingPercentage: 9e17
     });
     surplusAuctionHouse = new SurplusAuctionHouse(address(safeEngine), address(protocolToken), _sahParams);
 
@@ -366,7 +366,7 @@ contract SingleRecyclingSurplusAuctionHouseTest is DSTest {
     assertEq(safeEngine.coinBalance(bob), 100 ether);
     // income is transferred to address(0)
     assertEq(protocolToken.balanceOf(address(surplusAuctionHouse)), 0 ether);
-    assertEq(protocolToken.balanceOf(surplusAuctionHouse.params().bidReceiver), 2 ether);
+    assertEq(protocolToken.balanceOf(surplusAuctionHouse.params().bidReceiver), 1.8 ether);
   }
 
   function test_bid_increase() public {

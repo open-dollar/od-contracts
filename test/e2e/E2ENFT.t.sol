@@ -622,16 +622,21 @@ contract E2ENFTTestAccessControl is NFTSetup {
   }
 
   function test_UpdateVaultHashState() public {
-    vm.warp(420);
-    vm.roll(69);
-    vm.startPrank(address(safeManager));
-    vault721.updateVaultHashState(1);
-    vm.stopPrank();
+    uint256 initTime = block.timestamp;
+    uint256 initBlock = block.number;
 
-    HashState memory hashState = vault721.getHashState(1);
+    vm.prank(alice);
+    uint256 safeId = openSafe();
 
-    assertEq(hashState.lastBlockNumber, 69, 'incorrect lastBlockNumber');
-    assertEq(hashState.lastBlockTimestamp, 420, 'incorrect lastBlockTimestamp');
+    vm.warp(initTime + 420);
+    vm.roll(initBlock + 69);
+    vm.prank(address(safeManager));
+    vault721.updateVaultHashState(safeId);
+
+    HashState memory hashState = vault721.getHashState(safeId);
+
+    assertEq(hashState.lastBlockNumber, initBlock + 69, 'incorrect lastBlockNumber');
+    assertEq(hashState.lastBlockTimestamp, initTime + 420, 'incorrect lastBlockTimestamp');
   }
 
   function test_UpdateAllowlist() public {
