@@ -5,6 +5,8 @@ import 'ds-test/test.sol';
 import {CoinForTest} from '@testnet/mocks/CoinForTest.sol';
 
 import {ISAFEEngine, SAFEEngine} from '@contracts/SAFEEngine.sol';
+import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
+import {Vault721} from '@contracts/proxies/Vault721.sol';
 import {ILiquidationEngine, LiquidationEngine} from '@contracts/LiquidationEngine.sol';
 import {IAccountingEngine, AccountingEngine} from '@contracts/AccountingEngine.sol';
 import {IStabilityFeeTreasury, StabilityFeeTreasury} from '@contracts/StabilityFeeTreasury.sol';
@@ -29,19 +31,23 @@ import {IDelayedOracle} from '@interfaces/oracles/IDelayedOracle.sol';
 
 import {DelayedOracleForTest} from '@testnet/mocks/DelayedOracleForTest.sol';
 import {OracleForTest} from '@testnet/mocks/OracleForTest.sol';
+import {IERC721Receiver} from '@openzeppelin/token/ERC721/IERC721Receiver.sol';
 
 import {Math, RAY, WAD} from '@libraries/Math.sol';
 
 abstract contract Hevm {
   function warp(uint256) public virtual;
   function prank(address) external virtual;
+  function mockCall(address, bytes memory, bytes memory)external virtual;
 }
 
-contract Guy {
+contract Guy is IERC721Receiver {
   SAFEEngine public safeEngine;
   GlobalSettlement public globalSettlement;
+  Hevm public hevm;
 
   constructor(SAFEEngine safeEngine_, GlobalSettlement globalSettlement_) {
+    hevm = Hevm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     safeEngine = safeEngine_;
     globalSettlement = globalSettlement_;
   }
@@ -54,6 +60,7 @@ contract Guy {
     int256 _deltaCollateral,
     int256 _deltaDebt
   ) public {
+    hevm.mockCall(address(0), abi.encodeWithSelector(IODSafeManager.safeHandlerToSafeId.selector, _safe), abi.encode(uint256(1)));
     safeEngine.modifySAFECollateralization(
       _collateralType, _safe, _collateralSrc, _debtDst, _deltaCollateral, _deltaDebt
     );
@@ -81,6 +88,15 @@ contract Guy {
 
   function redeemCollateral(bytes32 _collateralType, uint256 _wad) public {
     globalSettlement.redeemCollateral(_collateralType, _wad);
+  }
+
+  function onERC721Received(
+    address operator,
+    address from,
+    uint256 tokenId,
+    bytes calldata data
+  ) external pure returns (bytes4) {
+    return IERC721Receiver.onERC721Received.selector;
   }
 }
 
@@ -210,8 +226,6 @@ contract SingleGlobalSettlementTest is DSTest {
 
     safeEngine.approveSAFEModification(address(surplusAuctionHouseOne));
 
-    protocolToken.addAuthorization(address(debtAuctionHouse));
-
     IDebtAuctionHouse.DebtAuctionHouseParams memory _debtAuctionHouseParams = IDebtAuctionHouse.DebtAuctionHouseParams({
       bidDecrease: 1.05e18,
       amountSoldIncrease: 1.5e18,
@@ -221,6 +235,7 @@ contract SingleGlobalSettlementTest is DSTest {
 
     debtAuctionHouse = new DebtAuctionHouse(address(safeEngine), address(protocolToken), _debtAuctionHouseParams);
 
+    protocolToken.addAuthorization(address(debtAuctionHouse));
     safeEngine.addAuthorization(address(coinJoin));
     systemCoin.mint(address(this), 50 ether);
     systemCoin.approve(address(coinJoin), type(uint256).max);
@@ -234,7 +249,7 @@ contract SingleGlobalSettlementTest is DSTest {
       disableCooldown: 0,
       surplusAmount: 0,
       surplusBuffer: 0,
-      debtAuctionMintedTokens: 0,
+      debtAuctionMintedTokens: 1,
       debtAuctionBidSize: 0
     });
 
