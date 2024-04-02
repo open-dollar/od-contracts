@@ -19,7 +19,7 @@ contract UpdateBlockDelay is JSONScript {
     /// REQUIRED ENV VARS ///
     address governanceAddress = vm.envAddress('GOVERNANCE_ADDRESS');
     address vault721 = vm.envAddress('VAULT_721_ADDRESS');
-    uint8 blockDelay = uint8(vm.envUint('BLOCK_DELAY'));
+    uint256 blockDelay = vm.envUint('BLOCK_DELAY');
     /// END REQUIRED ENV VARS ///
 
     ODGovernor gov = ODGovernor(payable(governanceAddress));

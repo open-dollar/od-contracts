@@ -286,7 +286,6 @@ contract SingleAccountingEngineTest is DSTest {
     accountingEngine.auctionSurplus();
 
     uint256 transferedSurplus = safeEngine.coinBalance(extraSurplusReceiver);
-    IAccountingEngine.AccountingEngineParams memory _params = accountingEngine.params();
 
     assertEq(transferedSurplus, (100 ether * 1e27), 'incorrect transfered surplus');
   }

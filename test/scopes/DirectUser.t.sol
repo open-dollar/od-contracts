@@ -12,6 +12,7 @@ import {
   ICollateralAuctionHouse
 } from '@script/Contracts.s.sol';
 import {IWeth} from '@interfaces/external/IWeth.sol';
+import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 import {SEPOLIA_WETH} from '@script/Registry.s.sol';
 import {RAY} from '@libraries/Math.sol';
 import {BaseUser} from '@test/scopes/BaseUser.t.sol';
@@ -106,6 +107,11 @@ abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
 
     vm.startPrank(_user);
     safeEngine.approveSAFEModification(_collateralJoin);
+    vm.mockCall(
+      address(safeManager),
+      abi.encodeWithSelector(IODSafeManager.safeHandlerToSafeId.selector, _user),
+      abi.encode(uint256(1))
+    );
     safeEngine.modifySAFECollateralization({
       _cType: ICollateralJoin(_collateralJoin).collateralType(),
       _safe: _user,
