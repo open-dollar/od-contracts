@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
+import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
 import {Common, COLLAT, DEBT, TEST_ETH_PRICE_DROP} from '@test/e2e/Common.t.sol';
 import {Math} from '@libraries/Math.sol';
 import {OracleForTest} from '@test/mocks/OracleForTest.sol';
@@ -23,6 +24,145 @@ abstract contract E2EGlobalSettlementTest is BaseUser, Common {
   uint256 ALICE_DEBT = 20e18;
   uint256 BOB_DEBT = 50e18;
   uint256 CAROL_DEBT = 60e18;
+
+  uint256 MULTIPLIER = 1000;
+  uint256 TEST_ETH_PRICE = COLLAT * MULTIPLIER;
+
+  function test_global_settlement() public {
+    _setCollateralPrice('TKN', TEST_ETH_PRICE);
+
+    // alice has a safe liquidated for price drop (active collateral auction)
+    // bob has a safe liquidated for price drop (active debt auction)
+    // carol has a safe that provides surplus (active surplus auction)
+    // dave has a healthy active safe
+    _generateDebt(alice, address(collateralJoin['TKN']), int256(COLLAT), int256(DEBT));
+    _generateDebt(bob, address(collateralJoin['TKN']), int256(COLLAT), int256(DEBT));
+    _generateDebt(carol, address(collateralJoin['TKN']), int256(COLLAT), int256(DEBT));
+
+    _setCollateralPrice('TKN', TEST_ETH_PRICE_DROP); // price 1 ETH = 100 OD
+    _liquidateSAFE('TKN', alice);
+    accountingEngine.popDebtFromQueue(block.timestamp);
+    accountingEngine.auctionDebt(); // active debt auction
+
+    _liquidateSAFE('TKN', bob); // active collateral auction
+    uint256 _collateralAuction = 1;
+
+    _collectFees('TKN', 50 * YEAR);
+    accountingEngine.auctionSurplus(); // active surplus auction
+
+    // NOTE: why DEBT/10 not-safe? (price dropped to 1/10)
+    _generateDebt(dave, address(collateralJoin['TKN']), int256(COLLAT), int256(DEBT / 100)); // active healthy safe
+
+    vm.prank(deployer);
+    globalSettlement.shutdownSystem();
+    globalSettlement.freezeCollateralType('TKN');
+
+    globalSettlement.fastTrackAuction('TKN', _collateralAuction);
+
+    _freeCollateral(alice, 'TKN');
+    _freeCollateral(bob, 'TKN');
+    _freeCollateral(carol, 'TKN');
+    _freeCollateral(dave, 'TKN');
+
+    accountingEngine.settleDebt(safeEngine.coinBalance(address(accountingEngine)));
+    vm.warp(block.timestamp + globalSettlement.params().shutdownCooldown);
+    globalSettlement.setOutstandingCoinSupply();
+    globalSettlement.calculateCashPrice('TKN');
+
+    _prepareCoinsForRedeeming(dave, systemCoin.balanceOf(dave));
+    _redeemCollateral(dave, 'TKN', DEBT / 100);
+  }
+
+  function test_post_settlement_surplus_auction_house() public {
+    _setCollateralPrice('TKN', TEST_ETH_PRICE);
+    _generateDebt(alice, address(collateralJoin['TKN']), int256(COLLAT), int256(DEBT));
+    _collectFees('TKN', 50 * YEAR);
+
+    vm.prank(deployer);
+    globalSettlement.shutdownSystem();
+    accountingEngine.transferPostSettlementSurplus();
+
+    uint256 _auctionId = settlementSurplusAuctioneer.auctionSurplus();
+    uint256 _amountToSell = postSettlementSurplusAuctionHouse.auctions(_auctionId).amountToSell;
+
+    uint256 _initialBid = accountingEngine.params().surplusAmount;
+    uint256 _bidIncrease = postSettlementSurplusAuctionHouse.params().bidIncrease;
+    uint256 _bid = _initialBid * _bidIncrease / 1e18;
+
+    // mint protocol tokens to bid with
+    vm.prank(deployer);
+    protocolToken.mint(address(this), _bid);
+
+    _increasePostSettlementBidSize(address(this), _auctionId, _bid);
+
+    // advance time to settle auction
+    vm.warp(block.timestamp + postSettlementSurplusAuctionHouse.params().bidDuration);
+    _settlePostSettlementSurplusAuction(address(this), _auctionId);
+
+    assertEq(_getInternalCoinBalance(address(this)), _amountToSell);
+
+    vm.warp(block.timestamp + globalSettlement.params().shutdownCooldown);
+    globalSettlement.setOutstandingCoinSupply();
+
+    _prepareCoinsForRedeeming(address(this), _amountToSell / 1e27);
+  }
+
+  /// Tests that incrementing a bid while being the top bidder only pulls the increment
+  function test_post_settlement_surplus_auction_house_rebid() public {
+    _setCollateralPrice('TKN', TEST_ETH_PRICE);
+
+    _generateDebt(alice, address(collateralJoin['TKN']), int256(COLLAT), int256(DEBT));
+    _collectFees('TKN', 50 * YEAR);
+
+    vm.prank(deployer);
+    globalSettlement.shutdownSystem();
+
+    accountingEngine.transferPostSettlementSurplus();
+
+    uint256 _auctionId = settlementSurplusAuctioneer.auctionSurplus();
+    uint256 _amountToSell = postSettlementSurplusAuctionHouse.auctions(_auctionId).amountToSell;
+
+    uint256 _initialBid = accountingEngine.params().surplusAmount;
+    uint256 _bidIncrease = postSettlementSurplusAuctionHouse.params().bidIncrease;
+    uint256 _bid = _initialBid * _bidIncrease / WAD;
+    uint256 _rebid = _bid * _bidIncrease / WAD;
+
+    // mint protocol tokens to bid with
+    vm.prank(deployer);
+    protocolToken.mint(address(this), _rebid + _bid);
+
+    // Peform the initial bid
+    _increasePostSettlementBidSize(address(this), _auctionId, _bid);
+
+    // Increment the bid to check that only the increment is pulled
+    // If more than the increment is pulled this reverts due to only having `_rebid` amount of tokens
+    _increasePostSettlementBidSize(address(this), _auctionId, _rebid);
+
+    // advance time to settle auction
+    vm.warp(block.timestamp + postSettlementSurplusAuctionHouse.params().bidDuration);
+    _settlePostSettlementSurplusAuction(address(this), _auctionId);
+
+    assertEq(_getInternalCoinBalance(address(this)), _amountToSell);
+
+    vm.warp(block.timestamp + globalSettlement.params().shutdownCooldown);
+    globalSettlement.setOutstandingCoinSupply();
+
+    _prepareCoinsForRedeeming(address(this), _amountToSell / RAY);
+  }
+
+  function _multiCollateralSetup() internal {
+    _generateDebt(alice, address(collateralJoin['TKN-A']), int256(COLLAT), int256(ALICE_DEBT));
+    _generateDebt(alice, address(collateralJoin['TKN-B']), int256(COLLAT), int256(ALICE_DEBT));
+    _generateDebt(alice, address(collateralJoin['TKN-C']), int256(COLLAT), int256(ALICE_DEBT));
+
+    _generateDebt(bob, address(collateralJoin['TKN-A']), int256(COLLAT), int256(BOB_DEBT));
+    _generateDebt(bob, address(collateralJoin['TKN-B']), int256(COLLAT), int256(BOB_DEBT));
+    _generateDebt(bob, address(collateralJoin['TKN-C']), int256(COLLAT), int256(BOB_DEBT));
+
+    _generateDebt(carol, address(collateralJoin['TKN-A']), int256(COLLAT), int256(CAROL_DEBT));
+    _generateDebt(carol, address(collateralJoin['TKN-B']), int256(COLLAT), int256(CAROL_DEBT));
+    _generateDebt(carol, address(collateralJoin['TKN-C']), int256(COLLAT), int256(CAROL_DEBT));
+  }
 
   function test_global_settlement_multicollateral() public {
     _multiCollateralSetup();
@@ -246,139 +386,6 @@ abstract contract E2EGlobalSettlementTest is BaseUser, Common {
         0.001e18
       );
     }
-  }
-
-  function test_global_settlement() public {
-    // alice has a safe liquidated for price drop (active collateral auction)
-    // bob has a safe liquidated for price drop (active debt auction)
-    // carol has a safe that provides surplus (active surplus auction)
-    // dave has a healthy active safe
-
-    _generateDebt(alice, address(collateralJoin['TKN']), int256(COLLAT), int256(DEBT));
-    _generateDebt(bob, address(collateralJoin['TKN']), int256(COLLAT), int256(DEBT));
-    _generateDebt(carol, address(collateralJoin['TKN']), int256(COLLAT), int256(DEBT));
-
-    _setCollateralPrice('TKN', TEST_ETH_PRICE_DROP); // price 1 ETH = 100 OD
-    _liquidateSAFE('TKN', alice);
-    accountingEngine.popDebtFromQueue(block.timestamp);
-    accountingEngine.auctionDebt(); // active debt auction
-
-    _liquidateSAFE('TKN', bob); // active collateral auction
-    uint256 _collateralAuction = 1;
-
-    _collectFees('TKN', 50 * YEAR);
-    accountingEngine.auctionSurplus(); // active surplus auction
-
-    // NOTE: why DEBT/10 not-safe? (price dropped to 1/10)
-    _generateDebt(dave, address(collateralJoin['TKN']), int256(COLLAT), int256(DEBT / 100)); // active healthy safe
-
-    vm.prank(deployer);
-    globalSettlement.shutdownSystem();
-    globalSettlement.freezeCollateralType('TKN');
-
-    globalSettlement.fastTrackAuction('TKN', _collateralAuction);
-
-    _freeCollateral(alice, 'TKN');
-    _freeCollateral(bob, 'TKN');
-    _freeCollateral(carol, 'TKN');
-    _freeCollateral(dave, 'TKN');
-
-    accountingEngine.settleDebt(safeEngine.coinBalance(address(accountingEngine)));
-    vm.warp(block.timestamp + globalSettlement.params().shutdownCooldown);
-    globalSettlement.setOutstandingCoinSupply();
-    globalSettlement.calculateCashPrice('TKN');
-
-    _prepareCoinsForRedeeming(dave, DEBT / 100);
-    _redeemCollateral(dave, 'TKN', DEBT / 100);
-  }
-
-  function test_post_settlement_surplus_auction_house() public {
-    _generateDebt(alice, address(collateralJoin['TKN']), int256(COLLAT), int256(DEBT));
-    _collectFees('TKN', 50 * YEAR);
-
-    vm.prank(deployer);
-    globalSettlement.shutdownSystem();
-
-    accountingEngine.transferPostSettlementSurplus();
-
-    uint256 _auctionId = settlementSurplusAuctioneer.auctionSurplus();
-    uint256 _amountToSell = postSettlementSurplusAuctionHouse.auctions(_auctionId).amountToSell;
-
-    uint256 _initialBid = accountingEngine.params().surplusAmount;
-    uint256 _bidIncrease = postSettlementSurplusAuctionHouse.params().bidIncrease;
-    uint256 _bid = _initialBid * _bidIncrease / 1e18;
-
-    // mint protocol tokens to bid with
-    vm.prank(deployer);
-    protocolToken.mint(address(this), _bid);
-
-    _increasePostSettlementBidSize(address(this), _auctionId, _bid);
-
-    // advance time to settle auction
-    vm.warp(block.timestamp + postSettlementSurplusAuctionHouse.params().bidDuration);
-    _settlePostSettlementSurplusAuction(address(this), _auctionId);
-
-    assertEq(_getInternalCoinBalance(address(this)), _amountToSell);
-
-    vm.warp(block.timestamp + globalSettlement.params().shutdownCooldown);
-    globalSettlement.setOutstandingCoinSupply();
-
-    _prepareCoinsForRedeeming(address(this), _amountToSell / 1e27);
-  }
-
-  /// Tests that incrementing a bid while being the top bidder only pulls the increment
-  function test_post_settlement_surplus_auction_house_rebid() public {
-    _generateDebt(alice, address(collateralJoin['TKN']), int256(COLLAT), int256(DEBT));
-    _collectFees('TKN', 50 * YEAR);
-
-    vm.prank(deployer);
-    globalSettlement.shutdownSystem();
-
-    accountingEngine.transferPostSettlementSurplus();
-
-    uint256 _auctionId = settlementSurplusAuctioneer.auctionSurplus();
-    uint256 _amountToSell = postSettlementSurplusAuctionHouse.auctions(_auctionId).amountToSell;
-
-    uint256 _initialBid = accountingEngine.params().surplusAmount;
-    uint256 _bidIncrease = postSettlementSurplusAuctionHouse.params().bidIncrease;
-    uint256 _bid = _initialBid * _bidIncrease / WAD;
-    uint256 _rebid = _bid * _bidIncrease / WAD;
-
-    // mint protocol tokens to bid with
-    vm.prank(deployer);
-    protocolToken.mint(address(this), _rebid);
-
-    // Peform the initial bid
-    _increasePostSettlementBidSize(address(this), _auctionId, _bid);
-
-    // Increment the bid to check that only the increment is pulled
-    // If more than the increment is pulled this reverts due to only having `_rebid` amount of tokens
-    _increasePostSettlementBidSize(address(this), _auctionId, _rebid);
-
-    // advance time to settle auction
-    vm.warp(block.timestamp + postSettlementSurplusAuctionHouse.params().bidDuration);
-    _settlePostSettlementSurplusAuction(address(this), _auctionId);
-
-    assertEq(_getInternalCoinBalance(address(this)), _amountToSell);
-
-    vm.warp(block.timestamp + globalSettlement.params().shutdownCooldown);
-    globalSettlement.setOutstandingCoinSupply();
-
-    _prepareCoinsForRedeeming(address(this), _amountToSell / RAY);
-  }
-
-  function _multiCollateralSetup() internal {
-    _generateDebt(alice, address(collateralJoin['TKN-A']), int256(COLLAT), int256(ALICE_DEBT));
-    _generateDebt(alice, address(collateralJoin['TKN-B']), int256(COLLAT), int256(ALICE_DEBT));
-    _generateDebt(alice, address(collateralJoin['TKN-C']), int256(COLLAT), int256(ALICE_DEBT));
-
-    _generateDebt(bob, address(collateralJoin['TKN-A']), int256(COLLAT), int256(BOB_DEBT));
-    _generateDebt(bob, address(collateralJoin['TKN-B']), int256(COLLAT), int256(BOB_DEBT));
-    _generateDebt(bob, address(collateralJoin['TKN-C']), int256(COLLAT), int256(BOB_DEBT));
-
-    _generateDebt(carol, address(collateralJoin['TKN-A']), int256(COLLAT), int256(CAROL_DEBT));
-    _generateDebt(carol, address(collateralJoin['TKN-B']), int256(COLLAT), int256(CAROL_DEBT));
-    _generateDebt(carol, address(collateralJoin['TKN-C']), int256(COLLAT), int256(CAROL_DEBT));
   }
 }
 
