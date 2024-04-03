@@ -79,11 +79,6 @@ contract NFTSetup is Common {
     ODProxy(_proxy).execute(address(basicActions), payload);
   }
 
-  function allowHandler(address _proxy, address _user, bool _ok) public {
-    bytes memory payload = abi.encodeWithSelector(basicActions.allowHandler.selector, address(safeManager), _user, _ok);
-    ODProxy(_proxy).execute(address(basicActions), payload);
-  }
-
   function quitSystem(address _proxy, uint256 _safeId, address _dst) public {
     bytes memory payload = abi.encodeWithSelector(basicActions.quitSystem.selector, address(safeManager), _safeId, _dst);
     ODProxy(_proxy).execute(address(basicActions), payload);
@@ -541,19 +536,6 @@ contract E2ENFTTestBasicActionsCalls is NFTSetup {
     assertEq(safeManager.safeCan(sData.owner, safeId, sData.nonce, bob), ok, 'incorrect safeCan');
   }
 
-  function test_allowHandler() public {
-    bool ok = true;
-    vm.startPrank(alice);
-    uint256 safeId = openSafe();
-
-    allowHandler(aliceProxy, bob, ok);
-    vm.stopPrank();
-
-    IODSafeManager.SAFEData memory sData = safeManager.safeData(safeId);
-
-    assertEq(safeManager.handlerCan(aliceProxy, sData.nonce, bob), ok, 'incorrect handlerCan');
-  }
-
   function test_addAndRemoveSAFE() public {
     vm.startPrank(alice);
     uint256 safeId = openSafe();
@@ -565,7 +547,7 @@ contract E2ENFTTestBasicActionsCalls is NFTSetup {
 
   /**
    * @dev if the nonce increments, then after each vault transfer
-   * all previous allowSAFE/allowHandler calls will be invalidated
+   * all previous allowSAFE calls will be invalidated
    */
   function test_transferFromIncrementsNonce() public {
     vm.startPrank(alice);

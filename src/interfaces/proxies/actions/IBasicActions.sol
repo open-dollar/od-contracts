@@ -22,12 +22,7 @@ interface IBasicActions is ICommonActions {
    * @param  _ok Boolean state to allow/disallow
    */
   function allowSAFE(address _manager, uint256 _safe, address _usr, bool _ok) external;
-  /**
-   * @notice Allow/disallow a handler address to manage the safe
-   * @param  _usr Address of the user to allow/disallow
-   * @param  _ok Boolean state to allow/disallow
-   */
-  function allowHandler(address _manager, address _usr, bool _ok) external;
+
   /**
    * @notice Modify a SAFE's collateralization ratio while keeping the generated COIN or collateral freed in the safe handler address
    * @param  _safe Id of the SAFE

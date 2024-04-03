@@ -250,19 +250,6 @@ contract Unit_ODSafeManager_SAFEManagement is Base {
     safeManager.transferSAFEOwnership(_scenario.safeId, _scenario.aliceProxy);
   }
 
-  event AllowHandler(address indexed _sender, address _usr, bool _ok);
-
-  function test_AllowHandler(Scenario memory _scenario) public happyPath(_scenario) {
-    vm.startPrank(_scenario.aliceProxy);
-
-    vm.expectEmit();
-    emit AllowHandler(_scenario.aliceProxy, _scenario.bob, true);
-
-    safeManager.allowHandler(_scenario.bob, true);
-
-    assertTrue(safeManager.handlerCan(_scenario.aliceProxy, 0, _scenario.bob), 'handler not allowed');
-  }
-
   function test_AddSAFE(Scenario memory _scenario) public happyPath(_scenario) {
     vm.prank(_scenario.bob);
     safeManager.addSAFE(_scenario.safeId);
@@ -335,7 +322,6 @@ contract Unit_ODSafeManager_SystemManagement is Base {
 
   function test_EnterSystem(Scenario memory _scenario) public happyPath(_scenario) {
     vm.startPrank(_scenario.aliceProxy);
-    safeManager.allowHandler(_scenario.aliceProxy, true);
     safeManager.allowSAFE(_scenario.safeId, _scenario.aliceProxy, true);
     vm.mockCall(
       address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.transferSAFECollateralAndDebt.selector), abi.encode()
@@ -348,7 +334,6 @@ contract Unit_ODSafeManager_SystemManagement is Base {
 
   function test_QuitSystem(Scenario memory _scenario) public happyPath(_scenario) {
     vm.startPrank(_scenario.aliceProxy);
-    safeManager.allowHandler(_scenario.aliceProxy, true);
     safeManager.allowSAFE(_scenario.safeId, _scenario.aliceProxy, true);
 
     vm.mockCall(

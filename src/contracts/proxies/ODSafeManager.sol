@@ -43,8 +43,6 @@ contract ODSafeManager is IODSafeManager {
     address _owner => mapping(uint256 _safeId => mapping(uint96 _safeNonce => mapping(address _caller => bool _ok)))
   ) public safeCan;
   /// @inheritdoc IODSafeManager
-  mapping(address _safeHandler => mapping(uint96 _safeNonce => mapping(address _caller => bool _ok))) public handlerCan;
-  /// @inheritdoc IODSafeManager
   mapping(address _safeHandler => uint256 _safeId) public safeHandlerToSafeId;
 
   // --- Modifiers ---
@@ -66,16 +64,6 @@ contract ODSafeManager is IODSafeManager {
    */
   modifier onlySafeOwner(uint256 _safe) {
     if (msg.sender != _safeData[_safe].owner) revert OnlySafeOwner();
-    _;
-  }
-
-  /**
-   * @notice Checks if the sender is the safe handler has permissions to call the function
-   * @param  _handler Address of the handler to check if msg.sender has permissions for
-   */
-  modifier handlerAllowed(address _handler) {
-    SAFEData memory data = getSafeDataFromHandler(_handler);
-    if (msg.sender != _handler && !handlerCan[_handler][data.nonce][msg.sender]) revert HandlerNotAllowed();
     _;
   }
 
@@ -132,14 +120,6 @@ contract ODSafeManager is IODSafeManager {
     address owner = data.owner;
     safeCan[owner][_safe][data.nonce][_usr] = _ok;
     emit AllowSAFE(msg.sender, _safe, _usr, _ok);
-  }
-
-  /// @inheritdoc IODSafeManager
-  function allowHandler(address _usr, bool _ok) external {
-    address safeHandler = msg.sender;
-    SAFEData memory data = getSafeDataFromHandler(safeHandler);
-    handlerCan[safeHandler][data.nonce][_usr] = _ok;
-    emit AllowHandler(safeHandler, _usr, _ok);
   }
 
   /// @inheritdoc IODSafeManager
@@ -234,7 +214,7 @@ contract ODSafeManager is IODSafeManager {
   }
 
   /// @inheritdoc IODSafeManager
-  function quitSystem(uint256 _safe, address _dst) external safeAllowed(_safe) handlerAllowed(_dst) {
+  function quitSystem(uint256 _safe, address _dst) external safeAllowed(_safe) {
     SAFEData memory _sData = _safeData[_safe];
     ISAFEEngine.SAFE memory _safeInfo = ISAFEEngine(safeEngine).safes(_sData.collateralType, _sData.safeHandler);
     int256 _deltaCollateral = _safeInfo.lockedCollateral.toInt();
@@ -252,7 +232,7 @@ contract ODSafeManager is IODSafeManager {
   }
 
   /// @inheritdoc IODSafeManager
-  function enterSystem(address _src, uint256 _safe) external handlerAllowed(_src) safeAllowed(_safe) {
+  function enterSystem(address _src, uint256 _safe) external safeAllowed(_safe) {
     SAFEData memory _sData = _safeData[_safe];
     ISAFEEngine.SAFE memory _safeInfo = ISAFEEngine(safeEngine).safes(_sData.collateralType, _src);
     int256 _deltaCollateral = _safeInfo.lockedCollateral.toInt();

@@ -218,11 +218,6 @@ contract BasicActions is CommonActions, IBasicActions {
   }
 
   /// @inheritdoc IBasicActions
-  function allowHandler(address _manager, address _usr, bool _ok) external delegateCall {
-    ODSafeManager(_manager).allowHandler(_usr, _ok);
-  }
-
-  /// @inheritdoc IBasicActions
   function modifySAFECollateralization(
     address _manager,
     uint256 _safeId,

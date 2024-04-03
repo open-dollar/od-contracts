@@ -6,8 +6,6 @@ interface IODSafeManager {
 
   /// @notice Emitted when calling allowSAFE with the sender address and the method arguments
   event AllowSAFE(address indexed _sender, uint256 indexed _safe, address _usr, bool _ok);
-  /// @notice Emitted when calling allowHandler with the sender address and the method arguments
-  event AllowHandler(address indexed _sender, address _usr, bool _ok);
   /// @notice Emitted when calling transferSAFEOwnership with the sender address and the method arguments
   event TransferSAFEOwnership(address indexed _sender, uint256 indexed _safe, address _dst);
   /// @notice Emitted when calling openSAFE with the sender address and the method arguments
@@ -74,9 +72,6 @@ interface IODSafeManager {
     address _caller
   ) external view returns (bool _ok);
 
-  /// @notice Mapping of handler to a caller permissions
-  function handlerCan(address _safeHandler, uint96 _safeNonce, address _caller) external view returns (bool _ok);
-
   /// @notice Mapping of handler to the safeId
   function safeHandlerToSafeId(address _safeHandler) external view returns (uint256 _safeId);
 
@@ -132,13 +127,6 @@ interface IODSafeManager {
    * @param  _ok Boolean state to allow/disallow
    */
   function allowSAFE(uint256 _safe, address _usr, bool _ok) external;
-
-  /**
-   * @notice Allow/disallow a handler address to manage the safe
-   * @param  _usr Address of the user to allow/disallow
-   * @param  _ok Boolean state to allow/disallow
-   */
-  function allowHandler(address _usr, bool _ok) external;
 
   /**
    * @notice Open a new safe for a user address
