@@ -48,6 +48,8 @@ contract Base is ODTest {
   TimelockController timelockController;
   ISAFEEngine mockSafeEngine;
 
+  address liquidationEngine = address(mockContract('LiquidationEngine'));
+
   function setUp() public virtual {
     ITaxCollector.TaxCollectorParams memory taxCollectorParams = ITaxCollector.TaxCollectorParams({
       primaryTaxReceiver: primaryTaxReceiver,
@@ -70,7 +72,8 @@ contract Base is ODTest {
     taxCollector.addAuthorization(owner);
     vault721.initialize(address(timelockController));
 
-    safeManager = new ODSafeManager(address(mockSafeEngine), address(vault721), address(taxCollector));
+    safeManager =
+      new ODSafeManager(address(mockSafeEngine), address(vault721), address(taxCollector), liquidationEngine);
 
     vm.stopPrank();
   }
