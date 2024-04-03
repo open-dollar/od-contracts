@@ -202,4 +202,18 @@ interface IBasicActions is ICommonActions {
     uint256 _safeId,
     uint256 _collateralWad
   ) external;
+
+  /**
+   * @notice Collects a collateral token amount from the SAFE handler, and transfers the ERC20 collateral to the user's address
+   * @param  _manager Address of the HaiSafeManager contract
+   * @param  _collateralJoin Address of the CollateralJoin contract
+   * @param  _safeId Id of the SAFE
+   * @param  _deltaWad Amount of collateral to collect [wad]
+   */
+  function collectTokenCollateral(
+    address _manager,
+    address _collateralJoin,
+    uint256 _safeId,
+    uint256 _deltaWad
+  ) external;
 }

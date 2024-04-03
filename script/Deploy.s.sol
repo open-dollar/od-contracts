@@ -10,6 +10,7 @@ import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadat
 import {Common} from '@script/Common.s.sol';
 import {SepoliaParams} from '@script/SepoliaParams.s.sol';
 import {MainnetParams} from '@script/MainnetParams.s.sol';
+import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 
 abstract contract Deploy is Common, Script {
   function _addAuthCreate2AndProtocolToken() public runIfFork restoreOriginalCaller {

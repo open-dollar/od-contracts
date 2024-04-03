@@ -411,6 +411,17 @@ contract BasicActions is CommonActions, IBasicActions {
     _collectAndExitCollateral(_manager, _collateralJoin, _safeId, _collateralWad);
   }
 
+  /// @inheritdoc IBasicActions
+  function collectTokenCollateral(
+    address _manager,
+    address _collateralJoin,
+    uint256 _safeId,
+    uint256 _deltaWad
+  ) external delegateCall {
+    // Transfers token amount to the user's address
+    _collectAndExitCollateral(_manager, _collateralJoin, _safeId, _deltaWad);
+  }
+
   /**
    * @dev calls Tax single on taxCollector.  do this before making any calls to safeManager modifySafeCollateralization
    */

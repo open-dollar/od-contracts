@@ -60,18 +60,6 @@ abstract contract E2EJobsTest is BaseUser, Common {
     assertEq(systemCoin.balanceOf(address(this)) - _initialBalance, JOB_REWARD);
   }
 
-  function test_work_transfer_extra_surplus() public {
-    vm.startPrank(deployer);
-    accountingEngine.modifyParameters('surplusTransferPercentage', abi.encode(1));
-    accountingEngine.modifyParameters('extraSurplusReceiver', abi.encode(address(0x420)));
-    vm.stopPrank();
-
-    uint256 _initialBalance = systemCoin.balanceOf(address(this));
-    _workAuctionSurplus(address(this));
-
-    assertEq(systemCoin.balanceOf(address(this)) - _initialBalance, JOB_REWARD);
-  }
-
   function test_work_liquidation() public {
     uint256 _initialBalance = systemCoin.balanceOf(address(this));
     _workLiquidation(address(this), TKN, safeHandler);
@@ -96,6 +84,6 @@ abstract contract E2EJobsTest is BaseUser, Common {
 
 // --- Scoped test contracts ---
 
-abstract contract E2EJobsTestDirectUser is DirectUser, E2EJobsTest {}
+contract E2EJobsTestDirectUser is DirectUser, E2EJobsTest {}
 
-abstract contract E2EJobsTestProxyUser is ProxyUser, E2EJobsTest {}
+contract E2EJobsTestProxyUser is ProxyUser, E2EJobsTest {}

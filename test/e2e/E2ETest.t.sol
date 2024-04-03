@@ -1,9 +1,16 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import {Common, RAD_DELTA} from './Common.t.sol';
+import {IERC721Receiver} from '@openzeppelin/token/ERC721/IERC721Receiver.sol';
+import {Common, RAD_DELTA} from '@test/e2e/Common.t.sol';
 
-import {ILiquidationEngine, IDebtAuctionHouse, ISurplusAuctionHouse} from '@script/Contracts.s.sol';
+import {
+  ILiquidationEngine,
+  ICollateralAuctionHouse,
+  IDebtAuctionHouse,
+  ISurplusAuctionHouse,
+  ODProxy
+} from '@script/Contracts.s.sol';
 import {
   INITIAL_DEBT_AUCTION_MINTED_TOKENS,
   ONE_HUNDRED_COINS,
@@ -30,7 +37,7 @@ uint256 constant INITIAL_PRICE = 1000e18; // $1000
 uint256 constant PRICE_DROP = 100e18; // $100
 uint256 constant LIQUIDATION_PENALTY = 1.1e18; // 10%
 
-abstract contract E2ETest is BaseUser, Base_CType, Common {
+abstract contract E2ETest is BaseUser, Base_CType, Common, IERC721Receiver {
   using Math for uint256;
 
   function setUp() public override {
@@ -44,6 +51,15 @@ abstract contract E2ETest is BaseUser, Base_CType, Common {
 
     _setCollateralPrice(_cType(), INITIAL_PRICE);
     taxCollector.taxSingle(_cType());
+  }
+
+  function onERC721Received(
+    address operator,
+    address from,
+    uint256 tokenId,
+    bytes calldata data
+  ) external returns (bytes4) {
+    return IERC721Receiver.onERC721Received.selector;
   }
 
   function test_open_safe() public {
@@ -123,7 +139,7 @@ abstract contract E2ETest is BaseUser, Base_CType, Common {
     _liquidateSAFE(_cType(), address(this));
   }
 
-  function test_collateral_auction() public {
+  function test_collateral_auction_full_sell() public {
     _generateDebt(address(this), address(collateralJoin[_cType()]), int256(COLLATERAL_AMOUNT), int256(DEBT_AMOUNT));
     uint256 _initialBalance = collateral[_cType()].balanceOf(address(this));
     _setCollateralPrice(_cType(), PRICE_DROP);
@@ -135,7 +151,33 @@ abstract contract E2ETest is BaseUser, Base_CType, Common {
     (uint256 _expectedCollateral,) = collateralAuctionHouse[_cType()].getCollateralBought(1, _amountToBid);
     assertEq(_expectedCollateral, COLLATERAL_AMOUNT);
 
-    _joinCoins(address(this), _amountToBid);
+    _buyCollateral(address(this), address(collateralAuctionHouse[_cType()]), 1, _expectedCollateral, _amountToBid);
+
+    uint256 _decimals = collateral[_cType()].decimals();
+    uint256 _collateralWei = _expectedCollateral / 10 ** (18 - _decimals);
+    assertEq(collateral[_cType()].balanceOf(address(this)) - _initialBalance, _collateralWei);
+
+    // NOTE: auctions(1) is deleted
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse[_cType()].auctions(1);
+    assertEq(_auction.amountToSell, 0);
+    assertEq(_auction.amountToRaise, 0);
+  }
+
+  function test_collateral_auction_full_raise() public {
+    _generateDebt(address(this), address(collateralJoin[_cType()]), int256(COLLATERAL_AMOUNT), int256(DEBT_AMOUNT));
+    uint256 _initialBalance = collateral[_cType()].balanceOf(address(this));
+    _setCollateralPrice(_cType(), PRICE_DROP);
+    _liquidateSAFE(_cType(), address(this));
+    _setCollateralPrice(_cType(), INITIAL_PRICE);
+
+    uint256 _amountToBid = Math.wmul(DEBT_AMOUNT, LIQUIDATION_PENALTY);
+    // NOTE: getExpectedCollateralBought doesn't have a previous reference (lastReadRedemptionPrice)
+    (uint256 _expectedCollateral,) = collateralAuctionHouse[_cType()].getCollateralBought(1, _amountToBid);
+    assertLt(_expectedCollateral, COLLATERAL_AMOUNT);
+
+    _generateDebt(
+      address(this), address(collateralJoin[_cType()]), int256(COLLATERAL_AMOUNT), int256(_amountToBid - DEBT_AMOUNT)
+    );
 
     _buyCollateral(address(this), address(collateralAuctionHouse[_cType()]), 1, _expectedCollateral, _amountToBid);
 
@@ -144,8 +186,14 @@ abstract contract E2ETest is BaseUser, Base_CType, Common {
     assertEq(collateral[_cType()].balanceOf(address(this)) - _initialBalance, _collateralWei);
 
     // NOTE: auctions(1) is deleted
-    uint256 _amountToSell = collateralAuctionHouse[_cType()].auctions(1).amountToSell;
-    assertEq(_amountToSell, 0);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse[_cType()].auctions(1);
+    assertEq(_auction.amountToSell, 0);
+    assertEq(_auction.amountToRaise, 0);
+
+    uint256 _remainderCollateral = COLLATERAL_AMOUNT - _expectedCollateral;
+    _collateralWei += _remainderCollateral / 10 ** (18 - _decimals);
+    _collectTokenCollateral(address(this), address(collateralJoin[_cType()]), _remainderCollateral);
+    assertEq(collateral[_cType()].balanceOf(address(this)) - _initialBalance, _collateralWei);
   }
 
   function test_collateral_auction_partial() public {
@@ -160,8 +208,6 @@ abstract contract E2ETest is BaseUser, Base_CType, Common {
     (uint256 _expectedCollateral,) = collateralAuctionHouse[_cType()].getCollateralBought(1, _amountToBid);
     assertEq(_expectedCollateral, COLLATERAL_AMOUNT / 2);
 
-    _joinCoins(address(this), _amountToBid);
-
     _buyCollateral(address(this), address(collateralAuctionHouse[_cType()]), 1, _expectedCollateral, _amountToBid);
 
     uint256 _decimals = collateral[_cType()].decimals();
@@ -169,8 +215,9 @@ abstract contract E2ETest is BaseUser, Base_CType, Common {
     assertEq(collateral[_cType()].balanceOf(address(this)) - _initialBalance, _collateralWei);
 
     // NOTE: auctions(1) is NOT deleted
-    uint256 _amountToSell = collateralAuctionHouse[_cType()].auctions(1).amountToSell;
-    assertGt(_amountToSell, 0);
+    ICollateralAuctionHouse.Auction memory _auction = collateralAuctionHouse[_cType()].auctions(1);
+    assertGt(_auction.amountToSell, 0);
+    assertGt(_auction.amountToRaise, 0);
   }
 
   function test_debt_auction() public {
@@ -190,7 +237,7 @@ abstract contract E2ETest is BaseUser, Base_CType, Common {
     uint256 _bidDecrease = debtAuctionHouse.params().bidDecrease;
     uint256 _tokenAmount = Math.wdiv(INITIAL_DEBT_AUCTION_MINTED_TOKENS, _bidDecrease);
 
-    _buyProtocolToken(address(this), 1, _tokenAmount, _auction.bidAmount);
+    _buyProtocolToken(address(this), 1, _tokenAmount, _auction.bidAmount / RAY);
 
     _auction = debtAuctionHouse.auctions(1);
     assertEq(_auction.bidAmount, ONE_HUNDRED_COINS);
@@ -206,6 +253,7 @@ abstract contract E2ETest is BaseUser, Base_CType, Common {
   function test_surplus_auction() public {
     _generateDebt(address(this), address(collateralJoin[_cType()]), int256(COLLATERAL_AMOUNT), int256(DEBT_AMOUNT));
     uint256 _initialBalance = systemCoin.balanceOf(address(this));
+    uint256 _initialProtocolTokenSupply = protocolToken.totalSupply();
     uint256 INITIAL_BID = 1e18;
 
     // mint protocol tokens to bid with
@@ -223,9 +271,9 @@ abstract contract E2ETest is BaseUser, Base_CType, Common {
 
     vm.warp(_auction.auctionDeadline);
 
-    assertEq(protocolToken.totalSupply(), INITIAL_BID);
+    assertEq(protocolToken.totalSupply(), INITIAL_BID + _initialProtocolTokenSupply);
     _settleSurplusAuction(address(this), _auctionId);
-    assertEq(protocolToken.totalSupply(), INITIAL_BID / 2); // 50% of the bid is burned
+    assertEq(protocolToken.totalSupply(), (INITIAL_BID / 2) + _initialProtocolTokenSupply); // 50% of the bid is burned
     assertEq(protocolToken.balanceOf(SURPLUS_AUCTION_BID_RECEIVER), INITIAL_BID / 2); // 50% is sent to the receiver
     assertEq(protocolToken.balanceOf(address(this)), 0);
     assertEq(systemCoin.balanceOf(address(this)) - _initialBalance, _auction.amountToSell / RAY);
@@ -234,6 +282,7 @@ abstract contract E2ETest is BaseUser, Base_CType, Common {
   function test_surplus_auction_and_bid() public {
     _generateDebt(address(this), address(collateralJoin[_cType()]), int256(COLLATERAL_AMOUNT), int256(DEBT_AMOUNT));
     uint256 _initialBalance = systemCoin.balanceOf(address(this));
+    uint256 _initialProtocolTokenSupply = protocolToken.totalSupply();
     uint256 INITIAL_BID = 1e18;
 
     // mint protocol tokens to bid with
@@ -251,10 +300,10 @@ abstract contract E2ETest is BaseUser, Base_CType, Common {
 
     vm.warp(_auction.auctionDeadline);
 
-    assertEq(protocolToken.totalSupply(), INITIAL_BID);
+    assertEq(protocolToken.totalSupply(), INITIAL_BID + _initialProtocolTokenSupply);
     surplusAuctionHouse.settleAuction(_auctionId);
-    _collectSystemCoins(address(this));
-    assertEq(protocolToken.totalSupply(), INITIAL_BID / 2); // 50% of the bid is burned
+    _exitAllCoins(address(this));
+    assertEq(protocolToken.totalSupply(), (INITIAL_BID / 2) + _initialProtocolTokenSupply); // 50% of the bid is burned
     assertEq(protocolToken.balanceOf(SURPLUS_AUCTION_BID_RECEIVER), INITIAL_BID / 2); // 50% is sent to the receiver
     assertEq(protocolToken.balanceOf(address(this)), 0);
     assertEq(systemCoin.balanceOf(address(this)) - _initialBalance, _auction.amountToSell / RAY);
@@ -263,6 +312,7 @@ abstract contract E2ETest is BaseUser, Base_CType, Common {
   function test_surplus_auction_and_multi_bid() public {
     _generateDebt(address(this), address(collateralJoin[_cType()]), int256(COLLATERAL_AMOUNT), int256(DEBT_AMOUNT));
     uint256 _initialBalance = systemCoin.balanceOf(address(this));
+    uint256 _initialProtocolTokenSupply = protocolToken.totalSupply();
     uint256 INITIAL_BID = 1e18;
     address other_user = label('other_user');
 
@@ -287,11 +337,11 @@ abstract contract E2ETest is BaseUser, Base_CType, Common {
 
     vm.warp(_auction.auctionDeadline);
 
-    assertEq(protocolToken.totalSupply(), INITIAL_BID + _secondBid);
+    assertEq(protocolToken.totalSupply(), INITIAL_BID + _secondBid + _initialProtocolTokenSupply);
     surplusAuctionHouse.settleAuction(_auctionId);
-    _collectSystemCoins(address(this));
+    _exitAllCoins(address(this));
     // 50% of the winning bid is burned
-    assertEq(protocolToken.totalSupply(), INITIAL_BID + (_secondBid / 2));
+    assertEq(protocolToken.totalSupply(), INITIAL_BID + (_secondBid / 2) + _initialProtocolTokenSupply);
     // 50% of the winning bid is sent to the receiver
     assertEq(protocolToken.balanceOf(SURPLUS_AUCTION_BID_RECEIVER), _secondBid / 2);
     assertEq(protocolToken.balanceOf(address(this)), 0);
@@ -301,6 +351,7 @@ abstract contract E2ETest is BaseUser, Base_CType, Common {
   function test_surplus_auction_and_rebid() public {
     _generateDebt(address(this), address(collateralJoin[_cType()]), int256(COLLATERAL_AMOUNT), int256(DEBT_AMOUNT));
     uint256 _initialBalance = systemCoin.balanceOf(address(this));
+    uint256 _initialProtocolTokenSupply = protocolToken.totalSupply();
     uint256 INITIAL_BID = 1e18;
 
     uint256 _bidIncrease = surplusAuctionHouse.params().bidIncrease;
@@ -308,7 +359,7 @@ abstract contract E2ETest is BaseUser, Base_CType, Common {
 
     // mint protocol tokens to bid with
     vm.prank(deployer);
-    protocolToken.mint(address(this), _secondBid);
+    protocolToken.mint(address(this), _secondBid + INITIAL_BID);
 
     // generate surplus
     _collectFees(_cType(), 10 * YEAR);
@@ -321,15 +372,18 @@ abstract contract E2ETest is BaseUser, Base_CType, Common {
     assertEq(_auction.bidAmount, _secondBid);
 
     vm.warp(_auction.auctionDeadline);
+    assertEq(protocolToken.totalSupply(), INITIAL_BID + _secondBid + _initialProtocolTokenSupply);
 
-    assertEq(protocolToken.totalSupply(), _secondBid);
     surplusAuctionHouse.settleAuction(_auctionId);
-    _collectSystemCoins(address(this));
+    _exitAllCoins(address(this));
     // 50% of the winning bid is burned
-    assertEq(protocolToken.totalSupply(), _secondBid / 2);
+    assertEq(protocolToken.totalSupply(), INITIAL_BID + (_secondBid / 2) + _initialProtocolTokenSupply);
     // 50% of the winning bid is sent to the receiver
     assertEq(protocolToken.balanceOf(SURPLUS_AUCTION_BID_RECEIVER), _secondBid / 2);
-    assertEq(protocolToken.balanceOf(address(this)), 0);
+    // test applies to DirectUser only
+    if (protocolToken.balanceOf(address(this)) != 0) {
+      assertEq(protocolToken.balanceOf(address(this)), INITIAL_BID);
+    }
     assertEq(systemCoin.balanceOf(address(this)) - _initialBalance, _auction.amountToSell / RAY);
   }
 }
@@ -341,10 +395,10 @@ abstract contract E2ETest is BaseUser, Base_CType, Common {
 
 // contract E2ETestProxyUserETH is ProxyUser, ETH_CType, E2ETest {}
 
-abstract contract E2ETestDirectUserTKN is DirectUser, TKN_CType, E2ETest {}
+contract E2ETestDirectUserTKN is DirectUser, TKN_CType, E2ETest {}
 
-abstract contract E2ETestProxyUserTKN is ProxyUser, TKN_CType, E2ETest {}
+contract E2ETestProxyUserTKN is ProxyUser, TKN_CType, E2ETest {}
 
-abstract contract E2ETestDirectUserTKN8D is DirectUser, TKN_8D_CType, E2ETest {}
+contract E2ETestDirectUserTKN8D is DirectUser, TKN_8D_CType, E2ETest {}
 
-abstract contract E2ETestProxyUserTKN8D is ProxyUser, TKN_8D_CType, E2ETest {}
+contract E2ETestProxyUserTKN8D is ProxyUser, TKN_8D_CType, E2ETest {}

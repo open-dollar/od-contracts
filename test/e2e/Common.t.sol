@@ -91,6 +91,10 @@ abstract contract Common is DeployForTest, ODTest {
     vm.label(bob, 'Bob');
     vm.label(carol, 'Carol');
     vm.label(dave, 'Dave');
+
+    vm.startPrank(deployer); // no governor on test deployment
+    accountingEngine.modifyParameters('extraSurplusReceiver', abi.encode(address(0x420)));
+    vm.stopPrank();
   }
 
   function _setCollateralPrice(bytes32 _collateral, uint256 _price) internal {

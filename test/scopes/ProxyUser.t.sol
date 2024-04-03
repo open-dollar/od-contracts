@@ -25,9 +25,9 @@ import {IWeth} from '@interfaces/external/IWeth.sol';
 import {BaseUser} from '@test/scopes/BaseUser.t.sol';
 
 abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
-  mapping(address => ODProxy) proxy;
-  mapping(address => mapping(bytes32 => uint256)) safe;
-  mapping(address => mapping(bytes32 => address)) safeHandlerMap;
+  mapping(address => ODProxy) private proxy;
+  mapping(address => mapping(bytes32 => uint256)) private safe;
+  mapping(address => mapping(bytes32 => address)) private safeHandler;
 
   function _getSafeStatus(
     bytes32 _cType,
@@ -59,25 +59,35 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
 
   // --- SAFE actions ---
 
-  function _lockETH(address _user, uint256 _collatAmount) internal override {
+  function _joinCoins(address _user, uint256 _amount) internal override {
     ODProxy _proxy = _getProxy(_user);
-    // (uint256 _safeId,) = _getSafe(_user, ETH_A);
 
     vm.startPrank(_user);
-    IWeth(address(collateral[ETH_A])).deposit{value: _collatAmount}();
-    collateral[ETH_A].approve(address(_proxy), _collatAmount);
+    systemCoin.approve(address(_proxy), _amount);
 
-    // NOTE: missing for ETH implementation (should add value to msg)
-    // bytes memory _callData = abi.encodeWithSelector(
-    //   BasicActions.lockTokenCollateral.selector,
-    //   address(safeManager),
-    //   address(collateralJoin[ETH_A]),
-    //   _safeId,
-    //   _collatAmount,
-    //   true
-    // );
-    // _proxy.execute(address(basicActions), _callData);
+    bytes memory _callData =
+      abi.encodeWithSelector(CommonActions.joinSystemCoins.selector, address(coinJoin), _user, _amount);
+
+    _proxy.execute(address(basicActions), _callData);
     vm.stopPrank();
+  }
+
+  function _exitCoins(address _user, uint256 _amount) internal override {
+    ODProxy _proxy = _getProxy(_user);
+
+    bytes memory _callData = abi.encodeWithSelector(CommonActions.exitSystemCoins.selector, address(coinJoin), _amount);
+
+    vm.prank(_user);
+    _proxy.execute(address(basicActions), _callData);
+  }
+
+  function _exitAllCoins(address _user) internal override {
+    ODProxy _proxy = _getProxy(_user);
+
+    bytes memory _callData = abi.encodeWithSelector(CommonActions.exitAllSystemCoins.selector, address(coinJoin));
+
+    vm.prank(_user);
+    _proxy.execute(address(basicActions), _callData);
   }
 
   function _joinTKN(address _user, address _collateralJoin, uint256 _amount) internal override {
@@ -101,24 +111,12 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
   }
 
   function _exitCollateral(address _user, address _collateralJoin, uint256 _amount) internal override {
-    // NOTE: proxy implementation already exits collateral
-  }
-
-  function _joinCoins(address _user, uint256 _amount) internal override {
     ODProxy _proxy = _getProxy(_user);
 
-    vm.startPrank(_user);
-    systemCoin.approve(address(_proxy), _amount);
+    bytes memory _callData = abi.encodeWithSelector(CommonActions.exitCollateral.selector, _collateralJoin, _amount);
 
-    bytes memory _callData =
-      abi.encodeWithSelector(CommonActions.joinSystemCoins.selector, address(coinJoin), _user, _amount);
-
+    vm.prank(_user);
     _proxy.execute(address(basicActions), _callData);
-    vm.stopPrank();
-  }
-
-  function _exitCoin(address _user, uint256 _amount) internal override {
-    // NOTE: proxy implementation already exits coins
   }
 
   function _liquidateSAFE(bytes32 _cType, address _user) internal override {
@@ -136,14 +134,12 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     bytes32 _cType = ICollateralJoin(_collateralJoin).collateralType();
     (uint256 _safeId,) = _getSafe(_user, _cType);
 
-    if (_cType == ETH_A) _lockETH(_user, uint256(_collatAmount));
-    else _joinTKN(_user, _collateralJoin, uint256(_collatAmount));
+    _joinTKN(_user, _collateralJoin, uint256(_collatAmount));
 
     bytes memory _callData = abi.encodeWithSelector(
       BasicActions.lockTokenCollateralAndGenerateDebt.selector,
       address(safeManager),
-      address(taxCollector),
-      address(collateralJoin[_cType]),
+      _collateralJoin,
       address(coinJoin),
       _safeId,
       _collatAmount,
@@ -170,7 +166,6 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     bytes memory _callData = abi.encodeWithSelector(
       BasicActions.repayDebtAndFreeTokenCollateral.selector,
       address(safeManager),
-      address(taxCollector),
       _collateralJoin,
       address(coinJoin),
       _safeId,
@@ -182,9 +177,22 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     vm.stopPrank();
   }
 
+  function _collectTokenCollateral(address _user, address _collateralJoin, uint256 _amount) internal override {
+    ODProxy _proxy = _getProxy(_user);
+    bytes32 _cType = ICollateralJoin(_collateralJoin).collateralType();
+    (uint256 _safeId,) = _getSafe(_user, _cType);
+
+    bytes memory _callData = abi.encodeWithSelector(
+      BasicActions.collectTokenCollateral.selector, address(safeManager), _collateralJoin, _safeId, _amount
+    );
+
+    vm.prank(_user);
+    _proxy.execute(address(basicActions), _callData);
+  }
+
   function _getProxy(address _user) internal returns (ODProxy) {
     if (proxy[_user] == ODProxy(address(0))) {
-      proxy[_user] = ODProxy(vault721.build());
+      proxy[_user] = ODProxy(vault721.build(_user));
     }
     return proxy[_user];
   }
@@ -203,10 +211,10 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
 
       // store safeId and safeHandler in local storage
       safe[_user][_cType] = _safeId;
-      safeHandlerMap[_user][_cType] = _safeHandler;
+      safeHandler[_user][_cType] = _safeHandler;
     }
 
-    return (safe[_user][_cType], safeHandlerMap[_user][_cType]);
+    return (safe[_user][_cType], safeHandler[_user][_cType]);
   }
 
   // --- Bidding actions ---
@@ -219,7 +227,6 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     uint256 _amountToBid
   ) internal override {
     ODProxy _proxy = _getProxy(_user);
-    _joinCoins(_user, _amountToBid);
 
     vm.startPrank(_user);
     systemCoin.approve(address(_proxy), _amountToBid);
@@ -279,24 +286,12 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
     vm.stopPrank();
   }
 
-  function _settleAuction(address _user, uint256 _auctionId) internal {
+  function _settleSurplusAuction(address _user, uint256 _auctionId) internal override {
     ODProxy _proxy = _getProxy(_user);
 
     bytes memory _callData = abi.encodeWithSelector(
       SurplusBidActions.settleAuction.selector, address(coinJoin), address(surplusAuctionHouse), _auctionId
     );
-
-    vm.prank(_user);
-    _proxy.execute(address(surplusBidActions), _callData);
-  }
-
-  function _collectSystemCoins(address _user) internal override {
-    ODProxy _proxy = _getProxy(_user);
-
-    uint256 _coinsToExit = safeEngine.coinBalance(address(_proxy));
-
-    bytes memory _callData =
-      abi.encodeWithSelector(CommonActions.exitSystemCoins.selector, address(coinJoin), _coinsToExit);
 
     vm.prank(_user);
     _proxy.execute(address(surplusBidActions), _callData);
@@ -361,7 +356,7 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
   function _redeemCollateral(
     address _user,
     bytes32 _cType,
-    uint256 /*_coinsAmount*/
+    uint256 _coinsAmount
   ) internal override returns (uint256 _collateralAmount) {
     ODProxy _proxy = _getProxy(_user);
 
