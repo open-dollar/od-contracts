@@ -40,7 +40,7 @@ contract ModifyParameters is JSONScript {
       values[0] = 0;
     }
 
-    // bytes[] memory calldatas = new bytes[](1);
+    bytes[] memory calldatas = new bytes[](1);
     calldatas[0] = data;
 
     string memory description = 'Update Modifiable Param';
@@ -58,7 +58,7 @@ contract ModifyParameters is JSONScript {
     {
       // Build the JSON output
       string memory objectKey = 'MODIFY_PARAMETERS_KEY';
-      vm.serializeBytes(objectKey, 'modifyParameters', _data);
+      vm.serializeBytes(objectKey, 'modifyParameters', data);
       string memory jsonOutput =
         _buildProposalParamsJSON(proposalId, objectKey, targets, values, calldatas, description, descriptionHash);
       vm.writeJson(jsonOutput, string.concat('./gov-output/', stringProposalId, '-modify-parameters-proposal.json'));
