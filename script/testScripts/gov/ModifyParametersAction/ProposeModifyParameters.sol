@@ -5,7 +5,6 @@ import {JSONScript} from '@script/testScripts/gov/JSONScript.s.sol';
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
-
 /// @title ModifyParameters Script
 /// @author OpenDollar
 /// @notice Script to modify parameters of any contract that inherits the "Modifiable.sol" contract
@@ -15,14 +14,13 @@ import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 /// @dev In the root, run: export FOUNDRY_PROFILE=governance && forge script --rpc-url <RPC_URL> script/testScripts/gov/ModifyParametersAction/ProposeModifyParameters.s.sol
 
 contract ModifyParameters is JSONScript {
-    
   function run() public {
     /// REQUIRED ENV VARS ///
     // address of the governance contract
     address governanceAddress = vm.envAddress('GOVERNANCE_ADDRESS');
     // address of the contract that you desire to modify the parameters of
-    address targetContract =vm.envAddress('TARGET_CONTRACT');
-    
+    address targetContract = vm.envAddress('TARGET_CONTRACT');
+
     // get the desired parameter bytes32 with: cast format-bytes32-string <parameters string>
 
     // the encoded bytes of the desired parameter change e.g. the output of (cast calldata "modifyParameters(bytes32,bytes memory)" 0x676c6f62616c446562744365696c696e67000000000000000000000000000000 1000000000000000000000)
