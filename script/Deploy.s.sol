@@ -15,7 +15,7 @@ import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 abstract contract Deploy is Common, Script {
   function _addAuthCreate2AndProtocolToken() public runIfFork restoreOriginalCaller {
     address deployerAddr = vm.addr(_deployerPk);
-    address create2AuthAddr1 = create2.authorizedAccounts()[0];
+    address create2AuthAddr = create2.authorizedAccounts()[0];
     address protocolTokenAuthAddr = protocolToken.authorizedAccounts()[0];
     vm.startBroadcast(create2AuthAddr);
     if (!_isAuth(address(create2), deployerAddr)) {
