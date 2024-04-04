@@ -61,7 +61,6 @@ contract NFTRenderer {
     string stroke;
     string lastUpdate;
     string stateHash;
-    address safeHandler;
   }
 
   /**
@@ -130,7 +129,7 @@ contract NFTRenderer {
   function getVaultCTypeAndCollateralAndDebt(uint256 _safeId)
     public
     view
-    returns (bytes32 cType, uint256 collateral, uint256 debt, uint256 coinBal, uint256 tokenCol, address safeHandler)
+    returns (bytes32 cType, uint256 collateral, uint256 debt, uint256 coinBal, uint256 tokenCol)
   {
     IODSafeManager.SAFEData memory safeMangerData = _safeManager.safeData(_safeId);
     address safeHandler = safeMangerData.safeHandler;
@@ -150,7 +149,7 @@ contract NFTRenderer {
    * @return stateHash state hash for safe with `_safeId`
    */
   function getStateHashBySafeId(uint256 _safeId) external view returns (bytes32 stateHash) {
-    (, uint256 collateral, uint256 debt, uint256 coinBal, uint256 tokenCol, address safeHandler) = getVaultCTypeAndCollateralAndDebt(_safeId);
+    (, uint256 collateral, uint256 debt, uint256 coinBal, uint256 tokenCol) = getVaultCTypeAndCollateralAndDebt(_safeId);
     stateHash = getStateHash(collateral, debt);
   }
 
@@ -178,14 +177,13 @@ contract NFTRenderer {
       uint256 debt;
       uint256 coinBal;
       uint256 tokenCol;
-      address safeHandler;
 
-      (cType, collateral, debt, coinBal, tokenCol, safeHandler) = getVaultCTypeAndCollateralAndDebt(_safeId);
+      (cType, collateral, debt, coinBal, tokenCol) = getVaultCTypeAndCollateralAndDebt(_safeId);
 
+      {
       params.coinBalance = coinBal.toString();
       params.tokenCollateral = tokenCol.toString();
-      params.safeHandler = safeHandler;
-
+      }
 
       IOracleRelayer.OracleRelayerCollateralParams memory oracleParams = _oracleRelayer.cParams(cType);
       IDelayedOracle oracle = oracleParams.oracle;
@@ -212,7 +210,6 @@ contract NFTRenderer {
         params.collateral = _parseNumberWithComma(left, right);
         params.metaCollateral = _parseNumber(left, right);
       }
-
       params.lastUpdate = _formatDateTime(oracle.lastUpdateTime());
       (params.risk, params.color) = _calcRisk(ratio, liquidationCRatio, safetyCRatio);
       params.stroke = _calcStroke(ratio);
@@ -260,14 +257,8 @@ contract NFTRenderer {
    * @dev json attributes
    */
   function _renderTraits(VaultParams memory params) internal pure returns (string memory traits) {
-    
-    //pack address variable without converting it to string.
-    string memory buffer = '"},{"trait_type":"Safe Handler ID","value":"';
-    traits = string(abi.encodePacked(buffer, params.safeHandler));
-    
     // stack at 16 slot max w/ 32-byte+ strings
     traits = string.concat(
-      traits,
       '"},{"trait_type":"Debt","value":"',
       params.metaDebt,
       '"},{"trait_type":"Collateral","value":"',

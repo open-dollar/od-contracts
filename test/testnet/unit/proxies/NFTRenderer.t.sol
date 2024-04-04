@@ -155,7 +155,7 @@ contract Unit_NFTRenderer_GetVaultCTypeAndCollateralAndDebt is Base {
   ) public {
     vm.mockCall(address(safeManager), abi.encodeWithSelector(IODSafeManager.safeData.selector), abi.encode(_safeData));
     vm.mockCall(address(safeEngine), abi.encodeWithSelector(ISAFEEngine.safes.selector), abi.encode(_safeEngineData));
-    (bytes32 cType, uint256 collateral, uint256 debt, uint256 coinBal, uint256 tokenCol, address safeHandlerID) = nftRenderer.getVaultCTypeAndCollateralAndDebt(1);
+    (bytes32 cType, uint256 collateral, uint256 debt, uint256 coinBal, uint256 tokenCol) = nftRenderer.getVaultCTypeAndCollateralAndDebt(1);
 
     assertEq(cType, _safeData.collateralType, 'incorrect cType');
     assertEq(collateral, _safeEngineData.lockedCollateral, 'incorrect safe engine collateral');
