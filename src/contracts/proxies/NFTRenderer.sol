@@ -207,9 +207,9 @@ contract NFTRenderer {
 
       params.stateHash = string(abi.encodePacked(getStateHash(collateral, debt)));
 
-      params.coinBalance = _safeEngine.coinBalance(_safeId);
+      params.coinBalance = _safeEngine.coinBalance(_safeId).toString();
 
-      params.tokenCollateral = _safeEngine.tokenCollateral(cType, _safeId);
+      params.tokenCollateral = _safeEngine.tokenCollateral(cType, _safeId).toString();
     }
 
 
