@@ -129,7 +129,7 @@ contract NFTRenderer {
   function getVaultCTypeAndCollateralAndDebt(uint256 _safeId)
     public
     view
-    returns (bytes32 cType, uint256 collateral, uint256 debt)
+    returns (bytes32 cType, uint256 collateral, uint256 debt, uint256 coinBal, uint256 tokenCol)
   {
     IODSafeManager.SAFEData memory safeMangerData = _safeManager.safeData(_safeId);
     address safeHandler = safeMangerData.safeHandler;
@@ -138,6 +138,9 @@ contract NFTRenderer {
     ISAFEEngine.SAFE memory SafeEngineData = _safeEngine.safes(cType, safeHandler);
     collateral = SafeEngineData.lockedCollateral;
     debt = SafeEngineData.generatedDebt;
+
+    coinBal = _safeEngine.coinBalance(safeMangerData.safeHandler);
+    tokenCol = _safeEngine.tokenCollateral(cType, safeMangerData.safeHandler);
   }
 
   /**
@@ -146,7 +149,7 @@ contract NFTRenderer {
    * @return stateHash state hash for safe with `_safeId`
    */
   function getStateHashBySafeId(uint256 _safeId) external view returns (bytes32 stateHash) {
-    (, uint256 collateral, uint256 debt) = getVaultCTypeAndCollateralAndDebt(_safeId);
+    (, uint256 collateral, uint256 debt, , ) = getVaultCTypeAndCollateralAndDebt(_safeId);
     stateHash = getStateHash(collateral, debt);
   }
 
@@ -172,7 +175,14 @@ contract NFTRenderer {
     {
       uint256 collateral;
       uint256 debt;
-      (cType, collateral, debt) = getVaultCTypeAndCollateralAndDebt(_safeId);
+      uint256 coinBal;
+      uint256 tokenCol;
+
+      (cType, collateral, debt, coinBal, tokenCol) = getVaultCTypeAndCollateralAndDebt(_safeId);
+
+      params.coinBalance = coinBal.toString();
+      params.tokenCollateral = tokenCol.toString();
+
 
       IOracleRelayer.OracleRelayerCollateralParams memory oracleParams = _oracleRelayer.cParams(cType);
       IDelayedOracle oracle = oracleParams.oracle;
@@ -206,10 +216,6 @@ contract NFTRenderer {
       params.ratio = ratio;
 
       params.stateHash = string(abi.encodePacked(getStateHash(collateral, debt)));
-
-      params.coinBalance = _safeEngine.coinBalance(_safeId).toString();
-
-      params.tokenCollateral = _safeEngine.tokenCollateral(cType, _safeId).toString();
     }
 
 
@@ -243,7 +249,7 @@ contract NFTRenderer {
     desc = string.concat(
       '"Non-Fungible Vault #',
       _safeId,
-      ' Caution! Trading this NFV gives the recipient full ownership of your Vault, including all collateral inside it & debt obligations. This act is irreversible.",'
+      ' CAUTION! Trading this NFV gives the recipient full ownership of your Vault, including all collateral inside it & debt obligations. This act is irreversible.",'
     );
   }
 
