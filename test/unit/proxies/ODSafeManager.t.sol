@@ -75,6 +75,8 @@ contract Base is ODTest {
     safeManager =
       new ODSafeManager(address(mockSafeEngine), address(vault721), address(taxCollector), liquidationEngine);
 
+    safeManager.addAuthorization(address(this));
+
     vm.stopPrank();
   }
 
@@ -223,7 +225,11 @@ contract Unit_ODSafeManager_SAFEManagement is Base {
 
     vm.expectEmit();
     emit TransferSAFEOwnership(address(vault721), 1, address(_scenario.alice));
-
+    vm.mockCall(
+      address(liquidationEngine),
+      abi.encodeWithSelector(ILiquidationEngine.chosenSAFESaviour.selector),
+      abi.encode(address(0))
+    );
     safeManager.transferSAFEOwnership(1, address(_scenario.alice));
 
     uint256[] memory _safes = safeManager.getSafes(_scenario.alice);
@@ -463,5 +469,27 @@ contract Unit_ODSafeManager_CollateralManagement is Base {
 
     vm.prank(_scenario.aliceProxy);
     safeManager.transferInternalCoins(_scenario.safeId, _scenario.bob, 100);
+  }
+}
+
+contract Unit_ODSafeManager_ModifyParameters is Base {
+  function test_ModifyParameters_LiquidationEngine() public {
+    safeManager.modifyParameters('liquidationEngine', abi.encode(address(1)));
+    assertEq(safeManager.liquidationEngine(), address(1));
+  }
+
+  function test_ModifyParameters_TaxCollector() public {
+    safeManager.modifyParameters('taxCollector', abi.encode(address(1)));
+    assertEq(safeManager.taxCollector(), address(1));
+  }
+
+  function test_ModifyParameters_Vault721() public {
+    safeManager.modifyParameters('vault721', abi.encode(address(1)));
+    assertEq(address(safeManager.vault721()), address(1));
+  }
+
+  function test_ModifyParameters_SafeEngine() public {
+    safeManager.modifyParameters('safeEngine', abi.encode(address(1)));
+    assertEq(safeManager.safeEngine(), address(1));
   }
 }

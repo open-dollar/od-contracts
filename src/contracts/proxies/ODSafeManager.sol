@@ -168,8 +168,9 @@ contract ODSafeManager is IODSafeManager, Authorizable, Modifiable {
 
     _safeData[_safe].owner = _dst;
 
-    ILiquidationEngine(liquidationEngine).protectSAFE(_sData.collateralType, _sData.safeHandler, address(0));
-
+    if (
+      ILiquidationEngine(liquidationEngine).chosenSAFESaviour(_sData.collateralType, _sData.safeHandler) != address(0)
+    ) ILiquidationEngine(liquidationEngine).protectSAFE(_sData.collateralType, _sData.safeHandler, address(0));
     emit TransferSAFEOwnership(msg.sender, _safe, _dst);
   }
 
