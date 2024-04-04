@@ -301,6 +301,7 @@ contract ODSafeManager is IODSafeManager, Authorizable, Modifiable {
     emit ProtectSAFE(msg.sender, _safe, _liquidationEngine, _saviour);
   }
 
+  /// @inheritdoc Modifiable
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     address _address = abi.decode(_data, (address));
 

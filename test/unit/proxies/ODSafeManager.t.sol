@@ -7,6 +7,7 @@ import {IVault721} from '@interfaces/proxies/IVault721.sol';
 import {SAFEEngineForTest, ISAFEEngine} from '@test/mocks/SAFEEngineForTest.sol';
 import {ODSafeManager} from '@contracts/proxies/ODSafeManager.sol';
 import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
+import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {TaxCollector} from '@contracts/TaxCollector.sol';
 import {ITaxCollector} from '@interfaces/ITaxCollector.sol';
 import {ILiquidationEngine} from '@interfaces/ILiquidationEngine.sol';
@@ -228,7 +229,7 @@ contract Unit_ODSafeManager_SAFEManagement is Base {
     vm.mockCall(
       address(liquidationEngine),
       abi.encodeWithSelector(ILiquidationEngine.chosenSAFESaviour.selector),
-      abi.encode(address(0))
+      abi.encode(address(1))
     );
     safeManager.transferSAFEOwnership(1, address(_scenario.alice));
 
@@ -491,5 +492,10 @@ contract Unit_ODSafeManager_ModifyParameters is Base {
   function test_ModifyParameters_SafeEngine() public {
     safeManager.modifyParameters('safeEngine', abi.encode(address(1)));
     assertEq(safeManager.safeEngine(), address(1));
+  }
+
+  function test_ModifyParameters_Revert_UnrecognizedParam() public{
+    vm.expectRevert(IModifiable.UnrecognizedParam.selector);
+    safeManager.modifyParameters('unrecognizedParam', abi.encode(address(1)));
   }
 }
