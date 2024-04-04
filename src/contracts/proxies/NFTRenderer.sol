@@ -171,10 +171,10 @@ contract NFTRenderer {
   function renderParams(uint256 _safeId) public view returns (VaultParams memory) {
     VaultParams memory params;
     params.vaultId = _safeId.toString();
-
-    bytes32 cType;
+    
     // scoped to reduce call stack
     {
+      bytes32 cType;
       uint256 collateral;
       uint256 debt;
       {
@@ -187,13 +187,11 @@ contract NFTRenderer {
       params.tokenCollateral = tokenCol.toString();
       }
 
-
       IOracleRelayer.OracleRelayerCollateralParams memory oracleParams = _oracleRelayer.cParams(cType);
       IDelayedOracle oracle = oracleParams.oracle;
-      uint256 safetyCRatio = oracleParams.safetyCRatio / 10e24;
-      uint256 liquidationCRatio = oracleParams.liquidationCRatio / 10e24;
 
       uint256 ratio;
+
       if (collateral != 0 && debt != 0) {
         ISAFEEngine.SAFEEngineCollateralData memory cTypeData = _safeEngine.cData(cType);
         ratio = ((collateral.wmul(oracle.read())).wdiv(debt.wmul(cTypeData.accumulatedRate))) / 1e7; // _RAY to _WAD conversion
@@ -217,18 +215,20 @@ contract NFTRenderer {
         params.metaCollateral = _parseNumber(left, right);
       }
       {
-      params.lastUpdate = _formatDateTime(oracle.lastUpdateTime());
-      (params.risk, params.color) = _calcRisk(ratio, liquidationCRatio, safetyCRatio);
-      params.stroke = _calcStroke(ratio);
-      params.ratio = ratio;
+        uint256 safetyCRatio = oracleParams.safetyCRatio / 10e24;
 
-      params.stateHash = string(abi.encodePacked(getStateHash(collateral, debt)));
+        uint256 liquidationCRatio = oracleParams.liquidationCRatio / 10e24;
+        params.lastUpdate = _formatDateTime(oracle.lastUpdateTime());
+        (params.risk, params.color) = _calcRisk(ratio, liquidationCRatio, safetyCRatio);
+        params.stroke = _calcStroke(ratio);
+        params.ratio = ratio;
+
+        params.stateHash = string(abi.encodePacked(getStateHash(collateral, debt)));
       }
+    
+      ITaxCollector.TaxCollectorCollateralData memory taxData = _taxCollector.cData(cType);
+      params.stabilityFee = (taxData.nextStabilityFee / _RAY).toString();
     }
-
-
-    ITaxCollector.TaxCollectorCollateralData memory taxData = _taxCollector.cData(cType);
-    params.stabilityFee = (taxData.nextStabilityFee / _RAY).toString();
 
     return params;
   }
@@ -276,15 +276,21 @@ contract NFTRenderer {
       '"},{"trait_type":"Token Collateral","value":"',
       params.tokenCollateral, 
       '"},{"trait_type":"Collateral Type","value":"',
-      params.symbol,
-      '"},{"trait_type":"Stability Fee","value":"',
-      params.stabilityFee,
-      '"},{"trait_type":"Risk","value":"',
-      params.risk,
-      '"},{"trait_type":"Collateralization Ratio","value":"',
-      params.ratio.toString(),
-      '"},{"trait_type":"Last Updated","value":"'
+      params.symbol
     );
+    //scoped to improve stack depth
+    {
+      traits = string.concat(
+        traits,
+        '"},{"trait_type":"Stability Fee","value":"',
+        params.stabilityFee,
+        '"},{"trait_type":"Risk","value":"',
+        params.risk,
+        '"},{"trait_type":"Collateralization Ratio","value":"',
+        params.ratio.toString(),
+        '"},{"trait_type":"Last Updated","value":"'
+      );
+    }
     
   }
 
