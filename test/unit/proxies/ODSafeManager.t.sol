@@ -494,7 +494,7 @@ contract Unit_ODSafeManager_ModifyParameters is Base {
     assertEq(safeManager.safeEngine(), address(1));
   }
 
-  function test_ModifyParameters_Revert_UnrecognizedParam() public{
+  function test_ModifyParameters_Revert_UnrecognizedParam() public {
     vm.expectRevert(IModifiable.UnrecognizedParam.selector);
     safeManager.modifyParameters('unrecognizedParam', abi.encode(address(1)));
   }
