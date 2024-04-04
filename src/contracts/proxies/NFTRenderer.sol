@@ -106,7 +106,7 @@ contract NFTRenderer {
           string.concat(
             _renderVaultInfo(params.vaultId, params.color),
             _renderCollatAndDebt(
-              ratio, params.stabilityFee, params.debt, params.collateral, params.symbol, params.lastUpdate //tokenCollateral and coinBalance are not included here because they will usuall be redundant.
+              ratio, params.stabilityFee, params.debt, params.collateral, params.symbol, params.lastUpdate 
             ),
             _renderRisk(ratio, params.stroke, params.risk),
             _renderBackground(params.color)
