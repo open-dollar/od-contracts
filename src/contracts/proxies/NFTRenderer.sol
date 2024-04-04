@@ -97,7 +97,8 @@ contract NFTRenderer {
     string memory text = _renderText(params);
     uint256 ratio = params.ratio;
 
-    string memory json = string.concat(
+    {
+      string memory json = string.concat(
       '{"name":"OD NFV #',
       text,
       '"}],"image":"data:image/svg+xml;base64,',
@@ -117,6 +118,7 @@ contract NFTRenderer {
     );
 
     uri = string.concat('data:application/json;base64,', Base64.encode(bytes(json)));
+    }
   }
 
   /**
@@ -139,8 +141,8 @@ contract NFTRenderer {
     collateral = SafeEngineData.lockedCollateral;
     debt = SafeEngineData.generatedDebt;
 
-    coinBal = _safeEngine.coinBalance(safeMangerData.safeHandler);
-    tokenCol = _safeEngine.tokenCollateral(cType, safeMangerData.safeHandler);
+    coinBal = _safeEngine.coinBalance(safeHandler);
+    tokenCol = _safeEngine.tokenCollateral(cType, safeHandler);
   }
 
   /**
@@ -149,7 +151,7 @@ contract NFTRenderer {
    * @return stateHash state hash for safe with `_safeId`
    */
   function getStateHashBySafeId(uint256 _safeId) external view returns (bytes32 stateHash) {
-    (, uint256 collateral, uint256 debt, uint256 coinBal, uint256 tokenCol) = getVaultCTypeAndCollateralAndDebt(_safeId);
+    (, uint256 collateral, uint256 debt, , ) = getVaultCTypeAndCollateralAndDebt(_safeId);
     stateHash = getStateHash(collateral, debt);
   }
 
@@ -175,15 +177,16 @@ contract NFTRenderer {
     {
       uint256 collateral;
       uint256 debt;
+      {
       uint256 coinBal;
       uint256 tokenCol;
 
       (cType, collateral, debt, coinBal, tokenCol) = getVaultCTypeAndCollateralAndDebt(_safeId);
 
-      {
       params.coinBalance = coinBal.toString();
       params.tokenCollateral = tokenCol.toString();
       }
+
 
       IOracleRelayer.OracleRelayerCollateralParams memory oracleParams = _oracleRelayer.cParams(cType);
       IDelayedOracle oracle = oracleParams.oracle;
@@ -197,8 +200,11 @@ contract NFTRenderer {
       } else {
         ratio = 0;
       }
+      {
       IERC20Metadata token = ICollateralJoin(_collateralJoinFactory.collateralJoins(cType)).collateral();
       params.symbol = token.symbol();
+      }
+
 
       {
         (uint256 left, uint256 right) = _floatingPoint(debt);
@@ -210,12 +216,14 @@ contract NFTRenderer {
         params.collateral = _parseNumberWithComma(left, right);
         params.metaCollateral = _parseNumber(left, right);
       }
+      {
       params.lastUpdate = _formatDateTime(oracle.lastUpdateTime());
       (params.risk, params.color) = _calcRisk(ratio, liquidationCRatio, safetyCRatio);
       params.stroke = _calcStroke(ratio);
       params.ratio = ratio;
 
       params.stateHash = string(abi.encodePacked(getStateHash(collateral, debt)));
+      }
     }
 
 
