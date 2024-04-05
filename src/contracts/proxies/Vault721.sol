@@ -7,28 +7,15 @@ import {ERC721EnumerableUpgradeable} from
 import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
+import {IVault721} from '@interfaces/proxies/IVault721.sol';
 
 // Open Dollar
 // Version 1.6.1
 
-struct HashState {
-  bytes32 lastHash;
-  uint256 lastBlockNumber;
-  uint256 lastBlockTimestamp;
-}
-
 /**
  * @notice Upgradeable contract used as singleton, but is not upgradeable
  */
-contract Vault721 is ERC721EnumerableUpgradeable {
-  error NotGovernor();
-  error NotSafeManager();
-  error NotWallet();
-  error ProxyAlreadyExist();
-  error BlockDelayNotOver();
-  error TimeDelayNotOver();
-  error ZeroAddress();
-
+contract Vault721 is ERC721EnumerableUpgradeable, IVault721 {
   address public timelockController;
   IODSafeManager public safeManager;
   NFTRenderer public nftRenderer;

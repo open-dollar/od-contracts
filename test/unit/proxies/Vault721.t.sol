@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import {ODTest, stdStorage, StdStorage} from '@test/utils/ODTest.t.sol';
-import {Vault721, HashState} from '@contracts/proxies/Vault721.sol';
+import {Vault721} from '@contracts/proxies/Vault721.sol';
 import {IVault721} from '@interfaces/proxies/IVault721.sol';
 import {TestVault721} from '@contracts/for-test/TestVault721.sol';
 import {SCWallet, Bad_SCWallet} from '@contracts/for-test/SCWallet.sol';
@@ -165,7 +165,7 @@ contract Vault721_ViewFunctions is Base {
     vm.prank(address(safeManager));
     vault721.updateVaultHashState(1);
 
-    HashState memory hashState = vault721.getHashState(1);
+    IVault721.HashState memory hashState = vault721.getHashState(1);
 
     assertEq(hashState.lastBlockNumber, block.number, 'incorrect block number');
     assertEq(hashState.lastBlockTimestamp, block.timestamp, 'incorrect time stamp');
@@ -221,7 +221,7 @@ contract Unit_Vault721_UpdateVaultHashState is Base {
     vm.prank(address(safeManager));
     vault721.updateVaultHashState(1);
 
-    HashState memory hashState = vault721.getHashState(1);
+    IVault721.HashState memory hashState = vault721.getHashState(1);
 
     assertEq(hashState.lastBlockNumber, block.number, 'incorrect block number');
     assertEq(hashState.lastBlockTimestamp, block.timestamp, 'incorrect time stamp');
@@ -229,14 +229,14 @@ contract Unit_Vault721_UpdateVaultHashState is Base {
   }
 
   function test_UpdateHashState_Revert_OnlySafeManager() public {
-    vm.expectRevert(Vault721.NotSafeManager.selector);
+    vm.expectRevert(IVault721.NotSafeManager.selector);
 
     vm.prank(address(user));
     vault721.updateVaultHashState(1);
   }
 
   function test_UpdateHashState_Revert_ZeroAddress() public {
-    vm.expectRevert(Vault721.ZeroAddress.selector);
+    vm.expectRevert(IVault721.ZeroAddress.selector);
 
     IODSafeManager.SAFEData memory returnSafe;
     vm.mockCall(address(safeManager), abi.encodeWithSelector(ODSafeManager.safeData.selector), abi.encode(returnSafe));
@@ -293,14 +293,14 @@ contract Unit_Vault721_GovernanceFunctions is Base {
   function test_UpdateNFTRenderer_Revert_OnlyGovernance() public {
     vm.mockCall(address(renderer), abi.encodeWithSelector(NFTRenderer.setImplementation.selector), abi.encode());
     vm.prank(address(user));
-    vm.expectRevert(Vault721.NotGovernor.selector);
+    vm.expectRevert(IVault721.NotGovernor.selector);
     vault721.updateNftRenderer(address(1), address(1), address(1), address(1));
   }
 
   function test_UpdateNFTRenderer_Revert_ZeroAddress() public {
     vm.mockCall(address(renderer), abi.encodeWithSelector(NFTRenderer.setImplementation.selector), abi.encode());
     vm.prank(address(timelockController));
-    vm.expectRevert(Vault721.ZeroAddress.selector);
+    vm.expectRevert(IVault721.ZeroAddress.selector);
     vault721.updateNftRenderer(
       address(0), _scenario.oracleRelayer, _scenario.taxCollector, _scenario.collateralJoinFactory
     );
@@ -347,7 +347,7 @@ contract Unit_Vault721_GovernanceFunctions is Base {
 
     vm.prank(_scenario.rando);
     // transfer token from rando to verify timeDelay was updated since there's no view function
-    vm.expectRevert(Vault721.TimeDelayNotOver.selector);
+    vm.expectRevert(IVault721.TimeDelayNotOver.selector);
     vm.mockCall(
       address(renderer),
       abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector),
@@ -713,7 +713,7 @@ contract Unit_Vault721_TransferFrom is Base {
 
     vm.prank(_scenario.user1);
 
-    vm.expectRevert(Vault721.BlockDelayNotOver.selector);
+    vm.expectRevert(IVault721.BlockDelayNotOver.selector);
 
     vm.mockCall(
       address(renderer),
@@ -745,7 +745,7 @@ contract Unit_Vault721_TransferFrom is Base {
     vault721.setApprovalForAll(_scenario.user2, true);
 
     vm.prank(_scenario.user2);
-    vm.expectRevert(Vault721.TimeDelayNotOver.selector);
+    vm.expectRevert(IVault721.TimeDelayNotOver.selector);
 
     vm.mockCall(
       address(renderer),

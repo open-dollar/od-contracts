@@ -15,21 +15,28 @@ interface IVault721 is IERC721EnumerableUpgradeable {
   error TimeDelayNotOver();
   error ZeroAddress();
 
+  struct HashState {
+    bytes32 lastHash;
+    uint256 lastBlockNumber;
+    uint256 lastBlockTimestamp;
+  }
+
   // public variables
   function timelockController() external returns (address);
   function safeManager() external returns (IODSafeManager);
   function nftRenderer() external returns (NFTRenderer);
-  function blockDelay() external returns (uint8);
+  function blockDelay() external returns (uint256);
   function timeDelay() external returns (uint256);
   function contractMetaData() external returns (string memory);
 
   // initializers
+  function initialize(address _timelockController) external;
   function initializeManager() external;
   function initializeRenderer() external;
 
   // external
   function getProxy(address _user) external view returns (address);
-  function getHashState(uint256 _vaultId) external view returns (uint256, uint256, uint256);
+  function getHashState(uint256 _vaultId) external view returns (HashState memory _hashState);
   function build() external returns (address payable);
   function build(address _user) external returns (address payable);
   function build(address[] memory _users) external returns (address payable[] memory _proxies);
@@ -48,11 +55,11 @@ interface IVault721 is IERC721EnumerableUpgradeable {
   function updateContractURI(string memory _metaData) external;
   function setSafeManager(address _safeManager) external;
   function setNftRenderer(address _nftRenderer) external;
-  function updateWhitelist(address _user, bool _status) external;
+  // function updateWhitelist(address _user, bool _status) external;
   function updateTimeDelay(uint256 _timeDelay) external;
   function updateBlockDelay(uint256 _blockDelay) external;
 
   // public
-  function tokenURI(uint256 _safeId) external returns (string memory);
+  // function tokenURI(uint256 _safeId) external returns (string memory);
   function contractURI() external returns (string memory);
 }

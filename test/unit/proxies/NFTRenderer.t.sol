@@ -265,16 +265,15 @@ contract Unit_NFTRenderer_SetImplementation is Base {
   );
 
   function test_SetImplementation(Implementations memory _imps) public {
-    vm.mockCall(
-      address(_imps.safeManager),
-      abi.encodeWithSelector(IODSafeManager.safeEngine.selector),
-      abi.encode(_imps.safeEngine)
-    );
-
     vm.prank(address(vault721));
     vm.expectEmit();
     emit ImplementationSet(
       _imps.safeManager, _imps.safeEngine, _imps.oracleRelayer, _imps.taxCollector, _imps.collateralJoinFactory
+    );
+    vm.mockCall(
+      address(_imps.safeManager),
+      abi.encodeWithSelector(IODSafeManager.safeEngine.selector),
+      abi.encode(_imps.safeEngine)
     );
     nftRenderer.setImplementation(
       _imps.safeManager, _imps.oracleRelayer, _imps.taxCollector, _imps.collateralJoinFactory

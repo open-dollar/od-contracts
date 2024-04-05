@@ -7,7 +7,8 @@ import {BaseUser} from '@test/scopes/BaseUser.t.sol';
 import {DirectUser} from '@test/scopes/DirectUser.t.sol';
 import {ProxyUser} from '@test/scopes/ProxyUser.t.sol';
 import {ERC20ForTest} from '@test/mocks/ERC20ForTest.sol';
-import {HashState, Vault721} from '@contracts/proxies/Vault721.sol';
+import {Vault721} from '@contracts/proxies/Vault721.sol';
+import {IVault721} from '@interfaces/proxies/IVault721.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 import {RAY, WAD} from '@libraries/Math.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
@@ -176,7 +177,7 @@ contract E2ENFTTest is NFTSetup {
     vm.startPrank(alice);
     uint256 safeId = openSafe();
 
-    vm.expectRevert(Vault721.NotWallet.selector);
+    vm.expectRevert(IVault721.NotWallet.selector);
     Vault721(vault721).transferFrom(alice, bobProxy, safeId);
     vm.stopPrank();
   }
@@ -185,7 +186,7 @@ contract E2ENFTTest is NFTSetup {
     vm.startPrank(alice);
     uint256 safeId = openSafe();
 
-    vm.expectRevert(Vault721.NotWallet.selector);
+    vm.expectRevert(IVault721.NotWallet.selector);
     Vault721(vault721).transferFrom(alice, bobProxy, safeId);
     vm.stopPrank();
   }
@@ -387,7 +388,7 @@ contract E2ENFTTestFuzzFrontrunning is NFTSetup {
     vm.stopPrank();
 
     vm.startPrank(bob);
-    vm.expectRevert(Vault721.TimeDelayNotOver.selector);
+    vm.expectRevert(IVault721.TimeDelayNotOver.selector);
     vault721.transferFrom(alice, bob, safeId);
     vm.stopPrank();
   }
@@ -438,7 +439,7 @@ contract E2ENFTTestFuzzFrontrunning is NFTSetup {
     vm.stopPrank();
 
     vm.startPrank(bob);
-    vm.expectRevert(Vault721.BlockDelayNotOver.selector);
+    vm.expectRevert(IVault721.BlockDelayNotOver.selector);
     vault721.transferFrom(alice, bob, safeId);
     vm.stopPrank();
   }
@@ -462,7 +463,7 @@ contract E2ENFTTestFuzzFrontrunning is NFTSetup {
     depositCollatAndGenDebt(TKN, safeId, _collateral, _debt, aliceProxy);
     vm.stopPrank();
 
-    HashState memory firstHashState = vault721.getHashState(safeId);
+    IVault721.HashState memory firstHashState = vault721.getHashState(safeId);
 
     assertEq(firstHashState.lastBlockNumber, initBlockNum, 'incorrect lastBlockNumber');
     assertEq(firstHashState.lastBlockTimestamp, initBlockTime, 'incorrect lastBlockTimestamp');
@@ -471,7 +472,7 @@ contract E2ENFTTestFuzzFrontrunning is NFTSetup {
     vm.warp(initBlockTime + 420);
 
     // should be same as firstHashState since no new change / update to state
-    HashState memory secondHashState = vault721.getHashState(safeId);
+    IVault721.HashState memory secondHashState = vault721.getHashState(safeId);
 
     assertEq(secondHashState.lastBlockNumber, initBlockNum, 'incorrect lastBlockNumber');
     assertEq(secondHashState.lastBlockTimestamp, initBlockTime, 'incorrect lastBlockTimestamp');
@@ -495,7 +496,7 @@ contract E2ENFTTestFuzzFrontrunning is NFTSetup {
     depositCollatAndGenDebt(TKN, safeId, _collateral, 0, aliceProxy);
     vm.stopPrank();
 
-    HashState memory firstHashState = vault721.getHashState(safeId);
+    IVault721.HashState memory firstHashState = vault721.getHashState(safeId);
 
     assertEq(firstHashState.lastBlockNumber, initBlockNum, 'incorrect lastBlockNumber');
     assertEq(firstHashState.lastBlockTimestamp, initBlockTime, 'incorrect lastBlockTimestamp');
@@ -508,7 +509,7 @@ contract E2ENFTTestFuzzFrontrunning is NFTSetup {
     vm.stopPrank();
 
     // should be different from firstHashState since new update to state
-    HashState memory secondHashState = vault721.getHashState(safeId);
+    IVault721.HashState memory secondHashState = vault721.getHashState(safeId);
 
     assertEq(secondHashState.lastBlockNumber, initBlockNum + 69, 'incorrect lastBlockNumber');
     assertEq(secondHashState.lastBlockTimestamp, initBlockTime + 420, 'incorrect lastBlockTimestamp');
@@ -569,35 +570,35 @@ contract E2ENFTTestBasicActionsCalls is NFTSetup {
 contract E2ENFTTestAccessControl is NFTSetup {
   function test_revert_If_UpdateVaultHashStateWhenNotSafeManager() public {
     vm.startPrank(alice);
-    vm.expectRevert(Vault721.NotSafeManager.selector);
+    vm.expectRevert(IVault721.NotSafeManager.selector);
     vault721.updateVaultHashState(1);
     vm.stopPrank();
   }
 
   function test_revert_If_UpdateAllowlistWhenNotGovernance() public {
     vm.startPrank(alice);
-    vm.expectRevert(Vault721.NotGovernor.selector);
+    vm.expectRevert(IVault721.NotGovernor.selector);
     vault721.updateAllowlist(alice, true);
     vm.stopPrank();
   }
 
   function test_revert_If_UpdateAllowlistForZeroAddress() public {
     vm.startPrank(vault721.timelockController());
-    vm.expectRevert(Vault721.ZeroAddress.selector);
+    vm.expectRevert(IVault721.ZeroAddress.selector);
     vault721.updateAllowlist(address(0), true);
     vm.stopPrank();
   }
 
   function test_revert_If_UpdateTimeDelayWhenNotGovernance() public {
     vm.startPrank(alice);
-    vm.expectRevert(Vault721.NotGovernor.selector);
+    vm.expectRevert(IVault721.NotGovernor.selector);
     vault721.updateTimeDelay(3 days);
     vm.stopPrank();
   }
 
   function test_revert_If_UpdateBlockDelayWhenNotGovernance() public {
     vm.startPrank(alice);
-    vm.expectRevert(Vault721.NotGovernor.selector);
+    vm.expectRevert(IVault721.NotGovernor.selector);
     vault721.updateBlockDelay(3);
     vm.stopPrank();
   }
@@ -614,7 +615,7 @@ contract E2ENFTTestAccessControl is NFTSetup {
     vm.prank(address(safeManager));
     vault721.updateVaultHashState(safeId);
 
-    HashState memory hashState = vault721.getHashState(safeId);
+    IVault721.HashState memory hashState = vault721.getHashState(safeId);
 
     assertEq(hashState.lastBlockNumber, initBlock + 69, 'incorrect lastBlockNumber');
     assertEq(hashState.lastBlockTimestamp, initTime + 420, 'incorrect lastBlockTimestamp');
