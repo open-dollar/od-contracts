@@ -218,11 +218,6 @@ contract BasicActions is CommonActions, IBasicActions {
   }
 
   /// @inheritdoc IBasicActions
-  function allowHandler(address _manager, address _usr, bool _ok) external delegateCall {
-    ODSafeManager(_manager).allowHandler(_usr, _ok);
-  }
-
-  /// @inheritdoc IBasicActions
   function modifySAFECollateralization(
     address _manager,
     uint256 _safeId,
@@ -414,6 +409,17 @@ contract BasicActions is CommonActions, IBasicActions {
 
     // Transfers token amount to the user's address
     _collectAndExitCollateral(_manager, _collateralJoin, _safeId, _collateralWad);
+  }
+
+  /// @inheritdoc IBasicActions
+  function collectTokenCollateral(
+    address _manager,
+    address _collateralJoin,
+    uint256 _safeId,
+    uint256 _deltaWad
+  ) external delegateCall {
+    // Transfers token amount to the user's address
+    _collectAndExitCollateral(_manager, _collateralJoin, _safeId, _deltaWad);
   }
 
   /**

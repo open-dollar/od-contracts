@@ -1,12 +1,18 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.20;
 
+import {IERC721EnumerableUpgradeable} from
+  '@openzeppelin-upgradeable/token/ERC721/extensions/IERC721EnumerableUpgradeable.sol';
 import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 
-interface IVault721 {
+interface IVault721 is IERC721EnumerableUpgradeable {
   error NotGovernor();
+  error NotSafeManager();
+  error NotWallet();
   error ProxyAlreadyExist();
+  error BlockDelayNotOver();
+  error TimeDelayNotOver();
   error ZeroAddress();
 
   // public variables
@@ -44,7 +50,7 @@ interface IVault721 {
   function setNftRenderer(address _nftRenderer) external;
   function updateWhitelist(address _user, bool _status) external;
   function updateTimeDelay(uint256 _timeDelay) external;
-  function updateBlockDelay(uint8 _blockDelay) external;
+  function updateBlockDelay(uint256 _blockDelay) external;
 
   // public
   function tokenURI(uint256 _safeId) external returns (string memory);

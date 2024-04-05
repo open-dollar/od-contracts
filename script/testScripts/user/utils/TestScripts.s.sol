@@ -35,7 +35,7 @@ contract TestScripts is Deployment {
   }
 
   /**
-   * @dev open new saf
+   * @dev open new safe
    */
   function openSafe(bytes32 _cType, address _proxy) public returns (uint256 _safeId) {
     _labelAddresses(_proxy);
@@ -142,14 +142,6 @@ contract TestScripts is Deployment {
       _safeId,
       COLLATERAL
     );
-    ODProxy(_proxy).execute(address(basicActions), payload);
-  }
-
-  /**
-   * @dev Allows a safe handler
-   */
-  function allowHandler(address _usr, bool _ok, address _proxy) public {
-    bytes memory payload = abi.encodeWithSelector(basicActions.allowHandler.selector, address(safeManager), _usr, _ok);
     ODProxy(_proxy).execute(address(basicActions), payload);
   }
 

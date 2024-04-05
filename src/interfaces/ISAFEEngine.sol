@@ -123,23 +123,23 @@ interface ISAFEEngine is IAuthorizable, IDisableable, IModifiable, IModifiablePe
   // --- Errors ---
 
   /// @notice Throws when trying to modify parameters of an uninitialized collateral type
-  error SAFEEng_CollateralTypeNotInitialized();
+  error SAFEEng_CollateralTypeNotInitialized(); // 0xcc8fbb29
   /// @notice Throws when trying to modify a SAFE into an unsafe state
-  error SAFEEng_SAFENotSafe();
+  error SAFEEng_SAFENotSafe(); // 0x1f441794
   /// @notice Throws when trying to modify a SAFE into a dusty safe (debt non-zero and below `debtFloor`)
-  error SAFEEng_DustySAFE();
+  error SAFEEng_DustySAFE(); // 0xbc8beb5f
   /// @notice Throws when trying to generate debt that would put the system over the global debt ceiling
-  error SAFEEng_GlobalDebtCeilingHit();
+  error SAFEEng_GlobalDebtCeilingHit(); // 0x4d0b26ae
   /// @notice Throws when trying to generate debt that would put the system over the collateral debt ceiling
-  error SAFEEng_CollateralDebtCeilingHit();
+  error SAFEEng_CollateralDebtCeilingHit(); // 0x787cf02c
   /// @notice Throws when trying to generate debt that would put the SAFE over the SAFE debt ceiling
-  error SAFEEng_SAFEDebtCeilingHit();
+  error SAFEEng_SAFEDebtCeilingHit(); // 0x8c77698d
   /// @notice Throws when an account tries to modify a SAFE without the proper permissions
-  error SAFEEng_NotSAFEAllowed();
+  error SAFEEng_NotSAFEAllowed(); // 0x4df694a1
   /// @notice Throws when an account tries to pull collateral from a SAFE without the proper permissions
-  error SAFEEng_NotCollateralSrcAllowed();
+  error SAFEEng_NotCollateralSrcAllowed(); // 0x3820cfbf
   /// @notice Throws when an account tries to push debt to a SAFE without the proper permissions
-  error SAFEEng_NotDebtDstAllowed();
+  error SAFEEng_NotDebtDstAllowed(); // 0x62c26e9a
 
   // --- Structs ---
 
@@ -215,7 +215,11 @@ interface ISAFEEngine is IAuthorizable, IDisableable, IModifiable, IModifiablePe
    * @dev    Returns a SAFEEngineCollateralData struct
    */
   function cData(bytes32 _cType) external view returns (SAFEEngineCollateralData memory _safeEngineCData);
-
+  /**
+   * @notice Getter for the address of the safe manager
+   * @return _safeManager Address of safe manager
+   */
+  function odSafeManager() external view returns (address _safeManager);
   /**
    * @notice Getter for the unpacked collateral data struct
    * @param  _cType Bytes32 representation of the collateral type
@@ -445,4 +449,9 @@ interface ISAFEEngine is IAuthorizable, IDisableable, IModifiable, IModifiablePe
    * @notice Checks whether msg.sender has the right to modify a SAFE
    */
   function canModifySAFE(address _safe, address _account) external view returns (bool _allowed);
+
+  /**
+   * @notice called by ODSafeManager during deployment
+   */
+  function initializeSafeManager() external;
 }

@@ -70,7 +70,7 @@ const createAnvilDeploymentsFile = (contracts) => {
 
   const outputPath = path.join(
     __dirname,
-    "../test/testlocal/nft/anvil/deployment/AnvilContracts.t.sol"
+    "../script/anvil/deployment/AnvilContracts.t.sol"
   );
   const content = `// SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;

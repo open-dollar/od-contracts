@@ -16,11 +16,12 @@ import {Assertions} from '@libraries/Assertions.sol';
 
 /**
  * @title  DebtAuctionHouse
- * @notice This contract enables the sell of newly minted protocol tokens in exchange for system coins to cover a protocol debt
+ * @notice This contract enables the selling of newly minted protocol tokens in exchange for system coins to cover a protocol debt
  */
 contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuctionHouse {
   using Encoding for bytes;
   using Assertions for address;
+  using Assertions for uint256;
 
   /// @inheritdoc IDebtAuctionHouse
   bytes32 public constant AUCTION_HOUSE_TYPE = bytes32('DEBT');
@@ -222,5 +223,7 @@ contract DebtAuctionHouse is Authorizable, Modifiable, Disableable, IDebtAuction
   /// @inheritdoc Modifiable
   function _validateParameters() internal view override {
     address(protocolToken).assertHasCode();
+    _params.bidDecrease.assertGt(0);
+    _params.amountSoldIncrease.assertGt(0);
   }
 }

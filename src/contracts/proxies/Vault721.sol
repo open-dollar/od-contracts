@@ -23,6 +23,7 @@ struct HashState {
 contract Vault721 is ERC721EnumerableUpgradeable {
   error NotGovernor();
   error NotSafeManager();
+  error NotWallet();
   error ProxyAlreadyExist();
   error BlockDelayNotOver();
   error TimeDelayNotOver();
@@ -31,7 +32,7 @@ contract Vault721 is ERC721EnumerableUpgradeable {
   address public timelockController;
   IODSafeManager public safeManager;
   NFTRenderer public nftRenderer;
-  uint8 public blockDelay;
+  uint256 public blockDelay;
   uint256 public timeDelay;
 
   string public contractMetaData =
@@ -112,7 +113,7 @@ contract Vault721 is ERC721EnumerableUpgradeable {
    * @dev allows msg.sender without an ODProxy to deploy a new ODProxy
    */
   function build() external returns (address payable _proxy) {
-    if (!_isNotProxy(msg.sender)) revert ProxyAlreadyExist();
+    if (!_shouldBuildProxy(msg.sender)) revert ProxyAlreadyExist();
     _proxy = _build(msg.sender);
   }
 
@@ -120,7 +121,7 @@ contract Vault721 is ERC721EnumerableUpgradeable {
    * @dev allows user without an ODProxy to deploy a new ODProxy
    */
   function build(address _user) external returns (address payable _proxy) {
-    if (!_isNotProxy(_user)) revert ProxyAlreadyExist();
+    if (!_shouldBuildProxy(_user)) revert ProxyAlreadyExist();
     _proxy = _build(_user);
   }
 
@@ -133,7 +134,7 @@ contract Vault721 is ERC721EnumerableUpgradeable {
     uint256 len = _users.length;
     _proxies = new address payable[](len);
     for (uint256 i = 0; i < len; i++) {
-      if (!_isNotProxy(_users[i])) revert ProxyAlreadyExist();
+      if (!_shouldBuildProxy(_users[i])) revert ProxyAlreadyExist();
       _proxies[i] = _build(_users[i]);
     }
   }
@@ -146,29 +147,6 @@ contract Vault721 is ERC721EnumerableUpgradeable {
     require(_proxyRegistry[_proxy] != address(0), 'V721: non-native proxy');
     address _user = _proxyRegistry[_proxy];
     _safeMint(_user, _safeId);
-  }
-
-  function transferFrom(
-    address _from,
-    address _to,
-    uint256 _tokenId
-  ) public override(ERC721Upgradeable, IERC721Upgradeable) {
-    // on allowlist addresses, we check the block delay along with the state hash
-    if (_allowlist[msg.sender]) {
-      if (
-        block.number < _hashState[_tokenId].lastBlockNumber + blockDelay
-          || _hashState[_tokenId].lastHash != nftRenderer.getStateHashBySafeId(_tokenId)
-      ) {
-        revert BlockDelayNotOver();
-      }
-      // on non-allowlist addresses, we just check the time delay
-    } else {
-      if (block.timestamp < _hashState[_tokenId].lastBlockTimestamp + timeDelay) {
-        revert TimeDelayNotOver();
-      }
-    }
-
-    super.transferFrom(_from, _to, _tokenId);
   }
 
   /**
@@ -190,6 +168,7 @@ contract Vault721 is ERC721EnumerableUpgradeable {
    * @dev allows ODSafeManager to update the hash state
    */
   function updateVaultHashState(uint256 _vaultId) external onlySafeManager {
+    if (safeManager.safeData(_vaultId).safeHandler == address(0)) revert ZeroAddress();
     _hashState[_vaultId] = HashState({
       lastHash: nftRenderer.getStateHashBySafeId(_vaultId),
       lastBlockNumber: block.number,
@@ -214,7 +193,7 @@ contract Vault721 is ERC721EnumerableUpgradeable {
   /**
    * @dev allows DAO to update the block delay
    */
-  function updateBlockDelay(uint8 _blockDelay) external onlyGovernance {
+  function updateBlockDelay(uint256 _blockDelay) external onlyGovernance {
     blockDelay = _blockDelay;
   }
 
@@ -227,6 +206,11 @@ contract Vault721 is ERC721EnumerableUpgradeable {
 
   /**
    * @dev allows DAO to update protocol implementation of SafeManager
+   *
+   * WARNING: This function should not be called unless the new SafeManager
+   * is capable of correctly persisting the proper safeId as it relates to the
+   * current tokenId. Additional considerations regarding data migration of
+   * core contracts should be addressed.
    */
   function setSafeManager(address _safeManager) external onlyGovernance {
     _setSafeManager(_safeManager);
@@ -257,7 +241,7 @@ contract Vault721 is ERC721EnumerableUpgradeable {
   /**
    * @dev check that proxy does not exist OR that the user does not own proxy
    */
-  function _isNotProxy(address _user) internal view returns (bool) {
+  function _shouldBuildProxy(address _user) internal view returns (bool) {
     return _userRegistry[_user] == address(0) || ODProxy(_userRegistry[_user]).OWNER() != _user;
   }
 
@@ -265,7 +249,8 @@ contract Vault721 is ERC721EnumerableUpgradeable {
    * @dev deploys ODProxy for user to interact with protocol
    * updates _proxyRegistry and _userRegistry mappings for new ODProxy
    */
-  function _build(address _user) internal returns (address payable _proxy) {
+  function _build(address _user) internal virtual returns (address payable _proxy) {
+    if (_proxyRegistry[_user] != address(0)) revert NotWallet();
     _proxy = payable(address(new ODProxy(_user)));
     _proxyRegistry[_proxy] = _user;
     _userRegistry[_user] = _proxy;
@@ -273,29 +258,57 @@ contract Vault721 is ERC721EnumerableUpgradeable {
   }
 
   /**
-   * @dev allows DAO to update protocol implementation of SafeManager
+   * @dev set or update protocol implementation of SafeManager
    */
   function _setSafeManager(address _safeManager) internal nonZero(_safeManager) {
     safeManager = IODSafeManager(_safeManager);
   }
 
   /**
-   * @dev allows DAO to update protocol implementation of NFTRenderer
+   * @dev set or update protocol implementation of NFTRenderer
    */
   function _setNftRenderer(address _nftRenderer) internal nonZero(_nftRenderer) {
     nftRenderer = NFTRenderer(_nftRenderer);
   }
 
   /**
+   * @dev prevent frontrun state change during token transferFrom
+   */
+  function _enforceStaticState(address _operator, uint256 _tokenId) internal view {
+    // on allowlist addresses, we check the block delay along with the state hash
+    if (_allowlist[_operator]) {
+      if (
+        block.number < _hashState[_tokenId].lastBlockNumber + blockDelay
+          || _hashState[_tokenId].lastHash != nftRenderer.getStateHashBySafeId(_tokenId)
+      ) {
+        revert BlockDelayNotOver();
+      }
+      // on non-allowlist addresses, we just check the time delay
+    } else {
+      if (block.timestamp < _hashState[_tokenId].lastBlockTimestamp + timeDelay) {
+        revert TimeDelayNotOver();
+      }
+    }
+  }
+
+  /**
+   * @dev enforce state before _transfer
+   */
+  function _transfer(address _from, address _to, uint256 _tokenId) internal override {
+    _enforceStaticState(msg.sender, _tokenId);
+    super._transfer(_from, _to, _tokenId);
+  }
+
+  /**
    * @dev _transfer calls `transferSAFEOwnership` on SafeManager
-   * enforces that ODProxy exists for transfer or it deploys a new ODProxy for receiver of vault/nft
+   * @notice check that NFV receiver has proxy or build
    */
   function _afterTokenTransfer(address _from, address _to, uint256 _tokenId, uint256) internal override {
     require(_to != address(0), 'V721: no burn');
     if (_from != address(0)) {
       address payable proxy;
 
-      if (_isNotProxy(_to)) {
+      if (_shouldBuildProxy(_to)) {
         proxy = _build(_to);
       } else {
         proxy = payable(_userRegistry[_to]);

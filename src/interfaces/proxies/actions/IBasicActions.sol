@@ -22,12 +22,7 @@ interface IBasicActions is ICommonActions {
    * @param  _ok Boolean state to allow/disallow
    */
   function allowSAFE(address _manager, uint256 _safe, address _usr, bool _ok) external;
-  /**
-   * @notice Allow/disallow a handler address to manage the safe
-   * @param  _usr Address of the user to allow/disallow
-   * @param  _ok Boolean state to allow/disallow
-   */
-  function allowHandler(address _manager, address _usr, bool _ok) external;
+
   /**
    * @notice Modify a SAFE's collateralization ratio while keeping the generated COIN or collateral freed in the safe handler address
    * @param  _safe Id of the SAFE
@@ -206,5 +201,19 @@ interface IBasicActions is ICommonActions {
     address _coinJoin,
     uint256 _safeId,
     uint256 _collateralWad
+  ) external;
+
+  /**
+   * @notice Collects a collateral token amount from the SAFE handler, and transfers the ERC20 collateral to the user's address
+   * @param  _manager Address of the HaiSafeManager contract
+   * @param  _collateralJoin Address of the CollateralJoin contract
+   * @param  _safeId Id of the SAFE
+   * @param  _deltaWad Amount of collateral to collect [wad]
+   */
+  function collectTokenCollateral(
+    address _manager,
+    address _collateralJoin,
+    uint256 _safeId,
+    uint256 _deltaWad
   ) external;
 }

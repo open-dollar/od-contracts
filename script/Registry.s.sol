@@ -13,7 +13,8 @@ address constant TEST_CREATE2FACTORY = 0xC5f2C81d16764908B18379D95f410912d928Adc
 // Tokens
 address constant SEPOLIA_PROTOCOL_TOKEN = 0x000e59706a2d1151721F5ef09ad311985d4267f9;
 address constant SEPOLIA_SYSTEM_COIN = 0x0006d00Ae8375BDb0b10fBb100490CD5504fD802;
-uint256 constant AIRDROP_AMOUNT = 10_000e18; // 10k tokens
+uint256 constant AIRDROP_AMOUNT = 10_000_000e18; // 10 million tokens
+uint256 constant AIRDROP_RECIPIENTS = 2;
 
 // Governance Settings
 uint256 constant TEST_INIT_VOTING_DELAY = 1;

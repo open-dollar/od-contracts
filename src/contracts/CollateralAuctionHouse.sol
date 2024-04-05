@@ -402,5 +402,6 @@ contract CollateralAuctionHouse is Authorizable, Modifiable, Disableable, IColla
     _params.minDiscount.assertGtEq(_params.maxDiscount).assertLtEq(WAD);
     _params.maxDiscount.assertGt(0);
     _params.perSecondDiscountUpdateRate.assertLtEq(RAY);
+    _params.minimumBid.assertGt(0);
   }
 }

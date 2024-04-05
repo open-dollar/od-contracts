@@ -65,6 +65,7 @@ abstract contract Authorizable is IAuthorizable {
 
   // --- Internal methods ---
   function _addAuthorization(address _account) internal {
+    if (_account == address(0)) revert NullAddress();
     if (_authorizedAccounts.add(_account)) {
       emit AddAuthorization(_account);
     } else {
