@@ -295,10 +295,10 @@ contract ODSafeManager is IODSafeManager, Authorizable, Modifiable {
   }
 
   /// @inheritdoc IODSafeManager
-  function protectSAFE(uint256 _safe, address _liquidationEngine, address _saviour) external safeAllowed(_safe) {
+  function protectSAFE(uint256 _safe, address _saviour) external safeAllowed(_safe) {
     SAFEData memory _sData = _safeData[_safe];
-    ILiquidationEngine(_liquidationEngine).protectSAFE(_sData.collateralType, _sData.safeHandler, _saviour);
-    emit ProtectSAFE(msg.sender, _safe, _liquidationEngine, _saviour);
+    ILiquidationEngine(liquidationEngine).protectSAFE(_sData.collateralType, _sData.safeHandler, _saviour);
+    emit ProtectSAFE(msg.sender, _safe, liquidationEngine, _saviour);
   }
 
   /// @inheritdoc Modifiable

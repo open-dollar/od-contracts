@@ -82,10 +82,9 @@ interface IBasicActions is ICommonActions {
   /**
    * @notice Choose a safe saviour inside LiquidationEngine for the SAFE
    * @param  _safe Id of the SAFE
-   * @param  _liquidationEngine Address of the LiquidationEngine
    * @param  _saviour Address of the saviour
    */
-  function protectSAFE(address _manager, uint256 _safe, address _liquidationEngine, address _saviour) external;
+  function protectSAFE(address _manager, uint256 _safe, address _saviour) external;
 
   /**
    * @notice Generates debt and sends COIN amount to msg.sender
