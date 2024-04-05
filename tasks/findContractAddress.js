@@ -1,22 +1,6 @@
 const fs = require("fs");
 const path = require("path");
 
-const [targetEnv, contractName] = process.argv.slice(2);
-
-const target = targetEnv[0].toUpperCase() + targetEnv.slice(1);
-let filePath;
-if(target == "Sepolia" || target == "Mainnet"){
-filePath = path.join(__dirname, `../script/${target}Contracts.s.sol`);
-} else if (target == "Anvil"){
-filePath = path.join(__dirname, `../script/anvil/deployment/${target}Contracts.t.sol`);
-} else {
-    console.log("Network not recognized");
-    return;
-}
-
-const addresses = fs.readFileSync(filePath).toString();
-
-
 function stringToObject(str) {
     const parts = str.split(';');
     const trimmedArray = {};
@@ -35,18 +19,38 @@ function stringToObject(str) {
 
     return trimmedArray;
   }
-const addressObj = stringToObject(addresses)
 
-const keys = Object.keys(addressObj).filter(e => e.toLowerCase().includes(contractName));
+ function findAddress(targetEnv, contractName){
 
-if(keys.length == 1){
-  const foundAddress = {
-    name: keys[0],
-    address: addressObj[keys[0]]
-  }
-  console.log(foundAddress.name, ':', foundAddress.address);
-  return JSON.stringify(foundAddress);
-} else {
-    console.log("Please use a more precise contract name.");
+    const target = targetEnv[0].toUpperCase() + targetEnv.slice(1);
+    let filePath;
+
+    if(target == "Sepolia" || target == "Mainnet"){
+        filePath = path.join(__dirname, `../script/${target}Contracts.s.sol`);
+        } else if (target == "Anvil"){
+        filePath = path.join(__dirname, `../script/anvil/deployment/${target}Contracts.t.sol`);
+        } else {
+            console.log("Network not recognized");
+            return;
+        }
+
+        const addresses = fs.readFileSync(filePath).toString();
+        const addressObj = stringToObject(addresses)
+        const keys = Object.keys(addressObj).filter(e => e.toLowerCase().includes(contractName.toLowerCase()));
+
+        if(keys.length == 1){
+          const foundAddress = {
+            name: keys[0],
+            address: addressObj[keys[0]]
+          }
+          return foundAddress;
+        } else {
+            console.log("Please use a more precise contract name.");
+            return;
+        }
+
 }
 
+
+
+exports.findAddress = findAddress

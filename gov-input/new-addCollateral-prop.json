@@ -1,0 +1,10 @@
+{
+  "ODGovernor": "0xA5DC5C86212cF22167c52b756363B0FeA7B6e591",
+  "GlobalSettlement": "0x8B777768Eba27f1161b1573d8A5e7334f4714a5A",
+  "NewCollateralType": "ARB",
+  "NewCollateralAddress": "0xNewCollateralTokenAddress",
+  "MinimumBid": "5e18",
+  "MinimumDiscount": "1e18",
+  "MaximumDiscount": "1e18",
+  "PerSecondDiscountUpdateRate": "999998607628240588157433861"
+}
