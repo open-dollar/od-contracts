@@ -206,7 +206,7 @@ contract NFTRenderer {
       }
 
       params.lastUpdate = _formatDateTime(oracle.lastUpdateTime());
-      (params.risk, params.color) = _calcRisk(ratio, liquidationCRatio, safetyCRatio);
+      (params.risk, params.color) = _calcRisk(ratio, state, liquidationCRatio, safetyCRatio);
       params.stroke = _calcStroke(ratio);
       params.ratio = ratio;
       params.state = state;
@@ -344,9 +344,8 @@ contract NFTRenderer {
     } else if (state == 1) {
       rectangle =
         '), 1005" d="M210 40a160 160 0 0 1 0 320 160 160 0 0 1 0-320" /></g><g class="risk-ratio"><rect x="242" y="306" width="154" height="82" rx="8" fill="#001828" fill-opacity=".7" /><circle cx="243" cy="326.5" r="4" /><text xml:space="preserve" font-weight="600"><tspan x="255" y="330.7">';
-      riskDetail = string.concat(
-        ' RISK</tspan></text><text xml:space="preserve"><tspan x="255" y="355.7">COLLATERAL</tspan><tspan x="255" y="371.7">RATIO &#8734</tspan></text>'
-      );
+      riskDetail =
+        ' RISK</tspan></text><text xml:space="preserve"><tspan x="255" y="355.7">COLLATERAL</tspan><tspan x="255" y="371.7">RATIO &#x221e;</tspan></text>'
     } else {
       rectangle =
         '), 1005" d="M210 40a160 160 0 0 1 0 320 160 160 0 0 1 0-320" /></g><g class="risk-ratio"><rect x="298" y="350" width="96" height="40" rx="8" fill="#001828" fill-opacity=".7" /><circle cx="299" cy="370.5" r="4" /><text xml:space="preserve" font-weight="600"><tspan x="311" y="374.7">';
@@ -379,14 +378,20 @@ contract NFTRenderer {
    */
   function _calcRisk(
     uint256 ratio,
+    uint256 state,
     uint256 liquidationRatio,
     uint256 safetyRatio
   ) internal pure returns (string memory, string memory) {
-    if (ratio == 0) return ('NO', '#63676F');
-    if (ratio <= liquidationRatio) return ('LIQUIDATION', '#E45200');
-    else if (ratio > liquidationRatio && ratio <= safetyRatio) return ('HIGH', '#E45200');
-    else if (ratio > safetyRatio && ratio <= (safetyRatio * 120 / 100)) return ('ELEVATED', '#FCBF3B');
-    else return ('LOW', '#5DBA14');
+    if (state == 2) {
+      if (ratio <= liquidationRatio) return ('LIQUIDATION', '#E45200');
+      else if (ratio > liquidationRatio && ratio <= safetyRatio) return ('HIGH', '#E45200');
+      else if (ratio > safetyRatio && ratio <= (safetyRatio * 120 / 100)) return ('ELEVATED', '#FCBF3B');
+      else return ('LOW', '#5DBA14');
+    } else if (state == 1) {
+      return ('LOW', '#5DBA14');
+    } else {
+      return ('NO', '#63676F');
+    }
   }
 
   /**
