@@ -50,7 +50,7 @@ interface IVault721 is IERC721EnumerableUpgradeable {
   function setNftRenderer(address _nftRenderer) external;
   function updateWhitelist(address _user, bool _status) external;
   function updateTimeDelay(uint256 _timeDelay) external;
-  function updateBlockDelay(uint8 _blockDelay) external;
+  function updateBlockDelay(uint256 _blockDelay) external;
 
   // public
   function tokenURI(uint256 _safeId) external returns (string memory);

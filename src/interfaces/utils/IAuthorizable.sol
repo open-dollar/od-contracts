@@ -18,11 +18,11 @@ interface IAuthorizable {
 
   // --- Errors ---
   /// @notice Throws if the account is already authorized on `addAuthorization`
-  error AlreadyAuthorized();
+  error AlreadyAuthorized(); // 0x6027d27e
   /// @notice Throws if the account is not authorized on `removeAuthorization`
-  error NotAuthorized();
+  error NotAuthorized(); // 0xea8e4eb5
   /// @notice Throws if the account is not authorized and tries to call an `onlyAuthorized` method
-  error Unauthorized();
+  error Unauthorized(); // 0x82b42900
   /// @notice Throws if zero address is passed
   error NullAddress();
 
