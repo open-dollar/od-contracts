@@ -181,6 +181,8 @@ contract NFTRenderer {
       if (collateral != 0 && debt != 0) {
         ISAFEEngine.SAFEEngineCollateralData memory cTypeData = _safeEngine.cData(cType);
         ratio = ((collateral.wmul(oracle.read())).wdiv(debt.wmul(cTypeData.accumulatedRate))) / 1e7; // _RAY to _WAD conversion
+      } else if (collateral != 0 && debt == 0) {
+        ratio = 100;
       } else {
         ratio = 0;
       }
@@ -292,10 +294,8 @@ contract NFTRenderer {
   ) internal pure returns (string memory svg) {
     string memory debtDetail;
     if (ratio == 0) {
-      // if (debt == 0 && collateral == 0) {
       debtDetail =
         '<text fill="#63676F" xml:space="preserve" font-size="24"><tspan x="136" y="210">Zero Balance</tspan></text><text opacity=".3" transform="rotate(-90 326.5 -58.5)" fill="#fff" xml:space="preserve" font-size="10"><tspan x="-10.3" y="7.3">Updated ';
-      // }
     } else {
       debtDetail = string.concat(
         '<text fill="#00587E" xml:space="preserve" font-weight="600"><tspan x="102" y="168.9">DEBT MINTED</tspan></text><text fill="#D0F1FF" xml:space="preserve" font-size="24"><tspan x="102" y="194">',
