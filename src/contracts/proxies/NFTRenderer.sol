@@ -46,6 +46,7 @@ contract NFTRenderer {
   }
 
   struct VaultParams {
+    uint256 state; // 0 = (no collateral, no debt) 1 = (collater, no debt) 2 = (collateral, debt)
     uint256 ratio;
     string collateral;
     string debt;
@@ -106,7 +107,7 @@ contract NFTRenderer {
             _renderCollatAndDebt(
               ratio, params.stabilityFee, params.debt, params.collateral, params.symbol, params.lastUpdate
             ),
-            _renderRisk(ratio, params.stroke, params.risk),
+            _renderRisk(params.state, ratio, params.stroke, params.risk),
             _renderBackground(params.color)
           )
         )
@@ -177,15 +178,19 @@ contract NFTRenderer {
       uint256 safetyCRatio = oracleParams.safetyCRatio / 10e24;
       uint256 liquidationCRatio = oracleParams.liquidationCRatio / 10e24;
 
-      uint256 ratio;
-      if (collateral != 0 && debt != 0) {
-        ISAFEEngine.SAFEEngineCollateralData memory cTypeData = _safeEngine.cData(cType);
-        ratio = ((collateral.wmul(oracle.read())).wdiv(debt.wmul(cTypeData.accumulatedRate))) / 1e7; // _RAY to _WAD conversion
-      } else if (collateral != 0 && debt == 0) {
-        ratio = 100;
-      } else {
-        ratio = 0;
+      uint256 ratio; // default 0
+      uint256 state; // default 0
+      if (collateral != 0) {
+        if (debt != 0) {
+          state = 2;
+          ISAFEEngine.SAFEEngineCollateralData memory cTypeData = _safeEngine.cData(cType);
+          ratio = ((collateral.wmul(oracle.read())).wdiv(debt.wmul(cTypeData.accumulatedRate))) / 1e7; // _RAY to _WAD conversion
+        } else {
+          state = 1;
+          ratio = 200;
+        }
       }
+
       IERC20Metadata token = ICollateralJoin(_collateralJoinFactory.collateralJoins(cType)).collateral();
       params.symbol = token.symbol();
 
@@ -204,6 +209,7 @@ contract NFTRenderer {
       (params.risk, params.color) = _calcRisk(ratio, liquidationCRatio, safetyCRatio);
       params.stroke = _calcStroke(ratio);
       params.ratio = ratio;
+      params.state = state;
 
       params.stateHash = string(abi.encodePacked(getStateHash(collateral, debt)));
     }
@@ -320,19 +326,26 @@ contract NFTRenderer {
    * @dev svg risk data
    */
   function _renderRisk(
+    uint256 state,
     uint256 ratio,
     string memory stroke,
     string memory risk
   ) internal pure returns (string memory svg) {
     string memory rectangle;
     string memory riskDetail;
-    if (ratio != 0) {
+    if (state == 2) {
       rectangle =
         '), 1005" d="M210 40a160 160 0 0 1 0 320 160 160 0 0 1 0-320" /></g><g class="risk-ratio"><rect x="242" y="306" width="154" height="82" rx="8" fill="#001828" fill-opacity=".7" /><circle cx="243" cy="326.5" r="4" /><text xml:space="preserve" font-weight="600"><tspan x="255" y="330.7">';
       riskDetail = string.concat(
         ' RISK</tspan></text><text xml:space="preserve"><tspan x="255" y="355.7">COLLATERAL</tspan><tspan x="255" y="371.7">RATIO ',
         ratio.toString(),
         '%</tspan></text>'
+      );
+    } else if (state == 1) {
+      rectangle =
+        '), 1005" d="M210 40a160 160 0 0 1 0 320 160 160 0 0 1 0-320" /></g><g class="risk-ratio"><rect x="242" y="306" width="154" height="82" rx="8" fill="#001828" fill-opacity=".7" /><circle cx="243" cy="326.5" r="4" /><text xml:space="preserve" font-weight="600"><tspan x="255" y="330.7">';
+      riskDetail = string.concat(
+        ' RISK</tspan></text><text xml:space="preserve"><tspan x="255" y="355.7">COLLATERAL</tspan><tspan x="255" y="371.7">RATIO &#8734</tspan></text>'
       );
     } else {
       rectangle =
