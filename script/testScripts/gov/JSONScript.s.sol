@@ -4,6 +4,7 @@ pragma solidity 0.8.19;
 import {Script} from 'forge-std/Script.sol';
 
 contract JSONScript is Script {
+
   /// @notice Builds the JSON object for proposal parameters
   /// @param proposalId the proposal id
   /// @param objectKey  the object key to use for the JSON object

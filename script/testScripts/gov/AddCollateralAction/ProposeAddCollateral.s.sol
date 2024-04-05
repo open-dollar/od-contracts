@@ -7,6 +7,7 @@ import {IGlobalSettlement} from '@contracts/settlement/GlobalSettlement.sol';
 import {ICollateralJoinFactory} from '@interfaces/factories/ICollateralJoinFactory.sol';
 import {ICollateralAuctionHouseFactory} from '@interfaces/factories/ICollateralAuctionHouseFactory.sol';
 import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
+import "forge-std/StdJson.sol";
 
 /// @title ProposeAddCollateral Script
 /// @author OpenDollar
@@ -17,18 +18,30 @@ import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
 /// @dev The script will output a JSON file with the proposal data to be used by the QueueProposal and ExecuteProposal scripts
 /// @dev In the root, run: export FOUNDRY_PROFILE=governance && forge script --rpc-url <RPC_URL> script/testScripts/gov/AddCollateralAction/ProposeAddCollateral.s.sol
 contract ProposeAddCollateral is JSONScript {
-  function run() public {
-    /// REQUIRED ENV VARS ///
-    address governanceAddress = vm.envAddress('GOVERNANCE_ADDRESS');
-    address globalSettlementAddress = vm.envAddress('GLOBAL_SETTLEMENT_ADDRESS');
-    bytes32 newCType = vm.envBytes32('ADD_COLLATERAL_NEW_COLLATERAL_TYPE');
-    address newCAddress = vm.envAddress('ADD_COLLATERAL_NEW_COLLATERAL_ADDRESS');
-    uint256 minimumBid = vm.envUint('ADD_COLLATERAL_MINIMUM_BID');
-    uint256 minDiscount = vm.envUint('ADD_COLLATERAL_MIN_DISCOUNT');
-    uint256 maxDiscount = vm.envUint('ADD_COLLATERAL_MAX_DISCOUNT');
-    uint256 perSecondDiscountUpdateRate = vm.envUint('ADD_COLLATERAL_PER_SECOND_DISCOUNT_UPDATE_RATE');
-    /// END REQUIRED ENV VARS ///
+  using stdJson for string;
 
+  address public governanceAddress;
+  address public globalSettlementAddress;
+  bytes32 public newCType;
+  address public newCAddress;
+  uint256 public minimumBid;
+  uint256 public minDiscount;
+  uint256 public maxDiscount;
+  uint256 public perSecondDiscountUpdateRate;
+
+  function _loadBaseData(string memory json) internal {
+    governanceAddress = json.readAddress(string(abi.encodePacked('.ODGovernor')));
+    globalSettlementAddress = json.readAddress(string(abi.encodePacked('.GlobalSettlement')));
+    newCType = json.readBytes32(string(abi.encodePacked('.NewCollateralType')));
+    newCAddress = json.readAddress(string(abi.encodePacked('.NewCollateralAddress')));
+    minimumBid = json.readUint(string(abi.encodePacked('.MinimumBid')));
+    minDiscount = json.readUint(string(abi.encodePacked('.MinimumDiscount')));
+    maxDiscount = json.readUint(string(abi.encodePacked('.MaximumDiscount')));
+    perSecondDiscountUpdateRate = json.readUint(string(abi.encodePacked('.PerSecondDiscountUpdateRate')));
+  }
+
+  function run(string memory json) public {
+    _loadBaseData(json);
     ODGovernor gov = ODGovernor(payable(governanceAddress));
     IGlobalSettlement globalSettlement = IGlobalSettlement(globalSettlementAddress);
 
@@ -69,7 +82,7 @@ contract ProposeAddCollateral is JSONScript {
 
     // Propose the action to add the collateral type
     uint256 proposalId = gov.propose(targets, values, calldatas, description);
-    string memory stringProposalId = vm.toString(proposalId);
+    string memory stringProposalId = vm.toString(bytes4(bytes(vm.toString(proposalId))));
 
     // Verify the proposalId is expected
     assert(proposalId == gov.hashProposal(targets, values, calldatas, descriptionHash));
