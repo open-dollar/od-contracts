@@ -8,7 +8,10 @@ let filePath;
 if(target == "Sepolia" || target == "Mainnet"){
 filePath = path.join(__dirname, `../script/${target}Contracts.s.sol`);
 } else if (target == "Anvil"){
-filePath = path.join(__dirname, `../script/anvil/${target}Contracts.t.sol`);
+filePath = path.join(__dirname, `../script/anvil/deployment/${target}Contracts.t.sol`);
+} else {
+    console.log("Network not recognized");
+    return;
 }
 
 const addresses = fs.readFileSync(filePath).toString();
@@ -34,14 +37,16 @@ function stringToObject(str) {
   }
 const addressObj = stringToObject(addresses)
 
-const key = Object.keys(addressObj).filter(e => e.toLowerCase().includes(contractName));
+const keys = Object.keys(addressObj).filter(e => e.toLowerCase().includes(contractName));
 
-if(key.length == 1){
-  const foundAddress = {}
-  foundAddress[key] = addressObj[key];
-  console.log('address found', foundAddress);
-  return foundAddress;
+if(keys.length == 1){
+  const foundAddress = {
+    name: keys[0],
+    address: addressObj[keys[0]]
+  }
+  console.log(foundAddress.name, ':', foundAddress.address);
+  return JSON.stringify(foundAddress);
 } else {
-    console.log("Must use more precise contract name.");
+    console.log("Please use a more precise contract name.");
 }
 
