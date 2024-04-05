@@ -209,8 +209,13 @@ contract Unit_NFTRenderer_RenderParams is Base {
         ) / 1e7,
         'incorrect ratio'
       );
+      assertEq(params.state, 2);
+    } else if (_data.safeEngineData.generatedDebt == 0 && _data.safeEngineData.lockedCollateral != 0) {
+      assertEq(params.ratio, 200, 'incorrect ratio');
+      assertEq(params.state, 1);
     } else {
       assertEq(params.ratio, 0, 'incorrect ratio param');
+      assertEq(params.state, 0);
     }
 
     if (bytes(params.collateral).length == 0) {
