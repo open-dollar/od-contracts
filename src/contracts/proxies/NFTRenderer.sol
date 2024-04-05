@@ -293,10 +293,7 @@ contract NFTRenderer {
     string memory lastUpdate
   ) internal pure returns (string memory svg) {
     string memory debtDetail;
-    if (ratio == 0) {
-      debtDetail =
-        '<text fill="#63676F" xml:space="preserve" font-size="24"><tspan x="136" y="210">Zero Balance</tspan></text><text opacity=".3" transform="rotate(-90 326.5 -58.5)" fill="#fff" xml:space="preserve" font-size="10"><tspan x="-10.3" y="7.3">Updated ';
-    } else {
+    if (ratio != 0) {
       debtDetail = string.concat(
         '<text fill="#00587E" xml:space="preserve" font-weight="600"><tspan x="102" y="168.9">DEBT MINTED</tspan></text><text fill="#D0F1FF" xml:space="preserve" font-size="24"><tspan x="102" y="194">',
         debt,
@@ -307,8 +304,10 @@ contract NFTRenderer {
         symbol,
         '</tspan></text><text opacity=".3" transform="rotate(-90 326.5 -58.5)" fill="#fff" xml:space="preserve" font-size="10"><tspan x="-10.3" y="7.3">Updated '
       );
+    } else {
+      debtDetail =
+        '<text fill="#63676F" xml:space="preserve" font-size="24"><tspan x="136" y="210">Zero Balance</tspan></text><text opacity=".3" transform="rotate(-90 326.5 -58.5)" fill="#fff" xml:space="preserve" font-size="10"><tspan x="-10.3" y="7.3">Updated ';
     }
-
     svg = string.concat(
       stabilityFee,
       '%</tspan></text><text opacity=".3" transform="rotate(90 -66.5 101.5)" fill="#fff" xml:space="preserve" font-size="10"><tspan x=".5" y="7.3">opendollar.com</tspan></text>',
