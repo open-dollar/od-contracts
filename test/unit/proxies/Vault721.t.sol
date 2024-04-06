@@ -175,7 +175,7 @@ contract Vault721_ViewFunctions is Base {
     string memory contractURI = vault721.contractURI();
     assertEq(
       contractURI,
-      'data:application/json;utf8,{"name": "Open Dollar Vaults","description": "Open Dollar is a DeFi lending protocol that enables borrowing against liquid staking tokens while earning staking rewards and enabling liquidity via Non-Fungible Vaults (NFVs).","image": "https://app.opendollar.com/collectionImage.png","external_link": "https://opendollar.com"}',
+      'data:application/json;utf8,{"name": "Open Dollar Vaults","description": "Open Dollar is a DeFi lending protocol that enables borrowing against liquid staking tokens while earning staking rewards and enabling liquidity via Non-Fungible Vaults (NFVs).","image": "https://app.opendollar.com/collectionImage.png","external_link": "https://app.opendollar.com"}',
       'incorrect returned string'
     );
   }
