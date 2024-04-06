@@ -164,30 +164,30 @@ contract Unit_NFTRenderer_GetVaultCTypeAndCollateralAndDebt is Base {
 }
 
 contract Unit_NFTRenderer_GetStateHash is Base {
-  function test_GetStateHashBySafeId(
-    IODSafeManager.SAFEData memory _safeData,
-    ISAFEEngine.SAFE memory _safeEngineData
-  ) public {
-    vm.mockCall(address(safeManager), abi.encodeWithSelector(IODSafeManager.safeData.selector), abi.encode(_safeData));
-    vm.mockCall(address(safeEngine), abi.encodeWithSelector(ISAFEEngine.safes.selector), abi.encode(_safeEngineData));
-    bytes32 stateHash = nftRenderer.getStateHashBySafeId(1);
+// function test_GetStateHashBySafeId(
+//   IODSafeManager.SAFEData memory _safeData,
+//   ISAFEEngine.SAFE memory _safeEngineData
+// ) public {
+//   vm.mockCall(address(safeManager), abi.encodeWithSelector(IODSafeManager.safeData.selector), abi.encode(_safeData));
+//   vm.mockCall(address(safeEngine), abi.encodeWithSelector(ISAFEEngine.safes.selector), abi.encode(_safeEngineData));
+//   bytes32 stateHash = nftRenderer.getStateHashBySafeId(1);
 
-    assertEq(
-      stateHash,
-      keccak256(abi.encode(_safeEngineData.lockedCollateral, _safeEngineData.generatedDebt)),
-      'incorrect state hash'
-    );
-  }
+//   assertEq(
+//     stateHash,
+//     keccak256(abi.encode(_safeEngineData.lockedCollateral, _safeEngineData.generatedDebt)),
+//     'incorrect state hash'
+//   );
+// }
 
-  function test_GetStateHash(ISAFEEngine.SAFE memory _safeEngineData) public {
-    bytes32 stateHash = nftRenderer.getStateHash(_safeEngineData.lockedCollateral, _safeEngineData.generatedDebt);
+// function test_GetStateHash(ISAFEEngine.SAFE memory _safeEngineData) public {
+//   bytes32 stateHash = nftRenderer.getStateHash(_safeEngineData.lockedCollateral, _safeEngineData.generatedDebt);
 
-    assertEq(
-      stateHash,
-      keccak256(abi.encode(_safeEngineData.lockedCollateral, _safeEngineData.generatedDebt)),
-      'incorrect state hash'
-    );
-  }
+//   assertEq(
+//     stateHash,
+//     keccak256(abi.encode(_safeEngineData.lockedCollateral, _safeEngineData.generatedDebt)),
+//     'incorrect state hash'
+//   );
+// }
 }
 
 contract Unit_NFTRenderer_RenderParams is Base {

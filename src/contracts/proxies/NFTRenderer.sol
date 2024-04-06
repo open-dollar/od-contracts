@@ -45,8 +45,9 @@ contract NFTRenderer {
     _collateralJoinFactory = ICollateralJoinFactory(collateralJoinFactory);
   }
 
+  // state = {0: (no collateral, no debt) 1: (collateral, no debt) 2: (collateral, debt)}
   struct VaultParams {
-    uint256 state; // 0 = (no collateral, no debt) 1 = (collater, no debt) 2 = (collateral, debt)
+    uint256 state;
     uint256 ratio;
     string collateral;
     string debt;
@@ -59,7 +60,8 @@ contract NFTRenderer {
     string color;
     string stroke;
     string lastUpdate;
-    string stateHash;
+    string coinBalance;
+    string tokenCollateral;
   }
 
   /**
@@ -91,7 +93,7 @@ contract NFTRenderer {
    * @dev render json object with NFT description and image
    * @notice svg needs to be broken into separate functions to reduce call stack for compilation
    */
-  function render(uint256 _safeId) external view returns (string memory uri) {
+  function render(uint256 _safeId) external view returns (string memory _uri) {
     VaultParams memory params = renderParams(_safeId);
     string memory text = _renderText(params);
     uint256 ratio = params.ratio;
@@ -114,8 +116,7 @@ contract NFTRenderer {
       ),
       '"}'
     );
-
-    uri = string.concat('data:application/json;base64,', Base64.encode(bytes(json)));
+    _uri = string.concat('data:application/json;base64,', Base64.encode(bytes(json)));
   }
 
   /**
@@ -140,26 +141,6 @@ contract NFTRenderer {
   }
 
   /**
-   * @dev computes the current state hash based on the state for a vault given `_safeId`
-   * @param _safeId vault id
-   * @return stateHash state hash for safe with `_safeId`
-   */
-  function getStateHashBySafeId(uint256 _safeId) external view returns (bytes32 stateHash) {
-    (, uint256 collateral, uint256 debt) = getVaultCTypeAndCollateralAndDebt(_safeId);
-    stateHash = getStateHash(collateral, debt);
-  }
-
-  /**
-   * @dev computes the current state hash given `_collateral` and `_debt`
-   * @param _collateral collateral amount
-   * @param _debt debt amount
-   * @return stateHash computed state hash
-   */
-  function getStateHash(uint256 _collateral, uint256 _debt) public pure returns (bytes32 stateHash) {
-    stateHash = keccak256(abi.encode(_collateral, _debt));
-  }
-
-  /**
    * @dev reads from various protocol contracts to collect data about user vaults by vault id
    */
   function renderParams(uint256 _safeId) public view returns (VaultParams memory) {
@@ -172,6 +153,14 @@ contract NFTRenderer {
       uint256 collateral;
       uint256 debt;
       (cType, collateral, debt) = getVaultCTypeAndCollateralAndDebt(_safeId);
+      {
+        (uint256 lDebt, uint256 rDebt) = _floatingPoint(debt);
+        params.metaDebt = _parseNumber(lDebt, rDebt);
+        params.debt = _parseNumberWithComma(lDebt, rDebt);
+        (uint256 lCollateral, uint256 rCollateral) = _floatingPoint(collateral);
+        params.metaCollateral = _parseNumber(lCollateral, rCollateral);
+        params.collateral = _parseNumberWithComma(lCollateral, rCollateral);
+      }
 
       IOracleRelayer.OracleRelayerCollateralParams memory oracleParams = _oracleRelayer.cParams(cType);
       IDelayedOracle oracle = oracleParams.oracle;
@@ -190,28 +179,14 @@ contract NFTRenderer {
           ratio = 200;
         }
       }
-
       IERC20Metadata token = ICollateralJoin(_collateralJoinFactory.collateralJoins(cType)).collateral();
       params.symbol = token.symbol();
-
-      {
-        (uint256 left, uint256 right) = _floatingPoint(debt);
-        params.debt = _parseNumberWithComma(left, right);
-        params.metaDebt = _parseNumber(left, right);
-      }
-      {
-        (uint256 left, uint256 right) = _floatingPoint(collateral);
-        params.collateral = _parseNumberWithComma(left, right);
-        params.metaCollateral = _parseNumber(left, right);
-      }
 
       params.lastUpdate = _formatDateTime(oracle.lastUpdateTime());
       (params.risk, params.color) = _calcRisk(ratio, state, liquidationCRatio, safetyCRatio);
       params.stroke = _calcStroke(ratio);
       params.ratio = ratio;
       params.state = state;
-
-      params.stateHash = string(abi.encodePacked(getStateHash(collateral, debt)));
     }
 
     ITaxCollector.TaxCollectorCollateralData memory taxData = _taxCollector.cData(cType);

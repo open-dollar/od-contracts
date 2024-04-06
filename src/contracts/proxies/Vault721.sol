@@ -7,6 +7,7 @@ import {ERC721EnumerableUpgradeable} from
 import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
+import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 
 // Open Dollar
 // Version 1.6.1
@@ -28,6 +29,7 @@ contract Vault721 is ERC721EnumerableUpgradeable {
   error BlockDelayNotOver();
   error TimeDelayNotOver();
   error ZeroAddress();
+  error StateViolation();
 
   address public timelockController;
   IODSafeManager public safeManager;
@@ -35,12 +37,19 @@ contract Vault721 is ERC721EnumerableUpgradeable {
   uint256 public blockDelay;
   uint256 public timeDelay;
 
+  struct NFVState {
+    uint256 collateral;
+    uint256 debt;
+    uint256 lastBlockNumber;
+    uint256 lastBlockTimestamp;
+  }
+
   string public contractMetaData =
-    '{"name": "Open Dollar Vaults","description": "Open Dollar is a DeFi lending protocol that enables borrowing against liquid staking tokens while earning staking rewards and enabling liquidity via Non-Fungible Vaults (NFVs).","image": "https://app.opendollar.com/collectionImage.png","external_link": "https://opendollar.com"}';
+    '{"name": "Open Dollar Vaults","description": "Open Dollar is a DeFi lending protocol that enables borrowing against liquid staking tokens while earning staking rewards and enabling liquidity via Non-Fungible Vaults (NFVs).","image": "https://app.opendollar.com/collectionImage.png","external_link": "https://app.opendollar.com"}';
 
   mapping(address proxy => address user) internal _proxyRegistry;
   mapping(address user => address proxy) internal _userRegistry;
-  mapping(uint256 vaultId => HashState hashState) internal _hashState;
+  mapping(uint256 vaultId => NFVState nfvState) internal _nfvState;
   mapping(address nftExchange => bool whitelisted) internal _allowlist;
 
   event CreateProxy(address indexed _user, address indexed _proxy);
@@ -99,10 +108,10 @@ contract Vault721 is ERC721EnumerableUpgradeable {
   }
 
   /**
-   * @dev get hash state by vault id
+   * @dev get nfv state by vault id
    */
-  function getHashState(uint256 _vaultId) external view returns (HashState memory) {
-    return _hashState[_vaultId];
+  function getNfvState(uint256 _vaultId) external view returns (NFVState memory) {
+    return _nfvState[_vaultId];
   }
 
   function getIsAllowlisted(address _user) external view returns (bool) {
@@ -165,12 +174,14 @@ contract Vault721 is ERC721EnumerableUpgradeable {
   }
 
   /**
-   * @dev allows ODSafeManager to update the hash state
+   * @dev allows ODSafeManager to update the nfv state in nfvState mapping
    */
-  function updateVaultHashState(uint256 _vaultId) external onlySafeManager {
-    if (safeManager.safeData(_vaultId).safeHandler == address(0)) revert ZeroAddress();
-    _hashState[_vaultId] = HashState({
-      lastHash: nftRenderer.getStateHashBySafeId(_vaultId),
+  function updateNfvState(uint256 _vaultId) external onlySafeManager {
+    (uint256 _collateral, uint256 _debt) = _getNfvValue(_vaultId);
+
+    _nfvState[_vaultId] = NFVState({
+      collateral: _collateral,
+      debt: _debt,
       lastBlockNumber: block.number,
       lastBlockTimestamp: block.timestamp
     });
@@ -272,22 +283,32 @@ contract Vault721 is ERC721EnumerableUpgradeable {
   }
 
   /**
-   * @dev prevent frontrun state change during token transferFrom
+   * @dev get generated debt and locked collateral of nfv by tokenId
+   */
+  function _getNfvValue(uint256 _vaultId) internal view returns (uint256, uint256) {
+    IODSafeManager.SAFEData memory safeMangerData = safeManager.safeData(_vaultId);
+    address safeHandler = safeMangerData.safeHandler;
+    if (safeHandler == address(0)) revert ZeroAddress();
+
+    ISAFEEngine.SAFE memory SafeEngineData =
+      ISAFEEngine(safeManager.safeEngine()).safes(safeMangerData.collateralType, safeHandler);
+    return (SafeEngineData.lockedCollateral, SafeEngineData.generatedDebt);
+  }
+
+  /**
+   * @dev prevent undesirable frontrun state change during token transferFrom
+   * @notice frontrunning that increases the lockedCollateral or decreases the generatedDebt is accepted
    */
   function _enforceStaticState(address _operator, uint256 _tokenId) internal view {
-    // on allowlist addresses, we check the block delay along with the state hash
+    (uint256 _collateral, uint256 _debt) = _getNfvValue(_tokenId);
+    NFVState memory _nfv = _nfvState[_tokenId];
+
+    if (_collateral < _nfv.collateral || _debt > _nfv.debt) revert StateViolation();
+
     if (_allowlist[_operator]) {
-      if (
-        block.number < _hashState[_tokenId].lastBlockNumber + blockDelay
-          || _hashState[_tokenId].lastHash != nftRenderer.getStateHashBySafeId(_tokenId)
-      ) {
-        revert BlockDelayNotOver();
-      }
-      // on non-allowlist addresses, we just check the time delay
+      if (block.number < _nfv.lastBlockNumber + blockDelay) revert BlockDelayNotOver();
     } else {
-      if (block.timestamp < _hashState[_tokenId].lastBlockTimestamp + timeDelay) {
-        revert TimeDelayNotOver();
-      }
+      if (block.timestamp < _nfv.lastBlockTimestamp + timeDelay) revert TimeDelayNotOver();
     }
   }
 

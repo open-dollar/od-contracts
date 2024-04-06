@@ -36,7 +36,7 @@ interface IVault721 is IERC721EnumerableUpgradeable {
 
   // external: only SafeManager
   function mint(address proxy, uint256 safeId) external;
-  function updateVaultHashState(uint256 _vaultId) external;
+  function updateNfvState(uint256 _vaultId) external;
 
   // external: only Governor
   function updateNftRenderer(
