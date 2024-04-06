@@ -60,7 +60,6 @@ contract NFTRenderer {
     string color;
     string stroke;
     string lastUpdate;
-    string coinBalance;
     string tokenCollateral;
   }
 
@@ -129,7 +128,7 @@ contract NFTRenderer {
   function getVaultCTypeAndCollateralAndDebt(uint256 _safeId)
     public
     view
-    returns (bytes32 cType, uint256 collateral, uint256 debt)
+    returns (bytes32 cType, uint256 collateral, uint256 debt, uint256 tokenCollateral)
   {
     IODSafeManager.SAFEData memory safeMangerData = _safeManager.safeData(_safeId);
     address safeHandler = safeMangerData.safeHandler;
@@ -138,6 +137,7 @@ contract NFTRenderer {
     ISAFEEngine.SAFE memory SafeEngineData = _safeEngine.safes(cType, safeHandler);
     collateral = SafeEngineData.lockedCollateral;
     debt = SafeEngineData.generatedDebt;
+    tokenCollateral = _safeEngine.tokenCollateral(cType, safeHandler);
   }
 
   /**
@@ -152,7 +152,8 @@ contract NFTRenderer {
     {
       uint256 collateral;
       uint256 debt;
-      (cType, collateral, debt) = getVaultCTypeAndCollateralAndDebt(_safeId);
+      uint256 tokenCollateral;
+      (cType, collateral, debt, tokenCollateral) = getVaultCTypeAndCollateralAndDebt(_safeId);
       {
         (uint256 lDebt, uint256 rDebt) = _floatingPoint(debt);
         params.metaDebt = _parseNumber(lDebt, rDebt);
@@ -160,6 +161,10 @@ contract NFTRenderer {
         (uint256 lCollateral, uint256 rCollateral) = _floatingPoint(collateral);
         params.metaCollateral = _parseNumber(lCollateral, rCollateral);
         params.collateral = _parseNumberWithComma(lCollateral, rCollateral);
+      }
+      {
+        (uint256 lTokenCollateral, uint256 rTokenCollateral) = _floatingPoint(tokenCollateral);
+        params.tokenCollateral = _parseNumber(lTokenCollateral, rTokenCollateral);
       }
 
       IOracleRelayer.OracleRelayerCollateralParams memory oracleParams = _oracleRelayer.cParams(cType);
@@ -208,7 +213,9 @@ contract NFTRenderer {
       '"attributes":[{"trait_type":"ID","value":"',
       params.vaultId,
       traits,
-      params.lastUpdate
+      params.lastUpdate,
+      '"},{"trait_type":"TokenCollateral","value":"',
+      params.tokenCollateral
     );
   }
 

@@ -300,10 +300,10 @@ contract Vault721 is ERC721EnumerableUpgradeable {
    * @notice frontrunning that increases the lockedCollateral or decreases the generatedDebt is accepted
    */
   function _enforceStaticState(address _operator, uint256 _tokenId) internal view {
-    (uint256 _collateral, uint256 _debt) = _getNfvValue(_tokenId);
+    (uint256 _collateralNow, uint256 _debtNow) = _getNfvValue(_tokenId);
     NFVState memory _nfv = _nfvState[_tokenId];
 
-    if (_collateral < _nfv.collateral || _debt > _nfv.debt) revert StateViolation();
+    if (_collateralNow < _nfv.collateral || _debtNow > _nfv.debt) revert StateViolation();
 
     if (_allowlist[_operator]) {
       if (block.number < _nfv.lastBlockNumber + blockDelay) revert BlockDelayNotOver();

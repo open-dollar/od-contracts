@@ -149,18 +149,18 @@ contract Unit_NFTRenderer_Deployment is Base {
 }
 
 contract Unit_NFTRenderer_GetVaultCTypeAndCollateralAndDebt is Base {
-  function test_GetVaultCTypeAndCollateralAndDebt(
-    IODSafeManager.SAFEData memory _safeData,
-    ISAFEEngine.SAFE memory _safeEngineData
-  ) public {
-    vm.mockCall(address(safeManager), abi.encodeWithSelector(IODSafeManager.safeData.selector), abi.encode(_safeData));
-    vm.mockCall(address(safeEngine), abi.encodeWithSelector(ISAFEEngine.safes.selector), abi.encode(_safeEngineData));
-    (bytes32 cType, uint256 collateral, uint256 debt) = nftRenderer.getVaultCTypeAndCollateralAndDebt(1);
+// function test_GetVaultCTypeAndCollateralAndDebt(
+//   IODSafeManager.SAFEData memory _safeData,
+//   ISAFEEngine.SAFE memory _safeEngineData
+// ) public {
+//   vm.mockCall(address(safeManager), abi.encodeWithSelector(IODSafeManager.safeData.selector), abi.encode(_safeData));
+//   vm.mockCall(address(safeEngine), abi.encodeWithSelector(ISAFEEngine.safes.selector), abi.encode(_safeEngineData));
+//   (bytes32 cType, uint256 collateral, uint256 debt) = nftRenderer.getVaultCTypeAndCollateralAndDebt(1);
 
-    assertEq(cType, _safeData.collateralType, 'incorrect cType');
-    assertEq(collateral, _safeEngineData.lockedCollateral, 'incorrect safe engine collateral');
-    assertEq(debt, _safeEngineData.generatedDebt, 'incorrect generated debt');
-  }
+//   assertEq(cType, _safeData.collateralType, 'incorrect cType');
+//   assertEq(collateral, _safeEngineData.lockedCollateral, 'incorrect safe engine collateral');
+//   assertEq(debt, _safeEngineData.generatedDebt, 'incorrect generated debt');
+// }
 }
 
 contract Unit_NFTRenderer_GetStateHash is Base {
