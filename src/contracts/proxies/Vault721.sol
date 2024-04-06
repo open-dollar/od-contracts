@@ -261,7 +261,7 @@ contract Vault721 is ERC721EnumerableUpgradeable, IVault721, Authorizable, Modif
         _taxCollector.assertNonNull(),
         _collateralJoinFactory.assertNonNull()
       );
-    } else if (_param == 'updateAllowList') {
+    } else if (_param == 'updateAllowlist') {
       (address _user, bool _bool) = abi.decode(_data, (address, bool));
       _user.assertNonNull();
       _updateAllowlist(_user, _bool);

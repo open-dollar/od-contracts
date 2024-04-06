@@ -283,12 +283,13 @@ contract Unit_Vault721_GovernanceFunctions is Base {
   }
 
   function test_UpdateNFTRenderer() public {
+    bytes32 _param = 'updateNFTRenderer';
     vm.prank(address(timelockController));
     vm.mockCall(
       address(_scenario.nftRenderer), abi.encodeWithSelector(NFTRenderer.setImplementation.selector), abi.encode()
     );
     vault721.modifyParameters(
-      'updateNftRenderer',
+      _param,
       abi.encode(
         _scenario.nftRenderer, _scenario.oracleRelayer, _scenario.taxCollector, _scenario.collateralJoinFactory
       )
@@ -298,8 +299,8 @@ contract Unit_Vault721_GovernanceFunctions is Base {
   function test_UpdateNFTRenderer_Revert_OnlyGovernance() public {
     vm.mockCall(address(renderer), abi.encodeWithSelector(NFTRenderer.setImplementation.selector), abi.encode());
     vm.prank(address(user));
-    vm.expectRevert(IAuthorizable.NotAuthorized.selector);
-    vault721.modifyParameters('updateNftRenderer', abi.encode(address(1), address(1), address(1), address(1)));
+    vm.expectRevert(IAuthorizable.Unauthorized.selector);
+    vault721.modifyParameters('updateNFTRenderer', abi.encode(address(1), address(1), address(1), address(1)));
   }
 
   function test_UpdateNFTRenderer_Revert_ZeroAddress() public {
@@ -307,15 +308,15 @@ contract Unit_Vault721_GovernanceFunctions is Base {
     vm.prank(address(timelockController));
     vm.expectRevert(Assertions.NullAddress.selector);
     vault721.modifyParameters(
-      'updateNftRenderer',
+      'updateNFTRenderer',
       abi.encode(address(0), _scenario.oracleRelayer, _scenario.taxCollector, _scenario.collateralJoinFactory)
     );
   }
 
-  function test_UpdateAllowList() public {
+  function test_UpdateAllowlist() public {
     _mintNft();
     vm.prank(address(timelockController));
-    vault721.modifyParameters('updateAllowList', abi.encode(_scenario.user, true));
+    vault721.modifyParameters('updateAllowlist', abi.encode(_scenario.user, true));
 
     vm.warp(block.timestamp + 100_000);
 
@@ -337,7 +338,7 @@ contract Unit_Vault721_GovernanceFunctions is Base {
     vm.assume(notUnderOrOverflowAdd(timeDelay, int256(block.timestamp)));
 
     vm.prank(address(timelockController));
-    vault721.modifyParameters('updateTimeDelay', abi.encode(timeDelay));
+    vault721.modifyParameters('timeDelay', abi.encode(timeDelay));
     //update vault hash state so there's a time to check against
     vm.prank(address(safeManager));
     vm.mockCall(
@@ -380,14 +381,15 @@ contract Unit_Vault721_GovernanceFunctions is Base {
     // hardcode previous hash into mock call for test
     bytes32 previousHashState = 0x0508bed9fd4f78f10478c995115fdf0b087b42d661e8c6f27710c035187b029b;
     _mintNft();
-    vm.assume(blockDelay > 0 && blockDelay < 1000);
-
-    vm.prank(address(timelockController));
-    vault721.modifyParameters('updateBlockDelay', abi.encode(blockDelay));
-
     //add to allow list so that block delay will be checked
     vm.prank(address(timelockController));
     vault721.modifyParameters('updateAllowlist', abi.encode(_scenario.user, true));
+
+    vm.assume(blockDelay > 0 && blockDelay < 1000);
+
+    bytes32 _param = 'blockDelay';
+    vm.prank(address(timelockController));
+    vault721.modifyParameters(_param, abi.encode(blockDelay));
 
     //update hash state with hardcoded value.
 
@@ -695,15 +697,15 @@ contract Unit_Vault721_TransferFrom is Base {
   }
 
   function test_TransferFrom_Revert_BlockDelayNotReached(Scenario memory _scenario) public basicLimits(_scenario) {
+    //add to allow list so that block delay will be checked
+    vm.prank(address(timelockController));
+    vault721.modifyParameters('updateAllowlist', abi.encode(_scenario.user1, true));
+
     _mintNft(_scenario);
     bytes32 previousHashState = vault721.getHashState(_scenario.tokenId).lastHash;
 
     vm.prank(address(timelockController));
     vault721.modifyParameters('blockDelay', abi.encode(_scenario.blockDelay));
-
-    //add to allow list so that block delay will be checked
-    vm.prank(address(timelockController));
-    vault721.modifyParameters('updateAllowlist', abi.encode(_scenario.user1, true));
 
     //update hash state with hardcoded value.
 
@@ -735,7 +737,7 @@ contract Unit_Vault721_TransferFrom is Base {
     _mintNft(_scenario);
 
     vm.prank(address(timelockController));
-    vault721.modifyParameters('updateTimeDelay', abi.encode(_scenario.timeDelay));
+    vault721.modifyParameters('timeDelay', abi.encode(_scenario.timeDelay));
 
     //update vault hash state so there's a time to check against
     vm.prank(address(safeManager));

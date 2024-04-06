@@ -397,7 +397,7 @@ contract E2ENFTTestFuzzFrontrunning is NFTSetup {
 
   function test_BlockDelay(uint256 _debt) public {
     vm.startPrank(vault721.timelockController());
-    vault721.modifyParameters('updateAllowList', abi.encode(bob, true));
+    vault721.modifyParameters('updateAllowlist', abi.encode(bob, true));
     vm.stopPrank();
 
     _debt = bound(_debt, 0, MINT_AMOUNT);
@@ -423,7 +423,7 @@ contract E2ENFTTestFuzzFrontrunning is NFTSetup {
 
   function test_BlockDelayRevert(uint256 _debt) public {
     vm.startPrank(vault721.timelockController());
-    vault721.modifyParameters('updateAllowList', abi.encode(bob, true));
+    vault721.modifyParameters('updateAllowlist', abi.encode(bob, true));
     vm.stopPrank();
 
     _debt = bound(_debt, 0, MINT_AMOUNT);
@@ -585,7 +585,7 @@ contract E2ENFTTestAccessControl is NFTSetup {
   }
 
   function test_revert_If_UpdateAllowlistForZeroAddress() public {
-    bytes32 _param = 'updateAllowList';
+    bytes32 _param = 'updateAllowlist';
     vm.startPrank(vault721.timelockController());
     vm.expectRevert(Assertions.NullAddress.selector);
     vault721.modifyParameters(_param, abi.encode(address(0), true));
@@ -628,7 +628,7 @@ contract E2ENFTTestAccessControl is NFTSetup {
 
   function test_UpdateAllowlist() public {
     address allowedAddress = address(0x420);
-    bytes32 _param = 'updateAllowList';
+    bytes32 _param = 'updateAllowlist';
     vm.startPrank(vault721.timelockController());
     vault721.modifyParameters(_param, abi.encode(allowedAddress, true));
     vm.stopPrank();
