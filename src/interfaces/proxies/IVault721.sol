@@ -63,19 +63,19 @@ interface IVault721 is IERC721EnumerableUpgradeable, IAuthorizable, IModifiable 
 
   /**
    * @notice The timelockController is the governance contract with permissions to update params
-   * @return address of the timelock controller
+   * @return _timelockController address of the timelock controller
    */
   function timelockController() external returns (address _timelockController);
 
   /**
    * @notice The safe manager calls mint and other functions on this contract and is used to get safe data for the vault hash
-   * @return safeManager address handles permissions and safe state
+   * @return _safeManager safeManager address handles permissions and safe state
    */
   function safeManager() external returns (IODSafeManager _safeManager);
 
   /**
    * @notice The nftRenderer creates the tokenURI and is used in the vaultHashState
-   * @return address of NFTrenderer
+   * @return _nftRenderer address of NFTrenderer
    */
   function nftRenderer() external returns (NFTRenderer _nftRenderer);
 
@@ -108,6 +108,7 @@ interface IVault721 is IERC721EnumerableUpgradeable, IAuthorizable, IModifiable 
 
   /**
    * @dev get hash state by vault id
+   * @return _hashState the hastate of the vault
    */
   function getHashState(uint256 _vaultId) external view returns (HashState memory _hashState);
 
