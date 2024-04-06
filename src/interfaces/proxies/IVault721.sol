@@ -111,7 +111,11 @@ interface IVault721 is IERC721EnumerableUpgradeable, IAuthorizable, IModifiable 
    * @return _hashState the hastate of the vault
    */
   function getHashState(uint256 _vaultId) external view returns (HashState memory _hashState);
-
+  /**
+   * @dev has this user been allow listed?  this function will tell you.
+   * @return bool false if not allow listed, true if they are indeed allow listed.
+   */
+  function getIsAllowlisted(address _user) external view returns (bool);
   // --- Methods ---
 
   /**

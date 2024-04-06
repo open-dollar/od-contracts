@@ -135,7 +135,7 @@ contract Vault721 is ERC721EnumerableUpgradeable, Authorizable, Modifiable, IVau
   /**
    * @dev generate URI with updated vault information
    */
-  /// @inheritdoc ERC721EnumerableUpgradeable
+  /// @inheritdoc ERC721Upgradeable
   function tokenURI(uint256 _safeId) public view override returns (string memory uri) {
     _requireMinted(_safeId);
     uri = nftRenderer.render(_safeId);
