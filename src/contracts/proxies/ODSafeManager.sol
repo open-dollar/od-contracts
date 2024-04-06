@@ -8,6 +8,7 @@ import {IVault721} from '@interfaces/proxies/IVault721.sol';
 import {ITaxCollector} from '@interfaces/ITaxCollector.sol';
 import {Modifiable} from '@contracts/utils/Modifiable.sol';
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
+import {Encoding} from '@libraries/Encoding.sol';
 
 import {Math} from '@libraries/Math.sol';
 import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
@@ -24,6 +25,7 @@ contract ODSafeManager is IODSafeManager, Authorizable, Modifiable {
   using Math for uint256;
   using EnumerableSet for EnumerableSet.UintSet;
   using Assertions for address;
+  using Encoding for bytes;
 
   /// @inheritdoc IODSafeManager
   address public safeEngine;
@@ -303,12 +305,12 @@ contract ODSafeManager is IODSafeManager, Authorizable, Modifiable {
 
   /// @inheritdoc Modifiable
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
-    address _address = abi.decode(_data, (address));
+    address _address = _data.toAddress();
 
-    if (_param == 'liquidationEngine') liquidationEngine = _address;
-    else if (_param == 'taxCollector') taxCollector = _address;
-    else if (_param == 'vault721') vault721 = IVault721(_address);
-    else if (_param == 'safeEngine') safeEngine = _address;
+    if (_param == 'liquidationEngine') liquidationEngine = _address.assertNonNull();
+    else if (_param == 'taxCollector') taxCollector = _address.assertNonNull();
+    else if (_param == 'vault721') vault721 = IVault721(_address.assertNonNull());
+    else if (_param == 'safeEngine') safeEngine = _address.assertNonNull();
     else revert UnrecognizedParam();
   }
 }

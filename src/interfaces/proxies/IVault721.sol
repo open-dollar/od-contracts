@@ -21,6 +21,8 @@ interface IVault721 is IERC721EnumerableUpgradeable {
     uint256 lastBlockTimestamp;
   }
 
+  event CreateProxy(address indexed _user, address indexed _proxy);
+
   // public variables
   function timelockController() external returns (address);
   function safeManager() external returns (IODSafeManager);
@@ -44,20 +46,6 @@ interface IVault721 is IERC721EnumerableUpgradeable {
   // external: only SafeManager
   function mint(address proxy, uint256 safeId) external;
   function updateVaultHashState(uint256 _vaultId) external;
-
-  // external: only Governor
-  function updateNftRenderer(
-    address _nftRenderer,
-    address _oracleRelayer,
-    address _taxCollector,
-    address _collateralJoinFactory
-  ) external;
-  function updateContractURI(string memory _metaData) external;
-  function setSafeManager(address _safeManager) external;
-  function setNftRenderer(address _nftRenderer) external;
-  // function updateWhitelist(address _user, bool _status) external;
-  function updateTimeDelay(uint256 _timeDelay) external;
-  function updateBlockDelay(uint256 _blockDelay) external;
 
   // public
   // function tokenURI(uint256 _safeId) external returns (string memory);

@@ -14,6 +14,8 @@ import {RAY, WAD} from '@libraries/Math.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 import {FakeBasicActions} from '@contracts/for-test/FakeBasicActions.sol';
+import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
+import {Assertions} from '@libraries/Assertions.sol';
 
 contract NFTSetup is Common {
   uint256 public constant MINT_AMOUNT = 1000 ether;
@@ -395,7 +397,7 @@ contract E2ENFTTestFuzzFrontrunning is NFTSetup {
 
   function test_BlockDelay(uint256 _debt) public {
     vm.startPrank(vault721.timelockController());
-    vault721.updateAllowlist(bob, true);
+    vault721.modifyParameters('updateAllowList', abi.encode(bob, true));
     vm.stopPrank();
 
     _debt = bound(_debt, 0, MINT_AMOUNT);
@@ -421,7 +423,7 @@ contract E2ENFTTestFuzzFrontrunning is NFTSetup {
 
   function test_BlockDelayRevert(uint256 _debt) public {
     vm.startPrank(vault721.timelockController());
-    vault721.updateAllowlist(bob, true);
+    vault721.modifyParameters('updateAllowList', abi.encode(bob, true));
     vm.stopPrank();
 
     _debt = bound(_debt, 0, MINT_AMOUNT);
@@ -517,8 +519,8 @@ contract E2ENFTTestFuzzFrontrunning is NFTSetup {
 
   function _updateDelays() internal {
     vm.startPrank(vault721.timelockController());
-    vault721.updateTimeDelay(5 days);
-    vault721.updateBlockDelay(3);
+    vault721.modifyParameters('timeDelay', abi.encode(5 days));
+    vault721.modifyParameters('blockDelay', abi.encode(3));
     vm.stopPrank();
   }
 }
@@ -577,29 +579,32 @@ contract E2ENFTTestAccessControl is NFTSetup {
 
   function test_revert_If_UpdateAllowlistWhenNotGovernance() public {
     vm.startPrank(alice);
-    vm.expectRevert(IVault721.NotGovernor.selector);
-    vault721.updateAllowlist(alice, true);
+    vm.expectRevert(IAuthorizable.Unauthorized.selector);
+    vault721.modifyParameters('updateAllowlist', abi.encode(alice, true));
     vm.stopPrank();
   }
 
   function test_revert_If_UpdateAllowlistForZeroAddress() public {
+    bytes32 _param = 'updateAllowList';
     vm.startPrank(vault721.timelockController());
-    vm.expectRevert(IVault721.ZeroAddress.selector);
-    vault721.updateAllowlist(address(0), true);
+    vm.expectRevert(Assertions.NullAddress.selector);
+    vault721.modifyParameters(_param, abi.encode(address(0), true));
     vm.stopPrank();
   }
 
   function test_revert_If_UpdateTimeDelayWhenNotGovernance() public {
+    bytes32 _param = 'updateTimeDelay';
     vm.startPrank(alice);
-    vm.expectRevert(IVault721.NotGovernor.selector);
-    vault721.updateTimeDelay(3 days);
+    vm.expectRevert(IAuthorizable.Unauthorized.selector);
+    vault721.modifyParameters(_param, abi.encode(3 days));
     vm.stopPrank();
   }
 
   function test_revert_If_UpdateBlockDelayWhenNotGovernance() public {
+    bytes32 _param = 'blockDelay';
     vm.startPrank(alice);
-    vm.expectRevert(IVault721.NotGovernor.selector);
-    vault721.updateBlockDelay(3);
+    vm.expectRevert(IAuthorizable.Unauthorized.selector);
+    vault721.modifyParameters(_param, abi.encode(3));
     vm.stopPrank();
   }
 
@@ -623,8 +628,9 @@ contract E2ENFTTestAccessControl is NFTSetup {
 
   function test_UpdateAllowlist() public {
     address allowedAddress = address(0x420);
+    bytes32 _param = 'updateAllowList';
     vm.startPrank(vault721.timelockController());
-    vault721.updateAllowlist(allowedAddress, true);
+    vault721.modifyParameters(_param, abi.encode(allowedAddress, true));
     vm.stopPrank();
 
     assertEq(vault721.getIsAllowlisted(allowedAddress), true, 'incorrect allowlist');
@@ -632,7 +638,7 @@ contract E2ENFTTestAccessControl is NFTSetup {
 
   function test_UpdateTimeDelay() public {
     vm.startPrank(vault721.timelockController());
-    vault721.updateTimeDelay(5 days);
+    vault721.modifyParameters('timeDelay', abi.encode(5 days));
     vm.stopPrank();
 
     assertEq(vault721.timeDelay(), 5 days, 'timeDelay not met');
@@ -640,7 +646,7 @@ contract E2ENFTTestAccessControl is NFTSetup {
 
   function test_UpdateBlockDelay() public {
     vm.startPrank(vault721.timelockController());
-    vault721.updateBlockDelay(3);
+    vault721.modifyParameters('blockDelay', abi.encode(3));
     vm.stopPrank();
 
     assertEq(vault721.blockDelay(), 3, 'blockDelay not met');
