@@ -19,7 +19,7 @@ import {Encoding} from '@libraries/Encoding.sol';
 /**
  * @notice Upgradeable contract used as singleton, but is not upgradeable
  */
-contract Vault721 is ERC721EnumerableUpgradeable, IVault721, Authorizable, Modifiable {
+contract Vault721 is ERC721EnumerableUpgradeable, Authorizable, Modifiable, IVault721 {
   using Assertions for address;
   using Encoding for bytes;
 
@@ -39,9 +39,6 @@ contract Vault721 is ERC721EnumerableUpgradeable, IVault721, Authorizable, Modif
 
   constructor() Authorizable(msg.sender) {}
 
-  /**
-   * @dev initializes DAO timelockController contract
-   */
   function initialize(address _timelockController) external initializer nonZero(_timelockController) {
     timelockController = _timelockController;
     // _addAuthorization(timelockController);
@@ -64,59 +61,44 @@ contract Vault721 is ERC721EnumerableUpgradeable, IVault721, Authorizable, Modif
     _;
   }
 
-  /**
-   * @dev initializes SafeManager contract
-   */
+  /// @inheritdoc IVault721
   function initializeManager() external {
     if (address(safeManager) == address(0)) safeManager = IODSafeManager(msg.sender);
   }
 
-  /**
-   * @dev initializes NFTRenderer contract
-   */
+  /// @inheritdoc IVault721
   function initializeRenderer() external {
     if (address(nftRenderer) == address(0)) nftRenderer = NFTRenderer(msg.sender);
   }
 
-  /**
-   * @dev get proxy by user address
-   */
+  /// @inheritdoc IVault721
   function getProxy(address _user) external view returns (address _proxy) {
     _proxy = _userRegistry[_user];
   }
 
-  /**
-   * @dev get hash state by vault id
-   */
+  /// @inheritdoc IVault721
   function getHashState(uint256 _vaultId) external view returns (HashState memory) {
     return _hashState[_vaultId];
   }
 
+  /// @inheritdoc IVault721
   function getIsAllowlisted(address _user) external view returns (bool) {
     return _allowlist[_user];
   }
 
-  /**
-   * @dev allows msg.sender without an ODProxy to deploy a new ODProxy
-   */
+  /// @inheritdoc IVault721
   function build() external returns (address payable _proxy) {
     if (!_shouldBuildProxy(msg.sender)) revert ProxyAlreadyExist();
     _proxy = _build(msg.sender);
   }
 
-  /**
-   * @dev allows user without an ODProxy to deploy a new ODProxy
-   */
+  /// @inheritdoc IVault721
   function build(address _user) external returns (address payable _proxy) {
     if (!_shouldBuildProxy(_user)) revert ProxyAlreadyExist();
     _proxy = _build(_user);
   }
 
-  /**
-   * @dev allows user to deploy proxies for multiple users
-   * @param _users array of user addresses
-   * @return _proxies array of proxy addresses
-   */
+  /// @inheritdoc IVault721
   function build(address[] memory _users) external returns (address payable[] memory _proxies) {
     uint256 len = _users.length;
     _proxies = new address payable[](len);
@@ -126,19 +108,14 @@ contract Vault721 is ERC721EnumerableUpgradeable, IVault721, Authorizable, Modif
     }
   }
 
-  /**
-   * @dev mint can only be called by the SafeManager
-   * enforces that only ODProxies call `openSafe` function by checking _proxyRegistry
-   */
+  /// @inheritdoc IVault721
   function mint(address _proxy, uint256 _safeId) external onlySafeManager {
     require(_proxyRegistry[_proxy] != address(0), 'V721: non-native proxy');
     address _user = _proxyRegistry[_proxy];
     _safeMint(_user, _safeId);
   }
 
-  /**
-   * @dev allows ODSafeManager to update the hash state
-   */
+  /// @inheritdoc IVault721
   function updateVaultHashState(uint256 _vaultId) external onlySafeManager {
     if (safeManager.safeData(_vaultId).safeHandler == address(0)) revert ZeroAddress();
     _hashState[_vaultId] = HashState({
@@ -158,14 +135,13 @@ contract Vault721 is ERC721EnumerableUpgradeable, IVault721, Authorizable, Modif
   /**
    * @dev generate URI with updated vault information
    */
+  /// @inheritdoc IERC721EnumerableUpgradeable
   function tokenURI(uint256 _safeId) public view override returns (string memory uri) {
     _requireMinted(_safeId);
     uri = nftRenderer.render(_safeId);
   }
 
-  /**
-   * @dev contract level meta data
-   */
+  /// @inheritdoc IVault721
   function contractURI() public view returns (string memory uri) {
     uri = string.concat('data:application/json;utf8,', contractMetaData);
   }
@@ -236,6 +212,7 @@ contract Vault721 is ERC721EnumerableUpgradeable, IVault721, Authorizable, Modif
    * current tokenId. Additional considerations regarding data migration of
    * core contracts should be addressed.
    */
+  /// @inheritdoc Modifiable
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     address _address = _data.toAddress();
 
