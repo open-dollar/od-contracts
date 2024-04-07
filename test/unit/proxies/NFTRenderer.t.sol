@@ -4,7 +4,7 @@ pragma solidity 0.8.19;
 import {ODTest, stdStorage, StdStorage} from '@test/utils/ODTest.t.sol';
 import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 import {IVault721} from '@interfaces/proxies/IVault721.sol';
-import {Vault721} from '@contracts/proxies/Vault721.sol';
+import {Vault721, NFVState} from '@contracts/proxies/Vault721.sol';
 import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
@@ -24,11 +24,13 @@ import {Base64} from '@openzeppelin/utils/Base64.sol';
 
 struct RenderParamsData {
   uint256 safeId;
+  uint256 tokenCollateralData;
   ITaxCollector.TaxCollectorCollateralData taxData;
   IODSafeManager.SAFEData safeData;
   ISAFEEngine.SAFEEngineCollateralData safeEngineCollateralData;
   ISAFEEngine.SAFE safeEngineData;
   IOracleRelayer.OracleRelayerCollateralParams oracleParams;
+  NFVState nfvStateData;
   uint256 readValue;
   uint256 timestamp;
 }
@@ -56,25 +58,21 @@ contract Base is ODTest {
 
   modifier noOverFlow(RenderParamsData memory _data) {
     _data.oracleParams.oracle = IDelayedOracle(address(oracleRelayer));
-    _data.safeEngineData.lockedCollateral = bound(_data.safeEngineData.lockedCollateral, 0, WAD * 1000);
-    _data.safeEngineData.generatedDebt = bound(_data.safeEngineData.generatedDebt, 0, WAD * 1000);
+    _data.nfvStateData.collateral = bound(_data.nfvStateData.collateral, 0, WAD * 1000);
+    _data.nfvStateData.debt = bound(_data.nfvStateData.collateral, 0, WAD * 1000);
     vm.assume(_data.safeEngineCollateralData.accumulatedRate > 0);
     _data.safeEngineCollateralData.accumulatedRate =
       bound(_data.safeEngineCollateralData.accumulatedRate, 1, WAD * 1000);
+    vm.assume(notUnderOrOverflowMul(_data.nfvStateData.collateral, Math.toInt(_data.oracleParams.oracle.read())));
     vm.assume(
-      notUnderOrOverflowMul(_data.safeEngineData.lockedCollateral, Math.toInt(_data.oracleParams.oracle.read()))
+      notUnderOrOverflowMul(_data.nfvStateData.debt, Math.toInt(_data.safeEngineCollateralData.accumulatedRate))
     );
     vm.assume(
-      notUnderOrOverflowMul(
-        _data.safeEngineData.generatedDebt, Math.toInt(_data.safeEngineCollateralData.accumulatedRate)
-      )
+      _data.nfvStateData.collateral.wmul(_data.oracleParams.oracle.read())
+        > _data.nfvStateData.debt.wmul(_data.safeEngineCollateralData.accumulatedRate)
     );
-    vm.assume(
-      _data.safeEngineData.lockedCollateral.wmul(_data.oracleParams.oracle.read())
-        > _data.safeEngineData.generatedDebt.wmul(_data.safeEngineCollateralData.accumulatedRate)
-    );
-    _data.safeEngineData.lockedCollateral = _data.safeEngineData.lockedCollateral * WAD;
-    _data.safeEngineData.generatedDebt = _data.safeEngineData.generatedDebt * WAD;
+    _data.nfvStateData.collateral = _data.nfvStateData.collateral * WAD;
+    _data.nfvStateData.debt = _data.nfvStateData.debt * WAD;
     _data.safeEngineCollateralData.accumulatedRate = _data.safeEngineCollateralData.accumulatedRate * WAD;
 
     _data.timestamp = bound(_data.timestamp, 100, 9_000_000_000);
@@ -106,10 +104,12 @@ contract Base is ODTest {
 
   function _mockRenderCalls(RenderParamsData memory _data) internal {
     vm.mockCall(
-      address(safeManager), abi.encodeWithSelector(IODSafeManager.safeData.selector), abi.encode(_data.safeData)
+      address(vault721), abi.encodeWithSelector(IVault721.getNfvState.selector), abi.encode(_data.nfvStateData)
     );
     vm.mockCall(
-      address(safeEngine), abi.encodeWithSelector(ISAFEEngine.safes.selector), abi.encode(_data.safeEngineData)
+      address(safeEngine),
+      abi.encodeWithSelector(ISAFEEngine.tokenCollateral.selector),
+      abi.encode(_data.tokenCollateralData)
     );
     vm.mockCall(
       address(oracleRelayer), abi.encodeWithSelector(oracleRelayer.cParams.selector), abi.encode(_data.oracleParams)
@@ -154,18 +154,18 @@ contract Unit_NFTRenderer_RenderParams is Base {
 
     NFTRenderer.VaultParams memory params = nftRenderer.renderParams(_data.safeId);
 
-    if (_data.safeEngineData.generatedDebt != 0 && _data.safeEngineData.lockedCollateral != 0) {
+    if (_data.nfvStateData.debt != 0 && _data.nfvStateData.collateral != 0) {
       assertEq(
         params.ratio,
         (
-          (_data.safeEngineData.lockedCollateral.wmul(_data.oracleParams.oracle.read())).wdiv(
-            _data.safeEngineData.generatedDebt.wmul(_data.safeEngineCollateralData.accumulatedRate)
+          (_data.nfvStateData.collateral.wmul(_data.oracleParams.oracle.read())).wdiv(
+            _data.nfvStateData.debt.wmul(_data.safeEngineCollateralData.accumulatedRate)
           )
         ) / 1e7,
         'incorrect ratio'
       );
       assertEq(params.state, 2);
-    } else if (_data.safeEngineData.generatedDebt == 0 && _data.safeEngineData.lockedCollateral != 0) {
+    } else if (_data.nfvStateData.debt == 0 && _data.nfvStateData.collateral != 0) {
       assertEq(params.ratio, 200, 'incorrect ratio');
       assertEq(params.state, 1);
     } else {
@@ -185,8 +185,8 @@ contract Unit_NFTRenderer_RenderParams is Base {
   }
 
   function test_RenderParams_zeros(RenderParamsData memory _data) public noOverFlow(_data) {
-    _data.safeEngineData.generatedDebt = 0;
-    _data.safeEngineData.lockedCollateral = 0;
+    _data.nfvStateData.debt = 0;
+    _data.nfvStateData.collateral = 0;
     _mockRenderCalls(_data);
 
     NFTRenderer.VaultParams memory params = nftRenderer.renderParams(_data.safeId);
@@ -199,7 +199,7 @@ contract Unit_NFTRenderer_RenderParams is Base {
   }
 }
 
-contract Unit_NFTRenderer_Render is Base {
+contract Unit_NFTRenderer_RenderBase is Base {
   function test_Render(RenderParamsData memory _data) public noOverFlow(_data) {
     _mockRenderCalls(_data);
 

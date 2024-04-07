@@ -153,8 +153,8 @@ contract NFTRenderer {
 
       uint256 ratio;
       uint256 state;
-      if (collateral != 0) {
-        if (debt != 0) {
+      if (collateral > 0) {
+        if (debt > 0) {
           state = 2;
           ISAFEEngine.SAFEEngineCollateralData memory cTypeData = _safeEngine.cData(cType);
           ratio = ((collateral.wmul(oracle.read())).wdiv(debt.wmul(cTypeData.accumulatedRate))) / 1e7; // _RAY to _WAD conversion
