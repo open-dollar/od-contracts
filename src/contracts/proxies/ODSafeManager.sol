@@ -272,7 +272,7 @@ contract ODSafeManager is IODSafeManager, Authorizable, Modifiable {
       _srcData.collateralType, _srcData.safeHandler, _dstData.safeHandler, _deltaCollateral, _deltaDebt
     );
 
-    // @note We update the vault hash state for src and the destination as the value for both changes
+    // @note update the collateral and debt state for src and the destination as the value for both changes
     vault721.updateNfvState(_safeSrc);
 
     vault721.updateNfvState(_safeDst);

@@ -214,7 +214,7 @@ contract NFTRenderer {
       params.vaultId,
       traits,
       params.lastUpdate,
-      '"},{"trait_type":"TokenCollateral","value":"',
+      '"},{"trait_type":"Internal Collateral","value":"',
       params.tokenCollateral
     );
   }
