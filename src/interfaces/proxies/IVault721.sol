@@ -15,6 +15,7 @@ interface IVault721 is IERC721EnumerableUpgradeable {
   error BlockDelayNotOver();
   error TimeDelayNotOver();
   error ZeroAddress();
+  error StateViolation();
 
   // public variables
   function timelockController() external returns (address);
