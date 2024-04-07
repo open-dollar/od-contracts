@@ -320,32 +320,32 @@ contract Unit_ODSafeManager_SAFEManagement is Base {
 
   event MoveSAFE(address indexed _sender, uint256 indexed _safeSrc, uint256 indexed _safeDst);
 
-  // function test_MoveSAFE(Scenario memory _scenario) public happyPath(_scenario) {
-  //   address newaliceProxy = vault721.build(_scenario.bob);
-  //   vm.prank(newaliceProxy);
-  //   uint256 safeId2 = safeManager.openSAFE(_scenario.cType, newaliceProxy);
+  function test_MoveSAFE(Scenario memory _scenario) public happyPath(_scenario) {
+    address newaliceProxy = vault721.build(_scenario.bob);
+    vm.prank(newaliceProxy);
+    uint256 safeId2 = safeManager.openSAFE(_scenario.cType, newaliceProxy);
 
-  //   vm.prank(newaliceProxy);
-  //   safeManager.allowSAFE(safeId2, _scenario.aliceProxy, true);
+    vm.prank(newaliceProxy);
+    safeManager.allowSAFE(safeId2, _scenario.aliceProxy, true);
 
-  //   vm.expectEmit();
-  //   emit MoveSAFE(address(_scenario.aliceProxy), _scenario.safeId, safeId2);
+    vm.expectEmit();
+    emit MoveSAFE(address(_scenario.aliceProxy), _scenario.safeId, safeId2);
 
-  //   vm.mockCall(
-  //     address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.safes.selector), abi.encode(_scenario.safeData)
-  //   );
+    vm.mockCall(
+      address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.safes.selector), abi.encode(_scenario.safeData)
+    );
 
-  //   vm.mockCall(
-  //     address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.transferSAFECollateralAndDebt.selector), abi.encode()
-  //   );
+    vm.mockCall(
+      address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.transferSAFECollateralAndDebt.selector), abi.encode()
+    );
 
-  //   vm.mockCall(address(vault721), abi.encodeWithSelector(IVault721.updateVaultHashState.selector), abi.encode());
+    vm.mockCall(address(vault721), abi.encodeWithSelector(IVault721.updateNfvState.selector), abi.encode());
 
-  //   vm.mockCall(address(vault721), abi.encodeWithSelector(IVault721.updateVaultHashState.selector), abi.encode());
+    vm.mockCall(address(vault721), abi.encodeWithSelector(IVault721.updateNfvState.selector), abi.encode());
 
-  //   vm.prank(_scenario.aliceProxy);
-  //   safeManager.moveSAFE(_scenario.safeId, safeId2);
-  // }
+    vm.prank(_scenario.aliceProxy);
+    safeManager.moveSAFE(_scenario.safeId, safeId2);
+  }
 
   event ProtectSAFE(address indexed _sender, uint256 indexed _safe, address _liquidationEngine, address _saviour);
 
@@ -389,30 +389,30 @@ contract Unit_ODSafeManager_SystemManagement is Base {
     _;
   }
 
-  // function test_EnterSystem(Scenario memory _scenario) public happyPath(_scenario) {
-  //   vm.startPrank(_scenario.aliceProxy);
-  //   safeManager.allowSAFE(_scenario.safeId, _scenario.aliceProxy, true);
-  //   vm.mockCall(
-  //     address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.transferSAFECollateralAndDebt.selector), abi.encode()
-  //   );
+  function test_EnterSystem(Scenario memory _scenario) public happyPath(_scenario) {
+    vm.startPrank(_scenario.aliceProxy);
+    safeManager.allowSAFE(_scenario.safeId, _scenario.aliceProxy, true);
+    vm.mockCall(
+      address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.transferSAFECollateralAndDebt.selector), abi.encode()
+    );
 
-  //   vm.mockCall(address(vault721), abi.encodeWithSelector(IVault721.updateVaultHashState.selector), abi.encode());
+    vm.mockCall(address(vault721), abi.encodeWithSelector(IVault721.updateNfvState.selector), abi.encode());
 
-  //   safeManager.enterSystem(_scenario.aliceProxy, _scenario.safeId);
-  // }
+    safeManager.enterSystem(_scenario.aliceProxy, _scenario.safeId);
+  }
 
-  // function test_QuitSystem(Scenario memory _scenario) public happyPath(_scenario) {
-  //   vm.startPrank(_scenario.aliceProxy);
-  //   safeManager.allowSAFE(_scenario.safeId, _scenario.aliceProxy, true);
+  function test_QuitSystem(Scenario memory _scenario) public happyPath(_scenario) {
+    vm.startPrank(_scenario.aliceProxy);
+    safeManager.allowSAFE(_scenario.safeId, _scenario.aliceProxy, true);
 
-  //   vm.mockCall(
-  //     address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.transferSAFECollateralAndDebt.selector), abi.encode()
-  //   );
+    vm.mockCall(
+      address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.transferSAFECollateralAndDebt.selector), abi.encode()
+    );
 
-  //   vm.mockCall(address(vault721), abi.encodeWithSelector(IVault721.updateVaultHashState.selector), abi.encode());
+    vm.mockCall(address(vault721), abi.encodeWithSelector(IVault721.updateNfvState.selector), abi.encode());
 
-  //   safeManager.quitSystem(_scenario.safeId, _scenario.aliceProxy);
-  // }
+    safeManager.quitSystem(_scenario.safeId, _scenario.aliceProxy);
+  }
 }
 
 contract Unit_ODSafeManager_CollateralManagement is Base {
@@ -426,96 +426,96 @@ contract Unit_ODSafeManager_CollateralManagement is Base {
     address indexed _sender, uint256 indexed _safe, int256 _deltaCollateral, int256 _deltaDebt
   );
 
-  // function test_modifySAFECollateralization(Scenario memory _scenario) public happyPath(_scenario) {
-  //   vm.mockCall(
-  //     address(mockSafeEngine), abi.encodeWithSelector(mockSafeEngine.modifySAFECollateralization.selector), abi.encode()
-  //   );
+  function test_modifySAFECollateralization(Scenario memory _scenario) public happyPath(_scenario) {
+    vm.mockCall(
+      address(mockSafeEngine), abi.encodeWithSelector(mockSafeEngine.modifySAFECollateralization.selector), abi.encode()
+    );
 
-  //   vm.mockCall(
-  //     address(mockSafeEngine), abi.encodeWithSelector(mockSafeEngine.updateAccumulatedRate.selector), abi.encode()
-  //   );
+    vm.mockCall(
+      address(mockSafeEngine), abi.encodeWithSelector(mockSafeEngine.updateAccumulatedRate.selector), abi.encode()
+    );
 
-  //   vm.mockCall(address(vault721), abi.encodeWithSelector(IVault721.updateVaultHashState.selector), abi.encode());
+    vm.mockCall(address(vault721), abi.encodeWithSelector(IVault721.updateNfvState.selector), abi.encode());
 
-  //   vm.mockCall(
-  //     address(taxCollector),
-  //     abi.encodeWithSelector(ITaxCollector.taxSingle.selector),
-  //     abi.encode(_scenario.cData.accumulatedRate)
-  //   );
+    vm.mockCall(
+      address(taxCollector),
+      abi.encodeWithSelector(ITaxCollector.taxSingle.selector),
+      abi.encode(_scenario.cData.accumulatedRate)
+    );
 
-  //   vm.prank(_scenario.aliceProxy);
+    vm.prank(_scenario.aliceProxy);
 
-  //   vm.expectEmit();
+    vm.expectEmit();
 
-  //   emit ModifySAFECollateralization(
-  //     _scenario.aliceProxy, _scenario.safeId, _scenario.deltaCollateral, _scenario.deltaDebt
-  //   );
+    emit ModifySAFECollateralization(
+      _scenario.aliceProxy, _scenario.safeId, _scenario.deltaCollateral, _scenario.deltaDebt
+    );
 
-  //   safeManager.modifySAFECollateralization(_scenario.safeId, (_scenario.deltaCollateral), (_scenario.deltaDebt), true);
-  // }
+    safeManager.modifySAFECollateralization(_scenario.safeId, (_scenario.deltaCollateral), (_scenario.deltaDebt), true);
+  }
 
   function test_modifySAFECollateralization_Revert_SafeNotAllowed(Scenario memory _scenario) public {
     vm.expectRevert(IODSafeManager.SafeNotAllowed.selector);
     safeManager.modifySAFECollateralization(_scenario.safeId, (_scenario.deltaCollateral), (_scenario.deltaDebt), true);
   }
 
-  // function test_SafeAllowed(Scenario memory _scenario) public happyPath(_scenario) {
-  //   vm.expectRevert(IODSafeManager.SafeNotAllowed.selector);
-  //   vm.prank(_scenario.bob);
-  //   safeManager.modifySAFECollateralization(_scenario.safeId, (_scenario.deltaCollateral), (_scenario.deltaDebt), true);
+  function test_SafeAllowed(Scenario memory _scenario) public happyPath(_scenario) {
+    vm.expectRevert(IODSafeManager.SafeNotAllowed.selector);
+    vm.prank(_scenario.bob);
+    safeManager.modifySAFECollateralization(_scenario.safeId, (_scenario.deltaCollateral), (_scenario.deltaDebt), true);
 
-  //   vm.prank(_scenario.aliceProxy);
-  //   safeManager.allowSAFE(_scenario.safeId, _scenario.bob, true);
+    vm.prank(_scenario.aliceProxy);
+    safeManager.allowSAFE(_scenario.safeId, _scenario.bob, true);
 
-  //   //mock external calls
-  //   vm.mockCall(
-  //     address(mockSafeEngine), abi.encodeWithSelector(mockSafeEngine.modifySAFECollateralization.selector), abi.encode()
-  //   );
+    // mock external calls
+    vm.mockCall(
+      address(mockSafeEngine), abi.encodeWithSelector(mockSafeEngine.modifySAFECollateralization.selector), abi.encode()
+    );
 
-  //   vm.mockCall(
-  //     address(mockSafeEngine), abi.encodeWithSelector(mockSafeEngine.updateAccumulatedRate.selector), abi.encode()
-  //   );
+    vm.mockCall(
+      address(mockSafeEngine), abi.encodeWithSelector(mockSafeEngine.updateAccumulatedRate.selector), abi.encode()
+    );
 
-  //   vm.mockCall(address(vault721), abi.encodeWithSelector(IVault721.updateVaultHashState.selector), abi.encode());
+    vm.mockCall(address(vault721), abi.encodeWithSelector(IVault721.updateNfvState.selector), abi.encode());
 
-  //   vm.mockCall(
-  //     address(taxCollector),
-  //     abi.encodeWithSelector(ITaxCollector.taxSingle.selector),
-  //     abi.encode(_scenario.cData.accumulatedRate)
-  //   );
+    vm.mockCall(
+      address(taxCollector),
+      abi.encodeWithSelector(ITaxCollector.taxSingle.selector),
+      abi.encode(_scenario.cData.accumulatedRate)
+    );
 
-  //   vm.expectEmit();
+    vm.expectEmit();
 
-  //   emit ModifySAFECollateralization(_scenario.bob, _scenario.safeId, _scenario.deltaCollateral, _scenario.deltaDebt);
+    emit ModifySAFECollateralization(_scenario.bob, _scenario.safeId, _scenario.deltaCollateral, _scenario.deltaDebt);
 
-  //   vm.prank(_scenario.bob);
-  //   safeManager.modifySAFECollateralization(_scenario.safeId, (_scenario.deltaCollateral), (_scenario.deltaDebt), true);
-  // }
+    vm.prank(_scenario.bob);
+    safeManager.modifySAFECollateralization(_scenario.safeId, (_scenario.deltaCollateral), (_scenario.deltaDebt), true);
+  }
 
   event TransferCollateral(address indexed _sender, uint256 indexed _safe, address _dst, uint256 _wad);
 
   event TransferCollateral(address indexed _sender, bytes32 _cType, uint256 indexed _safe, address _dst, uint256 _wad);
 
-  // function test_transferCollateral(Scenario memory _scenario) public happyPath(_scenario) {
-  //   vm.mockCall(address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.transferCollateral.selector), abi.encode());
-  //   vm.mockCall(address(vault721), abi.encodeWithSelector(IVault721.updateVaultHashState.selector), abi.encode());
+  function test_transferCollateral(Scenario memory _scenario) public happyPath(_scenario) {
+    vm.mockCall(address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.transferCollateral.selector), abi.encode());
+    vm.mockCall(address(vault721), abi.encodeWithSelector(IVault721.updateNfvState.selector), abi.encode());
 
-  //   vm.expectEmit();
-  //   emit TransferCollateral(_scenario.aliceProxy, _scenario.safeId, _scenario.aliceProxy, 100);
+    vm.expectEmit();
+    emit TransferCollateral(_scenario.aliceProxy, _scenario.safeId, _scenario.aliceProxy, 100);
 
-  //   vm.prank(_scenario.aliceProxy);
-  //   safeManager.transferCollateral(_scenario.safeId, _scenario.aliceProxy, 100);
-  // }
+    vm.prank(_scenario.aliceProxy);
+    safeManager.transferCollateral(_scenario.safeId, _scenario.aliceProxy, 100);
+  }
 
-  // function test_transferCollateral_cType(Scenario memory _scenario) public happyPath(_scenario) {
-  //   vm.mockCall(address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.transferCollateral.selector), abi.encode());
-  //   vm.mockCall(address(vault721), abi.encodeWithSelector(IVault721.updateVaultHashState.selector), abi.encode());
+  function test_transferCollateral_cType(Scenario memory _scenario) public happyPath(_scenario) {
+    vm.mockCall(address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.transferCollateral.selector), abi.encode());
+    vm.mockCall(address(vault721), abi.encodeWithSelector(IVault721.updateNfvState.selector), abi.encode());
 
-  //   vm.expectEmit();
-  //   emit TransferCollateral(_scenario.aliceProxy, _scenario.cType, _scenario.safeId, owner, 100);
-  //   vm.prank(_scenario.aliceProxy);
-  //   safeManager.transferCollateral(_scenario.cType, _scenario.safeId, owner, 100);
-  // }
+    vm.expectEmit();
+    emit TransferCollateral(_scenario.aliceProxy, _scenario.cType, _scenario.safeId, owner, 100);
+    vm.prank(_scenario.aliceProxy);
+    safeManager.transferCollateral(_scenario.cType, _scenario.safeId, owner, 100);
+  }
 
   event TransferInternalCoins(address indexed _sender, uint256 indexed _safe, address _dst, uint256 _rad);
 
