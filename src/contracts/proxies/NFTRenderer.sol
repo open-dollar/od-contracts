@@ -50,10 +50,10 @@ contract NFTRenderer {
   struct VaultParams {
     uint256 state;
     uint256 ratio;
-    string collateral;
-    string debt;
-    string metaCollateral;
-    string metaDebt;
+    string collateralJson;
+    string debtJson;
+    string collateralSvg;
+    string debtSvg;
     string vaultId;
     string stabilityFee;
     string symbol;
@@ -61,6 +61,8 @@ contract NFTRenderer {
     string color;
     string stroke;
     string lastUpdate;
+    string lastBlockNumber;
+    string lastBlockTimestamp;
     string tokenCollateral;
   }
 
@@ -107,7 +109,7 @@ contract NFTRenderer {
           string.concat(
             _renderVaultInfo(params.vaultId, params.color),
             _renderCollatAndDebt(
-              ratio, params.stabilityFee, params.debt, params.collateral, params.symbol, params.lastUpdate
+              ratio, params.stabilityFee, params.debtSvg, params.collateralSvg, params.symbol, params.lastUpdate
             ),
             _renderRisk(params.state, ratio, params.stroke, params.risk),
             _renderBackground(params.color)
@@ -131,21 +133,18 @@ contract NFTRenderer {
     {
       NFVState memory nfvState = vault721.getNfvState(_safeId);
       cType = nfvState.cType;
+      params.lastBlockNumber = nfvState.lastBlockNumber.toString();
+      params.lastBlockTimestamp = nfvState.lastBlockTimestamp.toString();
+
       uint256 collateral = nfvState.collateral;
+      params.collateralJson = collateral.toString();
+      params.collateralSvg = _formatNumberForSvg(collateral);
+
       uint256 debt = nfvState.debt;
-      {
-        (uint256 lDebt, uint256 rDebt) = _floatingPoint(debt);
-        params.metaDebt = _parseNumber(lDebt, rDebt);
-        params.debt = _parseNumberWithComma(lDebt, rDebt);
+      params.debtJson = debt.toString();
+      params.debtSvg = _formatNumberForSvg(debt);
 
-        (uint256 lCollateral, uint256 rCollateral) = _floatingPoint(collateral);
-        params.metaCollateral = _parseNumber(lCollateral, rCollateral);
-        params.collateral = _parseNumberWithComma(lCollateral, rCollateral);
-
-        (uint256 lTokenCollateral, uint256 rTokenCollateral) =
-          _floatingPoint(_safeEngine.tokenCollateral(cType, nfvState.safeHandler));
-        params.tokenCollateral = _parseNumber(lTokenCollateral, rTokenCollateral);
-      }
+      params.tokenCollateral = _formatNumberForJson(_safeEngine.tokenCollateral(cType, nfvState.safeHandler));
 
       IOracleRelayer.OracleRelayerCollateralParams memory oracleParams = _oracleRelayer.cParams(cType);
       IDelayedOracle oracle = oracleParams.oracle;
@@ -193,6 +192,10 @@ contract NFTRenderer {
       params.vaultId,
       traits,
       params.lastUpdate,
+      '"},{"trait_type":"Modified on Block","value":"',
+      params.lastBlockNumber,
+      '"},{"trait_type":"Modified at Timestamp ","value":"',
+      params.lastBlockTimestamp,
       '"},{"trait_type":"Internal Collateral","value":"',
       params.tokenCollateral
     );
@@ -216,9 +219,9 @@ contract NFTRenderer {
     // stack at 16 slot max w/ 32-byte+ strings
     traits = string.concat(
       '"},{"trait_type":"Debt","value":"',
-      params.metaDebt,
+      params.debtJson,
       '"},{"trait_type":"Collateral","value":"',
-      params.metaCollateral,
+      params.collateralJson,
       '"},{"trait_type":"Collateral Type","value":"',
       params.symbol,
       '"},{"trait_type":"Stability Fee","value":"',
@@ -362,6 +365,16 @@ contract NFTRenderer {
     if (ratio == 0) return '0';
     if (ratio <= 100 || ratio >= 200) return '100';
     else return (ratio - 100).toString();
+  }
+
+  function _formatNumberForJson(uint256 num) internal pure returns (string memory) {
+    (uint256 left, uint256 right) = _floatingPoint(num);
+    return _parseNumber(left, right);
+  }
+
+  function _formatNumberForSvg(uint256 num) internal pure returns (string memory) {
+    (uint256 left, uint256 right) = _floatingPoint(num);
+    return _parseNumberWithComma(left, right);
   }
 
   /**
