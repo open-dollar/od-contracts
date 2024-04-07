@@ -137,11 +137,11 @@ contract NFTRenderer {
         (uint256 lDebt, uint256 rDebt) = _floatingPoint(debt);
         params.metaDebt = _parseNumber(lDebt, rDebt);
         params.debt = _parseNumberWithComma(lDebt, rDebt);
+
         (uint256 lCollateral, uint256 rCollateral) = _floatingPoint(collateral);
         params.metaCollateral = _parseNumber(lCollateral, rCollateral);
         params.collateral = _parseNumberWithComma(lCollateral, rCollateral);
-      }
-      {
+
         (uint256 lTokenCollateral, uint256 rTokenCollateral) =
           _floatingPoint(_safeEngine.tokenCollateral(cType, nfvState.safeHandler));
         params.tokenCollateral = _parseNumber(lTokenCollateral, rTokenCollateral);
