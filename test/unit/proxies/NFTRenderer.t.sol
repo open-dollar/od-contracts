@@ -47,14 +47,12 @@ contract Base is ODTest {
   string emptyString;
 
   NFTRenderer public nftRenderer;
-  // protocol contracts
   IVault721 public vault721;
   IODSafeManager public safeManager;
   ISAFEEngine public safeEngine;
   IOracleRelayer public oracleRelayer;
   ITaxCollector public taxCollector;
   ICollateralJoinFactory public collateralJoinFactory;
-  //address _vault721, address oracleRelayer, address taxCollector, address collateralJoinFactory
 
   modifier noOverFlow(RenderParamsData memory _data) {
     _data.oracleParams.oracle = IDelayedOracle(address(oracleRelayer));
@@ -131,7 +129,6 @@ contract Base is ODTest {
       abi.encodeWithSelector(ICollateralJoin.collateral.selector),
       abi.encode(address(_collateral))
     );
-
     vm.mockCall(address(_collateral), abi.encodeWithSelector(IERC20Metadata.symbol.selector), abi.encode('TST'));
     vm.mockCall(
       address(_data.oracleParams.oracle),
@@ -146,48 +143,6 @@ contract Unit_NFTRenderer_Deployment is Base {
   function test_Deployment_Params() public {
     assertEq(address(vault721), address(nftRenderer.vault721()), 'incorrect vault721 set');
   }
-}
-
-contract Unit_NFTRenderer_GetVaultCTypeAndCollateralAndDebt is Base {
-// function test_GetVaultCTypeAndCollateralAndDebt(
-//   IODSafeManager.SAFEData memory _safeData,
-//   ISAFEEngine.SAFE memory _safeEngineData
-// ) public {
-//   vm.mockCall(address(safeManager), abi.encodeWithSelector(IODSafeManager.safeData.selector), abi.encode(_safeData));
-//   vm.mockCall(address(safeEngine), abi.encodeWithSelector(ISAFEEngine.safes.selector), abi.encode(_safeEngineData));
-//   (bytes32 cType, uint256 collateral, uint256 debt) = nftRenderer.getVaultCTypeAndCollateralAndDebt(1);
-
-//   assertEq(cType, _safeData.collateralType, 'incorrect cType');
-//   assertEq(collateral, _safeEngineData.lockedCollateral, 'incorrect safe engine collateral');
-//   assertEq(debt, _safeEngineData.generatedDebt, 'incorrect generated debt');
-// }
-}
-
-contract Unit_NFTRenderer_GetStateHash is Base {
-// function test_GetStateHashBySafeId(
-//   IODSafeManager.SAFEData memory _safeData,
-//   ISAFEEngine.SAFE memory _safeEngineData
-// ) public {
-//   vm.mockCall(address(safeManager), abi.encodeWithSelector(IODSafeManager.safeData.selector), abi.encode(_safeData));
-//   vm.mockCall(address(safeEngine), abi.encodeWithSelector(ISAFEEngine.safes.selector), abi.encode(_safeEngineData));
-//   bytes32 stateHash = nftRenderer.getStateHashBySafeId(1);
-
-//   assertEq(
-//     stateHash,
-//     keccak256(abi.encode(_safeEngineData.lockedCollateral, _safeEngineData.generatedDebt)),
-//     'incorrect state hash'
-//   );
-// }
-
-// function test_GetStateHash(ISAFEEngine.SAFE memory _safeEngineData) public {
-//   bytes32 stateHash = nftRenderer.getStateHash(_safeEngineData.lockedCollateral, _safeEngineData.generatedDebt);
-
-//   assertEq(
-//     stateHash,
-//     keccak256(abi.encode(_safeEngineData.lockedCollateral, _safeEngineData.generatedDebt)),
-//     'incorrect state hash'
-//   );
-// }
 }
 
 contract Unit_NFTRenderer_RenderParams is Base {

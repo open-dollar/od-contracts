@@ -155,22 +155,6 @@ contract Vault721_ViewFunctions is Base {
     assertTrue(allowlisted, 'user not allowed');
   }
 
-  // function test_GetHashState() public {
-  //   vm.mockCall(
-  //     address(renderer),
-  //     abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector),
-  //     abi.encode(bytes32(keccak256('testHash')))
-  //   );
-  //   _mockSafeCall();
-  //   vm.prank(address(safeManager));
-  //   vault721.updateVaultHashState(1);
-
-  //   NFVState memory hashState = vault721.getHashState(1);
-
-  //   assertEq(hashState.lastBlockNumber, block.number, 'incorrect block number');
-  //   assertEq(hashState.lastBlockTimestamp, block.timestamp, 'incorrect time stamp');
-  // }
-
   function test_ContractURI() public {
     string memory contractURI = vault721.contractURI();
     assertEq(
@@ -306,23 +290,13 @@ contract Unit_Vault721_GovernanceFunctions is Base {
     );
   }
 
-  // function test_UpdateAllowList() public {
-  //   _mintNft();
-  //   vm.prank(address(timelockController));
-  //   vault721.updateAllowlist(_scenario.user, true);
-
-  //   vm.warp(block.timestamp + 100_000);
-
-  //   vm.mockCall(
-  //     address(renderer), abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector), abi.encode(bytes32(0))
-  //   );
-
-  //   vm.prank(_scenario.user);
-  //   // transfer token to verify allowlist was updated since there's no view function
-  //   vault721.transferFrom(_scenario.user, owner, 1);
-
-  //   assertEq(vault721.balanceOf(owner), 1, 'transfer not succesful');
-  // }
+  function test_UpdateAllowList() public {
+    _mintNft();
+    assertFalse(vault721.getIsAllowlisted(_scenario.user));
+    vm.prank(address(timelockController));
+    vault721.updateAllowlist(_scenario.user, true);
+    assertTrue(vault721.getIsAllowlisted(_scenario.user));
+  }
 
   // function test_UpdateTimeDelay(uint256 timeDelay) public {
   //   _mintNft();
@@ -430,7 +404,7 @@ contract Unit_Vault721_GovernanceFunctions is Base {
   }
 }
 
-contract Unit_TestVault721_TransferFrom_SafeTransferFrom_ProxyReceiver is Base {
+contract Unit_Vault721_ForTest_TransferFrom_SafeTransferFrom_ProxyReceiver is Base {
   TestVault721 internal testVault721;
   address internal user1 = address(1);
   address internal user2 = address(2);
