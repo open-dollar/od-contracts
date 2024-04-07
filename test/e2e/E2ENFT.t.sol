@@ -7,7 +7,7 @@ import {BaseUser} from '@test/scopes/BaseUser.t.sol';
 import {DirectUser} from '@test/scopes/DirectUser.t.sol';
 import {ProxyUser} from '@test/scopes/ProxyUser.t.sol';
 import {ERC20ForTest} from '@test/mocks/ERC20ForTest.sol';
-import {HashState, Vault721} from '@contracts/proxies/Vault721.sol';
+import {NFVState, Vault721} from '@contracts/proxies/Vault721.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 import {RAY, WAD} from '@libraries/Math.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
@@ -567,12 +567,12 @@ contract E2ENFTTestBasicActionsCalls is NFTSetup {
 }
 
 contract E2ENFTTestAccessControl is NFTSetup {
-  // function test_revert_If_UpdateVaultHashStateWhenNotSafeManager() public {
-  //   vm.startPrank(alice);
-  //   vm.expectRevert(Vault721.NotSafeManager.selector);
-  //   vault721.updateVaultHashState(1);
-  //   vm.stopPrank();
-  // }
+  function test_revert_If_UpdateVaultHashStateWhenNotSafeManager() public {
+    vm.startPrank(alice);
+    vm.expectRevert(Vault721.NotSafeManager.selector);
+    vault721.updateNfvState(1);
+    vm.stopPrank();
+  }
 
   function test_revert_If_UpdateAllowlistWhenNotGovernance() public {
     vm.startPrank(alice);
@@ -602,23 +602,23 @@ contract E2ENFTTestAccessControl is NFTSetup {
     vm.stopPrank();
   }
 
-  // function test_UpdateVaultHashState() public {
-  //   uint256 initTime = block.timestamp;
-  //   uint256 initBlock = block.number;
+  function test_UpdateNfvState() public {
+    uint256 initTime = block.timestamp;
+    uint256 initBlock = block.number;
 
-  //   vm.prank(alice);
-  //   uint256 safeId = openSafe();
+    vm.prank(alice);
+    uint256 safeId = openSafe();
 
-  //   vm.warp(initTime + 420);
-  //   vm.roll(initBlock + 69);
-  //   vm.prank(address(safeManager));
-  //   vault721.updateVaultHashState(safeId);
+    vm.warp(initTime + 420);
+    vm.roll(initBlock + 69);
+    vm.prank(address(safeManager));
+    vault721.updateNfvState(safeId);
 
-  //   HashState memory hashState = vault721.getHashState(safeId);
+    NFVState memory nfvState = vault721.getNfvState(safeId);
 
-  //   assertEq(hashState.lastBlockNumber, initBlock + 69, 'incorrect lastBlockNumber');
-  //   assertEq(hashState.lastBlockTimestamp, initTime + 420, 'incorrect lastBlockTimestamp');
-  // }
+    assertEq(nfvState.lastBlockNumber, initBlock + 69, 'incorrect lastBlockNumber');
+    assertEq(nfvState.lastBlockTimestamp, initTime + 420, 'incorrect lastBlockTimestamp');
+  }
 
   function test_UpdateAllowlist() public {
     address allowedAddress = address(0x420);

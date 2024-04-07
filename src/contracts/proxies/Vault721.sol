@@ -12,10 +12,13 @@ import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 // Open Dollar
 // Version 1.6.1
 
-struct HashState {
-  bytes32 lastHash;
+struct NFVState {
+  bytes32 cType;
+  uint256 collateral;
+  uint256 debt;
   uint256 lastBlockNumber;
   uint256 lastBlockTimestamp;
+  address safeHandler;
 }
 
 /**
@@ -36,13 +39,6 @@ contract Vault721 is ERC721EnumerableUpgradeable {
   NFTRenderer public nftRenderer;
   uint256 public blockDelay;
   uint256 public timeDelay;
-
-  struct NFVState {
-    uint256 collateral;
-    uint256 debt;
-    uint256 lastBlockNumber;
-    uint256 lastBlockTimestamp;
-  }
 
   string public contractMetaData =
     '{"name": "Open Dollar Vaults","description": "Open Dollar is a DeFi lending protocol that enables borrowing against liquid staking tokens while earning staking rewards and enabling liquidity via Non-Fungible Vaults (NFVs).","image": "https://app.opendollar.com/collectionImage.png","external_link": "https://app.opendollar.com"}';
@@ -177,13 +173,15 @@ contract Vault721 is ERC721EnumerableUpgradeable {
    * @dev allows ODSafeManager to update the nfv state in nfvState mapping
    */
   function updateNfvState(uint256 _vaultId) external onlySafeManager {
-    (uint256 _collateral, uint256 _debt) = _getNfvValue(_vaultId);
+    (bytes32 _cType, uint256 _collateral, uint256 _debt, address _safeHandler) = _getNfvValue(_vaultId);
 
     _nfvState[_vaultId] = NFVState({
+      cType: _cType,
       collateral: _collateral,
       debt: _debt,
       lastBlockNumber: block.number,
-      lastBlockTimestamp: block.timestamp
+      lastBlockTimestamp: block.timestamp,
+      safeHandler: _safeHandler
     });
   }
 
@@ -285,14 +283,14 @@ contract Vault721 is ERC721EnumerableUpgradeable {
   /**
    * @dev get generated debt and locked collateral of nfv by tokenId
    */
-  function _getNfvValue(uint256 _vaultId) internal view returns (uint256, uint256) {
+  function _getNfvValue(uint256 _vaultId) internal view returns (bytes32, uint256, uint256, address) {
     IODSafeManager.SAFEData memory safeMangerData = safeManager.safeData(_vaultId);
     address safeHandler = safeMangerData.safeHandler;
     if (safeHandler == address(0)) revert ZeroAddress();
+    bytes32 cType = safeMangerData.collateralType;
 
-    ISAFEEngine.SAFE memory SafeEngineData =
-      ISAFEEngine(safeManager.safeEngine()).safes(safeMangerData.collateralType, safeHandler);
-    return (SafeEngineData.lockedCollateral, SafeEngineData.generatedDebt);
+    ISAFEEngine.SAFE memory SafeEngineData = ISAFEEngine(safeManager.safeEngine()).safes(cType, safeHandler);
+    return (cType, SafeEngineData.lockedCollateral, SafeEngineData.generatedDebt, safeHandler);
   }
 
   /**
@@ -300,7 +298,7 @@ contract Vault721 is ERC721EnumerableUpgradeable {
    * @notice frontrunning that increases the lockedCollateral or decreases the generatedDebt is accepted
    */
   function _enforceStaticState(address _operator, uint256 _tokenId) internal view {
-    (uint256 _collateralNow, uint256 _debtNow) = _getNfvValue(_tokenId);
+    (, uint256 _collateralNow, uint256 _debtNow,) = _getNfvValue(_tokenId);
     NFVState memory _nfv = _nfvState[_tokenId];
 
     if (_collateralNow < _nfv.collateral || _debtNow > _nfv.debt) revert StateViolation();

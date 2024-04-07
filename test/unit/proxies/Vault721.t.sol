@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import {ODTest, stdStorage, StdStorage} from '@test/utils/ODTest.t.sol';
-import {Vault721, HashState} from '@contracts/proxies/Vault721.sol';
+import {Vault721, NFVState} from '@contracts/proxies/Vault721.sol';
 import {IVault721} from '@interfaces/proxies/IVault721.sol';
 import {TestVault721} from '@contracts/for-test/TestVault721.sol';
 import {SCWallet, Bad_SCWallet} from '@contracts/for-test/SCWallet.sol';
@@ -165,7 +165,7 @@ contract Vault721_ViewFunctions is Base {
   //   vm.prank(address(safeManager));
   //   vault721.updateVaultHashState(1);
 
-  //   HashState memory hashState = vault721.getHashState(1);
+  //   NFVState memory hashState = vault721.getHashState(1);
 
   //   assertEq(hashState.lastBlockNumber, block.number, 'incorrect block number');
   //   assertEq(hashState.lastBlockTimestamp, block.timestamp, 'incorrect time stamp');
@@ -221,7 +221,7 @@ contract Unit_Vault721_UpdateVaultHashState is Base {
   //   vm.prank(address(safeManager));
   //   vault721.updateVaultHashState(1);
 
-  //   HashState memory hashState = vault721.getHashState(1);
+  //   NFVState memory hashState = vault721.getHashState(1);
 
   //   assertEq(hashState.lastBlockNumber, block.number, 'incorrect block number');
   //   assertEq(hashState.lastBlockTimestamp, block.timestamp, 'incorrect time stamp');

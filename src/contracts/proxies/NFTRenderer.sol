@@ -6,6 +6,7 @@ import {Strings} from '@openzeppelin/utils/Strings.sol';
 import {Base64} from '@openzeppelin/utils/Base64.sol';
 import {Math} from '@libraries/Math.sol';
 import {IVault721} from '@interfaces/proxies/IVault721.sol';
+import {NFVState} from '@contracts/proxies/Vault721.sol';
 import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
@@ -119,28 +120,6 @@ contract NFTRenderer {
   }
 
   /**
-   * @dev gets the vault ctype, collateral and debt amounts given `_safeId`
-   * @param _safeId vault id
-   * @return cType collateral type
-   * @return collateral collateral amount for safe with `_safeId`
-   * @return debt debt amount for safe with `_safeId`
-   */
-  function getVaultCTypeAndCollateralAndDebt(uint256 _safeId)
-    public
-    view
-    returns (bytes32 cType, uint256 collateral, uint256 debt, uint256 tokenCollateral)
-  {
-    IODSafeManager.SAFEData memory safeMangerData = _safeManager.safeData(_safeId);
-    address safeHandler = safeMangerData.safeHandler;
-    cType = safeMangerData.collateralType;
-
-    ISAFEEngine.SAFE memory SafeEngineData = _safeEngine.safes(cType, safeHandler);
-    collateral = SafeEngineData.lockedCollateral;
-    debt = SafeEngineData.generatedDebt;
-    tokenCollateral = _safeEngine.tokenCollateral(cType, safeHandler);
-  }
-
-  /**
    * @dev reads from various protocol contracts to collect data about user vaults by vault id
    */
   function renderParams(uint256 _safeId) public view returns (VaultParams memory) {
@@ -150,10 +129,10 @@ contract NFTRenderer {
     bytes32 cType;
     // scoped to reduce call stack
     {
-      uint256 collateral;
-      uint256 debt;
-      uint256 tokenCollateral;
-      (cType, collateral, debt, tokenCollateral) = getVaultCTypeAndCollateralAndDebt(_safeId);
+      NFVState memory nfvState = vault721.getNfvState(_safeId);
+      cType = nfvState.cType;
+      uint256 collateral = nfvState.collateral;
+      uint256 debt = nfvState.debt;
       {
         (uint256 lDebt, uint256 rDebt) = _floatingPoint(debt);
         params.metaDebt = _parseNumber(lDebt, rDebt);
@@ -163,7 +142,8 @@ contract NFTRenderer {
         params.collateral = _parseNumberWithComma(lCollateral, rCollateral);
       }
       {
-        (uint256 lTokenCollateral, uint256 rTokenCollateral) = _floatingPoint(tokenCollateral);
+        (uint256 lTokenCollateral, uint256 rTokenCollateral) =
+          _floatingPoint(_safeEngine.tokenCollateral(cType, nfvState.safeHandler));
         params.tokenCollateral = _parseNumber(lTokenCollateral, rTokenCollateral);
       }
 
@@ -172,8 +152,8 @@ contract NFTRenderer {
       uint256 safetyCRatio = oracleParams.safetyCRatio / 10e24;
       uint256 liquidationCRatio = oracleParams.liquidationCRatio / 10e24;
 
-      uint256 ratio; // default 0
-      uint256 state; // default 0
+      uint256 ratio;
+      uint256 state;
       if (collateral != 0) {
         if (debt != 0) {
           state = 2;
@@ -193,7 +173,6 @@ contract NFTRenderer {
       params.ratio = ratio;
       params.state = state;
     }
-
     ITaxCollector.TaxCollectorCollateralData memory taxData = _taxCollector.cData(cType);
     params.stabilityFee = (taxData.nextStabilityFee / _RAY).toString();
 

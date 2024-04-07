@@ -5,6 +5,7 @@ import {IERC721EnumerableUpgradeable} from
   '@openzeppelin-upgradeable/token/ERC721/extensions/IERC721EnumerableUpgradeable.sol';
 import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
+import {NFVState} from '@contracts/proxies/Vault721.sol';
 
 interface IVault721 is IERC721EnumerableUpgradeable {
   error NotGovernor();
@@ -29,7 +30,7 @@ interface IVault721 is IERC721EnumerableUpgradeable {
 
   // external
   function getProxy(address _user) external view returns (address);
-  function getHashState(uint256 _vaultId) external view returns (uint256, uint256, uint256);
+  function getNfvState(uint256 _vaultId) external view returns (NFVState memory);
   function build() external returns (address payable);
   function build(address _user) external returns (address payable);
   function build(address[] memory _users) external returns (address payable[] memory _proxies);
