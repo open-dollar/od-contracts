@@ -7,9 +7,15 @@ import {IVault721} from '@interfaces/proxies/IVault721.sol';
 import {TestVault721} from '@contracts/for-test/TestVault721.sol';
 import {SCWallet, Bad_SCWallet} from '@contracts/for-test/SCWallet.sol';
 import {ODSafeManager} from '@contracts/proxies/ODSafeManager.sol';
+import {SAFEEngine, ISAFEEngine} from '@contracts/SAFEEngine.sol';
 import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 import {TimelockController} from '@openzeppelin/governance/TimelockController.sol';
 import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
+
+struct RenderData {
+  IODSafeManager.SAFEData safeData;
+  ISAFEEngine.SAFE safeEngineData;
+}
 
 contract Base is ODTest {
   using stdStorage for StdStorage;
@@ -22,6 +28,7 @@ contract Base is ODTest {
   Vault721 vault721;
   NFTRenderer renderer;
   ODSafeManager safeManager;
+  SAFEEngine safeEngine;
   TimelockController timelockController;
 
   function setUp() public virtual {
@@ -32,15 +39,31 @@ contract Base is ODTest {
 
     renderer = NFTRenderer(mockContract('nftRenderer'));
     safeManager = ODSafeManager(mockContract('SafeManager'));
+    safeEngine = SAFEEngine(mockContract('SAFEEngine'));
     timelockController = TimelockController(payable(mockContract('timeLockController')));
 
     vm.stopPrank();
+  }
+
+  modifier testNums(RenderData memory _data) {
+    vm.assume(_data.safeData.safeHandler != address(0));
+    vm.assume(_data.safeData.owner != address(0));
+    _;
   }
 
   function _mockSafeCall() internal {
     IODSafeManager.SAFEData memory returnSafe;
     returnSafe.safeHandler = address(1);
     vm.mockCall(address(safeManager), abi.encodeWithSelector(ODSafeManager.safeData.selector), abi.encode(returnSafe));
+  }
+
+  function _mockUpdateNfvState(RenderData memory _data) internal testNums(_data) {
+    vm.mockCall(
+      address(safeManager), abi.encodeWithSelector(ODSafeManager.safeData.selector), abi.encode(_data.safeData)
+    );
+    vm.mockCall(
+      address(safeEngine), abi.encodeWithSelector(SAFEEngine.safes.selector), abi.encode(_data.safeEngineData)
+    );
   }
 }
 
@@ -179,7 +202,7 @@ contract Vault721_ViewFunctions is Base {
   }
 }
 
-contract Unit_Vault721_UpdateVaultHashState is Base {
+contract Unit_Vault721_UpdateNfvState is Base {
   address userProxy;
 
   function setUp() public override {
@@ -193,41 +216,34 @@ contract Unit_Vault721_UpdateVaultHashState is Base {
     userProxy = vault721.build(user);
   }
 
-  // function test_UpdateHashState() public {
-  //   vm.mockCall(
-  //     address(renderer),
-  //     abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector),
-  //     abi.encode(bytes32(keccak256('testHash')))
-  //   );
-
+  // function test_UpdateNfvState(RenderData memory data) public {
   //   _mockSafeCall();
+  //   _mockUpdateNfvState(data);
 
   //   vm.prank(address(safeManager));
-  //   vault721.updateVaultHashState(1);
+  //   vault721.updateNfvState(1);
 
-  //   NFVState memory hashState = vault721.getHashState(1);
+  //   NFVState memory nfvState = vault721.getNfvState(1);
 
-  //   assertEq(hashState.lastBlockNumber, block.number, 'incorrect block number');
-  //   assertEq(hashState.lastBlockTimestamp, block.timestamp, 'incorrect time stamp');
-  //   assertEq(hashState.lastHash, bytes32(keccak256('testHash')), 'incorrect hash');
+  //   assertEq(nfvState.lastBlockNumber, block.number, 'incorrect block number');
+  //   assertEq(nfvState.lastBlockTimestamp, block.timestamp, 'incorrect time stamp');
   // }
 
-  // function test_UpdateHashState_Revert_OnlySafeManager() public {
+  // function test_UpdateNfvState_Revert_OnlySafeManager() public {
   //   vm.expectRevert(Vault721.NotSafeManager.selector);
-
   //   vm.prank(address(user));
-  //   vault721.updateVaultHashState(1);
+  //   vault721.updateNfvState(1);
   // }
 
-  // function test_UpdateHashState_Revert_ZeroAddress() public {
-  //   vm.expectRevert(Vault721.ZeroAddress.selector);
+  function test_UpdateNfvState_Revert_ZeroAddress() public {
+    vm.expectRevert(Vault721.ZeroAddress.selector);
 
-  //   IODSafeManager.SAFEData memory returnSafe;
-  //   vm.mockCall(address(safeManager), abi.encodeWithSelector(ODSafeManager.safeData.selector), abi.encode(returnSafe));
+    IODSafeManager.SAFEData memory returnSafe;
+    vm.mockCall(address(safeManager), abi.encodeWithSelector(ODSafeManager.safeData.selector), abi.encode(returnSafe));
 
-  //   vm.prank(address(safeManager));
-  //   vault721.updateVaultHashState(1);
-  // }
+    vm.prank(address(safeManager));
+    vault721.updateNfvState(1);
+  }
 }
 
 contract Unit_Vault721_GovernanceFunctions is Base {
@@ -291,99 +307,34 @@ contract Unit_Vault721_GovernanceFunctions is Base {
   }
 
   function test_UpdateAllowList() public {
-    _mintNft();
     assertFalse(vault721.getIsAllowlisted(_scenario.user));
     vm.prank(address(timelockController));
     vault721.updateAllowlist(_scenario.user, true);
     assertTrue(vault721.getIsAllowlisted(_scenario.user));
   }
 
-  // function test_UpdateTimeDelay(uint256 timeDelay) public {
-  //   _mintNft();
+  function test_UpdateTimeDelay(uint256 timeDelay) public {
+    vm.assume(timeDelay > uint256(0) && timeDelay < uint256(1_000_000_000));
+    vm.assume(notUnderOrOverflowAdd(timeDelay, int256(block.timestamp)));
 
-  //   vm.assume(timeDelay > uint256(0) && timeDelay < uint256(1_000_000_000));
-  //   vm.assume(notUnderOrOverflowAdd(timeDelay, int256(block.timestamp)));
+    vm.prank(address(timelockController));
+    vault721.updateTimeDelay(timeDelay);
 
-  //   vm.prank(address(timelockController));
-  //   vault721.updateTimeDelay(timeDelay);
-  //   //update vault hash state so there's a time to check against
-  //   vm.prank(address(safeManager));
-  //   vm.mockCall(
-  //     address(renderer),
-  //     abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector),
-  //     abi.encode(bytes32('test-hash'))
-  //   );
-  //   _mockSafeCall();
-  //   vault721.updateVaultHashState(1);
+    assertEq(vault721.timeDelay(), timeDelay, 'timeDelay not updated');
+  }
 
-  //   vm.prank(_scenario.user);
-  //   vault721.setApprovalForAll(_scenario.rando, true);
+  function test_UpdateBlockDelay(uint256 blockDelay) public {
+    vm.assume(blockDelay > 0 && blockDelay < 1000);
 
-  //   vm.prank(_scenario.rando);
-  //   // transfer token from rando to verify timeDelay was updated since there's no view function
-  //   vm.expectRevert(Vault721.TimeDelayNotOver.selector);
-  //   vm.mockCall(
-  //     address(renderer),
-  //     abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector),
-  //     abi.encode(bytes32('test-hash'))
-  //   );
-  //   vault721.transferFrom(_scenario.user, owner, 1);
+    vm.prank(address(timelockController));
+    vault721.updateBlockDelay(blockDelay);
 
-  //   vm.warp(block.timestamp + timeDelay);
-  //   vm.prank(_scenario.user);
-  //   vault721.setApprovalForAll(_scenario.rando, true);
+    //add to allow list so that block delay will be checked
+    vm.prank(address(timelockController));
+    vault721.updateAllowlist(_scenario.user, true);
 
-  //   vm.prank(_scenario.rando);
-  //   vm.mockCall(
-  //     address(renderer),
-  //     abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector),
-  //     abi.encode(bytes32('test-hash'))
-  //   );
-  //   vault721.transferFrom(_scenario.user, owner, 1);
-
-  //   assertEq(vault721.balanceOf(owner), 1, 'transfer not succesful');
-  // }
-
-  // function test_UpdateBlockDelay(uint256 blockDelay) public {
-  //   // hardcode previous hash into mock call for test
-  //   bytes32 previousHashState = 0x0508bed9fd4f78f10478c995115fdf0b087b42d661e8c6f27710c035187b029b;
-  //   _mintNft();
-  //   vm.assume(blockDelay > 0 && blockDelay < 1000);
-
-  //   vm.prank(address(timelockController));
-  //   vault721.updateBlockDelay(blockDelay);
-
-  //   //add to allow list so that block delay will be checked
-  //   vm.prank(address(timelockController));
-  //   vault721.updateAllowlist(_scenario.user, true);
-
-  //   //update hash state with hardcoded value.
-
-  //   vm.mockCall(
-  //     address(renderer),
-  //     abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector),
-  //     abi.encode(previousHashState)
-  //   );
-  //   _mockSafeCall();
-  //   vm.prank(address(safeManager));
-  //   vault721.updateVaultHashState(1);
-
-  //   // transfer token to verify blockDelay was updated since there's no view function
-
-  //   //advance to correct block
-  //   vm.roll(block.number + blockDelay + 1);
-
-  //   vm.prank(_scenario.user);
-  //   vm.mockCall(
-  //     address(renderer),
-  //     abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector),
-  //     abi.encode(bytes32(previousHashState))
-  //   );
-
-  //   vault721.transferFrom(_scenario.user, owner, 1);
-
-  //   assertEq(vault721.balanceOf(owner), 1, 'transfer not succesful');
-  // }
+    assertEq(vault721.blockDelay(), blockDelay, 'blockDelay not updated');
+  }
 
   function test_UpdateContractURI() public {
     vm.prank(address(timelockController));
