@@ -443,76 +443,76 @@ contract E2ENFTTestFuzzFrontrunning is NFTSetup {
     vm.stopPrank();
   }
 
-  // function test_UpdatesVaultHashState(uint256 _debt) public {
-  //   _debt = bound(_debt, 0, MINT_AMOUNT);
-  //   uint256 _collateral = _debt * MULTIPLIER;
-  //   token.mint(alice, _collateral);
+  function test_UpdatesVaultNfvState(uint256 _debt) public {
+    _debt = bound(_debt, 0, MINT_AMOUNT);
+    uint256 _collateral = _debt * MULTIPLIER;
+    token.mint(alice, _collateral);
 
-  //   uint256 initBlockNum = block.number;
-  //   uint256 initBlockTime = block.timestamp;
+    uint256 initBlockNum = block.number;
+    uint256 initBlockTime = block.timestamp;
 
-  //   _updateDelays();
-  //   vm.roll(initBlockNum);
-  //   vm.warp(initBlockTime);
+    _updateDelays();
+    vm.roll(initBlockNum);
+    vm.warp(initBlockTime);
 
-  //   vm.startPrank(alice);
-  //   uint256 safeId = openSafe();
+    vm.startPrank(alice);
+    uint256 safeId = openSafe();
 
-  //   token.approve(aliceProxy, type(uint256).max);
-  //   depositCollatAndGenDebt(TKN, safeId, _collateral, _debt, aliceProxy);
-  //   vm.stopPrank();
+    token.approve(aliceProxy, type(uint256).max);
+    depositCollatAndGenDebt(TKN, safeId, _collateral, _debt, aliceProxy);
+    vm.stopPrank();
 
-  //   HashState memory firstHashState = vault721.getHashState(safeId);
+    NFVState memory firstNfvState = vault721.getNfvState(safeId);
 
-  //   assertEq(firstHashState.lastBlockNumber, initBlockNum, 'incorrect lastBlockNumber');
-  //   assertEq(firstHashState.lastBlockTimestamp, initBlockTime, 'incorrect lastBlockTimestamp');
+    assertEq(firstNfvState.lastBlockNumber, initBlockNum, 'incorrect lastBlockNumber');
+    assertEq(firstNfvState.lastBlockTimestamp, initBlockTime, 'incorrect lastBlockTimestamp');
 
-  //   vm.roll(initBlockNum + 69);
-  //   vm.warp(initBlockTime + 420);
+    vm.roll(initBlockNum + 69);
+    vm.warp(initBlockTime + 420);
 
-  //   // should be same as firstHashState since no new change / update to state
-  //   HashState memory secondHashState = vault721.getHashState(safeId);
+    // should be same as firstNfvState since no new change / update to state
+    NFVState memory secondNfvState = vault721.getNfvState(safeId);
 
-  //   assertEq(secondHashState.lastBlockNumber, initBlockNum, 'incorrect lastBlockNumber');
-  //   assertEq(secondHashState.lastBlockTimestamp, initBlockTime, 'incorrect lastBlockTimestamp');
-  // }
+    assertEq(secondNfvState.lastBlockNumber, initBlockNum, 'incorrect lastBlockNumber');
+    assertEq(secondNfvState.lastBlockTimestamp, initBlockTime, 'incorrect lastBlockTimestamp');
+  }
 
-  // function test_UpdatesVaultHashState_And_GenerateDebt(uint256 _collateral) public {
-  //   _collateral = bound(_collateral, MINT_AMOUNT / MULTIPLIER, MINT_AMOUNT * MULTIPLIER);
-  //   token.mint(alice, _collateral);
+  function test_UpdatesVaultNfvState_And_GenerateDebt(uint256 _collateral) public {
+    _collateral = bound(_collateral, MINT_AMOUNT / MULTIPLIER, MINT_AMOUNT * MULTIPLIER);
+    token.mint(alice, _collateral);
 
-  //   uint256 initBlockNum = block.number;
-  //   uint256 initBlockTime = block.timestamp;
+    uint256 initBlockNum = block.number;
+    uint256 initBlockTime = block.timestamp;
 
-  //   _updateDelays();
-  //   vm.roll(initBlockNum);
-  //   vm.warp(initBlockTime);
+    _updateDelays();
+    vm.roll(initBlockNum);
+    vm.warp(initBlockTime);
 
-  //   vm.startPrank(alice);
-  //   uint256 safeId = openSafe();
+    vm.startPrank(alice);
+    uint256 safeId = openSafe();
 
-  //   token.approve(aliceProxy, type(uint256).max);
-  //   depositCollatAndGenDebt(TKN, safeId, _collateral, 0, aliceProxy);
-  //   vm.stopPrank();
+    token.approve(aliceProxy, type(uint256).max);
+    depositCollatAndGenDebt(TKN, safeId, _collateral, 0, aliceProxy);
+    vm.stopPrank();
 
-  //   HashState memory firstHashState = vault721.getHashState(safeId);
+    NFVState memory firstNfvState = vault721.getNfvState(safeId);
 
-  //   assertEq(firstHashState.lastBlockNumber, initBlockNum, 'incorrect lastBlockNumber');
-  //   assertEq(firstHashState.lastBlockTimestamp, initBlockTime, 'incorrect lastBlockTimestamp');
+    assertEq(firstNfvState.lastBlockNumber, initBlockNum, 'incorrect lastBlockNumber');
+    assertEq(firstNfvState.lastBlockTimestamp, initBlockTime, 'incorrect lastBlockTimestamp');
 
-  //   vm.roll(initBlockNum + 69);
-  //   vm.warp(initBlockTime + 420);
+    vm.roll(initBlockNum + 69);
+    vm.warp(initBlockTime + 420);
 
-  //   vm.startPrank(alice);
-  //   genDebt(safeId, _collateral / MULTIPLIER, aliceProxy);
-  //   vm.stopPrank();
+    vm.startPrank(alice);
+    genDebt(safeId, _collateral / MULTIPLIER, aliceProxy);
+    vm.stopPrank();
 
-  //   // should be different from firstHashState since new update to state
-  //   HashState memory secondHashState = vault721.getHashState(safeId);
+    // should be different from firstNfvState since new update to state
+    NFVState memory secondNfvState = vault721.getNfvState(safeId);
 
-  //   assertEq(secondHashState.lastBlockNumber, initBlockNum + 69, 'incorrect lastBlockNumber');
-  //   assertEq(secondHashState.lastBlockTimestamp, initBlockTime + 420, 'incorrect lastBlockTimestamp');
-  // }
+    assertEq(secondNfvState.lastBlockNumber, initBlockNum + 69, 'incorrect lastBlockNumber');
+    assertEq(secondNfvState.lastBlockTimestamp, initBlockTime + 420, 'incorrect lastBlockTimestamp');
+  }
 
   function _updateDelays() internal {
     vm.startPrank(vault721.timelockController());
@@ -567,7 +567,7 @@ contract E2ENFTTestBasicActionsCalls is NFTSetup {
 }
 
 contract E2ENFTTestAccessControl is NFTSetup {
-  function test_revert_If_UpdateVaultHashStateWhenNotSafeManager() public {
+  function test_revert_If_UpdateVaultNfvStateWhenNotSafeManager() public {
     vm.startPrank(alice);
     vm.expectRevert(Vault721.NotSafeManager.selector);
     vault721.updateNfvState(1);
