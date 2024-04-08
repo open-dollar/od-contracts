@@ -56,7 +56,6 @@ contract Base is ODTest {
   }
 
   function _mockSafeCall(IODSafeManager.SAFEData memory returnSafe) internal {
-    
     returnSafe.safeHandler = address(1);
     vm.mockCall(address(safeManager), abi.encodeWithSelector(IODSafeManager.safeData.selector), abi.encode(returnSafe));
   }
@@ -272,7 +271,8 @@ contract Unit_Vault721_GovernanceFunctions is Base {
   }
 
   Scenario internal _scenario;
-  ISAFEEngine.SAFE internal testSafeEngineData = ISAFEEngine.SAFE({lockedCollateral: 100 ether, generatedDebt: 10 ether});
+  ISAFEEngine.SAFE internal testSafeEngineData =
+    ISAFEEngine.SAFE({lockedCollateral: 100 ether, generatedDebt: 10 ether});
   IODSafeManager.SAFEData internal testSAFEData =
     IODSafeManager.SAFEData({nonce: 0, owner: address(0), safeHandler: address(420), collateralType: collateralTypeA});
   RenderData internal scenarioData = RenderData({safeData: testSAFEData, safeEngineData: testSafeEngineData});
@@ -339,12 +339,12 @@ contract Unit_Vault721_GovernanceFunctions is Base {
   }
 
   function test_ModifyParameters_UpdateTimeDelay() public {
-    uint256 timeDelay = 123456;
+    uint256 timeDelay = 123_456;
     assertEq(vault721.timeDelay(), 0, 'incorrect starting time delay');
     vm.prank(address(timelockController));
     vault721.modifyParameters('timeDelay', abi.encode(timeDelay));
     //update vault hash state so there's a time to check against
-    
+
     assertEq(vault721.timeDelay(), timeDelay, 'incorrect ending time delay');
   }
 
@@ -354,13 +354,12 @@ contract Unit_Vault721_GovernanceFunctions is Base {
     //add to allow list so that block delay will be checked
     vm.prank(address(timelockController));
     vault721.modifyParameters('updateAllowlist', abi.encode(_scenario.user, true));
-    
+
     bytes32 _param = 'blockDelay';
     vm.prank(address(timelockController));
     vault721.modifyParameters(_param, abi.encode(blockDelay));
 
     assertEq(vault721.blockDelay(), blockDelay, 'blockDelay not updated');
-
   }
 
   function test_ModifyParameters_UpdateContractURI() public {
@@ -416,7 +415,8 @@ contract Unit_TestVault721_TransferFrom_SafeTransferFrom_ProxyReceiver is Base {
   address internal userProxy1;
   address internal userProxy2;
 
-  ISAFEEngine.SAFE internal testSafeEngineData = ISAFEEngine.SAFE({lockedCollateral: 100 ether, generatedDebt: 10 ether});
+  ISAFEEngine.SAFE internal testSafeEngineData =
+    ISAFEEngine.SAFE({lockedCollateral: 100 ether, generatedDebt: 10 ether});
   IODSafeManager.SAFEData internal testSAFEData =
     IODSafeManager.SAFEData({nonce: 0, owner: user1, safeHandler: address(420), collateralType: collateralTypeA});
   RenderData internal scenarioData = RenderData({safeData: testSAFEData, safeEngineData: testSafeEngineData});
@@ -504,7 +504,8 @@ contract Unit_Vault721_TransferFrom_SafeTransferFrom is Base {
   address internal scwallet;
   address internal badscwallet;
 
-  ISAFEEngine.SAFE internal testSafeEngineData = ISAFEEngine.SAFE({lockedCollateral: 100 ether, generatedDebt: 10 ether});
+  ISAFEEngine.SAFE internal testSafeEngineData =
+    ISAFEEngine.SAFE({lockedCollateral: 100 ether, generatedDebt: 10 ether});
   IODSafeManager.SAFEData internal testSAFEData =
     IODSafeManager.SAFEData({nonce: 0, owner: user1, safeHandler: address(420), collateralType: collateralTypeA});
   RenderData internal scenarioData = RenderData({safeData: testSAFEData, safeEngineData: testSafeEngineData});
@@ -631,9 +632,10 @@ contract Unit_Vault721_TransferFrom_SafeTransferFrom is Base {
 
 contract Unit_Vault721_TransferFrom is Base {
   address userProxy;
-  ISAFEEngine.SAFE internal testSafeEngineData = ISAFEEngine.SAFE({lockedCollateral: 100 ether, generatedDebt: 10 ether});
+  ISAFEEngine.SAFE internal testSafeEngineData =
+    ISAFEEngine.SAFE({lockedCollateral: 100 ether, generatedDebt: 10 ether});
   IODSafeManager.SAFEData internal testSAFEData =
-  IODSafeManager.SAFEData({nonce: 0, owner: address(0), safeHandler: address(420), collateralType: collateralTypeA});
+    IODSafeManager.SAFEData({nonce: 0, owner: address(0), safeHandler: address(420), collateralType: collateralTypeA});
   RenderData internal scenarioData = RenderData({safeData: testSAFEData, safeEngineData: testSafeEngineData});
 
   struct Scenario {

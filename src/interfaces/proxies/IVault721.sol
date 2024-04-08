@@ -117,7 +117,7 @@ interface IVault721 is IERC721EnumerableUpgradeable, IAuthorizable, IModifiable 
   /**
    * @dev get nfv state by vault id
    */
-   function getNfvState(uint256 _vaultId) external view returns (NFVState memory);
+  function getNfvState(uint256 _vaultId) external view returns (NFVState memory);
   /**
    * @dev has this user been allow listed?  this function will tell you.
    * @return bool false if not allow listed, true if they are indeed allow listed.
