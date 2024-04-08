@@ -4,7 +4,7 @@ pragma solidity 0.8.19;
 import {ODTest, stdStorage, StdStorage} from '@test/utils/ODTest.t.sol';
 import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 import {IVault721} from '@interfaces/proxies/IVault721.sol';
-import {Vault721, NFVState} from '@contracts/proxies/Vault721.sol';
+import {Vault721} from '@contracts/proxies/Vault721.sol';
 import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
@@ -30,7 +30,7 @@ struct RenderParamsData {
   ISAFEEngine.SAFEEngineCollateralData safeEngineCollateralData;
   ISAFEEngine.SAFE safeEngineData;
   IOracleRelayer.OracleRelayerCollateralParams oracleParams;
-  NFVState nfvStateData;
+  IVault721.NFVState nfvStateData;
   uint256 readValue;
   uint256 timestamp;
 }
@@ -225,16 +225,15 @@ contract Unit_NFTRenderer_SetImplementation is Base {
   );
 
   function test_SetImplementation(Implementations memory _imps) public {
-    vm.mockCall(
-      address(_imps.safeManager),
-      abi.encodeWithSelector(IODSafeManager.safeEngine.selector),
-      abi.encode(_imps.safeEngine)
-    );
-
     vm.prank(address(vault721));
     vm.expectEmit();
     emit ImplementationSet(
       _imps.safeManager, _imps.safeEngine, _imps.oracleRelayer, _imps.taxCollector, _imps.collateralJoinFactory
+    );
+    vm.mockCall(
+      address(_imps.safeManager),
+      abi.encodeWithSelector(IODSafeManager.safeEngine.selector),
+      abi.encode(_imps.safeEngine)
     );
     nftRenderer.setImplementation(
       _imps.safeManager, _imps.oracleRelayer, _imps.taxCollector, _imps.collateralJoinFactory

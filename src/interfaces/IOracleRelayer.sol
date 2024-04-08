@@ -20,6 +20,12 @@ interface IOracleRelayer is IAuthorizable, IDisableable, IModifiable, IModifiabl
   event UpdateRedemptionPrice(uint256 _redemptionPrice);
 
   /**
+   * @notice Emitted when the redemption rate is updated
+   * @param _redemptionRate The new redemption rate [ray]
+   */
+  event UpdateRedemptionRate(uint256 _redemptionRate);
+
+  /**
    * @notice Emitted when a collateral type price is updated
    * @param _cType Bytes32 representation of the collateral type
    * @param _priceFeedValue The new collateral price [wad]

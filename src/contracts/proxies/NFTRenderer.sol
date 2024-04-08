@@ -6,7 +6,6 @@ import {Strings} from '@openzeppelin/utils/Strings.sol';
 import {Base64} from '@openzeppelin/utils/Base64.sol';
 import {Math} from '@libraries/Math.sol';
 import {IVault721} from '@interfaces/proxies/IVault721.sol';
-import {NFVState} from '@contracts/proxies/Vault721.sol';
 import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
@@ -131,7 +130,7 @@ contract NFTRenderer {
     bytes32 cType;
     // scoped to reduce call stack
     {
-      NFVState memory nfvState = vault721.getNfvState(_safeId);
+      IVault721.NFVState memory nfvState = vault721.getNfvState(_safeId);
       cType = nfvState.cType;
       params.lastBlockNumber = nfvState.lastBlockNumber.toString();
       params.lastBlockTimestamp = nfvState.lastBlockTimestamp.toString();
