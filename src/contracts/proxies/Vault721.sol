@@ -288,7 +288,6 @@ contract Vault721 is ERC721EnumerableUpgradeable {
     address safeHandler = safeMangerData.safeHandler;
     if (safeHandler == address(0)) revert ZeroAddress();
     bytes32 cType = safeMangerData.collateralType;
-
     ISAFEEngine.SAFE memory SafeEngineData = ISAFEEngine(safeManager.safeEngine()).safes(cType, safeHandler);
     return (cType, SafeEngineData.lockedCollateral, SafeEngineData.generatedDebt, safeHandler);
   }

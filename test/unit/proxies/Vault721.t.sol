@@ -23,6 +23,7 @@ contract Base is ODTest {
   address deployer = label('deployer');
   address owner = label('owner');
   address user = address(0xdeadce11);
+  bytes32 collateralTypeA = 'TypeA';
   // address userProxy;
 
   Vault721 vault721;
@@ -54,15 +55,18 @@ contract Base is ODTest {
   function _mockSafeCall() internal {
     IODSafeManager.SAFEData memory returnSafe;
     returnSafe.safeHandler = address(1);
-    vm.mockCall(address(safeManager), abi.encodeWithSelector(ODSafeManager.safeData.selector), abi.encode(returnSafe));
+    vm.mockCall(address(safeManager), abi.encodeWithSelector(IODSafeManager.safeData.selector), abi.encode(returnSafe));
   }
 
   function _mockUpdateNfvState(RenderData memory _data) internal testNums(_data) {
     vm.mockCall(
-      address(safeManager), abi.encodeWithSelector(ODSafeManager.safeData.selector), abi.encode(_data.safeData)
+      address(safeManager), abi.encodeWithSelector(IODSafeManager.safeData.selector), abi.encode(_data.safeData)
     );
     vm.mockCall(
-      address(safeEngine), abi.encodeWithSelector(SAFEEngine.safes.selector), abi.encode(_data.safeEngineData)
+      address(safeManager), abi.encodeWithSelector(IODSafeManager.safeEngine.selector), abi.encode(address(safeEngine))
+    );
+    vm.mockCall(
+      address(safeEngine), abi.encodeWithSelector(ISAFEEngine.safes.selector), abi.encode(_data.safeEngineData)
     );
   }
 }
@@ -362,6 +366,9 @@ contract Unit_Vault721_ForTest_TransferFrom_SafeTransferFrom_ProxyReceiver is Ba
   address internal userProxy1;
   address internal userProxy2;
 
+  IODSafeManager.SAFEData _testSAFEData =
+    IODSafeManager.SAFEData({nonce: 0, owner: user1, safeHandler: address(420), collateralType: collateralTypeA});
+
   function setUp() public override {
     Base.setUp();
     testVault721 = new TestVault721();
@@ -438,12 +445,17 @@ contract Unit_Vault721_ForTest_TransferFrom_SafeTransferFrom_ProxyReceiver is Ba
 }
 
 contract Unit_Vault721_TransferFrom_SafeTransferFrom is Base {
-  address internal user1 = address(1);
-  address internal user2 = address(2);
-  address internal userProxy1;
-  address internal userProxy2;
-  address internal scwallet;
-  address internal badscwallet;
+  address public user1 = address(1);
+  address public user2 = address(2);
+  address public userProxy1;
+  address public userProxy2;
+  address public scwallet;
+  address public badscwallet;
+
+  ISAFEEngine.SAFE public testSafeEngineData = ISAFEEngine.SAFE({lockedCollateral: 100 ether, generatedDebt: 10 ether});
+  IODSafeManager.SAFEData public testSAFEData =
+    IODSafeManager.SAFEData({nonce: 0, owner: user1, safeHandler: address(420), collateralType: collateralTypeA});
+  RenderData public scenarioData = RenderData({safeData: testSAFEData, safeEngineData: testSafeEngineData});
 
   function setUp() public override {
     Base.setUp();
@@ -458,104 +470,111 @@ contract Unit_Vault721_TransferFrom_SafeTransferFrom is Base {
     userProxy2 = vault721.build(user2);
   }
 
-  // function test_TransferFrom() public {
-  //   vm.prank(address(safeManager));
-  //   vault721.mint(userProxy1, 1);
+  function test_TransferFrom() public {
+    vm.startPrank(address(safeManager));
+    vault721.mint(userProxy1, 1);
+    _mockUpdateNfvState(scenarioData);
+    vault721.updateNfvState(1);
+    vm.stopPrank();
 
-  //   vm.prank(user1);
-  //   vault721.setApprovalForAll(user2, true);
+    vm.prank(user1);
+    vault721.setApprovalForAll(user2, true);
 
-  //   vm.prank(user2);
-  //   vm.mockCall(
-  //     address(renderer), abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector), abi.encode(bytes32(0))
-  //   );
+    vm.prank(user2);
+    _mockUpdateNfvState(scenarioData);
+    // user2 has no bytecode - assumed to be EOA
+    vault721.transferFrom(user1, user2, 1);
 
-  //   // user2 has no bytecode - assumed to be EOA
-  //   vault721.safeTransferFrom(user1, user2, 1);
-  // }
+    assertEq(vault721.ownerOf(1), user2, 'nfv not transfered');
+  }
 
-  // function test_SafeTransferFrom() public {
-  //   vm.prank(address(safeManager));
-  //   vault721.mint(userProxy1, 1);
+  function test_SafeTransferFrom() public {
+    vm.startPrank(address(safeManager));
+    vault721.mint(userProxy1, 1);
+    _mockUpdateNfvState(scenarioData);
+    vault721.updateNfvState(1);
+    vm.stopPrank();
 
-  //   vm.prank(user1);
-  //   vault721.setApprovalForAll(user2, true);
+    vm.prank(user1);
+    vault721.setApprovalForAll(user2, true);
 
-  //   vm.prank(user2);
-  //   vm.mockCall(
-  //     address(renderer), abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector), abi.encode(bytes32(0))
-  //   );
+    vm.prank(user2);
+    _mockUpdateNfvState(scenarioData);
 
-  //   // scwallet has erc721Reveiver - no revert
-  //   vault721.safeTransferFrom(user1, scwallet, 1);
-  // }
+    // scwallet has erc721Reveiver - no revert
+    vault721.safeTransferFrom(user1, scwallet, 1);
 
-  // function test_SafeTransferFrom_NoReceiver_Revert() public {
-  //   vm.prank(address(safeManager));
-  //   vault721.mint(userProxy1, 1);
+    assertEq(vault721.ownerOf(1), scwallet, 'nfv not transfered');
+  }
 
-  //   vm.prank(user1);
-  //   vault721.setApprovalForAll(user2, true);
+  function test_SafeTransferFrom_NoReceiver_Revert() public {
+    vm.startPrank(address(safeManager));
+    vault721.mint(userProxy1, 1);
+    _mockUpdateNfvState(scenarioData);
+    vault721.updateNfvState(1);
+    vm.stopPrank();
 
-  //   vm.prank(user2);
-  //   vm.mockCall(
-  //     address(renderer), abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector), abi.encode(bytes32(0))
-  //   );
+    vm.prank(user1);
+    vault721.setApprovalForAll(user2, true);
 
-  //   // badscwallet does not have erc721Reveiver - revert
-  //   vm.expectRevert('ERC721: transfer to non ERC721Receiver implementer');
-  //   vault721.safeTransferFrom(user1, badscwallet, 1);
-  // }
+    _mockUpdateNfvState(scenarioData);
 
-  // function test_Unsafe_TransferFrom_NoReceiver() public {
-  //   vm.prank(address(safeManager));
-  //   vault721.mint(userProxy1, 1);
+    vm.prank(user2);
+    // badscwallet does not have erc721Reveiver - revert
+    vm.expectRevert('ERC721: transfer to non ERC721Receiver implementer');
+    vault721.safeTransferFrom(user1, badscwallet, 1);
+  }
 
-  //   vm.prank(user1);
-  //   vault721.setApprovalForAll(user2, true);
+  function test_Unsafe_TransferFrom_NoReceiver() public {
+    vm.startPrank(address(safeManager));
+    vault721.mint(userProxy1, 1);
+    _mockUpdateNfvState(scenarioData);
+    vault721.updateNfvState(1);
+    vm.stopPrank();
 
-  //   vm.prank(user2);
-  //   vm.mockCall(
-  //     address(renderer), abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector), abi.encode(bytes32(0))
-  //   );
+    vm.prank(user1);
+    vault721.setApprovalForAll(user2, true);
+    _mockUpdateNfvState(scenarioData);
 
-  //   // badscwallet does not have erc721Reveiver - no revert becuase transferFrom does not check for erc721Reveiver
-  //   vault721.transferFrom(user1, badscwallet, 1);
-  // }
+    vm.prank(user2);
+    // badscwallet does not have erc721Reveiver - no revert becuase transferFrom does not check for erc721Reveiver
+    vault721.transferFrom(user1, badscwallet, 1);
+  }
 
-  // function test_TransferFrom_ToProxy_NoReceiver_Revert() public {
-  //   vm.prank(address(safeManager));
-  //   vault721.mint(userProxy1, 1);
+  function test_TransferFrom_ToProxy_NoReceiver_Revert() public {
+    vm.startPrank(address(safeManager));
+    vault721.mint(userProxy1, 1);
+    _mockUpdateNfvState(scenarioData);
+    vault721.updateNfvState(1);
+    vm.stopPrank();
 
-  //   vm.prank(user1);
-  //   vault721.setApprovalForAll(user2, true);
+    vm.prank(user1);
+    vault721.setApprovalForAll(user2, true);
+    _mockUpdateNfvState(scenarioData);
 
-  //   vm.prank(user2);
-  //   vm.mockCall(
-  //     address(renderer), abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector), abi.encode(bytes32(0))
-  //   );
+    vm.prank(user2);
 
-  //   // NotWallet check triggered before proxy can fail on Non-erc721Reveiver
-  //   vm.expectRevert(IVault721.NotWallet.selector);
-  //   vault721.transferFrom(user1, userProxy2, 1);
-  // }
+    // NotWallet check triggered before proxy can fail on Non-erc721Reveiver
+    vm.expectRevert(IVault721.NotWallet.selector);
+    vault721.transferFrom(user1, userProxy2, 1);
+  }
 
-  // function test_safeTransferFrom_ToProxy_NoReceiver_Revert() public {
-  //   vm.prank(address(safeManager));
-  //   vault721.mint(userProxy1, 1);
+  function test_safeTransferFrom_ToProxy_NoReceiver_Revert() public {
+    vm.startPrank(address(safeManager));
+    vault721.mint(userProxy1, 1);
+    _mockUpdateNfvState(scenarioData);
+    vault721.updateNfvState(1);
+    vm.stopPrank();
 
-  //   vm.prank(user1);
-  //   vault721.setApprovalForAll(user2, true);
+    vm.prank(user1);
+    vault721.setApprovalForAll(user2, true);
+    _mockUpdateNfvState(scenarioData);
 
-  //   vm.prank(user2);
-  //   vm.mockCall(
-  //     address(renderer), abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector), abi.encode(bytes32(0))
-  //   );
-
-  //   // NotWallet check triggered before proxy can fail on Non-erc721Reveiver
-  //   vm.expectRevert(IVault721.NotWallet.selector);
-  //   vault721.transferFrom(user1, userProxy2, 1);
-  // }
+    vm.prank(user2);
+    // NotWallet check triggered before proxy can fail on Non-erc721Reveiver
+    vm.expectRevert(IVault721.NotWallet.selector);
+    vault721.transferFrom(user1, userProxy2, 1);
+  }
 }
 
 contract Unit_Vault721_TransferFrom is Base {

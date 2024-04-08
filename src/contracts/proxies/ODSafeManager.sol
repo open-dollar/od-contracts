@@ -146,6 +146,8 @@ contract ODSafeManager is IODSafeManager, Authorizable, Modifiable {
 
     vault721.mint(_usr, _safeId);
 
+    vault721.updateNfvState(_safeId);
+
     emit OpenSAFE(msg.sender, _usr, _safeId);
     return _safeId;
   }
