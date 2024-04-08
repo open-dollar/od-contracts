@@ -6,6 +6,8 @@ import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ILiquidationEngine} from '@interfaces/ILiquidationEngine.sol';
 import {IVault721} from '@interfaces/proxies/IVault721.sol';
 import {ITaxCollector} from '@interfaces/ITaxCollector.sol';
+import {Modifiable} from '@contracts/utils/Modifiable.sol';
+import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
 import {Math} from '@libraries/Math.sol';
 import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
@@ -18,18 +20,18 @@ import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
  * @notice This contract acts as interface to the SAFEEngine, facilitating the management of SAFEs
  * @dev    This contract is meant to be used by users that interact with the protocol through a proxy contract
  */
-contract ODSafeManager is IODSafeManager {
+contract ODSafeManager is IODSafeManager, Authorizable, Modifiable {
   using Math for uint256;
   using EnumerableSet for EnumerableSet.UintSet;
   using Assertions for address;
 
   /// @inheritdoc IODSafeManager
   address public safeEngine;
+  address public liquidationEngine;
+  address public taxCollector;
 
   // --- ERC721 ---
   IVault721 public vault721;
-
-  address public taxCollector;
 
   uint256 internal _safeId; // Auto incremental
   mapping(address _safeOwner => EnumerableSet.UintSet) private _usrSafes;
@@ -67,12 +69,18 @@ contract ODSafeManager is IODSafeManager {
     _;
   }
 
-  constructor(address _safeEngine, address _vault721, address _taxCollector) {
+  constructor(
+    address _safeEngine,
+    address _vault721,
+    address _taxCollector,
+    address _liquidationEngine
+  ) Authorizable(msg.sender) {
     safeEngine = _safeEngine.assertNonNull();
     ISAFEEngine(safeEngine).initializeSafeManager();
     vault721 = IVault721(_vault721);
     vault721.initializeManager();
     taxCollector = _taxCollector.assertNonNull();
+    liquidationEngine = _liquidationEngine.assertNonNull();
   }
 
   // --- Getters ---
@@ -160,6 +168,9 @@ contract ODSafeManager is IODSafeManager {
 
     _safeData[_safe].owner = _dst;
 
+    if (
+      ILiquidationEngine(liquidationEngine).chosenSAFESaviour(_sData.collateralType, _sData.safeHandler) != address(0)
+    ) ILiquidationEngine(liquidationEngine).protectSAFE(_sData.collateralType, _sData.safeHandler, address(0));
     emit TransferSAFEOwnership(msg.sender, _safe, _dst);
   }
 
@@ -284,9 +295,20 @@ contract ODSafeManager is IODSafeManager {
   }
 
   /// @inheritdoc IODSafeManager
-  function protectSAFE(uint256 _safe, address _liquidationEngine, address _saviour) external safeAllowed(_safe) {
+  function protectSAFE(uint256 _safe, address _saviour) external safeAllowed(_safe) {
     SAFEData memory _sData = _safeData[_safe];
-    ILiquidationEngine(_liquidationEngine).protectSAFE(_sData.collateralType, _sData.safeHandler, _saviour);
-    emit ProtectSAFE(msg.sender, _safe, _liquidationEngine, _saviour);
+    ILiquidationEngine(liquidationEngine).protectSAFE(_sData.collateralType, _sData.safeHandler, _saviour);
+    emit ProtectSAFE(msg.sender, _safe, liquidationEngine, _saviour);
+  }
+
+  /// @inheritdoc Modifiable
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
+    address _address = abi.decode(_data, (address));
+
+    if (_param == 'liquidationEngine') liquidationEngine = _address;
+    else if (_param == 'taxCollector') taxCollector = _address;
+    else if (_param == 'vault721') vault721 = IVault721(_address);
+    else if (_param == 'safeEngine') safeEngine = _address;
+    else revert UnrecognizedParam();
   }
 }

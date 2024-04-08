@@ -7,6 +7,10 @@ import {IVault721} from '@interfaces/proxies/IVault721.sol';
 import {SAFEEngineForTest, ISAFEEngine} from '@test/mocks/SAFEEngineForTest.sol';
 import {ODSafeManager} from '@contracts/proxies/ODSafeManager.sol';
 import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
+import {IAccountingEngine} from '@interfaces/IAccountingEngine.sol';
+import {ISAFESaviour} from '@interfaces/external/ISAFESaviour.sol';
+import {LiquidationEngineForTest} from '@test/mocks/LiquidationEngineForTest.sol';
+import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {TaxCollector} from '@contracts/TaxCollector.sol';
 import {ITaxCollector} from '@interfaces/ITaxCollector.sol';
 import {ILiquidationEngine} from '@interfaces/ILiquidationEngine.sol';
@@ -47,6 +51,14 @@ contract Base is ODTest {
   ODSafeManager safeManager;
   TimelockController timelockController;
   ISAFEEngine mockSafeEngine;
+  IAccountingEngine mockAccountingEngine = IAccountingEngine(mockContract('AccountingEngine'));
+
+  ILiquidationEngine liquidationEngine;
+
+  ILiquidationEngine.LiquidationEngineParams liquidationEngineParams = ILiquidationEngine.LiquidationEngineParams({
+    onAuctionSystemCoinLimit: type(uint256).max,
+    saviourGasLimit: 10_000_000
+  });
 
   function setUp() public virtual {
     ITaxCollector.TaxCollectorParams memory taxCollectorParams = ITaxCollector.TaxCollectorParams({
@@ -70,8 +82,21 @@ contract Base is ODTest {
     taxCollector.addAuthorization(owner);
     vault721.initialize(address(timelockController));
 
-    safeManager = new ODSafeManager(address(mockSafeEngine), address(vault721), address(taxCollector));
+    liquidationEngine =
+      new LiquidationEngineForTest(address(mockSafeEngine), address(mockAccountingEngine), liquidationEngineParams);
 
+    safeManager =
+      new ODSafeManager(address(mockSafeEngine), address(vault721), address(taxCollector), address(liquidationEngine));
+
+    safeManager.addAuthorization(address(this));
+    liquidationEngine.addAuthorization(address(this));
+
+    label(address(liquidationEngine), 'LiquidationEngine');
+    label(address(safeManager), 'safeManager');
+    label(address(taxCollector), 'taxCollector');
+    label(address(vault721), 'vault721');
+    label(address(mockSafeEngine), 'mockSafeEngine');
+    label(address(timelockController), 'timelockController');
     vm.stopPrank();
   }
 
@@ -216,20 +241,46 @@ contract Unit_ODSafeManager_SAFEManagement is Base {
   event TransferSAFEOwnership(address indexed _sender, uint256 indexed _safe, address _dst);
 
   function test_transferSAFEOwnership(Scenario memory _scenario) public happyPath(_scenario) {
-    vm.startPrank(address(vault721));
+    //todo
+    // authorize savior
+    ILiquidationEngine saviour = ILiquidationEngine(mockContract('mockSaviour'));
+
+    vm.mockCall(
+      address(saviour),
+      abi.encodeWithSelector(ISAFESaviour.saveSAFE.selector),
+      abi.encode(true, type(uint256).max, type(uint256).max)
+    );
+    liquidationEngine.connectSAFESaviour(address(saviour));
+
+    //openSafe
+    vm.prank(_scenario.bob);
+    address bobProxy = vault721.build();
+    _scenario.safeId = safeManager.openSAFE(collateralTypeA, bobProxy);
+
+    IODSafeManager.SAFEData memory _sData = safeManager.safeData(_scenario.safeId);
+
+    // protect safe so we can assert that saviour has been cleared
+    vm.prank(bobProxy);
+    safeManager.protectSAFE(_scenario.safeId, address(saviour));
+    assertEq(
+      liquidationEngine.chosenSAFESaviour(collateralTypeA, _sData.safeHandler), address(saviour), 'saviour not set'
+    );
 
     vm.expectEmit();
-    emit TransferSAFEOwnership(address(vault721), 1, address(_scenario.alice));
-
-    safeManager.transferSAFEOwnership(1, address(_scenario.alice));
+    emit TransferSAFEOwnership(address(vault721), _scenario.safeId, address(_scenario.alice));
+    vm.startPrank(address(vault721));
+    safeManager.transferSAFEOwnership(_scenario.safeId, address(_scenario.alice));
 
     uint256[] memory _safes = safeManager.getSafes(_scenario.alice);
     assertEq(_safes.length, 1, 'SAFE transfer: incorrect number of safes');
-    assertEq(_safes[0], 1, 'SAFE transfer: incorrect safe id');
-    IODSafeManager.SAFEData memory safeData = safeManager.safeData(1);
+    assertEq(_safes[0], _scenario.safeId, 'SAFE transfer: incorrect safe id');
+    IODSafeManager.SAFEData memory safeData = safeManager.safeData(_scenario.safeId);
 
     assertEq(safeData.nonce, 1, 'incorrect nonce after transfer');
     assertEq(safeData.owner, _scenario.alice, 'incorrect safe owner');
+    assertEq(
+      liquidationEngine.chosenSAFESaviour(collateralTypeA, _sData.safeHandler), address(0), 'saviour not cleared'
+    );
   }
 
   function test_transferSAFEOwnership_Revert_Vault721() public {
@@ -299,17 +350,35 @@ contract Unit_ODSafeManager_SAFEManagement is Base {
   event ProtectSAFE(address indexed _sender, uint256 indexed _safe, address _liquidationEngine, address _saviour);
 
   function test_ProtectSafe(Scenario memory _scenario) public happyPath(_scenario) {
-    address mockLiquidationEngine = address(0xc0ffee);
-    address mockSavior = address(0x1337);
-    vm.expectEmit();
-    emit ProtectSAFE(_scenario.aliceProxy, _scenario.safeId, mockLiquidationEngine, mockSavior);
+    ILiquidationEngine saviour = ILiquidationEngine(mockContract('mockSaviour'));
 
     vm.mockCall(
-      address(mockLiquidationEngine), abi.encodeWithSelector(ILiquidationEngine.protectSAFE.selector), abi.encode()
+      address(saviour),
+      abi.encodeWithSelector(ISAFESaviour.saveSAFE.selector),
+      abi.encode(true, type(uint256).max, type(uint256).max)
+    );
+    liquidationEngine.connectSAFESaviour(address(saviour));
+
+    //openSafe
+    vm.prank(_scenario.bob);
+    address bobProxy = vault721.build();
+    _scenario.safeId = safeManager.openSAFE(collateralTypeA, bobProxy);
+
+    IODSafeManager.SAFEData memory _sData = safeManager.safeData(_scenario.safeId);
+
+    // protect safe so we can assert that saviour has been cleared
+    vm.prank(bobProxy);
+
+    vm.expectEmit();
+    emit ProtectSAFE(bobProxy, _scenario.safeId, address(liquidationEngine), address(saviour));
+    safeManager.protectSAFE(_scenario.safeId, address(saviour));
+
+    assertEq(
+      liquidationEngine.chosenSAFESaviour(collateralTypeA, _sData.safeHandler), address(saviour), 'saviour not set'
     );
 
-    vm.prank(_scenario.aliceProxy);
-    safeManager.protectSAFE(_scenario.safeId, mockLiquidationEngine, mockSavior);
+    vm.prank(bobProxy);
+    safeManager.protectSAFE(_scenario.safeId, address(saviour));
   }
 }
 
@@ -460,5 +529,32 @@ contract Unit_ODSafeManager_CollateralManagement is Base {
 
     vm.prank(_scenario.aliceProxy);
     safeManager.transferInternalCoins(_scenario.safeId, _scenario.bob, 100);
+  }
+}
+
+contract Unit_ODSafeManager_ModifyParameters is Base {
+  function test_ModifyParameters_LiquidationEngine() public {
+    safeManager.modifyParameters('liquidationEngine', abi.encode(address(1)));
+    assertEq(safeManager.liquidationEngine(), address(1));
+  }
+
+  function test_ModifyParameters_TaxCollector() public {
+    safeManager.modifyParameters('taxCollector', abi.encode(address(1)));
+    assertEq(safeManager.taxCollector(), address(1));
+  }
+
+  function test_ModifyParameters_Vault721() public {
+    safeManager.modifyParameters('vault721', abi.encode(address(1)));
+    assertEq(address(safeManager.vault721()), address(1));
+  }
+
+  function test_ModifyParameters_SafeEngine() public {
+    safeManager.modifyParameters('safeEngine', abi.encode(address(1)));
+    assertEq(safeManager.safeEngine(), address(1));
+  }
+
+  function test_ModifyParameters_Revert_UnrecognizedParam() public {
+    vm.expectRevert(IModifiable.UnrecognizedParam.selector);
+    safeManager.modifyParameters('unrecognizedParam', abi.encode(address(1)));
   }
 }

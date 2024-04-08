@@ -209,6 +209,7 @@ contract SingleModifySAFECollateralizationTest is DSTest {
   CoinForTest stable;
   TaxCollector taxCollector;
   NFTRenderer nftRenderer;
+  address public liquidationEngine = address(0xbeef);
 
   ICollateralJoinFactory collateralJoinFactory;
   ICollateralJoin collateralA;
@@ -280,7 +281,7 @@ contract SingleModifySAFECollateralizationTest is DSTest {
     safeEngine.addAuthorization(address(taxCollector));
 
     vault721 = new Vault721();
-    safeManager = new ODSafeManager(address(safeEngine), address(vault721), address(taxCollector));
+    safeManager = new ODSafeManager(address(safeEngine), address(vault721), address(taxCollector), liquidationEngine);
     vault721.initialize(address(this));
 
     userProxy = vault721.build(user);
@@ -523,6 +524,7 @@ contract SingleSAFEDebtLimitTest is DSTest {
   TaxCollector taxCollector;
   ODSafeManager safeManager;
   Vault721 vault721;
+  address public liquidationEngine = address(0xbeef);
 
   ICollateralJoinFactory collateralJoinFactory;
   ICollateralJoin collateralA;
@@ -595,7 +597,7 @@ contract SingleSAFEDebtLimitTest is DSTest {
     taxCollector.modifyParameters('gold', 'stabilityFee', abi.encode(1_000_000_564_701_133_626_865_910_626)); // 5% / day
     safeEngine.addAuthorization(address(taxCollector));
     vault721 = new Vault721();
-    safeManager = new ODSafeManager(address(safeEngine), address(vault721), address(taxCollector));
+    safeManager = new ODSafeManager(address(safeEngine), address(vault721), address(taxCollector), liquidationEngine);
     gold.approve(address(collateralA), type(uint256).max);
 
     safeEngine.addAuthorization(address(safeEngine));
@@ -1028,7 +1030,8 @@ contract SingleLiquidationTest is DSTest {
     protocolToken.addAuthorization(address(debtAuctionHouse));
 
     vault721 = new Vault721();
-    safeManager = new ODSafeManager(address(safeEngine), address(vault721), address(taxCollector));
+    safeManager =
+      new ODSafeManager(address(safeEngine), address(vault721), address(taxCollector), address(liquidationEngine));
     vault721.initialize(address(this));
 
     userProxy = vault721.build(user);

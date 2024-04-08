@@ -168,6 +168,7 @@ contract SingleTransferSAFECollateralAndDebtTest is DSTest {
   ODSafeManager safeManager;
   Vault721 vault721;
   TaxCollector taxCollector;
+  address liqduiationEngine = address(0xbeef);
   Hevm hevm;
   Guy ali;
   Guy bob;
@@ -198,7 +199,7 @@ contract SingleTransferSAFECollateralAndDebtTest is DSTest {
     taxCollector = new TaxCollector(address(safeEngine), _taxCollectorParams);
 
     vault721 = new Vault721();
-    safeManager = new ODSafeManager(address(safeEngine), address(vault721), address(taxCollector));
+    safeManager = new ODSafeManager(address(safeEngine), address(vault721), address(taxCollector), liqduiationEngine);
 
     ali = new Guy(safeEngine, safeManager);
     bob = new Guy(safeEngine, safeManager);
