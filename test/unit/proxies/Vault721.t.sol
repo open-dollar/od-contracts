@@ -12,6 +12,7 @@ import {TimelockController} from '@openzeppelin/governance/TimelockController.so
 import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
+import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
 contract Base is ODTest {
   using stdStorage for StdStorage;
@@ -95,6 +96,14 @@ contract Unit_Vault721_Build is Base {
     vault721.build();
 
     vm.expectRevert(IVault721.ProxyAlreadyExist.selector);
+    vault721.build();
+  }
+
+  function test_Build_Revert_NotWallet() public {
+    address newProxy = vault721.build(owner);
+
+    vm.expectRevert(IVault721.NotWallet.selector);
+    vm.prank(newProxy);
     vault721.build();
   }
 
@@ -435,6 +444,33 @@ contract Unit_Vault721_GovernanceFunctions is Base {
     vm.prank(address(timelockController));
     vault721.modifyParameters('nftRenderer', abi.encode(address(1)));
     assertEq(address(vault721.nftRenderer()), address(1), 'incorrect address set');
+  }
+
+  function test_ModifyParameters_timelockController() public {
+    address oldTimelock = vault721.timelockController();
+    vm.prank(address(timelockController));
+    vault721.modifyParameters('timelockController', abi.encode(address(1)));
+    assertEq(vault721.timelockController(), address(1), 'incorrect timelock controller');
+    address[] memory authorizedAccounts = vault721.authorizedAccounts();
+    bool isAuth = false;
+    for (uint256 i; i < authorizedAccounts.length; i++) {
+      if (authorizedAccounts[i] == oldTimelock) {
+        isAuth = true;
+      }
+    }
+  }
+
+  function test_ModifyParameters_timelockController_RevertNullAddress() public {
+    vm.prank(address(timelockController));
+    vm.expectRevert(Assertions.NullAddress.selector);
+    vault721.modifyParameters('timelockController', abi.encode(address(0)));
+    assertEq(vault721.timelockController(), address(timelockController), 'incorrect timelock controller');
+  }
+
+  function test_ModifyParameters_Revert_UnrecognizedParam() public {
+    vm.expectRevert(IModifiable.UnrecognizedParam.selector);
+    vm.prank(address(timelockController));
+    vault721.modifyParameters('unrecognizedParam', abi.encode(0));
   }
 }
 

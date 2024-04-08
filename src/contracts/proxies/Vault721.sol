@@ -200,10 +200,6 @@ contract Vault721 is ERC721EnumerableUpgradeable, Authorizable, Modifiable, IVau
     nftRenderer.setImplementation(_safeManager, _oracleRelayer, _taxCollector, _collateralJoinFactory);
   }
 
-  function _setBlockDelay(uint256 _blockDelay) internal {
-    blockDelay = _blockDelay;
-  }
-
   /**
    * @dev allows DAO to update protocol implementation of SafeManager
    *
