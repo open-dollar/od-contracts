@@ -5,6 +5,7 @@ import {JSONScript} from '@script/testScripts/gov/JSONScript.s.sol';
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 import {IVault721} from '@interfaces/proxies/IVault721.sol';
 import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
+import {Modifiable} from '@contracts/utils/Modifiable.sol';
 
 /// @title ProposeUpdateNFTRenderer Script
 /// @author OpenDollar
@@ -41,7 +42,7 @@ contract ProposeUpdateNFTRenderer is JSONScript {
 
     bytes[] memory calldatas = new bytes[](1);
     calldatas[0] = abi.encodeWithSelector(
-      IVault721.updateNftRenderer.selector, nftRendererAddress, oracleRelayer, taxCollector, collateralJoinFactory
+      Modifiable.modifyParameters.selector, nftRendererAddress, oracleRelayer, taxCollector, collateralJoinFactory
     );
 
     string memory description = 'Update NFTRenderer';

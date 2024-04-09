@@ -223,13 +223,11 @@ contract E2EGovernor is Common {
     values = new uint256[](1);
     values[0] = 0;
 
-    bytes memory calldata0 = abi.encodeWithSelector(
-      IVault721.updateNftRenderer.selector,
-      address(nftRenderer),
-      address(oracleRelayer),
-      address(taxCollector),
-      address(collateralJoinFactory)
-    );
+    bytes32 _param = 'updateNFTRenderer';
+    bytes memory _data =
+      abi.encode(address(nftRenderer), address(oracleRelayer), address(taxCollector), address(collateralJoinFactory));
+
+    bytes memory calldata0 = abi.encodeWithSelector(IModifiable.modifyParameters.selector, _param, _data);
 
     calldatas = new bytes[](1);
     calldatas[0] = calldata0;
@@ -312,7 +310,10 @@ contract E2EGovernor is Common {
     values = new uint256[](1);
     values[0] = 0;
 
-    bytes memory calldata0 = abi.encodeWithSelector(IVault721.updateBlockDelay.selector, blockDelay);
+    bytes32 _param = 'blockDelay';
+
+    bytes memory calldata0 =
+      abi.encodeWithSelector(IModifiable.modifyParameters.selector, _param, abi.encode(blockDelay));
 
     calldatas = new bytes[](1);
     calldatas[0] = calldata0;
@@ -342,7 +343,9 @@ contract E2EGovernor is Common {
     values = new uint256[](1);
     values[0] = 0;
 
-    bytes memory calldata0 = abi.encodeWithSelector(IVault721.updateTimeDelay.selector, timeDelay);
+    bytes32 _param = 'timeDelay';
+    bytes memory calldata0 =
+      abi.encodeWithSelector(IModifiable.modifyParameters.selector, _param, abi.encode(timeDelay));
 
     calldatas = new bytes[](1);
     calldatas[0] = calldata0;
@@ -501,7 +504,9 @@ contract E2EGovernorAccessControl is E2EGovernor {
     address fakeCollateralJoinFactory = address(3);
     NFTRenderer newNFTRenderer =
       new NFTRenderer(address(vault721), fakeOracleRelayer, fakeTaxCollector, fakeCollateralJoinFactory);
-    vault721.updateNftRenderer(address(newNFTRenderer), fakeOracleRelayer, fakeTaxCollector, fakeCollateralJoinFactory);
+    bytes memory addresses =
+      abi.encode(address(newNFTRenderer), fakeOracleRelayer, fakeTaxCollector, fakeCollateralJoinFactory);
+    vault721.modifyParameters('updateNFTRenderer', addresses);
     vm.stopPrank();
   }
 
@@ -543,7 +548,7 @@ contract E2EGovernorAccessControl is E2EGovernor {
    */
   function testUpdateBlockDelay() public {
     vm.startPrank(vault721.timelockController());
-    vault721.updateBlockDelay(1);
+    vault721.modifyParameters('blockDelay', abi.encode(1));
     vm.stopPrank();
 
     assertEq(vault721.blockDelay(), 1, 'Block Delay not set properly');
@@ -554,7 +559,7 @@ contract E2EGovernorAccessControl is E2EGovernor {
    */
   function testUpdateTimeDelay() public {
     vm.startPrank(vault721.timelockController());
-    vault721.updateTimeDelay(1);
+    vault721.modifyParameters('timeDelay', abi.encode(1));
     vm.stopPrank();
 
     assertEq(vault721.timeDelay(), 1, 'Time Delay not set properly');

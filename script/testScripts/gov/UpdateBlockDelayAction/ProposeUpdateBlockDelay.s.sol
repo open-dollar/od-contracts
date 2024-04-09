@@ -5,6 +5,7 @@ import {JSONScript} from '@script/testScripts/gov/JSONScript.s.sol';
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 import {IVault721} from '@interfaces/proxies/IVault721.sol';
 import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
+import {Modifiable} from '@contracts/utils/Modifiable.sol';
 
 /// @title UpdateBlockDelay Script
 /// @author OpenDollar
@@ -19,7 +20,8 @@ contract UpdateBlockDelay is JSONScript {
     /// REQUIRED ENV VARS ///
     address governanceAddress = vm.envAddress('GOVERNANCE_ADDRESS');
     address vault721 = vm.envAddress('VAULT_721_ADDRESS');
-    uint256 blockDelay = vm.envUint('BLOCK_DELAY');
+    bytes32 parameter = 'blockDelay';
+    bytes memory blockDelay = abi.encode(vm.envUint('BLOCK_DELAY'));
     /// END REQUIRED ENV VARS ///
 
     ODGovernor gov = ODGovernor(payable(governanceAddress));
@@ -36,7 +38,7 @@ contract UpdateBlockDelay is JSONScript {
     }
 
     bytes[] memory calldatas = new bytes[](1);
-    calldatas[0] = abi.encodeWithSelector(IVault721.updateBlockDelay.selector, blockDelay);
+    calldatas[0] = abi.encodeWithSelector(Modifiable.modifyParameters.selector, parameter, blockDelay);
 
     string memory description = 'Update Block Delay';
     bytes32 descriptionHash = keccak256(bytes(description));
@@ -53,7 +55,7 @@ contract UpdateBlockDelay is JSONScript {
     {
       // Build the JSON output
       string memory objectKey = 'UPDATE_BLOCK_DELAY_KEY';
-      vm.serializeUint(objectKey, 'blockDelay', blockDelay);
+      vm.serializeBytes(objectKey, 'blockDelay', blockDelay);
       string memory jsonOutput =
         _buildProposalParamsJSON(proposalId, objectKey, targets, values, calldatas, description, descriptionHash);
       vm.writeJson(jsonOutput, string.concat('./gov-output/', stringProposalId, '-update-block-delay-proposal.json'));

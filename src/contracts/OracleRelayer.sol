@@ -144,6 +144,8 @@ contract OracleRelayer is Authorizable, Disableable, Modifiable, ModifiablePerCo
       _redemptionRate = _params.redemptionRateLowerBound;
     }
     redemptionRate = _redemptionRate;
+
+    emit UpdateRedemptionRate(redemptionRate);
   }
 
   // --- Shutdown ---
