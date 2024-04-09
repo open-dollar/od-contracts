@@ -301,19 +301,19 @@ contract ODSafeManager is IODSafeManager, Authorizable, Modifiable {
     ILiquidationEngine(liquidationEngine).protectSAFE(_sData.collateralType, _sData.safeHandler, _saviour);
     emit ProtectSAFE(msg.sender, _safe, liquidationEngine, _saviour);
   }
-  
+
   /**
    * @notice internal check to only update nfvState if the vault vaule decreases. eg. debt increases or collateral decreases.
    */
-  function _updateNfvState(uint256 _safe, int _deltaCollateral, int _deltaDebt)private {
-    if(_deltaDebt > 0 || _deltaCollateral < 0) vault721.updateNfvState(_safe);
+  function _updateNfvState(uint256 _safe, int256 _deltaCollateral, int256 _deltaDebt) private {
+    if (_deltaDebt > 0 || _deltaCollateral < 0) vault721.updateNfvState(_safe);
   }
 
   /**
-   * @notice check to only update if internal coins are transferred 
+   * @notice check to only update if internal coins are transferred
    */
-  function _updateNfvState(uint256 _safe, uint256 _delta)private {
-    if(_delta > 0)vault721.updateNfvState(_safe);
+  function _updateNfvState(uint256 _safe, uint256 _delta) private {
+    if (_delta > 0) vault721.updateNfvState(_safe);
   }
 
   /// @inheritdoc Modifiable

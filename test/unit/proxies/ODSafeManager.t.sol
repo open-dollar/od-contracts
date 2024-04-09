@@ -2,6 +2,7 @@
 pragma solidity 0.8.19;
 
 import {ODTest, stdStorage, StdStorage} from '@test/utils/ODTest.t.sol';
+import 'forge-std/Vm.sol';
 import {Vault721} from '@contracts/proxies/Vault721.sol';
 import {IVault721} from '@interfaces/proxies/IVault721.sol';
 import {SAFEEngineForTest, ISAFEEngine} from '@test/mocks/SAFEEngineForTest.sol';
@@ -414,6 +415,8 @@ contract Unit_ODSafeManager_SystemManagement is Base {
   }
 }
 
+import 'forge-std/console2.sol';
+
 contract Unit_ODSafeManager_CollateralManagement is Base {
   modifier happyPath(Scenario memory _scenario) {
     _assumeHappyPath(_scenario);
@@ -435,7 +438,30 @@ contract Unit_ODSafeManager_CollateralManagement is Base {
       address(mockSafeEngine), abi.encodeWithSelector(mockSafeEngine.updateAccumulatedRate.selector), abi.encode()
     );
 
-    vm.mockCall(address(vault721), abi.encodeWithSelector(IVault721.updateNfvState.selector), abi.encode());
+    vm.mockCall(
+      address(taxCollector),
+      abi.encodeWithSelector(ITaxCollector.taxSingle.selector),
+      abi.encode(_scenario.cData.accumulatedRate)
+    );
+
+    vm.expectEmit();
+    emit ModifySAFECollateralization(
+      _scenario.aliceProxy, _scenario.safeId, _scenario.deltaCollateral, _scenario.deltaDebt
+    );
+    vm.prank(_scenario.aliceProxy);
+    safeManager.modifySAFECollateralization(_scenario.safeId, _scenario.deltaCollateral, _scenario.deltaDebt, true);
+  }
+
+  function test_modifySAFECollateralization_NoUpdateNFVState(Scenario memory _scenario) public happyPath(_scenario) {
+    _scenario.deltaCollateral = 0;
+    _scenario.deltaDebt = 0;
+    vm.mockCall(
+      address(mockSafeEngine), abi.encodeWithSelector(mockSafeEngine.modifySAFECollateralization.selector), abi.encode()
+    );
+
+    vm.mockCall(
+      address(mockSafeEngine), abi.encodeWithSelector(mockSafeEngine.updateAccumulatedRate.selector), abi.encode()
+    );
 
     vm.mockCall(
       address(taxCollector),
@@ -443,15 +469,67 @@ contract Unit_ODSafeManager_CollateralManagement is Base {
       abi.encode(_scenario.cData.accumulatedRate)
     );
 
-    vm.prank(_scenario.aliceProxy);
-
     vm.expectEmit();
-
     emit ModifySAFECollateralization(
       _scenario.aliceProxy, _scenario.safeId, _scenario.deltaCollateral, _scenario.deltaDebt
     );
 
+    vm.prank(_scenario.aliceProxy);
+    vm.recordLogs();
     safeManager.modifySAFECollateralization(_scenario.safeId, (_scenario.deltaCollateral), (_scenario.deltaDebt), true);
+    Vm.Log[] memory entries = vm.getRecordedLogs();
+    bool modifySafeLog = false;
+    bool nfvStateLog = false;
+    for (uint256 i; i < entries.length; i++) {
+      if (entries[i].topics[0] == keccak256('ModifySAFECollateralization(address,uint256,int256,int256)')) {
+        modifySafeLog = true;
+      }
+      if (entries[i].topics[0] == keccak256('NFVStateUpdated(uint256)')) nfvStateLog = true;
+    }
+    assertTrue(modifySafeLog);
+    assertFalse(nfvStateLog);
+  }
+
+  function test_modifySAFECollateralization_UpdateNFVState(Scenario memory _scenario) public happyPath(_scenario) {
+    _scenario.deltaCollateral = -100;
+    _scenario.deltaDebt = 100;
+
+    vm.mockCall(
+      address(mockSafeEngine), abi.encodeWithSelector(mockSafeEngine.modifySAFECollateralization.selector), abi.encode()
+    );
+
+    vm.mockCall(
+      address(mockSafeEngine), abi.encodeWithSelector(mockSafeEngine.updateAccumulatedRate.selector), abi.encode()
+    );
+
+    vm.mockCall(
+      address(taxCollector),
+      abi.encodeWithSelector(ITaxCollector.taxSingle.selector),
+      abi.encode(_scenario.cData.accumulatedRate)
+    );
+
+    vm.expectEmit();
+    emit ModifySAFECollateralization(
+      _scenario.aliceProxy, _scenario.safeId, _scenario.deltaCollateral, _scenario.deltaDebt
+    );
+    vm.prank(_scenario.aliceProxy);
+    vm.recordLogs();
+    safeManager.modifySAFECollateralization(_scenario.safeId, _scenario.deltaCollateral, _scenario.deltaDebt, true);
+
+    Vm.Log[] memory entries = vm.getRecordedLogs();
+    console2.log('ENTRIES', entries.length);
+    console2.log('topics', entries[0].topics.length);
+    bool modifySafeLog = false;
+    bool nfvStateLog = false;
+    for (uint256 i; i < entries.length; i++) {
+      if (entries[i].topics[0] == keccak256('ModifySAFECollateralization(address,uint256,int256,int256)')) {
+        modifySafeLog = true;
+      }
+      if (entries[i].topics[0] == keccak256('NFVStateUpdated(uint256)')) nfvStateLog = true;
+    }
+
+    assertTrue(modifySafeLog);
+    assertTrue(nfvStateLog);
   }
 
   function test_modifySAFECollateralization_Revert_SafeNotAllowed(Scenario memory _scenario) public {
@@ -460,6 +538,7 @@ contract Unit_ODSafeManager_CollateralManagement is Base {
   }
 
   function test_SafeAllowed(Scenario memory _scenario) public happyPath(_scenario) {
+    _scenario.bob = address(45_667);
     vm.expectRevert(IODSafeManager.SafeNotAllowed.selector);
     vm.prank(_scenario.bob);
     safeManager.modifySAFECollateralization(_scenario.safeId, (_scenario.deltaCollateral), (_scenario.deltaDebt), true);
@@ -530,8 +609,6 @@ contract Unit_ODSafeManager_CollateralManagement is Base {
     vm.prank(_scenario.aliceProxy);
     safeManager.transferInternalCoins(_scenario.safeId, _scenario.bob, 100);
   }
-
-
 }
 
 contract Unit_ODSafeManager_ModifyParameters is Base {

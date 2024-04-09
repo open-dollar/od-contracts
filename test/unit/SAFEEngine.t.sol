@@ -919,19 +919,15 @@ contract Unit_SAFEEngine_ModifySafeCollateralization is Base {
   }
 
   function test_Emit_ModifySAFECollateralization_ZeroDelta(ModifySAFECollateralizationScenario memory _scenario)
-  public
-  happyPath(_scenario)
-{
-  vm.expectEmit();
-  emit ModifySAFECollateralization(
-    collateralType, safe, src, debtDestination, 0, 0
-  );
+    public
+    happyPath(_scenario)
+  {
+    vm.expectEmit();
+    emit ModifySAFECollateralization(collateralType, safe, src, debtDestination, 0, 0);
 
-  vm.prank(safe);
-  safeEngine.modifySAFECollateralization(
-    collateralType, safe, src, debtDestination, 0, 0
-  );
-}
+    vm.prank(safe);
+    safeEngine.modifySAFECollateralization(collateralType, safe, src, debtDestination, 0, 0);
+  }
 
   function test_Revert_ContractIsDisabled() public {
     _mockContractEnabled(false);
