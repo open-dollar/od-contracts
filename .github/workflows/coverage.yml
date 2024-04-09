@@ -22,6 +22,7 @@ jobs:
         with:
           node-version: 18.x
           cache: "yarn"
+          cache-key: yarn-${{ hashFiles('**/yarn.lock') }}-${{ github.run_id }}
 
       - name: Install dependencies
         run: yarn --frozen-lockfile --network-concurrency 1
@@ -37,7 +38,13 @@ jobs:
 
       - name: Run Coverage
         shell: bash
-        run: yarn test:coverage
+        run: yarn test:coverage --verbose
+
+      - name: Upload lcov.info
+        uses: actions/upload-artifact@v4
+        with:
+          name: lcov-info
+          path: lcov.info
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v4.1.0
