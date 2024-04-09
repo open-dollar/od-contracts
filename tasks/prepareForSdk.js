@@ -33,7 +33,6 @@ const createOutputFile = (contracts) => {
   const ETH_ADDRESS = "Verify Manually";
   const final = {
     MULTICALL: "0xcA11bde05977b3631167028862bE2a173976CA11",
-    ETH: ETH_ADDRESS,
     GEB_SYSTEM_COIN: contracts.SystemCoin_Address,
     GEB_PROTOCOL_TOKEN: contracts.ProtocolToken_Address,
     GEB_SAFE_ENGINE: contracts.SAFEEngine_Address,
@@ -139,7 +138,7 @@ const createOutputFile = (contracts) => {
 
   const outputPath = path.join(__dirname, "./output.js");
   const content = `// WARNING: You must verify the ETH address is still correct 
-// which is used in both 'addresses' and 'collateral'
+// which is used in 'collateral'
 
 
 const addresses = ${JSON.stringify(final, null, 2)}
