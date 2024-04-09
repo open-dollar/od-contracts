@@ -195,7 +195,7 @@ contract ODSafeManager is IODSafeManager, Authorizable, Modifiable {
       _sData.collateralType, _sData.safeHandler, collateralSource, debtDestination, _deltaCollateral, _deltaDebt
     );
 
-    vault721.updateNfvState(_safe);
+    _updateNfvState(_safe, _deltaCollateral, _deltaDebt);
     emit ModifySAFECollateralization(msg.sender, _safe, _deltaCollateral, _deltaDebt);
   }
 
@@ -205,7 +205,7 @@ contract ODSafeManager is IODSafeManager, Authorizable, Modifiable {
 
     ISAFEEngine(safeEngine).transferCollateral(_sData.collateralType, _sData.safeHandler, _dst, _wad);
 
-    vault721.updateNfvState(_safe);
+    _updateNfvState(_safe, _wad);
     emit TransferCollateral(msg.sender, _safe, _dst, _wad);
   }
 
@@ -214,7 +214,7 @@ contract ODSafeManager is IODSafeManager, Authorizable, Modifiable {
     SAFEData memory _sData = _safeData[_safe];
     ISAFEEngine(safeEngine).transferCollateral(_cType, _sData.safeHandler, _dst, _wad);
 
-    vault721.updateNfvState(_safe);
+    _updateNfvState(_safe, _wad);
     emit TransferCollateral(msg.sender, _cType, _safe, _dst, _wad);
   }
 
@@ -223,7 +223,7 @@ contract ODSafeManager is IODSafeManager, Authorizable, Modifiable {
     SAFEData memory _sData = _safeData[_safe];
     ISAFEEngine(safeEngine).transferInternalCoins(_sData.safeHandler, _dst, _rad);
 
-    vault721.updateNfvState(_safe);
+    _updateNfvState(_safe, _rad);
     emit TransferInternalCoins(msg.sender, _safe, _dst, _rad);
   }
 
@@ -237,7 +237,7 @@ contract ODSafeManager is IODSafeManager, Authorizable, Modifiable {
       _sData.collateralType, _sData.safeHandler, _dst, _deltaCollateral, _deltaDebt
     );
 
-    vault721.updateNfvState(_safe);
+    _updateNfvState(_safe, _deltaCollateral, _deltaDebt);
 
     // Remove safe from owner's list (notice it doesn't erase safe ownership)
     _usrSafes[_sData.owner].remove(_safe);
@@ -255,7 +255,7 @@ contract ODSafeManager is IODSafeManager, Authorizable, Modifiable {
       _sData.collateralType, _src, _sData.safeHandler, _deltaCollateral, _deltaDebt
     );
 
-    vault721.updateNfvState(_safe);
+    _updateNfvState(_safe, _deltaCollateral, _deltaDebt);
     emit EnterSystem(msg.sender, _src, _safe);
   }
 
@@ -300,6 +300,20 @@ contract ODSafeManager is IODSafeManager, Authorizable, Modifiable {
     SAFEData memory _sData = _safeData[_safe];
     ILiquidationEngine(liquidationEngine).protectSAFE(_sData.collateralType, _sData.safeHandler, _saviour);
     emit ProtectSAFE(msg.sender, _safe, liquidationEngine, _saviour);
+  }
+  
+  /**
+   * @notice internal check to only update nfvState if the vault vaule decreases. eg. debt increases or collateral decreases.
+   */
+  function _updateNfvState(uint256 _safe, int _deltaCollateral, int _deltaDebt)private {
+    if(_deltaDebt > 0 || _deltaCollateral < 0) vault721.updateNfvState(_safe);
+  }
+
+  /**
+   * @notice check to only update if internal coins are transferred 
+   */
+  function _updateNfvState(uint256 _safe, uint256 _delta)private {
+    if(_delta > 0)vault721.updateNfvState(_safe);
   }
 
   /// @inheritdoc Modifiable

@@ -17,6 +17,11 @@ interface IVault721 is IERC721EnumerableUpgradeable, IAuthorizable, IModifiable 
    * @param _proxy the address of the proxy
    */
   event CreateProxy(address indexed _user, address indexed _proxy);
+  /**
+   * @notice Emitted when an nfv vault state is update.
+   * @param _vaultId the uint256 ID of the vault whos state was modified
+   */
+  event NFVStateUpdated(uint256 _vaultId);
 
   // --- Errors ---
 

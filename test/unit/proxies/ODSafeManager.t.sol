@@ -241,7 +241,6 @@ contract Unit_ODSafeManager_SAFEManagement is Base {
   event TransferSAFEOwnership(address indexed _sender, uint256 indexed _safe, address _dst);
 
   function test_transferSAFEOwnership(Scenario memory _scenario) public happyPath(_scenario) {
-    //todo
     // authorize savior
     ILiquidationEngine saviour = ILiquidationEngine(mockContract('mockSaviour'));
 
@@ -425,6 +424,7 @@ contract Unit_ODSafeManager_CollateralManagement is Base {
   event ModifySAFECollateralization(
     address indexed _sender, uint256 indexed _safe, int256 _deltaCollateral, int256 _deltaDebt
   );
+  event NFVStateUpdated(uint256 _safeId);
 
   function test_modifySAFECollateralization(Scenario memory _scenario) public happyPath(_scenario) {
     vm.mockCall(
@@ -530,6 +530,8 @@ contract Unit_ODSafeManager_CollateralManagement is Base {
     vm.prank(_scenario.aliceProxy);
     safeManager.transferInternalCoins(_scenario.safeId, _scenario.bob, 100);
   }
+
+
 }
 
 contract Unit_ODSafeManager_ModifyParameters is Base {

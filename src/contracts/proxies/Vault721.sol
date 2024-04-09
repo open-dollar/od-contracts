@@ -128,6 +128,8 @@ contract Vault721 is ERC721EnumerableUpgradeable, Authorizable, Modifiable, IVau
       lastBlockTimestamp: block.timestamp,
       safeHandler: _safeHandler
     });
+
+    emit NFVStateUpdated(_vaultId);
   }
 
   /**
