@@ -106,6 +106,12 @@ abstract contract Common is Contracts, Params, Test {
     // token adapters
     _revoke(coinJoin, removeAddress, addAddress);
 
+    // safe manager
+    _revoke(safeManager, removeAddress, addAddress);
+
+    // vault 721
+    _revoke(vault721, removeAddress, addAddress);
+
     if (address(ethJoin) != address(0)) {
       _revoke(ethJoin, removeAddress, addAddress);
     }
@@ -383,7 +389,8 @@ abstract contract Common is Contracts, Params, Test {
     }
     vault721.initialize(address(timelockController));
 
-    safeManager = new ODSafeManager(address(safeEngine), address(vault721), address(taxCollector));
+    safeManager =
+      new ODSafeManager(address(safeEngine), address(vault721), address(taxCollector), address(liquidationEngine));
     nftRenderer =
       new NFTRenderer(address(vault721), address(oracleRelayer), address(taxCollector), address(collateralJoinFactory));
 

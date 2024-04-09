@@ -6,6 +6,9 @@ import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {ILiquidationEngine} from '@interfaces/ILiquidationEngine.sol';
 import {IVault721} from '@interfaces/proxies/IVault721.sol';
 import {ITaxCollector} from '@interfaces/ITaxCollector.sol';
+import {Modifiable} from '@contracts/utils/Modifiable.sol';
+import {Authorizable} from '@contracts/utils/Authorizable.sol';
+import {Encoding} from '@libraries/Encoding.sol';
 
 import {Math} from '@libraries/Math.sol';
 import {EnumerableSet} from '@openzeppelin/utils/structs/EnumerableSet.sol';
@@ -18,18 +21,19 @@ import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
  * @notice This contract acts as interface to the SAFEEngine, facilitating the management of SAFEs
  * @dev    This contract is meant to be used by users that interact with the protocol through a proxy contract
  */
-contract ODSafeManager is IODSafeManager {
+contract ODSafeManager is IODSafeManager, Authorizable, Modifiable {
   using Math for uint256;
   using EnumerableSet for EnumerableSet.UintSet;
   using Assertions for address;
+  using Encoding for bytes;
 
   /// @inheritdoc IODSafeManager
   address public safeEngine;
+  address public liquidationEngine;
+  address public taxCollector;
 
   // --- ERC721 ---
   IVault721 public vault721;
-
-  address public taxCollector;
 
   uint256 internal _safeId; // Auto incremental
   mapping(address _safeOwner => EnumerableSet.UintSet) private _usrSafes;
@@ -67,12 +71,18 @@ contract ODSafeManager is IODSafeManager {
     _;
   }
 
-  constructor(address _safeEngine, address _vault721, address _taxCollector) {
+  constructor(
+    address _safeEngine,
+    address _vault721,
+    address _taxCollector,
+    address _liquidationEngine
+  ) Authorizable(msg.sender) {
     safeEngine = _safeEngine.assertNonNull();
     ISAFEEngine(safeEngine).initializeSafeManager();
     vault721 = IVault721(_vault721);
     vault721.initializeManager();
     taxCollector = _taxCollector.assertNonNull();
+    liquidationEngine = _liquidationEngine.assertNonNull();
   }
 
   // --- Getters ---
@@ -138,6 +148,8 @@ contract ODSafeManager is IODSafeManager {
 
     vault721.mint(_usr, _safeId);
 
+    vault721.updateNfvState(_safeId);
+
     emit OpenSAFE(msg.sender, _usr, _safeId);
     return _safeId;
   }
@@ -160,6 +172,9 @@ contract ODSafeManager is IODSafeManager {
 
     _safeData[_safe].owner = _dst;
 
+    if (
+      ILiquidationEngine(liquidationEngine).chosenSAFESaviour(_sData.collateralType, _sData.safeHandler) != address(0)
+    ) ILiquidationEngine(liquidationEngine).protectSAFE(_sData.collateralType, _sData.safeHandler, address(0));
     emit TransferSAFEOwnership(msg.sender, _safe, _dst);
   }
 
@@ -180,8 +195,7 @@ contract ODSafeManager is IODSafeManager {
       _sData.collateralType, _sData.safeHandler, collateralSource, debtDestination, _deltaCollateral, _deltaDebt
     );
 
-    vault721.updateVaultHashState(_safe);
-
+    _updateNfvState(_safe, _deltaCollateral, _deltaDebt);
     emit ModifySAFECollateralization(msg.sender, _safe, _deltaCollateral, _deltaDebt);
   }
 
@@ -191,8 +205,7 @@ contract ODSafeManager is IODSafeManager {
 
     ISAFEEngine(safeEngine).transferCollateral(_sData.collateralType, _sData.safeHandler, _dst, _wad);
 
-    vault721.updateVaultHashState(_safe);
-
+    _updateNfvState(_safe, _wad);
     emit TransferCollateral(msg.sender, _safe, _dst, _wad);
   }
 
@@ -201,8 +214,7 @@ contract ODSafeManager is IODSafeManager {
     SAFEData memory _sData = _safeData[_safe];
     ISAFEEngine(safeEngine).transferCollateral(_cType, _sData.safeHandler, _dst, _wad);
 
-    vault721.updateVaultHashState(_safe);
-
+    _updateNfvState(_safe, _wad);
     emit TransferCollateral(msg.sender, _cType, _safe, _dst, _wad);
   }
 
@@ -210,6 +222,8 @@ contract ODSafeManager is IODSafeManager {
   function transferInternalCoins(uint256 _safe, address _dst, uint256 _rad) external safeAllowed(_safe) {
     SAFEData memory _sData = _safeData[_safe];
     ISAFEEngine(safeEngine).transferInternalCoins(_sData.safeHandler, _dst, _rad);
+
+    _updateNfvState(_safe, _rad);
     emit TransferInternalCoins(msg.sender, _safe, _dst, _rad);
   }
 
@@ -223,7 +237,7 @@ contract ODSafeManager is IODSafeManager {
       _sData.collateralType, _sData.safeHandler, _dst, _deltaCollateral, _deltaDebt
     );
 
-    vault721.updateVaultHashState(_safe);
+    _updateNfvState(_safe, _deltaCollateral, _deltaDebt);
 
     // Remove safe from owner's list (notice it doesn't erase safe ownership)
     _usrSafes[_sData.owner].remove(_safe);
@@ -241,8 +255,7 @@ contract ODSafeManager is IODSafeManager {
       _sData.collateralType, _src, _sData.safeHandler, _deltaCollateral, _deltaDebt
     );
 
-    vault721.updateVaultHashState(_safe);
-
+    _updateNfvState(_safe, _deltaCollateral, _deltaDebt);
     emit EnterSystem(msg.sender, _src, _safe);
   }
 
@@ -258,10 +271,9 @@ contract ODSafeManager is IODSafeManager {
       _srcData.collateralType, _srcData.safeHandler, _dstData.safeHandler, _deltaCollateral, _deltaDebt
     );
 
-    // @note We update the vault hash state for src and the destination as the value for both changes
-    vault721.updateVaultHashState(_safeSrc);
-
-    vault721.updateVaultHashState(_safeDst);
+    // @note update the collateral and debt state for src and the destination as the value for both changes
+    vault721.updateNfvState(_safeSrc);
+    vault721.updateNfvState(_safeDst);
 
     // Remove safe from owner's list (notice it doesn't erase safe ownership)
     _usrSafes[_srcData.owner].remove(_safeSrc);
@@ -284,9 +296,34 @@ contract ODSafeManager is IODSafeManager {
   }
 
   /// @inheritdoc IODSafeManager
-  function protectSAFE(uint256 _safe, address _liquidationEngine, address _saviour) external safeAllowed(_safe) {
+  function protectSAFE(uint256 _safe, address _saviour) external safeAllowed(_safe) {
     SAFEData memory _sData = _safeData[_safe];
-    ILiquidationEngine(_liquidationEngine).protectSAFE(_sData.collateralType, _sData.safeHandler, _saviour);
-    emit ProtectSAFE(msg.sender, _safe, _liquidationEngine, _saviour);
+    ILiquidationEngine(liquidationEngine).protectSAFE(_sData.collateralType, _sData.safeHandler, _saviour);
+    emit ProtectSAFE(msg.sender, _safe, liquidationEngine, _saviour);
+  }
+
+  /**
+   * @notice internal check to only update nfvState if the vault vaule decreases. eg. debt increases or collateral decreases.
+   */
+  function _updateNfvState(uint256 _safe, int256 _deltaCollateral, int256 _deltaDebt) private {
+    if (_deltaDebt > 0 || _deltaCollateral < 0) vault721.updateNfvState(_safe);
+  }
+
+  /**
+   * @notice check to only update if internal coins are transferred
+   */
+  function _updateNfvState(uint256 _safe, uint256 _delta) private {
+    if (_delta > 0) vault721.updateNfvState(_safe);
+  }
+
+  /// @inheritdoc Modifiable
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
+    address _address = _data.toAddress();
+
+    if (_param == 'liquidationEngine') liquidationEngine = _address.assertNonNull();
+    else if (_param == 'taxCollector') taxCollector = _address.assertNonNull();
+    else if (_param == 'vault721') vault721 = IVault721(_address.assertNonNull());
+    else if (_param == 'safeEngine') safeEngine = _address.assertNonNull();
+    else revert UnrecognizedParam();
   }
 }

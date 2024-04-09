@@ -45,12 +45,14 @@ contract NFTRenderer {
     _collateralJoinFactory = ICollateralJoinFactory(collateralJoinFactory);
   }
 
+  // state = {0: (no collateral, no debt) 1: (collateral, no debt) 2: (collateral, debt)}
   struct VaultParams {
+    uint256 state;
     uint256 ratio;
-    string collateral;
-    string debt;
-    string metaCollateral;
-    string metaDebt;
+    string collateralJson;
+    string debtJson;
+    string collateralSvg;
+    string debtSvg;
     string vaultId;
     string stabilityFee;
     string symbol;
@@ -58,7 +60,9 @@ contract NFTRenderer {
     string color;
     string stroke;
     string lastUpdate;
-    string stateHash;
+    string lastBlockNumber;
+    string lastBlockTimestamp;
+    string tokenCollateral;
   }
 
   /**
@@ -90,7 +94,7 @@ contract NFTRenderer {
    * @dev render json object with NFT description and image
    * @notice svg needs to be broken into separate functions to reduce call stack for compilation
    */
-  function render(uint256 _safeId) external view returns (string memory uri) {
+  function render(uint256 _safeId) external view returns (string memory _uri) {
     VaultParams memory params = renderParams(_safeId);
     string memory text = _renderText(params);
     uint256 ratio = params.ratio;
@@ -104,58 +108,16 @@ contract NFTRenderer {
           string.concat(
             _renderVaultInfo(params.vaultId, params.color),
             _renderCollatAndDebt(
-              ratio, params.stabilityFee, params.debt, params.collateral, params.symbol, params.lastUpdate
+              ratio, params.stabilityFee, params.debtSvg, params.collateralSvg, params.symbol, params.lastUpdate
             ),
-            _renderRisk(ratio, params.stroke, params.risk),
+            _renderRisk(params.state, ratio, params.stroke, params.risk),
             _renderBackground(params.color)
           )
         )
       ),
       '"}'
     );
-
-    uri = string.concat('data:application/json;base64,', Base64.encode(bytes(json)));
-  }
-
-  /**
-   * @dev gets the vault ctype, collateral and debt amounts given `_safeId`
-   * @param _safeId vault id
-   * @return cType collateral type
-   * @return collateral collateral amount for safe with `_safeId`
-   * @return debt debt amount for safe with `_safeId`
-   */
-  function getVaultCTypeAndCollateralAndDebt(uint256 _safeId)
-    public
-    view
-    returns (bytes32 cType, uint256 collateral, uint256 debt)
-  {
-    IODSafeManager.SAFEData memory safeMangerData = _safeManager.safeData(_safeId);
-    address safeHandler = safeMangerData.safeHandler;
-    cType = safeMangerData.collateralType;
-
-    ISAFEEngine.SAFE memory SafeEngineData = _safeEngine.safes(cType, safeHandler);
-    collateral = SafeEngineData.lockedCollateral;
-    debt = SafeEngineData.generatedDebt;
-  }
-
-  /**
-   * @dev computes the current state hash based on the state for a vault given `_safeId`
-   * @param _safeId vault id
-   * @return stateHash state hash for safe with `_safeId`
-   */
-  function getStateHashBySafeId(uint256 _safeId) external view returns (bytes32 stateHash) {
-    (, uint256 collateral, uint256 debt) = getVaultCTypeAndCollateralAndDebt(_safeId);
-    stateHash = getStateHash(collateral, debt);
-  }
-
-  /**
-   * @dev computes the current state hash given `_collateral` and `_debt`
-   * @param _collateral collateral amount
-   * @param _debt debt amount
-   * @return stateHash computed state hash
-   */
-  function getStateHash(uint256 _collateral, uint256 _debt) public pure returns (bytes32 stateHash) {
-    stateHash = keccak256(abi.encode(_collateral, _debt));
+    _uri = string.concat('data:application/json;base64,', Base64.encode(bytes(json)));
   }
 
   /**
@@ -168,9 +130,20 @@ contract NFTRenderer {
     bytes32 cType;
     // scoped to reduce call stack
     {
-      uint256 collateral;
-      uint256 debt;
-      (cType, collateral, debt) = getVaultCTypeAndCollateralAndDebt(_safeId);
+      IVault721.NFVState memory nfvState = vault721.getNfvState(_safeId);
+      cType = nfvState.cType;
+      params.lastBlockNumber = nfvState.lastBlockNumber.toString();
+      params.lastBlockTimestamp = nfvState.lastBlockTimestamp.toString();
+
+      uint256 collateral = nfvState.collateral;
+      params.collateralJson = collateral.toString();
+      params.collateralSvg = _formatNumberForSvg(collateral);
+
+      uint256 debt = nfvState.debt;
+      params.debtJson = debt.toString();
+      params.debtSvg = _formatNumberForSvg(debt);
+
+      params.tokenCollateral = _formatNumberForJson(_safeEngine.tokenCollateral(cType, nfvState.safeHandler));
 
       IOracleRelayer.OracleRelayerCollateralParams memory oracleParams = _oracleRelayer.cParams(cType);
       IDelayedOracle oracle = oracleParams.oracle;
@@ -178,34 +151,26 @@ contract NFTRenderer {
       uint256 liquidationCRatio = oracleParams.liquidationCRatio / 10e24;
 
       uint256 ratio;
-      if (collateral != 0 && debt != 0) {
-        ISAFEEngine.SAFEEngineCollateralData memory cTypeData = _safeEngine.cData(cType);
-        ratio = ((collateral.wmul(oracle.read())).wdiv(debt.wmul(cTypeData.accumulatedRate))) / 1e7; // _RAY to _WAD conversion
-      } else {
-        ratio = 0;
+      uint256 state;
+      if (collateral > 0) {
+        if (debt > 0) {
+          state = 2;
+          ISAFEEngine.SAFEEngineCollateralData memory cTypeData = _safeEngine.cData(cType);
+          ratio = ((collateral.wmul(oracle.read())).wdiv(debt.wmul(cTypeData.accumulatedRate))) / 1e7; // _RAY to _WAD conversion
+        } else {
+          state = 1;
+          ratio = 200;
+        }
       }
       IERC20Metadata token = ICollateralJoin(_collateralJoinFactory.collateralJoins(cType)).collateral();
       params.symbol = token.symbol();
 
-      {
-        (uint256 left, uint256 right) = _floatingPoint(debt);
-        params.debt = _parseNumberWithComma(left, right);
-        params.metaDebt = _parseNumber(left, right);
-      }
-      {
-        (uint256 left, uint256 right) = _floatingPoint(collateral);
-        params.collateral = _parseNumberWithComma(left, right);
-        params.metaCollateral = _parseNumber(left, right);
-      }
-
       params.lastUpdate = _formatDateTime(oracle.lastUpdateTime());
-      (params.risk, params.color) = _calcRisk(ratio, liquidationCRatio, safetyCRatio);
+      (params.risk, params.color) = _calcRisk(ratio, state, liquidationCRatio, safetyCRatio);
       params.stroke = _calcStroke(ratio);
       params.ratio = ratio;
-
-      params.stateHash = string(abi.encodePacked(getStateHash(collateral, debt)));
+      params.state = state;
     }
-
     ITaxCollector.TaxCollectorCollateralData memory taxData = _taxCollector.cData(cType);
     params.stabilityFee = (taxData.nextStabilityFee / _RAY).toString();
 
@@ -225,7 +190,13 @@ contract NFTRenderer {
       '"attributes":[{"trait_type":"ID","value":"',
       params.vaultId,
       traits,
-      params.lastUpdate
+      params.lastUpdate,
+      '"},{"trait_type":"Modified on Block","value":"',
+      params.lastBlockNumber,
+      '"},{"trait_type":"Modified at Timestamp ","value":"',
+      params.lastBlockTimestamp,
+      '"},{"trait_type":"Internal Collateral","value":"',
+      params.tokenCollateral
     );
   }
 
@@ -247,9 +218,9 @@ contract NFTRenderer {
     // stack at 16 slot max w/ 32-byte+ strings
     traits = string.concat(
       '"},{"trait_type":"Debt","value":"',
-      params.metaDebt,
+      params.debtJson,
       '"},{"trait_type":"Collateral","value":"',
-      params.metaCollateral,
+      params.collateralJson,
       '"},{"trait_type":"Collateral Type","value":"',
       params.symbol,
       '"},{"trait_type":"Stability Fee","value":"',
@@ -318,13 +289,14 @@ contract NFTRenderer {
    * @dev svg risk data
    */
   function _renderRisk(
+    uint256 state,
     uint256 ratio,
     string memory stroke,
     string memory risk
   ) internal pure returns (string memory svg) {
     string memory rectangle;
     string memory riskDetail;
-    if (ratio != 0) {
+    if (state == 2) {
       rectangle =
         '), 1005" d="M210 40a160 160 0 0 1 0 320 160 160 0 0 1 0-320" /></g><g class="risk-ratio"><rect x="242" y="306" width="154" height="82" rx="8" fill="#001828" fill-opacity=".7" /><circle cx="243" cy="326.5" r="4" /><text xml:space="preserve" font-weight="600"><tspan x="255" y="330.7">';
       riskDetail = string.concat(
@@ -332,6 +304,11 @@ contract NFTRenderer {
         ratio.toString(),
         '%</tspan></text>'
       );
+    } else if (state == 1) {
+      rectangle =
+        '), 1005" d="M210 40a160 160 0 0 1 0 320 160 160 0 0 1 0-320" /></g><g class="risk-ratio"><rect x="242" y="306" width="154" height="82" rx="8" fill="#001828" fill-opacity=".7" /><circle cx="243" cy="326.5" r="4" /><text xml:space="preserve" font-weight="600"><tspan x="255" y="330.7">';
+      riskDetail =
+        ' RISK</tspan></text><text xml:space="preserve"><tspan x="255" y="355.7">COLLATERAL</tspan><tspan x="255" y="371.7">RATIO &#x221e;</tspan></text>';
     } else {
       rectangle =
         '), 1005" d="M210 40a160 160 0 0 1 0 320 160 160 0 0 1 0-320" /></g><g class="risk-ratio"><rect x="298" y="350" width="96" height="40" rx="8" fill="#001828" fill-opacity=".7" /><circle cx="299" cy="370.5" r="4" /><text xml:space="preserve" font-weight="600"><tspan x="311" y="374.7">';
@@ -364,14 +341,20 @@ contract NFTRenderer {
    */
   function _calcRisk(
     uint256 ratio,
+    uint256 state,
     uint256 liquidationRatio,
     uint256 safetyRatio
   ) internal pure returns (string memory, string memory) {
-    if (ratio == 0) return ('NO', '#63676F');
-    if (ratio <= liquidationRatio) return ('LIQUIDATION', '#E45200');
-    else if (ratio > liquidationRatio && ratio <= safetyRatio) return ('HIGH', '#E45200');
-    else if (ratio > safetyRatio && ratio <= (safetyRatio * 120 / 100)) return ('ELEVATED', '#FCBF3B');
-    else return ('LOW', '#5DBA14');
+    if (state == 2) {
+      if (ratio <= liquidationRatio) return ('LIQUIDATION', '#E45200');
+      else if (ratio > liquidationRatio && ratio <= safetyRatio) return ('HIGH', '#E45200');
+      else if (ratio > safetyRatio && ratio <= (safetyRatio * 120 / 100)) return ('ELEVATED', '#FCBF3B');
+      else return ('LOW', '#5DBA14');
+    } else if (state == 1) {
+      return ('LOW', '#5DBA14');
+    } else {
+      return ('NO', '#63676F');
+    }
   }
 
   /**
@@ -381,6 +364,16 @@ contract NFTRenderer {
     if (ratio == 0) return '0';
     if (ratio <= 100 || ratio >= 200) return '100';
     else return (ratio - 100).toString();
+  }
+
+  function _formatNumberForJson(uint256 num) internal pure returns (string memory) {
+    (uint256 left, uint256 right) = _floatingPoint(num);
+    return _parseNumber(left, right);
+  }
+
+  function _formatNumberForSvg(uint256 num) internal pure returns (string memory) {
+    (uint256 left, uint256 right) = _floatingPoint(num);
+    return _parseNumberWithComma(left, right);
   }
 
   /**
