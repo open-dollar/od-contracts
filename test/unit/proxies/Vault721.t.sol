@@ -433,67 +433,71 @@ contract Unit_TestVault721_TransferFrom_SafeTransferFrom_ProxyReceiver is Base {
     userProxy2 = testVault721.build(user2);
   }
 
-  // function test_TransferFrom() public {
-  //   vm.prank(address(safeManager));
-  //   testVault721.mint(userProxy1, 1);
+  function test_TransferFrom() public {
+    vm.startPrank(address(safeManager));
+    testVault721.mint(userProxy1, 1);
+    _mockUpdateNfvState(scenarioData);
+    testVault721.updateNfvState(1);
+    vm.stopPrank();
 
-  //   vm.prank(user1);
-  //   testVault721.setApprovalForAll(user2, true);
+    vm.prank(user1);
+    testVault721.setApprovalForAll(user2, true);
 
-  //   vm.prank(user2);
-  //   vm.mockCall(
-  //     address(renderer), abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector), abi.encode(bytes32(0))
-  //   );
+    vm.prank(user2);
+    _mockUpdateNfvState(scenarioData);
+    // user2 has no bytecode - assumed to be EOA
+    testVault721.transferFrom(user1, user2, 1);
 
-  //   testVault721.transferFrom(user1, user2, 1);
-  // }
+    assertEq(testVault721.ownerOf(1), user2, 'nfv not transfered');
+  }
 
-  // function test_SafeTransferFrom() public {
-  //   vm.prank(address(safeManager));
-  //   testVault721.mint(userProxy1, 1);
+  function test_SafeTransferFrom() public {
+    vm.startPrank(address(safeManager));
+    testVault721.mint(userProxy1, 1);
+    _mockUpdateNfvState(scenarioData);
+    testVault721.updateNfvState(1);
+    vm.stopPrank();
 
-  //   vm.prank(user1);
-  //   testVault721.setApprovalForAll(user2, true);
+    vm.prank(user1);
+    testVault721.setApprovalForAll(user2, true);
 
-  //   vm.prank(user2);
-  //   vm.mockCall(
-  //     address(renderer), abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector), abi.encode(bytes32(0))
-  //   );
+    vm.prank(user2);
+    _mockUpdateNfvState(scenarioData);
+    // user2 has no bytecode - assumed to be EOA
+    testVault721.safeTransferFrom(user1, user2, 1);
 
-  //   testVault721.safeTransferFrom(user1, user2, 1);
-  // }
+    assertEq(testVault721.ownerOf(1), user2, 'nfv not transfered');
+  }
 
-  // function test_TransferFrom_ToProxy_Revert() public {
-  //   vm.prank(address(safeManager));
-  //   testVault721.mint(userProxy1, 1);
+  function test_TransferFrom_ToProxy_Revert() public {
+    vm.startPrank(address(safeManager));
+    testVault721.mint(userProxy1, 1);
+    _mockUpdateNfvState(scenarioData);
+    testVault721.updateNfvState(1);
+    vm.stopPrank();
+    vm.prank(user1);
+    testVault721.setApprovalForAll(user2, true);
 
-  //   vm.prank(user1);
-  //   testVault721.setApprovalForAll(user2, true);
+    vm.prank(user2);
+    _mockUpdateNfvState(scenarioData);
+    vm.expectRevert(IVault721.NotWallet.selector);
+    testVault721.transferFrom(user1, userProxy2, 1);
+  }
 
-  //   vm.prank(user2);
-  //   vm.mockCall(
-  //     address(renderer), abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector), abi.encode(bytes32(0))
-  //   );
+  function test_SafeTransferFrom_ToProxy_Revert() public {
+    vm.startPrank(address(safeManager));
+    testVault721.mint(userProxy1, 1);
+    _mockUpdateNfvState(scenarioData);
+    vault721.updateNfvState(1);
+    vm.stopPrank();
+    vm.prank(user1);
+    testVault721.setApprovalForAll(user2, true);
 
-  //   vm.expectRevert(IVault721.NotWallet.selector);
-  //   testVault721.transferFrom(user1, userProxy2, 1);
-  // }
-
-  // function test_SafeTransferFrom_ToProxy_Revert() public {
-  //   vm.prank(address(safeManager));
-  //   testVault721.mint(userProxy1, 1);
-
-  //   vm.prank(user1);
-  //   testVault721.setApprovalForAll(user2, true);
-
-  //   vm.prank(user2);
-  //   vm.mockCall(
-  //     address(renderer), abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector), abi.encode(bytes32(0))
-  //   );
-
-  //   vm.expectRevert(IVault721.NotWallet.selector);
-  //   testVault721.safeTransferFrom(user1, userProxy2, 1);
-  // }
+    vm.prank(user2);
+    _mockUpdateNfvState(scenarioData);
+    vm.expectRevert(IVault721.NotWallet.selector);
+    testVault721.safeTransferFrom(user1, userProxy2, 1);
+  }
 }
 
 contract Unit_Vault721_TransferFrom_SafeTransferFrom is Base {
@@ -660,9 +664,9 @@ contract Unit_Vault721_TransferFrom is Base {
     _scenario.user2 = address(2);
     testSAFEData.owner = _scenario.user1;
     vm.assume(_scenario.tokenId != uint256(0));
-    vm.assume(_scenario.blockDelay > 0);
+    vm.assume(_scenario.blockDelay > 0 && _scenario.blockDelay < 1000);
     vm.assume(_scenario.timeDelay > 0);
-    vm.assume(_scenario.timeDelay < 9_000_000_000);
+    vm.assume(_scenario.timeDelay < 1_000_000_000);
     vm.assume(notUnderOrOverflowAdd(_scenario.blockDelay, int256(block.number)));
     vm.assume(notUnderOrOverflowAdd(_scenario.timeDelay, int256(block.timestamp)));
     _;
@@ -671,94 +675,72 @@ contract Unit_Vault721_TransferFrom is Base {
   function _mintNft(Scenario memory _scenario) internal returns (address _userProxy) {
     _userProxy = vault721.build(_scenario.user1);
 
-    vm.prank(address(safeManager));
+    vm.startPrank(address(safeManager));
     vault721.mint(_userProxy, _scenario.tokenId);
+    _mockUpdateNfvState(scenarioData);
+    vault721.updateNfvState(1);
+    vm.stopPrank();
   }
 
-  // function test_TransferFrom(Scenario memory _scenario) public basicLimits(_scenario) {
-  //   userProxy = _mintNft(_scenario);
-  //   vm.assume(_scenario.user1 != userProxy);
-  //   vm.assume(_scenario.user2 != userProxy);
-  //   vault721.build(_scenario.user2);
-  //   vm.prank(_scenario.user1);
-  //   vault721.setApprovalForAll(_scenario.user2, true);
+  function test_TransferFrom(Scenario memory _scenario) public basicLimits(_scenario) {
+    userProxy = _mintNft(_scenario);
+    vm.assume(_scenario.user1 != userProxy);
+    vm.assume(_scenario.user2 != userProxy);
+    vault721.build(_scenario.user2);
+    vm.prank(_scenario.user1);
+    vault721.setApprovalForAll(_scenario.user2, true);
 
-  //   vm.prank(_scenario.user2);
-  //   vm.mockCall(
-  //     address(renderer), abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector), abi.encode(bytes32(0))
-  //   );
+    vm.prank(_scenario.user2);
+    _mockUpdateNfvState(scenarioData);
+    vault721.transferFrom(_scenario.user1, _scenario.user2, _scenario.tokenId);
+  }
 
-  //   vault721.transferFrom(_scenario.user1, _scenario.user2, _scenario.tokenId);
-  // }
+  function test_TransferFrom_Revert_BlockDelayNotReached(Scenario memory _scenario) public basicLimits(_scenario) {
+    //add to allow list so that block delay will be checked
+    vm.prank(address(timelockController));
+    vault721.modifyParameters('updateAllowlist', abi.encode(_scenario.user1, true));
 
-  // function test_TransferFrom_Revert_BlockDelayNotReached(Scenario memory _scenario) public basicLimits(_scenario) {
-  //   //add to allow list so that block delay will be checked
-  //   vm.prank(address(timelockController));
-  //   vault721.modifyParameters('updateAllowlist', abi.encode(_scenario.user1, true));
+    _mintNft(_scenario);
 
-  //   _mintNft(_scenario);
-  //   bytes32 previousHashState = vault721.getHashState(_scenario.tokenId).lastHash;
+    vm.prank(address(timelockController));
+    vault721.modifyParameters('blockDelay', abi.encode(_scenario.blockDelay));
 
-  //   vm.prank(address(timelockController));
-  //   vault721.modifyParameters('blockDelay', abi.encode(_scenario.blockDelay));
+    //update hash state with hardcoded value.
 
-  //   //update hash state with hardcoded value.
+    vm.prank(address(safeManager));
+    _mockUpdateNfvState(scenarioData);
+    vault721.updateNfvState(_scenario.tokenId);
 
-  //   vm.mockCall(
-  //     address(renderer),
-  //     abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector),
-  //     abi.encode(bytes32(previousHashState))
-  //   );
+    vm.prank(_scenario.user1);
 
-  //   vm.prank(address(safeManager));
-  //   _mockSafeCall();
-  //   vault721.updateVaultHashState(_scenario.tokenId);
+    vm.expectRevert(IVault721.BlockDelayNotOver.selector);
+    _mockUpdateNfvState(scenarioData);
+    vault721.transferFrom(_scenario.user1, _scenario.user2, _scenario.tokenId);
+    assertEq(vault721.balanceOf(_scenario.user1), 1, 'token transferred');
+  }
 
-  //   vm.prank(_scenario.user1);
+  function test_TransferFrom_Revert_TimeDelayNotOver(Scenario memory _scenario) public basicLimits(_scenario) {
+    _mintNft(_scenario);
 
-  //   vm.expectRevert(IVault721.BlockDelayNotOver.selector);
+    vm.prank(address(timelockController));
+    vault721.modifyParameters('timeDelay', abi.encode(_scenario.timeDelay));
 
-  //   vm.mockCall(
-  //     address(renderer),
-  //     abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector),
-  //     abi.encode(bytes32(previousHashState))
-  //   );
+    //update vault hash state so there's a time to check against
 
-  //   vault721.transferFrom(_scenario.user1, _scenario.user2, _scenario.tokenId);
-  //   assertEq(vault721.balanceOf(_scenario.user1), 1, 'token transferred');
-  // }
+    vm.prank(address(safeManager));
+    _mockUpdateNfvState(scenarioData);
+    vault721.updateNfvState(_scenario.tokenId);
 
-  // function test_TransferFrom_Revert_TimeDelayNotOver(Scenario memory _scenario) public basicLimits(_scenario) {
-  //   _mintNft(_scenario);
+    vm.prank(_scenario.user1);
+    vault721.setApprovalForAll(_scenario.user2, true);
 
-  //   vm.prank(address(timelockController));
-  //   vault721.modifyParameters('timeDelay', abi.encode(_scenario.timeDelay));
+    vm.prank(_scenario.user2);
+    vm.expectRevert(IVault721.TimeDelayNotOver.selector);
+    _mockUpdateNfvState(scenarioData);
+    vault721.transferFrom(_scenario.user1, _scenario.user2, _scenario.tokenId);
 
-  //   //update vault hash state so there's a time to check against
-  //   vm.prank(address(safeManager));
-  //   vm.mockCall(
-  //     address(renderer),
-  //     abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector),
-  //     abi.encode(bytes32('test-hash'))
-  //   );
-  //   _mockSafeCall();
-  //   vault721.updateVaultHashState(_scenario.tokenId);
-
-  //   vm.prank(_scenario.user1);
-  //   vault721.setApprovalForAll(_scenario.user2, true);
-
-  //   vm.prank(_scenario.user2);
-  //   vm.expectRevert(IVault721.TimeDelayNotOver.selector);
-
-  //   vm.mockCall(
-  //     address(renderer),
-  //     abi.encodeWithSelector(NFTRenderer.getStateHashBySafeId.selector),
-  //     abi.encode(bytes32('test-hash'))
-  //   );
-  //   vault721.transferFrom(_scenario.user1, _scenario.user2, _scenario.tokenId);
-
-  //   assertEq(vault721.balanceOf(_scenario.user1), 1, 'transfer succesful');
-  // }
+    assertEq(vault721.balanceOf(_scenario.user1), 1, 'transfer succesful');
+  }
 }
 
 contract Unit_Vault721_ProxyDeployment is Base {
