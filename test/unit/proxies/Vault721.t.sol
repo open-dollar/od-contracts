@@ -565,7 +565,7 @@ contract Unit_Vault721_TransferFrom_SafeTransferFrom is Base {
     assertEq(vault721.ownerOf(tokenId), scwallet, 'nfv not transfered');
   }
 
-  function test_TransferFrom_Revert_BlockDelayNotReached() public  {
+  function test_TransferFrom_Revert_BlockDelayNotReached() public {
     uint256 blockDelay = 1234;
     //add to allow list so that block delay will be checked
     vm.prank(address(timelockController));
@@ -576,7 +576,6 @@ contract Unit_Vault721_TransferFrom_SafeTransferFrom is Base {
     _mockUpdateNfvState(scenarioData);
     vault721.updateNfvState(tokenId);
     vm.stopPrank();
-
 
     vm.prank(address(timelockController));
     vault721.modifyParameters('blockDelay', abi.encode(blockDelay));
@@ -595,8 +594,8 @@ contract Unit_Vault721_TransferFrom_SafeTransferFrom is Base {
     assertEq(vault721.balanceOf(user1), 1, 'token transferred');
   }
 
-  function test_TransferFrom_Revert_TimeDelayNotOver() public  {
-    uint256 timeDelay = 123456;
+  function test_TransferFrom_Revert_TimeDelayNotOver() public {
+    uint256 timeDelay = 123_456;
     vm.startPrank(address(safeManager));
     vault721.mint(userProxy1, tokenId);
     _mockUpdateNfvState(scenarioData);
