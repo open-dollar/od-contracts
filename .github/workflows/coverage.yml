@@ -38,7 +38,7 @@ jobs:
 
       - name: Run Coverage
         shell: bash
-        run: yarn test:coverage --verbose
+        run: yarn test:coverage
 
       - name: Upload lcov.info
         uses: actions/upload-artifact@v4
