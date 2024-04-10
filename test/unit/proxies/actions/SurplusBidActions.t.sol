@@ -71,5 +71,9 @@ contract SurplusBidActionTest is ActionBaseTest {
     address savedDataSurplusAuctionHouse =
       decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('surplusAuctionHouse()')));
     uint256 savedDataAuctionId = decodeAsUint256(proxy.execute(target, abi.encodeWithSignature('auctionId()')));
+
+    assertEq(savedDataCoinJoin, _coinJoin);
+    assertEq(savedDataSurplusAuctionHouse, _surplusAuctionHouse);
+    assertEq(savedDataAuctionId, _auctionId);
   }
 }
