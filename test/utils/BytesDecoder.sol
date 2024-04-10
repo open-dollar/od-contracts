@@ -2,7 +2,6 @@
 pragma solidity 0.8.19;
 
 contract BytesDecoder {
-
   function decodeAsUint256(bytes memory data) public pure returns (uint256) {
     return abi.decode(data, (uint256));
   }

@@ -27,7 +27,6 @@ contract SurplusBidActionMock {
 // Testing the calls from ODProxy to SurplusBidActions.
 // In this test we don't care about the actual implementation of SurplusBidAction, only that the calls are made correctly
 contract SurplusBidActionTest is ActionBaseTest {
-  
   SurplusBidActionMock surplusBidAuction = new SurplusBidActionMock();
 
   function setUp() public {

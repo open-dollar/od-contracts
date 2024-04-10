@@ -55,7 +55,6 @@ contract RewardActionsMock {
 // Testing the calls from ODProxy to RewardActions.
 // In this test we don't care about the actual implementation of SurplusBidAction, only that the calls are made correctly
 contract RewardActionsTest is ActionBaseTest {
-
   RewardActionsMock rewardActions;
 
   function setUp() public {
@@ -71,10 +70,8 @@ contract RewardActionsTest is ActionBaseTest {
 
     proxy.execute(target, abi.encodeWithSignature('startDebtAuction(address,address)', accountingJob, coinJoin));
 
-    address savedDataAccountingJob =
-      decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('accountingJob()')));
-    address savedDataCoinJoin =
-      decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('coinJoin()')));
+    address savedDataAccountingJob = decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('accountingJob()')));
+    address savedDataCoinJoin = decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('coinJoin()')));
 
     assertEq(savedDataAccountingJob, accountingJob);
     assertEq(savedDataCoinJoin, coinJoin);
@@ -88,10 +85,8 @@ contract RewardActionsTest is ActionBaseTest {
 
     proxy.execute(target, abi.encodeWithSignature('startSurplusAuction(address,address)', accountingJob, coinJoin));
 
-    address savedDataAccountingJob =
-      decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('accountingJob()')));
-    address savedDataCoinJoin =
-      decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('coinJoin()')));
+    address savedDataAccountingJob = decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('accountingJob()')));
+    address savedDataCoinJoin = decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('coinJoin()')));
 
     assertEq(savedDataAccountingJob, accountingJob);
     assertEq(savedDataCoinJoin, coinJoin);
@@ -110,12 +105,9 @@ contract RewardActionsTest is ActionBaseTest {
       abi.encodeWithSignature('popDebtFromQueue(address,address,uint256)', accountingJob, coinJoin, debtTimestamp)
     );
 
-    address savedDataAccountingJob =
-      decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('accountingJob()')));
-    address savedDataCoinJoin =
-      decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('coinJoin()')));
-    uint256 savedDataDebtTimestamp =
-      decodeAsUint256(proxy.execute(target, abi.encodeWithSignature('debtTimestamp()')));
+    address savedDataAccountingJob = decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('accountingJob()')));
+    address savedDataCoinJoin = decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('coinJoin()')));
+    uint256 savedDataDebtTimestamp = decodeAsUint256(proxy.execute(target, abi.encodeWithSignature('debtTimestamp()')));
 
     assertEq(savedDataAccountingJob, accountingJob);
     assertEq(savedDataCoinJoin, coinJoin);
@@ -130,10 +122,8 @@ contract RewardActionsTest is ActionBaseTest {
 
     proxy.execute(target, abi.encodeWithSignature('auctionSurplus(address,address)', accountingJob, coinJoin));
 
-    address savedDataAccountingJob =
-      decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('accountingJob()')));
-    address savedDataCoinJoin =
-      decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('coinJoin()')));
+    address savedDataAccountingJob = decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('accountingJob()')));
+    address savedDataCoinJoin = decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('coinJoin()')));
 
     assertEq(savedDataAccountingJob, accountingJob);
     assertEq(savedDataCoinJoin, coinJoin);
@@ -152,10 +142,8 @@ contract RewardActionsTest is ActionBaseTest {
       abi.encodeWithSignature('liquidateSAFE(address,address,bytes32,address)', liquidationJob, coinJoin, cType, safe)
     );
 
-    address savedDataLiquidationJob =
-      decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('oracleJob()')));
-    address savedDataCoinJoin =
-      decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('coinJoin()')));
+    address savedDataLiquidationJob = decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('oracleJob()')));
+    address savedDataCoinJoin = decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('coinJoin()')));
     bytes32 savedDataCType = bytes32(decodeAsUint256(proxy.execute(target, abi.encodeWithSignature('cType()'))));
     address savedDataSafe = decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('safe()')));
 
@@ -176,10 +164,8 @@ contract RewardActionsTest is ActionBaseTest {
       target, abi.encodeWithSignature('updateCollateralPrice(address,address,bytes32)', oracleJob, coinJoin, cType)
     );
 
-    address savedDataOracleJob =
-      decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('oracleJob()')));
-    address savedDataCoinJoin =
-      decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('coinJoin()')));
+    address savedDataOracleJob = decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('oracleJob()')));
+    address savedDataCoinJoin = decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('coinJoin()')));
     bytes32 savedDataCType = bytes32(decodeAsUint256(proxy.execute(target, abi.encodeWithSignature('cType()'))));
 
     assertEq(savedDataOracleJob, oracleJob);
@@ -195,10 +181,8 @@ contract RewardActionsTest is ActionBaseTest {
 
     proxy.execute(target, abi.encodeWithSignature('updateRedemptionRate(address,address)', oracleJob, coinJoin));
 
-    address savedDataOracleJob =
-      decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('oracleJob()')));
-    address savedDataCoinJoin =
-      decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('coinJoin()')));
+    address savedDataOracleJob = decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('oracleJob()')));
+    address savedDataCoinJoin = decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('coinJoin()')));
 
     assertEq(savedDataOracleJob, oracleJob);
     assertEq(savedDataCoinJoin, coinJoin);
