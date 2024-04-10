@@ -37,6 +37,39 @@ function proposeUpdateParameter() {
 }
 
 function display_help() {
+    case "$1" in
+        "")
+          echo "type proposal type to get input orders"
+          echo "e.g.:  yarn propose:generate --help addCollateral"
+          exit 1
+          ;;
+      addCollateral | addcollateral)
+          echo "============================================="
+          echo "your correct collateral order is this:"
+          echo "yarn script:propose:generate <network> addCollateral [collateral type] [collateral token address] [minimum bid] [minimum discount] [maximum discount] [perSecondRate]"
+          echo "============================================="
+           shift 2
+           ;;
+
+      -a | --add-options)
+          # do something here call function
+          # and write it in your help function display_help()
+           shift 2
+           ;;
+
+      --) # End of all options
+          shift
+          break
+          ;;
+      -*)
+          echo "Error: Unknown option: $1" >&2
+          ## or call function display_help
+          exit 1 
+          ;;
+      *)  # No more options
+          break
+          ;;
+    esac
     echo "HELP!"
 }
 
@@ -48,14 +81,14 @@ do
             echo " yarn script:propose [target environment] [proposalType] [requiredInputs for that type]"
             echo "    where target environment (required): anvil / sepolia / mainnet"
             echo "    the type of proposal to be generated"
-            echo "    an array of the needed inputs for that proposal type in format: [[inputName, input], [inputName2, input2]]"
+            echo "    your inputs in the correct order.  use -help for more info"
             echo ""
             echo "Example:"
-            echo " yarn script:propose sepolia addCollateral ARB 0xNewCollateralTokenAddress 5e18 1e18 1e18 999998607628240588157433861"
+            echo "yarn script:propose:generate sepolia addCollateral ARB 0xNewCollateralTokenAddress 5000000000000000000 1000000000000000000 1000000000000000000 999998607628240588157433861"
         exit 1
           ;;
       -h | --help)
-          display_help
+          display_help $2
           exit 1
           ;;
       -d | --display)

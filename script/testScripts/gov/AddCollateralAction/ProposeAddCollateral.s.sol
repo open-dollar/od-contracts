@@ -7,7 +7,7 @@ import {IGlobalSettlement} from '@contracts/settlement/GlobalSettlement.sol';
 import {ICollateralJoinFactory} from '@interfaces/factories/ICollateralJoinFactory.sol';
 import {ICollateralAuctionHouseFactory} from '@interfaces/factories/ICollateralAuctionHouseFactory.sol';
 import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
-import "forge-std/StdJson.sol";
+import 'forge-std/StdJson.sol';
 
 /// @title ProposeAddCollateral Script
 /// @author OpenDollar
@@ -22,7 +22,7 @@ contract ProposeAddCollateral is JSONScript {
 
   address public governanceAddress;
   address public globalSettlementAddress;
-  bytes32 public newCType;
+  string public newCType;
   address public newCAddress;
   uint256 public minimumBid;
   uint256 public minDiscount;
@@ -32,7 +32,7 @@ contract ProposeAddCollateral is JSONScript {
   function _loadBaseData(string memory json) internal {
     governanceAddress = json.readAddress(string(abi.encodePacked('.ODGovernor')));
     globalSettlementAddress = json.readAddress(string(abi.encodePacked('.GlobalSettlement')));
-    newCType = json.readBytes32(string(abi.encodePacked('.NewCollateralType')));
+    newCType = json.readString(string(abi.encodePacked('.NewCollateralType')));
     newCAddress = json.readAddress(string(abi.encodePacked('.NewCollateralAddress')));
     minimumBid = json.readUint(string(abi.encodePacked('.MinimumBid')));
     minDiscount = json.readUint(string(abi.encodePacked('.MinimumDiscount')));
@@ -46,21 +46,21 @@ contract ProposeAddCollateral is JSONScript {
     IGlobalSettlement globalSettlement = IGlobalSettlement(globalSettlementAddress);
 
     string memory stringCAddress = vm.toString(newCAddress);
-    string memory stringCType = vm.toString(newCType);
+    bytes32 bytesCType = keccak256(abi.encodePacked(newCType));
 
     // Get target contract addresses from GlobalSettlement:
     //  - CollateralJoinFactory
     //  - CollateralAuctionHouseFactory
-    address[] memory targets = new address[](2);
+    address[] memory targets = new address[](1);
     {
       targets[0] = address(globalSettlement.collateralJoinFactory());
-      targets[1] = address(globalSettlement.collateralAuctionHouseFactory());
+      // targets[1] = address(globalSettlement.collateralAuctionHouseFactory());
     }
     // No values needed
-    uint256[] memory values = new uint256[](2);
+    uint256[] memory values = new uint256[](1);
     {
       values[0] = 0;
-      values[1] = 0;
+      // values[1] = 0;
     }
     // Get calldata for:
     //  - CollateralJoinFactory.deployCollateralJoin
@@ -72,7 +72,7 @@ contract ProposeAddCollateral is JSONScript {
       maxDiscount: maxDiscount,
       perSecondDiscountUpdateRate: perSecondDiscountUpdateRate
     });
-    calldatas[0] = abi.encodeWithSelector(ICollateralJoinFactory.deployCollateralJoin.selector, newCType, newCAddress);
+    calldatas[0] = abi.encodeWithSelector(ICollateralJoinFactory.deployCollateralJoin.selector, bytesCType, newCAddress);
 
     // Get the description and descriptionHash
     string memory description = 'Add collateral to the system';
@@ -91,7 +91,7 @@ contract ProposeAddCollateral is JSONScript {
       // Build the JSON output
       string memory objectKey = 'PROPOSE_ADD_COLLATERAL_KEY';
       vm.serializeString(objectKey, 'newCollateralAddress', stringCAddress);
-      vm.serializeString(objectKey, 'newCollateralType', stringCType);
+      vm.serializeString(objectKey, 'newCollateralType', newCType);
       string memory jsonOutput =
         _buildProposalParamsJSON(proposalId, objectKey, targets, values, calldatas, description, descriptionHash);
       vm.writeJson(jsonOutput, string.concat('./gov-output/', stringProposalId, '-add-collateral-proposal.json'));
