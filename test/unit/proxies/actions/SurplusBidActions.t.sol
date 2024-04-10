@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import 'forge-std/Test.sol';
-import {ODProxy} from '@contracts/proxies/ODProxy.sol';
+import {ActionBaseTest, ODProxy} from './ActionBaseTest.sol';
 
 // Mock for testing ODProxy -> SurplusBidActions
 contract SurplusBidActionMock {
@@ -26,10 +26,8 @@ contract SurplusBidActionMock {
 
 // Testing the calls from ODProxy to SurplusBidActions.
 // In this test we don't care about the actual implementation of SurplusBidAction, only that the calls are made correctly
-contract SurplusBidActionTest is Test {
-  address public constant alice = address(0x01);
-  address public constant bob = address(0x02);
-  ODProxy proxy;
+contract SurplusBidActionTest is ActionBaseTest {
+  
   SurplusBidActionMock surplusBidAuction = new SurplusBidActionMock();
 
   function setUp() public {
@@ -49,9 +47,9 @@ contract SurplusBidActionTest is Test {
     );
 
     address savedDataSurplusAuctionHouse =
-      _helperDecodeAsAddress(proxy.execute(target, abi.encodeWithSignature('surplusAuctionHouse()')));
-    uint256 savedDataAuctionId = _helperDecodeAsUint256(proxy.execute(target, abi.encodeWithSignature('auctionId()')));
-    uint256 savedDataBidAmount = _helperDecodeAsUint256(proxy.execute(target, abi.encodeWithSignature('bidAmount()')));
+      decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('surplusAuctionHouse()')));
+    uint256 savedDataAuctionId = decodeAsUint256(proxy.execute(target, abi.encodeWithSignature('auctionId()')));
+    uint256 savedDataBidAmount = decodeAsUint256(proxy.execute(target, abi.encodeWithSignature('bidAmount()')));
 
     assertEq(savedDataSurplusAuctionHouse, _surplusAuctionHouse);
     assertEq(savedDataAuctionId, _auctionId);
@@ -70,18 +68,9 @@ contract SurplusBidActionTest is Test {
       abi.encodeWithSignature('settleAuction(address,address,uint256)', _coinJoin, _surplusAuctionHouse, _auctionId)
     );
 
-    address savedDataCoinJoin = _helperDecodeAsAddress(proxy.execute(target, abi.encodeWithSignature('coinJoin()')));
+    address savedDataCoinJoin = decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('coinJoin()')));
     address savedDataSurplusAuctionHouse =
-      _helperDecodeAsAddress(proxy.execute(target, abi.encodeWithSignature('surplusAuctionHouse()')));
-    uint256 savedDataAuctionId = _helperDecodeAsUint256(proxy.execute(target, abi.encodeWithSignature('auctionId()')));
-  }
-
-  // Helpers
-  function _helperDecodeAsAddress(bytes memory _data) internal pure returns (address) {
-    return address(abi.decode(_data, (address)));
-  }
-
-  function _helperDecodeAsUint256(bytes memory _data) internal pure returns (uint256) {
-    return uint256(abi.decode(_data, (uint256)));
+      decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('surplusAuctionHouse()')));
+    uint256 savedDataAuctionId = decodeAsUint256(proxy.execute(target, abi.encodeWithSignature('auctionId()')));
   }
 }
