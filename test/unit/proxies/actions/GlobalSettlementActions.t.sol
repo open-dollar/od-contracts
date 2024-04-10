@@ -55,7 +55,7 @@ contract GlobalSettlementActionTest is ActionBaseTest {
 
   function test_freeCollateral() public {
     vm.startPrank(alice);
-      address target = address(globalSettlementAction);
+    address target = address(globalSettlementAction);
     address manager = address(0x123);
     address globalSettlement = address(0x456);
     address collateralJoin = address(0x789);
