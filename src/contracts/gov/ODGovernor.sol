@@ -136,6 +136,13 @@ contract ODGovernor is
   }
 
   /**
+   * inherit: GovernorCompatibilityBravo
+   */
+  function cancel(uint256 proposalId) public virtual override(GovernorCompatibilityBravo) {
+    return super.cancel(proposalId);
+  }
+
+  /**
    * inherit: Governor, GovernorTimelockControl
    */
   function _executor() internal view override(Governor, GovernorTimelockControl) returns (address) {
