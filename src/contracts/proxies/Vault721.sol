@@ -7,27 +7,22 @@ import {ERC721EnumerableUpgradeable} from
 import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
+import {IVault721} from '@interfaces/proxies/IVault721.sol';
+import {Modifiable} from '@contracts/utils/Modifiable.sol';
+import {Authorizable} from '@contracts/utils/Authorizable.sol';
+import {Assertions} from '@libraries/Assertions.sol';
+import {Encoding} from '@libraries/Encoding.sol';
+import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 
 // Open Dollar
 // Version 1.6.1
 
-struct HashState {
-  bytes32 lastHash;
-  uint256 lastBlockNumber;
-  uint256 lastBlockTimestamp;
-}
-
 /**
  * @notice Upgradeable contract used as singleton, but is not upgradeable
  */
-contract Vault721 is ERC721EnumerableUpgradeable {
-  error NotGovernor();
-  error NotSafeManager();
-  error NotWallet();
-  error ProxyAlreadyExist();
-  error BlockDelayNotOver();
-  error TimeDelayNotOver();
-  error ZeroAddress();
+contract Vault721 is ERC721EnumerableUpgradeable, Authorizable, Modifiable, IVault721 {
+  using Assertions for address;
+  using Encoding for bytes;
 
   address public timelockController;
   IODSafeManager public safeManager;
@@ -36,29 +31,19 @@ contract Vault721 is ERC721EnumerableUpgradeable {
   uint256 public timeDelay;
 
   string public contractMetaData =
-    '{"name": "Open Dollar Vaults","description": "Open Dollar is a DeFi lending protocol that enables borrowing against liquid staking tokens while earning staking rewards and enabling liquidity via Non-Fungible Vaults (NFVs).","image": "https://app.opendollar.com/collectionImage.png","external_link": "https://opendollar.com"}';
+    '{"name": "Open Dollar Vaults","description": "Open Dollar is a DeFi lending protocol that enables borrowing against liquid staking tokens while earning staking rewards and enabling liquidity via Non-Fungible Vaults (NFVs).","image": "https://app.opendollar.com/collectionImage.png","external_link": "https://app.opendollar.com"}';
 
   mapping(address proxy => address user) internal _proxyRegistry;
   mapping(address user => address proxy) internal _userRegistry;
-  mapping(uint256 vaultId => HashState hashState) internal _hashState;
+  mapping(uint256 vaultId => NFVState nfvState) internal _nfvState;
   mapping(address nftExchange => bool whitelisted) internal _allowlist;
 
-  event CreateProxy(address indexed _user, address indexed _proxy);
+  constructor() Authorizable(msg.sender) {}
 
-  /**
-   * @dev initializes DAO timelockController contract
-   */
   function initialize(address _timelockController) external initializer nonZero(_timelockController) {
     timelockController = _timelockController;
+    // _addAuthorization(timelockController);
     __ERC721_init('OpenDollar Vault', 'ODV');
-  }
-
-  /**
-   * @dev control access for DAO timelockController
-   */
-  modifier onlyGovernance() {
-    if (msg.sender != timelockController) revert NotGovernor();
-    _;
   }
 
   /**
@@ -77,59 +62,44 @@ contract Vault721 is ERC721EnumerableUpgradeable {
     _;
   }
 
-  /**
-   * @dev initializes SafeManager contract
-   */
+  /// @inheritdoc IVault721
   function initializeManager() external {
-    if (address(safeManager) == address(0)) _setSafeManager(msg.sender);
+    if (address(safeManager) == address(0)) safeManager = IODSafeManager(msg.sender);
   }
 
-  /**
-   * @dev initializes NFTRenderer contract
-   */
+  /// @inheritdoc IVault721
   function initializeRenderer() external {
-    if (address(nftRenderer) == address(0)) _setNftRenderer(msg.sender);
+    if (address(nftRenderer) == address(0)) nftRenderer = NFTRenderer(msg.sender);
   }
 
-  /**
-   * @dev get proxy by user address
-   */
+  /// @inheritdoc IVault721
   function getProxy(address _user) external view returns (address _proxy) {
     _proxy = _userRegistry[_user];
   }
 
-  /**
-   * @dev get hash state by vault id
-   */
-  function getHashState(uint256 _vaultId) external view returns (HashState memory) {
-    return _hashState[_vaultId];
+  /// @inheritdoc IVault721
+  function getNfvState(uint256 _vaultId) external view returns (NFVState memory) {
+    return _nfvState[_vaultId];
   }
 
+  /// @inheritdoc IVault721
   function getIsAllowlisted(address _user) external view returns (bool) {
     return _allowlist[_user];
   }
 
-  /**
-   * @dev allows msg.sender without an ODProxy to deploy a new ODProxy
-   */
+  /// @inheritdoc IVault721
   function build() external returns (address payable _proxy) {
     if (!_shouldBuildProxy(msg.sender)) revert ProxyAlreadyExist();
     _proxy = _build(msg.sender);
   }
 
-  /**
-   * @dev allows user without an ODProxy to deploy a new ODProxy
-   */
+  /// @inheritdoc IVault721
   function build(address _user) external returns (address payable _proxy) {
     if (!_shouldBuildProxy(_user)) revert ProxyAlreadyExist();
     _proxy = _build(_user);
   }
 
-  /**
-   * @dev allows user to deploy proxies for multiple users
-   * @param _users array of user addresses
-   * @return _proxies array of proxy addresses
-   */
+  /// @inheritdoc IVault721
   function build(address[] memory _users) external returns (address payable[] memory _proxies) {
     uint256 len = _users.length;
     _proxies = new address payable[](len);
@@ -139,101 +109,46 @@ contract Vault721 is ERC721EnumerableUpgradeable {
     }
   }
 
-  /**
-   * @dev mint can only be called by the SafeManager
-   * enforces that only ODProxies call `openSafe` function by checking _proxyRegistry
-   */
+  /// @inheritdoc IVault721
   function mint(address _proxy, uint256 _safeId) external onlySafeManager {
     require(_proxyRegistry[_proxy] != address(0), 'V721: non-native proxy');
     address _user = _proxyRegistry[_proxy];
     _safeMint(_user, _safeId);
   }
 
-  /**
-   * @dev allows DAO to update protocol implementation on NFTRenderer
-   */
-  function updateNftRenderer(
-    address _nftRenderer,
-    address _oracleRelayer,
-    address _taxCollector,
-    address _collateralJoinFactory
-  ) external onlyGovernance nonZero(_oracleRelayer) nonZero(_taxCollector) nonZero(_collateralJoinFactory) {
-    address _safeManager = address(safeManager);
-    require(_safeManager != address(0));
-    _setNftRenderer(_nftRenderer);
-    nftRenderer.setImplementation(_safeManager, _oracleRelayer, _taxCollector, _collateralJoinFactory);
-  }
+  /// @inheritdoc IVault721
+  function updateNfvState(uint256 _vaultId) external onlySafeManager {
+    (bytes32 _cType, uint256 _collateral, uint256 _debt, address _safeHandler) = _getNfvValue(_vaultId);
 
-  /**
-   * @dev allows ODSafeManager to update the hash state
-   */
-  function updateVaultHashState(uint256 _vaultId) external onlySafeManager {
-    if (safeManager.safeData(_vaultId).safeHandler == address(0)) revert ZeroAddress();
-    _hashState[_vaultId] = HashState({
-      lastHash: nftRenderer.getStateHashBySafeId(_vaultId),
+    _nfvState[_vaultId] = NFVState({
+      cType: _cType,
+      collateral: _collateral,
+      debt: _debt,
       lastBlockNumber: block.number,
-      lastBlockTimestamp: block.timestamp
+      lastBlockTimestamp: block.timestamp,
+      safeHandler: _safeHandler
     });
+
+    emit NFVStateUpdated(_vaultId);
   }
 
   /**
    * @dev allows DAO to update allowlist
    */
-  function updateAllowlist(address _user, bool _allowed) external onlyGovernance nonZero(_user) {
+  function _updateAllowlist(address _user, bool _allowed) internal nonZero(_user) {
     _allowlist[_user] = _allowed;
-  }
-
-  /**
-   * @dev allows DAO to update the time delay
-   */
-  function updateTimeDelay(uint256 _timeDelay) external onlyGovernance {
-    timeDelay = _timeDelay;
-  }
-
-  /**
-   * @dev allows DAO to update the block delay
-   */
-  function updateBlockDelay(uint256 _blockDelay) external onlyGovernance {
-    blockDelay = _blockDelay;
-  }
-
-  /**
-   * @dev update meta data
-   */
-  function updateContractURI(string memory _metaData) external onlyGovernance {
-    contractMetaData = _metaData;
-  }
-
-  /**
-   * @dev allows DAO to update protocol implementation of SafeManager
-   *
-   * WARNING: This function should not be called unless the new SafeManager
-   * is capable of correctly persisting the proper safeId as it relates to the
-   * current tokenId. Additional considerations regarding data migration of
-   * core contracts should be addressed.
-   */
-  function setSafeManager(address _safeManager) external onlyGovernance {
-    _setSafeManager(_safeManager);
-  }
-
-  /**
-   * @dev allows DAO to update protocol implementation of NFTRenderer
-   */
-  function setNftRenderer(address _nftRenderer) external onlyGovernance {
-    _setNftRenderer(_nftRenderer);
   }
 
   /**
    * @dev generate URI with updated vault information
    */
+  /// @inheritdoc ERC721Upgradeable
   function tokenURI(uint256 _safeId) public view override returns (string memory uri) {
     _requireMinted(_safeId);
     uri = nftRenderer.render(_safeId);
   }
 
-  /**
-   * @dev contract level meta data
-   */
+  /// @inheritdoc IVault721
   function contractURI() public view returns (string memory uri) {
     uri = string.concat('data:application/json;utf8,', contractMetaData);
   }
@@ -258,36 +173,91 @@ contract Vault721 is ERC721EnumerableUpgradeable {
   }
 
   /**
-   * @dev set or update protocol implementation of SafeManager
+   * @dev get generated debt and locked collateral of nfv by tokenId
    */
-  function _setSafeManager(address _safeManager) internal nonZero(_safeManager) {
-    safeManager = IODSafeManager(_safeManager);
+  function _getNfvValue(uint256 _vaultId) internal view returns (bytes32, uint256, uint256, address) {
+    IODSafeManager.SAFEData memory safeMangerData = safeManager.safeData(_vaultId);
+    address safeHandler = safeMangerData.safeHandler;
+    if (safeHandler == address(0)) revert ZeroAddress();
+    bytes32 cType = safeMangerData.collateralType;
+    ISAFEEngine.SAFE memory SafeEngineData = ISAFEEngine(safeManager.safeEngine()).safes(cType, safeHandler);
+    return (cType, SafeEngineData.lockedCollateral, SafeEngineData.generatedDebt, safeHandler);
   }
 
   /**
-   * @dev set or update protocol implementation of NFTRenderer
-   */
-  function _setNftRenderer(address _nftRenderer) internal nonZero(_nftRenderer) {
-    nftRenderer = NFTRenderer(_nftRenderer);
-  }
-
-  /**
-   * @dev prevent frontrun state change during token transferFrom
+   * @dev prevent undesirable frontrun state change during token transferFrom
+   * @notice frontrunning that increases the lockedCollateral or decreases the generatedDebt is accepted
    */
   function _enforceStaticState(address _operator, uint256 _tokenId) internal view {
-    // on allowlist addresses, we check the block delay along with the state hash
+    (, uint256 _collateralNow, uint256 _debtNow,) = _getNfvValue(_tokenId);
+    NFVState memory _nfv = _nfvState[_tokenId];
+
+    if (_collateralNow < _nfv.collateral || _debtNow > _nfv.debt) revert StateViolation();
+
     if (_allowlist[_operator]) {
-      if (
-        block.number < _hashState[_tokenId].lastBlockNumber + blockDelay
-          || _hashState[_tokenId].lastHash != nftRenderer.getStateHashBySafeId(_tokenId)
-      ) {
-        revert BlockDelayNotOver();
-      }
-      // on non-allowlist addresses, we just check the time delay
+      if (block.number < _nfv.lastBlockNumber + blockDelay) revert BlockDelayNotOver();
     } else {
-      if (block.timestamp < _hashState[_tokenId].lastBlockTimestamp + timeDelay) {
-        revert TimeDelayNotOver();
-      }
+      if (block.timestamp < _nfv.lastBlockTimestamp + timeDelay) revert TimeDelayNotOver();
+    }
+  }
+
+  /**
+   * @dev allows DAO to update protocol implementation on NFTRenderer
+   */
+  function _updateNftRenderer(
+    address _nftRenderer,
+    address _oracleRelayer,
+    address _taxCollector,
+    address _collateralJoinFactory
+  ) internal {
+    address _safeManager = address(safeManager);
+    _safeManager.assertNonNull();
+    nftRenderer = NFTRenderer(_nftRenderer);
+    nftRenderer.setImplementation(_safeManager, _oracleRelayer, _taxCollector, _collateralJoinFactory);
+  }
+
+  /**
+   * @dev allows DAO to update protocol implementation of SafeManager
+   *
+   * WARNING: SafeManager should not be updated unless the new SafeManager
+   * is capable of correctly persisting the proper safeId as it relates to the
+   * current tokenId. Additional considerations regarding data migration of
+   * core contracts should be addressed.
+   */
+  /// @inheritdoc Modifiable
+  function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
+    address _address = _data.toAddress();
+
+    if (_param == 'safeManager') {
+      safeManager = IODSafeManager(_address.assertNonNull());
+    } else if (_param == 'timelockController') {
+      address oldController = timelockController;
+      _addAuthorization(_address.assertNonNull());
+      timelockController = _address;
+      _removeAuthorization(oldController);
+    } else if (_param == 'nftRenderer') {
+      nftRenderer = NFTRenderer(_address.assertNonNull());
+    } else if (_param == 'blockDelay') {
+      blockDelay = _data.toUint256();
+    } else if (_param == 'timeDelay') {
+      timeDelay = _data.toUint256();
+    } else if (_param == 'updateNFTRenderer') {
+      (address _nftRenderer, address _oracleRelayer, address _taxCollector, address _collateralJoinFactory) =
+        abi.decode(_data, (address, address, address, address));
+      _updateNftRenderer(
+        _nftRenderer.assertNonNull(),
+        _oracleRelayer.assertNonNull(),
+        _taxCollector.assertNonNull(),
+        _collateralJoinFactory.assertNonNull()
+      );
+    } else if (_param == 'updateAllowlist') {
+      (address _user, bool _bool) = abi.decode(_data, (address, bool));
+      _user.assertNonNull();
+      _updateAllowlist(_user, _bool);
+    } else if (_param == 'contractURI') {
+      contractMetaData = abi.decode(_data, (string));
+    } else {
+      revert UnrecognizedParam();
     }
   }
 

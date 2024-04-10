@@ -5,6 +5,7 @@ import {JSONScript} from '@script/testScripts/gov/JSONScript.s.sol';
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 import {IVault721} from '@interfaces/proxies/IVault721.sol';
 import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
+import {Modifiable} from '@contracts/utils/Modifiable.sol';
 
 /// @title UpdateTimeDelay Script
 /// @author OpenDollar
@@ -36,7 +37,7 @@ contract UpdateTimeDelay is JSONScript {
     }
 
     bytes[] memory calldatas = new bytes[](1);
-    calldatas[0] = abi.encodeWithSelector(IVault721.updateTimeDelay.selector, timeDelay);
+    calldatas[0] = abi.encodeWithSelector(Modifiable.modifyParameters.selector, timeDelay);
 
     string memory description = 'Update Time Delay';
     bytes32 descriptionHash = keccak256(bytes(description));
