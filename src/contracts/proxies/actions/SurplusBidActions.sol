@@ -40,7 +40,7 @@ contract SurplusBidActions is ISurplusBidActions, CommonActions {
   }
 
   /// @inheritdoc ISurplusBidActions
-    function settleAuction(address _coinJoin, address _surplusAuctionHouse, uint256 _auctionId) external delegateCall {
+  function settleAuction(address _coinJoin, address _surplusAuctionHouse, uint256 _auctionId) external delegateCall {
     uint256 _amountToSell = ISurplusAuctionHouse(_surplusAuctionHouse).auctions(_auctionId).amountToSell;
     ISurplusAuctionHouse(_surplusAuctionHouse).settleAuction(_auctionId);
 
