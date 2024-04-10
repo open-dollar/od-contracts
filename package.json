@@ -28,7 +28,7 @@
     "deploy:anvil": "bash -c 'source .env && forge script DeployAnvil --with-gas-price 2000000000 -vvvvv --rpc-url $ANVIL_RPC --private-key $ANVIL_ONE --broadcast --ffi' && mkdir -p deployments/anvil/ && cp broadcast/Deploy.s.sol/31337/run-latest.json deployments/anvil/ && node tasks/parseAnvilDeployments.js",
     "deploy:mainnet": "bash -c 'source .env && forge script DeployMainnet --rpc-url $ARB_MAINNET_RPC --broadcast --private-key $ARB_MAINNET_DEPLOYER_PK --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY'",
     "deploy:mainnet:ffi": "bash -c 'source .env && forge script DeployMainnet --rpc-url $ARB_MAINNET_RPC --broadcast --private-key $ARB_MAINNET_DEPLOYER_PK --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY --ffi'",
-    "deploy:sepolia:ffi": "bash -c 'source .env && forge script DeploySepolia --with-gas-price 2000000000 -vvvvv --chain-id 461614 --rpc-url $ARB_SEPOLIA_RPC --private-key $ARB_SEPOLIA_DEPLOYER_PK --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY --ffi'",
+    "deploy:sepolia:ffi": "bash -c 'source .env && forge script DeploySepolia --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC --private-key $ARB_SEPOLIA_DEPLOYER_PK --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY --ffi'",
     "postinstall": "forge install",
     "lint:check": "yarn lint:sol && forge fmt --check",
     "lint:fix": "sort-package-json && forge fmt && yarn lint:sol --fix",

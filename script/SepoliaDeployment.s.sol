@@ -22,7 +22,7 @@ abstract contract SepoliaDeployment is Contracts, SepoliaParams, SepoliaContract
     delegatee[ARB] = governor;
 
     // --- ERC20s ---
-    collateral[ARB] = IERC20Metadata(address(MintableVoteERC20_Address));
+    collateral[ARB] = IERC20Metadata(address(MintableVoteERC20_ARB_Address));
     collateral[WSTETH] = IERC20Metadata(MintableERC20_WSTETH_Address);
     collateral[CBETH] = IERC20Metadata(MintableERC20_CBETH_Address);
     collateral[RETH] = IERC20Metadata(MintableERC20_RETH_Address);
