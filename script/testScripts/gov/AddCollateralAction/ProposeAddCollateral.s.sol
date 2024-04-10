@@ -8,11 +8,11 @@ import {ICollateralJoinFactory} from '@interfaces/factories/ICollateralJoinFacto
 import {ICollateralAuctionHouseFactory} from '@interfaces/factories/ICollateralAuctionHouseFactory.sol';
 import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
 import 'forge-std/StdJson.sol';
+import 'forge-std/console2.sol';
 
 /// @title ProposeAddCollateral Script
 /// @author OpenDollar
 /// @notice Script to propose adding a new collateral type to the system via ODGovernance
-/// @dev NOTE This script requires the following env vars in the REQUIRED ENV VARS section below
 /// @dev This script is used to propose adding a new collateral type to the system
 /// @dev The script will propose a deployment of new CollateralJoin and CollateralAuctionHouse contracts
 /// @dev The script will output a JSON file with the proposal data to be used by the QueueProposal and ExecuteProposal scripts
@@ -22,7 +22,7 @@ contract ProposeAddCollateral is JSONScript {
 
   address public governanceAddress;
   address public globalSettlementAddress;
-  string public newCType;
+  bytes32 public newCType;
   address public newCAddress;
   uint256 public minimumBid;
   uint256 public minDiscount;
@@ -32,7 +32,7 @@ contract ProposeAddCollateral is JSONScript {
   function _loadBaseData(string memory json) internal {
     governanceAddress = json.readAddress(string(abi.encodePacked('.ODGovernor')));
     globalSettlementAddress = json.readAddress(string(abi.encodePacked('.GlobalSettlement')));
-    newCType = json.readString(string(abi.encodePacked('.NewCollateralType')));
+    newCType = bytes32(abi.encodePacked(json.readString(string(abi.encodePacked('.NewCollateralType')))));
     newCAddress = json.readAddress(string(abi.encodePacked('.NewCollateralAddress')));
     minimumBid = json.readUint(string(abi.encodePacked('.MinimumBid')));
     minDiscount = json.readUint(string(abi.encodePacked('.MinimumDiscount')));
@@ -46,11 +46,11 @@ contract ProposeAddCollateral is JSONScript {
     IGlobalSettlement globalSettlement = IGlobalSettlement(globalSettlementAddress);
 
     string memory stringCAddress = vm.toString(newCAddress);
-    bytes32 bytesCType = keccak256(abi.encodePacked(newCType));
+    string memory stringCType = vm.toString(newCType);
 
     // Get target contract addresses from GlobalSettlement:
     //  - CollateralJoinFactory
-    //  - CollateralAuctionHouseFactory
+    //  - CollateralAuctionHouseFactory note why is this address also a target?
     address[] memory targets = new address[](1);
     {
       targets[0] = address(globalSettlement.collateralJoinFactory());
@@ -72,7 +72,7 @@ contract ProposeAddCollateral is JSONScript {
       maxDiscount: maxDiscount,
       perSecondDiscountUpdateRate: perSecondDiscountUpdateRate
     });
-    calldatas[0] = abi.encodeWithSelector(ICollateralJoinFactory.deployCollateralJoin.selector, bytesCType, newCAddress);
+    calldatas[0] = abi.encodeWithSelector(ICollateralJoinFactory.deployCollateralJoin.selector, newCType, newCAddress);
 
     // Get the description and descriptionHash
     string memory description = 'Add collateral to the system';
@@ -82,7 +82,7 @@ contract ProposeAddCollateral is JSONScript {
 
     // Propose the action to add the collateral type
     uint256 proposalId = gov.propose(targets, values, calldatas, description);
-    string memory stringProposalId = vm.toString(bytes4(bytes(vm.toString(proposalId))));
+    string memory stringProposalId = vm.toString(proposalId);
 
     // Verify the proposalId is expected
     assert(proposalId == gov.hashProposal(targets, values, calldatas, descriptionHash));
@@ -91,7 +91,7 @@ contract ProposeAddCollateral is JSONScript {
       // Build the JSON output
       string memory objectKey = 'PROPOSE_ADD_COLLATERAL_KEY';
       vm.serializeString(objectKey, 'newCollateralAddress', stringCAddress);
-      vm.serializeString(objectKey, 'newCollateralType', newCType);
+      vm.serializeString(objectKey, 'newCollateralType', stringCType);
       string memory jsonOutput =
         _buildProposalParamsJSON(proposalId, objectKey, targets, values, calldatas, description, descriptionHash);
       vm.writeJson(jsonOutput, string.concat('./gov-output/', stringProposalId, '-add-collateral-proposal.json'));
