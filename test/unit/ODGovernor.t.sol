@@ -123,7 +123,7 @@ contract Unit_ODGovernorTest is Base {
     uint256 propId = odGovernor.propose(targets, values, calldatas, proposal_description);
     vm.roll(1000); // move to block number to some point inside the voting window
 
-    odGovernor.cancel(propId);
+    odGovernor.cancel(targets, values, calldatas, proposal_hash);
     uint256 proposalState = uint256(odGovernor.state(propId));
     assertEq(proposalState, uint256(IGovernor.ProposalState.Canceled));
   }
