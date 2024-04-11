@@ -18,7 +18,7 @@ function propose(){
             echo "Unrecognized target environment"
             exit 1    
       fi
-    
+
       FOUNDRY_PROFILE=governance forge script script/testScripts/gov/Proposer.s.sol:Proposer -s $CALLDATA --rpc-url $RPC_ENDPOINT
 
       read -p "Please verify the data and confirm the submission of this proposal (y/n):" CONFIRMATION
@@ -31,10 +31,7 @@ if [[ $CONFIRMATION == "y" || $CONFIRMATION == "Y" ]]
 fi
 }
 
-while :
-do
-    case "$1" in
-      "")
+function display_help() {
             echo "Usage:"
             echo " yarn script:propose [target environment] [proposalType] "
             echo "    where target environment (required): anvil / arb-sepolia  / arb-mainnet"
@@ -43,11 +40,17 @@ do
             echo ""
             echo "Example:"
             echo "yarn script:propose arb-sepolia /gov-output/arb-sepolia/67531219-add-collateral-proposal.json"
-        exit 1
+        exit 0
+}
+
+while :
+do
+    case "$1" in
+      "")
+        display_help
           ;;
       -h | --help)
           display_help
-          exit 1
           ;;
       -d | --display)
           display="$2"
@@ -81,8 +84,11 @@ done
 # is set then execute #
 ######################
 
-if [[ $1 != "" ]]
-  then propose $1 $2
-
+if [[ $1 != "" && $2 != "" ]]
+    then 
+    propose $1 $2
+    else 
+    display_help
 fi
 
+exit 0;

@@ -50,7 +50,6 @@ do
           ;;
       -h | --help)
           display_help
-          exit 1
           ;;
       --) # End of all options
           shift
