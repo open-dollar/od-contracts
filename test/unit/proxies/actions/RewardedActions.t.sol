@@ -2,189 +2,150 @@
 pragma solidity 0.8.19;
 
 import {ActionBaseTest, ODProxy} from './ActionBaseTest.sol';
+import {RewardedActions} from '@contracts/proxies/actions/RewardedActions.sol';
+import {CoinJoinMock} from './SurplusBidActions.t.sol';
 
-// Mock for testing ODProxy -> RewardActions
-contract RewardActionsMock {
-  address public accountingJob;
-  address public coinJoin;
-  uint256 public debtTimestamp;
-  bytes32 public cType;
-  address public safe;
-  address public oracleJob;
+contract AccountingJobMock {
 
-  function startDebtAuction(address _accountingJob, address _coinJoin) external {
-    accountingJob = _accountingJob;
-    coinJoin = _coinJoin;
+  bool public wasWorkAuctionDebtCalled;
+  bool public wasWorkAuctionSurplusCalled;
+  bool public wasWorkPopDebtFromQueueCalled;
+  uint256 public rewardAmount;
+
+  function reset() external {
+    wasWorkAuctionDebtCalled = false;
+    wasWorkAuctionSurplusCalled = false;
+  wasWorkPopDebtFromQueueCalled = false;
   }
 
-  function startSurplusAuction(address _accountingJob, address _coinJoin) external {
-    accountingJob = _accountingJob;
-    coinJoin = _coinJoin;
+  function _mock_setRewardAmount(uint256 _rewardAmount) external {
+    rewardAmount = _rewardAmount;
   }
 
-  function popDebtFromQueue(address _accountingJob, address _coinJoin, uint256 _debtTimestamp) external {
-    accountingJob = _accountingJob;
-    coinJoin = _coinJoin;
-    debtTimestamp = _debtTimestamp;
+  function workAuctionDebt() external {
+    wasWorkAuctionDebtCalled = true;
   }
 
-  function auctionSurplus(address _accountingJob, address _coinJoin) external {
-    accountingJob = _accountingJob;
-    coinJoin = _coinJoin;
+  function workAuctionSurplus() external {
+    wasWorkAuctionSurplusCalled = true;
   }
 
-  function liquidateSAFE(address _liquidationJob, address _coinJoin, bytes32 _cType, address _safe) external {
-    oracleJob = _liquidationJob;
-    coinJoin = _coinJoin;
-    cType = _cType;
-    safe = _safe;
-  }
-
-  function updateCollateralPrice(address _oracleJob, address _coinJoin, bytes32 _cType) external {
-    oracleJob = _oracleJob;
-    coinJoin = _coinJoin;
-    cType = _cType;
-  }
-
-  function updateRedemptionRate(address _oracleJob, address _coinJoin) external {
-    oracleJob = _oracleJob;
-    coinJoin = _coinJoin;
+  function workPopDebtFromQueue(uint256 _debtBlockTimestamp) external {
+     wasWorkPopDebtFromQueueCalled = true;
   }
 }
 
-// Testing the calls from ODProxy to RewardActions.
-// In this test we don't care about the actual implementation of SurplusBidAction, only that the calls are made correctly
-contract RewardActionsTest is ActionBaseTest {
-  RewardActionsMock rewardActions;
+contract LiquidationEngineMock {
+
+  bool public wasWorkLiquidationCalled;
+  uint256 public rewardAmount;
+
+  function reset() external {
+    wasWorkLiquidationCalled = false;
+  }
+
+  function _mock_setRewardAmount(uint256 _rewardAmount) external {
+    rewardAmount = _rewardAmount;
+  }
+
+  function workLiquidation(bytes32 _cType, address _safe) external {
+    wasWorkLiquidationCalled = true;
+  }
+
+}
+
+contract OracleJobMock {
+
+  bool public wasWorkUpdateCollateralPrice;
+  bool public wasWorkUpdateRate;
+  uint256 public rewardAmount;
+
+  function _mock_setRewardAmount(uint256 _rewardAmount) external {
+    rewardAmount = _rewardAmount;
+  }
+
+  function reset() external {
+    wasWorkUpdateCollateralPrice = false;
+    wasWorkUpdateRate = false;
+  }
+
+  function workUpdateCollateralPrice(bytes32 _cType) external {
+    wasWorkUpdateCollateralPrice = true;
+  }
+
+  function workUpdateRate() external {
+    wasWorkUpdateCollateralPrice = true;
+  }
+
+}
+
+
+// Testing the calls from ODProxy to RewardedActions
+contract RewardedActionsTest is ActionBaseTest {
+  RewardedActions rewardedActions = new RewardedActions();
+  AccountingJobMock accountingJob = new AccountingJobMock();
+  CoinJoinMock coinJoin = new CoinJoinMock();
+  LiquidationEngineMock liquidationEngine = new LiquidationEngineMock();
+  OracleJobMock oracleJob = new OracleJobMock();
 
   function setUp() public {
     proxy = new ODProxy(alice);
-    rewardActions = new RewardActionsMock();
   }
 
-  function test_callStartDebtAuction() public {
+  function test_startDebtAuction() public {
+    accountingJob.reset();
+    accountingJob._mock_setRewardAmount(100);
     vm.startPrank(alice);
-    address target = address(rewardActions);
-    address accountingJob = address(0x123);
-    address coinJoin = address(0x456);
-
-    proxy.execute(target, abi.encodeWithSignature('startDebtAuction(address,address)', accountingJob, coinJoin));
-
-    address savedDataAccountingJob = decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('accountingJob()')));
-    address savedDataCoinJoin = decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('coinJoin()')));
-
-    assertEq(savedDataAccountingJob, accountingJob);
-    assertEq(savedDataCoinJoin, coinJoin);
+    proxy.execute(address(rewardedActions), abi.encodeWithSignature('startDebtAuction(address,address)', address(accountingJob), address(coinJoin)));
+    assertTrue(accountingJob.wasWorkAuctionDebtCalled());
   }
 
   function test_startSurplusAuction() public {
+    accountingJob.reset();
+    accountingJob._mock_setRewardAmount(100);
     vm.startPrank(alice);
-    address target = address(rewardActions);
-    address accountingJob = address(0x123);
-    address coinJoin = address(0x456);
-
-    proxy.execute(target, abi.encodeWithSignature('startSurplusAuction(address,address)', accountingJob, coinJoin));
-
-    address savedDataAccountingJob = decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('accountingJob()')));
-    address savedDataCoinJoin = decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('coinJoin()')));
-
-    assertEq(savedDataAccountingJob, accountingJob);
-    assertEq(savedDataCoinJoin, coinJoin);
+    proxy.execute(address(rewardedActions), abi.encodeWithSignature('startSurplusAuction(address,address)', address(accountingJob), address(coinJoin)));
+    assertTrue(accountingJob.wasWorkAuctionSurplusCalled());
   }
 
   function test_popDebtFromQueue() public {
+    accountingJob.reset();
+    accountingJob._mock_setRewardAmount(100);
     vm.startPrank(alice);
-    // function popDebtFromQueue(address _accountingJob, address _coinJoin, uint256 _debtTimestamp) external {
-    address target = address(rewardActions);
-    address accountingJob = address(0x123);
-    address coinJoin = address(0x456);
-    uint256 debtTimestamp = 123;
-
-    proxy.execute(
-      target,
-      abi.encodeWithSignature('popDebtFromQueue(address,address,uint256)', accountingJob, coinJoin, debtTimestamp)
-    );
-
-    address savedDataAccountingJob = decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('accountingJob()')));
-    address savedDataCoinJoin = decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('coinJoin()')));
-    uint256 savedDataDebtTimestamp = decodeAsUint256(proxy.execute(target, abi.encodeWithSignature('debtTimestamp()')));
-
-    assertEq(savedDataAccountingJob, accountingJob);
-    assertEq(savedDataCoinJoin, coinJoin);
-    assertEq(savedDataDebtTimestamp, debtTimestamp);
+    proxy.execute(address(rewardedActions), abi.encodeWithSignature('popDebtFromQueue(address,address,uint256)', address(accountingJob), address(coinJoin), 0));
+    assertTrue(accountingJob.wasWorkPopDebtFromQueueCalled());
   }
 
   function test_auctionSurplus() public {
+    accountingJob.reset();
+    accountingJob._mock_setRewardAmount(100);
     vm.startPrank(alice);
-    address target = address(rewardActions);
-    address accountingJob = address(0x123);
-    address coinJoin = address(0x456);
-
-    proxy.execute(target, abi.encodeWithSignature('auctionSurplus(address,address)', accountingJob, coinJoin));
-
-    address savedDataAccountingJob = decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('accountingJob()')));
-    address savedDataCoinJoin = decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('coinJoin()')));
-
-    assertEq(savedDataAccountingJob, accountingJob);
-    assertEq(savedDataCoinJoin, coinJoin);
+    proxy.execute(address(rewardedActions), abi.encodeWithSignature('auctionSurplus(address,address)', address(accountingJob), address(coinJoin)));
+    assertTrue(accountingJob.wasWorkAuctionSurplusCalled());
   }
 
   function test_liquidateSAFE() public {
+    liquidationEngine.reset();
     vm.startPrank(alice);
-    address target = address(rewardActions);
-    address liquidationJob = address(0x123);
-    address coinJoin = address(0x456);
-    bytes32 cType = bytes32(uint256(1));
-    address safe = address(0x789);
-
-    proxy.execute(
-      target,
-      abi.encodeWithSignature('liquidateSAFE(address,address,bytes32,address)', liquidationJob, coinJoin, cType, safe)
-    );
-
-    address savedDataLiquidationJob = decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('oracleJob()')));
-    address savedDataCoinJoin = decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('coinJoin()')));
-    bytes32 savedDataCType = bytes32(decodeAsUint256(proxy.execute(target, abi.encodeWithSignature('cType()'))));
-    address savedDataSafe = decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('safe()')));
-
-    assertEq(savedDataLiquidationJob, liquidationJob);
-    assertEq(savedDataCoinJoin, coinJoin);
-    assertEq(savedDataCType, cType);
-    assertEq(savedDataSafe, safe);
+    proxy.execute(address(rewardedActions), abi.encodeWithSignature('liquidateSAFE(address,address,bytes32,address)', address(liquidationEngine), address(coinJoin), bytes32(0), address(0)));
+    assertTrue(liquidationEngine.wasWorkLiquidationCalled());
   }
 
   function test_updateCollateralPrice() public {
+    oracleJob.reset();
+    oracleJob._mock_setRewardAmount(100);
+    coinJoin.reset();
     vm.startPrank(alice);
-    address target = address(rewardActions);
-    address oracleJob = address(0x123);
-    address coinJoin = address(0x456);
-    bytes32 cType = bytes32(uint256(1));
-
-    proxy.execute(
-      target, abi.encodeWithSignature('updateCollateralPrice(address,address,bytes32)', oracleJob, coinJoin, cType)
-    );
-
-    address savedDataOracleJob = decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('oracleJob()')));
-    address savedDataCoinJoin = decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('coinJoin()')));
-    bytes32 savedDataCType = bytes32(decodeAsUint256(proxy.execute(target, abi.encodeWithSignature('cType()'))));
-
-    assertEq(savedDataOracleJob, oracleJob);
-    assertEq(savedDataCoinJoin, coinJoin);
-    assertEq(savedDataCType, cType);
+    proxy.execute(address(rewardedActions), abi.encodeWithSignature('updateCollateralPrice(address,address,bytes32)', address(oracleJob), address(coinJoin), bytes32(0)));
+    assertTrue(oracleJob.wasWorkUpdateCollateralPrice());
   }
 
   function test_updateRedemptionRate() public {
+    oracleJob.reset();
+    oracleJob._mock_setRewardAmount(100);
     vm.startPrank(alice);
-    address target = address(rewardActions);
-    address oracleJob = address(0x123);
-    address coinJoin = address(0x456);
-
-    proxy.execute(target, abi.encodeWithSignature('updateRedemptionRate(address,address)', oracleJob, coinJoin));
-
-    address savedDataOracleJob = decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('oracleJob()')));
-    address savedDataCoinJoin = decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('coinJoin()')));
-
-    assertEq(savedDataOracleJob, oracleJob);
-    assertEq(savedDataCoinJoin, coinJoin);
+    proxy.execute(address(rewardedActions), abi.encodeWithSignature('updateRedemptionRate(address,address)', address(oracleJob), address(coinJoin)));
+    assertTrue(oracleJob.wasWorkUpdateCollateralPrice());
   }
+
 }

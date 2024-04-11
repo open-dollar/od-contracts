@@ -8,19 +8,38 @@ import {ICommonSurplusAuctionHouse} from '@interfaces/ICommonSurplusAuctionHouse
 import {SurplusBidActions} from '@contracts/proxies/actions/SurplusBidActions.sol';
 import {ProtocolToken} from '@contracts/tokens/ProtocolToken.sol';
 
+import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
+
 contract SafeEngineMock {
 
   bool public wasApproveSAFEModificationCalled;
 
   bool public canModifySAF;
+  ISAFEEngine.SAFE public safe;
+  uint256 public collateralBalance;
+  uint256 public coinBalancePoint;
 
   function reset() external {
     wasApproveSAFEModificationCalled = false;
     canModifySAF = false;
+    safe = ISAFEEngine.SAFE(0, 0);
+    collateralBalance = 0;
+  }
+
+  function _mock_setCollateralBalance(uint256 _collateralBalance) external {
+    collateralBalance = _collateralBalance;
+  }
+
+  function _mock_addSafeData(uint256 lockedCollateral, uint256 generatedDebt) external {
+    safe =  ISAFEEngine.SAFE(lockedCollateral, generatedDebt);
   }
 
   function mock_setCanModifySAFE(bool _canModifySAFE) external {
     canModifySAF = _canModifySAFE;
+  }
+
+  function mock_setCoinBalance(uint256 _coinBalance) external {
+    coinBalancePoint = _coinBalance;
   }
 
   function canModifySAFE(address _safe, address _account) external view returns (bool _allowed) {
@@ -29,6 +48,18 @@ contract SafeEngineMock {
 
   function approveSAFEModification(address _account) external {
     wasApproveSAFEModificationCalled = true;
+  }
+
+  function tokenCollateral(bytes32 _cType, address _account) external view returns (uint256 _collateralBalance) {
+    return collateralBalance;
+  }
+
+  function safes(bytes32 _cType, address _safeAddress) external view returns (ISAFEEngine.SAFE memory _safeData) {
+    return safe;
+  }
+
+  function coinBalance(address _account) external view returns (uint256 _coinBalance) {
+    return coinBalancePoint;
   }
 }
 
@@ -155,8 +186,6 @@ contract SurplusBidActionTest is ActionBaseTest {
   }
 
   function test_settleAuctionWithSafeModificationFalse() public {
-      SurplusActionsHouseMock surplusActionsHouseMock = new SurplusActionsHouseMock();
-    CoinJoinMock coinJoin = new CoinJoinMock();
     address _coinJoin = address(coinJoin);
     address _surplusAuctionHouse = address(surplusActionsHouseMock);
     uint256 _auctionId = 1;

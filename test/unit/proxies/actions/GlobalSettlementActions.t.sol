@@ -2,125 +2,138 @@
 pragma solidity 0.8.19;
 
 import {ActionBaseTest, ODProxy} from './ActionBaseTest.sol';
+import {IODSafeManager} from '@contracts/proxies/ODSafeManager.sol';
+import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
+import {GlobalSettlementActions} from '@contracts/proxies/actions/GlobalSettlementActions.sol';
+import {SafeEngineMock} from './SurplusBidActions.t.sol';
 
-// Mock for testing ODProxy -> GlobalSettlementAction
-contract GlobalSettlementActionMock {
-  address public manager;
-  address public globalSettlement;
-  address public collateralJoin;
-  uint256 public safeId;
-  address public coinJoin;
-  uint256 public coinAmount;
 
-  function freeCollateral(
-    address _manager,
-    address _globalSettlement,
-    address _collateralJoin,
-    uint256 _safeId
-  ) external returns (uint256 _collateralAmount) {
-    manager = _manager;
-    globalSettlement = _globalSettlement;
-    collateralJoin = _collateralJoin;
-    safeId = _safeId;
+contract ODSafeManagerMock {
 
-    return 2024;
+  IODSafeManager.SAFEData public safeDataPoint;
+  address public safeEngine;
+
+  bool public wasQuitSystemCalled;
+  uint256 public collateralBalance;
+
+  constructor() {
+    safeEngine = address(new SafeEngineMock());
   }
 
-  function prepareCoinsForRedeeming(address _globalSettlement, address _coinJoin, uint256 _coinAmount) external {
-    globalSettlement = _globalSettlement;
-    coinJoin = _coinJoin;
-    coinAmount = _coinAmount;
+  function reset() external {
+    safeDataPoint = IODSafeManager.SAFEData(0, address(0), address(0), bytes32(0));
+    wasQuitSystemCalled = false;
+
   }
 
-  function redeemCollateral(
-    address _globalSettlement,
-    address _collateralJoin
-  ) external returns (uint256 _collateralAmount) {
-    globalSettlement = _globalSettlement;
-    collateralJoin = _collateralJoin;
+  function _mock_setSafeData(
+    uint96 _nonce,
+    address _owner,
+    address _safeHandler,
+    bytes32 _collateralType
+  ) external {
+    safeDataPoint = IODSafeManager.SAFEData(_nonce, _owner, _safeHandler, _collateralType);
+  }
 
-    return 2024;
+  function _mock_setCollateralBalance(uint256 _collateralBalance) external {
+    collateralBalance = _collateralBalance;
+  }
+
+  function safeData(uint256 _safe) external view returns (IODSafeManager.SAFEData memory _sData) {
+    return safeDataPoint;
+  }
+
+  function quitSystem(uint256 _safe, address _dst) external {
+    wasQuitSystemCalled = true;
+  }
+
+  function tokenCollateral(bytes32 _cType, address _account) external view returns (uint256 _collateralBalance) {
+    return collateralBalance;
+  }
+}
+
+contract GlobalSettlementMock {
+
+  bool public wasProcessSAFECalled;
+  bool public wasFreeCollateralCalled;
+  bool public wasPrepareCoinsForRedeemingCalled;
+  address public safeEngine;
+
+  function reset() external {
+    wasProcessSAFECalled = false;
+    wasFreeCollateralCalled = false;
+    wasPrepareCoinsForRedeemingCalled = false;
+  }
+
+  function _mock_setSafeEngine(address _safeEngine) external {
+    safeEngine = _safeEngine;
+  }
+
+  function processSAFE(bytes32 _cType, address _safe) external {
+    wasProcessSAFECalled = true;
+  }
+
+  function freeCollateral(bytes32 _cType) external {
+    wasFreeCollateralCalled = true;
+  }
+
+  function prepareCoinsForRedeeming(uint256 _coinAmount) external {
+    wasPrepareCoinsForRedeemingCalled = true;
   }
 }
 
 // Testing the calls from ODProxy to GlobalSettlementAction.
 // In this test we don't care about the actual implementation of SurplusBidAction, only that the calls are made correctly
 contract GlobalSettlementActionTest is ActionBaseTest {
-  GlobalSettlementActionMock globalSettlementAction;
+
+  GlobalSettlementActions globalSettlementAction = new GlobalSettlementActions();
+  GlobalSettlementMock globalSettlementMock = new GlobalSettlementMock();
+  ODSafeManagerMock odSafeManagerMock = new ODSafeManagerMock();
 
   function setUp() public {
     proxy = new ODProxy(alice);
-    globalSettlementAction = new GlobalSettlementActionMock();
   }
 
   function test_freeCollateral() public {
+    globalSettlementMock.reset();
     vm.startPrank(alice);
-    address target = address(globalSettlementAction);
-    address manager = address(0x123);
-    address globalSettlement = address(0x456);
-    address collateralJoin = address(0x789);
-    uint256 safeId = 123;
+    odSafeManagerMock._mock_setSafeData(0, alice, alice, bytes32(0));
+    odSafeManagerMock._mock_setCollateralBalance(100);
 
     proxy.execute(
-      target,
-      abi.encodeWithSignature(
-        'freeCollateral(address,address,address,uint256)', manager, globalSettlement, collateralJoin, safeId
+      address(globalSettlementAction),
+      abi.encodeWithSelector(
+        globalSettlementAction.freeCollateral.selector,
+        address(odSafeManagerMock),
+        address(globalSettlementMock),
+        address(0),
+        0
       )
     );
+     assertTrue(odSafeManagerMock.wasQuitSystemCalled());
 
-    address savedDataManager = decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('manager()')));
-    address savedDataGlobalSettlement =
-      decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('globalSettlement()')));
-    address savedDataCollateralJoin =
-      decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('collateralJoin()')));
-    uint256 savedDataSafeId = decodeAsUint256(proxy.execute(target, abi.encodeWithSignature('safeId()')));
-
-    assertEq(savedDataManager, manager);
-    assertEq(savedDataGlobalSettlement, globalSettlement);
-    assertEq(savedDataCollateralJoin, collateralJoin);
-    assertEq(savedDataSafeId, safeId);
   }
 
   function test_prepareCoinsForRedeeming() public {
+    globalSettlementMock.reset();
     vm.startPrank(alice);
-    address target = address(globalSettlementAction);
-    address globalSettlement = address(0x123);
-    address coinJoin = address(0x456);
-    uint256 coinAmount = 123;
+    odSafeManagerMock._mock_setSafeData(0, alice, alice, bytes32(0));
+    odSafeManagerMock._mock_setCollateralBalance(100);
+
+    SafeEngineMock safeEngineMock = SafeEngineMock(odSafeManagerMock.safeEngine());
+    safeEngineMock.mock_setCoinBalance(100);
+    globalSettlementMock._mock_setSafeEngine(address(safeEngineMock));
 
     proxy.execute(
-      target,
-      abi.encodeWithSignature(
-        'prepareCoinsForRedeeming(address,address,uint256)', globalSettlement, coinJoin, coinAmount
+      address(globalSettlementAction),
+      abi.encodeWithSelector(
+        globalSettlementAction.prepareCoinsForRedeeming.selector,
+        address(globalSettlementMock),
+        address(0),
+        0
       )
     );
-
-    address savedDataGlobalSettlement =
-      decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('globalSettlement()')));
-    address savedDataCoinJoin = decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('coinJoin()')));
-    uint256 savedDataCoinAmount = decodeAsUint256(proxy.execute(target, abi.encodeWithSignature('coinAmount()')));
-
-    assertEq(savedDataGlobalSettlement, globalSettlement);
-    assertEq(savedDataCoinJoin, coinJoin);
-    assertEq(savedDataCoinAmount, coinAmount);
-  }
-
-  function test_redeemCollateral() public {
-    vm.startPrank(alice);
-    address target = address(globalSettlementAction);
-    address globalSettlement = address(0x123);
-    address collateralJoin = address(0x456);
-
-    proxy.execute(
-      target, abi.encodeWithSignature('redeemCollateral(address,address)', globalSettlement, collateralJoin)
-    );
-
-    address savedDataGlobalSettlement =
-      decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('globalSettlement()')));
-    address savedDataCollateralJoin =
-      decodeAsAddress(proxy.execute(target, abi.encodeWithSignature('collateralJoin()')));
-
-    assertEq(savedDataGlobalSettlement, globalSettlement);
-    assertEq(savedDataCollateralJoin, collateralJoin);
+    
+    assertTrue(globalSettlementMock.wasPrepareCoinsForRedeemingCalled());
   }
 }
