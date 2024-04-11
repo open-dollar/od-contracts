@@ -6,7 +6,6 @@ import {RewardedActions} from '@contracts/proxies/actions/RewardedActions.sol';
 import {CoinJoinMock} from './SurplusBidActions.t.sol';
 
 contract AccountingJobMock {
-
   bool public wasWorkAuctionDebtCalled;
   bool public wasWorkAuctionSurplusCalled;
   bool public wasWorkPopDebtFromQueueCalled;
@@ -15,7 +14,7 @@ contract AccountingJobMock {
   function reset() external {
     wasWorkAuctionDebtCalled = false;
     wasWorkAuctionSurplusCalled = false;
-  wasWorkPopDebtFromQueueCalled = false;
+    wasWorkPopDebtFromQueueCalled = false;
   }
 
   function _mock_setRewardAmount(uint256 _rewardAmount) external {
@@ -31,12 +30,11 @@ contract AccountingJobMock {
   }
 
   function workPopDebtFromQueue(uint256 _debtBlockTimestamp) external {
-     wasWorkPopDebtFromQueueCalled = true;
+    wasWorkPopDebtFromQueueCalled = true;
   }
 }
 
 contract LiquidationEngineMock {
-
   bool public wasWorkLiquidationCalled;
   uint256 public rewardAmount;
 
@@ -51,11 +49,9 @@ contract LiquidationEngineMock {
   function workLiquidation(bytes32 _cType, address _safe) external {
     wasWorkLiquidationCalled = true;
   }
-
 }
 
 contract OracleJobMock {
-
   bool public wasWorkUpdateCollateralPrice;
   bool public wasWorkUpdateRate;
   uint256 public rewardAmount;
@@ -76,9 +72,7 @@ contract OracleJobMock {
   function workUpdateRate() external {
     wasWorkUpdateCollateralPrice = true;
   }
-
 }
-
 
 // Testing the calls from ODProxy to RewardedActions
 contract RewardedActionsTest is ActionBaseTest {
@@ -96,7 +90,10 @@ contract RewardedActionsTest is ActionBaseTest {
     accountingJob.reset();
     accountingJob._mock_setRewardAmount(100);
     vm.startPrank(alice);
-    proxy.execute(address(rewardedActions), abi.encodeWithSignature('startDebtAuction(address,address)', address(accountingJob), address(coinJoin)));
+    proxy.execute(
+      address(rewardedActions),
+      abi.encodeWithSignature('startDebtAuction(address,address)', address(accountingJob), address(coinJoin))
+    );
     assertTrue(accountingJob.wasWorkAuctionDebtCalled());
   }
 
@@ -104,7 +101,10 @@ contract RewardedActionsTest is ActionBaseTest {
     accountingJob.reset();
     accountingJob._mock_setRewardAmount(100);
     vm.startPrank(alice);
-    proxy.execute(address(rewardedActions), abi.encodeWithSignature('startSurplusAuction(address,address)', address(accountingJob), address(coinJoin)));
+    proxy.execute(
+      address(rewardedActions),
+      abi.encodeWithSignature('startSurplusAuction(address,address)', address(accountingJob), address(coinJoin))
+    );
     assertTrue(accountingJob.wasWorkAuctionSurplusCalled());
   }
 
@@ -112,7 +112,10 @@ contract RewardedActionsTest is ActionBaseTest {
     accountingJob.reset();
     accountingJob._mock_setRewardAmount(100);
     vm.startPrank(alice);
-    proxy.execute(address(rewardedActions), abi.encodeWithSignature('popDebtFromQueue(address,address,uint256)', address(accountingJob), address(coinJoin), 0));
+    proxy.execute(
+      address(rewardedActions),
+      abi.encodeWithSignature('popDebtFromQueue(address,address,uint256)', address(accountingJob), address(coinJoin), 0)
+    );
     assertTrue(accountingJob.wasWorkPopDebtFromQueueCalled());
   }
 
@@ -120,14 +123,26 @@ contract RewardedActionsTest is ActionBaseTest {
     accountingJob.reset();
     accountingJob._mock_setRewardAmount(100);
     vm.startPrank(alice);
-    proxy.execute(address(rewardedActions), abi.encodeWithSignature('auctionSurplus(address,address)', address(accountingJob), address(coinJoin)));
+    proxy.execute(
+      address(rewardedActions),
+      abi.encodeWithSignature('auctionSurplus(address,address)', address(accountingJob), address(coinJoin))
+    );
     assertTrue(accountingJob.wasWorkAuctionSurplusCalled());
   }
 
   function test_liquidateSAFE() public {
     liquidationEngine.reset();
     vm.startPrank(alice);
-    proxy.execute(address(rewardedActions), abi.encodeWithSignature('liquidateSAFE(address,address,bytes32,address)', address(liquidationEngine), address(coinJoin), bytes32(0), address(0)));
+    proxy.execute(
+      address(rewardedActions),
+      abi.encodeWithSignature(
+        'liquidateSAFE(address,address,bytes32,address)',
+        address(liquidationEngine),
+        address(coinJoin),
+        bytes32(0),
+        address(0)
+      )
+    );
     assertTrue(liquidationEngine.wasWorkLiquidationCalled());
   }
 
@@ -136,7 +151,12 @@ contract RewardedActionsTest is ActionBaseTest {
     oracleJob._mock_setRewardAmount(100);
     coinJoin.reset();
     vm.startPrank(alice);
-    proxy.execute(address(rewardedActions), abi.encodeWithSignature('updateCollateralPrice(address,address,bytes32)', address(oracleJob), address(coinJoin), bytes32(0)));
+    proxy.execute(
+      address(rewardedActions),
+      abi.encodeWithSignature(
+        'updateCollateralPrice(address,address,bytes32)', address(oracleJob), address(coinJoin), bytes32(0)
+      )
+    );
     assertTrue(oracleJob.wasWorkUpdateCollateralPrice());
   }
 
@@ -144,8 +164,10 @@ contract RewardedActionsTest is ActionBaseTest {
     oracleJob.reset();
     oracleJob._mock_setRewardAmount(100);
     vm.startPrank(alice);
-    proxy.execute(address(rewardedActions), abi.encodeWithSignature('updateRedemptionRate(address,address)', address(oracleJob), address(coinJoin)));
+    proxy.execute(
+      address(rewardedActions),
+      abi.encodeWithSignature('updateRedemptionRate(address,address)', address(oracleJob), address(coinJoin))
+    );
     assertTrue(oracleJob.wasWorkUpdateCollateralPrice());
   }
-
 }

@@ -8,7 +8,6 @@ import {GlobalSettlementActions} from '@contracts/proxies/actions/GlobalSettleme
 import {SafeEngineMock} from './SurplusBidActions.t.sol';
 
 contract CollateralJoinMock {
-
   bool public wasJoinCalled;
   bool public wasExitCalled;
   bytes32 public collateralType;
@@ -40,11 +39,9 @@ contract CollateralJoinMock {
   function decimals() external view returns (uint256) {
     return 18;
   }
-
 }
 
 contract ODSafeManagerMock {
-
   IODSafeManager.SAFEData public safeDataPoint;
   address public safeEngine;
 
@@ -58,15 +55,9 @@ contract ODSafeManagerMock {
   function reset() external {
     safeDataPoint = IODSafeManager.SAFEData(0, address(0), address(0), bytes32(0));
     wasQuitSystemCalled = false;
-
   }
 
-  function _mock_setSafeData(
-    uint96 _nonce,
-    address _owner,
-    address _safeHandler,
-    bytes32 _collateralType
-  ) external {
+  function _mock_setSafeData(uint96 _nonce, address _owner, address _safeHandler, bytes32 _collateralType) external {
     safeDataPoint = IODSafeManager.SAFEData(_nonce, _owner, _safeHandler, _collateralType);
   }
 
@@ -88,7 +79,6 @@ contract ODSafeManagerMock {
 }
 
 contract GlobalSettlementMock {
-
   bool public wasProcessSAFECalled;
   bool public wasFreeCollateralCalled;
   bool public wasPrepareCoinsForRedeemingCalled;
@@ -148,7 +138,6 @@ contract GlobalSettlementMock {
 // Testing the calls from ODProxy to GlobalSettlementAction.
 // In this test we don't care about the actual implementation of SurplusBidAction, only that the calls are made correctly
 contract GlobalSettlementActionTest is ActionBaseTest {
-
   GlobalSettlementActions globalSettlementAction = new GlobalSettlementActions();
   GlobalSettlementMock globalSettlementMock = new GlobalSettlementMock();
   ODSafeManagerMock odSafeManagerMock = new ODSafeManagerMock();
@@ -174,8 +163,7 @@ contract GlobalSettlementActionTest is ActionBaseTest {
         0
       )
     );
-     assertTrue(odSafeManagerMock.wasQuitSystemCalled());
-
+    assertTrue(odSafeManagerMock.wasQuitSystemCalled());
   }
 
   function test_prepareCoinsForRedeeming() public {
@@ -191,10 +179,7 @@ contract GlobalSettlementActionTest is ActionBaseTest {
     proxy.execute(
       address(globalSettlementAction),
       abi.encodeWithSelector(
-        globalSettlementAction.prepareCoinsForRedeeming.selector,
-        address(globalSettlementMock),
-        address(0),
-        0
+        globalSettlementAction.prepareCoinsForRedeeming.selector, address(globalSettlementMock), address(0), 0
       )
     );
 
@@ -209,10 +194,10 @@ contract GlobalSettlementActionTest is ActionBaseTest {
     SafeEngineMock safeEngineMock = SafeEngineMock(odSafeManagerMock.safeEngine());
 
     safeEngineMock._mock_setCollateralBalance(100);
-    safeEngineMock.mock_setCoinBalance(10000);
+    safeEngineMock.mock_setCoinBalance(10_000);
 
     globalSettlementMock._mock_setSafeEngine(address(safeEngineMock));
-    globalSettlementMock._mock_setCoinBag(100000);
+    globalSettlementMock._mock_setCoinBag(100_000);
     globalSettlementMock._mock_setCoinsUsedToRedeem(5555);
 
     collateralJoinMock._mock_setSafeEngine(address(safeEngineMock));
@@ -220,14 +205,10 @@ contract GlobalSettlementActionTest is ActionBaseTest {
     proxy.execute(
       address(globalSettlementAction),
       abi.encodeWithSelector(
-        globalSettlementAction.redeemCollateral.selector,
-        address(globalSettlementMock),
-        address(collateralJoinMock),
-        0
+        globalSettlementAction.redeemCollateral.selector, address(globalSettlementMock), address(collateralJoinMock), 0
       )
     );
 
     assertTrue(collateralJoinMock.wasExitCalled());
-
   }
 }
