@@ -9,6 +9,7 @@ import {SurplusBidActions} from '@contracts/proxies/actions/SurplusBidActions.so
 import {ProtocolToken} from '@contracts/tokens/ProtocolToken.sol';
 
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
+import {ISystemCoin} from '@interfaces/tokens/ISystemCoin.sol';
 
 contract SafeEngineMock {
   bool public wasApproveSAFEModificationCalled;
@@ -64,19 +65,31 @@ contract SafeEngineMock {
 
 contract CoinJoinMock {
   address public safeEngine;
+  ISystemCoin public systemCoin;
+
   bool public wasExitCalled;
+  bool public wasJoinCalled;
 
   constructor() {
     safeEngine = address(new SafeEngineMock());
+    systemCoin = ISystemCoin(address(new ProtocolToken()));
+    systemCoin.initialize('SystemCoin', 'SysCoin');
+    systemCoin.mint(address(this), 1000 ether);
+    systemCoin.mint(address(0x1), 1000 ether);
   }
 
   function reset() external {
     wasExitCalled = false;
+    wasJoinCalled = false;
     SafeEngineMock(safeEngine).reset();
   }
 
   function exit(address _account, uint256 _wad) external {
     wasExitCalled = true;
+  }
+
+  function join(address _account, uint256 _wad) external {
+    wasJoinCalled = true;
   }
 }
 
