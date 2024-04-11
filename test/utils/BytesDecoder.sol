@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 contract BytesDecoder {
   function decodeAsUint256(bytes memory data) public pure returns (uint256) {
