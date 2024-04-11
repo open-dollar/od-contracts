@@ -84,12 +84,20 @@ contract CoinJoinMock {
     SafeEngineMock(safeEngine).reset();
   }
 
+  function _mock_systemCoinMint(address _account, uint256 _wad) public {
+    systemCoin.mint(_account, _wad);
+  }
+
   function exit(address _account, uint256 _wad) external {
     wasExitCalled = true;
   }
 
   function join(address _account, uint256 _wad) external {
     wasJoinCalled = true;
+  }
+
+  function decimals() external view returns (uint256) {
+    return 18;
   }
 }
 
