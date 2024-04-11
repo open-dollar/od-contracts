@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {AuthorizableUpgradableForTest, IAuthorizable} from '@test/mocks/AuthorizableUpgradableForTest.sol';
 import {ODTest} from '@test/utils/ODTest.t.sol';

@@ -45,9 +45,9 @@ fs.readFile(filePath, "utf8", (err, data) => {
             curr.contractName.includes("DelayedOracleFactory")
           ) {
             name = "DelayedOracleChild" + "_" + index;
-          } else if (  curr.contractName.includes("DenominatedOracleFactory") ){
+          } else if (curr.contractName.includes("DenominatedOracleFactory")) {
             name = "DenominatedOracleChild" + "_" + index;
-          } else if( curr.contractName.includes("RelayerFactory") ){
+          } else if (curr.contractName.includes("RelayerFactory")) {
             name = "RelayerChild" + "_" + index;
           }
 
@@ -66,14 +66,14 @@ const createAnvilDeploymentsFile = (contracts) => {
   const addressText = Object.keys(contracts).reduce((acc, curr) => {
     acc += `  address public ${curr}_Address = ${contracts[curr]};\n`;
     return acc;
-  }, ""); 
+  }, "");
 
   const outputPath = path.join(
     __dirname,
     "../script/anvil/deployment/AnvilContracts.t.sol"
   );
   const content = `// SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 abstract contract AnvilContracts {
 ${addressText}}

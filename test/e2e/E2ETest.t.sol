@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {IERC721Receiver} from '@openzeppelin/token/ERC721/IERC721Receiver.sol';
 import {Common, RAD_DELTA} from '@test/e2e/Common.t.sol';

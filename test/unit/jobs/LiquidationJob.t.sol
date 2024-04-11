@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {LiquidationJobForTest, ILiquidationJob} from '@test/mocks/LiquidationJobForTest.sol';
 import {ILiquidationEngine} from '@interfaces/ILiquidationEngine.sol';

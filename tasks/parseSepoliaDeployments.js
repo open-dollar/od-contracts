@@ -14,7 +14,7 @@ fs.readFile(filePath, "utf8", (err, data) => {
     if (contractAddress && contractName && transactionType === "CREATE") {
       // Protocol contracts
       let name = contractName;
-      if (contractName === "MintableERC20") {
+      if (["MintableERC20", "MintableVoteERC20"].includes(contractName)) {
         const tokenSymbolArg = curr.arguments[1].toUpperCase();
         name = name + "_" + tokenSymbolArg.replaceAll('"', "");
       }
@@ -60,7 +60,7 @@ const createSepoliaDeploymentsFile = (contracts) => {
 
   const outputPath = path.join(__dirname, "../script/SepoliaContracts.s.sol");
   const content = `// SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 abstract contract SepoliaContracts {
 ${addressText}}
