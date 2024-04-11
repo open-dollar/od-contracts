@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {ERC721Upgradeable, IERC721Upgradeable} from '@openzeppelin-upgradeable/token/ERC721/ERC721Upgradeable.sol';
 import {ERC721EnumerableUpgradeable} from
@@ -15,7 +15,7 @@ import {Encoding} from '@libraries/Encoding.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 
 // Open Dollar
-// Version 1.6.1
+// Version 1.6.5
 
 /**
  * @notice Upgradeable contract used as singleton, but is not upgradeable

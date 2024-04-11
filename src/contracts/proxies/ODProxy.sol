@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {Address} from '@openzeppelin/utils/Address.sol';
 
 // Open Dollar
-// Version 1.6.1
+// Version 1.6.5
 
 contract ODProxy {
   using Address for address;

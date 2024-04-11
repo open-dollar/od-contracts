@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {ICollateralJoinChild} from '@interfaces/factories/ICollateralJoinChild.sol';
 import {ERC20Votes} from '@openzeppelin/token/ERC20/extensions/ERC20Votes.sol';

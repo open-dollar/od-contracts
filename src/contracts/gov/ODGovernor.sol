@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {IVotes} from '@openzeppelin/governance/utils/IVotes.sol';
 import {IERC165} from '@openzeppelin/utils/introspection/IERC165.sol';
@@ -123,6 +123,15 @@ contract ODGovernor is
     super._execute(proposalId, targets, values, calldatas, descriptionHash);
   }
 
+  function cancel(
+    address[] memory targets,
+    uint256[] memory values,
+    bytes[] memory calldatas,
+    bytes32 descriptionHash
+  ) public override(Governor, GovernorCompatibilityBravo, IGovernor) returns (uint256) {
+    return super.cancel(targets, values, calldatas, descriptionHash);
+  }
+
   /**
    * inherit: Governor, GovernorTimelockControl
    */
@@ -133,6 +142,13 @@ contract ODGovernor is
     bytes32 descriptionHash
   ) internal override(Governor, GovernorTimelockControl) returns (uint256) {
     return super._cancel(targets, values, calldatas, descriptionHash);
+  }
+
+  /**
+   * inherit: GovernorCompatibilityBravo
+   */
+  function cancel(uint256 proposalId) public virtual override(GovernorCompatibilityBravo) {
+    return super.cancel(proposalId);
   }
 
   /**

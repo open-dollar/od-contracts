@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {IAccountingJob} from '@interfaces/jobs/IAccountingJob.sol';
 import {ILiquidationJob} from '@interfaces/jobs/ILiquidationJob.sol';
