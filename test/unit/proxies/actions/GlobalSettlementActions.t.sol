@@ -7,6 +7,41 @@ import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {GlobalSettlementActions} from '@contracts/proxies/actions/GlobalSettlementActions.sol';
 import {SafeEngineMock} from './SurplusBidActions.t.sol';
 
+contract CollateralJoinMock {
+
+  bool public wasJoinCalled;
+  bool public wasExitCalled;
+  bytes32 public collateralType;
+
+  address public safeEngine;
+
+  function reset() external {
+    wasJoinCalled = false;
+    wasExitCalled = false;
+    collateralType = bytes32(0);
+  }
+
+  function _mock_setCollateralType(bytes32 _collateralType) external {
+    collateralType = _collateralType;
+  }
+
+  function _mock_setSafeEngine(address _safeEngine) external {
+    safeEngine = _safeEngine;
+  }
+
+  function join(address _account, uint256 _wei) external {
+    wasJoinCalled = true;
+  }
+
+  function exit(address _account, uint256 _wei) external {
+    wasExitCalled = true;
+  }
+
+  function decimals() external view returns (uint256) {
+    return 18;
+  }
+
+}
 
 contract ODSafeManagerMock {
 
@@ -57,16 +92,32 @@ contract GlobalSettlementMock {
   bool public wasProcessSAFECalled;
   bool public wasFreeCollateralCalled;
   bool public wasPrepareCoinsForRedeemingCalled;
+  bool public wasRedeemCollateralCalled;
+
+  uint256 public coinBagPoint;
+  uint256 public coinsUsedToRedeemPoint;
+
   address public safeEngine;
 
   function reset() external {
     wasProcessSAFECalled = false;
     wasFreeCollateralCalled = false;
     wasPrepareCoinsForRedeemingCalled = false;
+    wasRedeemCollateralCalled = false;
+    coinBagPoint = 0;
+    coinsUsedToRedeemPoint = 0;
   }
 
   function _mock_setSafeEngine(address _safeEngine) external {
     safeEngine = _safeEngine;
+  }
+
+  function _mock_setCoinBag(uint256 _coinBag) external {
+    coinBagPoint = _coinBag;
+  }
+
+  function _mock_setCoinsUsedToRedeem(uint256 _coinsUsedToRedeem) external {
+    coinsUsedToRedeemPoint = _coinsUsedToRedeem;
   }
 
   function processSAFE(bytes32 _cType, address _safe) external {
@@ -80,6 +131,18 @@ contract GlobalSettlementMock {
   function prepareCoinsForRedeeming(uint256 _coinAmount) external {
     wasPrepareCoinsForRedeemingCalled = true;
   }
+
+  function coinBag(address _coinHolder) external view returns (uint256 _coinBag) {
+    return coinBagPoint;
+  }
+
+  function coinsUsedToRedeem(bytes32 _cType, address _coinHolder) external view returns (uint256 _coinsUsedToRedeem) {
+    return coinsUsedToRedeemPoint;
+  }
+
+  function redeemCollateral(bytes32 _cType, uint256 _coinsAmount) external {
+    wasRedeemCollateralCalled = true;
+  }
 }
 
 // Testing the calls from ODProxy to GlobalSettlementAction.
@@ -89,6 +152,7 @@ contract GlobalSettlementActionTest is ActionBaseTest {
   GlobalSettlementActions globalSettlementAction = new GlobalSettlementActions();
   GlobalSettlementMock globalSettlementMock = new GlobalSettlementMock();
   ODSafeManagerMock odSafeManagerMock = new ODSafeManagerMock();
+  CollateralJoinMock collateralJoinMock = new CollateralJoinMock();
 
   function setUp() public {
     proxy = new ODProxy(alice);
@@ -133,7 +197,37 @@ contract GlobalSettlementActionTest is ActionBaseTest {
         0
       )
     );
-    
+
     assertTrue(globalSettlementMock.wasPrepareCoinsForRedeemingCalled());
+  }
+
+  function test_redeemCollateral() public {
+    globalSettlementMock.reset();
+    vm.startPrank(alice);
+    odSafeManagerMock._mock_setSafeData(0, alice, alice, bytes32(0));
+
+    SafeEngineMock safeEngineMock = SafeEngineMock(odSafeManagerMock.safeEngine());
+
+    safeEngineMock._mock_setCollateralBalance(100);
+    safeEngineMock.mock_setCoinBalance(10000);
+
+    globalSettlementMock._mock_setSafeEngine(address(safeEngineMock));
+    globalSettlementMock._mock_setCoinBag(100000);
+    globalSettlementMock._mock_setCoinsUsedToRedeem(5555);
+
+    collateralJoinMock._mock_setSafeEngine(address(safeEngineMock));
+
+    proxy.execute(
+      address(globalSettlementAction),
+      abi.encodeWithSelector(
+        globalSettlementAction.redeemCollateral.selector,
+        address(globalSettlementMock),
+        address(collateralJoinMock),
+        0
+      )
+    );
+
+    assertTrue(collateralJoinMock.wasExitCalled());
+
   }
 }

@@ -86,6 +86,7 @@ contract GlobalSettlementActions is CommonActions, IGlobalSettlementActions {
     __globalSettlement.redeemCollateral(_cType, _coinAmount);
 
     _collateralAmount = __safeEngine.tokenCollateral(_cType, address(this));
+
     _exitCollateral(_collateralJoin, _collateralAmount);
   }
 }
