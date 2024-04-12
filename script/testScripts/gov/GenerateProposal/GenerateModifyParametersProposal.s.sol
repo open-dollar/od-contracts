@@ -86,7 +86,7 @@ contract GenerateModifyParametersProposal is GenerateProposal, JSONScript {
     string memory dataType,
     string memory param,
     string memory dataString
-  ) internal returns (bytes memory dataOutput) {
+  ) internal pure returns (bytes memory dataOutput) {
     bytes32 typeHash = keccak256(abi.encode(dataType));
     bytes4 selector = IModifiable.modifyParameters.selector;
     // keccak256(abi.encode('uint256'))

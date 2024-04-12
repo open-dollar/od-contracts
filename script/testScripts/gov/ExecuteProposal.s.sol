@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.20;
+pragma solidity ^0.8.20;
 
 import 'forge-std/console2.sol';
+import 'forge-std/Script.sol';
 import {JSONScript} from '@script/testScripts/gov/JSONScript.s.sol';
+import {ForkManagement} from '@script/testScripts/gov/ForkManagement.s.sol';
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 
 /// @title ExecuteProposal Script
@@ -11,32 +13,40 @@ import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 /// @dev NOTE This script requires the following env vars in the REQUIRED ENV VARS section below
 /// @dev The script will execute the proposal to set the NFT Renderer on Vault721
 /// @dev To run: export FOUNDRY_PROFILE=governance && forge script script/testScripts/gov/UpdateNFTRendererAction/ExecuteUpdateNFTRenderer.s.sol in the root of the repo
-contract ExecuteUpdateProposal is JSONScript {
-  function run() public {
-    /// REQUIRED ENV VARS ///
-    // The address of the ODGovernor contract
-    address governanceAddress = vm.envAddress('GOVERNANCE_ADDRESS');
+contract ExecuteUpdateProposal is Script, ForkManagement {
+  using stdJson for string;
 
-    // The path to the JSON file for the desired proposal to execute
-    string memory jsonFilePath = vm.envString('JSON_FILE_PATH');
+  ODGovernor public governor;
+  uint256[] public values;
+  address[] targets;
+  bytes[] public calldatas;
+  string public description;
+  bytes32 public descriptionHash;
+  uint256 proposalId;
 
-    uint256 govPK = vm.envUint('GOV_EXECUTOR_PK');
-    /// END REQUIRED ENV VARS ///
+  function run(string memory _filePath) public {
+    _loadJson(_filePath);
+    _checkNetworkParams();
+    _loadPrivateKeys();
+    _loadBaseData(json);
+    _executeProposal();
+  }
 
-    // See Propose{GovAction}.s.sol to see the expected JSON input
-    string memory jsonFile = vm.readFile(jsonFilePath);
+  function _loadBaseData(string memory json) internal virtual {
+    values = json.readUintArray(string(abi.encodePacked('.values')));
+    targets = json.readAddressArray(string(abi.encodePacked('.targets')));
+    calldatas = json.readBytesArray(string(abi.encodePacked('.calldatas')));
+    description = json.readString(string(abi.encodePacked('.description')));
+    descriptionHash = json.readBytes32(string(abi.encodePacked('.descriptionHash')));
+    proposalId = json.readUint(string(abi.encodePacked('.proposalId')));
+    governor = ODGovernor(payable(json.readAddress(string(abi.encodePacked(('.odGovernor'))))));
+  }
 
-    string memory description = vm.parseJsonString(jsonFile, '.description');
-    console2.log(description);
-
-    // Parse the JSON arguments from the output of Propose{GovAction}.s.sol
-    (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, bytes32 descriptionHash) =
-      _parseExecutionParamsJSON(jsonFile);
-
-    vm.startBroadcast(govPK);
+  function _executeProposal() internal {
+    vm.startBroadcast(privateKey);
 
     // execute proposal
-    ODGovernor(payable(governanceAddress)).execute(targets, values, calldatas, descriptionHash);
+    governor.execute(targets, values, calldatas, descriptionHash);
 
     vm.stopBroadcast();
   }
