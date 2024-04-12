@@ -49,6 +49,7 @@ contract GenerateAddCollateralProposal is GenerateProposal, JSONScript {
 
   function _generateProposal() internal override {
     ODGovernor gov = ODGovernor(payable(governanceAddress));
+    console2.log(gov.quorumDenominator());
     IGlobalSettlement globalSettlement = IGlobalSettlement(globalSettlementAddress);
     // Get target contract addresses from GlobalSettlement:
     //  - CollateralJoinFactory
@@ -99,20 +100,6 @@ contract GenerateAddCollateralProposal is GenerateProposal, JSONScript {
   }
 
   function _serializeCurrentJson(string memory _objectKey) internal override returns (string memory _serializedInput) {
-    vm.serializeString(_objectKey, 'proposalType', proposalType);
-    string memory collateralString = json.readString(string(abi.encodePacked('.newCollateralType')));
-    string memory _network = json.readString(string(abi.encodePacked('.network')));
-    string memory _chainid = json.readString(string(abi.encodePacked('.chainid')));
-    vm.serializeString(_objectKey, 'network', _network);
-    vm.serializeString(_objectKey, 'chainid', _chainid);
-    vm.serializeString(_objectKey, 'newCollateralType', collateralString);
-    vm.serializeAddress(_objectKey, 'odGovernor', governanceAddress);
-    vm.serializeAddress(_objectKey, 'globalSettlement', globalSettlementAddress);
-    vm.serializeAddress(_objectKey, 'newCollateralAddress', newCAddress);
-    vm.serializeBytes32(_objectKey, 'newCollateralBytes32', newCType);
-    vm.serializeUint(_objectKey, 'minimumBid', minimumBid);
-    vm.serializeUint(_objectKey, 'minimumDiscount', minDiscount);
-    vm.serializeUint(_objectKey, 'maximumDiscount', maxDiscount);
-    _serializedInput = vm.serializeUint(_objectKey, 'perSecondDiscountUpdateRate', perSecondDiscountUpdateRate);
+    _serializedInput = vm.serializeJson(_objectKey, json);
   }
 }

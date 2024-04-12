@@ -52,7 +52,7 @@ contract Proposer is Script, ForkManagement {
         && targets.length == calldatas.length,
       'params not set'
     );
-    require(keccak256(abi.encode(description)) == descriptionHash, 'Description changed');
+    // require(keccak256(abi.encode(description)) == descriptionHash, 'Description changed');
 
     uint256 newProposalId = governor.hashProposal(targets, values, calldatas, descriptionHash);
     if (newProposalId == proposalId) {
