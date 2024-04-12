@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {ODTest, stdStorage, StdStorage} from '@test/utils/ODTest.t.sol';
 import {Vault721} from '@contracts/proxies/Vault721.sol';

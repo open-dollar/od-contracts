@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
 import {IODCreate2Factory} from '@interfaces/factories/IODCreate2Factory.sol';
