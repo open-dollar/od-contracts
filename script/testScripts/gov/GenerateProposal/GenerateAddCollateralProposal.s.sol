@@ -50,7 +50,6 @@ contract GenerateAddCollateralProposal is GenerateProposal, JSONScript {
   function _generateProposal() internal override {
     ODGovernor gov = ODGovernor(payable(governanceAddress));
     IGlobalSettlement globalSettlement = IGlobalSettlement(globalSettlementAddress);
-
     // Get target contract addresses from GlobalSettlement:
     //  - CollateralJoinFactory
     //  - CollateralAuctionHouseFactory note why is this address also a target?
@@ -76,7 +75,8 @@ contract GenerateAddCollateralProposal is GenerateProposal, JSONScript {
       perSecondDiscountUpdateRate: perSecondDiscountUpdateRate
     });
     calldatas[0] = abi.encodeWithSelector(ICollateralJoinFactory.deployCollateralJoin.selector, newCType, newCAddress);
-    calldatas[1] = abi.encodeWithSelector(IModifiablePerCollateral.initializeCollateralType.selector, newCType,_cahCParams);
+    calldatas[1] =
+      abi.encodeWithSelector(IModifiablePerCollateral.initializeCollateralType.selector, newCType, _cahCParams);
     // Get the descriptionHash
     bytes32 descriptionHash = keccak256(bytes(description));
 

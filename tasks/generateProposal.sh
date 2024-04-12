@@ -7,6 +7,7 @@ set -e
 ###############
 
 function generateProposal(){
+
   NETWORK="$1"
       RPC_ENDPOINT=""
     if [[ $NETWORK = "arb-sepolia" || $NETWORK = "sepolia" ]]; then
@@ -21,7 +22,6 @@ function generateProposal(){
       fi
     COMMAND_PATH=$(node tasks/parseProposalPath.js $2)
     CALLDATA=$(cast calldata "run(string)" $2)
-
       FOUNDRY_PROFILE=governance forge script $COMMAND_PATH -s $CALLDATA --rpc-url $RPC_ENDPOINT
 
 }

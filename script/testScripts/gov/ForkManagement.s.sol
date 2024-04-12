@@ -8,7 +8,9 @@ import 'forge-std/console2.sol';
 
 contract ForkManagement is Script {
   using stdJson for string;
+
   error UnrecognizedChainId();
+
   string public json;
   uint256 public privateKey;
   address public proposer;
@@ -23,7 +25,7 @@ contract ForkManagement is Script {
     } else if (block.chainid == 42_161) {
       privateKey = vm.envUint('ARB_MAINNET_DEPLOYER_PK');
       proposer = vm.addr(privateKey);
-    } else if (block.chainid == 31337) {
+    } else if (block.chainid == 31_337) {
       privateKey = vm.envUint('ANVIL_ONE');
       proposer = vm.addr(privateKey);
     } else {
