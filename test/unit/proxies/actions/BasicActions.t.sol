@@ -6,6 +6,7 @@ import {ActionBaseTest, ODProxy} from './ActionBaseTest.sol';
 import {BasicActions} from '@contracts/proxies/actions/BasicActions.sol';
 import {ODSafeManagerMock} from './GlobalSettlementActions.t.sol';
 import {CoinJoinMock} from './CollateralBidActions.t.sol';
+import {SafeEngineMock} from './SurplusBidActions.t.sol';
 
 contract BasicActionsTest is ActionBaseTest {
   BasicActions basicActions = new BasicActions();
@@ -29,23 +30,19 @@ contract BasicActionsTest is ActionBaseTest {
   }
 
   function test_generateDebt() public {
-    /*safeManager.reset();
+    safeManager.reset();
     coinJoin.reset();
 
     vm.startPrank(alice);
-
+    SafeEngineMock(safeManager.safeEngine())._mock_setCollateralData(0, 0, 1, 0, 0);
     proxy.execute(
       address(basicActions),
       abi.encodeWithSignature(
-        'generateDebt(address,address,uint256,uint256)',
-        address(safeManager),
-        address(coinJoin),
-        1,
-        10
+        'generateDebt(address,address,uint256,uint256)', address(safeManager), address(coinJoin), 1, 10
       )
     );
 
-    assertTrue(coinJoin.wasExitCalled());*/
+    assertTrue(coinJoin.wasExitCalled());
   }
 
   function test_allowSAFE() public {
@@ -58,6 +55,48 @@ contract BasicActionsTest is ActionBaseTest {
     );
 
     assertTrue(safeManager.wasAllowSAFECalled());
+  }
+
+  function test_modifySAFECollateralization() public {
+    safeManager.reset();
+    vm.startPrank(alice);
+
+    proxy.execute(
+      address(basicActions),
+      abi.encodeWithSignature(
+        'modifySAFECollateralization(address,uint256,int256,int256)', address(safeManager), 1, 1, 1
+      )
+    );
+
+    assertTrue(safeManager.wasModifySAFECollateralizationCalled());
+  }
+
+  function test_transferInternalCoins() public {
+    safeManager.reset();
+    vm.startPrank(alice);
+
+    proxy.execute(
+      address(basicActions),
+      abi.encodeWithSignature(
+        'transferCollateral(address,uint256,address,uint256)', address(safeManager), 1, address(0x01), 1
+      )
+    );
+
+    assertTrue(safeManager.wasTransferCollateralCalled());
+  }
+
+  function test_transferCollateral() public {
+    safeManager.reset();
+    vm.startPrank(alice);
+
+    proxy.execute(
+      address(basicActions),
+      abi.encodeWithSignature(
+        'transferInternalCoins(address,uint256,address,uint256)', address(safeManager), 1, address(0x01), 1
+      )
+    );
+
+    assertTrue(safeManager.wasTransferInteralCoinsCalled());
   }
 
   function test_quitSystem() public {
@@ -125,5 +164,21 @@ contract BasicActionsTest is ActionBaseTest {
     );
 
     assertTrue(safeManager.wasProtectSAFECalled());
+  }
+
+  function test_repayDebt() public {
+    safeManager.reset();
+    vm.startPrank(alice);
+    coinJoin.systemCoin().approve(address(proxy), 10 ether);
+    SafeEngineMock(safeManager.safeEngine())._mock_setCollateralData(0, 0, 1, 0, 0);
+
+    proxy.execute(
+      address(basicActions),
+      abi.encodeWithSignature(
+        'repayDebt(address,address,uint256,uint256)', address(safeManager), address(coinJoin), 1, 1
+      )
+    );
+
+    assertTrue(safeManager.wasModifySAFECollateralizationCalled());
   }
 }

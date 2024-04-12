@@ -18,8 +18,10 @@ contract SafeEngineMock {
   ISAFEEngine.SAFE public safe;
   uint256 public collateralBalance;
   uint256 public coinBalancePoint;
+  ISAFEEngine.SAFEEngineCollateralData collateralDataPoint;
 
   function reset() external {
+    collateralDataPoint = ISAFEEngine.SAFEEngineCollateralData(0, 0, 0, 0, 0);
     wasApproveSAFEModificationCalled = false;
     canModifySAF = false;
     safe = ISAFEEngine.SAFE(0, 0);
@@ -28,6 +30,18 @@ contract SafeEngineMock {
 
   function _mock_setCollateralBalance(uint256 _collateralBalance) external {
     collateralBalance = _collateralBalance;
+  }
+
+  function _mock_setCollateralData(
+    uint256 _debtAmount,
+    uint256 _lockedAmount,
+    uint256 _accumulatedRate,
+    uint256 _safetyPrice,
+    uint256 _liquidationPrice
+  ) external {
+    collateralDataPoint = ISAFEEngine.SAFEEngineCollateralData(
+      _debtAmount, _lockedAmount, _accumulatedRate, _safetyPrice, _liquidationPrice
+    );
   }
 
   function _mock_addSafeData(uint256 lockedCollateral, uint256 generatedDebt) external {
@@ -60,6 +74,10 @@ contract SafeEngineMock {
 
   function coinBalance(address _account) external view returns (uint256 _coinBalance) {
     return coinBalancePoint;
+  }
+
+  function cData(bytes32 _cType) external view returns (ISAFEEngine.SAFEEngineCollateralData memory _safeEngineCData) {
+    return collateralDataPoint;
   }
 }
 

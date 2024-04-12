@@ -43,6 +43,7 @@ contract CollateralJoinMock {
 
 contract ODSafeManagerMock {
   IODSafeManager.SAFEData public safeDataPoint;
+  ISAFEEngine.SAFEEngineCollateralData public collateralDataPoint;
   address public safeEngine;
 
   bool public wasQuitSystemCalled;
@@ -53,6 +54,10 @@ contract ODSafeManagerMock {
   bool public wasAddSAFECalled;
   bool public wasRemoveSAFECalled;
   bool public wasProtectSAFECalled;
+  bool public wasModifySAFECollateralizationCalled;
+  bool public wasTransferCollateralCalled;
+  bool public wasTaxCollectorTaxSingleCalled;
+  bool public wasTransferInteralCoinsCalled;
   uint256 public collateralBalance;
   uint256 public safeId;
 
@@ -71,6 +76,10 @@ contract ODSafeManagerMock {
     wasAddSAFECalled = false;
     wasRemoveSAFECalled = false;
     wasProtectSAFECalled = false;
+    wasModifySAFECollateralizationCalled = false;
+    wasTransferCollateralCalled = false;
+    wasTransferInteralCoinsCalled = false;
+    wasTaxCollectorTaxSingleCalled = false;
     collateralBalance = 0;
   }
 
@@ -125,6 +134,32 @@ contract ODSafeManagerMock {
 
   function protectSAFE(uint256 _safe, address _handler) external {
     wasProtectSAFECalled = true;
+  }
+
+  function modifySAFECollateralization(
+    uint256 _safe,
+    int256 _deltaCollateral,
+    int256 _deltaDebt,
+    bool _nonSafeHandlerAddress
+  ) external {
+    wasModifySAFECollateralizationCalled = true;
+  }
+
+  function transferCollateral(uint256 _safe, address _dst, uint256 _wad) external {
+    wasTransferCollateralCalled = true;
+  }
+
+  function transferInternalCoins(uint256 _safe, address _dst, uint256 _rad) external {
+    wasTransferInteralCoinsCalled = true;
+  }
+
+  function taxCollector() external view returns (address) {
+    return address(this);
+  }
+
+  function taxSingle(bytes32 _cType) external returns (uint256 _latestAccumulatedRate) {
+    wasTaxCollectorTaxSingleCalled = true;
+    return 0;
   }
 }
 
