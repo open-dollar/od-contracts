@@ -7,7 +7,7 @@ import {
   SafeEngineMock, GlobalSettlementMock, ODSafeManagerMock, CollateralJoinMock
 } from '@test/mocks/ActionsMocks.sol';
 
-contract GlobalSettlementActionTest is ActionBaseTest {
+contract GlobalSettlementActionsTest is ActionBaseTest {
   GlobalSettlementActions globalSettlementAction = new GlobalSettlementActions();
   GlobalSettlementMock globalSettlementMock = new GlobalSettlementMock();
   ODSafeManagerMock odSafeManagerMock = new ODSafeManagerMock();
@@ -27,8 +27,8 @@ contract GlobalSettlementActionTest is ActionBaseTest {
 
     proxy.execute(
       address(globalSettlementAction),
-      abi.encodeWithSelector(
-        globalSettlementAction.freeCollateral.selector,
+      abi.encodeWithSignature(
+        'freeCollateral(address,address,address,uint256)',
         address(odSafeManagerMock),
         address(globalSettlementMock),
         address(0),
@@ -49,8 +49,8 @@ contract GlobalSettlementActionTest is ActionBaseTest {
 
     proxy.execute(
       address(globalSettlementAction),
-      abi.encodeWithSelector(
-        globalSettlementAction.prepareCoinsForRedeeming.selector, address(globalSettlementMock), address(0), 0
+      abi.encodeWithSignature(
+        'prepareCoinsForRedeeming(address,address,uint256)', address(globalSettlementMock), address(0), 0
       )
     );
 

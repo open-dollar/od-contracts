@@ -49,13 +49,8 @@ contract DebtBidActionsTest is ActionBaseTest {
   function test_collectProtocolTokens() public {
     vm.startPrank(alice);
     bytes memory resp = proxy.execute(
-      address(debtBidActions),
-      abi.encodeWithSignature(
-        'collectProtocolTokens(address)', address(coinJoin.systemCoin())
-      )
+      address(debtBidActions), abi.encodeWithSignature('collectProtocolTokens(address)', address(coinJoin.systemCoin()))
     );
     assertTrue(resp.length == 0);
   }
-
-
 }

@@ -49,6 +49,10 @@ contract CollateralJoinMock {
   function exit(address _account, uint256 _wei) external {
     wasExitCalled = true;
   }
+
+  function collateralType() external view returns (bytes32) {
+    return bytes32(0);
+  }
 }
 
 contract CoinJoinMock {
