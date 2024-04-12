@@ -17,10 +17,11 @@ contract GenerateModifyParametersProposal is GenerateProposal, JSONScript {
 
   string public objectKey = 'MODIFY_PARAMS_OBJECT_KEY';
 
-  string[] internal _datas;
   address[] internal _targets;
+  string[] internal _datas;
   string[] internal _params;
   string[] internal _dataTypes;
+
   address internal _governanceAddress;
   string internal _description;
 
@@ -28,6 +29,7 @@ contract GenerateModifyParametersProposal is GenerateProposal, JSONScript {
     _description = json.readString(string(abi.encodePacked('.description')));
     _governanceAddress = json.readAddress(string(abi.encodePacked('.odGovernor')));
     uint256 len = json.readUint(string(abi.encodePacked('.numberOfModifications')));
+
     for (uint256 i; i < len; i++) {
       string memory index = Strings.toString(i);
       address target = json.readAddress(string(abi.encodePacked('.modifyObjects[', index, '].target')));
@@ -39,9 +41,6 @@ contract GenerateModifyParametersProposal is GenerateProposal, JSONScript {
       _dataTypes.push(dataType);
       _datas.push(data);
     }
-
-    console2.log(_datas.length);
-    // json.readAddress(string(abi.encodePacked('.modifyObjects[', i, '].target')));
   }
 
   function _generateProposal() internal override {
@@ -52,6 +51,7 @@ contract GenerateModifyParametersProposal is GenerateProposal, JSONScript {
     );
 
     uint256 len = _params.length;
+
     address[] memory targets = new address[](len);
     uint256[] memory values = new uint256[](len);
     bytes[] memory calldatas = new bytes[](len);
@@ -89,21 +89,13 @@ contract GenerateModifyParametersProposal is GenerateProposal, JSONScript {
   ) internal returns (bytes memory dataOutput) {
     bytes32 typeHash = keccak256(abi.encode(dataType));
     bytes4 selector = IModifiable.modifyParameters.selector;
-
+    // keccak256(abi.encode('uint256'))
     if (typeHash == 0x30f3243bbfedd88bc30751e3112f67415273ecd7b3860e727409d9e0be640fe7) {
-      /**
-       * keccak256(abi.encode('uint256'))
-       */
       dataOutput = abi.encodeWithSelector(selector, abi.encodePacked(param), vm.parseUint(dataString));
     } else if (typeHash == 0x8b1b3d42ac46af6ce1829ec380281d4261c5dd83378384e2a0c84e2051dabfbc) {
-      /**
-       * keccak256(abi.encode('address'))
-       */
       dataOutput = abi.encodeWithSelector(selector, abi.encodePacked(param), vm.parseAddress(dataString));
+      // keccak256(abi.encode('string'))
     } else if (typeHash == 0xfb3d096706e32f4b66d4295434b5927d45452f76a41eb48c393c9dffb67c74af) {
-      /**
-       * keccak256(abi.encode('string'))
-       */
       dataOutput = abi.encodeWithSelector(selector, abi.encodePacked(param), dataString);
     } else {
       revert UnrecognizedDataType();
