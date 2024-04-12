@@ -3,7 +3,7 @@ pragma solidity ^0.8.19;
 
 import 'forge-std/Script.sol';
 import 'forge-std/console2.sol';
-import {ForkManagement} from './ForkManagement.s.sol';
+import {ForkManagement} from '@script/testScripts/gov/helpers/ForkManagement.s.sol';
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 
 contract Proposer is Script, ForkManagement {

@@ -3,8 +3,8 @@ pragma solidity ^0.8.20;
 
 import 'forge-std/console2.sol';
 import 'forge-std/Script.sol';
-import {JSONScript} from '@script/testScripts/gov/JSONScript.s.sol';
-import {ForkManagement} from '@script/testScripts/gov/ForkManagement.s.sol';
+import {JSONScript} from '@script/testScripts/gov/helpers/JSONScript.s.sol';
+import {ForkManagement} from '@script/testScripts/gov/helpers/ForkManagement.s.sol';
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 
 /// @title ExecuteProposal Script

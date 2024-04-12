@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.20;
 
-import {JSONScript} from '@script/testScripts/gov/JSONScript.s.sol';
+import {JSONScript} from '@script/testScripts/gov/helpers/JSONScript.s.sol';
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
 
