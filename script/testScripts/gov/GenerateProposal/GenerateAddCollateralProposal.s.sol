@@ -7,6 +7,7 @@ import {GenerateProposal} from '../GenerateProposal.s.sol';
 import {IGlobalSettlement} from '@contracts/settlement/GlobalSettlement.sol';
 import {ICollateralJoinFactory} from '@interfaces/factories/ICollateralJoinFactory.sol';
 import {ICollateralAuctionHouseFactory} from '@interfaces/factories/ICollateralAuctionHouseFactory.sol';
+import {IModifiablePerCollateral} from '@interfaces/utils/IModifiablePerCollateral.sol';
 import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
 import 'forge-std/StdJson.sol';
 import 'forge-std/console2.sol';
@@ -50,26 +51,23 @@ contract GenerateAddCollateralProposal is GenerateProposal, JSONScript {
     ODGovernor gov = ODGovernor(payable(governanceAddress));
     IGlobalSettlement globalSettlement = IGlobalSettlement(globalSettlementAddress);
 
-    string memory stringCAddress = vm.toString(newCAddress);
-    string memory stringCType = vm.toString(newCType);
-
     // Get target contract addresses from GlobalSettlement:
     //  - CollateralJoinFactory
     //  - CollateralAuctionHouseFactory note why is this address also a target?
-    address[] memory targets = new address[](1);
+    address[] memory targets = new address[](2);
     {
       targets[0] = address(globalSettlement.collateralJoinFactory());
-      // targets[1] = address(globalSettlement.collateralAuctionHouseFactory());
+      targets[1] = address(globalSettlement.collateralAuctionHouseFactory());
     }
     // No values needed
-    uint256[] memory values = new uint256[](1);
+    uint256[] memory values = new uint256[](2);
     {
       values[0] = 0;
-      // values[1] = 0;
+      values[1] = 0;
     }
     // Get calldata for:
     //  - CollateralJoinFactory.deployCollateralJoin
-    bytes[] memory calldatas = new bytes[](1);
+    bytes[] memory calldatas = new bytes[](2);
     ICollateralAuctionHouse.CollateralAuctionHouseParams memory _cahCParams = ICollateralAuctionHouse
       .CollateralAuctionHouseParams({
       minimumBid: minimumBid,
@@ -78,7 +76,7 @@ contract GenerateAddCollateralProposal is GenerateProposal, JSONScript {
       perSecondDiscountUpdateRate: perSecondDiscountUpdateRate
     });
     calldatas[0] = abi.encodeWithSelector(ICollateralJoinFactory.deployCollateralJoin.selector, newCType, newCAddress);
-
+    calldatas[1] = abi.encodeWithSelector(IModifiablePerCollateral.initializeCollateralType.selector, newCType,_cahCParams);
     // Get the descriptionHash
     bytes32 descriptionHash = keccak256(bytes(description));
 

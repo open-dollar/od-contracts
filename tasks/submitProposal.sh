@@ -33,13 +33,13 @@ fi
 
 function display_help() {
             echo "Usage:"
-            echo " yarn script:propose [target environment] [proposalType] "
+            echo " yarn propose:submit [target environment] [proposalType] "
             echo "    where target environment (required): anvil / arb-sepolia  / arb-mainnet"
             echo "    the type of proposal to be generated"
             echo "    your inputs in the correct order.  use --help for more info"
             echo ""
             echo "Example:"
-            echo "yarn script:propose arb-sepolia /gov-output/arb-sepolia/67531219-add-collateral-proposal.json"
+            echo "yarn propose:submit arb-sepolia /gov-output/arb-sepolia/67531219-add-collateral-proposal.json"
         exit 0
 }
 

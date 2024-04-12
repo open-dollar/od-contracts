@@ -6,13 +6,12 @@ set -e
 ## FUNCTIONS ##
 ###############
 
-function parsePath(){
+function generateProposal(){
   NETWORK="$1"
       RPC_ENDPOINT=""
     if [[ $NETWORK = "arb-sepolia" || $NETWORK = "sepolia" ]]; then
              RPC_ENDPOINT=$ARB_SEPOLIA_RPC
           elif [[ "$NETWORK" = "anvil" ]]; then
-
                RPC_ENDPOINT=$ANVIL_RPC
           elif [[ "$NETWORK" = "arb-mainnet" || "$NETWORK" = "mainnet" ]]; then
                RPC_ENDPOINT=$ARB_MAINNET_RPC
@@ -31,13 +30,13 @@ function display_help() {
 
  
             echo "Usage:"
-            echo " yarn script:generate [target environment] [proposalPath]"
+            echo " yarn propose:generate [target environment] [proposalPath]"
             echo "    where target environment (required): anvil / arb-sepolia / arb-mainnet"
             echo "    the path to the proposal JSON file"
             echo "    your inputs in the correct order.  use -help for more info"
             echo ""
             echo "Example:"
-            echo "yarn script:generate arb-sepolia /gov-input/new-addCollateral-prop.json"
+            echo "yarn propose:generate arb-sepolia /gov-input/new-addCollateral-prop.json"
           exit 0
 }
 
@@ -68,7 +67,7 @@ done
 
 if [[ $1 != "" && $2 != "" ]]
   then
-  parsePath $1 $2
+  generateProposal $1 $2
   else
    display_help
 fi

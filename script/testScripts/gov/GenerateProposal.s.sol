@@ -18,8 +18,8 @@ contract GenerateProposal is ForkManagement {
   function run(string memory _filePath) public {
     _loadJson(_filePath);
     _checkNetworkParams();
-    _loadBaseData(json);
     _loadPrivateKeys();
+    _loadBaseData(json);
     _generateProposal();
   }
 
