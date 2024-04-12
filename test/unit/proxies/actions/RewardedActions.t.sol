@@ -3,76 +3,7 @@ pragma solidity 0.8.20;
 
 import {ActionBaseTest, ODProxy} from './ActionBaseTest.sol';
 import {RewardedActions} from '@contracts/proxies/actions/RewardedActions.sol';
-import {CoinJoinMock} from './SurplusBidActions.t.sol';
-
-contract AccountingJobMock {
-  bool public wasWorkAuctionDebtCalled;
-  bool public wasWorkAuctionSurplusCalled;
-  bool public wasWorkPopDebtFromQueueCalled;
-  uint256 public rewardAmount;
-
-  function reset() external {
-    wasWorkAuctionDebtCalled = false;
-    wasWorkAuctionSurplusCalled = false;
-    wasWorkPopDebtFromQueueCalled = false;
-  }
-
-  function _mock_setRewardAmount(uint256 _rewardAmount) external {
-    rewardAmount = _rewardAmount;
-  }
-
-  function workAuctionDebt() external {
-    wasWorkAuctionDebtCalled = true;
-  }
-
-  function workAuctionSurplus() external {
-    wasWorkAuctionSurplusCalled = true;
-  }
-
-  function workPopDebtFromQueue(uint256 _debtBlockTimestamp) external {
-    wasWorkPopDebtFromQueueCalled = true;
-  }
-}
-
-contract LiquidationEngineMock {
-  bool public wasWorkLiquidationCalled;
-  uint256 public rewardAmount;
-
-  function reset() external {
-    wasWorkLiquidationCalled = false;
-  }
-
-  function _mock_setRewardAmount(uint256 _rewardAmount) external {
-    rewardAmount = _rewardAmount;
-  }
-
-  function workLiquidation(bytes32 _cType, address _safe) external {
-    wasWorkLiquidationCalled = true;
-  }
-}
-
-contract OracleJobMock {
-  bool public wasWorkUpdateCollateralPrice;
-  bool public wasWorkUpdateRate;
-  uint256 public rewardAmount;
-
-  function _mock_setRewardAmount(uint256 _rewardAmount) external {
-    rewardAmount = _rewardAmount;
-  }
-
-  function reset() external {
-    wasWorkUpdateCollateralPrice = false;
-    wasWorkUpdateRate = false;
-  }
-
-  function workUpdateCollateralPrice(bytes32 _cType) external {
-    wasWorkUpdateCollateralPrice = true;
-  }
-
-  function workUpdateRate() external {
-    wasWorkUpdateCollateralPrice = true;
-  }
-}
+import {CoinJoinMock, AccountingJobMock, LiquidationEngineMock, OracleJobMock} from '@test/mocks/ActionsMocks.sol';
 
 // Testing the calls from ODProxy to RewardedActions
 contract RewardedActionsTest is ActionBaseTest {
@@ -84,12 +15,15 @@ contract RewardedActionsTest is ActionBaseTest {
 
   function setUp() public {
     proxy = new ODProxy(alice);
+    accountingJob.reset();
+    liquidationEngine.reset();
+    oracleJob.reset();
+    coinJoin.reset();
   }
 
   function test_startDebtAuction() public {
-    accountingJob.reset();
-    accountingJob._mock_setRewardAmount(100);
     vm.startPrank(alice);
+    accountingJob._mock_setRewardAmount(100);
     proxy.execute(
       address(rewardedActions),
       abi.encodeWithSignature('startDebtAuction(address,address)', address(accountingJob), address(coinJoin))
@@ -98,9 +32,8 @@ contract RewardedActionsTest is ActionBaseTest {
   }
 
   function test_startSurplusAuction() public {
-    accountingJob.reset();
-    accountingJob._mock_setRewardAmount(100);
     vm.startPrank(alice);
+    accountingJob._mock_setRewardAmount(100);
     proxy.execute(
       address(rewardedActions),
       abi.encodeWithSignature('startSurplusAuction(address,address)', address(accountingJob), address(coinJoin))
@@ -109,9 +42,8 @@ contract RewardedActionsTest is ActionBaseTest {
   }
 
   function test_popDebtFromQueue() public {
-    accountingJob.reset();
-    accountingJob._mock_setRewardAmount(100);
     vm.startPrank(alice);
+    accountingJob._mock_setRewardAmount(100);
     proxy.execute(
       address(rewardedActions),
       abi.encodeWithSignature('popDebtFromQueue(address,address,uint256)', address(accountingJob), address(coinJoin), 0)
@@ -120,9 +52,8 @@ contract RewardedActionsTest is ActionBaseTest {
   }
 
   function test_auctionSurplus() public {
-    accountingJob.reset();
-    accountingJob._mock_setRewardAmount(100);
     vm.startPrank(alice);
+    accountingJob._mock_setRewardAmount(100);
     proxy.execute(
       address(rewardedActions),
       abi.encodeWithSignature('auctionSurplus(address,address)', address(accountingJob), address(coinJoin))
@@ -131,7 +62,6 @@ contract RewardedActionsTest is ActionBaseTest {
   }
 
   function test_liquidateSAFE() public {
-    liquidationEngine.reset();
     vm.startPrank(alice);
     proxy.execute(
       address(rewardedActions),
@@ -147,10 +77,8 @@ contract RewardedActionsTest is ActionBaseTest {
   }
 
   function test_updateCollateralPrice() public {
-    oracleJob.reset();
-    oracleJob._mock_setRewardAmount(100);
-    coinJoin.reset();
     vm.startPrank(alice);
+    oracleJob._mock_setRewardAmount(100);
     proxy.execute(
       address(rewardedActions),
       abi.encodeWithSignature(
@@ -161,9 +89,8 @@ contract RewardedActionsTest is ActionBaseTest {
   }
 
   function test_updateRedemptionRate() public {
-    oracleJob.reset();
-    oracleJob._mock_setRewardAmount(100);
     vm.startPrank(alice);
+    oracleJob._mock_setRewardAmount(100);
     proxy.execute(
       address(rewardedActions),
       abi.encodeWithSignature('updateRedemptionRate(address,address)', address(oracleJob), address(coinJoin))

@@ -4,21 +4,9 @@ pragma solidity 0.8.20;
 import 'forge-std/Test.sol';
 import {ActionBaseTest, ODProxy} from './ActionBaseTest.sol';
 import {CollateralBidActions} from '@contracts/proxies/actions/CollateralBidActions.sol';
-import {CoinJoinMock, SafeEngineMock} from './SurplusBidActions.t.sol';
-import {CollateralJoinMock} from './GlobalSettlementActions.t.sol';
-
-contract CollateralAuctionHouseMock {
-  bool public wasBuyCollateralCalled;
-
-  function reset() external {
-    wasBuyCollateralCalled = false;
-  }
-
-  function buyCollateral(uint256 _auctionId, uint256 _bidAmount) external returns (uint256, uint256) {
-    wasBuyCollateralCalled = true;
-    return (1, 1);
-  }
-}
+import {
+  CoinJoinMock, SafeEngineMock, CollateralJoinMock, CollateralAuctionHouseMock
+} from '@test/mocks/ActionsMocks.sol';
 
 contract CollateralBidActionsTest is ActionBaseTest {
   CollateralBidActions collateralBidActions = new CollateralBidActions();
@@ -28,10 +16,12 @@ contract CollateralBidActionsTest is ActionBaseTest {
 
   function setUp() public {
     proxy = new ODProxy(alice);
+    coinJoin.reset();
+    collateralAuctionHouse.reset();
+    collateralJoin.reset();
   }
 
   function test_buyCollateral() public {
-    coinJoin.reset();
     vm.startPrank(alice);
     coinJoin.systemCoin().approve(address(proxy), 10 ether);
     collateralJoin._mock_setSafeEngine(coinJoin.safeEngine());

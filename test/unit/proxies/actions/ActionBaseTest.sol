@@ -3,9 +3,8 @@ pragma solidity 0.8.20;
 
 import 'forge-std/Test.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
-import {BytesDecoder} from '@test/utils/BytesDecoder.sol';
 
-abstract contract ActionBaseTest is Test, BytesDecoder {
+abstract contract ActionBaseTest is Test {
   address public constant alice = address(0x01);
   ODProxy public proxy;
 }

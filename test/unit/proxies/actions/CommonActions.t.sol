@@ -14,12 +14,11 @@ contract CommonActionsTest is ActionBaseTest {
 
   function setUp() public {
     proxy = new ODProxy(alice);
+    coinJoin.reset();
   }
 
   function test_joinSystemCoins() public {
-    coinJoin.reset();
     vm.startPrank(alice);
-
     coinJoin.systemCoin().approve(address(proxy), 10 ether);
     proxy.execute(
       address(commonActions),
@@ -30,9 +29,7 @@ contract CommonActionsTest is ActionBaseTest {
   }
 
   function test_exitSystemCoins() public {
-    coinJoin.reset();
     vm.startPrank(alice);
-
     coinJoin.systemCoin().approve(address(proxy), 10 ether);
     proxy.execute(
       address(commonActions), abi.encodeWithSignature('exitSystemCoins(address,uint256)', address(coinJoin), 10_000)
@@ -42,19 +39,15 @@ contract CommonActionsTest is ActionBaseTest {
   }
 
   function test_exitAllSystemCoins() public {
-    coinJoin.reset();
     vm.startPrank(alice);
-
     SafeEngineMock(coinJoin.safeEngine()).mock_setCoinBalance(10_000 ether);
     proxy.execute(address(commonActions), abi.encodeWithSignature('exitAllSystemCoins(address)', address(coinJoin)));
-
     assertTrue(coinJoin.wasExitCalled());
   }
 
   function test_exitCollateral() public {
     coinJoin.reset();
     vm.startPrank(alice);
-
     SafeEngineMock(coinJoin.safeEngine()).mock_setCoinBalance(10_000 ether);
     proxy.execute(
       address(commonActions), abi.encodeWithSignature('exitCollateral(address,uint256)', address(coinJoin), 10_000)

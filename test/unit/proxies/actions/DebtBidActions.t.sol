@@ -3,40 +3,7 @@ pragma solidity 0.8.20;
 
 import {ActionBaseTest, ODProxy} from './ActionBaseTest.sol';
 import {DebtBidActions, IDebtAuctionHouse} from '@contracts/proxies/actions/DebtBidActions.sol';
-import {CoinJoinMock, SafeEngineMock} from './SurplusBidActions.t.sol';
-
-contract DebtAuctionHouseMock {
-  bool public wasDecreaseSoldAmountCalled;
-  bool public wasSettleAuctionCalled;
-  IDebtAuctionHouse.Auction public auction;
-
-  function reset() external {
-    wasDecreaseSoldAmountCalled = false;
-    wasSettleAuctionCalled = false;
-  }
-
-  function auctions(uint256 _id) external view returns (IDebtAuctionHouse.Auction memory _auction) {
-    return auction;
-  }
-
-  function _mock_setAuction(
-    uint256 bidAmount,
-    uint256 amountToSell,
-    address highBidder,
-    uint256 bidExpiry,
-    uint256 auctionDeadline
-  ) external {
-    auction = IDebtAuctionHouse.Auction(bidAmount, amountToSell, highBidder, bidExpiry, auctionDeadline);
-  }
-
-  function decreaseSoldAmount(uint256 _id, uint256 _amountToBuy) external {
-    wasDecreaseSoldAmountCalled = true;
-  }
-
-  function settleAuction(uint256 _id) external {
-    wasSettleAuctionCalled = true;
-  }
-}
+import {CoinJoinMock, SafeEngineMock, DebtAuctionHouseMock} from '@test/mocks/ActionsMocks.sol';
 
 contract DebtBidActionsTest is ActionBaseTest {
   DebtBidActions public debtBidActions = new DebtBidActions();
@@ -46,15 +13,15 @@ contract DebtBidActionsTest is ActionBaseTest {
 
   function setUp() public {
     proxy = new ODProxy(alice);
+    debtAuctionHouseMock.reset();
+    safeEngine.reset();
+    coinJoin.reset();
   }
 
   function test_decreaseSoldAmount() public {
-    debtAuctionHouseMock.reset();
-    debtAuctionHouseMock._mock_setAuction(1, 1, address(alice), 1, 1);
     vm.startPrank(alice);
-
+    debtAuctionHouseMock._mock_setAuction(1, 1, address(alice), 1, 1);
     coinJoin.systemCoin().approve(address(proxy), 10 ether);
-
     proxy.execute(
       address(debtBidActions),
       abi.encodeWithSignature(
@@ -66,12 +33,8 @@ contract DebtBidActionsTest is ActionBaseTest {
   }
 
   function test_settleAuction() public {
-    debtAuctionHouseMock.reset();
-    debtAuctionHouseMock._mock_setAuction(1, 1, address(alice), 1, 1);
-    SafeEngineMock safeEngine = SafeEngineMock(coinJoin.safeEngine());
-    safeEngine.mock_setCoinBalance(100);
     vm.startPrank(alice);
-
+    debtAuctionHouseMock._mock_setAuction(1, 1, address(alice), 1, 1);
     proxy.execute(
       address(debtBidActions),
       abi.encodeWithSignature(
