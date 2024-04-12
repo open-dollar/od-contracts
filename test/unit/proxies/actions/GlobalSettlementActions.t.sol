@@ -46,7 +46,15 @@ contract ODSafeManagerMock {
   address public safeEngine;
 
   bool public wasQuitSystemCalled;
+  bool public wasOpenSAFECalled;
+  bool public wasEnterSystemCalled;
+  bool public wasAllowSAFECalled;
+  bool public wasMoveSAFECalled;
+  bool public wasAddSAFECalled;
+  bool public wasRemoveSAFECalled;
+  bool public wasProtectSAFECalled;
   uint256 public collateralBalance;
+  uint256 public safeId;
 
   constructor() {
     safeEngine = address(new SafeEngineMock());
@@ -54,7 +62,16 @@ contract ODSafeManagerMock {
 
   function reset() external {
     safeDataPoint = IODSafeManager.SAFEData(0, address(0), address(0), bytes32(0));
+    safeId = 0;
     wasQuitSystemCalled = false;
+    wasOpenSAFECalled = false;
+    wasAllowSAFECalled = false;
+    wasEnterSystemCalled = false;
+    wasMoveSAFECalled = false;
+    wasAddSAFECalled = false;
+    wasRemoveSAFECalled = false;
+    wasProtectSAFECalled = false;
+    collateralBalance = 0;
   }
 
   function _mock_setSafeData(uint96 _nonce, address _owner, address _safeHandler, bytes32 _collateralType) external {
@@ -65,6 +82,10 @@ contract ODSafeManagerMock {
     collateralBalance = _collateralBalance;
   }
 
+  function _mock_setSafeId(uint256 _safeId) external {
+    safeId = _safeId;
+  }
+
   function safeData(uint256 _safe) external view returns (IODSafeManager.SAFEData memory _sData) {
     return safeDataPoint;
   }
@@ -73,8 +94,37 @@ contract ODSafeManagerMock {
     wasQuitSystemCalled = true;
   }
 
+  function enterSystem(address _src, uint256 _safe) external {
+    wasEnterSystemCalled = true;
+  }
+
   function tokenCollateral(bytes32 _cType, address _account) external view returns (uint256 _collateralBalance) {
     return collateralBalance;
+  }
+
+  function openSAFE(bytes32 _cType, address _usr) external returns (uint256 _id) {
+    wasOpenSAFECalled = true;
+    return safeId;
+  }
+
+  function allowSAFE(uint256 _safe, address _usr, bool _ok) external {
+    wasAllowSAFECalled = true;
+  }
+
+  function moveSAFE(uint256 _safeSrc, uint256 _safeDst) external {
+    wasMoveSAFECalled = true;
+  }
+
+  function addSAFE(uint256 _safe) external {
+    wasAddSAFECalled = true;
+  }
+
+  function removeSAFE(uint256 _safe) external {
+    wasRemoveSAFECalled = true;
+  }
+
+  function protectSAFE(uint256 _safe, address _handler) external {
+    wasProtectSAFECalled = true;
   }
 }
 
