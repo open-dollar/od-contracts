@@ -35,6 +35,7 @@ contract DebtBidActionsTest is ActionBaseTest {
   function test_settleAuction() public {
     vm.startPrank(alice);
     debtAuctionHouseMock._mock_setAuction(1, 1, address(alice), 1, 1);
+    SafeEngineMock(coinJoin.safeEngine())._mock_setCoinBalance(1 ether);
     proxy.execute(
       address(debtBidActions),
       abi.encodeWithSignature(
@@ -44,4 +45,17 @@ contract DebtBidActionsTest is ActionBaseTest {
 
     assertTrue(coinJoin.wasExitCalled());
   }
+
+  function test_collectProtocolTokens() public {
+    vm.startPrank(alice);
+    bytes memory resp = proxy.execute(
+      address(debtBidActions),
+      abi.encodeWithSignature(
+        'collectProtocolTokens(address)', address(coinJoin.systemCoin())
+      )
+    );
+    assertTrue(resp.length == 0);
+  }
+
+
 }

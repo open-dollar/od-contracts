@@ -305,11 +305,11 @@ contract SafeEngineMock {
     safe = ISAFEEngine.SAFE(lockedCollateral, generatedDebt);
   }
 
-  function mock_setCanModifySAFE(bool _canModifySAFE) external {
+  function _mock_setCanModifySAFE(bool _canModifySAFE) external {
     canModifySAF = _canModifySAFE;
   }
 
-  function mock_setCoinBalance(uint256 _coinBalance) external {
+  function _mock_setCoinBalance(uint256 _coinBalance) external {
     coinBalancePoint = _coinBalance;
   }
 

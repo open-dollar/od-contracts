@@ -45,7 +45,7 @@ contract SurplusBidActionTest is ActionBaseTest {
     address _surplusAuctionHouse = address(surplusActionsHouseMock);
     uint256 _auctionId = 1;
     SafeEngineMock safeEngine = SafeEngineMock(coinJoin.safeEngine());
-    safeEngine.mock_setCanModifySAFE(true);
+    safeEngine._mock_setCanModifySAFE(true);
     proxy.execute(
       address(surplusBidActions),
       abi.encodeWithSignature('settleAuction(address,address,uint256)', _coinJoin, _surplusAuctionHouse, _auctionId)
@@ -63,7 +63,7 @@ contract SurplusBidActionTest is ActionBaseTest {
     address _surplusAuctionHouse = address(surplusActionsHouseMock);
     uint256 _auctionId = 1;
     SafeEngineMock safeEngine = SafeEngineMock(coinJoin.safeEngine());
-    safeEngine.mock_setCanModifySAFE(false);
+    safeEngine._mock_setCanModifySAFE(false);
     proxy.execute(
       address(surplusBidActions),
       abi.encodeWithSignature('settleAuction(address,address,uint256)', _coinJoin, _surplusAuctionHouse, _auctionId)

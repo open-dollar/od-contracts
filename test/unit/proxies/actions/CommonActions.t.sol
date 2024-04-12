@@ -40,7 +40,7 @@ contract CommonActionsTest is ActionBaseTest {
 
   function test_exitAllSystemCoins() public {
     vm.startPrank(alice);
-    SafeEngineMock(coinJoin.safeEngine()).mock_setCoinBalance(10_000 ether);
+    SafeEngineMock(coinJoin.safeEngine())._mock_setCoinBalance(10_000 ether);
     proxy.execute(address(commonActions), abi.encodeWithSignature('exitAllSystemCoins(address)', address(coinJoin)));
     assertTrue(coinJoin.wasExitCalled());
   }
@@ -48,7 +48,7 @@ contract CommonActionsTest is ActionBaseTest {
   function test_exitCollateral() public {
     coinJoin.reset();
     vm.startPrank(alice);
-    SafeEngineMock(coinJoin.safeEngine()).mock_setCoinBalance(10_000 ether);
+    SafeEngineMock(coinJoin.safeEngine())._mock_setCoinBalance(10_000 ether);
     proxy.execute(
       address(commonActions), abi.encodeWithSignature('exitCollateral(address,uint256)', address(coinJoin), 10_000)
     );

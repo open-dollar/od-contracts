@@ -44,7 +44,7 @@ contract GlobalSettlementActionTest is ActionBaseTest {
     odSafeManagerMock._mock_setCollateralBalance(100);
 
     SafeEngineMock safeEngineMock = SafeEngineMock(odSafeManagerMock.safeEngine());
-    safeEngineMock.mock_setCoinBalance(100);
+    safeEngineMock._mock_setCoinBalance(100);
     globalSettlementMock._mock_setSafeEngine(address(safeEngineMock));
 
     proxy.execute(
@@ -64,7 +64,7 @@ contract GlobalSettlementActionTest is ActionBaseTest {
     SafeEngineMock safeEngineMock = SafeEngineMock(odSafeManagerMock.safeEngine());
 
     safeEngineMock._mock_setCollateralBalance(100);
-    safeEngineMock.mock_setCoinBalance(10_000);
+    safeEngineMock._mock_setCoinBalance(10_000);
 
     globalSettlementMock._mock_setSafeEngine(address(safeEngineMock));
     globalSettlementMock._mock_setCoinBag(100_000);
