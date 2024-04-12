@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {JSONScript} from '@script/testScripts/gov/JSONScript.s.sol';
 import {Strings} from '@openzeppelin/utils/Strings.sol';
