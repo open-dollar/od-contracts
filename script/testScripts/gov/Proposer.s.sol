@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.19;
+pragma solidity 0.8.20;
 
 import 'forge-std/Script.sol';
 import 'forge-std/console2.sol';
@@ -46,7 +46,7 @@ contract Proposer is Script, ForkManagement {
     assert(proposalId == newProposalId);
   }
 
-  function _verifyProposal() internal returns (bool _verified) {
+  function _verifyProposal() internal view returns (bool _verified) {
     require(
       address(governor) != address(0) && values.length > 0 && values.length == targets.length
         && targets.length == calldatas.length,
