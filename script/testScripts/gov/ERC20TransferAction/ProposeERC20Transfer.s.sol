@@ -63,7 +63,7 @@ contract ProposeERC20Transfer is JSONScript {
       vm.serializeUint(objectKey, 'amountToTransferInWei', amountToTransfer);
       string memory jsonOutput =
         _buildProposalParamsJSON(proposalId, objectKey, targets, values, calldatas, description, descriptionHash);
-      vm.writeJson(jsonOutput, string.concat('./gov-output/', stringProposalId, '-transfer-tokens-proposal.json'));
+      vm.writeJson(jsonOutput, string.concat('./gov-output/', stringProposalId, '-transfer-tokens.json'));
     }
 
     // Expected JSON output:

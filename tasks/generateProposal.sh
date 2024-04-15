@@ -22,6 +22,7 @@ function generateProposal(){
       fi
     COMMAND_PATH=$(node tasks/parseProposalPath.js $2)
     CALLDATA=$(cast calldata "run(string)" $2)
+    echo "BASH PATH"
     echo "$COMMAND_PATH"
       FOUNDRY_PROFILE=governance forge script $COMMAND_PATH -s $CALLDATA --rpc-url $RPC_ENDPOINT
 
