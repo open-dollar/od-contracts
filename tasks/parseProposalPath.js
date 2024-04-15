@@ -7,6 +7,7 @@ const jsonPath = "../" + args[0];
 const basePath = path.join(__dirname, jsonPath);
 const currentJson = JSON.parse(fs.readFileSync(basePath));
 
+if(currentJson.numberOfModifications != undefined){
 // create correct number of modifications
 currentJson.numberOfModifications = currentJson.modifyObjects.length;
 
@@ -17,6 +18,7 @@ fs.writeFile(basePath, JSON.stringify(currentJson), (err) => {
       return;
     }
 });
+}
 
 const proposalType = currentJson.proposalType[0].toUpperCase() + currentJson.proposalType.slice(1);
 
