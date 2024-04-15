@@ -87,12 +87,6 @@ contract NFTSetup is Common {
     ODProxy(_proxy).execute(address(basicActions), payload);
   }
 
-  function enterSystem(address _proxy, address _src, uint256 _safeId) public {
-    bytes memory payload =
-      abi.encodeWithSelector(basicActions.enterSystem.selector, address(safeManager), _src, _safeId);
-    ODProxy(_proxy).execute(address(basicActions), payload);
-  }
-
   function moveSAFE(address _proxy, uint256 _src, uint256 _dst) public {
     bytes memory payload = abi.encodeWithSelector(basicActions.moveSAFE.selector, address(safeManager), _src, _dst);
     ODProxy(_proxy).execute(address(basicActions), payload);

@@ -56,12 +56,6 @@ interface IBasicActions is ICommonActions {
    */
   function quitSystem(address _manager, uint256 _safe, address _dst) external;
   /**
-   * @notice Enter the system, migrating the safe (lockedCollateral, generatedDebt) from a src handler to the safe handler
-   * @param  _src Address of the src handler
-   * @param  _safe Id of the SAFE
-   */
-  function enterSystem(address _manager, address _src, uint256 _safe) external;
-  /**
    * @notice Move a position from safeSrc handler to the safeDst handler
    * @param  _safeSrc Id of the source SAFE
    * @param  _safeDst Id of the destination SAFE

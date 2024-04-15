@@ -246,20 +246,6 @@ contract ODSafeManager is IODSafeManager, Authorizable, Modifiable {
   }
 
   /// @inheritdoc IODSafeManager
-  function enterSystem(address _src, uint256 _safe) external safeAllowed(_safe) {
-    SAFEData memory _sData = _safeData[_safe];
-    ISAFEEngine.SAFE memory _safeInfo = ISAFEEngine(safeEngine).safes(_sData.collateralType, _src);
-    int256 _deltaCollateral = _safeInfo.lockedCollateral.toInt();
-    int256 _deltaDebt = _safeInfo.generatedDebt.toInt();
-    ISAFEEngine(safeEngine).transferSAFECollateralAndDebt(
-      _sData.collateralType, _src, _sData.safeHandler, _deltaCollateral, _deltaDebt
-    );
-
-    _updateNfvState(_safe, _deltaCollateral, _deltaDebt);
-    emit EnterSystem(msg.sender, _src, _safe);
-  }
-
-  /// @inheritdoc IODSafeManager
   function moveSAFE(uint256 _safeSrc, uint256 _safeDst) external safeAllowed(_safeSrc) safeAllowed(_safeDst) {
     SAFEData memory _srcData = _safeData[_safeSrc];
     SAFEData memory _dstData = _safeData[_safeDst];
