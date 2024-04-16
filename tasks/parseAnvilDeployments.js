@@ -85,6 +85,6 @@ ${addressText}}
       return;
     }
 
-    console.log("AnvilContracts.s.sol written to file successfully!");
+    console.log("AnvilContracts.t.sol written to file successfully!");
   });
 };
