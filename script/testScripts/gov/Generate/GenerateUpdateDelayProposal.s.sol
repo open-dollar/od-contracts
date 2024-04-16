@@ -2,12 +2,10 @@
 pragma solidity 0.8.20;
 
 import {JSONScript} from '@script/testScripts/gov/helpers/JSONScript.s.sol';
-import {Strings} from '@openzeppelin/utils/Strings.sol';
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 import {TimelockController} from '@openzeppelin/governance/TimelockController.sol';
 import {Generator} from '@script/testScripts/gov/Generator.s.sol';
 import 'forge-std/StdJson.sol';
-import 'forge-std/console2.sol';
 
 contract GenerateUpdateDelayProposal is Generator, JSONScript {
   using stdJson for string;
