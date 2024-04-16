@@ -24,13 +24,17 @@ contract FetchGovernanceParams is Common, SepoliaDeployment, Script {
 
   function _fetchGovernanceParams() internal view {
     uint256 minDelay = timelockController.getMinDelay();
-    bool governorIsAdmin = timelockController.hasRole(bytes32('TIMELOCK_ADMIN_ROLE'), address(governor));
-    bool deployerIsAdmin =
-      timelockController.hasRole(bytes32('TIMELOCK_ADMIN_ROLE'), 0xA0313248556DeA42fd17B345817Dd5DC5674c1E1);
+    bool governorIsAdmin = timelockController.hasRole(timelockController.TIMELOCK_ADMIN_ROLE(), address(governor));
+    bool deployerIsAdmin = timelockController.hasRole(timelockController.TIMELOCK_ADMIN_ROLE(), deployer);
+    bool governorIsProposer = timelockController.hasRole(timelockController.PROPOSER_ROLE(), address(governor));
+    bool deployerIsProposer = timelockController.hasRole(timelockController.PROPOSER_ROLE(), deployer);
 
-    console2.log('TimelockController: minDelay: ', minDelay);
-    console2.log('TimelockController: admin role goveror: ', governorIsAdmin);
-    console2.log('TimelockController: admin role deployer: ', deployerIsAdmin);
+    console2.log('Timelock Controller', address(timelockController));
+    console2.log('minDelay: ', minDelay);
+    console2.log('admin role goveror: ', governorIsAdmin);
+    console2.log('admin role deployer: ', deployerIsAdmin);
+    console2.log('Proposer role governor: ', governorIsProposer);
+    console2.log('Proposer role deployer: ', deployerIsProposer);
 
     //  = governor.params();
   }
