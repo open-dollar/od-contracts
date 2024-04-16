@@ -43,7 +43,7 @@ contract GenerateUpdateDelayProposal is Generator, JSONScript {
     vm.startBroadcast(privateKey);
     bytes32 operationHash = tlc.hashOperation(targets[0], values[0], calldatas[0], bytes32(0), bytes32(0));
 
-    // tlc.schedule(targets[0], values[0], calldatas[0], bytes32(0), bytes32(0), 0);
+    tlc.schedule(targets[0], values[0], calldatas[0], bytes32(0), bytes32(0), 0);
 
     // Propose the action to add the collateral type
     // uint256 proposalId = gov.hashProposal(targets, values, calldatas, descriptionHash);
