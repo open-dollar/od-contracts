@@ -36,7 +36,7 @@ abstract contract Deploy is Common, Script {
   function run() public {
     deployer = vm.addr(_deployerPk);
 
-    if (isFork()) {
+    if (isFork() && block.chainid != 1337) {
       vm.startPrank(deployer);
     } else {
       vm.startBroadcast(deployer);
