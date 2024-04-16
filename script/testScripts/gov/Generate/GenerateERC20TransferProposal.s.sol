@@ -17,7 +17,6 @@ import 'forge-std/StdJson.sol';
 contract GenerateERC20TransferProposal is Generator, JSONScript {
   using stdJson for string;
 
-  string public objectKey = 'PROPOSE_ERC20_TRANSFER_KEY';
   address public governanceAddress;
   string public description;
   address[] public ERC20TokenAddresses;
@@ -63,7 +62,7 @@ contract GenerateERC20TransferProposal is Generator, JSONScript {
       );
     }
 
-    // Get the description and descriptionHash
+    // Get the descriptionHash
     bytes32 descriptionHash = keccak256(bytes(description));
 
     vm.startBroadcast(privateKey);
@@ -76,6 +75,7 @@ contract GenerateERC20TransferProposal is Generator, JSONScript {
     assert(proposalId == gov.hashProposal(targets, values, calldatas, descriptionHash));
 
     {
+      string memory objectKey = 'PROPOSE_ERC20_TRANSFER_KEY';
       string memory jsonOutput =
         _buildProposalParamsJSON(proposalId, objectKey, targets, values, calldatas, description, descriptionHash);
       vm.writeJson(jsonOutput, string.concat('./gov-output/', network, '/', stringProposalId, '-transfer-erc20.json'));

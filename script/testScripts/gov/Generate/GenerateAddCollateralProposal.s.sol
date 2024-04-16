@@ -22,7 +22,6 @@ import 'forge-std/console2.sol';
 contract GenerateAddCollateralProposal is Generator, JSONScript {
   using stdJson for string;
 
-  string public objectKey = 'PROPOSE_ADD_COLLATERAL_KEY';
   address public governanceAddress;
   address public globalSettlementAddress;
   bytes32 public newCType;
@@ -88,6 +87,7 @@ contract GenerateAddCollateralProposal is Generator, JSONScript {
     string memory stringProposalId = vm.toString(proposalId / 10 ** 69);
 
     {
+      string memory objectKey = 'PROPOSE_ADD_COLLATERAL_KEY';
       // Build the JSON output
       string memory builtProp =
         _buildProposalParamsJSON(proposalId, objectKey, targets, values, calldatas, description, descriptionHash);

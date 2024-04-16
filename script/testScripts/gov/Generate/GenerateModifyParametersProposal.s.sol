@@ -15,8 +15,6 @@ contract GenerateModifyParametersProposal is Generator, JSONScript {
 
   error UnrecognizedDataType();
 
-  string public objectKey = 'MODIFY_PARAMS_OBJECT_KEY';
-
   address[] internal _targets;
   string[] internal _datas;
   string[] internal _params;
@@ -72,6 +70,7 @@ contract GenerateModifyParametersProposal is Generator, JSONScript {
     string memory stringProposalId = vm.toString(proposalId / 10 ** 69);
 
     {
+      string memory objectKey = 'MODIFY_PARAMS_OBJECT_KEY';
       // Build the JSON output
       string memory builtProp =
         _buildProposalParamsJSON(proposalId, objectKey, targets, values, calldatas, _description, descriptionHash);
