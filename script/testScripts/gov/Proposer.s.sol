@@ -52,7 +52,7 @@ contract Proposer is Script, ForkManagement {
         && targets.length == calldatas.length,
       'params not set'
     );
-    
+
     uint256 newProposalId = governor.hashProposal(targets, values, calldatas, descriptionHash);
     if (newProposalId == proposalId) {
       _verified = true;
