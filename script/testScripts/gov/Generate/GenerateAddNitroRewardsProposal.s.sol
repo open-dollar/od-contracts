@@ -16,11 +16,10 @@ interface NitroPool {
 /// @title ProposeAddRewardsToNitroPool Script
 /// @author OpenDollar
 /// @notice Script to propose adding rewards to NitroPool via ODGovernance
-/// @dev NOTE This script requires the following env vars in the REQUIRED ENV VARS section below
 /// @dev This script is used to propose adding rewards to NitroPool, we first approve ERC20 to NitroPool and then call addRewards
 /// @dev The script will output a JSON file with the proposal data to be used by the QueueProposal and ExecuteProposal scripts
 /// @dev In the root, run: export FOUNDRY_PROFILE=governance && forge script --rpc-url <RPC_URL> script/testScripts/gov/AddRewardsToNitroPool/ProposeAddRewardsToNitroPool.s.sol
-contract ProposeAddRewardsToNitroPool is Generator, JSONScript {
+contract GenerateAddNitroRewardsProposal is Generator, JSONScript {
   using stdJson for string;
 
   string public description;
@@ -85,7 +84,9 @@ contract ProposeAddRewardsToNitroPool is Generator, JSONScript {
       string memory objectKey = 'PROPOSE_ADD_NITROPOOL_REWARDS_KEY';
       string memory jsonOutput =
         _buildProposalParamsJSON(proposalId, objectKey, targets, values, calldatas, description, descriptionHash);
-      vm.writeJson(jsonOutput, string.concat('./gov-output/', stringProposalId, '-add-nitro-rewards.json'));
+      vm.writeJson(
+        jsonOutput, string.concat('./gov-output/', network, '/', stringProposalId, '-add-nitro-rewards.json')
+      );
     }
 
     vm.stopBroadcast();
