@@ -37,6 +37,8 @@ Addresses for testnet can be found in the app: https://app.dev.opendollar.com/st
 | 2 | March 2024 | [Quantstamp](https://www.trailofbits.com/) | [39d1a1c](https://github.com/open-dollar/od-contracts/commit/39d1a1c) | [View Changes](https://github.com/open-dollar/od-contracts/compare/39d1a1c...main) | Report to be published |
 | 3 | TBD | TBD | TBD | TBD | The code for the [od-relayers] repo, used to fetch price data, is currently being audited and will be completed prior to launch. |
 
+Additional audits completed prior to forking this codebase can be found here: https://github.com/hai-on-op/audit-reports
+
 # Usage
 
 ## Basic Setup for Cloned Repo
