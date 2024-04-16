@@ -5,5 +5,5 @@
 "odGovernor": "0xA5DC5C86212cF22167c52b756363B0FeA7B6e591",
 "timelockController": "0xC1b1A32Cb29E441A1a16cC1120aF47f2787D5000",
 "proposalType": "UpdateDelay",
-"newDelay": "0"
+"newDelay": 0
 }

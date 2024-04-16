@@ -23,7 +23,8 @@ contract GenerateUpdateDelayProposal is Generator, JSONScript {
   }
 
   function _generateProposal() internal override {
-    ODGovernor gov = ODGovernor(payable(_governanceAddress));
+    // ODGovernor gov = ODGovernor(payable(_governanceAddress));
+    TimelockController tlc = TimelockController(payable(_timelockController));
     address[] memory targets = new address[](1);
     {
       targets[0] = _timelockController;
@@ -37,20 +38,28 @@ contract GenerateUpdateDelayProposal is Generator, JSONScript {
       calldatas[0] = abi.encodeWithSelector(TimelockController.updateDelay.selector, _newDelay);
     }
 
-    bytes32 descriptionHash = keccak256(bytes(_description));
+    // bytes32 descriptionHash = keccak256(bytes(_description));
 
     vm.startBroadcast(privateKey);
+    bytes32 operationHash = tlc.hashOperation(targets[0], values[0], calldatas[0], bytes32(0), bytes32(0));
+
+    tlc.schedule(targets[0], values[0], calldatas[0], bytes32(0), bytes32(0), 0);
 
     // Propose the action to add the collateral type
-    uint256 proposalId = gov.hashProposal(targets, values, calldatas, descriptionHash);
-    string memory stringProposalId = vm.toString(proposalId / 10 ** 69);
+    // uint256 proposalId = gov.hashProposal(targets, values, calldatas, descriptionHash);
+    string memory stringOperationHash = vm.toString(operationHash);
 
     {
-      string memory objectKey = 'UPDATE-TIMELOCK-OBJECT';
+      string memory objectKey = 'SCHEDULE-TIMELOCK-OBJECT';
       // Build the JSON output
-      string memory builtProp =
-        _buildProposalParamsJSON(proposalId, objectKey, targets, values, calldatas, _description, descriptionHash);
-      vm.writeJson(builtProp, string.concat('./gov-output/', network, '/', stringProposalId, '-updateDelay.json'));
+      string memory builtProp = _serializeCurrentJson(objectKey);
+      vm.serializeBytes32(objectKey, 'operationHash', operationHash);
+      vm.serializeAddress(objectKey, 'targets', targets);
+      vm.serializeUint(objectKey, 'values', values);
+      vm.serializeBytes(objectKey, 'calldatas', calldatas);
+      vm.writeJson(
+        builtProp, string.concat('./gov-output/', network, '/', stringOperationHash, '-updateTimeDelay.json')
+      );
     }
 
     vm.stopBroadcast();
