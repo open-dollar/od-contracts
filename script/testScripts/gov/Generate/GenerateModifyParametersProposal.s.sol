@@ -28,14 +28,14 @@ contract GenerateModifyParametersProposal is Generator, JSONScript {
   function _loadBaseData(string memory json) internal override {
     _description = json.readString(string(abi.encodePacked('.description')));
     _governanceAddress = json.readAddress(string(abi.encodePacked('.odGovernor')));
-    uint256 len = json.readUint(string(abi.encodePacked('.numberOfModifications')));
+    uint256 len = json.readUint(string(abi.encodePacked('.arrayLength')));
 
     for (uint256 i; i < len; i++) {
       string memory index = Strings.toString(i);
-      address target = json.readAddress(string(abi.encodePacked('.modifyObjects[', index, '].target')));
-      string memory param = json.readString(string(abi.encodePacked('.modifyObjects[', index, '].param')));
-      string memory dataType = json.readString(string(abi.encodePacked('.modifyObjects[', index, '].type')));
-      string memory data = json.readString(string(abi.encodePacked('.modifyObjects[', index, '].data')));
+      address target = json.readAddress(string(abi.encodePacked('.objectArray[', index, '].target')));
+      string memory param = json.readString(string(abi.encodePacked('.objectArray[', index, '].param')));
+      string memory dataType = json.readString(string(abi.encodePacked('.objectArray[', index, '].type')));
+      string memory data = json.readString(string(abi.encodePacked('.objectArray[', index, '].data')));
       _targets.push(target);
       _params.push(param);
       _dataTypes.push(dataType);
