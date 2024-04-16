@@ -11,11 +11,11 @@ contract Proposer is Script, ForkManagement {
 
   ODGovernor public governor;
   uint256[] public values;
-  address[] targets;
+  address[] public targets;
   bytes[] public calldatas;
   string public description;
   bytes32 public descriptionHash;
-  uint256 proposalId;
+  uint256 public proposalId;
 
   function _loadBaseData(string memory json) internal virtual {
     values = json.readUintArray(string(abi.encodePacked('.values')));
@@ -52,8 +52,7 @@ contract Proposer is Script, ForkManagement {
         && targets.length == calldatas.length,
       'params not set'
     );
-    // require(keccak256(abi.encode(description)) == descriptionHash, 'Description changed');
-
+    
     uint256 newProposalId = governor.hashProposal(targets, values, calldatas, descriptionHash);
     if (newProposalId == proposalId) {
       _verified = true;
