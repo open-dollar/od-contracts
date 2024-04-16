@@ -43,7 +43,7 @@ contract GenerateUpdateDelayProposal is Generator, JSONScript {
     vm.startBroadcast(privateKey);
     bytes32 operationHash = tlc.hashOperation(targets[0], values[0], calldatas[0], bytes32(0), bytes32(0));
 
-    tlc.schedule(targets[0], values[0], calldatas[0], bytes32(0), bytes32(0), 0);
+    // tlc.schedule(targets[0], values[0], calldatas[0], bytes32(0), bytes32(0), 0);
 
     // Propose the action to add the collateral type
     // uint256 proposalId = gov.hashProposal(targets, values, calldatas, descriptionHash);
@@ -52,13 +52,13 @@ contract GenerateUpdateDelayProposal is Generator, JSONScript {
     {
       string memory objectKey = 'SCHEDULE-TIMELOCK-OBJECT';
       // Build the JSON output
-      string memory builtProp = _serializeCurrentJson(objectKey);
-      vm.serializeBytes32(objectKey, 'operationHash', operationHash);
+      _serializeCurrentJson(objectKey);
       vm.serializeAddress(objectKey, 'targets', targets);
       vm.serializeUint(objectKey, 'values', values);
       vm.serializeBytes(objectKey, 'calldatas', calldatas);
+      string memory jsonOutput = vm.serializeBytes32(objectKey, 'operationHash', operationHash);
       vm.writeJson(
-        builtProp, string.concat('./gov-output/', network, '/', stringOperationHash, '-updateTimeDelay.json')
+        jsonOutput, string.concat('./gov-output/', network, '/', stringOperationHash, '-updateTimeDelay.json')
       );
     }
 
