@@ -12,6 +12,10 @@ contract MockProxyTarget {
     return true;
   }
 
+  function payableCall() public payable returns (bool) {
+    return true;
+  }
+
   function callWithArgs(uint256 a, uint256 b) public pure returns (uint256) {
     return a + b;
   }
@@ -70,5 +74,49 @@ contract ODProxyTest is Test {
     vm.startPrank(alice);
     vm.expectRevert();
     proxy.execute(address(target), abi.encodeWithSignature('callWillFail()'));
+  }
+
+  function testArbitraryExecute() public {
+    vm.startPrank(alice);
+    bytes memory resp = proxy.arbitraryExecute(address(target), abi.encodeWithSignature('call()'), 0);
+    assertTrue(abi.decode(resp, (bool)));
+  }
+
+  function testArbitraryExecuteWithValue() public {
+    vm.startPrank(alice);
+    vm.deal(address(proxy), 1 ether);
+    bytes memory resp = proxy.arbitraryExecute(address(target), abi.encodeWithSignature('payableCall()'), 1 ether);
+    assertTrue(abi.decode(resp, (bool)));
+  }
+
+  function testArbitraryExecuteWithValueFail() public {
+    vm.startPrank(alice);
+    vm.expectRevert('Address: insufficient balance for call');
+    proxy.arbitraryExecute(address(target), abi.encodeWithSignature('payableCall()'), 1 ether);
+  }
+
+  function testArbitraryExecuteWithArgs() public {
+    vm.startPrank(alice);
+    bytes memory resp =
+      proxy.arbitraryExecute(address(target), abi.encodeWithSignature('callWithArgs(uint256,uint256)', 1, 2), 0);
+    assertEq(abi.decode(resp, (uint256)), 3);
+  }
+
+  function testArbitraryExecuteWithNoTarget() public {
+    vm.startPrank(alice);
+    vm.expectRevert('Address: call to non-contract');
+    proxy.arbitraryExecute(address(0), abi.encodeWithSignature('call()'), 0);
+  }
+
+  function testArbitraryExecuteNonOwner() public {
+    vm.startPrank(bob);
+    vm.expectRevert(OnlyOwner.selector);
+    proxy.arbitraryExecute(address(target), abi.encodeWithSignature('call()'), 0);
+  }
+
+  function testArbitraryExecuteWillFail() public {
+    vm.startPrank(alice);
+    vm.expectRevert();
+    proxy.arbitraryExecute(address(target), abi.encodeWithSignature('callWillFail()'), 0);
   }
 }
