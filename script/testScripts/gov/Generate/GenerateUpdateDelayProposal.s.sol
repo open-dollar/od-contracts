@@ -12,18 +12,15 @@ contract GenerateUpdateDelayProposal is Generator, JSONScript {
 
   uint256 internal _newDelay;
   address internal _timelockController;
-  address internal _governanceAddress;
   string internal _description;
 
   function _loadBaseData(string memory json) internal override {
     _description = json.readString(string(abi.encodePacked('.description')));
-    _governanceAddress = json.readAddress(string(abi.encodePacked('.odGovernor')));
     _newDelay = json.readUint(string(abi.encodePacked(('.newDelay'))));
     _timelockController = json.readAddress(string(abi.encodePacked('.timelockController')));
   }
 
   function _generateProposal() internal override {
-    // ODGovernor gov = ODGovernor(payable(_governanceAddress));
     TimelockController tlc = TimelockController(payable(_timelockController));
     address[] memory targets = new address[](1);
     {
@@ -43,7 +40,7 @@ contract GenerateUpdateDelayProposal is Generator, JSONScript {
     vm.startBroadcast(privateKey);
     bytes32 operationHash = tlc.hashOperation(targets[0], values[0], calldatas[0], bytes32(0), bytes32(0));
 
-    tlc.schedule(targets[0], values[0], calldatas[0], bytes32(0), bytes32(0), 0);
+    tlc.schedule(targets[0], values[0], calldatas[0], bytes32(0), bytes32(0), 259_200);
 
     // Propose the action to add the collateral type
 
