@@ -15,6 +15,7 @@ abstract contract Common is Contracts, Params, Test {
   bytes32 internal _vault721Salt;
   bytes internal _systemCoinInitCode;
   bytes internal _vault721InitCode;
+  bool internal _isTest;
 
   function logGovernor() public runIfFork {
     emit log_named_address('Governor', governor);

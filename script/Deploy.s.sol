@@ -4,6 +4,7 @@ pragma solidity 0.8.20;
 import '@script/Contracts.s.sol';
 import '@script/Registry.s.sol';
 import '@script/Params.s.sol';
+import 'forge-std/console2.sol';
 import {Script, VmSafe} from 'forge-std/Script.sol';
 import {FixedPointMathLib} from '@isolmate/utils/FixedPointMathLib.sol';
 import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
@@ -36,7 +37,7 @@ abstract contract Deploy is Common, Script {
   function run() public {
     deployer = vm.addr(_deployerPk);
 
-    if (isFork() && block.chainid != 1337) {
+    if (_isTest) {
       vm.startPrank(deployer);
     } else {
       vm.startBroadcast(deployer);
@@ -79,7 +80,7 @@ abstract contract Deploy is Common, Script {
       _setupCollateral(_cType);
     }
     // Mint initial ODG airdrop E2E or Anvil
-    if (isFork() || isNetworkAnvil()) {
+    if (isFork() && isNetworkAnvil()) {
       protocolToken.mint(address(0x420), AIRDROP_AMOUNT / AIRDROP_RECIPIENTS);
       protocolToken.mint(address(0x421), AIRDROP_AMOUNT / AIRDROP_RECIPIENTS);
     }
@@ -103,7 +104,7 @@ abstract contract Deploy is Common, Script {
       }
     }
 
-    if (isFork()) {
+    if (_isTest) {
       vm.stopPrank();
     }
   }
