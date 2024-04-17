@@ -18,11 +18,11 @@ contract ExecuteUpdateProposal is Script, ForkManagement {
 
   ODGovernor public governor;
   uint256[] public values;
-  address[] targets;
+  address[] public targets;
   bytes[] public calldatas;
+  uint256 public proposalId;
   string public description;
   bytes32 public descriptionHash;
-  uint256 proposalId;
 
   function run(string memory _filePath) public {
     _loadJson(_filePath);
