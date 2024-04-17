@@ -105,11 +105,12 @@ contract Unit_ODGovernorTest is Base {
     vm.roll(100); // move to block number to 100
     (address[] memory targets, uint256[] memory values, bytes[] memory calldatas) = __createProposalArgs();
     vm.startPrank(alice);
+    bytes32 descriptionHash = keccak256(bytes(proposal_description));
     uint256 propId = odGovernor.propose(targets, values, calldatas, proposal_description);
-    vm.roll(1000); // move to block number to some point inside the voting window
+    vm.roll(10); // move to block number to some point inside the voting window
 
     // cancel the proposal
-    odGovernor.cancel(propId);
+    odGovernor.cancel(targets, values, calldatas, descriptionHash);
     uint256 proposalState = uint256(odGovernor.state(propId));
     assertEq(proposalState, uint256(IGovernor.ProposalState.Canceled));
   }
@@ -121,7 +122,7 @@ contract Unit_ODGovernorTest is Base {
     (address[] memory targets, uint256[] memory values, bytes[] memory calldatas) = __createProposalArgs();
     vm.startPrank(alice);
     uint256 propId = odGovernor.propose(targets, values, calldatas, proposal_description);
-    vm.roll(1000); // move to block number to some point inside the voting window
+    vm.roll(10); // move to block number to some point inside the voting window
 
     odGovernor.cancel(targets, values, calldatas, proposal_hash);
     uint256 proposalState = uint256(odGovernor.state(propId));
@@ -151,7 +152,7 @@ contract Unit_ODGovernorTest is Base {
 
     // execute proposal
     vm.startPrank(executor);
-    odGovernor.execute(propId);
+    odGovernor.execute(targets, values, calldatas, proposal_hash);
 
     uint256 proposalState = uint256(odGovernor.state(propId));
     assertEq(proposalState, uint256(IGovernor.ProposalState.Executed));
