@@ -16,6 +16,11 @@ address constant SEPOLIA_SYSTEM_COIN = 0x0006d00Ae8375BDb0b10fBb100490CD5504fD80
 uint256 constant AIRDROP_AMOUNT = 10_000_000e18; // 10 million tokens
 uint256 constant AIRDROP_RECIPIENTS = 2;
 
+uint256 constant SEPOLIA_INIT_VOTING_DELAY = 360;
+uint256 constant SEPOLIA_INIT_VOTING_PERIOD = 2160;
+uint256 constant SEPOLIA_INIT_PROP_THRESHOLD = 10_000e18;
+uint256 constant SEPOLIA_INIT_VOTE_QUORUM = 3;
+
 // Governance Settings
 uint256 constant TEST_INIT_VOTING_DELAY = 1;
 uint256 constant TEST_INIT_VOTING_PERIOD = 15;
