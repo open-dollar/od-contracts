@@ -86,7 +86,6 @@ contract ODGovernor is
     return super.state(proposalId);
   }
 
-
   /**
    * inherit: Governor, GovernorSettings
    */
@@ -105,15 +104,6 @@ contract ODGovernor is
     bytes32 descriptionHash
   ) internal override(Governor, GovernorTimelockControl) {
     super._execute(proposalId, targets, values, calldatas, descriptionHash);
-  }
-
-  function cancel(
-    address[] memory targets,
-    uint256[] memory values,
-    bytes[] memory calldatas,
-    bytes32 descriptionHash
-  ) public override(Governor, IGovernor) returns (uint256) {
-    return super.cancel(targets, values, calldatas, descriptionHash);
   }
 
   /**
