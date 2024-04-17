@@ -399,7 +399,7 @@ contract Unit_ODSafeManager_SystemManagement is Base {
 
     vm.mockCall(address(vault721), abi.encodeWithSelector(IVault721.updateNfvState.selector), abi.encode());
 
-    safeManager.quitSystem(_scenario.safeId, _scenario.aliceProxy);
+    safeManager.quitSystem(_scenario.safeId);
   }
 }
 

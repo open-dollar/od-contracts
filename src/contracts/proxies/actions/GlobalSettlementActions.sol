@@ -41,7 +41,7 @@ contract GlobalSettlementActions is CommonActions, IGlobalSettlementActions {
       _safeEngine.approveSAFEModification(_manager);
     }
 
-    __manager.quitSystem(_safeId, address(this));
+    __manager.quitSystem(_safeId);
 
     // free collateral
     __globalSettlement.freeCollateral(_safeData.collateralType);
