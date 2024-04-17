@@ -182,11 +182,10 @@ interface IODSafeManager {
   function transferInternalCoins(uint256 _safe, address _dst, uint256 _rad) external;
 
   /**
-   * @notice Quit the system, migrating the safe (lockedCollateral, generatedDebt) to a different dst handler
+   * @notice Quit the system, migrating the safe (lockedCollateral, generatedDebt) to the ODProxy address
    * @param  _safe Id of the SAFE
-   * @param  _dst Address of the dst handler
    */
-  function quitSystem(uint256 _safe, address _dst) external;
+  function quitSystem(uint256 _safe) external;
 
   /**
    * @notice Move a position from safeSrc handler to the safeDst handler

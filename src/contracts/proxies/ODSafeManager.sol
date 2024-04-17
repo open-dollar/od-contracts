@@ -228,8 +228,9 @@ contract ODSafeManager is IODSafeManager, Authorizable, Modifiable {
   }
 
   /// @inheritdoc IODSafeManager
-  function quitSystem(uint256 _safe, address _dst) external safeAllowed(_safe) {
+  function quitSystem(uint256 _safe) external safeAllowed(_safe) {
     SAFEData memory _sData = _safeData[_safe];
+    address _dst = _sData.owner;
     ISAFEEngine.SAFE memory _safeInfo = ISAFEEngine(safeEngine).safes(_sData.collateralType, _sData.safeHandler);
     int256 _deltaCollateral = _safeInfo.lockedCollateral.toInt();
     int256 _deltaDebt = _safeInfo.generatedDebt.toInt();
@@ -240,8 +241,8 @@ contract ODSafeManager is IODSafeManager, Authorizable, Modifiable {
     _updateNfvState(_safe, _deltaCollateral, _deltaDebt);
 
     // Remove safe from owner's list (notice it doesn't erase safe ownership)
-    _usrSafes[_sData.owner].remove(_safe);
-    _usrSafesPerCollat[_sData.owner][_sData.collateralType].remove(_safe);
+    _usrSafes[_dst].remove(_safe);
+    _usrSafesPerCollat[_dst][_sData.collateralType].remove(_safe);
     emit QuitSystem(msg.sender, _safe, _dst);
   }
 
