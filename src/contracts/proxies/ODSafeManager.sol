@@ -250,6 +250,7 @@ contract ODSafeManager is IODSafeManager, Authorizable, Modifiable {
   function moveSAFE(uint256 _safeSrc, uint256 _safeDst) external safeAllowed(_safeSrc) safeAllowed(_safeDst) {
     SAFEData memory _srcData = _safeData[_safeSrc];
     SAFEData memory _dstData = _safeData[_safeDst];
+    if (_dstData.safeHandler == address(0)) revert HandlerDoesNotExist();
     if (_srcData.collateralType != _dstData.collateralType) revert CollateralTypesMismatch();
     ISAFEEngine.SAFE memory _safeInfo = ISAFEEngine(safeEngine).safes(_srcData.collateralType, _srcData.safeHandler);
     int256 _deltaCollateral = _safeInfo.lockedCollateral.toInt();
