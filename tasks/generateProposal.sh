@@ -5,24 +5,11 @@ set -e
 ###############
 ## FUNCTIONS ##
 ###############
-function getNetwork(){
-    echo "$1"
-}
-function getPath(){
-    input_string="$3"
-
-# Use parameter expansion and regular expression matching to extract the desired part
-desired_part="${input_string##*/od-contracts}"
-
-# Print the desired part
-echo "$desired_part"
-}
 
 function generateProposal(){
-  OUTPUT=$(node ./tasks/parseNetwork.js $1)
-  echo "$OUTPUT"
-  NETWORK=$(getNetwork $OUTPUT)
-  CAST_PATH=$(getPath $OUTPUT)
+  declare OUTPUT=($(node ./tasks/parseNetwork.js $1))
+  NETWORK=${OUTPUT[0]}
+  CAST_PATH=${OUTPUT[1]}
     CALLDATA=$(cast calldata "run(string)" $CAST_PATH)
     if [[ $NETWORK = "arb-sepolia" || $NETWORK = "sepolia" ]]; then
              RPC_ENDPOINT=$ARB_SEPOLIA_RPC

@@ -7,11 +7,12 @@ set -e
 ## FUNCTIONS ##
 ###############
 
-function propose(){
+
+function execute(){
   declare OUTPUT=($(node ./tasks/parseNetwork.js $1))
   NETWORK=${OUTPUT[0]}
   CAST_PATH=${OUTPUT[1]}
-    CALLDATA=$(cast calldata "run(string)" $CAST_PATH)
+  CALLDATA=$(cast calldata "run(string)" $CAST_PATH)
     RPC_ENDPOINT=""
       if [[ $NETWORK = "arb-sepolia" || $NETWORK = "sepolia" ]]; then RPC_ENDPOINT=$ARB_SEPOLIA_RPC
           elif [[ $NETWORK = "anvil" ]]; then RPC_ENDPOINT=$ANVIL_RPC
@@ -21,14 +22,14 @@ function propose(){
             exit 1    
       fi
 
-      FOUNDRY_PROFILE=governance forge script script/testScripts/gov/Proposer.s.sol:Proposer -s $CALLDATA --rpc-url $RPC_ENDPOINT
+      FOUNDRY_PROFILE=governance forge script script/testScripts/gov/Executor.s.sol:Executor -s $CALLDATA --rpc-url $RPC_ENDPOINT
 
       read -p "Please verify the data and confirm the submission of this proposal (y/n):" CONFIRMATION
 
 if [[ $CONFIRMATION == "y" || $CONFIRMATION == "Y" ]]
     then
         echo "Executing..."
-        FOUNDRY_PROFILE=governance forge script script/testScripts/gov/Proposer.s.sol:Proposer -s $CALLDATA --rpc-url $RPC_ENDPOINT --broadcast
+        FOUNDRY_PROFILE=governance forge script script/testScripts/gov/Executor.s.sol:Executor -s $CALLDATA --rpc-url $RPC_ENDPOINT --broadcast
    
 fi
 }
@@ -86,9 +87,9 @@ done
 # is set then execute #
 ######################
 
-if [[ $1 != "" ]]
+if [[ $1 != ""  ]]
     then 
-    propose $1 
+    execute $1 
     else 
     display_help
 fi
