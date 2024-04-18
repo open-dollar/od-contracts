@@ -219,7 +219,7 @@ contract SAFESaviourIncreaseGeneratedDebtOrDecreaseCollateral is ISAFESaviour, B
   // If true this performs the increase or decrease, if false this saviour does nothing.
   bool performAction;
   // Track if the `saveSAFE` was called
-  bool public wasCalled;
+  uint256 public wasCalled;
 
   constructor(uint256 _lockedCollateral, uint256 _generatedDebt, bool _collateralOrDebt, bool _performAction) {
     lockedCollateral = _lockedCollateral;
@@ -233,7 +233,7 @@ contract SAFESaviourIncreaseGeneratedDebtOrDecreaseCollateral is ISAFESaviour, B
     bytes32 _cType,
     address _safe
   ) external returns (bool _ok, uint256 _collateralAdded, uint256 _liquidatorReward) {
-    wasCalled = true;
+    wasCalled = 1;
     if (!performAction) return (true, 0, 0);
 
     uint256 newLockedCollateral = collateralOrDebt ? lockedCollateral - 1 : lockedCollateral;
@@ -282,23 +282,23 @@ contract Unit_LiquidationEngine_Constructor is Base {
   event AddAuthorization(address _account);
   event ModifyParameters(bytes32 indexed _parameter, bytes32 indexed _cType, bytes _data);
 
-  function test_Set_Authorization() public {
+  function test_Set_Authorization() public view {
     assertEq(liquidationEngine.authorizedAccounts(deployer), true);
   }
 
-  function test_Set_SafeEngine() public {
+  function test_Set_SafeEngine() public view {
     assertEq(address(liquidationEngine.safeEngine()), address(mockSafeEngine));
   }
 
-  function test_Set_AccountingEngine() public {
+  function test_Set_AccountingEngine() public view {
     assertEq(address(liquidationEngine.accountingEngine()), address(mockAccountingEngine));
   }
 
-  function test_Set_OnAuctionSystemCoinLimit() public {
+  function test_Set_OnAuctionSystemCoinLimit() public view {
     assertEq(liquidationEngine.params().onAuctionSystemCoinLimit, type(uint256).max);
   }
 
-  function test_Set_ContractEnabled() public {
+  function test_Set_ContractEnabled() public view {
     assertEq(liquidationEngine.contractEnabled(), true);
   }
 
@@ -440,7 +440,7 @@ contract Unit_LiquidationEngine_RemoveCoinsFromAuction is Base {
     _mockCurrentOnAuctionSystemCoins(_initialCurrentOnAuctionSystemCoins);
 
     liquidationEngine.removeCoinsFromAuction(_rad);
-    assertEq(liquidationEngine.currentOnAuctionSystemCoins(), _initialCurrentOnAuctionSystemCoins - _rad);
+    assert(liquidationEngine.currentOnAuctionSystemCoins() == (_initialCurrentOnAuctionSystemCoins - _rad));
   }
 
   function test_Emit_UpdateCurrentOnAuctionSystemCoins(
@@ -1030,7 +1030,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
 
     liquidationEngine.liquidateSAFE(collateralType, safe);
 
-    assertEq(liquidationEngine.currentOnAuctionSystemCoins(), _currentOnAuctionSystemCoins + _amountToRaise);
+    assert(liquidationEngine.currentOnAuctionSystemCoins() == (_currentOnAuctionSystemCoins + _amountToRaise));
   }
 
   function test_Set_CurrentOnAuctionSystemCoins_PartialLiquidation(
@@ -1046,7 +1046,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
 
     liquidationEngine.liquidateSAFE(collateralType, safe);
 
-    assertEq(liquidationEngine.currentOnAuctionSystemCoins(), _currentOnAuctionSystemCoins + _amountToRaise);
+    assert(liquidationEngine.currentOnAuctionSystemCoins() == (_currentOnAuctionSystemCoins + _amountToRaise));
   }
 
   function test_Emit_UpdateCurrentOnAuctionSystemCoins(
@@ -1344,7 +1344,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     liquidationEngine.liquidateSAFE(collateralType, safe);
 
     // Test that if an increase was attempted the state was reverted to reflect it never happening
-    assertTrue(!SAFESaviourIncreaseGeneratedDebtOrDecreaseCollateral(address(_testSaveSaviour)).wasCalled());
+    assert(SAFESaviourIncreaseGeneratedDebtOrDecreaseCollateral(address(_testSaveSaviour)).wasCalled() == 0);
   }
 
   function test_InternalRevert_InvalidSaviourOperation_DecreaseCollateral(Liquidation memory _liquidation)
@@ -1362,7 +1362,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     liquidationEngine.liquidateSAFE(collateralType, safe);
 
     // Test that if an decrease was attempted the state was reverted to reflect it never happening
-    assertTrue(!SAFESaviourIncreaseGeneratedDebtOrDecreaseCollateral(address(_testSaveSaviour)).wasCalled());
+    assert(SAFESaviourIncreaseGeneratedDebtOrDecreaseCollateral(address(_testSaveSaviour)).wasCalled() == 0);
   }
 
   function test_NotRevert_NewLiquidationPriceIsZero(Liquidation memory _liquidation)
