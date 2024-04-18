@@ -47,4 +47,6 @@ contract ODProxy {
   ) external payable onlyOwner returns (bytes memory _response) {
     _response = _target.functionCallWithValue(_data, _value);
   }
+
+  receive() external payable {}
 }
