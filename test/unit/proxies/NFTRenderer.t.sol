@@ -174,13 +174,16 @@ contract Unit_NFTRenderer_RenderParams is Base {
     }
 
     if (bytes(params.collateralJson).length == 0) {
-      fail('No collateral returned');
+      // fail('No collateral returned');
+      fail();
     }
     if (bytes(params.debtJson).length == 0) {
-      fail('No debt returned');
+      // fail('No debt returned');
+      fail();
     }
     if (bytes(params.debtSvg).length == 0) {
-      fail('No metaDebt returned');
+      // fail('No metaDebt returned');
+      fail();
     }
   }
 
@@ -194,7 +197,8 @@ contract Unit_NFTRenderer_RenderParams is Base {
     assertEq(params.ratio, 0, 'incorrect ratio param');
 
     if (bytes(params.collateralJson).length == 0) {
-      fail('No collateral string returned');
+      // fail('No collateral string returned');
+      fail();
     }
   }
 }
@@ -206,7 +210,8 @@ contract Unit_NFTRenderer_RenderBase is Base {
     string memory returnedURI = nftRenderer.render(_data.safeId);
 
     if (bytes(returnedURI).length == 0) {
-      fail('no URI returned');
+      // fail('no URI returned');
+      fail();
     }
   }
 }
