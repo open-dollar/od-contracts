@@ -9,6 +9,7 @@ import {ICollateralJoinFactory} from '@interfaces/factories/ICollateralJoinFacto
 import {ICollateralAuctionHouseFactory} from '@interfaces/factories/ICollateralAuctionHouseFactory.sol';
 import {IModifiablePerCollateral} from '@interfaces/utils/IModifiablePerCollateral.sol';
 import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
+import {CollateralAuctionHouseChild} from '@contracts/factories/CollateralAuctionHouseChild.sol';
 import 'forge-std/StdJson.sol';
 import 'forge-std/console2.sol';
 

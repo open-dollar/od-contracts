@@ -1,15 +1,14 @@
 {
   "chainid": 31337,
-  "description": "add Boden as a collateral type",
-  "globalSettlement": "0x8B777768Eba27f1161b1573d8A5e7334f4714a5A",
-  "maximumDiscount": 1000000000020000000,
-  "minimumBid": 100000002000000000,
-  "minimumDiscount": 1000000000002000000,
+  "description": "add RETH as a collateral type",
+  "globalSettlement": "0xF45B1CdbA9AACE2e9bbE80bf376CE816bb7E73FB",
+  "maximumDiscount": 1,
+  "minimumBid": 2,
+  "minimumDiscount": 3,
   "network": "anvil",
-  "newCollateralAddress": "0x5ff631684f3dcF6430764C002b7184b9757C814c",
-  "newCollateralBytes32": "0x4152420000000000000000000000000000000000000000000000000000000000",
-  "newCollateralType": "Boden",
-  "odGovernor": "0xA5DC5C86212cF22167c52b756363B0FeA7B6e591",
+  "newCollateralAddress": "0x3E661784267F128e5f706De17Fac1Fc1c9d56f30",
+  "newCollateralType": "RETH",
+  "odGovernor": "0xD2D5e508C82EFc205cAFA4Ad969a4395Babce026",
   "perSecondDiscountUpdateRate": 999998607628240538157433861,
   "proposalType": "AddCollateral"
 }

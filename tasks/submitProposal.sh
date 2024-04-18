@@ -6,13 +6,27 @@ set -e
 ###############
 ## FUNCTIONS ##
 ###############
+function getNetwork(){
+    echo "$1"
+}
+function getPath(){
+    input_string="$3"
+
+# Use parameter expansion and regular expression matching to extract the desired part
+desired_part="${input_string##*/od-contracts}"
+
+# Print the desired part
+echo "$desired_part"
+}
 
 function propose(){
-  NETWORK=$1
-    CALLDATA=$(cast calldata "run(string)" $2)
+  OUTPUT=$(node ./tasks/parseNetwork.js $1)
+  NETWORK=$(getNetwork $OUTPUT)
+  CAST_PATH=$(getPath $OUTPUT)
+    CALLDATA=$(cast calldata "run(string)" $CAST_PATH)
     RPC_ENDPOINT=""
       if [[ $NETWORK = "arb-sepolia" || $NETWORK = "sepolia" ]]; then RPC_ENDPOINT=$ARB_SEPOLIA_RPC
-          elif [[ NETWORK = "anvil" ]]; then RPC_ENDPOINT=$ANVIL_RPC
+          elif [[ $NETWORK = "anvil" ]]; then RPC_ENDPOINT=$ANVIL_RPC
           elif [[ $NETWORK = "arb-mainnet" || $NETWORK = "mainnet" ]]; then RPC_ENDPOINT=$ARB_MAINNET_RPC
           else
             echo "Unrecognized target environment"
@@ -84,9 +98,9 @@ done
 # is set then execute #
 ######################
 
-if [[ $1 != "" && $2 != "" ]]
+if [[ $1 != "" ]]
     then 
-    propose $1 $2
+    propose $1 
     else 
     display_help
 fi
