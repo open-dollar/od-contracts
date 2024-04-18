@@ -42,7 +42,7 @@ contract Executor is Script, ForkManagement {
   }
 
   function _executeProposal() internal {
-    vm.startBroadcast(privateKey);
+    vm.startBroadcast(_privateKey);
 
     // execute proposal
     governor.execute(targets, values, calldatas, descriptionHash);

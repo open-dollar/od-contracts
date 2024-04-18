@@ -12,22 +12,22 @@ contract ForkManagement is Script {
   error UnrecognizedChainId();
 
   string public json;
-  uint256 public privateKey;
+  uint256 internal _privateKey;
   address public proposer;
-  uint256 public chainId;
-  string public network;
+  uint256 internal _chainId;
+  string internal _network;
   string public path;
 
   function _loadPrivateKeys() internal {
     if (block.chainid == 421_614) {
-      privateKey = vm.envUint('ARB_SEPOLIA_DEPLOYER_PK');
-      proposer = vm.addr(privateKey);
+      _privateKey = vm.envUint('ARB_SEPOLIA_DEPLOYER_PK');
+      proposer = vm.addr(_privateKey);
     } else if (block.chainid == 42_161) {
-      privateKey = vm.envUint('ARB_MAINNET_DEPLOYER_PK');
-      proposer = vm.addr(privateKey);
+      _privateKey = vm.envUint('ARB_MAINNET_DEPLOYER_PK');
+      proposer = vm.addr(_privateKey);
     } else if (block.chainid == 31_337) {
-      privateKey = vm.envUint('ANVIL_ONE');
-      proposer = vm.addr(privateKey);
+      _privateKey = vm.envUint('ANVIL_ONE');
+      proposer = vm.addr(_privateKey);
     } else {
       revert UnrecognizedChainId();
     }
@@ -44,12 +44,12 @@ contract ForkManagement is Script {
     return json;
   }
 
-  function _checkNetworkParams() internal {
-    network = json.readString(string(abi.encodePacked('.network')));
-    chainId = json.readUint(string(abi.encodePacked('.chainid')));
-    console2.log('Target environment:', network);
-    console2.log('Network:', network);
-    console2.log('ChainId:', chainId);
-    if (block.chainid != chainId) revert('Wrong chainid');
+  function _checkNetworkParams() internal virtual {
+    _network = json.readString(string(abi.encodePacked('.network')));
+    _chainId = json.readUint(string(abi.encodePacked('.chainid')));
+    console2.log('Target environment:', _network);
+    console2.log('Network:', _network);
+    console2.log('ChainId:', _chainId);
+    if (block.chainid != _chainId) revert('Wrong chainid');
   }
 }

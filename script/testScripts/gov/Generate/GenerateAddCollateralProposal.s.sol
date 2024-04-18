@@ -49,7 +49,6 @@ contract GenerateAddCollateralProposal is Generator, JSONScript {
 
   function _generateProposal() internal override {
     ODGovernor gov = ODGovernor(payable(governanceAddress));
-    console2.log(gov.quorumDenominator());
     IGlobalSettlement globalSettlement = IGlobalSettlement(globalSettlementAddress);
     // Get target contract addresses from GlobalSettlement:
     //  - CollateralJoinFactory
@@ -81,7 +80,7 @@ contract GenerateAddCollateralProposal is Generator, JSONScript {
     // Get the descriptionHash
     bytes32 descriptionHash = keccak256(bytes(description));
 
-    vm.startBroadcast(privateKey);
+    vm.startBroadcast(_privateKey);
 
     // Propose the action to add the collateral type
     uint256 proposalId = gov.hashProposal(targets, values, calldatas, descriptionHash);
@@ -92,7 +91,7 @@ contract GenerateAddCollateralProposal is Generator, JSONScript {
       // Build the JSON output
       string memory builtProp =
         _buildProposalParamsJSON(proposalId, objectKey, targets, values, calldatas, description, descriptionHash);
-      vm.writeJson(builtProp, string.concat('./gov-output/', network, '/', stringProposalId, '-add-collateral.json'));
+      vm.writeJson(builtProp, string.concat('./gov-output/', _network, '/', stringProposalId, '-add-collateral.json'));
     }
 
     vm.stopBroadcast();

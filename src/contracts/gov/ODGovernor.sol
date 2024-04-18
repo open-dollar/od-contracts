@@ -125,6 +125,14 @@ contract ODGovernor is
     return super._executor();
   }
 
+  function _getVotes(
+    address account,
+    uint256 timepoint,
+    bytes memory params
+  ) internal view override(Governor, GovernorVotes) returns (uint256) {
+    return super._getVotes(account, timepoint, params);
+  }
+
   /**
    * inherit: Governor, GovernorTimelockControl
    */
