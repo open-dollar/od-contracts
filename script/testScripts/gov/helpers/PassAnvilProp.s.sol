@@ -48,19 +48,21 @@ contract PassAnvilProp is Script, AnvilDeployment, ForkManagement {
     console2.log('Voting weight: ', IVotes(address(protocolToken)).getVotes(proposer));
 
     propState = gov.state(proposalId);
-        (uint256 id,
-            address proposer,
-            uint256 eta,
-            uint256 startBlock,
-            uint256 endBlock,
-            uint256 forVotes,
-            uint256 againstVotes,
-            uint256 abstainVotes,
-            bool canceled,
-            bool executed) = gov.proposals(proposalId);
-            console2.log("FOR VOTES: ", forVotes);
-            console2.log("AGAINST VOTES: ", againstVotes);
-            console2.log("ABSTAIN VOTES: ", abstainVotes);
+    (
+      uint256 id,
+      address proposer,
+      uint256 eta,
+      uint256 startBlock,
+      uint256 endBlock,
+      uint256 forVotes,
+      uint256 againstVotes,
+      uint256 abstainVotes,
+      bool canceled,
+      bool executed
+    ) = gov.proposals(proposalId);
+    console2.log('FOR VOTES: ', forVotes);
+    console2.log('AGAINST VOTES: ', againstVotes);
+    console2.log('ABSTAIN VOTES: ', abstainVotes);
     console2.log(uint8(propState));
     if (propState == IGovernor.ProposalState.Active) {
       console2.log('Casting Vote...', block.number);
@@ -70,7 +72,7 @@ contract PassAnvilProp is Script, AnvilDeployment, ForkManagement {
       vm.warp(block.timestamp + 300 seconds);
 
       propState = gov.state(proposalId);
-      console2.log("PROP STATE: ", uint8(propState));
+      console2.log('PROP STATE: ', uint8(propState));
       if (propState == IGovernor.ProposalState.Succeeded) {
         console2.log('Proposal Passed');
       } else if (propState == IGovernor.ProposalState.Active) {
