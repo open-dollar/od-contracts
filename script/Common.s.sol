@@ -389,7 +389,7 @@ abstract contract Common is Contracts, Params, Test {
     } else {
       vault721 = new Vault721();
     }
-    vault721.initialize(address(timelockController), 0, 0);
+    vault721.initialize(address(timelockController), BLOCK_DELAY, TIME_DELAY);
 
     safeManager =
       new ODSafeManager(address(safeEngine), address(vault721), address(taxCollector), address(liquidationEngine));
