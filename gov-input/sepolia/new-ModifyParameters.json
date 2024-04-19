@@ -1,6 +1,6 @@
 {
     "chainid": 421614,
-    "description": "Modify some random parameters",
+    "description": "Modify some Vault721 blockDelay",
     "network": "sepolia",
     "proposalType": "ModifyParameters",
     "odGovernor": "0x69ae232E574352232aB8678869eAA3BEBd885211",
