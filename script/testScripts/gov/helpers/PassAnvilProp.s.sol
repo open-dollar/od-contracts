@@ -40,8 +40,24 @@ contract PassAnvilProp is Script, AnvilDeployment, ForkManagement {
     _loadBaseData(json);
 
     vm.startBroadcast(_privateKey);
+    _passVote();
+   
+  }
 
-    console2.log('Delegating Token...');
+  function delegateTokens(string memory _filePath) public {
+        _loadJson(_filePath);
+    _checkNetworkParams();
+    _loadPrivateKeys();
+    _loadBaseData(json);
+
+    vm.startBroadcast(_privateKey);
+    protocolToken.delegate(proposer);
+    uint256 voteWeight = protocolToken.getVotes(proposer);
+    console2.log('Current vote weight: ', voteWeight);
+  }
+
+  function _passVote() internal {
+     console2.log('Delegating Token...');
     IVotes(address(protocolToken)).delegate(proposer);
     console2.log('Voting Delay:', gov.votingDelay());
     console2.log('Voting Period:', gov.votingPeriod());
@@ -84,7 +100,4 @@ contract PassAnvilProp is Script, AnvilDeployment, ForkManagement {
       console2.log('Vote not active! use anvil_mine 2 to mine 2 blocks and start voting.');
     }
   }
-
-  function _delegateAndVote() internal {}
-  function _passVote() internal {}
 }
