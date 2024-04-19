@@ -1,14 +1,14 @@
 {
   "chainid": 31337,
-  "description": "add RETH as a collateral type",
-  "globalSettlement": "0x7036124464A2d2447516309169322c8498ac51e3",
+  "description": "add BETH as a collateral type",
+  "globalSettlement": "0xF45B1CdbA9AACE2e9bbE80bf376CE816bb7E73FB",
   "maximumDiscount": 1,
   "minimumBid": 2,
   "minimumDiscount": 3,
   "network": "anvil",
   "newCollateralAddress": "0xC1dC7a8379885676a6Ea08E67b7Defd9a235De71",
-  "newCollateralType": "RETH",
-  "odGovernor": "0x0b27a79cb9C0B38eE06Ca3d94DAA68e0Ed17F953",
+  "newCollateralType": "BETH",
+  "odGovernor": "0x73C68f1f41e4890D06Ba3e71b9E9DfA555f1fb46",
   "perSecondDiscountUpdateRate": 999998607628240538157433861,
   "proposalType": "AddCollateral"
 }

@@ -37,6 +37,7 @@
     "propose:execute": "./tasks/executeProposal.sh",
     "propose:generate": "./tasks/generateProposal.sh",
     "propose:submit": "./tasks/submitProposal.sh",
+    "propose:pass": "./tasks/passProp.sh",
     "script:permit": "chmod ug+x ./tasks/generateProposal.sh && chmod ug+x ./tasks/submitProposal.sh && chmod ug+x ./tasks/executeProposal.sh",
     "script:sepolia": "bash -c 'source .env && forge script SepoliaScript --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC --broadcast --private-key $GOERLI_GOVERNOR_PK --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY'",
     "script:sepolia:delegate": "bash -c 'source .env && forge script SepoliaDelegate --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC --broadcast --private-key $GOERLI_GOVERNOR_PK --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY'",

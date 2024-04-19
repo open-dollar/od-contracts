@@ -14,22 +14,22 @@ function execute(){
   CAST_PATH=${OUTPUT[1]}
   CALLDATA=$(cast calldata "run(string)" $CAST_PATH)
     RPC_ENDPOINT=""
-      if [[ $NETWORK = "arb-sepolia" || $NETWORK = "sepolia" ]]; then RPC_ENDPOINT=$ARB_SEPOLIA_RPC
-          elif [[ $NETWORK = "anvil" ]]; then RPC_ENDPOINT=$ANVIL_RPC
-          elif [[ $NETWORK = "arb-mainnet" || $NETWORK = "mainnet" ]]; then RPC_ENDPOINT=$ARB_MAINNET_RPC
+      if [[ $NETWORK = "arb-sepolia" || $NETWORK = "sepolia" ]]; then RPC_ENDPOINT=$ARB_SEPOLIA_RPC PRIVATE_KEY=$ARB_SEPOLIA_PK
+          elif [[ $NETWORK = "anvil" ]]; then RPC_ENDPOINT=$ANVIL_RPC PRIVATE_KEY=$ANVIL_ONE
+          elif [[ $NETWORK = "arb-mainnet" || $NETWORK = "mainnet" ]]; then RPC_ENDPOINT=$ARB_MAINNET_RPC PRIVATE_KEY=$ARB_MAINNET_PK
           else
             echo "Unrecognized target environment"
             exit 1    
       fi
 
-      FOUNDRY_PROFILE=governance forge script script/testScripts/gov/Executor.s.sol:Executor -s $CALLDATA --rpc-url $RPC_ENDPOINT
+      FOUNDRY_PROFILE=governance forge script script/testScripts/gov/Executor.s.sol:Executor -s $CALLDATA --rpc-url $RPC_ENDPOINT --private-key $PRIVATE_KEY
 
       read -p "Please verify the data and confirm the submission of this proposal (y/n):" CONFIRMATION
 
 if [[ $CONFIRMATION == "y" || $CONFIRMATION == "Y" ]]
     then
         echo "Executing..."
-        FOUNDRY_PROFILE=governance forge script script/testScripts/gov/Executor.s.sol:Executor -s $CALLDATA --rpc-url $RPC_ENDPOINT --broadcast
+        FOUNDRY_PROFILE=governance forge script script/testScripts/gov/Executor.s.sol:Executor -s $CALLDATA --rpc-url $RPC_ENDPOINT --private-key $PRIVATE_KEY --broadcast
    
 fi
 }

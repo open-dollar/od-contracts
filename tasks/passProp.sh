@@ -16,24 +16,44 @@ function passProp(){
   CALLDATA=$(cast calldata "run(string)" $CAST_PATH)
     RPC_ENDPOINT=""
       if [[ $NETWORK = "arb-sepolia" || $NETWORK = "sepolia" ]]; then echo "incorrect network" exit 2
-          elif [[ $NETWORK = "anvil" ]]; then RPC_ENDPOINT=$ANVIL_RPC
+          elif [[ $NETWORK = "anvil" ]]; then RPC_ENDPOINT=$ANVIL_RPC PRIVATE_KEY=$ANVIL_ONE
           elif [[ $NETWORK = "arb-mainnet" || $NETWORK = "mainnet" ]]; then echo "incorrect network" exit 2
           else
             echo "Unrecognized target environment"
             exit 1    
       fi
-        echo "Simulating..."
+        echo "Simulating... "
 
-      FOUNDRY_PROFILE=governance forge script script/testScripts/gov/helpers/PassAnvilProp.s.sol:PassAnvilProp -s $CALLDATA --rpc-url $RPC_ENDPOINT
+      FOUNDRY_PROFILE=governance forge script script/testScripts/gov/helpers/PassAnvilProp.s.sol:PassAnvilProp -s $CALLDATA --rpc-url $RPC_ENDPOINT --private-key $PRIVATE_KEY
 
       read -p "Please verify the data and confirm that you want to pass this proposal (y/n):" CONFIRMATION
 
 if [[ $CONFIRMATION == "y" || $CONFIRMATION == "Y" ]]
     then
         echo "Passing proposal on Anvil..."
-        FOUNDRY_PROFILE=governance forge script script/testScripts/gov/helpers/PassAnvilProp.s.sol:PassAnvilProp -s $CALLDATA --rpc-url $RPC_ENDPOINT --broadcast
+        FOUNDRY_PROFILE=governance forge script script/testScripts/gov/helpers/PassAnvilProp.s.sol:PassAnvilProp -s $CALLDATA --rpc-url $RPC_ENDPOINT --private-key $PRIVATE_KEY --broadcast
    
 fi
+}
+
+function delegate(){
+    declare OUTPUT=($(node ./tasks/parseNetwork.js $1))
+    NETWORK=${OUTPUT[0]}
+    CAST_PATH=${OUTPUT[1]}
+    PRIVATE_KEY=$ANVIL_ONE
+    echo "$PRIVATE_KEY"
+    CALLDATA=$(cast calldata "delegateTokens(string)" $CAST_PATH)
+     forge script script/testScripts/gov/helpers/PassAnvilProp.s.sol:PassAnvilProp -s $CALLDATA --rpc-url $ANVIL_RPC  --private-key $PRIVATE_KEY
+
+
+     read -p "Please verify the data and confirm that you want to pass this proposal (y/n):" CONFIRMATION
+     if [[ $CONFIRMATION == "y" || $CONFIRMATION == "Y" ]]
+    then
+        echo "Passing proposal on Anvil..."
+         forge script script/testScripts/gov/helpers/PassAnvilProp.s.sol:PassAnvilProp -s $CALLDATA --rpc-url $ANVIL_RPC --private-key $PRIVATE_KEY --broadcast
+   
+fi
+     exit 0
 }
 
 function display_help() {
@@ -62,10 +82,10 @@ do
       -h | --help)
           display_help
           ;;
-      -d | --display)
-          display="$2"
-           shift 2
-           ;;
+    #   -d | --display)
+    #       display="$2"
+    #        shift 2
+    #        ;;
 
       -a | --add-options)
           # do something here call function
@@ -75,6 +95,9 @@ do
         -r | --rpc-call)
           makeCall $2 $3
           ;;
+        -d | --delegate)
+        delegate $2
+        ;;
       --) # End of all options
           shift
           break
