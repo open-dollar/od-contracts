@@ -235,7 +235,7 @@ abstract contract Common is Contracts, Params, Test {
 
       // // revoke deployer from TIMELOCK_ADMIN_ROLE
       timelockController.renounceRole(timelockController.TIMELOCK_ADMIN_ROLE(), deployer);
-      protocolToken.mint(msg.sender, 100 ether);
+      protocolToken.mint(msg.sender, 500_000_000e18); // mint 500 million tokens to deployer on anvil to sway the vote.
     }
   }
 

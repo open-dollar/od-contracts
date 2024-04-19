@@ -12,11 +12,11 @@ contract ForkManagement is Script {
   error UnrecognizedChainId();
 
   string public json;
-  uint256 internal _privateKey;
   address public proposer;
-  uint256 internal _chainId;
-  string internal _network;
   string public path;
+  uint256 internal _privateKey;
+  uint256 internal _chainId;
+  string internal _network;  
 
   function _loadPrivateKeys() internal {
     if (block.chainid == 421_614) {

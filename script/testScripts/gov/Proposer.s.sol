@@ -35,7 +35,7 @@ contract Proposer is Script, ForkManagement {
 
     vm.startBroadcast(_privateKey);
     require(_verifyProposal(), 'proposal not verifiable');
-    console2.log('Proposal verified.  Proposing...');
+    console2.log('Proposal verified.  Proposing...', block.number);
     _propose();
     vm.stopBroadcast();
   }

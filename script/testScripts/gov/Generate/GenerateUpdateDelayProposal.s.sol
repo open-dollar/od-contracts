@@ -37,7 +37,7 @@ contract GenerateUpdateDelayProposal is Generator, JSONScript {
 
     // bytes32 descriptionHash = keccak256(bytes(_description));
 
-    vm.startBroadcast(privateKey);
+    vm.startBroadcast(_privateKey);
     bytes32 operationHash = tlc.hashOperation(targets[0], values[0], calldatas[0], bytes32(0), bytes32(0));
 
     tlc.schedule(targets[0], values[0], calldatas[0], bytes32(0), bytes32(0), 259_200);
@@ -55,7 +55,7 @@ contract GenerateUpdateDelayProposal is Generator, JSONScript {
       vm.serializeBytes(objectKey, 'calldatas', calldatas);
       string memory jsonOutput = vm.serializeBytes32(objectKey, 'operationHash', operationHash);
       vm.writeJson(
-        jsonOutput, string.concat('./gov-output/', network, '/', stringOperationHash, '-updateTimeDelay.json')
+        jsonOutput, string.concat('./gov-output/', _network, '/', stringOperationHash, '-updateTimeDelay.json')
       );
     }
 

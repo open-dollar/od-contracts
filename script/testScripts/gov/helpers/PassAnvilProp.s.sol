@@ -43,21 +43,34 @@ contract PassAnvilProp is Script, AnvilDeployment, ForkManagement {
 
     console2.log('Delegating Token...');
     IVotes(address(protocolToken)).delegate(proposer);
+    console2.log('Voting Delay:', gov.votingDelay());
+    console2.log('Voting Period:', gov.votingPeriod());
+    console2.log('Voting weight: ', IVotes(address(protocolToken)).getVotes(proposer));
 
-    console2.log("IT'S A TIME WARP!!!");
-    vm.roll(block.number + 2);
-    vm.warp(block.timestamp + 30 seconds);
     propState = gov.state(proposalId);
+        (uint256 id,
+            address proposer,
+            uint256 eta,
+            uint256 startBlock,
+            uint256 endBlock,
+            uint256 forVotes,
+            uint256 againstVotes,
+            uint256 abstainVotes,
+            bool canceled,
+            bool executed) = gov.proposals(proposalId);
+            console2.log("FOR VOTES: ", forVotes);
+            console2.log("AGAINST VOTES: ", againstVotes);
+            console2.log("ABSTAIN VOTES: ", abstainVotes);
     console2.log(uint8(propState));
     if (propState == IGovernor.ProposalState.Active) {
-      console2.log('Casting Vote...');
+      console2.log('Casting Vote...', block.number);
       gov.castVote(proposalId, 1);
 
-      console2.log("IT'S A TIME WARP!!!");
       vm.roll(block.number + 16);
       vm.warp(block.timestamp + 300 seconds);
 
       propState = gov.state(proposalId);
+      console2.log("PROP STATE: ", uint8(propState));
       if (propState == IGovernor.ProposalState.Succeeded) {
         console2.log('Proposal Passed');
       } else if (propState == IGovernor.ProposalState.Active) {
@@ -66,12 +79,8 @@ contract PassAnvilProp is Script, AnvilDeployment, ForkManagement {
         console2.log('failed to pass proposal');
       }
     } else {
-      console2.log('VOTE NOT ACTIVE!');
+      console2.log('Vote not active! use anvil_mine 2 to mine 2 blocks and start voting.');
     }
-  }
-
-  function mintProtocolTokens() public {
-    protocolToken.mint(msg.sender, 100 ether);
   }
 
   function _delegateAndVote() internal {}

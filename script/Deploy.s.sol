@@ -81,8 +81,8 @@ abstract contract Deploy is Common, Script {
     }
     // Mint initial ODG airdrop E2E or Anvil
     if (isFork() && isNetworkAnvil()) {
-      protocolToken.mint(address(0x420), AIRDROP_AMOUNT / AIRDROP_RECIPIENTS);
-      protocolToken.mint(address(0x421), AIRDROP_AMOUNT / AIRDROP_RECIPIENTS);
+      // protocolToken.mint(address(0x420), AIRDROP_AMOUNT / AIRDROP_RECIPIENTS);
+      // protocolToken.mint(address(0x421), AIRDROP_AMOUNT / AIRDROP_RECIPIENTS);
     }
 
     // Deploy contracts related to the SafeManager usecase

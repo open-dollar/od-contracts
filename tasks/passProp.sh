@@ -48,6 +48,11 @@ function display_help() {
         exit 0
 }
 
+function makeCall() {
+    node ./tasks/anvilRPCCalls.js $1 $2
+    exit 0
+}
+
 while :
 do
     case "$1" in
@@ -67,7 +72,9 @@ do
           # and write it in your help function display_help()
            shift 2
            ;;
-
+        -r | --rpc-call)
+          makeCall $2 $3
+          ;;
       --) # End of all options
           shift
           break
@@ -89,11 +96,11 @@ done
 # is set then execute #
 ######################
 
-if [[ $1 != ""  ]]
-    then 
-    passProp $1 
+if [[ $1 != "" && $2 == "" ]]; then passProp $1
+        elif [[ $1 == "rpc-call" ]]; then makeCall $2 $3
     else 
     display_help
+
 fi
 
 exit 0;
