@@ -63,7 +63,7 @@ contract GenerateModifyParametersProposal is Generator, JSONScript {
 
     bytes32 descriptionHash = keccak256(bytes(_description));
 
-    vm.startBroadcast(privateKey);
+    vm.startBroadcast(_privateKey);
 
     // Propose the action to add the collateral type
     uint256 proposalId = gov.hashProposal(targets, values, calldatas, descriptionHash);
@@ -74,7 +74,7 @@ contract GenerateModifyParametersProposal is Generator, JSONScript {
       // Build the JSON output
       string memory builtProp =
         _buildProposalParamsJSON(proposalId, objectKey, targets, values, calldatas, _description, descriptionHash);
-      vm.writeJson(builtProp, string.concat('./gov-output/', network, '/', stringProposalId, '-modifyParameters.json'));
+      vm.writeJson(builtProp, string.concat('./gov-output/', _network, '/', stringProposalId, '-modifyParameters.json'));
     }
 
     vm.stopBroadcast();

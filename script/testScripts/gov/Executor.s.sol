@@ -3,7 +3,6 @@ pragma solidity 0.8.20;
 
 import 'forge-std/console2.sol';
 import 'forge-std/Script.sol';
-import {JSONScript} from '@script/testScripts/gov/helpers/JSONScript.s.sol';
 import {ForkManagement} from '@script/testScripts/gov/helpers/ForkManagement.s.sol';
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 
@@ -13,7 +12,7 @@ import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 /// @dev NOTE This script requires the following env vars in the REQUIRED ENV VARS section below
 /// @dev The script will execute the proposal to set the NFT Renderer on Vault721
 /// @dev To run: export FOUNDRY_PROFILE=governance && forge script script/testScripts/gov/UpdateNFTRendererAction/ExecuteUpdateNFTRenderer.s.sol in the root of the repo
-contract ExecuteUpdateProposal is Script, ForkManagement {
+contract Executor is Script, ForkManagement {
   using stdJson for string;
 
   ODGovernor public governor;
@@ -43,10 +42,10 @@ contract ExecuteUpdateProposal is Script, ForkManagement {
   }
 
   function _executeProposal() internal {
-    vm.startBroadcast(privateKey);
+    vm.startBroadcast(_privateKey);
 
     // execute proposal
-    governor.execute(targets, values, calldatas, descriptionHash);
+    governor.queue(proposalId); //(targets, values, calldatas, descriptionHash);
 
     vm.stopBroadcast();
   }

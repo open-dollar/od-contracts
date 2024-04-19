@@ -7,9 +7,10 @@ set -e
 ###############
 
 function generateProposal(){
-
-  NETWORK="$1"
-      RPC_ENDPOINT=""
+  declare OUTPUT=($(node ./tasks/parseNetwork.js $1))
+  NETWORK=${OUTPUT[0]}
+  CAST_PATH=${OUTPUT[1]}
+    CALLDATA=$(cast calldata "run(string)" $CAST_PATH)
     if [[ $NETWORK = "arb-sepolia" || $NETWORK = "sepolia" ]]; then
              RPC_ENDPOINT=$ARB_SEPOLIA_RPC
           elif [[ "$NETWORK" = "anvil" ]]; then
@@ -20,10 +21,9 @@ function generateProposal(){
             echo "Unrecognized target environment"
             exit 1    
       fi
-    COMMAND_PATH=$(node tasks/parseProposalPath.js $2)
-    CALLDATA=$(cast calldata "run(string)" $2)
-    echo "BASH PATH"
-    echo "$COMMAND_PATH"
+    COMMAND_PATH=$(node tasks/parseProposalPath.js $1)
+    CALLDATA=$(cast calldata "run(string)" $CAST_PATH)
+
       FOUNDRY_PROFILE=governance forge script $COMMAND_PATH -s $CALLDATA --rpc-url $RPC_ENDPOINT
 
 }
@@ -67,9 +67,9 @@ do
     esac
 done
 
-if [[ $1 != "" && $2 != "" ]]
+if [[ $1 != ""  ]]
   then
-  generateProposal $1 $2
+  generateProposal $1 
   else
    display_help
 fi

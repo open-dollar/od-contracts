@@ -41,7 +41,7 @@ contract QueueProposal is ForkManagement, JSONScript {
     _loadBaseData(json);
     _loadPrivateKeys();
 
-    vm.startBroadcast(privateKey);
+    vm.startBroadcast(_privateKey);
     _queueProposal();
     vm.stopBroadcast();
   }
