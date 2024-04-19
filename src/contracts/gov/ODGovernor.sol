@@ -9,7 +9,7 @@ import {TimelockController} from '@openzeppelin/governance/TimelockController.so
 
 import {Governor} from '@openzeppelin/governance/Governor.sol';
 import {GovernorSettings} from '@openzeppelin/governance/extensions/GovernorSettings.sol';
-import {GovernorCountingSimple} from '@openzeppelin/governance/extensions/GovernorCountingSimple.sol';
+import {GovernorCompatibilityBravo} from '@openzeppelin/governance/compatibility/GovernorCompatibilityBravo.sol';
 import {GovernorVotes} from '@openzeppelin/governance/extensions/GovernorVotes.sol';
 import {GovernorVotesQuorumFraction} from '@openzeppelin/governance/extensions/GovernorVotesQuorumFraction.sol';
 import {GovernorTimelockControl} from '@openzeppelin/governance/extensions/GovernorTimelockControl.sol';
@@ -17,7 +17,7 @@ import {GovernorTimelockControl} from '@openzeppelin/governance/extensions/Gover
 contract ODGovernor is
   Governor,
   GovernorSettings,
-  GovernorCountingSimple,
+  GovernorCompatibilityBravo,
   GovernorVotes,
   GovernorVotesQuorumFraction,
   GovernorTimelockControl
@@ -80,10 +80,27 @@ contract ODGovernor is
   }
 
   /**
-   * inherit: Governor
+   * inherit: Governor, GovernorTimelockControl
    */
-  function state(uint256 proposalId) public view override(Governor, GovernorTimelockControl) returns (ProposalState) {
+  function state(uint256 proposalId)
+    public
+    view
+    override(Governor, IGovernor, GovernorTimelockControl)
+    returns (ProposalState)
+  {
     return super.state(proposalId);
+  }
+
+  /**
+   * inherit: Governor, GovernorCompatibilityBravo
+   */
+  function propose(
+    address[] memory targets,
+    uint256[] memory values,
+    bytes[] memory calldatas,
+    string memory description
+  ) public override(Governor, GovernorCompatibilityBravo, IGovernor) returns (uint256) {
+    return super.propose(targets, values, calldatas, description);
   }
 
   /**
@@ -128,7 +145,12 @@ contract ODGovernor is
   /**
    * inherit: Governor, GovernorTimelockControl
    */
-  function supportsInterface(bytes4 interfaceId) public view override(Governor, GovernorTimelockControl) returns (bool) {
+  function supportsInterface(bytes4 interfaceId)
+    public
+    view
+    override(Governor, IERC165, GovernorTimelockControl)
+    returns (bool)
+  {
     return super.supportsInterface(interfaceId);
   }
 }

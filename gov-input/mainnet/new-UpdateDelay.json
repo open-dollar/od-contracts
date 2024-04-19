@@ -1,0 +1,8 @@
+{
+"chainid": 42161,
+"description": "update timelock controller delay",
+"network": "mainnet",
+"timelockController": "0x7A528eA3E06D85ED1C22219471Cf0b1851943903",
+"proposalType": "UpdateDelay",
+"newDelay": 86400
+}

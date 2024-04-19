@@ -1,0 +1,18 @@
+{
+  "calldatas": [
+    "0x64d623530000000000000000000000000000000000000000000000000000000000015180"
+  ],
+  "chainid": 42161,
+  "description": "update timelock controller delay",
+  "network": "mainnet",
+  "newDelay": 86400,
+  "operationHash": "0x1b2522e3608cf246e7c2c8fbb1d33c281a4e25ada0866fffd5135e881ae6f94b",
+  "proposalType": "UpdateDelay",
+  "targets": [
+    "0x7A528eA3E06D85ED1C22219471Cf0b1851943903"
+  ],
+  "timelockController": "0x7A528eA3E06D85ED1C22219471Cf0b1851943903",
+  "values": [
+    0
+  ]
+}
