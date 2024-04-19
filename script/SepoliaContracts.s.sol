@@ -6,7 +6,7 @@ abstract contract SepoliaContracts {
   address public Vault721_Address = 0x05AC7e3ac152012B980407dEff2655c209667E4c;
   address public ProtocolToken_Address = 0xbbB4f37c787C6ecb0b6b5Fb3F73221aA22fabA70;
   address public TimelockController_Address = 0xC1b1A32Cb29E441A1a16cC1120aF47f2787D5000;
-  address public ODGovernor_Address = 0xA98b762fE463477B05AC13c7af3384BbA81D5CF3;
+  address public ODGovernor_Address = 0x69ae232E574352232aB8678869eAA3BEBd885211;
   address public ChainlinkRelayerFactory_Address = 0x555691C860015a5CE8748296fbbAa624410F55A4;
   address public DenominatedOracleFactory_Address = 0xD18Ce4d87Bf1E8a959F9F9eC2dB5A8D639408580;
   address public DelayedOracleFactory_Address = 0x500E234652Ee1a8b06F99599Ae7d5299527270fB;
