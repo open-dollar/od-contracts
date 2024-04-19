@@ -80,7 +80,7 @@ contract Unit_Vault721_Initialize is Base {
   }
 
   function testInitialize() public {
-    vault721.initialize(address(timelockController));
+    vault721.initialize(address(timelockController), 0, 0);
   }
 
   function testInitSafeManager() public safeManagerPath {
@@ -93,13 +93,13 @@ contract Unit_Vault721_Initialize is Base {
 
   function testInitializeZeroFail() public {
     vm.expectRevert(IVault721.ZeroAddress.selector);
-    vault721.initialize(address(0));
+    vault721.initialize(address(0), 0, 0);
   }
 
   function testInitializeMultiInitFail() public {
-    vault721.initialize(address(timelockController));
+    vault721.initialize(address(timelockController), 0, 0);
     vm.expectRevert(bytes('Initializable: contract is already initialized'));
-    vault721.initialize(address(timelockController));
+    vault721.initialize(address(timelockController), 0, 0);
   }
 }
 
@@ -147,7 +147,7 @@ contract Unit_Vault721_Mint is Base {
 
   function setUp() public override {
     Base.setUp();
-    vault721.initialize(address(timelockController));
+    vault721.initialize(address(timelockController), 0, 0);
     vm.prank(address(safeManager));
     vault721.initializeManager();
 
@@ -171,7 +171,7 @@ contract Vault721_ViewFunctions is Base {
 
   function setUp() public override {
     Base.setUp();
-    vault721.initialize(address(timelockController));
+    vault721.initialize(address(timelockController), 0, 0);
     vm.prank(address(renderer));
     vault721.initializeRenderer();
     vm.prank(address(safeManager));
@@ -221,7 +221,7 @@ contract Unit_Vault721_UpdateNfvState is Base {
 
   function setUp() public override {
     Base.setUp();
-    vault721.initialize(address(timelockController));
+    vault721.initialize(address(timelockController), 0, 0);
     vm.prank(address(renderer));
     vault721.initializeRenderer();
     vm.prank(address(safeManager));
@@ -279,7 +279,7 @@ contract Unit_Vault721_GovernanceFunctions is Base {
 
   function setUp() public override {
     Base.setUp();
-    vault721.initialize(address(timelockController));
+    vault721.initialize(address(timelockController), 0, 0);
     vm.prank(address(renderer));
     vault721.initializeRenderer();
     vm.prank(address(safeManager));
@@ -424,7 +424,7 @@ contract Unit_TestVault721_TransferFrom_SafeTransferFrom_ProxyReceiver is Base {
   function setUp() public override {
     Base.setUp();
     testVault721 = new TestVault721();
-    testVault721.initialize(address(timelockController));
+    testVault721.initialize(address(timelockController), 0, 0);
     vm.prank(address(renderer));
     testVault721.initializeRenderer();
     vm.prank(address(safeManager));
@@ -519,7 +519,7 @@ contract Unit_Vault721_TransferFrom_SafeTransferFrom is Base {
     Base.setUp();
     scwallet = address(new SCWallet());
     badscwallet = address(new Bad_SCWallet());
-    vault721.initialize(address(timelockController));
+    vault721.initialize(address(timelockController), 0, 0);
     vm.prank(address(renderer));
     vault721.initializeRenderer();
     vm.prank(address(safeManager));
@@ -695,7 +695,7 @@ contract Unit_Vault721_TransferFrom_SafeTransferFrom is Base {
 contract Unit_Vault721_ProxyDeployment is Base {
   function setUp() public override {
     Base.setUp();
-    vault721.initialize(address(timelockController));
+    vault721.initialize(address(timelockController), 0, 0);
     vm.prank(address(renderer));
     vault721.initializeRenderer();
     vm.prank(address(safeManager));

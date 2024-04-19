@@ -81,7 +81,7 @@ contract Base is ODTest {
     taxCollector = new TaxCollector(address(mockSafeEngine), taxCollectorParams);
 
     taxCollector.addAuthorization(owner);
-    vault721.initialize(address(timelockController));
+    vault721.initialize(address(timelockController), 0, 0);
 
     liquidationEngine =
       new LiquidationEngineForTest(address(mockSafeEngine), address(mockAccountingEngine), liquidationEngineParams);
