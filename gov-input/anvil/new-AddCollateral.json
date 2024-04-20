@@ -2,6 +2,7 @@
   "chainid": 31337,
   "description": "add BETH as a collateral type",
   "globalSettlement": "0xF45B1CdbA9AACE2e9bbE80bf376CE816bb7E73FB",
+  "protocolToken": "0x0000000000000000000000000000000000000000",
   "maximumDiscount": 1,
   "minimumBid": 2,
   "minimumDiscount": 3,

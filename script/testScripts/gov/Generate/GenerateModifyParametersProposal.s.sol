@@ -8,7 +8,6 @@ import {Modifiable} from '@contracts/utils/Modifiable.sol';
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 import {Generator} from '@script/testScripts/gov/Generator.s.sol';
 import 'forge-std/StdJson.sol';
-import 'forge-std/console2.sol';
 
 contract GenerateModifyParametersProposal is Generator, JSONScript {
   using stdJson for string;
@@ -91,13 +90,13 @@ contract GenerateModifyParametersProposal is Generator, JSONScript {
 
     if (typeHash == keccak256(abi.encode('uint256')) || typeHash == keccak256(abi.encode('uint'))) {
       uint256 parsedUint = vm.parseUint(dataString);
-      dataOutput = abi.encodeWithSelector(selector, encodedParam, parsedUint);
+      dataOutput = abi.encodeWithSelector(selector, encodedParam, abi.encode(parsedUint));
     } else if (typeHash == keccak256(abi.encode('address'))) {
-      dataOutput = abi.encodeWithSelector(selector, encodedParam, vm.parseAddress(dataString));
+      dataOutput = abi.encodeWithSelector(selector, encodedParam, abi.encode(vm.parseAddress(dataString)));
     } else if (typeHash == keccak256(abi.encode('string'))) {
-      dataOutput = abi.encodeWithSelector(selector, encodedParam, dataString);
+      dataOutput = abi.encodeWithSelector(selector, encodedParam, abi.encode(dataString));
     } else if (typeHash == keccak256(abi.encode('int256')) || typeHash == keccak256(abi.encode('int'))) {
-      dataOutput = abi.encodeWithSelector(selector, encodedParam, vm.parseInt(dataString));
+      dataOutput = abi.encodeWithSelector(selector, encodedParam, abi.encode(vm.parseInt(dataString)));
     } else {
       revert UnrecognizedDataType();
     }

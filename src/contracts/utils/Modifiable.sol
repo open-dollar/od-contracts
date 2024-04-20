@@ -10,6 +10,7 @@ import 'forge-std/console2.sol';
  * @notice Allows inheriting contracts to modify parameters values
  * @dev    Requires inheriting contracts to override `_modifyParameters` virtual methods
  */
+
 abstract contract Modifiable is Authorizable, IModifiable {
   // --- Constants ---
 
@@ -20,8 +21,6 @@ abstract contract Modifiable is Authorizable, IModifiable {
 
   /// @inheritdoc IModifiable
   function modifyParameters(bytes32 _param, bytes memory _data) external isAuthorized validParams {
-    console2.log('mod par');
-    console2.logBytes(_data);
     emit ModifyParameters(_param, _GLOBAL_PARAM, _data);
     _modifyParameters(_param, _data);
   }
