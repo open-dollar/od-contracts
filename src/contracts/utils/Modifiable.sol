@@ -4,7 +4,7 @@ pragma solidity 0.8.20;
 import {IModifiable} from '@interfaces/utils/IModifiable.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
-
+import 'forge-std/console2.sol';
 /**
  * @title  Modifiable
  * @notice Allows inheriting contracts to modify parameters values
@@ -20,6 +20,8 @@ abstract contract Modifiable is Authorizable, IModifiable {
 
   /// @inheritdoc IModifiable
   function modifyParameters(bytes32 _param, bytes memory _data) external isAuthorized validParams {
+    console2.log('mod par');
+    console2.logBytes(_data);
     emit ModifyParameters(_param, _GLOBAL_PARAM, _data);
     _modifyParameters(_param, _data);
   }

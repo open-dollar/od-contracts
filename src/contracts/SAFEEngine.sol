@@ -15,7 +15,7 @@ Coded for Reflexer and The Money God with 🥕 by
 https://defi.sucks
 
 */
-
+import 'forge-std/console2.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 
@@ -413,7 +413,9 @@ contract SAFEEngine is Authorizable, Disableable, Modifiable, ModifiablePerColla
   /// @inheritdoc Modifiable
   function _modifyParameters(bytes32 _param, bytes memory _data) internal override {
     uint256 _uint256 = _data.toUint256();
-
+    console2.logBytes32(_param);
+    console2.logBytes(_data);
+    console2.log(_uint256);
     if (_param == 'globalDebtCeiling') _params.globalDebtCeiling = _uint256;
     else if (_param == 'safeDebtCeiling') _params.safeDebtCeiling = _uint256;
     else if (_param == 'odSafeManager') _odSafeManager = IODSafeManager(_data.toAddress().assertNonNull());
