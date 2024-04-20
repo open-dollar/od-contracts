@@ -15,6 +15,7 @@ abstract contract Common is Contracts, Params, Test {
   bytes32 internal _vault721Salt;
   bytes internal _systemCoinInitCode;
   bytes internal _vault721InitCode;
+  bool internal _isTest;
 
   function logGovernor() public runIfFork {
     emit log_named_address('Governor', governor);
@@ -234,6 +235,7 @@ abstract contract Common is Contracts, Params, Test {
 
       // // revoke deployer from TIMELOCK_ADMIN_ROLE
       timelockController.renounceRole(timelockController.TIMELOCK_ADMIN_ROLE(), deployer);
+      protocolToken.mint(0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266, 10_000_000 ether); // mint 10 million tokens to deployer on anvil to sway the vote.
     }
   }
 

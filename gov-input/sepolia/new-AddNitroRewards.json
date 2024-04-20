@@ -1,0 +1,15 @@
+{
+    "chainid": 421614,
+    "network": "sepolia",
+    "proposalType": "AddNitroRewards",
+    "description": "add arb to nitro pool as reward",
+    "odGovernor": "0xA5DC5C86212cF22167c52b756363B0FeA7B6e591",
+    "nitroPool": "0x5ff631684f3dcF6430764C002b7184b9757C814c",
+    "objectArray": [
+        {
+            "rewardToken": "0xA5DC5C86212cF22167c52b756363B0FeA7B6e591",
+            "rewardAmount": 100000
+        }
+    ],
+    "arrayLength": 2
+}

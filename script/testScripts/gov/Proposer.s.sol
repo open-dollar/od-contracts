@@ -1,20 +1,12 @@
-// SPDX-License-Identifier: GPL-3.0
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.20;
 
-import {JSONScript} from '@script/testScripts/gov/helpers/JSONScript.s.sol';
-import {IGovernor} from '@openzeppelin/governance/IGovernor.sol';
-import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
-import {ForkManagement} from '@script/testScripts/gov/helpers/ForkManagement.s.sol';
 import 'forge-std/Script.sol';
+import 'forge-std/console2.sol';
+import {ForkManagement} from '@script/testScripts/gov/helpers/ForkManagement.s.sol';
+import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 
-/// @title QueueProposal Script
-/// @author OpenDollar
-/// @notice Script to queue an existing proposal to the system via ODGovernance
-/// @dev NOTE This script requires the following env vars in the REQUIRED ENV VARS section below
-/// @dev NOTE Specify JSON_FILE_PATH in .env to select the proposal to queue
-/// @dev There needs to be enough votes AND the time lock time must be passed as well
-
-contract QueueProposal is ForkManagement, JSONScript {
+contract Proposer is Script, ForkManagement {
   using stdJson for string;
 
   ODGovernor public governor;
@@ -42,12 +34,30 @@ contract QueueProposal is ForkManagement, JSONScript {
     _loadPrivateKeys();
 
     vm.startBroadcast(_privateKey);
-    _queueProposal();
+    require(_verifyProposal(), 'proposal not verifiable');
+    console2.log('Proposal verified.  Proposing...', block.number);
+    _propose();
     vm.stopBroadcast();
   }
 
-  function _queueProposal() internal {
-    uint256 queuedPropId = governor.queue(targets, values, calldatas, descriptionHash);
-    assert(queuedPropId == proposalId);
+  function _propose() internal virtual {
+    uint256 newProposalId = governor.propose(targets, values, calldatas, description);
+    // Verify the proposalId is expected
+    assert(proposalId == newProposalId);
+  }
+
+  function _verifyProposal() internal view returns (bool _verified) {
+    require(
+      address(governor) != address(0) && values.length > 0 && values.length == targets.length
+        && targets.length == calldatas.length,
+      'params not set'
+    );
+
+    uint256 newProposalId = governor.hashProposal(targets, values, calldatas, descriptionHash);
+    if (newProposalId == proposalId) {
+      _verified = true;
+    }
+    console2.log('Proposal ID: ', proposalId);
+    console2.log(description);
   }
 }

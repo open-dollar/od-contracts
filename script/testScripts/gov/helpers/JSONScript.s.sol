@@ -18,6 +18,7 @@ contract JSONScript is Script {
     string memory description,
     bytes32 descriptionHash
   ) internal returns (string memory jsonOutput) {
+    _serializeCurrentJson(objectKey);
     vm.serializeUint(objectKey, 'proposalId', proposalId);
     vm.serializeAddress(objectKey, 'targets', targets);
     vm.serializeUint(objectKey, 'values', values);
@@ -25,6 +26,9 @@ contract JSONScript is Script {
     vm.serializeString(objectKey, 'description', description);
     jsonOutput = vm.serializeBytes32(objectKey, 'descriptionHash', descriptionHash);
   }
+  /// @notice override this in the generator script in order to include the input json file in the output file
+
+  function _serializeCurrentJson(string memory objectKey) internal virtual returns (string memory _serializedInput) {}
 
   /// @notice Parses the params required for execution from a json file
   /// @param jsonFile the proposal to execute json output file
@@ -32,8 +36,10 @@ contract JSONScript is Script {
   /// @return values the values to send in each calldata call
   /// @return calldatas the calldatas to execute
   /// @return descriptionHash the descriptionHash
+
   function _parseExecutionParamsJSON(string memory jsonFile)
     internal
+    pure
     returns (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, bytes32 descriptionHash)
   {
     targets = vm.parseJsonAddressArray(jsonFile, '.targets');
@@ -44,7 +50,7 @@ contract JSONScript is Script {
 
   /// @notice Parses the params required for execution from a json file
   /// @return proposalId the proposal to execute json output file
-  function _parseProposalId(string memory jsonFile) internal returns (uint256 proposalId) {
+  function _parseProposalId(string memory jsonFile) internal pure returns (uint256 proposalId) {
     proposalId = vm.parseJsonUint(jsonFile, '.proposalId');
   }
 }

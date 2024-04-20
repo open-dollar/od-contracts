@@ -1,6 +1,6 @@
 const fs = require("fs");
 const path = require("path");
-
+const { ethers } = require("ethers");
 const filePath = path.join(__dirname, "../deployments/anvil/run-latest.json");
 
 fs.readFile(filePath, "utf8", (err, data) => {
@@ -23,7 +23,7 @@ fs.readFile(filePath, "utf8", (err, data) => {
       } else if (contractName === "OpenDollar") {
         name = "SystemCoin";
       }
-      acc[name] = contractAddress;
+      acc[name] = ethers.getAddress(contractAddress);
     }
     if (curr.additionalContracts.length) {
       let name;
@@ -51,7 +51,7 @@ fs.readFile(filePath, "utf8", (err, data) => {
             name = "RelayerChild" + "_" + index;
           }
 
-          acc[name] = contract.address;
+          acc[name] = ethers.getAddress(contract.address);
         }
       });
     }
@@ -85,6 +85,6 @@ ${addressText}}
       return;
     }
 
-    console.log("AnvilContracts.s.sol written to file successfully!");
+    console.log("AnvilContracts.t.sol written to file successfully!");
   });
 };

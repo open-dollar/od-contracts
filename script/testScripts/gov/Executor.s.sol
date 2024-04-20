@@ -1,29 +1,35 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.20;
 
-import {JSONScript} from '@script/testScripts/gov/helpers/JSONScript.s.sol';
-import {IGovernor} from '@openzeppelin/governance/IGovernor.sol';
-import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
-import {ForkManagement} from '@script/testScripts/gov/helpers/ForkManagement.s.sol';
+import 'forge-std/console2.sol';
 import 'forge-std/Script.sol';
+import {ForkManagement} from '@script/testScripts/gov/helpers/ForkManagement.s.sol';
+import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 
-/// @title QueueProposal Script
+/// @title ExecuteProposal Script
 /// @author OpenDollar
-/// @notice Script to queue an existing proposal to the system via ODGovernance
+/// @notice Script to execute a proposal given a JSON file
 /// @dev NOTE This script requires the following env vars in the REQUIRED ENV VARS section below
-/// @dev NOTE Specify JSON_FILE_PATH in .env to select the proposal to queue
-/// @dev There needs to be enough votes AND the time lock time must be passed as well
-
-contract QueueProposal is ForkManagement, JSONScript {
+/// @dev The script will execute the proposal to set the NFT Renderer on Vault721
+/// @dev To run: export FOUNDRY_PROFILE=governance && forge script script/testScripts/gov/UpdateNFTRendererAction/ExecuteUpdateNFTRenderer.s.sol in the root of the repo
+contract Executor is Script, ForkManagement {
   using stdJson for string;
 
   ODGovernor public governor;
   uint256[] public values;
   address[] public targets;
   bytes[] public calldatas;
+  uint256 public proposalId;
   string public description;
   bytes32 public descriptionHash;
-  uint256 public proposalId;
+
+  function run(string memory _filePath) public {
+    _loadJson(_filePath);
+    _checkNetworkParams();
+    _loadPrivateKeys();
+    _loadBaseData(json);
+    _executeProposal();
+  }
 
   function _loadBaseData(string memory json) internal virtual {
     values = json.readUintArray(string(abi.encodePacked('.values')));
@@ -35,19 +41,12 @@ contract QueueProposal is ForkManagement, JSONScript {
     governor = ODGovernor(payable(json.readAddress(string(abi.encodePacked(('.odGovernor'))))));
   }
 
-  function run(string memory _filePath) public {
-    _loadJson(_filePath);
-    _checkNetworkParams();
-    _loadBaseData(json);
-    _loadPrivateKeys();
-
+  function _executeProposal() internal {
     vm.startBroadcast(_privateKey);
-    _queueProposal();
-    vm.stopBroadcast();
-  }
 
-  function _queueProposal() internal {
-    uint256 queuedPropId = governor.queue(targets, values, calldatas, descriptionHash);
-    assert(queuedPropId == proposalId);
+    // execute proposal
+    governor.queue(proposalId); //(targets, values, calldatas, descriptionHash);
+
+    vm.stopBroadcast();
   }
 }
