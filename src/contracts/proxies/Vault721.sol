@@ -46,6 +46,7 @@ contract Vault721 is ERC721EnumerableUpgradeable, Authorizable, Modifiable, IVau
     uint256 _timeDelay
   ) external initializer nonZero(_timelockController) {
     timelockController = _timelockController;
+    _addAuthorization(timelockController);
     __ERC721_init('OpenDollar Vault', 'ODV');
     blockDelay = _blockDelay;
     timeDelay = _timeDelay;

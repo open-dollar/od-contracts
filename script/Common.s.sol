@@ -98,7 +98,15 @@ abstract contract Common is Contracts, Params, Test {
 
     // tokens
     _revoke(systemCoin, removeAddress, addAddress);
-    _revoke(protocolToken, removeAddress, addAddress);
+
+    /// @notice pre-deployed protocolToken
+    if (protocolToken.authorizedAccounts(addAddress) != true) {
+      protocolToken.addAuthorization(addAddress);
+    }
+    if (protocolToken.authorizedAccounts(removeAddress) == true) {
+      if (protocolToken.authorizedAccounts(address(create2))) protocolToken.removeAuthorization(address(create2));
+      protocolToken.removeAuthorization(removeAddress);
+    }
 
     // pid controller
     _revoke(pidController, removeAddress, addAddress);
@@ -110,8 +118,14 @@ abstract contract Common is Contracts, Params, Test {
     // safe manager
     _revoke(safeManager, removeAddress, addAddress);
 
-    // vault 721
-    _revoke(vault721, removeAddress, addAddress);
+    /// @notice pre-deployed vault721
+    if (vault721.authorizedAccounts(addAddress) != true) {
+      vault721.addAuthorization(addAddress);
+    }
+    if (vault721.authorizedAccounts(removeAddress) == true) {
+      if (vault721.authorizedAccounts(address(create2))) vault721.removeAuthorization(address(create2));
+      vault721.removeAuthorization(removeAddress);
+    }
 
     if (address(ethJoin) != address(0)) {
       _revoke(ethJoin, removeAddress, addAddress);
