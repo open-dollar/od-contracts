@@ -8,7 +8,6 @@
     {
       "erc20Token": "0xbbB4f37c787C6ecb0b6b5Fb3F73221aA22fabA70",
       "transferTo": "0xC295763Eed507d4A0f8B77241c03dd3354781a15",
-      "transferFrom": "0xC1b1A32Cb29E441A1a16cC1120aF47f2787D5000",
       "amount": 1000000000000000000
     }
   ],
