@@ -1,0 +1,27 @@
+{
+  "arrayLength": 1,
+  "calldatas": [
+    "0xda8a4bb8676c6f62616c446562744365696c696e67000000000000000000000000000000000000000000000000004a2b520c520832243af77ba4f1041fe6000000000000"
+  ],
+  "chainid": 421614,
+  "description": "Modify globalDebtCeiling round 2",
+  "descriptionHash": "0x4840b1b6c37b08b8cd75b1080cfe8ea82ad008e9457d373d298c37237d4f94ca",
+  "network": "sepolia",
+  "objectArray": [
+    {
+      "target": "0x2C3C51Eed16F6eAe6CF2607fFF5753dE6cc48Aa5",
+      "param": "globalDebtCeiling",
+      "type": "uint256",
+      "data": "27750000000000000000000000000000000000000000000000000"
+    }
+  ],
+  "odGovernor": "0x69ae232E574352232aB8678869eAA3BEBd885211",
+  "proposalId": 108829304647168655391752646058872227053280922003992403737703040423551649056301,
+  "proposalType": "ModifyParameters",
+  "targets": [
+    "0x2C3C51Eed16F6eAe6CF2607fFF5753dE6cc48Aa5"
+  ],
+  "values": [
+    0
+  ]
+}
