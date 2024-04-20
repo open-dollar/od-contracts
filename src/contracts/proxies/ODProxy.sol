@@ -38,15 +38,12 @@ contract ODProxy {
 
   /**
    * @dev arbitrary call function
-   * @notice prevents funds from getting stuck in proxy
+   * @notice prevents erc20 funds from getting stuck in proxy
    */
   function arbitraryExecute(
     address _target,
-    bytes memory _data,
-    uint256 _value
+    bytes memory _data
   ) external payable onlyOwner returns (bytes memory _response) {
-    _response = _target.functionCallWithValue(_data, _value);
+    _response = _target.functionCall(_data);
   }
-
-  receive() external payable {}
 }
