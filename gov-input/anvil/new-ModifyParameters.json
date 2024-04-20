@@ -1,16 +1,1 @@
-{
-    "chainid": 31337,
-    "description": "Modify some random parameters",
-    "network": "anvil",
-    "proposalType": "ModifyParameters",
-    "odGovernor": "0x408F924BAEC71cC3968614Cb2c58E155A35e6890",
-    "objectArray": [
-        {
-            "target": "0xc9952Fc93Fa9bE383ccB39008c786b9f94eAc95d",
-            "param": "globalDebtCeiling",
-            "type": "uint256",
-            "data": "100000000000000000000000000"
-        }
-    ],
-    "arrayLength": 1
-}
+{"chainid":31337,"description":"Modify some random parameters","network":"anvil","proposalType":"ModifyParameters","odGovernor":"0x15F2ea83eB97ede71d84Bd04fFF29444f6b7cd52","objectArray":[{"target":"0xb6057e08a11da09a998985874FE2119e98dB3D5D","param":"globalDebtCeiling","type":"uint256","data":"100000000000000000000000000"}],"arrayLength":1}

@@ -41,11 +41,10 @@ contract PassAnvilProp is Script, AnvilDeployment, ForkManagement {
 
     vm.startBroadcast(_privateKey);
     _passVote();
-   
   }
 
   function delegateTokens(string memory _filePath) public {
-        _loadJson(_filePath);
+    _loadJson(_filePath);
     _checkNetworkParams();
     _loadPrivateKeys();
     _loadBaseData(json);
@@ -57,7 +56,7 @@ contract PassAnvilProp is Script, AnvilDeployment, ForkManagement {
   }
 
   function _passVote() internal {
-     console2.log('Delegating Token...');
+    console2.log('Delegating Token...');
     IVotes(address(protocolToken)).delegate(proposer);
     console2.log('Voting Delay:', gov.votingDelay());
     console2.log('Voting Period:', gov.votingPeriod());

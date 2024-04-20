@@ -89,13 +89,13 @@ contract GenerateModifyParametersProposal is Generator, JSONScript {
     bytes4 selector = IModifiable.modifyParameters.selector;
 
     if (typeHash == keccak256(abi.encode('uint256')) || typeHash == keccak256(abi.encode('uint'))) {
-      dataOutput = abi.encodeWithSelector(selector, abi.encodePacked(param), vm.parseUint(dataString));
+      dataOutput = abi.encodeWithSelector(selector, bytes32((abi.encodePacked(param))), vm.parseUint(dataString));
     } else if (typeHash == keccak256(abi.encode('address'))) {
-      dataOutput = abi.encodeWithSelector(selector, abi.encodePacked(param), vm.parseAddress(dataString));
+      dataOutput = abi.encodeWithSelector(selector, bytes32((abi.encodePacked(param))), vm.parseAddress(dataString));
     } else if (typeHash == keccak256(abi.encode('string'))) {
-      dataOutput = abi.encodeWithSelector(selector, abi.encodePacked(param), dataString);
+      dataOutput = abi.encodeWithSelector(selector, bytes32((abi.encodePacked(param))), dataString);
     } else if (typeHash == keccak256(abi.encode('int256')) || typeHash == keccak256(abi.encode('int'))) {
-      dataOutput = abi.encodeWithSelector(selector, abi.encodePacked(param), vm.parseInt(dataString));
+      dataOutput = abi.encodeWithSelector(selector, bytes32((abi.encodePacked(param))), vm.parseInt(dataString));
     } else {
       revert UnrecognizedDataType();
     }
