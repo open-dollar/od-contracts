@@ -3,31 +3,14 @@
     "description": "Modify some random parameters",
     "network": "anvil",
     "proposalType": "ModifyParameters",
-    "odGovernor": "0xA5DC5C86212cF22167c52b756363B0FeA7B6e591",
+    "odGovernor": "0x408F924BAEC71cC3968614Cb2c58E155A35e6890",
     "objectArray": [
         {
-            "target": "0x00024F3c588d9a1c11Be800637b43E0C88befF1A",
-            "param": "blockDelay",
+            "target": "0xc9952Fc93Fa9bE383ccB39008c786b9f94eAc95d",
+            "param": "globalDebtCeiling",
             "type": "uint256",
-            "data": "11111"
-        },
-        {
-            "target": "0x00024F3c588d9a1c11Be800637b43E0C88befF1A",
-            "param": "safeManager",
-            "type": "address",
-            "data": "0xA5DC5C86212cF22167c52b756363B0FeA7B6e591"
-        },
-        {
-            "target": "0x00024F3c588d9a1c11Be800637b43E0C88befF1A",
-            "param": "contractURI",
-            "type": "string",
-            "data": "this_is_a_newContractURI"
-        },
-        {
-            "target": "0x00024F3c588d9a1c11Be800637b43E0C88befF1A",
-            "param": "kp",
-            "type": "int256",
-            "data": "1000"
+            "data": "100000000000000000000000000"
         }
-    ]
+    ],
+    "arrayLength": 1
 }

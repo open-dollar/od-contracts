@@ -51,8 +51,8 @@ contract PassAnvilProp is Script, AnvilDeployment, ForkManagement {
     _loadBaseData(json);
 
     vm.startBroadcast(_privateKey);
-    protocolToken.delegate(proposer);
-    uint256 voteWeight = protocolToken.getVotes(proposer);
+    IVotes(address(protocolToken)).delegate(proposer);
+    uint256 voteWeight = IVotes(address(protocolToken)).getVotes(proposer);
     console2.log('Current vote weight: ', voteWeight);
   }
 
