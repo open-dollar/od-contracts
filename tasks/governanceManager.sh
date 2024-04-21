@@ -89,7 +89,7 @@ function delegate() {
   echo "DELEGATING"
   read -p "Please verify the data and confirm that you want to delegate your tokens (y/n): " CONFIRMATION
   if [[ $CONFIRMATION == "y" || $CONFIRMATION == "Y" ]]; then
-    echo "Passing proposal on Anvil..."
+    echo "Delegating your tokens..."
     broadcast "GovernanceHelpers" $CALLDATA $ANVIL_RPC $PRIVATE_KEY
 
   fi
