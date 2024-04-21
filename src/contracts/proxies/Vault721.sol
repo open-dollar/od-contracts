@@ -31,7 +31,7 @@ contract Vault721 is ERC721EnumerableUpgradeable, Authorizable, Modifiable, IVau
   uint256 public timeDelay;
 
   string public contractMetaData =
-    '{"name": "Open Dollar Vaults","description": "Open Dollar is a DeFi lending protocol that enables borrowing against liquid staking tokens while earning staking rewards and enabling liquidity via Non-Fungible Vaults (NFVs).","image": "https://app.opendollar.com/collectionImage.png","external_link": "https://app.opendollar.com"}';
+    '{"name": "Open Dollar Vaults","description": "Open Dollar is a stablecoin protocol built on Arbitrum designed to help you earn yield and leverage your assets with safety and predictability.","image": "https://app.opendollar.com/collectionImage.png","external_link": "https://app.opendollar.com"}';
 
   mapping(address proxy => address user) internal _proxyRegistry;
   mapping(address user => address proxy) internal _userRegistry;
