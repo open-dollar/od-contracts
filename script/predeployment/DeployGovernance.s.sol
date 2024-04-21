@@ -44,7 +44,10 @@ contract DeployGovernanceMainnet is Script {
     _timelockController.revokeRole(_timelockController.PROPOSER_ROLE(), oldGovernor);
     _timelockController.revokeRole(_timelockController.EXECUTOR_ROLE(), oldGovernor);
 
-    // Grant role to execute updateDelay
+    address oldDevTeam = 0xA0313248556DeA42fd17B345817Dd5DC5674c1E1;
+    _timelockController.revokeRole(_timelockController.PROPOSER_ROLE(), oldDevTeam);
+    _timelockController.revokeRole(_timelockController.EXECUTOR_ROLE(), oldDevTeam);
+
     _timelockController.grantRole(_timelockController.EXECUTOR_ROLE(), deployer);
 
     vm.stopBroadcast();
