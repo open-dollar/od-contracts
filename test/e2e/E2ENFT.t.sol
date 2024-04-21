@@ -519,8 +519,15 @@ contract E2ENFTTestFuzzFrontrunning is NFTSetup {
 
   function _updateDelays() internal {
     vm.startPrank(vault721.timelockController());
-    vault721.modifyParameters('timeDelay', abi.encode(5 days));
-    vault721.modifyParameters('blockDelay', abi.encode(3));
+    vault721.modifyParameters('timeDelay', abi.encode(3 days));
+    vault721.modifyParameters('blockDelay', abi.encode(5));
+    vm.stopPrank();
+  }
+
+  function _removeDelays() internal {
+    vm.startPrank(vault721.timelockController());
+    vault721.modifyParameters('timeDelay', abi.encode(0 days));
+    vault721.modifyParameters('blockDelay', abi.encode(0));
     vm.stopPrank();
   }
 }
