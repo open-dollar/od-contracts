@@ -196,7 +196,7 @@ contract Vault721_ViewFunctions is Base {
     string memory contractURI = vault721.contractURI();
     assertEq(
       contractURI,
-      'data:application/json;utf8,{"name": "Open Dollar Vaults","description": "Open Dollar Vaults","description": "Open Dollar is a stablecoin protocol built on Arbitrum designed to help you earn yield and leverage your assets with safety and predictability.","image": "https://app.opendollar.com/collectionImage.png","external_link": "https://app.opendollar.com"}',
+      'data:application/json;utf8,{"name": "Open Dollar Vaults","description": "Open Dollar is a stablecoin protocol built on Arbitrum designed to help you earn yield and leverage your assets with safety and predictability.","image": "https://app.opendollar.com/collectionImage.png","external_link": "https://app.opendollar.com"}',
       'incorrect returned string'
     );
   }
