@@ -11,8 +11,8 @@ address constant SEPOLIA_OD_GOVERNOR = 0x69ae232E574352232aB8678869eAA3BEBd88521
 address constant TEST_CREATE2FACTORY = 0xC5f2C81d16764908B18379D95f410912d928Adc2;
 
 // Vault721
-uint256 constant BLOCK_DELAY = 0;
-uint256 constant TIME_DELAY = 0;
+uint256 constant BLOCK_DELAY = 3;
+uint256 constant TIME_DELAY = 1 hours;
 
 // Tokens
 address constant SEPOLIA_PROTOCOL_TOKEN = 0xbbB4f37c787C6ecb0b6b5Fb3F73221aA22fabA70;
