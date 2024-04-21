@@ -154,6 +154,13 @@ contract NFTSetup is Common {
 }
 
 contract E2ENFTTest is NFTSetup {
+  function _removeDelays() internal {
+    vm.startPrank(vault721.timelockController());
+    vault721.modifyParameters('timeDelay', abi.encode(0 days));
+    vault721.modifyParameters('blockDelay', abi.encode(0));
+    vm.stopPrank();
+  }
+
   function test_openSafe() public {
     vm.startPrank(alice);
     bytes memory payload = abi.encodeWithSelector(basicActions.openSAFE.selector, address(safeManager), TKN, aliceProxy);
@@ -169,6 +176,7 @@ contract E2ENFTTest is NFTSetup {
 
   function test_transferSafe() public {
     vm.startPrank(alice);
+    _removeDelays();
     uint256 safeId = openSafe();
 
     Vault721(vault721).transferFrom(alice, bob, safeId);
@@ -177,6 +185,7 @@ contract E2ENFTTest is NFTSetup {
 
   function test_transferSafeToProxyFail() public {
     vm.startPrank(alice);
+    _removeDelays();
     uint256 safeId = openSafe();
 
     vm.expectRevert(IVault721.NotWallet.selector);
@@ -186,6 +195,7 @@ contract E2ENFTTest is NFTSetup {
 
   function test_transferSafeToZeroFail() public {
     vm.startPrank(alice);
+    _removeDelays();
     uint256 safeId = openSafe();
 
     vm.expectRevert(IVault721.NotWallet.selector);
@@ -214,6 +224,7 @@ contract E2ENFTTest is NFTSetup {
 
   function test_openSafe_lockCollateral_transfer() public {
     vm.startPrank(alice);
+    _removeDelays();
 
     uint256 safeId = openSafe();
 
