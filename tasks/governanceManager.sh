@@ -55,7 +55,7 @@ function queue() {
   read -p "Please verify the data and confirm that you want to queue this proposal (y/n): " CONFIRMATION
 
   if [[ $CONFIRMATION == "y" || $CONFIRMATION == "Y" ]]; then
-    echo "Passing proposal on Anvil..."
+    echo "Queuing your proposal..."
     broadcast "QueueProposal" $CALLDATA $RPC_ENDPOINT $PRIVATE_KEY
   fi
 }
