@@ -1,34 +1,16 @@
 {
-    "chainid": 421614,
-    "description": "Modify some random parameters",
-    "network": "sepolia",
-    "proposalType": "ModifyParameters",
-    "odGovernor": "0xA5DC5C86212cF22167c52b756363B0FeA7B6e591",
-    "objectArray": [
-        {
-            "target": "0x00024F3c588d9a1c11Be800637b43E0C88befF1A",
-            "param": "blockDelay",
-            "type": "uint256",
-            "data": "11111"
-        },
-        {
-            "target": "0x00024F3c588d9a1c11Be800637b43E0C88befF1A",
-            "param": "safeManager",
-            "type": "address",
-            "data": "0xA5DC5C86212cF22167c52b756363B0FeA7B6e591"
-        },
-        {
-            "target": "0x00024F3c588d9a1c11Be800637b43E0C88befF1A",
-            "param": "contractURI",
-            "type": "string",
-            "data": "this_is_a_newContractURI"
-        },
-        {
-            "target": "0x00024F3c588d9a1c11Be800637b43E0C88befF1A",
-            "param": "kp",
-            "type": "int256",
-            "data": "1000"
-        }
-    ],
-    "arrayLength": 4
+  "chainid": 421614,
+  "description": "Modify globalDebtCeiling round 2",
+  "network": "sepolia",
+  "proposalType": "ModifyParameters",
+  "odGovernor": "0x69ae232E574352232aB8678869eAA3BEBd885211",
+  "objectArray": [
+    {
+      "target": "0x2C3C51Eed16F6eAe6CF2607fFF5753dE6cc48Aa5",
+      "param": "globalDebtCeiling",
+      "type": "uint256",
+      "data": "27750000000000000000000000000000000000000000000000000"
+    }
+  ],
+  "arrayLength": 1
 }

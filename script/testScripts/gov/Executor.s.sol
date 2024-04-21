@@ -45,7 +45,7 @@ contract Executor is Script, ForkManagement {
     vm.startBroadcast(_privateKey);
 
     // execute proposal
-    governor.queue(proposalId); //(targets, values, calldatas, descriptionHash);
+    governor.execute(proposalId); //(targets, values, calldatas, descriptionHash);
 
     vm.stopBroadcast();
   }

@@ -21,7 +21,6 @@ contract GenerateERC20TransferProposal is Generator, JSONScript {
   string public description;
   address[] public ERC20TokenAddresses;
   address[] public receiverAddresses;
-  address[] public fromAddresses;
   uint256[] public amountsToTransfer;
 
   function _loadBaseData(string memory json) internal override {
@@ -33,11 +32,9 @@ contract GenerateERC20TransferProposal is Generator, JSONScript {
       string memory index = Strings.toString(i);
       address token = json.readAddress(string(abi.encodePacked('.objectArray[', index, '].erc20Token')));
       address transferTo = json.readAddress(string(abi.encodePacked('.objectArray[', index, '].transferTo')));
-      address transferFrom = json.readAddress(string(abi.encodePacked('.objectArray[', index, '].transferFrom')));
       uint256 amount = json.readUint(string(abi.encodePacked('.objectArray[', index, '].amount')));
       ERC20TokenAddresses.push(token);
       receiverAddresses.push(transferTo);
-      fromAddresses.push(transferFrom);
       amountsToTransfer.push(amount);
     }
   }
@@ -45,10 +42,7 @@ contract GenerateERC20TransferProposal is Generator, JSONScript {
   function _generateProposal() internal override {
     ODGovernor gov = ODGovernor(payable(governanceAddress));
     uint256 len = ERC20TokenAddresses.length;
-    require(
-      len == receiverAddresses.length && fromAddresses.length == len && len == amountsToTransfer.length,
-      'ERC20 TRANSFER: array length mismatch'
-    );
+    require(len == receiverAddresses.length && len == amountsToTransfer.length, 'ERC20 TRANSFER: array length mismatch');
 
     address[] memory targets = new address[](len);
     uint256[] memory values = new uint256[](len);
@@ -57,9 +51,7 @@ contract GenerateERC20TransferProposal is Generator, JSONScript {
     for (uint256 i; i < len; i++) {
       targets[i] = ERC20TokenAddresses[i];
       values[i] = 0;
-      calldatas[i] = abi.encodeWithSelector(
-        IERC20.transferFrom.selector, fromAddresses[i], receiverAddresses[i], amountsToTransfer[i]
-      );
+      calldatas[i] = abi.encodeWithSelector(IERC20.transfer.selector, receiverAddresses[i], amountsToTransfer[i]);
     }
 
     // Get the descriptionHash

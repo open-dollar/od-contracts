@@ -20,10 +20,10 @@ contract ForkManagement is Script {
 
   function _loadPrivateKeys() internal {
     if (block.chainid == 421_614) {
-      _privateKey = vm.envUint('ARB_SEPOLIA_DEPLOYER_PK');
+      _privateKey = vm.envUint('ARB_SEPOLIA_PK');
       proposer = vm.addr(_privateKey);
     } else if (block.chainid == 42_161) {
-      _privateKey = vm.envUint('ARB_MAINNET_DEPLOYER_PK');
+      _privateKey = vm.envUint('ARB_MAINNET_PK');
       proposer = vm.addr(_privateKey);
     } else if (block.chainid == 31_337) {
       _privateKey = vm.envUint('ANVIL_ONE');

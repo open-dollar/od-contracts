@@ -11,7 +11,7 @@ import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 import {IGovernor} from '@openzeppelin/governance/IGovernor.sol';
 import {IVotes} from '@openzeppelin/governance/utils/IVotes.sol';
 
-contract PassAnvilProp is Script, AnvilDeployment, ForkManagement {
+contract GovernanceHelpers is Script, ForkManagement {
   using stdJson for string;
 
   IGovernor.ProposalState public propState;
@@ -22,8 +22,9 @@ contract PassAnvilProp is Script, AnvilDeployment, ForkManagement {
   string public description;
   bytes32 public descriptionHash;
   uint256 public proposalId;
+  address protocolToken;
 
-  function _loadBaseData(string memory json) internal virtual {
+  function _loadBaseData() internal virtual {
     values = json.readUintArray(string(abi.encodePacked('.values')));
     targets = json.readAddressArray(string(abi.encodePacked('.targets')));
     calldatas = json.readBytesArray(string(abi.encodePacked('.calldatas')));
@@ -31,60 +32,90 @@ contract PassAnvilProp is Script, AnvilDeployment, ForkManagement {
     descriptionHash = json.readBytes32(string(abi.encodePacked('.descriptionHash')));
     proposalId = json.readUint(string(abi.encodePacked('.proposalId')));
     gov = ODGovernor(payable(json.readAddress(string(abi.encodePacked(('.odGovernor'))))));
+    protocolToken = json.readAddress(string(abi.encodePacked('.protocolToken')));
   }
 
   function run(string memory _filePath) public {
     _loadJson(_filePath);
     _checkNetworkParams();
     _loadPrivateKeys();
-    _loadBaseData(json);
+    _loadBaseData();
 
     vm.startBroadcast(_privateKey);
+    _Vote();
+  }
 
-    console2.log('Delegating Token...');
-    IVotes(address(protocolToken)).delegate(proposer);
+  function delegateTokens(string memory _filePath) public {
+    _loadJson(_filePath);
+    _checkNetworkParams();
+    _loadPrivateKeys();
+    _loadBaseData();
+
+    vm.startBroadcast(_privateKey);
+    IVotes(protocolToken).delegate(proposer);
+    uint256 voteWeight = IVotes(protocolToken).getVotes(proposer);
+    console2.log('Current vote weight: ', voteWeight);
+  }
+
+  function _Vote() internal {
     console2.log('Voting Delay:', gov.votingDelay());
     console2.log('Voting Period:', gov.votingPeriod());
     console2.log('Voting weight: ', IVotes(address(protocolToken)).getVotes(proposer));
 
     propState = gov.state(proposalId);
+    if (propState == IGovernor.ProposalState.Active) {
+      console2.log('#######################################');
+      console2.log('Casting Vote...');
+      gov.castVote(proposalId, 1);
+
+      _getPropInfo(proposalId);
+      _logPropState(propState);
+    } else {
+      console2.log('#######################################');
+      console2.log('Vote not active!');
+      _logPropState(propState);
+      _getPropInfo(proposalId);
+    }
+  }
+
+  function _getPropInfo(uint256 propId) internal {
     (
       uint256 id,
       address proposer,
-      uint256 eta,
+      ,
       uint256 startBlock,
       uint256 endBlock,
       uint256 forVotes,
       uint256 againstVotes,
       uint256 abstainVotes,
-      bool canceled,
-      bool executed
-    ) = gov.proposals(proposalId);
+      ,
+    ) = gov.proposals(propId);
+    console2.log('PROPID: ', id);
+    console2.log('PROPOSER: ', proposer);
+    console2.log('START BLOCK: ', startBlock);
+    console2.log('END BLOCK: ', endBlock);
     console2.log('FOR VOTES: ', forVotes);
     console2.log('AGAINST VOTES: ', againstVotes);
     console2.log('ABSTAIN VOTES: ', abstainVotes);
-    console2.log(uint8(propState));
-    if (propState == IGovernor.ProposalState.Active) {
-      console2.log('Casting Vote...', block.number);
-      gov.castVote(proposalId, 1);
-
-      vm.roll(block.number + 16);
-      vm.warp(block.timestamp + 300 seconds);
-
-      propState = gov.state(proposalId);
-      console2.log('PROP STATE: ', uint8(propState));
-      if (propState == IGovernor.ProposalState.Succeeded) {
-        console2.log('Proposal Passed');
-      } else if (propState == IGovernor.ProposalState.Active) {
-        console2.log('Proposal still active.');
-      } else {
-        console2.log('failed to pass proposal');
-      }
-    } else {
-      console2.log('Vote not active! use anvil_mine 2 to mine 2 blocks and start voting.');
-    }
   }
 
-  function _delegateAndVote() internal {}
-  function _passVote() internal {}
+  function _logPropState(IGovernor.ProposalState _state) internal {
+    if (uint8(_state) == 0) {
+      console2.log('Prop state: Pending');
+    } else if (uint8(_state) == 1) {
+      console2.log('Prop state: Active');
+    } else if (uint8(_state) == 2) {
+      console2.log('Prop state: Canceled');
+    } else if (uint8(_state) == 3) {
+      console2.log('Prop state: Defeated');
+    } else if (uint8(_state) == 4) {
+      console2.log('Prop state: Succeeded');
+    } else if (uint8(_state) == 5) {
+      console2.log('Prop state: Queued');
+    } else if (uint8(_state) == 6) {
+      console2.log('Prop state: Expired');
+    } else if (uint8(_state) == 7) {
+      console2.log('Prop state: Executed');
+    }
+  }
 }
