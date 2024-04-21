@@ -1,1 +1,16 @@
-{"chainid":31337,"description":"Transfer treasury token","network":"anvil","odGovernor":"0xA5DC5C86212cF22167c52b756363B0FeA7B6e591","proposalType":"ERC20Transfer","objectArray":[{"erc20Token":"0xbbB4f37c787C6ecb0b6b5Fb3F73221aA22fabA70","transferTo":"0xC295763Eed507d4A0f8B77241c03dd3354781a15","amount":1000000000000000000}],"arrayLength":1}
+{
+  "chainid": "31337",
+  "description": "Transfer treasury token",
+  "network": "anvil",
+  "protocolToken": "0x0000000000000000000000000000000000000000",
+  "odGovernor": "0xA5DC5C86212cF22167c52b756363B0FeA7B6e591",
+  "proposalType": "ERC20Transfer",
+  "objectArray": [
+    {
+      "erc20Token": "0xbbB4f37c787C6ecb0b6b5Fb3F73221aA22fabA70",
+      "transferTo": "0xC295763Eed507d4A0f8B77241c03dd3354781a15",
+      "amount": "1000000000000000000"
+    }
+  ],
+  "arrayLength": "1"
+}

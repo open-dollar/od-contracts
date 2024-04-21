@@ -517,8 +517,7 @@ contract Unit_ODSafeManager_CollateralManagement is Base {
     safeManager.modifySAFECollateralization(_scenario.safeId, _scenario.deltaCollateral, _scenario.deltaDebt, true);
 
     Vm.Log[] memory entries = vm.getRecordedLogs();
-    console2.log('ENTRIES', entries.length);
-    console2.log('topics', entries[0].topics.length);
+
     bool modifySafeLog = false;
     bool nfvStateLog = false;
     for (uint256 i; i < entries.length; i++) {

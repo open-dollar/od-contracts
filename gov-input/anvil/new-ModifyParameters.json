@@ -1,16 +1,17 @@
 {
-    "chainid": 31337,
-    "description": "Modify some random parameters",
+    "chainid": "31337",
+    "description": "Raise the global debt ceiling",
     "network": "anvil",
     "proposalType": "ModifyParameters",
-    "odGovernor": "0x69ae232E574352232aB8678869eAA3BEBd885211",
+    "protocolToken": "0x1e86fCe4d102A5924A9EF503f772fCA162Af2067",
+    "odGovernor": "0x85f93384BAd10d7751Fcc3bBD8F8710db3190700",
     "objectArray": [
         {
-            "target": "0x05AC7e3ac152012B980407dEff2655c209667E4c",
-            "param": "blockDelay",
+            "target": "0x17975FB494576ae89D627F904Ec723B87c7C35c8",
+            "param": "globalDebtCeiling",
             "type": "uint256",
-            "data": "4"
+            "data": "100000000000000000000000000"
         }
     ],
-    "arrayLength": 1
+    "arrayLength": "1"
 }

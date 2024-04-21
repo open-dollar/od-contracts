@@ -1,16 +1,16 @@
 {
-    "chainid": 421614,
-    "description": "Modify Vault721 blockDelay",
-    "network": "sepolia",
-    "proposalType": "ModifyParameters",
-    "odGovernor": "0x69ae232E574352232aB8678869eAA3BEBd885211",
-    "objectArray": [
-        {
-            "target": "0x05AC7e3ac152012B980407dEff2655c209667E4c",
-            "param": "blockDelay",
-            "type": "uint256",
-            "data": "5"
-        }
-    ],
-    "arrayLength": 1
+  "chainid": 421614,
+  "description": "Modify globalDebtCeiling round 2",
+  "network": "sepolia",
+  "proposalType": "ModifyParameters",
+  "odGovernor": "0x69ae232E574352232aB8678869eAA3BEBd885211",
+  "objectArray": [
+    {
+      "target": "0x2C3C51Eed16F6eAe6CF2607fFF5753dE6cc48Aa5",
+      "param": "globalDebtCeiling",
+      "type": "uint256",
+      "data": "27750000000000000000000000000000000000000000000000000"
+    }
+  ],
+  "arrayLength": 1
 }
