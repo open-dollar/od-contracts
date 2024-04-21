@@ -1,0 +1,27 @@
+{
+  "arrayLength": 1,
+  "calldatas": [
+    "0xda8a4bb8676c6f62616c446562744365696c696e6700000000000000000000000000000000000000000000000000000000000000000000000052b7d2dcc80cd2e4000000"
+  ],
+  "chainid": 31337,
+  "description": "Modify some random parameters",
+  "descriptionHash": "0xaddfc6537d23e389275d7ca726e722b88ed8417ab699f5b4084ad0c71be3b580",
+  "network": "anvil",
+  "objectArray": [
+    {
+      "target": "0xb6057e08a11da09a998985874FE2119e98dB3D5D",
+      "param": "globalDebtCeiling",
+      "type": "uint256",
+      "data": "100000000000000000000000000"
+    }
+  ],
+  "odGovernor": "0x15F2ea83eB97ede71d84Bd04fFF29444f6b7cd52",
+  "proposalId": 28874109713552216854521700231286508627149309502214984527772082262776035304147,
+  "proposalType": "ModifyParameters",
+  "targets": [
+    "0xb6057e08a11da09a998985874FE2119e98dB3D5D"
+  ],
+  "values": [
+    0
+  ]
+}

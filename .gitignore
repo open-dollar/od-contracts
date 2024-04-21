@@ -7,7 +7,8 @@ node_modules
 cache
 out
 out-via-ir
-broadcast/**/run-*.json
+broadcast/**/*.json
+!broadcast/**/42161/*.json
 
 # Coverage Reports
 coverage-report
