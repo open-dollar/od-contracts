@@ -17,9 +17,6 @@ contract ForkManagement is Script {
   uint256 internal _privateKey;
   uint256 internal _chainId;
   string internal _network;
-  uint256 internal _privateKey;
-  uint256 internal _chainId;
-  string internal _network;
 
   function _loadPrivateKeys() internal {
     if (block.chainid == 421_614) {

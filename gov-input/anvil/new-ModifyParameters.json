@@ -1,5 +1,5 @@
 {
-    "chainid": 31337,
+    "chainid": "31337",
     "description": "Raise the global debt ceiling",
     "network": "anvil",
     "proposalType": "ModifyParameters",
@@ -13,5 +13,5 @@
             "data": "100000000000000000000000000"
         }
     ],
-    "arrayLength": 1
+    "arrayLength": "1"
 }
