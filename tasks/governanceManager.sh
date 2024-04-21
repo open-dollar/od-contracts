@@ -52,7 +52,7 @@ function queue() {
 
   delimitier
   echo "QUEUEING"
-  read -p "Please verify the data and confirm that you want to queue this proposal (y/n):" CONFIRMATION
+  read -p "Please verify the data and confirm that you want to queue this proposal (y/n): " CONFIRMATION
 
   if [[ $CONFIRMATION == "y" || $CONFIRMATION == "Y" ]]; then
     echo "Passing proposal on Anvil..."
@@ -87,7 +87,7 @@ function delegate() {
   simulate "GovernanceHelpers" $CALLDATA $ANVIL_RPC $PRIVATE_KEY
   delimitier
   echo "DELEGATING"
-  read -p "Please verify the data and confirm that you want to delegate your tokens (y/n):" CONFIRMATION
+  read -p "Please verify the data and confirm that you want to delegate your tokens (y/n): " CONFIRMATION
   if [[ $CONFIRMATION == "y" || $CONFIRMATION == "Y" ]]; then
     echo "Passing proposal on Anvil..."
     broadcast "GovernanceHelpers" $CALLDATA $ANVIL_RPC $PRIVATE_KEY
@@ -144,7 +144,7 @@ function submit() {
   simulate "Proposer" $CALLDATA $RPC_ENDPOINT $PRIVATE_KEY
   delimitier
   echo " SUBMITTING"
-  read -p "Please verify the data and confirm the submission of this proposal (y/n):" CONFIRMATION
+  read -p "Please verify the data and confirm the submission of this proposal (y/n): " CONFIRMATION
 
   if [[ $CONFIRMATION == "y" || $CONFIRMATION == "Y" ]]; then
     echo "Executing..."
@@ -181,7 +181,7 @@ function execute() {
   simulate "Executor" $CALLDATA $RPC_ENDPOINT $PRIVATE_KEY
   delimitier
   echo "EXECUTING"
-  read -p "Please verify the data and confirm the execution of this proposal (y/n):" CONFIRMATION
+  read -p "Please verify the data and confirm the execution of this proposal (y/n): " CONFIRMATION
 
   if [[ $CONFIRMATION == "y" || $CONFIRMATION == "Y" ]]; then
     echo "Executing..."
@@ -268,7 +268,6 @@ while :; do
     ;;
   -*)
     echo "Error: Unknown option: $1" >&2
-    ## or call function display_help
     exit 1
     ;;
   *) # No more options
@@ -278,8 +277,8 @@ while :; do
 done
 
 #######################
-# Check if parameter  #
-# is set then execute #
+# Check if parameters #
+# are set             #
 #######################
 
 if [[ $1 != "" && $2 == "" ]]; then
