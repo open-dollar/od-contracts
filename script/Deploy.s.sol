@@ -30,7 +30,7 @@ abstract contract Deploy is Common, Script {
     vm.stopBroadcast();
   }
 
-  function _isAuth(address _contract, address _account) public returns (bool b) {
+  function _isAuth(address _contract, address _account) public view returns (bool b) {
     b = IAuthorizable(_contract).authorizedAccounts(_account);
   }
 
@@ -89,19 +89,11 @@ abstract contract Deploy is Common, Script {
     deployProxyContracts();
     // Deploy and setup contracts that rely on deployed environment
     setupPostEnvironment();
-    if (isNetworkArbitrumOne()) {
-      // mainnet: revoke deployer, authorize governor
+
+    if (!isNetworkAnvil()) {
       _updateAuthorizationForAllContracts(deployer, governor);
     } else {
-      // sepolia || anvil -> revoke deployer, authorize [H, P, governor]
-      _delegateAllTo(H);
-      _delegateAllTo(P);
-
-      if (!onFork()) {
-        _updateAuthorizationForAllContracts(deployer, governor);
-      } else {
-        _delegateAllTo(governor);
-      }
+      _delegateAllTo(governor);
     }
 
     if (_isTest) {

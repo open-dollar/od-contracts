@@ -60,7 +60,7 @@ interface IVault721 is IERC721EnumerableUpgradeable, IAuthorizable, IModifiable 
   /**
    * @dev initializes DAO timelockController contract
    */
-  function initialize(address _timelockController) external;
+  function initialize(address _timelockController, uint256 _blockDelay, uint256 _timeDelay) external;
 
   /**
    * @dev initializes SafeManager contract

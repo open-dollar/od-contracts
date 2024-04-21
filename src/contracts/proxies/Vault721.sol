@@ -40,10 +40,16 @@ contract Vault721 is ERC721EnumerableUpgradeable, Authorizable, Modifiable, IVau
 
   constructor() Authorizable(msg.sender) {}
 
-  function initialize(address _timelockController) external initializer nonZero(_timelockController) {
+  function initialize(
+    address _timelockController,
+    uint256 _blockDelay,
+    uint256 _timeDelay
+  ) external initializer nonZero(_timelockController) {
     timelockController = _timelockController;
-    // _addAuthorization(timelockController);
+    if (!_isAuthorized(timelockController)) _addAuthorization(timelockController);
     __ERC721_init('OpenDollar Vault', 'ODV');
+    blockDelay = _blockDelay;
+    timeDelay = _timeDelay;
   }
 
   /**

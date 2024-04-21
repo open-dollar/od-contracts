@@ -282,7 +282,7 @@ contract SingleModifySAFECollateralizationTest is DSTest {
 
     vault721 = new Vault721();
     safeManager = new ODSafeManager(address(safeEngine), address(vault721), address(taxCollector), liquidationEngine);
-    vault721.initialize(address(this));
+    vault721.initialize(address(this), 0, 0);
 
     userProxy = vault721.build(user);
     uint256 safeId = safeManager.openSAFE('gold', address(userProxy));
@@ -1032,7 +1032,7 @@ contract SingleLiquidationTest is DSTest {
     vault721 = new Vault721();
     safeManager =
       new ODSafeManager(address(safeEngine), address(vault721), address(taxCollector), address(liquidationEngine));
-    vault721.initialize(address(this));
+    vault721.initialize(address(this), 0, 0);
 
     userProxy = vault721.build(user);
     uint256 safeId = safeManager.openSAFE('gold', address(userProxy));
