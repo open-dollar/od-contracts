@@ -24,7 +24,7 @@ contract DeployGovernanceMainnet is Script {
     // empty address array for Proposers and Executors (ODGovernor will assume these roles)
     address[] memory members = new address[](0);
 
-    _timelockController = new TimelockController(MAINNET_MIN_DELAY, members, members, deployer);
+    _timelockController = TimelockController(payable(MAINNET_TIMELOCK_CONTROLLER));
 
     _odGovernor = new ODGovernor(
       MAINNET_INIT_VOTING_DELAY,
@@ -38,6 +38,17 @@ contract DeployGovernanceMainnet is Script {
     // set odGovernor as PROPOSER_ROLE and EXECUTOR_ROLE
     _timelockController.grantRole(_timelockController.PROPOSER_ROLE(), address(_odGovernor));
     _timelockController.grantRole(_timelockController.EXECUTOR_ROLE(), address(_odGovernor));
+
+    // revoke old odGovernor and devTeam from PROPOSER_ROLE and EXECUTOR_ROLE
+    address oldGovernor = 0xb7D1793425494e4C4133cF947C0992DC85F2948E;
+    _timelockController.revokeRole(_timelockController.PROPOSER_ROLE(), oldGovernor);
+    _timelockController.revokeRole(_timelockController.EXECUTOR_ROLE(), oldGovernor);
+
+    address oldDevTeam = 0xA0313248556DeA42fd17B345817Dd5DC5674c1E1;
+    _timelockController.revokeRole(_timelockController.PROPOSER_ROLE(), oldDevTeam);
+    _timelockController.revokeRole(_timelockController.EXECUTOR_ROLE(), oldDevTeam);
+
+    _timelockController.grantRole(_timelockController.EXECUTOR_ROLE(), deployer);
 
     vm.stopBroadcast();
   }
