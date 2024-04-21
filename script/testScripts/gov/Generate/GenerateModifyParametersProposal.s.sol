@@ -89,8 +89,7 @@ contract GenerateModifyParametersProposal is Generator, JSONScript {
     bytes4 selector = IModifiable.modifyParameters.selector;
 
     if (typeHash == keccak256(abi.encode('uint256')) || typeHash == keccak256(abi.encode('uint'))) {
-      uint256 parsedUint = vm.parseUint(dataString);
-      dataOutput = abi.encodeWithSelector(selector, encodedParam, abi.encode(parsedUint));
+      dataOutput = abi.encodeWithSelector(selector, encodedParam, abi.encode(vm.parseUint(dataString)));
     } else if (typeHash == keccak256(abi.encode('address'))) {
       dataOutput = abi.encodeWithSelector(selector, encodedParam, abi.encode(vm.parseAddress(dataString)));
     } else if (typeHash == keccak256(abi.encode('string'))) {
