@@ -140,20 +140,27 @@ contract GenerateAddCollateralProposal is Generator, JSONScript {
 
     calldatas[0] = abi.encodeWithSelector(ICollateralJoinFactory.deployCollateralJoin.selector, newCType, newCAddress);
 
-    calldatas[1] =
-      abi.encodeWithSelector(IModifiablePerCollateral.initializeCollateralType.selector, newCType, abi.encode(_cahCParams));
-    calldatas[2] =
-      abi.encodeWithSelector(IModifiablePerCollateral.initializeCollateralType.selector, newCType, abi.encode(_SAFEEngineCollateralParams));
-    calldatas[3] =
-      abi.encodeWithSelector(IModifiablePerCollateral.initializeCollateralType.selector, newCType, abi.encode(_taxCollectorCParams));
-    calldatas[4] =
-      abi.encodeWithSelector(IModifiablePerCollateral.initializeCollateralType.selector, newCType, abi.encode(_liquidationEngineCParams));
-    calldatas[5] = abi.encodeWithSelector(IModifiablePerCollateral.initializeCollateralType.selector, newCType, abi.encode(_oracleCParams));
-    calldatas[6] =
-      abi.encodeWithSelector(IAuthorizable.addAuthorization.selector, abi.encode(_liquidationEngineCParams.collateralAuctionHouse));
+    calldatas[1] = abi.encodeWithSelector(
+      IModifiablePerCollateral.initializeCollateralType.selector, newCType, abi.encode(_cahCParams)
+    );
+    calldatas[2] = abi.encodeWithSelector(
+      IModifiablePerCollateral.initializeCollateralType.selector, newCType, abi.encode(_SAFEEngineCollateralParams)
+    );
+    calldatas[3] = abi.encodeWithSelector(
+      IModifiablePerCollateral.initializeCollateralType.selector, newCType, abi.encode(_taxCollectorCParams)
+    );
+    calldatas[4] = abi.encodeWithSelector(
+      IModifiablePerCollateral.initializeCollateralType.selector, newCType, abi.encode(_liquidationEngineCParams)
+    );
+    calldatas[5] = abi.encodeWithSelector(
+      IModifiablePerCollateral.initializeCollateralType.selector, newCType, abi.encode(_oracleCParams)
+    );
+    calldatas[6] = abi.encodeWithSelector(
+      IAuthorizable.addAuthorization.selector, abi.encode(_liquidationEngineCParams.collateralAuctionHouse)
+    );
     calldatas[7] = abi.encodeWithSelector(
-      ISAFEEngine.approveSAFEModification.selector, abi.encode(_liquidationEngineCParams.collateralAuctionHouse
-    ));
+      ISAFEEngine.approveSAFEModification.selector, abi.encode(_liquidationEngineCParams.collateralAuctionHouse)
+    );
 
     // Get the descriptionHash
     bytes32 descriptionHash = keccak256(bytes(description));
