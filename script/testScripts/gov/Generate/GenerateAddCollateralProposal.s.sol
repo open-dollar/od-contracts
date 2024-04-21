@@ -110,9 +110,7 @@ contract GenerateAddCollateralProposal is Generator, JSONScript {
   function _generateProposal() internal override {
     ODGovernor gov = ODGovernor(payable(governanceAddress));
     IGlobalSettlement globalSettlement = IGlobalSettlement(globalSettlementAddress);
-    // Get target contract addresses from GlobalSettlement:
-    //  - CollateralJoinFactory
-    //  - CollateralAuctionHouseFactory note why is this address also a target?
+
     address[] memory targets = new address[](8);
     {
       targets[0] = address(globalSettlement.collateralJoinFactory());
@@ -137,25 +135,25 @@ contract GenerateAddCollateralProposal is Generator, JSONScript {
       values[7] = 0;
     }
     // Get calldata for:
-    //  - CollateralJoinFactory.deployCollateralJoin
+
     bytes[] memory calldatas = new bytes[](8);
 
     calldatas[0] = abi.encodeWithSelector(ICollateralJoinFactory.deployCollateralJoin.selector, newCType, newCAddress);
 
     calldatas[1] =
-      abi.encodeWithSelector(IModifiablePerCollateral.initializeCollateralType.selector, newCType, _cahCParams);
+      abi.encodeWithSelector(IModifiablePerCollateral.initializeCollateralType.selector, newCType, abi.encode(_cahCParams));
     calldatas[2] =
-      abi.encodeWithSelector(IModifiablePerCollateral.initializeCollateralType.selector, _SAFEEngineCollateralParams);
+      abi.encodeWithSelector(IModifiablePerCollateral.initializeCollateralType.selector, newCType, abi.encode(_SAFEEngineCollateralParams));
     calldatas[3] =
-      abi.encodeWithSelector(IModifiablePerCollateral.initializeCollateralType.selector, _taxCollectorCParams);
+      abi.encodeWithSelector(IModifiablePerCollateral.initializeCollateralType.selector, newCType, abi.encode(_taxCollectorCParams));
     calldatas[4] =
-      abi.encodeWithSelector(IModifiablePerCollateral.initializeCollateralType.selector, _liquidationEngineCParams);
-    calldatas[5] = abi.encodeWithSelector(IModifiablePerCollateral.initializeCollateralType.selector, _oracleCParams);
+      abi.encodeWithSelector(IModifiablePerCollateral.initializeCollateralType.selector, newCType, abi.encode(_liquidationEngineCParams));
+    calldatas[5] = abi.encodeWithSelector(IModifiablePerCollateral.initializeCollateralType.selector, newCType, abi.encode(_oracleCParams));
     calldatas[6] =
-      abi.encodeWithSelector(IAuthorizable.addAuthorization.selector, _liquidationEngineCParams.collateralAuctionHouse);
+      abi.encodeWithSelector(IAuthorizable.addAuthorization.selector, abi.encode(_liquidationEngineCParams.collateralAuctionHouse));
     calldatas[7] = abi.encodeWithSelector(
-      ISAFEEngine.approveSAFEModification.selector, _liquidationEngineCParams.collateralAuctionHouse
-    );
+      ISAFEEngine.approveSAFEModification.selector, abi.encode(_liquidationEngineCParams.collateralAuctionHouse
+    ));
 
     // Get the descriptionHash
     bytes32 descriptionHash = keccak256(bytes(description));
