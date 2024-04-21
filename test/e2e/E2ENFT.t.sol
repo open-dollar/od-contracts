@@ -175,8 +175,8 @@ contract E2ENFTTest is NFTSetup {
   }
 
   function test_transferSafe() public {
-    vm.startPrank(alice);
     _removeDelays();
+    vm.startPrank(alice);
     uint256 safeId = openSafe();
 
     Vault721(vault721).transferFrom(alice, bob, safeId);
@@ -184,8 +184,8 @@ contract E2ENFTTest is NFTSetup {
   }
 
   function test_transferSafeToProxyFail() public {
-    vm.startPrank(alice);
     _removeDelays();
+    vm.startPrank(alice);
     uint256 safeId = openSafe();
 
     vm.expectRevert(IVault721.NotWallet.selector);
@@ -194,8 +194,8 @@ contract E2ENFTTest is NFTSetup {
   }
 
   function test_transferSafeToZeroFail() public {
-    vm.startPrank(alice);
     _removeDelays();
+    vm.startPrank(alice);
     uint256 safeId = openSafe();
 
     vm.expectRevert(IVault721.NotWallet.selector);
@@ -223,8 +223,8 @@ contract E2ENFTTest is NFTSetup {
   }
 
   function test_openSafe_lockCollateral_transfer() public {
-    vm.startPrank(alice);
     _removeDelays();
+    vm.startPrank(alice);
 
     uint256 safeId = openSafe();
 
