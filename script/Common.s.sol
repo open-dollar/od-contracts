@@ -6,7 +6,7 @@ import '@script/Registry.s.sol';
 import {Test} from 'forge-std/Test.sol';
 import {VmSafe} from 'forge-std/Script.sol';
 import {Params, ParamChecker, OD, ETH_A, ARB, JOB_REWARD} from '@script/Params.s.sol';
-import "forge-std/console.sol";
+import 'forge-std/console.sol';
 
 abstract contract Common is Contracts, Params, Test {
   uint256 internal _chainId;
@@ -66,15 +66,15 @@ abstract contract Common is Contracts, Params, Test {
   function deployCollateralContracts(bytes32 _cType) public updateParams {
     // deploy CollateralJoin and CollateralAuctionHouse
     address _delegatee = delegatee[_cType];
-    if (_delegatee == address(0)) {
-      collateralJoin[_cType] =
-        collateralJoinFactory.deployCollateralJoin({_cType: _cType, _collateral: address(collateral[_cType])});
-    } else {
+    if (_cType = ARB) {
       collateralJoin[_cType] = collateralJoinFactory.deployDelegatableCollateralJoin({
         _cType: _cType,
         _collateral: address(collateral[_cType]),
         _delegatee: _delegatee
       });
+    } else {
+      collateralJoin[_cType] =
+        collateralJoinFactory.deployCollateralJoin({_cType: _cType, _collateral: address(collateral[_cType])});
     }
 
     collateralAuctionHouseFactory.initializeCollateralType(_cType, abi.encode(_collateralAuctionHouseParams[_cType]));
@@ -129,7 +129,7 @@ abstract contract Common is Contracts, Params, Test {
     // factories or children
     //_revoke(chainlinkRelayerFactory, removeAddress, addAddress);
     //_revoke(denominatedOracleFactory, removeAddress, addAddress);
-    console.log("removing access from delayed oracle");
+    console.log('removing access from delayed oracle');
     _revoke(delayedOracleFactory, removeAddress, addAddress);
     _revoke(collateralJoinFactory, removeAddress, addAddress);
     _revoke(collateralAuctionHouseFactory, removeAddress, addAddress);
