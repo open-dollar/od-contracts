@@ -1,0 +1,16 @@
+{
+  "chainid": 42161,
+  "description": "Add new safeManager to the SAFEEngine",
+  "network": "mainnet",
+  "proposalType": "ModifyParameters",
+  "odGovernor": "0xf704735CE81165261156b41D33AB18a08803B86F",
+  "objectArray": [
+    {
+      "target": "0xEff45E8e2353893BD0558bD5892A42786E9142F1",
+      "param": "odSafeManager",
+      "type": "address",
+      "data": "0x1196Ee216798107130bd61A80c3BeeC2DeC113AA"
+    }
+  ],
+  "arrayLength": "1"
+}
