@@ -34,8 +34,8 @@ Addresses for testnet can be found in the app: https://app.dev.opendollar.com/st
 | Audit Number | Date | Auditor | Commit | Changes Since Audit | Report |
 |--------------|------|---------|--------|---------------------|--------|
 | 1 | October, 2023 | [Cod4rena](https://code4rena.com) | [f401eb5](https://github.com/open-dollar/od-contracts/commit/f401eb5) | [View Changes](https://github.com/open-dollar/od-contracts/compare/f401eb5...main) | [View Report](https://code4rena.com/reports/2023-10-opendollar) |
-| 2 | March, 2024 | [Quantstamp](https://www.trailofbits.com/) | [39d1a1c](https://github.com/open-dollar/od-contracts/commit/39d1a1c) | [View Changes](https://github.com/open-dollar/od-contracts/compare/39d1a1c...main) | Report to be published |
-| 3 | April, 2024 | [Pessimistic](https://pessimistic.io/) | [a0b7640](https://github.com/open-dollar/od-contracts/commit/a0b7640) | [View Changes](https://github.com/open-dollar/od-contracts/compare/a0b7640...main) | Report to be published |
+| 2 | March, 2024 | [Pessimistic](https://pessimistic.io/) | [a0b7640](https://github.com/open-dollar/od-contracts/commit/a0b7640) | [View Changes](https://github.com/open-dollar/od-contracts/compare/a0b7640...main) | Report to be published |
+| 3 | March, 2024 | [Quantstamp](https://www.trailofbits.com/) | [5715669](https://github.com/open-dollar/od-contracts/commit/39d1a1c) | [View Changes](https://github.com/open-dollar/od-contracts/compare/5715669...main) | Report to be published |
 | 4 | April, 2024 | [Pashov Audit Group](https://www.pashov.net/) | [453222d](https://github.com/open-dollar/od-relayer/commit/453222d) | [View Changes](https://github.com/open-dollar/od-relayer/compare/453222d...main) | Report to be published |
 
 Additional audits completed prior to forking this codebase can be found here: https://github.com/hai-on-op/audit-reports
