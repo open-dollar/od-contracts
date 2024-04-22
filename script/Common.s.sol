@@ -6,6 +6,7 @@ import '@script/Registry.s.sol';
 import {Test} from 'forge-std/Test.sol';
 import {VmSafe} from 'forge-std/Script.sol';
 import {Params, ParamChecker, OD, ETH_A, ARB, JOB_REWARD} from '@script/Params.s.sol';
+import "forge-std/console.sol";
 
 abstract contract Common is Contracts, Params, Test {
   uint256 internal _chainId;
@@ -118,22 +119,17 @@ abstract contract Common is Contracts, Params, Test {
     // safe manager
     _revoke(safeManager, removeAddress, addAddress);
 
-    /// @notice pre-deployed vault721
-    if (vault721.authorizedAccounts(addAddress) != true) {
-      vault721.addAuthorization(addAddress);
-    }
-    if (vault721.authorizedAccounts(removeAddress) == true) {
-      if (vault721.authorizedAccounts(address(create2))) vault721.removeAuthorization(address(create2));
-      vault721.removeAuthorization(removeAddress);
-    }
+    // vault721
+    //_revoke(vault721, removeAddress, addAddress);
 
     if (address(ethJoin) != address(0)) {
       _revoke(ethJoin, removeAddress, addAddress);
     }
 
     // factories or children
-    _revoke(chainlinkRelayerFactory, removeAddress, addAddress);
-    _revoke(denominatedOracleFactory, removeAddress, addAddress);
+    //_revoke(chainlinkRelayerFactory, removeAddress, addAddress);
+    //_revoke(denominatedOracleFactory, removeAddress, addAddress);
+    console.log("removing access from delayed oracle");
     _revoke(delayedOracleFactory, removeAddress, addAddress);
     _revoke(collateralJoinFactory, removeAddress, addAddress);
     _revoke(collateralAuctionHouseFactory, removeAddress, addAddress);
