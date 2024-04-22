@@ -1,15 +1,15 @@
 {
   "chainid": 42161,
-  "description": "Modify globalDebtCeiling round 2",
+  "description": "Add new safeManager to the SAFEEngine",
   "network": "mainnet",
   "proposalType": "ModifyParameters",
   "odGovernor": "0xf704735CE81165261156b41D33AB18a08803B86F",
   "objectArray": [
     {
       "target": "0xEff45E8e2353893BD0558bD5892A42786E9142F1",
-      "param": "globalDebtCeiling",
-      "type": "uint256",
-      "data": "27750000000000000000000000000000000000000000000000000"
+      "param": "odSafeManager",
+      "type": "address",
+      "data": "0x"
     }
   ],
   "arrayLength": "1"
