@@ -54,4 +54,7 @@ abstract contract MainnetContracts {
   address public PostSettlementSurplusBidActions_Address = 0x2B7F191E4FdCf4E354f344349302BC3E98780044;
   address public GlobalSettlementActions_Address = 0xBB935d412DFab5200D01B1fcaF2aa14Af5b5b2ED;
   address public RewardedActions_Address = 0xD51fD52C5BCC150491d1e629094a3A56B7194096;
+  address public CAMELOT_RELAYER_FACTORY = 0x36645830479170265A154Acb726780fdaE41A28F;
+  address public ChainlinkRelayerFactory_Address = 0x06C32500489C28Bd57c551afd8311Fef20bFaBB5;
+  address public DENOMINATED_ORACLE_FACTORY = 0xBF760b23d2ef3615cec549F22b95a34DB0F8f5CD;
 }

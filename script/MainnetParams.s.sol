@@ -33,7 +33,7 @@ abstract contract MainnetParams is Contracts, Params {
       bidIncrease: 1.01e18, // +1 %
       bidDuration: 6 hours,
       totalAuctionLength: 1 days,
-      bidReceiver: governor,
+      bidReceiver: address(odGovernor),
       recyclingPercentage: 0.5e18 // 50% is burned
     });
 
@@ -85,7 +85,7 @@ abstract contract MainnetParams is Contracts, Params {
     _postSettlementSAHParams = IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams({
       bidIncrease: 1.01e18, // +1 %
       bidDuration: 3 hours,
-      totalAuctionLength: 1 days
+      totalAuctionLength: 2 days
     });
 
     // --- Collateral Default Params ---
@@ -115,9 +115,9 @@ abstract contract MainnetParams is Contracts, Params {
       });
 
       _collateralAuctionHouseParams[_cType] = ICollateralAuctionHouse.CollateralAuctionHouseParams({
-        minimumBid: 5e18, // 5 COINs
+        minimumBid: 100e18, // 5 COINs
         minDiscount: 1e18, // no discount
-        maxDiscount: 1e18, // no discount
+        maxDiscount: 0.9e18, // no discount
         perSecondDiscountUpdateRate: MINUS_0_5_PERCENT_PER_HOUR // RAY
       });
     }
@@ -127,7 +127,7 @@ abstract contract MainnetParams is Contracts, Params {
     _oracleRelayerCParams[WSTETH] = IOracleRelayer.OracleRelayerCollateralParams({
       oracle: delayedOracle[WSTETH],
       safetyCRatio: 1.25e27, // 125%
-      liquidationCRatio: 1.2e27 // 120%
+      liquidationCRatio: 1.20e27 // 120%
     });
 
     _safeEngineCParams[WSTETH] = ISAFEEngine.SAFEEngineCollateralParams({
@@ -154,7 +154,7 @@ abstract contract MainnetParams is Contracts, Params {
     _oracleRelayerCParams[RETH] = IOracleRelayer.OracleRelayerCollateralParams({
       oracle: delayedOracle[RETH],
       safetyCRatio: 1.25e27, // 125%
-      liquidationCRatio: 1.2e27 // 120%
+      liquidationCRatio: 1.20e27 // 120%
     });
 
     _safeEngineCParams[RETH] = ISAFEEngine.SAFEEngineCollateralParams({
