@@ -67,7 +67,7 @@ abstract contract Common is Contracts, Params, Test {
     // deploy CollateralJoin and CollateralAuctionHouse
     address _delegatee = delegatee[_cType];
     if (_cType == ARB) {
-      console.log("Using arb ctype, so deploying delegatable cjoin.");
+      console.log('Using arb ctype, so deploying delegatable cjoin.');
       collateralJoin[_cType] = collateralJoinFactory.deployDelegatableCollateralJoin({
         _cType: _cType,
         _collateral: address(collateral[_cType]),
