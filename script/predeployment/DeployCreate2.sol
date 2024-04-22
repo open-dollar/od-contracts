@@ -14,6 +14,7 @@ import {OpenDollar, SystemCoin, ISystemCoin} from '@contracts/tokens/SystemCoin.
 
 // SIMULATE
 // source .env && forge script DeployProtocolTokenMainnet --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC
+
 contract DeployProtocolTokenMainnet is Script, Test {
   IODCreate2Factory internal _create2 = IODCreate2Factory(MAINNET_CREATE2FACTORY);
 
