@@ -38,7 +38,7 @@ contract Redeploy is MainnetContracts, Script, Test {
     _vault721Hash = keccak256(_vault721InitCode);
 
     _precomputeAddress = _create2.precomputeAddress(MAINNET_SALT_VAULT721, _vault721Hash);
-    emit log_named_address('ODG precompute', _precomputeAddress);
+    emit log_named_address('Vault721 precompute', _precomputeAddress);
 
     _vault721 = _create2.create2deploy(MAINNET_SALT_VAULT721, _vault721InitCode);
     emit log_named_address('Vault721 deployment', _vault721);
