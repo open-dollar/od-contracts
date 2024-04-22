@@ -70,7 +70,7 @@ abstract contract MainnetParams is Contracts, Params {
 
     _pidControllerParams = IPIDController.PIDControllerParams({
       perSecondCumulativeLeak: HALF_LIFE_30_DAYS, // 0.999998e27
-      noiseBarrier: WAD, // no noise barrier
+      noiseBarrier: 0.995e18, // no noise barrier
       feedbackOutputLowerBound: -int256(RAY - 1), // unbounded
       feedbackOutputUpperBound: RAD, // unbounded
       integralPeriodSize: 1 hours
