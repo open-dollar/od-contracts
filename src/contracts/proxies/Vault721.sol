@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {ERC721Upgradeable, IERC721Upgradeable} from '@openzeppelin-upgradeable/token/ERC721/ERC721Upgradeable.sol';
 import {ERC721EnumerableUpgradeable} from
@@ -15,7 +15,7 @@ import {Encoding} from '@libraries/Encoding.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 
 // Open Dollar
-// Version 1.6.1
+// Version 1.6.5
 
 /**
  * @notice Upgradeable contract used as singleton, but is not upgradeable
@@ -31,7 +31,7 @@ contract Vault721 is ERC721EnumerableUpgradeable, Authorizable, Modifiable, IVau
   uint256 public timeDelay;
 
   string public contractMetaData =
-    '{"name": "Open Dollar Vaults","description": "Open Dollar is a DeFi lending protocol that enables borrowing against liquid staking tokens while earning staking rewards and enabling liquidity via Non-Fungible Vaults (NFVs).","image": "https://app.opendollar.com/collectionImage.png","external_link": "https://app.opendollar.com"}';
+    '{"name": "Open Dollar Vaults","description": "Open Dollar is a stablecoin protocol built on Arbitrum designed to help you earn yield and leverage your assets with safety and predictability.","image": "https://app.opendollar.com/collectionImage.png","external_link": "https://app.opendollar.com"}';
 
   mapping(address proxy => address user) internal _proxyRegistry;
   mapping(address user => address proxy) internal _userRegistry;
@@ -40,10 +40,16 @@ contract Vault721 is ERC721EnumerableUpgradeable, Authorizable, Modifiable, IVau
 
   constructor() Authorizable(msg.sender) {}
 
-  function initialize(address _timelockController) external initializer nonZero(_timelockController) {
+  function initialize(
+    address _timelockController,
+    uint256 _blockDelay,
+    uint256 _timeDelay
+  ) external initializer nonZero(_timelockController) {
     timelockController = _timelockController;
-    // _addAuthorization(timelockController);
+    if (!_isAuthorized(timelockController)) _addAuthorization(timelockController);
     __ERC721_init('OpenDollar Vault', 'ODV');
+    blockDelay = _blockDelay;
+    timeDelay = _timeDelay;
   }
 
   /**

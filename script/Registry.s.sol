@@ -1,20 +1,29 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 // --- ARB Sepolia Testnet ---
 
 // Governor
-address constant SEPOLIA_TIMELOCK_CONTROLLER = 0xB052d23F4Ffb146e48318b97fe9903b9e6D0ddC3;
-address constant SEPOLIA_OD_GOVERNOR = 0xA5DC5C86212cF22167c52b756363B0FeA7B6e591;
+address constant SEPOLIA_TIMELOCK_CONTROLLER = 0xC1b1A32Cb29E441A1a16cC1120aF47f2787D5000;
+address constant SEPOLIA_OD_GOVERNOR = 0x69ae232E574352232aB8678869eAA3BEBd885211;
 
 // Create2 Factory
 address constant TEST_CREATE2FACTORY = 0xC5f2C81d16764908B18379D95f410912d928Adc2;
 
+// Vault721
+uint256 constant BLOCK_DELAY = 3;
+uint256 constant TIME_DELAY = 1 hours;
+
 // Tokens
-address constant SEPOLIA_PROTOCOL_TOKEN = 0x000e59706a2d1151721F5ef09ad311985d4267f9;
+address constant SEPOLIA_PROTOCOL_TOKEN = 0xbbB4f37c787C6ecb0b6b5Fb3F73221aA22fabA70;
 address constant SEPOLIA_SYSTEM_COIN = 0x0006d00Ae8375BDb0b10fBb100490CD5504fD802;
 uint256 constant AIRDROP_AMOUNT = 10_000_000e18; // 10 million tokens
 uint256 constant AIRDROP_RECIPIENTS = 2;
+
+uint256 constant SEPOLIA_INIT_VOTING_DELAY = 5; // 1 min
+uint256 constant SEPOLIA_INIT_VOTING_PERIOD = 25; // 5 min
+uint256 constant SEPOLIA_INIT_PROP_THRESHOLD = 10_000e18;
+uint256 constant SEPOLIA_INIT_VOTE_QUORUM = 3;
 
 // Governance Settings
 uint256 constant TEST_INIT_VOTING_DELAY = 1;
@@ -32,9 +41,9 @@ address constant J = 0xcb81A76a565aC4870EDA5B0e32c5a0D2ec734174;
 address constant P = 0xC295763Eed507d4A0f8B77241c03dd3354781a15;
 
 // Vanity address params - use `cast create2` to find salt (salt must change for each deployment)
-bytes32 constant SEPOLIA_SALT_SYSTEMCOIN = 0x70fa4ea91ea128890d92e6fc3b0c38abd1d4a18628325d59a4a6094cc46c3ee6;
+bytes32 constant SEPOLIA_SALT_SYSTEMCOIN = bytes32(uint256(0x1a));
 bytes32 constant SEPOLIA_SALT_PROTOCOLTOKEN = 0xb05d41f9bf22a7cc22e8d712ee9fb325052e1f1bdf30bbe7ace677e42455c2cf;
-bytes32 constant SEPOLIA_SALT_VAULT721 = 0x5ac389d6d0e471d10d622ae01cd40e538cd3d6c7931353187b287c2e83d35616;
+bytes32 constant SEPOLIA_SALT_VAULT721 = bytes32(uint256(0x1a));
 
 // Camelot Relayer (pre-deployed @ sol 0.7.6)
 address constant SEPOLIA_CAMELOT_RELAYER_FACTORY = 0x7C85Bceb6DE55f317fe846a2e02100Ac84e94167;
@@ -66,7 +75,7 @@ address constant SEPOLIA_WETH = 0x980B62Da83eFf3D4576C647993b0c1D7faf17c73;
 
 // Governor
 address constant MAINNET_TIMELOCK_CONTROLLER = 0x7A528eA3E06D85ED1C22219471Cf0b1851943903;
-address constant MAINNET_OD_GOVERNOR = 0xb7D1793425494e4C4133cF947C0992DC85F2948E;
+address constant MAINNET_OD_GOVERNOR = 0xf704735CE81165261156b41D33AB18a08803B86F;
 
 address constant MAINNET_SYSTEM_COIN_ORACLE = address(1); // from od-relayer deployment
 
@@ -77,10 +86,10 @@ address constant MAINNET_CREATE2FACTORY = 0x6EDb251053B4F7670C98e18bbEA20818367b
 address constant MAINNET_PROTOCOL_TOKEN = 0x000D636bD52BFc1B3a699165Ef5aa340BEA8939c;
 
 // Governance Settings
-uint256 constant MAINNET_INIT_VOTING_DELAY = 7200;
-uint256 constant MAINNET_INIT_VOTING_PERIOD = 50_400;
-uint256 constant MAINNET_INIT_PROP_THRESHOLD = 10_000 * 1e18;
-uint256 constant MAINNET_INIT_VOTE_QUORUM = 2;
+uint256 constant MAINNET_INIT_VOTING_DELAY = 3600; // 12 hours in blocks
+uint256 constant MAINNET_INIT_VOTING_PERIOD = 14_400; // 48 hours in blocks
+uint256 constant MAINNET_INIT_PROP_THRESHOLD = 5000 * 1e18; // 5k ODG
+uint256 constant MAINNET_INIT_VOTE_QUORUM = 2; // 20k ODG
 
 // Deployment params
 address constant MAINNET_TEST_DEPLOYER = 0xA0313248556DeA42fd17B345817Dd5DC5674c1E1;

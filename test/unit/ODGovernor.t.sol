@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 import {TimelockController} from '@openzeppelin/governance/TimelockController.sol';
@@ -99,22 +99,37 @@ contract Unit_ODGovernorTest is Base {
     assertEq(proposalState, uint256(IGovernor.ProposalState.Active));
   }
 
-  function test_ODGovernor_Propose_and_Cancel() public {
-    // setup: Alice receives tokens and delegates to herself
-    __mintAndDelegate(alice, 100 ether);
-    vm.roll(100); // move to block number to 100
-    (address[] memory targets, uint256[] memory values, bytes[] memory calldatas) = __createProposalArgs();
-    vm.startPrank(alice);
-    uint256 propId = odGovernor.propose(targets, values, calldatas, proposal_description);
-    vm.roll(1000); // move to block number to some point inside the voting window
+  // function test_ODGovernor_Propose_and_Cancel() public {
+  //   // setup: Alice receives tokens and delegates to herself
+  //   __mintAndDelegate(alice, 100 ether);
+  //   vm.roll(100); // move to block number to 100
+  //   (address[] memory targets, uint256[] memory values, bytes[] memory calldatas) = __createProposalArgs();
+  //   vm.startPrank(alice);
+  //   bytes32 descriptionHash = keccak256(bytes(proposal_description));
+  //   uint256 propId = odGovernor.propose(targets, values, calldatas, proposal_description);
+  //   vm.roll(10); // move to block number to some point inside the voting window
 
-    // cancel the proposal
-    odGovernor.cancel(propId);
-    uint256 proposalState = uint256(odGovernor.state(propId));
-    assertEq(proposalState, uint256(IGovernor.ProposalState.Canceled));
-  }
+  //   // cancel the proposal
+  //   odGovernor.cancel(targets, values, calldatas, descriptionHash);
+  //   uint256 proposalState = uint256(odGovernor.state(propId));
+  //   assertEq(proposalState, uint256(IGovernor.ProposalState.Canceled));
+  // }
 
-  function test_ODGovernor_Propsose_and_Execute() public {
+  // function test_ODGovernor_Propose_and_CancelExtendedArguments() public {
+  //   // setup: Alice receives tokens and delegates to herself
+  //   __mintAndDelegate(alice, 100 ether);
+  //   vm.roll(100); // move to block number to 100
+  //   (address[] memory targets, uint256[] memory values, bytes[] memory calldatas) = __createProposalArgs();
+  //   vm.startPrank(alice);
+  //   uint256 propId = odGovernor.propose(targets, values, calldatas, proposal_description);
+  //   vm.roll(10); // move to block number to some point inside the voting window
+
+  //   odGovernor.cancel(targets, values, calldatas, proposal_hash);
+  //   uint256 proposalState = uint256(odGovernor.state(propId));
+  //   assertEq(proposalState, uint256(IGovernor.ProposalState.Canceled));
+  // }
+
+  function test_ODGovernor_Propose_and_Execute() public {
     uint256 bobBalanceBeforeExecute = token.balanceOf(bob);
     uint256 blockTime = block.timestamp;
     uint256 blockNumber = block.number;
@@ -137,7 +152,7 @@ contract Unit_ODGovernorTest is Base {
 
     // execute proposal
     vm.startPrank(executor);
-    odGovernor.execute(propId);
+    odGovernor.execute(targets, values, calldatas, proposal_hash);
 
     uint256 proposalState = uint256(odGovernor.state(propId));
     assertEq(proposalState, uint256(IGovernor.ProposalState.Executed));

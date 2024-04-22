@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {ODSafeManager} from '@contracts/proxies/ODSafeManager.sol';
 import {CommonActions} from '@contracts/proxies/actions/CommonActions.sol';
@@ -41,7 +41,7 @@ contract GlobalSettlementActions is CommonActions, IGlobalSettlementActions {
       _safeEngine.approveSAFEModification(_manager);
     }
 
-    __manager.quitSystem(_safeId, address(this));
+    __manager.quitSystem(_safeId);
 
     // free collateral
     __globalSettlement.freeCollateral(_safeData.collateralType);

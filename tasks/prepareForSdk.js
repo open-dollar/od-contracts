@@ -81,7 +81,7 @@ const createOutputFile = (contracts) => {
       address: ETH_ADDRESS,
     },
     ARB: {
-      address: contracts.MintableVoteERC20_Address,
+      address: contracts.MintableVoteERC20_ARB_Address,
       collateralJoin:
         contracts.CollateralJoinChild_0x4152420000000000000000000000000000000000000000000000000000000000_Address,
       collateralAuctionHouse:

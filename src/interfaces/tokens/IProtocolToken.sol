@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {IERC20MetadataUpgradeable} from '@openzeppelin-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol';
 import {
@@ -8,7 +8,7 @@ import {
 } from '@openzeppelin-upgradeable/token/ERC20/extensions/ERC20VotesUpgradeable.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 
-interface IProtocolToken is IVotesUpgradeable, IERC20MetadataUpgradeable, IERC20PermitUpgradeable, IAuthorizable {
+interface IProtocolToken is IERC20MetadataUpgradeable, IERC20PermitUpgradeable, IAuthorizable {
   function initialize(string memory _name, string memory _symbol) external;
 
   /**

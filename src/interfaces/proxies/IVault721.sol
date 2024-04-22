@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {IERC721EnumerableUpgradeable} from
   '@openzeppelin-upgradeable/token/ERC721/extensions/IERC721EnumerableUpgradeable.sol';
@@ -60,7 +60,7 @@ interface IVault721 is IERC721EnumerableUpgradeable, IAuthorizable, IModifiable 
   /**
    * @dev initializes DAO timelockController contract
    */
-  function initialize(address _timelockController) external;
+  function initialize(address _timelockController, uint256 _blockDelay, uint256 _timeDelay) external;
 
   /**
    * @dev initializes SafeManager contract

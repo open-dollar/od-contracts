@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import '@script/Contracts.s.sol';
 import '@script/Registry.s.sol';
@@ -15,6 +15,7 @@ abstract contract Common is Contracts, Params, Test {
   bytes32 internal _vault721Salt;
   bytes internal _systemCoinInitCode;
   bytes internal _vault721InitCode;
+  bool internal _isTest;
 
   function logGovernor() public runIfFork {
     emit log_named_address('Governor', governor);
@@ -97,7 +98,15 @@ abstract contract Common is Contracts, Params, Test {
 
     // tokens
     _revoke(systemCoin, removeAddress, addAddress);
-    _revoke(protocolToken, removeAddress, addAddress);
+
+    /// @notice pre-deployed protocolToken
+    if (protocolToken.authorizedAccounts(addAddress) != true) {
+      protocolToken.addAuthorization(addAddress);
+    }
+    if (protocolToken.authorizedAccounts(removeAddress) == true) {
+      if (protocolToken.authorizedAccounts(address(create2))) protocolToken.removeAuthorization(address(create2));
+      protocolToken.removeAuthorization(removeAddress);
+    }
 
     // pid controller
     _revoke(pidController, removeAddress, addAddress);
@@ -109,8 +118,14 @@ abstract contract Common is Contracts, Params, Test {
     // safe manager
     _revoke(safeManager, removeAddress, addAddress);
 
-    // vault 721
-    _revoke(vault721, removeAddress, addAddress);
+    /// @notice pre-deployed vault721
+    if (vault721.authorizedAccounts(addAddress) != true) {
+      vault721.addAuthorization(addAddress);
+    }
+    if (vault721.authorizedAccounts(removeAddress) == true) {
+      if (vault721.authorizedAccounts(address(create2))) vault721.removeAuthorization(address(create2));
+      vault721.removeAuthorization(removeAddress);
+    }
 
     if (address(ethJoin) != address(0)) {
       _revoke(ethJoin, removeAddress, addAddress);
@@ -234,6 +249,7 @@ abstract contract Common is Contracts, Params, Test {
 
       // // revoke deployer from TIMELOCK_ADMIN_ROLE
       timelockController.renounceRole(timelockController.TIMELOCK_ADMIN_ROLE(), deployer);
+      protocolToken.mint(0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266, 500_000_000 ether); // mint 500 million tokens to deployer on anvil to sway the vote.
     }
   }
 
@@ -387,7 +403,7 @@ abstract contract Common is Contracts, Params, Test {
     } else {
       vault721 = new Vault721();
     }
-    vault721.initialize(address(timelockController));
+    vault721.initialize(address(timelockController), BLOCK_DELAY, TIME_DELAY);
 
     safeManager =
       new ODSafeManager(address(safeEngine), address(vault721), address(taxCollector), address(liquidationEngine));

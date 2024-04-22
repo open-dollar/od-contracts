@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
 import {Common, COLLAT, DEBT, TKN} from '@test/e2e/Common.t.sol';
@@ -82,14 +82,8 @@ contract NFTSetup is Common {
     ODProxy(_proxy).execute(address(basicActions), payload);
   }
 
-  function quitSystem(address _proxy, uint256 _safeId, address _dst) public {
-    bytes memory payload = abi.encodeWithSelector(basicActions.quitSystem.selector, address(safeManager), _safeId, _dst);
-    ODProxy(_proxy).execute(address(basicActions), payload);
-  }
-
-  function enterSystem(address _proxy, address _src, uint256 _safeId) public {
-    bytes memory payload =
-      abi.encodeWithSelector(basicActions.enterSystem.selector, address(safeManager), _src, _safeId);
+  function quitSystem(address _proxy, uint256 _safeId) public {
+    bytes memory payload = abi.encodeWithSelector(basicActions.quitSystem.selector, address(safeManager), _safeId);
     ODProxy(_proxy).execute(address(basicActions), payload);
   }
 
@@ -154,6 +148,13 @@ contract NFTSetup is Common {
 }
 
 contract E2ENFTTest is NFTSetup {
+  function _removeDelays() internal {
+    vm.startPrank(vault721.timelockController());
+    vault721.modifyParameters('timeDelay', abi.encode(0 days));
+    vault721.modifyParameters('blockDelay', abi.encode(0));
+    vm.stopPrank();
+  }
+
   function test_openSafe() public {
     vm.startPrank(alice);
     bytes memory payload = abi.encodeWithSelector(basicActions.openSAFE.selector, address(safeManager), TKN, aliceProxy);
@@ -168,6 +169,7 @@ contract E2ENFTTest is NFTSetup {
   }
 
   function test_transferSafe() public {
+    _removeDelays();
     vm.startPrank(alice);
     uint256 safeId = openSafe();
 
@@ -176,6 +178,7 @@ contract E2ENFTTest is NFTSetup {
   }
 
   function test_transferSafeToProxyFail() public {
+    _removeDelays();
     vm.startPrank(alice);
     uint256 safeId = openSafe();
 
@@ -185,6 +188,7 @@ contract E2ENFTTest is NFTSetup {
   }
 
   function test_transferSafeToZeroFail() public {
+    _removeDelays();
     vm.startPrank(alice);
     uint256 safeId = openSafe();
 
@@ -213,6 +217,7 @@ contract E2ENFTTest is NFTSetup {
   }
 
   function test_openSafe_lockCollateral_transfer() public {
+    _removeDelays();
     vm.startPrank(alice);
 
     uint256 safeId = openSafe();
@@ -519,8 +524,8 @@ contract E2ENFTTestFuzzFrontrunning is NFTSetup {
 
   function _updateDelays() internal {
     vm.startPrank(vault721.timelockController());
-    vault721.modifyParameters('timeDelay', abi.encode(5 days));
-    vault721.modifyParameters('blockDelay', abi.encode(3));
+    vault721.modifyParameters('timeDelay', abi.encode(3 days));
+    vault721.modifyParameters('blockDelay', abi.encode(5));
     vm.stopPrank();
   }
 }

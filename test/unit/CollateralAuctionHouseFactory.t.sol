@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {
   CollateralAuctionHouseFactoryForTest,
@@ -196,6 +196,25 @@ contract Unit_CollateralAuctionHouseFactory_DeployCollateralAuctionHouse is Base
     assertEq(
       address(collateralAuctionHouseFactory.collateralAuctionHouses(_cType)), address(collateralAuctionHouseChild)
     );
+  }
+
+  function test_Set_CollateralAuctionHouseChild_disable() public happyPath {
+    collateralAuctionHouseFactory.initializeCollateralType(collateralType, abi.encode(cahParams));
+    collateralAuctionHouseFactory.callChildDisable(address(collateralAuctionHouseChild));
+    assertEq(collateralAuctionHouseChild.contractEnabled(), false);
+  }
+
+  function test_Set_OracleCollateralAuctionHouseChild() public happyPath {
+    collateralAuctionHouseFactory.initializeCollateralType(collateralType, abi.encode(cahParams));
+
+    collateralAuctionHouseFactory.callChildSetOracle(address(0x01));
+    assertEq(address(collateralAuctionHouseChild.oracleRelayer()), address(0x01));
+  }
+
+  function test_Set_SetLiquidationEngineCollateralAuctionHouseChild() public happyPath {
+    collateralAuctionHouseFactory.initializeCollateralType(collateralType, abi.encode(cahParams));
+    collateralAuctionHouseFactory.callChildSetLiquidationEngine(address(0x01));
+    assertEq(address(collateralAuctionHouseChild.liquidationEngine()), address(0x01));
   }
 }
 

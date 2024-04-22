@@ -13,7 +13,7 @@ title = 'Open Dollar Docs'
 src = 'src/'               # root_path variable in build-docs.sh
 
 [profile.default]
-auto_detect_solc = true
+solc = '0.8.20'
 src = 'src'
 test = 'test'
 out = 'out'
@@ -21,8 +21,9 @@ libs = ['lib']
 fuzz_runs = 1000
 optimizer_runs = 10_000
 block_timestamp = 1675855961
-fs_permissions = [{ access = "write", path = "./test/simulations" }]
-fuzz.max_test_rejects = 10000000
+# fs_permissions = [{ access = "write", path = "./test/simulations" }]
+fs_permissions = [{ access = "read-write", path = "./" }]
+fuzz_max_test_rejects = 10000000
 
 [profile.governance]
 fs_permissions = [{ access = "read-write", path = "./" }]
@@ -37,6 +38,7 @@ via_ir = false
 out = 'out-via-ir'
 fuzz_runs = 5000
 src = 'test'
+fs_permissions = [{ access = "read-write", path = "./" }]
 
 [rpc_endpoints]
 mainnet = "${ARB_MAINNET_RPC}"

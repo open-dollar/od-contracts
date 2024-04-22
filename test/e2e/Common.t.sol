@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {MAINNET_WETH, SEPOLIA_WETH} from '@script/Registry.s.sol';
 import {ODTest} from '@test/utils/ODTest.t.sol';
@@ -32,6 +32,7 @@ contract DeployForTest is TestParams, Deploy {
   constructor() {
     // NOTE: creates fork in order to have WSTETH at 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1
     vm.createSelectFork(vm.rpcUrl('mainnet'));
+    _isTest = true;
   }
 
   function setupEnvironment() public virtual override {

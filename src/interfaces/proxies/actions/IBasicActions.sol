@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {ICommonActions} from '@interfaces/proxies/actions/ICommonActions.sol';
 
@@ -52,15 +52,8 @@ interface IBasicActions is ICommonActions {
   /**
    * @notice Quit the system, migrating the safe (lockedCollateral, generatedDebt) to a different dst handler
    * @param  _safe Id of the SAFE
-   * @param  _dst Address of the dst handler
    */
-  function quitSystem(address _manager, uint256 _safe, address _dst) external;
-  /**
-   * @notice Enter the system, migrating the safe (lockedCollateral, generatedDebt) from a src handler to the safe handler
-   * @param  _src Address of the src handler
-   * @param  _safe Id of the SAFE
-   */
-  function enterSystem(address _manager, address _src, uint256 _safe) external;
+  function quitSystem(address _manager, uint256 _safe) external;
   /**
    * @notice Move a position from safeSrc handler to the safeDst handler
    * @param  _safeSrc Id of the source SAFE

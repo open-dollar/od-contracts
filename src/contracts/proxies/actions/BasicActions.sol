@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {ODSafeManager} from '@contracts/proxies/ODSafeManager.sol';
 
@@ -238,13 +238,8 @@ contract BasicActions is CommonActions, IBasicActions {
   }
 
   /// @inheritdoc IBasicActions
-  function quitSystem(address _manager, uint256 _safeId, address _dst) external delegateCall {
-    ODSafeManager(_manager).quitSystem(_safeId, _dst);
-  }
-
-  /// @inheritdoc IBasicActions
-  function enterSystem(address _manager, address _src, uint256 _safeId) external delegateCall {
-    ODSafeManager(_manager).enterSystem(_src, _safeId);
+  function quitSystem(address _manager, uint256 _safeId) external delegateCall {
+    ODSafeManager(_manager).quitSystem(_safeId);
   }
 
   /// @inheritdoc IBasicActions

@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
-import {JSONScript} from '@script/testScripts/gov/JSONScript.s.sol';
+import {JSONScript} from '@script/testScripts/gov/helpers/JSONScript.s.sol';
 import {IGovernor} from '@openzeppelin/governance/IGovernor.sol';
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
+import {ForkManagement} from '@script/testScripts/gov/helpers/ForkManagement.s.sol';
+import 'forge-std/Script.sol';
 
 /// @title QueueProposal Script
 /// @author OpenDollar
@@ -12,28 +14,40 @@ import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 /// @dev NOTE Specify JSON_FILE_PATH in .env to select the proposal to queue
 /// @dev There needs to be enough votes AND the time lock time must be passed as well
 
-contract QueueProposal is JSONScript {
-  function run() public {
-    /// REQUIRED ENV VARS ///
-    address governanceAddress = vm.envAddress('GOVERNANCE_ADDRESS');
+contract QueueProposal is ForkManagement, JSONScript {
+  using stdJson for string;
 
-    // The path to the JSON file for the desired proposal to execute
-    string memory jsonFilePath = vm.envString('JSON_FILE_PATH');
+  ODGovernor public governor;
+  uint256[] public values;
+  address[] public targets;
+  bytes[] public calldatas;
+  string public description;
+  bytes32 public descriptionHash;
+  uint256 public proposalId;
 
-    uint256 govPK = vm.envUint('GOV_EXECUTOR_PK');
-    /// END REQUIRED ENV VARS ///
+  function _loadBaseData(string memory json) internal virtual {
+    values = json.readUintArray(string(abi.encodePacked('.values')));
+    targets = json.readAddressArray(string(abi.encodePacked('.targets')));
+    calldatas = json.readBytesArray(string(abi.encodePacked('.calldatas')));
+    description = json.readString(string(abi.encodePacked('.description')));
+    descriptionHash = json.readBytes32(string(abi.encodePacked('.descriptionHash')));
+    proposalId = json.readUint(string(abi.encodePacked('.proposalId')));
+    governor = ODGovernor(payable(json.readAddress(string(abi.encodePacked(('.odGovernor'))))));
+  }
 
-    ODGovernor gov = ODGovernor(payable(governanceAddress));
+  function run(string memory _filePath) public {
+    _loadJson(_filePath);
+    _checkNetworkParams();
+    _loadBaseData(json);
+    _loadPrivateKeys();
 
-    uint256 proposalId = _parseProposalId(jsonFilePath);
-
-    vm.startBroadcast(govPK);
-
-    gov.queue(proposalId);
-
+    vm.startBroadcast(_privateKey);
+    _queueProposal();
     vm.stopBroadcast();
+  }
 
-    IGovernor.ProposalState propState = gov.state(proposalId);
-    assert(propState == IGovernor.ProposalState.Queued);
+  function _queueProposal() internal {
+    uint256 queuedPropId = governor.queue(targets, values, calldatas, descriptionHash);
+    assert(queuedPropId == proposalId);
   }
 }

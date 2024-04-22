@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {AIRDROP_AMOUNT, AIRDROP_RECIPIENTS} from '@script/Registry.s.sol';
 import {IVotes} from '@openzeppelin/governance/utils/IVotes.sol';

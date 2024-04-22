@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 interface IODSafeManager {
   // --- Events ---
@@ -22,8 +22,6 @@ interface IODSafeManager {
   event TransferInternalCoins(address indexed _sender, uint256 indexed _safe, address _dst, uint256 _rad);
   /// @notice Emitted when calling quitSystem with the sender address and the method arguments
   event QuitSystem(address indexed _sender, uint256 indexed _safe, address _dst);
-  /// @notice Emitted when calling enterSystem with the sender address and the method arguments
-  event EnterSystem(address indexed _sender, address _src, uint256 indexed _safe);
   /// @notice Emitted when calling moveSAFE with the sender address and the method arguments
   event MoveSAFE(address indexed _sender, uint256 indexed _safeSrc, uint256 indexed _safeDst);
   /// @notice Emitted when calling protectSAFE with the sender address and the method arguments
@@ -184,18 +182,10 @@ interface IODSafeManager {
   function transferInternalCoins(uint256 _safe, address _dst, uint256 _rad) external;
 
   /**
-   * @notice Quit the system, migrating the safe (lockedCollateral, generatedDebt) to a different dst handler
-   * @param  _safe Id of the SAFE
-   * @param  _dst Address of the dst handler
-   */
-  function quitSystem(uint256 _safe, address _dst) external;
-
-  /**
-   * @notice Enter the system, migrating the safe (lockedCollateral, generatedDebt) from a src handler to the safe handler
-   * @param  _src Address of the src handler
+   * @notice Quit the system, migrating the safe (lockedCollateral, generatedDebt) to the ODProxy address
    * @param  _safe Id of the SAFE
    */
-  function enterSystem(address _src, uint256 _safe) external;
+  function quitSystem(uint256 _safe) external;
 
   /**
    * @notice Move a position from safeSrc handler to the safeDst handler

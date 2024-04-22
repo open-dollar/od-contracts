@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {IDelayedOracleChild} from '@interfaces/factories/IDelayedOracleChild.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';

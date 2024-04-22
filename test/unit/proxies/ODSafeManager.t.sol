@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {ODTest, stdStorage, StdStorage} from '@test/utils/ODTest.t.sol';
 import 'forge-std/Vm.sol';
@@ -81,7 +81,7 @@ contract Base is ODTest {
     taxCollector = new TaxCollector(address(mockSafeEngine), taxCollectorParams);
 
     taxCollector.addAuthorization(owner);
-    vault721.initialize(address(timelockController));
+    vault721.initialize(address(timelockController), 0, 0);
 
     liquidationEngine =
       new LiquidationEngineForTest(address(mockSafeEngine), address(mockAccountingEngine), liquidationEngineParams);
@@ -389,18 +389,6 @@ contract Unit_ODSafeManager_SystemManagement is Base {
     _;
   }
 
-  function test_EnterSystem(Scenario memory _scenario) public happyPath(_scenario) {
-    vm.startPrank(_scenario.aliceProxy);
-    safeManager.allowSAFE(_scenario.safeId, _scenario.aliceProxy, true);
-    vm.mockCall(
-      address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.transferSAFECollateralAndDebt.selector), abi.encode()
-    );
-
-    vm.mockCall(address(vault721), abi.encodeWithSelector(IVault721.updateNfvState.selector), abi.encode());
-
-    safeManager.enterSystem(_scenario.aliceProxy, _scenario.safeId);
-  }
-
   function test_QuitSystem(Scenario memory _scenario) public happyPath(_scenario) {
     vm.startPrank(_scenario.aliceProxy);
     safeManager.allowSAFE(_scenario.safeId, _scenario.aliceProxy, true);
@@ -411,7 +399,7 @@ contract Unit_ODSafeManager_SystemManagement is Base {
 
     vm.mockCall(address(vault721), abi.encodeWithSelector(IVault721.updateNfvState.selector), abi.encode());
 
-    safeManager.quitSystem(_scenario.safeId, _scenario.aliceProxy);
+    safeManager.quitSystem(_scenario.safeId);
   }
 }
 
@@ -517,8 +505,7 @@ contract Unit_ODSafeManager_CollateralManagement is Base {
     safeManager.modifySAFECollateralization(_scenario.safeId, _scenario.deltaCollateral, _scenario.deltaDebt, true);
 
     Vm.Log[] memory entries = vm.getRecordedLogs();
-    console2.log('ENTRIES', entries.length);
-    console2.log('topics', entries[0].topics.length);
+
     bool modifySafeLog = false;
     bool nfvStateLog = false;
     for (uint256 i; i < entries.length; i++) {

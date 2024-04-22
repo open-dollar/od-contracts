@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {PIDController, IPIDController} from '@contracts/PIDController.sol';
 import {Math} from '@libraries/Math.sol';
