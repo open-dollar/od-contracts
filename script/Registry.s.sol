@@ -79,9 +79,6 @@ address constant MAINNET_OD_GOVERNOR = 0xf704735CE81165261156b41D33AB18a08803B86
 
 address constant MAINNET_SYSTEM_COIN_ORACLE = address(1); // from od-relayer deployment
 
-// Create2 Factory
-address constant MAINNET_CREATE2FACTORY = 0x6EDb251053B4F7670C98e18bbEA20818367b4C0f;
-
 // Protocol Token
 address constant MAINNET_PROTOCOL_TOKEN = 0x000D636bD52BFc1B3a699165Ef5aa340BEA8939c;
 
@@ -98,12 +95,15 @@ address constant MAINNET_SAFE = 0x8516B2319b0541E0253b866557929FF7B76027ba; // s
 uint256 constant MAINNET_MIN_DELAY = 3 days; // timelock for governor
 uint256 constant ORACLE_INTERVAL_PROD = 1 hours;
 
-// Vanity address params - use `cast create2` to find salt
+// Create2 Factory
+address constant MAINNET_CREATE2FACTORY = 0x6EDb251053B4F7670C98e18bbEA20818367b4C0f;
+
+// Vanity address params - Calculate using ComputeAdress.s.sol
 bytes32 constant MAINNET_SALT_SYSTEMCOIN = 0x20275bcfd2d2006585a0ef275c0e7e2d593d892048281150499c23206cf1aff5;
 bytes32 constant MAINNET_SALT_PROTOCOLTOKEN_X = 0x9b1a9c8e5919ef7cfcbfc9bca7a4e864a4cb000e481d77291abf03c358055d0f; // 0x000000d627d89106efd5bbFFb2aBa457310e04AA
 bytes32 constant MAINNET_SALT_PROTOCOLTOKEN_XX = 0xc9a9fed357826f89be546dd81e107a64fd2feab41f85119fc682ecdc3d209ae2; // 0x00000D6e081E063dfA1c0e4F71D60E29ff5BC26c
 bytes32 constant MAINNET_SALT_PROTOCOLTOKEN = 0xb2c552ad83cd8e190b3d170a646188c6a64fc6dda47a1ae28748fc0f6c53ce65; // 0x000D636bD52BFc1B3a699165Ef5aa340BEA8939c
-bytes32 constant MAINNET_SALT_VAULT721 = 0x8ee1d4d43981ea220e106e4b693735506483322df7a4e8d9994bb14a922f231b;
+bytes32 constant MAINNET_SALT_VAULT721 = 0xa89bcefed48fed2f30c2c088ee79f076f39a5106f7ce3931ca5f1060fb956dd4;
 
 // Camelot Relayer (pre-deployed @ sol 0.7.6)
 address constant MAINNET_CAMELOT_RELAYER_FACTORY = address(0);
