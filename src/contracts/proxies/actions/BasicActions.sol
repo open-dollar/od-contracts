@@ -243,11 +243,6 @@ contract BasicActions is CommonActions, IBasicActions {
   }
 
   /// @inheritdoc IBasicActions
-  function enterSystem(address _manager, address _src, uint256 _safeId) external delegateCall {
-    ODSafeManager(_manager).enterSystem(_src, _safeId);
-  }
-
-  /// @inheritdoc IBasicActions
   function moveSAFE(address _manager, uint256 _safeSrc, uint256 _safeDst) external delegateCall {
     ODSafeManager(_manager).moveSAFE(_safeSrc, _safeDst);
   }
