@@ -32,7 +32,6 @@ contract VerifySepoliaParams is VerifyParams, SepoliaDeployment, Script {
 
 // TODO add mainnet verification when deployment happens
 
-
 contract VerifyMainnetParams is VerifyParams, MainnetDeployment, Script {
   function run() public {
     vm.startBroadcast(vm.envUint('ARB_MAINNET_PK'));

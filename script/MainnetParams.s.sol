@@ -127,7 +127,7 @@ abstract contract MainnetParams is Contracts, Params {
     _oracleRelayerCParams[WSTETH] = IOracleRelayer.OracleRelayerCollateralParams({
       oracle: delayedOracle[WSTETH],
       safetyCRatio: 1.25e27, // 125%
-      liquidationCRatio: 1.20e27 // 120%
+      liquidationCRatio: 1.2e27 // 120%
     });
 
     _safeEngineCParams[WSTETH] = ISAFEEngine.SAFEEngineCollateralParams({
@@ -154,7 +154,7 @@ abstract contract MainnetParams is Contracts, Params {
     _oracleRelayerCParams[RETH] = IOracleRelayer.OracleRelayerCollateralParams({
       oracle: delayedOracle[RETH],
       safetyCRatio: 1.25e27, // 125%
-      liquidationCRatio: 1.20e27 // 120%
+      liquidationCRatio: 1.2e27 // 120%
     });
 
     _safeEngineCParams[RETH] = ISAFEEngine.SAFEEngineCollateralParams({
