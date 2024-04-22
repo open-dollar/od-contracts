@@ -389,18 +389,6 @@ contract Unit_ODSafeManager_SystemManagement is Base {
     _;
   }
 
-  function test_EnterSystem(Scenario memory _scenario) public happyPath(_scenario) {
-    vm.startPrank(_scenario.aliceProxy);
-    safeManager.allowSAFE(_scenario.safeId, _scenario.aliceProxy, true);
-    vm.mockCall(
-      address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.transferSAFECollateralAndDebt.selector), abi.encode()
-    );
-
-    vm.mockCall(address(vault721), abi.encodeWithSelector(IVault721.updateNfvState.selector), abi.encode());
-
-    safeManager.enterSystem(_scenario.aliceProxy, _scenario.safeId);
-  }
-
   function test_QuitSystem(Scenario memory _scenario) public happyPath(_scenario) {
     vm.startPrank(_scenario.aliceProxy);
     safeManager.allowSAFE(_scenario.safeId, _scenario.aliceProxy, true);
@@ -411,7 +399,7 @@ contract Unit_ODSafeManager_SystemManagement is Base {
 
     vm.mockCall(address(vault721), abi.encodeWithSelector(IVault721.updateNfvState.selector), abi.encode());
 
-    safeManager.quitSystem(_scenario.safeId, _scenario.aliceProxy);
+    safeManager.quitSystem(_scenario.safeId);
   }
 }
 

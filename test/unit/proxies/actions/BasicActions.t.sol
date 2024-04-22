@@ -98,22 +98,10 @@ contract BasicActionsTest is ActionBaseTest {
     vm.startPrank(alice);
 
     proxy.execute(
-      address(basicActions),
-      abi.encodeWithSignature('quitSystem(address,uint256,address)', address(safeManager), 1, address(0x01))
+      address(basicActions), abi.encodeWithSignature('quitSystem(address,uint256)', address(safeManager), 1)
     );
 
     assertTrue(safeManager.wasQuitSystemCalled());
-  }
-
-  function test_enterSystem() public {
-    vm.startPrank(alice);
-
-    proxy.execute(
-      address(basicActions),
-      abi.encodeWithSignature('enterSystem(address,address,uint256)', address(safeManager), address(0x01), 1)
-    );
-
-    assertTrue(safeManager.wasEnterSystemCalled());
   }
 
   function test_moveSafe() public {

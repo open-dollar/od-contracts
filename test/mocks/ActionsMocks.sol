@@ -151,7 +151,7 @@ contract ODSafeManagerMock {
     return safeDataPoint;
   }
 
-  function quitSystem(uint256 _safe, address _dst) external {
+  function quitSystem(uint256 _safe) external {
     wasQuitSystemCalled = true;
   }
 
