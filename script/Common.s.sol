@@ -5,7 +5,7 @@ import '@script/Contracts.s.sol';
 import '@script/Registry.s.sol';
 import {Test} from 'forge-std/Test.sol';
 import {VmSafe} from 'forge-std/Script.sol';
-import {Params, ParamChecker, OD, ETH_A, JOB_REWARD} from '@script/Params.s.sol';
+import {Params, ParamChecker, OD, ETH_A, ARB, JOB_REWARD} from '@script/Params.s.sol';
 
 abstract contract Common is Contracts, Params, Test {
   uint256 internal _chainId;
@@ -226,7 +226,6 @@ abstract contract Common is Contracts, Params, Test {
       protocolToken.initialize('Open Dollar Governance', 'ODG');
     }
     systemCoin.initialize('Open Dollar', 'OD');
-
     address[] memory members = new address[](0);
 
     if (isNetworkAnvil()) {
@@ -242,12 +241,13 @@ abstract contract Common is Contracts, Params, Test {
       );
       // set governor
       governor = address(timelockController);
+      delegatee[ARB] = governor;
 
       // set odGovernor as PROPOSER_ROLE and EXECUTOR_ROLE
       timelockController.grantRole(timelockController.PROPOSER_ROLE(), address(odGovernor));
       timelockController.grantRole(timelockController.EXECUTOR_ROLE(), address(odGovernor));
 
-      // // revoke deployer from TIMELOCK_ADMIN_ROLE
+      // revoke deployer from TIMELOCK_ADMIN_ROLE
       timelockController.renounceRole(timelockController.TIMELOCK_ADMIN_ROLE(), deployer);
       protocolToken.mint(0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266, 500_000_000 ether); // mint 500 million tokens to deployer on anvil to sway the vote.
     }
@@ -354,8 +354,8 @@ abstract contract Common is Contracts, Params, Test {
   }
 
   function deployOracleFactories() public updateParams {
-    chainlinkRelayerFactory = new ChainlinkRelayerFactory();
-    denominatedOracleFactory = new DenominatedOracleFactory();
+    // chainlinkRelayerFactory = new ChainlinkRelayerFactory(); // Skipped for mainnet
+    // denominatedOracleFactory = new DenominatedOracleFactory(); // Skipped for mainnet
     delayedOracleFactory = new DelayedOracleFactory();
   }
 
