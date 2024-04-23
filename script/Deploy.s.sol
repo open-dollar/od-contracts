@@ -127,14 +127,37 @@ contract DeployMainnet is MainnetParams, Deploy {
 
   // Setup oracle feeds
   function setupEnvironment() public virtual override updateParams {
-    systemCoinOracle = new OracleForTest(OD_INITIAL_PRICE); // 1 OD = 1 USD
+    IBaseOracle _arbUSDPriceFeed = IBaseOracle(MAINNET_CHAINLINK_ARB_USD_RELAYER);
+    IBaseOracle _wstethUSDPriceFeed = IBaseOracle(MAINNET_DENOMINATED_WSTETH_USD_ORACLE);
+    IBaseOracle _rethUSDPriceFeed = IBaseOracle(MAINNET_DENOMINATED_RETH_USD_ORACLE);
+    if (!isNetworkArbitrumOne()) {
+      // to USD
+      IBaseOracle _ethUSDPriceFeed =
+        chainlinkRelayerFactory.deployChainlinkRelayer(CHAINLINK_ETH_USD_FEED, ORACLE_INTERVAL_PROD);
 
-    delayedOracle[ARB] =
-      delayedOracleFactory.deployDelayedOracle(IBaseOracle(MAINNET_CHAINLINK_ARB_USD_RELAYER), ORACLE_INTERVAL_PROD);
-    delayedOracle[WSTETH] =
-      delayedOracleFactory.deployDelayedOracle(IBaseOracle(MAINNET_DENOMINATED_WSTETH_USD_ORACLE), ORACLE_INTERVAL_PROD);
-    delayedOracle[RETH] =
-      delayedOracleFactory.deployDelayedOracle(IBaseOracle(MAINNET_DENOMINATED_RETH_USD_ORACLE), ORACLE_INTERVAL_PROD);
+      IBaseOracle _arbUSDPriceFeed =
+        chainlinkRelayerFactory.deployChainlinkRelayer(CHAINLINK_ARB_USD_FEED, ORACLE_INTERVAL_PROD);
+
+      // to ETH
+      IBaseOracle _wstethETHPriceFeed =
+        chainlinkRelayerFactory.deployChainlinkRelayer(CHAINLINK_WSTETH_ETH_FEED, ORACLE_INTERVAL_PROD);
+
+      IBaseOracle _rethETHPriceFeed =
+        chainlinkRelayerFactory.deployChainlinkRelayer(CHAINLINK_RETH_ETH_FEED, ORACLE_INTERVAL_PROD);
+
+      // denominations
+      IBaseOracle _wstethUSDPriceFeed =
+        denominatedOracleFactory.deployDenominatedOracle(_wstethETHPriceFeed, _ethUSDPriceFeed, false);
+
+      IBaseOracle _rethUSDPriceFeed =
+        denominatedOracleFactory.deployDenominatedOracle(_rethETHPriceFeed, _ethUSDPriceFeed, false);
+    }
+
+    delayedOracle[ARB] = delayedOracleFactory.deployDelayedOracle(_arbUSDPriceFeed, ORACLE_INTERVAL_PROD);
+    delayedOracle[WSTETH] = delayedOracleFactory.deployDelayedOracle(_wstethUSDPriceFeed, ORACLE_INTERVAL_PROD);
+    delayedOracle[RETH] = delayedOracleFactory.deployDelayedOracle(_rethUSDPriceFeed, ORACLE_INTERVAL_PROD);
+
+    systemCoinOracle = new OracleForTest(OD_INITIAL_PRICE); // 1 OD = 1 USD
 
     collateral[ARB] = IERC20Metadata(ARBITRUM_ARB);
     collateral[WSTETH] = IERC20Metadata(ARBITRUM_WSTETH);
