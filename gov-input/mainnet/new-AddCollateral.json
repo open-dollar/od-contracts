@@ -1,16 +1,17 @@
 {
-  "chainid": "421614",
-  "network": "sepolia",
-  "newCollateralAddress": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+    "chainid": "42161",
+    "description": "add NEWADD as a collateral type",
+    "network": "mainnet",
+    "newCollateralAddress": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
     "newCollateralType": "NEWADD",
     "proposalType": "AddCollateral",
-    "ProtocolToken_Address": "0xc6e7DF5E7b4f2A278906862b61205850344D4e7d",
-    "ODGovernor_Address": "0xa85233C63b9Ee964Add6F2cffe00Fd84eb32338f",
-    "SAFEEngine_Address": "0x67d269191c92Caf3cD7723F116c85e6E9bf55933",
-    "OracleRelayer_Address": "0xE6E340D132b5f46d1e472DebcD681B2aBc16e57E",
-    "LiquidationEngine_Address": "0xa82fF9aFd8f496c3d6ac40E2a0F282E47488CFc9",
-    "TaxCollector_Address": "0x95401dc811bb5740090279Ba06cfA8fcF6113778",
-    "GlobalSettlement_Address": "0x5f3f1dBD7B74C6B46e8c44f98792A1dAf8d69154",
+    "ProtocolToken_Address": "0x000D636bD52BFc1B3a699165Ef5aa340BEA8939c",
+    "ODGovernor_Address": "0xf704735CE81165261156b41D33AB18a08803B86F",
+    "SAFEEngine_Address": "0xEff45E8e2353893BD0558bD5892A42786E9142F1",
+    "OracleRelayer_Address": "0x7404fc1F3796748FAE17011b57Fad9713185c1d6",
+    "LiquidationEngine_Address": "0x17e546dDCE2EA8A74Bd667269457A2e80b309965",
+    "TaxCollector_Address": "0xc93F938A95488a03b976A15B20fAcFD52D087fB2",
+    "GlobalSettlement_Address": "0x1c6B7ab018be82ed6b5c63aE82D9f07bb7B231A2",
     "SAFEEngineCollateralParams": {
         "collateralDebtCeiling": "500000000000000000000000000000000000000000000000",
         "collateralDebtFloor": "100000000000000000000000000000000000000000000000"
@@ -19,7 +20,7 @@
         "stabilityFee": "1000000000000000000000000000"
     },
     "LiquidationEngineCollateralParams": {
-        "newCAHChild": "0xd468bF477c0c99095D508c3B0A60f39348d91ac0",
+        "newCAHChild": "0x293b702362918e990Dd5f48a80fB139FeAd64263",
         "liquidationPenalty": "1000000000000000000",
         "liquidationQuantity": "1000000000000000000000000000000000000000000000"
     },

@@ -77,7 +77,7 @@ async function predictAddress(currentJson, provider) {
 
 async function predictAddressAndWriteToFile(currentJson, provider) {
   const predictedAddress = await predictAddress(currentJson, provider);
-  currentJson["newCAHChild"] = predictedAddress;
+  currentJson["LiquidationEngineCollateralParams"]["newCAHChild"] = predictedAddress;
   fs.writeFileSync(basePath, JSON.stringify(currentJson), (err) => {
     if (err) {
       console.error(err);

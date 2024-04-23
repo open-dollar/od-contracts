@@ -88,23 +88,32 @@ contract GenerateAddCollateralProposal is Generator, JSONScript {
     liquidationEngine = json.readAddress(string(abi.encodePacked('.LiquidationEngine_Address:')));
     oracleRelayer = json.readAddress(string(abi.encodePacked('.OracleRelayer_Address:')));
 
-    _cahCParams.minimumBid = json.readUint(string(abi.encodePacked('.minimumBid')));
-    _cahCParams.minDiscount = json.readUint(string(abi.encodePacked('.minimumDiscount')));
-    _cahCParams.maxDiscount = json.readUint(string(abi.encodePacked('.maximumDiscount')));
-    _cahCParams.perSecondDiscountUpdateRate = json.readUint(string(abi.encodePacked('.perSecondDiscountUpdateRate')));
+    _cahCParams.minimumBid = json.readUint(string(abi.encodePacked('.CollateralAuctionHouseParams.minimumBid')));
+    _cahCParams.minDiscount = json.readUint(string(abi.encodePacked('.CollateralAuctionHouseParams.minimumDiscount')));
+    _cahCParams.maxDiscount = json.readUint(string(abi.encodePacked('.CollateralAuctionHouseParams.maximumDiscount')));
+    _cahCParams.perSecondDiscountUpdateRate =
+      json.readUint(string(abi.encodePacked('.CollateralAuctionHouseParams.perSecondDiscountUpdateRate')));
 
-    _SAFEEngineCollateralParams.debtCeiling = json.readUint(string(abi.encodePacked('.collateralDebtCeiling')));
-    _SAFEEngineCollateralParams.debtFloor = json.readUint(string(abi.encodePacked('.collateralDebtFloor')));
+    _SAFEEngineCollateralParams.debtCeiling =
+      json.readUint(string(abi.encodePacked('.SAFEEngineCollateralParams.collateralDebtCeiling')));
+    _SAFEEngineCollateralParams.debtFloor =
+      json.readUint(string(abi.encodePacked('.SAFEEngineCollateralParams.collateralDebtFloor')));
 
-    _taxCollectorCParams.stabilityFee = json.readUint(string(abi.encodePacked('.stabilityFee')));
+    _taxCollectorCParams.stabilityFee =
+      json.readUint(string(abi.encodePacked('.TaxCollectorCollateralParams.stabilityFee')));
 
-    _liquidationEngineCParams.collateralAuctionHouse = json.readAddress(string(abi.encodePacked('.newCAHChild')));
-    _liquidationEngineCParams.liquidationPenalty = json.readUint(string(abi.encodePacked('.liquidationPenalty')));
-    _liquidationEngineCParams.liquidationQuantity = json.readUint(string(abi.encodePacked('.liquidationQuantity')));
+    _liquidationEngineCParams.collateralAuctionHouse =
+      json.readAddress(string(abi.encodePacked('.LiquidationEngineCollateralParams.newCAHChild')));
+    _liquidationEngineCParams.liquidationPenalty =
+      json.readUint(string(abi.encodePacked('.LiquidationEngineCollateralParams.liquidationPenalty')));
+    _liquidationEngineCParams.liquidationQuantity =
+      json.readUint(string(abi.encodePacked('.LiquidationEngineCollateralParams.liquidationQuantity')));
 
-    _oracleCParams.oracle = IDelayedOracle(json.readAddress(string(abi.encodePacked('.delayedOracle'))));
-    _oracleCParams.safetyCRatio = json.readUint(string(abi.encodePacked('.safetyCRatio')));
-    _oracleCParams.liquidationCRatio = json.readUint(string(abi.encodePacked('.liquidationCRatio')));
+    _oracleCParams.oracle =
+      IDelayedOracle(json.readAddress(string(abi.encodePacked('.OracleRelayerCollateralParams.delayedOracle'))));
+    _oracleCParams.safetyCRatio = json.readUint(string(abi.encodePacked('.OracleRelayerCollateralParams.safetyCRatio')));
+    _oracleCParams.liquidationCRatio =
+      json.readUint(string(abi.encodePacked('.OracleRelayerCollateralParams.liquidationCRatio')));
   }
 
   function _generateProposal() internal override {
