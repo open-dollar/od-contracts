@@ -16,7 +16,6 @@ contract GenerateUpdateDelayProposal is Generator, JSONScript {
   string internal _description;
 
   function _loadBaseData(string memory json) internal override {
-
     _description = json.readString(string(abi.encodePacked('.description')));
     _newDelay = json.readUint(string(abi.encodePacked(('.newDelay'))));
     _timelockController = json.readAddress(string(abi.encodePacked('.timelockController')));
@@ -51,10 +50,9 @@ contract GenerateUpdateDelayProposal is Generator, JSONScript {
     {
       string memory objectKey = 'SCHEDULE-TIMELOCK-OBJECT';
       // Build the JSON output
-       string memory jsonOutput =_buildProposalParamsJSON(proposalId, objectKey, targets, values, calldatas, _description, descriptionHash);
-      vm.writeJson(
-        jsonOutput, string.concat('./gov-output/', _network, '/', stringProposalId, '-updateTimeDelay.json')
-      );
+      string memory jsonOutput =
+        _buildProposalParamsJSON(proposalId, objectKey, targets, values, calldatas, _description, descriptionHash);
+      vm.writeJson(jsonOutput, string.concat('./gov-output/', _network, '/', stringProposalId, '-updateTimeDelay.json'));
     }
 
     vm.stopBroadcast();
