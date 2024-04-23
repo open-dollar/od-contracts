@@ -120,17 +120,15 @@ abstract contract Common is Contracts, Params, Test {
     // safe manager
     _revoke(safeManager, removeAddress, addAddress);
 
-    // vault721
-    //_revoke(vault721, removeAddress, addAddress);
-
     if (address(ethJoin) != address(0)) {
       _revoke(ethJoin, removeAddress, addAddress);
     }
 
     // factories or children
-    //_revoke(chainlinkRelayerFactory, removeAddress, addAddress);
-    //_revoke(denominatedOracleFactory, removeAddress, addAddress);
-    console.log('removing access from delayed oracle');
+    if (!isNetworkArbitrumOne()) {
+      _revoke(chainlinkRelayerFactory, removeAddress, addAddress);
+      _revoke(denominatedOracleFactory, removeAddress, addAddress);
+    }
     _revoke(delayedOracleFactory, removeAddress, addAddress);
     _revoke(collateralJoinFactory, removeAddress, addAddress);
     _revoke(collateralAuctionHouseFactory, removeAddress, addAddress);
@@ -238,7 +236,6 @@ abstract contract Common is Contracts, Params, Test {
       );
       // set governor
       governor = address(timelockController);
-      delegatee[ARB] = governor;
 
       // set odGovernor as PROPOSER_ROLE and EXECUTOR_ROLE
       timelockController.grantRole(timelockController.PROPOSER_ROLE(), address(odGovernor));
@@ -351,8 +348,10 @@ abstract contract Common is Contracts, Params, Test {
   }
 
   function deployOracleFactories() public updateParams {
-    // chainlinkRelayerFactory = new ChainlinkRelayerFactory(); // Skipped for mainnet
-    // denominatedOracleFactory = new DenominatedOracleFactory(); // Skipped for mainnet
+    if (!isNetworkArbitrumOne()) {
+      chainlinkRelayerFactory = new ChainlinkRelayerFactory();
+      denominatedOracleFactory = new DenominatedOracleFactory();
+    }
     delayedOracleFactory = new DelayedOracleFactory();
   }
 
