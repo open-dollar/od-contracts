@@ -22,6 +22,7 @@ import 'forge-std/console2.sol';
 
 abstract contract VerifyParams is Common {
   function _verifyParams() internal view {
+    console2.log('Verifying onchain parameters...');
     ISAFEEngine.SAFEEngineParams memory SEParams = safeEngine.params();
 
     if (SEParams.safeDebtCeiling != _safeEngineParams.safeDebtCeiling) {
@@ -117,20 +118,18 @@ abstract contract VerifyParams is Common {
       );
     }
 
-    //TODO for some reason fetching these params causes a revert with no info...
+    ILiquidationEngine.LiquidationEngineParams memory LEParams = liquidationEngine.params();
 
-    // ILiquidationEngine.LiquidationEngineParams memory LEParams = liquidationEngine.params();
-
-    // if (LEParams.onAuctionSystemCoinLimit != _liquidationEngineParams.onAuctionSystemCoinLimit) {
-    //   console2.log('LiquidationEngineParams: incorrect onAuctionSystemCoinLimit: ', LEParams.onAuctionSystemCoinLimit);
-    //   console2.log(
-    //     'LiquidationEngineParams: desired onAuctionSystemCoinLimit: ', _liquidationEngineParams.onAuctionSystemCoinLimit
-    //   );
-    // }
-    // if (LEParams.saviourGasLimit != _liquidationEngineParams.saviourGasLimit) {
-    //   console2.log('LiquidationEngineParams: incorrect saviourGasLimit: ', LEParams.saviourGasLimit);
-    //   console2.log('LiquidationEngineParams: desired saviourGasLimit: ', _liquidationEngineParams.saviourGasLimit);
-    // }
+    if (LEParams.onAuctionSystemCoinLimit != _liquidationEngineParams.onAuctionSystemCoinLimit) {
+      console2.log('LiquidationEngineParams: incorrect onAuctionSystemCoinLimit: ', LEParams.onAuctionSystemCoinLimit);
+      console2.log(
+        'LiquidationEngineParams: desired onAuctionSystemCoinLimit: ', _liquidationEngineParams.onAuctionSystemCoinLimit
+      );
+    }
+    if (LEParams.saviourGasLimit != _liquidationEngineParams.saviourGasLimit) {
+      console2.log('LiquidationEngineParams: incorrect saviourGasLimit: ', LEParams.saviourGasLimit);
+      console2.log('LiquidationEngineParams: desired saviourGasLimit: ', _liquidationEngineParams.saviourGasLimit);
+    }
 
     //STABILITY FEE TREASURY
     IStabilityFeeTreasury.StabilityFeeTreasuryParams memory SFTParams = stabilityFeeTreasury.params();

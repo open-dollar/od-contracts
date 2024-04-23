@@ -33,7 +33,7 @@ abstract contract MainnetParams is Contracts, Params {
       bidIncrease: 1.01e18, // +1 %
       bidDuration: 6 hours,
       totalAuctionLength: 1 days,
-      bidReceiver: address(odGovernor),
+      bidReceiver: address(timelockController),
       recyclingPercentage: 0.5e18 // 50% is burned
     });
 
@@ -85,7 +85,7 @@ abstract contract MainnetParams is Contracts, Params {
     _postSettlementSAHParams = IPostSettlementSurplusAuctionHouse.PostSettlementSAHParams({
       bidIncrease: 1.01e18, // +1 %
       bidDuration: 3 hours,
-      totalAuctionLength: 2 days
+      totalAuctionLength: 1 days
     });
 
     // --- Collateral Default Params ---
