@@ -262,11 +262,12 @@ abstract contract VerifyParams is Common {
       console2.log('PostSettlementSAHParams: incorrect totalAuctionLength: ', PSSAHParams.totalAuctionLength);
       console2.log('PostSettlementSAHParams: desired totalAuctionLength: ', _postSettlementSAHParams.totalAuctionLength);
     }
+    console2.log('Finished verifying onchain parameters.');
   }
 
   function _verifyCollateralParams() internal view {
     bytes32[] memory collateralList = collateralAuctionHouseFactory.collateralList(); // bytes32 collateralTypes for collat auction
-
+    console2.log('Verifying Collateral Params...');
     // verify params for every collateral type in collateral Auction house.
     for (uint256 i; i < collateralList.length; i++) {
       bytes32 _cType = collateralList[i];
@@ -341,5 +342,6 @@ abstract contract VerifyParams is Common {
       }
       console2.log('Collateral type ', i, ' verified.');
     }
+    console2.log('Finished Verifying Collateral Params.');
   }
 }
