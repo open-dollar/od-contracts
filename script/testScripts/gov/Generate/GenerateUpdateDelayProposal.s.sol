@@ -24,7 +24,7 @@ contract GenerateUpdateDelayProposal is Generator, JSONScript {
   }
 
   function _generateProposal() internal override {
-    ODGovernor gov = TimelockController(payable(_odGovernor));
+    ODGovernor gov = ODGovernor(payable(_odGovernor));
     address[] memory targets = new address[](1);
     {
       targets[0] = _timelockController;
@@ -51,7 +51,7 @@ contract GenerateUpdateDelayProposal is Generator, JSONScript {
     {
       string memory objectKey = 'SCHEDULE-TIMELOCK-OBJECT';
       // Build the JSON output
-      _serializeCurrentJson(objectKey);
+      string memory jsonOutput = _serializeCurrentJson(objectKey);
       vm.serializeAddress(objectKey, 'targets', targets);
       vm.serializeUint(objectKey, 'values', values);
       vm.serializeBytes(objectKey, 'calldatas', calldatas);
