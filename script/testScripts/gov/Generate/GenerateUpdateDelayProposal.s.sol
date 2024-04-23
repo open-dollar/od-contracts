@@ -51,10 +51,7 @@ contract GenerateUpdateDelayProposal is Generator, JSONScript {
     {
       string memory objectKey = 'SCHEDULE-TIMELOCK-OBJECT';
       // Build the JSON output
-      string memory jsonOutput = _serializeCurrentJson(objectKey);
-      vm.serializeAddress(objectKey, 'targets', targets);
-      vm.serializeUint(objectKey, 'values', values);
-      vm.serializeBytes(objectKey, 'calldatas', calldatas);
+       string memory jsonOutput =_buildProposalParamsJSON(proposalId, objectKey, targets, values, calldatas, _description, descriptionHash);
       vm.writeJson(
         jsonOutput, string.concat('./gov-output/', _network, '/', stringProposalId, '-updateTimeDelay.json')
       );
