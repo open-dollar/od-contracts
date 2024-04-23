@@ -24,7 +24,7 @@ contract GenerateERC20TransferProposal is Generator, JSONScript {
   uint256[] public amountsToTransfer;
 
   function _loadBaseData(string memory json) internal override {
-    governanceAddress = json.readAddress(string(abi.encodePacked('.odGovernor')));
+    governanceAddress = json.readAddress(string(abi.encodePacked('.ODGovernor_Address:')));
     description = json.readString(string(abi.encodePacked('.description')));
     uint256 len = json.readUint(string(abi.encodePacked('.arrayLength')));
 

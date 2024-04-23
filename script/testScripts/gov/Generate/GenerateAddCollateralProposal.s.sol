@@ -78,15 +78,15 @@ contract GenerateAddCollateralProposal is Generator, JSONScript {
 
   function _loadBaseData(string memory json) internal override {
     proposalType = json.readString(string(abi.encodePacked('.proposalType')));
-    governanceAddress = json.readAddress(string(abi.encodePacked('.odGovernor')));
-    globalSettlementAddress = json.readAddress(string(abi.encodePacked('.globalSettlement')));
+    governanceAddress = json.readAddress(string(abi.encodePacked('.ODGovernor_Address:')));
+    globalSettlementAddress = json.readAddress(string(abi.encodePacked('.GlobalSettlement_Address:')));
     newCType = bytes32(abi.encodePacked(json.readString(string(abi.encodePacked('.newCollateralType')))));
     newCAddress = json.readAddress(string(abi.encodePacked('.newCollateralAddress')));
     description = json.readString(string(abi.encodePacked('.description')));
-    safeEngine = json.readAddress(string(abi.encodePacked('.safeEngine')));
-    taxCollector = json.readAddress(string(abi.encodePacked('.taxCollector')));
-    liquidationEngine = json.readAddress(string(abi.encodePacked('.liquidationEngine')));
-    oracleRelayer = json.readAddress(string(abi.encodePacked('.oracleRelayer')));
+    safeEngine = json.readAddress(string(abi.encodePacked('.SAFEEngine_Address:')));
+    taxCollector = json.readAddress(string(abi.encodePacked('.TaxCollector_Address:')));
+    liquidationEngine = json.readAddress(string(abi.encodePacked('.LiquidationEngine_Address:')));
+    oracleRelayer = json.readAddress(string(abi.encodePacked('.OracleRelayer_Address:')));
 
     _cahCParams.minimumBid = json.readUint(string(abi.encodePacked('.minimumBid')));
     _cahCParams.minDiscount = json.readUint(string(abi.encodePacked('.minimumDiscount')));

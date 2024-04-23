@@ -68,7 +68,7 @@ function generateProposal() {
   getRpcAndPk $NETWORK
 
   CALLDATA=$(cast calldata "run(string)" $CAST_PATH)
-
+  node tasks/parseProposalPath.js $1
   COMMAND_PATH=$(node tasks/parseProposalPath.js $1)
 
   CALLDATA=$(cast calldata "run(string)" $CAST_PATH)
@@ -208,6 +208,10 @@ function submitVoteAndExecute() {
   execute $1
 }
 
+function findAndAddAddresses(){
+  node ./tasks/findContractAddress.js $1
+}
+
 while :; do
   case "$1" in
   "")
@@ -249,6 +253,7 @@ while :; do
     ;;
   -g | --generate)
     checkPath $2
+    findAndAddAddresses $2
     generateProposal $2
     exit 0
     ;;

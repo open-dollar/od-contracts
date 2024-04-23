@@ -50,16 +50,19 @@ function getNetwork(network) {
 }
 
 async function predictAddress(currentJson, provider) {
+
   const contractJSON = JSON.parse(
     fs.readFileSync(
       path.join(__dirname, "../out/GlobalSettlement.sol/GlobalSettlement.json")
     )
   );
+
   const globalSettlement = new ethers.Contract(
-    currentJson.globalSettlement,
+    currentJson.GlobalSettlement_Address,
     contractJSON.abi,
     provider
   );
+
   const collateralAuctionHouseFactoryAddress =
     await globalSettlement.collateralAuctionHouseFactory();
   const nonce = await provider.getTransactionCount(

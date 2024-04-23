@@ -18,8 +18,8 @@ contract GenerateUpdateDelayProposal is Generator, JSONScript {
   function _loadBaseData(string memory json) internal override {
     _description = json.readString(string(abi.encodePacked('.description')));
     _newDelay = json.readUint(string(abi.encodePacked(('.newDelay'))));
-    _timelockController = json.readAddress(string(abi.encodePacked('.timelockController')));
-    _odGovernor = json.readAddress(string(abi.encodePacked('.odGovernor')));
+    _timelockController = json.readAddress(string(abi.encodePacked('.TimelockController_Address')));
+    _odGovernor = json.readAddress(string(abi.encodePacked('.ODGovernor_Address:')));
   }
 
   function _generateProposal() internal override {

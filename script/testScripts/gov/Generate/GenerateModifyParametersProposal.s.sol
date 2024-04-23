@@ -24,7 +24,7 @@ contract GenerateModifyParametersProposal is Generator, JSONScript {
 
   function _loadBaseData(string memory json) internal override {
     _description = json.readString(string(abi.encodePacked('.description')));
-    _governanceAddress = json.readAddress(string(abi.encodePacked('.odGovernor')));
+    _governanceAddress = json.readAddress(string(abi.encodePacked('.ODGovernor_Address:')));
     uint256 len = json.readUint(string(abi.encodePacked('.arrayLength')));
 
     for (uint256 i; i < len; i++) {
@@ -62,7 +62,6 @@ contract GenerateModifyParametersProposal is Generator, JSONScript {
 
     bytes32 descriptionHash = keccak256(bytes(_description));
 
-    vm.startBroadcast(_privateKey);
     vm.startBroadcast(_privateKey);
 
     // Propose the action to add the collateral type
