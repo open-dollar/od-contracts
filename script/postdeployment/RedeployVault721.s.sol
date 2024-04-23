@@ -12,12 +12,12 @@ import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 import {MainnetContracts} from '@script/MainnetContracts.s.sol';
 
 // BROADCAST
-// source .env && forge script Redeploy --skip-simulation --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
+// source .env && forge script RedeployVault721 --skip-simulation --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
 
 // SIMULATE
-// source .env && forge script Redeploy --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC
+// source .env && forge script RedeployVault721 --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC
 
-contract Redeploy is MainnetContracts, Script, Test {
+contract RedeployVault721 is MainnetContracts, Script, Test {
   IODCreate2Factory internal _create2 = IODCreate2Factory(MAINNET_CREATE2FACTORY);
 
   bytes internal _vault721InitCode;

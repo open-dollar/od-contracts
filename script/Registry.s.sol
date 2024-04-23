@@ -99,9 +99,9 @@ uint256 constant ORACLE_INTERVAL_PROD = 1 hours;
 address constant MAINNET_CREATE2FACTORY = 0x6EDb251053B4F7670C98e18bbEA20818367b4C0f;
 
 // Vanity address params - Calculate using ComputeAdress.s.sol
-bytes32 constant MAINNET_SALT_SYSTEMCOIN = 0x20275bcfd2d2006585a0ef275c0e7e2d593d892048281150499c23206cf1aff5;
+bytes32 constant MAINNET_SALT_SYSTEMCOIN = bytes32(uint256(0x1a));
 bytes32 constant MAINNET_SALT_PROTOCOLTOKEN = 0xb2c552ad83cd8e190b3d170a646188c6a64fc6dda47a1ae28748fc0f6c53ce65; // 0x000D636bD52BFc1B3a699165Ef5aa340BEA8939c
-bytes32 constant MAINNET_SALT_VAULT721 = 0xb3a9046ab300fe8c3dcd20eb1cdc04aa6339505fed764b5f94aab52d18c5b842;
+bytes32 constant MAINNET_SALT_VAULT721 = bytes32(uint256(0x1a));
 
 // Camelot Relayer (pre-deployed @ sol 0.7.6)
 address constant MAINNET_CAMELOT_RELAYER_FACTORY = address(0);
