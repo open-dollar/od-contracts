@@ -101,7 +101,7 @@ address constant MAINNET_CREATE2FACTORY = 0x6EDb251053B4F7670C98e18bbEA20818367b
 // Vanity address params - Calculate using ComputeAdress.s.sol
 bytes32 constant MAINNET_SALT_SYSTEMCOIN = bytes32(uint256(0x1a));
 bytes32 constant MAINNET_SALT_PROTOCOLTOKEN = 0xb2c552ad83cd8e190b3d170a646188c6a64fc6dda47a1ae28748fc0f6c53ce65; // 0x000D636bD52BFc1B3a699165Ef5aa340BEA8939c
-bytes32 constant MAINNET_SALT_VAULT721 = bytes32(uint256(0x1a));
+bytes32 constant MAINNET_SALT_VAULT721 = 0x313ea1c24cc50d612632e9f0d6131525f483a8fbc682fdfd87dabc24fb091325;
 
 // Camelot Relayer (pre-deployed @ sol 0.7.6)
 address constant MAINNET_CAMELOT_RELAYER_FACTORY = address(0);

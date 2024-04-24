@@ -77,7 +77,6 @@ contract RedeployVault721 is Base {
     SAFEEngine(SAFEEngine_Address).modifyParameters('odSafeManager', bytes(abi.encodePacked(_safeManager)));
 
     IAuthorizable(_safeManager).addAuthorization(MAINNET_TIMELOCK_CONTROLLER);
-    IAuthorizable(_safeManager).removeAuthorization(_DEPLOYER);
 
     if (_broadcast) vm.stopBroadcast();
     else vm.stopPrank();
