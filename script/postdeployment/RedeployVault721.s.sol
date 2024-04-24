@@ -62,11 +62,13 @@ contract RedeployVault721 is Base {
     if (_broadcast) vm.startBroadcast(_deployerPk);
     else vm.startPrank(_DEPLOYER);
 
-    _vault721 = _create2.create2deploy(MAINNET_SALT_VAULT721, _vault721InitCode);
-    Vault721(_vault721).initialize(MAINNET_TIMELOCK_CONTROLLER, BLOCK_DELAY, TIME_DELAY);
+    // _vault721 = _create2.create2deploy(MAINNET_SALT_VAULT721, _vault721InitCode);
+    _vault721 = 0x0005AFE00fF7E7FF83667bFe4F2996720BAf0B36;
+    // Vault721(_vault721).initialize(MAINNET_TIMELOCK_CONTROLLER, BLOCK_DELAY, TIME_DELAY);
 
-    _safeManager =
-      address(new ODSafeManager(SAFEEngine_Address, _vault721, TaxCollector_Address, LiquidationEngine_Address));
+    // _safeManager =
+    //   address(new ODSafeManager(SAFEEngine_Address, _vault721, TaxCollector_Address, LiquidationEngine_Address));
+    _safeManager = 0x8646CBd915eAAD1a4E2Ba5e2b67Acec4957d5f1a;
     _nftRenderer =
       address(new NFTRenderer(_vault721, OracleRelayer_Address, TaxCollector_Address, CollateralJoinFactory_Address));
 
