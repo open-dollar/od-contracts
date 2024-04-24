@@ -31,8 +31,8 @@ contract GovernanceHelpers is Script, ForkManagement {
     description = json.readString(string(abi.encodePacked('.description')));
     descriptionHash = json.readBytes32(string(abi.encodePacked('.descriptionHash')));
     proposalId = json.readUint(string(abi.encodePacked('.proposalId')));
-    gov = ODGovernor(payable(json.readAddress(string(abi.encodePacked(('.odGovernor'))))));
-    protocolToken = json.readAddress(string(abi.encodePacked('.protocolToken')));
+    gov = ODGovernor(payable(json.readAddress(string(abi.encodePacked(('.ODGovernor_Address'))))));
+    protocolToken = json.readAddress(string(abi.encodePacked('.ProtocolToken_Address')));
   }
 
   function run(string memory _filePath) public {
@@ -49,7 +49,7 @@ contract GovernanceHelpers is Script, ForkManagement {
     _loadJson(_filePath);
     _checkNetworkParams();
     _loadPrivateKeys();
-    _loadBaseData();
+    protocolToken = json.readAddress(string(abi.encodePacked('.ProtocolToken_Address')));
 
     vm.startBroadcast(_privateKey);
     IVotes(protocolToken).delegate(proposer);
