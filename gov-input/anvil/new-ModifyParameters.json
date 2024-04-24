@@ -9,6 +9,7 @@
         {
             "target": "0x17975FB494576ae89D627F904Ec723B87c7C35c8",
             "param": "globalDebtCeiling",
+            "collateralType": "RETH",
             "type": "uint256",
             "data": "100000000000000000000000000"
         }

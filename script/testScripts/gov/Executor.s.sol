@@ -38,7 +38,7 @@ contract Executor is Script, ForkManagement {
     description = json.readString(string(abi.encodePacked('.description')));
     descriptionHash = json.readBytes32(string(abi.encodePacked('.descriptionHash')));
     proposalId = json.readUint(string(abi.encodePacked('.proposalId')));
-    governor = ODGovernor(payable(json.readAddress(string(abi.encodePacked(('.odGovernor'))))));
+    governor = ODGovernor(payable(json.readAddress(string(abi.encodePacked(('.ODGovernor_Address'))))));
   }
 
   function _executeProposal() internal {
