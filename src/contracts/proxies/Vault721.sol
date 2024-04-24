@@ -15,7 +15,7 @@ import {Encoding} from '@libraries/Encoding.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 
 // Open Dollar
-// Version 1.6.5
+// Version 1.7.0
 
 /**
  * @notice Upgradeable contract used as singleton, but is not upgradeable

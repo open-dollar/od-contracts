@@ -5,7 +5,8 @@ import '@script/Contracts.s.sol';
 import '@script/Registry.s.sol';
 import {Test} from 'forge-std/Test.sol';
 import {VmSafe} from 'forge-std/Script.sol';
-import {Params, ParamChecker, OD, ETH_A, JOB_REWARD} from '@script/Params.s.sol';
+import {Params, ParamChecker, OD, ETH_A, ARB, JOB_REWARD} from '@script/Params.s.sol';
+import 'forge-std/console.sol';
 
 abstract contract Common is Contracts, Params, Test {
   uint256 internal _chainId;
@@ -65,15 +66,16 @@ abstract contract Common is Contracts, Params, Test {
   function deployCollateralContracts(bytes32 _cType) public updateParams {
     // deploy CollateralJoin and CollateralAuctionHouse
     address _delegatee = delegatee[_cType];
-    if (_delegatee == address(0)) {
-      collateralJoin[_cType] =
-        collateralJoinFactory.deployCollateralJoin({_cType: _cType, _collateral: address(collateral[_cType])});
-    } else {
+    if (_cType == ARB) {
+      console.log('Using arb ctype, so deploying delegatable cjoin.');
       collateralJoin[_cType] = collateralJoinFactory.deployDelegatableCollateralJoin({
         _cType: _cType,
         _collateral: address(collateral[_cType]),
-        _delegatee: _delegatee
+        _delegatee: address(timelockController)
       });
+    } else {
+      collateralJoin[_cType] =
+        collateralJoinFactory.deployCollateralJoin({_cType: _cType, _collateral: address(collateral[_cType])});
     }
 
     collateralAuctionHouseFactory.initializeCollateralType(_cType, abi.encode(_collateralAuctionHouseParams[_cType]));
@@ -118,22 +120,15 @@ abstract contract Common is Contracts, Params, Test {
     // safe manager
     _revoke(safeManager, removeAddress, addAddress);
 
-    /// @notice pre-deployed vault721
-    if (vault721.authorizedAccounts(addAddress) != true) {
-      vault721.addAuthorization(addAddress);
-    }
-    if (vault721.authorizedAccounts(removeAddress) == true) {
-      if (vault721.authorizedAccounts(address(create2))) vault721.removeAuthorization(address(create2));
-      vault721.removeAuthorization(removeAddress);
-    }
-
     if (address(ethJoin) != address(0)) {
       _revoke(ethJoin, removeAddress, addAddress);
     }
 
     // factories or children
-    _revoke(chainlinkRelayerFactory, removeAddress, addAddress);
-    _revoke(denominatedOracleFactory, removeAddress, addAddress);
+    if (!isNetworkArbitrumOne()) {
+      _revoke(chainlinkRelayerFactory, removeAddress, addAddress);
+      _revoke(denominatedOracleFactory, removeAddress, addAddress);
+    }
     _revoke(delayedOracleFactory, removeAddress, addAddress);
     _revoke(collateralJoinFactory, removeAddress, addAddress);
     _revoke(collateralAuctionHouseFactory, removeAddress, addAddress);
@@ -226,7 +221,6 @@ abstract contract Common is Contracts, Params, Test {
       protocolToken.initialize('Open Dollar Governance', 'ODG');
     }
     systemCoin.initialize('Open Dollar', 'OD');
-
     address[] memory members = new address[](0);
 
     if (isNetworkAnvil()) {
@@ -247,7 +241,7 @@ abstract contract Common is Contracts, Params, Test {
       timelockController.grantRole(timelockController.PROPOSER_ROLE(), address(odGovernor));
       timelockController.grantRole(timelockController.EXECUTOR_ROLE(), address(odGovernor));
 
-      // // revoke deployer from TIMELOCK_ADMIN_ROLE
+      // revoke deployer from TIMELOCK_ADMIN_ROLE
       timelockController.renounceRole(timelockController.TIMELOCK_ADMIN_ROLE(), deployer);
       protocolToken.mint(0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266, 500_000_000 ether); // mint 500 million tokens to deployer on anvil to sway the vote.
     }
@@ -354,8 +348,10 @@ abstract contract Common is Contracts, Params, Test {
   }
 
   function deployOracleFactories() public updateParams {
-    chainlinkRelayerFactory = new ChainlinkRelayerFactory();
-    denominatedOracleFactory = new DenominatedOracleFactory();
+    if (!isNetworkArbitrumOne()) {
+      chainlinkRelayerFactory = new ChainlinkRelayerFactory();
+      denominatedOracleFactory = new DenominatedOracleFactory();
+    }
     delayedOracleFactory = new DelayedOracleFactory();
   }
 
