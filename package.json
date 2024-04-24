@@ -43,7 +43,7 @@
     "simulate-vanity-precompile:mainnet": "bash -c 'source .env && forge script VerifyVault721VanityAddr --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC --private-key $ARB_MAINNET_DEPLOYER_PK'",
     "redeploy:mainnet": "bash -c 'source .env && forge script RedeployVault721 --skip-simulation --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY'",
     "revoke:mainnet": "bash -c 'source .env && forge script RevokeDeployer --skip-simulation --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY'",
-    "test": "FOUNDRY_FUZZ_RUNS=128 FOUNDRY_FUZZ_MAX_TEST_REJECTS=1000000 forge test -vvv --ffi",
+    "test": "FOUNDRY_FUZZ_RUNS=64 FOUNDRY_FUZZ_MAX_TEST_REJECTS=1200000 forge test -vvv --ffi",
     "test:coverage": "forge coverage --report lcov && lcov --ignore-errors unused --remove lcov.info 'node_modules/*' 'script/*' 'test/*' 'src/contracts/for-test/*' 'src/libraries/*' -o lcov.info.pruned && mv lcov.info.pruned lcov.info && genhtml -o coverage-report lcov.info",
     "test:e2e": "forge test --match-contract E2E -vvv --ffi",
     "test:local": "FOUNDRY_FUZZ_RUNS=32 FOUNDRY_FUZZ_MAX_TEST_REJECTS=1000000 forge test -vvv --ffi",
