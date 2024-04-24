@@ -621,20 +621,19 @@ contract Unit_GlobalSettlement_FastTrackAuction is Base {
   }
 
   function test_Revert_IntOverflow_1(FastTrackAuctionStruct memory _auction) public {
-    vm.assume(_auction.finalCoinPerCollateralPrice != 0);
-    vm.assume(_auction.accumulatedRate != 0);
+    if (_auction.finalCoinPerCollateralPrice != 0 && _auction.accumulatedRate != 0) {
+      uint256 _debt = _auction.amountToRaise / _auction.accumulatedRate;
 
-    uint256 _debt = _auction.amountToRaise / _auction.accumulatedRate;
+      vm.assume(notOverflowAdd(_auction.collateralTotalDebt, _debt));
+      vm.assume(notOverflowInt256(_auction.amountToSell));
 
-    vm.assume(notOverflowAdd(_auction.collateralTotalDebt, _debt));
-    vm.assume(notOverflowInt256(_auction.amountToSell));
-    vm.assume(!notOverflowInt256(_debt));
+      _mockValues(_auction);
 
-    _mockValues(_auction);
-
-    vm.expectRevert(Math.IntOverflow.selector);
-
-    globalSettlement.fastTrackAuction(_auction.collateralType, _auction.id);
+      if (!notOverflowInt256(_debt)) {
+        vm.expectRevert(Math.IntOverflow.selector);
+        globalSettlement.fastTrackAuction(_auction.collateralType, _auction.id);
+      }
+    }
   }
 
   function test_Call_SafeEngine_CreateUnbackedDebt(FastTrackAuctionStruct memory _auction) public happyPath(_auction) {

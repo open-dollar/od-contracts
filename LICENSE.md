@@ -5,6 +5,7 @@ Copyright (C) 2020 Maker Ecosystem Growth Holdings, INC.
 Copyright (C) 2020 Reflexer Labs, INC.
 Copyright (C) 2015-2020 DappHub, LLC
 Copyright (C) 2023 Reflexer Labs, INC.
+Copyright (C) 2024 OpenFi Foundation
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published by
