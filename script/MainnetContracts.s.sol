@@ -3,7 +3,7 @@ pragma solidity 0.8.20;
 
 abstract contract MainnetContracts {
   address public SystemCoin_Address = 0x221A0f68770658C15B525d0F89F5da2baAB5f321;
-  address public Vault721_Address = 0x4B3c4a28feFA050d0cfC6C405fB855b9b5506f7b;
+  address public Vault721_Address = 0x0005AFE00fF7E7FF83667bFe4F2996720BAf0B36;
   address public ProtocolToken_Address = 0x000D636bD52BFc1B3a699165Ef5aa340BEA8939c;
   address public TimelockController_Address = 0x7A528eA3E06D85ED1C22219471Cf0b1851943903;
   address public ODGovernor_Address = 0xf704735CE81165261156b41D33AB18a08803B86F;
@@ -45,8 +45,8 @@ abstract contract MainnetContracts {
   address public
     CollateralAuctionHouseChild_0x5245544800000000000000000000000000000000000000000000000000000000_Address =
       0x51a423B43101B219a9ECdEC67525896d856186Ec;
-  address public ODSafeManager_Address = 0xC2B820BdD4564301561A11119CB4F190D38De465;
-  address public NFTRenderer_Address = 0xce1200B260C11eE8c0feF6891cD21e008D614891;
+  address public ODSafeManager_Address = 0x8646CBd915eAAD1a4E2Ba5e2b67Acec4957d5f1a;
+  address public NFTRenderer_Address = 0xFDB6935CF3A6441f83adF60CF5C9bf89A4fd7681;
   address public BasicActions_Address = 0x6eBfcE92CF88f4684CEF44989c35910927a42e9C;
   address public DebtBidActions_Address = 0x490CEDC57E1D2409F111C6a6Db75AC6A7Fc45E4a;
   address public SurplusBidActions_Address = 0x8F43FdD337C0A84f0d00C70F3c4E6A4E52A84C7E;
