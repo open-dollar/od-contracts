@@ -12,16 +12,18 @@ contract GenerateUpdateDelayProposal is Generator, JSONScript {
 
   uint256 internal _newDelay;
   address internal _timelockController;
+  address internal _odGovernor;
   string internal _description;
 
   function _loadBaseData(string memory json) internal override {
     _description = json.readString(string(abi.encodePacked('.description')));
     _newDelay = json.readUint(string(abi.encodePacked(('.newDelay'))));
     _timelockController = json.readAddress(string(abi.encodePacked('.timelockController')));
+    _odGovernor = json.readAddress(string(abi.encodePacked('.odGovernor')));
   }
 
   function _generateProposal() internal override {
-    TimelockController tlc = TimelockController(payable(_timelockController));
+    ODGovernor gov = ODGovernor(payable(_odGovernor));
     address[] memory targets = new address[](1);
     {
       targets[0] = _timelockController;
@@ -35,28 +37,22 @@ contract GenerateUpdateDelayProposal is Generator, JSONScript {
       calldatas[0] = abi.encodeWithSelector(TimelockController.updateDelay.selector, _newDelay);
     }
 
-    // bytes32 descriptionHash = keccak256(bytes(_description));
+    bytes32 descriptionHash = keccak256(bytes(_description));
 
     vm.startBroadcast(_privateKey);
-    bytes32 operationHash = tlc.hashOperation(targets[0], values[0], calldatas[0], bytes32(0), bytes32(0));
 
-    tlc.schedule(targets[0], values[0], calldatas[0], bytes32(0), bytes32(0), 259_200);
+    uint256 proposalId = gov.hashProposal(targets, values, calldatas, descriptionHash);
 
     // Propose the action to add the collateral type
 
-    string memory stringOperationHash = vm.toString(uint256(operationHash) / 10 ** 69);
+    string memory stringProposalId = vm.toString(proposalId / 10 ** 69);
 
     {
       string memory objectKey = 'SCHEDULE-TIMELOCK-OBJECT';
       // Build the JSON output
-      _serializeCurrentJson(objectKey);
-      vm.serializeAddress(objectKey, 'targets', targets);
-      vm.serializeUint(objectKey, 'values', values);
-      vm.serializeBytes(objectKey, 'calldatas', calldatas);
-      string memory jsonOutput = vm.serializeBytes32(objectKey, 'operationHash', operationHash);
-      vm.writeJson(
-        jsonOutput, string.concat('./gov-output/', _network, '/', stringOperationHash, '-updateTimeDelay.json')
-      );
+      string memory jsonOutput =
+        _buildProposalParamsJSON(proposalId, objectKey, targets, values, calldatas, _description, descriptionHash);
+      vm.writeJson(jsonOutput, string.concat('./gov-output/', _network, '/', stringProposalId, '-updateTimeDelay.json'));
     }
 
     vm.stopBroadcast();
