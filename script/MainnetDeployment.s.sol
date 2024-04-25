@@ -47,10 +47,10 @@ abstract contract MainnetDeployment is Contracts, MainnetParams, MainnetContract
     settlementSurplusAuctioneer = SettlementSurplusAuctioneer(SettlementSurplusAuctioneer_Address);
 
     // --- factories ---
-    // chainlinkRelayerFactory = ChainlinkRelayerFactory(ChainlinkRelayerFactory_Address);
-    // denominatedOracleFactory = DenominatedOracleFactory(DenominatedOracleFactory_Address);
+    chainlinkRelayerFactory = ChainlinkRelayerFactory(ChainlinkRelayerFactory_Address);
+    denominatedOracleFactory = DenominatedOracleFactory(DenominatedOracleFactory_Address);
     // camelotRelayerFactory = CamelotRelayerFactory(CAMELOT_RELAYER_FACTORY);
-    // delayedOracleFactory = DelayedOracleFactory(DelayedOracleFactory_Address);
+    delayedOracleFactory = DelayedOracleFactory(DelayedOracleFactory_Address);
 
     collateralJoinFactory = CollateralJoinFactory(CollateralJoinFactory_Address);
     collateralAuctionHouseFactory = CollateralAuctionHouseFactory(CollateralAuctionHouseFactory_Address);
