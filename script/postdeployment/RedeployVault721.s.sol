@@ -130,31 +130,33 @@ contract UpdateOracles is Base {
     if (_broadcast) vm.startBroadcast(_deployerPk);
     else vm.startPrank(_DEPLOYER);
 
-    IBaseOracle _wstethETHPriceFeed = chainlinkRelayerFactory.deployChainlinkRelayer(CHAINLINK_WSTETH_ETH_FEED, 86_400);
-    IBaseOracle _rethETHPriceFeed = chainlinkRelayerFactory.deployChainlinkRelayer(CHAINLINK_RETH_ETH_FEED, 86_400);
+    IBaseOracle _wstethETHPriceFeedNew =
+      chainlinkRelayerFactory.deployChainlinkRelayer(CHAINLINK_WSTETH_ETH_FEED, 86_400);
+    IBaseOracle _rethETHPriceFeedNew = chainlinkRelayerFactory.deployChainlinkRelayer(CHAINLINK_RETH_ETH_FEED, 86_400);
 
-    emit log_named_address('WSTETH / ETH Oracle Address', address(_wstethETHPriceFeed));
-    emit log_named_address('RETH / ETH Oracle Address', address(_rethETHPriceFeed));
+    emit log_named_address('WSTETH / ETH Oracle Address', address(_wstethETHPriceFeedNew));
+    emit log_named_address('RETH / ETH Oracle Address', address(_rethETHPriceFeedNew));
 
     _usdEthRelayer = 0x3e6C1621f674da311E57646007fBfAd857084383;
 
-    IBaseOracle _wstethUSDPriceFeed =
-      denominatedOracleFactory.deployDenominatedOracle(_wstethETHPriceFeed, IBaseOracle(_usdEthRelayer), false);
-    IBaseOracle _rethUSDPriceFeed =
-      denominatedOracleFactory.deployDenominatedOracle(_rethETHPriceFeed, IBaseOracle(_usdEthRelayer), false);
+    IBaseOracle _wstethUSDPriceFeedNew =
+      denominatedOracleFactory.deployDenominatedOracle(_wstethETHPriceFeedNew, IBaseOracle(_usdEthRelayer), false);
+    IBaseOracle _rethUSDPriceFeedNew =
+      denominatedOracleFactory.deployDenominatedOracle(_rethETHPriceFeedNew, IBaseOracle(_usdEthRelayer), false);
 
-    emit log_named_address('WSTETH / USD Oracle Address', address(_wstethUSDPriceFeed));
-    emit log_named_address('RETH / USD Oracle Address', address(_rethUSDPriceFeed));
+    emit log_named_address('WSTETH / USD Oracle Address', address(_wstethUSDPriceFeedNew));
+    emit log_named_address('RETH / USD Oracle Address', address(_rethUSDPriceFeedNew));
 
-    IBaseOracle _wstethDelayedOracle =
-      delayedOracleFactory.deployDelayedOracle(_wstethUSDPriceFeed, ORACLE_INTERVAL_PROD);
-    IBaseOracle _rethDelayedOracle = delayedOracleFactory.deployDelayedOracle(_rethUSDPriceFeed, ORACLE_INTERVAL_PROD);
+    IBaseOracle _wstethDelayedOracleNew =
+      delayedOracleFactory.deployDelayedOracle(_wstethUSDPriceFeedNew, ORACLE_INTERVAL_PROD);
+    IBaseOracle _rethDelayedOracleNew =
+      delayedOracleFactory.deployDelayedOracle(_rethUSDPriceFeedNew, ORACLE_INTERVAL_PROD);
 
-    emit log_named_address('WSTETH Delayed Oracle Address', address(_wstethDelayedOracle));
-    emit log_named_address('RETH Delayed Oracle Address', address(_rethDelayedOracle));
+    emit log_named_address('WSTETH Delayed Oracle Address', address(_wstethDelayedOracleNew));
+    emit log_named_address('RETH Delayed Oracle Address', address(_rethDelayedOracleNew));
 
-    oracleRelayer.modifyParameters(WSTETH, 'oracle', bytes(abi.encode(_wstethDelayedOracle)));
-    oracleRelayer.modifyParameters(RETH, 'oracle', bytes(abi.encode(_rethDelayedOracle)));
+    oracleRelayer.modifyParameters(WSTETH, 'oracle', bytes(abi.encode(_wstethDelayedOracleNew)));
+    oracleRelayer.modifyParameters(RETH, 'oracle', bytes(abi.encode(_rethDelayedOracleNew)));
 
     if (_broadcast) vm.stopBroadcast();
     else vm.stopPrank();
