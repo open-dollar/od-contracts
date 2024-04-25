@@ -115,9 +115,9 @@ abstract contract MainnetParams is Contracts, Params {
       });
 
       _collateralAuctionHouseParams[_cType] = ICollateralAuctionHouse.CollateralAuctionHouseParams({
-        minimumBid: 5e18, // 5 COINs
+        minimumBid: 100e18, // 5 COINs
         minDiscount: 1e18, // no discount
-        maxDiscount: 1e18, // no discount
+        maxDiscount: 0.9e18, // no discount
         perSecondDiscountUpdateRate: MINUS_0_5_PERCENT_PER_HOUR // RAY
       });
     }
@@ -189,7 +189,7 @@ abstract contract MainnetParams is Contracts, Params {
       debtFloor: 200 * RAD // 200
     });
 
-    _taxCollectorCParams[ARB].stabilityFee = PLUS_1_75_PERCENT_PER_YEAR;
+    _taxCollectorCParams[ARB].stabilityFee = PLUS_5_PERCENT_PER_YEAR;
 
     _liquidationEngineCParams[ARB] = ILiquidationEngine.LiquidationEngineCollateralParams({
       collateralAuctionHouse: address(collateralAuctionHouse[ARB]),

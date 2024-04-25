@@ -22,6 +22,7 @@ import 'forge-std/console2.sol';
 
 abstract contract VerifyParams is Common {
   function _verifyParams() internal view {
+    console2.log('Verifying onchain parameters...');
     ISAFEEngine.SAFEEngineParams memory SEParams = safeEngine.params();
 
     if (SEParams.safeDebtCeiling != _safeEngineParams.safeDebtCeiling) {
@@ -117,20 +118,18 @@ abstract contract VerifyParams is Common {
       );
     }
 
-    //TODO for some reason fetching these params causes a revert with no info...
+    ILiquidationEngine.LiquidationEngineParams memory LEParams = liquidationEngine.params();
 
-    // ILiquidationEngine.LiquidationEngineParams memory LEParams = liquidationEngine.params();
-
-    // if (LEParams.onAuctionSystemCoinLimit != _liquidationEngineParams.onAuctionSystemCoinLimit) {
-    //   console2.log('LiquidationEngineParams: incorrect onAuctionSystemCoinLimit: ', LEParams.onAuctionSystemCoinLimit);
-    //   console2.log(
-    //     'LiquidationEngineParams: desired onAuctionSystemCoinLimit: ', _liquidationEngineParams.onAuctionSystemCoinLimit
-    //   );
-    // }
-    // if (LEParams.saviourGasLimit != _liquidationEngineParams.saviourGasLimit) {
-    //   console2.log('LiquidationEngineParams: incorrect saviourGasLimit: ', LEParams.saviourGasLimit);
-    //   console2.log('LiquidationEngineParams: desired saviourGasLimit: ', _liquidationEngineParams.saviourGasLimit);
-    // }
+    if (LEParams.onAuctionSystemCoinLimit != _liquidationEngineParams.onAuctionSystemCoinLimit) {
+      console2.log('LiquidationEngineParams: incorrect onAuctionSystemCoinLimit: ', LEParams.onAuctionSystemCoinLimit);
+      console2.log(
+        'LiquidationEngineParams: desired onAuctionSystemCoinLimit: ', _liquidationEngineParams.onAuctionSystemCoinLimit
+      );
+    }
+    if (LEParams.saviourGasLimit != _liquidationEngineParams.saviourGasLimit) {
+      console2.log('LiquidationEngineParams: incorrect saviourGasLimit: ', LEParams.saviourGasLimit);
+      console2.log('LiquidationEngineParams: desired saviourGasLimit: ', _liquidationEngineParams.saviourGasLimit);
+    }
 
     //STABILITY FEE TREASURY
     IStabilityFeeTreasury.StabilityFeeTreasuryParams memory SFTParams = stabilityFeeTreasury.params();
@@ -263,11 +262,12 @@ abstract contract VerifyParams is Common {
       console2.log('PostSettlementSAHParams: incorrect totalAuctionLength: ', PSSAHParams.totalAuctionLength);
       console2.log('PostSettlementSAHParams: desired totalAuctionLength: ', _postSettlementSAHParams.totalAuctionLength);
     }
+    console2.log('Finished verifying onchain parameters.');
   }
 
   function _verifyCollateralParams() internal view {
     bytes32[] memory collateralList = collateralAuctionHouseFactory.collateralList(); // bytes32 collateralTypes for collat auction
-
+    console2.log('Verifying Collateral Params...');
     // verify params for every collateral type in collateral Auction house.
     for (uint256 i; i < collateralList.length; i++) {
       bytes32 _cType = collateralList[i];
@@ -342,5 +342,6 @@ abstract contract VerifyParams is Common {
       }
       console2.log('Collateral type ', i, ' verified.');
     }
+    console2.log('Finished Verifying Collateral Params.');
   }
 }
