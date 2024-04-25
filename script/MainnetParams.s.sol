@@ -189,7 +189,7 @@ abstract contract MainnetParams is Contracts, Params {
       debtFloor: 200 * RAD // 200
     });
 
-    _taxCollectorCParams[ARB].stabilityFee = PLUS_1_75_PERCENT_PER_YEAR;
+    _taxCollectorCParams[ARB].stabilityFee = PLUS_5_PERCENT_PER_YEAR;
 
     _liquidationEngineCParams[ARB] = ILiquidationEngine.LiquidationEngineCollateralParams({
       collateralAuctionHouse: address(collateralAuctionHouse[ARB]),

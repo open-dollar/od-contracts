@@ -13,7 +13,7 @@ import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 import {MainnetContracts} from '@script/MainnetContracts.s.sol';
 import {MainnetDeployment} from '@script/MainnetDeployment.s.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
-import {WSTETH, RETH} from '@script/MainnetParams.s.sol';
+import {WSTETH, RETH, ARB} from '@script/MainnetParams.s.sol';
 
 abstract contract Base is MainnetDeployment, Script, Test {
   IODCreate2Factory internal _create2 = IODCreate2Factory(MAINNET_CREATE2FACTORY);
@@ -155,6 +155,29 @@ contract UpdateOracles is Base {
 
     oracleRelayer.modifyParameters(WSTETH, 'oracle', bytes(abi.encode(_wstethDelayedOracle)));
     oracleRelayer.modifyParameters(RETH, 'oracle', bytes(abi.encode(_rethDelayedOracle)));
+
+    if (_broadcast) vm.stopBroadcast();
+    else vm.stopPrank();
+  }
+}
+
+// BROADCAST
+// source .env && forge script UpdateStabilityFee --skip-simulation --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
+
+// SIMULATE
+// source .env && forge script UpdateStabilityFee --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC
+contract UpdateStabilityFee is Base {
+  address internal constant _DEPLOYER = 0xF78dA2A37049627636546E0cFAaB2aD664950917;
+
+  function run() public {
+    bool _broadcast;
+    if (_deployer == _DEPLOYER) _broadcast = true;
+
+    if (_broadcast) vm.startBroadcast(_deployerPk);
+    else vm.startPrank(_DEPLOYER);
+
+    // uint256 constant PLUS_5_PERCENT_PER_YEAR = 1_000_000_001_547_125_957_863_212_448;
+    taxCollector.modifyParameters(ARB, 'stabilityFee', abi.encode(1_000_000_001_547_125_957_863_212_448));
 
     if (_broadcast) vm.stopBroadcast();
     else vm.stopPrank();
