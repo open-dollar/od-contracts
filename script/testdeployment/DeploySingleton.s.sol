@@ -5,6 +5,7 @@ import {Script} from 'forge-std/Script.sol';
 import {OpenDollarGovernance, ProtocolToken, IProtocolToken} from '@contracts/tokens/ProtocolToken.sol';
 import {OpenDollar, SystemCoin, ISystemCoin} from '@contracts/tokens/SystemCoin.sol';
 import {Vault721} from '@contracts/proxies/Vault721.sol';
+import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 
 // BROADCAST
 // source .env && forge script DeployProxySingletonMain --skip-simulation --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
@@ -15,7 +16,7 @@ import {Vault721} from '@contracts/proxies/Vault721.sol';
 contract DeployProxySingletonMain is Script {
   function run() public {
     vm.startBroadcast(vm.envUint('ARB_MAINNET_DEPLOYER_PK'));
-    new Vault721();
+    new ODProxy(msg.sender);
     vm.stopBroadcast();
   }
 }
