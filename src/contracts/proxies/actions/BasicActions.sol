@@ -302,8 +302,6 @@ contract BasicActions is CommonActions, IBasicActions {
     address _safeEngine = ODSafeManager(_manager).safeEngine();
     ODSafeManager.SAFEData memory _safeInfo = ODSafeManager(_manager).safeData(_safeId);
 
-    _taxSingle(_manager, _safeId);
-
     ISAFEEngine.SAFE memory _safeData = ISAFEEngine(_safeEngine).safes(_safeInfo.collateralType, _safeInfo.safeHandler);
 
     // Joins COIN amount into the safeEngine
@@ -313,6 +311,7 @@ contract BasicActions is CommonActions, IBasicActions {
       _getRepaidDebt(_safeEngine, address(this), _safeInfo.collateralType, _safeInfo.safeHandler)
     );
 
+    _taxSingle(_manager, _safeId);
     // Paybacks debt to the SAFE (allowed because reducing debt of the SAFE)
     _modifySAFECollateralization(_manager, _safeId, 0, -_safeData.generatedDebt.toInt(), false);
   }
