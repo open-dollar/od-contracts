@@ -67,6 +67,7 @@ function generateProposal() {
 
   getRpcAndPk $NETWORK
 
+  {
   CALLDATA=$(cast calldata "run(string)" $CAST_PATH)
   node tasks/parseProposalPath.js $1
   COMMAND_PATH=$(node tasks/parseProposalPath.js $1)
@@ -74,6 +75,9 @@ function generateProposal() {
   CALLDATA=$(cast calldata "run(string)" $CAST_PATH)
 
   simulate $COMMAND_PATH $CALLDATA $RPC_ENDPOINT $PRIVATE_KEY
+  } && {
+  node ./tasks/cleanInput.js $1
+  }
 }
 
 function delegate() {
@@ -120,7 +124,7 @@ function display_help() {
   echo " $(tput smul)Options:$(tput sgr0) "
   echo "-h, --help                        Print help"
   echo "-g, --generate                    Generate your proposal from the simple input json             |  example: propose -g gov-input/anvil/new-ModifyParameters.json"
-  echo "-d, --delegate                    Delegate your votes. uses gov-input or gov-output path        |  example: propose -d gov-output/anvil/38642346-modifyParameters.json"
+  echo "-d, --delegate                    Delegate your votes. uses gov-output path                     |  example: propose -d gov-output/anvil/38642346-modifyParameters.json"
   echo "-s, --submit                      Submit your proposal with the generated gov-output path       |  example: propose -s gov-output/anvil/38642346-modifyParameters.json"
   echo "-v, --vote                        Vote for your submitted proposal                              |  example: propose -v gov-output/anvil/38642346-modifyParameters.json"
   echo "-q, --queue                       Queue your passed proposal                                    |  example: propose -q gov-output/anvil/38642346-modifyParameters.json"

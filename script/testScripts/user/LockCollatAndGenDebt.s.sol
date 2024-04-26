@@ -3,6 +3,8 @@ pragma solidity ^0.8.13;
 
 import {TestScripts} from '@script/testScripts/user/utils/TestScripts.s.sol';
 import {MintableERC20} from '@contracts/for-test/MintableVoteERC20.sol';
+import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
+import 'forge-std/console2.sol';
 
 // BROADCAST
 // source .env && forge script LockCollAndGenDebt --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
@@ -14,11 +16,15 @@ contract LockCollAndGenDebt is TestScripts {
   function run() public {
     vm.startBroadcast(vm.envUint('ARB_SEPOLIA_PK'));
     MintableERC20(address(WETH_TOKEN)).mint(USER1, 1_000_000 ether);
+    console2.log('WETH BAL: ', WETH_TOKEN.balanceOf(USER1));
+    ISAFEEngine.SAFEEngineCollateralData memory _cData = safeEngine.cData(WSTETH);
+    console2.log(_cData.debtAmount);
+    console2.log(_cData.safetyPrice);
+    console2.log(_cData.liquidationPrice);
+    // address proxy = address(deployOrFind(USER1));
+    // WETH_TOKEN.approve(address(proxy), type(uint256).max);
 
-    address proxy = address(deployOrFind(USER1));
-    WETH_TOKEN.approve(address(proxy), type(uint256).max);
-
-    depositCollatAndGenDebt(WSTETH, SAFE, COLLATERAL, DEBT, proxy);
+    // depositCollatAndGenDebt(WSTETH, SAFE, COLLATERAL, DEBT, proxy);
     vm.stopBroadcast();
   }
 }
