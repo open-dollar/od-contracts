@@ -314,7 +314,7 @@ contract BasicActions is CommonActions, IBasicActions {
     );
 
     // Paybacks debt to the SAFE (allowed because reducing debt of the SAFE)
-    _modifySAFECollateralization(_manager, _safeId, 0, -_safeData.generatedDebt.toInt(), true);
+    _modifySAFECollateralization(_manager, _safeId, 0, -_safeData.generatedDebt.toInt(), false);
   }
 
   /// @inheritdoc IBasicActions
