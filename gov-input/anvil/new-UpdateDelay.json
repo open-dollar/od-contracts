@@ -2,9 +2,9 @@
 "chainid": 31337,
 "description": "update timelock controller delay",
 "network": "anvil",
-"TimelockController_Address": "0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44",
-"ODGovernor_Address": "0xa85233C63b9Ee964Add6F2cffe00Fd84eb32338f",
+"TimelockController_Address": "",
+"ODGovernor_Address": "",
 "proposalType": "UpdateDelay",
-"ProtocolToken_Address": "0xc6e7DF5E7b4f2A278906862b61205850344D4e7d",
+"ProtocolToken_Address": "",
 "newDelay": 86400
 }
