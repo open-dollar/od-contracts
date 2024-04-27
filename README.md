@@ -56,10 +56,10 @@ When running `forge`, you can specify the profile to use using the FOUNDRY_PROFI
 ## Governance Actions
 
 OpenDollar governance follows the common pattern of:
-
-- proposing a governance action
-- queuing the governance action
-- executing the governance action
+- generating a governance proposal
+- submitting a governance proposal
+- queuing the governance proposal
+- executing the governance proposal
 
 We include a set of governance scripts in `script/gov` which allow DAO members to propose, queue and execute different governance actions.
 
@@ -76,17 +76,9 @@ All available flags can also be viewed with
 yarn propose --help
 ```
 
-The current list of governance operations that can be proposed:
-
-- Add Collateral: Adding a new collateral type to the system which can be borrowed against
-- Modify Parameters: Modify any parameters in a contract that inherits Modifiable.sol
-- Add Nitro Rewards: add rewards to the nitro pool.
-- ERC20 Transfer: transfer erc20 tokens from a target contract.
-- Update Delay: Update the time delay on the timelock controller contract.
-
 The input for the proposal is a json file in the "gov-inputs/[network]" folder.  You can find basic templates in these folders.
 
-The input Json must have a correct "network" and "chainId" for the network you would like to make the proposal on.
+The input Json must have a correct "network" and "chainid" for the network you would like to make the proposal on.
 
 Contract addresses with the "_Address" suffix will be automatically added by the generation script. You can leave these empty.
 
@@ -103,12 +95,26 @@ The output is always a JSON file which includes at least the following `proposal
 }
 ```
 
-The JSON output may also include extra params informative purposes and for execution params for the scripts themselves.  Please do not alter the generated outputs in any way.  This will invalidate the proposal.
+The JSON output may also include extra params for informative purposes and for execution params for the scripts themselves.  Please do not alter the generated outputs in any way.  This will invalidate the proposal.
+
+The current list of governance operations that can be proposed:
+
+- Add Collateral: Adding a new collateral type to the system which can be borrowed against
+- Modify Parameters: Modify any parameters in a contract that inherits Modifiable.sol
+- Add Nitro Rewards: add rewards to the nitro pool.
+- ERC20 Transfer: transfer erc20 tokens from a target contract.
+- Update Delay: Update the time delay on the timelock controller contract.
 
 #### Steps for submitting a proposal
 1. Fill in necessarry data in the input Json template.
-2. Generate the Proposal with `yarn propose -g /path-to-input/new-proposal-file.json`
-3. 
+2. Generate the Proposal with `yarn propose -g /gov-input/new-Proposal.json`
+3. Push your changes up to github so someone else can re-generate the proposal with the same params in order to verify.
+3. After Verification, Submit the proposal with `yarn propose -s /gov-output/11111111-proposalType.json`
+4. Vote on a proposal with `yarn propose -v /gov-output/11111111-proposalType.json`
+5. Queue a proposal with `yarn propose -q /gov-output/11111111-proposalType.json`
+6. Execute a proposal with `yarn propose -x /gov-output/11111111-proposalType.json`
+
+#### Proposal Types
 
 ##### Add Collateral
 
@@ -133,22 +139,9 @@ The JSON output may also include extra params informative purposes and for execu
 - OracleRelayerCollateralParams: 
     - delayedOracle: Usually a DelayedOracle that enforces delays to fresh price feeds.
     - safetyCRatio: RAY, CRatio used to compute the 'safePrice' - the price used when generating debt in SAFEEngine.
-    - liquidationCRatio: RAY, CRatio used to compute the 'liquidationPrice' - the price used when liquidating SAFEs.
+    - liquidationCRatio: RAY, CRatio used to compute the 'liquidationPrice' the price used when liquidating SAFEs.
 
-This script proposes adding a new collateral to the system (deploys new contracts via the collateral join and collateral auction house factories).
-
-##### Update Block Delay
-
-[`ProposeUpdateBlockDelay.s.sol`](script/testScripts/gov/UpdateBlockDelayAction/ProposeUpdateBlockDelay.s.sol)
-
-**Required env vars:**
-
-- `GOV_EXECUTOR_PK`: private key of the governance executor
-- `GOVERNANCE_ADDRESS`: address of OD Governance
-- `VAULT_721_ADDRESS`: address of the Vault721 contract
-- `BLOCK_DELAY`: the number of blocks to wait before being able to transfer after collateral or debt has been updated for allowlisted addresses
-
-This script proposes setting a new block delay on the Vault721 contract.
+This script proposes adding a new collateral to the system (deploys new contracts via the collateral join, collateral auction house factories and it adds the correct authorizations to the needed contracts).
 
 ##### Update Time Delay
 
@@ -167,9 +160,8 @@ This script proposes setting a new time delay on the Vault721 contract.
 
 [`ProposeUpdatePidController.s.sol`](script/testScripts/gov/UpdatePidControllerAction/ProposeUpdatePidController.s.sol)
 
-**Required env vars:**
+**Required json vars:**
 
-- `GOV_EXECUTOR_PK`: private key of the governance executor
 - `GOVERNANCE_ADDRESS`: address of OD Governance
 - `PID_CONTROLLER_ADDRESS`: address of PID controller
 - `SEED_PROPOSER`: new seed proposer address
