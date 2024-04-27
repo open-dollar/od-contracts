@@ -119,4 +119,11 @@ contract MainnetScripts is MainnetDeployment, Script, Test {
     );
     ODProxy(_proxy).execute(address(basicActions), payload);
   }
+
+  function generateDebt(uint256 _safeId, uint256 _deltaWad, address _proxy) public {
+    bytes memory payload = abi.encodeWithSelector(
+      basicActions.generateDebt.selector, address(safeManager), address(coinJoin), _safeId, _deltaWad
+    );
+    ODProxy(_proxy).execute(address(basicActions), payload);
+  }
 }
