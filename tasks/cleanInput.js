@@ -9,11 +9,11 @@ const currentJson = JSON.parse(fs.readFileSync(basePath));
 const contractNames = Object.keys(currentJson).filter((key) => key.includes("_Address"));
 let modifiedJson = currentJson;
 
-contractNames.forEach((e) => { modifiedJson[e] = ""});
+contractNames.forEach((e) => { modifiedJson[e] = "" });
 
-fs.writeFile(basePath, JSON.stringify(modifiedJson), (err) => {
-    if (err) {
-      console.error(err);
-      return;
-    }
-  });
+fs.writeFile(basePath, JSON.stringify(modifiedJson, null, 4), (err) => {
+  if (err) {
+    console.error(err);
+    return;
+  }
+});
