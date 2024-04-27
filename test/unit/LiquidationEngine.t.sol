@@ -22,9 +22,10 @@ import {Assertions} from '@libraries/Assertions.sol';
 // Mock that will burn all gas
 contract MockFatSaviour is ISAFESaviour {
   event Log(string);
+
   function saveSAFE(address, bytes32, address) external returns (bool, uint256, uint256) {
     emit Log('FatSaviour called');
-    while(true) {} // this loop will consume all available gas
+    while (true) {} // this loop will consume all available gas
     return (true, 0, 0);
   }
 }
@@ -1363,7 +1364,10 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
     liquidationEngine.liquidateSAFE(collateralType, safe);
   }
 
-  function test_Emit_Liquidate_withRougeSaviour(Liquidation memory _liquidation) public happyPathFullLiquidation(_liquidation) {
+  function test_Emit_Liquidate_withRougeSaviour(Liquidation memory _liquidation)
+    public
+    happyPathFullLiquidation(_liquidation)
+  {
     MockFatSaviour _testSaveSaviour = new MockFatSaviour();
     _mockChosenSafeSaviour(collateralType, safe, address(_testSaveSaviour));
     _mockSafeSaviours(address(_testSaveSaviour), 1);
