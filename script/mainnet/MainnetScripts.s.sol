@@ -15,8 +15,8 @@ contract MainnetScripts is MainnetDeployment, Script, Test {
   bool internal _broadcast;
 
   // User wallet address
-  address public USER1 = vm.envAddress('ARB_SEPOLIA_PUBLIC1');
-  address public USER2 = vm.envAddress('ARB_SEPOLIA_PUBLIC2');
+  address public USER1 = vm.envAddress('ARB_MAINNET_PUBLIC1');
+  address public USER2 = vm.envAddress('ARB_MAINNET_PUBLIC2');
 
   // Safe id
   uint256 public SAFE = vm.envUint('SAFE');
