@@ -8,6 +8,9 @@ import {Test} from 'forge-std/Test.sol';
 import {MainnetDeployment} from '@script/MainnetDeployment.s.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 import {WSTETH, ARB, RETH} from '@script/MainnetParams.s.sol';
+import {TestScripts} from '@script/testScripts/user/utils/TestScripts.s.sol';
+import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
+import 'forge-std/console2.sol';
 
 contract MainnetScripts is MainnetDeployment, Script, Test {
   uint256 internal _userPk;
@@ -20,6 +23,7 @@ contract MainnetScripts is MainnetDeployment, Script, Test {
 
   // Safe id
   uint256 public SAFE = vm.envUint('SAFE');
+  uint256 public safeId;
 
   // Collateral and debt
   uint256 public COLLATERAL = vm.envUint('COLLATERAL'); // ex: COLLATERAL=400000000000000000 (0.4 ether)
@@ -30,6 +34,8 @@ contract MainnetScripts is MainnetDeployment, Script, Test {
   bytes32 public constant WSTETH = bytes32('WSTETH'); // 0x5745544800000000000000000000000000000000000000000000000000000000
   bytes32 public constant ARB = bytes32('ARB'); //0x4152420000000000000000000000000000000000000000000000000000000000
   bytes32 public constant RETH = bytes32('RETH');
+
+  address _reth_Address = 0xEC70Dcb4A1EFa46b8F2D97C310C9c4790ba5ffA8; //reth whale address 0xba12222222228d8ba445958a75a0704d566bf2c8
 
   modifier prankSwitch(address _caller, address _account) {
     if (_caller == _account) _broadcast = true;
@@ -84,6 +90,33 @@ contract MainnetScripts is MainnetDeployment, Script, Test {
   function repayAllDebt(uint256 _safeId, address _proxy) public {
     bytes memory payload =
       abi.encodeWithSelector(basicActions.repayAllDebt.selector, address(safeManager), address(coinJoin), _safeId);
+    ODProxy(_proxy).execute(address(basicActions), payload);
+  }
+
+  // scripts for testing on anvil fork using RETH_WHALE as ARB_MAINNET_PUBLIC1 address
+  function openSafe(bytes32 _cType, address _proxy) public returns (uint256 _safeId) {
+    bytes memory payload = abi.encodeWithSelector(basicActions.openSAFE.selector, address(safeManager), _cType, _proxy);
+    bytes memory _safeData = ODProxy(_proxy).execute(address(basicActions), payload);
+    _safeId = abi.decode(_safeData, (uint256));
+    console2.log(IERC20(_reth_Address).balanceOf(USER1));
+  }
+
+  function depositCollatAndGenDebt(
+    bytes32 _cType,
+    uint256 _safeId,
+    uint256 _collatAmount,
+    uint256 _deltaWad,
+    address _proxy
+  ) public {
+    bytes memory payload = abi.encodeWithSelector(
+      basicActions.lockTokenCollateralAndGenerateDebt.selector,
+      address(safeManager),
+      address(collateralJoin[_cType]),
+      address(coinJoin),
+      _safeId,
+      _collatAmount,
+      _deltaWad
+    );
     ODProxy(_proxy).execute(address(basicActions), payload);
   }
 }
