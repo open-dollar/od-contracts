@@ -126,4 +126,18 @@ contract MainnetScripts is MainnetDeployment, Script, Test {
     );
     ODProxy(_proxy).execute(address(basicActions), payload);
   }
+
+  /**
+   * in order to lockCollateral, use the lockCollatAndGenDebt script, with deltaWad (debt to generate) set to zero
+   */
+  function depositCollat(bytes32 _cType, uint256 _safeId, uint256 _collatAmount, address _proxy) public {
+    bytes memory payload = abi.encodeWithSelector(
+      basicActions.lockTokenCollateral.selector,
+      address(safeManager),
+      address(collateralJoin[_cType]),
+      _safeId,
+      _collatAmount
+    );
+    ODProxy(_proxy).execute(address(basicActions), payload);
+  }
 }
