@@ -48,7 +48,12 @@ contract TestRepay is MainnetScripts {
     depositCollatAndGenDebt(RETH, safeId2, 150 ether, 200 ether, proxy);
     systemCoin.approve(proxy, type(uint256).max);
     // repay debt on safe 1
-    repayAllDebt(safeId, proxy);
+    repayAllDebt(safeId, proxy); //-199987022715481439548 || -199987022715481439548
+    // repayAllDebtAndFreeTokenCollateral(RETH, safeId, proxy, 0);
     vm.stopBroadcast();
   }
 }
+
+/**
+ * 0xEff45E8e2353893BD0558bD5892A42786E9142F1::modifySAFECollateralization(0x5245544800000000000000000000000000000000000000000000000000000000, SAFEHandler: [0xD79b87bc3EB61B086d647c42EA7c1d70952c0c50], SAFEHandler: [0xD79b87bc3EB61B086d647c42EA7c1d70952c0c50], SAFEHandler: [0xD79b87bc3EB61B086d647c42EA7c1d70952c0c50], 0, -199987022715481439548 [-1.999e20])
+ */
