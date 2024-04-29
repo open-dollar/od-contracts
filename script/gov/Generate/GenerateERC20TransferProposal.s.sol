@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.20;
 
-import {JSONScript} from '@script/testScripts/gov/helpers/JSONScript.s.sol';
+import {JSONScript} from '@script/gov/helpers/JSONScript.s.sol';
 import {Strings} from '@openzeppelin/utils/Strings.sol';
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
-import {Generator} from '@script/testScripts/gov/Generator.s.sol';
+import {Generator} from '@script/gov/Generator.s.sol';
 import 'forge-std/StdJson.sol';
 
 /// @title ProposeAddCollateral Script
@@ -13,7 +13,7 @@ import 'forge-std/StdJson.sol';
 /// @notice Script to propose ERC20 token to a specific account via ODGovernance
 /// @dev This script is used to propose transfer from the governance contract to a specific account
 /// @dev The script will output a JSON file with the proposal data to be used by the QueueProposal and ExecuteProposal scripts
-/// @dev In the root, run: export FOUNDRY_PROFILE=governance && forge script --rpc-url <RPC_URL> script/testScripts/gov/ERC20TransferAction/ProposeERC20Transfer.s.sol
+/// @dev In the root, run: export FOUNDRY_PROFILE=governance && forge script --rpc-url <RPC_URL> script/gov/ERC20TransferAction/ProposeERC20Transfer.s.sol
 contract GenerateERC20TransferProposal is Generator, JSONScript {
   using stdJson for string;
 
@@ -24,7 +24,7 @@ contract GenerateERC20TransferProposal is Generator, JSONScript {
   uint256[] public amountsToTransfer;
 
   function _loadBaseData(string memory json) internal override {
-    governanceAddress = json.readAddress(string(abi.encodePacked('.odGovernor')));
+    governanceAddress = json.readAddress(string(abi.encodePacked('.ODGovernor_Address:')));
     description = json.readString(string(abi.encodePacked('.description')));
     uint256 len = json.readUint(string(abi.encodePacked('.arrayLength')));
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.20;
 
-import {JSONScript} from '@script/testScripts/gov/helpers/JSONScript.s.sol';
+import {JSONScript} from '@script/gov/helpers/JSONScript.s.sol';
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 import {Generator} from '../Generator.s.sol';
 import {IGlobalSettlement} from '@contracts/settlement/GlobalSettlement.sol';
@@ -24,7 +24,7 @@ import 'forge-std/console2.sol';
 /// @dev This script is used to propose adding a new collateral type to the system
 /// @dev The script will propose a deployment of new CollateralJoin and CollateralAuctionHouse contracts
 /// @dev The script will output a JSON file with the proposal data to be used by the QueueProposal and ExecuteProposal scripts
-/// @dev In the root, run: export FOUNDRY_PROFILE=governance && forge script --rpc-url <RPC_URL> script/testScripts/gov/AddCollateralAction/ProposeAddCollateral.s.sol
+/// @dev In the root, run: export FOUNDRY_PROFILE=governance && forge script --rpc-url <RPC_URL> script/gov/AddCollateralAction/ProposeAddCollateral.s.sol
 contract GenerateAddCollateralProposal is Generator, JSONScript {
   using stdJson for string;
 
@@ -78,33 +78,42 @@ contract GenerateAddCollateralProposal is Generator, JSONScript {
 
   function _loadBaseData(string memory json) internal override {
     proposalType = json.readString(string(abi.encodePacked('.proposalType')));
-    governanceAddress = json.readAddress(string(abi.encodePacked('.odGovernor')));
-    globalSettlementAddress = json.readAddress(string(abi.encodePacked('.globalSettlement')));
+    governanceAddress = json.readAddress(string(abi.encodePacked('.ODGovernor_Address:')));
+    globalSettlementAddress = json.readAddress(string(abi.encodePacked('.GlobalSettlement_Address:')));
     newCType = bytes32(abi.encodePacked(json.readString(string(abi.encodePacked('.newCollateralType')))));
     newCAddress = json.readAddress(string(abi.encodePacked('.newCollateralAddress')));
     description = json.readString(string(abi.encodePacked('.description')));
-    safeEngine = json.readAddress(string(abi.encodePacked('.safeEngine')));
-    taxCollector = json.readAddress(string(abi.encodePacked('.taxCollector')));
-    liquidationEngine = json.readAddress(string(abi.encodePacked('.liquidationEngine')));
-    oracleRelayer = json.readAddress(string(abi.encodePacked('.oracleRelayer')));
+    safeEngine = json.readAddress(string(abi.encodePacked('.SAFEEngine_Address:')));
+    taxCollector = json.readAddress(string(abi.encodePacked('.TaxCollector_Address:')));
+    liquidationEngine = json.readAddress(string(abi.encodePacked('.LiquidationEngine_Address:')));
+    oracleRelayer = json.readAddress(string(abi.encodePacked('.OracleRelayer_Address:')));
 
-    _cahCParams.minimumBid = json.readUint(string(abi.encodePacked('.minimumBid')));
-    _cahCParams.minDiscount = json.readUint(string(abi.encodePacked('.minimumDiscount')));
-    _cahCParams.maxDiscount = json.readUint(string(abi.encodePacked('.maximumDiscount')));
-    _cahCParams.perSecondDiscountUpdateRate = json.readUint(string(abi.encodePacked('.perSecondDiscountUpdateRate')));
+    _cahCParams.minimumBid = json.readUint(string(abi.encodePacked('.CollateralAuctionHouseParams.minimumBid')));
+    _cahCParams.minDiscount = json.readUint(string(abi.encodePacked('.CollateralAuctionHouseParams.minimumDiscount')));
+    _cahCParams.maxDiscount = json.readUint(string(abi.encodePacked('.CollateralAuctionHouseParams.maximumDiscount')));
+    _cahCParams.perSecondDiscountUpdateRate =
+      json.readUint(string(abi.encodePacked('.CollateralAuctionHouseParams.perSecondDiscountUpdateRate')));
 
-    _SAFEEngineCollateralParams.debtCeiling = json.readUint(string(abi.encodePacked('.collateralDebtCeiling')));
-    _SAFEEngineCollateralParams.debtFloor = json.readUint(string(abi.encodePacked('.collateralDebtFloor')));
+    _SAFEEngineCollateralParams.debtCeiling =
+      json.readUint(string(abi.encodePacked('.SAFEEngineCollateralParams.collateralDebtCeiling')));
+    _SAFEEngineCollateralParams.debtFloor =
+      json.readUint(string(abi.encodePacked('.SAFEEngineCollateralParams.collateralDebtFloor')));
 
-    _taxCollectorCParams.stabilityFee = json.readUint(string(abi.encodePacked('.stabilityFee')));
+    _taxCollectorCParams.stabilityFee =
+      json.readUint(string(abi.encodePacked('.TaxCollectorCollateralParams.stabilityFee')));
 
-    _liquidationEngineCParams.collateralAuctionHouse = json.readAddress(string(abi.encodePacked('.newCAHChild')));
-    _liquidationEngineCParams.liquidationPenalty = json.readUint(string(abi.encodePacked('.liquidationPenalty')));
-    _liquidationEngineCParams.liquidationQuantity = json.readUint(string(abi.encodePacked('.liquidationQuantity')));
+    _liquidationEngineCParams.collateralAuctionHouse =
+      json.readAddress(string(abi.encodePacked('.LiquidationEngineCollateralParams.newCAHChild')));
+    _liquidationEngineCParams.liquidationPenalty =
+      json.readUint(string(abi.encodePacked('.LiquidationEngineCollateralParams.liquidationPenalty')));
+    _liquidationEngineCParams.liquidationQuantity =
+      json.readUint(string(abi.encodePacked('.LiquidationEngineCollateralParams.liquidationQuantity')));
 
-    _oracleCParams.oracle = IDelayedOracle(json.readAddress(string(abi.encodePacked('.delayedOracle'))));
-    _oracleCParams.safetyCRatio = json.readUint(string(abi.encodePacked('.safetyCRatio')));
-    _oracleCParams.liquidationCRatio = json.readUint(string(abi.encodePacked('.liquidationCRatio')));
+    _oracleCParams.oracle =
+      IDelayedOracle(json.readAddress(string(abi.encodePacked('.OracleRelayerCollateralParams.delayedOracle'))));
+    _oracleCParams.safetyCRatio = json.readUint(string(abi.encodePacked('.OracleRelayerCollateralParams.safetyCRatio')));
+    _oracleCParams.liquidationCRatio =
+      json.readUint(string(abi.encodePacked('.OracleRelayerCollateralParams.liquidationCRatio')));
   }
 
   function _generateProposal() internal override {

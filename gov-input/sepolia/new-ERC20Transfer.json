@@ -2,13 +2,14 @@
   "chainid": 421614,
   "description": "Transfer ODG back",
   "network": "sepolia",
-  "odGovernor": "0x69ae232E574352232aB8678869eAA3BEBd885211",
+  "ODGovernor_Address": "0x69ae232E574352232aB8678869eAA3BEBd885211",
+  "ProtocolToken_Address": "",
   "proposalType": "ERC20Transfer",
   "objectArray": [
     {
       "erc20Token": "0xbbB4f37c787C6ecb0b6b5Fb3F73221aA22fabA70",
       "transferTo": "0xC295763Eed507d4A0f8B77241c03dd3354781a15",
-      "amount": 1000000000000000000
+      "amount": "1000000000000000000"
     }
   ],
   "arrayLength": 1

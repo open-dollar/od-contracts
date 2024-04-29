@@ -50,16 +50,19 @@ function getNetwork(network) {
 }
 
 async function predictAddress(currentJson, provider) {
+
   const contractJSON = JSON.parse(
     fs.readFileSync(
       path.join(__dirname, "../out/GlobalSettlement.sol/GlobalSettlement.json")
     )
   );
+
   const globalSettlement = new ethers.Contract(
-    currentJson.globalSettlement,
+    currentJson.GlobalSettlement_Address,
     contractJSON.abi,
     provider
   );
+
   const collateralAuctionHouseFactoryAddress =
     await globalSettlement.collateralAuctionHouseFactory();
   const nonce = await provider.getTransactionCount(
@@ -74,7 +77,7 @@ async function predictAddress(currentJson, provider) {
 
 async function predictAddressAndWriteToFile(currentJson, provider) {
   const predictedAddress = await predictAddress(currentJson, provider);
-  currentJson["newCAHChild"] = predictedAddress;
+  currentJson["LiquidationEngineCollateralParams"]["newCAHChild"] = predictedAddress;
   fs.writeFileSync(basePath, JSON.stringify(currentJson), (err) => {
     if (err) {
       console.error(err);
@@ -87,7 +90,7 @@ const proposalType =
   currentJson.proposalType[0].toUpperCase() + currentJson.proposalType.slice(1);
 
 // output desired path.
-let desiredPath = `script/testScripts/gov/Generate/Generate${proposalType}Proposal.s.sol:Generate${proposalType}Proposal`;
+let desiredPath = `script/gov/Generate/Generate${proposalType}Proposal.s.sol:Generate${proposalType}Proposal`;
 
 console.log(desiredPath);
 return;

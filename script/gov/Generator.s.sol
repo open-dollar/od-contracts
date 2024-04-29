@@ -4,7 +4,7 @@ pragma solidity 0.8.20;
 //solhint-disable
 
 import 'forge-std/Script.sol';
-import {ForkManagement} from '@script/testScripts/gov/helpers/ForkManagement.s.sol';
+import {ForkManagement} from '@script/gov/helpers/ForkManagement.s.sol';
 
 contract Generator is ForkManagement {
   using stdJson for string;

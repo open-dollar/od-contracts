@@ -1,7 +1,7 @@
 {
-    "chainid": "31337",
+    "chainid": "42161",
     "description": "add NEWADD as a collateral type",
-    "network": "anvil",
+    "network": "mainnet",
     "newCollateralAddress": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
     "newCollateralType": "NEWADD",
     "proposalType": "AddCollateral",
@@ -20,7 +20,7 @@
         "stabilityFee": "1000000000000000000000000000"
     },
     "LiquidationEngineCollateralParams": {
-        "newCAHChild": "0xd468bF477c0c99095D508c3B0A60f39348d91ac0",
+        "newCAHChild": "0x293b702362918e990Dd5f48a80fB139FeAd64263",
         "liquidationPenalty": "1000000000000000000",
         "liquidationQuantity": "1000000000000000000000000000000000000000000000"
     },
