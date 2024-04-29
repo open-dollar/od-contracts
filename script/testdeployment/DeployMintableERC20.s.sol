@@ -5,6 +5,8 @@ import {Script} from 'forge-std/Script.sol';
 import {MintableERC20} from '@contracts/for-test/MintableERC20.sol';
 import {OracleForTestnet} from '@contracts/for-test/OracleForTestnet.sol';
 import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
+import {SepoliaDeployment} from '@script/SepoliaDeployment.s.sol';
+import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
 import 'forge-std/console2.sol';
 
 // BROADCAST
@@ -14,15 +16,20 @@ import 'forge-std/console2.sol';
 // source .env && forge script DeployMintableERC20Sepolia --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC
 
 
-contract DeployMintableERC20Sepolia is Script {
+contract DeployMintableERC20Sepolia is SepoliaDeployment, Script {
   function run() public {
     vm.startBroadcast(vm.envUint('ARB_SEPOLIA_DEPLOYER_PK'));
-    address deployer = vm.envAddress('ARB_SEPOLIA_DEPLOYER_ADDR');
-    address newMintable = new MintableERC20('Puffer ETH', 'pufETH', 18);
-    address newOracle = new OracleForTestnet(3500e18);
-    IERC20(newMintable).mint(deployer, 100_000 ether);
+    string memory symbol = 'pufETH';
+    string memory collateralName = 'Puffer ETH';
+    address newMintable = address(new MintableERC20(collateralName, symbol, 18));
+    address newOracle = address(new OracleForTestnet(3500e18));
+    address delayedOracle = address(delayedOracleFactory.deployDelayedOracle(IBaseOracle(newOracle), 60));
+    MintableERC20(newMintable).mint(100_000 ether);
     console2.log('New Mintable: ', newMintable);
     console2.log('New Oracle: ', newOracle);
+    console2.log('New Delayed Oracle: ', delayedOracle);
+    console2.log('New Collateral Name: ', collateralName);
+    console2.log('New Collateral Type: ', symbol);
     vm.stopBroadcast();
   }
 }
