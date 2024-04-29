@@ -8,6 +8,3 @@
 		path = lib/prb-test
 		url = https://github.com/paulrberg/prb-test
 	    branch = 0.5.5
-[submodule "lib/forge-std"]
-	path = lib/forge-std
-	url = https://github.com/foundry-rs/forge-std
