@@ -68,7 +68,7 @@ We include a set of governance scripts in `script/gov` which allow DAO members t
 ### Governance
 
 ```
-yarn propose [option flag] [path to input json]
+yarn propose [action flag] [option flag] [path to input json]
 ```
 
 All available flags can also be viewed with
@@ -78,12 +78,19 @@ yarn propose --help
 
 The input for the proposal is a json file in the "gov-inputs/[network]" folder.  You can find basic templates in these folders.
 
-The input Json must have a correct "network" and "chainid" for the network you would like to make the proposal on.
+All JSON inputs have these required fields:
+- `chainid`: the chainId of the desired network.
+- `network`: the desired network to be submitted on.
+- `proposalType`: the type of proposal.  This must be in camel case with the first letter capitalized e.g. "AddCollateral"
+- `ODGovernor_Address`: the address of the OD_Governor.  if you don't want to enter this manually use the `--auto` flag.
+- `description`:  a description of the proposal being made.
 
-Contract addresses with the "_Address" suffix can be automatically added by the generation script with the `--auto` flag.  for example:
+Contract addresses with the "_Address" suffix can be automatically added by the generation script with the `--auto` flag.  
+For example:
 ```
 yarn propose -g --auto /gov-input/anvil/new-AddCollateral.json
 ```
+will fill in`ProtocolToken_Address, ODGovernor_Address, SAFEEngine_Address, OracleRelayer_Address,  LiquidationEngine_Address, TaxCollector_Address, GlobalSettlement_Address` from `script/anvil/deployment/AnvilContracts.t.sol`
 
 The output is always a JSON file which includes at least the following `proposalParams`:
 
@@ -111,12 +118,16 @@ The current list of governance operations that can be proposed:
 ##### Steps for submitting a proposal
 
 1. Fill in necessarry data in the input Json template.
-2. Generate the Proposal with `yarn propose -g /gov-input/new-Proposal.json`
-3. Push your changes up to github so someone else can re-generate the proposal with the same params in order to verify.
-3. After Verification, Submit the proposal with `yarn propose -s /gov-output/11111111-proposalType.json`
-4. Vote on a proposal with `yarn propose -v /gov-output/11111111-proposalType.json`
-5. Queue a proposal with `yarn propose -q /gov-output/11111111-proposalType.json`
-6. Execute a proposal with `yarn propose -x /gov-output/11111111-proposalType.json`
+2. Generate the Proposal with `yarn propose -g --auto /gov-input/new-Proposal.json`
+3. If you haven't delegated your tokens you can delegate to yourself with `yarn propose -d /gov-output/11111111-proposalType.json`
+4. Push your changes up to github so someone else can re-generate the proposal with the same params in order to verify.
+5. After Verification, Submit the proposal with `yarn propose -s /gov-output/11111111-proposalType.json`
+6. Vote on a proposal with `yarn propose -v /gov-output/11111111-proposalType.json`
+7. Queue a proposal with `yarn propose -q /gov-output/11111111-proposalType.json`
+8. Execute a proposal with `yarn propose -x /gov-output/11111111-proposalType.json`
+
+**note:**
+If you want to use the `--delegate` flag to delegate your tokens, you must add the `ProtocolToken_Address` field to the input json, or use the `--auto` flag when generating the proposal.
 
 #### Proposal Types
 
@@ -153,77 +164,50 @@ This script proposes adding a new collateral to the system (deploys new contract
 
 **Required JSON vars:**
 
-- `GOV_EXECUTOR_PK`: private key of the governance executor
-- `GOVERNANCE_ADDRESS`: address of OD Governance
-- `VAULT_721_ADDRESS`: address of the Vault721 contract
-- `TIME_DELAY`: the amount of time to wait before being able to transfer after collateral or debt has been updated for non-allowlisted addresses
-
-This script proposes setting a new time delay on the Vault721 contract.
+- `objectArray`: each object in the array can be a param to be modified.  Each object must contain:
+    - `target`: the address of the target contract.
+    - `param`: the name of the param to be modified.
+    - `type`: the data type of the input data.
+    - `data`: the input data.  this can be a string, uint or an address.  depending on the requirement of the parameter that is being modified.
 
 ##### Update PIDController Params
 
-[`ProposeUpdatePidController.s.sol`](script/testScripts/gov/UpdatePidControllerAction/ProposeUpdatePidController.s.sol)
+[`new-UpdatePIDController.json`](gov-input/anvil/new-UpdatePIDController.json)
 
-**Required json vars:**
+To update the PID controller you simply make a ModifyParameters proposal with all the PID controller params you would like to modify listed as individual params in the `objectArray`.
 
-- `GOVERNANCE_ADDRESS`: address of OD Governance
-- `PID_CONTROLLER_ADDRESS`: address of PID controller
-- `SEED_PROPOSER`: new seed proposer address
-- `NOISE_BARRIER`: new noise barrier value
-- `INTEGRAL_PERIOD_SIZE`: new integral period size value
-- `FEEDBACK_OUTPUT_UPPER_BOUND`: new feedback output upper bound value
-- `FEEDBACK_OUTPUT_LOWER_BOUND`: new feedback output lower bound value
-- `PER_SECOND_CUMULATIVE_LEAK`: new per second cumulative leak value
-- `KP`: new kp value
-- `KI`: new ki value
-- `PRICE_DEVIATION_CUMULATIVE`: new deviation observation integral value
 
 > NOTE: see [`IPIDController.sol`](src/interfaces/IPIDController.sol) for more information about this.
 
-This script proposes updating params on the PIDController contract.
+##### ERC20 Transfer
+
+[`newERC20Transfer.json`](gov-input/anvil/newERC20Transfer.json)
+
+You can propose multiple transfers in the same proposal by adding multiple transfer objects to the `objectArray`
+
+**Required json vars:**
+- `erc20Token`: the address of the token to be transfered
+- `transferTo`: the address of the token recipient
+- `amount`: the amount to be transfered in wei.
 
 #### Generating A governance proposal
 
+Generate your governance proposal with:
+```
+ yarn propose -g --auto /gov-input/new-ProposalType.json
+ ```
+
 #### Queuing Governance Actions
-
-**Required env vars:**
-
-- `GOVERNANCE_ADDRESS`: address of OD Governance
-- `JSON_FILE_PATH`: the path to the desired JSON proposal file
-- `GOV_EXECUTOR_PK`: the private key of the queuer of the governance action
-
-[`QueueProposal.s.sol`](script/testScripts/gov/QueueProposal.s.sol) is used to queue a proposal given the path of the JSON file which you want, e.g. `export JSON_FILE_PATH=gov-output/1-add-collateral-proposal.json`.
-
-This script extracts the proposal id and queues the proposal via the OD governance contract. This script can be used arbitrarily for any proposal.
+Queue a passed proposal with:
+```
+yarn propose -q /gov-output/11111111-proposalType.json
+```
 
 #### Executing Governance Actions
-
-**Required env vars:**
-
-- `GOVERNANCE_ADDRESS`: address of OD Governance
-- `JSON_FILE_PATH`: the path to the desired JSON proposal file
-- `GOV_EXECUTOR_PK`: the private key of the executor of the governance action
-
-[`ExecuteProposal.s.sol`](script/testScripts/gov/ExecuteProposal.s.sol) is used to execute a proposal given the path of the JSON file you want, e.g. `export JSON_FILE_PATH=gov-output/1-add-collateral-proposal.json`.
-
-The script extracts the necessary execution params from the JSON-the same params used during the proposal and executes the proposal. This script can be used arbitrarily for any proposal.
-
-##### ERC20 Transfer
-
-[`ProposeERC20Transfer.s.sol`](script/testScripts/gov/ProposeERC20Transfer.s.sol)
-
-> NOTE: This script uses `transferFrom` to allow the governance to manage transfers from governance balance but also to allow the governance to transfer tokens from any address to any address
-
-**Required env vars:**
-
-- `GOV_EXECUTOR_PK`: private key of the governance executor
-- `GOVERNANCE_ADDRESS`: address of OD Governance
-- `ERC20_TRANSFER_TOKEN_ADDRESS`: address of the ERC20 contract
-- `ERC20_TRANSFER_FROM_ADDRESS`: address of the sender of the ERC20 tokens
-- `ERC20_TRANSFER_RECEIVER_ADDRESS`: address of the receiver of the ERC20 tokens
-- `ERC20_TRANSFER_AMOUNT`: amount to be transferred
-
-This script proposes transferring ERC20 tokens from one address to another.
+Execute a queued proposal with:
+```
+yarn propose -x /gov-output/11111111-proposalType.json
+```
 
 # Development
 

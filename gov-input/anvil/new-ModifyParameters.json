@@ -1,7 +1,7 @@
 {
     "chainid": "31337",
-    "description": "Raise the global debt ceiling",
     "network": "anvil",
+    "description": "Raise the global debt ceiling",
     "proposalType": "ModifyParameters",
     "ProtocolToken_Address": "",
     "ODGovernor_Address": "",

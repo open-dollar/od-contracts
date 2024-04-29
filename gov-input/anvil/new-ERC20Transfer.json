@@ -2,7 +2,7 @@
   "chainid": "31337",
   "description": "Transfer treasury token",
   "network": "anvil",
-  "ProtocolToken_Address": "0x0000000000000000000000000000000000000000",
+  "ProtocolToken_Address": "",
   "ODGovernor_Address": "",
   "proposalType": "ERC20Transfer",
   "objectArray": [
