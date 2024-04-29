@@ -132,24 +132,24 @@ contract DeployMainnet is MainnetParams, Deploy {
     IBaseOracle _rethUSDPriceFeed = IBaseOracle(MAINNET_DENOMINATED_RETH_USD_ORACLE);
     if (!isNetworkArbitrumOne()) {
       // to USD
-      IBaseOracle _ethUSDPriceFeed =
+      _ethUSDPriceFeed =
         chainlinkRelayerFactory.deployChainlinkRelayer(CHAINLINK_ETH_USD_FEED, ORACLE_INTERVAL_PROD);
 
-      IBaseOracle _arbUSDPriceFeed =
+      _arbUSDPriceFeed =
         chainlinkRelayerFactory.deployChainlinkRelayer(CHAINLINK_ARB_USD_FEED, ORACLE_INTERVAL_PROD);
 
       // to ETH
-      IBaseOracle _wstethETHPriceFeed =
+      _wstethETHPriceFeed =
         chainlinkRelayerFactory.deployChainlinkRelayer(CHAINLINK_WSTETH_ETH_FEED, ORACLE_INTERVAL_PROD);
 
-      IBaseOracle _rethETHPriceFeed =
+      _rethETHPriceFeed =
         chainlinkRelayerFactory.deployChainlinkRelayer(CHAINLINK_RETH_ETH_FEED, ORACLE_INTERVAL_PROD);
 
       // denominations
-      IBaseOracle _wstethUSDPriceFeed =
+      _wstethUSDPriceFeed =
         denominatedOracleFactory.deployDenominatedOracle(_wstethETHPriceFeed, _ethUSDPriceFeed, false);
 
-      IBaseOracle _rethUSDPriceFeed =
+      _rethUSDPriceFeed =
         denominatedOracleFactory.deployDenominatedOracle(_rethETHPriceFeed, _ethUSDPriceFeed, false);
     }
 
