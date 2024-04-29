@@ -15,7 +15,7 @@ import {Encoding} from '@libraries/Encoding.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 
 // Open Dollar
-// Version 1.6.5
+// Version 1.7.0
 
 /**
  * @notice Upgradeable contract used as singleton, but is not upgradeable
@@ -47,7 +47,7 @@ contract Vault721 is ERC721EnumerableUpgradeable, Authorizable, Modifiable, IVau
   ) external initializer nonZero(_timelockController) {
     timelockController = _timelockController;
     if (!_isAuthorized(timelockController)) _addAuthorization(timelockController);
-    __ERC721_init('OpenDollar Vault', 'ODV');
+    __ERC721_init('Open Dollar Vault', 'OD-NFV');
     blockDelay = _blockDelay;
     timeDelay = _timeDelay;
   }
