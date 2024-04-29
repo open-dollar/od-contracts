@@ -300,21 +300,21 @@ contract BasicActions is CommonActions, IBasicActions {
   /// @inheritdoc IBasicActions
   function repayAllDebt(address _manager, address _coinJoin, uint256 _safeId) external delegateCall {
     address _safeEngine = ODSafeManager(_manager).safeEngine();
-    ODSafeManager.SAFEData memory _safeInfo = ODSafeManager(_manager).safeData(_safeId);
-
+    // collecting tax before getting safe data to avoid overflow in collection
     _taxSingle(_manager, _safeId);
+    ODSafeManager.SAFEData memory _safeInfo = ODSafeManager(_manager).safeData(_safeId);
 
     ISAFEEngine.SAFE memory _safeData = ISAFEEngine(_safeEngine).safes(_safeInfo.collateralType, _safeInfo.safeHandler);
 
     // Joins COIN amount into the safeEngine
     _joinSystemCoins(
       _coinJoin,
-      address(this),
-      _getRepaidDebt(_safeEngine, address(this), _safeInfo.collateralType, _safeInfo.safeHandler)
+      _safeInfo.safeHandler,
+      _getRepaidDebt(_safeEngine, _safeInfo.safeHandler, _safeInfo.collateralType, _safeInfo.safeHandler)
     );
-
+    _taxSingle(_manager, _safeId);
     // Paybacks debt to the SAFE (allowed because reducing debt of the SAFE)
-    _modifySAFECollateralization(_manager, _safeId, 0, -_safeData.generatedDebt.toInt(), true);
+    _modifySAFECollateralization(_manager, _safeId, 0, -_safeData.generatedDebt.toInt(), false);
   }
 
   /// @inheritdoc IBasicActions
@@ -380,7 +380,7 @@ contract BasicActions is CommonActions, IBasicActions {
     uint256 _collateralWad
   ) external delegateCall {
     address _safeEngine = ODSafeManager(_manager).safeEngine();
-    //collecting tax before getting safe data to avoid overflow in collection
+    // collecting tax before getting safe data to avoid overflow in collection
     _taxSingle(_manager, _safeId);
 
     ODSafeManager.SAFEData memory _safeInfo = ODSafeManager(_manager).safeData(_safeId);

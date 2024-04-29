@@ -6,6 +6,21 @@ import {OpenDollarGovernance, ProtocolToken, IProtocolToken} from '@contracts/to
 import {OpenDollar, SystemCoin, ISystemCoin} from '@contracts/tokens/SystemCoin.sol';
 import {Vault721} from '@contracts/proxies/Vault721.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
+import {BasicActions, CommonActions} from '@contracts/proxies/actions/BasicActions.sol';
+
+// BROADCAST
+// source .env && forge script DeployBasicActionsSingletonMain --skip-simulation --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
+
+// SIMULATE
+// source .env && forge script DeployBasicActionsSingletonMain --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC
+
+contract DeployBasicActionsSingletonMain is Script {
+  function run() public {
+    vm.startBroadcast(vm.envUint('ARB_MAINNET_DEPLOYER_PK'));
+    new BasicActions();
+    vm.stopBroadcast();
+  }
+}
 
 // BROADCAST
 // source .env && forge script DeployProxySingletonMain --skip-simulation --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
