@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.20;
 
-import {JSONScript} from '@script/testScripts/gov/helpers/JSONScript.s.sol';
+import {JSONScript} from '@script/gov/helpers/JSONScript.s.sol';
 import {Strings} from '@openzeppelin/utils/Strings.sol';
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 import {Modifiable} from '@contracts/utils/Modifiable.sol';
 import {IModifiablePerCollateral} from '@interfaces/utils/IModifiablePerCollateral.sol';
-import {Generator} from '@script/testScripts/gov/Generator.s.sol';
+import {Generator} from '@script/gov/Generator.s.sol';
 import 'forge-std/StdJson.sol';
 
 contract GenerateModifyParametersPerCollateralProposal is Generator, JSONScript {
