@@ -67,17 +67,15 @@ function generateProposal() {
 
   getRpcAndPk $NETWORK
 
-  {
+
   CALLDATA=$(cast calldata "run(string)" $CAST_PATH)
-  node tasks/parseProposalPath.js $1
+
   COMMAND_PATH=$(node tasks/parseProposalPath.js $1)
 
   CALLDATA=$(cast calldata "run(string)" $CAST_PATH)
 
   simulate $COMMAND_PATH $CALLDATA $RPC_ENDPOINT $PRIVATE_KEY
-  } && {
-  node ./tasks/cleanInput.js $1
-  }
+
 }
 
 function delegate() {
@@ -119,9 +117,9 @@ function display_help() {
   echo " 5. If your proposal passes you can queue it to be executed."
   echo " 6. After enough time has passed you can execute it."
 
-  echo " $(tput smul)Usage:$(tput sgr0) yarn propose [option flag] [proposal Path]"
+  echo " $(tput smul)Usage:$(tput sgr0) yarn propose [command flag] [option flag] [proposal Path]"
   echo ""
-  echo " $(tput smul)Options:$(tput sgr0) "
+  echo " $(tput smul)Commands:$(tput sgr0) "
   echo " -h, --help                        Print help"
   echo " -g, --generate                    Generate your proposal from the simple input json             |  example: propose -g gov-input/anvil/new-ModifyParameters.json"
   echo " -d, --delegate                    Delegate your votes. uses gov-output path                     |  example: propose -d gov-output/anvil/38642346-modifyParameters.json"
@@ -129,6 +127,10 @@ function display_help() {
   echo " -v, --vote                        Vote for your submitted proposal                              |  example: propose -v gov-output/anvil/38642346-modifyParameters.json"
   echo " -q, --queue                       Queue your passed proposal                                    |  example: propose -q gov-output/anvil/38642346-modifyParameters.json"
   echo " -x, --execute                     Execute your queued proposal                                  |  example: propose -x gov-output/anvil/38642346-modifyParameters.json"
+  echo ""
+  echo " $(tput smul)Options:$(tput sgr0) "
+  echo ""
+  echo " -a, --auto              Add to the -g flag in order to automatically insert available addresses | example: propose -g -a gov-input/anvil/new-ModifyParameters.json"
   echo ""
   echo " $(tput smul)Anvil only commands:$(tput sgr0) "
   echo " -r, --rpc-call                    Make an rpc call make sure to add any necessary arguments     |  example: propose -r anvil_mine 2"
@@ -216,19 +218,18 @@ function findAndAddAddresses(){
   node ./tasks/findContractAddress.js $1
 }
 
+function cleanInputs(){
+  node ./tasks/cleanInput.js $1
+
+}
+
 while :; do
   case "$1" in
   "")
     display_help
     ;;
-  -h | --help)
+  -h | -\? | --help)
     display_help
-    ;;
-
-  -a | --add-options)
-    # do something here call function
-    # and write it in your help function display_help()
-    shift 2
     ;;
   -r | --rpc-call)
     checkPath $2
@@ -256,9 +257,15 @@ while :; do
     exit 0
     ;;
   -g | --generate)
+    if [[ $2 == "--auto" || $2 == "-a" ]]; then
+    checkPath $3
+    findAndAddAddresses $3
+    generateProposal $3
+    cleanInputs $3
+    else
     checkPath $2
-    findAndAddAddresses $2
     generateProposal $2
+    fi
     exit 0
     ;;
   -x | --execute)

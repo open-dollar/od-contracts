@@ -80,7 +80,10 @@ The input for the proposal is a json file in the "gov-inputs/[network]" folder. 
 
 The input Json must have a correct "network" and "chainid" for the network you would like to make the proposal on.
 
-Contract addresses with the "_Address" suffix will be automatically added by the generation script. You can leave these empty.
+Contract addresses with the "_Address" suffix can be automatically added by the generation script with the `--auto` flag.  for example:
+```
+yarn propose -g --auto /gov-input/anvil/new-AddCollateral.json
+```
 
 The output is always a JSON file which includes at least the following `proposalParams`:
 
@@ -105,7 +108,8 @@ The current list of governance operations that can be proposed:
 - ERC20 Transfer: transfer erc20 tokens from a target contract.
 - Update Delay: Update the time delay on the timelock controller contract.
 
-#### Steps for submitting a proposal
+##### Steps for submitting a proposal
+
 1. Fill in necessarry data in the input Json template.
 2. Generate the Proposal with `yarn propose -g /gov-input/new-Proposal.json`
 3. Push your changes up to github so someone else can re-generate the proposal with the same params in order to verify.
@@ -143,11 +147,11 @@ The current list of governance operations that can be proposed:
 
 This script proposes adding a new collateral to the system (deploys new contracts via the collateral join, collateral auction house factories and it adds the correct authorizations to the needed contracts).
 
-##### Update Time Delay
+##### Modify Parameters
 
-[`ProposeUpdateTimeDelay.s.sol`](script/testScripts/gov/UpdateTimeDelayAction/ProposeUpdateTimeDelay.s.sol)
+[`new-ModifyParameters.json`](gov-input/anvil/new-ModifyParameters.json)
 
-**Required env vars:**
+**Required JSON vars:**
 
 - `GOV_EXECUTOR_PK`: private key of the governance executor
 - `GOVERNANCE_ADDRESS`: address of OD Governance

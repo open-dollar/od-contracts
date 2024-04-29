@@ -11,9 +11,9 @@ let modifiedJson = currentJson;
 
 contractNames.forEach((e) => { modifiedJson[e] = "" });
 
-fs.writeFile(basePath, JSON.stringify(modifiedJson, null, 4), (err) => {
-  if (err) {
-    console.error(err);
-    return;
-  }
-});
+fs.writeFile(basePath, JSON.stringify(modifiedJson, 4), (err) => {
+    if (err) {
+      console.error(err);
+      return;
+    }
+  });
