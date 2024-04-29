@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.20;
 
-import {JSONScript} from '@script/testScripts/gov/helpers/JSONScript.s.sol';
+import {JSONScript} from '@script/gov/helpers/JSONScript.s.sol';
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
-import {Generator} from '@script/testScripts/gov/Generator.s.sol';
+import {Generator} from '@script/gov/Generator.s.sol';
 import {Strings} from '@openzeppelin/utils/Strings.sol';
 import 'forge-std/StdJson.sol';
 
@@ -18,7 +18,7 @@ interface NitroPool {
 /// @notice Script to propose adding rewards to NitroPool via ODGovernance
 /// @dev This script is used to propose adding rewards to NitroPool, we first approve ERC20 to NitroPool and then call addRewards
 /// @dev The script will output a JSON file with the proposal data to be used by the QueueProposal and ExecuteProposal scripts
-/// @dev In the root, run: export FOUNDRY_PROFILE=governance && forge script --rpc-url <RPC_URL> script/testScripts/gov/AddRewardsToNitroPool/ProposeAddRewardsToNitroPool.s.sol
+/// @dev In the root, run: export FOUNDRY_PROFILE=governance && forge script --rpc-url <RPC_URL> script/gov/AddRewardsToNitroPool/ProposeAddRewardsToNitroPool.s.sol
 contract GenerateAddNitroRewardsProposal is Generator, JSONScript {
   using stdJson for string;
 

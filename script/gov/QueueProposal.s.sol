@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.20;
 
-import {JSONScript} from '@script/testScripts/gov/helpers/JSONScript.s.sol';
+import {JSONScript} from '@script/gov/helpers/JSONScript.s.sol';
 import {IGovernor} from '@openzeppelin/governance/IGovernor.sol';
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
-import {ForkManagement} from '@script/testScripts/gov/helpers/ForkManagement.s.sol';
+import {ForkManagement} from '@script/gov/helpers/ForkManagement.s.sol';
 import 'forge-std/Script.sol';
 
 /// @title QueueProposal Script

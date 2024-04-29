@@ -90,7 +90,7 @@ const proposalType =
   currentJson.proposalType[0].toUpperCase() + currentJson.proposalType.slice(1);
 
 // output desired path.
-let desiredPath = `script/testScripts/gov/Generate/Generate${proposalType}Proposal.s.sol:Generate${proposalType}Proposal`;
+let desiredPath = `script/gov/Generate/Generate${proposalType}Proposal.s.sol:Generate${proposalType}Proposal`;
 
 console.log(desiredPath);
 return;
