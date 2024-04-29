@@ -85,7 +85,8 @@ All JSON inputs have these required fields:
 - `ODGovernor_Address`: the address of the OD_Governor.  if you don't want to enter this manually use the `--auto` flag.
 - `description`:  a description of the proposal being made.
 
-Contract addresses with the "_Address" suffix can be automatically added by the generation script with the `--auto` flag.  
+Contract addresses with the "_Address" suffix can be automatically added by the generation script with the `--auto` flag. 
+
 For example:
 ```
 yarn propose -g --auto /gov-input/anvil/new-AddCollateral.json
@@ -137,9 +138,6 @@ If you want to use the `--delegate` flag to delegate your tokens, you must add t
 
 **Required json fields**
 
-- chainid: must be the correct id for the chain you wish to propose on
-- network: the name of the network (e.g. mainnet, sepolia, anvil)
-- description: the description of the proposal.
 - newCollateralAddress: the token address of the proposed collateral to be added.
 - newCollateralType: the symbol of the collateral token e.g. ARB
 - SAFEEngineCollateralParams:
@@ -186,13 +184,14 @@ To update the PID controller you simply make a ModifyParameters proposal with al
 You can propose multiple transfers in the same proposal by adding multiple transfer objects to the `objectArray`
 
 **Required json vars:**
-- `erc20Token`: the address of the token to be transfered
-- `transferTo`: the address of the token recipient
-- `amount`: the amount to be transfered in wei.
+- `objectArray`: each object in the objectArray is a proposed transfer.
+    - `erc20Token`: the address of the token to be transfered
+    - `transferTo`: the address of the token recipient
+    - `amount`: the amount to be transfered in wei.
 
 #### Generating A governance proposal
 
-Generate your governance proposal with:
+Once you have filled out all the required fields in the input json you can generate your governance proposal with:
 ```
  yarn propose -g --auto /gov-input/new-ProposalType.json
  ```
