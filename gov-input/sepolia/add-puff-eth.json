@@ -1,0 +1,38 @@
+{
+    "chainid": "421614",
+    "network": "sepolia",
+    "newCollateralAddress": "",
+    "newCollateralType": "PUFETH",
+    "proposalType": "AddCollateral",
+    "description": "Add puffer eth to collateral options",
+    "ProtocolToken_Address": "",
+    "ODGovernor_Address": "",
+    "SAFEEngine_Address": "",
+    "OracleRelayer_Address": "",
+    "LiquidationEngine_Address": "",
+    "TaxCollector_Address": "",
+    "GlobalSettlement_Address": "",
+    "SAFEEngineCollateralParams": {
+        "collateralDebtCeiling": "10000000000000000000000000000000000000000000000000000",
+        "collateralDebtFloor": "200000000000000000000000000000000000000000000000"
+    },
+    "TaxCollectorCollateralParams": {
+        "stabilityFee": "1000000000550051944812439051"
+    },
+    "LiquidationEngineCollateralParams": {
+        "newCAHChild": "",
+        "liquidationPenalty": "1050000000000000000",
+        "liquidationQuantity": "100000000000000000000000000000000000000000000000000"
+    },
+    "OracleRelayerCollateralParams": {
+        "delayedOracle": "",
+        "safetyCRatio": "1250000000000000000000000000",
+        "liquidationCRatio": "1200000000000000000000000000"
+    },
+    "CollateralAuctionHouseParams": {
+        "maximumDiscount": "900000000000000000",
+        "minimumBid": "100000000000000000000",
+        "minimumDiscount": "1000000000000000000",
+        "perSecondDiscountUpdateRate": "999985752120000000000000000"
+    }
+}
