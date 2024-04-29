@@ -3,7 +3,8 @@
   "description": "Modify globalDebtCeiling round 2",
   "network": "sepolia",
   "proposalType": "ModifyParameters",
-  "odGovernor": "0x69ae232E574352232aB8678869eAA3BEBd885211",
+  "ODGovernor_Address": "",
+  "ProtocolToken_Address": "",
   "objectArray": [
     {
       "target": "0x2C3C51Eed16F6eAe6CF2607fFF5753dE6cc48Aa5",
