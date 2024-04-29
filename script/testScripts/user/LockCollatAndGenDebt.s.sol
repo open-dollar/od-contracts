@@ -16,15 +16,11 @@ contract LockCollAndGenDebt is TestScripts {
   function run() public {
     vm.startBroadcast(vm.envUint('ARB_SEPOLIA_PK'));
     MintableERC20(address(WETH_TOKEN)).mint(USER1, 1_000_000 ether);
-    console2.log('WETH BAL: ', WETH_TOKEN.balanceOf(USER1));
-    ISAFEEngine.SAFEEngineCollateralData memory _cData = safeEngine.cData(WSTETH);
-    console2.log(_cData.debtAmount);
-    console2.log(_cData.safetyPrice);
-    console2.log(_cData.liquidationPrice);
-    // address proxy = address(deployOrFind(USER1));
-    // WETH_TOKEN.approve(address(proxy), type(uint256).max);
 
-    // depositCollatAndGenDebt(WSTETH, SAFE, COLLATERAL, DEBT, proxy);
+    address proxy = address(deployOrFind(USER1));
+    WETH_TOKEN.approve(address(proxy), type(uint256).max);
+
+    depositCollatAndGenDebt(WSTETH, SAFE, COLLATERAL, DEBT, proxy);
     vm.stopBroadcast();
   }
 }
