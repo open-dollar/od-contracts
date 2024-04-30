@@ -42,7 +42,6 @@ contract GovernanceHelpers is Script, ForkManagement {
     _loadBaseData();
 
     vm.startBroadcast(_privateKey);
-    _Vote();
   }
 
   function delegateTokens(string memory _filePath) public {
@@ -57,7 +56,14 @@ contract GovernanceHelpers is Script, ForkManagement {
     console2.log('Current vote weight: ', voteWeight);
   }
 
-  function _Vote() internal {
+  function vote(string memory _filePath) public {
+    _loadJson(_filePath);
+    _checkNetworkParams();
+    _loadPrivateKeys();
+    _loadBaseData();
+
+    vm.startBroadcast(_privateKey);
+
     console2.log('Voting Delay:', gov.votingDelay());
     console2.log('Voting Period:', gov.votingPeriod());
     console2.log('Voting weight: ', IVotes(address(protocolToken)).getVotes(proposer));
