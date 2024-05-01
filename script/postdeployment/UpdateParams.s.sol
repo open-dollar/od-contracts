@@ -109,7 +109,7 @@ contract AddNFVAuthorizationViaTimelock is Base {
 
     bool isDeployerAuthorized = vault721.authorizedAccounts(_deployer);
     console2.log(isDeployerAuthorized);
-    assert(isDeployerAuthorized);
+    assert(isDeployerAuthorized == true);
   }
 }
 
