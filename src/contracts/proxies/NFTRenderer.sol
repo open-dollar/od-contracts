@@ -20,7 +20,7 @@ contract NFTRenderer {
   using Math for uint256;
   using DateTime for uint256;
 
-  uint256 internal constant _RAY = 10 ** 27;
+  uint256 internal constant _RAY = 1e27;
 
   IVault721 public immutable vault721;
 
@@ -172,7 +172,7 @@ contract NFTRenderer {
       params.state = state;
     }
     ITaxCollector.TaxCollectorCollateralData memory taxData = _taxCollector.cData(cType);
-    params.stabilityFee = (taxData.nextStabilityFee / _RAY).toString();
+    params.stabilityFee = _formatNumberForSvgRay(taxData.nextStabilityFee);
 
     return params;
   }
@@ -264,7 +264,7 @@ contract NFTRenderer {
     string memory debtDetail;
     if (ratio != 0) {
       debtDetail = string.concat(
-        '<text fill="#00587E" xml:space="preserve" font-weight="600"><tspan x="102" y="168.9">DEBT MINTED</tspan></text><text fill="#D0F1FF" xml:space="preserve" font-size="24"><tspan x="102" y="194">',
+        '<text fill="#00587E" xml:space="preserve" font-weight="600"><tspan x="102" y="168.9">DEBT</tspan></text><text fill="#D0F1FF" xml:space="preserve" font-size="24"><tspan x="102" y="194">',
         debt,
         ' OD',
         '</tspan></text><text fill="#00587E" xml:space="preserve" font-weight="600"><tspan x="102" y="229.9">COLLATERAL DEPOSITED</tspan></text><text fill="#D0F1FF" xml:space="preserve" font-size="24"><tspan x="102" y="255">',
@@ -374,6 +374,14 @@ contract NFTRenderer {
   function _formatNumberForSvg(uint256 num) internal pure returns (string memory) {
     (uint256 left, uint256 right) = _floatingPoint(num);
     return _parseNumberWithComma(left, right);
+  }
+
+  function _formatNumberForSvgRay(uint256 num) internal pure returns (string memory) {
+    uint256 left = num / _RAY;
+    uint256 expLeft = left * _RAY;
+    uint256 expRight = num - expLeft;
+    uint256 right = expRight / 1e25; // format to 4 decimal places
+    return _parseNumber(left, right);
   }
 
   /**
