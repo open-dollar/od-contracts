@@ -7,6 +7,7 @@ import {MainnetDeployment} from '@script/MainnetDeployment.s.sol';
 import {TimelockController} from '@openzeppelin/governance/TimelockController.sol';
 import {IPIDController} from '@interfaces/IPIDController.sol';
 import {ILiquidationEngine} from '@interfaces/ILiquidationEngine.sol';
+import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
 import 'forge-std/console2.sol';
 
@@ -18,6 +19,7 @@ import 'forge-std/console2.sol';
  */
 abstract contract Base is MainnetDeployment, Script {
   address internal constant _DEPLOYER = 0xF78dA2A37049627636546E0cFAaB2aD664950917;
+  address internal constant _NEW_NFV_RENDERER = address(0);
   uint256 internal constant _NEW_GAS_LIMIT = 3_000_000;
   int256 internal constant _NEW_PROPORTIONAL_GAIN = 3_160_000_000_000; // kp
   int256 internal constant _NEW_INTEGRAL_GAIN = 316_000; // ki
@@ -78,6 +80,55 @@ contract UpdateLiquidationEngineParams is Base {
     ILiquidationEngine.LiquidationEngineParams memory newParams = liquidationEngine.params();
     console2.log(newParams.saviourGasLimit);
     assert(newParams.saviourGasLimit == _NEW_GAS_LIMIT);
+  }
+}
+
+// BROADCAST
+// source .env && forge script AddNFVAuthorizationViaTimelock --skip-simulation --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
+
+// SIMULATE
+// source .env && forge script AddNFVAuthorizationViaTimelock --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC
+
+contract AddNFVAuthorizationViaTimelock is Base {
+  function run() public prankSwitch(_broadcast) {
+    address[] memory targets = new address[](1);
+    {
+      targets[0] = address(vault721);
+    }
+    uint256[] memory values = new uint256[](1);
+    {
+      values[0] = 0;
+    }
+    bytes[] memory calldatas = new bytes[](1);
+    {
+      calldatas[0] = abi.encodeWithSelector(Authorizable.addAuthorization.selector, _deployer);
+    }
+
+    timelockController.schedule(targets[0], values[0], calldatas[0], bytes32(0), bytes32(0), 0);
+    timelockController.execute(targets[0], values[0], calldatas[0], bytes32(0), bytes32(0));
+
+    bool isDeployerAuthorized = vault721.authorizedAccounts(_deployer);
+    console2.log(isDeployerAuthorized);
+    assert(isDeployerAuthorized);
+  }
+}
+
+// BROADCAST
+// source .env && forge script UpdateNFVRenderer --skip-simulation --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
+
+// SIMULATE
+// source .env && forge script UpdateNFVRenderer --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC
+
+contract UpdateNFVRenderer is Base {
+  function run() public prankSwitch(_broadcast) {
+    bytes memory data = abi.encode(_NEW_GAS_LIMIT);
+
+    console2.log(vault721.authorizedAccounts(_deployer));
+    console2.log(vault721.authorizedAccounts(address(timelockController)));
+
+    // vault721.modifyParameters('nftRenderer', data);
+
+    // assert(address(vault721.nftRenderer()) == _NEW_NFV_RENDERER);
   }
 }
 
