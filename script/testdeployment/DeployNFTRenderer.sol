@@ -7,12 +7,12 @@ import {SepoliaDeployment} from '@script/SepoliaDeployment.s.sol';
 import {NFTRenderer} from '@contracts/proxies/NFTRenderer.sol';
 
 // BROADCAST
-// source .env && forge script DeployNFTRenderer --skip-simulation --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
+// source .env && forge script DeployNFTRendererSepolia --skip-simulation --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
 
 // SIMULATE
-// source .env && forge script DeployNFTRenderer --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC
+// source .env && forge script DeployNFTRendererSepolia --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC
 
-contract DeployNFTRenderer is SepoliaDeployment, Script {
+contract DeployNFTRendererSepolia is SepoliaDeployment, Script {
   function run() public {
     vm.startBroadcast(vm.envUint('ARB_SEPOLIA_DEPLOYER_PK'));
     new NFTRenderer(address(vault721), address(oracleRelayer), address(taxCollector), address(collateralJoinFactory));

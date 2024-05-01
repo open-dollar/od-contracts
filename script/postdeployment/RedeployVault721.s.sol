@@ -17,6 +17,7 @@ import {WSTETH, RETH, ARB} from '@script/MainnetParams.s.sol';
 
 abstract contract Base is MainnetDeployment, Script, Test {
   IODCreate2Factory internal _create2 = IODCreate2Factory(MAINNET_CREATE2FACTORY);
+  address internal constant _DEPLOYER = 0xF78dA2A37049627636546E0cFAaB2aD664950917;
 
   uint256 internal _deployerPk;
   address internal _deployer;
@@ -57,8 +58,6 @@ contract VerifyVault721VanityAddr is Base {
 // source .env && forge script RedeployVault721 --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC
 
 contract RedeployVault721 is Base {
-  address internal constant _DEPLOYER = 0xF78dA2A37049627636546E0cFAaB2aD664950917;
-
   function run() public {
     bool _broadcast;
     if (_deployer == _DEPLOYER) _broadcast = true;
@@ -95,8 +94,6 @@ contract RedeployVault721 is Base {
 // SIMULATE
 // source .env && forge script UpdateSafeManager --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC
 contract UpdateSafeManager is Base {
-  address internal constant _DEPLOYER = 0xF78dA2A37049627636546E0cFAaB2aD664950917;
-
   function run() public {
     bool _broadcast;
     if (_deployer == _DEPLOYER) _broadcast = true;
@@ -121,8 +118,6 @@ contract UpdateSafeManager is Base {
 // SIMULATE
 // source .env && forge script UpdateOracles --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC
 contract UpdateOracles is Base {
-  address internal constant _DEPLOYER = 0xF78dA2A37049627636546E0cFAaB2aD664950917;
-
   function run() public {
     bool _broadcast;
     if (_deployer == _DEPLOYER) _broadcast = true;
@@ -169,8 +164,6 @@ contract UpdateOracles is Base {
 // SIMULATE
 // source .env && forge script UpdateStabilityFee --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC
 contract UpdateStabilityFee is Base {
-  address internal constant _DEPLOYER = 0xF78dA2A37049627636546E0cFAaB2aD664950917;
-
   function run() public {
     bool _broadcast;
     if (_deployer == _DEPLOYER) _broadcast = true;
@@ -180,6 +173,33 @@ contract UpdateStabilityFee is Base {
 
     // uint256 constant PLUS_5_PERCENT_PER_YEAR = 1_000_000_001_547_125_957_863_212_448;
     taxCollector.modifyParameters(ARB, 'stabilityFee', abi.encode(1_000_000_001_547_125_957_863_212_448));
+
+    if (_broadcast) vm.stopBroadcast();
+    else vm.stopPrank();
+  }
+}
+
+// BROADCAST
+// source .env && forge script DeployNFTRendererMainnet --skip-simulation --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
+
+// SIMULATE
+// source .env && forge script DeployNFTRendererMainnet --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC
+
+contract DeployNFTRendererMainnet is Base {
+  function run() public {
+    bool _broadcast;
+    if (_deployer == _DEPLOYER) _broadcast = true;
+
+    if (_broadcast) vm.startBroadcast(_deployerPk);
+    NFTRenderer nftRenderer =
+      new NFTRenderer(address(vault721), address(oracleRelayer), address(taxCollector), address(collateralJoinFactory));
+
+    nftRenderer.updateStabilityFee(RETH, '1.75');
+    nftRenderer.updateStabilityFee(WSTETH, '1.85');
+    nftRenderer.updateStabilityFee(ARB, '5');
+
+    nftRenderer.addAuthorization(address(timelockController));
+    nftRenderer.removeAuthorization(_deployer);
 
     if (_broadcast) vm.stopBroadcast();
     else vm.stopPrank();

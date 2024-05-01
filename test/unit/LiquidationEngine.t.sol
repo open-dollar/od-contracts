@@ -19,6 +19,17 @@ import {StdStorage, stdStorage} from 'forge-std/StdStorage.sol';
 import {Math, MAX_RAD, RAY, WAD} from '@libraries/Math.sol';
 import {Assertions} from '@libraries/Assertions.sol';
 
+// Mock that will burn all gas
+contract MockFatSaviour is ISAFESaviour {
+  event Log(string);
+
+  function saveSAFE(address, bytes32, address) external returns (bool, uint256, uint256) {
+    emit Log('FatSaviour called');
+    while (true) {} // this loop will consume all available gas
+    return (true, 0, 0);
+  }
+}
+
 abstract contract Base is ODTest {
   using stdStorage for StdStorage;
 
@@ -44,7 +55,7 @@ abstract contract Base is ODTest {
 
   ILiquidationEngine.LiquidationEngineParams liquidationEngineParams = ILiquidationEngine.LiquidationEngineParams({
     onAuctionSystemCoinLimit: type(uint256).max,
-    saviourGasLimit: 10_000_000
+    saviourGasLimit: 3_000_000
   });
 
   function setUp() public virtual {
@@ -743,6 +754,7 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
   event UpdateCurrentOnAuctionSystemCoins(uint256 _currentOnAuctionSystemCoins);
   event SaveSAFE(bytes32 indexed _cType, address indexed _safe, uint256 _collateralAddedOrDebtRepaid);
   event FailedSAFESave(bytes _failReason);
+  event Log(string _msg);
 
   struct Liquidation {
     uint256 accumulatedRate;
@@ -1349,6 +1361,19 @@ contract Unit_LiquidationEngine_LiquidateSafe is Base {
       auctionId
     );
 
+    liquidationEngine.liquidateSAFE(collateralType, safe);
+  }
+
+  function test_Emit_Liquidate_withRougeSaviour(Liquidation memory _liquidation)
+    public
+    happyPathFullLiquidation(_liquidation)
+  {
+    MockFatSaviour _testSaveSaviour = new MockFatSaviour();
+    _mockChosenSafeSaviour(collateralType, safe, address(_testSaveSaviour));
+    _mockSafeSaviours(address(_testSaveSaviour), 1);
+    vm.prank(user);
+    vm.expectEmit();
+    emit Log('FatSaviour called');
     liquidationEngine.liquidateSAFE(collateralType, safe);
   }
 
