@@ -156,7 +156,7 @@ contract UpdateLiquidationJobReward is Base {
 
 contract UpdateTimelockMinDelay is Base {
   function run() public prankSwitch(_broadcast) {
-    uint256 _newDelay = 3600;
+    uint256 _newDelay = 86_400;
 
     address[] memory targets = new address[](1);
     {
@@ -171,8 +171,10 @@ contract UpdateTimelockMinDelay is Base {
       calldatas[0] = abi.encodeWithSelector(TimelockController.updateDelay.selector, _newDelay);
     }
 
-    timelockController.schedule(targets[0], values[0], calldatas[0], bytes32(0), bytes32(0), 0);
-    timelockController.execute(targets[0], values[0], calldatas[0], bytes32(0), bytes32(0));
+    bytes32 salt = bytes32(abi.encodePacked('1 Day timelock delay'));
+
+    timelockController.schedule(targets[0], values[0], calldatas[0], bytes32(0), salt, 0);
+    timelockController.execute(targets[0], values[0], calldatas[0], bytes32(0), salt);
 
     uint256 newMinDelay = timelockController.getMinDelay();
     console2.log(newMinDelay);
