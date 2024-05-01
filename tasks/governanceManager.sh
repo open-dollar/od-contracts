@@ -86,13 +86,13 @@ function delegate() {
 
   CALLDATA=$(cast calldata "delegateTokens(string)" $CAST_PATH)
 
-  simulate "GovernanceHelpers" $CALLDATA $NETWORK $PRIVATE_KEY
+  simulate "GovernanceHelpers" $CALLDATA $RPC_ENDPOINT $PRIVATE_KEY
   delimitier
   echo "DELEGATING"
   read -p "Please verify the data and confirm that you want to delegate your tokens (y/n): " CONFIRMATION
   if [[ $CONFIRMATION == "y" || $CONFIRMATION == "Y" ]]; then
     echo "Delegating your tokens..."
-    broadcast "GovernanceHelpers" $CALLDATA $NETWORK $PRIVATE_KEY
+    broadcast "GovernanceHelpers" $CALLDATA $RPC_ENDPOINT $PRIVATE_KEY
 
   fi
 }
