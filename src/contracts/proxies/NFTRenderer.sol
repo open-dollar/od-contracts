@@ -380,7 +380,7 @@ contract NFTRenderer {
     uint256 left = num / _RAY;
     uint256 expLeft = left * _RAY;
     uint256 expRight = num - expLeft;
-    uint256 right = expRight / 1e25; // format to 4 decimal places
+    uint256 right = expRight / 1e25; // format to 2 decimal places
     return _parseNumber(left, right);
   }
 
