@@ -55,7 +55,7 @@ abstract contract Base is ODTest {
 
   ILiquidationEngine.LiquidationEngineParams liquidationEngineParams = ILiquidationEngine.LiquidationEngineParams({
     onAuctionSystemCoinLimit: type(uint256).max,
-    saviourGasLimit: 10_000_000
+    saviourGasLimit: 3_000_000
   });
 
   function setUp() public virtual {
