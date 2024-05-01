@@ -14,8 +14,9 @@ import {ITaxCollector} from '@interfaces/ITaxCollector.sol';
 import {ICollateralJoinFactory} from '@interfaces/factories/ICollateralJoinFactory.sol';
 import {ICollateralJoin} from '@interfaces/utils/ICollateralJoin.sol';
 import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
+import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
-contract NFTRenderer {
+contract NFTRenderer is Authorizable {
   using Strings for uint256;
   using Math for uint256;
   using DateTime for uint256;
@@ -31,11 +32,18 @@ contract NFTRenderer {
   ITaxCollector internal _taxCollector;
   ICollateralJoinFactory internal _collateralJoinFactory;
 
+  mapping(bytes32 cType => string stabilityFee) public stabilityFeesPerYear;
+
   event ImplementationSet(
     address safeManager, address safeEngine, address oracleRelayer, address taxCollector, address collateralJoinFactory
   );
 
-  constructor(address _vault721, address oracleRelayer, address taxCollector, address collateralJoinFactory) {
+  constructor(
+    address _vault721,
+    address oracleRelayer,
+    address taxCollector,
+    address collateralJoinFactory
+  ) Authorizable(msg.sender) {
     vault721 = IVault721(_vault721);
     vault721.initializeRenderer();
     _safeManager = IODSafeManager(vault721.safeManager());
@@ -55,6 +63,7 @@ contract NFTRenderer {
     string debtSvg;
     string vaultId;
     string stabilityFee;
+    string stabilityFeePerYear;
     string symbol;
     string risk;
     string color;
@@ -91,6 +100,13 @@ contract NFTRenderer {
   }
 
   /**
+   * @dev update stabilityFeesPerYear mapping
+   */
+  function updateStabilityFee(bytes32 _cType, string memory _stabilityFee) external isAuthorized {
+    stabilityFeesPerYear[_cType] = _stabilityFee;
+  }
+
+  /**
    * @dev render json object with NFT description and image
    * @notice svg needs to be broken into separate functions to reduce call stack for compilation
    */
@@ -108,7 +124,7 @@ contract NFTRenderer {
           string.concat(
             _renderVaultInfo(params.vaultId, params.color),
             _renderCollatAndDebt(
-              ratio, params.stabilityFee, params.debtSvg, params.collateralSvg, params.symbol, params.lastUpdate
+              ratio, params.stabilityFeePerYear, params.debtSvg, params.collateralSvg, params.symbol, params.lastUpdate
             ),
             _renderRisk(params.state, ratio, params.stroke, params.risk),
             _renderBackground(params.color)
@@ -171,7 +187,8 @@ contract NFTRenderer {
       params.state = state;
     }
     ITaxCollector.TaxCollectorCollateralData memory taxData = _taxCollector.cData(cType);
-    params.stabilityFee = _formatNumberForSvgRay(taxData.nextStabilityFee);
+    params.stabilityFee = taxData.nextStabilityFee.toString();
+    params.stabilityFeePerYear = stabilityFeesPerYear[cType];
 
     return params;
   }
@@ -262,7 +279,7 @@ contract NFTRenderer {
    */
   function _renderCollatAndDebt(
     uint256 ratio,
-    string memory stabilityFee,
+    string memory stabilityFeePerYear,
     string memory debt,
     string memory collateral,
     string memory symbol,
@@ -285,7 +302,7 @@ contract NFTRenderer {
         '<text fill="#63676F" xml:space="preserve" font-size="24"><tspan x="136" y="210">Zero Balance</tspan></text><text opacity=".3" transform="rotate(-90 326.5 -58.5)" fill="#fff" xml:space="preserve" font-size="10"><tspan x="-10.3" y="7.3">Updated ';
     }
     svg = string.concat(
-      stabilityFee,
+      stabilityFeePerYear,
       '%</tspan></text><text opacity=".3" transform="rotate(90 -66.5 101.5)" fill="#fff" xml:space="preserve" font-size="10"><tspan x=".5" y="7.3">opendollar.com</tspan></text>',
       debtDetail,
       lastUpdate
@@ -381,14 +398,6 @@ contract NFTRenderer {
   function _formatNumberForSvg(uint256 num) internal pure returns (string memory) {
     (uint256 left, uint256 right) = _floatingPoint(num);
     return _parseNumberWithComma(left, right);
-  }
-
-  function _formatNumberForSvgRay(uint256 num) internal pure returns (string memory) {
-    uint256 left = num / _RAY;
-    uint256 expLeft = left * _RAY;
-    uint256 expRight = num - expLeft;
-    uint256 right = expRight / 1e25; // format to 2 decimal places
-    return _parseNumber(left, right);
   }
 
   /**
