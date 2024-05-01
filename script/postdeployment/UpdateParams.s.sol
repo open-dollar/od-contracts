@@ -19,7 +19,7 @@ import 'forge-std/console2.sol';
  */
 abstract contract Base is MainnetDeployment, Script {
   address internal constant _DEPLOYER = 0xF78dA2A37049627636546E0cFAaB2aD664950917;
-  address internal constant _NEW_NFV_RENDERER = address(0);
+  address internal constant _NEW_NFV_RENDERER = 0x06988165b30825735B1BB9baCba43fb9e04551AF;
   uint256 internal constant _NEW_GAS_LIMIT = 3_000_000;
   int256 internal constant _NEW_PROPORTIONAL_GAIN = 3_160_000_000_000; // kp
   int256 internal constant _NEW_INTEGRAL_GAIN = 316_000; // ki
@@ -121,14 +121,13 @@ contract AddNFVAuthorizationViaTimelock is Base {
 
 contract UpdateNFVRenderer is Base {
   function run() public prankSwitch(_broadcast) {
-    bytes memory data = abi.encode(_NEW_GAS_LIMIT);
+    bytes memory data = abi.encode(_NEW_NFV_RENDERER);
 
-    console2.log(vault721.authorizedAccounts(_deployer));
-    console2.log(vault721.authorizedAccounts(address(timelockController)));
+    vault721.modifyParameters('nftRenderer', data);
 
-    // vault721.modifyParameters('nftRenderer', data);
+    vault721.removeAuthorization(MAINNET_CREATE2FACTORY);
 
-    // assert(address(vault721.nftRenderer()) == _NEW_NFV_RENDERER);
+    assert(address(vault721.nftRenderer()) == _NEW_NFV_RENDERER);
   }
 }
 
