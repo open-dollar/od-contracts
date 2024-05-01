@@ -253,7 +253,7 @@ contract NFTRenderer {
       color,
       ';}@keyframes progress {0% {stroke-dasharray: 0 1005;}} @keyframes liquidation {0% {  opacity: 80%;} 50% {  opacity: 20%;} 100 {  opacity: 80%;}}</style><g font-family="Inter, Verdana, sans-serif" style="white-space:pre" font-size="12"><path fill="#001828" d="M0 0H420V420H0z" /><path fill="url(#gradient)" d="M0 0H420V420H0z" /><path id="od-pattern-tile" opacity=".05" d="M49.7-40a145 145 0 1 0 0 290m0-290V8.2m0-48.4a145 145 0 1 1 0 290m0-241.6a96.7 96.7 0 1 0 0 193.3m0-193.3a96.7 96.7 0 1 1 0 193.3m0 0v48.3m0-96.6a48.3 48.3 0 0 0 0-96.7v96.7Zm0 0a48.3 48.3 0 0 1 0-96.7v96.7Z" stroke="#fff" /><use xlink:href="#od-pattern-tile" x="290" /><use xlink:href="#od-pattern-tile" y="290" /><use xlink:href="#od-pattern-tile" x="290" y="290" /><use xlink:href="#od-pattern-tile" x="193" y="145" /><text fill="#00587E" xml:space="preserve"><tspan x="24" y="40.7">VAULT ID</tspan></text><text fill="#1499DA" xml:space="preserve" font-size="22"><tspan x="24" y="65">',
       vaultId,
-      '</tspan></text><text fill="#00587E" xml:space="preserve"><tspan x="335.9" y="40.7">STABILITY</tspan><tspan x="335.9" y="54.7">FEE</tspan></text><text fill="#1499DA" xml:space="preserve" font-size="22"><tspan x="364" y="63.3">'
+      '</tspan></text><text fill="#00587E" xml:space="preserve"><tspan x="312" y="40.7">STABILITY FEE</tspan></text><text fill="#1499DA" xml:space="preserve" font-size="22" text-anchor="end"><tspan x="456.5" y="63.3">'
     );
   }
 
