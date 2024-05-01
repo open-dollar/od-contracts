@@ -132,18 +132,17 @@ contract NFTRenderer {
     {
       IVault721.NFVState memory nfvState = vault721.getNfvState(_safeId);
       cType = nfvState.cType;
+      address safeHandler = nfvState.safeHandler;
       params.lastBlockNumber = nfvState.lastBlockNumber.toString();
       params.lastBlockTimestamp = nfvState.lastBlockTimestamp.toString();
 
-      uint256 collateral = nfvState.collateral;
+      (uint256 collateral, uint256 debt) = _renderValue(cType, safeHandler);
       params.collateralJson = collateral.toString();
       params.collateralSvg = _formatNumberForSvg(collateral);
-
-      uint256 debt = nfvState.debt;
       params.debtJson = debt.toString();
       params.debtSvg = _formatNumberForSvg(debt);
 
-      params.tokenCollateral = _formatNumberForJson(_safeEngine.tokenCollateral(cType, nfvState.safeHandler));
+      params.tokenCollateral = _formatNumberForJson(_safeEngine.tokenCollateral(cType, safeHandler));
 
       IOracleRelayer.OracleRelayerCollateralParams memory oracleParams = _oracleRelayer.cParams(cType);
       IDelayedOracle oracle = oracleParams.oracle;
@@ -175,6 +174,14 @@ contract NFTRenderer {
     params.stabilityFee = _formatNumberForSvgRay(taxData.nextStabilityFee);
 
     return params;
+  }
+
+  /**
+   * @dev generated debt & locked collateral
+   */
+  function _renderValue(bytes32 _cType, address _safeHandler) internal view returns (uint256, uint256) {
+    ISAFEEngine.SAFE memory SafeEngineData = ISAFEEngine(_safeManager.safeEngine()).safes(_cType, _safeHandler);
+    return (SafeEngineData.lockedCollateral, SafeEngineData.generatedDebt);
   }
 
   /**
