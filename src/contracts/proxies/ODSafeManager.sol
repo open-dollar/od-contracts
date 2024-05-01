@@ -291,7 +291,7 @@ contract ODSafeManager is IODSafeManager, Authorizable, Modifiable {
   }
 
   /**
-   * @notice internal check to only update nfvState if the vault vaule decreases. eg. debt increases or collateral decreases.
+   * @notice internal check to only update nfvState if the vault value decreases. eg. debt increases or collateral decreases.
    */
   function _updateNfvState(uint256 _safe, int256 _deltaCollateral, int256 _deltaDebt) private {
     if (_deltaDebt > 0 || _deltaCollateral < 0) vault721.updateNfvState(_safe);
