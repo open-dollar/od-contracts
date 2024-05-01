@@ -5,6 +5,9 @@ import '@script/Registry.s.sol';
 import {Script} from 'forge-std/Script.sol';
 import {MainnetDeployment} from '@script/MainnetDeployment.s.sol';
 import {TimelockController} from '@openzeppelin/governance/TimelockController.sol';
+import {IPIDController} from '@interfaces/IPIDController.sol';
+import {ILiquidationEngine} from '@interfaces/ILiquidationEngine.sol';
+
 import 'forge-std/console2.sol';
 
 /**
@@ -15,7 +18,7 @@ import 'forge-std/console2.sol';
  */
 abstract contract Base is MainnetDeployment, Script {
   address internal constant _DEPLOYER = 0xF78dA2A37049627636546E0cFAaB2aD664950917;
-  uint256 internal constant _NEW_GAS_LIMIT = 10_000_000;
+  uint256 internal constant _NEW_GAS_LIMIT = 3_000_000;
   int256 internal constant _NEW_PROPORTIONAL_GAIN = 3_160_000_000_000; // kp
   int256 internal constant _NEW_INTEGRAL_GAIN = 316_000; // ki
 
@@ -51,6 +54,12 @@ contract UpdatePiParams is Base {
 
     pidController.modifyParameters('kp', kpData);
     pidController.modifyParameters('ki', kiData);
+
+    IPIDController.ControllerGains memory newControllerGains = pidController.controllerGains();
+    console2.log(newControllerGains.kp);
+    console2.log(newControllerGains.ki);
+    assert(newControllerGains.kp == _NEW_PROPORTIONAL_GAIN);
+    assert(newControllerGains.ki == _NEW_INTEGRAL_GAIN);
   }
 }
 
@@ -65,6 +74,10 @@ contract UpdateLiquidationEngineParams is Base {
     bytes memory data = abi.encode(_NEW_GAS_LIMIT);
 
     liquidationEngine.modifyParameters('saviourGasLimit', data);
+
+    ILiquidationEngine.LiquidationEngineParams memory newParams = liquidationEngine.params();
+    console2.log(newParams.saviourGasLimit);
+    assert(newParams.saviourGasLimit == _NEW_GAS_LIMIT);
   }
 }
 
