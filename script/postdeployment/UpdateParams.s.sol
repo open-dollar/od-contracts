@@ -132,6 +132,23 @@ contract UpdateNFVRenderer is Base {
 }
 
 // BROADCAST
+// source .env && forge script UpdateLiquidationJobReward --skip-simulation --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
+
+// SIMULATE
+// source .env && forge script UpdateLiquidationJobReward --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC
+
+contract UpdateLiquidationJobReward is Base {
+  function run() public prankSwitch(_broadcast) {
+    uint256 newReward = 1e18;
+    bytes memory data = abi.encode(newReward);
+
+    liquidationJob.modifyParameters('rewardAmount', data);
+
+    assert(liquidationJob.rewardAmount() == newReward);
+  }
+}
+
+// BROADCAST
 // source .env && forge script UpdateTimelockMinDelay --skip-simulation --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
 
 // SIMULATE
