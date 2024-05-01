@@ -15,7 +15,6 @@ import 'forge-std/console2.sol';
 // SIMULATE
 // source .env && forge script DeployMintableERC20Sepolia --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC
 
-
 contract DeployMintableERC20Sepolia is SepoliaDeployment, Script {
   function run() public {
     vm.startBroadcast(vm.envUint('ARB_SEPOLIA_DEPLOYER_PK'));
