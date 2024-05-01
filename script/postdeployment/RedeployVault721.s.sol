@@ -191,7 +191,15 @@ contract DeployNFTRendererMainnet is Base {
     if (_deployer == _DEPLOYER) _broadcast = true;
 
     if (_broadcast) vm.startBroadcast(_deployerPk);
-    new NFTRenderer(address(vault721), address(oracleRelayer), address(taxCollector), address(collateralJoinFactory));
+    NFTRenderer nftRenderer =
+      new NFTRenderer(address(vault721), address(oracleRelayer), address(taxCollector), address(collateralJoinFactory));
+
+    nftRenderer.updateStabilityFee(RETH, '1.75');
+    nftRenderer.updateStabilityFee(WSTETH, '1.85');
+    nftRenderer.updateStabilityFee(ARB, '5');
+
+    nftRenderer.addAuthorization(address(timelockController));
+    nftRenderer.removeAuthorization(_deployer);
 
     if (_broadcast) vm.stopBroadcast();
     else vm.stopPrank();
