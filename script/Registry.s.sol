@@ -92,7 +92,7 @@ uint256 constant MAINNET_INIT_VOTE_QUORUM = 2; // 20k ODG
 address constant MAINNET_TEST_DEPLOYER = 0xA0313248556DeA42fd17B345817Dd5DC5674c1E1;
 address constant MAINNET_DEPLOYER = 0xF78dA2A37049627636546E0cFAaB2aD664950917;
 address constant MAINNET_SAFE = 0x8516B2319b0541E0253b866557929FF7B76027ba; // set this before mainnet deployment
-uint256 constant MAINNET_MIN_DELAY = 3 days; // timelock for tlc_gov
+uint256 constant MAINNET_MIN_DELAY = 3 days; // timelock for tlcGov
 uint256 constant ORACLE_INTERVAL_PROD = 1 hours;
 
 // Create2 Factory

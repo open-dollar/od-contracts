@@ -93,7 +93,7 @@ abstract contract CommonDeploymentTest is ODTest, Deploy {
   }
 
   function test_Grant_Auth() public {
-    _test_Authorizations(tlc_gov, true);
+    _test_Authorizations(tlcGov, true);
 
     if (delegate != address(0)) {
       _test_Authorizations(delegate, true);
@@ -154,7 +154,7 @@ abstract contract CommonDeploymentTest is ODTest, Deploy {
  *
  *     create2 = IODCreate2Factory(MAINNET_CREATE2FACTORY);
  *     protocolToken = IProtocolToken(MAINNET_PROTOCOL_TOKEN);
- *     tlc_gov = MAINNET_TIMELOCK_CONTROLLER;
+ *     tlcGov = MAINNET_TIMELOCK_CONTROLLER;
  *     timelockController = TimelockController(payable(MAINNET_TIMELOCK_CONTROLLER));
  *     odGovernor = ODGovernor(payable(MAINNET_OD_GOVERNOR));
  *
@@ -184,7 +184,7 @@ contract E2EDeploymentSepoliaTest is DeploySepolia, CommonDeploymentTest {
     create2 = IODCreate2Factory(TEST_CREATE2FACTORY);
     protocolToken = IProtocolToken(SEPOLIA_PROTOCOL_TOKEN);
 
-    tlc_gov = SEPOLIA_TIMELOCK_CONTROLLER;
+    tlcGov = SEPOLIA_TIMELOCK_CONTROLLER;
     timelockController = TimelockController(payable(SEPOLIA_TIMELOCK_CONTROLLER));
     odGovernor = ODGovernor(payable(SEPOLIA_OD_GOVERNOR));
 
@@ -214,11 +214,11 @@ contract E2EDeploymentSepoliaTest is DeploySepolia, CommonDeploymentTest {
 //     vm.selectFork(forkId);
 
 //     protocolToken = IProtocolToken(SEPOLIA_PROTOCOL_TOKEN);
-//     tlc_gov = SEPOLIA_TIMELOCK_CONTROLLER;
+//     tlcGov = SEPOLIA_TIMELOCK_CONTROLLER;
 //     timelockController = TimelockController(payable(SEPOLIA_TIMELOCK_CONTROLLER));
 //     odGovernor = ODGovernor(payable(SEPOLIA_OD_GOVERNOR));
 //     protocolToken = IProtocolToken(SEPOLIA_PROTOCOL_TOKEN);
-//     tlc_gov = SEPOLIA_TIMELOCK_CONTROLLER;
+//     tlcGov = SEPOLIA_TIMELOCK_CONTROLLER;
 //     timelockController = TimelockController(payable(SEPOLIA_TIMELOCK_CONTROLLER));
 //     odGovernor = ODGovernor(payable(SEPOLIA_OD_GOVERNOR));
 
@@ -242,6 +242,6 @@ contract E2EDeploymentSepoliaTest is DeploySepolia, CommonDeploymentTest {
 
 //   // TODO: pass
 //   function test_Delegated_OP() public {
-//     assertEq(ERC20Votes(GOERLI_GOV_TOKEN).delegates(address(collateralJoin[ARB])), tlc_gov);
+//     assertEq(ERC20Votes(GOERLI_GOV_TOKEN).delegates(address(collateralJoin[ARB])), tlcGov);
 //   }
 // }

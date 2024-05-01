@@ -19,7 +19,7 @@ abstract contract Common is Contracts, Params, Test {
   bool internal _isTest;
 
   function logGovernor() public runIfFork {
-    emit log_named_address('Governor', tlc_gov);
+    emit log_named_address('Governor', tlcGov);
   }
 
   function getChainId() public view returns (uint256) {
@@ -234,8 +234,8 @@ abstract contract Common is Contracts, Params, Test {
         address(protocolToken),
         timelockController
       );
-      // set tlc_gov
-      tlc_gov = address(timelockController);
+      // set tlcGov
+      tlcGov = address(timelockController);
 
       // set odGovernor as PROPOSER_ROLE and EXECUTOR_ROLE
       timelockController.grantRole(timelockController.PROPOSER_ROLE(), address(odGovernor));

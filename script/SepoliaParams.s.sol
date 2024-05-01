@@ -10,7 +10,7 @@ abstract contract SepoliaParams is Contracts, Params {
 
   function _getEnvironmentParams() internal override {
     // Setup delegated collateral joins
-    delegatee[ARB] = tlc_gov;
+    delegatee[ARB] = tlcGov;
 
     _safeEngineParams = ISAFEEngine.SAFEEngineParams({
       safeDebtCeiling: 10_000_000 * WAD, // WAD
@@ -39,7 +39,7 @@ abstract contract SepoliaParams is Contracts, Params {
       bidIncrease: 1.01e18, // +1 %
       bidDuration: 1 hours,
       totalAuctionLength: 1 days,
-      bidReceiver: tlc_gov,
+      bidReceiver: tlcGov,
       recyclingPercentage: 0.5e18 // 50% is burned
     });
 
