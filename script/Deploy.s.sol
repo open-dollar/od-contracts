@@ -132,25 +132,23 @@ contract DeployMainnet is MainnetParams, Deploy {
     IBaseOracle _rethUSDPriceFeed = IBaseOracle(MAINNET_DENOMINATED_RETH_USD_ORACLE);
     if (!isNetworkArbitrumOne()) {
       // to USD
-      _ethUSDPriceFeed =
+      IBaseOracle _ethUSDPriceFeed =
         chainlinkRelayerFactory.deployChainlinkRelayer(CHAINLINK_ETH_USD_FEED, ORACLE_INTERVAL_PROD);
 
-      _arbUSDPriceFeed =
-        chainlinkRelayerFactory.deployChainlinkRelayer(CHAINLINK_ARB_USD_FEED, ORACLE_INTERVAL_PROD);
+      _arbUSDPriceFeed = chainlinkRelayerFactory.deployChainlinkRelayer(CHAINLINK_ARB_USD_FEED, ORACLE_INTERVAL_PROD);
 
       // to ETH
-      _wstethETHPriceFeed =
+      IBaseOracle _wstethETHPriceFeed =
         chainlinkRelayerFactory.deployChainlinkRelayer(CHAINLINK_WSTETH_ETH_FEED, ORACLE_INTERVAL_PROD);
 
-      _rethETHPriceFeed =
+      IBaseOracle _rethETHPriceFeed =
         chainlinkRelayerFactory.deployChainlinkRelayer(CHAINLINK_RETH_ETH_FEED, ORACLE_INTERVAL_PROD);
 
       // denominations
       _wstethUSDPriceFeed =
         denominatedOracleFactory.deployDenominatedOracle(_wstethETHPriceFeed, _ethUSDPriceFeed, false);
 
-      _rethUSDPriceFeed =
-        denominatedOracleFactory.deployDenominatedOracle(_rethETHPriceFeed, _ethUSDPriceFeed, false);
+      _rethUSDPriceFeed = denominatedOracleFactory.deployDenominatedOracle(_rethETHPriceFeed, _ethUSDPriceFeed, false);
     }
 
     delayedOracle[ARB] = delayedOracleFactory.deployDelayedOracle(_arbUSDPriceFeed, ORACLE_INTERVAL_PROD);
