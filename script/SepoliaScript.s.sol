@@ -28,7 +28,7 @@ contract SepoliaScript is SepoliaDeployment, Common, Script {
     _getEnvironmentParams();
 
     address _governor = vm.addr(_governorPK);
-    require(_governor == governor || _governor == delegate);
+    require(_governor == tlc_gov || _governor == delegate);
     vm.startBroadcast(_governor);
 
     // Script goes here
@@ -47,7 +47,7 @@ contract SepoliaDelegate is SepoliaDeployment, Common, Script {
     _getEnvironmentParams();
 
     address _governor = vm.addr(_governorPK);
-    require(_governor == governor);
+    require(_governor == tlc_gov);
     vm.startBroadcast(_governor);
 
     _delegateAllTo(delegate);

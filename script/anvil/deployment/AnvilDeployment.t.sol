@@ -19,7 +19,7 @@ abstract contract AnvilDeployment is Contracts, SepoliaParams, AnvilContracts {
     collateralTypes.push(RETH);
 
     // --- utils ---
-    delegatee[ARB] = governor;
+    delegatee[ARB] = tlc_gov;
 
     // --- ERC20s ---
     collateral[ARB] = IERC20Metadata(MintableVoteERC20_Address);

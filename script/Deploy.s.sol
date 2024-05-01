@@ -91,9 +91,9 @@ abstract contract Deploy is Common, Script {
     setupPostEnvironment();
 
     if (!isNetworkAnvil()) {
-      _updateAuthorizationForAllContracts(deployer, governor);
+      _updateAuthorizationForAllContracts(deployer, tlc_gov);
     } else {
-      _delegateAllTo(governor);
+      _delegateAllTo(tlc_gov);
     }
 
     if (_isTest) {
@@ -115,7 +115,7 @@ contract DeployMainnet is MainnetParams, Deploy {
     // set create2 factory
     create2 = IODCreate2Factory(MAINNET_CREATE2FACTORY);
     protocolToken = IProtocolToken(MAINNET_PROTOCOL_TOKEN);
-    governor = MAINNET_TIMELOCK_CONTROLLER;
+    tlc_gov = MAINNET_TIMELOCK_CONTROLLER;
     timelockController = TimelockController(payable(MAINNET_TIMELOCK_CONTROLLER));
     odGovernor = ODGovernor(payable(MAINNET_OD_GOVERNOR));
 
@@ -185,7 +185,7 @@ contract DeploySepolia is SepoliaParams, Deploy {
     // set create2 factory
     create2 = IODCreate2Factory(TEST_CREATE2FACTORY);
     protocolToken = IProtocolToken(SEPOLIA_PROTOCOL_TOKEN);
-    governor = SEPOLIA_TIMELOCK_CONTROLLER;
+    tlc_gov = SEPOLIA_TIMELOCK_CONTROLLER;
     timelockController = TimelockController(payable(SEPOLIA_TIMELOCK_CONTROLLER));
     odGovernor = ODGovernor(payable(SEPOLIA_OD_GOVERNOR));
 

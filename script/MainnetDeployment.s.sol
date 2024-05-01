@@ -18,7 +18,7 @@ abstract contract MainnetDeployment is Contracts, MainnetParams, MainnetContract
     collateralTypes.push(RETH);
 
     // --- utils ---
-    delegatee[ARB] = governor;
+    delegatee[ARB] = tlc_gov;
 
     // --- ERC20s ---
     collateral[ARB] = IERC20Metadata(0x912CE59144191C1204E64559FE8253a0e49E6548);
@@ -79,7 +79,7 @@ abstract contract MainnetDeployment is Contracts, MainnetParams, MainnetContract
     liquidationJob = LiquidationJob(LiquidationJob_Address);
     oracleJob = OracleJob(OracleJob_Address);
 
-    // --- governor ---
+    // --- tlc_gov ---
     timelockController = TimelockController(payable(TimelockController_Address));
     odGovernor = ODGovernor(payable(ODGovernor_Address));
 
