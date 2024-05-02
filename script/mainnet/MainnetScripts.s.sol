@@ -98,7 +98,7 @@ contract MainnetScripts is MainnetDeployment, Script, Test {
     bytes memory payload = abi.encodeWithSelector(basicActions.openSAFE.selector, address(safeManager), _cType, _proxy);
     bytes memory _safeData = ODProxy(_proxy).execute(address(basicActions), payload);
     _safeId = abi.decode(_safeData, (uint256));
-    console2.log(IERC20(_reth_Address).balanceOf(USER1));
+    console2.log('RETH BALANCE USER!: ', IERC20(_reth_Address).balanceOf(USER1));
   }
 
   function depositCollatAndGenDebt(
