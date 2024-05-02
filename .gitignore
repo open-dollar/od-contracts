@@ -2,6 +2,7 @@
 yarn-error.log
 node_modules
 .DS_STORE
+.nvmrc
 
 # Foundry files
 cache
@@ -20,6 +21,7 @@ lcov.info
 # Avoid ignoring gitkeep
 !/**/.gitkeep
 .vscode/
+
 
 # Docs build files
 docs/book
