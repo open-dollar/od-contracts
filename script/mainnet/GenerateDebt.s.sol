@@ -9,6 +9,7 @@ import 'forge-std/console2.sol';
 // ANVIL
 // source .env && anvil --rpc-url $ARB_MAINNET_RPC
 // source .env && forge script TestGenerate --with-gas-price 2000000000 -vvvvv --rpc-url $ANVIL_RPC --unlocked
+
 contract TestGenerate is MainnetScripts {
   function run() public {
     vm.startBroadcast(USER1);
