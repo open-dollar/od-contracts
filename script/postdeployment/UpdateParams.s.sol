@@ -181,3 +181,41 @@ contract UpdateTimelockMinDelay is Base {
     assert(newMinDelay == _newDelay);
   }
 }
+
+// BROADCAST
+// source .env && forge script TimelockGrantRole --skip-simulation --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
+
+// SIMULATE
+// source .env && forge script TimelockGrantRole --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC
+
+contract TimelockGrantRole is Base {
+  function run() public {
+    vm.startPrank(0xf704735CE81165261156b41D33AB18a08803B86F);
+
+    address _newGovernor = address(0x1234);
+
+    address[] memory targets = new address[](1);
+    {
+      targets[0] = address(timelockController);
+    }
+    uint256[] memory values = new uint256[](1);
+    {
+      values[0] = 0;
+    }
+    bytes[] memory calldatas = new bytes[](1);
+    {
+      calldatas[0] =
+        abi.encodeWithSignature('grantRole(bytes32,address)', timelockController.PROPOSER_ROLE(), _newGovernor);
+    }
+
+    timelockController.schedule(targets[0], values[0], calldatas[0], bytes32(0), bytes32(0), 86_400);
+
+    vm.warp(block.timestamp + 86_401);
+
+    timelockController.execute(targets[0], values[0], calldatas[0], bytes32(0), bytes32(0));
+
+    bool newGovernorHasRole = timelockController.hasRole(timelockController.PROPOSER_ROLE(), _newGovernor);
+    assert(newGovernorHasRole == true);
+    vm.stopPrank();
+  }
+}
