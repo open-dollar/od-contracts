@@ -57,6 +57,7 @@ contract RevokeDeployer is MainnetDeployment, Script, Test {
     // tokens
     _updateAuth(systemCoin);
     _updateAuth(protocolToken);
+    _updateAuth(vault721);
 
     // pid controller
     _updateAuth(pidController);
