@@ -60,6 +60,8 @@ contract Base is ODTest {
     _data.oracleParams.oracle = IDelayedOracle(address(oracleRelayer));
     _data.nfvStateData.collateral = bound(_data.nfvStateData.collateral, 0, WAD * 1000);
     _data.nfvStateData.debt = bound(_data.nfvStateData.collateral, 0, WAD * 1000);
+    _data.safeEngineData.generatedDebt = _data.nfvStateData.debt;
+    _data.safeEngineData.lockedCollateral = _data.nfvStateData.collateral;
     vm.assume(_data.safeEngineCollateralData.accumulatedRate > 0);
     _data.safeEngineCollateralData.accumulatedRate =
       bound(_data.safeEngineCollateralData.accumulatedRate, 1, WAD * 1000);
@@ -105,6 +107,9 @@ contract Base is ODTest {
   function _mockRenderCalls(RenderParamsData memory _data) internal {
     vm.mockCall(
       address(vault721), abi.encodeWithSelector(IVault721.getNfvState.selector), abi.encode(_data.nfvStateData)
+    );
+    vm.mockCall(
+      address(safeEngine), abi.encodeWithSelector(ISAFEEngine.safes.selector), abi.encode(_data.safeEngineData)
     );
     vm.mockCall(
       address(safeEngine),
@@ -162,14 +167,14 @@ contract Unit_NFTRenderer_RenderParams is Base {
             _data.nfvStateData.debt.wmul(_data.safeEngineCollateralData.accumulatedRate)
           )
         ) / 1e7,
-        'incorrect ratio'
+        'incorrect ratio state 2'
       );
       assertEq(params.state, 2);
     } else if (_data.nfvStateData.debt == 0 && _data.nfvStateData.collateral != 0) {
-      assertEq(params.ratio, 200, 'incorrect ratio');
+      assertEq(params.ratio, 200, 'incorrect ratio state 1');
       assertEq(params.state, 1);
     } else {
-      assertEq(params.ratio, 0, 'incorrect ratio param');
+      assertEq(params.ratio, 0, 'incorrect ratio state 0');
       assertEq(params.state, 0);
     }
 
@@ -187,11 +192,13 @@ contract Unit_NFTRenderer_RenderParams is Base {
   function test_RenderParams_zeros(RenderParamsData memory _data) public noOverFlow(_data) {
     _data.nfvStateData.debt = 0;
     _data.nfvStateData.collateral = 0;
+    _data.safeEngineData.generatedDebt = _data.nfvStateData.debt;
+    _data.safeEngineData.lockedCollateral = _data.nfvStateData.collateral;
     _mockRenderCalls(_data);
 
     NFTRenderer.VaultParams memory params = nftRenderer.renderParams(_data.safeId);
 
-    assertEq(params.ratio, 0, 'incorrect ratio param');
+    assertTrue(params.ratio == 0, 'incorrect ratio param');
 
     if (bytes(params.collateralJson).length == 0) {
       fail();
