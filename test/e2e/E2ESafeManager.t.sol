@@ -15,8 +15,6 @@ abstract contract E2ESafeMangerSetUp is Base_CType, Common {
   address aliceProxy;
   address bobProxy;
 
-  address testSaviour;
-
   uint256 aliceSafeId;
   uint256 bobSafeId;
 
@@ -24,15 +22,13 @@ abstract contract E2ESafeMangerSetUp is Base_CType, Common {
 
   event TransferSAFEOwnership(address indexed _sender, uint256 indexed _safe, address _dst);
 
-  function setUp() public override {
+  function setUp() public virtual override{
     super.setUp();
     super.setupEnvironment();
     aliceProxy = deployOrFind(alice);
     aliceSafeId = safeManager.openSAFE(_cType(), aliceProxy);
     aliceData = safeManager.safeData(aliceSafeId);
-    testSaviour = address(new SafeSaviourForForTest());
-    vm.prank(address(timelockController));
-    liquidationEngine.connectSAFESaviour(testSaviour);
+
   }
 
   function deployOrFind(address owner) public returns (address payable) {
@@ -56,7 +52,7 @@ abstract contract E2ESafeMangerSetUp is Base_CType, Common {
   }
 }
 
-contract E2ESafeManagerTest is E2ESafeMangerSetUp {
+contract E2ESafeManagerTest_ViewFunctions is E2ESafeMangerSetUp {
   function test_GetSafes() public view {
     uint256[] memory safes = safeManager.getSafes(address(aliceProxy));
     assertEq(safes.length, 1);
@@ -109,7 +105,17 @@ contract E2ESafeManagerTest is E2ESafeMangerSetUp {
     assertEq(safeManager.getSafes(bobProxy).length, 1);
     assertEq(vault721.ownerOf(bobSafeId), bob);
   }
+}
 
+contract E2ESafeManagerTest_TransferOwnership is E2ESafeMangerSetUp {
+   address testSaviour;
+
+   function setUp() public override{
+    super.setUp();
+    testSaviour = address(new SafeSaviourForForTest());
+    vm.prank(address(timelockController));
+    liquidationEngine.connectSAFESaviour(testSaviour);
+   }
   function test_TransferSafeOwnership() public {
     bobProxy = deployOrFind(bob);
     //set safe savior to test savior clearing on transfer
@@ -131,6 +137,8 @@ contract E2ESafeManagerTest is E2ESafeMangerSetUp {
     assertEq(aliceData.nonce, 1);
     assertEq(safeManager.getSafes(aliceProxy).length, 0);
     assertEq(safeManager.getSafes(bobProxy).length, 1);
+    assertEq(safeManager.getSafes(aliceProxy, _cType()).length, 0);
+    assertEq(safeManager.getSafes(bobProxy, _cType()).length, 1);
     assertEq(aliceData.owner, bobProxy);
   }
 
@@ -161,3 +169,5 @@ contract E2ESafeManagerTest is E2ESafeMangerSetUp {
     vm.stopPrank();
   }
 }
+
+contract E2ESafeManagerTest_ModifySafeCollateralization is E2ESafeMangerSetUp {}
