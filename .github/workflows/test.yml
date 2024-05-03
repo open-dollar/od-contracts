@@ -37,6 +37,11 @@ jobs:
   forge:
     name: Run Unit and E2E Tests
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20.x]
+
     steps:
       - uses: actions/checkout@v3
         with:
@@ -46,6 +51,7 @@ jobs:
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: nightly
+          cache: true
 
       - name: Install forge dependencies
         run: forge install
@@ -53,8 +59,8 @@ jobs:
       - name: Install yarn dependencies
         run: yarn install --frozen-lockfile
 
-      - name: Precompile using 0.8.19 and via-ir=false
-        run: yarn build
+      - name: Build 
+        run: forge build
 
       - name: "Create env file"
         run: |
@@ -68,30 +74,3 @@ jobs:
       - name: Run tests
         shell: bash
         run: yarn test
-
-  # coverage:
-  #   name: Run Coverage Tests
-  #   runs-on: ubuntu-latest
-
-  #   strategy:
-  #     matrix:
-  #       node-version: [16.x]
-
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #     - name: Use Node.js
-  #       uses: actions/setup-node@v3
-  #       with:
-  #         node-version: ${{ matrix.node-version }}
-  #         cache: "yarn"
-  #     - name: Install Foundry
-  #       uses: foundry-rs/foundry-toolchain@v1
-  #       with:
-  #         version: nightly
-  #     - run: yarn install
-  #     - run: yarn build
-  #     - run: yarn coverage
-  #     - uses: codecov/codecov-action@v3
-  #       with:
-  #         files: ./coverage/lcov.info
-  #         flags: production
