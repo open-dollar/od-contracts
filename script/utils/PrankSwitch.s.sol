@@ -18,13 +18,15 @@ contract PrankSwitch is Script, Test {
     _deployer = vm.addr(_deployerPk);
   }
 
-  modifier prankSwitch(address _caller, address _account) {
-    bool _broadcast;
-    if (_caller == _account) _broadcast = true;
-    if (_broadcast) vm.startBroadcast(_deployerPk);
-    else vm.startPrank(_account);
-    _;
-    if (_broadcast) vm.stopBroadcast();
-    else vm.stopPrank();
+  modifier prankSwitch(address _account) {
+    if (_deployer == _account) {
+      vm.startBroadcast(_deployerPk);
+      _;
+      vm.stopBroadcast();
+    } else {
+      vm.startPrank(_account);
+      _;
+      vm.stopPrank();
+    }
   }
 }

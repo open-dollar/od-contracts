@@ -15,7 +15,7 @@ import {HardcodedOracle} from '@contracts/for-test/HardcodedOracle.sol';
 contract DeployStaticOracle is MainnetDeployment, PrankSwitch {
   address internal _initialSystemCoinOracle;
 
-  function run() public prankSwitch(_deployer, MAINNET_TIMELOCK_CONTROLLER) {
+  function run() public prankSwitch(MAINNET_TIMELOCK_CONTROLLER) {
     _initialSystemCoinOracle = address(new HardcodedOracle('OD / USD', 1e18));
     emit log_named_address('SystemCoinOracle Address', _initialSystemCoinOracle);
 

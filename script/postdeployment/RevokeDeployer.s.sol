@@ -29,7 +29,7 @@ contract RevokeDeployer is MainnetDeployment, PrankSwitch {
    *
    * @dev this script can only be run once by deployer
    */
-  function run() public prankSwitch(_deployer, MAINNET_TIMELOCK_CONTROLLER) {
+  function run() public prankSwitch(MAINNET_TIMELOCK_CONTROLLER) {
     // base contracts
     _updateAuth(safeEngine);
     _updateAuth(liquidationEngine);
