@@ -33,7 +33,7 @@ abstract contract MainnetParams is Contracts, Params {
       bidIncrease: 1.01e18, // +1 %
       bidDuration: 6 hours,
       totalAuctionLength: 1 days,
-      bidReceiver: governor,
+      bidReceiver: tlcGov,
       recyclingPercentage: 0.5e18 // 50% is burned
     });
 

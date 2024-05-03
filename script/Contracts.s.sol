@@ -97,7 +97,7 @@ abstract contract Contracts {
   // --- Helpers ---
   uint256 public chainId;
   address public deployer;
-  address public governor;
+  address public tlcGov;
   address public delegate;
   bytes32[] public collateralTypes;
   mapping(bytes32 => address) public delegatee;

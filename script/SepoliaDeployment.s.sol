@@ -19,7 +19,7 @@ abstract contract SepoliaDeployment is Contracts, SepoliaParams, SepoliaContract
     collateralTypes.push(RETH);
 
     // --- utils ---
-    delegatee[ARB] = governor;
+    delegatee[ARB] = tlcGov;
 
     // --- ERC20s ---
     collateral[ARB] = IERC20Metadata(address(MintableVoteERC20_ARB_Address));
