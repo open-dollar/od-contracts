@@ -22,13 +22,13 @@ function vote() {
   declare OUTPUT=($(node ./tasks/parseNetwork.js $1))
   NETWORK=${OUTPUT[0]}
   CAST_PATH=${OUTPUT[1]}
-  CALLDATA=$(cast calldata "run(string)" $CAST_PATH)
+  CALLDATA=$(cast calldata "vote(string)" $CAST_PATH)
 
   getRpcAndPk $NETWORK
 
   echo "Simulating... "
 
-  simulate "GovernanceHelpers" $CALLDATA $ANVIL_RPC $PRIVATE_KEY
+  simulate "GovernanceHelpers" $CALLDATA $RPC_ENDPOINT $PRIVATE_KEY
 
   delimitier
   echo "VOTING"
@@ -36,7 +36,7 @@ function vote() {
 
   if [[ $CONFIRMATION == "y" || $CONFIRMATION == "Y" ]]; then
     echo "Voting for proposal on $NETWORK..."
-    broadcast "GovernanceHelpers" $CALLDATA $ANVIL_RPC $PRIVATE_KEY
+    broadcast "GovernanceHelpers" $CALLDATA $RPC_ENDPOINT $PRIVATE_KEY
   fi
 }
 
@@ -86,13 +86,13 @@ function delegate() {
 
   CALLDATA=$(cast calldata "delegateTokens(string)" $CAST_PATH)
 
-  simulate "GovernanceHelpers" $CALLDATA $ANVIL_RPC $PRIVATE_KEY
+  simulate "GovernanceHelpers" $CALLDATA $RPC_ENDPOINT $PRIVATE_KEY
   delimitier
   echo "DELEGATING"
   read -p "Please verify the data and confirm that you want to delegate your tokens (y/n): " CONFIRMATION
   if [[ $CONFIRMATION == "y" || $CONFIRMATION == "Y" ]]; then
     echo "Delegating your tokens..."
-    broadcast "GovernanceHelpers" $CALLDATA $ANVIL_RPC $PRIVATE_KEY
+    broadcast "GovernanceHelpers" $CALLDATA $RPC_ENDPOINT $PRIVATE_KEY
 
   fi
 }

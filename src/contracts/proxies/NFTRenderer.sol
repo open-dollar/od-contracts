@@ -14,13 +14,14 @@ import {ITaxCollector} from '@interfaces/ITaxCollector.sol';
 import {ICollateralJoinFactory} from '@interfaces/factories/ICollateralJoinFactory.sol';
 import {ICollateralJoin} from '@interfaces/utils/ICollateralJoin.sol';
 import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
+import {Authorizable} from '@contracts/utils/Authorizable.sol';
 
-contract NFTRenderer {
+contract NFTRenderer is Authorizable {
   using Strings for uint256;
   using Math for uint256;
   using DateTime for uint256;
 
-  uint256 internal constant _RAY = 10 ** 27;
+  uint256 internal constant _RAY = 1e27;
 
   IVault721 public immutable vault721;
 
@@ -31,11 +32,18 @@ contract NFTRenderer {
   ITaxCollector internal _taxCollector;
   ICollateralJoinFactory internal _collateralJoinFactory;
 
+  mapping(bytes32 cType => string stabilityFee) public stabilityFeesPerYear;
+
   event ImplementationSet(
     address safeManager, address safeEngine, address oracleRelayer, address taxCollector, address collateralJoinFactory
   );
 
-  constructor(address _vault721, address oracleRelayer, address taxCollector, address collateralJoinFactory) {
+  constructor(
+    address _vault721,
+    address oracleRelayer,
+    address taxCollector,
+    address collateralJoinFactory
+  ) Authorizable(msg.sender) {
     vault721 = IVault721(_vault721);
     vault721.initializeRenderer();
     _safeManager = IODSafeManager(vault721.safeManager());
@@ -55,6 +63,7 @@ contract NFTRenderer {
     string debtSvg;
     string vaultId;
     string stabilityFee;
+    string stabilityFeePerYear;
     string symbol;
     string risk;
     string color;
@@ -91,6 +100,13 @@ contract NFTRenderer {
   }
 
   /**
+   * @dev update stabilityFeesPerYear mapping
+   */
+  function updateStabilityFee(bytes32 _cType, string memory _stabilityFee) external isAuthorized {
+    stabilityFeesPerYear[_cType] = _stabilityFee;
+  }
+
+  /**
    * @dev render json object with NFT description and image
    * @notice svg needs to be broken into separate functions to reduce call stack for compilation
    */
@@ -108,7 +124,7 @@ contract NFTRenderer {
           string.concat(
             _renderVaultInfo(params.vaultId, params.color),
             _renderCollatAndDebt(
-              ratio, params.stabilityFee, params.debtSvg, params.collateralSvg, params.symbol, params.lastUpdate
+              ratio, params.stabilityFeePerYear, params.debtSvg, params.collateralSvg, params.symbol, params.lastUpdate
             ),
             _renderRisk(params.state, ratio, params.stroke, params.risk),
             _renderBackground(params.color)
@@ -132,18 +148,17 @@ contract NFTRenderer {
     {
       IVault721.NFVState memory nfvState = vault721.getNfvState(_safeId);
       cType = nfvState.cType;
+      address safeHandler = nfvState.safeHandler;
       params.lastBlockNumber = nfvState.lastBlockNumber.toString();
       params.lastBlockTimestamp = nfvState.lastBlockTimestamp.toString();
 
-      uint256 collateral = nfvState.collateral;
+      (uint256 collateral, uint256 debt) = _renderValue(cType, safeHandler);
       params.collateralJson = collateral.toString();
       params.collateralSvg = _formatNumberForSvg(collateral);
-
-      uint256 debt = nfvState.debt;
       params.debtJson = debt.toString();
       params.debtSvg = _formatNumberForSvg(debt);
 
-      params.tokenCollateral = _formatNumberForJson(_safeEngine.tokenCollateral(cType, nfvState.safeHandler));
+      params.tokenCollateral = _formatNumberForJson(_safeEngine.tokenCollateral(cType, safeHandler));
 
       IOracleRelayer.OracleRelayerCollateralParams memory oracleParams = _oracleRelayer.cParams(cType);
       IDelayedOracle oracle = oracleParams.oracle;
@@ -172,9 +187,18 @@ contract NFTRenderer {
       params.state = state;
     }
     ITaxCollector.TaxCollectorCollateralData memory taxData = _taxCollector.cData(cType);
-    params.stabilityFee = (taxData.nextStabilityFee / _RAY).toString();
+    params.stabilityFee = taxData.nextStabilityFee.toString();
+    params.stabilityFeePerYear = stabilityFeesPerYear[cType];
 
     return params;
+  }
+
+  /**
+   * @dev generated debt & locked collateral
+   */
+  function _renderValue(bytes32 _cType, address _safeHandler) internal view returns (uint256, uint256) {
+    ISAFEEngine.SAFE memory SafeEngineData = ISAFEEngine(_safeManager.safeEngine()).safes(_cType, _safeHandler);
+    return (SafeEngineData.lockedCollateral, SafeEngineData.generatedDebt);
   }
 
   /**
@@ -246,7 +270,7 @@ contract NFTRenderer {
       color,
       ';}@keyframes progress {0% {stroke-dasharray: 0 1005;}} @keyframes liquidation {0% {  opacity: 80%;} 50% {  opacity: 20%;} 100 {  opacity: 80%;}}</style><g font-family="Inter, Verdana, sans-serif" style="white-space:pre" font-size="12"><path fill="#001828" d="M0 0H420V420H0z" /><path fill="url(#gradient)" d="M0 0H420V420H0z" /><path id="od-pattern-tile" opacity=".05" d="M49.7-40a145 145 0 1 0 0 290m0-290V8.2m0-48.4a145 145 0 1 1 0 290m0-241.6a96.7 96.7 0 1 0 0 193.3m0-193.3a96.7 96.7 0 1 1 0 193.3m0 0v48.3m0-96.6a48.3 48.3 0 0 0 0-96.7v96.7Zm0 0a48.3 48.3 0 0 1 0-96.7v96.7Z" stroke="#fff" /><use xlink:href="#od-pattern-tile" x="290" /><use xlink:href="#od-pattern-tile" y="290" /><use xlink:href="#od-pattern-tile" x="290" y="290" /><use xlink:href="#od-pattern-tile" x="193" y="145" /><text fill="#00587E" xml:space="preserve"><tspan x="24" y="40.7">VAULT ID</tspan></text><text fill="#1499DA" xml:space="preserve" font-size="22"><tspan x="24" y="65">',
       vaultId,
-      '</tspan></text><text fill="#00587E" xml:space="preserve"><tspan x="335.9" y="40.7">STABILITY</tspan><tspan x="335.9" y="54.7">FEE</tspan></text><text fill="#1499DA" xml:space="preserve" font-size="22"><tspan x="364" y="63.3">'
+      '</tspan></text><text fill="#00587E" xml:space="preserve"><tspan x="312" y="40.7">STABILITY FEE</tspan></text><text fill="#1499DA" xml:space="preserve" font-size="22"><tspan x="401.5" y="63.3" text-anchor="end">'
     );
   }
 
@@ -255,7 +279,7 @@ contract NFTRenderer {
    */
   function _renderCollatAndDebt(
     uint256 ratio,
-    string memory stabilityFee,
+    string memory stabilityFeePerYear,
     string memory debt,
     string memory collateral,
     string memory symbol,
@@ -264,10 +288,10 @@ contract NFTRenderer {
     string memory debtDetail;
     if (ratio != 0) {
       debtDetail = string.concat(
-        '<text fill="#00587E" xml:space="preserve" font-weight="600"><tspan x="102" y="168.9">DEBT MINTED</tspan></text><text fill="#D0F1FF" xml:space="preserve" font-size="24"><tspan x="102" y="194">',
+        '<text fill="#00587E" xml:space="preserve" font-weight="600"><tspan x="102" y="168.9">DEBT</tspan></text><text fill="#D0F1FF" xml:space="preserve" font-size="24"><tspan x="102" y="194">',
         debt,
         ' OD',
-        '</tspan></text><text fill="#00587E" xml:space="preserve" font-weight="600"><tspan x="102" y="229.9">COLLATERAL DEPOSITED</tspan></text><text fill="#D0F1FF" xml:space="preserve" font-size="24"><tspan x="102" y="255">',
+        '</tspan></text><text fill="#00587E" xml:space="preserve" font-weight="600"><tspan x="102" y="229.9">COLLATERAL</tspan></text><text fill="#D0F1FF" xml:space="preserve" font-size="24"><tspan x="102" y="255">',
         collateral,
         ' ',
         symbol,
@@ -278,7 +302,7 @@ contract NFTRenderer {
         '<text fill="#63676F" xml:space="preserve" font-size="24"><tspan x="136" y="210">Zero Balance</tspan></text><text opacity=".3" transform="rotate(-90 326.5 -58.5)" fill="#fff" xml:space="preserve" font-size="10"><tspan x="-10.3" y="7.3">Updated ';
     }
     svg = string.concat(
-      stabilityFee,
+      stabilityFeePerYear,
       '%</tspan></text><text opacity=".3" transform="rotate(90 -66.5 101.5)" fill="#fff" xml:space="preserve" font-size="10"><tspan x=".5" y="7.3">opendollar.com</tspan></text>',
       debtDetail,
       lastUpdate

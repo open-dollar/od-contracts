@@ -39,7 +39,7 @@ abstract contract MainnetParams is Contracts, Params {
 
     _liquidationEngineParams = ILiquidationEngine.LiquidationEngineParams({
       onAuctionSystemCoinLimit: 100_000 * RAD, // 10_000 COINs
-      saviourGasLimit: 10_000_000 // 10M gas
+      saviourGasLimit: 3_000_000 // 3M gas
     });
 
     _stabilityFeeTreasuryParams = IStabilityFeeTreasury.StabilityFeeTreasuryParams({

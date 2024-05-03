@@ -99,8 +99,7 @@ contract BasicActions is CommonActions, IBasicActions {
     _modifySAFECollateralization(_manager, _safeId, 0, deltaDebt, false);
 
     // Moves the COIN amount to user's address
-    // deltaDebt should always be positive, but we use SafeCast as an extra guard
-    _collectAndExitCoins(_manager, _coinJoin, _safeId, deltaDebt.toUint256());
+    _collectAndExitCoins(_manager, _coinJoin, _safeId, _deltaWad);
   }
 
   /**
@@ -170,8 +169,7 @@ contract BasicActions is CommonActions, IBasicActions {
     _modifySAFECollateralization(_manager, _safeId, _collateralAmount.toInt(), deltaDebt, false);
 
     // Exits and transfers COIN amount to the user's address
-    // deltaDebt should always be positive, but we use SafeCast as an extra guard
-    _collectAndExitCoins(_manager, _coinJoin, _safeId, deltaDebt.toUint256());
+    _collectAndExitCoins(_manager, _coinJoin, _safeId, _deltaWad);
   }
 
   /**
