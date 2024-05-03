@@ -11,6 +11,7 @@ contract PrankSwitch is Script, Test {
 
   /**
    * @notice can use `override` in setUp to change .env variable in inherited contract
+   * by default _deployerPk is set to ARB_MAINNET_DEPLOYER_PK
    */
   function setUp() public virtual {
     _deployerPk = vm.envUint('ARB_MAINNET_DEPLOYER_PK');
