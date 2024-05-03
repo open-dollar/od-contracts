@@ -265,7 +265,11 @@ Template: [`new-AddCollateral.json`](gov-input/anvil/new-AddCollateral.json)
     - delayedOracle: Usually a DelayedOracle that enforces delays to fresh price feeds.
     - safetyCRatio: RAY, CRatio used to compute the 'safePrice' - the price used when generating debt in SAFEEngine.
     - liquidationCRatio: RAY, CRatio used to compute the 'liquidationPrice' the price used when liquidating SAFEs.
-
+- CollateralAuctionHouseParams:
+    - maximumDiscount: WAD,  Maximum discount at which collateral is being sold
+    - minimumBid: WAD, Minimum acceptable bid
+    - minimumDiscount: WAD, Minimum discount at which collateral is being sold
+    - perSecondDiscountUpdateRate: RAY, Rate at which the discount will be updated in an auction.
 This script proposes adding a new collateral to the system (deploys new contracts via the collateral join, collateral auction house factories and it adds the correct authorizations to the needed contracts).
 
 ### Modify Parameters
