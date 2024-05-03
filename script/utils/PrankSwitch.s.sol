@@ -9,6 +9,9 @@ contract PrankSwitch is Script, Test {
   uint256 internal _deployerPk;
   address internal _deployer;
 
+  /**
+   * @notice can use `override` in setUp to change .env variable in inherited contract
+   */
   function setUp() public virtual {
     _deployerPk = vm.envUint('ARB_MAINNET_DEPLOYER_PK');
     _deployer = vm.addr(_deployerPk);
