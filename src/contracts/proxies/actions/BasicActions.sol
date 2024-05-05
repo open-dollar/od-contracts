@@ -225,9 +225,30 @@ contract BasicActions is CommonActions, IBasicActions {
     _modifySAFECollateralization(_manager, _safeId, _deltaCollateral, _deltaDebt, false);
   }
 
+  function modifySAFECollateralizationNonSafeHandler(
+    address _manager,
+    uint256 _safeId,
+    int256 _deltaCollateral,
+    int256 _deltaDebt
+  ) external delegateCall {
+    ODSafeManager(_manager).modifySAFECollateralization(_safeId, _deltaCollateral, _deltaDebt, true);
+  }
+
   /// @inheritdoc IBasicActions
   function transferCollateral(address _manager, uint256 _safeId, address _dst, uint256 _deltaWad) external delegateCall {
     _transferCollateral(_manager, _safeId, _dst, _deltaWad);
+  }
+
+  /// @inheritdoc IBasicActions
+  function transferCollateralWithCType(
+    address _manager,
+    bytes32 _cType,
+    uint256 _safeId,
+    address _dst,
+    uint256 _deltaWad
+  ) external delegateCall {
+    if (_deltaWad == 0) return;
+    ODSafeManager(_manager).transferCollateral(_cType, _safeId, _dst, _deltaWad);
   }
 
   /// @inheritdoc IBasicActions

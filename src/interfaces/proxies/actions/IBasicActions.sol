@@ -42,6 +42,21 @@ interface IBasicActions is ICommonActions {
    * @param  _wad Amount of collateral to transfer [wad]
    */
   function transferCollateral(address _manager, uint256 _safe, address _dst, uint256 _wad) external;
+
+  /**
+   * @notice Transfer wad amount of safe collateral from the safe address to a dst address. only to be used to correct a missallocation of collateral
+   * @param  _safe Id of the SAFE
+   * @param _cType the collateral type to be transfered
+   * @param  _dst Address of the dst address
+   * @param  _wad Amount of collateral to transfer [wad]
+   */
+  function transferCollateralWithCType(
+    address _manager,
+    bytes32 _cType,
+    uint256 _safe,
+    address _dst,
+    uint256 _wad
+  ) external;
   /**
    * @notice Transfer an amount of COIN from the safe address to a dst address [rad]
    * @param  _safe Id of the SAFE

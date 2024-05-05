@@ -90,6 +90,33 @@ abstract contract BasicActionsForE2ETests is Common {
     ODProxy(_proxy).execute(address(basicActions), payload);
   }
 
+  function modifySAFECollateralizationNonHandler(
+    address _proxy,
+    uint256 _safeId,
+    int256 _collateralDelta,
+    int256 _debtDelta
+  ) public {
+    bytes memory payload = abi.encodeWithSelector(
+      basicActions.modifySAFECollateralizationNonSafeHandler.selector,
+      address(safeManager),
+      _safeId,
+      _collateralDelta,
+      _debtDelta
+    );
+    ODProxy(_proxy).execute(address(basicActions), payload);
+  }
+
+  function freeTokenCollateral(address _proxy, bytes32 _cType, uint256 _safeId, uint256 _deltaWad) public {
+    bytes memory payload = abi.encodeWithSelector(
+      basicActions.freeTokenCollateral.selector,
+      address(safeManager),
+      address(collateralJoin[_cType]),
+      _safeId,
+      _deltaWad
+    );
+    ODProxy(_proxy).execute(address(basicActions), payload);
+  }
+
   function transferCollateral(address _proxy, uint256 _safeId, address _dst, uint256 _deltaWad) public {
     bytes memory payload =
       abi.encodeWithSelector(basicActions.transferCollateral.selector, address(safeManager), _safeId, _dst, _deltaWad);
@@ -130,8 +157,11 @@ abstract contract E2ESafeMangerSetUp is Base_CType, BasicActionsForE2ETests {
   uint256 bobSafeId;
 
   IODSafeManager.SAFEData public aliceData;
+  IODSafeManager.SAFEData public bobData;
 
-  event TransferSAFEOwnership(address indexed _sender, uint256 indexed _safe, address _dst);
+  ERC20ForTest internal _token;
+
+  event NFVStateUpdated(uint256 _vaultId);
 
   function setUp() public virtual override {
     super.setUp();
@@ -139,6 +169,11 @@ abstract contract E2ESafeMangerSetUp is Base_CType, BasicActionsForE2ETests {
     aliceProxy = deployOrFind(alice);
     aliceSafeId = safeManager.openSAFE(_cType(), aliceProxy);
     aliceData = safeManager.safeData(aliceSafeId);
+
+    //mint collateral to alice
+    _token = ERC20ForTest(address(ICollateralJoin(address(collateralJoin[_cType()])).collateral()));
+    vm.prank(alice);
+    _token.approve(address(aliceProxy), type(uint256).max);
   }
 
   function deployOrFind(address owner) public returns (address payable) {
@@ -218,6 +253,8 @@ contract E2ESafeManagerTest_ViewFunctions is E2ESafeMangerSetUp {
 }
 
 contract E2ESafeManagerTest_TransferOwnership is E2ESafeMangerSetUp {
+  event TransferSAFEOwnership(address indexed _sender, uint256 indexed _safe, address _dst);
+
   address testSaviour;
 
   function setUp() public override {
@@ -282,34 +319,24 @@ contract E2ESafeManagerTest_TransferOwnership is E2ESafeMangerSetUp {
 }
 
 contract E2ESafeManagerTest_ModifySafeCollateralization is E2ESafeMangerSetUp {
-  ERC20ForTest internal _token;
-
   struct Scenario {
     uint256 mintedCollateral;
     uint256 generatedDebt;
     uint256 lockedCollateral;
   }
 
-  function setUp() public override {
-    super.setUp();
-    //mint collateral to alice
-    _token = ERC20ForTest(address(ICollateralJoin(address(collateralJoin[_cType()])).collateral()));
-    vm.prank(alice);
-    _token.approve(address(aliceProxy), type(uint256).max);
-  }
-
   modifier happyPath(Scenario memory _scenario) {
     ISAFEEngine.SAFEEngineCollateralParams memory safeEngineParams = safeEngine.cParams(_cType());
     ISAFEEngine.SAFEEngineCollateralData memory cData = safeEngine.cData(_cType());
-
+    vm.assume(notOverflowMul(_scenario.mintedCollateral, cData.accumulatedRate));
     vm.assume(
       _scenario.mintedCollateral > 10_000
-        && _scenario.mintedCollateral < ((safeEngineParams.debtCeiling / RAY) * (cData.accumulatedRate) / RAD)
+        && _scenario.mintedCollateral * cData.accumulatedRate < safeEngineParams.debtCeiling
     );
     vm.assume(_scenario.mintedCollateral >= _scenario.lockedCollateral);
     _scenario.generatedDebt = bound(
       _scenario.generatedDebt,
-      (_scenario.lockedCollateral * (1 * 100)) / 10_000,
+      (_scenario.lockedCollateral * (100)) / 10_000,
       (_scenario.lockedCollateral * (74 * 100)) / 10_000
     );
     _token.mint(alice, _scenario.mintedCollateral);
@@ -333,6 +360,10 @@ contract E2ESafeManagerTest_ModifySafeCollateralization is E2ESafeMangerSetUp {
     public
     happyPath(_scenario)
   {
+    if (_scenario.generatedDebt > 0) {
+      vm.expectEmit(address(vault721));
+      emit NFVStateUpdated(aliceSafeId);
+    }
     _depositAndGen(_scenario);
     assertEq(safeEngine.safes(_cType(), aliceData.safeHandler).lockedCollateral, _scenario.lockedCollateral);
     assertEq(safeEngine.safes(_cType(), aliceData.safeHandler).generatedDebt, _scenario.generatedDebt);
@@ -359,5 +390,231 @@ contract E2ESafeManagerTest_ModifySafeCollateralization is E2ESafeMangerSetUp {
     systemCoin.approve(aliceProxy, type(uint256).max);
     repayAllDebt(aliceSafeId, aliceProxy);
     assertEq(safeEngine.safes(_cType(), aliceData.safeHandler).generatedDebt, 0);
+  }
+
+  function test_ModifySafeCollateralization_Revert_SafeNotAllowed() public {
+    bobProxy = deployOrFind(bob);
+    _token.mint(bob, 100 ether);
+    vm.startPrank(bob);
+    _token.approve(bobProxy, type(uint256).max);
+    vm.expectRevert(IODSafeManager.SafeNotAllowed.selector);
+    depositCollatAndGenDebt(_cType(), aliceSafeId, 100 ether, 0, bobProxy);
+  }
+
+  function test_ModifySafeCollateralization_NonSafeHandler() public {}
+}
+
+contract E2ESafeManagerTest_TransferCollateral is E2ESafeMangerSetUp {
+  event TransferCollateral(address indexed _sender, uint256 indexed _safe, address _dst, uint256 _wad);
+  event TransferCollateral(address indexed _sender, bytes32 _cType, uint256 indexed _safe, address _dst, uint256 _wad);
+
+  struct Scenario {
+    uint256 mintedCollateral;
+    uint256 lockedCollateral;
+  }
+
+  function setUp() public override {
+    super.setUp();
+
+    bobProxy = deployOrFind(bob);
+    bobSafeId = safeManager.openSAFE(_cType(), bobProxy);
+    bobData = safeManager.safeData(bobSafeId);
+  }
+
+  modifier happyPath(Scenario memory _scenario) {
+    ISAFEEngine.SAFEEngineCollateralParams memory safeEngineParams = safeEngine.cParams(_cType());
+    ISAFEEngine.SAFEEngineCollateralData memory cData = safeEngine.cData(_cType());
+    vm.assume(notOverflowMul(_scenario.mintedCollateral, cData.accumulatedRate));
+    vm.assume(
+      _scenario.mintedCollateral > 10_000
+        && _scenario.mintedCollateral * cData.accumulatedRate < safeEngineParams.debtCeiling
+    );
+    vm.assume(_scenario.mintedCollateral >= _scenario.lockedCollateral);
+    _token.mint(alice, _scenario.mintedCollateral);
+
+    _;
+  }
+
+  function _depositCollateral(Scenario memory _scenario) internal {
+    vm.prank(alice);
+    depositCollatAndGenDebt(_cType(), aliceSafeId, _scenario.lockedCollateral, 0, aliceProxy);
+  }
+
+  function test_TransferCollateral(Scenario memory _scenario) public happyPath(_scenario) {
+    vm.startPrank(alice);
+    _token.approve(aliceProxy, type(uint256).max);
+    depositCollatAndGenDebt(_cType(), aliceSafeId, _scenario.lockedCollateral, 0, aliceProxy);
+    assertEq(safeEngine.tokenCollateral(_cType(), bob), 0, 'unequal collateral');
+    modifySAFECollateralization(aliceProxy, aliceSafeId, -int256(_scenario.lockedCollateral), 0);
+    vm.stopPrank();
+    vm.prank(alice);
+    transferCollateral(aliceProxy, aliceSafeId, bob, _scenario.lockedCollateral);
+    assertEq(safeEngine.tokenCollateral(_cType(), bob), _scenario.lockedCollateral, 'unequal collateral');
+  }
+
+  function test_TransferCollateral_Revert_SafeNotAllowed() public {
+    vm.prank(alice);
+    vm.expectRevert(IODSafeManager.SafeNotAllowed.selector);
+    transferCollateral(aliceProxy, bobSafeId, bob, 1 ether);
+  }
+
+  function test_TransferCollateral_CType(Scenario memory _scenario) public happyPath(_scenario) {
+    vm.startPrank(alice);
+    _token.approve(aliceProxy, type(uint256).max);
+    depositCollatAndGenDebt(_cType(), aliceSafeId, _scenario.lockedCollateral, 0, aliceProxy);
+    modifySAFECollateralization(aliceProxy, aliceSafeId, -int256(_scenario.lockedCollateral), 0);
+    bytes memory payload = abi.encodeWithSelector(
+      basicActions.transferCollateralWithCType.selector,
+      address(safeManager),
+      _cType(),
+      aliceSafeId,
+      alice,
+      _scenario.lockedCollateral
+    );
+    ODProxy(aliceProxy).execute(address(basicActions), payload);
+    vm.stopPrank();
+    assertEq(safeEngine.tokenCollateral(_cType(), alice), _scenario.lockedCollateral);
+  }
+
+  function test_TransferCollateral_CType_SafeNotAllowed(Scenario memory _scenario) public happyPath(_scenario) {
+    vm.startPrank(alice);
+    _token.approve(aliceProxy, type(uint256).max);
+    depositCollatAndGenDebt(_cType(), aliceSafeId, _scenario.lockedCollateral, 0, aliceProxy);
+    modifySAFECollateralization(aliceProxy, aliceSafeId, -int256(_scenario.lockedCollateral), 0);
+    vm.stopPrank();
+    bytes memory payload = abi.encodeWithSelector(
+      basicActions.transferCollateralWithCType.selector,
+      address(safeManager),
+      _cType(),
+      aliceSafeId,
+      bob,
+      _scenario.lockedCollateral
+    );
+    vm.prank(bob);
+    vm.expectRevert(IODSafeManager.SafeNotAllowed.selector);
+    safeManager.transferCollateral(_cType(), aliceSafeId, bob, _scenario.lockedCollateral);
+  }
+}
+
+contract E2ESafeManagerTest_TransferInternalCoins is E2ESafeMangerSetUp {
+  event TransferInternalCoins(address indexed _sender, uint256 indexed _safe, address _dst, uint256 _rad);
+
+  function setUp() public override {
+    super.setUp();
+    bobProxy = deployOrFind(bob);
+    bobSafeId = safeManager.openSAFE(_cType(), bobProxy);
+    bobData = safeManager.safeData(bobSafeId);
+  }
+
+  function test_TransferInternalCoins() public {
+    vm.prank(address(timelockController));
+    safeEngine.createUnbackedDebt(aliceData.safeHandler, aliceData.safeHandler, 1 ether * RAY);
+    vm.prank(alice);
+    vm.expectEmit();
+    emit TransferInternalCoins(aliceProxy, aliceSafeId, bobData.safeHandler, 1 ether);
+    transferInternalCoins(aliceProxy, aliceSafeId, bobData.safeHandler, 1 ether);
+    assertEq(safeEngine.coinBalance(bobData.safeHandler), 1 ether);
+  }
+
+  function test_TransferInternalCoins_Revert_SafeNotAllowerd() public {
+    vm.prank(address(timelockController));
+    safeEngine.createUnbackedDebt(aliceData.safeHandler, aliceData.safeHandler, 1 ether * RAY);
+    vm.prank(alice);
+    vm.expectRevert(IODSafeManager.SafeNotAllowed.selector);
+    transferInternalCoins(aliceProxy, bobSafeId, bobData.safeHandler, 1 ether);
+  }
+}
+
+contract E2ESafeManagerTest_QuitSystem is E2ESafeMangerSetUp {
+  event QuitSystem(address indexed _sender, uint256 indexed _safe, address _dst);
+
+  function setUp() public override {
+    super.setUp();
+    bobProxy = deployOrFind(bob);
+    bobSafeId = safeManager.openSAFE(_cType(), bobProxy);
+    bobData = safeManager.safeData(bobSafeId);
+  }
+
+  struct Scenario {
+    uint256 mintedCollateral;
+    uint256 generatedDebt;
+    uint256 lockedCollateral;
+  }
+
+  modifier happyPath(Scenario memory _scenario) {
+    ISAFEEngine.SAFEEngineCollateralParams memory safeEngineParams = safeEngine.cParams(_cType());
+    ISAFEEngine.SAFEEngineCollateralData memory cData = safeEngine.cData(_cType());
+    vm.assume(notOverflowMul(_scenario.mintedCollateral, cData.accumulatedRate));
+    vm.assume(
+      _scenario.mintedCollateral > 10_000
+        && _scenario.mintedCollateral * cData.accumulatedRate < safeEngineParams.debtCeiling
+    );
+    vm.assume(_scenario.mintedCollateral >= _scenario.lockedCollateral);
+    _scenario.generatedDebt = bound(
+      _scenario.generatedDebt,
+      (_scenario.lockedCollateral * (100)) / 10_000,
+      (_scenario.lockedCollateral * (74 * 100)) / 10_000
+    );
+    _token.mint(alice, _scenario.mintedCollateral);
+    _;
+  }
+
+  function test_QuitSystem(Scenario memory _scenario) public happyPath(_scenario) {
+    // alice's proxy has to approve the safeManager on the safe engine in order to transfer collateral.
+    vm.prank(aliceProxy);
+    safeEngine.approveSAFEModification(address(safeManager));
+    vm.startPrank(alice);
+    depositCollatAndGenDebt(_cType(), aliceSafeId, _scenario.lockedCollateral, _scenario.generatedDebt, aliceProxy);
+
+    vm.expectEmit(address(safeManager));
+    emit QuitSystem(aliceProxy, aliceSafeId, aliceProxy);
+
+    quitSystem(aliceProxy, aliceSafeId);
+    assertEq(safeEngine.coinBalance(aliceProxy), 0);
+    assertEq(safeEngine.safes(_cType(), aliceProxy).generatedDebt, _scenario.generatedDebt);
+    assertEq(safeEngine.safes(_cType(), aliceProxy).lockedCollateral, _scenario.lockedCollateral);
+  }
+
+  function test_QuitSystem_Revert_SafeNotAllowed() public {
+    vm.startPrank(alice);
+    // using this revert because basic actions calls the safe engine first to move collateral around
+    // vm.expectRevert(ISAFEEngine.SAFEEng_NotSAFEAllowed.selector);
+    vm.expectRevert(IODSafeManager.SafeNotAllowed.selector);
+    quitSystem(aliceProxy, bobSafeId);
+  }
+}
+
+contract E2ESafeManagerTest_MoveSAFE is E2ESafeMangerSetUp {
+  event QuitSystem(address indexed _sender, uint256 indexed _safe, address _dst);
+
+  function setUp() public override {
+    super.setUp();
+    bobProxy = deployOrFind(bob);
+    bobSafeId = safeManager.openSAFE(_cType(), bobProxy);
+    bobData = safeManager.safeData(bobSafeId);
+  }
+
+  struct Scenario {
+    uint256 mintedCollateral;
+    uint256 generatedDebt;
+    uint256 lockedCollateral;
+  }
+
+  modifier happyPath(Scenario memory _scenario) {
+    ISAFEEngine.SAFEEngineCollateralParams memory safeEngineParams = safeEngine.cParams(_cType());
+    ISAFEEngine.SAFEEngineCollateralData memory cData = safeEngine.cData(_cType());
+    vm.assume(notOverflowMul(_scenario.mintedCollateral, cData.accumulatedRate));
+    vm.assume(
+      _scenario.mintedCollateral > 10_000
+        && _scenario.mintedCollateral * cData.accumulatedRate < safeEngineParams.debtCeiling
+    );
+    vm.assume(_scenario.mintedCollateral >= _scenario.lockedCollateral);
+    _scenario.generatedDebt = bound(
+      _scenario.generatedDebt,
+      (_scenario.lockedCollateral * (100)) / 10_000,
+      (_scenario.lockedCollateral * (74 * 100)) / 10_000
+    );
+    _token.mint(alice, _scenario.mintedCollateral);
+    _;
   }
 }
