@@ -2,8 +2,7 @@
 pragma solidity 0.8.20;
 
 import '@script/Registry.s.sol';
-import {Script} from 'forge-std/Script.sol';
-import {Test} from 'forge-std/Test.sol';
+import {PrankSwitch} from '@script/utils/PrankSwitch.s.sol';
 import {TimelockController} from '@openzeppelin/governance/TimelockController.sol';
 import {IODCreate2Factory} from '@interfaces/factories/IODCreate2Factory.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
@@ -18,7 +17,7 @@ import {MainnetDeployment} from '@script/MainnetDeployment.s.sol';
 // SIMULATE
 // source .env && forge script RevokeDeployer --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC
 
-contract RevokeDeployer is MainnetDeployment, Script, Test {
+contract RevokeDeployer is MainnetDeployment, PrankSwitch {
   address internal constant _TIMELOCKCONTROLLER = MAINNET_TIMELOCK_CONTROLLER;
   address internal constant _DEPLOYER = 0xF78dA2A37049627636546E0cFAaB2aD664950917;
 
@@ -30,16 +29,7 @@ contract RevokeDeployer is MainnetDeployment, Script, Test {
    *
    * @dev this script can only be run once by deployer
    */
-  function run() public {
-    uint256 _deployerPk = vm.envUint('ARB_MAINNET_DEPLOYER_PK');
-    address _deployer = vm.addr(_deployerPk);
-    bool _broadcast;
-
-    if (_deployer == _DEPLOYER) _broadcast = true;
-
-    if (_broadcast) vm.startBroadcast(_deployerPk);
-    else vm.startPrank(_DEPLOYER);
-
+  function run() public prankSwitch(MAINNET_TIMELOCK_CONTROLLER) {
     // base contracts
     _updateAuth(safeEngine);
     _updateAuth(liquidationEngine);
@@ -85,9 +75,6 @@ contract RevokeDeployer is MainnetDeployment, Script, Test {
 
     // governance
     _renounceRoles(TimelockController(payable(_TIMELOCKCONTROLLER)));
-
-    if (_broadcast) vm.stopBroadcast();
-    else vm.stopPrank();
   }
 
   /**
