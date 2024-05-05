@@ -577,8 +577,6 @@ contract E2ESafeManagerTest_QuitSystem is E2ESafeMangerSetUp {
 
   function test_QuitSystem_Revert_SafeNotAllowed() public {
     vm.startPrank(alice);
-    // using this revert because basic actions calls the safe engine first to move collateral around
-    // vm.expectRevert(ISAFEEngine.SAFEEng_NotSAFEAllowed.selector);
     vm.expectRevert(IODSafeManager.SafeNotAllowed.selector);
     quitSystem(aliceProxy, bobSafeId);
   }
@@ -586,6 +584,7 @@ contract E2ESafeManagerTest_QuitSystem is E2ESafeMangerSetUp {
 
 contract E2ESafeManagerTest_MoveSAFE is E2ESafeMangerSetUp {
   event QuitSystem(address indexed _sender, uint256 indexed _safe, address _dst);
+  event MoveSAFE(address indexed _sender, uint256 indexed _safeSrc, uint256 indexed _safeDst);
 
   function setUp() public override {
     super.setUp();
@@ -616,5 +615,85 @@ contract E2ESafeManagerTest_MoveSAFE is E2ESafeMangerSetUp {
     );
     _token.mint(alice, _scenario.mintedCollateral);
     _;
+  }
+
+  function test_MoveSafe(Scenario memory _scenario) public happyPath(_scenario) {
+    // alice's proxy has to approve the safeManager on the safe engine in order to transfer collateral.
+    vm.prank(aliceProxy);
+    safeEngine.approveSAFEModification(address(safeManager));
+    vm.startPrank(bobProxy);
+    safeEngine.approveSAFEModification(address(safeManager));
+    // bob must approve aliceProxy on the safeManager
+    safeManager.allowSAFE(bobSafeId, aliceProxy, true);
+    vm.stopPrank();
+    vm.startPrank(alice);
+    depositCollatAndGenDebt(_cType(), aliceSafeId, _scenario.lockedCollateral, _scenario.generatedDebt, aliceProxy);
+
+    vm.expectEmit(address(safeManager));
+    emit MoveSAFE(aliceProxy, aliceSafeId, bobSafeId);
+
+    moveSAFE(aliceProxy, aliceSafeId, bobSafeId);
+
+    assertEq(safeEngine.safes(_cType(), bobData.safeHandler).generatedDebt, _scenario.generatedDebt);
+    assertEq(safeEngine.safes(_cType(), bobData.safeHandler).lockedCollateral, _scenario.lockedCollateral);
+  }
+
+  function test_MoveSafe_Revert_SafeNotAllowed() public {
+    vm.startPrank(alice);
+    vm.expectRevert(IODSafeManager.SafeNotAllowed.selector);
+    moveSAFE(aliceProxy, bobSafeId, aliceSafeId);
+  }
+}
+
+contract E2ESafeManagerTest_AddRemoveSafe is E2ESafeMangerSetUp {
+  function test_AddSafe() public {
+    uint256[] memory _safes = safeManager.getSafes(alice);
+    assertEq(_safes.length, 0);
+
+    vm.prank(alice);
+    safeManager.addSAFE(aliceSafeId);
+
+    _safes = safeManager.getSafes(alice);
+    assertEq(_safes.length, 1);
+    assertEq(_safes[0], aliceSafeId);
+  }
+
+  function test_RemoveSafe() public {
+    uint256[] memory _safes = safeManager.getSafes(aliceProxy);
+    assertEq(_safes.length, 1);
+    vm.prank(aliceProxy);
+    safeManager.removeSAFE(aliceSafeId);
+
+    _safes = safeManager.getSafes(aliceProxy);
+    assertEq(_safes.length, 0);
+  }
+
+  function test_RemoveSafe_RevertSafeNotAllowed() public {
+    vm.startPrank(alice);
+    vm.expectRevert(IODSafeManager.SafeNotAllowed.selector);
+    safeManager.removeSAFE(aliceSafeId);
+  }
+}
+
+contract E2ESafeManagerTest_PotectSAFE is E2ESafeMangerSetUp {
+  address testSaviour;
+
+  function setUp() public override {
+    super.setUp();
+    testSaviour = address(new SafeSaviourForForTest());
+    vm.prank(address(timelockController));
+    liquidationEngine.connectSAFESaviour(testSaviour);
+  }
+
+  function test_ProtectSafe() public {
+    vm.prank(aliceProxy);
+    safeManager.protectSAFE(aliceSafeId, testSaviour);
+    assertEq(liquidationEngine.chosenSAFESaviour(_cType(), aliceData.safeHandler), testSaviour);
+  }
+
+  function test_ProtectSafe_Revert_SafeNotAllowed() public {
+    vm.prank(bobProxy);
+    vm.expectRevert(IODSafeManager.SafeNotAllowed.selector);
+    safeManager.protectSAFE(aliceSafeId, testSaviour);
   }
 }
