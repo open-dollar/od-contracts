@@ -15,6 +15,7 @@ import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 import {ERC20ForTest} from '@test/mocks/ERC20ForTest.sol';
 import {ICollateralJoin} from '@interfaces/utils/ICollateralJoin.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
+import {Assertions} from '@libraries/Assertions.sol';
 
 import 'forge-std/console2.sol';
 
@@ -149,7 +150,7 @@ abstract contract BasicActionsForE2ETests is Common {
   }
 }
 
-abstract contract E2ESafeMangerSetUp is Base_CType, BasicActionsForE2ETests {
+abstract contract E2ESafeManagerSetUp is Base_CType, BasicActionsForE2ETests {
   address aliceProxy;
   address bobProxy;
 
@@ -197,7 +198,7 @@ abstract contract E2ESafeMangerSetUp is Base_CType, BasicActionsForE2ETests {
   }
 }
 
-contract E2ESafeManagerTest_ViewFunctions is E2ESafeMangerSetUp {
+contract E2ESafeManagerTest_ViewFunctions is E2ESafeManagerSetUp {
   function test_GetSafes() public view {
     uint256[] memory safes = safeManager.getSafes(address(aliceProxy));
     assertEq(safes.length, 1);
@@ -252,7 +253,7 @@ contract E2ESafeManagerTest_ViewFunctions is E2ESafeMangerSetUp {
   }
 }
 
-contract E2ESafeManagerTest_TransferOwnership is E2ESafeMangerSetUp {
+contract E2ESafeManagerTest_TransferOwnership is E2ESafeManagerSetUp {
   event TransferSAFEOwnership(address indexed _sender, uint256 indexed _safe, address _dst);
 
   address testSaviour;
@@ -318,7 +319,7 @@ contract E2ESafeManagerTest_TransferOwnership is E2ESafeMangerSetUp {
   }
 }
 
-contract E2ESafeManagerTest_ModifySafeCollateralization is E2ESafeMangerSetUp {
+contract E2ESafeManagerTest_ModifySafeCollateralization is E2ESafeManagerSetUp {
   struct Scenario {
     uint256 mintedCollateral;
     uint256 generatedDebt;
@@ -404,7 +405,7 @@ contract E2ESafeManagerTest_ModifySafeCollateralization is E2ESafeMangerSetUp {
   function test_ModifySafeCollateralization_NonSafeHandler() public {}
 }
 
-contract E2ESafeManagerTest_TransferCollateral is E2ESafeMangerSetUp {
+contract E2ESafeManagerTest_TransferCollateral is E2ESafeManagerSetUp {
   event TransferCollateral(address indexed _sender, uint256 indexed _safe, address _dst, uint256 _wad);
   event TransferCollateral(address indexed _sender, bytes32 _cType, uint256 indexed _safe, address _dst, uint256 _wad);
 
@@ -496,7 +497,7 @@ contract E2ESafeManagerTest_TransferCollateral is E2ESafeMangerSetUp {
   }
 }
 
-contract E2ESafeManagerTest_TransferInternalCoins is E2ESafeMangerSetUp {
+contract E2ESafeManagerTest_TransferInternalCoins is E2ESafeManagerSetUp {
   event TransferInternalCoins(address indexed _sender, uint256 indexed _safe, address _dst, uint256 _rad);
 
   function setUp() public override {
@@ -525,7 +526,7 @@ contract E2ESafeManagerTest_TransferInternalCoins is E2ESafeMangerSetUp {
   }
 }
 
-contract E2ESafeManagerTest_QuitSystem is E2ESafeMangerSetUp {
+contract E2ESafeManagerTest_QuitSystem is E2ESafeManagerSetUp {
   event QuitSystem(address indexed _sender, uint256 indexed _safe, address _dst);
 
   function setUp() public override {
@@ -582,7 +583,7 @@ contract E2ESafeManagerTest_QuitSystem is E2ESafeMangerSetUp {
   }
 }
 
-contract E2ESafeManagerTest_MoveSAFE is E2ESafeMangerSetUp {
+contract E2ESafeManagerTest_MoveSAFE is E2ESafeManagerSetUp {
   event QuitSystem(address indexed _sender, uint256 indexed _safe, address _dst);
   event MoveSAFE(address indexed _sender, uint256 indexed _safeSrc, uint256 indexed _safeDst);
 
@@ -645,7 +646,7 @@ contract E2ESafeManagerTest_MoveSAFE is E2ESafeMangerSetUp {
   }
 }
 
-contract E2ESafeManagerTest_AddRemoveSafe is E2ESafeMangerSetUp {
+contract E2ESafeManagerTest_AddRemoveSafe is E2ESafeManagerSetUp {
   function test_AddSafe() public {
     uint256[] memory _safes = safeManager.getSafes(alice);
     assertEq(_safes.length, 0);
@@ -675,7 +676,7 @@ contract E2ESafeManagerTest_AddRemoveSafe is E2ESafeMangerSetUp {
   }
 }
 
-contract E2ESafeManagerTest_PotectSAFE is E2ESafeMangerSetUp {
+contract E2ESafeManagerTest_ProtectSAFE is E2ESafeManagerSetUp {
   address testSaviour;
 
   function setUp() public override {
@@ -695,5 +696,55 @@ contract E2ESafeManagerTest_PotectSAFE is E2ESafeMangerSetUp {
     vm.prank(bobProxy);
     vm.expectRevert(IODSafeManager.SafeNotAllowed.selector);
     safeManager.protectSAFE(aliceSafeId, testSaviour);
+  }
+}
+
+contract E2ESafeManagerTest_ModifyParameters is E2ESafeManagerSetUp {
+  function test_ModifyParams_LiquidationEngine() public {
+    vm.prank(address(deployer));
+    safeManager.modifyParameters('liquidationEngine', abi.encode(address(1)));
+    assertEq(safeManager.liquidationEngine(), address(1));
+  }
+
+  function test_ModifyParams_LiquidationEngine_RevertNullAddress() public {
+    vm.prank(address(deployer));
+    vm.expectRevert(Assertions.NullAddress.selector);
+    safeManager.modifyParameters('liquidationEngine', abi.encode(address(0)));
+  }
+
+  function test_ModifyParams_TaxCollector() public {
+    vm.prank(address(deployer));
+    safeManager.modifyParameters('taxCollector', abi.encode(address(1)));
+    assertEq(safeManager.taxCollector(), address(1));
+  }
+
+  function test_ModifyParams_TaxCollector_RevertNullAddress() public {
+    vm.prank(address(deployer));
+    vm.expectRevert(Assertions.NullAddress.selector);
+    safeManager.modifyParameters('taxCollector', abi.encode(address(0)));
+  }
+
+  function test_ModifyParams_Vault721() public {
+    vm.prank(address(deployer));
+    safeManager.modifyParameters('vault721', abi.encode(address(1)));
+    assertEq(address(safeManager.vault721()), address(1));
+  }
+
+  function test_ModifyParams_Vault721_RevertNullAddress() public {
+    vm.prank(address(deployer));
+    vm.expectRevert(Assertions.NullAddress.selector);
+    safeManager.modifyParameters('vault721', abi.encode(address(0)));
+  }
+
+  function test_ModifyParams_SafeEngine() public {
+    vm.prank(address(deployer));
+    safeManager.modifyParameters('safeEngine', abi.encode(address(1)));
+    assertEq(safeManager.safeEngine(), address(1));
+  }
+
+  function test_ModifyParams_SafeEngine_RevertNullAddress() public {
+    vm.prank(address(deployer));
+    vm.expectRevert(Assertions.NullAddress.selector);
+    safeManager.modifyParameters('safeEngine', abi.encode(address(0)));
   }
 }
