@@ -91,22 +91,6 @@ abstract contract BasicActionsForE2ETests is Common {
     ODProxy(_proxy).execute(address(basicActions), payload);
   }
 
-  function modifySAFECollateralizationNonHandler(
-    address _proxy,
-    uint256 _safeId,
-    int256 _collateralDelta,
-    int256 _debtDelta
-  ) public {
-    bytes memory payload = abi.encodeWithSelector(
-      basicActions.modifySAFECollateralizationNonSafeHandler.selector,
-      address(safeManager),
-      _safeId,
-      _collateralDelta,
-      _debtDelta
-    );
-    ODProxy(_proxy).execute(address(basicActions), payload);
-  }
-
   function freeTokenCollateral(address _proxy, bytes32 _cType, uint256 _safeId, uint256 _deltaWad) public {
     bytes memory payload = abi.encodeWithSelector(
       basicActions.freeTokenCollateral.selector,
@@ -401,8 +385,6 @@ contract E2ESafeManagerTest_ModifySafeCollateralization is E2ESafeManagerSetUp {
     vm.expectRevert(IODSafeManager.SafeNotAllowed.selector);
     depositCollatAndGenDebt(_cType(), aliceSafeId, 100 ether, 0, bobProxy);
   }
-
-  function test_ModifySafeCollateralization_NonSafeHandler() public {}
 }
 
 contract E2ESafeManagerTest_TransferCollateral is E2ESafeManagerSetUp {
