@@ -231,6 +231,18 @@ contract BasicActions is CommonActions, IBasicActions {
   }
 
   /// @inheritdoc IBasicActions
+  function transferCollateralWithCType(
+    address _manager,
+    bytes32 _cType,
+    uint256 _safeId,
+    address _dst,
+    uint256 _deltaWad
+  ) external delegateCall {
+    if (_deltaWad == 0) return;
+    ODSafeManager(_manager).transferCollateral(_cType, _safeId, _dst, _deltaWad);
+  }
+
+  /// @inheritdoc IBasicActions
   function transferInternalCoins(address _manager, uint256 _safeId, address _dst, uint256 _rad) external delegateCall {
     _transferInternalCoins(_manager, _safeId, _dst, _rad);
   }

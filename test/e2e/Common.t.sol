@@ -95,6 +95,7 @@ abstract contract Common is DeployForTest, ODTest {
 
     vm.startPrank(deployer); // no governor on test deployment
     accountingEngine.modifyParameters('extraSurplusReceiver', abi.encode(address(0x420)));
+
     vm.stopPrank();
   }
 
