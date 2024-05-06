@@ -150,35 +150,6 @@ abstract contract CommonDeploymentTest is ODTest, Deploy {
   }
 }
 
-contract E2EDeploymentSepoliaTest is DeploySepolia, CommonDeploymentTest {
-  function setUp() public override {
-    uint256 forkId = vm.createFork(vm.rpcUrl('sepolia'));
-    vm.selectFork(forkId);
-
-    create2 = IODCreate2Factory(TEST_CREATE2FACTORY);
-    protocolToken = IProtocolToken(SEPOLIA_PROTOCOL_TOKEN);
-
-    tlcGov = SEPOLIA_TIMELOCK_CONTROLLER;
-    timelockController = TimelockController(payable(SEPOLIA_TIMELOCK_CONTROLLER));
-    odGovernor = ODGovernor(payable(SEPOLIA_OD_GOVERNOR));
-
-    _deployerPk = uint256(vm.envBytes32('ARB_SEPOLIA_DEPLOYER_PK'));
-    chainId = 421_614;
-
-    _systemCoinSalt = getSemiRandSalt();
-    _vault721Salt = getSemiRandSalt();
-    run();
-  }
-
-  function setupEnvironment() public override(DeploySepolia, Deploy) {
-    super.setupEnvironment();
-  }
-
-  function setupPostEnvironment() public override(DeploySepolia, Deploy) {
-    super.setupPostEnvironment();
-  }
-}
-
 contract E2EDeploymentMainnetTest is DeployMainnet, CommonDeploymentTest {
   function setUp() public override {
     uint256 forkId = vm.createFork(vm.rpcUrl('mainnet'));
@@ -204,6 +175,35 @@ contract E2EDeploymentMainnetTest is DeployMainnet, CommonDeploymentTest {
   }
 
   function setupPostEnvironment() public override(DeployMainnet, Deploy) {
+    super.setupPostEnvironment();
+  }
+}
+
+contract E2EDeploymentSepoliaTest is DeploySepolia, CommonDeploymentTest {
+  function setUp() public override {
+    uint256 forkId = vm.createFork(vm.rpcUrl('sepolia'));
+    vm.selectFork(forkId);
+
+    create2 = IODCreate2Factory(TEST_CREATE2FACTORY);
+    protocolToken = IProtocolToken(SEPOLIA_PROTOCOL_TOKEN);
+
+    tlcGov = SEPOLIA_TIMELOCK_CONTROLLER;
+    timelockController = TimelockController(payable(SEPOLIA_TIMELOCK_CONTROLLER));
+    odGovernor = ODGovernor(payable(SEPOLIA_OD_GOVERNOR));
+
+    _deployerPk = uint256(vm.envBytes32('ARB_SEPOLIA_DEPLOYER_PK'));
+    chainId = 421_614;
+
+    _systemCoinSalt = getSemiRandSalt();
+    _vault721Salt = getSemiRandSalt();
+    run();
+  }
+
+  function setupEnvironment() public override(DeploySepolia, Deploy) {
+    super.setupEnvironment();
+  }
+
+  function setupPostEnvironment() public override(DeploySepolia, Deploy) {
     super.setupPostEnvironment();
   }
 }
