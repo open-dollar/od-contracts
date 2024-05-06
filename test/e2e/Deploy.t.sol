@@ -171,37 +171,3 @@ contract E2EDeploymentSepoliaTest is DeploySepolia, CommonDeploymentTest {
     super.setupPostEnvironment();
   }
 }
-
-/**
- * todo: Fix this test after next Sepolia deployment
- */
-contract SepoliaDeploymentTest is SepoliaDeployment, CommonDeploymentTest {
-  function setUp() public {
-    uint256 forkId = vm.createFork(vm.rpcUrl('sepolia'));
-    vm.selectFork(forkId);
-
-    protocolToken = IProtocolToken(SEPOLIA_PROTOCOL_TOKEN);
-    tlcGov = SEPOLIA_TIMELOCK_CONTROLLER;
-    timelockController = TimelockController(payable(SEPOLIA_TIMELOCK_CONTROLLER));
-    odGovernor = ODGovernor(payable(SEPOLIA_OD_GOVERNOR));
-    protocolToken = IProtocolToken(SEPOLIA_PROTOCOL_TOKEN);
-    tlcGov = SEPOLIA_TIMELOCK_CONTROLLER;
-    timelockController = TimelockController(payable(SEPOLIA_TIMELOCK_CONTROLLER));
-    odGovernor = ODGovernor(payable(SEPOLIA_OD_GOVERNOR));
-
-    _deployerPk = uint256(vm.envBytes32('ARB_SEPOLIA_DEPLOYER_PK'));
-    chainId = 421_614;
-    _deployerPk = uint256(vm.envBytes32('ARB_SEPOLIA_DEPLOYER_PK'));
-    chainId = 421_614;
-
-    _systemCoinSalt = getSemiRandSalt();
-    _vault721Salt = getSemiRandSalt();
-    _systemCoinSalt = getSemiRandSalt();
-    _vault721Salt = getSemiRandSalt();
-
-    _getEnvironmentParams();
-    _getEnvironmentParams();
-
-    run();
-  }
-}
