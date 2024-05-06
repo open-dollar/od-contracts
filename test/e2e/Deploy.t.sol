@@ -161,7 +161,7 @@ contract E2EDeploymentMainnetTest is DeployMainnet, CommonDeploymentTest {
     timelockController = TimelockController(payable(MAINNET_TIMELOCK_CONTROLLER));
     odGovernor = ODGovernor(payable(MAINNET_OD_GOVERNOR));
 
-    _deployerPk = uint256(vm.envBytes32('ARB_MAINNET_TEST_DEPLOYER_PK'));
+    _deployerPk = uint256(vm.envBytes32('ARB_MAINNET_DEPLOYER_PK'));
     chainId = 42_161;
 
     _systemCoinSalt = getSemiRandSalt();
