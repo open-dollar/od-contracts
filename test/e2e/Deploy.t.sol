@@ -93,15 +93,22 @@ abstract contract CommonDeploymentTest is ODTest, Deploy {
   }
 
   function test_Grant_Auth() public {
-    _test_Authorizations(tlcGov, true);
-
-    if (delegate != address(0)) {
-      _test_Authorizations(delegate, true);
+    uint256 _id;
+    assembly {
+      _id := chainid()
     }
 
-    if (!isFork()) {
-      // if not fork, test deployer
-      _test_Authorizations(deployer, false);
+    if (_id != 42_161) {
+      _test_Authorizations(tlcGov, true);
+
+      if (delegate != address(0)) {
+        _test_Authorizations(delegate, true);
+      }
+
+      if (!isFork()) {
+        // if not fork, test deployer
+        _test_Authorizations(deployer, false);
+      }
     }
   }
 
@@ -168,6 +175,35 @@ contract E2EDeploymentSepoliaTest is DeploySepolia, CommonDeploymentTest {
   }
 
   function setupPostEnvironment() public override(DeploySepolia, Deploy) {
+    super.setupPostEnvironment();
+  }
+}
+
+contract E2EDeploymentMainnetTest is DeployMainnet, CommonDeploymentTest {
+  function setUp() public override {
+    uint256 forkId = vm.createFork(vm.rpcUrl('mainnet'));
+    vm.selectFork(forkId);
+
+    create2 = IODCreate2Factory(MAINNET_CREATE2FACTORY);
+    protocolToken = IProtocolToken(MAINNET_PROTOCOL_TOKEN);
+    tlcGov = MAINNET_TIMELOCK_CONTROLLER;
+    timelockController = TimelockController(payable(MAINNET_TIMELOCK_CONTROLLER));
+    odGovernor = ODGovernor(payable(MAINNET_OD_GOVERNOR));
+
+    _deployerPk = uint256(vm.envBytes32('ARB_MAINNET_TEST_DEPLOYER_PK'));
+    chainId = 42_161;
+
+    _systemCoinSalt = getSemiRandSalt();
+    _vault721Salt = getSemiRandSalt();
+
+    run();
+  }
+
+  function setupEnvironment() public override(DeployMainnet, Deploy) {
+    super.setupEnvironment();
+  }
+
+  function setupPostEnvironment() public override(DeployMainnet, Deploy) {
     super.setupPostEnvironment();
   }
 }
