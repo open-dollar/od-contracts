@@ -47,7 +47,7 @@ abstract contract MainnetContracts {
       0x51a423B43101B219a9ECdEC67525896d856186Ec;
   address public ODSafeManager_Address = 0x8646CBd915eAAD1a4E2Ba5e2b67Acec4957d5f1a;
   address public NFTRenderer_Address = 0xFDB6935CF3A6441f83adF60CF5C9bf89A4fd7681;
-  address public BasicActions_Address = 0x6eBfcE92CF88f4684CEF44989c35910927a42e9C;
+  address public BasicActions_Address = 0x688CFd8024ba60030fE4D669fd45D914A82933db;
   address public DebtBidActions_Address = 0x490CEDC57E1D2409F111C6a6Db75AC6A7Fc45E4a;
   address public SurplusBidActions_Address = 0x8F43FdD337C0A84f0d00C70F3c4E6A4E52A84C7E;
   address public CollateralBidActions_Address = 0xb60772EDb81a143D98c4aB0bD1C671a5E5184179;

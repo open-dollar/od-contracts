@@ -33,11 +33,12 @@ Addresses for can be found in the app: https://app.opendollar.com/stats
 
 | Audit | Date | Auditor | Commit | Changes Since Audit | Report |
 |--------------|------|---------|--------|---------------------|--------|
-| 1. od-contracts| October, 2023 | [Cod4rena](https://code4rena.com) | [f401eb5](https://github.com/open-dollar/od-contracts/commit/f401eb5) | [View Changes](https://github.com/open-dollar/od-contracts/compare/f401eb5...main) | [View Report](https://code4rena.com/reports/2023-10-opendollar) |
-| 2. od-app | March, 2024 | [Quantstamp](https://www.quantstamp.com/)  | [7c9b18c](https://github.com/open-dollar/od-app/commit/7c9b18c) | [View Changes](https://github.com/open-dollar/od-app/compare/7c9b18c...main) | [View Report](https://certificate.quantstamp.com/full/open-dollar-d-app/f0ff4333-535d-4de6-96e0-8573623c18bf/index.html) |
-| 3. od-contracts | April, 2024 | [Pessimistic](https://pessimistic.io/) | [a0b7640](https://github.com/open-dollar/od-contracts/commit/a0b7640) | [View Changes](https://github.com/open-dollar/od-contracts/compare/a0b7640...main) | Report to be published |
-| 4. od-contracts | April, 2024 | [Quantstamp](https://www.quantstamp.com/) | [6cdc848](https://github.com/open-dollar/od-contracts/commit/6cdc848) | [View Changes](https://github.com/open-dollar/od-contracts/compare/6cdc848...main) | [View Report](https://certificate.quantstamp.com/full/open-dollar-smart-contract-audit/202828fa-eb09-4d33-beab-c1ebee11ebd1/index.html) |
-| 5. od-relayer | April, 2024 | [Pashov Audit Group](https://www.pashov.net/) | [453222d](https://github.com/open-dollar/od-relayer/commit/453222d) | [View Changes](https://github.com/open-dollar/od-relayer/compare/453222d...main) | [View Report](https://github.com/pashov/audits/blob/master/team/pdf/OpenDollar-security-review.pdf) |
+| contracts| October, 2023 | [Cod4rena](https://code4rena.com) | [f401eb5](https://github.com/open-dollar/od-contracts/commit/f401eb5) | [View Changes](https://github.com/open-dollar/od-contracts/compare/f401eb5...main) | [View Report](https://code4rena.com/reports/2023-10-opendollar) |
+| app | March, 2024 | [Quantstamp](https://www.quantstamp.com/)  | [7c9b18c](https://github.com/open-dollar/od-app/commit/7c9b18c) | [View Changes](https://github.com/open-dollar/od-app/compare/7c9b18c...main) | [View Report](https://certificate.quantstamp.com/full/open-dollar-d-app/f0ff4333-535d-4de6-96e0-8573623c18bf/index.html) |
+| contracts | April, 2024 | [Quantstamp](https://www.quantstamp.com/) | [6cdc848](https://github.com/open-dollar/od-contracts/commit/6cdc848) | [View Changes](https://github.com/open-dollar/od-contracts/compare/6cdc848...main) | [View Report](https://certificate.quantstamp.com/full/open-dollar-smart-contract-audit/202828fa-eb09-4d33-beab-c1ebee11ebd1/index.html) |
+| relayer | April, 2024 | [Pashov Audit Group](https://www.pashov.net/) | [453222d](https://github.com/open-dollar/od-relayer/commit/453222d) | [View Changes](https://github.com/open-dollar/od-relayer/compare/453222d...main) | [View Report](https://github.com/pashov/audits/blob/master/team/pdf/OpenDollar-security-review.pdf) |
+
+A Security Scan was performed by [Pessimistic](https://pessimistic.io/) April, 2024 at [a0b7640](https://github.com/open-dollar/od-contracts/commit/a0b7640). (Report to be published) 
 
 Additional audits completed prior to forking this codebase can be found here: https://github.com/hai-on-op/audit-reports
 
