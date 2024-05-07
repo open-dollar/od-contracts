@@ -529,6 +529,7 @@ contract SingleSAFEDebtLimitTest is DSTest {
   ICollateralJoinFactory collateralJoinFactory;
   ICollateralJoin collateralA;
   address me;
+  address safe;
 
   function try_modifySAFECollateralization(
     bytes32 _collateralType,
@@ -602,6 +603,11 @@ contract SingleSAFEDebtLimitTest is DSTest {
 
     safeEngine.addAuthorization(address(safeEngine));
 
+    hevm.mockCall(
+      address(safeManager),
+      abi.encodeWithSelector(IODSafeManager.safeHandlerToSafeId.selector, address(this)),
+      abi.encode(uint256(1))
+    );
     collateralA.join(address(this), 1000 ether);
 
     safeEngine.modifyParameters('gold', 'debtCeiling', abi.encode(rad(10 ether)));
@@ -684,6 +690,7 @@ contract SingleJoinTest is DSTest {
   Hevm hevm;
 
   SAFEEngine safeEngine;
+  IODSafeManager safeManager;
   CoinForTest collateral;
   ICollateralJoinFactory collateralJoinFactory;
   ICollateralJoin collateralA;
@@ -707,7 +714,8 @@ contract SingleJoinTest is DSTest {
     collateralJoinFactory = new CollateralJoinFactory(address(safeEngine));
     safeEngine.addAuthorization(address(collateralJoinFactory));
     collateralA = collateralJoinFactory.deployCollateralJoin('collateral', address(collateral));
-
+    hevm.mockCall(address(1), abi.encode(Vault721.initializeManager.selector), abi.encode('0'));
+    safeManager = new ODSafeManager(address(safeEngine), address(1), address(2), address(3));
     ethA = new ETHJoin(address(safeEngine), 'ETH');
     safeEngine.addAuthorization(address(ethA));
 
@@ -731,6 +739,10 @@ contract SingleJoinTest is DSTest {
 
   function try_join_tokenCollateral(address usr, uint256 wad) public returns (bool ok) {
     string memory _sig = 'join(address,uint256)';
+    hevm.mockCall(
+      address(safeManager), abi.encodeWithSelector(IODSafeManager.safeHandlerToSafeId.selector, usr), abi.encode(1)
+    );
+
     (ok,) = address(collateralA).call(abi.encodeWithSignature(_sig, usr, wad));
   }
 

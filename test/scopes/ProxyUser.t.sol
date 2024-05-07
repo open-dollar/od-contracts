@@ -20,6 +20,7 @@ import {
   CommonActions,
   ODProxy
 } from '@script/Contracts.s.sol';
+import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 import {SEPOLIA_WETH} from '@script/Registry.s.sol';
 import {IWeth} from '@interfaces/external/IWeth.sol';
 import {BaseUser} from '@test/scopes/BaseUser.t.sol';
@@ -67,7 +68,11 @@ abstract contract ProxyUser is BaseUser, Contracts, ScriptBase {
 
     bytes memory _callData =
       abi.encodeWithSelector(CommonActions.joinSystemCoins.selector, address(coinJoin), _user, _amount);
-
+    vm.mockCall(
+      address(safeManager),
+      abi.encodeWithSelector(IODSafeManager.safeHandlerToSafeId.selector, _user),
+      abi.encode(uint256(1))
+    );
     _proxy.execute(address(basicActions), _callData);
     vm.stopPrank();
   }

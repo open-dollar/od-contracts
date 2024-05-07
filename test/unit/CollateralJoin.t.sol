@@ -3,6 +3,7 @@ pragma solidity 0.8.20;
 
 import {CollateralJoinForTest, ICollateralJoin} from '@test/mocks/CollateralJoinForTest.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
+import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 import {IERC20Metadata, IERC20} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
 import {IAuthorizable} from '@interfaces/utils/IAuthorizable.sol';
 import {IDisableable} from '@interfaces/utils/IDisableable.sol';
@@ -161,6 +162,15 @@ contract Unit_CollateralJoin_Join is Base {
     _mockTransferFrom(user, address(collateralJoin), _wei, _transferFromReturn);
   }
 
+  function _mockJoinCalls(address _user) internal {
+    vm.mockCall(
+      address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.odSafeManager.selector), abi.encode(address(0))
+    );
+    vm.mockCall(
+      address(0), abi.encodeWithSelector(IODSafeManager.safeHandlerToSafeId.selector, _user), abi.encode(uint256(1))
+    );
+  }
+
   function test_Revert_ContractIsDisabled(address _account, uint256 _wei) public {
     _mockContractEnabled(false);
 
@@ -175,7 +185,7 @@ contract Unit_CollateralJoin_Join is Base {
     _mockValues(_wei, 0, false);
 
     vm.expectRevert(Math.IntOverflow.selector);
-
+    _mockJoinCalls(_account);
     collateralJoin.join(_account, _wei);
   }
 
@@ -186,8 +196,21 @@ contract Unit_CollateralJoin_Join is Base {
     _mockValues(_wei, _decimals, false);
 
     vm.expectRevert('SafeERC20: ERC20 operation did not succeed');
-
+    _mockJoinCalls(_account);
     collateralJoin.join(_account, _wei);
+  }
+
+  function test_Revert_InvalidSAFEHandler() public {
+    vm.startPrank(user);
+
+    vm.expectRevert('CollateralJoin: Invalid SAFEHandler');
+    vm.mockCall(
+      address(mockSafeEngine), abi.encodeWithSelector(ISAFEEngine.odSafeManager.selector), abi.encode(address(1))
+    );
+    vm.mockCall(
+      address(1), abi.encodeWithSelector(IODSafeManager.safeHandlerToSafeId.selector, address(this)), abi.encode(0)
+    );
+    collateralJoin.join(address(this), 1 ether);
   }
 
   function test_Call_SafeEngine_ModifyCollateralBalance(
@@ -202,7 +225,7 @@ contract Unit_CollateralJoin_Join is Base {
       abi.encodeCall(mockSafeEngine.modifyCollateralBalance, (collateralType, _account, int256(_wad))),
       1
     );
-
+    _mockJoinCalls(_account);
     collateralJoin.join(_account, _wei);
   }
 
@@ -214,7 +237,7 @@ contract Unit_CollateralJoin_Join is Base {
     vm.expectCall(
       address(mockCollateral), abi.encodeCall(IERC20.transferFrom, (user, address(collateralJoin), _wei)), 1
     );
-
+    _mockJoinCalls(_account);
     collateralJoin.join(_account, _wei);
   }
 
@@ -223,7 +246,7 @@ contract Unit_CollateralJoin_Join is Base {
 
     vm.expectEmit();
     emit Join(user, _account, _wad);
-
+    _mockJoinCalls(_account);
     collateralJoin.join(_account, _wei);
   }
 }

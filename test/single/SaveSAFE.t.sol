@@ -128,6 +128,7 @@ contract SingleSaveSAFETest is DSTest {
   Hevm hevm;
 
   SAFEEngine safeEngine;
+
   Feed systemCoinFeed;
   OracleRelayer oracleRelayer;
   AccountingEngine accountingEngine;
@@ -255,6 +256,11 @@ contract SingleSaveSAFETest is DSTest {
     safeEngine.addAuthorization(address(collateralJoinFactory));
     collateralA = collateralJoinFactory.deployCollateralJoin('gold', address(gold));
     gold.approve(address(collateralA), type(uint256).max);
+    hevm.mockCall(
+      address(0),
+      abi.encodeWithSelector(IODSafeManager.safeHandlerToSafeId.selector, address(this)),
+      abi.encode(uint256(1))
+    );
     collateralA.join(address(this), 1000 ether);
 
     safeEngine.updateCollateralPrice('gold', ray(1 ether), ray(1 ether));
