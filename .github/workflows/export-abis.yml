@@ -40,9 +40,9 @@ jobs:
         run: yarn version --new-version "0.0.0-${GITHUB_SHA::8}" --no-git-tag-version
 
       - name: Export Solidity - ${{ matrix.export_type }}
-        uses: defi-wonderland/solidity-exporter-action@v2.0.0
+        uses: open-dollar/solidity-exporter-action@v2.0.2
         with:
-          package_name: '@open-dollar/${{ matrix.export_type }}'
+          package_name: '@open-dollar'
           out: 'out'
           interfaces: 'src/interfaces'
           contracts: 'src/contracts'
