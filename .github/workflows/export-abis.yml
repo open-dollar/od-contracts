@@ -42,7 +42,7 @@ jobs:
       - name: Export Solidity - ${{ matrix.export_type }}
         uses: defi-wonderland/solidity-exporter-action@v2.0.0
         with:
-          package_name: '@open-dollar'
+          package_name: 'open-dollar'
           out: 'out'
           interfaces: 'src/interfaces'
           contracts: 'src/contracts'
