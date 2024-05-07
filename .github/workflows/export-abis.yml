@@ -40,7 +40,7 @@ jobs:
         run: yarn version --new-version "0.0.0-${GITHUB_SHA::8}" --no-git-tag-version
 
       - name: Export Solidity - ${{ matrix.export_type }}
-        uses: open-dollar/solidity-exporter-action@v2.0.1
+        uses: open-dollar/solidity-exporter-action@v2.0.2
         with:
           package_name: '@opendollar'
           out: 'out'
