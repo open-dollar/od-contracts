@@ -42,14 +42,14 @@ jobs:
       - name: Export Solidity - ${{ matrix.export_type }}
         uses: defi-wonderland/solidity-exporter-action@v2.0.0
         with:
-          package_name: 'open-dollar'
+          package_name: '@open-dollar/${{ matrix.export_type }}'
           out: 'out'
           interfaces: 'src/interfaces'
           contracts: 'src/contracts'
           export_type: '${{ matrix.export_type }}'
 
       - name: Publish
-        run: cd export/open-dollar-${{ matrix.export_type }} && less package.json
+        run: cd export/@open-dollar/${{ matrix.export_type }} && less package.json
         # run: cd export/open-dollar-${{ matrix.export_type }} && npm publish --access public
         # env:
           # NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
