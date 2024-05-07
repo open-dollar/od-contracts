@@ -3,6 +3,7 @@ pragma solidity 0.8.20;
 
 import {ICollateralJoin} from '@interfaces/utils/ICollateralJoin.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
+import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
 import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
 
 import {Authorizable} from '@contracts/utils/Authorizable.sol';
@@ -65,6 +66,10 @@ contract CollateralJoin is Disableable, ICollateralJoin {
    * @inheritdoc ICollateralJoin
    */
   function join(address _account, uint256 _wei) external whenEnabled {
+    require(
+      IODSafeManager(safeEngine.odSafeManager()).safeHandlerToSafeId(_account) != 0,
+      'CollateralJoin: Invalid SAFEHandler'
+    );
     // Effect
     uint256 _wad = _wei * 10 ** multiplier; // convert to 18 decimals [wad]
     safeEngine.modifyCollateralBalance(collateralType, _account, _wad.toInt());

@@ -6,6 +6,8 @@ import {CoinForTest} from '@test/mocks/CoinForTest.sol';
 
 import {ISAFEEngine, SAFEEngine} from '@contracts/SAFEEngine.sol';
 import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
+import {IVault721} from '@interfaces/proxies/IVault721.sol';
+import {ODSafeManager} from '@contracts/proxies/ODSafeManager.sol';
 import {ILiquidationEngine, LiquidationEngine} from '@contracts/LiquidationEngine.sol';
 import {IAccountingEngine, AccountingEngine} from '@contracts/AccountingEngine.sol';
 import {IStabilityFeeTreasury, StabilityFeeTreasury} from '@contracts/StabilityFeeTreasury.sol';
@@ -119,6 +121,10 @@ contract SingleGlobalSettlementTest is DSTest {
   CoinJoin coinJoin;
   ICollateralJoinFactory collateralJoinFactory;
   ICollateralAuctionHouseFactory collateralAuctionHouseFactory;
+  IODSafeManager safeManager;
+  address mockVault721 = address(1);
+  address mockTaxCollector = address(2);
+  address mockLiquidationEngine = address(3);
 
   struct CollateralType {
     DelayedOracleForTest oracleSecurityModule;
@@ -142,6 +148,14 @@ contract SingleGlobalSettlementTest is DSTest {
 
   function _balanceOf(bytes32 _collateralType, address _usr) internal view returns (uint256) {
     return collateralTypes[_collateralType].collateral.balanceOf(_usr);
+  }
+
+  function _mockJoinSafeManagerCheck(address _user) internal {
+    hevm.mockCall(
+      address(safeManager),
+      abi.encodeWithSelector(IODSafeManager.safeHandlerToSafeId.selector, _user),
+      abi.encode(uint256(1))
+    );
   }
 
   function _init_collateral(string memory _name, bytes32 _encodedName) internal returns (CollateralType memory) {
@@ -214,6 +228,8 @@ contract SingleGlobalSettlementTest is DSTest {
     systemCoin = new CoinForTest('Coin', 'Coin');
     coinJoin = new CoinJoin(address(safeEngine), address(systemCoin));
     collateralJoinFactory = new CollateralJoinFactory(address(safeEngine));
+    hevm.mockCall(address(mockVault721), abi.encode(IVault721.initializeManager.selector), abi.encode(1));
+    safeManager = new ODSafeManager(address(safeEngine), mockVault721, mockTaxCollector, mockLiquidationEngine);
     safeEngine.addAuthorization(address(collateralJoinFactory));
 
     ISurplusAuctionHouse.SurplusAuctionHouseParams memory _sahParams = ISurplusAuctionHouse.SurplusAuctionHouseParams({
@@ -341,6 +357,7 @@ contract SingleGlobalSettlementTest is DSTest {
 
     // make a SAFE:
     address _safe1 = address(_ali);
+    _mockJoinSafeManagerCheck(address(_ali));
     gold.collateralJoin.join(_safe1, 10 ether);
     _ali.modifySAFECollateralization('gold', _safe1, _safe1, _safe1, 10 ether, 15 ether);
 
@@ -405,11 +422,13 @@ contract SingleGlobalSettlementTest is DSTest {
 
     // make a SAFE:
     address _safe1 = address(_ali);
+    _mockJoinSafeManagerCheck(_safe1);
     gold.collateralJoin.join(_safe1, 10 ether);
     _ali.modifySAFECollateralization('gold', _safe1, _safe1, _safe1, 10 ether, 15 ether);
 
     // make a second SAFE:
     address safe2 = address(_bob);
+    _mockJoinSafeManagerCheck(safe2);
     gold.collateralJoin.join(safe2, 1 ether);
     _bob.modifySAFECollateralization('gold', safe2, safe2, safe2, 1 ether, 3 ether);
 
@@ -492,6 +511,7 @@ contract SingleGlobalSettlementTest is DSTest {
 
     // make a SAFE:
     address _safe1 = address(_ali);
+    _mockJoinSafeManagerCheck(_safe1);
     gold.collateralJoin.join(_safe1, 10 ether);
     _ali.modifySAFECollateralization('gold', _safe1, _safe1, _safe1, 10 ether, 15 ether);
 
@@ -573,6 +593,7 @@ contract SingleGlobalSettlementTest is DSTest {
 
     // make a SAFE:
     address _safe1 = address(_ali);
+    _mockJoinSafeManagerCheck(_safe1);
     gold.collateralJoin.join(_safe1, 10 ether);
     _ali.modifySAFECollateralization('gold', _safe1, _safe1, _safe1, 10 ether, 15 ether);
 
@@ -638,6 +659,7 @@ contract SingleGlobalSettlementTest is DSTest {
 
     // make a SAFE:
     address _safe1 = address(_ali);
+    _mockJoinSafeManagerCheck(_safe1);
     gold.collateralJoin.join(_safe1, 10 ether);
     _ali.modifySAFECollateralization('gold', _safe1, _safe1, _safe1, 10 ether, 15 ether);
 
@@ -688,6 +710,7 @@ contract SingleGlobalSettlementTest is DSTest {
 
     // make a SAFE:
     address _safe1 = address(_ali);
+    _mockJoinSafeManagerCheck(_safe1);
     gold.collateralJoin.join(_safe1, 10 ether);
     _ali.modifySAFECollateralization('gold', _safe1, _safe1, _safe1, 10 ether, 15 ether);
 
@@ -773,6 +796,7 @@ contract SingleGlobalSettlementTest is DSTest {
     // make a SAFE:
     address _safe1 = address(_ali);
     gold.collateral.approve(address(gold.collateralJoin), type(uint256).max);
+    _mockJoinSafeManagerCheck(_safe1);
     gold.collateralJoin.join(_safe1, 10 ether);
     _ali.modifySAFECollateralization('gold', _safe1, _safe1, _safe1, 10 ether, 15 ether);
 
@@ -860,6 +884,7 @@ contract SingleGlobalSettlementTest is DSTest {
 
     // make a SAFE:
     address _safe1 = address(_ali);
+    _mockJoinSafeManagerCheck(_safe1);
     gold.collateralJoin.join(_safe1, 10 ether);
     _ali.modifySAFECollateralization('gold', _safe1, _safe1, _safe1, 10 ether, 15 ether);
 
@@ -869,6 +894,7 @@ contract SingleGlobalSettlementTest is DSTest {
 
     // make a second SAFE:
     address safe2 = address(_bob);
+    _mockJoinSafeManagerCheck(safe2);
     gold.collateralJoin.join(safe2, 1 ether);
     _bob.modifySAFECollateralization('gold', safe2, safe2, safe2, 1 ether, 3 ether);
 
@@ -959,11 +985,13 @@ contract SingleGlobalSettlementTest is DSTest {
 
     // make a SAFE:
     address _safe1 = address(_ali);
+    _mockJoinSafeManagerCheck(_safe1);
     gold.collateralJoin.join(_safe1, 10 ether);
     _ali.modifySAFECollateralization('gold', _safe1, _safe1, _safe1, 10 ether, 15 ether);
 
     // make a second SAFE:
     address safe2 = address(_bob);
+    _mockJoinSafeManagerCheck(safe2);
     coal.collateralJoin.join(safe2, 1 ether);
     safeEngine.updateCollateralPrice('coal', ray(5 ether), ray(5 ether));
     _bob.modifySAFECollateralization('coal', safe2, safe2, safe2, 1 ether, 5 ether);
@@ -1045,6 +1073,7 @@ contract SingleGlobalSettlementTest is DSTest {
     // make a SAFE:
     address _safe1 = address(_ali);
     gold.collateral.mint(500_000_000 ether);
+    _mockJoinSafeManagerCheck(_safe1);
     gold.collateralJoin.join(_safe1, 500_000_000 ether);
     _ali.modifySAFECollateralization('gold', _safe1, _safe1, _safe1, 500_000_000 ether, 10_000_000 ether);
     // _ali's urn has 500_000_000 collateral, 10^7 debt (and 10^7 system coins since rate == RAY)

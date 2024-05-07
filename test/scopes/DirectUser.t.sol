@@ -78,6 +78,11 @@ abstract contract DirectUser is BaseUser, Contracts, ScriptBase {
     }
 
     _collateral.approve(address(_collateralJoin), _wei);
+    vm.mockCall(
+      address(safeManager),
+      abi.encodeWithSelector(IODSafeManager.safeHandlerToSafeId.selector, _user),
+      abi.encode(uint256(1))
+    );
     ICollateralJoin(_collateralJoin).join(_user, _wei);
     vm.stopPrank();
   }
