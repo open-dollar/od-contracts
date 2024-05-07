@@ -49,7 +49,6 @@ jobs:
           export_type: '${{ matrix.export_type }}'
 
       - name: Publish
-        run: cd export/@open-dollar/${{ matrix.export_type }} && less package.json
-        # run: cd export/open-dollar-${{ matrix.export_type }} && npm publish --access public
-        # env:
-          # NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: cd export/@open-dollar/${{ matrix.export_type }} && npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
