@@ -93,15 +93,22 @@ abstract contract CommonDeploymentTest is ODTest, Deploy {
   }
 
   function test_Grant_Auth() public {
-    _test_Authorizations(tlcGov, true);
-
-    if (delegate != address(0)) {
-      _test_Authorizations(delegate, true);
+    uint256 _id;
+    assembly {
+      _id := chainid()
     }
 
-    if (!isFork()) {
-      // if not fork, test deployer
-      _test_Authorizations(deployer, false);
+    if (_id != 42_161) {
+      _test_Authorizations(tlcGov, true);
+
+      if (delegate != address(0)) {
+        _test_Authorizations(delegate, true);
+      }
+
+      if (!isFork()) {
+        // if not fork, test deployer
+        _test_Authorizations(deployer, false);
+      }
     }
   }
 
@@ -143,39 +150,35 @@ abstract contract CommonDeploymentTest is ODTest, Deploy {
   }
 }
 
-/**
- * @dev not possible to test mainnet deployment due to predeployment of protcolToken
- *  that is exclusively authorized to single wallet
- *
- * contract E2EDeploymentMainnetTest is DeployMainnet, CommonDeploymentTest {
- *   function setUp() public override {
- *     uint256 forkId = vm.createFork(vm.rpcUrl('mainnet'));
- *     vm.selectFork(forkId);
- *
- *     create2 = IODCreate2Factory(MAINNET_CREATE2FACTORY);
- *     protocolToken = IProtocolToken(MAINNET_PROTOCOL_TOKEN);
- *     tlcGov = MAINNET_TIMELOCK_CONTROLLER;
- *     timelockController = TimelockController(payable(MAINNET_TIMELOCK_CONTROLLER));
- *     odGovernor = ODGovernor(payable(MAINNET_OD_GOVERNOR));
- *
- *     _deployerPk = uint256(vm.envBytes32('ARB_MAINNET_TEST_DEPLOYER_PK'));
- *     chainId = 42_161;
- *
- *     _systemCoinSalt = getSemiRandSalt();
- *     _vault721Salt = getSemiRandSalt();
- *
- *     run();
- *   }
- *
- *   function setupEnvironment() public override(DeployMainnet, Deploy) {
- *     super.setupEnvironment();
- *   }
- *
- *   function setupPostEnvironment() public override(DeployMainnet, Deploy) {
- *     super.setupPostEnvironment();
- *   }
- * }
- */
+contract E2EDeploymentMainnetTest is DeployMainnet, CommonDeploymentTest {
+  function setUp() public override {
+    uint256 forkId = vm.createFork(vm.rpcUrl('mainnet'));
+    vm.selectFork(forkId);
+
+    create2 = IODCreate2Factory(MAINNET_CREATE2FACTORY);
+    protocolToken = IProtocolToken(MAINNET_PROTOCOL_TOKEN);
+    tlcGov = MAINNET_TIMELOCK_CONTROLLER;
+    timelockController = TimelockController(payable(MAINNET_TIMELOCK_CONTROLLER));
+    odGovernor = ODGovernor(payable(MAINNET_OD_GOVERNOR));
+
+    _deployerPk = uint256(vm.envBytes32('ARB_MAINNET_DEPLOYER_PK'));
+    chainId = 42_161;
+
+    _systemCoinSalt = getSemiRandSalt();
+    _vault721Salt = getSemiRandSalt();
+
+    run();
+  }
+
+  function setupEnvironment() public override(DeployMainnet, Deploy) {
+    super.setupEnvironment();
+  }
+
+  function setupPostEnvironment() public override(DeployMainnet, Deploy) {
+    super.setupPostEnvironment();
+  }
+}
+
 contract E2EDeploymentSepoliaTest is DeploySepolia, CommonDeploymentTest {
   function setUp() public override {
     uint256 forkId = vm.createFork(vm.rpcUrl('sepolia'));
@@ -204,44 +207,3 @@ contract E2EDeploymentSepoliaTest is DeploySepolia, CommonDeploymentTest {
     super.setupPostEnvironment();
   }
 }
-
-/**
- * todo: Fix this test after next Sepolia deployment
- */
-// contract SepoliaDeploymentTest is SepoliaDeployment, CommonDeploymentTest {
-//   function setUp() public {
-//     uint256 forkId = vm.createFork(vm.rpcUrl('sepolia'));
-//     vm.selectFork(forkId);
-
-//     protocolToken = IProtocolToken(SEPOLIA_PROTOCOL_TOKEN);
-//     tlcGov = SEPOLIA_TIMELOCK_CONTROLLER;
-//     timelockController = TimelockController(payable(SEPOLIA_TIMELOCK_CONTROLLER));
-//     odGovernor = ODGovernor(payable(SEPOLIA_OD_GOVERNOR));
-//     protocolToken = IProtocolToken(SEPOLIA_PROTOCOL_TOKEN);
-//     tlcGov = SEPOLIA_TIMELOCK_CONTROLLER;
-//     timelockController = TimelockController(payable(SEPOLIA_TIMELOCK_CONTROLLER));
-//     odGovernor = ODGovernor(payable(SEPOLIA_OD_GOVERNOR));
-
-//     _deployerPk = uint256(vm.envBytes32('ARB_SEPOLIA_DEPLOYER_PK'));
-//     chainId = 421_614;
-//     _deployerPk = uint256(vm.envBytes32('ARB_SEPOLIA_DEPLOYER_PK'));
-//     chainId = 421_614;
-
-//     _systemCoinSalt = getSemiRandSalt();
-//     _vault721Salt = getSemiRandSalt();
-//     _systemCoinSalt = getSemiRandSalt();
-//     _vault721Salt = getSemiRandSalt();
-
-//     _getEnvironmentParams();
-//     _getEnvironmentParams();
-
-//     run();
-//   }
-//     run();
-//   }
-
-//   // TODO: pass
-//   function test_Delegated_OP() public {
-//     assertEq(ERC20Votes(GOERLI_GOV_TOKEN).delegates(address(collateralJoin[ARB])), tlcGov);
-//   }
-// }
