@@ -23,7 +23,7 @@ abstract contract ERC7496Adapter is IERC7496 {
   /**
    * @dev get NFV trait
    */
-  function getTraitValue(uint256 _tokenId, bytes32 _traitKey) external view returns (bytes32 traitValue) {
+  function getTraitValue(uint256 _tokenId, bytes32 _traitKey) external view returns (bytes32) {
     (bytes32 _collateral, bytes32 _debt) = _getTraitValues(_tokenId);
     if (_traitKey == COLLATERAL) return _collateral;
     if (_traitKey == DEBT) return _debt;
