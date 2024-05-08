@@ -35,15 +35,15 @@ abstract contract ERC7496Adapter is IERC7496 {
   function getTraitValues(
     uint256 _tokenId,
     bytes32[] calldata _traitKeys
-  ) external view returns (bytes32[] memory traitValues) {
+  ) external view returns (bytes32[] memory _traitValues) {
     (bytes32 _collateral, bytes32 _debt) = _getTraitValues(_tokenId);
-    traitValues = new bytes32[](2);
+    _traitValues = new bytes32[](2);
     if (_traitKeys[0] == COLLATERAL && _traitKeys[1] == DEBT) {
-      traitValues[0] = _collateral;
-      traitValues[1] = _debt;
+      _traitValues[0] = _collateral;
+      _traitValues[1] = _debt;
     } else if (_traitKeys[0] == DEBT && _traitKeys[1] == COLLATERAL) {
-      traitValues[0] = _debt;
-      traitValues[1] = _collateral;
+      _traitValues[0] = _debt;
+      _traitValues[1] = _collateral;
     } else {
       revert UnknownTraitKeys();
     }
@@ -52,8 +52,8 @@ abstract contract ERC7496Adapter is IERC7496 {
   /**
    * @dev ???
    */
-  function getTraitMetadataURI() external view returns (string memory uri) {
-    uri = '?';
+  function getTraitMetadataURI() external view returns (string memory _uri) {
+    _uri = '?';
   }
 
   /**
@@ -68,8 +68,8 @@ abstract contract ERC7496Adapter is IERC7496 {
    * @notice return values are not hashed to enable enforceable condition in zone
    */
   function _getTraitValues(uint256 _tokenId) internal view returns (bytes32 _collateral, bytes32 _debt) {
-    IVault721.NFVState memory nfvState = vault721.getNfvState(_tokenId);
-    _collateral = bytes32(nfvState.collateral);
-    _debt = bytes32(nfvState.debt);
+    IVault721.NFVState memory _nfvState = vault721.getNfvState(_tokenId);
+    _collateral = bytes32(_nfvState.collateral);
+    _debt = bytes32(_nfvState.debt);
   }
 }
