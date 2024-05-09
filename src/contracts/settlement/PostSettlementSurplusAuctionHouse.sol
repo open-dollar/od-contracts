@@ -4,7 +4,7 @@ pragma solidity 0.8.20;
 import {
   IPostSettlementSurplusAuctionHouse,
   ICommonSurplusAuctionHouse
-} from '@interfaces/settlement/IPostSettlementSurplusAuctionHouse.sol';
+} from '../../interfaces/settlement/IPostSettlementSurplusAuctionHouse.sol';
 import {ISAFEEngine} from '@interfaces/ISAFEEngine.sol';
 import {IProtocolToken} from '@interfaces/tokens/IProtocolToken.sol';
 
