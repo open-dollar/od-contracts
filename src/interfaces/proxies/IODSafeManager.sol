@@ -62,6 +62,9 @@ interface IODSafeManager {
   /// @notice Address of the SAFEEngine
   function safeEngine() external view returns (address _safeEngine);
 
+  /// @notice Address of the LiquidationEngine
+  function liquidationEngine() external view returns (address _liquidationEngine);
+
   /// @notice Mapping of owner and safe permissions to a caller permissions
   function safeCan(
     address _owner,
