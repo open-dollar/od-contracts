@@ -47,6 +47,9 @@ jobs:
           interfaces: 'src/interfaces'
           contracts: 'src/contracts'
           libraries: 'src/libraries'
+          scripts: 'src/scripts'
+          tests: 'src/tests'
+
           export_type: '${{ matrix.export_type }}'
 
       - name: Publish
