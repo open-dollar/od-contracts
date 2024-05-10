@@ -47,8 +47,8 @@ jobs:
           interfaces: 'src/interfaces'
           contracts: 'src/contracts'
           libraries: 'src/libraries'
-          scripts: 'src/scripts'
-          tests: 'src/tests'
+          scripts: 'script'
+          tests: 'test'
 
           export_type: '${{ matrix.export_type }}'
 
