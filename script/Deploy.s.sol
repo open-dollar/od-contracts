@@ -6,7 +6,6 @@ import '@script/Registry.s.sol';
 import '@script/Params.s.sol';
 import 'forge-std/console2.sol';
 import {Script, VmSafe} from 'forge-std/Script.sol';
-import {FixedPointMathLib} from '@isolmate/utils/FixedPointMathLib.sol';
 import {IERC20Metadata} from '@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol';
 import {Common} from '@script/Common.s.sol';
 import {SepoliaParams} from '@script/SepoliaParams.s.sol';
@@ -170,8 +169,6 @@ contract DeployMainnet is MainnetParams, Deploy {
 }
 
 contract DeploySepolia is SepoliaParams, Deploy {
-  using FixedPointMathLib for uint256;
-
   IBaseOracle public chainlinkEthUSDPriceFeed;
 
   function setUp() public virtual {
