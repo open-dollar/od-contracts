@@ -6,7 +6,7 @@ import {
   ISAFEEngine,
   ILiquidationEngine,
   IOracleRelayer
-} from '@interfaces/settlement/IGlobalSettlement.sol';
+} from '../../interfaces/settlement/IGlobalSettlement.sol';
 
 import {ICollateralAuctionHouse} from '@interfaces/ICollateralAuctionHouse.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
