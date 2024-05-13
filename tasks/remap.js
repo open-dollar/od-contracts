@@ -28,7 +28,7 @@ const transformRemappings = (file, filePath) => {
     return fileLines
         .map(line => {
             // Just modify imports
-            if (!line.match(/} from '/g)) return line;
+            if (!line.match(/^\s*import|} from '/g)) return line;
 
             const remapping = remappings.find(([find]) => line.match(find))
 
@@ -67,7 +67,7 @@ const transformRemappings = (file, filePath) => {
             else if (dds > 1) adjustedPath = adjustedPath.substring(3)   // replace "../../" with "../"
 
             line = `${keep}'${adjustedPath}';`
-            console.log(existingPath, newPath, line);
+            // console.log(existingPath, newPath, line);
             return line;
         })
         .join('\n');
@@ -75,9 +75,10 @@ const transformRemappings = (file, filePath) => {
 
 const run = () => {
     // const filePath = "src/contracts/LiquidationEngine.sol"
-    const filePath = "src/contracts/settlement/GlobalSettlement.sol"
+    // const filePath = "src/contracts/settlement/GlobalSettlement.sol"
     // const filePath = "src/contracts/settlement/PostSettlementSurplusAuctionHouse.sol"
+    const filePath = "test/e2e/Common.t.sol"
     const fileContents = fse.readFileSync(filePath, 'utf8');
-    console.log(transformRemappings(fileContents, filePath).substring(0, 300))
+    console.log(transformRemappings(fileContents, filePath).substring(0, 1000))
 }
 run();
