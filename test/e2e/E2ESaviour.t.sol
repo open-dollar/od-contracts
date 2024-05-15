@@ -417,6 +417,8 @@ contract E2ESaviourTestLiquidateAndSave is E2ESaviourTestLiquidateSetup {
     // Approved proxy to elect saviour for protection
     vm.prank(aliceProxy);
     liquidationEngine.protectSAFE(TKN, aliceNFV.safeHandler, address(saviour));
+
+    _setAndRefreshData();
   }
 
   function test_tokenBals() public {
@@ -447,6 +449,7 @@ contract E2ESaviourTestLiquidateAndSave is E2ESaviourTestLiquidateSetup {
   function test_liquidateProtectedSafe() public {
     liquidationEngine.liquidateSAFE(TKN, aliceNFV.safeHandler);
     (uint256 _collateral, uint256 _debt) = saviour.getCurrentCollateralAndDebt(TKN, aliceNFV.safeHandler);
+    assertTrue(_collateral != 0 && _debt != 0);
   }
 
   function test_liquidateUnprotectedSafe() public {
