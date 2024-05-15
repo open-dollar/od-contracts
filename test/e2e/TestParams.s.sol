@@ -102,7 +102,7 @@ abstract contract TestParams is Contracts, Params {
       _oracleRelayerCParams[_cType] = IOracleRelayer.OracleRelayerCollateralParams({
         oracle: delayedOracle[_cType],
         safetyCRatio: 1.35e27, // 135%
-        liquidationCRatio: 1.35e27 // 135%
+        liquidationCRatio: 1.25e27 // 125%
       });
 
       _taxCollectorCParams[_cType] = ITaxCollector.TaxCollectorCollateralParams({

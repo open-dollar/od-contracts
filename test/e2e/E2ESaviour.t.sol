@@ -410,11 +410,11 @@ contract E2ESaviourTestLiquidateAndSave is E2ESaviourTestLiquidateSetup {
     vm.prank(treasury);
     saviour.setVaultStatus(vaults[aliceProxy], true);
 
-    // SafeHandler to approve proxy to modify it's safe
+    // SafeHandler to approve proxy to modify it's safe (not needed)
     vm.prank(aliceNFV.safeHandler);
     safeEngine.approveSAFEModification(aliceProxy);
 
-    // Approved proxy to elect saviour for protection
+    // Approved proxy to elect saviour for protection (call from safeManager)
     vm.prank(aliceProxy);
     liquidationEngine.protectSAFE(TKN, aliceNFV.safeHandler, address(saviour));
 
