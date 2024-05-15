@@ -101,18 +101,11 @@ contract ODSaviour is AccessControl, IODSaviour {
     emit VaultStatusSet(_vaultId, _enabled);
   }
 
-  /**
-   * todo increase collateral to sufficient level
-   * 1. find out how much collateral is required to effectively save the safe
-   * 2. transfer the collateral to the vault, so the liquidation math will result in null liquidation
-   * 3. write tests
-   */
   function saveSAFE(
     address _liquidator,
     bytes32 _cType,
     address _safe
   ) external onlyRole(PROTOCOL) returns (bool _ok, uint256 _collateralAdded, uint256 _liquidatorReward) {
-    if (liquidationEngine != _liquidator) revert OnlyLiquidationEngine();
     uint256 _vaultId = safeManager.safeHandlerToSafeId(_safe);
     if (_vaultId == 0) {
       _collateralAdded = type(uint256).max;
@@ -135,17 +128,20 @@ contract ODSaviour is AccessControl, IODSaviour {
 
       if (_safetyCRatio > _currCRatio) {
         uint256 _diffCRatio = _safetyCRatio.wdiv(_currCRatio);
-        _reqCollateral = (_currCollateral.wmul(_diffCRatio)) - _currCollateral;
+        _reqCollateral = ((_currCollateral.wmul(_diffCRatio)) - _currCollateral);
       } else {
         revert SafetyRatioMet();
       }
     }
 
-    // transferFrom ARB Treasury amount of _reqCollateral
-    _saviourTokenAddresses[_cType].transferFrom(saviourTreasury, address(this), _reqCollateral);
+    IERC20 _cToken = _saviourTokenAddresses[_cType];
 
-    if (_saviourTokenAddresses[_cType].balanceOf(address(this)) >= _reqCollateral) {
+    // transferFrom ARB Treasury amount of _reqCollateral
+    _cToken.transferFrom(saviourTreasury, address(this), _reqCollateral);
+
+    if (_cToken.balanceOf(address(this)) >= _reqCollateral) {
       address _collateralJoin = collateralJoinFactory.collateralJoins(_cType);
+      _cToken.approve(_collateralJoin, _reqCollateral);
       ICollateralJoin(_collateralJoin).join(_safe, _reqCollateral);
       _collateralAdded = _reqCollateral;
       _liquidatorReward = liquidatorReward;
