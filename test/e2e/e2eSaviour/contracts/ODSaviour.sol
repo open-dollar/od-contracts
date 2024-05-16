@@ -4,6 +4,7 @@ pragma solidity 0.8.20;
 import {AccessControl} from '@openzeppelin/access/AccessControl.sol';
 import {IERC20} from '@openzeppelin/token/ERC20/ERC20.sol';
 
+import {IODSaviour} from '@test/e2e/e2eSaviour/interfaces/IODSaviour.sol';
 import {ISAFEEngine} from '@contracts/SAFEEngine.sol';
 import {ODSafeManager, IODSafeManager} from '@contracts/proxies/ODSafeManager.sol';
 import {IOracleRelayer} from '@interfaces/IOracleRelayer.sol';
@@ -13,8 +14,9 @@ import {ICollateralJoin} from '@interfaces/utils/ICollateralJoin.sol';
 import {IVault721} from '@interfaces/proxies/IVault721.sol';
 import {Math} from '@libraries/Math.sol';
 import {Assertions} from '@libraries/Assertions.sol';
-
-import {IODSaviour} from '@test/e2e/e2eSaviour/interfaces/IODSaviour.sol';
+import {Authorizable} from '@contracts/utils/Authorizable.sol';
+import {Modifiable} from '@contracts/utils/Modifiable.sol';
+import {ModifiablePerCollateral} from '@contracts/utils/ModifiablePerCollateral.sol';
 
 /**
  * @notice Steps to save a safe using ODSaviour:
@@ -29,10 +31,6 @@ import {IODSaviour} from '@test/e2e/e2eSaviour/interfaces/IODSaviour.sol';
 contract ODSaviour is Authorizable, Modifiable, ModifiablePerCollateral, IODSaviour {
   using Math for uint256;
   using Assertions for address;
-
-  // solhint-disable-next-line modifier-name-mixedcase
-  bytes32 public constant SAVIOUR_TREASURY = keccak256(abi.encode('SAVIOUR_TREASURY'));
-  bytes32 public constant PROTOCOL = keccak256(abi.encode('PROTOCOL'));
 
   uint256 public liquidatorReward;
   address public saviourTreasury;
@@ -67,12 +65,6 @@ contract ODSaviour is Authorizable, Modifiable, ModifiablePerCollateral, IODSavi
     return address(_saviourTokenAddresses[_cType]);
   }
 
-  /**
-   * todo increase collateral to sufficient level
-   * 1. find out how much collateral is required to effectively save the safe
-   * 2. transfer the collateral to the vault, so the liquidation math will result in null liquidation
-   * 3. write tests
-   */
   function saveSAFE(
     address _liquidator,
     bytes32 _cType,
@@ -106,13 +98,12 @@ contract ODSaviour is Authorizable, Modifiable, ModifiablePerCollateral, IODSavi
         revert SafetyRatioMet();
       }
     }
+    IERC20 _token = _saviourTokenAddresses[_cType];
+    _token.transferFrom(saviourTreasury, address(this), _reqCollateral);
 
-    // transferFrom ARB Treasury amount of _reqCollateral
-    _saviourTokenAddresses[_cType].transferFrom(saviourTreasury, address(this), _reqCollateral);
-
-    if (_saviourTokenAddresses[_cType].balanceOf(address(this)) >= _reqCollateral) {
+    if (_token.balanceOf(address(this)) >= _reqCollateral) {
       address _collateralJoin = collateralJoinFactory.collateralJoins(_cType);
-      _saviourTokenAddresses[_cType].approve(_collateralJoin, _reqCollateral);
+      _token.approve(_collateralJoin, _reqCollateral);
       ICollateralJoin(_collateralJoin).join(_safe, _reqCollateral);
       safeManager.modifySAFECollateralization(_vaultId, int256(_reqCollateral), int256(0), false);
       _collateralAdded = _reqCollateral;
@@ -161,7 +152,11 @@ contract ODSaviour is Authorizable, Modifiable, ModifiablePerCollateral, IODSavi
       uint256 _liquidatorReward = abi.decode(_data, (uint256));
       liquidatorReward = _liquidatorReward;
     } else if (_param == 'saviourTreasury') {
+      if (saviourTreasury != address(0)) {
+        _removeAuthorization(saviourTreasury);
+      }
       saviourTreasury = abi.decode(_data, (address));
+      _addAuthorization(saviourTreasury);
     } else {
       revert UnrecognizedParam();
     }

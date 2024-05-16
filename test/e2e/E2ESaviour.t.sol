@@ -15,9 +15,10 @@ import {IVault721} from '@interfaces/proxies/IVault721.sol';
 import {ODProxy} from '@contracts/proxies/ODProxy.sol';
 import {Math} from '@libraries/Math.sol';
 import {DelayedOracleForTest} from '@test/mocks/DelayedOracleForTest.sol';
+import {Authorizable, IAuthorizable} from '@contracts/utils/Authorizable.sol';
 
 contract E2ESaviourSetup is Common {
-  uint256 public constant TREASURY_AMOUNT = 100_000_000_000 ether;
+  uint256 public constant TREASURY_AMOUNT = 1_000_000_000_000_000_000_000_000_000 ether;
   uint256 public constant USER_AMOUNT = 1000 ether;
 
   ODSaviour public saviour;
@@ -32,28 +33,19 @@ contract E2ESaviourSetup is Common {
     super.setUp();
     treasury = vm.addr(uint256(keccak256('ARB Treasury')));
 
-    IODSaviour.SaviourInit memory _init = _initSaviour(treasury);
+    IODSaviour.SaviourInit memory _init = IODSaviour.SaviourInit({
+      vault721: address(vault721),
+      oracleRelayer: address(oracleRelayer),
+      collateralJoinFactory: address(collateralJoinFactory)
+    });
+
     saviour = new ODSaviour(_init);
+    saviour.modifyParameters('saviourTreasury', abi.encode(treasury));
+    saviour.initializeCollateralType(TKN, abi.encode(address(collateral[TKN])));
 
     _mintTKN(treasury, TREASURY_AMOUNT, address(saviour));
-    aliceProxy = _userSetup(vm.addr(uint256(keccak256('Alice'))), USER_AMOUNT, 'AliceProxy');
-    bobProxy = _userSetup(vm.addr(uint256(keccak256('Bob'))), USER_AMOUNT, 'BobProxy');
-  }
-
-  function _initSaviour(address _saviourTreasury) internal view returns (IODSaviour.SaviourInit memory _init) {
-    uint256 len = collateralTypes.length;
-    address[] memory tokens = new address[](len);
-    for (uint256 i = 0; i < len; i++) {
-      tokens[i] = address(collateral[collateralTypes[i]]);
-    }
-    _init.saviourTreasury = _saviourTreasury;
-    _init.protocolGovernor = address(timelockController);
-    _init.vault721 = address(vault721);
-    _init.oracleRelayer = address(oracleRelayer);
-    _init.collateralJoinFactory = address(collateralJoinFactory);
-    _init.cTypes = collateralTypes;
-    _init.saviourTokens = tokens;
-    _init.liquidatorReward = 0;
+    aliceProxy = _userSetup(alice, USER_AMOUNT, 'AliceProxy');
+    bobProxy = _userSetup(bob, USER_AMOUNT, 'BobProxy');
   }
 
   function _userSetup(address _user, uint256 _amount, string memory _name) internal returns (address _proxy) {
@@ -85,14 +77,8 @@ contract E2ESaviourSetup is Common {
 }
 
 contract E2ESaviourTestSetup is E2ESaviourSetup {
-  function test_Constants() public view {
-    assertEq(saviour.SAVIOUR_TREASURY(), keccak256(abi.encode('SAVIOUR_TREASURY')));
-    assertEq(saviour.PROTOCOL(), keccak256(abi.encode('PROTOCOL')));
-  }
-
   function test_Addresses() public view {
     assertEq(saviour.saviourTreasury(), treasury);
-    assertEq(saviour.protocolGovernor(), address(timelockController));
     assertEq(saviour.liquidationEngine(), address(liquidationEngine));
   }
 
@@ -106,84 +92,83 @@ contract E2ESaviourTestSetup is E2ESaviourSetup {
 }
 
 contract E2ESaviourTestAccessControl is E2ESaviourSetup {
-  function test_Roles() public view {
-    assertTrue(IAccessControl(saviour).hasRole(saviour.SAVIOUR_TREASURY(), treasury));
-    assertTrue(IAccessControl(saviour).hasRole(saviour.PROTOCOL(), address(timelockController)));
-    assertTrue(IAccessControl(saviour).hasRole(saviour.PROTOCOL(), address(liquidationEngine)));
+  modifier notZero(bytes32 _b, address _a) {
+    vm.assume(_b != bytes32(0));
+    vm.assume(_a != address(0));
+    _;
   }
 
-  function test_AddCType(bytes32 _cType, address _tokenAddress) public {
-    vm.startPrank(treasury);
-    saviour.addCType(_cType, _tokenAddress);
+  function test_roles() public view {
+    assertTrue(IAuthorizable(saviour).authorizedAccounts(treasury));
+    assertTrue(IAuthorizable(saviour).authorizedAccounts(address(this)));
+  }
+
+  function test_initCType(bytes32 _cType, address _tokenAddress) public notZero(_cType, _tokenAddress) {
+    vm.prank(treasury);
+    saviour.initializeCollateralType(_cType, abi.encode(_tokenAddress));
     assertTrue(saviour.cType(_cType) == _tokenAddress);
   }
 
-  function test_AddCTypeRevert(address _attacker, bytes32 _cType, address _tokenAddress) public {
+  function test_initCTypeRevert(
+    address _attacker,
+    bytes32 _cType,
+    address _tokenAddress
+  ) public notZero(_cType, _tokenAddress) {
     vm.assume(_attacker != treasury);
-    vm.startPrank(_attacker);
+    vm.prank(_attacker);
     vm.expectRevert();
-    saviour.addCType(_cType, _tokenAddress);
+    saviour.initializeCollateralType(_cType, abi.encode(_tokenAddress));
   }
 
-  function test_setLiquidatorReward(uint256 _rewardA, uint256 _rewardB) public {
-    vm.prank(address(timelockController));
-    saviour.setLiquidatorReward(_rewardA);
-    assertTrue(saviour.liquidatorReward() == _rewardA);
-
-    vm.prank(address(liquidationEngine));
-    saviour.setLiquidatorReward(_rewardB);
-    assertTrue(saviour.liquidatorReward() == _rewardB);
+  function test_setLiquidatorReward(uint256 _reward) public {
+    saviour.modifyParameters('liquidatorReward', abi.encode(_reward));
+    assertTrue(saviour.liquidatorReward() == _reward);
   }
 
   function test_setLiquidatorRewardRevert(address _attacker, uint256 _reward) public {
-    vm.assume(_attacker != address(timelockController) && _attacker != address(liquidationEngine));
-    vm.startPrank(_attacker);
+    vm.assume(_attacker != address(this));
+    vm.prank(_attacker);
     vm.expectRevert();
-    saviour.setLiquidatorReward(_reward);
+    saviour.modifyParameters('liquidatorReward', abi.encode(_reward));
   }
 
-  function test_SetVaultStatus(uint256 _vaultId, bool _enabled) public {
-    vm.startPrank(treasury);
-    saviour.setVaultStatus(_vaultId, _enabled);
+  function test_modifyParams() public {
+    uint256 _vaultId = 1;
+    assertFalse(saviour.isEnabled(_vaultId));
+    saviour.modifyParameters('setVaultStatus', abi.encode(_vaultId, true));
+    assertTrue(saviour.isEnabled(_vaultId));
+  }
+
+  function test_modifyParams(bool _enabled) public {
+    uint256 _vaultId = 2;
+    saviour.modifyParameters('setVaultStatus', abi.encode(_vaultId, _enabled));
     assertTrue(saviour.isEnabled(_vaultId) == _enabled);
   }
 
-  function test_SetVaultStatusRevert(address _attacker, uint256 _vaultId, bool _enabled) public {
-    vm.assume(_attacker != treasury);
-    vm.startPrank(_attacker);
+  function test_modifyParamsRevert(address _attacker, uint256 _vaultId, bool _enabled) public {
+    vm.assume(_attacker != address(this));
+    vm.prank(_attacker);
     vm.expectRevert();
-    saviour.setVaultStatus(_vaultId, _enabled);
+    saviour.modifyParameters('setVaultStatus', abi.encode(_vaultId, _enabled));
   }
 
-  function test_SaveSafe(bytes32 _cType, address _safe) public {
+  function test_saveSafe(bytes32 _cType, address _safe) public {
     vm.prank(address(liquidationEngine));
+    (bool _ok,,) = saviour.saveSAFE(address(liquidationEngine), _cType, _safe);
+    assertTrue(_ok);
+  }
+
+  function test_SaveSafe(address _liquidator, bytes32 _cType, address _safe) public {
+    vm.prank(address(liquidationEngine));
+    (bool _ok,,) = saviour.saveSAFE(_liquidator, _cType, _safe);
+    assertTrue(_ok);
+  }
+
+  function test_saveSafeRevert(address _attacker, bytes32 _cType, address _safe) public {
+    vm.assume(_attacker != address(liquidationEngine));
+    vm.prank(_attacker);
+    vm.expectRevert();
     saviour.saveSAFE(address(liquidationEngine), _cType, _safe);
-  }
-
-  function test_SaveSafeRevert(bytes32 _cType, address _safe) public {
-    vm.prank(address(timelockController));
-    vm.expectRevert();
-    saviour.saveSAFE(address(timelockController), _cType, _safe);
-  }
-
-  function test_SaveSafeRevert(address _liquidator, bytes32 _cType, address _safe) public {
-    vm.assume(_liquidator != address(timelockController) && _liquidator != address(liquidationEngine));
-    vm.prank(address(timelockController));
-    vm.expectRevert();
-    saviour.saveSAFE(_liquidator, _cType, _safe);
-
-    vm.prank(address(liquidationEngine));
-    vm.expectRevert();
-    saviour.saveSAFE(_liquidator, _cType, _safe);
-  }
-
-  function test_SaveSafeRevert(address _attacker, address _liquidator, bytes32 _cType, address _safe) public {
-    vm.assume(
-      _attacker != address(timelockController) && _attacker != address(liquidationEngine) && _attacker != _liquidator
-    );
-    vm.startPrank(_attacker);
-    vm.expectRevert();
-    saviour.saveSAFE(_liquidator, _cType, _safe);
   }
 }
 
@@ -214,10 +199,6 @@ contract E2ESaviourTestRiskSetup is E2ESaviourSetup {
   uint256 public accumulatedRate; // RAY
   uint256 public liquidationPrice; // RAY
 
-  uint256 public wadSafetyCRatio;
-  uint256 public wadLiquidationCRatio;
-  uint256 public wadAccumulatedRate;
-
   function setUp() public virtual override {
     super.setUp();
     tknOracle = DelayedOracleForTest(address(delayedOracle[TKN]));
@@ -240,10 +221,6 @@ contract E2ESaviourTestRiskSetup is E2ESaviourSetup {
     safetyCRatio = oracleParams.safetyCRatio;
     oracle = oracleParams.oracle;
     oracleRead = oracle.read();
-    /// @notice WAD conversions
-    wadAccumulatedRate = accumulatedRate / RAY_WAD_DIFF;
-    wadLiquidationCRatio = liquidationCRatio / RAY_WAD_DIFF;
-    wadSafetyCRatio = safetyCRatio / RAY_WAD_DIFF;
   }
 
   function _depositCollatAndGenDebt(uint256 _safeId, uint256 _collatAmount, uint256 _deltaWad, address _proxy) internal {
@@ -265,11 +242,11 @@ contract E2ESaviourTestRiskSetup is E2ESaviourSetup {
     _fixedPtPercent = _wad / (WAD / TWO_DECIMAL_OFFSET);
   }
 
-  function _readRisk(address _safeHandler) internal returns (uint256 _riskRatio, int256 _percentOverSafety) {
+  function _readRisk(address _safeHandler) internal view returns (uint256 _riskRatio, int256 _percentOverSafety) {
     (uint256 _collateral, uint256 _debt) = saviour.getCurrentCollateralAndDebt(TKN, _safeHandler);
     _riskRatio = _collateral.wmul(oracle.read()).wdiv(_debt.wmul(accumulatedRate)) / (RAY_WAD_DIFF / TWO_DECIMAL_OFFSET);
     unchecked {
-      _percentOverSafety = int256(_riskRatio) - int256(wadSafetyCRatio / (WAD / TWO_DECIMAL_OFFSET));
+      _percentOverSafety = int256(_riskRatio) - int256((safetyCRatio / RAY_WAD_DIFF) / (WAD / TWO_DECIMAL_OFFSET));
     }
   }
 }
@@ -282,16 +259,9 @@ contract E2ESaviourTestRisk is E2ESaviourTestRiskSetup {
     emit log_named_uint('SafetyCRatio TKN [RAY]', safetyCRatio);
     emit log_named_uint('LiquidCRatio TKN [RAY]', liquidationCRatio);
 
-    /// @notice WAD format
-    emit log_named_uint('Oracle Read ------- [WAD]', oracleRead);
-    emit log_named_uint('Accumulated Rate [to WAD]', wadAccumulatedRate);
-    emit log_named_uint('SafetyCRatio TKN [to WAD]', wadSafetyCRatio);
-    emit log_named_uint('LiquidCRatio TKN [to WAD]', wadLiquidationCRatio);
-    assertTrue(wadSafetyCRatio / oracleRead > 0);
-
     uint256 percentOracleRead = _toFixedPointPercent(oracleRead);
-    uint256 percentSafetyCRatio = _toFixedPointPercent(wadSafetyCRatio);
-    uint256 percentLiquidationCRatio = _toFixedPointPercent(wadLiquidationCRatio);
+    uint256 percentSafetyCRatio = _toFixedPointPercent(safetyCRatio / RAY_WAD_DIFF);
+    uint256 percentLiquidationCRatio = _toFixedPointPercent(liquidationCRatio / RAY_WAD_DIFF);
 
     /// @notice Fixed point 2-decimal format (nftRenderer format)
     emit log_named_uint('Oracle Read ---- [to %]', percentOracleRead);
@@ -300,7 +270,7 @@ contract E2ESaviourTestRisk is E2ESaviourTestRiskSetup {
     assertTrue(percentSafetyCRatio / percentOracleRead > 0);
   }
 
-  function test_SetUp() public view {
+  function test_setUp() public view {
     (uint256 _collateral, uint256 _debt) = saviour.getCurrentCollateralAndDebt(TKN, aliceNFV.safeHandler);
     assertEq(_collateral, DEPOSIT);
     assertEq(_debt, MINT);
@@ -407,35 +377,40 @@ contract E2ESaviourTestLiquidateAndSave is E2ESaviourTestLiquidateSetup {
     liquidationEngine.connectSAFESaviour(address(saviour));
 
     // Treasury to approve select protocol vaults as eligible for saving
-    vm.prank(treasury);
-    saviour.setVaultStatus(vaults[aliceProxy], true);
+    saviour.modifyParameters('setVaultStatus', abi.encode(vaults[aliceProxy], true));
 
-    // SafeHandler to approve proxy to modify it's safe (not needed)
-    vm.prank(aliceNFV.safeHandler);
-    safeEngine.approveSAFEModification(aliceProxy);
+    bytes memory payloadAllow = abi.encodeWithSelector(
+      basicActions.allowSAFE.selector, address(safeManager), vaults[aliceProxy], address(saviour), true
+    );
+    // Approve saviour as safe handler
+    vm.prank(alice);
+    ODProxy(aliceProxy).execute(address(basicActions), payloadAllow);
 
-    // Approved proxy to elect saviour for protection (call from safeManager)
-    vm.prank(aliceProxy);
-    liquidationEngine.protectSAFE(TKN, aliceNFV.safeHandler, address(saviour));
+    bytes memory payloadProtect = abi.encodeWithSelector(
+      basicActions.protectSAFE.selector, address(safeManager), vaults[aliceProxy], address(saviour)
+    );
+    // Proxy to elect saviour to protect vault
+    vm.prank(alice);
+    ODProxy(aliceProxy).execute(address(basicActions), payloadProtect);
 
     _setAndRefreshData();
   }
 
-  function test_tokenBals() public {
+  function test_tokenBals() public view {
     assertEq(token.balanceOf(treasury), TREASURY_AMOUNT);
     assertEq(token.balanceOf(address(saviour)), 0);
     assertEq(token.allowance(treasury, address(saviour)), TREASURY_AMOUNT);
   }
 
-  function test_enabledVault() public {
+  function test_enabledVault() public view {
     assertTrue(saviour.isEnabled(vaults[aliceProxy]));
   }
 
-  function test_disabledVault() public {
+  function test_disabledVault() public view {
     assertFalse(saviour.isEnabled(vaults[bobProxy]));
   }
 
-  function test_protectSafe() public {
+  function test_protectSafe() public view {
     address chosenSaviour = liquidationEngine.chosenSAFESaviour(TKN, aliceNFV.safeHandler);
     assertTrue(address(saviour) == chosenSaviour);
   }
@@ -447,14 +422,110 @@ contract E2ESaviourTestLiquidateAndSave is E2ESaviourTestLiquidateSetup {
   }
 
   function test_liquidateProtectedSafe() public {
+    (uint256 _collateralA, uint256 _debtA) = saviour.getCurrentCollateralAndDebt(TKN, aliceNFV.safeHandler);
+    assertTrue(_collateralA > 0 && _debtA > 0);
     liquidationEngine.liquidateSAFE(TKN, aliceNFV.safeHandler);
-    (uint256 _collateral, uint256 _debt) = saviour.getCurrentCollateralAndDebt(TKN, aliceNFV.safeHandler);
-    assertTrue(_collateral != 0 && _debt != 0);
+    (uint256 _collateralB, uint256 _debtB) = saviour.getCurrentCollateralAndDebt(TKN, aliceNFV.safeHandler);
+    assertTrue(_collateralB > _collateralA && _debtB == _debtA);
   }
 
   function test_liquidateUnprotectedSafe() public {
+    (uint256 _collateralA, uint256 _debtA) = saviour.getCurrentCollateralAndDebt(TKN, bobNFV.safeHandler);
+    assertTrue(_collateralA > 0 && _debtA > 0);
     liquidationEngine.liquidateSAFE(TKN, bobNFV.safeHandler);
-    (uint256 _collateral, uint256 _debt) = saviour.getCurrentCollateralAndDebt(TKN, bobNFV.safeHandler);
-    assertTrue(_collateral == 0 && _debt == 0);
+    (uint256 _collateralB, uint256 _debtB) = saviour.getCurrentCollateralAndDebt(TKN, bobNFV.safeHandler);
+    assertTrue(_collateralB == 0 && _debtB == 0);
+  }
+}
+
+/// todo clean up and refactor to remove duplicate code in other setups
+contract E2ESaviourTestFuzz is E2ESaviourTestRiskSetup {
+  ERC20ForTest public token;
+
+  function setUp() public virtual override {
+    super.setUp();
+    token = ERC20ForTest(saviour.cType(TKN));
+
+    // increase user's vault risk
+    _depositCollatAndGenDebt(vaults[aliceProxy], 0, 5 ether, aliceProxy);
+    _depositCollatAndGenDebt(vaults[bobProxy], 0, 5 ether, bobProxy);
+
+    // Protocol DAO to connect saviour
+    vm.prank(liquidationEngine.authorizedAccounts()[0]);
+    liquidationEngine.connectSAFESaviour(address(saviour));
+
+    // Treasury to approve select protocol vaults as eligible for saving
+    saviour.modifyParameters('setVaultStatus', abi.encode(vaults[aliceProxy], true));
+
+    bytes memory payloadAllow = abi.encodeWithSelector(
+      basicActions.allowSAFE.selector, address(safeManager), vaults[aliceProxy], address(saviour), true
+    );
+    // Approve saviour as safe handler
+    vm.prank(alice);
+    ODProxy(aliceProxy).execute(address(basicActions), payloadAllow);
+
+    bytes memory payloadProtect = abi.encodeWithSelector(
+      basicActions.protectSAFE.selector, address(safeManager), vaults[aliceProxy], address(saviour)
+    );
+    // Proxy to elect saviour to protect vault
+    vm.prank(alice);
+    ODProxy(aliceProxy).execute(address(basicActions), payloadProtect);
+
+    _setAndRefreshData();
+  }
+
+  function _devalueCollateral(uint256 _devaluation) internal {
+    uint256 tknPrice = tknOracle.read();
+    bound(_devaluation, 0.1 ether, 0.2 ether);
+    tknOracle.setPriceAndValidity(tknPrice - _devaluation, true);
+    _setAndRefreshData();
+    oracleRelayer.updateCollateralPrice(TKN);
+    _setAndRefreshData();
+  }
+
+  function test_liquidateProtectedSafe(uint256 _devaluation) public {
+    emit log_named_uint('Liquidation Price ***', liquidationPrice);
+    emit log_named_uint('Accumulated Rate  ***', accumulatedRate);
+    (uint256 _collateralA, uint256 _debtA) = saviour.getCurrentCollateralAndDebt(TKN, aliceNFV.safeHandler);
+    assertTrue(_collateralA > 0 && _debtA > 0);
+    assertTrue((_collateralA * liquidationPrice) >= (_debtA * accumulatedRate));
+
+    _devalueCollateral(_devaluation);
+    emit log_named_uint('Liquidation Price ***', liquidationPrice);
+    emit log_named_uint('Accumulated Rate  ***', accumulatedRate);
+    (uint256 _collateralB, uint256 _debtB) = saviour.getCurrentCollateralAndDebt(TKN, aliceNFV.safeHandler);
+    if (liquidationPrice != 0 && (_collateralB * liquidationPrice) < (_debtB * accumulatedRate)) {
+      liquidationEngine.liquidateSAFE(TKN, aliceNFV.safeHandler);
+    }
+
+    (uint256 _collateralC, uint256 _debtC) = saviour.getCurrentCollateralAndDebt(TKN, aliceNFV.safeHandler);
+    assertTrue(_collateralC >= _collateralA);
+    assertEq(_debtC, _debtA);
+  }
+
+  function test_liquidateUnprotectedSafe(uint256 _devaluation) public {
+    emit log_named_uint('Liquidation Price ***', liquidationPrice);
+    emit log_named_uint('Accumulated Rate  ***', accumulatedRate);
+    uint256 _collateralC;
+    uint256 _debtC;
+
+    (uint256 _collateralA, uint256 _debtA) = saviour.getCurrentCollateralAndDebt(TKN, bobNFV.safeHandler);
+    assertTrue(_collateralA > 0 && _debtA > 0);
+    assertTrue((_collateralA * liquidationPrice) >= (_debtA * accumulatedRate));
+
+    _devalueCollateral(_devaluation);
+    emit log_named_uint('Liquidation Price ***', liquidationPrice);
+    emit log_named_uint('Accumulated Rate  ***', accumulatedRate);
+    (uint256 _collateralB, uint256 _debtB) = saviour.getCurrentCollateralAndDebt(TKN, aliceNFV.safeHandler);
+
+    if (liquidationPrice != 0 && (_collateralB * liquidationPrice) < (_debtB * accumulatedRate)) {
+      liquidationEngine.liquidateSAFE(TKN, bobNFV.safeHandler);
+
+      (_collateralC, _debtC) = saviour.getCurrentCollateralAndDebt(TKN, bobNFV.safeHandler);
+      assertTrue(_collateralC == 0 && _debtC == 0);
+    } else {
+      (_collateralC, _debtC) = saviour.getCurrentCollateralAndDebt(TKN, bobNFV.safeHandler);
+      assertTrue(_collateralC == _collateralA && _debtC == _debtA);
+    }
   }
 }
