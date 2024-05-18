@@ -85,18 +85,21 @@ contract ODSaviour is Authorizable, Modifiable, ModifiablePerCollateral, IODSavi
 
     uint256 _reqCollateral;
     {
+      ISAFEEngine.SAFEEngineCollateralData memory _safeEngCData = safeEngine.cData(_cType);
+      ISAFEEngine.SAFE memory _safeData = safeEngine.safes(_cType, _safe);
+
       (uint256 _currCollateral, uint256 _currDebt) = getCurrentCollateralAndDebt(_cType, _safe);
-      uint256 _accumulatedRate = safeEngine.cData(_cType).accumulatedRate;
+      uint256 _accumulatedRate = _safeEngCData.accumulatedRate;
+      uint256 _liquidationPrice = _safeEngCData.liquidationPrice;
+      uint256 _safetyPrice = _safeEngCData.safetyPrice;
 
-      uint256 _currCRatio = ((_currCollateral.wmul(_oracle.read())).wdiv(_currDebt.wmul(_accumulatedRate)));
-      uint256 _safetyCRatio = _oracleParams.safetyCRatio / 1e18;
+      uint256 _collatXliqPrice = _currCollateral.wmul(_liquidationPrice);
+      uint256 _debtXaccumuRate = _currDebt.wmul(_accumulatedRate);
 
-      if (_safetyCRatio > _currCRatio) {
-        uint256 _diffCRatio = _safetyCRatio.wdiv(_currCRatio);
-        _reqCollateral = (_currCollateral.wmul(_diffCRatio)) - _currCollateral;
-      } else {
-        revert SafetyRatioMet();
-      }
+      _reqCollateral = (_debtXaccumuRate - _collatXliqPrice).wdiv(_safetyPrice);
+      uint256 _newCollatXliqPrice = (_reqCollateral + _currCollateral).wmul(_liquidationPrice);
+
+      if (_newCollatXliqPrice <= _debtXaccumuRate) revert SafetyRatioNotMet();
     }
     IERC20 _token = _saviourTokenAddresses[_cType];
     _token.transferFrom(saviourTreasury, address(this), _reqCollateral);
@@ -121,9 +124,9 @@ contract ODSaviour is Authorizable, Modifiable, ModifiablePerCollateral, IODSavi
     bytes32 _cType,
     address _safe
   ) public view returns (uint256 _currCollateral, uint256 _currDebt) {
-    ISAFEEngine.SAFE memory _safeEngineData = safeEngine.safes(_cType, _safe);
-    _currCollateral = _safeEngineData.lockedCollateral;
-    _currDebt = _safeEngineData.generatedDebt;
+    ISAFEEngine.SAFE memory _safeData = safeEngine.safes(_cType, _safe);
+    _currCollateral = _safeData.lockedCollateral;
+    _currDebt = _safeData.generatedDebt;
   }
 
   function _initializeCollateralType(bytes32 _cType, bytes memory _collateralParams) internal virtual override {

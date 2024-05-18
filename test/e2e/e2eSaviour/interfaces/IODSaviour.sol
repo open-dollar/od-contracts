@@ -15,7 +15,7 @@ interface IODSaviour is ISAFESaviour {
   error VaultNotAllowed(uint256 _vaultId);
   error CollateralTransferFailed();
   error OnlyLiquidationEngine();
-  error SafetyRatioMet();
+  error SafetyRatioNotMet();
   error AlreadyInitialized(bytes32);
   error UninitializedCollateral(bytes32);
   error CollateralMustBeInitialized(bytes32);

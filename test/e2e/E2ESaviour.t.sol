@@ -19,6 +19,7 @@ import {Authorizable, IAuthorizable} from '@contracts/utils/Authorizable.sol';
 
 contract E2ESaviourSetup is Common {
   uint256 public constant TREASURY_AMOUNT = 1_000_000_000_000_000_000_000_000_000 ether;
+  uint256 public constant PROTOCOL_AMOUNT = 1_000_000_000 ether;
   uint256 public constant USER_AMOUNT = 1000 ether;
 
   ODSaviour public saviour;
@@ -26,6 +27,7 @@ contract E2ESaviourSetup is Common {
 
   address public aliceProxy;
   address public bobProxy;
+  address public deployerProxy;
 
   mapping(address proxy => uint256 safeId) public vaults;
 
@@ -46,6 +48,7 @@ contract E2ESaviourSetup is Common {
     _mintTKN(treasury, TREASURY_AMOUNT, address(saviour));
     aliceProxy = _userSetup(alice, USER_AMOUNT, 'AliceProxy');
     bobProxy = _userSetup(bob, USER_AMOUNT, 'BobProxy');
+    deployerProxy = _userSetup(deployer, PROTOCOL_AMOUNT, 'DeployerProxy');
   }
 
   function _userSetup(address _user, uint256 _amount, string memory _name) internal returns (address _proxy) {
@@ -153,6 +156,7 @@ contract E2ESaviourTestAccessControl is E2ESaviourSetup {
   }
 
   function test_saveSafe(bytes32 _cType, address _safe) public {
+    saviour.modifyParameters('setVaultStatus', abi.encode(1, true));
     vm.prank(address(liquidationEngine));
     (bool _ok,,) = saviour.saveSAFE(address(liquidationEngine), _cType, _safe);
     assertTrue(_ok);
@@ -205,6 +209,7 @@ contract E2ESaviourTestRiskSetup is E2ESaviourSetup {
     _setAndRefreshData();
     _depositCollatAndGenDebt(vaults[aliceProxy], DEPOSIT, MINT, aliceProxy);
     _depositCollatAndGenDebt(vaults[bobProxy], DEPOSIT, MINT, bobProxy);
+    _depositCollatAndGenDebt(vaults[deployerProxy], PROTOCOL_AMOUNT, MINT, deployerProxy);
   }
 
   /**
@@ -270,6 +275,12 @@ contract E2ESaviourTestRisk is E2ESaviourTestRiskSetup {
     assertTrue(percentSafetyCRatio / percentOracleRead > 0);
   }
 
+  function test_oracle() public view {
+    IOracleRelayer.OracleRelayerCollateralParams memory oracleParams = oracleRelayer.cParams(TKN);
+    IDelayedOracle oracle = oracleParams.oracle;
+    assertEq(address(tknOracle), address(oracle));
+  }
+
   function test_setUp() public view {
     (uint256 _collateral, uint256 _debt) = saviour.getCurrentCollateralAndDebt(TKN, aliceNFV.safeHandler);
     assertEq(_collateral, DEPOSIT);
@@ -308,16 +319,11 @@ contract E2ESaviourTestRisk is E2ESaviourTestRiskSetup {
 
   function test_triggerLiquidationScenario() public {
     (uint256 _riskRatioBefore, int256 _percentOverSafetyBefore) = _readRisk(aliceNFV.safeHandler);
-    emit log_named_uint('Vault Risk [start]', _riskRatioBefore);
     uint256 tknPriceBefore = tknOracle.read();
     uint256 systemCoinPrice = systemCoinOracle.read();
-    emit log_named_uint('TKN Price  [start]', tknPriceBefore);
-    emit log_named_uint('System Coin  Price', systemCoinPrice);
     tknOracle.setPriceAndValidity(tknPriceBefore - 0.05 ether, true);
     uint256 tknPriceAfter = tknOracle.read();
-    emit log_named_uint('TKN Price [update]', tknPriceAfter);
     (uint256 _riskRatioAfter, int256 _percentOverSafetyAfter) = _readRisk(aliceNFV.safeHandler);
-    emit log_named_uint('Vault Risk[update]', _riskRatioAfter);
     assertTrue(_riskRatioBefore > _riskRatioAfter);
   }
 }
@@ -440,6 +446,8 @@ contract E2ESaviourTestLiquidateAndSave is E2ESaviourTestLiquidateSetup {
 
 /// todo clean up and refactor to remove duplicate code in other setups
 contract E2ESaviourTestFuzz is E2ESaviourTestRiskSetup {
+  using Math for uint256;
+
   ERC20ForTest public token;
 
   function setUp() public virtual override {
@@ -475,37 +483,56 @@ contract E2ESaviourTestFuzz is E2ESaviourTestRiskSetup {
   }
 
   function _devalueCollateral(uint256 _devaluation) internal {
-    uint256 tknPrice = tknOracle.read();
-    bound(_devaluation, 0.1 ether, 0.2 ether);
-    tknOracle.setPriceAndValidity(tknPrice - _devaluation, true);
+    uint256 _tknPrice = tknOracle.read();
+    emit log_named_uint('TKN   Price', _tknPrice);
+    emit log_named_uint('DEVAL Price', _devaluation);
+    tknOracle.setPriceAndValidity(_tknPrice - _devaluation, true);
     _setAndRefreshData();
     oracleRelayer.updateCollateralPrice(TKN);
     _setAndRefreshData();
   }
 
+  function test_algorithm(uint256 _devaluation) public {
+    _devaluation = bound(_devaluation, 0.1 ether, 1 ether - 1);
+    _devalueCollateral(_devaluation);
+
+    ISAFEEngine.SAFEEngineCollateralData memory _safeEngCData = safeEngine.cData(TKN);
+    ISAFEEngine.SAFE memory _safeData = safeEngine.safes(TKN, aliceNFV.safeHandler);
+
+    (uint256 _currCollateral, uint256 _currDebt) = saviour.getCurrentCollateralAndDebt(TKN, aliceNFV.safeHandler);
+    uint256 _accumulatedRate = _safeEngCData.accumulatedRate;
+    uint256 _liquidationPrice = _safeEngCData.liquidationPrice;
+    uint256 _safetyPrice = _safeEngCData.safetyPrice;
+
+    uint256 _collatXliqPrice = _currCollateral.wmul(_liquidationPrice);
+    uint256 _debtXaccumuRate = _currDebt.wmul(_accumulatedRate);
+
+    if (_collatXliqPrice < _debtXaccumuRate) {
+      uint256 _reqAmount = (_debtXaccumuRate - _collatXliqPrice).wdiv(_safetyPrice);
+      uint256 _newCollatXliqPrice = (_currCollateral + _reqAmount).wmul(_liquidationPrice);
+
+      assertTrue(_newCollatXliqPrice > _debtXaccumuRate);
+    }
+  }
+
   function test_liquidateProtectedSafe(uint256 _devaluation) public {
-    emit log_named_uint('Liquidation Price ***', liquidationPrice);
-    emit log_named_uint('Accumulated Rate  ***', accumulatedRate);
+    _devaluation = bound(_devaluation, 1, 1 ether - 1);
     (uint256 _collateralA, uint256 _debtA) = saviour.getCurrentCollateralAndDebt(TKN, aliceNFV.safeHandler);
     assertTrue(_collateralA > 0 && _debtA > 0);
     assertTrue((_collateralA * liquidationPrice) >= (_debtA * accumulatedRate));
 
     _devalueCollateral(_devaluation);
-    emit log_named_uint('Liquidation Price ***', liquidationPrice);
-    emit log_named_uint('Accumulated Rate  ***', accumulatedRate);
     (uint256 _collateralB, uint256 _debtB) = saviour.getCurrentCollateralAndDebt(TKN, aliceNFV.safeHandler);
     if (liquidationPrice != 0 && (_collateralB * liquidationPrice) < (_debtB * accumulatedRate)) {
       liquidationEngine.liquidateSAFE(TKN, aliceNFV.safeHandler);
     }
-
     (uint256 _collateralC, uint256 _debtC) = saviour.getCurrentCollateralAndDebt(TKN, aliceNFV.safeHandler);
     assertTrue(_collateralC >= _collateralA);
     assertEq(_debtC, _debtA);
   }
 
   function test_liquidateUnprotectedSafe(uint256 _devaluation) public {
-    emit log_named_uint('Liquidation Price ***', liquidationPrice);
-    emit log_named_uint('Accumulated Rate  ***', accumulatedRate);
+    _devaluation = bound(_devaluation, 1, 1 ether - 1);
     uint256 _collateralC;
     uint256 _debtC;
 
@@ -514,9 +541,7 @@ contract E2ESaviourTestFuzz is E2ESaviourTestRiskSetup {
     assertTrue((_collateralA * liquidationPrice) >= (_debtA * accumulatedRate));
 
     _devalueCollateral(_devaluation);
-    emit log_named_uint('Liquidation Price ***', liquidationPrice);
-    emit log_named_uint('Accumulated Rate  ***', accumulatedRate);
-    (uint256 _collateralB, uint256 _debtB) = saviour.getCurrentCollateralAndDebt(TKN, aliceNFV.safeHandler);
+    (uint256 _collateralB, uint256 _debtB) = saviour.getCurrentCollateralAndDebt(TKN, bobNFV.safeHandler);
 
     if (liquidationPrice != 0 && (_collateralB * liquidationPrice) < (_debtB * accumulatedRate)) {
       liquidationEngine.liquidateSAFE(TKN, bobNFV.safeHandler);
