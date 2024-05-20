@@ -682,10 +682,11 @@ contract E2ESafeManagerTest_ProtectSAFE is E2ESafeManagerSetUp {
     protectSAFE(bobProxy, aliceSafeId, testSaviour);
     assertFalse(safeManager.safeCan(bobProxy, aliceSafeId, 0, testSaviour));
   }
+
   function test_ProtectSafe_NotAllowedAfterRevert() public {
     address randomSaviour = address(1234);
-        vm.prank(alice);
-        vm.expectRevert(ILiquidationEngine.LiqEng_SaviourNotAuthorized.selector);
+    vm.prank(alice);
+    vm.expectRevert(ILiquidationEngine.LiqEng_SaviourNotAuthorized.selector);
     protectSAFE(aliceProxy, aliceSafeId, randomSaviour);
     assertFalse(safeManager.safeCan(aliceProxy, aliceSafeId, 0, randomSaviour));
   }
