@@ -270,6 +270,7 @@ contract BasicActions is CommonActions, IBasicActions {
   /// @inheritdoc IBasicActions
   function protectSAFE(address _manager, uint256 _safe, address _saviour) external delegateCall {
     ODSafeManager(_manager).protectSAFE(_safe, _saviour);
+    ODSafeManager(_manager).allowSAFE(_safe, _saviour, true);
   }
 
   /// @inheritdoc IBasicActions
