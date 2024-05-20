@@ -7,6 +7,7 @@ import {BaseUser} from '@test/scopes/BaseUser.t.sol';
 import {DirectUser} from '@test/scopes/DirectUser.t.sol';
 import {ProxyUser} from '@test/scopes/ProxyUser.t.sol';
 import {IODSafeManager} from '@interfaces/proxies/IODSafeManager.sol';
+import {ILiquidationEngine} from '@interfaces/ILiquidationEngine.sol';
 import {SafeSaviourForForTest} from '@test/mocks/SafeSaviourForTest.sol';
 
 import {HOUR, YEAR, RAD, WAD, RAY} from '@libraries/Math.sol';
@@ -153,7 +154,7 @@ abstract contract E2ESafeManagerSetUp is Base_CType, BasicActionsForE2ETests {
     aliceProxy = deployOrFind(alice);
     aliceSafeId = safeManager.openSAFE(_cType(), aliceProxy);
     aliceData = safeManager.safeData(aliceSafeId);
-
+    bobProxy = deployOrFind(bob);
     //mint collateral to alice
     _token = ERC20ForTest(address(ICollateralJoin(address(collateralJoin[_cType()])).collateral()));
     vm.prank(alice);
@@ -676,9 +677,17 @@ contract E2ESafeManagerTest_ProtectSAFE is E2ESafeManagerSetUp {
   }
 
   function test_ProtectSafe_Revert_SafeNotAllowed() public {
-    vm.prank(bobProxy);
+    vm.prank(bob);
     vm.expectRevert(IODSafeManager.SafeNotAllowed.selector);
-    safeManager.protectSAFE(aliceSafeId, testSaviour);
+    protectSAFE(bobProxy, aliceSafeId, testSaviour);
+    assertFalse(safeManager.safeCan(bobProxy, aliceSafeId, 0, testSaviour));
+  }
+  function test_ProtectSafe_NotAllowedAfterRevert() public {
+    address randomSaviour = address(1234);
+        vm.prank(alice);
+        vm.expectRevert(ILiquidationEngine.LiqEng_SaviourNotAuthorized.selector);
+    protectSAFE(aliceProxy, aliceSafeId, randomSaviour);
+    assertFalse(safeManager.safeCan(aliceProxy, aliceSafeId, 0, randomSaviour));
   }
 }
 
