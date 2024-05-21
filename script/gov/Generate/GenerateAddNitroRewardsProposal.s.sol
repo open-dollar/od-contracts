@@ -71,8 +71,6 @@ contract GenerateAddNitroRewardsProposal is Generator, JSONScript {
     // Get the description and descriptionHash
     bytes32 descriptionHash = keccak256(bytes(description));
 
-    vm.startBroadcast(_privateKey);
-
     // Propose the action to add rewards to NitroPool
     uint256 proposalId = gov.propose(targets, values, calldatas, description);
     string memory stringProposalId = vm.toString(proposalId / 10 ** 69);
@@ -88,8 +86,6 @@ contract GenerateAddNitroRewardsProposal is Generator, JSONScript {
         jsonOutput, string.concat('./gov-output/', _network, '/', stringProposalId, '-add-nitro-rewards.json')
       );
     }
-
-    vm.stopBroadcast();
   }
 
   function _serializeCurrentJson(string memory _objectKey) internal override returns (string memory _serializedInput) {

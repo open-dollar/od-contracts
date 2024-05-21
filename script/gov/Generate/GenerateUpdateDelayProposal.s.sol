@@ -39,8 +39,6 @@ contract GenerateUpdateDelayProposal is Generator, JSONScript {
 
     bytes32 descriptionHash = keccak256(bytes(_description));
 
-    vm.startBroadcast(_privateKey);
-
     uint256 proposalId = gov.hashProposal(targets, values, calldatas, descriptionHash);
 
     // Propose the action to add the collateral type
@@ -54,8 +52,6 @@ contract GenerateUpdateDelayProposal is Generator, JSONScript {
         _buildProposalParamsJSON(proposalId, objectKey, targets, values, calldatas, _description, descriptionHash);
       vm.writeJson(jsonOutput, string.concat('./gov-output/', _network, '/', stringProposalId, '-updateTimeDelay.json'));
     }
-
-    vm.stopBroadcast();
   }
 
   function _serializeCurrentJson(string memory _objectKey) internal override returns (string memory _serializedInput) {

@@ -35,8 +35,10 @@ function getNetwork(network) {
   let signer; //ethers.getCreateAddress(from: , nonce: 1)
   let provider;
   if (network == "anvil") {
-    provider = new ethers.JsonRpcProvider("http://localhost:8545");
-    signer = new ethers.Wallet(process.env.ANVIL_ONE, provider);
+    let anvilRpc = process.env.ANVIL_RPC;
+    let anvilPK = process.env.ANVIL_ONE;
+    provider = new ethers.JsonRpcProvider(anvilRpc, provider);
+    signer = new ethers.Wallet(anvilPK, provider);
   } else if (network == "sepolia" || network == "arb-sepolia") {
     const rpc_endpoint = process.env.ARB_SEPOLIA_RPC;
     provider = new ethers.JsonRpcProvider(rpc_endpoint);

@@ -57,8 +57,6 @@ contract GenerateERC20TransferProposal is Generator, JSONScript {
     // Get the descriptionHash
     bytes32 descriptionHash = keccak256(bytes(description));
 
-    vm.startBroadcast(_privateKey);
-
     // Propose the action to add transfer the ERC20 token to the receiver
     uint256 proposalId = gov.propose(targets, values, calldatas, description);
     string memory stringProposalId = vm.toString(proposalId / 10 ** 69);
@@ -72,8 +70,6 @@ contract GenerateERC20TransferProposal is Generator, JSONScript {
         _buildProposalParamsJSON(proposalId, objectKey, targets, values, calldatas, description, descriptionHash);
       vm.writeJson(jsonOutput, string.concat('./gov-output/', _network, '/', stringProposalId, '-transfer-erc20.json'));
     }
-
-    vm.stopBroadcast();
   }
 
   function _serializeCurrentJson(string memory _objectKey) internal override returns (string memory _serializedInput) {
