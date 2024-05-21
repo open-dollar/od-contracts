@@ -1,0 +1,11 @@
+{
+  "chainid": 42161,
+  "description": "Reduce governance threshold to 2,000 ODG",
+  "network": "mainnet",
+  "proposalType": "flexible",
+  "targets": ["0xf704735CE81165261156b41D33AB18a08803B86F"],
+  "calldatas": [
+    "0xece40cc100000000000000000000000000000000000000000000006c6b935b8bbd400000"
+  ],
+  "values": [0]
+}
