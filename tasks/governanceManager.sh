@@ -68,7 +68,7 @@ function generateProposal() {
   getRpcAndPk $NETWORK
 
   COMMAND_PATH=$(node tasks/parseProposalPath.js $1)
-echo "$COMMAND_PATH"
+
   CALLDATA=$(cast calldata "run(string)" $CAST_PATH)
   forge script $COMMAND_PATH -s $CALLDATA --fork-url $ARB_MAINNET_RPC --unlocked 
   # simulate $COMMAND_PATH $CALLDATA $RPC_ENDPOINT $PRIVATE_KEY

@@ -25,7 +25,6 @@ contract Generator is ForkManagement {
       vm.createSelectFork(vm.rpcUrl('sepolia'));
     } else {
       vm.createSelectFork(vm.rpcUrl('mainnet'));
-      vm.prank(0x000D636bD52BFc1B3a699165Ef5aa340BEA8939c);
     }
 
     _generateProposal();
