@@ -18,7 +18,6 @@ contract Generator is ForkManagement {
 
   function run(string memory _filePath) public {
     _loadJson(_filePath);
-    _loadPrivateKeys();
     _loadBaseData(json);
     _network = json.readString(string(abi.encodePacked('.network')));
     if (json.readUint(string(abi.encodePacked('.chainid'))) == 421_614) {
@@ -26,7 +25,6 @@ contract Generator is ForkManagement {
     } else {
       vm.createSelectFork(vm.rpcUrl('mainnet'));
     }
-
     _generateProposal();
   }
 
