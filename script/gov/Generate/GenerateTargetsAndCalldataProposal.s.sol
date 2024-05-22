@@ -5,36 +5,36 @@ import {JSONScript} from '@script/gov/helpers/JSONScript.s.sol';
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
 import {TimelockController} from '@openzeppelin/governance/TimelockController.sol';
 import {Generator} from '@script/gov/Generator.s.sol';
+import {Strings} from '@openzeppelin/utils/Strings.sol';
 import 'forge-std/StdJson.sol';
 
-contract GenerateUpdateDelayProposal is Generator, JSONScript {
+contract GenerateTargetsAndCalldataProposal is Generator, JSONScript {
   using stdJson for string;
 
-  uint256 internal _newDelay;
-  address internal _timelockController;
-  address internal _odGovernor;
-  string internal _description;
+  address public _odGovernor;
+  string public _description;
+  address[] public targets;
+  bytes[] public calldatas;
 
   function _loadBaseData(string memory json) internal override {
     _description = json.readString(string(abi.encodePacked('.description')));
-    _newDelay = json.readUint(string(abi.encodePacked(('.newDelay'))));
-    _timelockController = json.readAddress(string(abi.encodePacked('.TimelockController_Address')));
     _odGovernor = json.readAddress(string(abi.encodePacked('.ODGovernor_Address:')));
+    uint256 len = json.readUint(string(abi.encodePacked('.arrayLength')));
+    for (uint256 i; i < len; i++) {
+      string memory index = Strings.toString(i);
+      address target = json.readAddress(string(abi.encodePacked('.objectArray[', index, '].target')));
+      bytes memory callData = json.readBytes(string(abi.encodePacked('.objectArray[', index, '].calldata')));
+      targets.push(target);
+      calldatas.push(callData);
+    }
   }
 
   function _generateProposal() internal override {
     ODGovernor gov = ODGovernor(payable(_odGovernor));
-    address[] memory targets = new address[](1);
-    {
-      targets[0] = _timelockController;
-    }
-    uint256[] memory values = new uint256[](1);
-    {
-      values[0] = 0;
-    }
-    bytes[] memory calldatas = new bytes[](1);
-    {
-      calldatas[0] = abi.encodeWithSelector(TimelockController.updateDelay.selector, _newDelay);
+
+    uint256[] memory values = new uint256[](targets.length);
+    for (uint256 i; i < targets.length; i++) {
+      values[i] = 0;
     }
 
     bytes32 descriptionHash = keccak256(bytes(_description));
@@ -46,11 +46,13 @@ contract GenerateUpdateDelayProposal is Generator, JSONScript {
     string memory stringProposalId = vm.toString(proposalId / 10 ** 69);
 
     {
-      string memory objectKey = 'SCHEDULE-TIMELOCK-OBJECT';
+      string memory objectKey = 'TARGETS-CALLDATA';
       // Build the JSON output
       string memory jsonOutput =
         _buildProposalParamsJSON(proposalId, objectKey, targets, values, calldatas, _description, descriptionHash);
-      vm.writeJson(jsonOutput, string.concat('./gov-output/', _network, '/', stringProposalId, '-updateTimeDelay.json'));
+      vm.writeJson(
+        jsonOutput, string.concat('./gov-output/', _network, '/', stringProposalId, '-targetsAndCalldata.json')
+      );
     }
   }
 

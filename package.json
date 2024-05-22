@@ -2,13 +2,13 @@
   "name": "@opendollar/contracts",
   "version": "1.7.1",
   "private": true,
-  "description": "Multicollateral ETH backed stablecoin",
+  "description": "Contracts for the Open Dollar protocol",
   "homepage": "https://www.opendollar.com/",
   "repository": {
     "type": "git",
     "url": "https://github.com/open-dollar/od-contracts"
   },
-  "license": "MIT",
+  "license": "GNU AGPL",
   "author": "OpenFi Foundation",
   "contributors": [
     "cupOJoseph (https://github.com/cupOJoseph)",

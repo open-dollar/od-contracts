@@ -10,5 +10,5 @@ const inputPath = path.join(__dirname, `../gov-input/${targetEnv}/new-${proposal
 
 const currentProp = require(inputPath);
 
-currentProp ? console.log(JSON.stringify(currentProp)) : console.log('');
+currentProp ? console.log(JSON.stringify(currentProp, null, 2)) : console.log('');
 return;

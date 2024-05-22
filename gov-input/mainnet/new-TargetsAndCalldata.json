@@ -1,0 +1,22 @@
+{
+  "chainid": 42161,
+  "description": "Random calldatas",
+  "network": "mainnet",
+  "proposalType": "TargetsAndCalldata",
+  "ODGovernor_Address": "0xf704735CE81165261156b41D33AB18a08803B86F",
+  "objectArray": [
+    {
+      "target": "0xbbB4f37c787C6ecb0b6b5Fb3F73221aA22fabA70",
+      "calldata": "0xC295763Eed507d4A0f8B77241c03dd3354781a15"
+    },
+    {
+      "target": "0xbbB4f37c787C6ecb0b6b5Fb3F73221aA22fabA70",
+      "calldata": "0xC295763Eed507d4A0f8B77241c03dd3354781a15"
+    },
+    {
+      "target": "0xbbB4f37c787C6ecb0b6b5Fb3F73221aA22fabA70",
+      "calldata": "0xC295763Eed507d4A0f8B77241c03dd3354781a15"
+    }
+  ],
+  "arrayLength": "3"
+}

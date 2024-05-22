@@ -14,7 +14,7 @@ if (currentJson.objectArray != undefined) {
   // create correct number of modifications
   currentJson["arrayLength"] = currentJson.objectArray.length.toString();
 
-  fs.writeFile(basePath, JSON.stringify(currentJson), (err) => {
+  fs.writeFile(basePath, JSON.stringify(currentJson, null, 2), (err) => {
     if (err) {
       console.error(err);
       return;
@@ -35,8 +35,10 @@ function getNetwork(network) {
   let signer; //ethers.getCreateAddress(from: , nonce: 1)
   let provider;
   if (network == "anvil") {
-    provider = new ethers.JsonRpcProvider("http://localhost:8545");
-    signer = new ethers.Wallet(process.env.ANVIL_ONE, provider);
+    let anvilRpc = process.env.ANVIL_RPC;
+    let anvilPK = process.env.ANVIL_ONE;
+    provider = new ethers.JsonRpcProvider(anvilRpc, provider);
+    signer = new ethers.Wallet(anvilPK, provider);
   } else if (network == "sepolia" || network == "arb-sepolia") {
     const rpc_endpoint = process.env.ARB_SEPOLIA_RPC;
     provider = new ethers.JsonRpcProvider(rpc_endpoint);
@@ -78,7 +80,7 @@ async function predictAddress(currentJson, provider) {
 async function predictAddressAndWriteToFile(currentJson, provider) {
   const predictedAddress = await predictAddress(currentJson, provider);
   currentJson["LiquidationEngineCollateralParams"]["newCAHChild"] = predictedAddress;
-  fs.writeFileSync(basePath, JSON.stringify(currentJson), (err) => {
+  fs.writeFileSync(basePath, JSON.stringify(currentJson, null, 2), (err) => {
     if (err) {
       console.error(err);
       return;

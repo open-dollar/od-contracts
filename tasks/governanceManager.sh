@@ -67,14 +67,11 @@ function generateProposal() {
 
   getRpcAndPk $NETWORK
 
-
-  CALLDATA=$(cast calldata "run(string)" $CAST_PATH)
-
   COMMAND_PATH=$(node tasks/parseProposalPath.js $1)
 
   CALLDATA=$(cast calldata "run(string)" $CAST_PATH)
-
-  simulate $COMMAND_PATH $CALLDATA $RPC_ENDPOINT $PRIVATE_KEY
+  forge script $COMMAND_PATH -s $CALLDATA --fork-url $ARB_MAINNET_RPC --unlocked 
+  # simulate $COMMAND_PATH $CALLDATA $RPC_ENDPOINT $PRIVATE_KEY
 
 }
 
