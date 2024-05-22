@@ -171,7 +171,7 @@ contract NFTRenderer is Authorizable {
         if (debt > 0) {
           state = 2;
           ISAFEEngine.SAFEEngineCollateralData memory cTypeData = _safeEngine.cData(cType);
-          ratio = ((collateral.wmul(oracle.read())).wdiv(debt.wmul(cTypeData.accumulatedRate))) / 1e7; // _RAY to _WAD conversion
+          ratio = ((collateral.wmul(oracle.read())).wdiv(debt.wmul(cTypeData.accumulatedRate))) / 1e7;
         } else {
           state = 1;
           ratio = 200;
