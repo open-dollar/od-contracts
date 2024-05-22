@@ -162,8 +162,8 @@ contract NFTRenderer is Authorizable {
 
       IOracleRelayer.OracleRelayerCollateralParams memory oracleParams = _oracleRelayer.cParams(cType);
       IDelayedOracle oracle = oracleParams.oracle;
-      uint256 safetyCRatio = oracleParams.safetyCRatio / 10e24;
-      uint256 liquidationCRatio = oracleParams.liquidationCRatio / 10e24;
+      uint256 safetyCRatio = oracleParams.safetyCRatio / 1e25;
+      uint256 liquidationCRatio = oracleParams.liquidationCRatio / 1e25;
 
       uint256 ratio;
       uint256 state;
