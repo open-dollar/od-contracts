@@ -14,7 +14,7 @@ if (currentJson.objectArray != undefined) {
   // create correct number of modifications
   currentJson["arrayLength"] = currentJson.objectArray.length.toString();
 
-  fs.writeFile(basePath, JSON.stringify(currentJson), (err) => {
+  fs.writeFile(basePath, JSON.stringify(currentJson, null, 2), (err) => {
     if (err) {
       console.error(err);
       return;
@@ -80,7 +80,7 @@ async function predictAddress(currentJson, provider) {
 async function predictAddressAndWriteToFile(currentJson, provider) {
   const predictedAddress = await predictAddress(currentJson, provider);
   currentJson["LiquidationEngineCollateralParams"]["newCAHChild"] = predictedAddress;
-  fs.writeFileSync(basePath, JSON.stringify(currentJson), (err) => {
+  fs.writeFileSync(basePath, JSON.stringify(currentJson, null, 2), (err) => {
     if (err) {
       console.error(err);
       return;
