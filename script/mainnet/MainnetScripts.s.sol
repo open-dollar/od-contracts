@@ -29,12 +29,6 @@ contract MainnetScripts is MainnetDeployment, Script, Test {
   uint256 public COLLATERAL = vm.envUint('COLLATERAL'); // ex: COLLATERAL=400000000000000000 (0.4 ether)
   uint256 public DEBT = vm.envUint('DEBT'); // ex: DEBT=200000000000000000000 (200 ether)
 
-  // Collateral
-  bytes32 public constant ETH_A = bytes32('ETH-A'); // 0x4554482d41000000000000000000000000000000000000000000000000000000
-  bytes32 public constant WSTETH = bytes32('WSTETH'); // 0x5745544800000000000000000000000000000000000000000000000000000000
-  bytes32 public constant ARB = bytes32('ARB'); //0x4152420000000000000000000000000000000000000000000000000000000000
-  bytes32 public constant RETH = bytes32('RETH');
-
   address _reth_Address = 0xEC70Dcb4A1EFa46b8F2D97C310C9c4790ba5ffA8; //reth whale address: 0xba12222222228d8ba445958a75a0704d566bf2c8
 
   modifier prankSwitch(address _caller, address _account) {
