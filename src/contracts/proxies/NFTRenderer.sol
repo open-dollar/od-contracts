@@ -162,8 +162,8 @@ contract NFTRenderer is Authorizable {
 
       IOracleRelayer.OracleRelayerCollateralParams memory oracleParams = _oracleRelayer.cParams(cType);
       IDelayedOracle oracle = oracleParams.oracle;
-      uint256 safetyCRatio = oracleParams.safetyCRatio / 10e24;
-      uint256 liquidationCRatio = oracleParams.liquidationCRatio / 10e24;
+      uint256 safetyCRatio = oracleParams.safetyCRatio / 1e25;
+      uint256 liquidationCRatio = oracleParams.liquidationCRatio / 1e25;
 
       uint256 ratio;
       uint256 state;
@@ -171,7 +171,7 @@ contract NFTRenderer is Authorizable {
         if (debt > 0) {
           state = 2;
           ISAFEEngine.SAFEEngineCollateralData memory cTypeData = _safeEngine.cData(cType);
-          ratio = ((collateral.wmul(oracle.read())).wdiv(debt.wmul(cTypeData.accumulatedRate))) / 1e7; // _RAY to _WAD conversion
+          ratio = ((collateral.wmul(oracle.read())).wdiv(debt.wmul(cTypeData.accumulatedRate))) / 1e7;
         } else {
           state = 1;
           ratio = 200;
