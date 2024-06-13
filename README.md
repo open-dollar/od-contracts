@@ -38,7 +38,7 @@ Addresses for can be found in the app: https://app.opendollar.com/stats
 | contracts | April, 2024 | [Quantstamp](https://www.quantstamp.com/) | [6cdc848](https://github.com/open-dollar/od-contracts/commit/6cdc848) | [View Changes](https://github.com/open-dollar/od-contracts/compare/6cdc848...main) | [View Report](https://certificate.quantstamp.com/full/open-dollar-smart-contract-audit/202828fa-eb09-4d33-beab-c1ebee11ebd1/index.html) |
 | relayer | April, 2024 | [Pashov Audit Group](https://www.pashov.net/) | [453222d](https://github.com/open-dollar/od-relayer/commit/453222d) | [View Changes](https://github.com/open-dollar/od-relayer/compare/453222d...main) | [View Report](https://github.com/pashov/audits/blob/master/team/pdf/OpenDollar-security-review.pdf) |
 
-A Security Scan was performed by [Pessimistic](https://pessimistic.io/) April, 2024 at [a0b7640](https://github.com/open-dollar/od-contracts/commit/a0b7640). (Report to be published) 
+A Security Scan was performed by [Pessimistic](https://pessimistic.io/) April, 2024 at [a0b7640](https://github.com/open-dollar/od-contracts/commit/a0b7640). ([View Report](https://github.com/pessimistic-io/scans/blob/main/Open%20Dollar%20Security%20Scan%20Results.pdf)) 
 
 Additional audits completed prior to forking this codebase can be found here: https://github.com/hai-on-op/audit-reports
 
