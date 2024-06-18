@@ -10,13 +10,15 @@ import {BasicActions, CommonActions} from '@contracts/proxies/actions/BasicActio
 
 // BROADCAST
 // source .env && forge script DeployBasicActionsSingletonMain --skip-simulation --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY
+// source .env && forge script DeployBasicActionsSingletonMain --skip-simulation --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC --broadcast --verify --etherscan-api-key $ARB_ETHERSCAN_API_KEY --account defaultKey --sender $DEFAULT_KEY_PUBLIC_ADDRESS
 
 // SIMULATE
-// source .env && forge script DeployBasicActionsSingletonMain --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC
+// source .env && forge script DeployBasicActionsSingletonMain --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_MAINNET_RPC --sender $DEFAULT_KEY_PUBLIC_ADDRESS
 
 contract DeployBasicActionsSingletonMain is Script {
   function run() public {
-    vm.startBroadcast(vm.envUint('ARB_MAINNET_DEPLOYER_PK'));
+    vm.startBroadcast();
+    // vm.startBroadcast(vm.envUint('ARB_MAINNET_DEPLOYER_PK'));
     new BasicActions();
     vm.stopBroadcast();
   }
