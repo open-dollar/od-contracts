@@ -166,7 +166,7 @@ interface ISAFEEngine is IAuthorizable, IDisableable, IModifiable, IModifiablePe
     uint256 /* RAY */ accumulatedRate;
     // Floor price at which a SAFE is allowed to generate debt
     uint256 /* RAY */ safetyPrice;
-    // Price at which a SAFE gets liquidated
+    // Price at which a SAFE gets liquidateddebtAmoun
     uint256 /* RAY */ liquidationPrice;
   }
 

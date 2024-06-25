@@ -11,9 +11,12 @@ import 'forge-std/console2.sol';
 // source .env && forge script OpenSafe --with-gas-price 2000000000 -vvvvv --rpc-url $ARB_SEPOLIA_RPC
 
 contract OpenSafe is TestScripts {
+  uint256 private _privateKey;
   function run() public {
-    vm.startBroadcast(vm.envUint('ARB_SEPOLIA_PK'));
-    address proxy = address(deployOrFind(USER1));
+    _privateKey = vm.envUint('ARB_MAINNET_PK');
+    vm.startBroadcast(_privateKey);
+    
+    address proxy =  deployOrFind(address(vm.addr(_privateKey)));
     uint256 safeId = openSafe(WSTETH, proxy);
     console2.log('SAFE ID: ', safeId);
     vm.stopBroadcast();

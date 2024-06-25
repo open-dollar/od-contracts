@@ -1,12 +1,17 @@
 {
   "chainid": 42161,
+<<<<<<< Updated upstream
   "description": "Raise globalDebtCeiling",
+=======
+  "description": "Add new safeManager to the SAFEEngine",
+>>>>>>> Stashed changes
   "network": "mainnet",
   "proposalType": "ModifyParameters",
   "odGovernor": "0xf704735CE81165261156b41D33AB18a08803B86F",
   "objectArray": [
     {
       "target": "0xEff45E8e2353893BD0558bD5892A42786E9142F1",
+<<<<<<< Updated upstream
       "param": "globalDebtCeiling",
       "type": "uint256",
       "data": "10000000000000000000000000000000000000000000000000000"
@@ -14,3 +19,12 @@
   ],
   "arrayLength": 1
 }
+=======
+      "param": "odSafeManager",
+      "type": "address",
+      "data": "0x1196Ee216798107130bd61A80c3BeeC2DeC113AA"
+    }
+  ],
+  "arrayLength": "1"
+}
+>>>>>>> Stashed changes
