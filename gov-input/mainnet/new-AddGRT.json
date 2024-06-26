@@ -1,0 +1,38 @@
+{
+    "chainid": "42161",
+    "description": "add GRT as a collateral type",
+    "network": "mainnet",
+    "newCollateralAddress": "0x9623063377ad1b27544c965ccd7342f7ea7e88c7",
+    "newCollateralType": "GRT",
+    "proposalType": "AddCollateral",
+    "ProtocolToken_Address": "",
+    "ODGovernor_Address": "",
+    "SAFEEngine_Address": "",
+    "OracleRelayer_Address": "",
+    "LiquidationEngine_Address": "",
+    "TaxCollector_Address": "",
+    "GlobalSettlement_Address": "",
+    "SAFEEngineCollateralParams": {
+        "collateralDebtCeiling": "TBD",
+        "collateralDebtFloor": "TBD"
+    },
+    "TaxCollectorCollateralParams": {
+        "stabilityFee": "TBD"
+    },
+    "LiquidationEngineCollateralParams": {
+        "newCAHChild": "",
+        "liquidationPenalty": "TBD",
+        "liquidationQuantity": "TBD"
+    },
+    "OracleRelayerCollateralParams": {
+        "delayedOracle": "TBD",
+        "safetyCRatio": "TBD",
+        "liquidationCRatio": "TBD"
+    },
+    "CollateralAuctionHouseParams": {
+        "maximumDiscount": "TBD",
+        "minimumBid": "TBD",
+        "minimumDiscount": "TBD",
+        "perSecondDiscountUpdateRate": "999998607628240538157433861"
+    }
+}

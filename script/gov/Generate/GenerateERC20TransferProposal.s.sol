@@ -58,11 +58,8 @@ contract GenerateERC20TransferProposal is Generator, JSONScript {
     bytes32 descriptionHash = keccak256(bytes(description));
 
     // Propose the action to add transfer the ERC20 token to the receiver
-    uint256 proposalId = gov.propose(targets, values, calldatas, description);
+    uint256 proposalId = gov.hashProposal(targets, values, calldatas, descriptionHash);
     string memory stringProposalId = vm.toString(proposalId / 10 ** 69);
-
-    // Verify the proposalId is expected
-    assert(proposalId == gov.hashProposal(targets, values, calldatas, descriptionHash));
 
     {
       string memory objectKey = 'PROPOSE_ERC20_TRANSFER_KEY';

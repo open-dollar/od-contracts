@@ -72,11 +72,9 @@ contract GenerateAddNitroRewardsProposal is Generator, JSONScript {
     bytes32 descriptionHash = keccak256(bytes(description));
 
     // Propose the action to add rewards to NitroPool
-    uint256 proposalId = gov.propose(targets, values, calldatas, description);
+    uint256 proposalId = gov.hashProposal(targets, values, calldatas, descriptionHash);
     string memory stringProposalId = vm.toString(proposalId / 10 ** 69);
 
-    // Verify the proposalId is expected
-    assert(proposalId == gov.hashProposal(targets, values, calldatas, descriptionHash));
     {
       // Build the JSON output
       string memory objectKey = 'PROPOSE_ADD_NITROPOOL_REWARDS_KEY';

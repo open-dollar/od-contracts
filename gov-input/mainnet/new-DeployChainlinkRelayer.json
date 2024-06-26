@@ -1,0 +1,14 @@
+{
+  "chainid": 42161,
+  "description": "Add new safeManager to the SAFEEngine",
+  "network": "mainnet",
+  "proposalType": "DeployChainlinkRelayers",
+  "ODGovernor_Address": "",
+  "ChainlinkRelayerFactory_Address": "",
+  "objectArray": [
+    {
+      "chainlinkFeed": "",
+      "oracleInterval": ""
+    }
+  ]
+}

@@ -51,7 +51,7 @@ function queue() {
   simulate "QueueProposal" $CALLDATA $RPC_ENDPOINT $PRIVATE_KEY
 
   delimitier
-  echo "QUEUEING"
+  echo "QUEUEING..."
   read -p "Please verify the data and confirm that you want to queue this proposal (y/n): " CONFIRMATION
 
   if [[ $CONFIRMATION == "y" || $CONFIRMATION == "Y" ]]; then
@@ -61,6 +61,7 @@ function queue() {
 }
 
 function generateProposal() {
+  echo "Generating..."
   declare OUTPUT=($(node ./tasks/parseNetwork.js $1))
   NETWORK=${OUTPUT[0]}
   CAST_PATH=${OUTPUT[1]}
@@ -68,9 +69,9 @@ function generateProposal() {
   getRpcAndPk $NETWORK
 
   COMMAND_PATH=$(node tasks/parseProposalPath.js $1)
-
+  echo "$COMMAND_PATH"
   CALLDATA=$(cast calldata "run(string)" $CAST_PATH)
-  forge script $COMMAND_PATH -s $CALLDATA --fork-url $ARB_MAINNET_RPC --unlocked 
+  forge script $COMMAND_PATH -s $CALLDATA --fork-url $ARB_MAINNET_RPC --unlocked 0x7a528ea3e06d85ed1c22219471cf0b1851943903
   # simulate $COMMAND_PATH $CALLDATA $RPC_ENDPOINT $PRIVATE_KEY
 
 }
@@ -211,11 +212,11 @@ function submitVoteAndExecute() {
   execute $1
 }
 
-function findAndAddAddresses(){
+function findAndAddAddresses() {
   node ./tasks/findContractAddress.js $1
 }
 
-function cleanInputs(){
+function cleanInputs() {
   node ./tasks/cleanInput.js $1
 
 }
@@ -255,13 +256,13 @@ while :; do
     ;;
   -g | --generate)
     if [[ $2 == "--auto" || $2 == "-a" ]]; then
-    checkPath $3
-    findAndAddAddresses $3
-    generateProposal $3
-    cleanInputs $3
+      checkPath $3
+      findAndAddAddresses $3
+      generateProposal $3
+      cleanInputs $3
     else
-    checkPath $2
-    generateProposal $2
+      checkPath $2
+      generateProposal $2
     fi
     exit 0
     ;;

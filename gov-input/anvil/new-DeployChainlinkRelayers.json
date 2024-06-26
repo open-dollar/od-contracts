@@ -1,0 +1,26 @@
+{
+  "chainid": 31337,
+  "description": "Add new safeManager to the SAFEEngine",
+  "network": "anvil",
+  "proposalType": "DeployChainlinkRelayers",
+  "ODGovernor_Address": "",
+  "ChainlinkRelayerFactory_Address": "",
+  "objectArray": [
+    {
+      "symbol": "LINK/USD",
+      "chainlinkFeed": "0x86E53CF1B870786351Da77A57575e79CB55812CB",
+      "oracleInterval": "86400"
+    },
+    {
+      "symbol": "GRT/USD",
+      "chainlinkFeed": "0x0F38D86FceF4955B705F35c9e41d1A16e0637c73",
+      "oracleInterval": "86400"
+    },
+    {
+      "symbol": "ETH/USD",
+      "chainlinkFeed": "0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612",
+      "oracleInterval": "86400"
+    }
+  ],
+  "arrayLength": "3"
+}
