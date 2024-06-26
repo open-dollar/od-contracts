@@ -3,49 +3,45 @@ pragma solidity 0.8.20;
 
 import {JSONScript} from '@script/gov/helpers/JSONScript.s.sol';
 import {ODGovernor} from '@contracts/gov/ODGovernor.sol';
-import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
 import {Generator} from '@script/gov/Generator.s.sol';
 import {Strings} from '@openzeppelin/utils/Strings.sol';
 import {IBaseOracle} from '@interfaces/oracles/IBaseOracle.sol';
-import {IDenominatedOracleFactory} from '@interfaces/factories/IDenominatedOracleFactory.sol';
+import {IDelayedOracleFactory} from '@interfaces/factories/IDelayedOracleFactory.sol';
 import 'forge-std/StdJson.sol';
 
-/// @title GenerateDeployDenominatedOraclesProposal Script
+/// @title GenerateDeployDelayedOraclesProposal Script
 /// @author OpenDollar
 /// @notice Script to generate a new chainlink relayer
 /// @dev This script is used to create a proposal input to use the DenominatedOracleFactory to deploy a new chainlink relayer
-contract GenerateDeployDenominatedOraclesProposal is Generator, JSONScript {
+contract GenerateDeployDelayedOraclesProposal is Generator, JSONScript {
   using stdJson for string;
 
   string public description;
   address public governanceAddress;
-  address public chainlinkRelayerFactory;
+  address public delayedOracleFactory;
   address[] public chainlinkPriceFeed;
-  address[] public chainlinkRelayer;
-  bool[] public inverted;
+  uint256[] public interval;
 
   function _loadBaseData(string memory json) internal override {
     governanceAddress = json.readAddress(string(abi.encodePacked('.ODGovernor_Address:')));
     description = json.readString(string(abi.encodePacked('.description')));
-    chainlinkRelayerFactory = json.readAddress(string(abi.encodePacked('.DenominatedOracleFactory_Address')));
+    delayedOracleFactory = json.readAddress(string(abi.encodePacked('.DelayedOracleFactory_Address')));
     uint256 len = json.readUint(string(abi.encodePacked('.arrayLength')));
 
     for (uint256 i; i < len; i++) {
       string memory index = Strings.toString(i);
       address feed = json.readAddress(string(abi.encodePacked('.objectArray[', index, '].chainlinkPriceFeed')));
-      address relayer = json.readAddress(string(abi.encodePacked('.objectArray[', index, '].chainlinkRelayer')));
-      bool _inverted = json.readBool(string(abi.encodePacked('.objectArray[', index, '].inverted')));
+      uint256 _interval = json.readUint(string(abi.encodePacked('.objectArray[', index, '].interval')));
       chainlinkPriceFeed.push(feed);
-      chainlinkRelayer.push(relayer);
-      inverted.push(_inverted);
+      interval.push(_interval);
     }
   }
 
   function _generateProposal() internal override {
     ODGovernor gov = ODGovernor(payable(governanceAddress));
 
-    uint256 len = chainlinkRelayer.length;
-    require(len == inverted.length, 'DENOMINATED ORACLE PROPOSER: mismatched array lengths');
+    uint256 len = chainlinkPriceFeed.length;
+    require(len == interval.length, 'DELAYED ORACLE PROPOSER: mismatched array lengths');
 
     address[] memory targets = new address[](len);
     uint256[] memory values = new uint256[](len);
@@ -54,12 +50,9 @@ contract GenerateDeployDenominatedOraclesProposal is Generator, JSONScript {
     for (uint256 i = 0; i < len; i++) {
       // encode relayer factory function data
       calldatas[i] = abi.encodeWithSelector(
-        IDenominatedOracleFactory.deployDenominatedOracle.selector,
-        IBaseOracle(chainlinkPriceFeed[i]),
-        IBaseOracle(chainlinkRelayer[i]),
-        inverted[i]
+        IDelayedOracleFactory.deployDelayedOracle.selector, IBaseOracle(chainlinkPriceFeed[i]), interval[i]
       );
-      targets[i] = chainlinkRelayerFactory;
+      targets[i] = delayedOracleFactory;
       values[i] = 0; // value is always 0
     }
 
@@ -72,11 +65,11 @@ contract GenerateDeployDenominatedOraclesProposal is Generator, JSONScript {
 
     {
       // Build the JSON output
-      string memory objectKey = 'PROPOSE_DEPLOY_DENOMINATED_ORACLE_KEY';
+      string memory objectKey = 'PROPOSE_DEPLOY_DELAYED_ORACLE_KEY';
       string memory jsonOutput =
         _buildProposalParamsJSON(proposalId, objectKey, targets, values, calldatas, description, descriptionHash);
       vm.writeJson(
-        jsonOutput, string.concat('./gov-output/', _network, '/', stringProposalId, '-deploy-denominated-oracle.json')
+        jsonOutput, string.concat('./gov-output/', _network, '/', stringProposalId, '-deploy-delayed-oracle.json')
       );
     }
   }

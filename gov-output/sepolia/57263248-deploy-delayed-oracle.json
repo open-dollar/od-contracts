@@ -1,0 +1,43 @@
+{
+  "DelayedOracleFactory_Address": "0x500E234652Ee1a8b06F99599Ae7d5299527270fB",
+  "ODGovernor_Address": "0x69ae232E574352232aB8678869eAA3BEBd885211",
+  "arrayLength": "3",
+  "calldatas": [
+    "0x4b61a02700000000000000000000000086e53cf1b870786351da77a57575e79cb55812cb0000000000000000000000000000000000000000000000000000000000015180",
+    "0x4b61a0270000000000000000000000000f38d86fcef4955b705f35c9e41d1a16e0637c730000000000000000000000000000000000000000000000000000000000015180",
+    "0x4b61a027000000000000000000000000639fe6ab55c921f74e7fac1ee960c0b6293ba6120000000000000000000000000000000000000000000000000000000000015180"
+  ],
+  "chainid": 421614,
+  "description": "deploy a new delayed oracle",
+  "descriptionHash": "0xcfd5d0e17505be1ac2c4c14c34f76e2eee407022966a3407199469ebbce4fd31",
+  "network": "sepolia",
+  "objectArray": [
+    {
+      "symbol": "LINK/USD",
+      "chainlinkPriceFeed": "0x86E53CF1B870786351Da77A57575e79CB55812CB",
+      "interval": "86400"
+    },
+    {
+      "symbol": "GRT/USD",
+      "chainlinkPriceFeed": "0x0F38D86FceF4955B705F35c9e41d1A16e0637c73",
+      "interval": "86400"
+    },
+    {
+      "symbol": "ETH/USD",
+      "chainlinkPriceFeed": "0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612",
+      "interval": "86400"
+    }
+  ],
+  "proposalId": 57263248683078067676388357467320405990069831192934024276588435061958740499633,
+  "proposalType": "DeployDelayedOracles",
+  "targets": [
+    "0x500E234652Ee1a8b06F99599Ae7d5299527270fB",
+    "0x500E234652Ee1a8b06F99599Ae7d5299527270fB",
+    "0x500E234652Ee1a8b06F99599Ae7d5299527270fB"
+  ],
+  "values": [
+    0,
+    0,
+    0
+  ]
+}

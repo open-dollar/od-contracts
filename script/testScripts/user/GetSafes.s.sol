@@ -15,9 +15,9 @@ contract GetSafes is TestScripts {
     address usr = vm.addr(vm.envUint('ARB_MAINNET_PK'));
     address proxy = deployOrFind(usr);
     uint256[] memory _safes = safeManager.getSafes(proxy);
-  console2.log(address(WETH_TOKEN));
-  console2.log(WETH_TOKEN.balanceOf(usr));
-  console2.log('address: ', usr);
+    console2.log(address(WETH_TOKEN));
+    console2.log(WETH_TOKEN.balanceOf(usr));
+    console2.log('address: ', usr);
     for (uint256 i = 0; i < _safes.length;) {
       safeManager.safeData(_safes[i]);
       console2.log('safe', _safes[i]);

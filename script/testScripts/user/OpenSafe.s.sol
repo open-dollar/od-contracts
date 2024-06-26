@@ -12,11 +12,12 @@ import 'forge-std/console2.sol';
 
 contract OpenSafe is TestScripts {
   uint256 private _privateKey;
+
   function run() public {
     _privateKey = vm.envUint('ARB_MAINNET_PK');
     vm.startBroadcast(_privateKey);
-    
-    address proxy =  deployOrFind(address(vm.addr(_privateKey)));
+
+    address proxy = deployOrFind(address(vm.addr(_privateKey)));
     uint256 safeId = openSafe(WSTETH, proxy);
     console2.log('SAFE ID: ', safeId);
     vm.stopBroadcast();

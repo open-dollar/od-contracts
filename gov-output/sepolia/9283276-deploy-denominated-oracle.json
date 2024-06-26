@@ -1,0 +1,37 @@
+{
+  "DenominatedOracleFactory_Address": "0xD18Ce4d87Bf1E8a959F9F9eC2dB5A8D639408580",
+  "ODGovernor_Address": "0x69ae232E574352232aB8678869eAA3BEBd885211",
+  "arrayLength": "2",
+  "calldatas": [
+    "0xc361d27000000000000000000000000086e53cf1b870786351da77a57575e79cb55812cb0000000000000000000000003e6c1621f674da311e57646007fbfad8570843830000000000000000000000000000000000000000000000000000000000000000",
+    "0xc361d2700000000000000000000000000f38d86fcef4955b705f35c9e41d1a16e0637c730000000000000000000000003e6c1621f674da311e57646007fbfad8570843830000000000000000000000000000000000000000000000000000000000000000"
+  ],
+  "chainid": 421614,
+  "description": "Deploy ne denominated oracles",
+  "descriptionHash": "0x33260b0ab2a8880ef79b3b281f450a05c3bb3c8dc8824a727de7e5a5d580afbd",
+  "network": "sepolia",
+  "objectArray": [
+    {
+      "symbol": "LINK/USD",
+      "chainlinkPriceFeed": "0x86E53CF1B870786351Da77A57575e79CB55812CB",
+      "chainlinkRelayer": "0x3e6C1621f674da311E57646007fBfAd857084383",
+      "inverted": "false"
+    },
+    {
+      "symbol": "GRT/USD",
+      "chainlinkPriceFeed": "0x0F38D86FceF4955B705F35c9e41d1A16e0637c73",
+      "chainlinkRelayer": "0x3e6C1621f674da311E57646007fBfAd857084383",
+      "inverted": "false"
+    }
+  ],
+  "proposalId": 9283276278007600405118366842604513209953976625995845140913441914749803854542,
+  "proposalType": "DeployDenominatedOracles",
+  "targets": [
+    "0xD18Ce4d87Bf1E8a959F9F9eC2dB5A8D639408580",
+    "0xD18Ce4d87Bf1E8a959F9F9eC2dB5A8D639408580"
+  ],
+  "values": [
+    0,
+    0
+  ]
+}
