@@ -1,0 +1,26 @@
+{
+  "chainid": 42161,
+  "description": "Deploy Delayed Oracle for Link, GRT, and ETH",
+  "network": "mainnet",
+  "proposalType": "DeployDelayedOracles",
+  "ODGovernor_Address": "0xf704735CE81165261156b41D33AB18a08803B86F",
+  "DelayedOracleFactory_Address": "0x9Dd63fA54dEfd8820BCAb3e3cC39aeEc1aE88098",
+  "objectArray": [
+    {
+      "symbol": "LINK/USD",
+      "priceFeed": "",
+      "interval": "86400"
+    },
+    {
+      "symbol": "GRT/USD",
+      "priceFeed": "",
+      "interval": "86400"
+    },
+    {
+      "symbol": "ETH/USD",
+      "priceFeed": "",
+      "interval": "86400"
+    }
+  ],
+  "arrayLength": "3"
+}

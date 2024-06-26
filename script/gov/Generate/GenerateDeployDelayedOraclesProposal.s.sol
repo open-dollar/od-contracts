@@ -19,7 +19,7 @@ contract GenerateDeployDelayedOraclesProposal is Generator, JSONScript {
   string public description;
   address public governanceAddress;
   address public delayedOracleFactory;
-  address[] public chainlinkPriceFeed;
+  address[] public priceFeed;
   uint256[] public interval;
 
   function _loadBaseData(string memory json) internal override {
@@ -30,9 +30,9 @@ contract GenerateDeployDelayedOraclesProposal is Generator, JSONScript {
 
     for (uint256 i; i < len; i++) {
       string memory index = Strings.toString(i);
-      address feed = json.readAddress(string(abi.encodePacked('.objectArray[', index, '].chainlinkPriceFeed')));
+      address feed = json.readAddress(string(abi.encodePacked('.objectArray[', index, '].priceFeed')));
       uint256 _interval = json.readUint(string(abi.encodePacked('.objectArray[', index, '].interval')));
-      chainlinkPriceFeed.push(feed);
+      priceFeed.push(feed);
       interval.push(_interval);
     }
   }
@@ -40,7 +40,7 @@ contract GenerateDeployDelayedOraclesProposal is Generator, JSONScript {
   function _generateProposal() internal override {
     ODGovernor gov = ODGovernor(payable(governanceAddress));
 
-    uint256 len = chainlinkPriceFeed.length;
+    uint256 len = priceFeed.length;
     require(len == interval.length, 'DELAYED ORACLE PROPOSER: mismatched array lengths');
 
     address[] memory targets = new address[](len);
@@ -50,7 +50,7 @@ contract GenerateDeployDelayedOraclesProposal is Generator, JSONScript {
     for (uint256 i = 0; i < len; i++) {
       // encode relayer factory function data
       calldatas[i] = abi.encodeWithSelector(
-        IDelayedOracleFactory.deployDelayedOracle.selector, IBaseOracle(chainlinkPriceFeed[i]), interval[i]
+        IDelayedOracleFactory.deployDelayedOracle.selector, IBaseOracle(priceFeed[i]), interval[i]
       );
       targets[i] = delayedOracleFactory;
       values[i] = 0; // value is always 0

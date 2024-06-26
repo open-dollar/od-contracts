@@ -1,14 +1,21 @@
 {
   "chainid": 42161,
-  "description": "Add new safeManager to the SAFEEngine",
+  "description": "Deploy Chainlink Relayer for LINK GRT",
   "network": "mainnet",
   "proposalType": "DeployChainlinkRelayers",
   "ODGovernor_Address": "",
   "ChainlinkRelayerFactory_Address": "",
   "objectArray": [
     {
-      "chainlinkFeed": "",
-      "oracleInterval": ""
+      "symbol": "LINK/USD",
+      "chainlinkFeed": "0x86E53CF1B870786351Da77A57575e79CB55812CB",
+      "oracleInterval": "86400"
+    },
+    {
+      "symbol": "GRT/USD",
+      "chainlinkFeed": "0x0F38D86FceF4955B705F35c9e41d1A16e0637c73",
+      "oracleInterval": "86400"
     }
-  ]
+  ],
+  "arrayLength": "2"
 }
