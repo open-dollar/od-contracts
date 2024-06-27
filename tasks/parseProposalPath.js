@@ -22,7 +22,12 @@ if (currentJson.objectArray != undefined) {
   });
 }
 
-if (currentJson.proposalType == "AddCollateral") {
+if (
+  currentJson.proposalType == "DeployChainlinkRelayers" ||
+  currentJson.proposalType == "DeployDelayedOracle" ||
+  currentJson.proposalType == "DeployDenominatedOracle" ||
+  currentJson.proposalType == "AddCollateral"
+) {
   const [signer, provider] = getNetwork(network);
   if (signer && provider) {
     predictAddressAndWriteToFile(currentJson, provider);
@@ -52,35 +57,99 @@ function getNetwork(network) {
 }
 
 async function predictAddress(currentJson, provider) {
+  let factoryAddress;
+  let nonce;
+  let numberOfAddressesToPredict;
+  if (currentJson.proposalType == "AddCollateral") {
+    const contractJSON = JSON.parse(
+      fs.readFileSync(
+        path.join(
+          __dirname,
+          "../out/GlobalSettlement.sol/GlobalSettlement.json"
+        )
+      )
+    );
 
-  const contractJSON = JSON.parse(
-    fs.readFileSync(
-      path.join(__dirname, "../out/GlobalSettlement.sol/GlobalSettlement.json")
-    )
-  );
+    const globalSettlement = new ethers.Contract(
+      currentJson.GlobalSettlement_Address,
+      contractJSON.abi,
+      provider
+    );
 
-  const globalSettlement = new ethers.Contract(
-    currentJson.GlobalSettlement_Address,
-    contractJSON.abi,
-    provider
-  );
+    factoryAddress = await globalSettlement.collateralAuctionHouseFactory();
 
-  const collateralAuctionHouseFactoryAddress =
-    await globalSettlement.collateralAuctionHouseFactory();
-  const nonce = await provider.getTransactionCount(
-    collateralAuctionHouseFactoryAddress
-  );
-  const predictedAddress = ethers.getCreateAddress({
-    from: collateralAuctionHouseFactoryAddress,
-    nonce: nonce,
-  });
-  return predictedAddress;
+    nonce = await provider.getTransactionCount(factoryAddress);
+
+    numberOfAddressesToPredict = 1;
+  } else if (currentJson.proposalType == "DeployChainlinkRelayers") {
+    factoryAddress = currentJson.ChainlinkRelayerFactory_Address;
+
+    nonce = await provider.getTransactionCount(factoryAddress);
+
+    numberOfAddressesToPredict = currentJson.arrayLength;
+  } else if (currentJson.proposalType == "DeployDelayedOracle") {
+    factoryAddress = currentJson.DelayedOracleFactory_Address;
+
+    nonce = await provider.getTransactionCount(factoryAddress);
+
+    numberOfAddressesToPredict = currentJson.arrayLength;
+  } else if (currentJson.proposalType == "DeployDenominatedOracle") {
+    factoryAddress = currentJson.DenominatedOracleFactory_Address;
+
+    nonce = await provider.getTransactionCount(factoryAddress);
+
+    numberOfAddressesToPredict = currentJson.arrayLength;
+  } else {
+    throw new Error("Parse Prop path: unrecognized proposal type.");
+  }
+  let predictedAddresses = [];
+
+  for (let i = 0; i < numberOfAddressesToPredict; i++) {
+    const predictedAddress = ethers.getCreateAddress({
+      from: factoryAddress,
+      nonce: nonce + i,
+    });
+
+    predictedAddresses.push(predictedAddress);
+  }
+
+  return predictedAddresses;
 }
 
 async function predictAddressAndWriteToFile(currentJson, provider) {
-  const predictedAddress = await predictAddress(currentJson, provider);
-  currentJson["LiquidationEngineCollateralParams"]["newCAHChild"] = predictedAddress;
-  fs.writeFileSync(basePath, JSON.stringify(currentJson, null, 2), (err) => {
+  const predictedAddresses = await predictAddress(currentJson, provider);
+  if (currentJson.proposalType == "AddCollateral") {
+    currentJson["LiquidationEngineCollateralParams"]["newCAHChild"] =
+      predictedAddresses[0];
+  } else if (currentJson.proposalType == "DeployChainlinkRelayers") {
+    let numberOfAddresses = currentJson.arrayLength;
+    currentJson["PredictedRelayerAddresses"] = [];
+    for (let i = 0; i < numberOfAddresses; i++) {
+      currentJson["PredictedRelayerAddresses"].push({
+        symbol: currentJson.objectArray[i].symbol,
+        address: predictedAddresses[i],
+      });
+      console.log(currentJson);
+    }
+  } else if (currentJson.proposalType == "DeployDelayedOracles") {
+    let numberOfAddresses = currentJson.arrayLength;
+    currentJson["PredictedDelayedOracleAddresses"] = [];
+    for (let i = 0; i < numberOfAddresses; i++) {
+      currentJson["PredictedDelayedOracleAddresses"][
+        currentJson.objectArray[i].symbol
+      ] = predictedAddresses[i];
+    }
+  } else if (currentJson.proposalType == "DeployDenominatedOracles") {
+    let numberOfAddresses = currentJson.arrayLength;
+    currentJson["PredictedDenominatedOracleAddresses"] = [];
+    for (let i = 0; i < numberOfAddresses; i++) {
+      currentJson["PredictedDenominatedOracleAddresses"][
+        currentJson.objectArray[i].symbol
+      ] = predictedAddresses[i];
+    }
+  }
+
+  fs.writeFile(basePath, JSON.stringify(currentJson, null, 2), (err) => {
     if (err) {
       console.error(err);
       return;

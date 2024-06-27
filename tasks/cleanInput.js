@@ -9,6 +9,15 @@ const currentJson = JSON.parse(fs.readFileSync(basePath));
 const contractNames = Object.keys(currentJson).filter((key) =>
   key.includes("_Address")
 );
+if (currentJson.PredictedRelayerAddresses != undefined) {
+  currentJson.PredictedRelayerAddresses = [];
+}
+if (currentJson.PredictedDelayedOracleAddresses != undefined) {
+  currentJson.PredictedDelayedOracleAddresses = [];
+}
+if (currentJson.PredictedDenominatedOracleAddresses != undefined) {
+  currentJson.PredictedDenominatedOracleAddresses = [];
+}
 let modifiedJson = currentJson;
 
 contractNames.forEach((e) => {
