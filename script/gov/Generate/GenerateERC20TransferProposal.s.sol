@@ -65,7 +65,7 @@ contract GenerateERC20TransferProposal is Generator, JSONScript {
       string memory objectKey = 'PROPOSE_ERC20_TRANSFER_KEY';
       string memory jsonOutput =
         _buildProposalParamsJSON(proposalId, objectKey, targets, values, calldatas, description, descriptionHash);
-      vm.writeJson(jsonOutput, string.concat('./gov-output/', _network, '/', stringProposalId, '-transfer-erc20.json'));
+      vm.writeJson(jsonOutput, string.concat('./gov-output/', _network, '/transfer-erc20', stringProposalId, '.json'));
     }
   }
 

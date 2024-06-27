@@ -69,7 +69,7 @@ contract GenerateDeployDelayedOraclesProposal is Generator, JSONScript {
       string memory jsonOutput =
         _buildProposalParamsJSON(proposalId, objectKey, targets, values, calldatas, description, descriptionHash);
       vm.writeJson(
-        jsonOutput, string.concat('./gov-output/', _network, '/', stringProposalId, '-deploy-delayed-oracle.json')
+        jsonOutput, string.concat('./gov-output/', _network, '/deploy-delayed-oracle-', stringProposalId, '.json')
       );
     }
   }

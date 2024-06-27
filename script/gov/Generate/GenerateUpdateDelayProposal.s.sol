@@ -50,7 +50,7 @@ contract GenerateUpdateDelayProposal is Generator, JSONScript {
       // Build the JSON output
       string memory jsonOutput =
         _buildProposalParamsJSON(proposalId, objectKey, targets, values, calldatas, _description, descriptionHash);
-      vm.writeJson(jsonOutput, string.concat('./gov-output/', _network, '/', stringProposalId, '-updateTimeDelay.json'));
+      vm.writeJson(jsonOutput, string.concat('./gov-output/', _network, '/updateTimeDelay-', stringProposalId, '.json'));
     }
   }
 

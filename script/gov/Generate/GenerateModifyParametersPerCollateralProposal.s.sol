@@ -73,7 +73,10 @@ contract GenerateModifyParametersPerCollateralProposal is Generator, JSONScript 
       // Build the JSON output
       string memory builtProp =
         _buildProposalParamsJSON(proposalId, objectKey, targets, values, calldatas, _description, descriptionHash);
-      vm.writeJson(builtProp, string.concat('./gov-output/', _network, '/', stringProposalId, '-modifyParameters.json'));
+      vm.writeJson(
+        builtProp,
+        string.concat('./gov-output/', _network, '/modifyParameters-perCollateral-', stringProposalId, '.json')
+      );
     }
   }
 

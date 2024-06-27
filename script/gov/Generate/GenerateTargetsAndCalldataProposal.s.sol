@@ -51,7 +51,7 @@ contract GenerateTargetsAndCalldataProposal is Generator, JSONScript {
       string memory jsonOutput =
         _buildProposalParamsJSON(proposalId, objectKey, targets, values, calldatas, _description, descriptionHash);
       vm.writeJson(
-        jsonOutput, string.concat('./gov-output/', _network, '/', stringProposalId, '-targetsAndCalldata.json')
+        jsonOutput, string.concat('./gov-output/', _network, '/targetsAndCalldata-', stringProposalId, '.json')
       );
     }
   }

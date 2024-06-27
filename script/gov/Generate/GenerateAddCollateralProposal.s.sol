@@ -183,7 +183,7 @@ contract GenerateAddCollateralProposal is Generator, JSONScript {
       // Build the JSON output
       string memory builtProp =
         _buildProposalParamsJSON(proposalId, objectKey, targets, values, calldatas, description, descriptionHash);
-      vm.writeJson(builtProp, string.concat('./gov-output/', _network, '/', stringProposalId, '-add-collateral.json'));
+      vm.writeJson(builtProp, string.concat('./gov-output/', _network, '/add-collateral-', stringProposalId, '.json'));
     }
   }
 

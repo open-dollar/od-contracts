@@ -69,7 +69,7 @@ contract GenerateDeployChainlinkRelayersProposal is Generator, JSONScript {
       string memory jsonOutput =
         _buildProposalParamsJSON(proposalId, objectKey, targets, values, calldatas, description, descriptionHash);
       vm.writeJson(
-        jsonOutput, string.concat('./gov-output/', _network, '/', stringProposalId, '-deploy-chainlink-relayer.json')
+        jsonOutput, string.concat('./gov-output/', _network, '/deploy-chainlink-relayer-', stringProposalId, '.json')
       );
     }
   }

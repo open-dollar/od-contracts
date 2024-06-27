@@ -60,7 +60,7 @@ function findAddress(currentJson) {
       currentJson[key] = addressObj[key];
     });
 
-    fs.writeFile(basePath, JSON.stringify(currentJson), (err) => {
+    fs.writeFile(basePath, JSON.stringify(currentJson, null, 2), (err) => {
       if (err) {
         console.error(err);
         return;
