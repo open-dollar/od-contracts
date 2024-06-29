@@ -40,7 +40,10 @@ contract DeployForTest is TestParams, Deploy {
 
     systemCoinOracle = new OracleForTest(OD_INITIAL_PRICE); // 1 OD = 1 USD
 
-    collateral[WSTETH] = IERC20Metadata(address(weth));
+    collateral[WETH] = IERC20Metadata(0x82aF49447D8a07e3bd95BD0d56f35241523fBab1);
+    collateral[RETH] = IERC20Metadata(0xEC70Dcb4A1EFa46b8F2D97C310C9c4790ba5ffA8);
+    collateral[WSTETH] = IERC20Metadata(0x5979D7b546E38E414F7E9822514be443A4800529);
+    collateral[ARB] = IERC20Metadata(0x912CE59144191C1204E64559FE8253a0e49E6548);
     collateral[TKN] = new ERC20ForTest();
 
     delayedOracle[WSTETH] = new DelayedOracleForTest(TEST_ETH_PRICE, address(0));
