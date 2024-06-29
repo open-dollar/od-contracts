@@ -46,7 +46,10 @@ contract DeployForTest is TestParams, Deploy {
     collateral[ARB] = IERC20Metadata(0x912CE59144191C1204E64559FE8253a0e49E6548);
     collateral[TKN] = new ERC20ForTest();
 
+    delayedOracle[WETH] = new DelayedOracleForTest(TEST_ETH_PRICE, address(0));
+    delayedOracle[RETH] = new DelayedOracleForTest(TEST_ETH_PRICE, address(0));
     delayedOracle[WSTETH] = new DelayedOracleForTest(TEST_ETH_PRICE, address(0));
+    delayedOracle[ARB] = new DelayedOracleForTest(TEST_ETH_PRICE, address(0));
     delayedOracle[TKN] = new DelayedOracleForTest(TEST_TKN_PRICE, address(0));
     delayedOracle['TKN-A'] = new DelayedOracleForTest(COLLATERAL_PRICE, address(0));
     delayedOracle['TKN-B'] = new DelayedOracleForTest(COLLATERAL_PRICE, address(0));
@@ -58,7 +61,10 @@ contract DeployForTest is TestParams, Deploy {
     collateral['TKN-C'] = new ERC20ForTest();
     collateral['TKN-8D'] = new MintableERC20('8 Decimals TKN', 'TKN', 8);
 
+    collateralTypes.push(WETH);
+    collateralTypes.push(RETH);
     collateralTypes.push(WSTETH);
+    collateralTypes.push(ARB);
     collateralTypes.push(TKN);
     collateralTypes.push('TKN-A');
     collateralTypes.push('TKN-B');
