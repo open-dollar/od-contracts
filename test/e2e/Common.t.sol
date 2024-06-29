@@ -5,7 +5,7 @@ import {MAINNET_WETH, SEPOLIA_WETH} from '@script/Registry.s.sol';
 import {ODTest} from '@test/utils/ODTest.t.sol';
 import {OD, OD_INITIAL_PRICE, ETH_A} from '@script/Params.s.sol';
 import {Deploy} from '@script/Deploy.s.sol';
-import {TestParams, WSTETH, TKN, TEST_ETH_PRICE, TEST_TKN_PRICE} from '@test/e2e/TestParams.t.sol';
+import {TestParams, WSTETH, RETH, ARB, WETH, TKN, TEST_ETH_PRICE, TEST_TKN_PRICE} from '@test/e2e/TestParams.t.sol';
 import {ERC20ForTest} from '@test/mocks/ERC20ForTest.sol';
 import {OracleForTest} from '@test/mocks/OracleForTest.sol';
 import {DelayedOracleForTest} from '@test/mocks/DelayedOracleForTest.sol';
@@ -40,10 +40,16 @@ contract DeployForTest is TestParams, Deploy {
 
     systemCoinOracle = new OracleForTest(OD_INITIAL_PRICE); // 1 OD = 1 USD
 
-    collateral[WSTETH] = IERC20Metadata(address(weth));
+    collateral[WETH] = IERC20Metadata(0x82aF49447D8a07e3bd95BD0d56f35241523fBab1);
+    collateral[RETH] = IERC20Metadata(0xEC70Dcb4A1EFa46b8F2D97C310C9c4790ba5ffA8);
+    collateral[WSTETH] = IERC20Metadata(0x5979D7b546E38E414F7E9822514be443A4800529);
+    collateral[ARB] = IERC20Metadata(0x912CE59144191C1204E64559FE8253a0e49E6548);
     collateral[TKN] = new ERC20ForTest();
 
+    delayedOracle[WETH] = new DelayedOracleForTest(TEST_ETH_PRICE, address(0));
+    delayedOracle[RETH] = new DelayedOracleForTest(TEST_ETH_PRICE, address(0));
     delayedOracle[WSTETH] = new DelayedOracleForTest(TEST_ETH_PRICE, address(0));
+    delayedOracle[ARB] = new DelayedOracleForTest(TEST_ETH_PRICE, address(0));
     delayedOracle[TKN] = new DelayedOracleForTest(TEST_TKN_PRICE, address(0));
     delayedOracle['TKN-A'] = new DelayedOracleForTest(COLLATERAL_PRICE, address(0));
     delayedOracle['TKN-B'] = new DelayedOracleForTest(COLLATERAL_PRICE, address(0));
@@ -55,7 +61,10 @@ contract DeployForTest is TestParams, Deploy {
     collateral['TKN-C'] = new ERC20ForTest();
     collateral['TKN-8D'] = new MintableERC20('8 Decimals TKN', 'TKN', 8);
 
+    collateralTypes.push(WETH);
+    collateralTypes.push(RETH);
     collateralTypes.push(WSTETH);
+    collateralTypes.push(ARB);
     collateralTypes.push(TKN);
     collateralTypes.push('TKN-A');
     collateralTypes.push('TKN-B');

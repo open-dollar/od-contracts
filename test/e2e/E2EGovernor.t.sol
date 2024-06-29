@@ -489,7 +489,7 @@ contract E2EGovernorAccessControl is E2EGovernor {
   function testDeployCollateralJoin() public {
     vm.startPrank(address(timelockController));
     bytes32[] memory _collateralTypesList = collateralJoinFactory.collateralTypesList();
-    assertEq(_collateralTypesList.length, 6);
+    assertEq(_collateralTypesList.length, 9);
     collateralJoinFactory.deployCollateralJoin(NEW_CTYPE, NEW_CTYPE_ADDR);
     vm.stopPrank();
   }
