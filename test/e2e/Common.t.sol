@@ -5,7 +5,7 @@ import {MAINNET_WETH, SEPOLIA_WETH} from '@script/Registry.s.sol';
 import {ODTest} from '@test/utils/ODTest.t.sol';
 import {OD, OD_INITIAL_PRICE, ETH_A} from '@script/Params.s.sol';
 import {Deploy} from '@script/Deploy.s.sol';
-import {TestParams, WSTETH, TKN, TEST_ETH_PRICE, TEST_TKN_PRICE} from '@test/e2e/TestParams.t.sol';
+import {TestParams, WSTETH, RETH, ARB, WETH, TKN, TEST_ETH_PRICE, TEST_TKN_PRICE} from '@test/e2e/TestParams.t.sol';
 import {ERC20ForTest} from '@test/mocks/ERC20ForTest.sol';
 import {OracleForTest} from '@test/mocks/OracleForTest.sol';
 import {DelayedOracleForTest} from '@test/mocks/DelayedOracleForTest.sol';
